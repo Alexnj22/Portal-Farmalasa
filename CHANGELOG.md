@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.348.1 — El libro dice cuánto se queda afuera, y el CSV explica sus bytes
+
+### El libro dice cuánta plata se queda afuera (C6 · H3)
+
+El libro de ventas solo incluye documentos con sello de Hacienda, y eso está
+bien: el filtro es correcto. Lo que estaba mal es que las ventas **sin** sello
+desaparecían del libro sin dejar rastro — se cobraron, están en el sistema, y el
+libro no decía ni que existen.
+
+Ahora, en Consumidor y Contribuyentes, un aviso dice cuánto suma lo que no entra
+y dónde se resuelve. Medido al escribir esto: junio y julio limpios (cero
+documentos), agosto con **$1,117.36 en 86 ventas**, de las cuales 63 son de ayer.
+
+Facturación ya las listaba una por una — «Pendiente MH» las de sello vacío,
+«Observaciones» las de sello inválido. Lo que no existía en ningún lado es **el
+total del período**, que es el único número que mira quien arma la declaración.
+Por eso el aviso vive en el libro y no en Facturación.
+
+No aparece en «Anulados»: ahí las filas son documentos invalidados a propósito, y
+este aviso habla de ventas finalizadas. Mezclarlos haría leer «anulada» donde
+dice «cobrada».
+
+### Los tres bytes que no se ven quedaron escritos (C7 · H20)
+
+El CSV que exporta el portal lleva BOM, CRLF y **ningún salto de línea al final**.
+Las tres son decisiones, no defaults, y hasta hoy vivían solo en el código sin
+decir por qué. Documentadas en `docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md`
+§9 y en el encabezado de `csvExport.js`.
+
+La que se escapa es la tercera: `join('\r\n')` no agrega terminador al final, y
+hay que dejarlo así. El reflejo natural —`map(l => l + '\r\n')`— agrega una línea
+vacía que nadie ve en pantalla, que el cotejo marca en cada archivo, y que Excel
+lee como una fila más. En un libro fiscal, una fila en blanco es una fila del
+libro.
+
+
+_(pendiente de redactar)_
+
 ## v2.348.0 — C1 y C2: el sello de Hacienda en las compras
 
 **C1 — la única columna donde el libro perdía contra su origen.** De las cinco

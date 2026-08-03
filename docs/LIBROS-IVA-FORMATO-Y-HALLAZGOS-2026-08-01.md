@@ -340,3 +340,32 @@ respuesta es "se presenta con 2", el cambio sería trabajo y riesgo por nada.
 Lo mismo aplica al libro de compras, que usa `subtotal − percepción`: hoy da
 `571.99` donde el origen calcula `571.9915`. En el libro se presenta con 2
 decimales de todas formas, así que ahí la diferencia no llega al archivo.
+
+---
+
+## 9. Los tres bytes que no se ven (C7 · H20)
+
+El archivo que baja el portal es **byte a byte** el mismo que el del origen, y eso
+es a propósito: la comparación del §6 es un `diff`, y un `diff` que se ensucia con
+diferencias de codificación **deja de servir para lo único que se le pide**, que es
+mostrar diferencias de datos. Tres decisiones, ninguna cosmética, todas en
+`src/utils/csvExport.js`:
+
+| Decisión | Byte | Por qué |
+|---|---|---|
+| **BOM al inicio** | `EF BB BF` | Sin él, Excel en es-SV abre el archivo como Latin-1 y `PEÑA` sale `PEÃ‘A`. Es el mismo motivo por el que lo trae el origen. |
+| **CRLF entre filas** | `0D 0A` | Lo que trae el origen. Con LF a secas el diff marca **todas** las líneas como distintas. |
+| **Sin salto final** | — | El archivo termina en el último dato. Un `\n` de más lo lee Excel como una fila vacía, y un libro fiscal con una fila en blanco al final es una fila del libro. |
+
+La tercera es la que se escapa: `lines.join('\r\n')` **no** agrega terminador al
+final, y hay que dejarlo así. El reflejo de escribir `lines.map(l => l + '\r\n')`
+—que es lo natural— agrega una línea vacía que ningún lector humano ve y que el
+diff marca en cada archivo.
+
+**Lo que NO se copia del origen es el contenido.** El formato se replica para poder
+cotejar; los datos se corrigen. Las diferencias vivas y su motivo están en el §6
+("Lo que todavía difiere"), y la regla general en `CLAUDE.md`: el origen sirvió para
+confirmar que lo que sacamos es real, no para copiarle los errores.
+
+Aplica a **todo** export del portal, no solo a los libros — `exportCsv` es
+compartida. Un export nuevo que quiera otro formato tiene que decir por qué.

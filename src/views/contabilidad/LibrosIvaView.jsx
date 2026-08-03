@@ -19,6 +19,7 @@ import { normalizeText } from '../../utils/helpers';
 import { exportCsv } from '../../utils/csvExport';
 import {
     fetchAnexoRetencionRenta,
+    fetchVentasFueraDelLibro,
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
     fetchNotasCreditoCompras,
@@ -526,6 +527,7 @@ export default function LibrosIvaView() {
     const [percepcion,    setPercepcion]    = useState([]);
     const [retencion,     setRetencion]     = useState([]);
     const [renta,         setRenta]         = useState([]);
+    const [fuera,         setFuera]         = useState(null);
     const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
@@ -537,7 +539,7 @@ export default function LibrosIvaView() {
     // y el carril puede mostrar el total del período sin importar dónde estés.
     const load = useCallback(async () => {
         setLoading(true);
-        const [c, k, a, co, pe, re, nc, rt] = await Promise.all([
+        const [c, k, a, co, pe, re, nc, rt, fu] = await Promise.all([
             fetchLibroConsumidor(desde, hasta, filterBranch),
             fetchLibroContribuyente(desde, hasta, filterBranch),
             fetchLibroAnulados(desde, hasta, filterBranch),
@@ -549,12 +551,13 @@ export default function LibrosIvaView() {
             // Sin sucursal, igual que las notas: los documentos llegan a una
             // casilla de la empresa y no traen sucursal.
             fetchAnexoRetencionRenta(desde, hasta),
+            fetchVentasFueraDelLibro(desde, hasta, filterBranch),
         ]);
         // Un libro que falla NO puede quedar como "no hubo operaciones": un mes
         // vacío por error de red es indistinguible de un mes sin movimiento, y
         // acá eso se declara a Hacienda. Vale doble para Retención y Sujeto
         // Excluido, que salen vacíos aun cuando todo funciona.
-        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error || rt.error;
+        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error || rt.error || fu.error;
         setError(fallo ? fallo.message : null);
         setConsumidor(c.data || []);
         setContribuyente(k.data || []);
@@ -564,6 +567,7 @@ export default function LibrosIvaView() {
         setRetencion(re.data || []);
         setNotas(nc.data || []);
         setRenta(rt.data || []);
+        setFuera((fu.data ?? [])[0] ?? null);
         setLoading(false);
     }, [desde, hasta, filterBranch]);
 
@@ -1119,6 +1123,26 @@ export default function LibrosIvaView() {
                         Incluye las 7 sucursales. Las compras anuladas van incluidas y marcadas,
                         como pide el libro. Sin columna de sello: el Art. 86 no la exige para
                         compras.
+                    </Notice>
+                )}
+
+                {/* C6/H3 — el filtro del sello es correcto, pero hasta acá las
+                    ventas que no lo tienen desaparecían del libro sin dejar
+                    rastro. Facturación ya las lista una por una; lo que no
+                    existía en ningún lado es el MONTO DEL PERÍODO, y es el único
+                    número que le importa a quien está armando la declaración.
+                    Por eso vive acá y no allá. */}
+                {/* No en `anulados`: ahí las filas son documentos invalidados a
+                    propósito, y este aviso habla de ventas FINALIZADAS. Mezclarlos
+                    en la misma pantalla haría leer "anulada" donde dice "cobrada". */}
+                {(activeTab === 'consumidor' || activeTab === 'contribuyente') && (fuera?.documentos ?? 0) > 0 && (
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        <strong>{formatMoney(fuera.monto)}</strong> en {fuera.documentos} ventas
+                        cobradas de {etiquetaMes(mes)} <strong>no entran a este libro</strong> porque
+                        les falta el sello de Hacienda. Se resuelven en Facturación:{' '}
+                        {fuera.sin_sello > 0 && <>{fuera.sin_sello} en <strong>Pendiente MH</strong></>}
+                        {fuera.sin_sello > 0 && fuera.sello_invalido > 0 && ' y '}
+                        {fuera.sello_invalido > 0 && <>{fuera.sello_invalido} en <strong>Observaciones</strong></>}.
                     </Notice>
                 )}
 

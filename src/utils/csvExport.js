@@ -2,6 +2,21 @@
 // compartida del patrón ya usado ad-hoc en TabMinMax.jsx (`exportCsv`):
 // BOM + separador `;` + CRLF, formato Excel-friendly para locale es-SV.
 // Sin lógica de negocio — solo la mecánica de armar y descargar el archivo.
+//
+// Los tres bytes invisibles son una DECISIÓN, no un default (C7/H20, documentado
+// en `docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md` §9). Los libros de IVA
+// se cotejan contra el archivo de referencia con un `diff`, y un diff que se
+// ensucia con diferencias de codificación deja de servir para lo único que se le
+// pide: mostrar diferencias de DATOS.
+//
+//   BOM `EF BB BF`  sin él Excel en es-SV abre en Latin-1 y `PEÑA` sale `PEÃ‘A`
+//   CRLF `0D 0A`    con LF a secas el diff marca TODAS las líneas como distintas
+//   sin salto final el archivo termina en el último dato
+//
+// La tercera es la que se escapa: `join('\r\n')` NO agrega terminador al final,
+// y hay que dejarlo así. El reflejo natural —`map(l => l + '\r\n')`— agrega una
+// línea vacía que nadie ve en pantalla y que Excel lee como una fila más. En un
+// libro fiscal, una fila en blanco es una fila del libro.
 
 function escapeCell(value) {
     if (value == null) return '';

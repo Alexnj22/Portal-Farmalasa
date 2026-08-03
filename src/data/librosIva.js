@@ -91,3 +91,15 @@ export function fetchAnexoRetencionRenta(desde, hasta) {
 export function fetchCandidatosRetencionRenta(desde, hasta) {
     return supabase.rpc('get_candidatos_retencion_renta', { p_desde: desde, p_hasta: hasta });
 }
+
+// C6 (H3): cuánto se cobró en el período y NO entra al libro por no tener sello.
+// El filtro del sello es correcto; lo que faltaba era que el monto se viera donde
+// se presenta el libro. Facturación ya las lista una por una — Pendiente MH las
+// de sello vacío, Observaciones las de sello inválido — pero en ningún lado
+// estaba el total del período.
+export function fetchVentasFueraDelLibro(desde, hasta, branchId) {
+    return supabase.rpc('get_ventas_fuera_del_libro', {
+        p_desde: desde, p_hasta: hasta,
+        p_branch_id: branchId ? Number(branchId) : null,
+    });
+}

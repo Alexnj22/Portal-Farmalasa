@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.346.1 — Botón cerrado en el plan de materiales
+
+Segundo elemento cerrado en `docs/PLAN-MATERIALES-2026-08-02.md`. En Liquid el
+botón es **vidrio de verdad** —translúcido con `backdrop-filter`, no un degradado
+opaco— y en Solid queda con **2 capas activas contra 6**: sin `backdrop-filter`,
+sin pseudo-elementos y sin `mix-blend-mode`.
+
+**El reflejo necesitó un token propio para el aro oscuro.** Un reflejo blanco con
+`mix-blend-mode: screen` es matemáticamente invisible sobre una superficie
+blanca: medido, **1.06 de contraste sobre blanco contra 3.54 sobre una
+coloreada**. Lo que hace legible un brillo sobre algo claro es la sombra que lo
+rodea, así que el reflejo pasa a ser núcleo claro + aro oscuro — **1.30 sobre
+claros y 4.05 sobre coloreados, mejor en los dos**. Y como no necesita
+`mix-blend-mode`, ahorra una capa de composición.
+
+Al elegir intensidad 0.40 apareció el mismo problema de vuelta: el aro escalaba
+con la intensidad y el botón blanco volvía a **1.11**. Por eso `--btn-esp-aro`
+es un token aparte con piso propio: la intensidad gobierna el brillo, el aro
+garantiza la legibilidad.
+
+**Queda anotado que apagar el barrido es una REMOCIÓN**, no un token en 0: el
+shimmer ya existe implementado (`.sweep`) y `DESIGN.md` lo documenta, así que
+hay que borrar la sección, el marcado y las reglas. Y que el gel hoy está a
+medias — sólo 2 de las 4 variantes lo tienen.
+
+Sigue sin implementarse nada: el documento se completa elemento por elemento.
+
 ## v2.346.0 — El cruce del libro completo, con la clave que sí identifica
 
 El libro completo cruzaba las compras con los documentos recibidos **sólo por el

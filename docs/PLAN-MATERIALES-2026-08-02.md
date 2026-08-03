@@ -5,7 +5,7 @@ sobre mockups interactivos con los tokens reales. Nada de esto está
 implementado todavía: este documento es el contrato que la implementación tiene
 que cumplir, y se va completando a medida que se cierra cada elemento.
 
-**Estado:** superficie (tarjeta) CERRADA · el resto pendiente.
+**Estado:** superficie (tarjeta) y botón CERRADOS · el resto pendiente.
 
 ---
 
@@ -51,6 +51,23 @@ luz). Se replican las tres, con estos valores aprobados:
 - **El reflejo va DEBAJO del contenido** — `z-index: 0` en la capa especular,
   `z-index: 1` en el contenido. Encima se come el texto y los botones: fue un
   bug real del primer mockup y el usuario lo detectó de inmediato.
+- **El reflejo sólo existe bajo el puntero** — `opacity: 0` en reposo. Con
+  `--mx/--my` en su valor por defecto el gradiente se dibuja en **todas** las
+  piezas a la vez aunque el mouse esté en la otra punta.
+- **El reflejo lleva núcleo claro Y ARO OSCURO, sin `mix-blend-mode`.** Un
+  reflejo blanco con `screen` es matemáticamente invisible sobre una superficie
+  blanca — no se puede aclarar lo que ya está en blanco. Medido sobre las bases
+  reales del portal:
+
+  | técnica | sobre claros | sobre coloreados |
+  |---|---|---|
+  | blanco + `screen` | **1.06** (invisible) | 3.54 |
+  | sólo oscuro | 1.34 | **1.15** (se pierde) |
+  | **núcleo claro + aro oscuro** | **1.30** | **4.05** |
+
+  Lo que hace legible un brillo sobre algo claro es **la sombra que lo rodea**,
+  igual que en la vida real. Y como no necesita `mix-blend-mode`, ahorra además
+  una capa de composición.
 - **El gel de presión vive en LO QUE SE APRIETA**, no en el contenedor. En una
   tarjeta clicable, la tarjeta entera; en una tarjeta con botones, los botones —
   la tarjeta no se mueve. Verificado: la clicable cede 7px, la de botones 0.
@@ -104,7 +121,74 @@ bug que originó todo este trabajo: una regla escrita que el código viola.
 
 ---
 
-## 2. Rendimiento — medido, no estimado
+## 2. Botón ✅ CERRADO
+
+El elemento más repetido del portal. Cuatro variantes reales: `primary`,
+`secondary`, `ghost`, `destructive`.
+
+```css
+:root {                                  /* Liquid Glass */
+  --btn-especular: 0.40;
+  --btn-esp-radio: 3rem;
+  --btn-esp-aro:   0.10;   /* piso del aro — legibilidad sobre blancos */
+  --btn-rim:       1.00;
+  --btn-barrido:   0;
+  --lift-hover:   -1px;
+}
+
+[data-theme="solid"], [data-theme="solid-dark"] {
+  /* Solid NO declara estas capas: no existen, no se apagan. */
+  --lift-hover: 0px;
+}
+
+/* El gel va en las CUATRO variantes, no en dos */
+.btn:active { transform: scale(.965); }
+[data-theme="solid"] .btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(15,23,42,.24);
+}
+
+/* Única capa compartida: el foco. Es accesibilidad, no material. */
+.btn:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 40%, transparent); }
+```
+
+**En Liquid el botón es vidrio de verdad**: translúcido con `backdrop-filter`,
+no un degradado opaco. Si no se ve lo que hay detrás, no es vidrio — y así
+estaba el primer mockup, que el usuario rechazó por eso mismo.
+
+**Proporción del reflejo.** 3rem sobre un botón de ~150px es el mismo ~32% que
+7rem sobre una tarjeta de 320px: el reflejo se lee del mismo tamaño relativo en
+los dos elementos.
+
+**`--btn-esp-aro` existe porque el aro no puede escalar con la intensidad.** Al
+bajar la intensidad a 0.40 el aro caía a .052 y el botón blanco volvía a **1.11**
+de contraste — prácticamente el 1.06 del bug original. Con piso 0.10 sube a
+~1.20 sin cambiar nada en los coloreados. La intensidad gobierna el brillo; el
+aro garantiza la legibilidad. Son dos cosas distintas y por eso son dos tokens.
+
+**Solid no declara ninguna capa de vidrio.** Sin `backdrop-filter`, sin
+`::before`/`::after`, sin `mix-blend-mode`. Cada una de esas capas es una
+superficie que el navegador compone aparte — ahí está la eficiencia, no en usar
+menos color. Solid queda con **2 capas activas** contra **6** de Liquid.
+
+### 2.1 Consecuencias en el código existente
+
+- **El gel está a medias hoy:** `primary` y `destructive` llevan
+  `active:scale-[0.98]`; `secondary` y `ghost` no llevan nada. No es una
+  decisión, es una inconsistencia — pasa a las cuatro.
+- **`--btn-barrido: 0` es una REMOCIÓN, no un apagado.** El shimmer ya existe
+  implementado (`.sweep` en `index.css`) y `DESIGN.md` lo documenta como *"All
+  primary CTA buttons include an inner shimmer overlay"*. Apagarlo obliga a:
+  borrar esa sección de `DESIGN.md`, quitar los `<span class="sweep">` del
+  marcado —si no queda DOM muerto— y eliminar las reglas de `index.css`. Se
+  decidió así porque con el reflejo y el canto vivo el barrido es redundante, y
+  además era la capa más cara de las tres.
+- **El foco es la única capa compartida** entre los dos materiales, y no es
+  graduable: es accesibilidad, no estilo.
+
+---
+
+## 3. Rendimiento — medido, no estimado
 
 Banco de pruebas con la CPU estrangulada vía CDP, barrido continuo del puntero,
 muestreo por cuadro.
@@ -143,22 +227,23 @@ componer. Su promesa de eficiencia es real, no retórica.
 
 ---
 
-## 3. Lo que la implementación tiene que incluir
+## 4. Lo que la implementación tiene que incluir
 
 Cuando se cierren todos los elementos:
 
-- [ ] Tokens de §1 en `src/index.css`, en los cuatro temas.
+- [ ] Tokens de §1 y §2 en `src/index.css`, en los cuatro temas.
 - [ ] `data-interactive` explícito en las tarjetas clicables — el gel y el
       hundido no tienen dónde aplicarse sin él. Hoy de **220**
       `data-surface="card"` apenas **3** declaran `onClick`.
-- [ ] Utilidad de seguimiento del puntero con las tres reglas de §2.
+- [ ] Utilidad de seguimiento del puntero con las tres reglas de §3.
+- [ ] Remover el barrido (`.sweep`): marcado, `index.css` y la sección de `DESIGN.md`.
 - [ ] `DESIGN.md` §2 y §5 actualizados, incluido el cambio de contrato de §1.4.
 - [ ] Categorías de gate nuevas: que no se pueda clavar un valor de material a
       mano, ni escribir un seguimiento de puntero que recorra la lista.
 
 ---
 
-## 4. Decisiones abiertas
+## 5. Decisiones abiertas
 
 **El alcance del vidrio.** Apple limita Liquid Glass a las capas de navegación y
 evita explícitamente el «vidrio sobre vidrio». El portal tiene **220**
@@ -176,13 +261,12 @@ motivo.
 
 ---
 
-## 5. Elementos pendientes de definir
+## 6. Elementos pendientes de definir
 
 Cada uno se cierra con su mockup y sus valores antes de tocar código:
 
 | elemento | por qué importa |
 |---|---|
-| **Botón** | el gesto más repetido; es donde vive el gel |
 | Campo / `LiquidSelect` | superficie + foco + estado inválido |
 | Menú flotante / dropdown | ya tiene capa flotante; falta su material |
 | Modal | la «gota» tiene tokens propios (340/240ms) |

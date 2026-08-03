@@ -2286,5 +2286,37 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "ALVARO DANIEL HERNANDEZ CHACON"
+ },
+ {
+  "erp_id": "15564",
+  "campo": "dui",
+  "valor": "01254430-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "HELIA HENRIQUEZ DE SANCHEZ"
+ },
+ {
+  "erp_id": "15577",
+  "campo": "dui",
+  "valor": "02375634-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "RENE DOUGLAS MONTEROSA"
+ },
+ {
+  "erp_id": "15582",
+  "campo": "dui",
+  "valor": "04789641-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ADELA MENJIVAR DE AYALA"
+ },
+ {
+  "erp_id": "15585",
+  "campo": "dui",
+  "valor": "02242498-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "KATERINE VANESSA CARDOZA"
  }
 ]

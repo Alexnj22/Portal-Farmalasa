@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.348.6 — Cierre de los 10 bloques: 15,648 fichas
+
+Bloque corto de 200 fichas para cerrar la tanda: **15,453 → 15,648 procesadas**,
+o sea 5,023 desde que arrancó el pedido de 10 bloques. 11,985 pendientes (24
+bloques), **57% del catálogo**. Cero campos perdidos y cero alterados en las
+15,648.
+
+El aislamiento de filas rechazadas del espejo volvió a actuar en la misma ficha
+(`erp 14318`, el duplicado con el nombre invertido): partió el lote, la reportó
+y aplicó las otras 475. Es el comportamiento que se buscaba — una ficha con
+problema deja de detener la campaña.
+
 ## v2.348.5 — Bloque D documentado con la deriva medida
 
 Solo documentación. No cambia una línea de la aplicación.

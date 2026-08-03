@@ -10,7 +10,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-02 18:16:14"
+  "ts": "2026-08-02 19:54:58"
  },
  {
   "tipo": "rechazo-erp",
@@ -23,7 +23,7 @@
   "cambios_intentados": {
    "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-02 18:16:17"
+  "ts": "2026-08-02 19:55:02"
  },
  {
   "tipo": "rechazo-erp",
@@ -37,7 +37,7 @@
    "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
    "dui": "INVÁLIDO '08666142-6' -> se borra"
   },
-  "ts": "2026-08-02 18:16:21"
+  "ts": "2026-08-02 19:55:15"
  },
  {
   "tipo": "rechazo-erp",
@@ -50,7 +50,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
   },
-  "ts": "2026-08-02 18:16:24"
+  "ts": "2026-08-02 19:55:18"
  },
  {
   "tipo": "rechazo-erp",
@@ -63,6 +63,17 @@
   "cambios_intentados": {
    "distrito": "CHALATENANGO (dirección (nombre completo))"
   },
-  "ts": "2026-08-02 18:16:27"
+  "ts": "2026-08-02 19:55:21"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:15599",
+  "erp_id": "15599",
+  "direccion": "LA LAGUNA, LAS VUELTAS, CHALATENANGO",
+  "candidatos": [
+   "LA LAGUNA",
+   "LAS VUELTAS"
+  ],
+  "elegido": "LA LAGUNA (ambiguo (2 candidatos))"
  }
 ]

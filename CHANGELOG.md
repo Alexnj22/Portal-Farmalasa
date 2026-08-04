@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.361.2 — El IVA retenido entra al paquete del mes
+
+**No estaba.** El paquete traía ocho libros y el IVA retenido sobre ventas no era
+ninguno de ellos: la sección tenía su botón de Exportar, pero quien baja el
+paquete —que es lo que se lleva contabilidad— se iba sin él. Ahora sale como
+`iva-retenido-sobre-ventas/<Sucursal>.csv`, repartido por sucursal como los otros
+seis que sí la traen.
+
+Lo arma **el mismo constructor** que el botón de la sección, no una segunda
+transcripción: dos copias del mismo libro se separan sin que nadie lo note, que
+es lo que ya pasó con `generar_csv_libro`. Verificado bajando los dos: byte a
+byte idénticos.
+
+El archivo cierra con dos filas, y la segunda solo aparece si hace falta:
+
+```
+TOTALES                      4427.08  44.27  4958.34
+ACREDITABLE (SIN ANULADOS)   4292.57  42.92
+```
+
+El total de arriba **incluye** los anulados porque las filas están a la vista y
+una suma que no suma lo que se ve es peor que una fila de más. El de abajo es el
+que se acredita — y es exactamente el que declara el Corte Z de julio en Salud 3.
+
+De paso, el cálculo del carril de la pestaña dejó de vivir suelto en el
+componente y pasó a `calcularTotales`, que es de donde lo toma también el
+paquete. Y el CSV de la sección se llama igual que la carpeta del ZIP.
+
 ## v2.361.1 — Metas: decisiones cerradas en el plan
 
 Solo documentación: las 4 decisiones de `docs/PLAN-METAS-2026-08-03.md` §8

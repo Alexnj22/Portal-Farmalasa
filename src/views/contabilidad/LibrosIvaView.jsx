@@ -593,14 +593,32 @@ const COLS_RET_VENTAS = [
 // encabezado y va en términos del portal. Es la lista que el contador necesita
 // para acreditar la retención al declarar, y por eso trae la identidad completa
 // de cada documento aunque en pantalla el ancho no dé para mostrarla toda.
-const csvRetencionVentas = (filas) => filas.map((r, i) => [
-    i + 1, fmtFecha(r.fecha), r.cliente || '',
-    formatearNrc(r.nrc), formatearNit(r.nit),
-    r.tipo_documento || '', soloNumero(r.correlativo), r.numero_control || '',
-    String(r.codigo_generacion || '').toUpperCase(), r.sello_recepcion || '',
-    (Number(r.monto_sujeto) || 0).toFixed(2), (Number(r.retencion_iva) || 0).toFixed(2),
-    (Number(r.total) || 0).toFixed(2), r.anulada ? 'ANULADO' : '',
-]);
+const csvRetencionVentas = (filas) => {
+    const dosDec = (n) => (Number(n) || 0).toFixed(2);
+    const suma = (rs, campo) => rs.reduce((s, r) => s + (Number(r[campo]) || 0), 0);
+    const vigentes = filas.filter(r => !r.anulada);
+    return [
+        ...filas.map((r, i) => [
+            i + 1, fmtFecha(r.fecha), r.cliente || '',
+            formatearNrc(r.nrc), formatearNit(r.nit),
+            r.tipo_documento || '', soloNumero(r.correlativo), r.numero_control || '',
+            String(r.codigo_generacion || '').toUpperCase(), r.sello_recepcion || '',
+            dosDec(r.monto_sujeto), dosDec(r.retencion_iva),
+            dosDec(r.total), r.anulada ? 'ANULADO' : '',
+        ]),
+        ['TOTALES', '', '', '', '', '', '', '', '', '',
+         dosDec(suma(filas, 'monto_sujeto')), dosDec(suma(filas, 'retencion_iva')),
+         dosDec(suma(filas, 'total')), ''],
+        // La segunda fila solo cuando hace falta. El total de arriba incluye los
+        // anulados porque las filas están arriba y una suma que no suma lo que
+        // se ve es peor que dos filas; el número que se acredita es este.
+        ...(vigentes.length === filas.length ? [] : [[
+            'ACREDITABLE (SIN ANULADOS)', '', '', '', '', '', '', '', '', '',
+            dosDec(suma(vigentes, 'monto_sujeto')), dosDec(suma(vigentes, 'retencion_iva')),
+            '', '',
+        ]]),
+    ];
+};
 const CSV_RET_VENTAS_HEADERS = ['N.', 'FECHA', 'CLIENTE', 'NRC', 'NIT', 'TIPO',
     'DOCUMENTO', 'NUMERO DE CONTROL', 'CODIGO DE GENERACION', 'SELLO',
     'BASE', 'IVA RETENIDO', 'TOTAL', 'ESTADO'];
@@ -633,7 +651,7 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                         disabled={loading || filas.length === 0}
                         title={`Exportar los ${filas.length} documentos con retención de ${etiquetaMes(mes)} en CSV`}
                         onClick={() => exportCsv(CSV_RET_VENTAS_HEADERS, csvRetencionVentas(filas),
-                            `iva-retenido_${sufijoArchivo}.csv`)}>
+                            `iva-retenido-sobre-ventas_${sufijoArchivo}.csv`)}>
                         Exportar
                     </Button>
                 <div className="text-right">
@@ -775,6 +793,12 @@ const calcularTotales = (d) => {
                          gravadas: suma(d.retencion, 'monto_sujeto'),
                          debito:   suma(d.retencion, 'retencion_iva'),
                          total:    suma(d.retencion, 'monto_sujeto') },
+        // El IVA que nos retuvieron. `debito` va SIN los anulados: es el que se
+        // acredita, y es el que muestra el carril de la pestaña.
+        retencionVentas: { docs: (d.retencionVentas || []).length, exentas: 0,
+                         gravadas: suma(d.retencionVentas || [], 'monto_sujeto'),
+                         debito:   suma((d.retencionVentas || []).filter(r => !r.anulada), 'retencion_iva'),
+                         total:    suma(d.retencionVentas || [], 'monto_sujeto') },
         // El IVA va NETO: las notas de crédito bajan el crédito fiscal y las
         // de débito lo suben, así que sumarlas todas juntas daría un ajuste
         // mayor al real. Es el número que contabilidad tiene que mover.
@@ -977,6 +1001,16 @@ const construirLibro = (tab, d, tot) => {
             ] };
     }
 
+    if (tab === 'retencionVentas') {
+        // El IVA que NOS retuvieron. No replica ningún archivo del origen —no
+        // existe uno— así que lleva encabezado, y usa el MISMO armador que el
+        // botón de la sección: dos transcripciones del mismo libro se separan
+        // sin que nadie lo note.
+        return { base: 'iva-retenido-sobre-ventas',
+            headers: CSV_RET_VENTAS_HEADERS,
+            rows: csvRetencionVentas(d.retencionVentas) };
+    }
+
     if (tab === 'percepcion' || tab === 'retencion') {
         const esPerc = tab === 'percepcion';
         const filasAnexo = esPerc ? d.percepcion : d.retencion;
@@ -1058,14 +1092,15 @@ const construirLibro = (tab, d, tot) => {
 // decir. Lanza si algún libro falla: un paquete al que le falta un libro en
 // silencio es peor que no tener paquete.
 const POR_SUCURSAL = ['consumidor', 'contribuyente', 'compras', 'anulados',
-                      'percepcion', 'retencion'];
+                      'percepcion', 'retencion', 'retencionVentas'];
 const SIN_SUCURSAL = ['renta', 'notas'];
 const LIBROS_VACIOS = { consumidor: [], contribuyente: [], anulados: [], compras: [],
-                        percepcion: [], retencion: [], notas: [], renta: [] };
+                        percepcion: [], retencion: [], notas: [], renta: [],
+                        retencionVentas: [] };
 
 async function armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal }) {
     const { downloadZip } = await getZipLib();
-    const [cons, contrib, anul, comp, perc, ret, nts, rent] = await Promise.all([
+    const [cons, contrib, anul, comp, perc, ret, nts, rent, rv] = await Promise.all([
         fetchLibroConsumidor(desde, hasta, null),
         fetchLibroContribuyente(desde, hasta, null),
         fetchLibroAnulados(desde, hasta, null),
@@ -1074,8 +1109,9 @@ async function armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal }) {
         fetchLibroRetencion(desde, hasta, null),
         fetchNotasCreditoCompras(desde, hasta),
         fetchAnexoRetencionRenta(desde, hasta),
+        fetchRetencionVentas(desde, hasta, null),
     ]);
-    for (const r of [cons, contrib, anul, comp, perc, ret, nts, rent])
+    for (const r of [cons, contrib, anul, comp, perc, ret, nts, rent, rv])
         if (r.error) throw r.error;
 
     const todo = {
@@ -1083,6 +1119,7 @@ async function armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal }) {
         anulados: anul.data || [], compras: comp.data || [],
         percepcion: perc.data || [], retencion: ret.data || [],
         notas: nts.data || [], renta: rent.data || [],
+        retencionVentas: rv.data || [],
     };
 
     // Las sucursales que APARECEN en el período, no una lista a mano: el día que
@@ -1232,22 +1269,18 @@ export default function LibrosIvaView({ openModal }) {
     // El juego completo de libros cargados, en un solo objeto: es lo que comen
     // `calcularTotales` y `construirLibro`, y lo que el ZIP arma por sucursal.
     const datos = useMemo(
-        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta }),
-        [consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta]);
+        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta,
+                 retencionVentas: retVentas }),
+        [consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta, retVentas]);
 
     const totales = useMemo(() => calcularTotales(datos), [datos]);
 
     // En Retención el carril habla de la sección que TIENE filas. Dejarlo en el
     // anexo del Art. 162 mostraría $0.00 arriba mientras la tabla de abajo
     // muestra $42.92, y de un vistazo eso se lee como un error, no como dos
-    // cosas distintas. Se excluyen las anuladas: el carril es lo acreditable.
-    const t = activeTab === 'retencion'
-        ? { docs: retVentas.length, exentas: 0,
-            gravadas: retVentas.reduce((s, r) => s + Number(r.monto_sujeto || 0), 0),
-            debito:   retVentas.filter(r => !r.anulada)
-                               .reduce((s, r) => s + Number(r.retencion_iva || 0), 0),
-            total:    retVentas.reduce((s, r) => s + Number(r.monto_sujeto || 0), 0) }
-        : totales[activeTab];
+    // cosas distintas. El cálculo vive en `calcularTotales` —que es también el
+    // que usa el paquete del mes— y no acá suelto.
+    const t = activeTab === 'retencion' ? totales.retencionVentas : totales[activeTab];
 
     // Cuántos CCF del período van a salir sin NRC. Es el dato que decide si el
     // libro de contribuyentes se puede presentar tal cual.

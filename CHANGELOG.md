@@ -21,9 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.367.1 — Permisos: vuelve la grilla, el multi-columna rompía la pantalla
+## v2.367.3 — El código de la grilla, que la entrada anterior describía sin llevar
 
 _(pendiente de redactar)_
+
+## v2.367.2 — Metas: Fase 2 documentada como cerrada
+
+Solo documentación: `docs/PLAN-METAS-2026-08-03.md` marca la Fase 2 como
+hecha (v2.366.0 + v2.367.0), con las guardas de la fórmula y el QA 9/9
+anotados. Quedan las fases 3 (vista de sala), 4-5 (bonificaciones y
+liquidación) y las gráficas del Tablero al final.
+
+## v2.367.1 — Permisos: vuelve la grilla, el multi-columna rompía la pantalla
+
+Revierte el cambio de v2.363.1. Se había pasado de grilla a `columns` para que
+cada tarjeta ocupara su alto y no quedaran huecos verticales. El usuario reportó
+—con captura— tarjetas de un grupo **encima** del grupo siguiente y una columna
+vacía en el medio.
+
+**Lo que la captura decía y las mediciones no.** La distribución era 3 tarjetas
+en la primera columna, la segunda vacía y 1 en la tercera. El balanceo de
+multi-columna no produce eso: reparte para igualar alturas. O sea que la
+fragmentación se estaba rompiendo por algo del contexto —el panel es un
+contenedor con `overflow-y-auto` y altura resuelta por flex— y no por el número
+de tarjetas.
+
+No se reprodujo a 1600, 1920, 2200 ni 2560 px: cero desborde y cero solapes en
+las cuatro. **Un layout que falla donde no se puede medir no se deja puesto.** Un
+hueco vertical es feo; una tarjeta encima de otra es una pantalla rota, y entre
+las dos la elección no está en discusión.
+
+Vuelve la grilla, con `items-start` para que las tarjetas cortas no se estiren al
+alto de la fila. Los huecos vuelven con ella y quedan como deuda conocida: si se
+retoma el empaquetado, la forma correcta es repartir los módulos en N listas
+desde JS —determinista, sin fragmentación de por medio— y no con `columns`.
 
 ## v2.367.0 — Metas: la pestaña Confirmación — el ciclo completo en el portal
 

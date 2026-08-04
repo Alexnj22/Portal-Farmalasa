@@ -319,8 +319,12 @@ autoría server-side, resultados congelados).
 - **Fase 1 — HECHA (v2.363.0 + v2.364.0)**: metas — tabla + config + ingreso
   manual del histórico + RPCs de cumplimiento y proyección + pantallas
   Tablero e Histórico.
-- **Fase 2**: metas — propuestas + flujo de confirmación + notificaciones +
-  crons.
+- **Fase 2 — HECHA (v2.366.0 + v2.367.0)**: propuestas automáticas (fórmula
+  con guardas: ventanas de historia completas o ritmo reciente; crecimiento
+  acotado 0.80–1.25 — el backtest sin guardas explotaba +652%, con ellas
+  5-7% de error), flujo confirmar→aprobar/devolver con candados de estado,
+  pestaña Confirmación, ciclo diario (cron `metas-ciclo-diario` 8:00 SV) y
+  notificaciones por rol. QA del ciclo entero 9/9.
 - **Fase 3**: vista «Mi sala» + quitar `comingSoon` + pulido + QA navegador.
 - **Fase 4**: bonificaciones — programas por producto y por laboratorio
   (config + cálculo + simulador), en modo informativo (interruptor apagado).

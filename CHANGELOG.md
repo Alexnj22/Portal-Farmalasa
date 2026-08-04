@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.370.3 — Metas: el bono también proyectado al cierre
+
+El cumplimiento de hoy dice dónde va la sala; ahora la pestaña dice además en
+cuánto termina si sigue al mismo ritmo — que es lo que permite perseguir el bono
+en vez de enterarse el día 1 del mes siguiente.
+
+- **En el mes en curso, cada persona ve las dos cifras**: lo que lleva ganado
+  hoy y lo que le tocaría si el mes cierra como va. La columna «Si cierra así»
+  aparece solo mientras el mes se puede mover; en un mes cerrado no hay futuro
+  que ofrecer.
+- **El aviso lo dice en una línea**: «Si La Popular sigue a este ritmo cierra en
+  $41,281.46 — 96.0% de la meta, y el bono de la sala sería $103.20. Llegando al
+  100% se duplica: le faltan $1,718.54.»
+- **La tabla ya no se ve vacía durante el mes.** Al día 4 el bono ganado es cero
+  por definición, así que la pantalla mostraba un vacío todos los días hasta fin
+  de mes; ahora con proyección hay qué mirar desde el primer día.
+
+La proyección no se recalcula: sale del mismo cálculo que ya usa el Tablero
+(promedio por día de semana de las últimas 8 semanas), así que las dos pantallas
+no pueden discrepar.
+
+Verificado en navegador contra La Popular: 9.9% al día 4, proyección de 96.0%,
+bolsa proyectada $103.20 y el cuarto de la jefatura en $25.80. La meta de prueba
+de agosto se borró por su identificador — las 109 metas reales cargadas hoy
+quedaron intactas.
+
 ## v2.370.2 — Metas: la pestaña Bono — el reparto en pantalla
 
 La pestaña que muestra el bono de la sala repartido persona por persona, con su

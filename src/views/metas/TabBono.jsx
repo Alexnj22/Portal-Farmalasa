@@ -15,12 +15,14 @@ import { fetchBonoMetaSala } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG } from './metasUtils';
 
-const COLS = [
+const COLS_BASE = [
     { key: 'persona', label: 'Persona' },
-    { key: 'venta',   label: 'Vendido',     align: 'right' },
+    { key: 'venta',   label: 'Vendido',      align: 'right' },
     { key: 'pct',     label: '% de la sala', align: 'right' },
-    { key: 'bono',    label: 'Bono',        align: 'right' },
+    { key: 'bono',    label: 'Bono hoy',     align: 'right' },
 ];
+// La columna de proyección solo existe mientras el mes se puede mover.
+const COL_PROY = { key: 'proy', label: 'Si cierra así', align: 'right' };
 
 // El bono de meta de UNA sala, persona por persona. La regla completa y su
 // verificación contra el cálculo anterior están en el §12 del plan; acá solo se
@@ -49,7 +51,15 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
     const esMesActual = ym === ymActual;
     const personas = useMemo(() => data?.personas ?? [], [data]);
     const tramo = data?.tramo ? TRAMO_CFG[data.tramo] : null;
+    const tramoProy = data?.tramo_proyectado ? TRAMO_CFG[data.tramo_proyectado] : null;
     const sinMeta = data != null && data.meta == null;
+
+    // Al día 4 la bolsa de HOY siempre es cero: si la tabla dependiera solo de
+    // ella, el mes en curso —el único que todavía se puede cambiar— se vería
+    // vacío todos los días hasta fin de mes. Con proyección hay qué mostrar.
+    const hayProyeccion = Number(data?.bolsa_proyectada ?? 0) > 0;
+    const hayReparto = Number(data?.bolsa ?? 0) > 0 || hayProyeccion;
+    const cols = useMemo(() => (hayProyeccion ? [...COLS_BASE, COL_PROY] : COLS_BASE), [hayProyeccion]);
 
     // Las dos fugas se cuentan aparte porque se arreglan distinto: una es un
     // código de vendedor que no existe (se corrige la venta) y la otra es
@@ -71,7 +81,9 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
                         value={data?.bolsa > 0 ? formatMoney(data.bolsa) : '—'}
                         sub={data?.tasa_pct > 0
                             ? `${formatPct(data.tasa_pct, { decimales: 2 })} de lo vendido`
-                            : sinMeta ? 'sin meta este mes' : 'no alcanzó el 95%'}
+                            : sinMeta ? 'sin meta este mes'
+                            : hayProyeccion ? `${formatMoney(data.bolsa_proyectada)} si cierra así`
+                            : 'no alcanzó el 95%'}
                         iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                         loading={loading}
                     />
@@ -144,11 +156,18 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
                 />
             )}
 
-            {/* El mes en curso todavía se mueve: decirlo evita que alguien tome
-                el número como definitivo. */}
-            {!loading && !error && esMesActual && data?.bolsa > 0 && (
+            {/* El mes en curso todavía se mueve. Decir en cuánto va a cerrar es
+                lo que permite perseguir el bono en vez de enterarse el día 1 del
+                mes siguiente — y deja claro que lo de hoy no es definitivo. */}
+            {!loading && !error && esMesActual && hayProyeccion && (
                 <Notice variant="info">
-                    {ymLabel(ym)} está en curso — estos montos cambian con cada venta del mes.
+                    Si {salaNombre(sala)} sigue a este ritmo cierra en{' '}
+                    <strong>{formatMoney(data.proyeccion)}</strong> —{' '}
+                    <strong className={tramoProy?.textCls || ''}>{formatPct(data.pct_proyectado)}</strong> de la meta,
+                    y el bono de la sala sería <strong>{formatMoney(data.bolsa_proyectada)}</strong>.
+                    {data.tramo_proyectado === 'medio' && (
+                        <> Llegando al 100% se duplica: le faltan {formatMoney(Math.max(0, data.meta - data.proyeccion))}.</>
+                    )}
                 </Notice>
             )}
 
@@ -163,17 +182,17 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
             {/* El mes en curso NO «cerró» en nada: al día 4 cualquier sala va en
                 un dígito, y decirle «no alcanzó» a un mes que recién empieza es
                 falso además de desalentador. */}
-            {!loading && !error && !sinMeta && data?.bolsa === 0 && (
+            {!loading && !error && !sinMeta && !hayReparto && (
                 <EmptyState
                     compact icon={Wallet}
                     title={esMesActual ? 'El bono todavía no se gana' : 'La sala no alcanzó el bono'}
                     subtitle={esMesActual
-                        ? `${salaNombre(sala)} va en ${formatPct(data.pct)} de la meta. Desde el 95% se gana la mitad del bono y desde el 100%, completo.`
+                        ? `${salaNombre(sala)} va en ${formatPct(data.pct)} de la meta y, al ritmo de hoy, cerraría en ${formatPct(data.pct_proyectado)}. Desde el 95% se gana la mitad del bono y desde el 100%, completo.`
                         : `Cerró en ${formatPct(data.pct)} de la meta; desde el 95% se gana la mitad y desde el 100% el bono completo.`}
                 />
             )}
 
-            {(loading || (data?.bolsa > 0 && personas.length > 0)) && (
+            {(loading || (hayReparto && personas.length > 0)) && (
                 <>
                     {/* Teléfono: una fila por persona — la tabla no reflowa (§32). */}
                     <div className="md:hidden space-y-2">
@@ -188,6 +207,11 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
                                 trailing={(
                                     <span className="flex flex-col items-end gap-1">
                                         <span className="text-body-sm font-black tabular-nums">{formatMoney(p.bono)}</span>
+                                        {hayProyeccion && (
+                                            <span className="text-label font-semibold text-chart-1-text tabular-nums">
+                                                {formatMoney(p.bono_proyectado)} si cierra así
+                                            </span>
+                                        )}
                                         {p.es_jefe && <Badge variant="chart-4" size="sm">Jefatura</Badge>}
                                         {p.en_prueba && <Badge variant="warning" size="sm">En prueba</Badge>}
                                     </span>
@@ -197,7 +221,7 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
                     </div>
 
                     <div className="hidden md:block">
-                        <DataTable columns={COLS} loading={loading} empty={{
+                        <DataTable columns={cols} loading={loading} empty={{
                             icon: Users,
                             message: 'Sin personal en la sala',
                             subtext: 'El reparto necesita al menos una persona activa asignada acá.',
@@ -226,6 +250,13 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
                                             </span>
                                         )}
                                     </DataCell>
+                                    {hayProyeccion && (
+                                        <DataCell align="right">
+                                            <span className="text-body-sm font-black tabular-nums text-chart-1-text">
+                                                {formatMoney(p.bono_proyectado)}
+                                            </span>
+                                        </DataCell>
+                                    )}
                                 </DataRow>
                             ))}
                         </DataTable>

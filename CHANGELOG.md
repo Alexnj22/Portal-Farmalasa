@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.371.0 — La autorización deja de confiar en un dato que escribe el navegador
+
+Encontrado al revisar por qué el login mostraba «usuario no encontrado» (v2.370.4).
+Siete funciones de la base decidían permisos leyendo `user_metadata` del JWT — un
+campo que **el propio navegador puede escribir** con
+`supabase.auth.updateUser({ data })`. No es teórico: el portal lo usa así en
+`LoginView.jsx:356`. Tres de ellas (`auth_has_module_permission`,
+`auth_can_edit_any`, `auth_can_edit_scope_all`) daban acceso total con
+`systemRole = 'SUPERADMIN'`, y las otras cuatro resolvían **qué empleado sos** por
+`user_metadata.code`, o sea que el cliente elegía su propia identidad.
+
+Medido contra producción antes de tocar nada, con la cuenta de un Dependiente de
+Farmacia: con su metadata real, `auditview/can_view` y `can_edit('compras')` daban
+`false`; agregándole `{"systemRole":"SUPERADMIN"}` al metadata, los dos pasaban a
+`true`. Una llamada desde la consola del navegador alcanzaba.
+
+Ahora la identidad sale de `auth.uid()` —claim firmado, no manipulable— y, para las
+cuentas de kiosco/carné cuyo uid no es el del empleado, de la tabla nueva
+`employee_auth_accounts`, que solo escribe el servidor. El bypass de
+superadministrador lee `employees.system_role` de la tabla, no del token. El correo
+tampoco participa.
+
+`ensure_user_by_code` tenía la otra mitad del problema: con cualquier sesión válida
+aceptaba el código de **otro** empleado, devolvía su perfil completo y le copiaba
+`roleId`/`systemRole`/`branchId` al metadata de quien preguntaba. Con sesión, ahora
+ignora el código del pedido y resuelve por el token. El camino sin sesión —el único
+que necesita el código, porque es lo único que hay antes de entrar— sigue igual y
+solo devuelve el correo con el que completar el ingreso.
+
+Verificado en las dos direcciones: los permisos de las 86 cuentas contra la fuente
+de verdad dan **516/516 correctos**, y los cuatro intentos de suplantación (metadata
+falsificado, código ajeno, correo ajeno) devuelven `false`. Probado además contra la
+función ya desplegada: pidiendo el código del administrador con otra sesión, devuelve
+el perfil de quien preguntó. Advisor de seguridad sigue en 0 errores.
+
 ## v2.370.4 — El login del cargo superusuario ya no dice «usuario no encontrado»
 
 Entrar con usuario y contraseña mostraba «Usuario no encontrado en el sistema.»

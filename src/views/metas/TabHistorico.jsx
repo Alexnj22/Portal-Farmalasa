@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Target, Plus, History } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Target, Plus, History, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import FilterBar from '../../components/common/FilterBar';
 import ListRow from '../../components/common/ListRow';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { fetchMetasHistorico } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -21,12 +22,14 @@ const COLS = [
 
 const fmtPct = (v) => formatPct(v);
 
-export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloadKey, searchTerm }) {
+export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloadKey, searchTerm, onClearSearch }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [salaFilter, setSalaFilter] = useState('');
     const [soloConMeta, setSoloConMeta] = useState(false);
+    // Ver la nota del mismo contador en TabTablero: es la salida del error.
+    const [intento, setIntento] = useState(0);
 
     useEffect(() => {
         let alive = true;
@@ -36,7 +39,7 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
             .then((data) => { if (alive) { setRows(data); setLoading(false); } })
             .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'Error al cargar el histórico')); setLoading(false); } });
         return () => { alive = false; };
-    }, [reloadKey]);
+    }, [reloadKey, intento]);
 
     const salaOpts = useMemo(() => {
         const ids = [...new Set(rows.map((r) => r.branch_id))];
@@ -55,12 +58,19 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
         return base;
     }, [rows, salaFilter, soloConMeta, searchTerm, salaNombre]);
 
+    // El buscador del header también recorta esta lista, así que cuenta como
+    // filtro para decidir QUÉ vacío mostrar — pero no para el «limpiar» de la
+    // píldora, que por §17 solo suelta lo que la píldora misma puso.
+    const hayFiltro = !!salaFilter || soloConMeta || !!searchTerm?.trim();
+    const limpiarFiltros = useCallback(() => { setSalaFilter(''); setSoloConMeta(false); }, []);
+    const limpiarTodo = useCallback(() => { limpiarFiltros(); onClearSearch?.(); }, [limpiarFiltros, onClearSearch]);
+
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
                 <FilterBar
                     activeCount={(salaFilter ? 1 : 0) + (soloConMeta ? 1 : 0)}
-                    onClear={() => { setSalaFilter(''); setSoloConMeta(false); }}
+                    onClear={limpiarFiltros}
                     acciones={canEdit ? [{
                         key: 'agregar', icon: Plus, label: 'Agregar meta', variant: 'primary',
                         onClick: () => onAgregarMeta(null, null),
@@ -88,15 +98,33 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
             </div>
 
             {error && (
-                <div data-surface="card" className="p-8 text-center">
-                    <p className="text-body-sm font-bold text-danger-text">{error}</p>
-                </div>
+                <EmptyState
+                    compact icon={AlertTriangle}
+                    iconClass="text-danger" glowClass="bg-danger/30"
+                    title="No se pudo cargar el histórico"
+                    subtitle={error}
+                    action={<Button variant="secondary" icon={RefreshCw} onClick={() => setIntento((n) => n + 1)}>Reintentar</Button>}
+                />
             )}
 
-            {/* Teléfono: una fila por mes-sala (la tabla no reflowa, §32). */}
+            {/* Teléfono: una fila por mes-sala (la tabla no reflowa, §32). El
+                vacío también es de acá: `DataTable` trae el suyo, pero vive en
+                la rama de escritorio, así que en el teléfono la lista quedaba
+                en blanco sin decir por qué. */}
             <div className="md:hidden space-y-2">
                 {loading ? (
                     <div data-surface="card" className="p-4"><SkeletonText lines={5} /></div>
+                ) : (!error && filtered.length === 0) ? (
+                    <EmptyState
+                        compact icon={hayFiltro ? Search : Target}
+                        title={hayFiltro ? 'Sin resultados' : 'Sin meses en el histórico'}
+                        subtitle={hayFiltro
+                            ? 'Ningún mes coincide con el recorte aplicado.'
+                            : 'El cumplimiento aparece cuando cada mes tiene su meta registrada.'}
+                        action={hayFiltro
+                            ? <Button variant="secondary" onClick={limpiarTodo}>Limpiar los filtros</Button>
+                            : canEdit ? <Button variant="primary" icon={Plus} onClick={() => onAgregarMeta(null, null)}>Agregar meta</Button> : undefined}
+                    />
                 ) : filtered.map((r) => {
                     const tramo = TRAMO_CFG[r.bono_tier];
                     return (
@@ -123,7 +151,15 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
             </div>
 
             <div className="hidden md:block">
-                <DataTable columns={COLS} loading={loading} empty={{
+                {/* El vacío de la tabla también distingue «no hay nada» de «tu
+                    recorte no encontró nada» (§18.1): con filtros puestos la
+                    salida es soltarlos, no registrar una meta. */}
+                <DataTable columns={COLS} loading={loading} empty={hayFiltro ? {
+                    icon: Search,
+                    message: 'Sin resultados',
+                    subtext: 'Ningún mes del histórico coincide con el recorte aplicado.',
+                    action: { label: 'Limpiar los filtros', onClick: limpiarTodo },
+                } : {
                     icon: Target,
                     message: 'Sin meses en el histórico',
                     subtext: canEdit

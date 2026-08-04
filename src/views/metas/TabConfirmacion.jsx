@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Undo2, Sparkles, CalendarCheck } from 'lucide-react';
+import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
@@ -25,7 +25,7 @@ const ESTADO_CFG = {
 // El ciclo del mes siguiente: el supervisor ajusta y confirma, el gerente
 // aprueba o devuelve con nota. También muestra el mes en curso si quedó
 // alguna meta sin oficializar (el sistema nunca la oficializa solo).
-export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged, searchTerm }) {
+export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged, searchTerm, onClearSearch }) {
     const { showToast } = useToastStore();
     const ymActual = ymHoySV();
     const ymSig = ymSumar(ymActual, 1);
@@ -218,7 +218,15 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         );
     }
     if (error) {
-        return <div data-surface="card" className="p-8 text-center"><p className="text-body-sm font-bold text-danger-text">{error}</p></div>;
+        return (
+            <EmptyState
+                compact icon={AlertTriangle}
+                iconClass="text-danger" glowClass="bg-danger/30"
+                title="No se pudo cargar el flujo"
+                subtitle={error}
+                action={<Button variant="secondary" icon={RefreshCw} onClick={cargar}>Reintentar</Button>}
+            />
+        );
     }
 
     return (
@@ -231,11 +239,14 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             : `${pendientesTodas.length} metas siguen sin oficializar`} — las salas la ven como pendiente.
                     </Notice>
                     {pendientesActual.length === 0 ? (
-                        <div data-surface="card" className="p-8 text-center">
-                            <p className="text-body-sm font-bold text-content-3">
-                                Ninguna de las pendientes coincide con &ldquo;{searchTerm}&rdquo;.
-                            </p>
-                        </div>
+                        <EmptyState
+                            compact icon={Search}
+                            title="Sin resultados"
+                            subtitle={`Ninguna de las ${pendientesTodas.length} metas sin oficializar coincide con "${searchTerm?.trim()}".`}
+                            action={onClearSearch && (
+                                <Button variant="secondary" onClick={onClearSearch}>Limpiar la búsqueda</Button>
+                            )}
+                        />
                     ) : (
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                             {pendientesActual.map((r) => <FilaMeta key={r.id} r={r} />)}
@@ -245,32 +256,48 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
             )}
 
             <section className="space-y-3">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
+                {/* El encabezado solo cuando hay algo que encabezar: con la
+                    sección vacía, el `EmptyState` ya dice de qué mes habla, y el
+                    h2 quedaba colgado arriba a la izquierda repitiéndolo. */}
+                {delMesSig.length > 0 && (
                     <h2 className="text-body font-black">Metas de {ymLabel(ymSig).toLowerCase()}</h2>
-                    {canEdit && !hayDelMesSig && (
-                        <Button
-                            variant="primary" icon={Sparkles} disabled={busy != null}
-                            onClick={() => accion(
-                                async () => { const n = await generarPropuestas(); if (!n) throw new Error('No había nada que proponer'); },
-                                'generar', 'METAS_GENERAR_PROPUESTAS', { mes: ymSig },
-                                'Propuestas listas', 'Revisa cada sala, ajusta el monto si hace falta y confirma.',
-                            )}
-                        >
-                            {busy === 'generar' ? 'Calculando…' : 'Generar propuestas'}
-                        </Button>
-                    )}
-                </div>
+                )}
 
+                {/* «Generar propuestas» vive DENTRO del vacío y no suelto en el
+                    encabezado: es la salida de ese estado (§18.1), y las dos
+                    condiciones eran la misma —sin metas del mes siguiente no hay
+                    nada que listar—, así que el botón nunca aparecía sin esta
+                    tarjeta debajo. Suelto arriba se leía como una acción de la
+                    sección entera. */}
                 {delMesSig.length === 0 ? (
-                    <div data-surface="card" className="p-10 text-center">
-                        <CalendarCheck size={28} className="mx-auto text-content-3 mb-2" />
-                        <p className="text-body-sm font-bold text-content-3 max-w-md mx-auto">
-                            {hayDelMesSig
-                                ? <>Ninguna sala coincide con &ldquo;{searchTerm}&rdquo;.</>
-                                : <>Todavía no hay metas para {ymLabel(ymSig).toLowerCase()}. El día 25 el
-                                    portal las propone solo{canEdit ? ', o genéralas ahora con el botón' : ''}.</>}
-                        </p>
-                    </div>
+                    hayDelMesSig ? (
+                        <EmptyState
+                            compact icon={Search}
+                            title="Sin resultados"
+                            subtitle={`Hay metas para ${ymLabel(ymSig).toLowerCase()}, pero ninguna coincide con "${searchTerm?.trim()}".`}
+                            action={onClearSearch && (
+                                <Button variant="secondary" onClick={onClearSearch}>Limpiar la búsqueda</Button>
+                            )}
+                        />
+                    ) : (
+                        <EmptyState
+                            compact icon={CalendarCheck}
+                            title={`Sin metas para ${ymLabel(ymSig).toLowerCase()}`}
+                            subtitle="El día 25 el portal las propone solo, con las ventas de los meses cerrados."
+                            action={canEdit && (
+                                <Button
+                                    variant="primary" icon={Sparkles} disabled={busy != null}
+                                    onClick={() => accion(
+                                        async () => { const n = await generarPropuestas(); if (!n) throw new Error('No había nada que proponer'); },
+                                        'generar', 'METAS_GENERAR_PROPUESTAS', { mes: ymSig },
+                                        'Propuestas listas', 'Revisa cada sala, ajusta el monto si hace falta y confirma.',
+                                    )}
+                                >
+                                    {busy === 'generar' ? 'Calculando…' : 'Generar propuestas ahora'}
+                                </Button>
+                            )}
+                        />
+                    )
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {delMesSig.map((r) => <FilaMeta key={r.id} r={r} />)}

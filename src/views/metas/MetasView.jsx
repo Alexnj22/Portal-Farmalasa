@@ -75,8 +75,17 @@ export default function MetasView() {
         />
     );
 
+    const limpiarBusqueda = useCallback(() => setSearch(''), []);
+
     return (
-        <GlassViewLayout icon={Target} title="Metas" filtersContent={filtersContent}>
+        // `transparentBody`: las tres pestañas arman su propio material — el
+        // Tablero y Confirmación son grillas de `data-surface="card"`, y el
+        // Histórico monta un `DataTable`, que trae su card adentro. Sin esto la
+        // card del cuerpo envuelve otra card: el doble borde y doble radio que
+        // este proyecto llama «una isla dentro de otra isla» (DESIGN.md §22), y
+        // las tarjetas quedan pegadas contra su marco porque esa card no lleva
+        // padding. Mismo criterio que Inicio, Sucursales y Roles.
+        <GlassViewLayout icon={Target} title="Metas" filtersContent={filtersContent} transparentBody>
             {activeTab === 'tablero' && (
                 <TabTablero
                     salaNombre={salaNombre}
@@ -85,6 +94,7 @@ export default function MetasView() {
                     reloadKey={reloadKey}
                     bonificacionesActivas={bonificacionesActivas}
                     searchTerm={search}
+                    onClearSearch={limpiarBusqueda}
                 />
             )}
             {activeTab === 'confirmacion' && (canEdit || canApprove) && (
@@ -95,6 +105,7 @@ export default function MetasView() {
                     reloadKey={reloadKey}
                     onChanged={() => setReloadKey((k) => k + 1)}
                     searchTerm={search}
+                    onClearSearch={limpiarBusqueda}
                 />
             )}
             {activeTab === 'historico' && (
@@ -104,6 +115,7 @@ export default function MetasView() {
                     onAgregarMeta={abrirModal}
                     reloadKey={reloadKey}
                     searchTerm={search}
+                    onClearSearch={limpiarBusqueda}
                 />
             )}
 

@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.370.1 — Metas: la vista vuelve a los canónicos de diseño
+
+Corrección del usuario sobre una captura del Tablero: *«visualmente no estás
+respetando design ni canónicos… las cards están pegadas al body, el filterpill
+no está a la derecha de las cards»*. Eran ejemplos, así que se hizo el pase
+completo del módulo. **El `gate:design` estaba en verde antes y después**: mide
+colores crudos y elementos nativos, no si la vista usa el canónico que le toca
+—otra vez la lección de `feedback_gate_verde_no_es_diseno_revisado`—.
+
+**Las tarjetas pegadas al body.** `MetasView` no pasaba `transparentBody`, así
+que las tres pestañas —dos grillas de tarjetas y un `DataTable`, que trae la
+suya— quedaban envueltas en la card del cuerpo de `GlassViewLayout`. Doble borde
+y doble radio (la «isla dentro de otra isla» de §22) y, como esa card no lleva
+padding, las tarjetas apoyadas contra su marco. Mismo criterio que Inicio,
+Sucursales y Roles.
+
+**La píldora, a la derecha de las tarjetas.** El Tablero tenía un
+`justify-between` con un stepper de mes escrito a mano a la izquierda y el botón
+«Agregar meta» suelto a la derecha. Ahora es el layout de §17.0 —el mismo de
+Personal, aprobado sobre mockup el 2026-07-30—: `CarrilCards` a la izquierda con
+`flex-1` y la píldora a la derecha, **en la misma fila**. En renglones separados
+no era solo estética: `FilterBar` mide la FILA y le reserva 314px al carril que
+tiene al lado, así que con el carril en otro renglón se descontaba ese ancho a
+cambio de nada. Verificado a 1600 y 1280 — a 1280 el carril desliza y la acción
+cede su texto al ícono, que es el orden de cesión que documenta §17.0.
+
+Lo que el control a mano se estaba perdiendo, además del aspecto: en táctil nada
+de eso llegaba a la barra flotante (`FilterBar` **es** esa barra, §17.3), no
+había forma de volver al mes actual, y las dos flechas se anunciaban «botón,
+botón» — `PeriodStepper` arma su nombre accesible con `unit`.
+
+**Cinco estados vacíos escritos a mano** pasaron a `EmptyState`, que §18.1 marca
+como obligatorio donde puede haber cero datos, y con la distinción que pide
+§26.2: el vacío por búsqueda («Sin resultados», con el término en el subtítulo y
+salida a limpiarla) no es el vacío por falta de datos. Los dos errores de carga
+ganaron un «Reintentar»; antes eran un párrafo rojo sin salida. Y «Generar
+propuestas» bajó del encabezado al vacío que llena: las dos condiciones eran la
+misma, así que el botón nunca aparecía sin esa tarjeta debajo.
+
+**Redacción (§26).** «Esta sala todavía no tiene meta» → «Sin meta para agosto
+2026»: `todavía` promete algo que la app no sabe. Y «Proyección de cierre» salía
+«Proyección de cie…» en una tarjeta de 148px — §17.0 pide dos palabras en el
+rótulo y el matiz en el `sub`, así que es «Proyección» + «al cierre del mes».
+Este último lo destapó el cambio de layout, no se veía antes.
+
 ## v2.370.0 — Metas: el bono de meta, calculado como manda la regla
 
 El cálculo del bono por cumplimiento de meta, tal como se venía haciendo a mano.

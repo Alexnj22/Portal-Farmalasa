@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Target, TrendingUp, Gauge, BarChart3, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Target, TrendingUp, Gauge, BarChart3, Plus, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
-import { SkeletonText } from '../../components/common/StateViews';
+import FilterBar from '../../components/common/FilterBar';
+import PeriodStepper from '../../components/common/PeriodStepper';
+import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { fetchMetasDashboard } from '../../data/metas';
@@ -14,13 +16,17 @@ import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG } from './meta
 
 const fmtPct = (v) => formatPct(v);
 
-export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm }) {
+export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm, onClearSearch }) {
     const ymActual = ymHoySV();
     const ymMax = ymSumar(ymActual, 1);
     const [ym, setYm] = useState(ymActual);
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    // Contador de reintentos: es lo que le da SALIDA al estado de error (§18.1
+    // — un vacío sin acción es una pantalla muerta). Solo cambia de valor para
+    // re-disparar el efecto.
+    const [intento, setIntento] = useState(0);
 
     useEffect(() => {
         let alive = true;
@@ -30,7 +36,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
             .then((data) => { if (alive) { setRows(data); setLoading(false); } })
             .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'Error al cargar las metas')); setLoading(false); } });
         return () => { alive = false; };
-    }, [ym, reloadKey]);
+    }, [ym, reloadKey, intento]);
 
     const esMesActual = ym === ymActual;
     const cerrado = ym < ymActual;
@@ -59,7 +65,14 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 </Notice>
             )}
 
-            <CarrilCards ariaLabel="Resumen de metas">
+            {/* Dos columnas: tarjetas a la izquierda, píldora a la derecha —
+                el layout de §17.0, el mismo de Personal. En renglones separados
+                la píldora se queda un renglón entero para sí sola, y además el
+                reparto de ancho de `FilterBar` deja de funcionar: mide la FILA y
+                le reserva sitio al carril que tiene al lado, así que si el
+                carril está en otro renglón le descuenta 314px a cambio de nada. */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <CarrilCards className="flex-1" ariaLabel="Resumen de metas">
                 <StatCard
                     icon={Target} label="Meta del mes"
                     value={resumen.meta > 0 ? formatMoney(resumen.meta) : '—'}
@@ -67,20 +80,25 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                     iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                     loading={loading}
                 />
+                {/* §17.0 — el rótulo nombra la métrica en dos palabras y el
+                    matiz baja al `sub`: en una tarjeta de 148px «Proyección de
+                    cierre» salía «Proyección de cie…», que ya no nombra nada. */}
                 <StatCard
-                    icon={TrendingUp} label={cerrado ? 'Vendido en el mes' : 'Vendido'}
+                    icon={TrendingUp} label="Vendido"
                     value={formatMoney(resumen.vendidoConMeta)}
                     valueCls="text-content"
-                    sub={resumen.meta > 0 ? `${fmtPct(resumen.vendidoConMeta / resumen.meta * 100)} de la meta` : 'salas con meta'}
+                    sub={resumen.meta > 0
+                        ? `${fmtPct(resumen.vendidoConMeta / resumen.meta * 100)} de la meta`
+                        : cerrado ? 'en el mes' : 'salas con meta'}
                     iconBg="bg-success/10" iconCls="text-success-text"
                     loading={loading}
                 />
                 {esMesActual && (
                     <StatCard
-                        icon={Gauge} label="Proyección de cierre"
+                        icon={Gauge} label="Proyección"
                         value={resumen.meta > 0 ? formatMoney(resumen.proy) : '—'}
                         valueCls="text-chart-1-text"
-                        sub={resumen.meta > 0 ? `${fmtPct(resumen.proy / resumen.meta * 100)} de la meta` : undefined}
+                        sub={resumen.meta > 0 ? `${fmtPct(resumen.proy / resumen.meta * 100)} de la meta` : 'al cierre del mes'}
                         iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                         loading={loading}
                     />
@@ -95,36 +113,57 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 />
             </CarrilCards>
 
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div data-surface="card" className="inline-flex items-center gap-1 px-2 py-1.5">
-                    <button
-                        type="button" aria-label="Mes anterior"
-                        onClick={() => setYm((v) => ymSumar(v, -1))}
-                        disabled={ym <= YM_INICIO_HISTORIA}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-brand/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                    ><ChevronLeft size={16} strokeWidth={2.5} /></button>
-                    <span className="text-body-sm font-black px-1 whitespace-nowrap">{ymLabel(ym)}</span>
-                    <button
-                        type="button" aria-label="Mes siguiente"
-                        onClick={() => setYm((v) => ymSumar(v, 1))}
-                        disabled={ym >= ymMax}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-brand/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                    ><ChevronRight size={16} strokeWidth={2.5} /></button>
-                    {esMesActual && rows[0] && (
-                        <span className="text-caption font-bold text-content-3 pr-2 whitespace-nowrap tabular-nums">
+            {/* §17 — los filtros de la vista y sus acciones, en UNA píldora.
+                Antes esto era un `justify-between` con un stepper escrito a mano
+                a la izquierda y el botón suelto a la derecha, y eso costaba tres
+                cosas además de verse distinto al resto del portal: en táctil
+                nada de esto llegaba a la barra flotante (`FilterBar` ES esa
+                barra, §17.3), no había forma de volver al mes actual, y las
+                flechas se anunciaban «botón, botón» — `PeriodStepper` arma su
+                nombre accesible con `unit`. */}
+            <div className="flex justify-end min-w-0">
+                <FilterBar
+                    title="Filtros de metas"
+                    activeCount={esMesActual ? 0 : 1}
+                    onClear={() => setYm(ymActual)}
+                    acciones={canEdit ? [{
+                        key: 'agregar', icon: Plus, label: 'Agregar meta', variant: 'primary',
+                        onClick: () => onAgregarMeta(ym, null),
+                    }] : []}
+                    // El día del mes no es un filtro ni un botón: es el dato que
+                    // le da sentido a la proyección (un 40% al día 4 y al día 28
+                    // no dicen lo mismo). Va por la escotilla de §17.
+                    accionesExtra={esMesActual && rows[0] ? (
+                        <Badge variant="neutral" size="sm">
                             día {rows[0].dias_transcurridos} de {rows[0].dias_mes}
-                        </span>
-                    )}
-                </div>
-                {canEdit && (
-                    <Button variant="secondary" icon={Plus} onClick={() => onAgregarMeta(ym, null)}>Agregar meta</Button>
-                )}
+                        </Badge>
+                    ) : null}
+                >
+                    <FilterBar.Section active={!esMesActual} onClear={() => setYm(ymActual)} label="mes">
+                        <PeriodStepper
+                            unit="mes"
+                            label={ymLabel(ym)}
+                            isCurrent={esMesActual}
+                            onPrev={() => setYm((v) => ymSumar(v, -1))}
+                            onNext={() => setYm((v) => ymSumar(v, 1))}
+                            onReset={() => setYm(ymActual)}
+                            resetLabel="Ir al mes actual"
+                            prevDisabled={ym <= YM_INICIO_HISTORIA}
+                            nextDisabled={ym >= ymMax}
+                        />
+                    </FilterBar.Section>
+                </FilterBar>
+            </div>
             </div>
 
             {error && (
-                <div data-surface="card" className="p-8 text-center">
-                    <p className="text-body-sm font-bold text-danger-text">{error}</p>
-                </div>
+                <EmptyState
+                    compact icon={AlertTriangle}
+                    iconClass="text-danger" glowClass="bg-danger/30"
+                    title="No se pudieron cargar las metas"
+                    subtitle={error}
+                    action={<Button variant="secondary" icon={RefreshCw} onClick={() => setIntento((n) => n + 1)}>Reintentar</Button>}
+                />
             )}
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -155,8 +194,10 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
 
                                 {sinMeta ? (
                                     <div className="flex-1 flex flex-col items-center justify-center text-center gap-2.5 py-4">
+                                        {/* §26.1 — «todavía» promete algo que la app
+                                            no sabe; el vacío se dice y ya. */}
                                         <p className="text-label font-semibold text-content-3 max-w-[240px]">
-                                            Esta sala todavía no tiene meta para {ymLabel(ym).toLowerCase()}.
+                                            Sin meta para {ymLabel(ym).toLowerCase()}
                                         </p>
                                         {canEdit && (
                                             <Button variant="primary" icon={Plus} onClick={() => onAgregarMeta(ym, r.branch_id)}>
@@ -194,13 +235,29 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                             </article>
                         );
                     })}
-                {!loading && !error && visibles.length === 0 && (
-                    <div data-surface="card" className="p-8 text-center md:col-span-2 xl:col-span-3">
-                        <Target size={28} className="mx-auto text-content-3 mb-2" />
-                        <p className="text-body-sm font-bold text-content-3">Sin resultados para &ldquo;{searchTerm}&rdquo;</p>
-                    </div>
-                )}
             </div>
+
+            {/* §18.1 — el vacío por FILTRO y el vacío por falta de datos son
+                mensajes distintos y salidas distintas: uno se resuelve soltando
+                la búsqueda, el otro no tiene nada que soltar. */}
+            {!loading && !error && visibles.length === 0 && (
+                searchTerm?.trim() ? (
+                    <EmptyState
+                        compact icon={Search}
+                        title="Sin resultados"
+                        subtitle={`Ninguna sala coincide con "${searchTerm.trim()}".`}
+                        action={onClearSearch && (
+                            <Button variant="secondary" onClick={onClearSearch}>Limpiar la búsqueda</Button>
+                        )}
+                    />
+                ) : (
+                    <EmptyState
+                        compact icon={Target}
+                        title="Sin salas para este mes"
+                        subtitle="Cuando una sala registre ventas, su tarjeta aparece acá."
+                    />
+                )
+            )}
         </div>
     );
 }

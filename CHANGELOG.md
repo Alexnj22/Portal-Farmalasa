@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.360.3 — Tipo de documento en la retención
+
+Columna **Tipo** con el badge CCF/COF en la sección de IVA retenido. No es
+decorativo: el tipo separa **dos fundamentos distintos del mismo 1%**, y el
+Art. 162 del Código Tributario los tiene en incisos separados.
+
+- **CCF — 27 documentos, $117.05.** Clientes: BANCO PROMERICA, COFARSAL,
+  LABORATORIOS VIJOSA y OPEN SOLUTIONS. Es el inciso primero: los grandes
+  contribuyentes que compran a un contribuyente de otra categoría retienen el 1%.
+- **COF — 17 documentos, $62.31.** Un solo cliente, el ISSS (dos fondos
+  circulantes). Es el inciso tercero, que designa agentes de retención a los
+  Órganos del Estado, las Municipalidades y **las instituciones oficiales
+  autónomas «aunque no sean contribuyentes de dicho impuesto»**. Por eso llevan
+  factura de consumidor y no crédito fiscal, y **por eso la retención sobre una
+  factura de consumidor no es un error**.
+
+Se acreditan juntos —en la declaración el IVA retenido es un solo total— así que
+la sección **no se parte en dos**. Pero el tipo tiene que verse, porque cada
+mitad se coteja contra una línea distinta del Corte Z: julio de Salud 3 son
+$39.32 en la sección de factura y $3.60 en la de crédito fiscal.
+
+Verificado contra el Art. 162 leído del PDF del repo, no de memoria, y contra los
+44 documentos: los **44** tienen base ≥ $100 (el piso que fija el artículo) y en
+40 la retención es exactamente el 1% de la base **sin IVA**, como manda el mismo
+artículo.
+
+**HALLAZGO — 10 documentos donde el DTE no declara la retención.** Cruzados los
+44 contra su propio DTE: el **total cuadra en los 44**, la retención en 34, y en
+**10 el DTE sellado dice `ivaRete1: 0`** mientras el portal registra una
+retención ($42.67 en conjunto). Son todos CCF de BANCO PROMERICA entre mayo y
+agosto de **2025** — ninguno cae en el período contable (junio 2026 en adelante),
+donde los 10 documentos cuadran con su DTE en las cuatro cifras. Queda anotado
+para el contador: o el documento se emitió sin consignar la retención —que el
+Art. 162 obliga a consignar— o el registro interno tiene una que no existió.
+
+**El ancho, otra vez.** La columna nueva no entraba: 1147 contra un contenedor de
+1076 a 1536, con la columna de botones afuera. Tres cambios, los tres medidos:
+la tabla va **a sangre** dentro de la tarjeta (el `p-4 md:p-5` le cobraba 40px),
+**Base sale de la tabla** (está en el documento y en el CSV, y es el retenido por
+cien), y el badge «Anulada» **puede bajar de línea** — con `shrink-0` el ancho
+mínimo de la celda del cliente era «nombre + badge en una línea», 234px medidos.
+Entra exacta en 1280, 1366, 1440, 1536 y 1920, con la misma cantidad de títulos
+que de celdas en las cinco.
+
 ## v2.360.2 — Documentado el diseño del módulo de Metas
 
 Solo documentación: `docs/PLAN-METAS-2026-08-03.md`, el diseño completo del
@@ -33,10 +77,6 @@ datos borrador, permisos por rol (Supervisor/a de Ventas edita, Gerente
 General aprueba), y las 4 decisiones pendientes del usuario que bloquean la
 Fase 1 (base con/sin IVA, sala vs vendedor, qué pasa el día 1 sin aprobar,
 formato del histórico a importar).
-
-## v2.360.1 — Tipo de documento en la retención
-
-_(pendiente de redactar)_
 
 ## v2.360.0 — Canon de permisos por vista: capacidades separadas de pestañas
 

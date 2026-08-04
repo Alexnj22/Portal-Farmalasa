@@ -585,7 +585,6 @@ const COLS_RET_VENTAS = [
     // fila abre el documento, que trae NIT y NRC, y las dos van completas al
     // CSV. La base además es el retenido por cien.
     { key: 'doc',    label: 'Documento', align: 'left', hideBelow: '2xl' },
-    { key: 'base',   label: 'Base',      align: 'right', hideBelow: '2xl' },
     { key: 'ret',    label: 'Retenido',  align: 'right' },
     { key: 'dte',    label: 'DTE',       align: 'center' },
 ];
@@ -650,6 +649,11 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                 </div>
             </header>
 
+            {/* A sangre dentro de la tarjeta: el `p-4 md:p-5` le cobraba 40px de
+                ancho a la tabla, y acá cada píxel se paga —con el padding, la
+                columna DTE quedaba fuera del visor a 1280 y 1536—. El borde
+                propio de la tabla sigue marcando dónde empieza. */}
+            <div className="-mx-4 md:-mx-5">
             <DataTable columns={COLS_RET_VENTAS} loading={loading} empty={empty}>
                 {filas.map((r, i) => (
                     <DataRow key={r.codigo_generacion || `${r.erp_invoice_id}-${i}`} index={i}
@@ -672,10 +676,16 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                             CIRCULANTE UM CHALATENANGO"). Envuelve en las líneas
                             que haga falta — son ≤10 filas por mes, no una tabla
                             de 400 donde la altura de fila se paga. */}
-                        <DataCell className="min-w-[10rem]">
-                            <div className="flex items-start gap-2 min-w-0">
+                        <DataCell className="min-w-[9rem]">
+                            {/* `flex-wrap` y el badge SIN `shrink-0`: con el badge
+                                fijo, el ancho mínimo de esta celda pasaba a ser
+                                "nombre + badge en una línea" —234px medidos— y a
+                                1280 eso empujaba la columna de botones fuera del
+                                visor. Que baje de línea cuesta una fila más alta
+                                en el único documento anulado del mes. */}
+                            <div className="flex flex-wrap items-start gap-x-2 gap-y-1 min-w-0">
                                 <span className="break-words leading-tight">{r.cliente || '—'}</span>
-                                {r.anulada && <Badge variant="warning" size="sm" className="shrink-0">Anulada</Badge>}
+                                {r.anulada && <Badge variant="warning" size="sm">Anulada</Badge>}
                             </div>
                         </DataCell>
                         {/* El correlativo y no el número de control: el control son
@@ -684,11 +694,6 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                         <DataCell hideBelow="2xl">
                             <CeldaDocumento numero={soloNumero(r.correlativo)} />
                         </DataCell>
-                        {/* `2xl` acá y `2xl` en COLS_RET_VENTAS: tienen que ser el
-                            MISMO peldaño. Cuando no coinciden, la tabla queda con
-                            más celdas que títulos y cada monto se lee bajo el
-                            rótulo del vecino — ya pasó en Contribuyentes a 1440. */}
-                        <DataCell align="right" hideBelow="2xl"><CeldaMonto v={r.monto_sujeto} /></DataCell>
                         <DataCell align="right"><CeldaMonto fuerte v={r.retencion_iva} /></DataCell>
                         <DataCell align="center">
                             {/* Deshabilitados y no ocultos cuando el documento no
@@ -699,17 +704,17 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                                 documento, así que sin esto bajar un archivo abriría
                                 además el modal encima. */}
                             <div className="flex items-center justify-center gap-1">
-                                <Button tone="chart-1" iconOnly icon={FileJson}
+                                <Button tone="chart-1" size="sm" iconOnly icon={FileJson}
                                     disabled={!r.json_path || bajando != null}
                                     title={r.json_path ? 'Descargar el JSON del documento' : 'El JSON de este documento no está guardado'}
                                     onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-json`,
                                         () => bajarArchivo(r.json_path, `${String(r.codigo_generacion).toUpperCase()}.json`)); }} />
-                                <Button tone="chart-1" iconOnly icon={FileText}
+                                <Button tone="chart-1" size="sm" iconOnly icon={FileText}
                                     disabled={!r.pdf_path || bajando != null}
                                     title={r.pdf_path ? 'Descargar el PDF del documento' : 'El PDF de este documento no está guardado'}
                                     onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-pdf`,
                                         () => bajarArchivo(r.pdf_path, `${String(r.codigo_generacion).toUpperCase()}.pdf`)); }} />
-                                <Button tone="chart-1" iconOnly icon={Archive}
+                                <Button tone="chart-1" size="sm" iconOnly icon={Archive}
                                     disabled={(!r.json_path && !r.pdf_path) || bajando != null}
                                     title="Descargar los dos en un ZIP"
                                     onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-zip`,
@@ -719,6 +724,7 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                     </DataRow>
                 ))}
             </DataTable>
+            </div>
         </section>
     );
 }

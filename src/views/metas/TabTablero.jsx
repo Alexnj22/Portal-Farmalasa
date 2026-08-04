@@ -175,7 +175,9 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                                     </div>
                                     {sinMeta
                                         ? <Badge variant="neutral" size="sm">Sin meta</Badge>
-                                        : tramo && <Badge variant={tramo.variante} size="sm">{tramo.label}</Badge>}
+                                        : r.estado !== 'oficial'
+                                            ? <Badge variant="warning" size="sm">Pendiente de aprobar</Badge>
+                                            : tramo && <Badge variant={tramo.variante} size="sm">{tramo.label}</Badge>}
                                 </div>
 
                                 {sinMeta ? (

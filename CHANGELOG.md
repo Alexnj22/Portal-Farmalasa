@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.367.1 — Permisos: vuelve la grilla, el multi-columna rompía la pantalla
+
+_(pendiente de redactar)_
+
+## v2.367.0 — Metas: la pestaña Confirmación — el ciclo completo en el portal
+
+Frontend de la Fase 2 (la base salió en v2.366.0). QA Playwright del ciclo
+entero 9/9 en verde y a la primera; datos y notificaciones de prueba borrados
+al terminar (incluida la migración `20260804041549`, que pasó a tuteo la
+notificación del día 25 — el gate de copy atrapó el voseo).
+
+- **Pestaña «Confirmación»** (solo para quien edita o aprueba): las metas del
+  mes siguiente en tarjetas con TODO el contexto para decidir — mismo mes del
+  año pasado, promedio de 3 meses y la propuesta del sistema — con el monto
+  editable mientras está en propuesta o devuelta. El supervisor confirma; el
+  gerente aprueba o devuelve con nota obligatoria, y la nota se ve en la
+  tarjeta devuelta. Si el mes en curso tiene metas sin oficializar, aparecen
+  arriba con su aviso.
+- **«Generar propuestas»**: si el día 25 todavía no llegó, el supervisor puede
+  disparar las propuestas del mes siguiente cuando quiera.
+- **Tablero**: una meta que aún no está aprobada se marca «Pendiente de
+  aprobar» en lugar de mostrar el tramo del bono como si fuera definitivo.
+- Cada acción del flujo va a la bitácora con sala, mes y monto.
+
 ## v2.366.1 — Cierre: la retención no va en el libro
 
 Documentación y una corrección de comentario. Cierre del trabajo de retención de

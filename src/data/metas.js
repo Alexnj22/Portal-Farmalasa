@@ -35,3 +35,40 @@ export async function fetchMetasConfig() {
     if (error) throw error;
     return data;
 }
+
+// ── Fase 2: el flujo de confirmación ─────────────────────────────────────────
+// Las filas con su id y estado, directo de la tabla (SELECT para authenticated;
+// las escrituras solo pasan por los RPC de abajo). Pocos meses → pocas filas.
+export async function fetchMetasRows(yearMonths) {
+    const { data, error } = await supabase
+        .from('metas_sucursal')
+        .select('id, branch_id, year_month, monto_meta, monto_propuesto, estado, nota, nota_devolucion, supervisor_at, gerente_at')
+        .in('year_month', yearMonths);
+    if (error) throw error;
+    return data ?? [];
+}
+
+export async function generarPropuestas() {
+    const { data, error } = await supabase.rpc('generar_propuestas_metas_manual');
+    if (error) throw error;
+    return data ?? 0; // cuántas se crearon
+}
+
+export async function confirmarMeta({ id, monto, nota }) {
+    const { error } = await supabase.rpc('confirmar_meta_supervisor', {
+        p_id: id,
+        p_monto: monto ?? null,
+        p_nota: nota || null,
+    });
+    if (error) throw error;
+}
+
+export async function aprobarMeta(id) {
+    const { error } = await supabase.rpc('aprobar_meta_gerente', { p_id: id });
+    if (error) throw error;
+}
+
+export async function devolverMeta({ id, nota }) {
+    const { error } = await supabase.rpc('devolver_meta_gerente', { p_id: id, p_nota: nota });
+    if (error) throw error;
+}

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.356.1 — Mantenimiento se puede repartir desde Permisos
+
+Primer arreglo salido de la auditoría de permisos
+(`docs/AUDITORIA-PERMISOS-2026-08-03.md`): **Mantenimiento** tenía todas las
+piezas menos una. La ruta ya exigía `PermissionGuard moduleKey="maintenance"`,
+el menú ya lo listaba en Sistema, `moduleMap.js` ya le daba ruta y etiqueta, y la
+base ya tenía filas para 2 roles — pero la clave nunca se registró en
+`permissionModules.js`, que es de donde sale la pantalla de Permisos. O sea que
+el módulo existía y no había forma de otorgarlo: los 2 roles que lo tienen
+llegaron ahí por una fila escrita a mano, no por la pantalla.
+
+Importa más de lo que parece porque Mantenimiento es el módulo que pone a los
+**otros** en solo lectura. Quedarse sin manera de repartirlo es justo lo que no
+conviene el día que hace falta.
+
+Es solo el registro: no se creó, borró ni modificó ninguna fila de
+`role_permissions`. Quien lo tenía lo sigue teniendo, y ahora aparece como
+switch en Permisos › Sistema, entre "Permisos de Acceso" y "Auditoría General",
+en el mismo orden que el menú.
+
+El resto de la auditoría —el permiso de descargar en las 12 vistas que exportan
+sin control, las 9 vistas con montos sin gate, las 9 filas huérfanas en la base y
+`staff_salary`, que está en Permisos y no lo consulta nadie— sigue pendiente de
+decisión y está documentado en §8 de la auditoría.
+
 ## v2.356.0 — Ventas Productos: números verdaderos y carga rápida
 
 Frontend de los 6 hallazgos de la auditoría de hoy (la base ya salió en

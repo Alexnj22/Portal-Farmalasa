@@ -15,7 +15,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck,
-    BookOpen, Contact
+    BookOpen, Contact, Wrench
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
@@ -202,6 +202,14 @@ export const MODULE_GROUPS = [
             { key: 'kiosk_pin',    label: 'PIN de Marcación',       desc: 'Ver y copiar el PIN personal para marcar en el kiosco',     icon: ShieldCheck,   hasApprove: false },
             { key: 'su_pin',       label: 'Código SU (Supervisores)', desc: 'Ver el código SU de 6 dígitos para autorizar marcajes de jefes y subjefes', icon: ShieldAlert, hasApprove: false },
             { key: 'permissions',  label: 'Permisos de Acceso',     desc: 'Control de acceso por rol a módulos del sistema',           icon: Lock,          hasApprove: false },
+            // Faltaba en este registro y por eso NO se podía otorgar desde
+            // Permisos (auditoría 2026-08-03): la ruta ya exigía
+            // `PermissionGuard moduleKey="maintenance"`, el menú ya lo listaba
+            // en Sistema y la base ya tenía filas para 2 roles — la única
+            // pieza ausente era la de repartirlo. Es además el módulo que pone
+            // a los demás en solo lectura, así que quedarse sin forma de
+            // asignarlo es justo lo que no conviene.
+            { key: 'maintenance',  label: 'Mantenimiento',          desc: 'Poner un módulo en solo lectura para el resto del personal, con motivo y duración: se sigue viendo todo, no se puede editar ni aprobar', icon: Wrench, hasApprove: false },
             { key: 'auditview',    label: 'Auditoría General',      desc: 'Registro completo de cambios y acciones en el sistema',     icon: Activity,      hasApprove: false },
             { key: 'ios_test',     label: 'Prueba iOS',             desc: 'Vista de prueba para verificar safe areas y layout en iOS', icon: Smartphone,    hasApprove: false },
             { key: 'sync_health',  label: 'Salud de Syncs',         desc: 'Historial de corridas de sync por dominio (productos/minmax/compras/backup) y alertas de fallo', icon: RadioTower, hasApprove: false },

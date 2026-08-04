@@ -195,6 +195,13 @@ const COLS_CONTRIBUYENTE = [
     { key: 'total',     label: 'Total',      align: 'right' },
 ];
 
+// La retención NO tiene columna propia, y no por olvido: se probó y no cabe.
+// Esta tabla ya ocupa el 100% exacto del contenedor a 1440 y 1536 —es lo que
+// obligó a sacar `Exentas` de la pantalla y a esconder el NIT hasta 2xl—, así
+// que una columna más empujaba `Total` fuera del visor en 1280, 1366, 1440 y
+// 1536 (medido: tabla 1082 contra contenedor 1046). Va como segunda línea de la
+// celda de Total, que es además donde se la busca: es la razón de que
+// `Gravadas + Débito` no sume el total.
 const COLS_ANULADOS = [
     { key: 'n',         label: 'N.º',        align: 'right' },
     { key: 'fecha',     label: 'Fecha',      align: 'left'  },
@@ -547,6 +554,10 @@ const calcularTotales = (d) => {
                          exentas: suma(d.contribuyente, 'ventas_exentas'),
                          gravadas: suma(d.contribuyente, 'ventas_gravadas'),
                          debito: suma(d.contribuyente, 'debito_fiscal'),
+                         // El 1% que retuvo el cliente. No baja la venta ni el
+                         // débito: es impuesto ya enterado por él, y por eso el
+                         // total del documento es menor que gravadas + débito.
+                         retencion: suma(d.contribuyente, 'retencion_iva'),
                          total: suma(d.contribuyente, 'total') },
         anulados:      { docs: d.anulados.length, exentas: 0, gravadas: 0, debito: 0,
                          total: suma(d.anulados, 'total') },
@@ -638,6 +649,18 @@ const construirLibro = (tab, d, tot) => {
         // El NRC va en la columna 8 y el NIT en la 18, los dos SIN guión.
         // Las columnas 11 y 12 quedan en cero: están en cero en toda la
         // muestra y no se pudo determinar cuál es cuál.
+        //
+        // Las 14 y 15 también van en cero, y ahí hay una PREGUNTA ABIERTA
+        // (2026-08-04). Desde que el origen manda la retención de IVA por
+        // documento se sabe que en las filas con retención su propio archivo
+        // escribe `gravadas + débito > total` —CCF 323659: 359.79 + 46.77
+        // contra 402.96— y que la resta de 3.60 no aparece en ninguna de las
+        // 19 columnas. O sea que el archivo del origen no declara la
+        // retención en ningún lado. El portal lo replica igual porque no se
+        // pudo verificar CUÁL columna la lleva (están en cero en toda la
+        // muestra), y escribir un monto en la columna equivocada de un libro
+        // que se presenta sería peor que no escribirlo. La pantalla sí la
+        // muestra. Hay que confirmarlo con el contador.
         //
         // Este reporte SÍ trae bien sus identificadores —número de control,
         // sello y código de generación coinciden con el documento de la
@@ -1008,6 +1031,12 @@ export default function LibrosIvaView() {
         () => contribuyente.filter(r => !r.nrc).length,
         [contribuyente]);
 
+    // ¿Este período tiene retención de IVA? Decide si la columna existe — sobre
+    // el período completo y no sobre la página que se está mirando.
+    const hayRetencion = useMemo(
+        () => contribuyente.some(r => Number(r.retencion_iva || 0) > 0),
+        [contribuyente]);
+
     // Lo mismo del lado de compras: sin NRC del proveedor el Art. 86 no se
     // cumple. Hoy son 2 proveedores del ERP a los que les falta el dato.
     const comprasSinNrc = useMemo(
@@ -1255,6 +1284,15 @@ export default function LibrosIvaView() {
                         <StatCard icon={Percent} label={ETIQUETAS[activeTab].impuesto}
                             value={formatMoney(t.debito)} loading={loading}
                             sub={activeTab === 'consumidor' ? 'Calculado 13%' : 'Documentado'} />
+                        {/* Solo cuando el período la tiene: es un número que el
+                            contador necesita para declarar (es impuesto ya
+                            enterado por el cliente), pero una tarjeta en cero
+                            todos los meses lo volvería ruido. */}
+                        {activeTab === 'contribuyente' && hayRetencion && (
+                            <StatCard icon={Percent} label="Retención de IVA"
+                                value={formatMoney(t.retencion)} loading={loading}
+                                sub="Retenida por el cliente" />
+                        )}
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">{barraFiltros}</div>
                 </div>
@@ -1277,6 +1315,14 @@ export default function LibrosIvaView() {
                     <Notice variant="info" icon={BookOpen} compact>
                         Solo entran las facturas con sello de Hacienda y estado FINALIZADA; los
                         anulados son los documentos invalidados ante Hacienda.
+                        {/* La explicación va acá y no en un `title` por documento:
+                            se lee una vez y alcanza para las 44 filas de la
+                            historia que la tienen. Y hace falta, porque sin ella
+                            la fila parece una suma mal hecha. */}
+                        {activeTab === 'contribuyente' && hayRetencion && <> En los documentos
+                        que lo indican, el cliente retuvo el 1% del IVA y lo entera él mismo
+                        (Art. 162 del Código Tributario): por eso el total cobrado es menor que
+                        gravadas más débito. Es impuesto ya pagado, no una venta menos.</>}
                     </Notice>
                 ) : (
                     <Notice variant="info" icon={BookOpen} compact>
@@ -1411,7 +1457,28 @@ export default function LibrosIvaView() {
                                 <DataCell hideBelow="2xl"><CeldaNit nit={r.nit} /></DataCell>
                                 <DataCell align="right">{formatMoney(r.ventas_gravadas)}</DataCell>
                                 <DataCell align="right" hideBelow="md">{formatMoney(r.debito_fiscal)}</DataCell>
-                                <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>
+                                {/* Segunda línea y no columna: ver el comentario
+                                    de COLS_CONTRIBUYENTE. Va acá porque es la
+                                    explicación del número de al lado — sin ella
+                                    la fila dice 359.79 + 46.77 = 402.96 y parece
+                                    una suma mal hecha. */}
+                                <DataCell align="right">
+                                    <span className="font-black">{formatMoney(r.total)}</span>
+                                    {Number(r.retencion_iva) > 0 && (
+                                        // Sin `whitespace-nowrap` a propósito: el ancho de
+                                        // columna lo fija el contenido, así que forzar una
+                                        // línea le sumaba 12px a la tabla y a 1280 —donde ya
+                                        // va justa— eso se paga en el visor. Que envuelva.
+                                        //
+                                        // Y sin `title`: sobre un <span> no es alcanzable por
+                                        // teclado ni por toque (§15.10). Lo que significa se
+                                        // explica en el aviso de arriba, que se lee una vez,
+                                        // en vez de en 44 celdas que hay que sobrevolar.
+                                        <span className="block text-micro font-semibold text-content-3 leading-tight">
+                                            -{formatMoney(r.retencion_iva)} retenido
+                                        </span>
+                                    )}
+                                </DataCell>
                             </DataRow>
                         ))}
                     </DataTable>

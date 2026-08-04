@@ -891,6 +891,16 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                         <span>IVA (13%)</span>
                                                         <span className="font-semibold text-content-2">{fmt(r.iva)}</span>
                                                     </div>
+                                                    {/* Sin esta línea el bloque no cierra: en un documento con
+                                                        retención el cliente descuenta ese 1% de lo que paga, así
+                                                        que subtotal + IVA da MÁS que el total y se lee como un
+                                                        error de suma. Se muestra solo cuando existe. */}
+                                                    {Number(r.retencion) > 0 && (
+                                                        <div className="flex justify-between gap-6 text-label text-content-3">
+                                                            <span>Retención de IVA</span>
+                                                            <span className="font-semibold text-content-2">-{fmt(r.retencion)}</span>
+                                                        </div>
+                                                    )}
                                                     <div className="flex justify-between gap-6 text-body-sm font-black border-t pt-1 mt-0.5 text-content border-divider">
                                                         <span>Total</span>
                                                         <span>{fmt(r.total)}</span>

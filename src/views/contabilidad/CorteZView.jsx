@@ -30,8 +30,10 @@ import { descargarCorteZPdf, etiquetaPeriodo } from '../../utils/corteZPrint';
 // ticket sería copiar una limitación de la impresora, no un requisito del dato.
 //
 // Dos hallazgos del cotejo que la vista tiene que dejar ver (2026-08-03):
-//   · El ticket puede contradecirse a sí mismo: su línea GRAVADAS y su línea
-//     TOTAL difieren en Salud 3, y GRAVADAS coincide con el libro al centavo.
+//   · La línea GRAVADAS y la línea TOTAL del ticket difieren en Salud 3 por la
+//     RETENCIÓN, que el ticket imprime al lado y resta. Desde el 2026-08-04 el
+//     libro la tiene documento por documento, así que la resta se verifica de
+//     los dos lados en vez de aceptarse del ticket.
 //   · El origen puede omitir una venta sellada: Salud 1 julio, $9.00.
 // Por eso el cotejo se muestra SIEMPRE, cuadre o no.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,19 +221,28 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                     portal={fila.portal_factura} dif={fila.dif_factura} />
                 <LineaCotejo rotulo="Ventas con crédito fiscal" z={fila.ccf_total}
                     portal={fila.portal_ccf} dif={fila.dif_ccf} />
+                {/* La retención ya no se acepta del ticket: el libro la tiene
+                    documento por documento, así que va como una línea más y con
+                    su diferencia. Antes era el único número del cotejo que salía
+                    de un solo lado — se le restaba al portal para que las otras
+                    líneas cuadraran, y nadie podía verificar la resta. */}
+                {(!cuadra(fila.retencion) || !cuadra(fila.portal_retencion)) && (
+                    <LineaCotejo rotulo="Retención de IVA" z={fila.retencion}
+                        portal={fila.portal_retencion} dif={fila.dif_retencion} />
+                )}
                 <LineaCotejo rotulo="Total general" z={fila.total_general}
                     portal={fila.portal_total} dif={fila.dif_total} />
             </div>
 
-            {/* La retención, dicha en voz alta. Sin esto la columna «Corte Z» y
-                la columna «Libro» muestran números distintos con un guión en la
-                diferencia, y se lee como un error de la tabla. Es la resta que
-                el propio ticket hace: TOTAL = GRAVADAS − RETENCIÓN. */}
+            {/* Por qué las dos columnas de arriba muestran números distintos con
+                un guión en la diferencia: es la resta que el propio ticket hace
+                —TOTAL = GRAVADAS − RETENCIÓN— y no un error de la tabla. */}
             {!cuadra(fila.retencion) && (
                 <p className="text-micro text-content-3 leading-relaxed">
                     El Corte Z declara <b>{formatMoney(fila.retencion)}</b> de retención de IVA y
                     la resta de su total, por eso su cifra es menor que la del libro. Descontada,
-                    los dos coinciden.
+                    los dos coinciden. Es el 1% que el cliente retiene y entera él mismo (Art. 162
+                    del Código Tributario): no es una venta menos, es un anticipo ya pagado.
                 </p>
             )}
 

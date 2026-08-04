@@ -111,9 +111,16 @@ async function syncBranch(
 
   // Paginado: PostgREST corta en 1000 filas; en rangos amplios eso dejaba el mapa
   // incompleto y re-procesaba facturas como "nuevas" (changelogs falsos).
+  // `subtotal`/`iva`/`retencion` entran a la comparación desde el 2026-08-03: el
+  // origen empezó a mandar la retención de IVA y, con ella, la base gravada y el
+  // débito REALES. Antes repartía el total NETO entre los dos, así que en un
+  // documento con retención el libro de contribuyentes salía con la base y el
+  // débito por debajo (verificado contra el propio libro del origen: CCF 323659,
+  // 356.60/46.36 guardado contra 359.79/46.77). Sin estos tres campos acá, una
+  // fila vieja nunca se corregiría sola: `total` no cambió.
   const existingRaw = await selectAllByIn<any>(
     supabase, 'sales_invoices',
-    'id, erp_invoice_id, estado, tipo_pago, recibido_mh, cliente, total, customer_id',
+    'id, erp_invoice_id, estado, tipo_pago, recibido_mh, cliente, subtotal, iva, retencion, total, customer_id',
     'erp_invoice_id', erpInvoiceIds,
   );
 
@@ -139,6 +146,9 @@ async function syncBranch(
     const existing = existingMap.get(erpId_s);
     const clienteName = venta.cliente?.trim() || null;
     const newTotal    = venta.totales?.total ?? 0;
+    const newSubtotal = venta.totales?.subtotal ?? 0;
+    const newIva      = venta.totales?.iva ?? 0;
+    const newRetencion = venta.totales?.retencion ?? 0;
 
     let hasChange = false;
 
@@ -166,6 +176,19 @@ async function syncBranch(
       if (!numEq(existing.total, newTotal)) {
         changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'total',     valor_anterior: existing.total,     valor_nuevo: String(newTotal) });
         hasChange = true;
+      }
+      // Los tres se mueven juntos —la base y el débito suben lo que sube la
+      // retención— pero se anotan por separado: el que lea el historial tiene
+      // que poder ver que la base gravada del documento cambió, no deducirlo.
+      for (const [campo, viejo, nuevo] of [
+        ['subtotal',  existing.subtotal,  newSubtotal],
+        ['iva',       existing.iva,       newIva],
+        ['retencion', existing.retencion, newRetencion],
+      ] as [string, any, number][]) {
+        if (!numEq(viejo, nuevo)) {
+          changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo, valor_anterior: viejo == null ? null : String(viejo), valor_nuevo: String(nuevo) });
+          hasChange = true;
+        }
       }
       // También upsertear si falta el customer_id para linkear retroactivamente
       if (!existing.customer_id && clienteName) hasChange = true;
@@ -196,8 +219,12 @@ async function syncBranch(
         // guardado tampoco, queda NULL y la factura cae en pendientes. Eso
         // además sana sola cualquier fila con basura que el sync vuelva a tocar.
         recibido_mh:       selloValido(venta.recibido_mh) ?? selloValido(existing?.recibido_mh) ?? null,
-        subtotal:          venta.totales?.subtotal ?? 0,
-        iva:               venta.totales?.iva ?? 0,
+        subtotal:          newSubtotal,
+        iva:               newIva,
+        // Retención de IVA del Art. 162 CT: la practica el cliente (un gran
+        // contribuyente) y se descuenta del total a cobrar, así que
+        // subtotal + iva - retencion = total.
+        retencion:         newRetencion,
         total:             newTotal,
         updated_at:        new Date().toISOString(),
       });

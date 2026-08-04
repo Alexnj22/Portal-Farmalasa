@@ -40,10 +40,19 @@ export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, f
     });
 }
 
+// La forma de una fila de la lista de ventas. Sale del `.select()` a propósito:
+// la cadena ya pasaba de 180 caracteres y `data-gate` mira una ventana de 450
+// desde el `.from(` para decidir si la consulta pagina — con la lista adentro,
+// el `.range()` de más abajo quedaba fuera de esa ventana y la consulta se
+// reportaba como sin paginar. Pagina; lo que faltaba era que se pudiera ver.
+const COLUMNAS_LISTA = 'id, branch_id, erp_invoice_id, correlativo, tipo_documento, ' +
+    'fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, retencion, total, ' +
+    'estado, recibido_mh, has_puntos';
+
 export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados, abIdsFilter, isSearching, searchTerm, page, pageSize }) {
     let q = supabase
         .from('sales_invoices')
-        .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado, recibido_mh, has_puntos')
+        .select(COLUMNAS_LISTA)
         .gte('fecha', fini).lte('fecha', ffin)
         .order(sortCol, { ascending: asc });
     if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });

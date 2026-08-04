@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.355.0 — Retención de IVA en ventas
+
+El origen empezó a mandar `totales.retencion` en el JSON de ventas. Confirmado
+bajando el archivo: la clave existe y trae monto. Pero el cambio venía con algo
+más grande adentro, y eso es lo que arregla esta versión.
+
+**Junto con la retención, el origen corrigió la base gravada y el débito.** En
+un documento con retención antes repartía el total NETO entre los dos; ahora
+manda los reales. Medido en Salud 3, julio 2026: 3,901 ventas, `total` idéntico
+al centavo en las dos versiones ($49,792.84), y `subtotal`/`iva` distintos en
+exactamente los 7 documentos con retención. O sea que el portal venía guardando
+la base y el débito **por debajo** en esas filas — y el libro de contribuyentes
+los publica tal cual.
+
+Se vio contra el propio libro del origen. El CCF 323659 (BANCO PROMERICA) sale
+ahí con gravadas **359.79** y débito **46.77**; el portal tenía 356.60 y 46.36.
+Cuadraba el total, que es la columna que uno mira. Comparadas las 19 columnas
+del archivo de julio de Salud 3, ahora coinciden **17 de 19** — antes eran 16,
+porque gravadas y débito diferían en esa fila. Las dos que siguen difiriendo son
+viejas y no son de este cambio: el nombre del cliente (el origen le quita la
+coma a "BANCO PROMERICA, S.A.") y el NIT, donde el portal tiene el dato completo
+y el archivo del origen lo trae corto o vacío.
+
+**Qué se hizo**
+
+- `sales_invoices.retencion` (0 por defecto: "sin retención" es un hecho, no un
+  dato que falte). `subtotal + iva − retencion = total`.
+- El sync la guarda, y ahora **compara** `subtotal`, `iva` y `retencion` contra
+  lo guardado. Faltaba: como `total` no cambió, una fila vieja nunca se habría
+  corregido sola.
+- Backfill por el camino normal del sync, 11 meses de Salud 3: **44 documentos**
+  en 15 meses de historia, **$179.36** de retención, todos de esa sucursal. El
+  total no se movió en ninguno (delta exacto $0.00) y las tres columnas quedaron
+  en los valores del origen ($17,945.40 / $2,332.92 / $179.36).
+- **Ventas**: el detalle de un documento muestra la línea. Sin ella el bloque no
+  cerraba — subtotal + IVA daba más que el total y se leía como un error de
+  suma.
+- **Libros IVA**: la retención va como segunda línea de la celda de Total, con
+  su total del período en el carril. No es columna propia y se probó por qué:
+  la tabla ya ocupa el 100% exacto del contenedor a 1440 y 1536, así que una
+  columna más empujaba `Total` fuera del visor en 1280, 1366, 1440 y 1536
+  (tabla 1082 contra contenedor 1046). Medido en las cinco anchuras, después
+  del cambio no hay regresión en ninguna.
+- **Corte Z**: la retención pasa a ser una línea del cotejo, con los dos lados.
+  Antes era el único número del cuadro que salía de una sola fuente: se le
+  restaba al portal para que las otras líneas cuadraran y nadie podía verificar
+  la resta. Julio, Salud 3: Corte Z $42.92, libro $42.92, diferencia cero. La
+  invalidada del 23/07 ($1.35) es justo la que explica que los documentos sumen
+  $44.27 y el libro $42.92.
+
+**Lo que queda abierto**
+
+- El archivo del origen **no declara la retención en ninguna de sus 19
+  columnas** — sus filas con retención dicen `gravadas + débito > total` y la
+  resta no aparece. El portal replica ese formato porque las columnas 14 y 15
+  están en cero en toda la muestra y no se pudo verificar cuál la lleva; poner
+  un monto en la columna equivocada de un libro que se presenta sería peor que
+  no ponerlo. **A confirmar con el contador.**
+- El libro de consumidor reporta los montos ya netos de retención, igual que el
+  origen (verificado: julio de Salud 3 da $48,564.53 de los dos lados). Si
+  fiscalmente correspondiera declarar el bruto y la retención aparte, eso es
+  otra decisión y también es del contador.
+- A 1280px la tabla de contribuyentes deja `Total` fuera del visor, y **ya era
+  así antes de este cambio** (949 contra un contenedor de 886). No se tocó acá
+  para no mezclar; queda anotado.
+
+_(pendiente de redactar)_
+
 ## v2.354.1 — Abrir y descargar son dos permisos, no uno
 
 Corrección de v2.354.0, del mismo día: ahí salió **un** permiso que cubría las

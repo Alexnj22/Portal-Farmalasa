@@ -10,16 +10,28 @@ import { getCorsHeaders, requireInvokeSecret, getErpBranchMap } from "../_shared
 // hay error, los totales suman bien, simplemente suman un documento menos. Sólo
 // se ve comparando contra afuera.
 //
-// Compara el libro de consumidor —una línea por día, con documentos y total— que
-// es el que concentra el 99% del volumen. Es liviano: un CSV por sucursal-mes.
+// Compara **los dos libros de ventas**: el de consumidor —una línea por día— y
+// el de contribuyentes —una línea por documento—. Es liviano: dos CSV por
+// sucursal-mes.
 //
-// Avisa, no arregla: recuperar el documento exige un `sync-dte-sales` de ese día,
-// y una diferencia también puede ser una venta anulada legítimamente.
+// El de contribuyentes se agregó el 2026-08-04. Antes solo se miraba consumidor
+// porque es el 99% del volumen, y eso dejaba a los CCF sin control diario
+// justamente siendo los documentos más grandes: uno perdido después de
+// sincronizado aparecía recién en el cotejo mensual del Corte Z, y sin
+// diagnóstico. Los dos se miden POR SEPARADO y después se suman — si un día
+// tuviera de más en un libro lo mismo que de menos en el otro, el total daría
+// cero y el día pasaría por bueno.
+//
+// Avisa y DIAGNOSTICA, pero no arregla: al encontrar un día que no cuadra baja
+// al documento y clasifica la causa (ver `diagnosticarDia`). Qué hacer con ella
+// depende de cuál sea, y en un caso —el registro perdido del lado del origen—
+// no hay nada que el portal pueda hacer.
 
 const BASE       = "https://clientesdte3.oss.com.sv/farma_salud/";
 const LOGIN_URL  = `${BASE}login.php`;
 const SESION_URL = `${BASE}cambio_sesion.php`;
 const LIBRO      = `${BASE}libro_ventas_consumidor_csv.php`;
+const LIBRO_CCF  = `${BASE}libro_ventas_contribuyente_csv.php`;
 const EMITIDOS   = `${BASE}descarga_dte_emitidos_json.php`;
 const DTE_JSON   = `${BASE}downloads/dteqr_json.php`;
 const DTE_PDF    = `${BASE}downloads/dteqr_pdf.php`;
@@ -102,11 +114,15 @@ async function veredictoDelDte(cg: string): Promise<{ causa: string; detalle: st
 // Verificado en tres días de tres sucursales (2026-08-01 y 02): el exceso del
 // libro del origen es exactamente el documento `NULA` del día, al centavo. Y en
 // el 14/07 de Salud 1, donde no hubo ninguno, las dos reglas dan lo mismo.
+// Los dos tipos, no solo consumidor: desde que el cuadre compara también el
+// libro de contribuyentes, un CCF puede ser el que explica el día.
 const INVALIDADO_MH = 'DTE INVALIDADO EN MH';
+const tipoDe = (v: any) => String(v?.correlativo ?? '').split('_').pop() ?? '';
+const DEL_LIBRO = new Set(['COF', 'CCF']);
 const enLibroErp = (v: any) =>
-  String(v?.correlativo ?? '').endsWith('COF') && v?.estado !== INVALIDADO_MH && selloOk(v?.recibido_mh);
+  DEL_LIBRO.has(tipoDe(v)) && v?.estado !== INVALIDADO_MH && selloOk(v?.recibido_mh);
 const enLibroPortal = (r: any) =>
-  r?.tipo_documento === 'COF' && r?.estado === 'FINALIZADA' && selloOk(r?.recibido_mh);
+  DEL_LIBRO.has(r?.tipo_documento) && r?.estado === 'FINALIZADA' && selloOk(r?.recibido_mh);
 
 // Tope de consultas al DTE por día. Un día con 25 sobrantes ya no es «un
 // documento perdido», es otra cosa, y no se arregla preguntando de a uno.
@@ -225,6 +241,7 @@ async function diagnosticarDia(
     explicado += impacto;
     documentos.push({
       erp_invoice_id: id,
+      tipo: (B?.tipo_documento ?? tipoDe(A)) || null,
       correlativo: soloDigitos(A?.correlativo ?? B?.correlativo),
       codigo_generacion: (B?.codigo_generacion ?? A?.codigo_generacion ?? null),
       total: Number((tA || tB).toFixed(2)),
@@ -291,31 +308,55 @@ Deno.serve(async (req) => {
           signal: AbortSignal.timeout(20_000),
         });
 
-        const res = await fetch(`${LIBRO}?fechaInicio=${desde}&fechaFin=${hasta}`, {
-          headers: { Cookie: cookie, 'X-Requested-With': 'XMLHttpRequest' },
-          signal: AbortSignal.timeout(90_000),
-        });
-        const txt = (await res.text()).trim();
-        if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error(`HTTP ${res.status}: vino HTML`);
+        // Los DOS libros. El de consumidor es una fila por día; el de
+        // contribuyentes, una por documento — hay que agrupar.
+        //
+        // Antes se comparaba solo el de consumidor, que es el 99% del volumen y
+        // por eso parecía suficiente. No lo era: los CCF son los documentos más
+        // grandes, y uno que el origen perdiera después de sincronizado no lo
+        // veía nadie a diario. Aparecía recién en el cotejo mensual del Corte Z
+        // y encima sin diagnóstico, porque el diagnóstico solo corría sobre los
+        // días que marcaba la comparación de consumidor.
+        const bajarLibro = async (url: string, colFecha: number, colTotal: number, minCols: number) => {
+          const res = await fetch(`${url}?fechaInicio=${desde}&fechaFin=${hasta}`, {
+            headers: { Cookie: cookie, 'X-Requested-With': 'XMLHttpRequest' },
+            signal: AbortSignal.timeout(90_000),
+          });
+          const txt = (await res.text()).trim();
+          if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error(`HTTP ${res.status}: vino HTML`);
+          const porDia = new Map<string, number>();
+          for (const linea of txt.split('\n')) {
+            const c = linea.split(';');
+            if (c.length < minCols) continue;
+            const [d, m, y] = (c[colFecha] ?? '').trim().split('/');
+            if (!y) continue;
+            const k = `${y}-${m}-${d}`;
+            porDia.set(k, (porDia.get(k) ?? 0) + (Number(c[colTotal]) || 0));
+          }
+          return porDia;
+        };
 
-        // Columna 0 = fecha DD/MM/YYYY, 20 = total del día.
-        const porDiaErp = new Map<string, number>();
-        for (const linea of txt.split('\n')) {
-          const c = linea.split(';');
-          if (c.length < 21) continue;
-          const [d, m, y] = (c[0] ?? '').trim().split('/');
-          if (!y) continue;
-          porDiaErp.set(`${y}-${m}-${d}`, Number(c[20]) || 0);
-        }
+        // Consumidor: 22 columnas, la 20 es el total del día.
+        // Contribuyentes: 19 columnas, la 16 es el total del documento.
+        const erpCof = await bajarLibro(LIBRO, 0, 20, 21);
+        const erpCcf = await bajarLibro(LIBRO_CCF, 0, 16, 17);
 
         const { data: portal, error: errPortal } = await supabase
           .rpc('resumen_ventas_diario', { p_desde: desde, p_hasta: hasta, p_branch_id: branchId });
         if (errPortal) throw new Error(`resumen_ventas_diario: ${errPortal.message}`);
 
-        const porDiaPortal = new Map<string, { docs: number; total: number }>();
+        const porDiaPortal = new Map<string, { docs: number; cof: number; ccf: number }>();
         for (const f of (portal ?? []) as any[]) {
-          porDiaPortal.set(String(f.fecha), { docs: Number(f.documentos), total: Number(f.total) });
+          const k = String(f.fecha);
+          const v = porDiaPortal.get(k) ?? { docs: 0, cof: 0, ccf: 0 };
+          v.docs += Number(f.documentos);
+          if (f.tipo_documento === 'CCF') v.ccf += Number(f.total);
+          else v.cof += Number(f.total);
+          porDiaPortal.set(k, v);
         }
+        const porDiaErp = new Map<string, number>();
+        for (const k of new Set([...erpCof.keys(), ...erpCcf.keys()]))
+          porDiaErp.set(k, (erpCof.get(k) ?? 0) + (erpCcf.get(k) ?? 0));
 
         // B2 (H5): se recorre la UNIÓN de los dos lados, no solo los días del
         // ERP. Antes, un día que existía en el portal y no en el origen era
@@ -327,12 +368,18 @@ Deno.serve(async (req) => {
         for (const dia of dias) {
           const totalErp    = porDiaErp.get(dia) ?? 0;
           const p           = porDiaPortal.get(dia);
-          const totalPortal = p?.total ?? 0;
-          const dif = Math.abs(totalErp - totalPortal);
+          const totalPortal = (p?.cof ?? 0) + (p?.ccf ?? 0);
+          // Los dos libros se miden POR SEPARADO y después se suman: si un día
+          // tuviera $50 de más en consumidor y $50 de menos en crédito fiscal,
+          // el total daría cero y el día pasaría por bueno.
+          const difCof = Number(((erpCof.get(dia) ?? 0) - (p?.cof ?? 0)).toFixed(2));
+          const difCcf = Number(((erpCcf.get(dia) ?? 0) - (p?.ccf ?? 0)).toFixed(2));
+          const dif = Math.max(Math.abs(difCof), Math.abs(difCcf));
           revisados.push({ branchId, dia });
           if (dif > TOLERANCIA) {
             const diferencia = Number((totalErp - totalPortal).toFixed(2));
             const h: any = { branchId, dia, totalErp, totalPortal, diferencia,
+                             difCof, difCcf,
                              enPortal: p ? p.docs : 0,
                              // Cuál de los dos lados no conoce el día: es lo
                              // primero que se pregunta al leer la alerta.

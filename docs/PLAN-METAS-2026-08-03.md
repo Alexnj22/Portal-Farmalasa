@@ -1,8 +1,9 @@
 # Plan — Módulo de Metas de Ventas por Sala
 
-**Estado: DISEÑO PROPUESTO** — aprobación conceptual del usuario pendiente de 4
-decisiones (ver §8). No se ha construido nada. Diseñado el 2026-08-03, en la
-misma sesión que cerró la auditoría de Ventas > Productos (v2.355.1–v2.359.0).
+**Estado: DISEÑO APROBADO, decisiones CERRADAS (§8) — listo para Fase 1.**
+No se ha construido nada. Diseñado el 2026-08-03, en la misma sesión que cerró
+la auditoría de Ventas > Productos (v2.355.1–v2.359.0); decisiones cerradas
+con el usuario el mismo día.
 
 **El ciclo en una frase:** el día 25 el sistema calcula la meta propuesta del
 mes siguiente por sala y notifica al supervisor; el supervisor ajusta y
@@ -158,7 +159,9 @@ congela el RESULTADO del bono al cerrar el mes (columna o tabla
    %, proyección de cierre, semáforo de bono.
 2. **Mi sala** (scope BRANCH): su meta grande, avance, proyección. Solo la
    suya.
-3. **Histórico**: por mes y sala — meta, venta real, %, bono logrado.
+3. **Histórico**: por mes y sala — meta, venta real, %, bono logrado. Incluye
+   «Agregar meta de un mes anterior» (can_edit) para el ingreso manual de las
+   metas históricas (decisión §8.4).
 4. **Confirmación** (supervisor edita, gerente aprueba): propuestas del mes
    siguiente con contexto al lado (mismo mes año pasado, tendencia 3 meses),
    monto editable, botones confirmar/aprobar/devolver.
@@ -183,18 +186,27 @@ implementar** (regla de la casa, `feedback_show_redesign_before_implementing`).
 primera lectura después del día 1 — decidir en implementación; si se congela
 con cron, va junto al de recordatorios.)
 
-## 8. DECISIONES PENDIENTES del usuario (bloquean Fase 1)
+## 8. DECISIONES — CERRADAS con el usuario (2026-08-03)
 
-1. **¿Meta con IVA o sin IVA?** Recomendado: CON IVA (total facturado — el
-   número del corte del día de la sala). `sales_daily_stats.sum_total` ya es
-   esa base.
-2. **¿Solo por sala, o también por vendedor?** Recomendado: por sala en v1;
-   por vendedor como fase futura.
-3. **¿Qué pasa si el día 1 no está aprobada?** Recomendado: la sala ve
-   «pendiente» y siguen los recordatorios (no se oficializa sola).
-   Alternativa: la propuesta entra automática.
-4. **¿En qué formato está el histórico de metas asignadas?** (Excel, papel,
-   sistema anterior…) Define cómo se construye la importación.
+1. **Base: CON IVA (total facturado).** El usuario preguntó qué es lo correcto
+   contablemente; la respuesta que quedó: contablemente el ingreso real es la
+   venta SIN IVA (el 13% se recauda para el Estado, no es ingreso), **pero
+   para el bono las dos bases dan el mismo % de cumplimiento** — casi toda la
+   venta de farmacia lleva el mismo 13%, así que meta y venta suben y bajan
+   proporcionales mientras se midan en la misma base. Elegida la base CON IVA
+   porque es el número que la sala VE en su corte del día y puede perseguir
+   sin hacer cuentas; las metas históricas del negocio también estaban
+   expresadas así. `sales_daily_stats.sum_total` ya es esa base. La
+   contabilidad formal sigue midiendo ingreso neto en su propio módulo — son
+   dos preguntas distintas y cada una usa su número.
+2. **Solo por sala** en v1; por vendedor queda como fase futura.
+3. **Día 1 sin aprobar → «meta pendiente»** y siguen los recordatorios. El
+   sistema NUNCA oficializa una meta solo.
+4. **Histórico: INGRESO MANUAL del usuario** — no hay archivo que importar.
+   La pantalla Histórico (§6.3) incluye «Agregar meta de un mes anterior»
+   (permiso can_edit): mes + sala + monto, entra como `oficial` con nota
+   «histórico ingresado a mano» y su autoría. El cumplimiento histórico se
+   calcula solo contra las ventas ya sincronizadas (desde 2025-05).
 
 ## 9. Orden de construcción
 

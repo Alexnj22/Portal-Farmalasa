@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.361.1 — Metas: decisiones cerradas en el plan
+
+Solo documentación: las 4 decisiones de `docs/PLAN-METAS-2026-08-03.md` §8
+quedaron cerradas con el usuario. Base CON IVA (para el bono ambas bases dan
+el mismo %; se elige la que la sala ve en su corte — la contabilidad formal
+sigue midiendo neto en su módulo), solo por sala en v1, día 1 sin aprobar =
+«pendiente» (nunca se oficializa sola), e histórico por INGRESO MANUAL desde
+la pantalla Histórico (no hay archivo que importar). El plan pasa a estado
+«listo para Fase 1».
+
 ## v2.361.0 — Gate de permisos: el canon se vigila solo
 
 **`npm run gate:permisos`** cruza lo declarado en Permisos contra lo que el

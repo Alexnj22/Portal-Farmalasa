@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.356.0 — Ventas Productos: números verdaderos y carga rápida
+
+Frontend de los 6 hallazgos de la auditoría de hoy (la base ya salió en
+v2.355.1); QA en navegador con la cuenta de CI, 10/10 verificaciones en verde.
+
+- **El detalle de un producto ya cuadra con su fila.** El drill carga las
+  últimas 300 ventas, pero el contador, las unidades y el total del pie ahora
+  salen de `get_product_drill_summary` (exactos, del período completo), igual
+  que el gráfico de reparto por sucursal — antes se sumaba solo lo cargado y
+  en RECARGA SALDO TIGO (631 ventas en julio) el pie decía $882.25 en vez de
+  $1,968.25. Cuando la tabla está recortada lo dice: «la tabla muestra las
+  últimas 300». Con chips de filtro activos se sigue sumando lo cargado (el
+  pie ya marca «(filtrado)»).
+- **Migración `20260804010750`**: el resumen multiplicaba por el `factor = 0`
+  literal que tienen algunas presentaciones (ej. la UNIDAD 1X1 de RECARGA
+  SALDO TIGO) y mostraba «0 unidades»; el cliente siempre lo coerció a 1 con
+  `|| 1`, ahora el RPC hace lo mismo con `NULLIF(factor, 0)`.
+- **La búsqueda sin sucursal es 100% local** sobre el dataset ya cargado: cero
+  RPCs por tecleo (antes cada búsqueda pagaba 0.6–4s de servidor) y el
+  plegado fonético/fuzzy vuelve a funcionar — «azetaminofen» encuentra
+  ACETAMINOFEN; antes el servidor devolvía 0 filas y no quedaba dataset donde
+  buscar parecidos. Con sucursal se mantiene la búsqueda en el servidor (es
+  la que aporta los productos sin venta), pero a un estado aparte.
+- **Las tarjetas ya no se mueven al buscar.** Los KPIs y el «% vs período
+  anterior» se calculan siempre sobre el dataset completo del período —
+  buscar filtraba las filas base y el % comparaba un subconjunto contra el
+  total anterior.
+- **Guard de generación en el fetch** (mismo patrón `fetchRowsRef` de la
+  pestaña Ventas): cambiar de mes o sucursal con una carga en vuelo — o con
+  el auto-retry de 1.5s pendiente — ya no puede pisar la vista con datos del
+  período anterior. El total del período previo lleva el mismo guard.
+- **Caché `ppv6` → `ppv7`**: el costo cambió server-side (v2.355.1), así que
+  una caché sin vencer (TTL 20 min) habría mostrado el costo viejo hasta 20
+  minutos después del deploy.
+
+QA (Playwright sobre el preview, julio 2026): margen global 25.1% (antes
+32.9%), ASPIRINA INFANTIL X 100 con costo $994.67 (caja, no unidad), KPIs
+idénticos antes y durante una búsqueda, typo encuentra por plegado fonético,
+drill de TIGO exacto, cero errores de consola.
+
 ## v2.355.1 — Ventas Productos: costo por presentación y RPCs rápidos en la base
 
 Migración `20260804004950` (solo base de datos; el frontend que consume lo

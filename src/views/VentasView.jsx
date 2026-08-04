@@ -1385,6 +1385,42 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     );
 }
 
+// Fila del RPC get_product_sales_agg_jsonb → fila de la tabla. Compartido entre
+// la carga de browse (fetchProductos) y la búsqueda server-side con sucursal.
+function mapAggRow(item) {
+    const qty         = parseFloat(item.cantidad     || 0);
+    const neto        = parseFloat(item.neto         || 0);
+    const costo_total = item.costo_total != null ? parseFloat(item.costo_total) : null;
+    const utilidad    = costo_total != null ? neto - costo_total : null;
+    const margen      = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
+    const costo_unitario = costo_total != null && qty > 0 ? costo_total / qty : null;
+    const presentaciones = (item.presentaciones || []).map(p => ({
+        presentacion: p.presentacion || '',
+        cantidad:     parseFloat(p.cantidad || 0),
+        neto:         parseFloat(p.neto     || 0),
+        factor:       parseInt(p.factor     || 1, 10),
+    }));
+    // Total in base units: each presentation quantity × its ERP factor.
+    // e.g. 2 CAJA(×10) + 6 UNIDAD(×1) = 26, not 8.
+    const cantidad_base = presentaciones.length > 0
+        ? presentaciones.reduce((s, p) => s + p.cantidad * p.factor, 0)
+        : qty;
+    return {
+        erp_product_id: item.erp_product_id,
+        descripcion:    item.descripcion,
+        laboratorio_id:     item.laboratorio_id ?? null,
+        laboratorio_nombre: item.laboratorio_nombre || null,
+        cantidad: qty, cantidad_base, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
+        ultima_venta:        item.ultima_venta        || null,
+        ultima_venta_por_suc: item.ultima_venta_por_suc || [],
+        oculto_en_ventas: !!item.oculto_en_ventas,
+        oculto_por: item.oculto_en_ventas
+            ? { first_names: item.oculto_por_first_names || null, last_names: item.oculto_por_last_names || null }
+            : null,
+        oculto_at: item.oculto_at || null,
+    };
+}
+
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode, setPrivacyMode }) {
     const { maxPriceLevel, getScope, user: currentUser } = useAuth();
     const allowedDrillTiers = useMemo(() => {
@@ -1416,8 +1452,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [drillSortDir, setDrillSortDir] = useState('desc');
     const [drillFilters, setDrillFilters] = useState({ tipodoc: '', changed: false });
     const [drillMonthly, setDrillMonthly] = useState([]);
+    // Totales exactos del período para el drill abierto (el detalle carga solo
+    // las últimas 300 ventas; ver get_product_drill_summary).
+    const [drillSummary, setDrillSummary] = useState(null);
     const productsCache = useRef(new Map()); // keyed by `${fini}|${ffin}|${branch}`
     const drillCache    = useRef(new Map()); // keyed by `${productId}|${fini}|${ffin}|${branch}`
+    // Guard de generación — mismo patrón que fetchRowsRef en TabVentas: un fetch
+    // viejo que resuelve tarde, o su auto-retry de 1.5s, no puede pisar la vista
+    // de un período/sucursal más nuevo.
+    const fetchGenRef = useRef(0);
+    // Resultados de la búsqueda server-side. Solo existe con sucursal
+    // seleccionada: ahí el servidor aporta productos sin venta que el dataset de
+    // browse no tiene. Sin sucursal, la búsqueda es 100% local.
+    const [searchRows, setSearchRows] = useState(null);
+    const [searchLoading, setSearchLoading] = useState(false);
     const [fini, ffin] = monthRange.split('|');
 
     const handleSort = (col) => {
@@ -1458,6 +1506,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     useEffect(() => {
         setExpandedKey(null);
         setDrillData([]);
+        setDrillSummary(null);
         drillCache.current.clear();
     }, [fini, ffin, filterBranch]);
 
@@ -1466,42 +1515,43 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillSortCol('fecha'); setDrillSortDir('desc');
         setDrillFilters({ tipodoc: '', changed: false });
         setDrillMonthly([]);
+        setDrillSummary(null);
         setDrillPage(1);
     }, [expandedKey]);
 
+    // Carga del dataset de BROWSE (todo el período, sin búsqueda — la búsqueda
+    // vive en su propio efecto más abajo y nunca pisa estas filas: los KPIs y el
+    // % contra el período anterior se calculan siempre sobre esto).
     const fetchProductos = useCallback(async (isRetry = false) => {
+        const rid = ++fetchGenRef.current;
         const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
-        // ppv6: bump de versión de la key — ppv5 guardaba filas sin
-        // oculto_por/oculto_at (agregados para trackear quién ocultó cada
-        // producto). Mismo patrón que los bumps anteriores (ppv3→ppv4→ppv5):
-        // sin esto, caché sin vencer (TTL 20 min) mostraría esos campos como
-        // undefined tras el deploy. ppv2/ppv3/ppv4 son versiones aún más viejas.
-        const lsKey    = `ppv6_${cacheKey}`;
+        // ppv7: bump de versión de la key — v2.355.1 corrigió el costo
+        // server-side (presentación vendida en vez del mínimo del producto), así
+        // que una caché ppv6 sin vencer (TTL 20 min) seguiría mostrando el costo
+        // viejo tras el deploy. Mismo patrón que los bumps ppv3→…→ppv6.
+        const lsKey    = `ppv7_${cacheKey}`;
         const TTL_MS   = 20 * 60 * 1000; // 20 minutes
 
-        // Cache only applies when not searching — search results are never cached
-        if (!searchTerm) {
-            // 1. In-memory cache (survives filter changes within same session)
-            if (productsCache.current.has(cacheKey)) {
-                setRows(productsCache.current.get(cacheKey));
-                setLoading(false);
-                return;
-            }
-            // 2. localStorage cache (survives navigation away and back)
-            try {
-                const stored = localStorage.getItem(lsKey);
-                if (stored) {
-                    const { data, ts } = JSON.parse(stored);
-                    if (Date.now() - ts < TTL_MS) {
-                        productsCache.current.set(cacheKey, data);
-                        setRows(data);
-                        setLoading(false);
-                        return;
-                    }
-                    localStorage.removeItem(lsKey);
-                }
-            } catch { /* localStorage unavailable or corrupted — proceed to fetch */ }
+        // 1. In-memory cache (survives filter changes within same session)
+        if (productsCache.current.has(cacheKey)) {
+            setRows(productsCache.current.get(cacheKey));
+            setLoading(false);
+            return;
         }
+        // 2. localStorage cache (survives navigation away and back)
+        try {
+            const stored = localStorage.getItem(lsKey);
+            if (stored) {
+                const { data, ts } = JSON.parse(stored);
+                if (Date.now() - ts < TTL_MS) {
+                    productsCache.current.set(cacheKey, data);
+                    setRows(data);
+                    setLoading(false);
+                    return;
+                }
+                localStorage.removeItem(lsKey);
+            }
+        } catch { /* localStorage unavailable or corrupted — proceed to fetch */ }
 
         setLoading(true);
         setError(null);
@@ -1515,81 +1565,76 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 p_fini:      fini,
                 p_ffin:      ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
-                ...(searchTerm ? { p_search: normSearch(searchTerm) || searchTerm } : {}),
             };
             // Una sola llamada JSONB (Patrón C): fetchAllRows re-ejecutaba el RPC
             // completo (~1-2s) por cada página de 1000 filas.
             const { data: presData, error: presErr } = await supabase.rpc('get_product_sales_agg_jsonb', rpcParams);
+            if (rid !== fetchGenRef.current) return; // otro período/sucursal ya pidió datos
             if (presErr) throw presErr;
             if (presData === null) throw new Error('No se pudo cargar productos');
             if (!presData.length) { setRows([]); setLoading(false); return; }
 
             // Cost now comes from the RPC — no separate fetch needed
-            const allRows = presData.map(item => {
-                const qty         = parseFloat(item.cantidad     || 0);
-                const neto        = parseFloat(item.neto         || 0);
-                const costo_total = item.costo_total != null ? parseFloat(item.costo_total) : null;
-                const utilidad    = costo_total != null ? neto - costo_total : null;
-                const margen      = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
-                const costo_unitario = costo_total != null && qty > 0 ? costo_total / qty : null;
-                const presentaciones = (item.presentaciones || []).map(p => ({
-                    presentacion: p.presentacion || '',
-                    cantidad:     parseFloat(p.cantidad || 0),
-                    neto:         parseFloat(p.neto     || 0),
-                    factor:       parseInt(p.factor     || 1, 10),
-                }));
-                // Total in base units: each presentation quantity × its ERP factor.
-                // e.g. 2 CAJA(×10) + 6 UNIDAD(×1) = 26, not 8.
-                const cantidad_base = presentaciones.length > 0
-                    ? presentaciones.reduce((s, p) => s + p.cantidad * p.factor, 0)
-                    : qty;
-                return {
-                    erp_product_id: item.erp_product_id,
-                    descripcion:    item.descripcion,
-                    laboratorio_id:     item.laboratorio_id ?? null,
-                    laboratorio_nombre: item.laboratorio_nombre || null,
-                    cantidad: qty, cantidad_base, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
-                    ultima_venta:        item.ultima_venta        || null,
-                    ultima_venta_por_suc: item.ultima_venta_por_suc || [],
-                    oculto_en_ventas: !!item.oculto_en_ventas,
-                    oculto_por: item.oculto_en_ventas
-                        ? { first_names: item.oculto_por_first_names || null, last_names: item.oculto_por_last_names || null }
-                        : null,
-                    oculto_at: item.oculto_at || null,
-                };
-            });
+            const allRows = presData.map(mapAggRow);
 
-            // Only persist browse results to cache (not search results)
-            if (!searchTerm) {
-                productsCache.current.set(cacheKey, allRows);
-                try {
-                    Object.keys(localStorage)
-                        // ppv2_/ppv3_/ppv4_/ppv5_ = versiones de esquema viejas (siempre se purgan);
-                        // ppv6_ = caché actual, solo se purga si venció su TTL.
-                        .filter(k => k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_') || (k.startsWith('ppv6_') && k !== lsKey))
-                        .forEach(k => {
-                            if (k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_')) { localStorage.removeItem(k); return; }
-                            try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch { /* entrada corrupta — se ignora */ }
-                        });
-                    localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
-                } catch { /* quota exceeded or unavailable — in-memory cache still works */ }
-            }
+            productsCache.current.set(cacheKey, allRows);
+            try {
+                Object.keys(localStorage)
+                    // ppv2_…ppv6_ = versiones de esquema viejas (siempre se purgan);
+                    // ppv7_ = caché actual, solo se purga si venció su TTL.
+                    .filter(k => /^ppv[2-6]_/.test(k) || (k.startsWith('ppv7_') && k !== lsKey))
+                    .forEach(k => {
+                        if (/^ppv[2-6]_/.test(k)) { localStorage.removeItem(k); return; }
+                        try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch { /* entrada corrupta — se ignora */ }
+                    });
+                localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
+            } catch { /* quota exceeded or unavailable — in-memory cache still works */ }
 
             setRows(allRows);
             setLoading(false);
         } catch (err) {
+            if (rid !== fetchGenRef.current) return; // la vista ya es de otro período
             if (!isRetry) {
                 // Auto-retry once after 1.5 s — handles transient network/PostgREST blips
                 // Keep spinner running so the user sees continuous loading, not a flash of error
-                setTimeout(() => fetchProductos(true), 1500);
+                setTimeout(() => { if (rid === fetchGenRef.current) fetchProductos(true); }, 1500);
             } else {
                 setError(mensajeAmigable(err, 'Error al cargar productos'));
                 setLoading(false);
             }
         }
-    }, [fini, ffin, filterBranch, searchTerm]);
+    }, [fini, ffin, filterBranch]);
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
+
+    // Búsqueda server-side, SOLO con sucursal: ahí el servidor aporta productos
+    // sin venta de esa sucursal (zero_sale_cands), que el browse no tiene. Sin
+    // sucursal el servidor no agrega nada — buscar ahí pagaba un RPC de 0.6-4s
+    // por tecleo y además mataba el fuzzy: con un typo el servidor devolvía 0
+    // filas y smartFilter ya no tenía dataset donde buscar parecidos.
+    useEffect(() => {
+        if (!searchTerm || !filterBranch) {
+            setSearchRows(null);
+            setSearchLoading(false);
+            return;
+        }
+        let alive = true;
+        setSearchLoading(true);
+        (async () => {
+            const { data, error: e } = await supabase.rpc('get_product_sales_agg_jsonb', {
+                p_fini:      fini,
+                p_ffin:      ffin,
+                p_branch_id: Number(filterBranch),
+                p_search:    normSearch(searchTerm) || searchTerm,
+            });
+            if (!alive) return;
+            // Si falla, searchRows queda null y la tabla cae al filtro local
+            // sobre el browse — se pierde solo el extra de productos sin venta.
+            setSearchRows(e || !Array.isArray(data) ? null : data.map(mapAggRow));
+            setSearchLoading(false);
+        })();
+        return () => { alive = false; };
+    }, [searchTerm, filterBranch, fini, ffin]);
 
     // Ocultar/mostrar producto en Ventas > Productos — global (para todos los
     // usuarios), vía products.oculto_en_ventas. No afecta Catálogo/Inventario.
@@ -1624,7 +1669,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             productsCache.current.set(cacheKey, productsCache.current.get(cacheKey).map(patchRow));
         }
         try {
-            const lsKey = `ppv6_${cacheKey}`;
+            const lsKey = `ppv7_${cacheKey}`;
             const stored = localStorage.getItem(lsKey);
             if (stored) {
                 const parsed = JSON.parse(stored);
@@ -1642,13 +1687,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             const c = drillCache.current.get(cacheKey);
             setDrillData(c.data);
             setDrillMonthly(c.monthly);
+            setDrillSummary(c.summary ?? null);
             setDrillLoading(false);
             return;
         }
         setDrillLoading(true);
         setDrillData([]);
         try {
-            const [{ data, error: e }, { data: precios }, { data: history }, { data: monthly }] = await Promise.all([
+            const [{ data, error: e }, { data: precios }, { data: history }, { data: monthly }, { data: summary }] = await Promise.all([
                 supabase.rpc('get_product_drill_lines', {
                     p_erp_product_id: productId,
                     p_fini:           fini,
@@ -1659,6 +1705,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 fetchProductPreciosHistory(productId),
                 supabase.rpc('get_product_trend', {
                     p_erp_product_id: productId,
+                    p_branch_id:      filterBranch ? Number(filterBranch) : null,
+                }),
+                // Totales EXACTOS del período: el detalle de arriba corta en las
+                // últimas 300 ventas, así que pie y gráfico no pueden sumarlo.
+                supabase.rpc('get_product_drill_summary', {
+                    p_erp_product_id: productId,
+                    p_fini:           fini,
+                    p_ffin:           ffin,
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,
                 }),
             ]);
@@ -1728,9 +1782,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 neto:     parseFloat(m.neto     || 0),
                 cantidad: parseFloat(m.cantidad || 0),
             }));
-            drillCache.current.set(cacheKey, { data: mappedData, monthly: mappedMonthly });
+            drillCache.current.set(cacheKey, { data: mappedData, monthly: mappedMonthly, summary: summary ?? null });
             setDrillData(mappedData);
             setDrillMonthly(mappedMonthly);
+            setDrillSummary(summary ?? null);
         } catch (err) {
             console.error(err);
         } finally {
@@ -1764,21 +1819,33 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         // (sii.total_linea, erp_product_id IS NOT NULL). Using get_ventas_stats
         // (si.total) caused a mismatch because it includes non-product lines
         // (discounts, adjustments, etc.). get_product_sales_total suma server-side
-        // sobre get_product_sales_agg — antes se descargaba el dataset completo
-        // del período anterior (~1-2MB) solo para sumar neto en el cliente.
+        // con la misma semántica del agregado (verificado idéntico a 20 decimales)
+        // — antes se descargaba el dataset completo del período anterior (~1-2MB)
+        // solo para sumar neto en el cliente.
         const prevParams = { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch ? Number(filterBranch) : null };
+        let alive = true;
         (async () => {
             const { data: total, error } = await supabase.rpc('get_product_sales_total', prevParams);
+            if (!alive) return; // el período/sucursal ya cambió — no pisar el pct nuevo
             if (error) console.error('get_product_sales_total failed:', error.message);
             setPrevProdStats({ sum: parseFloat(total || 0) });
         })();
+        return () => { alive = false; };
     }, [fini, ffin, filterBranch]);
+
+    // Base de la TABLA: con búsqueda + sucursal entran los resultados del server
+    // (traen los productos sin venta de esa sucursal); en el resto de los casos,
+    // el dataset local. El fuzzy de smartFilter corre siempre sobre esta base.
+    const tableBaseRows = useMemo(() => {
+        const base = searchTerm && filterBranch && searchRows ? searchRows : rows;
+        return base.filter(r => showHidden ? r.oculto_en_ventas : !r.oculto_en_ventas);
+    }, [rows, searchRows, searchTerm, filterBranch, showHidden]);
 
     // filtered + sorted — busca en TODO el dataset, no solo en la página visible
     const { results: filtered, isFuzzy: isProdFuzzy } = useMemo(() => {
         const { results, isFuzzy } = !searchTerm
-            ? { results: visibleBaseRows, isFuzzy: false }
-            : smartFilter(searchTerm, visibleBaseRows, r => [r.descripcion, ...(r.presentaciones || []).map(p => p.presentacion)]);
+            ? { results: tableBaseRows, isFuzzy: false }
+            : smartFilter(searchTerm, tableBaseRows, r => [r.descripcion, ...(r.presentaciones || []).map(p => p.presentacion)]);
         const labFiltered = filterLab ? results.filter(r => String(r.laboratorio_id) === String(filterLab)) : results;
         const sorted = [...labFiltered].sort((a, b) => {
             const asc = sortDir === 'asc' ? 1 : -1;
@@ -1790,10 +1857,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             return typeof av === 'string' ? av.localeCompare(bv) * asc : (av - bv) * asc;
         });
         return { results: sorted, isFuzzy };
-    }, [visibleBaseRows, searchTerm, sortCol, sortDir, filterLab]);
+    }, [tableBaseRows, searchTerm, sortCol, sortDir, filterLab]);
 
-    // KPIs sobre el período completo, acotados por laboratorio si hay filtro activo
-    // (no afectados por búsqueda — el buscador es para encontrar, el filtro para acotar)
+    // KPIs sobre el período completo, acotados por laboratorio si hay filtro
+    // activo. SIEMPRE sobre el dataset de browse (visibleBaseRows ← rows): la
+    // búsqueda no los mueve — el buscador es para encontrar, el filtro para
+    // acotar — y el % contra el período anterior compara total contra total.
     const labFilteredRows = useMemo(() =>
         filterLab ? visibleBaseRows.filter(r => String(r.laboratorio_id) === String(filterLab)) : visibleBaseRows,
         [visibleBaseRows, filterLab]
@@ -1872,7 +1941,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 sortKey={sortCol}
                 sortDir={sortDir}
                 onSort={handleSort}
-                loading={loading}
+                loading={loading || searchLoading}
                 skeletonRows={10}
                 empty={{ icon: Package, message: searchTerm ? `Sin resultados para "${searchTerm}"` : showHidden ? 'No hay productos ocultos' : 'Sin datos para este período' }}
                 minWidth="640px"
@@ -2053,8 +2122,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             const showTrend  = drillMonthly.length > 0;
                                                             if (!showBranch && !showTrend) return null;
 
-                                                            // Branch rotation aggregated from drill data
+                                                            // Reparto por sucursal con los totales EXACTOS del período
+                                                            // (drillData carga solo las últimas 300 ventas: sumarlas acá
+                                                            // sesgaba el gráfico hacia lo reciente en productos con más
+                                                            // movimiento). Si el resumen no llegó, se cae a lo cargado.
                                                             const branchAgg = showBranch ? (() => {
+                                                                if (drillSummary?.por_sucursal?.length) {
+                                                                    const entries = drillSummary.por_sucursal.map(s => [String(s.branch_id), parseFloat(s.neto || 0)]);
+                                                                    const total   = entries.reduce((s, [, v]) => s + v, 0);
+                                                                    const cantMap = Object.fromEntries(drillSummary.por_sucursal.map(s => [String(s.branch_id), parseFloat(s.cantidad_base || 0)]));
+                                                                    return { entries, total, cantMap };
+                                                                }
                                                                 const netoMap = {}, cantMap = {};
                                                                 const factorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
                                                                 for (const l of drillData) {
@@ -2144,8 +2222,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         {drillData.length > 0 && (() => {
                                                             const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
                                                             const drillFactorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
-                                                            const totCant  = filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0) * (drillFactorMap[l.presentacion] || 1), 0);
-                                                            const totNeto  = filteredDrill.reduce((s, l) => s + parseFloat(l.neto_display ?? l.neto ?? 0), 0);
+                                                            // Sin chips activos, los totales salen del resumen EXACTO del
+                                                            // servidor (la tabla solo carga las últimas 300 ventas y en
+                                                            // productos con más movimiento sumarlas quedaba corto contra
+                                                            // la fila del producto). Con chips, se suma lo cargado y el
+                                                            // pie ya dice "(filtrado)".
+                                                            const sinFiltrosDrill = !drillFilters.tipodoc && !drillFilters.changed;
+                                                            const usarSummary = sinFiltrosDrill && drillSummary != null;
+                                                            const totCant  = usarSummary
+                                                                ? parseFloat(drillSummary.total_cantidad_base || 0)
+                                                                : filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0) * (drillFactorMap[l.presentacion] || 1), 0);
+                                                            const totNeto  = usarSummary
+                                                                ? parseFloat(drillSummary.total_display || 0)
+                                                                : filteredDrill.reduce((s, l) => s + parseFloat(l.neto_display ?? l.neto ?? 0), 0);
+                                                            const nVentas  = usarSummary ? drillSummary.total_count : filteredDrill.length;
                                                             const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / drillPageSize));
                                                             const paginatedDrill  = filteredDrill.slice((drillPage - 1) * drillPageSize, drillPage * drillPageSize);
                                                             // Era un `<th onClick>` pelado — el mismo defecto que
@@ -2203,14 +2293,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     })()}
 
                                                                     {/* Totals summary */}
-                                                                    <div className="flex items-center gap-3 mb-2">
+                                                                    <div className="flex flex-wrap items-center gap-3 mb-2">
                                                                         <p className="text-caption font-black uppercase tracking-widest text-content-2">
-                                                                            {filteredDrill.length} venta{filteredDrill.length !== 1 ? 's' : ''}{drillData.length >= 300 ? '+' : ''}
+                                                                            {nVentas} venta{nVentas !== 1 ? 's' : ''}{!usarSummary && drillData.length >= 300 ? '+' : ''}
                                                                         </p>
                                                                         <span className="text-content-3">·</span>
                                                                         <p className="text-caption font-black text-content-2">{fmtQty(totCant)} <span className="font-medium text-content-3">unidades</span></p>
                                                                         <span className="text-content-3">·</span>
                                                                         <p className="text-label font-black text-success-text">{fmt(totNeto)} <span className="text-micro font-medium text-content-3">total</span></p>
+                                                                        {drillData.length >= 300 && nVentas > 300 && (
+                                                                            <>
+                                                                                <span className="text-content-3">·</span>
+                                                                                <p className="text-caption font-semibold text-content-3">la tabla muestra las últimas 300</p>
+                                                                            </>
+                                                                        )}
                                                                     </div>
 
                                                                     {/* Table */}

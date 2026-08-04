@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.355.1 — Ventas Productos: costo por presentación y RPCs rápidos en la base
+
+Migración `20260804004950` (solo base de datos; el frontend que consume lo
+nuevo va en la versión siguiente). Sale de la auditoría de hoy sobre
+`/ventas?tab=productos`:
+
+- **El costo ahora es el de la presentación vendida.** `get_product_sales_agg`
+  costeaba toda venta con el `MIN(costo)` del producto — el costo de la
+  UNIDAD aplicado a ventas de CAJAS (el costo en `product_precios` es por
+  presentación: CAJA X 10 cuesta 10× la unidad, verificado con datos). En
+  julio 2026 eso escondía **$16,509.75 de costo**: margen global 32.9% en
+  pantalla contra 25.2% real, 438 líneas de presentación afectadas. El fix
+  reusa el mismo match por nombre que ya resolvía el `factor` (misma fila →
+  factor y costo consistentes), con el mínimo sano como fallback (2 líneas
+  sin match en julio, 3 con costo sucio `costo > viñeta`).
+- **Un mes cerrado pasó de 2,567ms a 427ms** (multi-mes may–jul: 579ms). El
+  CTE de bordes parciales escaneaba TODO el rango de facturas solo para
+  descartar cada fila con `to_char()` cuando el rango eran meses completos —
+  el caso normal del picker. Ahora los bordes son dos rangos de fecha
+  explícitos que quedan vacíos si no hay borde parcial. Además `ultima_venta`
+  se restringe a los productos candidatos en vez de agrupar las 137k filas
+  del agregado completo en cada llamada.
+- **`get_product_sales_total` pasó de ~850-915ms a 14ms.** Re-ejecutaba todo
+  el agregado para devolver un solo número (y corre en cada visita al tab);
+  ahora suma del agregado mensual + bordes en vivo, excluyendo ocultos igual
+  que antes. Idéntico a 20 decimales en los 7 rangos probados.
+- **Nueva `get_product_drill_summary`**: totales exactos del detalle de un
+  producto. `get_product_drill_lines` corta en 300 líneas y el pie de la
+  tabla del drill sumaba solo esas: 8 productos de julio no cuadraban contra
+  su propia fila (el peor: $882.25 mostrado vs $1,968.25 real).
+
+Equivalencia verificada ANTES de aplicar, con funciones `pg_temp` contra las
+vivas en 10 rangos (meses cerrados, bordes parciales, mismo mes a medias, mes
+en curso, sucursal, búsqueda): cantidad, neto, última venta y presentaciones
+idénticos en todas las filas; solo el costo cambia, y donde se esperaba.
+
 ## v2.355.0 — Retención de IVA en ventas
 
 El origen empezó a mandar `totales.retencion` en el JSON de ventas. Confirmado

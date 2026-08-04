@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.364.1 — El modo de scroll fijo necesitaba min-h-0 en el cuerpo
+
+Completa el arreglo de v2.363.1, que estaba a medias: quitar la altura fija de
+Permisos dejó a las dos columnas sin scrollear, porque faltaba la pieza de
+verdad y estaba un nivel más arriba.
+
+**El diagnóstico.** Un flex item nace con `min-height: auto`, o sea que no puede
+encogerse por debajo de su contenido. El cuerpo de `GlassViewLayout` no lo
+anulaba, así que crecía al alto de lo que tuviera adentro —medido en Permisos:
+**8.550px** en un contenedor de 798— y las columnas que piden `h-full` +
+`overflow-y-auto` nunca llegaban a scrollear: el contenido se iba por debajo del
+contenedor externo, que es `overflow-hidden`, y quedaba **inalcanzable**.
+
+Por eso las vistas con este layout venían fijando la altura a mano
+(`h-[calc(100dvh-40px)]`): tapaba el síntoma con un número que asume dónde
+empieza el panel, y se rompe cuando algo lo corre — el aviso de «portal en
+construcción» lo baja 44px, que es de dónde salían los 74px de borde muerto que
+se veían al fondo de Permisos.
+
+`lg:min-h-0` en el cuerpo, **solo cuando `fixedScrollMode` está activo**. Sin ese
+modo el scroll es del contenedor externo y el cuerpo crece a gusto, así que no
+aplica. Medido después: las dos columnas de Permisos vuelven a scrollear
+(`scrollHeight` 1.939 y 8.750 contra 978 de alto visible) y el panel termina
+donde corresponde.
+
+Revisadas las otras vistas con este layout —Nómina, Cargos, Avisos y Horarios—:
+sin desborde horizontal, con su contenedor scrolleando y sin errores de consola.
+
 ## v2.364.0 — Metas: el módulo entra al portal — Tablero e Histórico
 
 Fase 1 del frontend (mockup aprobado por el usuario en esta misma sesión; la

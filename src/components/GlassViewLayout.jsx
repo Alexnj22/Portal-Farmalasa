@@ -231,7 +231,23 @@ const GlassViewLayout = ({
                         // pena mirar: el clúster flotante, las hojas, los
                         // dropdowns. Una superficie apoyada sobre el fondo no.
                         data-vidrio="no"
-                        className={`group/table flex flex-col lg:flex-1 ${bodyCardCls}`}>
+                        // `lg:min-h-0` SOLO con `fixedScrollMode`, y es la pieza que
+                        // hace que ese modo funcione de verdad. Un flex item nace con
+                        // `min-height: auto`, o sea que no puede encogerse por debajo de
+                        // su contenido: este wrapper crecía al alto de lo que tuviera
+                        // adentro (medido en Permisos: 8.550px) en vez de quedarse en los
+                        // 798px que le daba su contenedor, y entonces las columnas que
+                        // adentro piden `h-full` + `overflow-y-auto` nunca llegaban a
+                        // scrollear — el contenido se iba abajo del contenedor externo,
+                        // que es `overflow-hidden`, y quedaba inalcanzable.
+                        //
+                        // Por eso las vistas con este layout venían fijando la altura a
+                        // mano (`h-[calc(100dvh-40px)]`): tapaba el síntoma con un número
+                        // que asume dónde empieza el panel, y se rompe cuando algo lo
+                        // corre — el aviso de "portal en construcción" lo baja 44px.
+                        // Sin `fixedScrollMode` no aplica: ahí el scroll es del
+                        // contenedor externo y el cuerpo crece a gusto.
+                        className={`group/table flex flex-col lg:flex-1 ${fixedScrollMode ? 'lg:min-h-0' : ''} ${bodyCardCls}`}>
                         {children}
                     </div>
                 </div>

@@ -157,15 +157,106 @@ policy, RPC o edge function. Escribirlo en cada caso, como se hizo con
 
 ---
 
+## 7-bis. EL CANON (decidido con el usuario, 2026-08-03)
+
+### Los cinco sufijos
+
+| Sufijo | Cuándo se usa | ¿Hace falta server-side? |
+|---|---|---|
+| `<modulo>_tab_<x>` | la vista tiene pestañas que son **cuerpos de datos distintos** (no cortes del mismo) | no, salvo que la pestaña traiga datos que el rol no debería leer |
+| `<modulo>_abrir` | la vista muestra un **documento o archivo almacenado** | **sí** — policy de Storage |
+| `<modulo>_descargar` | la vista **exporta, descarga o imprime** | **sí, si el archivo lo arma el servidor**. Si el CSV se arma en el navegador con datos que el rol ya puede leer, es orden de interfaz, no seguridad — decirlo en el comentario |
+| `<modulo>_ver_montos` | hay cards o columnas con `$` **que no son el propósito de la vista** | recomendable (RPC o policy) |
+| `<modulo>_ver_costos` | costo de compra | **sí** — policy |
+
+### Las seis reglas
+
+1. **El nombre empieza por la clave del módulo.** `facturas_compra_descargar`,
+   nunca `descargar_facturas`. Así el permiso se ordena solo junto a su módulo
+   y se ve de un vistazo qué vista toca.
+2. **`_tab_` es SOLO para pestañas.** Una capacidad jamás se llama `tab`. Es el
+   error que hay que deshacer en `productos_tab_catalogo_costos`.
+3. **La clave se registra en `permissionModules.js` el mismo día que el código la
+   consulta.** Lo que no está en el registro no se puede repartir — es lo que
+   pasó con `maintenance` (v2.356.1) y lo que deja filas huérfanas en la base.
+4. **Backfill en `true`** para todo rol que ya tiene el módulo. Nadie pierde
+   acceso el día del despliegue; apagar es una decisión explícita y reversible.
+5. **Si el permiso protege datos, tiene que existir del lado del servidor.** Un
+   gate que solo esconde botones es decorativo
+   (ver `feedback_client_side_credentials_are_decorative`).
+6. **El label habla del portal**, no del sistema de origen ni de la tubería
+   (regla de CLAUDE.md, "la pantalla habla del PORTAL").
+
+### `_ver_montos` no aplica cuando el monto ES la vista
+
+En Cotizaciones o en Ventas, esconder los `$` deja una pantalla sin sentido: el
+precio es el contenido, no un adorno. El sufijo es para vistas donde el monto es
+**una columna más** —Clientes, Conteo, Inventario— o donde el número es
+contable y el operativo no lo necesita. Aplicarlo por simetría sería ruido.
+
+---
+
+## 7-ter. Matriz por vista
+
+`TIENE` = permisos que consulta hoy · `QUITAR` = deriva a limpiar ·
+`AGREGAR` = propuesta. En negrita, las de prioridad alta (datos sensibles).
+
+| Módulo | Tiene hoy | Quitar | Agregar |
+|---|---|---|---|
+| `overview` (Dashboard) | `overview` + 17 `dash_*` | `dash_distribution` (widget eliminado) | — |
+| `staff_list` | `staff_list` | — | **`staff_list_descargar`** (CSV del padrón) |
+| `staff_detail` | `staff_detail` | — | — (`staff_salary` queda pendiente por decisión del usuario) |
+| `monitor` | `monitor` | — | — |
+| `time_audit` | `time_audit` | — | `time_audit_descargar` (CSV de marcaciones) |
+| `schedules` | `schedules` + 3 `_tab_` | `schedules_tab_catalog` (BD; migrar sus roles a `_shifts`) | — |
+| `requests` | `requests` | — | — |
+| `vacation_plan` | `vacation_plan` | — | — |
+| `payroll` | `payroll` | — | **`payroll_descargar`** (boletas y planilla con salarios) |
+| `ventas` | 3 `ventas_tab_*` | — | — (el monto ES la vista) |
+| `facturacion` | `facturacion` + 5 `_tab_` | — | `facturacion_ver_montos` |
+| `cotizaciones` | `cotizaciones` | — | `cotizaciones_descargar` (PDF) |
+| `clientes` | `clientes` | — | `clientes_ver_montos` (facturación por cliente) |
+| `productos` | 3 `_tab_` + `productos_tab_catalogo_costos` | el nombre `productos_tab_catalogo_costos` | `productos_ver_costos` (mismo permiso, nombre canónico) |
+| `minmax` | `minmax`, 2 `_tab_`, `_tab_solicitudes`, `minmax_ver_costos` | — | `minmax_descargar` (CSV) |
+| `ventas_perdidas` | — | — | `ventas_perdidas_descargar` |
+| `compras` | — | — | `compras_ver_montos`, `compras_tab_facturas`, `compras_tab_productos` |
+| `proveedores` | `proveedores` | — | — |
+| `conteo_inventario` | `conteo_inventario`, `conteo_ver_sistema` | — | `conteo_descargar` (hoja impresa — **rompe el ciego igual que ver la existencia**), `conteo_ver_montos` |
+| `laboratorios` | — | — | — |
+| `pedidos` | 5 `pedidos_tab_*` | `pedidos_tab_{diferencias,en_curso,recepcion}` (BD) | `pedidos_descargar` (impresión del pedido) |
+| `facturas_compra` | `facturas_compra`, `_abrir`, `_descargar`, `_ver_montos` | — | ✅ **es el modelo del canon** |
+| `libros_iva` | — | — | **`libros_iva_descargar`**, `libros_iva_ver_montos`, `libros_iva_tab_<7 libros>` |
+| `libro_compras_completo` | — | — | **`libro_compras_completo_descargar`**, `_ver_montos` |
+| `corte_z` | — | — | **`corte_z_descargar`** (PDF), `corte_z_ver_montos` |
+| `branches` | `branches` | — | `branches_descargar` (CSV de historial) |
+| `roles` | `roles` | — | — |
+| `announcements` | `announcements` | — | — |
+| `encuesta` | — | — | — |
+| `encuesta_admin` | `encuesta_admin` | — | — |
+| `emp_requests` · `emp_announcements` · `emp_profile` · `emp_documents` | vía `PermissionGuard` | `emp_home`, `emp_schedule` (BD) | — |
+| `kiosk_pin` · `su_pin` | ambos | — | — |
+| `permissions` · `auditview` · `ios_test` · `sync_health` · `orphan_objects` | cada uno el suyo | — | — |
+| `maintenance` | `maintenance` | — | ✅ registrado en v2.356.1 |
+| — (retirados) | — | `promociones` + sus 3 `_tab_` (BD) | — |
+
+**Total:** 9 filas huérfanas y 2 renombres a limpiar · 19 claves nuevas a crear,
+de las cuales 4 son de prioridad alta (`payroll_descargar`,
+`staff_list_descargar`, `libros_iva_descargar`, `corte_z_descargar` /
+`libro_compras_completo_descargar`).
+
+---
+
 ## 8. Decisiones pendientes del usuario
 
-1. **Alcance de la ejecución**: (a) limpiar la deriva del §3, (b) `_descargar` en
-   las 12 vistas del §4, (c) `_ver_montos` en las 9 del §5, (d) pestañas de
-   Libros IVA y Compras.
-2. **`staff_salary`**: implementarlo de verdad (frontend + server-side, porque
-   hoy el salario viaja al navegador de cualquiera que abra el expediente), o
-   borrarlo para que la pantalla deje de prometer un control que no existe.
+**Resueltas el 2026-08-03:**
 
-Cualquier creación de claves nuevas debería seguir el patrón de v2.354.0:
-**backfill en `true`** a los roles que ya tienen el módulo, para que el día del
-despliegue nadie pierda acceso, y que el apagado sea una decisión explícita.
+- **`staff_salary` queda como está.** No se implementa ni se borra en este
+  trabajo. Sigue siendo un hueco abierto y **el más serio del informe**: la
+  pantalla ofrece un control de "datos sensibles" que no existe en ninguna capa,
+  y el salario viaja al navegador de cualquiera que abra el expediente.
+- **Las claves nuevas arrancan encendidas** (backfill en `true` a todo rol que ya
+  tiene el módulo), igual que v2.354.0. Apagar es decisión explícita y reversible.
+- **El canon quedó definido** (§7-bis) y la matriz por vista también (§7-ter).
+
+**Sigue abierto:** el orden de ejecución de las 19 claves nuevas y de la limpieza
+de las 9 filas huérfanas.

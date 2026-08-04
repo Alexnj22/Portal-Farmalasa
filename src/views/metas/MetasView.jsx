@@ -10,10 +10,12 @@ import TabTablero from './TabTablero';
 import TabHistorico from './TabHistorico';
 import TabConfirmacion from './TabConfirmacion';
 import MetaModal from './MetaModal';
+import { SALAS_VENTA } from './metasUtils';
 
 // Metas por sala — docs/PLAN-METAS-2026-08-03.md. Tablero e Histórico (Fase 1)
-// + el flujo de confirmación supervisor→gerente (Fase 2). La vista de sala y
-// las bonificaciones llegan en fases siguientes.
+// + el flujo de confirmación supervisor→gerente (Fase 2). Este módulo es de
+// supervisión: la sala ve SU meta en el widget «Meta del mes» del Inicio
+// (`WidgetMetaSala`), no acá. Las bonificaciones llegan en fases siguientes.
 export default function MetasView() {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('metas', 'can_edit');
@@ -53,7 +55,7 @@ export default function MetasView() {
 
     // Solo salas de venta: las mismas 6 que devuelven los RPC del módulo.
     const salaOptions = useMemo(() => {
-        const idsVenta = new Set([2, 4, 25, 27, 28, 29]);
+        const idsVenta = new Set(SALAS_VENTA);
         return (branches || [])
             .filter((b) => idsVenta.has(b.id))
             .map((b) => ({ value: String(b.id), label: b.name }))
@@ -92,6 +94,7 @@ export default function MetasView() {
                     canApprove={canApprove}
                     reloadKey={reloadKey}
                     onChanged={() => setReloadKey((k) => k + 1)}
+                    searchTerm={search}
                 />
             )}
             {activeTab === 'historico' && (

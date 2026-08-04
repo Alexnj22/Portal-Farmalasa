@@ -325,10 +325,14 @@ autoría server-side, resultados congelados).
   5-7% de error), flujo confirmar→aprobar/devolver con candados de estado,
   pestaña Confirmación, ciclo diario (cron `metas-ciclo-diario` 8:00 SV) y
   notificaciones por rol. QA del ciclo entero 9/9.
-- **Fase 3 — HECHA a medias (v2.368.0)**: la meta de la sala salió como
+- **Fase 3 — HECHA (v2.368.0 + v2.369.0)**: la meta de la sala salió como
   **widget del Inicio**, no como la pantalla «Mi sala» de §6.2 (decisión del
-  usuario 2026-08-04, ver §11). Falta el resto de la fase: quitar `comingSoon`
-  del módulo y el pulido general.
+  usuario 2026-08-04, ver §11). `comingSoon` ya se había quitado en la Fase 1.
+  Pulido: el buscador de la barra ahora filtra también en Confirmación (estaba
+  puesto y no hacía nada), la leyenda de la barra de avance se alineó con las
+  marcas que nombra, y la lista de salas de venta quedó en un solo lugar
+  (`SALAS_VENTA` de `metasUtils`). QA de las tres pestañas en navegador con
+  datos, sin errores de consola; datos de prueba borrados.
 - **Fase 4**: bonificaciones — programas por producto y por laboratorio
   (config + cálculo + simulador), en modo informativo (interruptor apagado).
 - **Fase 5**: liquidación mensual unificada + exportable para planilla.

@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.369.0 — Metas: cierre de la Fase 3 — el buscador que no buscaba y la leyenda que mentía
+
+Pulido y verificación del módulo completo, pestaña por pestaña y con datos
+reales en el navegador. Dos de los hallazgos son cosas que se veían todos los
+días sin que nadie las mirara:
+
+- **El buscador aparecía en la pestaña Confirmación y no filtraba nada.** Es
+  uno solo para las tres pestañas: escribir el nombre de una sala en Tablero o
+  Histórico filtraba, y en Confirmación no pasaba nada. Ya filtra, con su
+  mensaje cuando ninguna sala coincide. El aviso de metas pendientes sigue
+  contando **todas** las del mes —es un hecho del mes, no del filtro— y el
+  botón «Generar propuestas» ya no reaparece por esconder las tarjetas con una
+  búsqueda.
+- **La leyenda de la barra de avance no señalaba lo que decía.** El «95%» se
+  repartía a lo ancho y quedaba en el centro de la barra, mientras la marca del
+  medio bono está al 86% de la escala: la etiqueta nombraba un punto que estaba
+  en otro lado. Ahora cada etiqueta va debajo de su marca.
+- El resumen decía «completo · medio · sin bo…» — el texto no cabía y se
+  cortaba justo en la palabra que explicaba el tercer número.
+- La lista de salas que venden estaba escrita dos veces (el módulo y el widget
+  del Inicio); ahora vive en un solo lugar.
+
+Verificado en navegador: las tres pestañas con datos, el filtrado en Tablero y
+Confirmación, los mensajes de «sin coincidencias» y el widget del Inicio, sin
+errores de consola. Las metas de prueba se borraron al terminar —
+`metas_sucursal` quedó en cero filas, sin notificaciones ni bitácora.
+
 ## v2.368.0 — Metas: la meta de la sala, como widget del Inicio
 
 La meta de cada sala deja de ser una pantalla aparte y pasa a ser un widget del

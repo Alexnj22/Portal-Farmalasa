@@ -90,7 +90,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                     value={resumen.conMeta > 0
                         ? `${resumen.tiers.completo} · ${resumen.tiers.medio} · ${resumen.tiers.nada}`
                         : '—'}
-                    sub={resumen.sinMeta > 0 ? `+${resumen.sinMeta} sin meta` : 'completo · medio · sin bono'}
+                    sub={resumen.sinMeta > 0 ? `+${resumen.sinMeta} sin meta` : 'completo · medio · nada'}
                     loading={loading}
                 />
             </CarrilCards>

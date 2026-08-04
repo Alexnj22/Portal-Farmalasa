@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Undo2, Sparkles, CalendarCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -25,7 +25,7 @@ const ESTADO_CFG = {
 // El ciclo del mes siguiente: el supervisor ajusta y confirma, el gerente
 // aprueba o devuelve con nota. También muestra el mes en curso si quedó
 // alguna meta sin oficializar (el sistema nunca la oficializa solo).
-export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged }) {
+export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged, searchTerm }) {
     const { showToast } = useToastStore();
     const ymActual = ymHoySV();
     const ymSig = ymSumar(ymActual, 1);
@@ -66,8 +66,25 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         return porSala;
     }, [historico, ymActual, ymSig]);
 
-    const delMesSig = rows.filter((r) => r.year_month === ymSig);
-    const pendientesActual = rows.filter((r) => r.year_month === ymActual && r.estado !== 'oficial');
+    // El buscador de la barra es UNO solo para las tres pestañas, así que acá
+    // también tiene que filtrar: si no, escribir el nombre de una sala no
+    // cambia nada y el control miente.
+    const coincide = useCallback(
+        (r) => {
+            const q = searchTerm?.trim().toLowerCase();
+            if (!q) return true;
+            return (salaNombre(r.branch_id) || '').toLowerCase().includes(q);
+        },
+        [searchTerm, salaNombre],
+    );
+
+    const delMesSig = rows.filter((r) => r.year_month === ymSig && coincide(r));
+    // El aviso cuenta TODAS las pendientes del mes: es un hecho del mes, no del
+    // filtro. Las tarjetas de abajo sí siguen al buscador.
+    const pendientesTodas = rows.filter((r) => r.year_month === ymActual && r.estado !== 'oficial');
+    const pendientesActual = pendientesTodas.filter(coincide);
+    // Sin filtrar: distingue «no hay propuestas» de «el buscador las escondió».
+    const hayDelMesSig = rows.some((r) => r.year_month === ymSig);
 
     const accion = async (fn, id, auditAction, auditDetails, okTitle, okBody) => {
         setBusy(id);
@@ -206,23 +223,31 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
 
     return (
         <div className="space-y-6">
-            {pendientesActual.length > 0 && (
+            {pendientesTodas.length > 0 && (
                 <section className="space-y-3">
                     <Notice variant="warning" icon={CalendarCheck}>
-                        {ymLabel(ymActual)} ya empezó y {pendientesActual.length === 1
+                        {ymLabel(ymActual)} ya empezó y {pendientesTodas.length === 1
                             ? 'una meta sigue sin oficializar'
-                            : `${pendientesActual.length} metas siguen sin oficializar`} — las salas la ven como pendiente.
+                            : `${pendientesTodas.length} metas siguen sin oficializar`} — las salas la ven como pendiente.
                     </Notice>
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {pendientesActual.map((r) => <FilaMeta key={r.id} r={r} />)}
-                    </div>
+                    {pendientesActual.length === 0 ? (
+                        <div data-surface="card" className="p-8 text-center">
+                            <p className="text-body-sm font-bold text-content-3">
+                                Ninguna de las pendientes coincide con &ldquo;{searchTerm}&rdquo;.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            {pendientesActual.map((r) => <FilaMeta key={r.id} r={r} />)}
+                        </div>
+                    )}
                 </section>
             )}
 
             <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <h2 className="text-body font-black">Metas de {ymLabel(ymSig).toLowerCase()}</h2>
-                    {canEdit && delMesSig.length === 0 && (
+                    {canEdit && !hayDelMesSig && (
                         <Button
                             variant="primary" icon={Sparkles} disabled={busy != null}
                             onClick={() => accion(
@@ -240,8 +265,10 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     <div data-surface="card" className="p-10 text-center">
                         <CalendarCheck size={28} className="mx-auto text-content-3 mb-2" />
                         <p className="text-body-sm font-bold text-content-3 max-w-md mx-auto">
-                            Todavía no hay metas para {ymLabel(ymSig).toLowerCase()}. El día 25 el
-                            portal las propone solo{canEdit ? ', o genéralas ahora con el botón' : ''}.
+                            {hayDelMesSig
+                                ? <>Ninguna sala coincide con &ldquo;{searchTerm}&rdquo;.</>
+                                : <>Todavía no hay metas para {ymLabel(ymSig).toLowerCase()}. El día 25 el
+                                    portal las propone solo{canEdit ? ', o genéralas ahora con el botón' : ''}.</>}
                         </p>
                     </div>
                 ) : (

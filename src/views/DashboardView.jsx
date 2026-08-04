@@ -28,6 +28,7 @@ import WidgetSrsInventory from './dashboard/WidgetSrsInventory';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
+import { SALAS_VENTA } from './metas/metasUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
@@ -125,9 +126,9 @@ const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5
 const MM_ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const MM_BRANCH_TO_ERP = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 
-// Las salas que venden, en el orden del tablero de Metas. Bodega (30) queda
-// fuera: no vende, así que no tiene meta (el RPC también la rechaza).
-const META_SALA_IDS = [2, 4, 25, 27, 28, 29];
+// Las salas que venden (Bodega no tiene meta) — la lista vive en el módulo de
+// Metas, que es su dueño; acá solo se consume.
+const META_SALA_IDS = SALAS_VENTA;
 
 const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req','meta_sala'];
 const TAB_WIDGETS = {

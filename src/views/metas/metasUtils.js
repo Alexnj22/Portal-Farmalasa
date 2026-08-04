@@ -30,6 +30,12 @@ export function ymLabelCorto(ym) {
 // El primer mes con ventas sincronizadas en el portal.
 export const YM_INICIO_HISTORIA = '2025-05';
 
+// Las salas que venden, en el orden del tablero. Es el mismo conjunto que
+// `erp_sucursal_map WHERE NOT es_bodega` y que devuelven todos los RPC del
+// módulo — Bodega no vende, así que no tiene meta. Vive acá porque lo necesitan
+// el módulo Y el widget del Inicio: tenerlo dos veces es tenerlo mal una vez.
+export const SALAS_VENTA = [2, 4, 25, 27, 28, 29];
+
 // Config del tramo del bono → cómo se pinta. El texto habla del negocio
 // («Bono completo»), nunca de la tubería.
 export const TRAMO_CFG = {

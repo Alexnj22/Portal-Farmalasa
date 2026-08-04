@@ -30,10 +30,18 @@ export default function BarraAvance({
                     />
                 )}
             </div>
-            <div className="flex justify-between text-micro font-bold text-content-3">
-                <span>$0</span>
-                <span className="text-warning-text">{umbralMedio}%</span>
-                <span className="text-success-text">meta</span>
+            {/* Las etiquetas van DEBAJO de su marca, no repartidas a lo ancho.
+                Con `justify-between` el «95%» quedaba en el centro de la barra
+                —a 43% de la escala— nombrando un punto que está en el 86%: la
+                leyenda decía una cosa y la marca estaba en otra. Como los dos
+                umbrales caen pegados (86.4% y 90.9% de la escala), una termina
+                antes de su marca y la otra empieza después, así no chocan. */}
+            <div className="relative h-3 text-micro font-bold text-content-3">
+                <span className="absolute left-0 top-0">$0</span>
+                <span className="absolute top-0 -translate-x-full pr-1 text-warning-text"
+                    style={{ left: `${escala(umbralMedio)}%` }}>{umbralMedio}%</span>
+                <span className="absolute top-0 pl-1 text-success-text"
+                    style={{ left: `${escala(umbralTotal)}%` }}>meta</span>
             </div>
         </div>
     );

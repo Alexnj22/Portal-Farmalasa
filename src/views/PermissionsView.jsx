@@ -667,7 +667,7 @@ const PermissionsView = () => {
         >
             {loading ? (
                 /* ── Skeleton ── */
-                <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[180px] xl:-mt-[200px] lg:h-[calc(100dvh-40px)]">
+                <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[180px] xl:-mt-[200px] lg:flex-1 lg:min-h-0">
                         {/* Skeleton left column */}
                         <div className="w-full lg:w-64 shrink-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] xl:pt-[200px] space-y-2.5 lg:pb-10">
                             {[...Array(6)].map((_, i) => (
@@ -709,7 +709,7 @@ const PermissionsView = () => {
                         </div>
                 </div>
             ) : (
-            <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[180px] xl:-mt-[200px] lg:h-[calc(100dvh-40px)]">
+            <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[180px] xl:-mt-[200px] lg:flex-1 lg:min-h-0">
 
                     {/* ── Columna izquierda: selector de cargos ── */}
                     <div className="w-full lg:w-64 shrink-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] xl:pt-[200px] [&::-webkit-scrollbar]:hidden">
@@ -961,7 +961,17 @@ const PermissionsView = () => {
                                             className={!groupActive && groupPartial ? 'opacity-40' : ''}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                    {/* MULTI-COLUMNA, no grilla. En una grilla todos los
+                                        elementos de una fila miden lo que el más alto, así que
+                                        una fila con Libros IVA (7 pestañas + 2 capacidades) al
+                                        lado de Corte Z (2 capacidades) dejaba un hueco vertical
+                                        enorme bajo el corto, y la siguiente fila arrancaba recién
+                                        después del largo. Con `columns` cada tarjeta ocupa su
+                                        alto y la columna sigue con la que viene.
+                                        El precio es que el orden de lectura pasa a ser por
+                                        columna en vez de por fila; dentro de un grupo de 3 a 12
+                                        módulos eso no cuesta nada, y el hueco sí se notaba. */}
+                                    <div className="columns-1 md:columns-2 xl:columns-3 gap-3">
                                         {g.modules.map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
                                             const tabPerms = m.sub
@@ -973,7 +983,7 @@ const PermissionsView = () => {
                                             return (
                                                 <div
                                                     key={m.key}
-                                                    className="animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both"
+                                                    className="mb-3 break-inside-avoid animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both"
                                                     style={{ animationDelay: `${(gi * 3 + i) * 40}ms` }}
                                                 >
                                                     <ModuleCard

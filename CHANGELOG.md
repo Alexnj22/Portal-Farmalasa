@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.363.1 — Permisos: las tarjetas se acomodan por su alto y el panel llega al borde
+
+Dos defectos que reportó el usuario con una captura, y los dos tenían una causa
+medible.
+
+**Las tarjetas dejaban huecos enormes.** Era una grilla, y en una grilla todos
+los elementos de una fila miden lo que el más alto. Con Libros IVA (7 pestañas +
+2 capacidades, 670px) al lado de Corte Z (2 capacidades, 330px), debajo del
+corto quedaba un vacío de 340px, y la fila siguiente arrancaba recién después
+del largo. Ahora es **multi-columna** (`columns-1 / md:2 / xl:3`): cada tarjeta
+ocupa su alto y la columna sigue con la que venga. El precio es que el orden de
+lectura pasa a ser por columna en vez de por fila — dentro de un grupo de 3 a 12
+módulos no cuesta nada, y el hueco sí se notaba.
+
+**El "borde" de abajo era el panel terminando antes de tiempo.** Medido: con una
+ventana de 1000px de alto, el panel derecho terminaba en el píxel 926 — **74px
+antes del borde**, y como es un contenedor con `overflow-y-auto`, ahí cortaba la
+tarjeta a la mitad. La causa: `lg:h-[calc(100dvh-40px)]`, una altura fija que
+asumía que el panel empezaba a 40px del tope. Empieza a −34px, por el
+`-mt-[200px]` que lo mete debajo del encabezado flotante, así que la cuenta
+sobraba por 74. Además el número dependía del aviso de "portal en construcción",
+que corre todo hacia abajo cuando está.
+
+El arreglo es dejar de calcular la altura: `lg:flex-1 lg:min-h-0`. El contenedor
+padre ya es `flex flex-col` con altura definida y su propio padding inferior, así
+que flex reparte lo que sobra y el panel termina exactamente donde tiene que
+terminar, con banner o sin banner. Es lo que ya hacían las otras cuatro vistas
+con este mismo layout (Avisos, Nómina, Cargos, Gestión de Encuesta) — Permisos
+era la única que hardcodeaba la altura.
+
 ## v2.363.0 — Metas: la base de datos de la Fase 1
 
 Migraciones `20260804032215` + `20260804032349` (solo BD; el frontend viene en

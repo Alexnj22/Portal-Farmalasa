@@ -1,9 +1,24 @@
 # Plan — Módulo de Metas y Bonificaciones de Ventas
 
-**Estado: DISEÑO APROBADO, decisiones CERRADAS (§8) — listo para Fase 1.**
-No se ha construido nada. Diseñado el 2026-08-03, en la misma sesión que cerró
-la auditoría de Ventas > Productos (v2.355.1–v2.359.0); decisiones cerradas
-con el usuario el mismo día.
+**Estado: FASE 1 COMPLETADA (v2.363.0 BD + v2.364.0 frontend, 2026-08-03).**
+Mockup aprobado por el usuario antes de construir; QA Playwright 14/14 en
+verde con los tres tramos del bono verificados contra ventas reales de julio.
+Quedan las fases 2-5 (§10). Notas de lo construido:
+
+- `comingSoon` se quitó en la FASE 1 (no en la 3 como decía §9 original): un
+  módulo `comingSoon` no tiene `<Route>` — nadie podía entrar. El acceso lo
+  controla `can_view` (el admin asigna en Permisos; el rol QA id=33 ya tiene
+  metas por el barrido 60/60).
+- El «hoy» de los RPC es el día de negocio SV (`America/El_Salvador`), no la
+  fecha UTC (migración 20260804032349).
+- Backtest de la proyección contra julio real: error medio ~3% (cortes 15 y
+  22 jul; Salud 3 -9% por mayoreo atípico de fin de mes).
+- **Pedido del usuario (2026-08-03): al FINALIZAR el módulo, agregar GRÁFICAS
+  al Tablero** (tendencia de cumplimiento por mes, meta vs venta). Cargar el
+  skill `dataviz` cuando se construyan.
+- Pendiente del usuario: asignar permisos reales (Supervisor/a de Ventas =
+  editar, Gerente General = aprobar) e ingresar sus metas históricas con
+  «Agregar meta».
 
 **El ciclo en una frase:** el día 25 el sistema calcula la meta propuesta del
 mes siguiente por sala y notifica al supervisor; el supervisor ajusta y
@@ -301,8 +316,9 @@ autoría server-side, resultados congelados).
 
 ## 10. Orden de construcción (actualizado)
 
-- **Fase 1**: metas — tabla + config + ingreso manual del histórico + RPCs de
-  cumplimiento y proyección + pantallas Tablero e Histórico.
+- **Fase 1 — HECHA (v2.363.0 + v2.364.0)**: metas — tabla + config + ingreso
+  manual del histórico + RPCs de cumplimiento y proyección + pantallas
+  Tablero e Histórico.
 - **Fase 2**: metas — propuestas + flujo de confirmación + notificaciones +
   crons.
 - **Fase 3**: vista «Mi sala» + quitar `comingSoon` + pulido + QA navegador.

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.365.3 — Metas: Fase 1 cerrada con QA
+
+Solo documentación: `docs/PLAN-METAS-2026-08-03.md` pasa a «Fase 1
+COMPLETADA». QA Playwright 14/14 en verde contra el preview con la cuenta de
+CI: los tres tramos del bono verificados con metas de prueba sobre las ventas
+REALES de julio (La Popular 102.7% → completo, Salud 2 97.2% → medio, Salud 3
+90.1% → nada), la meta creada de punta a punta por el MODAL (Salud 5, agosto:
+quedó al instante con «Bono completo» proyectado 100.2%), navegación de meses,
+histórico de 15 meses y cero errores de consola. Metas de prueba borradas al
+terminar; la tabla queda en 0 filas lista para las reales. Anotado el pedido
+del usuario: gráficas en el Tablero al finalizar el módulo. Nota de QA: en
+Chromium headless `@media(hover:hover)` no aplica y la raíz de CarrilCards
+intercepta clicks de lo que tenga debajo — en navegadores reales no pasa; los
+scripts usan `dispatchEvent('click')` para ese caso.
+
 ## v2.365.2 — El cuadre diario cubre también los CCF
 
 El cuadre miraba solo el libro de consumidor. La razón era buena —es el 99% del

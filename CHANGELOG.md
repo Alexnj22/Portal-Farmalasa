@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.370.4 — El login del cargo superusuario ya no dice «usuario no encontrado»
+
+Entrar con usuario y contraseña mostraba «Usuario no encontrado en el sistema.»
+y, un momento después, el portal abría igual. La contraseña nunca estuvo mal: la
+policy de lectura de `employees` esconde a quien tiene un cargo marcado como
+superusuario, **sin exceptuar al propio titular**, así que el paso siguiente al
+alta de sesión —leer el perfil desde `employees_safe`, que es `security_invoker`
+y por lo tanto pasa por RLS— recibía cero filas. La sesión ya estaba creada por
+`signInWithPassword`, y el perfil terminaba armándolo el otro camino
+(`ensure_user_by_code`, que corre con service_role y no pasa por RLS): de ahí el
+error seguido del ingreso.
+
+La policy ahora agrega `OR id = (SELECT auth_employee_id())`: uno siempre se ve a
+sí mismo. El cargo superusuario sigue oculto para los demás — verificado contra
+producción en las dos direcciones, el titular se ve (1 fila) y otro empleado no lo
+ve (0).
+
 ## v2.370.3 — Metas: el bono también proyectado al cierre
 
 El cumplimiento de hoy dice dónde va la sala; ahora la pestaña dice además en

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Button from '../common/Button';
 import { Archive, AlertTriangle, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
+import { useAuth } from '../../context/AuthContext';
 import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
 import SegmentedControl from '../common/SegmentedControl';
@@ -140,6 +141,13 @@ const PdfZoomViewer = ({ src }) => {
 // — en vez del texto crudo. Tab a "PDF" cuando el documento tiene uno asociado.
 const FormPurchaseDteViewer = ({ formData }) => {
     const { document } = formData || {};
+    // Llegar acá ya exige `facturas_compra_abrir` (la vista es el único origen
+    // del modal). Lo que falta chequear es lo OTRO: llevarse el archivo es un
+    // permiso aparte, así que los tres botones de descarga del encabezado se
+    // consultan acá y no se pasan por prop — UnifiedModal no reenvía nada más
+    // que formData.
+    const { hasPermission } = useAuth();
+    const canDownload = hasPermission('facturas_compra_descargar');
     const [tab, setTab] = useState('detalle');
     const [dte, setDte] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -255,13 +263,15 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 options={[{ value: 'detalle', label: 'Detalle' }, { value: 'pdf', label: 'PDF' }]}
                             />
                         )}
-                        {document?.pdf_path && (
+                        {canDownload && document?.pdf_path && (
                             <Button variant="secondary" icon={Archive} disabled={downloadingAll} title="Descargar PDF + JSON en un ZIP" onClick={downloadAll}>{downloadingAll ? 'Armando ZIP…' : 'Todo'}</Button>
                         )}
-                        {document?.pdf_path && (
+                        {canDownload && document?.pdf_path && (
                             <Button variant="secondary" icon={Download} onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}>PDF</Button>
                         )}
-                        <Button icon={Download} onClick={() => downloadStoredFile(document?.json_path, `${document?.codigo_generacion}.json`)}>JSON</Button>
+                        {canDownload && (
+                            <Button icon={Download} onClick={() => downloadStoredFile(document?.json_path, `${document?.codigo_generacion}.json`)}>JSON</Button>
+                        )}
                     </div>
                 </div>
                 {downloadAllError && (

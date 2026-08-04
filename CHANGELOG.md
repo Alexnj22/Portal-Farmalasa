@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.354.1 — Abrir y descargar son dos permisos, no uno
+
+Corrección de v2.354.0, del mismo día: ahí salió **un** permiso que cubría las
+dos cosas juntas, y son dos decisiones distintas. `facturas_compra_archivos` se
+partió en:
+
+- **Abrir el Documento (JSON/PDF)** (`facturas_compra_abrir`) — clic en la fila,
+  detalle con el JSON armado como factura y el PDF en el visor, los enlaces a la
+  nota de crédito / al documento original / al PDF que justificó una anulación,
+  el visor de los adjuntos de Revisión, y "Detectar código" (que baja el PDF y lo
+  parsea, pero no lo deja en el disco de nadie).
+- **Descargar Archivos (JSON/PDF/ZIP)** (`facturas_compra_descargar`) — los tres
+  botones de la fila (JSON, PDF, paquete), los tres del encabezado del detalle
+  ("Todo", "PDF", "JSON") y "Descargar" de la barra de filtros, que es el ZIP de
+  todo el período.
+
+Las cuatro combinaciones son válidas y hacen lo que dicen: solo abrir deja mirar
+sin llevarse nada; solo descargar deja llevarse el archivo sin que la fila se
+abra; ninguno de los dos deja el listado pelado (fecha, proveedor, tipo, número
+de control, monto).
+
+**Dónde llega el candado, y dónde no.** El ZIP del período se firma en
+`export-purchase-dte-manifest`, que ahora exige específicamente el permiso de
+descargar: sin él no emite ni una URL. Para el archivo suelto,
+`purchase_dte_storage_select` acepta cualquiera de los dos, porque abrir el PDF
+en el visor necesita leer el objeto igual que descargarlo — **una URL firmada
+sirve para ver y para guardar**, así que "abrir sin poder descargar" es una
+separación de la interfaz, no del byte. Se dice acá para que nadie lo tome por
+un control que no es. Verificado con transacciones que apagan cada permiso y
+hacen `ROLLBACK`: abrir solo → lee el bucket; descargar solo → lee el bucket;
+los dos apagados → sigue viendo el módulo y el bucket le devuelve cero.
+
+Los 5 roles que ya veían el módulo tienen los dos permisos en `true`, o sea el
+mismo acceso que antes de todo el cambio.
+
+Migración `20260804004157_facturas_compra_abrir_y_descargar_separados`.
+
 ## v2.354.0 — Permiso aparte para abrir y descargar el documento de compra
 
 Hasta hoy, en Facturas de Compra ver el listado y acceder al archivo eran la

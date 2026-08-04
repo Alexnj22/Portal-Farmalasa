@@ -603,7 +603,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
 
 function TabDocumentos({
     dateRange, setDateRange,
-    searchTerm, refreshKey, openModal, proveedores, canEdit, canOpenFiles, showCards,
+    searchTerm, refreshKey, openModal, proveedores, canEdit, canOpen, canDownload, showCards,
     syncing, syncProgress, runSyncNow,
 }) {
     const [dateStart, dateEnd] = dateRange.split('|');
@@ -940,7 +940,7 @@ function TabDocumentos({
                     onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); setFilterInvalidados(false); setFilterTipo(''); }}
                     activeCount={[dateDirty, filterSinProveedor, filterInvalidados, !!filterTipo].filter(Boolean).length}
                     acciones={[
-                        ...(canOpenFiles && filtered.length > 0 ? [{
+                        ...(canDownload && filtered.length > 0 ? [{
                             key: 'descargar', icon: Download,
                             // El rótulo NO lleva el contador, y es a propósito:
                             // FilterBar arma su clave de medición con los
@@ -1034,7 +1034,7 @@ function TabDocumentos({
 
             <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
                 {pageRows.map((row, i) => (
-                    <DataRow key={row.id} index={i} onClick={canOpenFiles ? () => viewDetail(row) : undefined}>
+                    <DataRow key={row.id} index={i} onClick={canOpen ? () => viewDetail(row) : undefined}>
                         <DataCell>
                             <span className="font-semibold text-content-2 tabular-nums">{fmtDate(row.fecha_emision)}</span>
                         </DataCell>
@@ -1061,15 +1061,15 @@ function TabDocumentos({
                                     caso Jamilu: poder ver el PDF que justificó la anulación sin
                                     tener que abrir el detalle primero (invalidacion_source viene de
                                     classify_purchase_dte_review vía review_queue.matched_document_id). */}
-                                {canOpenFiles && row.invalidado && row.invalidacion_source?.file_path && (
+                                {canOpen && row.invalidado && row.invalidacion_source?.file_path && (
                                     <Button variant="destructive" icon={Link2} title="Ver el PDF que justificó la anulación" onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}>Ver documento</Button>
                                 )}
-                                {canOpenFiles && row.notas_credito?.length > 0 && (
+                                {canOpen && row.notas_credito?.length > 0 && (
                                     <Button tone="warning" icon={Link2} title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`} onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}>NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}</Button>
                                 )}
                                 {/* Inverso del badge NC — desde la NC/ND se puede ver el CCF/Factura
                                     que corrige (a pedido del usuario, misma mecánica que el badge de arriba). */}
-                                {canOpenFiles && row.documento_relacionado && (
+                                {canOpen && row.documento_relacionado && (
                                     <Button tone="chart-1" icon={Link2} title={`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`} onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}>Ver original</Button>
                                 )}
                                 {/* Confirmado desde Revisión sin que su JSON llegara nunca — ver
@@ -1081,9 +1081,10 @@ function TabDocumentos({
                                             <>
                                                 {/* Detectar el código BAJA el PDF y lo parsea en el
                                                     navegador — es leer el documento, así que va con
-                                                    el mismo permiso que abrirlo. Adjuntar JSON no
-                                                    toca ningún archivo (es un RPC de fusión). */}
-                                                {canOpenFiles && (
+                                                    el permiso de abrirlo (no con el de descargar:
+                                                    el archivo no queda en el disco del usuario).
+                                                    Adjuntar JSON no toca ningún archivo (RPC). */}
+                                                {canOpen && (
                                                     <DetectCodeAction
                                                         pdfPath={row.pdf_path}
                                                         onFound={(match) => mergePorCodigo(row, match)}
@@ -1108,12 +1109,18 @@ function TabDocumentos({
                             <span className="tabular-nums font-bold text-content">{fmt$(row.monto_total)}</span>
                         </DataCell>
                         <DataCell align="center">
-                            {canOpenFiles && (
+                            {(canOpen || canDownload) && (
                                 <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                    <Button tone="chart-1" icon={Eye} title="Ver detalle" iconOnly onClick={() => viewDetail(row)} />
-                                    <Button tone="chart-1" icon={FileJson} disabled={!row.json_path} title={row.json_path ? 'Descargar JSON' : 'Sin JSON'} iconOnly onClick={() => download(row.json_path, 'json', row)} />
-                                    <Button tone="chart-1" icon={Download} disabled={!row.pdf_path} title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'} iconOnly onClick={() => download(row.pdf_path, 'pdf', row)} />
-                                    <Button tone="chart-1" icon={Archive} title="Descargar paquete (JSON+PDF)" iconOnly onClick={() => downloadPackage(row)} />
+                                    {canOpen && (
+                                        <Button tone="chart-1" icon={Eye} title="Ver detalle" iconOnly onClick={() => viewDetail(row)} />
+                                    )}
+                                    {canDownload && (
+                                        <>
+                                            <Button tone="chart-1" icon={FileJson} disabled={!row.json_path} title={row.json_path ? 'Descargar JSON' : 'Sin JSON'} iconOnly onClick={() => download(row.json_path, 'json', row)} />
+                                            <Button tone="chart-1" icon={Download} disabled={!row.pdf_path} title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'} iconOnly onClick={() => download(row.pdf_path, 'pdf', row)} />
+                                            <Button tone="chart-1" icon={Archive} title="Descargar paquete (JSON+PDF)" iconOnly onClick={() => downloadPackage(row)} />
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </DataCell>
@@ -1137,7 +1144,7 @@ function TabDocumentos({
 
 // ── TabRevision ───────────────────────────────────────────────────────────────
 
-function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, canEdit, canOpenFiles, openModal }) {
+function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, canEdit, canOpen, openModal }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [rowError, setRowError] = useState('');
@@ -1254,7 +1261,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
 
             <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Sin pendientes de revisión' }}>
                 {filtered.map((row, i) => (
-                    <DataRow key={row.id} index={i} onClick={canOpenFiles ? () => openFile(row) : undefined}>
+                    <DataRow key={row.id} index={i} onClick={canOpen ? () => openFile(row) : undefined}>
                         <DataCell>
                             <span className="font-semibold text-content-2 tabular-nums text-label">{fmtDateTime(row.received_at)}</span>
                         </DataCell>
@@ -1273,7 +1280,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                             <span className="text-content-2 text-label">{row.from_email || '—'}</span>
                         </DataCell>
                         <DataCell>
-                            {canOpenFiles ? (
+                            {canOpen ? (
                                 <Button variant="ghost" title={row.filename} onClick={() => openFile(row)}>{row.filename}</Button>
                             ) : (
                                 // Sin permiso para abrirlo el nombre sigue en pantalla —
@@ -1294,7 +1301,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                                 {/* Igual que en Documentos: detectar el código baja
                                                     y parsea el PDF, así que necesita el permiso de
                                                     abrir el documento. */}
-                                                {!anyOpen && canOpenFiles && (
+                                                {!anyOpen && canOpen && (
                                                     <DetectCodeAction
                                                         pdfPath={row.file_path}
                                                         detectedCodigo={row.ai_suggested?.detected_codigo_generacion}
@@ -1361,17 +1368,20 @@ export default function FacturasCompraView({ openModal }) {
     // patrón que minmax_ver_costos) — algunos roles con acceso al módulo no
     // deben ver montos ($) de compras, solo los documentos.
     const canViewCards = hasPermission('facturas_compra_ver_montos');
-    // Pedido del usuario 2026-08-03: separar "ver el listado" de "abrir el
-    // documento". Sin este permiso la fila no se puede clickear, no se abre el
-    // detalle (que trae el JSON armado como factura y el PDF adentro) y no hay
-    // ninguna descarga — quedan fecha, proveedor, tipo, n° de control y monto.
-    // Quien lo tiene puede las dos cosas: abrir y descargar.
+    // Pedido del usuario 2026-08-03: abrir y descargar son cosas distintas y
+    // van en permisos distintos. `abrir` = ver el documento en pantalla (clic
+    // en la fila → detalle con el JSON armado como factura y el PDF adentro,
+    // y el visor de los adjuntos de Revisión). `descargar` = llevarse el
+    // archivo (JSON, PDF, el paquete de la fila y el ZIP del período). Sin
+    // ninguno de los dos quedan fecha, proveedor, tipo, n° de control y monto.
     //
-    // No alcanza con esconder los botones: la policy de Storage
-    // (`purchase_dte_storage_select`) y `export-purchase-dte-manifest` piden la
-    // MISMA clave, así que sin el permiso tampoco se emite una URL firmada por
-    // fuera de la vista.
-    const canOpenFiles = hasPermission('facturas_compra_archivos');
+    // No alcanza con esconder los botones: `purchase_dte_storage_select` exige
+    // uno de los dos para leer el bucket, y la edge function del ZIP masivo
+    // exige el de descargar. Lo que NO se puede separar server-side es el
+    // archivo suelto — una URL firmada sirve para ver y para guardar, así que
+    // "abrir sin poder descargar" es una separación de la interfaz, no del byte.
+    const canOpen     = hasPermission('facturas_compra_abrir');
+    const canDownload = hasPermission('facturas_compra_descargar');
 
     const [searchParams, setSearchParams] = useSearchParams();
     const rawTab = searchParams.get('tab');
@@ -1469,7 +1479,8 @@ export default function FacturasCompraView({ openModal }) {
                     openModal={openModal}
                     proveedores={proveedores}
                     canEdit={canEdit}
-                    canOpenFiles={canOpenFiles}
+                    canOpen={canOpen}
+                    canDownload={canDownload}
                     showCards={canViewCards}
                     syncing={syncing}
                     syncProgress={syncProgress}
@@ -1484,7 +1495,7 @@ export default function FacturasCompraView({ openModal }) {
                     dateStart={dateStart}
                     dateEnd={dateEnd}
                     canEdit={canEdit}
-                    canOpenFiles={canOpenFiles}
+                    canOpen={canOpen}
                     openModal={openModal}
                 />
             )}

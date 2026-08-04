@@ -78,16 +78,18 @@ Deno.serve(async (req) => {
     });
   }
   // Hacen falta las DOS claves: ver el módulo y, desde 2026-08-03, el permiso
-  // aparte de abrir/descargar el documento (`facturas_compra_archivos`). Sin la
-  // segunda esta función no emite ni una firma — es lo que evita que esconder
-  // el botón "Descargar" en la vista sea todo el candado. La policy de Storage
-  // pide la misma clave para el archivo suelto.
+  // de DESCARGAR (`facturas_compra_descargar`). Acá va ese y no el de abrir,
+  // que es lo que separa a los dos permisos: el ZIP del período es la descarga
+  // más grande del módulo, así que quien solo puede mirar documentos en
+  // pantalla no obtiene ni una firma de esta función. Para el archivo suelto la
+  // policy de Storage acepta cualquiera de los dos — una URL firmada sirve para
+  // ver y para guardar, y ahí la separación es de la interfaz, no del byte.
   const { data: empRole } = await admin.from("employees").select("role_id").eq("id", employee.id).single();
   const { data: perms, error: permErr } = await admin.from("role_permissions").select("module_key, can_view")
     .eq("role_id", empRole?.role_id ?? -1)
-    .in("module_key", ["facturas_compra", "facturas_compra_archivos"]);
+    .in("module_key", ["facturas_compra", "facturas_compra_descargar"]);
   const puede = (key: string) => (perms ?? []).some((p) => p.module_key === key && p.can_view === true);
-  if (permErr || !puede("facturas_compra") || !puede("facturas_compra_archivos")) {
+  if (permErr || !puede("facturas_compra") || !puede("facturas_compra_descargar")) {
     return new Response(JSON.stringify({ error: "FORBIDDEN" }), {
       status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

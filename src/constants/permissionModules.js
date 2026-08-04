@@ -127,6 +127,14 @@ export const MODULE_GROUPS = [
         color: 'text-chart-1-text',
         modules: [
             { key: 'facturas_compra', label: 'Facturas de Compra (Correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icon: FileText, hasApprove: false, tabs: [
+                // Separa "ver el listado" de "abrir el documento" (pedido del
+                // usuario 2026-08-03). Sin este permiso la fila no se clickea y
+                // no hay descarga: se ven fecha, proveedor, tipo, n° de control
+                // y monto, y nada más. El gate NO vive solo en la vista — la
+                // policy de Storage `purchase_dte_storage_select` y la edge
+                // function `export-purchase-dte-manifest` exigen esta misma
+                // clave, si no las firmas se podrían pedir igual por fuera.
+                { key: 'facturas_compra_archivos',   label: 'Abrir y Descargar el Documento (JSON/PDF)' },
                 { key: 'facturas_compra_ver_montos', label: 'Cards Contables' },
             ]},
             { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido', icon: BookOpen, hasApprove: false, hasScope: true },

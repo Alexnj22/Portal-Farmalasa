@@ -77,10 +77,17 @@ Deno.serve(async (req) => {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  // Hacen falta las DOS claves: ver el módulo y, desde 2026-08-03, el permiso
+  // aparte de abrir/descargar el documento (`facturas_compra_archivos`). Sin la
+  // segunda esta función no emite ni una firma — es lo que evita que esconder
+  // el botón "Descargar" en la vista sea todo el candado. La policy de Storage
+  // pide la misma clave para el archivo suelto.
   const { data: empRole } = await admin.from("employees").select("role_id").eq("id", employee.id).single();
-  const { data: perm } = await admin.from("role_permissions").select("can_view")
-    .eq("role_id", empRole?.role_id ?? -1).eq("module_key", "facturas_compra").single();
-  if (perm?.can_view !== true) {
+  const { data: perms, error: permErr } = await admin.from("role_permissions").select("module_key, can_view")
+    .eq("role_id", empRole?.role_id ?? -1)
+    .in("module_key", ["facturas_compra", "facturas_compra_archivos"]);
+  const puede = (key: string) => (perms ?? []).some((p) => p.module_key === key && p.can_view === true);
+  if (permErr || !puede("facturas_compra") || !puede("facturas_compra_archivos")) {
     return new Response(JSON.stringify({ error: "FORBIDDEN" }), {
       status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

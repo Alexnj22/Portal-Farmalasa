@@ -60,8 +60,13 @@ const MENU_GROUPS = [
     { key: 'rrhh',          label: 'RRHH',          icon: Users,         modules: ['entrevistas']                        },
     // `clientes` entra acá y no en un grupo propio: el receptor de la factura es
     // el mismo asunto que Facturación y Cotizaciones, y quien factura es quien
-    // necesita su ficha fiscal correcta. Quedan 5 de los 6 que admite un grupo.
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'clientes'] },
+    // necesita su ficha fiscal correcta. Quedan 4 de los 6 que admite un grupo.
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes'] },
+    // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
+    // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
+    // así que queda a un click desde cualquier pantalla en vez de detrás del
+    // acordeón. Va pegado a Bonificaciones: el tramo del bono sale de la meta.
+    { key: 'metas',        label: 'Metas',         icon: Target,        modules: ['metas'] },
     // La vista de Promociones se retiró el 2026-07-28 (pedido del usuario):
     // el grupo queda como el slot de Bonificaciones, que se construye después.
     { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift, modules: ['bonificaciones'] },

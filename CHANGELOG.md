@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.369.1 — Metas sale de Comercial: ahora es un menú principal
+
+Pedido del usuario. **Metas** estaba dentro del acordeón de *Comercial*, junto a
+Ventas, Facturación, Cotizaciones y Clientes: llegar a ella eran dos clicks —
+abrir el grupo y después elegir el módulo— y con el menú colapsado había que
+pasar por el flyout. Ahora es una entrada propia del menú, al mismo nivel que
+Inicio o Nómina, con su ícono de diana y a un click desde cualquier pantalla.
+
+No hizo falta código nuevo: un grupo con un solo módulo ya se pinta plano
+(`renderGroup` → `renderNavItem`), que es como se ven hoy Nómina, Personal,
+Documentos y Pedidos a Sucursales. El cambio es sacar `metas` de la lista de
+*Comercial* y darle su propia fila, **pegada a Bonificaciones** — el tramo del
+bono sale de la meta, y quedan una debajo de la otra.
+
+*Comercial* queda con 4 módulos. El permiso de Metas **no se movió**: sigue en
+el grupo Comercial de la pantalla de Permisos, que es donde lo busca quien
+reparte accesos (mismo criterio que Bonificaciones, que también tiene menú
+propio y permiso ahí adentro).
+
 ## v2.369.0 — Metas: cierre de la Fase 3 — el buscador que no buscaba y la leyenda que mentía
 
 Pulido y verificación del módulo completo, pestaña por pestaña y con datos

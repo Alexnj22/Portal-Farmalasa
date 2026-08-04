@@ -129,30 +129,6 @@
    "distrito"
   ]
  },
- "17808": {
-  "erp_id": "17808",
-  "name": "ELMER EVANI ZELAYA CASAMALHUAPA",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "18837": {
-  "erp_id": "18837",
-  "name": "OPEN SOLUTIONS SYSTEMS S.A DE C.V",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "19145": {
-  "erp_id": "19145",
-  "name": "SANTOS  CASTANEDA",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
  "19338": {
   "erp_id": "19338",
   "name": "NELSY SOFIA GONZALES BARRIENTOS",
@@ -161,19 +137,12 @@
    "distrito"
   ]
  },
- "19428": {
-  "erp_id": "19428",
-  "name": "STTEFANY GRISSEL ALVARENGA DE MARAVILLA  (4P)",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
  "19520": {
   "erp_id": "19520",
-  "name": "FRANKLIN ROSA ABEL SOLIS MOLINA",
-  "categoria": "(sin categoría)",
+  "name": "franklin rosa abel solis molina",
+  "categoria": "?",
   "faltan": [
+   "nombre",
    "telefono1",
    "departamento",
    "municipio",
@@ -891,6 +860,26 @@
    "sel_giro",
    "correo",
    "direccion"
+  ]
+ },
+ "18197": {
+  "erp_id": "18197",
+  "name": "BLANCA YESSENIA ROMERO GAVARRETE",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "19188": {
+  "erp_id": "19188",
+  "name": "BLANCA LIDIA ORELLANA ALEMAN",
+  "categoria": "Extranjero",
+  "faltan": [
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo"
   ]
  }
 }

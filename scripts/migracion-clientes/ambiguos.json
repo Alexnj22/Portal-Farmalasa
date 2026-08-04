@@ -10,7 +10,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-03 19:42:50"
+  "ts": "2026-08-03 22:03:12"
  },
  {
   "tipo": "rechazo-erp",
@@ -23,7 +23,7 @@
   "cambios_intentados": {
    "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-03 19:42:53"
+  "ts": "2026-08-03 22:03:14"
  },
  {
   "tipo": "rechazo-erp",
@@ -37,7 +37,7 @@
    "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
    "dui": "INVÁLIDO '08666142-6' -> se borra"
   },
-  "ts": "2026-08-03 19:42:55"
+  "ts": "2026-08-03 22:03:16"
  },
  {
   "tipo": "rechazo-erp",
@@ -50,7 +50,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
   },
-  "ts": "2026-08-03 19:42:58"
+  "ts": "2026-08-03 22:03:18"
  },
  {
   "tipo": "rechazo-erp",
@@ -63,7 +63,7 @@
   "cambios_intentados": {
    "distrito": "CHALATENANGO (dirección (nombre completo))"
   },
-  "ts": "2026-08-03 19:42:59"
+  "ts": "2026-08-03 22:03:20"
  },
  {
   "tipo": "rechazo-erp",
@@ -76,6 +76,6 @@
   "cambios_intentados": {
    "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
   },
-  "ts": "2026-08-03 19:43:01"
+  "ts": "2026-08-03 22:03:22"
  }
 ]

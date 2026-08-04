@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus } from 'lucide-react';
+import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus, ShieldCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -11,6 +12,7 @@ import { formatMoney, formatPct } from '../../utils/formatNumber';
 import {
     fetchMetasRows, fetchMetasHistorico, generarPropuestas,
     confirmarMeta, aprobarMeta, devolverMeta,
+    fetchAutorizadores, aprobarMetaPorAutorizacion,
 } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from './metasUtils';
@@ -44,6 +46,10 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     const [ajustes, setAjustes] = useState({});
     const [devolviendo, setDevolviendo] = useState(null); // id → abre el campo de nota
     const [notaDev, setNotaDev] = useState('');
+    const [autorizando, setAutorizando] = useState(null); // id → abre el registro de autorización
+    const [notaAut, setNotaAut] = useState('');
+    const [quienAut, setQuienAut] = useState('');
+    const [autorizadores, setAutorizadores] = useState([]);
     const [busy, setBusy] = useState(null);       // id (o 'generar') en vuelo
 
     const cargar = () => {
@@ -56,6 +62,16 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         return () => { alive = false; };
     };
     useEffect(cargar, [reloadKey, ymActual, ymSig]);
+
+    // La lista de gerentes se pide una vez: alimenta el selector de «quién
+    // autorizó» y también resuelve el nombre en las metas ya asentadas.
+    useEffect(() => {
+        let alive = true;
+        fetchAutorizadores()
+            .then((a) => { if (alive) setAutorizadores(a); })
+            .catch(() => { /* sin lista: el botón queda sin opciones y no se puede registrar */ });
+        return () => { alive = false; };
+    }, []);
 
     // Contexto por sala, derivado del histórico ya calculado: el mismo mes del
     // año pasado, el promedio de los últimos 3 meses cerrados y en cuánto cerró
@@ -249,7 +265,57 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             </Button>
                         </>
                     )}
+                    {/* El camino para cuando el gerente autoriza de palabra y no
+                        entra al portal. Solo aparece a quien NO puede aprobar:
+                        el que sí puede, aprueba y listo. */}
+                    {!canApprove && canEdit && r.estado === 'confirmada_supervisor' && (
+                        <Button variant="secondary" icon={ShieldCheck} disabled={busy != null}
+                            onClick={() => { setAutorizando(autorizando === r.id ? null : r.id); setNotaAut(''); setQuienAut(''); }}>
+                            Registrar autorización del gerente
+                        </Button>
+                    )}
                 </div>
+
+                {autorizando === r.id && (
+                    <div data-surface="card" data-tono="warning" className="mt-3 p-3 space-y-2">
+                        <p className="text-label font-semibold text-content-2">
+                            Esto la deja oficial. Queda asentado que la ejecutaste vos con
+                            autorización de quien elijas, y a esa persona le llega el aviso.
+                        </p>
+                        <LiquidSelect
+                            value={quienAut} onChange={setQuienAut}
+                            options={autorizadores.map((a) => ({ value: a.id, label: a.name }))}
+                            placeholder="¿Quién autorizó?"
+                        />
+                        <PortalInput
+                            label="¿Cómo lo autorizó?" name={`nota-aut-${r.id}`}
+                            value={notaAut} onChange={(e) => setNotaAut(e.target.value)}
+                            placeholder="Ej. lo aprobó por teléfono el 4 de agosto" required
+                        />
+                        <Button
+                            variant="primary" icon={ShieldCheck}
+                            disabled={busy != null || !quienAut || !notaAut.trim()}
+                            onClick={() => accion(
+                                () => aprobarMetaPorAutorizacion({ id: r.id, autorizoPor: quienAut, nota: notaAut.trim() }),
+                                r.id, 'METAS_APROBAR_POR_AUTORIZACION',
+                                { sala: salaNombre(r.branch_id), mes: r.year_month, monto: r.monto_meta,
+                                  autorizo: autorizadores.find((a) => a.id === quienAut)?.name, nota: notaAut.trim() },
+                                'Meta oficial', 'Quedó registrada con la autorización, y a quien autorizó le llegó el aviso.',
+                            )}
+                        >
+                            Dejar oficial con esta autorización
+                        </Button>
+                    </div>
+                )}
+
+                {r.estado === 'oficial' && r.autorizado_por && (
+                    <p className="mt-3 text-label font-semibold text-content-3">
+                        Oficial por autorización de <strong className="text-content-2">
+                            {autorizadores.find((a) => a.id === r.autorizado_por)?.name || 'la gerencia'}
+                        </strong>
+                        {r.autorizado_nota ? ` — ${r.autorizado_nota}` : ''}
+                    </p>
+                )}
 
                 {devolviendo === r.id && (
                     <div className="mt-3 space-y-2">

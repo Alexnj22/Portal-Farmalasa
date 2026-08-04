@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.372.0 — Metas: aprobar registrando la autorización del gerente
+
+Confirmar una meta la deja en «espera aprobación», no oficial: el paso final es
+del gerente. Pero el gerente muchas veces autoriza de palabra y no entra al
+portal, así que las metas se quedaban ahí. Ahora el supervisor puede dejarla
+oficial **asentando quién lo autorizó**.
+
+**La autoría no se inventa.** `gerente_por` guarda a quien *ejecutó* la acción en
+el portal, y la columna nueva `autorizado_por` a quien la *autorizó*. Nunca se
+escribe al gerente como si hubiera entrado él — eso sería falsificar una firma,
+que es justo lo que este camino no puede hacer.
+
+Los cuatro controles que lo hacen defendible, todos en el servidor:
+
+1. **Al gerente le llega el aviso en el momento**: *«Fulano dejó oficial la meta
+   de septiembre diciendo que vos la autorizaste. Si no fue así, avisá.»* Sin
+   esto, «el gerente autorizó» es nada más un dicho.
+2. **Quien autoriza tiene que ser un gerente activo de verdad** — sale de
+   `get_metas_autorizadores()`, no de un campo libre.
+3. **Nadie puede registrarse a sí mismo** como quien autorizó.
+4. **La nota es obligatoria**: hay que decir cómo se dio esa autorización
+   («lo aprobó por teléfono el 4 de agosto»).
+
+El botón solo aparece a quien **no** puede aprobar: el que sí puede, aprueba y
+listo. Y la meta ya oficial muestra la línea «Oficial por autorización de
+<gerente> — <nota>».
+
+**Hallazgo aparte, y es el que explica el problema de fondo:** el rol *Gerente
+General* **no tiene ningún permiso sobre Metas** — ni ver. Rutilio Alemán recibe
+los avisos de «Metas por aprobar» y no puede abrir el módulo. Hoy ninguna meta
+podía llegar a oficial salvo por la cuenta de CI. Queda señalado sin tocarlo:
+repartir accesos es decisión del usuario, no de quien programa.
+
+Probado de punta a punta en el navegador con una meta sintética de septiembre y
+el rol de la cuenta de prueba, ambos revertidos al terminar: quedó `oficial`,
+ejecutó QA Testing, autorizó Rutilio Alemán, y el aviso le llegó a él. Las 6
+metas de agosto quedaron intactas en `propuesta`.
+
 ## v2.371.3 — Metas: aviso propio, centavos, y Confirmación con contexto
 
 Cinco correcciones del usuario sobre la pantalla, todas verificadas en el

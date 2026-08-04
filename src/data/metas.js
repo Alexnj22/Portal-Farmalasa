@@ -42,7 +42,7 @@ export async function fetchMetasConfig() {
 export async function fetchMetasRows(yearMonths) {
     const { data, error } = await supabase
         .from('metas_sucursal')
-        .select('id, branch_id, year_month, monto_meta, monto_propuesto, estado, nota, nota_devolucion, supervisor_at, gerente_at')
+        .select('id, branch_id, year_month, monto_meta, monto_propuesto, estado, nota, nota_devolucion, supervisor_at, gerente_at, autorizado_por, autorizado_nota')
         .in('year_month', yearMonths);
     if (error) throw error;
     return data ?? [];
@@ -70,6 +70,24 @@ export async function aprobarMeta(id) {
 
 export async function devolverMeta({ id, nota }) {
     const { error } = await supabase.rpc('devolver_meta_gerente', { p_id: id, p_nota: nota });
+    if (error) throw error;
+}
+
+// Quiénes pueden figurar como autorizantes (gerentes activos). Va por RPC y no
+// por un select a `employees`: quien registra la autorización no tiene por qué
+// poder leer el expediente de nadie.
+export async function fetchAutorizadores() {
+    const { data, error } = await supabase.rpc('get_metas_autorizadores');
+    if (error) throw error;
+    return data || [];
+}
+
+// Deja la meta oficial asentando que el gerente autorizó de palabra. El servidor
+// guarda las DOS personas: quien ejecutó y quien autorizó, y le avisa al segundo.
+export async function aprobarMetaPorAutorizacion({ id, autorizoPor, nota }) {
+    const { error } = await supabase.rpc('aprobar_meta_por_autorizacion', {
+        p_id: id, p_autorizo: autorizoPor, p_nota: nota,
+    });
     if (error) throw error;
 }
 

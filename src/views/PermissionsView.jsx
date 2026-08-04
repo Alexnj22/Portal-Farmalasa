@@ -983,17 +983,21 @@ const PermissionsView = () => {
                                             className={!groupActive && groupPartial ? 'opacity-40' : ''}
                                         />
                                     </div>
-                                    {/* MULTI-COLUMNA, no grilla. En una grilla todos los
-                                        elementos de una fila miden lo que el más alto, así que
-                                        una fila con Libros IVA (7 pestañas + 2 capacidades) al
-                                        lado de Corte Z (2 capacidades) dejaba un hueco vertical
-                                        enorme bajo el corto, y la siguiente fila arrancaba recién
-                                        después del largo. Con `columns` cada tarjeta ocupa su
-                                        alto y la columna sigue con la que viene.
-                                        El precio es que el orden de lectura pasa a ser por
-                                        columna en vez de por fila; dentro de un grupo de 3 a 12
-                                        módulos eso no cuesta nada, y el hueco sí se notaba. */}
-                                    <div className="columns-1 md:columns-2 xl:columns-3 gap-3">
+                                    {/* GRILLA, y se volvió a ella a propósito (2026-08-04).
+                                        Se probó `columns` para que cada tarjeta ocupara su alto y
+                                        no quedaran huecos: el usuario reportó tarjetas de un grupo
+                                        pisando al grupo siguiente, con una columna vacía en el
+                                        medio — una distribución que el balanceo de multi-columna
+                                        no produce, así que la fragmentación se estaba rompiendo
+                                        por algo del contexto (el panel es un contenedor con
+                                        `overflow-y-auto` y altura resuelta por flex).
+                                        No se reprodujo a 1600/1920/2200/2560, y un layout que
+                                        falla donde no se puede medir no se deja puesto: un hueco
+                                        es feo, una tarjeta encima de otra es una pantalla rota.
+                                        Si se retoma el empaquetado, hacerlo repartiendo los
+                                        módulos en N listas desde JS —determinista, sin
+                                        fragmentación— y no con `columns`. */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
                                         {g.modules.map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
                                             const tabPerms = m.sub
@@ -1005,7 +1009,7 @@ const PermissionsView = () => {
                                             return (
                                                 <div
                                                     key={m.key}
-                                                    className="mb-3 break-inside-avoid animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both"
+                                                    className="animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both"
                                                     style={{ animationDelay: `${(gi * 3 + i) * 40}ms` }}
                                                 >
                                                     <ModuleCard

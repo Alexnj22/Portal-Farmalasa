@@ -21,9 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.367.4 — Permisos: vuelve la grilla, el multi-columna rompía la pantalla
+
+Revierte el cambio de v2.363.1. Se había pasado de grilla a `columns` para que
+cada tarjeta ocupara su alto y no quedaran huecos verticales. El usuario reportó
+—con captura— tarjetas de un grupo **encima** del grupo siguiente y una columna
+vacía en el medio.
+
+**Lo que la captura decía y las mediciones no.** La distribución era 3 tarjetas
+en la primera columna, la segunda vacía y 1 en la tercera. El balanceo de
+multi-columna no produce eso: reparte para igualar alturas. O sea que la
+fragmentación se rompía por algo del contexto —el panel es un contenedor con
+`overflow-y-auto` y altura resuelta por flex— y no por el número de tarjetas.
+
+No se reprodujo a 1600, 1920, 2200 ni 2560 px: cero desborde y cero solapes en
+las cuatro. **Un layout que falla donde no se puede medir no se deja puesto.** Un
+hueco vertical es feo; una tarjeta encima de otra es una pantalla rota.
+
+Vuelve la grilla, con `items-start` para que las tarjetas cortas no se estiren al
+alto de la fila. Los huecos vuelven con ella y quedan como deuda conocida: si se
+retoma el empaquetado, la forma correcta es repartir los módulos en N listas
+desde JS —determinista, sin fragmentación— y no con `columns`.
+
+Nota de proceso: el texto de esta entrada ya había salido en v2.367.1 sin su
+código, porque otra sesión commiteó `CHANGELOG.md` y `src/version.js` mientras el
+archivo de la vista seguía sin commitear. Es el barrido de índice compartido que
+ya había pasado con v2.354.0.
+
 ## v2.367.3 — El código de la grilla, que la entrada anterior describía sin llevar
 
-_(pendiente de redactar)_
+Sin cambios nuevos: es el commit del código que describe la entrada de
+**v2.367.1** (la vuelta de `columns` a grilla en Permisos). Aquella entrada salió
+sin su código porque otra sesión commiteó `CHANGELOG.md` y `src/version.js`
+mientras el texto estaba escrito y el archivo de la vista todavía no — el mismo
+barrido de índice compartido que ya había pasado con v2.354.0.
+
+Queda anotado acá y no se reescribe la entrada de v2.367.1: el changelog cuenta
+lo que pasó, y esto pasó.
 
 ## v2.367.2 — Metas: Fase 2 documentada como cerrada
 

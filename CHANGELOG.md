@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.366.0 — Metas: propuestas automáticas y el flujo de confirmación en la base
+
+Fase 2, solo BD (migraciones `20260804040648` + `20260804040831`; el frontend
+viene en la versión siguiente).
+
+- **Propuestas automáticas**: `generar_propuestas_metas` — mismo mes del año
+  pasado ajustado por el crecimiento reciente (últimos 3 meses vs los mismos
+  del año anterior), redondeada a $100, nunca pisa lo existente. **El backtest
+  destapó que la fórmula ingenua explotaba** (+652% cuando la ventana del año
+  pasado cae antes del inicio de la historia, 2025-05) — con las guardas
+  (ventanas completas o se usa el ritmo reciente; crecimiento acotado a
+  0.80–1.25) el error medio contra jun/jul reales quedó en **5-7%**.
+  Propuestas de septiembre verificadas con ROLLBACK: $54,000 (Salud 1) a
+  $13,800 (Salud 5), las 6 sensatas.
+- **El flujo**: `confirmar_meta_supervisor` (ajusta monto y confirma; con la
+  última, UNA notificación al gerente — no seis), `aprobar_meta_gerente` y
+  `devolver_meta_gerente` (nota obligatoria; notifica al supervisor al
+  instante). Estados con candados server-side y autoría en cada paso. Nueva
+  columna `nota_devolucion`.
+- **Ciclo diario** (`metas_ciclo_diario` + cron `metas-ciclo-diario`, 8:00 AM
+  SV): el día 25 genera y notifica al supervisor; del 28 en adelante recuerda
+  lo sin confirmar; del 30 (y hasta el día 5) lo sin aprobar; y si el mes ya
+  empezó con metas sin oficializar, avisa a ambos hasta que se resuelva — el
+  sistema NUNCA oficializa solo.
+- **Notificaciones por rol** (`metas_notificar_rol`): filas en `notifications`
+  para cada empleado activo del rol, mismo patrón del resto del portal; sin
+  depender del push. Funciones internas revocadas de `authenticated`; el
+  supervisor tiene su disparo manual (`generar_propuestas_metas_manual`).
+
 ## v2.365.4 — El hover de grupo se apagaba justo al llegarle encima
 
 Lo reportó el usuario sobre el estado vacío de Permisos: *«al acercarme hace

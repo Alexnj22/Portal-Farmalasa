@@ -554,11 +554,46 @@ const PermissionsView = () => {
     // salvo que el cargo sea Super Usuario — ahí el warning es el dato.
     const roleStyle = selectedRoleId && roleIsSU[selectedRoleId] ? SUPER_USUARIO : SELECCION;
 
+    // El buscador cambia de objeto según dónde estés parado: sin cargo elegido
+    // busca CARGOS (es lo único que hay), y con uno elegido busca MÓDULOS, que
+    // es lo que se está mirando. Antes solo buscaba cargos, así que ubicar
+    // "descargar de Nómina" entre 63 tarjetas era recorrerlas con el ojo.
+    const buscaModulos = !!selectedRoleId;
+    const q = searchQuery.trim();
+
     const { filteredRoles, isPermRoleFuzzy } = useMemo(() => {
-        if (!searchQuery.trim()) return { filteredRoles: orgRoles, isPermRoleFuzzy: false };
-        const { results, isFuzzy } = smartFilter(searchQuery, orgRoles, r => [r.name]);
+        // Con un cargo elegido la columna de cargos NO se filtra: el texto está
+        // buscando en la otra columna, y esconder cargos mientras tanto haría
+        // desaparecer el que se está editando.
+        if (buscaModulos || !q) return { filteredRoles: orgRoles, isPermRoleFuzzy: false };
+        const { results, isFuzzy } = smartFilter(q, orgRoles, r => [r.name]);
         return { filteredRoles: results, isPermRoleFuzzy: isFuzzy };
-    }, [orgRoles, searchQuery]);
+    }, [orgRoles, q, buscaModulos]);
+
+    // Grupos con sus módulos filtrados. Busca en el nombre del módulo, en el del
+    // grupo y en los SUB-PERMISOS: escribir "descargar" tiene que traer los
+    // módulos que tienen esa capacidad aunque la palabra no esté en su nombre —
+    // y así trae Listado de Personal, Auditoría de Tiempos y Sucursales.
+    //
+    // La DESCRIPCIÓN queda fuera a propósito. Se probó con y sin, y con ella la
+    // búsqueda se vuelve inútil: "pedidos" devolvía 6 módulos (entre ellos Plan
+    // de Vacaciones y Salud de Syncs) en vez de 1, "nómina" devolvía 4 en vez de
+    // 1, y "iva" traía Monitor Real-Time porque su descripción dice "asistencia
+    // act·iva·". Las descripciones son párrafos escritos para leerse, no para
+    // buscarse; el precio de incluirlas es que el resultado deja de ser una
+    // respuesta.
+    const gruposFiltrados = useMemo(() => {
+        if (!buscaModulos || !q) return MODULE_GROUPS;
+        return MODULE_GROUPS
+            .map(g => ({
+                ...g,
+                modules: smartFilter(q, g.modules,
+                    m => [m.label, g.group, ...(m.sub || []).map(s => s.label)]).results,
+            }))
+            .filter(g => g.modules.length > 0);
+    }, [buscaModulos, q]);
+
+    const modulosEncontrados = gruposFiltrados.reduce((n, g) => n + g.modules.length, 0);
 
     const copyOptions = orgRoles
         .filter(r => r.id !== selectedRoleId)
@@ -593,7 +628,7 @@ const PermissionsView = () => {
         <ViewTabBar
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
-            placeholder="Buscar cargo..."
+            placeholder={buscaModulos ? 'Buscar módulo o permiso…' : 'Buscar cargo…'}
         />
     );
 
@@ -757,13 +792,33 @@ const PermissionsView = () => {
                             <EmptyState icon={MousePointerClick} title="Selecciona un cargo"
                                 subtitle="para modificar sus permisos de acceso" />
                         ) : (
-                        /* Grid de módulos */
-                        <div className="space-y-6 pb-10">
+                        /* Grid de módulos. `space-y-9` y no `-6`: con nueve secciones
+                           seguidas, el aire entre grupos es la mitad de lo que los
+                           separa — la otra mitad es el encabezado de abajo. */
+                        <div className="space-y-9 pb-10">
 
                             {/* Las acciones sobre el cargo elegido (§17). Van acá y no
                                 en la columna de cargos porque operan sobre ESTA
                                 columna: es lo que están por reescribir. */}
                             {filtrosCuerpo && <div className="flex justify-end">{filtrosCuerpo}</div>}
+
+                            {/* Buscando módulos: se dice cuántos quedan y se ofrece la
+                                salida. Sin esto, escribir algo que no matchea deja la
+                                columna en blanco sin explicar por qué. */}
+                            {buscaModulos && q && (
+                                <div className="flex items-center gap-2 px-1">
+                                    <Search size={11} className="text-content-3 shrink-0" strokeWidth={2.5} />
+                                    <p className="text-caption font-semibold text-content-2">
+                                        {modulosEncontrados === 0
+                                            ? <>Ningún módulo coincide con &ldquo;{q}&rdquo;</>
+                                            : <>{modulosEncontrados} módulo{modulosEncontrados !== 1 ? 's' : ''} para &ldquo;{q}&rdquo;</>}
+                                    </p>
+                                    <button type="button" onClick={() => setSearchQuery('')}
+                                        className="text-caption font-bold text-brand-text hover:text-brand-hover underline underline-offset-2">
+                                        Ver todos
+                                    </button>
+                                </div>
+                            )}
 
                             {/* ── Cards: Super Usuario (1/3) + Nivel de Precio (2/3) ── */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
@@ -866,21 +921,30 @@ const PermissionsView = () => {
 
                             </div>{/* end 2-col grid */}
 
-                            {MODULE_GROUPS.map((g, gi) => {
+                            {gruposFiltrados.map((g, gi) => {
                                 // groupActive/groupPartial solo considera módulos principales (sin tabs)
                                 const groupActive = g.modules.every(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view);
                                 const groupPartial = !groupActive && g.modules.some(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view);
+                                const groupCount = g.modules.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view).length;
                                 // Para el toggle de sección, incluir también los tabs de cada módulo
                                 const allGroupModules = g.modules.flatMap(m => [m, ...(m.sub || []).map(t => ({ key: t.key, hasApprove: false }))]);
                                 return (
                                 <div key={g.group}>
-                                    <div className="flex items-center gap-2.5 mb-3">
-                                        <span className={`flex-1 border-t border-current opacity-[0.15] ${g.color}`} />
-                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-border-card shadow-sm ${g.color}`}>
-                                            <p className="text-micro font-black uppercase tracking-widest">{g.group}</p>
-                                            {groupPartial && !groupActive && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 flex-shrink-0" />}
-                                            {groupActive && <Check size={9} strokeWidth={3} className="flex-shrink-0" />}
-                                        </div>
+                                    {/* Encabezado de SECCIÓN, no una etiqueta flotante. Antes era
+                                        una píldora centrada entre dos líneas al 15% de opacidad:
+                                        con nueve grupos y 63 tarjetas, el corte entre secciones no
+                                        se veía y todo leía como una sola lista larga. Ahora va a la
+                                        izquierda —que es por donde baja el ojo—, con el nombre a
+                                        peso pleno y cuántos módulos del grupo tiene el cargo. */}
+                                    <div className="flex items-center gap-3 mb-3.5">
+                                        <span className={`w-2 h-2 rounded-full bg-current shrink-0 ${g.color}`} />
+                                        <p className="text-label font-black uppercase tracking-widest text-content-2">{g.group}</p>
+                                        <span className="text-caption font-semibold text-content-3 tabular-nums shrink-0">
+                                            {groupCount} de {g.modules.length}
+                                        </span>
+                                        {groupActive && <Check size={11} strokeWidth={3} className="text-success shrink-0" />}
+                                        {groupPartial && <span className="w-1.5 h-1.5 rounded-full bg-content-3 shrink-0" />}
+                                        <span className="flex-1 border-t border-divider" />
                                         {/* Toggle de sección. `groupPartial` (algunos módulos
                                             de la sección activos, no todos) no es un estado que
                                             el switch tenga: se muestra apagado y a media opacidad,
@@ -896,7 +960,6 @@ const PermissionsView = () => {
                                             title={groupActive ? 'Desactivar sección' : 'Activar sección'}
                                             className={!groupActive && groupPartial ? 'opacity-40' : ''}
                                         />
-                                        <span className={`flex-1 border-t border-current opacity-[0.15] ${g.color}`} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((m, i) => {

@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.362.1 — Permisos: el buscador busca módulos y las secciones se separan
+
+**El buscador cambia de objeto según dónde estés parado.** Sin cargo elegido
+busca cargos, que es lo único que hay en pantalla. Con un cargo elegido busca
+**módulos**, que es lo que se está mirando: antes solo buscaba cargos, así que
+ubicar «el permiso de descargar de Nómina» entre 63 tarjetas era recorrerlas con
+el ojo. La columna de cargos no se filtra mientras tanto — esconder el cargo que
+se está editando sería el peor momento para hacerlo.
+
+Busca en el nombre del módulo, en el del grupo y en **los sub-permisos**, así que
+escribir «descargar» trae Listado de Personal, Auditoría de Tiempos y Sucursales,
+cuyos nombres no contienen esa palabra pero cuyas capacidades sí.
+
+**La descripción queda fuera del índice, y eso se midió.** Con las descripciones
+adentro la búsqueda dejaba de ser una respuesta: «pedidos» devolvía 6 módulos
+—entre ellos Plan de Vacaciones y Salud de Syncs— en vez de 1; «nómina», 4 en vez
+de 1; y «iva» traía Monitor Real-Time porque su descripción dice «asistencia
+act·iva·». Sin ellas, «montos» devuelve exactamente los 6 módulos que tienen esa
+capacidad. Las descripciones son párrafos escritos para leerse, no para buscarse.
+
+**Las secciones se ven.** El encabezado de grupo era una píldora centrada entre
+dos líneas al 15% de opacidad: con nueve grupos y 63 tarjetas, el corte entre
+secciones no se notaba y todo leía como una sola lista larga. Ahora es un
+encabezado de verdad — a la izquierda, que es por donde baja el ojo, con el
+nombre a peso pleno y cuántos módulos del grupo tiene el cargo («4 de 4»), la
+regla hasta el switch de sección, y más aire entre grupos.
+
 ## v2.362.0 — Permisos: un solo acento, bitácora y las guardas que faltaban
 
 Auditoría de diseño de la vista de Permisos de Acceso. Puntuó **18/40** en las

@@ -3062,5 +3062,109 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "MARIA JOSE TELLEZ CABRERA"
+ },
+ {
+  "erp_id": "19899",
+  "campo": "dui",
+  "valor": "04803818-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA DORIS GUARDADO"
+ },
+ {
+  "erp_id": "20093",
+  "campo": "dui",
+  "valor": "01211002-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "CESAR ANTONIO LEON"
+ },
+ {
+  "erp_id": "20099",
+  "campo": "dui",
+  "valor": "00693295-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ROSA NERY ALVARADO GUERRA"
+ },
+ {
+  "erp_id": "20133",
+  "campo": "dui",
+  "valor": "01236341-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANTONIA JACOBO LEON"
+ },
+ {
+  "erp_id": "20193",
+  "campo": "dui",
+  "valor": "00102603-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSEFINA LARA FUENTES"
+ },
+ {
+  "erp_id": "20269",
+  "campo": "dui",
+  "valor": "01842424-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LAUTERIA MARIA DOLORES HERNANDEZ LOPEZ"
+ },
+ {
+  "erp_id": "20273",
+  "campo": "dui",
+  "valor": "13071983-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "Maria Angela Lopez Menjivar"
+ },
+ {
+  "erp_id": "20300",
+  "campo": "dui",
+  "valor": "02496495-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JUAN PABLO ORELLA MENA"
+ },
+ {
+  "erp_id": "20303",
+  "campo": "dui",
+  "valor": "06683140-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SALVADOR DE JESUS NAVARRO"
+ },
+ {
+  "erp_id": "20387",
+  "campo": "dui",
+  "valor": "01299574-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ZOILA ORELLANA ORELLANA"
+ },
+ {
+  "erp_id": "20424",
+  "campo": "dui",
+  "valor": "02507653-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE TOBIA GALVEZ GALVEZ"
+ },
+ {
+  "erp_id": "20469",
+  "campo": "dui",
+  "valor": "07466196-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANA MARGARITA OLIVA JACOBO"
+ },
+ {
+  "erp_id": "20706",
+  "campo": "dui",
+  "valor": "84414491-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "EFRAIN ORELLANA"
  }
 ]

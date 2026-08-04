@@ -193,8 +193,6 @@
   "categoria": "Contribuyente",
   "faltan": [
    "distrito",
-   "nit",
-   "nrc",
    "direccion"
   ]
  },

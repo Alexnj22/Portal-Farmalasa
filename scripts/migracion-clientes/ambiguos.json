@@ -10,7 +10,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-03 14:58:35"
+  "ts": "2026-08-03 19:42:50"
  },
  {
   "tipo": "rechazo-erp",
@@ -23,7 +23,7 @@
   "cambios_intentados": {
    "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-03 14:58:38"
+  "ts": "2026-08-03 19:42:53"
  },
  {
   "tipo": "rechazo-erp",
@@ -37,7 +37,7 @@
    "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
    "dui": "INVÁLIDO '08666142-6' -> se borra"
   },
-  "ts": "2026-08-03 14:58:41"
+  "ts": "2026-08-03 19:42:55"
  },
  {
   "tipo": "rechazo-erp",
@@ -50,7 +50,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
   },
-  "ts": "2026-08-03 14:58:45"
+  "ts": "2026-08-03 19:42:58"
  },
  {
   "tipo": "rechazo-erp",
@@ -63,17 +63,19 @@
   "cambios_intentados": {
    "distrito": "CHALATENANGO (dirección (nombre completo))"
   },
-  "ts": "2026-08-03 14:58:47"
+  "ts": "2026-08-03 19:42:59"
  },
  {
-  "tipo": "distrito",
-  "portal_id": "erp:16102",
-  "erp_id": "16102",
-  "direccion": "CALLE HACIA TEJUTLA, BO LAS FLORES, EL PARAISO, CHALATENANGO",
-  "candidatos": [
-   "EL PARAÍSO",
-   "TEJUTLA"
-  ],
-  "elegido": "EL PARAÍSO (ambiguo (2 candidatos))"
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:16421",
+  "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
+  "erp_id": "16421",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
+  },
+  "ts": "2026-08-03 19:43:01"
  }
 ]

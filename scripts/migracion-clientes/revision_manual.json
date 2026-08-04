@@ -2414,5 +2414,261 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "NORMA CELINA CRUZ MENJIVAR"
+ },
+ {
+  "erp_id": "16168",
+  "campo": "dui",
+  "valor": "03756602-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "FRANCISCO DIMAS PAZ TEJADA"
+ },
+ {
+  "erp_id": "16203",
+  "campo": "dui",
+  "valor": "13181996-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA YOLANDA NAVARRO"
+ },
+ {
+  "erp_id": "16230",
+  "campo": "dui",
+  "valor": "05445364-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JUAN CRISTOBAL PASCACIO GUARDADO"
+ },
+ {
+  "erp_id": "16334",
+  "campo": "dui",
+  "valor": "00725103-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE ANIBAL ORELLANA"
+ },
+ {
+  "erp_id": "16382",
+  "campo": "dui",
+  "valor": "06110008-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "CINDY MARICELA JACOBO FIGUEROA"
+ },
+ {
+  "erp_id": "16431",
+  "campo": "dui",
+  "valor": "00499230-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ESTELA VASQUEZ"
+ },
+ {
+  "erp_id": "16474",
+  "campo": "dui",
+  "valor": "02151366-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ROSA MELIDA GOMEZ SANCHEZ"
+ },
+ {
+  "erp_id": "16489",
+  "campo": "dui",
+  "valor": "05000502-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LUIS MIGUEL ABREGO GALDAMEZ"
+ },
+ {
+  "erp_id": "16512",
+  "campo": "dui",
+  "valor": "01124808-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA BLANCA LIDIA MENJIVAR DE ORELLANA"
+ },
+ {
+  "erp_id": "16515",
+  "campo": "dui",
+  "valor": "05194804-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "NERIS JAVIER MONGE MONGE"
+ },
+ {
+  "erp_id": "16561",
+  "campo": "dui",
+  "valor": "04035395-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE JULIAN CARTAGENA CARTAGENA"
+ },
+ {
+  "erp_id": "16599",
+  "campo": "dui",
+  "valor": "02832910-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA JACINTA ROMERO"
+ },
+ {
+  "erp_id": "16651",
+  "campo": "dui",
+  "valor": "05084250-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LUIS ALFREDO RODRIGUEZ MACAY"
+ },
+ {
+  "erp_id": "16689",
+  "campo": "dui",
+  "valor": "05505616-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ODALYS MORELIA MANCIA JOVEL"
+ },
+ {
+  "erp_id": "16743",
+  "campo": "dui",
+  "valor": "01414349-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JESUS GRIPIN SANTOS FLORES TEJADA"
+ },
+ {
+  "erp_id": "16812",
+  "campo": "dui",
+  "valor": "05739136-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIELOS YAMILET MENJIVAR RECINOS"
+ },
+ {
+  "erp_id": "16855",
+  "campo": "dui",
+  "valor": "00065570-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SONIA BERTILA MORAN DE CALLES"
+ },
+ {
+  "erp_id": "16870",
+  "campo": "dui",
+  "valor": "00999681-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MIGUEL ANGEL GOMEZ"
+ },
+ {
+  "erp_id": "16889",
+  "campo": "dui",
+  "valor": "00665235-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MIRIAM DOLORES HERRERA FRANCO"
+ },
+ {
+  "erp_id": "16915",
+  "campo": "dui",
+  "valor": "04928373-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JACQUELINE SUSANA SARACAY AQUINO"
+ },
+ {
+  "erp_id": "17021",
+  "campo": "dui",
+  "valor": "02051985-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARLENI EUCEDA"
+ },
+ {
+  "erp_id": "17033",
+  "campo": "dui",
+  "valor": "01551818-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BLANCA MORENA AGUILAR DE ESPINOZA"
+ },
+ {
+  "erp_id": "17138",
+  "campo": "dui",
+  "valor": "04670575-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE ROBERTO GUARDADO DELGADO"
+ },
+ {
+  "erp_id": "17254",
+  "campo": "dui",
+  "valor": "02817740-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANDRES OVIDIO MARTINEZ"
+ },
+ {
+  "erp_id": "17279",
+  "campo": "dui",
+  "valor": "04589536-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ALICIA RIVERA DE ALEMAN"
+ },
+ {
+  "erp_id": "17290",
+  "campo": "dui",
+  "valor": "00000000-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ELENA VIDES CUELLAR"
+ },
+ {
+  "erp_id": "17421",
+  "campo": "dui",
+  "valor": "01365554-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ESMERALDA BEATRIZ MARQUEZ"
+ },
+ {
+  "erp_id": "17441",
+  "campo": "dui",
+  "valor": "01877660-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "HUMBERTO ANTONIO GUILLEN GUILLEN"
+ },
+ {
+  "erp_id": "17548",
+  "campo": "dui",
+  "valor": "01774086-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "DAMIAN DE JESUS MEJIA GUARDADO"
+ },
+ {
+  "erp_id": "17551",
+  "campo": "dui",
+  "valor": "01245879-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ESTELA GUEVARA"
+ },
+ {
+  "erp_id": "17570",
+  "campo": "dui",
+  "valor": "08128595-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BLANCA ROSA LOPEZ DE RIVAS"
+ },
+ {
+  "erp_id": "17590",
+  "campo": "dui",
+  "valor": "05719293-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BLANCA EDITH GUERRA SANTAMARIA"
  }
 ]

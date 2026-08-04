@@ -129,22 +129,6 @@
    "distrito"
   ]
  },
- "16276": {
-  "erp_id": "16276",
-  "name": "GLORIA MARGARITA CORDOVA SERRANO",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "16421": {
-  "erp_id": "16421",
-  "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
  "17808": {
   "erp_id": "17808",
   "name": "ELMER EVANI ZELAYA CASAMALHUAPA",
@@ -890,6 +874,23 @@
   "categoria": "Consumidor",
   "faltan": [
    "departamento"
+  ]
+ },
+ "16403": {
+  "erp_id": "16403",
+  "name": "DIHARE SOCIEDAD ANONIMA DE CAPITAL VARIABLE",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
   ]
  }
 }

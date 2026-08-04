@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Target, Gauge, History, CalendarCheck } from 'lucide-react';
+import { Target, Gauge, History, CalendarCheck, Coins } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,7 @@ import { fetchMetasConfig } from '../../data/metas';
 import TabTablero from './TabTablero';
 import TabHistorico from './TabHistorico';
 import TabConfirmacion from './TabConfirmacion';
+import TabBono from './TabBono';
 import MetaModal from './MetaModal';
 import { SALAS_VENTA } from './metasUtils';
 
@@ -17,7 +18,7 @@ import { SALAS_VENTA } from './metasUtils';
 // supervisión: la sala ve SU meta en el widget «Meta del mes» del Inicio
 // (`WidgetMetaSala`), no acá. Las bonificaciones llegan en fases siguientes.
 export default function MetasView() {
-    const { hasPermission } = useAuth();
+    const { hasPermission, user } = useAuth();
     const canEdit = hasPermission('metas', 'can_edit');
     const canApprove = hasPermission('metas', 'can_approve');
     const branches = useStaffStore((s) => s.branches);
@@ -27,6 +28,7 @@ export default function MetasView() {
     // del módulo es de lectura para cualquiera con el permiso de ver.
     const tabs = useMemo(() => [
         { key: 'tablero',   label: 'Tablero',   icon: Gauge },
+        { key: 'bono',      label: 'Bono',      icon: Coins },
         ...(canEdit || canApprove ? [{ key: 'confirmacion', label: 'Confirmación', icon: CalendarCheck }] : []),
         { key: 'historico', label: 'Histórico', icon: History },
     ], [canEdit, canApprove]);
@@ -95,6 +97,17 @@ export default function MetasView() {
                     bonificacionesActivas={bonificacionesActivas}
                     searchTerm={search}
                     onClearSearch={limpiarBusqueda}
+                />
+            )}
+            {activeTab === 'bono' && (
+                <TabBono
+                    salaNombre={salaNombre}
+                    branchOptions={salaOptions}
+                    bonificacionesActivas={bonificacionesActivas}
+                    reloadKey={reloadKey}
+                    defaultBranchId={SALAS_VENTA.includes(Number(user?.branchId ?? user?.branch_id))
+                        ? Number(user?.branchId ?? user?.branch_id)
+                        : SALAS_VENTA[0]}
                 />
             )}
             {activeTab === 'confirmacion' && (canEdit || canApprove) && (

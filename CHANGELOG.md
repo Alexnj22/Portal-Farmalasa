@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.370.2 — Metas: la pestaña Bono — el reparto en pantalla
+
+La pestaña que muestra el bono de la sala repartido persona por persona, con su
+mes y su sala. Arriba, las cuatro cifras que resumen el reparto: el bono de la
+sala, el cuarto de la jefatura, los tres cuartos del equipo y lo que no cobra
+nadie. Abajo, la tabla: cada quien con lo que vendió, su parte de la sala y su
+bono; la jefatura marcada, y quien esté en período de prueba también, con la
+nota de que cobra la mitad.
+
+- **Lo que no se reparte se dice, con su motivo y su monto.** Antes eso vivía en
+  una fila llamada «código incorrecto» y nadie sabía de qué estaba hecha; ahora
+  el aviso separa lo vendido a nombre de personal de otra sala de lo vendido con
+  un código que no existe.
+- **El mes en curso no «cierra» en nada.** La primera versión decía «Cerró en
+  9.9% de la meta» en un mes que iba por el día 4 — falso y desalentador. Ahora
+  distingue: en el mes corriente dice a cuánto va y qué falta para ganarlo.
+
+Verificado en navegador con datos de prueba en los tres tramos: bono completo
+(La Popular en 108.6% — $215.64 de bolsa, $53.91 de jefatura, las seis personas
+al centavo y $25.71 sin repartir), medio bono (Salud 1 en 97.6% — $121.95, la
+mitad del porcentaje) y sin bono (Salud 3 en 82.6%). Sin errores de consola. Las
+metas de prueba se borraron al terminar: `metas_sucursal` quedó en cero filas,
+sin bitácora ni notificaciones.
+
 ## v2.370.1 — Metas: la vista vuelve a los canónicos de diseño
 
 Corrección del usuario sobre una captura del Tablero: *«visualmente no estás

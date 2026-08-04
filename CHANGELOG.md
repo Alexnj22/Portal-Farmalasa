@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.360.2 — Documentado el diseño del módulo de Metas
+
+Solo documentación: `docs/PLAN-METAS-2026-08-03.md`, el diseño completo del
+módulo de Metas de ventas por sala, aprobación conceptual en curso. La regla
+del bono (100% → completo, ≥95% → medio, <95% → nada), los tres cálculos
+(cumplimiento en vivo, proyección de cierre con perfil por día de semana,
+propuesta del mes siguiente por estacionalidad + crecimiento), el flujo
+supervisor → gerente → salas con notificaciones y recordatorios, el modelo de
+datos borrador, permisos por rol (Supervisor/a de Ventas edita, Gerente
+General aprueba), y las 4 decisiones pendientes del usuario que bloquean la
+Fase 1 (base con/sin IVA, sala vs vendedor, qué pasa el día 1 sin aprobar,
+formato del histórico a importar).
+
+## v2.360.1 — Tipo de documento en la retención
+
+_(pendiente de redactar)_
+
 ## v2.360.0 — Canon de permisos por vista: capacidades separadas de pestañas
 
 Ejecución de `docs/AUDITORIA-PERMISOS-2026-08-03.md`. Hasta hoy el portal tenía

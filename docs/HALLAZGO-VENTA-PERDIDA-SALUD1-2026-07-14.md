@@ -148,9 +148,13 @@ del período contable.**
    monto no suma—, que es lo que permite ubicar el registro perdido.
 3. Los 2 documentos de agosto de 2025 sin sello ($38.00) quedan anotados: son
    anteriores al período contable y no afectan ninguna declaración.
-4. **Decidir qué se hace con las 3 ventas anuladas sin invalidar** ($82.05 en el
-   período contable). Son las únicas de esta auditoría donde el que declara de
-   menos es el portal.
+4. ~~Decidir qué se hace con las 3 ventas anuladas sin invalidar.~~ **Decidido el
+   2026-08-04**: las de agosto de 2026 son período activo y quedan a la vista sin
+   urgencia (Salud 5 `342802`, Salud 4 `342407`, Salud 1 `343519` · $82.05); las
+   anteriores se dan por cerradas —ya no hay forma de corregirlas y quedaron
+   solventadas en el sistema de origen— y además caen fuera del alcance del
+   cuadre, que solo mira el mes en curso y el anterior. Detalle en
+   `RETENCION-IVA-VENTAS-2026-08-04.md`.
 
 ## Lo que quedó automatizado (v2.363.0)
 

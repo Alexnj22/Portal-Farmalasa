@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.366.1 — Cierre: la retención no va en el libro
+
+Documentación y una corrección de comentario. Cierre del trabajo de retención de
+IVA sobre ventas, en `docs/RETENCION-IVA-VENTAS-2026-08-04.md`.
+
+**Lo que estaba anotado como «pregunta abierta» tenía respuesta en el
+reglamento.** El comentario del exportador decía que no se pudo determinar en
+cuál de las 19 columnas va la retención, porque las candidatas están en cero en
+toda la muestra. Leyendo el **Art. 85 RCT**: las doce columnas del libro de
+contribuyentes incluyen «impuesto **percibido**» (literal k) y **no existe una
+de impuesto retenido**. Tampoco en el **Art. 83**, el de consumidor.
+
+No era «no supimos en cuál columna» — **no hay columna**. La retención es un
+anticipo del impuesto (Art. 162 CT): va en la declaración, respaldada por los
+comprobantes de retención. Por eso viaja como CSV aparte en el paquete del mes,
+que es papel de trabajo para declarar y no un libro.
+
+**Y al leerlo apareció lo único que queda abierto.** El literal l) pide el
+«total de ventas por documento», que es la **suma de las columnas anteriores** —
+la retención no está entre ellas, así que no se resta. El propio DTE distingue
+`montoTotalOperacion` (406.56) de `totalPagar` (402.96): **el libro pide el
+primero y hoy va el segundo, acá y en el archivo del origen.** Son **$48.95** en
+el período contable (junio $6.03, julio $42.92). No se cambió porque mueve
+números ya declarados y lo decide el contador; si lo confirma es una línea por
+libro.
+
+**Decidido también** (2026-08-04): de las seis ventas anuladas que nunca se
+invalidaron ante Hacienda, las tres de agosto de 2026 quedan a la vista sin
+urgencia por ser período activo, y las tres anteriores se dan por cerradas —
+quedaron solventadas en el sistema de origen y caen fuera del alcance del cuadre.
+
 ## v2.366.0 — Metas: propuestas automáticas y el flujo de confirmación en la base
 
 Fase 2, solo BD (migraciones `20260804040648` + `20260804040831`; el frontend

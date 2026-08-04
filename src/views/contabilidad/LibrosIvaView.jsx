@@ -869,17 +869,24 @@ const construirLibro = (tab, d, tot) => {
         // Las columnas 11 y 12 quedan en cero: están en cero en toda la
         // muestra y no se pudo determinar cuál es cuál.
         //
-        // Las 14 y 15 también van en cero, y ahí hay una PREGUNTA ABIERTA
-        // (2026-08-04). Desde que el origen manda la retención de IVA por
-        // documento se sabe que en las filas con retención su propio archivo
-        // escribe `gravadas + débito > total` —CCF 323659: 359.79 + 46.77
-        // contra 402.96— y que la resta de 3.60 no aparece en ninguna de las
-        // 19 columnas. O sea que el archivo del origen no declara la
-        // retención en ningún lado. El portal lo replica igual porque no se
-        // pudo verificar CUÁL columna la lleva (están en cero en toda la
-        // muestra), y escribir un monto en la columna equivocada de un libro
-        // que se presenta sería peor que no escribirlo. La pantalla sí la
-        // muestra. Hay que confirmarlo con el contador.
+        // La RETENCIÓN de IVA no va en este archivo, y quedó zanjado leyendo el
+        // reglamento (2026-08-04). El **Art. 85 RCT** enumera las doce columnas
+        // del libro y entre ellas está «impuesto PERCIBIDO» (literal k) — pero
+        // **no existe una de impuesto retenido**. Tampoco en el Art. 83, el de
+        // consumidor. La retención es un anticipo del impuesto (Art. 162 CT):
+        // va en la declaración, respaldada por los comprobantes de retención,
+        // no en una columna del libro.
+        //
+        // Por eso la pantalla la muestra y el archivo no la lleva — y por eso
+        // viaja como CSV aparte en el paquete del mes, que es papel de trabajo
+        // para declarar. No era «no supimos en cuál columna»: no hay columna.
+        //
+        // Lo que SÍ quedó abierto es otra cosa y está en
+        // `docs/RETENCION-IVA-VENTAS-2026-08-04.md`: el literal l) pide el
+        // «total de ventas por documento», que es la suma de las columnas
+        // anteriores —la retención no está entre ellas, así que no se resta—, y
+        // hoy acá va el total COBRADO. Son $48.95 del período contable. No se
+        // cambió porque mueve números ya declarados.
         //
         // Este reporte SÍ trae bien sus identificadores —número de control,
         // sello y código de generación coinciden con el documento de la

@@ -7,6 +7,12 @@ export function ymHoySV() {
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+// Día del mes en el mismo huso que `ymHoySV`. Lo usa Confirmación para no
+// mostrar el mes siguiente antes de que el portal lo proponga.
+export function diaHoySV() {
+    return new Date(Date.now() - 6 * 3600_000).getUTCDate();
+}
+
 export function ymSumar(ym, meses) {
     const [y, m] = ym.split('-').map(Number);
     const idx = y * 12 + (m - 1) + meses;

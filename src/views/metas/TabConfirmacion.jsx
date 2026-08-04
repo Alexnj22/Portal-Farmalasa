@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search } from 'lucide-react';
+import { CheckCircle2, Undo2, Sparkles, CalendarCheck, AlertTriangle, RefreshCw, Search, Minus, Plus } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -7,13 +7,18 @@ import PortalInput from '../../components/common/PortalInput';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import { formatMoney } from '../../utils/formatNumber';
+import { formatMoney, formatPct } from '../../utils/formatNumber';
 import {
     fetchMetasRows, fetchMetasHistorico, generarPropuestas,
     confirmarMeta, aprobarMeta, devolverMeta,
 } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, ymLabelCorto } from './metasUtils';
+import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from './metasUtils';
+
+// Un toque = 1% sobre la propuesta, y el recorrido se topa en ±10%: más que eso
+// no es ajustar una meta, es escribir otra — y para eso está devolverla.
+const PASO_FACTOR = 0.01;
+const PASOS_MAX = 10;
 
 const ESTADO_CFG = {
     propuesta:             { label: 'Propuesta',              variante: 'chart-1' },
@@ -25,7 +30,7 @@ const ESTADO_CFG = {
 // El ciclo del mes siguiente: el supervisor ajusta y confirma, el gerente
 // aprueba o devuelve con nota. También muestra el mes en curso si quedó
 // alguna meta sin oficializar (el sistema nunca la oficializa solo).
-export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged, searchTerm, onClearSearch }) {
+export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloadKey, onChanged, searchTerm, onClearSearch, diaPropuesta = 25 }) {
     const { showToast } = useToastStore();
     const ymActual = ymHoySV();
     const ymSig = ymSumar(ymActual, 1);
@@ -34,7 +39,9 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     const [historico, setHistorico] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [montos, setMontos] = useState({});     // id → monto editado (texto)
+    // id → pasos de ajuste sobre la propuesta. Se guardan los PASOS y no el
+    // monto: el supervisor no teclea una cifra, corre la exigencia.
+    const [ajustes, setAjustes] = useState({});
     const [devolviendo, setDevolviendo] = useState(null); // id → abre el campo de nota
     const [notaDev, setNotaDev] = useState('');
     const [busy, setBusy] = useState(null);       // id (o 'generar') en vuelo
@@ -44,14 +51,17 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         setLoading(true);  
         setError(null);
         Promise.all([fetchMetasRows([ymActual, ymSig]), fetchMetasHistorico()])
-            .then(([r, h]) => { if (alive) { setRows(r); setHistorico(h); setMontos({}); setLoading(false); } })
+            .then(([r, h]) => { if (alive) { setRows(r); setHistorico(h); setAjustes({}); setLoading(false); } })
             .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'Error al cargar el flujo')); setLoading(false); } });
         return () => { alive = false; };
     };
     useEffect(cargar, [reloadKey, ymActual, ymSig]);
 
     // Contexto por sala, derivado del histórico ya calculado: el mismo mes del
-    // año pasado y el promedio de los últimos 3 meses cerrados.
+    // año pasado, el promedio de los últimos 3 meses cerrados y en cuánto cerró
+    // el mes pasado — que es el dato con el que uno decide si el monto propuesto
+    // es alcanzable o no.
+    const ymPasado = ymSumar(ymActual, -1);
     const contexto = useMemo(() => {
         const porSala = {};
         const ult3 = [ymSumar(ymActual, -1), ymSumar(ymActual, -2), ymSumar(ymActual, -3)];
@@ -59,12 +69,17 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
             const c = (porSala[h.branch_id] ||= { anioPasado: null, tres: [] });
             if (h.year_month === ymSumar(ymSig, -12)) c.anioPasado = Number(h.venta_total);
             if (ult3.includes(h.year_month)) c.tres.push(Number(h.venta_total));
+            if (h.year_month === ymPasado) {
+                c.pctPasado = h.pct_cumplimiento != null ? Number(h.pct_cumplimiento) : null;
+                c.tierPasado = h.bono_tier || null;
+                c.metaPasada = h.monto_meta != null ? Number(h.monto_meta) : null;
+            }
         }
         for (const c of Object.values(porSala)) {
             c.prom3 = c.tres.length ? c.tres.reduce((s, v) => s + v, 0) / c.tres.length : null;
         }
         return porSala;
-    }, [historico, ymActual, ymSig]);
+    }, [historico, ymActual, ymSig, ymPasado]);
 
     // El buscador de la barra es UNO solo para las tres pestañas, así que acá
     // también tiene que filtrar: si no, escribir el nombre de una sala no
@@ -86,6 +101,13 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     // Sin filtrar: distingue «no hay propuestas» de «el buscador las escondió».
     const hayDelMesSig = rows.some((r) => r.year_month === ymSig);
 
+    // El mes siguiente no se muestra antes de que el portal lo proponga: hasta
+    // el día `dia_propuesta` no hay nada que confirmar ahí, y la sección salía
+    // igual, con un vacío que invitaba a generar las metas de un mes cuyos datos
+    // de cálculo todavía no existen (pedido del usuario 2026-08-04: «apenas es 4
+    // de agosto, cómo se va a calcular algo ya»).
+    const mostrarMesSig = hayDelMesSig || diaHoySV() >= diaPropuesta;
+
     const accion = async (fn, id, auditAction, auditDetails, okTitle, okBody) => {
         setBusy(id);
         try {
@@ -105,8 +127,14 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         const es = ESTADO_CFG[r.estado] || ESTADO_CFG.propuesta;
         const ctx = contexto[r.branch_id] || {};
         const editable = canEdit && ['propuesta', 'devuelta'].includes(r.estado);
-        const montoActual = montos[r.id] ?? String(r.monto_meta ?? '');
-        const montoNum = parseFloat(String(montoActual).replace(/,/g, ''));
+        // La base es lo que propuso el portal; si la meta se creó a mano, ella
+        // misma. El ajuste corre desde ahí, no desde un campo en blanco.
+        const base = Number(r.monto_propuesto ?? r.monto_meta ?? 0);
+        const pasos = ajustes[r.id] ?? 0;
+        const montoNum = base > 0 ? Math.round(base * (1 + PASO_FACTOR * pasos) * 100) / 100 : 0;
+        const mover = (d) => setAjustes((a) => ({
+            ...a, [r.id]: Math.max(-PASOS_MAX, Math.min(PASOS_MAX, pasos + d)),
+        }));
 
         return (
             <article data-surface="card" className="p-5">
@@ -131,6 +159,23 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Promedio 3 meses</p>
                         <p className="text-body-sm font-black tabular-nums">{ctx.prom3 != null ? formatMoney(ctx.prom3) : '—'}</p>
                     </div>
+                    {/* En cuánto cerró el mes pasado: es con lo que uno decide si
+                        el monto propuesto es alcanzable. Sin meta ese mes no hay
+                        porcentaje que mostrar, y decirlo es más honesto que un
+                        guion suelto. */}
+                    <div className="col-span-2">
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3">
+                            Cerró {ymLabelCorto(ymPasado)}
+                        </p>
+                        {ctx.pctPasado != null ? (
+                            <p className="text-body-sm font-black tabular-nums">
+                                <span className={TRAMO_CFG[ctx.tierPasado]?.textCls || ''}>{formatPct(ctx.pctPasado)}</span>
+                                <span className="text-content-3 font-semibold"> de su meta de {formatMoney(ctx.metaPasada)}</span>
+                            </p>
+                        ) : (
+                            <p className="text-body-sm font-semibold text-content-3">Ese mes no tuvo meta</p>
+                        )}
+                    </div>
                     {r.monto_propuesto != null && (
                         <div className="col-span-2">
                             <p className="text-micro font-black uppercase tracking-widest text-content-3">Propuesta del sistema</p>
@@ -140,11 +185,31 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 </div>
 
                 {editable ? (
-                    <PortalInput
-                        label="Meta a confirmar" name={`monto-${r.id}`} prefix="$" type="number"
-                        value={montoActual}
-                        onChange={(e) => setMontos((m) => ({ ...m, [r.id]: e.target.value }))}
-                    />
+                    /* No se teclea el monto: se corre la exigencia. Un campo libre
+                       invita a inventar una cifra redonda y pierde el cálculo que
+                       hay detrás; acá cada toque es 1% sobre la propuesta y el
+                       monto se ve en dinero, con sus separadores. */
+                    <div>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Meta a confirmar</p>
+                        <p className="text-xl font-black tabular-nums mt-0.5">{formatMoney(montoNum)}</p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <Button variant="secondary" size="sm" icon={Minus}
+                                disabled={busy != null || pasos <= -PASOS_MAX}
+                                onClick={() => mover(-1)}>
+                                Menos exigente
+                            </Button>
+                            <Button variant="secondary" size="sm" icon={Plus}
+                                disabled={busy != null || pasos >= PASOS_MAX}
+                                onClick={() => mover(1)}>
+                                Más exigente
+                            </Button>
+                            {pasos !== 0 && (
+                                <Badge variant={pasos > 0 ? 'warning' : 'neutral'} size="sm">
+                                    {pasos > 0 ? '+' : ''}{pasos}% sobre la propuesta
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
                 ) : (
                     <div className="mb-1">
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Meta</p>
@@ -255,6 +320,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 </section>
             )}
 
+            {mostrarMesSig && (
             <section className="space-y-3">
                 {/* El encabezado solo cuando hay algo que encabezar: con la
                     sección vacía, el `EmptyState` ya dice de qué mes habla, y el
@@ -283,7 +349,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <EmptyState
                             compact icon={CalendarCheck}
                             title={`Sin metas para ${ymLabel(ymSig).toLowerCase()}`}
-                            subtitle="El día 25 el portal las propone solo, con las ventas de los meses cerrados."
+                            subtitle={`El día ${diaPropuesta} el portal las propone solo, con las ventas de los meses cerrados.`}
                             action={canEdit && (
                                 <Button
                                     variant="primary" icon={Sparkles} disabled={busy != null}
@@ -304,6 +370,18 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     </div>
                 )}
             </section>
+            )}
+
+            {/* Antes del día de la propuesta y sin nada pendiente del mes en
+                curso, la pestaña quedaría en blanco. Decir cuándo aparece algo
+                es la respuesta a la pregunta que uno se hace mirándola. */}
+            {!mostrarMesSig && pendientesTodas.length === 0 && (
+                <EmptyState
+                    compact icon={CalendarCheck}
+                    title="Sin metas por confirmar"
+                    subtitle={`Las de ${ymLabel(ymSig).toLowerCase()} se proponen solas el día ${diaPropuesta}.`}
+                />
+            )}
         </div>
     );
 }

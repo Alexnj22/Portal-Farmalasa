@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.371.3 — Metas: aviso propio, centavos, y Confirmación con contexto
+
+Cinco correcciones del usuario sobre la pantalla, todas verificadas en el
+navegador.
+
+**El aviso no llegaba porque lo mandaba el llamador, no la función.** Generar las
+propuestas creaba las metas en silencio: el aviso vivía dentro de
+`metas_ciclo_diario`, así que solo salía por el camino del cron del día 25.
+Apretar el botón de la pantalla —o generar desde una consulta— dejaba seis metas
+esperando confirmación sin que nadie se enterara. Ahora avisa
+`generar_propuestas_metas` misma, y el ciclo diario ya no duplica.
+
+**La propuesta ya no se redondea a la decena.** Redondear $41,006.81 a $41,010
+mueve el objetivo sin que nadie lo decida. La meta es un monto y se guarda con
+sus centavos.
+
+**En Confirmación, cada sala muestra en cuánto cerró el mes pasado** — el
+porcentaje coloreado por su tramo y contra qué meta se midió (*«108.6% de su meta
+de $39,709.35»*). Es el dato con el que uno decide si el monto propuesto es
+alcanzable, y estaba solo en otra pestaña.
+
+**La meta ya no se teclea: se corre la exigencia.** El campo libre invitaba a
+inventar una cifra redonda y perdía el cálculo que hay detrás; además se veía sin
+separadores de miles. Ahora el monto se muestra en dinero (`$44,865.86`) y se
+ajusta con **«Menos exigente» / «Más exigente»**, un 1% por toque sobre la
+propuesta del sistema, topado en ±10% —más que eso no es ajustar una meta, es
+escribir otra, y para eso está devolverla—. Un badge dice cuánto se corrió
+(`+1% sobre la propuesta`).
+
+**Septiembre ya no aparece un 4 de agosto.** La sección del mes siguiente salía
+siempre, con un vacío que invitaba a generar las metas de un mes cuyos datos de
+cálculo todavía no existen. Ahora aparece cuando ya hay propuestas o cuando llegó
+el día que las propone (`metas_config.dia_propuesta`, hoy 25) — y ese día sale de
+la config, ya no escrito a mano en el texto.
+
 ## v2.371.2 — Metas: la propuesta automática, arreglada y calibrada
 
 **La función estaba rota y nadie lo había notado porque nunca se había corrido

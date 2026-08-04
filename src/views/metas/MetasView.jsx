@@ -41,11 +41,18 @@ export default function MetasView() {
     const [modal, setModal] = useState(null);          // { ym, branchId } | null
     const [reloadKey, setReloadKey] = useState(0);
     const [bonificacionesActivas, setBonificacionesActivas] = useState(false);
+    // El día en que el portal propone las metas del mes siguiente. Confirmación
+    // lo necesita para no adelantar una sección que todavía no tiene contenido.
+    const [diaPropuesta, setDiaPropuesta] = useState(25);
 
     useEffect(() => {
         let alive = true;
         fetchMetasConfig()
-            .then((cfg) => { if (alive) setBonificacionesActivas(!!cfg?.bonificaciones_activas); })
+            .then((cfg) => {
+                if (!alive) return;
+                setBonificacionesActivas(!!cfg?.bonificaciones_activas);
+                if (cfg?.dia_propuesta) setDiaPropuesta(Number(cfg.dia_propuesta));
+            })
             .catch(() => { /* sin config legible: se queda el aviso de suspendidas */ });
         return () => { alive = false; };
     }, []);
@@ -119,6 +126,7 @@ export default function MetasView() {
                     onChanged={() => setReloadKey((k) => k + 1)}
                     searchTerm={search}
                     onClearSearch={limpiarBusqueda}
+                    diaPropuesta={diaPropuesta}
                 />
             )}
             {activeTab === 'historico' && (

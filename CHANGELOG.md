@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.372.1 — Metas: confirmar todas de una vez
+
+Botón **«Confirmar las N · $total»** en el encabezado del grupo sobre el que
+actúa — el mismo sitio que «Aprobar todo» en Asistencia. Lleva la cuenta y el
+total en el rótulo: confirmar seis metas de golpe no puede ser un botón mudo.
+Con una sola fila no aparece; para eso está el botón de la tarjeta.
+
+**Manda exactamente lo que cada tarjeta muestra.** El cálculo del monto (la
+propuesta más el ajuste de «Más/Menos exigente») se extrajo a un solo `montoDe()`
+que usan la tarjeta y el lote. Calcularlo dos veces es cómo un día divergen.
+
+**Del lado del servidor va en UNA transacción**: `confirmar_metas_lote(jsonb)`
+recorre `confirmar_meta_supervisor` en un bucle en vez de reescribir sus
+validaciones —permiso, estado válido, monto y aviso al gerente siguen viviendo en
+un solo lugar— y si una falla, no quedan tres confirmadas y tres no.
+
+Respeta el buscador: si hay un filtro puesto, el botón cuenta y confirma las que
+están en pantalla, y el número en el rótulo lo deja explícito.
+
+Probado en el navegador sobre tres metas sintéticas de septiembre, borradas al
+terminar: las tres pasaron juntas a «espera aprobación» con sus montos intactos
+($140,000 exactos, igual que el rótulo). Las metas reales de agosto no se
+tocaron.
+
 ## v2.372.0 — Metas: aprobar registrando la autorización del gerente
 
 Confirmar una meta la deja en «espera aprobación», no oficial: el paso final es

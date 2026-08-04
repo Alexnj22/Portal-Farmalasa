@@ -11,7 +11,7 @@ import { useToastStore } from '../../store/toastStore';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import {
     fetchMetasRows, fetchMetasHistorico, generarPropuestas,
-    confirmarMeta, aprobarMeta, devolverMeta,
+    confirmarMeta, confirmarMetasLote, aprobarMeta, devolverMeta,
     fetchAutorizadores, aprobarMetaPorAutorizacion,
 } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -124,6 +124,20 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     // de agosto, cómo se va a calcular algo ya»).
     const mostrarMesSig = hayDelMesSig || diaHoySV() >= diaPropuesta;
 
+    // El monto que se va a confirmar, con el ajuste de exigencia aplicado. Vive
+    // acá y no dentro de la tarjeta para que «Confirmar todas» mande EXACTAMENTE
+    // lo que cada tarjeta muestra — si se calculara dos veces, un día divergen.
+    const montoDe = useCallback((r) => {
+        const base = Number(r.monto_propuesto ?? r.monto_meta ?? 0);
+        const pasos = ajustes[r.id] ?? 0;
+        return base > 0 ? Math.round(base * (1 + PASO_FACTOR * pasos) * 100) / 100 : 0;
+    }, [ajustes]);
+
+    const esConfirmable = useCallback(
+        (r) => canEdit && ['propuesta', 'devuelta'].includes(r.estado) && montoDe(r) > 0,
+        [canEdit, montoDe],
+    );
+
     const accion = async (fn, id, auditAction, auditDetails, okTitle, okBody) => {
         setBusy(id);
         try {
@@ -139,15 +153,39 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         }
     };
 
+    // Acción del grupo, en el encabezado del grupo sobre el que actúa — el mismo
+    // sitio que «Aprobar todo» en Asistencia. Lleva la cuenta y el total en el
+    // rótulo: confirmar seis metas de golpe no puede ser un botón mudo.
+    // Con una sola fila no aparece: para eso está el botón de la tarjeta.
+    const ConfirmarTodas = ({ filas, mes }) => {
+        const lote = filas.filter(esConfirmable);
+        if (lote.length < 2) return null;
+        const total = lote.reduce((s, r) => s + montoDe(r), 0);
+        return (
+            <Button
+                variant="primary" icon={CheckCircle2} disabled={busy != null}
+                onClick={() => accion(
+                    () => confirmarMetasLote(lote.map((r) => ({ id: r.id, monto: montoDe(r) }))),
+                    'lote', 'METAS_CONFIRMAR_LOTE',
+                    { mes, cuantas: lote.length, total,
+                      salas: lote.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', ') },
+                    'Metas confirmadas',
+                    `${lote.length} salas · ${formatMoney(total)}. Al confirmar todas, le llega al gerente.`,
+                )}
+            >
+                {busy === 'lote' ? 'Confirmando…' : `Confirmar las ${lote.length} · ${formatMoney(total)}`}
+            </Button>
+        );
+    };
+
     const FilaMeta = ({ r }) => {
         const es = ESTADO_CFG[r.estado] || ESTADO_CFG.propuesta;
         const ctx = contexto[r.branch_id] || {};
         const editable = canEdit && ['propuesta', 'devuelta'].includes(r.estado);
         // La base es lo que propuso el portal; si la meta se creó a mano, ella
         // misma. El ajuste corre desde ahí, no desde un campo en blanco.
-        const base = Number(r.monto_propuesto ?? r.monto_meta ?? 0);
         const pasos = ajustes[r.id] ?? 0;
-        const montoNum = base > 0 ? Math.round(base * (1 + PASO_FACTOR * pasos) * 100) / 100 : 0;
+        const montoNum = montoDe(r);
         const mover = (d) => setAjustes((a) => ({
             ...a, [r.id]: Math.max(-PASOS_MAX, Math.min(PASOS_MAX, pasos + d)),
         }));
@@ -369,6 +407,11 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             ? 'una meta sigue sin oficializar'
                             : `${pendientesTodas.length} metas siguen sin oficializar`} — las salas la ven como pendiente.
                     </Notice>
+                    {pendientesActual.length > 0 && (
+                        <div className="flex justify-end">
+                            <ConfirmarTodas filas={pendientesActual} mes={ymActual} />
+                        </div>
+                    )}
                     {pendientesActual.length === 0 ? (
                         <EmptyState
                             compact icon={Search}
@@ -392,7 +435,10 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     sección vacía, el `EmptyState` ya dice de qué mes habla, y el
                     h2 quedaba colgado arriba a la izquierda repitiéndolo. */}
                 {delMesSig.length > 0 && (
-                    <h2 className="text-body font-black">Metas de {ymLabel(ymSig).toLowerCase()}</h2>
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <h2 className="text-body font-black">Metas de {ymLabel(ymSig).toLowerCase()}</h2>
+                        <ConfirmarTodas filas={delMesSig} mes={ymSig} />
+                    </div>
                 )}
 
                 {/* «Generar propuestas» vive DENTRO del vacío y no suelto en el

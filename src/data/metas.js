@@ -63,6 +63,14 @@ export async function confirmarMeta({ id, monto, nota }) {
     if (error) throw error;
 }
 
+// Confirma varias de una vez. Va en UNA transacción del lado del servidor: si
+// alguna falla no quedan la mitad confirmadas.
+export async function confirmarMetasLote(items) {
+    const { data, error } = await supabase.rpc('confirmar_metas_lote', { p_items: items });
+    if (error) throw error;
+    return data ?? 0;
+}
+
 export async function aprobarMeta(id) {
     const { error } = await supabase.rpc('aprobar_meta_gerente', { p_id: id });
     if (error) throw error;

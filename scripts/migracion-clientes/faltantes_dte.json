@@ -238,7 +238,7 @@
  },
  "21188": {
   "erp_id": "21188",
-  "name": "SUSANA MARGARITA GUILLEN DE QUIJADA",
+  "name": "susana margarita guillen de quijada",
   "categoria": "Contribuyente",
   "faltan": [
    "distrito"
@@ -247,14 +247,6 @@
  "21305": {
   "erp_id": "21305",
   "name": "REINA GUADALUPE VALLE LEMUS",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "21451": {
-  "erp_id": "21451",
-  "name": "DELMY ELIZABETH MANCIA DE VALLE",
   "categoria": "Contribuyente",
   "faltan": [
    "distrito"
@@ -277,14 +269,6 @@
    "direccion"
   ]
  },
- "21823": {
-  "erp_id": "21823",
-  "name": "JAQUELINE  TEJADA",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
  "22119": {
   "erp_id": "22119",
   "name": "DELMY ANGELINA VASQUEZ ALFARO",
@@ -293,26 +277,10 @@
    "distrito"
   ]
  },
- "22320": {
-  "erp_id": "22320",
-  "name": "MARIA LUZ LANDAVERDE DE LEMUS",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
  "22438": {
   "erp_id": "22438",
   "name": "FUNERARIA AGUILAS DEL NORTE SOCIEDAD ANÓNIMA DE CAPITAL VARIABLE",
   "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "22659": {
-  "erp_id": "22659",
-  "name": "EVELIN TATIANA AGUILAR VILLEDA",
-  "categoria": "Consumidor",
   "faltan": [
    "distrito"
   ]
@@ -878,6 +846,26 @@
    "nrc",
    "sel_giro",
    "correo"
+  ]
+ },
+ "21309": {
+  "erp_id": "21309",
+  "name": "Asociacion PILARH",
+  "categoria": "Extranjero",
+  "faltan": [
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo"
+  ]
+ },
+ "21504": {
+  "erp_id": "21504",
+  "name": "JESUS ANTONIO ALVARADO CARBAJAL",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
   ]
  }
 }

@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.357.0 — El DTE de una venta, y el IVA que nos retuvieron
+
+Dos cosas que faltaban después de v2.355.0: la retención no estaba en la
+pestaña que lleva su nombre, y los documentos no se podían abrir.
+
+**La respuesta a «¿la agregaste en retención?» era no, y con motivo.** Esa
+pestaña es el anexo del Art. 162: las retenciones que la empresa practica **como
+agente**, y sale vacía en toda la historia porque no lo es. Lo que tienen estas
+ventas es lo contrario — el 1% que el cliente nos retuvo a nosotros. Son dos
+cosas opuestas y sumarlas sería declarar un impuesto por otro, la misma línea
+que ya separa la retención de Renta del Art. 156. Ahora la pestaña lleva las dos
+mitades, rotuladas y separadas, con la que tiene filas arriba.
+
+**El DTE se puede abrir.** Resultó que el origen publica el documento por
+`codigoGeneracion`, sin login y sin cookie, en dos endpoints que no estaban
+usados: `downloads/dteqr_json.php` (que ya se conocía, da el número de control)
+y **`downloads/dteqr_pdf.php`, que no estaba documentado en ningún lado**. Los
+dos archivos se archivan en un bucket privado y se abren desde el libro con los
+mismos tres botones que Facturas de Compra: JSON, PDF y el paquete ZIP.
+
+Bajados los 10 documentos con retención desde junio de 2026 — 10 de 10 con JSON
+y PDF, ~1.9 MB. Junio en adelante porque es desde donde hay datos contables.
+
+**El DTE es el tercer testigo de v2.355.0.** Su `resumen` trae `ivaRete1`, o sea
+la retención dicha por el documento legal. Comparados los 10 contra lo guardado
+—gravada, IVA, retención y total a pagar—, **los 10 cuadran**. Y confirma que la
+base corregida era la correcta: el CCF 323659 dice `totalGravada: 359.79`, que es
+el valor nuevo y no el que el portal tenía antes. Ojo con la forma: el CCF
+(DTE-03) desglosa base + IVA y la factura de consumidor (DTE-01) reporta el monto
+**con IVA adentro** y sin tributos — compararlos con la misma regla da ocho
+diferencias que no existen.
+
+**Además**
+
+- La retención llegaba como flotante (`1.059999942779541`) mientras subtotal,
+  IVA y total llegan con dos decimales. Entraba así a una columna de dinero:
+  `sum()` devolvía 179.3599987030029290. El sync ya la redondea y lo guardado
+  quedó limpio. No se podía arreglar re-sincronizando: la comparación del sync
+  usa media unidad de tolerancia, así que 6e-8 no dispara nada.
+- La sección exporta su propio CSV con la identidad completa de cada documento
+  (número de control, código de generación, sello), que es lo que hace falta para
+  acreditar la retención al declarar. No replica ningún archivo del origen —no
+  existe uno— así que lleva encabezado.
+- El carril de la pestaña pasa a hablar de la sección que tiene filas. Dejarlo en
+  el anexo mostraba $0.00 arriba y $42.92 en la tabla de abajo, que de un vistazo
+  se lee como un error y no como dos cosas distintas.
+- Las anuladas van incluidas y marcadas, con su monto dicho aparte: no se
+  acreditan, pero su retención **sí** aparece en el Corte Z del período, y es lo
+  que explica que julio de Salud 3 dé $44.27 en documentos contra $42.92 en el
+  ticket.
+
+**Medido en el navegador**, que es donde esto se rompe: la tabla nueva entra
+exacta en 1280, 1366, 1440, 1536 y 1920, con la misma cantidad de títulos que de
+celdas en las cinco. La primera versión no entraba —1133 contra un contenedor de
+1004 a 1440— y lo que quedaba fuera del visor era justo la columna de botones.
+Ceden NRC y Base hasta 2xl, con el `hideBelow` idéntico en el encabezado y en la
+celda. Y los tres botones se apretaron de verdad: bajan el JSON (2.2 kB, con su
+`numeroControl` y su `ivaRete1`), el PDF (`%PDF-1.4`, 184 kB) y el ZIP con los
+dos adentro.
+
+_(pendiente de redactar)_
+
 ## v2.356.1 — Mantenimiento se puede repartir desde Permisos
 
 Primer arreglo salido de la auditoría de permisos

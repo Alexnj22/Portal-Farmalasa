@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, SearchX, Archive } from 'lucide-react';
+import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, SearchX, Archive, FileJson } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -9,6 +9,7 @@ import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useStaffStore } from '../../store/staffStore';
@@ -22,8 +23,9 @@ import {
     fetchVentasFueraDelLibro,
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
-    fetchNotasCreditoCompras,
+    fetchNotasCreditoCompras, fetchRetencionVentas,
 } from '../../data/librosIva';
+import { getSignedFileUrl } from '../../utils/storageFiles';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
@@ -534,6 +536,192 @@ function getZipLib() {
     return zipPromise;
 }
 
+// ── El DTE archivado de una venta ───────────────────────────────────────────
+//
+// `sales-dte` es un bucket PRIVADO: en la base vive la URL formato-public como
+// identificador y `getSignedFileUrl` la firma en el momento de abrirla. Guardar
+// una firmada sería guardar algo que expira.
+function dispararDescarga(blob, nombre) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+}
+
+async function bajarArchivo(path, nombre) {
+    const url = await getSignedFileUrl(path);
+    if (!url) throw new Error('No se pudo firmar el enlace del archivo.');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`No se pudo bajar el archivo (HTTP ${res.status}).`);
+    dispararDescarga(await res.blob(), nombre);
+}
+
+// El ZIP de UN documento se arma en el navegador, igual que en Facturas de
+// Compra: son dos archivos de ~186 kB, no amerita ida al servidor.
+async function bajarPaqueteDte(row) {
+    const { downloadZip } = await getZipLib();
+    const base = String(row.codigo_generacion || row.erp_invoice_id || 'dte').toUpperCase();
+    const entradas = [];
+    for (const [ext, path] of [['json', row.json_path], ['pdf', row.pdf_path]]) {
+        if (!path) continue;
+        const url = await getSignedFileUrl(path);
+        if (!url) continue;
+        const res = await fetch(url);
+        if (res.ok) entradas.push({ name: `${base}.${ext}`, input: await res.blob() });
+    }
+    if (entradas.length === 0) throw new Error('Este documento no tiene archivos guardados.');
+    dispararDescarga(await downloadZip(entradas).blob(), `${base}.zip`);
+}
+
+// ── Sección: el IVA que NOS retuvieron ──────────────────────────────────────
+//
+// Vive en la pestaña de Retención pero es la mitad OPUESTA del anexo que está
+// abajo: acá el agente de retención es el cliente y nosotros somos el retenido.
+// Separadas y rotuladas porque sumarlas sería declarar un impuesto por otro —
+// la misma línea que ya separa la retención de Renta (Art. 156) de la de IVA
+// (Art. 162).
+//
+// Tabla propia y no la de la pestaña: son ≤10 filas por mes en toda la
+// historia, así que no necesita buscador ni paginación, y el anexo de abajo
+// tiene que conservar los suyos intactos porque es el archivo que se presenta.
+const COLS_RET_VENTAS = [
+    { key: 'n',      label: 'N.º',       align: 'right' },
+    { key: 'fecha',  label: 'Fecha',     align: 'left'  },
+    { key: 'cliente', label: 'Cliente',  align: 'left'  },
+    // `2xl` en NRC y Base, y NO por gusto: con las ocho columnas la tabla medía
+    // 974 contra un contenedor de 844 a 1280 y 930 a 1366, y lo que quedaba
+    // fuera del visor era la columna DTE — o sea los botones, que son el motivo
+    // de la sección. Ceden estas dos porque el retenido y el documento se
+    // pueden leer sin ellas: el NRC está en el DTE que se abre al lado, y la
+    // base es el retenido por cien. Mismo criterio que el NIT en Contribuyentes.
+    { key: 'nrc',    label: 'NRC',       align: 'left', hideBelow: '2xl' },
+    { key: 'doc',    label: 'Documento', align: 'left', hideBelow: 'sm' },
+    { key: 'base',   label: 'Base',      align: 'right', hideBelow: '2xl' },
+    { key: 'ret',    label: 'Retenido',  align: 'right' },
+    { key: 'dte',    label: 'DTE',       align: 'center' },
+];
+
+// Este CSV NO replica ningún archivo del origen —no existe uno— así que lleva
+// encabezado y va en términos del portal. Es la lista que el contador necesita
+// para acreditar la retención al declarar, y por eso trae la identidad completa
+// de cada documento aunque en pantalla el ancho no dé para mostrarla toda.
+const csvRetencionVentas = (filas) => filas.map((r, i) => [
+    i + 1, fmtFecha(r.fecha), r.cliente || '',
+    formatearNrc(r.nrc), formatearNit(r.nit),
+    r.tipo_documento || '', soloNumero(r.correlativo), r.numero_control || '',
+    String(r.codigo_generacion || '').toUpperCase(), r.sello_recepcion || '',
+    (Number(r.monto_sujeto) || 0).toFixed(2), (Number(r.retencion_iva) || 0).toFixed(2),
+    (Number(r.total) || 0).toFixed(2), r.anulada ? 'ANULADO' : '',
+]);
+const CSV_RET_VENTAS_HEADERS = ['N.', 'FECHA', 'CLIENTE', 'NRC', 'NIT', 'TIPO',
+    'DOCUMENTO', 'NUMERO DE CONTROL', 'CODIGO DE GENERACION', 'SELLO',
+    'BASE', 'IVA RETENIDO', 'TOTAL', 'ESTADO'];
+
+function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, onError }) {
+    const [bajando, setBajando] = useState(null);
+
+    const total   = filas.reduce((s, r) => s + Number(r.retencion_iva || 0), 0);
+    const vigente = filas.filter(r => !r.anulada)
+                         .reduce((s, r) => s + Number(r.retencion_iva || 0), 0);
+    const anuladas = filas.filter(r => r.anulada).length;
+
+    const correr = async (clave, fn) => {
+        setBajando(clave);
+        try { await fn(); } catch (e) { onError(e.message); } finally { setBajando(null); }
+    };
+
+    return (
+        <section data-surface="card" className="p-4 md:p-5 space-y-3">
+            <header className="flex flex-wrap items-baseline justify-between gap-3">
+                <div className="min-w-0">
+                    <h3 className="text-body font-bold">IVA que nos retuvieron</h3>
+                    <p className="text-caption text-content-3">
+                        Ventas en las que el cliente retuvo el 1% y lo entera él mismo (Art. 162
+                        del Código Tributario). Es impuesto ya pagado: se acredita al declarar.
+                    </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                    <Button variant="secondary" size="sm" icon={Download}
+                        disabled={loading || filas.length === 0}
+                        title={`Exportar los ${filas.length} documentos con retención de ${etiquetaMes(mes)} en CSV`}
+                        onClick={() => exportCsv(CSV_RET_VENTAS_HEADERS, csvRetencionVentas(filas),
+                            `iva-retenido_${sufijoArchivo}.csv`)}>
+                        Exportar
+                    </Button>
+                <div className="text-right">
+                    <p className="font-mono text-title tabular-nums font-black">{formatMoney(vigente)}</p>
+                    <p className="text-micro text-content-3">
+                        {filas.length} documento{filas.length === 1 ? '' : 's'} en {etiquetaMes(mes)}
+                        {/* La anulada no se acredita, pero su retención SÍ aparece en el
+                            Corte Z del período. Decirlo es lo que hace que la resta se
+                            entienda en vez de parecer un descuadre. */}
+                        {anuladas > 0 && <> · {anuladas} anulado{anuladas === 1 ? '' : 's'} por {formatMoney(total - vigente)}, que no se acredita{anuladas === 1 ? '' : 'n'}</>}
+                    </p>
+                </div>
+                </div>
+            </header>
+
+            <DataTable columns={COLS_RET_VENTAS} loading={loading} empty={empty}>
+                {filas.map((r, i) => (
+                    <DataRow key={r.codigo_generacion || `${r.erp_invoice_id}-${i}`} index={i}>
+                        <DataCell align="right">{i + 1}</DataCell>
+                        <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
+                        {/* Cell propia y no `CeldaProveedor`: esa lleva 16rem, que
+                            acá se comía la columna de botones (medido: tabla 1133
+                            contra un contenedor de 1004 a 1440, con DTE fuera del
+                            visor). Los clientes que retienen son instituciones de
+                            nombre largo, así que sigue a dos líneas. */}
+                        <DataCell className="max-w-[11rem]">
+                            <div className="flex items-start gap-2 min-w-0">
+                                <span className="line-clamp-2 break-words leading-tight" title={r.cliente || undefined}>
+                                    {r.cliente || '—'}
+                                </span>
+                                {r.anulada && <Badge variant="warning" size="sm" className="shrink-0">Anulada</Badge>}
+                            </div>
+                        </DataCell>
+                        {/* `2xl` acá y `2xl` en COLS_RET_VENTAS: tienen que ser el
+                            MISMO peldaño. Cuando no coinciden, la tabla queda con
+                            más celdas que títulos y cada monto se lee bajo el
+                            rótulo del vecino — ya pasó en Contribuyentes a 1440. */}
+                        <DataCell hideBelow="2xl"><CeldaNrc nrc={r.nrc} /></DataCell>
+                        {/* El correlativo y no el número de control: el control son
+                            31 caracteres monoespaciados y vale ~230px de tabla. Va
+                            en el DTE, que se abre acá al lado. */}
+                        <DataCell hideBelow="sm">
+                            <CeldaDocumento numero={soloNumero(r.correlativo)} />
+                        </DataCell>
+                        <DataCell align="right" hideBelow="2xl"><CeldaMonto v={r.monto_sujeto} /></DataCell>
+                        <DataCell align="right"><CeldaMonto fuerte v={r.retencion_iva} /></DataCell>
+                        <DataCell align="center">
+                            {/* Deshabilitados y no ocultos cuando el documento no
+                                está archivado: que el botón exista y no se pueda
+                                apretar dice "falta el archivo"; que no exista dice
+                                "acá no hay nada que abrir", que es otra cosa. */}
+                            <div className="flex items-center justify-center gap-1">
+                                <Button tone="chart-1" iconOnly icon={FileJson}
+                                    disabled={!r.json_path || bajando != null}
+                                    title={r.json_path ? 'Descargar el JSON del documento' : 'El JSON de este documento no está guardado'}
+                                    onClick={() => correr(`${r.codigo_generacion}-json`,
+                                        () => bajarArchivo(r.json_path, `${String(r.codigo_generacion).toUpperCase()}.json`))} />
+                                <Button tone="chart-1" iconOnly icon={FileText}
+                                    disabled={!r.pdf_path || bajando != null}
+                                    title={r.pdf_path ? 'Descargar el PDF del documento' : 'El PDF de este documento no está guardado'}
+                                    onClick={() => correr(`${r.codigo_generacion}-pdf`,
+                                        () => bajarArchivo(r.pdf_path, `${String(r.codigo_generacion).toUpperCase()}.pdf`))} />
+                                <Button tone="chart-1" iconOnly icon={Archive}
+                                    disabled={(!r.json_path && !r.pdf_path) || bajando != null}
+                                    title="Descargar los dos en un ZIP"
+                                    onClick={() => correr(`${r.codigo_generacion}-zip`, () => bajarPaqueteDte(r))} />
+                            </div>
+                        </DataCell>
+                    </DataRow>
+                ))}
+            </DataTable>
+        </section>
+    );
+}
+
 // ── Totales de un juego de libros ────────────────────────────────────────────
 //
 // A nivel de módulo y no dentro del componente porque el ZIP los necesita **por
@@ -947,6 +1135,12 @@ export default function LibrosIvaView() {
     const [compras,       setCompras]       = useState([]);
     const [percepcion,    setPercepcion]    = useState([]);
     const [retencion,     setRetencion]     = useState([]);
+    // La otra mitad de la pestaña de Retención: las ventas donde el cliente nos
+    // retuvo. Estado aparte y NO dentro de `datos` a propósito — `datos` es lo
+    // que alimenta el buscador, el orden, la paginación y el CSV de la pestaña,
+    // y todo eso tiene que seguir siendo el anexo del Art. 162, que es el
+    // archivo que se presenta.
+    const [retVentas,     setRetVentas]     = useState([]);
     const [renta,         setRenta]         = useState([]);
     const [fuera,         setFuera]         = useState(null);
     const [notas,         setNotas]         = useState([]);
@@ -963,7 +1157,7 @@ export default function LibrosIvaView() {
     // y el carril puede mostrar el total del período sin importar dónde estés.
     const load = useCallback(async () => {
         setLoading(true);
-        const [c, k, a, co, pe, re, nc, rt, fu] = await Promise.all([
+        const [c, k, a, co, pe, re, nc, rt, fu, rv] = await Promise.all([
             fetchLibroConsumidor(desde, hasta, filterBranch),
             fetchLibroContribuyente(desde, hasta, filterBranch),
             fetchLibroAnulados(desde, hasta, filterBranch),
@@ -976,12 +1170,13 @@ export default function LibrosIvaView() {
             // casilla de la empresa y no traen sucursal.
             fetchAnexoRetencionRenta(desde, hasta),
             fetchVentasFueraDelLibro(desde, hasta, filterBranch),
+            fetchRetencionVentas(desde, hasta, filterBranch),
         ]);
         // Un libro que falla NO puede quedar como "no hubo operaciones": un mes
         // vacío por error de red es indistinguible de un mes sin movimiento, y
         // acá eso se declara a Hacienda. Vale doble para Retención y Sujeto
         // Excluido, que salen vacíos aun cuando todo funciona.
-        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error || rt.error || fu.error;
+        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error || rt.error || fu.error || rv.error;
         setError(fallo ? fallo.message : null);
         setConsumidor(c.data || []);
         setContribuyente(k.data || []);
@@ -992,6 +1187,7 @@ export default function LibrosIvaView() {
         setNotas(nc.data || []);
         setRenta(rt.data || []);
         setFuera((fu.data ?? [])[0] ?? null);
+        setRetVentas(rv.data || []);
         setLoading(false);
     }, [desde, hasta, filterBranch]);
 
@@ -1023,7 +1219,17 @@ export default function LibrosIvaView() {
 
     const totales = useMemo(() => calcularTotales(datos), [datos]);
 
-    const t = totales[activeTab];
+    // En Retención el carril habla de la sección que TIENE filas. Dejarlo en el
+    // anexo del Art. 162 mostraría $0.00 arriba mientras la tabla de abajo
+    // muestra $42.92, y de un vistazo eso se lee como un error, no como dos
+    // cosas distintas. Se excluyen las anuladas: el carril es lo acreditable.
+    const t = activeTab === 'retencion'
+        ? { docs: retVentas.length, exentas: 0,
+            gravadas: retVentas.reduce((s, r) => s + Number(r.monto_sujeto || 0), 0),
+            debito:   retVentas.filter(r => !r.anulada)
+                               .reduce((s, r) => s + Number(r.retencion_iva || 0), 0),
+            total:    retVentas.reduce((s, r) => s + Number(r.monto_sujeto || 0), 0) }
+        : totales[activeTab];
 
     // Cuántos CCF del período van a salir sin NRC. Es el dato que decide si el
     // libro de contribuyentes se puede presentar tal cual.
@@ -1311,7 +1517,18 @@ export default function LibrosIvaView() {
                     de lo que quiere decir. Los que piden hacer algo —NRC
                     faltante, documentos sin sincronizar— se quedan a tamaño
                     completo, y ahora se distinguen de un vistazo. */}
-                {ES_DE_VENTAS.has(activeTab) ? (
+                {/* Retención es la única pestaña con las dos mitades —una de
+                    ventas y otra de compras—, así que no puede usar ninguno de
+                    los dos avisos: el de compras hablaba del Art. 86 y del sello
+                    encima de una tabla de ventas. */}
+                {activeTab === 'retencion' ? (
+                    <Notice variant="info" icon={BookOpen} compact>
+                        Dos cosas opuestas en la misma pantalla: arriba, el IVA que los clientes
+                        retuvieron sobre nuestras ventas —impuesto ya pagado, que se acredita al
+                        declarar—; abajo, el que la empresa habría retenido como agente. Los
+                        documentos anulados van incluidos y marcados, y no se acreditan.
+                    </Notice>
+                ) : ES_DE_VENTAS.has(activeTab) ? (
                     <Notice variant="info" icon={BookOpen} compact>
                         Solo entran las facturas con sello de Hacienda y estado FINALIZADA; los
                         anulados son los documentos invalidados ante Hacienda.
@@ -1524,6 +1741,35 @@ export default function LibrosIvaView() {
                             </DataRow>
                         ))}
                     </DataTable>
+                )}
+
+                {/* La pestaña de Retención lleva las DOS mitades, y en este
+                    orden: primero la que tiene filas. La de abajo es el anexo
+                    del Art. 162 —lo que la empresa retiene como agente— y sale
+                    vacío porque no lo es; si fuera lo primero que se ve, la
+                    pestaña parecería no tener nada. */}
+                {activeTab === 'retencion' && (
+                    <SeccionRetencionVentas
+                        filas={retVentas}
+                        loading={loading}
+                        mes={mes}
+                        empty={vacioDe(Percent,
+                            `Sin retención de IVA en ${etiquetaMes(mes)}`,
+                            'Ningún cliente practicó retención sobre las ventas del período.')}
+                        sufijoArchivo={sufijoArchivo}
+                        onError={setError}
+                    />
+                )}
+
+                {activeTab === 'retencion' && (
+                    <div className="pt-1">
+                        <h3 className="text-body font-bold">IVA que retuvo la empresa</h3>
+                        <p className="text-caption text-content-3">
+                            El anexo del Art. 162: las retenciones practicadas como agente. Es la
+                            mitad opuesta de la de arriba y por eso va aparte — sumarlas sería
+                            declarar un impuesto por otro.
+                        </p>
+                    </div>
                 )}
 
                 {/* Percepción y retención son la misma tabla con otro impuesto.

@@ -148,7 +148,13 @@ async function syncBranch(
     const newTotal    = venta.totales?.total ?? 0;
     const newSubtotal = venta.totales?.subtotal ?? 0;
     const newIva      = venta.totales?.iva ?? 0;
-    const newRetencion = venta.totales?.retencion ?? 0;
+    // Redondeada a centavos: el origen manda la retención como flotante
+    // (`1.059999942779541`, `3.5999999046325684`) mientras que subtotal, iva y
+    // total llegan con dos decimales. El DTE dice `ivaRete1: 3.6`, o sea que el
+    // valor real tiene dos decimales y lo demás es basura de coma flotante.
+    // Guardarla cruda ensucia la columna y hace que `sum()` devuelva
+    // 179.3599987030029290 donde el dato es 179.36.
+    const newRetencion = Math.round((Number(venta.totales?.retencion) || 0) * 100) / 100;
 
     let hasChange = false;
 

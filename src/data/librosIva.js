@@ -49,10 +49,23 @@ export function fetchLibroPercepcion(desde, hasta, branchId) {
     return supabase.rpc('get_libro_percepcion', params(desde, hasta, branchId));
 }
 
-// Anexo de retención (Art. 162 CT). Sale vacío y así debe ser: el ERP tampoco
-// tiene una sola fila entre 2025-01 y 2026-07 en las 7 sucursales.
+// Anexo de retención (Art. 162 CT) — el que la empresa presentaría COMO AGENTE
+// de retención. Sale vacío y así debe ser: no lo es, y el origen tampoco tiene
+// una sola fila entre 2025-01 y 2026-07 en las 7 sucursales.
 export function fetchLibroRetencion(desde, hasta, branchId) {
     return supabase.rpc('get_libro_retencion', params(desde, hasta, branchId));
+}
+
+// La otra mitad, y la que sí tiene filas: el 1% que un cliente gran
+// contribuyente nos retuvo sobre una venta. Son dos cosas OPUESTAS —una la
+// practicamos, la otra nos la practican— y por eso van en secciones separadas
+// de la misma pestaña. Confundirlas sería declarar un impuesto por otro, que es
+// la misma trampa que ya está anotada para la retención de Renta del Art. 156.
+//
+// Trae `json_path`/`pdf_path` del DTE archivado cuando existe, para abrir el
+// documento sin salir del libro.
+export function fetchRetencionVentas(desde, hasta, branchId) {
+    return supabase.rpc('get_retencion_ventas', params(desde, hasta, branchId));
 }
 
 // Reporte de sujeto excluido (Art. 119 CT). RETIRADO de la vista el 2026-08-02:

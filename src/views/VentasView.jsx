@@ -1833,11 +1833,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         return () => { alive = false; };
     }, [fini, ffin, filterBranch]);
 
-    // Base de la TABLA: con búsqueda + sucursal entran los resultados del server
-    // (traen los productos sin venta de esa sucursal); en el resto de los casos,
-    // el dataset local. El fuzzy de smartFilter corre siempre sobre esta base.
+    // Base de la TABLA: con búsqueda + sucursal, los resultados del server (que
+    // traen los productos sin venta de esa sucursal) se UNEN al dataset local —
+    // si solo se usara lo del server, un typo que sus tokens no matchean
+    // devolvería 0 filas y el fuzzy de smartFilter no tendría dónde buscar
+    // parecidos. En el resto de los casos, el dataset local solo.
     const tableBaseRows = useMemo(() => {
-        const base = searchTerm && filterBranch && searchRows ? searchRows : rows;
+        let base = rows;
+        if (searchTerm && filterBranch && searchRows) {
+            const ids = new Set(searchRows.map(r => r.erp_product_id));
+            base = [...searchRows, ...rows.filter(r => !ids.has(r.erp_product_id))];
+        }
         return base.filter(r => showHidden ? r.oculto_en_ventas : !r.oculto_en_ventas);
     }, [rows, searchRows, searchTerm, filterBranch, showHidden]);
 

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.359.0 — Última venta exacta y búsqueda que perdona el typo con sucursal
+
+Cierra los pendientes 1, 2 y 5 de la auditoría de Ventas > Productos
+(migración `20260804013457` + frontend). QA Playwright 13/13 en verde.
+
+- **"Última venta" ahora es el día exacto, siempre.** El agregado mensual no
+  guardaba el día, así que todo producto sin ventas en el mes en curso
+  mostraba el último día de su último mes con ventas (hasta ~30 días de
+  optimismo — un producto vendido el 3 de julio decía "31 jul"). La tabla
+  `product_sales_monthly_agg` lleva ahora la columna `ultima_venta`
+  (`MAX(fecha)` del grupo), `rebuild`/`refresh` la mantienen, y el RPC la usa
+  con fallback al fin de mes. Backfill de los 15 meses del histórico
+  (137,408 filas, medido antes con BEGIN…ROLLBACK) y verificación: **0
+  diferencias contra las ventas en vivo en los 16,679 pares
+  producto-sucursal**, y 0 diferencias de montos en los 15 meses.
+- **El typo con sucursal seleccionada vuelve a encontrar.** La búsqueda con
+  sucursal es del servidor (es la que trae los productos sin venta), pero si
+  sus tokens no matchean devolvía 0 filas y el fuzzy local no tenía dónde
+  buscar. Ahora los resultados del servidor se UNEN al dataset local y
+  smartFilter corre sobre la unión — "acetaminfen" (sin la o) encuentra
+  ACETAMINOFEN con Salud 1 seleccionada, verificado en navegador.
+- **El mapeo sucursal→código interno dejó de estar harcodeado** en el RPC:
+  sale de `erp_sucursal_map` (verificado idéntico al VALUES que reemplaza),
+  excluyendo la bodega igual que antes. Una sucursal nueva ya no requiere
+  editar la función.
+
+Decisiones del mismo repaso, anotadas: la pestaña Ventas montada oculta se
+queda como está (dueña del selector de período); la ventana de
+autocorrección de 3 meses del agregado se queda (no se anula ni corrige nada
+de tan atrás — y el histórico ya quedó cuadrado al centavo).
+
 ## v2.358.0 — Abrir el DTE de una venta desde el libro
 
 Los tres pedidos sobre la sección de retención, y lo que costó cada uno.

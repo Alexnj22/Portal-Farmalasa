@@ -94,6 +94,43 @@ let archivos = execSync(
   { cwd: RAIZ, encoding: 'utf8' },
 ).trim().split('\n').filter(Boolean);
 
+// El CONTENIDO también sale del índice cuando corre el hook. Filtrar la lista
+// por `git ls-files` cerraba solo la mitad del agujero: un archivo trackeado que
+// otra sesión tiene a medio editar se seguía leyendo del DISCO, así que sus
+// hallazgos entraban al commit ajeno igual que los de un archivo sin trackear.
+// Pasó el 2026-08-03 — `src/data/ventas.js` a medio editar por otra sesión subió
+// `sin-paginar` de 9 a 10 y bloqueó un commit que no tocaba ese archivo ni esa
+// categoría, con el mismo mensaje que culpa a "código nuevo que hay que
+// arreglar". El índice ya era la definición correcta según el comentario de
+// arriba; esto la termina de implementar.
+//
+// `git cat-file --batch` en UN proceso, no un `git show` por archivo (son ~480).
+// Sale un Buffer a propósito: `execSync` corta en 1 MB si se le pide texto y el
+// fuente entero pasa de eso — y el corte llegaría como un archivo truncado, no
+// como un error.
+function leerDelIndice(rutas) {
+  const salida = execSync('git cat-file --batch', {
+    cwd: RAIZ,
+    input: rutas.map(r => `:${r}`).join('\n') + '\n',
+    maxBuffer: 512 * 1024 * 1024,
+  });
+  const mapa = new Map();
+  let pos = 0;
+  for (const ruta of rutas) {
+    const nl = salida.indexOf(0x0a, pos);
+    if (nl === -1) break;
+    const cabecera = salida.toString('utf8', pos, nl);   // "<oid> blob <bytes>"
+    const partes = cabecera.split(' ');
+    if (partes[1] !== 'blob') { pos = nl + 1; continue; } // "missing" / "ambiguous"
+    const ini = nl + 1;
+    const fin = ini + Number(partes[2]);
+    mapa.set(ruta, salida.toString('utf8', ini, fin));
+    pos = fin + 1;                                        // +1: el \n de cierre
+  }
+  return mapa;
+}
+
+const desdeIndice = new Map();
 if (soloIndexado) {
   const indexados = new Set(
     execSync('git ls-files -- src supabase/functions', { cwd: RAIZ, encoding: 'utf8' })
@@ -105,7 +142,14 @@ if (soloIndexado) {
   if (fuera > 0) {
     console.log(`\n  (${fuera} archivo${fuera !== 1 ? 's' : ''} sin trackear fuera del análisis: no son de este commit)`);
   }
+  for (const [ruta, texto] of leerDelIndice(archivos)) desdeIndice.set(ruta, texto);
 }
+
+// Modo manual (`npm run gate:data`): el disco, que es lo que uno quiere al
+// auditar o antes de regenerar el baseline.
+const leerFuente = (archivo) => (soloIndexado
+  ? (desdeIndice.get(archivo) ?? '')
+  : readFileSync(join(RAIZ, archivo), 'utf8'));
 
 const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'error-ignorado': [] };
 const push = (cat, archivo, linea, detalle) => {
@@ -135,7 +179,7 @@ function tablaEnContexto(src, idx) {
 }
 
 for (const archivo of archivos) {
-  const src = soloCodigo(readFileSync(join(RAIZ, archivo), 'utf8'));
+  const src = soloCodigo(leerFuente(archivo));
 
   // 1. tipo-booleano — .eq/.neq/.is(col, true|false) y {col: true|false} en escrituras,
   //    contra el snapshot de columnas realmente BOOLEAN.

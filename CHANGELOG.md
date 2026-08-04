@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.363.0 — Metas: la base de datos de la Fase 1
+
+Migraciones `20260804032215` + `20260804032349` (solo BD; el frontend viene en
+la versión siguiente). Mockup aprobado por el usuario antes de construir.
+
+- **`metas_sucursal`**: la meta mensual por sala, con estados listos para el
+  flujo supervisor→gerente de la Fase 2 (hoy todo entra `oficial` a mano) y
+  autoría server-side. **`metas_config`**: umbrales del bono (100/95/50),
+  día de propuesta y el interruptor `bonificaciones_activas` (nace APAGADO —
+  las bonificaciones están suspendidas por decisión).
+- **`upsert_meta_manual`**: el ingreso manual (histórico o mes en curso);
+  valida permiso de edición en Metas, mes, monto y que la sala venda.
+  Verificado el rechazo sin permiso y el ciclo completo con BEGIN…ROLLBACK
+  (meta de prueba $47,000 en julio → 103.8% → «completo» → deshecho).
+- **`get_metas_dashboard`**: las 6 salas de un mes con venta acumulada EN VIVO
+  (agregado diario hasta ayer + scan del día en curso — sales_daily_stats
+  nunca trae hoy), % de cumplimiento, proyección de cierre por perfil de día
+  de semana (8 semanas) y el tramo del bono. Verificado al centavo contra la
+  suma directa de facturas: diff $0.00 en las 6 salas.
+- **`get_metas_historico`**: meses cerrados desde 2025-05 por sala, con % y
+  tramo del bono según los umbrales de config.
+- **El «hoy» es el día de negocio de El Salvador** (UTC-6), no la fecha UTC
+  del servidor — con CURRENT_DATE, desde las 18:00 SV el tablero contaba un
+  día de más y perdía la frescura de la tarde-noche.
+- **Backtest de la proyección** contra julio real: error medio ~3% (cortes al
+  15 y 22 de julio, 6 salas; la única desviación grande, Salud 3 con -9%, es
+  explicable: ventas mayoristas atípicas de fin de mes que ningún modelo de
+  ritmo puede anticipar).
+
 ## v2.362.1 — Permisos: el buscador busca módulos y las secciones se separan
 
 **El buscador cambia de objeto según dónde estés parado.** Sin cargo elegido

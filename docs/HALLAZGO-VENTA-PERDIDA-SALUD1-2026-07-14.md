@@ -3,6 +3,27 @@
 **Auditado el 2026-08-03.** Conclusión: **el portal tiene razón y el origen
 perdió el registro de una venta que sí existe y está sellada por Hacienda.**
 
+> ## ✅ RESUELTO el 2026-08-04 — el origen recuperó el registro
+>
+> Lo corrigieron del lado del origen y la venta volvió a su base de datos. Se
+> verificó por las dos vías, en este orden:
+>
+> 1. **`dteqr_pdf.php` ya genera el documento** — 184,165 bytes que empiezan con
+>    `%PDF-1.4`, y el contenido es exactamente esta venta (código de generación
+>    `C8AC7997-…`, control `DTE-01-S003P001-…032552`, 14/07 08:10:17, COLITISIL
+>    36 × $0.25 = $9.00). Antes reventaba con `Undefined offset: 0`, que fue la
+>    prueba de que la fila no estaba: ese generador lee la base, no el archivo.
+> 2. **Se reprocesó el Corte Z de julio, las 6 sucursales.** El de Salud 1 pasó
+>    de $48,252.89 a **$48,261.89** en factura —exactamente los $9.00— y su total
+>    general a $48,779.68, idéntico al del portal. Las 6 sucursales quedan en
+>    **cero en las cuatro columnas** (factura, crédito fiscal, total y retención).
+> 3. **El cuadre diario recorrió julio completo otra vez**: 186 días-sucursal,
+>    **0 diferencias**, y el hallazgo del 14/07 se marcó resuelto solo.
+>
+> La conclusión de la auditoría no cambia —el registro sí había desaparecido de
+> la base del origen, y todo lo de abajo se sostiene—; lo que cambió es que ya
+> volvió. **Julio 2026 cierra con 6 de 6 sucursales cuadradas al centavo.**
+
 ---
 
 ## El documento
@@ -140,12 +161,14 @@ del período contable.**
 
 ## Qué hacer
 
-1. **No tocar el documento del portal.** La venta existe, está sellada y el
-   Art. 83 obliga a registrarla. Nuestro libro la incluye; el del origen no. La
-   diferencia de $9.00 en la tarjeta del Corte Z es correcta y va a quedarse.
-2. **Reportarlo al proveedor del origen** con los datos de arriba —sobre todo
-   el error de `dteqr_pdf.php` y el rango del libro que contiene un id cuyo
-   monto no suma—, que es lo que permite ubicar el registro perdido.
+1. ~~**No tocar el documento del portal.**~~ **Cumplido.** Nunca se tocó, y por
+   eso al recuperarse el registro del otro lado los dos libros coincidieron sin
+   ningún ajuste. La venta existe, está sellada y el Art. 83 obliga a
+   registrarla.
+2. ~~**Reportarlo al proveedor del origen**~~ **Hecho, y corregido el
+   2026-08-04**: el registro volvió a la base del origen (ver el bloque de
+   arriba). Los datos que permitieron ubicarlo fueron el error de
+   `dteqr_pdf.php` y el rango del libro que contiene un id cuyo monto no suma.
 3. Los 2 documentos de agosto de 2025 sin sello ($38.00) quedan anotados: son
    anteriores al período contable y no afectan ninguna declaración.
 4. ~~Decidir qué se hace con las 3 ventas anuladas sin invalidar.~~ **Decidido el

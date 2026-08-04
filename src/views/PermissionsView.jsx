@@ -5,11 +5,12 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { EmptyState } from '../components/common/StateViews';
+import Button from '../components/common/Button';
 import {
     ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
-    ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
+    ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, SearchX, MousePointerClick,
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck
@@ -723,6 +724,16 @@ const PermissionsView = () => {
                                 Similares a &ldquo;{searchQuery}&rdquo;
                             </div>
                         )}
+                        {filteredRoles.length === 0 && (
+                            <EmptyState
+                                compact
+                                icon={SearchX}
+                                glowClass="bg-content-3/30"
+                                title="Sin resultados"
+                                subtitle={`Ningún cargo se parece a “${q}”`}
+                                action={<Button variant="secondary" onClick={() => setSearchQuery('')}>Ver todos</Button>}
+                            />
+                        )}
                         {filteredRoles.map((r) => {
                             const isActive = selectedRoleId === r.id;
                             const isSURol = !!roleIsSU[r.id];
@@ -805,18 +816,13 @@ const PermissionsView = () => {
                             {/* Buscando módulos: se dice cuántos quedan y se ofrece la
                                 salida. Sin esto, escribir algo que no matchea deja la
                                 columna en blanco sin explicar por qué. */}
-                            {buscaModulos && q && (
+                            {buscaModulos && q && modulosEncontrados > 0 && (
                                 <div className="flex items-center gap-2 px-1">
                                     <Search size={11} className="text-content-3 shrink-0" strokeWidth={2.5} />
                                     <p className="text-caption font-semibold text-content-2">
-                                        {modulosEncontrados === 0
-                                            ? <>Ningún módulo coincide con &ldquo;{q}&rdquo;</>
-                                            : <>{modulosEncontrados} módulo{modulosEncontrados !== 1 ? 's' : ''} para &ldquo;{q}&rdquo;</>}
+                                        {modulosEncontrados} módulo{modulosEncontrados !== 1 ? 's' : ''} para &ldquo;{q}&rdquo;
                                     </p>
-                                    <button type="button" onClick={() => setSearchQuery('')}
-                                        className="text-caption font-bold text-brand-text hover:text-brand-hover underline underline-offset-2">
-                                        Ver todos
-                                    </button>
+                                    <Button variant="ghost" onClick={() => setSearchQuery('')}>Ver todos</Button>
                                 </div>
                             )}
 
@@ -920,6 +926,22 @@ const PermissionsView = () => {
                             })()}
 
                             </div>{/* end 2-col grid */}
+
+                            {/* "No hay resultados" es un estado vacío, no una línea de
+                                texto: el estándar (DESIGN.md §18) pide el canónico cada vez
+                                que no haya datos que mostrar, y eso incluye una búsqueda que
+                                no encuentra nada. Antes acá quedaba el aviso suelto y debajo
+                                la columna en blanco, sin decir qué hacer. */}
+                            {buscaModulos && q && modulosEncontrados === 0 && (
+                                <EmptyState
+                                    compact
+                                    icon={SearchX}
+                                    glowClass="bg-content-3/30"
+                                    title="Sin resultados"
+                                    subtitle={`Ningún módulo se parece a “${q}”`}
+                                    action={<Button variant="secondary" onClick={() => setSearchQuery('')}>Ver todos los módulos</Button>}
+                                />
+                            )}
 
                             {gruposFiltrados.map((g, gi) => {
                                 // groupActive/groupPartial solo considera módulos principales (sin tabs)

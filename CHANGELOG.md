@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.365.2 — El cuadre diario cubre también los CCF
+
+El cuadre miraba solo el libro de consumidor. La razón era buena —es el 99% del
+volumen— pero dejaba a los créditos fiscales **sin control diario justamente
+siendo los documentos más grandes**: el CCF de BANCO PROMERICA de julio son
+$402.96 contra los $9.00 del caso que destapó todo esto.
+
+El hueco no era que no se vieran nunca, sino **cuándo y con qué información**:
+un CCF perdido por el origen después de sincronizado aparecía recién en el
+cotejo mensual del Corte Z, y ahí el panel de diagnóstico no tenía nada que
+decir — porque el diagnóstico solo corría sobre los días que marcaba la
+comparación de consumidor.
+
+Ahora se bajan **los dos libros** por sucursal-mes: consumidor (una línea por
+día) y contribuyentes (una por documento, que se agrupa acá). El clasificador ya
+sirve igual para los dos tipos, y cada documento del diagnóstico lleva el suyo.
+
+**Los dos se miden por separado y después se suman.** Si un día tuviera $50 de
+más en consumidor y $50 de menos en crédito fiscal, el total daría cero y el día
+pasaría por bueno.
+
+Corrido sobre junio, julio y agosto — **378 días de sucursal, 0 errores**: las
+únicas diferencias son las **mismas 4** que ya estaban, todas de consumidor y
+todas explicadas al centavo. Los créditos fiscales cuadran en todo el período
+contable.
+
+`resumen_ventas_diario` pasa a devolver una fila por día **y tipo**. Se
+reemplaza en vez de dejar un overload con DEFAULT al lado: el único que lo
+llamaba es el cuadre, y va en este mismo commit.
+
+## v2.365.1 — Permisos: el vacío de búsqueda usa el canónico
+
+El «Selecciona un cargo» de la vista siempre fue el canónico (`EmptyState` de
+`StateViews`, §18). El que **no** lo era es el que se agregó en v2.362.1 con el
+buscador de módulos: cuando la búsqueda no encontraba nada, quedaba una línea de
+texto suelta y debajo la columna en blanco, sin decir qué hacer. El estándar es
+explícito — el canónico va «cada vez que haya un sin datos / **no hay
+resultados** / sin historial».
+
+Ahora los dos casos de búsqueda sin resultados usan `EmptyState`: el de módulos y
+el de cargos, que tampoco mostraba nada cuando ningún cargo coincidía. Los dos
+con su salida («Ver todos») en vez de dejar al usuario borrando el texto a mano.
+
+De paso, `gate:design` cazó una regla que el texto nuevo rompía: §26.1 pide que
+el vacío se escriba `Sin <sustantivo plural>` y prohíbe explícitamente arrancar
+con «Ningún». Quedó **«Sin resultados»**, que es lo que ya usan otras cuatro
+pantallas del portal para este mismo caso.
+
 ## v2.365.0 — El cuadre diagnostica la causa
 
 El cuadre diario encontraba el DÍA que no cuadra y ahí se detenía, con un aviso

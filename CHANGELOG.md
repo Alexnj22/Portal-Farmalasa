@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.361.3 — Metas: bonificaciones por producto y laboratorio en el plan
+
+Solo documentación: el plan pasa a «Metas y Bonificaciones» (§9-10 de
+`docs/PLAN-METAS-2026-08-03.md`). Tres tipos de bono: cumplimiento de meta
+(ya diseñado), por producto(s) — bono al VENDEDOR que hizo cada venta
+(el portal ya sabe quién vendió qué; el «Factor» del Excel muere porque se
+cuentan unidades base solas) más fondos de Administración y Bodega que se
+reparten al fin de mes — y por laboratorio(s) — niveles con montos globales
+del programa y umbral de venta por sala; «persona base» = activos de esa
+sala. Transversal: bonificaciones SUSPENDIDAS hoy (interruptor general, todo
+en modo informativo; las metas corren siempre), liquidación mensual unificada
+aprobada por gerente y exportable, simulador de costo con datos reales, sin
+retroactividad. Es el sucesor del módulo Promociones retirado el 2026-07-28;
+no reusa nada de aquel esquema. Definiciones cerradas con el usuario en la
+misma sesión; fases 4-5 agregadas al orden de construcción.
+
 ## v2.361.2 — El IVA retenido entra al paquete del mes
 
 **No estaba.** El paquete traía ocho libros y el IVA retenido sobre ventas no era

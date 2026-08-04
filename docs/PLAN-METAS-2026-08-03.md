@@ -1,4 +1,4 @@
-# Plan — Módulo de Metas de Ventas por Sala
+# Plan — Módulo de Metas y Bonificaciones de Ventas
 
 **Estado: DISEÑO APROBADO, decisiones CERRADAS (§8) — listo para Fase 1.**
 No se ha construido nada. Diseñado el 2026-08-03, en la misma sesión que cerró
@@ -208,15 +208,110 @@ con cron, va junto al de recordatorios.)
    «histórico ingresado a mano» y su autoría. El cumplimiento histórico se
    calcula solo contra las ventas ya sincronizadas (desde 2025-05).
 
-## 9. Orden de construcción
+## 9. BONIFICACIONES — los otros dos tipos (agregado 2026-08-03)
 
-- **Fase 1**: tabla + config + import del histórico + RPCs de cumplimiento y
-  proyección + pantallas Tablero e Histórico. (Ya con esto el cumplimiento
-  real es visible.)
-- **Fase 2**: propuestas + flujo de confirmación completo + notificaciones +
+El usuario amplió el alcance con capturas de su sistema anterior en Excel
+(«cavernícola»): además del bono por cumplimiento de meta (§1), existen **bono
+por producto(s)** y **bono por venta de laboratorio(s)**. Contexto CLAVE:
+**las bonificaciones están SUSPENDIDAS hoy** — se construye la capacidad
+completa, pero con un interruptor general apagado; **las metas corren SIEMPRE**
+(el flujo §4 no depende de las bonificaciones: sirve para seguir el progreso
+de cada sala aunque no haya bono).
+
+Es el sucesor del módulo Promociones RETIRADO el 2026-07-28
+(`project_promotions_module`: 6 tablas dropeadas, solo tuvo una promo de
+prueba; quedó escrito «Bonificaciones se construirá de cero, con su propio
+esquema»). No reusar nada de aquel; sí su lección: nada de caches que nunca se
+llenan — todo se deriva de las ventas reales.
+
+### 9a. Bono por producto(s)
+
+Programa con vigencia (inicio–fin), **1 o más productos**, y tres montos por
+unidad vendida: bono al **vendedor**, aporte al fondo de **Administración** y
+aporte al fondo de **Bodega** (en su Excel: $1.00 / $0.25 / $0.25).
+
+Definiciones cerradas con el usuario (2026-08-03):
+- **El bono principal va AL VENDEDOR que hizo cada venta** — el portal ya lo
+  sabe (`sales_invoices.cod_vendedor` → employees.code, el mismo join del
+  drill de Ventas > Productos). Nada de conteo manual.
+- **ADM y Bodega son FONDOS**: se acumula (unidades × monto) y el total se
+  reparte entre las personas del área al fin de mes.
+- Las unidades se cuentan en **unidades base** (una caja de 10 cuenta 10 — la
+  misma lógica factor de Ventas > Productos, con factor 0 = 1). El campo
+  «Factor» del Excel muere; queda `unidades_por_bono` (default 1) por si un
+  bono es «$1 por cada 2 unidades».
+- Anuladas/invalidadas descontadas solas (mismos filtros de estado de todo el
+  módulo de ventas).
+
+### 9b. Bono por venta de laboratorio(s)
+
+Programa mensual con **1 o más laboratorios** y **niveles**: si la venta
+mensual de esos laboratorios en la sala alcanza el umbral del nivel, cada
+**persona base** de la sala gana el monto del nivel.
+
+Definiciones cerradas con el usuario (2026-08-03):
+- **Montos por nivel GLOBALES del programa** (ej. $10/$20/$30/$40 para todas
+  las salas); lo que varía por sala es el **UMBRAL de venta** de cada nivel —
+  exactamente como su Excel (Salud 4 necesita $4,250 para el nivel 1, Salud 5
+  $1,800).
+- **Cantidad de niveles flexible** (no fija en 4).
+- **«Persona base» = todo empleado ACTIVO asignado a esa sala** en el mes
+  (employees.branch_id + status).
+- La venta por laboratorio por sala se deriva de las ventas reales
+  (products.laboratorio_id) — la matriz del Excel se llena sola.
+
+### 9c. Transversal a los 3 tipos
+
+- **Interruptor general** `bonificaciones_activas` (hoy: apagado). Programas
+  se pueden crear/configurar/simular igual; todo se calcula y muestra en
+  **modo informativo** («esto se habría ganado») sin generar nada para pago.
+- **Liquidación mensual unificada**: una pantalla de cierre — por persona:
+  bono de meta + bonos de producto + bono de laboratorio = total; fondos ADM y
+  Bodega con su total y reparto. El gerente aprueba → congelada y exportable
+  para planilla. Suspendidas → la liquidación existe como informativa.
+- **Simulador de costo** al crear un programa: «si hubiera corrido el mes
+  pasado habría costado $X» con datos reales (sugerencia aceptada).
+- **Sin retroactividad**: editar un programa aplica desde el día del cambio;
+  lo ya ganado no se reescribe. Todo a bitácora.
+- **Motivación en la vista de sala**: «te faltan $X para el siguiente nivel»
+  (laboratorio) y barra de avance con proyección (meta).
+
+### 9d. Modelo de datos adicional (borrador)
+
+```sql
+bono_programas (id, tipo 'producto'|'laboratorio', nombre,
+                estado 'borrador'|'activo'|'suspendido'|'finalizado',
+                inicio date, fin date,                 -- vigencia (producto)
+                bono_vendedor numeric, unidades_por_bono int DEFAULT 1,
+                bono_adm_unidad numeric, bono_bod_unidad numeric,
+                comentarios, created_by, created_at)
+bono_programa_productos    (programa_id, erp_product_id)
+bono_programa_laboratorios (programa_id, laboratorio_id)
+bono_niveles        (programa_id, nivel, monto_por_persona)   -- global del programa
+bono_niveles_umbral (programa_id, nivel, branch_id, umbral_venta)
+bono_liquidaciones  (year_month, estado 'borrador'|'aprobada', informativa bool,
+                     aprobada_por, aprobada_at)
+bono_liquidacion_detalle (liquidacion_id, employee_id NULL para fondos,
+                          area 'vendedor'|'sala'|'adm'|'bodega',
+                          tipo, programa_id, monto, detalle jsonb)
+```
+
+Mismas reglas de la casa que §5 (RLS, escrituras vía RPC DEFINER con permiso,
+autoría server-side, resultados congelados).
+
+## 10. Orden de construcción (actualizado)
+
+- **Fase 1**: metas — tabla + config + ingreso manual del histórico + RPCs de
+  cumplimiento y proyección + pantallas Tablero e Histórico.
+- **Fase 2**: metas — propuestas + flujo de confirmación + notificaciones +
   crons.
 - **Fase 3**: vista «Mi sala» + quitar `comingSoon` + pulido + QA navegador.
+- **Fase 4**: bonificaciones — programas por producto y por laboratorio
+  (config + cálculo + simulador), en modo informativo (interruptor apagado).
+- **Fase 5**: liquidación mensual unificada + exportable para planilla.
 
-Cada fase con su verificación (los cálculos de proyección contra datos reales
-de `sales_daily_stats` antes de mostrar nada) y las reglas de siempre:
-migraciones con archivo local + gates, mockup antes de UI, bump por commit.
+Las metas van primero a propósito: son lo que está VIVO hoy (las
+bonificaciones están suspendidas). Cada fase con su verificación (los cálculos
+contra datos reales de `sales_daily_stats`/ventas antes de mostrar nada) y las
+reglas de siempre: migraciones con archivo local + gates, mockup antes de UI,
+bump por commit.

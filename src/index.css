@@ -1522,6 +1522,32 @@
   --tw-scale-z: 100%;
 }
 
+/* Y lo mismo para `group-hover:`, que las reglas de arriba solo tocaban por
+   accidente y a medias (2026-08-04).
+   `[class*="hover:-translate-y"]` SÍ matchea la clase `group-hover:-translate-y-2`
+   —"hover:-translate-y" es una subcadena de ella— pero el selector exige
+   `:hover` sobre ESE elemento, y en un patrón de grupo quien dispara el efecto
+   es el ancestro. Resultado: el hijo se levantaba mientras el puntero estaba en
+   cualquier otra parte del grupo, y se bajaba justo al llegar encima de él.
+   Medido en el estado vacío de Permisos, tema Solid: puntero sobre el título
+   `translate: 0px -8px`, puntero sobre el ícono `0px`, y al salir del ícono
+   volvía a -8px. Se lee como un hover que se apaga cuando uno lo alcanza — que
+   es exactamente como lo reportó el usuario.
+   Son 40 utilidades `group-hover:` con movimiento en el proyecto, así que el
+   defecto no era de una pantalla. */
+[data-theme="solid"] .group:hover [class*="group-hover:-translate-y"],
+[data-theme="solid-dark"] .group:hover [class*="group-hover:-translate-y"],
+[data-theme="solid"] .group:hover [class*="group-hover:translate-y"],
+[data-theme="solid-dark"] .group:hover [class*="group-hover:translate-y"] {
+  --tw-translate-y: 0px;
+}
+[data-theme="solid"] .group:hover [class*="group-hover:scale-"],
+[data-theme="solid-dark"] .group:hover [class*="group-hover:scale-"] {
+  --tw-scale-x: 100%;
+  --tw-scale-y: 100%;
+  --tw-scale-z: 100%;
+}
+
 /* ═══ Capa flotante abierta: lo de ATRÁS se queda quieto (2026-08-01) ═════
    Con un menú abierto, mover el mouse por encima de él hacía entrar y salir
    de `:hover` a la tarjeta que quedó DEBAJO — y como esa tarjeta se levanta

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.365.4 — El hover de grupo se apagaba justo al llegarle encima
+
+Lo reportó el usuario sobre el estado vacío de Permisos: *«al acercarme hace
+hover, pero cuando llego al elemento se quita, y cuando salgo se activa de
+nuevo»*. Es del tema Solid y afecta a todo el portal, no a esa pantalla.
+
+**La causa.** Solid anula el lift a propósito, y lo hace con
+`[class*="hover:-translate-y"]:hover`. Ese selector **sí** matchea la clase
+`group-hover:-translate-y-2` —«hover:-translate-y» es una subcadena de ella— pero
+exige `:hover` sobre **ese** elemento, y en un patrón de grupo quien dispara el
+efecto es el ancestro. Entonces el hijo se levantaba mientras el puntero estaba
+en cualquier otra parte del grupo, y se bajaba justo al llegarle encima.
+
+Medido en el estado vacío, tema Solid, mirando el `top` real del ícono:
+
+| puntero | `translate` | top |
+|---|---|---|
+| fuera | `none` | 274 |
+| sobre el título | `0px -8px` | **266** |
+| sobre el ícono | `0px` | **274** |
+| sobre el título otra vez | `0px -8px` | **266** |
+
+Se corrige donde el propio archivo dice que va —en el tema, no en cada
+componente—: dos reglas más para la forma `group-hover:`, de movimiento y de
+escala. Son **40 utilidades `group-hover:` con movimiento** en el proyecto, así
+que el defecto no era de una pantalla.
+
+Verificado en los cuatro temas: Solid y Solid Dark no levantan (que es lo que el
+tema decide) y los de vidrio levantan igual sobre el título que sobre el ícono.
+Antes, los cuatro se contradecían según dónde cayera el puntero.
+
 ## v2.365.3 — Metas: Fase 1 cerrada con QA
 
 Solo documentación: `docs/PLAN-METAS-2026-08-03.md` pasa a «Fase 1

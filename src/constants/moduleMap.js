@@ -39,7 +39,7 @@ export const MODULE_MAP = {
     maintenance:       { path: '/mantenimiento',  label: 'Mantenimiento',            icon: Wrench        },
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
-    metas:             { path: '/metas',            label: 'Metas',                    icon: Target,       comingSoon: true },
+    metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
     clientes:          { path: '/clientes',         label: 'Clientes',                 icon: Contact    },

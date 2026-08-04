@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.364.0 — Metas: el módulo entra al portal — Tablero e Histórico
+
+Fase 1 del frontend (mockup aprobado por el usuario en esta misma sesión; la
+base de datos salió en v2.363.0). El módulo deja de ser «próximamente»: ruta
+`/metas` con guard de permiso, entrada real en el menú (grupo Comercial) y en
+la pantalla de Permisos con Aprobar y ámbito (para las fases siguientes).
+Nadie lo ve hasta que el admin asigne el permiso.
+
+- **Tablero**: las 6 salas del mes en tarjetas — meta, vendido en vivo, barra
+  de avance con los DOS umbrales del bono dibujados (95% ámbar, 100% verde) y
+  el rombo de la proyección de cierre; a las salas en riesgo les dice cuánto
+  les falta («le faltan $X para el 95%»). KPIs de cabecera: meta total,
+  vendido, proyección y semáforo. Navegable a meses pasados (muestran su
+  resultado final) y al mes siguiente. Aviso fijo mientras las bonificaciones
+  sigan suspendidas: el bono se muestra solo como referencia.
+- **Histórico**: meses cerrados desde mayo 2025 por sala con meta, vendido, %
+  y el tramo del bono; filtros por sala y «solo con meta»; en teléfono,
+  filas ListRow (la tabla no reflowa, §32).
+- **Agregar meta** (permiso de edición): modal canónico con mes, sala, monto
+  y nota — para el histórico que el usuario tiene anotado y para el mes en
+  curso mientras el flujo de propuestas (Fase 2) no exista. Todo pasa por el
+  RPC con autoría server-side y va a la bitácora.
+- Componentes canónicos de punta a punta (GlassViewLayout, ViewTabBar,
+  CarrilCards/StatCard, FilterBar, DataTable, ListRow, LiquidModal,
+  LiquidSelect, PortalInput) y formato de cifras vía utils/formatNumber —
+  el gate de diseño atrapó un `toLocaleString('en-US')` que se coló y se
+  corrigió antes del commit. Gates de diseño y permisos en verde.
+
 ## v2.363.1 — Permisos: las tarjetas se acomodan por su alto y el panel llega al borde
 
 Dos defectos que reportó el usuario con una captura, y los dos tenían una causa

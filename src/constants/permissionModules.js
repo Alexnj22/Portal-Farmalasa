@@ -112,7 +112,7 @@ export const MODULE_GROUPS = [
                 // igual sin ver cuánto factura cada cliente.
                 { key: 'clientes_ver_montos', label: 'Ver la facturación por cliente', tipo: 'cap' },
             ]},
-            { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas (próximamente)', icon: Target,        hasApprove: false, comingSoon: true },
+            { key: 'metas',          label: 'Metas',         desc: 'Metas mensuales de venta por sala: cumplimiento en vivo, proyección de cierre e histórico con el tramo del bono', icon: Target, hasApprove: true, hasScope: true },
             { key: 'bonificaciones', label: 'Bonificaciones',desc: 'Esquemas de bonificación por ventas y metas alcanzadas (próximamente)',                icon: DollarSign,    hasApprove: false, comingSoon: true },
         ],
     },

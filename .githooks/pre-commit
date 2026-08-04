@@ -84,6 +84,17 @@ if git diff --cached --name-only | grep -qE '^(src/|supabase/functions/)'; then
   node scripts/data-gate.mjs --hook || exit 1
 fi
 
+# permissions-gate: solo si el commit toca el registro de permisos o código que
+# los consulta. Cruza lo declarado en Permisos contra lo que el código realmente
+# gatea (por sus cinco caminos: literal, plantilla, variable, indirecta y guard
+# de ruta). Existe porque la auditoría del 2026-08-03 encontró a mano un permiso
+# de "datos sensibles" que no consultaba nadie, un módulo que no se podía
+# repartir, y un rename que dejó a la vista consultando la clave vieja.
+# Local, sin red, ~200ms. `--hook` lo acota al ÍNDICE, no al disco.
+if git diff --cached --name-only | grep -qE '^src/'; then
+  node scripts/permissions-gate.mjs --hook || exit 1
+fi
+
 # bundle-gate NO va acá a propósito: necesita `npm run build` (~6 s) y un dist/
 # fresco, y un hook que obliga a buildear en cada commit se termina saltando con
 # --no-verify. Va antes de cerrar un trabajo, junto a gate:design.

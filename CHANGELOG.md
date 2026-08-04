@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.361.0 — Gate de permisos: el canon se vigila solo
+
+**`npm run gate:permisos`** cruza lo declarado en Permisos contra lo que el
+código realmente gatea. Corre solo en el pre-commit cuando el commit toca
+`src/`, es local y tarda ~200ms.
+
+Existe porque la auditoría del 2026-08-03 encontró **a mano** cosas que un
+script encuentra en un segundo: un permiso de "datos sensibles" que no consultaba
+nadie (`staff_salary`), un widget muerto que dejó su permiso vivo
+(`dash_distribution`), un módulo usado en el menú que no se podía repartir
+(`maintenance`), y —el peor— un rename que dejó la vista consultando la clave
+vieja, lo que habría apagado los costos del catálogo para todos en silencio.
+
+**La razón de que haga falta un script y no un grep:** el portal gatea de cinco
+maneras distintas y solo una es un literal.
+
+```js
+hasPermission('facturas_compra_abrir')       // literal
+hasPermission(`ventas_tab_${t.key}`)         // plantilla
+hasPermission(t.permKey)                     // variable (Pedidos)
+showWidget('kpi', 'dash_kpi')                // indirecta (Dashboard)
+<PermissionGuard moduleKey="ventas">         // guard de ruta
+```
+
+El primer barrido de la auditoría, hecho con grep literal, dijo "42 claves
+muertas" y eran **2**. Hay además una sexta fuente que ni siquiera está en
+`src/`: `conteo_ver_sistema` lo gatea una función de Postgres, y borrarlo por
+"muerto" habría roto el conteo ciego — por eso el gate tiene una lista corta y
+declarada a mano de claves gateadas en la base, cada una con su motivo escrito.
+
+Detecta tres cosas, y las tres se probaron rompiéndolas a propósito: una clave
+declarada que nadie consulta, una clave consultada que nadie declaró, y una
+capacidad con `_tab_` en el nombre (el error que originó todo esto).
+
+**`staff_salary` no se silencia ni deja el gate rojo.** Va en una lista de
+`PENDIENTES` que se imprime como aviso en cada corrida, con el motivo completo.
+Un gate rojo permanente enseña a ignorar el gate; uno que esconde el hallazgo
+enseña que no había hallazgo. Y si la clave se gatea o se borra, el gate avisa
+que hay que sacarla de esa lista.
+
+De paso, la lectura del índice de git (`git cat-file --batch`, con sus dos
+trampas: `maxBuffer` explícito y avance por bytes) se extrajo a
+`scripts/lib/git-index.mjs` en vez de copiarse — dos copias de la misma regla no
+son dos testigos.
+
+**Verificado en el navegador**, que es lo que ningún gate prueba: la pantalla de
+Permisos pinta los dos bloques separados y ordenados (7 módulos con `PESTAÑAS`,
+14 con `CAPACIDADES` para un rol con todo), Libros IVA muestra sus 7 libros y
+debajo sus 2 capacidades, y Conteo —que no tiene pestañas— muestra solo el
+bloque de capacidades, sin encabezado vacío.
+
 ## v2.360.3 — Tipo de documento en la retención
 
 Columna **Tipo** con el badge CCF/COF en la sección de IVA retenido. No es

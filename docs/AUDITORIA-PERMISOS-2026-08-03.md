@@ -4,8 +4,14 @@ Disparada por el pedido de hacer **canónicos** los permisos de las vistas
 (descargar, ver cards, ver pestañas, y lo que cada vista necesite), después de
 partir `facturas_compra_archivos` en `_abrir` + `_descargar` (v2.354.1).
 
-Estado: **auditoría cerrada, ejecución pendiente de decisión del usuario.**
-Ninguna clave se creó, borró ni modificó como parte de este documento.
+Estado: **auditoría cerrada y EJECUTADA** (v2.356.1, v2.360.0 y v2.361.0).
+El canon vive en §7-bis, la matriz por vista en §7-ter, y desde v2.361.0 lo
+vigila **`npm run gate:permisos`** (`scripts/permissions-gate.mjs`), que corre
+solo en el pre-commit cuando el commit toca `src/`.
+
+Queda abierto un único hallazgo, por decisión explícita del usuario:
+`staff_salary` (ver §8). El gate lo imprime como aviso en cada corrida en vez de
+silenciarlo o de quedarse rojo para siempre.
 
 ---
 

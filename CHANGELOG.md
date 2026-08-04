@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.371.1 — La nota de dónde retomar el trabajo de autorización
+
+`docs/SEGURIDAD-AUTORIZACION-2026-08-04.md`: qué se cerró hoy (el login del cargo
+superusuario y la escalada por `user_metadata`), con qué se verificó, y lo que
+queda abierto — el barrido de los RPC que reciben identidad por parámetro y no la
+cruzan contra `auth_employee_id()`, que es el mismo patrón a otra escala.
+
+Incluye las dos herramientas que hicieron falta y van a volver a hacer falta:
+cómo simular el JWT de un usuario sin escribir nada (y por qué tiene que ir en un
+bloque `DO`, no en un `SELECT` — con `set_config` en un `LATERAL` el planner
+reordena y toda la medición miente), y por qué un cambio así se verifica contra la
+fuente de verdad y no contra el comportamiento anterior, que era justamente el que
+estaba mal.
+
 ## v2.371.0 — La autorización deja de confiar en un dato que escribe el navegador
 
 Encontrado al revisar por qué el login mostraba «usuario no encontrado» (v2.370.4).

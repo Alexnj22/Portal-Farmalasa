@@ -52,6 +52,12 @@ export default function ConteoInventarioView() {
     const navigate = useNavigate();
     const { user, hasPermission, getScope } = useAuth();
     const canEdit = hasPermission('conteo_inventario', 'can_edit');
+    // El conteo se audita con unidades; la valuación en dinero va aparte.
+    const canVerMontos = hasPermission('conteo_inventario_ver_montos');
+    // Encabezado y celda con la MISMA condición (trampa de las columnas corridas).
+    const cols = useMemo(
+        () => (canVerMontos ? COLS : COLS.filter(c => c.key !== 'valor')),
+        [canVerMontos]);
     const conteos = useStaffStore((s) => s.conteosInventario);
     const loading = useStaffStore((s) => s.conteosInventarioLoading);
     const fetchConteosInventario = useStaffStore((s) => s.fetchConteosInventario);
@@ -240,7 +246,7 @@ export default function ConteoInventarioView() {
                                     <Badge variant={es.variante} size="sm">{es.label}</Badge>
                                     {c.total_diferencias > 0 && (
                                         <span className="text-caption font-bold text-warning-text tabular-nums">
-                                            {c.total_diferencias} dif · {formatMoney(valorNeto)}
+                                            {c.total_diferencias} dif{canVerMontos ? ` · ${formatMoney(valorNeto)}` : ''}
                                         </span>
                                     )}
                                     {faltaAjuste(c) && (
@@ -257,7 +263,7 @@ export default function ConteoInventarioView() {
             </div>
 
             <div className="hidden md:block">
-            <DataTable columns={COLS} loading={loading} empty={{
+            <DataTable columns={cols} loading={loading} empty={{
                 icon: ClipboardCheck,
                 message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá',
                 subtext: foco === 'TODOS'
@@ -293,9 +299,11 @@ export default function ConteoInventarioView() {
                                     <span className="text-caption font-bold text-success">Sin diferencias</span>
                                 ) : <span className="text-content-3">—</span>}
                             </DataCell>
-                            <DataCell align="right" hideBelow="lg">
-                                <span className={`text-label font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{formatMoney(valorNeto)}</span>
-                            </DataCell>
+                            {canVerMontos && (
+                                <DataCell align="right" hideBelow="lg">
+                                    <span className={`text-label font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{formatMoney(valorNeto)}</span>
+                                </DataCell>
+                            )}
                             <DataCell align="center">
                                 <div className="flex flex-col items-center gap-1">
                                     <Badge variant={es.variante} size="sm" icon={es.icon}>{es.label}</Badge>

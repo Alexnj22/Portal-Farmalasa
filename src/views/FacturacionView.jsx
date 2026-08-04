@@ -55,6 +55,16 @@ function avisarFalloAlSolventar(error, contexto) {
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => formatMoney(n || 0);
+
+// `facturacion_ver_montos` (canon 2026-08-03). El módulo sirve para perseguir
+// anulaciones, saltos de correlativo y documentos pendientes de Hacienda, y todo
+// eso se trabaja sin ver el importe. Un componente y no un `fmt` local porque
+// los montos viven en cinco componentes distintos de este archivo: así el gate
+// se declara UNA vez y no hay forma de que a uno se le olvide.
+const Monto = ({ v }) => {
+    const { hasPermission } = useAuth();
+    return hasPermission('facturacion_ver_montos') ? fmt(v) : '—';
+};
 const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
 const IMMEDIATE_TIPOS = ['tarjeta', 'transferencia', 'cheque', 'bitcoin'];
 const CREDIT_TIPOS    = ['credito'];
@@ -335,7 +345,7 @@ function BloqueFormaPago({
                 <Badge uppercase={false}>{filas.length} transacci{filas.length !== 1 ? 'ones' : 'ón'}</Badge>
                 <div className="ml-auto text-right">
                     <div className="text-micro font-bold uppercase tracking-widest text-content-3">Total pendiente</div>
-                    <div className={`text-title-sm font-black leading-none mt-0.5 ${t.texto}`}>{fmt(total)}</div>
+                    <div className={`text-title-sm font-black leading-none mt-0.5 ${t.texto}`}>{<Monto v={total} />}</div>
                 </div>
             </div>
             <DataTable
@@ -372,7 +382,7 @@ function BloqueFormaPago({
                                 <DataCell hideBelow="md">{nombreSucursal(r.branch_id)}</DataCell>
                                 <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
                                 <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
-                                <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
+                                <DataCell className="text-body-lg font-bold whitespace-nowrap">{<Monto v={r.total} />}</DataCell>
                                 <DataCell align="right">
                                     {canEdit && (
                                         <Button variant="ghost" icon={Check}
@@ -686,7 +696,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                                                         </div>}
                                                                         <div className="flex items-center justify-between pt-1 border-t border-divider">
                                                                             <p className="text-micro font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                            <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
+                                                                            <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{<Monto v={r.total} />}</p>
                                                                         </div>
                                                                     </div>
                                                                     <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
@@ -703,7 +713,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                                             <div className="flex items-center gap-2 mb-2.5">
                                                                 <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
                                                                 {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
-                                                                <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
+                                                                <span className="ml-auto text-body-sm font-black text-content-2">{<Monto v={r.total} />}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
  <PortalTextarea
@@ -764,7 +774,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                                 {inv?.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{inv.erp_invoice_id}</span>}
                                                 <span className="font-mono text-label text-content-3">{inv?.correlativo}</span>
                                                 <span className="text-label text-content-3">{getBranch(inv?.branch_id)}</span>
-                                                {inv?.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{fmt(inv.total)}</span>}
+                                                {inv?.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{<Monto v={inv.total} />}</span>}
                                             </div>
                                             {r.comment && <p className="text-body-sm text-content-3 mb-1">"{r.comment}"</p>}
                                             <p className="text-label text-content-3">
@@ -1125,7 +1135,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                                             </div>}
                                                                             <div className="flex items-center justify-between pt-1 border-t border-divider">
                                                                                 <p className="text-micro font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                                <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
+                                                                                <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{<Monto v={r.total} />}</p>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1146,7 +1156,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                             <div className="flex items-center gap-2 mb-2.5">
                                                                 <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
                                                                 {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
-                                                                <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
+                                                                <span className="ml-auto text-body-sm font-black text-content-2">{<Monto v={r.total} />}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
                                                                 <PortalTextarea
@@ -1207,7 +1217,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                 {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
                                                 <span className="font-mono text-label text-content-3">{r.correlativo}</span>
                                                 <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
-                                                {r.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{fmt(r.total)}</span>}
+                                                {r.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{<Monto v={r.total} />}</span>}
                                             </div>
                                             {r.resolution?.comment && <p className="text-body-sm text-content-3 mb-1">"{r.resolution.comment}"</p>}
                                             <p className="text-label text-content-3">
@@ -1874,7 +1884,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                             valueCls={pendingFiltered.length > 0 ? 'text-chart-1-text' : 'text-content'}
                         />
                         <StatCard
-                            icon={CreditCard} label="Total pendiente" value={fmt(totalPending)}
+                            icon={CreditCard} label="Total pendiente" value={<Monto v={totalPending} />}
                             iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                             valueCls="text-chart-1-text"
                         />
@@ -2043,7 +2053,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                             <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
                                             <DataCell hideBelow="lg" className="max-w-[140px] truncate">{inv?.cliente || '—'}</DataCell>
                                             <DataCell className="whitespace-nowrap">{inv?.fecha || '—'}</DataCell>
-                                            <DataCell className="font-bold whitespace-nowrap">{fmt(inv?.total)}</DataCell>
+                                            <DataCell className="font-bold whitespace-nowrap">{<Monto v={inv?.total} />}</DataCell>
                                             <DataCell>
                                                 <div className="flex items-center gap-2">
                                                     {r.confirmed_by_photo ? (
@@ -2417,7 +2427,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                                         <div className="font-mono text-micro text-danger-text mt-0.5">sello: &ldquo;{r.recibido_mh}&rdquo;</div>
                                                                     )}
                                                                 </div>
-                                                                <span className="text-body-sm font-black text-content-2 shrink-0 ml-auto">{fmt(r.total)}</span>
+                                                                <span className="text-body-sm font-black text-content-2 shrink-0 ml-auto">{<Monto v={r.total} />}</span>
                                                             </div>
                                                         );
                                                     })}
@@ -2436,7 +2446,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                                     const meta = metaObs(code);
                                                                     return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
                                                                 })}
-                                                                <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
+                                                                <span className="ml-auto text-body-sm font-black text-content-2">{<Monto v={r.total} />}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
                                                                 <PortalTextarea
@@ -2499,7 +2509,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                 {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
                                                 <span className="font-mono text-label text-content-3">{r.correlativo}</span>
                                                 <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
-                                                {r.total != null && <span className="text-body-sm font-bold text-content-2 ml-auto">{fmt(r.total)}</span>}
+                                                {r.total != null && <span className="text-body-sm font-bold text-content-2 ml-auto">{<Monto v={r.total} />}</span>}
                                             </div>
                                             <div className="flex flex-wrap gap-1 mb-1">
                                                 {(r.observaciones || []).map(code => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Badge from '../components/common/Badge';
-import { MODULE_GROUPS } from '../constants/permissionModules';
+import { MODULE_GROUPS, pestanasDe, capacidadesDe } from '../constants/permissionModules';
 import SegmentedControl from '../components/common/SegmentedControl';
 import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -29,11 +29,13 @@ import {
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).
 
-// Lista plana completa (incluye sub-tabs) para operaciones bulk (activate all, copy from)
+// Lista plana completa (incluye los sub-permisos: pestañas Y capacidades) para
+// operaciones bulk (activate all, copy from). `isTab` conserva el nombre viejo
+// porque lo único que expresa es "no es un módulo principal".
 const MODULES = MODULE_GROUPS.flatMap(g =>
-    g.modules.flatMap(m => [m, ...(m.tabs || []).map(t => ({ key: t.key, hasApprove: false, isTab: true }))])
+    g.modules.flatMap(m => [m, ...(m.sub || []).map(s => ({ key: s.key, hasApprove: false, isTab: true }))])
 );
-// Solo módulos principales (sin sub-tabs) para estadísticas y conteos
+// Solo módulos principales (sin sub-permisos) para estadísticas y conteos
 const MAIN_MODULES = MODULES.filter(m => !m.isTab);
 
 // ─── Metadatos de roles (solo display — la lista real viene de la DB) ────────
@@ -227,15 +229,26 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     </div>
                 )}
 
-                {/* Sub-tabs */}
-                {tabs && perms.can_view && tabPerms && (
-                    <div className="mt-3 pt-3 border-t border-border-card">
+                {/* Sub-permisos, en DOS bloques. Antes iban todos juntos bajo el
+                    rótulo "Pestañas", que para la mitad era falso: ahí adentro
+                    conviven pestañas de la vista y capacidades (descargar, ver
+                    montos, ver costos, abrir). Ver el encabezado de
+                    constants/permissionModules.js. Las pestañas van primero
+                    porque son las que dibujan la vista; las capacidades después,
+                    porque modifican lo que ya se ve. */}
+                {perms.can_view && tabPerms && [
+                    { titulo: 'Pestañas',    icono: Layers,   items: pestanasDe({ sub: tabs }) },
+                    { titulo: 'Capacidades', icono: Sparkles, items: capacidadesDe({ sub: tabs }) },
+                ].filter(b => b.items.length > 0).map(bloque => {
+                    const BloqueIcon = bloque.icono;
+                    return (
+                    <div key={bloque.titulo} className="mt-3 pt-3 border-t border-border-card">
                         <div className="flex items-center gap-1.5 mb-2">
-                            <Layers size={9} className="text-content-3" strokeWidth={2.5} />
-                            <p className="text-micro font-black uppercase tracking-widest text-content-2">Pestañas</p>
+                            <BloqueIcon size={9} className="text-content-3" strokeWidth={2.5} />
+                            <p className="text-micro font-black uppercase tracking-widest text-content-2">{bloque.titulo}</p>
                         </div>
                         <div className="space-y-1.5">
-                            {tabs.map(tab => {
+                            {bloque.items.map(tab => {
                                 const tabPerm = tabPerms[tab.key] || { can_view: false };
                                 return (
                                     <div key={tab.key} data-surface={tabPerm.can_view ? undefined : 'card'} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${tabPerm.can_view ? 'bg-chart-1/10 border-chart-1/30' : ''}`}>
@@ -256,7 +269,8 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                             })}
                         </div>
                     </div>
-                )}
+                    );
+                })}
             </div>
         </div>
     );
@@ -802,7 +816,7 @@ const PermissionsView = () => {
                                 const groupActive = g.modules.every(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view);
                                 const groupPartial = !groupActive && g.modules.some(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view);
                                 // Para el toggle de sección, incluir también los tabs de cada módulo
-                                const allGroupModules = g.modules.flatMap(m => [m, ...(m.tabs || []).map(t => ({ key: t.key, hasApprove: false }))]);
+                                const allGroupModules = g.modules.flatMap(m => [m, ...(m.sub || []).map(t => ({ key: t.key, hasApprove: false }))]);
                                 return (
                                 <div key={g.group}>
                                     <div className="flex items-center gap-2.5 mb-3">
@@ -832,11 +846,11 @@ const PermissionsView = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
-                                            const tabPerms = m.tabs
-                                                ? Object.fromEntries(m.tabs.map(t => [t.key, permissions[`${selectedRoleId}:${t.key}`] || { can_view: false }]))
+                                            const tabPerms = m.sub
+                                                ? Object.fromEntries(m.sub.map(t => [t.key, permissions[`${selectedRoleId}:${t.key}`] || { can_view: false }]))
                                                 : null;
-                                            const tabSaving = m.tabs
-                                                ? Object.fromEntries(m.tabs.map(t => [t.key, !!saving[`${selectedRoleId}:${t.key}`]]))
+                                            const tabSaving = m.sub
+                                                ? Object.fromEntries(m.sub.map(t => [t.key, !!saving[`${selectedRoleId}:${t.key}`]]))
                                                 : null;
                                             return (
                                                 <div
@@ -851,7 +865,7 @@ const PermissionsView = () => {
                                                         locked={!canEdit}
                                                         saving={saving[k]}
                                                         flash={!!savedFlash[k]}
-                                                        tabs={m.tabs}
+                                                        tabs={m.sub}
                                                         tabPerms={tabPerms}
                                                         tabSaving={tabSaving}
                                                         onTabChange={handleToggle}

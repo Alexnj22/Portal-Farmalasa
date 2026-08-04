@@ -17,6 +17,7 @@ import {
     CalendarClock, Ban, Star, Search, Check,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { notifyBranch } from '../../utils/notify';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -104,6 +105,12 @@ const PEDIDO_LABEL = { confirmado: 'Por despachar', enviado: 'En ruta', parcial:
 // hook usePedidosData (./tabpedidos/usePedidosData.js) — mismos nombres,
 // misma lógica, extracción mecánica. Este archivo queda solo con el JSX.
 export default function TabPedidos({ searchTerm = '' }) {
+    const { hasPermission } = useAuth();
+    // `pedidos_descargar` gatea la REIMPRESIÓN de un pedido ya generado, no la
+    // impresión que sale al generarlo: esa es el entregable del flujo de bodega
+    // —el papel con el que se arman las cajas— y bloquearla dejaría el pedido
+    // hecho y sin hoja. El permiso se llama "Reimprimir el pedido" por eso.
+    const canDownload = hasPermission('pedidos_descargar');
     const {
         user, isBranch, canEdit,
         erpSucursalId, branchName,
@@ -417,7 +424,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canApoyo && !isApoyoBodega && (
                                                 <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
                                             )}
-                                            {canActuar && (
+                                            {canActuar && canDownload && (
                                                 <Button variant="secondary" disabled={printingPdf === row.pedido_id} onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}>{printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF</Button>
                                             )}
                                             {canActuar && !isBranch && stage === 'preparado' && (

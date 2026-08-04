@@ -107,7 +107,10 @@ const COLS = [
 ];
 
 export default function LibroComprasCompletoView() {
-    const { getScope } = useAuth();
+    const { getScope, hasPermission } = useAuth();
+    // Canon de permisos 2026-08-03.
+    const canDownload  = hasPermission('libro_compras_completo_descargar');
+    const canVerMontos = hasPermission('libro_compras_completo_ver_montos');
     const branches = useStaffStore((s) => s.branches);
 
     const [activeTab, setActiveTab]   = useState('todos');
@@ -238,7 +241,7 @@ export default function LibroComprasCompletoView() {
         <FilterBar
             onClear={() => { setFB(''); setMes(mesActual()); }}
             activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}
-            acciones={[{
+            acciones={!canDownload ? [] : [{
                 key: 'exportar',
                 icon: Download,
                 label: 'Exportar',
@@ -297,10 +300,16 @@ export default function LibroComprasCompletoView() {
                     <CarrilCards className="flex-1" ariaLabel="Resumen del libro completo">
                         <StatCard icon={BookOpen} label="Documentos" value={totales.docs} loading={loading}
                             sub={`${totales.docs - totales.sinCompra} registradas · ${totales.sinCompra} sin registrar`} />
-                        <StatCard icon={Mail} label="Compras" value={formatMoney(totales.total)}
-                            sub="Del período" loading={loading} />
-                        <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.credito)}
-                            sub="Documentado" loading={loading} />
+                        {/* Documentos queda siempre: es lo que dice si el libro está
+                            completo (cuántas sin registrar), y no revela cifras. */}
+                        {canVerMontos && (
+                            <>
+                                <StatCard icon={Mail} label="Compras" value={formatMoney(totales.total)}
+                                    sub="Del período" loading={loading} />
+                                <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.credito)}
+                                    sub="Documentado" loading={loading} />
+                            </>
+                        )}
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">{barraFiltros}</div>
                 </div>

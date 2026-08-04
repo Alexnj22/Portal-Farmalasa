@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     Contact, Users, IdCard, Building2, MapPin, AlertTriangle, ShieldCheck,
     FileWarning, Receipt, Store, Search,
@@ -137,6 +137,14 @@ function UbicacionCell({ row }) {
 
 export default function ClientesView({ openModal }) {
     const { hasPermission } = useAuth();
+    // Canon 2026-08-03: la ficha fiscal se completa igual sin ver cuánto
+    // factura cada cliente — el monto acá es una columna más.
+    const canVerMontos = hasPermission('clientes_ver_montos');
+    // Encabezado y celda con la MISMA condición — si no, "Facturado" queda
+    // encima de "Última compra".
+    const cols = useMemo(
+        () => (canVerMontos ? COLS : COLS.filter(c => c.key !== 'total')),
+        [canVerMontos]);
     const canEdit = hasPermission('clientes', 'can_edit');
 
     const [search, setSearch] = useState('');
@@ -442,7 +450,7 @@ export default function ClientesView({ openModal }) {
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
                 <DataTable
-                    columns={COLS}
+                    columns={cols}
                     sortKey={sortCol}
                     sortDir={sortDir}
                     onSort={handleSort}
@@ -494,11 +502,13 @@ export default function ClientesView({ openModal }) {
                                         </p>
                                     )}
                                 </DataCell>
-                                <DataCell align="right" hideBelow="sm">
-                                    <span className="tabular-nums font-bold text-content-2">
-                                        {formatMoney(row.total)}
-                                    </span>
-                                </DataCell>
+                                {canVerMontos && (
+                                    <DataCell align="right" hideBelow="sm">
+                                        <span className="tabular-nums font-bold text-content-2">
+                                            {formatMoney(row.total)}
+                                        </span>
+                                    </DataCell>
+                                )}
                                 <DataCell hideBelow="2xl">
                                     <span className="text-content-2 text-label tabular-nums">
                                         {fmtDate(row.ultima_fecha)}

@@ -881,6 +881,8 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const navigate  = useNavigate();
   const { user, hasPermission, getScope } = useAuth();
   const canEdit   = hasPermission('time_audit', 'can_edit');
+  // El CSV se lleva las marcaciones fuera del portal (canon 2026-08-03).
+  const canDownload = hasPermission('time_audit_descargar');
   const showToast = useToastStore(s => s.showToast);
   const storeEmployees = useStaff(s => s.employees);
   const storeBranches = useStaff(s => s.branches);
@@ -1423,7 +1425,9 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {/* Export CSV */}
               {quincenaSummary.length > 0 && (
                 <div className="flex justify-end pb-2">
-                  <Button variant="secondary" icon={Download} onClick={handleExportCSVQuincena}>Exportar CSV</Button>
+                  {canDownload && (
+                    <Button variant="secondary" icon={Download} onClick={handleExportCSVQuincena}>Exportar CSV</Button>
+                  )}
                 </div>
               )}
 

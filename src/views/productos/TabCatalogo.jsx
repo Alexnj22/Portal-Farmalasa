@@ -832,7 +832,7 @@ function PriceHistorySection({ history, allowedPriceFields }) {
 
 function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
     const { maxPriceLevel, hasPermission } = useAuth();
-    const canSeeCosts = hasPermission('productos_tab_catalogo_costos');
+    const canSeeCosts = hasPermission('productos_ver_costos');
 
     // ── Expanded-row theme tokens ────────────────────────────────────────────
     const xk = {
@@ -1316,7 +1316,7 @@ export default function TabCatalogo({
     onCategoryCreated = null,
 }) {
     const { maxPriceLevel, hasPermission } = useAuth();
-    const canSeeCosts = hasPermission('productos_tab_catalogo_costos');
+    const canSeeCosts = hasPermission('productos_ver_costos');
     const allowedPriceFields = useMemo(() => {
         if (!maxPriceLevel) return PRICE_FIELDS;
         const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);

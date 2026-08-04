@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
@@ -47,6 +48,8 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
 };
 
 const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, employees = [], openModal }) => {
+    const { hasPermission } = useAuth();
+    const canDownload = hasPermission('branches_descargar');
     const [typeFilter, setTypeFilter] = useState('ALL');
     const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
     const [searchQuery, setSearchQuery] = useState('');
@@ -340,6 +343,9 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 )}
                             </button>
 
+                            {/* `branches_descargar` (canon 2026-08-03): el reporte y el
+                                CSV se llevan el historial de la sucursal fuera del portal. */}
+                            {canDownload && (
                             <div className="relative z-toast" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                                 <Button variant="ghost" size="sm" icon={Download}>
                                     <span className="hidden sm:inline">Exportar</span>
@@ -351,6 +357,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     </div>
                                 </div>
                             </div>
+                            )}
                         </div>
                     )}
                 >

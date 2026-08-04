@@ -789,6 +789,11 @@ function Tarjeta({ valor, rotulo, sub, tono = 'neutral' }) {
 }
 
 function ResumenCards({ resumen, abierto }) {
+    const { hasPermission } = useAuth();
+    // `conteo_inventario_ver_montos` (canon 2026-08-03): el conteo se hace y se
+    // audita con unidades. La valuación en dinero es la lectura contable y va
+    // aparte — quien cuenta no necesita saber cuánto vale el faltante.
+    const canVerMontos = hasPermission('conteo_inventario_ver_montos');
     const {
         total_items: items = 0, total_productos: productos = 0, contados = 0, pendientes = 0,
         sin_ubicar: sinUbicar = 0, recontados = 0, contadores = 0, agregados = 0,
@@ -836,12 +841,14 @@ function ResumenCards({ resumen, abierto }) {
                         conteo. Mientras está abierto van rotulados como PARCIAL —
                         valuar un conteo a medias como si fuera el resultado es el
                         error que este módulo ya cometió una vez (hallazgo #3). */}
-                    <Tarjeta
-                        tono="danger"
-                        valor={formatMoney(falt)}
-                        rotulo={abierto ? 'Faltante parcial' : 'Faltante'}
-                        sub={`sobrante ${formatMoney(sobra)}`}
-                    />
+                    {canVerMontos && (
+                        <Tarjeta
+                            tono="danger"
+                            valor={formatMoney(falt)}
+                            rotulo={abierto ? 'Faltante parcial' : 'Faltante'}
+                            sub={`sobrante ${formatMoney(sobra)}`}
+                        />
+                    )}
                 </>
             )}
         </div>
@@ -1091,6 +1098,10 @@ export default function ConteoDetailView() {
     const { showToast } = useToastStore();
     const canEdit = hasPermission('conteo_inventario', 'can_edit');
     const canApprove = hasPermission('conteo_inventario', 'can_approve');
+    // Canon 2026-08-03. La hoja y los CSV se llevan el conteo al papel — y la
+    // hoja incluye la existencia del sistema, o sea que el ciego se podía
+    // romper por la impresora aunque `conteo_ver_sistema` estuviera apagado.
+    const canDownload = hasPermission('conteo_inventario_descargar');
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
     const fetchConteoProductsPage = useStaffStore((s) => s.fetchConteoProductsPage);
@@ -1398,7 +1409,7 @@ export default function ConteoDetailView() {
     // Qué documentos existen para este conteo AHORA. Mientras se cuenta hay uno
     // solo (la hoja), así que "Imprimir" imprime y no abre un selector de una
     // opción; con el conteo cerrado hay cuatro y ahí sí hay algo que elegir.
-    const documentos = [
+    const documentos = !canDownload ? [] : [
         { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el anaquel, con firma de quien contó.' },
         ...(hasResults ? [
             { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valuación de cada renglón.' },

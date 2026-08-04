@@ -247,7 +247,7 @@ function printBranchPlanilla(branchEntries, branch, period, branches) {
 
 // ─── Edit entry form (no ModalShell — rendered inside parent's ModalShell) ───
 // ─── Branch-grouped table ─────────────────────────────────────────────────────
-function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit }) {
+function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit, canDownload }) {
     const grouped = useMemo(() => {
         const map = new Map();
         for (const e of entries) {
@@ -302,12 +302,17 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                             </div>
 
                             <div className="flex items-center gap-2 ml-auto">
-                                {/* Print all boletas for this branch */}
-                                <Button variant="secondary" icon={Printer} title="Imprimir todas las boletas de esta sucursal" onClick={() => printBoletasBatch(grp, period, branches)}>Boletas</Button>
-                                {/* Print branch planilla */}
-                                <Button variant="secondary" icon={Printer} title="Imprimir planilla de esta sucursal" onClick={() => printBranchPlanilla(grp, branch, period, branches)}>Planilla</Button>
+                                {/* La boleta y la planilla se llevan el salario de cada
+                                    empleado al papel — van con `payroll_descargar`, no
+                                    con el permiso de ver la nómina en pantalla. */}
+                                {canDownload && (
+                                    <>
+                                        <Button variant="secondary" icon={Printer} title="Imprimir todas las boletas de esta sucursal" onClick={() => printBoletasBatch(grp, period, branches)}>Boletas</Button>
+                                        <Button variant="secondary" icon={Printer} title="Imprimir planilla de esta sucursal" onClick={() => printBranchPlanilla(grp, branch, period, branches)}>Planilla</Button>
 
-                                <div className="w-px h-5 bg-divider mx-1" />
+                                        <div className="w-px h-5 bg-divider mx-1" />
+                                    </>
+                                )}
 
                                 <div className="text-right">
                                     <p className="text-micro font-black uppercase tracking-widest text-content-2">Total a pagar</p>
@@ -343,7 +348,9 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                         <DataCell align="right" className="font-black text-success-text whitespace-nowrap">{fmt(e.net_pay)}</DataCell>
                                         <DataCell>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                                                <Button variant="secondary" icon={Printer} title="Imprimir boleta individual" iconOnly onClick={() => onPrint(e)} />
+                                                {canDownload && (
+                                                    <Button variant="secondary" icon={Printer} title="Imprimir boleta individual" iconOnly onClick={() => onPrint(e)} />
+                                                )}
                                                 {!isPaid && (
                                                     <Button tone="warning" icon={Edit2} title="Editar" iconOnly onClick={() => onEdit(e)} />
                                                 )}
@@ -364,6 +371,10 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
 const PayrollView = ({ openModal }) => {
     const { user, hasPermission, getScope } = useAuth();
     const canApprove             = hasPermission('payroll', 'can_approve');
+    // Imprimir boletas/planilla y bajar el CSV del banco es un permiso aparte de
+    // ver la nómina en pantalla (canon 2026-08-03): el papel se lleva el salario
+    // de cada empleado fuera del portal.
+    const canDownload            = hasPermission('payroll_descargar');
     const branches               = useStaffStore(s => s.branches);
     const payrollPeriods         = useStaffStore(s => s.payrollPeriods);
     const payrollEntries         = useStaffStore(s => s.payrollEntries);
@@ -584,12 +595,14 @@ const PayrollView = ({ openModal }) => {
                                             {(isDraft||isApproved) && (
                                                 <Button variant="secondary" icon={RotateCcw} disabled={generating} onClick={handleGenerate}>{generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}</Button>
                                             )}
-                                            {payrollEntries.length > 0 && (
+                                            {payrollEntries.length > 0 && canDownload && (
                                                 <>
                                                     {/* Print ALL boletas in batch */}
                                                     <Button variant="secondary" icon={Printer} onClick={() => printBoletasBatch(filteredEntries, activePeriod, branches)}>Todas las Boletas</Button>
                                                     {/* Global planilla */}
                                                     <Button variant="secondary" icon={Printer} onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}>Planilla Global</Button>
+                                                    {/* El CSV del banco es el más sensible de los tres:
+                                                        sale con el neto de cada empleado y su cuenta. */}
                                                     <Button variant="secondary" icon={Download} onClick={downloadCSV}>CSV Banco</Button>
                                                 </>
                                             )}
@@ -687,6 +700,7 @@ const PayrollView = ({ openModal }) => {
                                         period={activePeriod}
                                         onPrint={(e) => printBoleta(e, activePeriod, branches)}
                                         onEdit={(e) => openModal?.('editPayrollEntry', e)}
+                                        canDownload={canDownload}
                                     />
                                     </>
                                 )}

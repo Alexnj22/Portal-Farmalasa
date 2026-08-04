@@ -309,6 +309,8 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
 export default function CotizacionesView() {
     const { user, maxPriceLevel, hasPermission, getScope } = useAuth();
     const canEdit   = hasPermission('cotizaciones', 'can_edit');
+    // El PDF sale del portal con los precios cotizados (canon 2026-08-03).
+    const canDownload = hasPermission('cotizaciones_descargar');
     const cotScope  = getScope('cotizaciones');
 
     // Filtrar columnas de precio según el nivel máximo permitido al cargo
@@ -844,7 +846,7 @@ export default function CotizacionesView() {
                             <>
                                 <Button variant="secondary" icon={Edit2} onClick={() => startEdit(cot)}>Editar</Button>
                                 <Button variant="destructive" onClick={() => setConfirmAnular(cot.id)}>Anular</Button>
-                                <Button icon={Printer} onClick={() => handlePrint(cot, itemsData)}>Imprimir / PDF</Button>
+                                {canDownload && <Button icon={Printer} onClick={() => handlePrint(cot, itemsData)}>Imprimir / PDF</Button>}
                             </>
                         )}
                     </div>
@@ -969,7 +971,7 @@ export default function CotizacionesView() {
 
                     {cot.status === 'ACTIVA' && (
                         <div className="flex justify-end pb-4">
-                            <Button icon={Printer} onClick={() => handlePrint(cot, itemsData)}>Imprimir / Guardar PDF</Button>
+                            {canDownload && <Button icon={Printer} onClick={() => handlePrint(cot, itemsData)}>Imprimir / Guardar PDF</Button>}
                         </div>
                     )}
                 </div>
@@ -1087,11 +1089,13 @@ export default function CotizacionesView() {
                                     {!isAnulada && canEdit && (
                                         <>
                                             <Button variant="secondary" size="xs" icon={Edit2} title="Editar" iconOnly onClick={() => startEdit(cot)} />
-                                            <Button tone="chart-1" size="xs" icon={Printer} title="Imprimir / PDF" iconOnly onClick={async () => {
+                                            {canDownload && (
+                                                <Button tone="chart-1" size="xs" icon={Printer} title="Imprimir / PDF" iconOnly onClick={async () => {
                                                     const { data, error } = await fetchCotizacionItems(cot.id);
                                                     if (error) console.error('print cotizacion: fetch items failed:', error.message);
                                                     handlePrint(cot, data || []);
                                                 }} />
+                                            )}
                                             <Button variant="destructive" size="xs" icon={Trash2} title="Anular" iconOnly onClick={() => setConfirmAnular(cot.id)} />
                                         </>
                                     )}

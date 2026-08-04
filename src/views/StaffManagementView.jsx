@@ -526,6 +526,9 @@ const StaffManagementView = ({
   const deletePracticante = useStaff(s => s.deletePracticante);
   const { user, hasPermission, getScope } = useAuth();
   const canEdit = hasPermission('staff_list', 'can_edit');
+  // El CSV se lleva el padrón de empleados fuera del portal — permiso aparte de
+  // consultarlo en pantalla (canon 2026-08-03).
+  const canDownload = hasPermission('staff_list_descargar');
 
 
 
@@ -851,8 +854,8 @@ const StaffManagementView = ({
     // táctil sigue rotulado.
     // Sin `tone`: lo pone `TONO_POR_ICONO` a partir del ícono, que es lo que hace
     // que `Download` se vea igual acá que en cualquier otra vista.
-    { key: 'exportar', icon: Download, label: 'Exportar',
-      soloIcono: true, onClick: handleExportCSV },
+    ...(canDownload ? [{ key: 'exportar', icon: Download, label: 'Exportar',
+      soloIcono: true, onClick: handleExportCSV }] : []),
   ];
 
   return (

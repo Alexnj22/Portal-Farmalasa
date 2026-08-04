@@ -260,9 +260,13 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 <Button size="sm" variant="secondary" icon={FileText} onClick={() => onVerTicket(fila)}>
                     {verTicket ? 'Ocultar el original' : 'Ver el original'}
                 </Button>
-                <Button size="sm" variant="secondary" icon={Download} onClick={() => onPdf(fila)}>
-                    PDF
-                </Button>
+                {/* Sin `corte_z_descargar` el llamador no pasa `onPdf` — el botón
+                    no existe en vez de existir y fallar. */}
+                {onPdf && (
+                    <Button size="sm" variant="secondary" icon={Download} onClick={() => onPdf(fila)}>
+                        PDF
+                    </Button>
+                )}
             </div>
 
             {verTicket && (
@@ -277,7 +281,10 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
 };
 
 export default function CorteZView() {
-    const { getScope, user } = useAuth();
+    const { getScope, user, hasPermission } = useAuth();
+    // Canon de permisos 2026-08-03.
+    const canDownload  = hasPermission('corte_z_descargar');
+    const canVerMontos = hasPermission('corte_z_ver_montos');
 
 
     const [mes, setMes] = useState(mesActual);
@@ -370,7 +377,7 @@ export default function CorteZView() {
         <FilterBar
             onClear={() => { setFilterBranch(''); setMes(mesActual()); }}
             activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}
-            acciones={[{
+            acciones={!canDownload ? [] : [{
                 key: 'pdf-todas',
                 icon: Archive,
                 // Rótulo constante: `FilterBar` mide la fila con los rótulos de
@@ -414,10 +421,18 @@ export default function CorteZView() {
                     <CarrilCards className="flex-1" ariaLabel="Resumen del Corte Z">
                         <StatCard icon={Receipt} label="Sucursales" value={totales.sucursales}
                             sub="Del período" loading={loading} />
-                        <StatCard icon={FileText} label="Total general" value={formatMoney(totales.total)}
-                            sub="Del período" loading={loading} />
-                        <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.ccf)}
-                            sub="Ventas con CCF" loading={loading} />
+                        {/* Las dos de dinero van con `corte_z_ver_montos`. Sucursales y
+                            "Con observación" quedan siempre: son las que dicen si el
+                            período está completo y si hay algo que perseguir, sin
+                            revelar ninguna cifra. */}
+                        {canVerMontos && (
+                            <>
+                                <StatCard icon={FileText} label="Total general" value={formatMoney(totales.total)}
+                                    sub="Del período" loading={loading} />
+                                <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.ccf)}
+                                    sub="Ventas con CCF" loading={loading} />
+                            </>
+                        )}
                         {/* El recuento y nada más. El detalle —cuánto, por qué, y
                             si hay algo que perseguir— vive en la tarjeta de cada
                             sucursal, que es donde se puede hacer algo con él;
@@ -460,7 +475,7 @@ export default function CorteZView() {
                             <TarjetaSucursal
                                 key={`${f.branch_id}-${f.periodo}`}
                                 fila={f}
-                                onPdf={pdfDe}
+                                onPdf={canDownload ? pdfDe : null}
                                 verTicket={abierto === f.branch_id}
                                 onVerTicket={() => setAbierto(a => (a === f.branch_id ? null : f.branch_id))}
                                 dias={dias[f.branch_id]}

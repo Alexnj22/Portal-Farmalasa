@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.360.0 — Canon de permisos por vista: capacidades separadas de pestañas
+
+Ejecución de `docs/AUDITORIA-PERMISOS-2026-08-03.md`. Hasta hoy el portal tenía
+**un** permiso de descarga —el de Facturas de Compra— mientras otros doce
+lugares exportaban o imprimían sin ningún control, y el registro de Permisos
+mostraba bajo el rótulo "Pestañas" cosas que no lo eran.
+
+**La pantalla de Permisos ahora tiene dos bloques por módulo.** `Pestañas`
+primero (las que dibujan la vista) y `Capacidades` después (las que modifican lo
+que ya se ve: descargar, ver montos, ver costos, abrir). Antes iban todas
+juntas, así que `minmax_ver_costos` y `conteo_ver_sistema` se anunciaban como
+pestañas. En el registro cada sub-permiso declara su `tipo`.
+
+**28 claves nuevas**, todas con backfill en `true` para quien ya veía el módulo
+—nadie pierde acceso al desplegar, apagar es una decisión explícita:
+
+- **Descargar**: Nómina (boletas, planilla y el CSV del banco), Personal,
+  Auditoría de Tiempos, Cotizaciones, Min/Max, Ventas Perdidas, Sucursales,
+  Libros IVA, Libro de Compras Completo, Corte Z y la hoja del Conteo.
+- **Ver montos**: Facturación, Clientes, Compras, Conteo, Libros IVA, Libro de
+  Compras Completo y Corte Z.
+- **Pestañas**: los 7 libros de IVA por separado y las 2 de Compras.
+
+**Un rename que era media verdad.** `productos_tab_catalogo_costos` decía `tab`
+y gateaba una columna: pasó a `productos_ver_costos`. El rename no es solo la
+fila — **dos policies de Postgres la nombraban** (`purchase_receipts_select` y
+`purchase_receipt_items_select`) y se actualizaron en la misma transacción. Si
+solo se hubieran renombrado las filas, el costo habría quedado visible para
+quien no debía.
+
+**Limpieza de la deriva**: se borraron 11 claves que no consultaba nadie —ni el
+frontend, ni una función, ni una policy—: `dash_distribution` (su widget ya no
+existe), las 4 de `promociones` (módulo retirado), 3 `pedidos_tab_*` de un
+rediseño viejo, `emp_home`, `emp_schedule` y `schedules_tab_catalog`.
+
+Tres decisiones que vale la pena dejar escritas, porque un permiso mal puesto
+rompe un flujo:
+
+- **Ventas y Cotizaciones NO llevan `_ver_montos`.** Ahí el precio *es* el
+  contenido; esconderlo deja una pantalla sin sentido.
+- **En Pedidos el permiso es *reimprimir*, no imprimir.** La hoja que sale al
+  generar el pedido es el entregable con el que se arman las cajas: bloquearla
+  dejaría el pedido hecho y sin papel. Se gatea el PDF de un pedido ya generado.
+- **La hoja del Conteo entra en el permiso de descarga** porque lleva la
+  existencia del sistema al papel — el ciego se podía romper por la impresora
+  aunque `conteo_ver_sistema` estuviera apagado.
+
+Verificado con un chequeo que expande las plantillas (`` `libros_iva_tab_${k}` ``),
+los `permKey` de Pedidos y los gates de Postgres: de 56 sub-permisos declarados,
+**0 quedan sin gatear**. Ese mismo chequeo encontró tres huecos reales durante el
+trabajo, el peor de ellos el catálogo de costos consultando la clave vieja
+después del rename.
+
+Migración `20260804014121_canon_permisos_capacidades_y_limpieza_de_deriva`.
+
 ## v2.359.0 — Última venta exacta y búsqueda que perdona el typo con sucursal
 
 Cierra los pendientes 1, 2 y 5 de la auditoría de Ventas > Productos

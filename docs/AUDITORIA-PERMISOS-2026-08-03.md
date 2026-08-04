@@ -79,7 +79,7 @@ caso es `productos_tab_catalogo_costos`, que dice `tab` y gatea una columna.
 | `emp_schedule` | 2 roles | no | no | Huérfana |
 | `promociones`, `promociones_tab_activas`, `promociones_tab_bonificaciones`, `promociones_tab_historial` | 2 roles c/u | no | no | Huérfanas — módulo retirado (`project_promotions_module`) |
 | `pedidos_tab_diferencias`, `pedidos_tab_en_curso`, `pedidos_tab_recepcion` | 2-3 roles | no | no | Huérfanas — rediseño de las pestañas de Pedidos |
-| `schedules_tab_catalog` | 3 roles | no | no | Huérfana: rename fallido de `schedules_tab_shifts`. **Las dos viven en la BD**, y la que el código lee (`_shifts`) tiene MENOS roles en true (4) que la muerta (6) — o sea que el rename le quitó el acceso a alguien sin avisar. |
+| `schedules_tab_catalog` | 3 roles en true | no | no | Huérfana: rename fallido de `schedules_tab_shifts`. **Las dos vivían en la BD.** ~~El rename le quitó el acceso a 2 roles~~ — **CORREGIDO al aplicar la migración**: eso salió de comparar filas totales (6 contra 4) en vez de filas en `true` (3 contra 3). Las filas de más tenían `can_view=false` y no cargaban ningún acceso; el merge fue un no-op verificado. La clave muerta se borró igual. |
 | `metas`, `bonificaciones`, `entrevistas` | sí | sí | no | **Legítimas**: `comingSoon: true` |
 | `conteo_ver_sistema` | sí | sí | no en `src/` | **Legítima**: la gatea `conteo_puede_ver_sistema()` en la base |
 

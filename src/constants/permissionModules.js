@@ -1,5 +1,21 @@
 // Registro de módulos para permisos: grupo → módulos con etiqueta CLARA,
-// descripción de una línea, ícono y sus pestañas.
+// descripción de una línea, ícono y sus sub-permisos.
+//
+// ── El campo `sub:` y por qué cada entrada lleva `tipo` ────────────────────
+// Hasta la auditoría del 2026-08-03 esto se llamaba `tabs:` y ahí adentro
+// convivían dos cosas distintas: pestañas de verdad (`ventas_tab_ventas`) y
+// capacidades que no son pestañas (`minmax_ver_costos` gatea columnas de costo,
+// `conteo_ver_sistema` rompe el conteo ciego, `facturas_compra_descargar` gatea
+// la descarga). La pantalla las mostraba todas bajo el rótulo "Pestañas", que
+// para la mitad era mentira — y el peor caso, `productos_tab_catalogo_costos`,
+// se llamaba `tab` y gateaba una columna.
+//
+// Ahora `sub` es la lista de sub-permisos y cada uno declara qué es:
+//     tipo: 'tab' → una pestaña de la vista
+//     tipo: 'cap' → una capacidad (descargar, ver montos, ver costos, abrir)
+// La pantalla de Permisos las pinta en dos bloques separados. El canon de
+// nombres vive en docs/AUDITORIA-PERMISOS-2026-08-03.md §7-bis: la clave
+// empieza SIEMPRE por la del módulo, y `_tab_` es solo para pestañas.
 //
 // Vivía dentro de PermissionsView.jsx. Se extrajo el 2026-07-29 para que la vista
 // de Mantenimiento muestre los mismos nombres — a pedido del usuario, "el nombre
@@ -33,7 +49,9 @@ export const MODULE_GROUPS = [
         group: 'Personal',
         color: 'text-chart-3-text',
         modules: [
-            { key: 'staff_list',   label: 'Listado de Personal',    desc: 'Ver y buscar empleados, datos básicos y estado',            icon: User,          hasApprove: false, hasScope: true },
+            { key: 'staff_list',   label: 'Listado de Personal',    desc: 'Ver y buscar empleados, datos básicos y estado',            icon: User,          hasApprove: false, hasScope: true, sub: [
+                { key: 'staff_list_descargar', label: 'Descargar el listado (CSV)', tipo: 'cap' },
+            ]},
             { key: 'staff_detail', label: 'Expediente Completo',    desc: 'Perfil, historial, eventos y documentos del empleado',      icon: User,          hasApprove: false, hasScope: true },
             { key: 'staff_salary', label: 'Salarios e Ingresos',    desc: 'Información salarial y ajustes de nómina (datos sensibles)',icon: User,          hasApprove: false, hasScope: true },
         ],
@@ -43,41 +61,57 @@ export const MODULE_GROUPS = [
         color: 'text-warning',
         modules: [
             { key: 'monitor',      label: 'Monitor Real-Time',      desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false, hasScope: true },
-            { key: 'time_audit',   label: 'Auditoría de Tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false, hasScope: true },
+            { key: 'time_audit',   label: 'Auditoría de Tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false, hasScope: true, sub: [
+                { key: 'time_audit_descargar', label: 'Descargar las marcaciones (CSV)', tipo: 'cap' },
+            ]},
         ],
     },
     {
         group: 'Operaciones',
         color: 'text-chart-1-text',
         modules: [
-            { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false, hasScope: true, tabs: [
-                { key: 'schedules_tab_calendar', label: 'Calendario' },
-                { key: 'schedules_tab_shifts',   label: 'Catálogo de Turnos' },
-                { key: 'schedules_tab_holidays', label: 'Feriados' },
+            { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false, hasScope: true, sub: [
+                { key: 'schedules_tab_calendar', label: 'Calendario',         tipo: 'tab' },
+                { key: 'schedules_tab_shifts',   label: 'Catálogo de Turnos', tipo: 'tab' },
+                { key: 'schedules_tab_holidays', label: 'Feriados',           tipo: 'tab' },
             ]},
             { key: 'requests',     label: 'Solicitudes',            desc: 'Revisión y aprobación de permisos, vacaciones e incapacidades', icon: ClipboardList, hasApprove: true,  hasScope: true },
             { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false, hasScope: true },
-            { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true,  hasScope: true },
+            { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true,  hasScope: true, sub: [
+                // La boleta y la planilla impresas se llevan el salario de cada
+                // empleado en papel. Es la descarga más sensible del portal.
+                { key: 'payroll_descargar', label: 'Imprimir boletas y planilla', tipo: 'cap' },
+            ]},
         ],
     },
     {
         group: 'Comercial',
         color: 'text-success',
         modules: [
-            { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false, hasScope: true, tabs: [
-                { key: 'ventas_tab_ventas',     label: 'Ventas'     },
-                { key: 'ventas_tab_vendedores', label: 'Vendedores' },
-                { key: 'ventas_tab_productos',  label: 'Productos'  },
+            // Sin `_ver_montos` a propósito (canon §7-bis): en Ventas el monto ES
+            // la vista — esconder los $ deja una pantalla sin sentido.
+            { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false, hasScope: true, sub: [
+                { key: 'ventas_tab_ventas',     label: 'Ventas',     tipo: 'tab' },
+                { key: 'ventas_tab_vendedores', label: 'Vendedores', tipo: 'tab' },
+                { key: 'ventas_tab_productos',  label: 'Productos',  tipo: 'tab' },
             ]},
-            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, tabs: [
-                { key: 'facturacion_tab_anuladas',      label: 'Anuladas'      },
-                { key: 'facturacion_tab_pendiente_mh',  label: 'Pendiente MH'  },
-                { key: 'facturacion_tab_saltos',        label: 'Saltos'        },
-                { key: 'facturacion_tab_no_efectivo',   label: 'No Efectivo'   },
-                { key: 'facturacion_tab_observaciones', label: 'Observaciones' },
+            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, sub: [
+                { key: 'facturacion_tab_anuladas',      label: 'Anuladas',      tipo: 'tab' },
+                { key: 'facturacion_tab_pendiente_mh',  label: 'Pendiente MH',  tipo: 'tab' },
+                { key: 'facturacion_tab_saltos',        label: 'Saltos',        tipo: 'tab' },
+                { key: 'facturacion_tab_no_efectivo',   label: 'No Efectivo',   tipo: 'tab' },
+                { key: 'facturacion_tab_observaciones', label: 'Observaciones', tipo: 'tab' },
+                { key: 'facturacion_ver_montos',        label: 'Ver montos',    tipo: 'cap' },
             ]},
-            { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true },
-            { key: 'clientes',       label: 'Clientes',      desc: 'Ficha fiscal del cliente: identidad (DUI/NIT/NRC), categoría, contacto y ubicación con la cascada departamento-municipio-distrito. Muestra la facturación de cada cliente para saber qué ficha vale la pena completar. Editar = corregir la ficha; los datos de un contribuyente exigen confirmación aparte', icon: Contact, hasApprove: false },
+            // Tampoco lleva `_ver_montos`: una cotización sin precios no es nada.
+            { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true, sub: [
+                { key: 'cotizaciones_descargar', label: 'Imprimir / guardar PDF', tipo: 'cap' },
+            ]},
+            { key: 'clientes',       label: 'Clientes',      desc: 'Ficha fiscal del cliente: identidad (DUI/NIT/NRC), categoría, contacto y ubicación con la cascada departamento-municipio-distrito. Muestra la facturación de cada cliente para saber qué ficha vale la pena completar. Editar = corregir la ficha; los datos de un contribuyente exigen confirmación aparte', icon: Contact, hasApprove: false, sub: [
+                // Acá el monto SÍ es una columna más: la ficha fiscal se completa
+                // igual sin ver cuánto factura cada cliente.
+                { key: 'clientes_ver_montos', label: 'Ver la facturación por cliente', tipo: 'cap' },
+            ]},
             { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas (próximamente)', icon: Target,        hasApprove: false, comingSoon: true },
             { key: 'bonificaciones', label: 'Bonificaciones',desc: 'Esquemas de bonificación por ventas y metas alcanzadas (próximamente)',                icon: DollarSign,    hasApprove: false, comingSoon: true },
         ],
@@ -86,35 +120,63 @@ export const MODULE_GROUPS = [
         group: 'Inventario',
         color: 'text-chart-9-text',
         modules: [
-            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
-                { key: 'productos_tab_catalogo',        label: 'Catálogo'   },
-                { key: 'productos_tab_catalogo_costos', label: 'Catálogo: Costos de Compra' },
-                { key: 'productos_tab_inventario',      label: 'Inventario' },
-                { key: 'productos_tab_sinventa',        label: 'Sin Venta'  },
+            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, sub: [
+                { key: 'productos_tab_catalogo',   label: 'Catálogo',   tipo: 'tab' },
+                { key: 'productos_tab_inventario', label: 'Inventario', tipo: 'tab' },
+                { key: 'productos_tab_sinventa',   label: 'Sin Venta',  tipo: 'tab' },
+                // Era `productos_tab_catalogo_costos` y NO es una pestaña: gatea
+                // las columnas de costo dentro del Catálogo. Renombrada en el
+                // barrido del canon (2026-08-03). Ojo: dos policies de Postgres
+                // la nombran (purchase_receipts_select y
+                // purchase_receipt_items_select) — se actualizaron en la misma
+                // migración que renombró las filas.
+                { key: 'productos_ver_costos',     label: 'Ver costos de compra', tipo: 'cap' },
             ]},
-            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true, hasScope: true, tabs: [
-                { key: 'minmax_tab_sucursal',    label: 'Sucursal'    },
-                { key: 'minmax_ver_costos',      label: 'Ver Costos (Compras/Ventas)' },
-                { key: 'minmax_tab_red',         label: 'Red'         },
-                { key: 'minmax_tab_solicitudes', label: 'Solicitudes' },
+            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true, hasScope: true, sub: [
+                { key: 'minmax_tab_sucursal',    label: 'Sucursal',    tipo: 'tab' },
+                { key: 'minmax_tab_red',         label: 'Red',         tipo: 'tab' },
+                { key: 'minmax_tab_solicitudes', label: 'Solicitudes', tipo: 'tab' },
+                { key: 'minmax_ver_costos',      label: 'Ver costos de compra y venta', tipo: 'cap' },
+                { key: 'minmax_descargar',       label: 'Descargar el análisis (CSV)',  tipo: 'cap' },
             ]},
-            { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false },
-            { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false },
+            { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false, sub: [
+                { key: 'ventas_perdidas_descargar', label: 'Descargar el registro (CSV)', tipo: 'cap' },
+            ]},
+            { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false, sub: [
+                { key: 'compras_tab_facturas',  label: 'Facturas',   tipo: 'tab' },
+                { key: 'compras_tab_productos', label: 'Productos',  tipo: 'tab' },
+                { key: 'compras_ver_montos',    label: 'Ver montos', tipo: 'cap' },
+            ]},
             { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icon: Truck, hasApprove: false },
-            { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, tabs: [
+            { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, sub: [
                 // El conteo es CIEGO mientras está abierto: sin este permiso la
                 // existencia del sistema NO SALE de la base (no es un switch en
                 // la vista, que era lo de antes). Con el conteo ya finalizado los
                 // números son el resultado y los ve cualquiera que vea el módulo.
-                { key: 'conteo_ver_sistema', label: 'Ver Existencia del Sistema (rompe el ciego)' },
+                //
+                // La clave NO empieza por `conteo_inventario_` como manda el
+                // canon, y se deja así a propósito: la nombra la función de
+                // Postgres `conteo_puede_ver_sistema`, así que renombrarla es
+                // tocar la base por cosmética. Las dos de abajo sí son canónicas.
+                { key: 'conteo_ver_sistema', label: 'Ver existencia del sistema (rompe el ciego)', tipo: 'cap' },
+                // La hoja impresa lleva la existencia del sistema al papel: sin
+                // este permiso, el ciego se rompía por la impresora aunque
+                // `conteo_ver_sistema` estuviera apagado.
+                { key: 'conteo_inventario_descargar',  label: 'Imprimir la hoja de conteo', tipo: 'cap' },
+                { key: 'conteo_inventario_ver_montos', label: 'Ver el valorizado',          tipo: 'cap' },
             ]},
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
-            { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, tabs: [
-                { key: 'pedidos_tab_generar',   label: 'Generar'              },
-                { key: 'pedidos_tab_historial', label: 'Pedidos (unificado)'  },
-                { key: 'pedidos_tab_rutas',     label: 'Rutas de entrega'     },
-                { key: 'pedidos_tab_metricas',  label: 'Métricas'             },
-                { key: 'pedidos_tab_reglas',    label: 'Reglas de despacho'   },
+            { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, sub: [
+                { key: 'pedidos_tab_generar',   label: 'Generar',             tipo: 'tab' },
+                { key: 'pedidos_tab_historial', label: 'Pedidos (unificado)', tipo: 'tab' },
+                { key: 'pedidos_tab_rutas',     label: 'Rutas de entrega',    tipo: 'tab' },
+                { key: 'pedidos_tab_metricas',  label: 'Métricas',            tipo: 'tab' },
+                { key: 'pedidos_tab_reglas',    label: 'Reglas de despacho',  tipo: 'tab' },
+                // REIMPRIMIR, no imprimir: la hoja que sale al GENERAR el pedido
+                // es el entregable del flujo de bodega —con ella se arman las
+                // cajas— y bloquearla dejaría el pedido hecho y sin papel. Este
+                // permiso gatea el PDF de un pedido ya generado.
+                { key: 'pedidos_descargar',     label: 'Reimprimir el pedido (PDF)', tipo: 'cap' },
             ]},
         ],
     },
@@ -126,7 +188,7 @@ export const MODULE_GROUPS = [
         group: 'Datos Contables',
         color: 'text-chart-1-text',
         modules: [
-            { key: 'facturas_compra', label: 'Facturas de Compra (Correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icon: FileText, hasApprove: false, tabs: [
+            { key: 'facturas_compra', label: 'Facturas de Compra (Correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icon: FileText, hasApprove: false, sub: [
                 // Tres cosas distintas, tres permisos (pedido del usuario
                 // 2026-08-03): ver el listado (facturas_compra.can_view),
                 // ABRIR el documento en pantalla, y DESCARGAR el archivo. Sin
@@ -137,13 +199,32 @@ export const MODULE_GROUPS = [
                 // exige uno de los dos para leer el bucket, y
                 // `export-purchase-dte-manifest` (el ZIP masivo) exige
                 // específicamente el de descarga.
-                { key: 'facturas_compra_abrir',      label: 'Abrir el Documento (JSON/PDF)' },
-                { key: 'facturas_compra_descargar',  label: 'Descargar Archivos (JSON/PDF/ZIP)' },
-                { key: 'facturas_compra_ver_montos', label: 'Cards Contables' },
+                { key: 'facturas_compra_abrir',      label: 'Abrir el documento (JSON/PDF)',     tipo: 'cap' },
+                { key: 'facturas_compra_descargar',  label: 'Descargar archivos (JSON/PDF/ZIP)', tipo: 'cap' },
+                { key: 'facturas_compra_ver_montos', label: 'Ver montos',                        tipo: 'cap' },
             ]},
-            { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido', icon: BookOpen, hasApprove: false, hasScope: true },
-            { key: 'corte_z', label: 'Corte Z', desc: 'El Corte Z mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por Hacienda, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icon: Receipt, hasApprove: false, hasScope: true },
-            { key: 'libro_compras_completo', label: 'Libro de Compras Completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras del ERP más los DTE recibidos por correo que nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sale del ERP y sirve para cotejarse contra el archivo del origen. Exporta el número de documento completo, no el cortado a 20 caracteres', icon: BookOpen, hasApprove: false, hasScope: true },
+            // Cada pestaña es un libro distinto, no un corte del mismo dato: por
+            // eso acá `_tab_` sí corresponde. Un contador externo puede necesitar
+            // Compras y no las ventas, o al revés.
+            { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido', icon: BookOpen, hasApprove: false, hasScope: true, sub: [
+                { key: 'libros_iva_tab_consumidor',    label: 'Consumidor',     tipo: 'tab' },
+                { key: 'libros_iva_tab_contribuyente', label: 'Contribuyentes', tipo: 'tab' },
+                { key: 'libros_iva_tab_compras',       label: 'Compras',        tipo: 'tab' },
+                { key: 'libros_iva_tab_anulados',      label: 'Anulados',       tipo: 'tab' },
+                { key: 'libros_iva_tab_percepcion',    label: 'Percepción',     tipo: 'tab' },
+                { key: 'libros_iva_tab_retencion',     label: 'Retención',      tipo: 'tab' },
+                { key: 'libros_iva_tab_renta',         label: 'Renta',          tipo: 'tab' },
+                { key: 'libros_iva_descargar',         label: 'Exportar los libros (CSV)', tipo: 'cap' },
+                { key: 'libros_iva_ver_montos',        label: 'Ver montos',                tipo: 'cap' },
+            ]},
+            { key: 'corte_z', label: 'Corte Z', desc: 'El Corte Z mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por Hacienda, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icon: Receipt, hasApprove: false, hasScope: true, sub: [
+                { key: 'corte_z_descargar',  label: 'Descargar el PDF', tipo: 'cap' },
+                { key: 'corte_z_ver_montos', label: 'Ver montos',       tipo: 'cap' },
+            ]},
+            { key: 'libro_compras_completo', label: 'Libro de Compras Completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras del ERP más los DTE recibidos por correo que nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sale del ERP y sirve para cotejarse contra el archivo del origen. Exporta el número de documento completo, no el cortado a 20 caracteres', icon: BookOpen, hasApprove: false, hasScope: true, sub: [
+                { key: 'libro_compras_completo_descargar',  label: 'Exportar el libro (CSV)', tipo: 'cap' },
+                { key: 'libro_compras_completo_ver_montos', label: 'Ver montos',              tipo: 'cap' },
+            ]},
         ],
     },
     {
@@ -159,7 +240,9 @@ export const MODULE_GROUPS = [
         group: 'Estructura',
         color: 'text-chart-9-text',
         modules: [
-            { key: 'branches',     label: 'Sucursales',             desc: 'Gestión de sucursales, contratos y datos operativos',       icon: Building2,     hasApprove: false },
+            { key: 'branches',     label: 'Sucursales',             desc: 'Gestión de sucursales, contratos y datos operativos',       icon: Building2,     hasApprove: false, sub: [
+                { key: 'branches_descargar', label: 'Descargar el historial (CSV)', tipo: 'cap' },
+            ]},
             { key: 'roles',        label: 'Cargos / Organigrama',   desc: 'Estructura organizacional, jerarquías y cargos',            icon: ShieldCheck,   hasApprove: false },
         ],
     },
@@ -180,7 +263,11 @@ export const MODULE_GROUPS = [
             { key: 'dash_requests',     label: 'Widget: Solicitudes',         desc: 'Solicitudes pendientes de aprobación en el dashboard',                     icon: ClipboardList,   hasApprove: false, hasScope: true },
             { key: 'dash_branches',     label: 'Widget: Sucursales',          desc: 'Estado y alertas de sucursales en el dashboard',                           icon: Building2,       hasApprove: false, hasScope: true },
             { key: 'dash_calendar',     label: 'Widget: Calendario',          desc: 'Calendario mensual con feriados y eventos',                               icon: CalendarDays,    hasApprove: false },
-            { key: 'dash_distribution', label: 'Widget: Distribución cargos', desc: 'Gráfica de distribución de personal por cargo',                           icon: PieChart,        hasApprove: false, hasScope: true },
+            // `dash_distribution` vivía acá y se quitó en el barrido del canon
+            // (2026-08-03): el widget "Distribución de cargos" ya no existe —
+            // no está en `ALL_WIDGET_IDS` de DashboardView— así que el permiso
+            // repartía acceso a una pantalla que nadie puede ver. Sus filas se
+            // borraron en la misma migración.
             { key: 'dash_announcements',label: 'Widget: Avisos recientes',    desc: 'Últimos avisos publicados en el dashboard',                               icon: Megaphone,       hasApprove: false, hasScope: true },
             { key: 'dash_shifts',       label: 'Widget: Estado de turnos',    desc: 'Ver quién está en labores, almuerzo o lactancia por sucursal en tiempo real', icon: Clock,       hasApprove: false, hasScope: true },
             { key: 'dash_absences',     label: 'Widget: Ausencias activas',   desc: 'Empleados con vacaciones, incapacidad o permiso activos hoy',              icon: UserX,           hasApprove: false, hasScope: true },
@@ -218,16 +305,22 @@ export const MODULE_GROUPS = [
     },
 ];
 
-// Plano: key → { label, desc, icon, group }. Incluye las pestañas, que también
-// son claves de role_permissions (y por lo tanto bloqueables).
+// Plano: key → { label, desc, icon, group }. Incluye los sub-permisos, que
+// también son claves de role_permissions (y por lo tanto bloqueables).
 export const MODULE_INFO = Object.fromEntries(
     MODULE_GROUPS.flatMap(g => g.modules.flatMap(m => [
         [m.key, { label: m.label, desc: m.desc, icon: m.icon, group: g.group }],
-        ...(m.tabs || []).map(t => [t.key, {
-            label: `${m.label} › ${t.label}`,
-            desc: `Pestaña "${t.label}" dentro de ${m.label}`,
+        ...(m.sub || []).map(s => [s.key, {
+            label: `${m.label} › ${s.label}`,
+            desc: s.tipo === 'cap'
+                ? `Capacidad "${s.label}" dentro de ${m.label}`
+                : `Pestaña "${s.label}" dentro de ${m.label}`,
             icon: m.icon,
             group: g.group,
         }]),
     ])),
 );
+
+// Helpers para separar los dos tipos sin repetir el filtro en cada pantalla.
+export const pestanasDe   = (m) => (m.sub || []).filter(s => s.tipo === 'tab');
+export const capacidadesDe = (m) => (m.sub || []).filter(s => s.tipo === 'cap');

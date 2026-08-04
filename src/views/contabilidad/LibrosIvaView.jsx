@@ -575,6 +575,7 @@ const COLS_RET_VENTAS = [
     { key: 'n',      label: 'N.º',       align: 'right' },
     { key: 'fecha',  label: 'Fecha',     align: 'left'  },
     { key: 'sucursal', label: 'Sucursal', align: 'left', hideBelow: 'lg' },
+    { key: 'tipo',   label: 'Tipo',      align: 'center' },
     { key: 'cliente', label: 'Cliente',  align: 'left'  },
     // El NRC NO tiene columna, y `Base` cede hasta 2xl. Es cuestión de ancho
     // medido, no de gusto: con las dos, la tabla daba 1159 contra un contenedor
@@ -656,6 +657,16 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                         <DataCell align="right">{i + 1}</DataCell>
                         <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
                         <DataCell hideBelow="lg" className="whitespace-nowrap">{nombreSucursal(r.branch_id)}</DataCell>
+                        {/* Mismo badge que el anexo de anulados. No es decorativo:
+                            los dos tipos son dos fundamentos distintos del mismo
+                            1% —empresa gran contribuyente contra institución del
+                            Estado— y además cada uno cuadra contra una línea
+                            distinta del Corte Z (factura y crédito fiscal). */}
+                        <DataCell align="center">
+                            <Badge variant={r.tipo_documento === 'CCF' ? 'danger' : 'neutral'} size="sm">
+                                {r.tipo_documento || '—'}
+                            </Badge>
+                        </DataCell>
                         {/* SIN recorte: el nombre del cliente es el dato, no una
                             etiqueta, y acá son instituciones ("ISSS, FONDO
                             CIRCULANTE UM CHALATENANGO"). Envuelve en las líneas

@@ -8,6 +8,7 @@ import ViewTabBar      from '../components/common/ViewTabBar';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { exportCsv } from '../utils/csvExport';
 import { useStaffStore as useStaff } from '../store/staffStore';
+import { useAuth } from '../context/AuthContext';
 import {
     fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
 } from '../data/ventasPerdidas';
@@ -24,6 +25,8 @@ const TAB_HELP = {
 };
 
 export default function VentasPperdidasView() {
+    const { hasPermission } = useAuth();
+    const canDownload = hasPermission('ventas_perdidas_descargar');
     const [activeTab,  setActiveTab]  = useState('pendiente');
     const [rows,       setRows]       = useState([]);
     const [loading,    setLoading]    = useState(false);
@@ -124,7 +127,7 @@ export default function VentasPperdidasView() {
                 <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                     <ShoppingCart size={13} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2} />
                     <p className="text-label text-content-2 font-medium leading-snug flex-1">{TAB_HELP[activeTab]}</p>
-                    {rows.length > 0 && (
+                    {rows.length > 0 && canDownload && (
                         <Button variant="secondary" icon={Download} onClick={handleExportCsv}>CSV</Button>
                     )}
                 </div>

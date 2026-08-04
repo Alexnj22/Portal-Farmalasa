@@ -260,6 +260,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
     const { hasPermission } = useAuth();
     const canManage = hasPermission('minmax', 'can_edit');
+    const canDownload = hasPermission('minmax_descargar');
 
     const {
         selectedErp, setSelectedErp,
@@ -428,11 +429,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             disabled: !canManage || calculating || loading,
             onClick: () => setCalcularConfirm({ open: true, mode: 'single' }),
         }]),
-        {
+        ...(canDownload ? [{
             key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true,
             disabled: data.length === 0 || loading,
             onClick: exportarCsv,
-        },
+        }] : []),
         {
             key: 'config', icon: Settings2, label: 'Configurar parámetros', soloIcono: true,
             disabled: !canManage, activo: configOpen,

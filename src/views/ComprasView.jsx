@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
     fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
 } from '../data/compras';
 import { formatMoney, formatQty } from '../utils/formatNumber';
+import { useAuth } from '../context/AuthContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,8 @@ function defaultRange() {
 // ── ItemsExpand ───────────────────────────────────────────────────────────────
 
 function ItemsExpand({ receiptId }) {
+    const { hasPermission } = useAuth();
+    const canVerMontos = hasPermission('compras_ver_montos');
     const [items,   setItems]   = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -97,8 +100,11 @@ function ItemsExpand({ receiptId }) {
                             <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">ID Producto</th>
                             <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Descripción</th>
                             <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Cant.</th>
-                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">P. Unit.</th>
-                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Total línea</th>
+                            {/* Encabezado y celda se filtran con la MISMA condición:
+                                filtrar uno solo deja las columnas corridas bajo
+                                títulos que no les corresponden. */}
+                            {canVerMontos && <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">P. Unit.</th>}
+                            {canVerMontos && <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Total línea</th>}
                             <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center hidden md:table-cell">Lote</th>
                             <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center hidden md:table-cell">Vencimiento</th>
                         </tr>
@@ -112,8 +118,8 @@ function ItemsExpand({ receiptId }) {
                                     <td className="px-3 py-2 text-content-3 tabular-nums font-mono">{it.erp_product_id ?? '—'}</td>
                                     <td className="px-3 py-2 text-content-2 font-medium">{it.descripcion || '—'}</td>
                                     <td className="px-3 py-2 text-center text-content-2 tabular-nums">{fmtNum(it.cantidad)}</td>
-                                    <td className="px-3 py-2 text-right text-content-2 tabular-nums">{fmt$(it.precio_unitario)}</td>
-                                    <td className="px-3 py-2 text-right font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</td>
+                                    {canVerMontos && <td className="px-3 py-2 text-right text-content-2 tabular-nums">{fmt$(it.precio_unitario)}</td>}
+                                    {canVerMontos && <td className="px-3 py-2 text-right font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</td>}
                                     <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
                                         {lote
                                             ? <Badge variant="chart-3" uppercase={false}>{lote}</Badge>
@@ -140,6 +146,13 @@ function TabFacturas({
     suppliers, supplierId, setSupplierId, sinProveedor, setSinProveedor,
     unlinkedCount, searchTerm,
 }) {
+    const { hasPermission } = useAuth();
+    // Canon 2026-08-03: en Compras el monto es una columna más — el historial
+    // (fecha, proveedor, estado, ítems) se lee igual sin ver cuánto costó.
+    const canVerMontos = hasPermission('compras_ver_montos');
+    const cols = useMemo(
+        () => (canVerMontos ? FACTURA_COLS : FACTURA_COLS.filter(c => !['subtotal', 'iva', 'total'].includes(c.key))),
+        [canVerMontos]);
     const [rows,      setRows]      = useState([]);
     const [loading,   setLoading]   = useState(false);
     const [page,      setPage]      = useState(1);
@@ -225,7 +238,7 @@ function TabFacturas({
                 {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
             </div>
 
-            <DataTable columns={FACTURA_COLS} loading={loading} empty={{ icon: ShoppingCart, message: 'Sin facturas en el período' }}>
+            <DataTable columns={cols} loading={loading} empty={{ icon: ShoppingCart, message: 'Sin facturas en el período' }}>
                 {rows.map((row, i) => (
                     <React.Fragment key={row.id}>
                         <DataRow index={i} aria-expanded={expandedId === row.id} onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
@@ -247,15 +260,19 @@ function TabFacturas({
                             <DataCell align="center">
                                 <span className="tabular-nums text-content-2">{row.purchase_receipt_items?.length ?? '—'}</span>
                             </DataCell>
-                            <DataCell align="right" hideBelow="md">
-                                <span className="tabular-nums text-content-2 text-label">{fmt$(row.subtotal)}</span>
-                            </DataCell>
-                            <DataCell align="right" hideBelow="lg">
-                                <span className="tabular-nums text-content-3 text-label">{fmt$(row.iva)}</span>
-                            </DataCell>
-                            <DataCell align="right">
-                                <span className="tabular-nums font-bold text-content">{fmt$(row.total)}</span>
-                            </DataCell>
+                            {canVerMontos && (
+                                <>
+                                    <DataCell align="right" hideBelow="md">
+                                        <span className="tabular-nums text-content-2 text-label">{fmt$(row.subtotal)}</span>
+                                    </DataCell>
+                                    <DataCell align="right" hideBelow="lg">
+                                        <span className="tabular-nums text-content-3 text-label">{fmt$(row.iva)}</span>
+                                    </DataCell>
+                                    <DataCell align="right">
+                                        <span className="tabular-nums font-bold text-content">{fmt$(row.total)}</span>
+                                    </DataCell>
+                                </>
+                            )}
                             <DataCell align="center">
                                 {/* Era un `<button>` SIN onClick: recibía el foco, se anunciaba
                                     como botón y no hacía nada al pulsar Enter. Ahora es lo que
@@ -271,7 +288,7 @@ function TabFacturas({
                         </DataRow>
                         {expandedId === row.id && (
                             <tr>
-                                <td colSpan={FACTURA_COLS.length} className="p-0">
+                                <td colSpan={cols.length} className="p-0">
                                     <ItemsExpand receiptId={row.id} />
                                 </td>
                             </tr>
@@ -290,6 +307,11 @@ function TabFacturas({
 // ── TabProductos ──────────────────────────────────────────────────────────────
 
 function TabProductos({ searchTerm }) {
+    const { hasPermission } = useAuth();
+    const canVerMontos = hasPermission('compras_ver_montos');
+    const cols = useMemo(
+        () => (canVerMontos ? PRODUCTO_COLS : PRODUCTO_COLS.filter(c => !['avg_cost', 'last_cost'].includes(c.key))),
+        [canVerMontos]);
     const [rows,    setRows]    = useState([]);
     const [loading, setLoading] = useState(false);
     const [page,    setPage]    = useState(1);
@@ -317,7 +339,7 @@ function TabProductos({ searchTerm }) {
                 {loading ? 'Cargando…' : `${total.toLocaleString()} producto${total !== 1 ? 's' : ''} con historial`}
             </div>
 
-            <DataTable columns={PRODUCTO_COLS} loading={loading} empty={{ icon: Package, message: 'Sin productos con historial de compras' }}>
+            <DataTable columns={cols} loading={loading} empty={{ icon: Package, message: 'Sin productos con historial de compras' }}>
                 {rows.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
                         <DataCell align="center">
@@ -338,12 +360,16 @@ function TabProductos({ searchTerm }) {
                         <DataCell align="right" hideBelow="md">
                             <span className="tabular-nums text-content-2 text-label">{fmtNum(row.total_units_received)}</span>
                         </DataCell>
-                        <DataCell align="right">
-                            <span className="tabular-nums text-content-2 text-label">{fmt$(row.avg_cost)}</span>
-                        </DataCell>
-                        <DataCell align="right">
-                            <span className="tabular-nums font-bold text-content text-label">{fmt$(row.latest_cost)}</span>
-                        </DataCell>
+                        {canVerMontos && (
+                            <>
+                                <DataCell align="right">
+                                    <span className="tabular-nums text-content-2 text-label">{fmt$(row.avg_cost)}</span>
+                                </DataCell>
+                                <DataCell align="right">
+                                    <span className="tabular-nums font-bold text-content text-label">{fmt$(row.latest_cost)}</span>
+                                </DataCell>
+                            </>
+                        )}
                     </DataRow>
                 ))}
             </DataTable>
@@ -358,9 +384,15 @@ function TabProductos({ searchTerm }) {
 // ── ComprasView ───────────────────────────────────────────────────────────────
 
 export default function ComprasView() {
+    const { hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const rawTab    = searchParams.get('tab');
-    const activeTab = TABS.some(t => t.key === rawTab) ? rawTab : 'facturas';
+    // Mismo patrón que el resto del portal: la pestaña por defecto es la primera
+    // PERMITIDA, no `facturas` fijo.
+    const allowedTabs = TABS.filter(t => hasPermission(`compras_tab_${t.key}`));
+    const activeTab = allowedTabs.some(t => t.key === rawTab)
+        ? rawTab
+        : (allowedTabs[0]?.key ?? 'facturas');
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
     const [search, setSearch] = useState('');
@@ -392,7 +424,7 @@ export default function ComprasView() {
     // auditoría UI/UX del menú, ver TabFacturas).
     const filtersContent = (
         <ViewTabBar
-            tabs={TABS}
+            tabs={allowedTabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             searchValue={search}

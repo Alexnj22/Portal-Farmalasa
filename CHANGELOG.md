@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.358.0 — Abrir el DTE de una venta desde el libro
+
+Los tres pedidos sobre la sección de retención, y lo que costó cada uno.
+
+**Clic en la fila abre el documento**, como en Facturas de Compra: modal con el
+detalle del DTE —cliente, NIT, sello, ítems y totales— y pestaña de PDF con el
+documento real adentro. Los botones de descarga llevan `stopPropagation`: sin
+eso, bajar un archivo abría además el modal encima.
+
+El visor de PDF con zoom, pinch y los parches de WebKit son 120 líneas que ya
+existían dentro del visor de compras. Se movieron a
+`components/common/PdfZoomViewer.jsx` y ahora las usan los dos. Lo demás **no**
+se reusó, y no por descuido: en una venta el emisor somos nosotros y el que
+importa es el receptor, el CCF desglosa base + IVA mientras la factura de
+consumidor manda el monto con IVA adentro y `tributos` vacío, y la retención
+—`resumen.ivaRete1`— no existe en un documento de compra. El modal respeta la
+forma de cada tipo: escribe «Gravado (IVA incluido)» y omite la línea de IVA
+donde ponerla en cero sería afirmar que no lo hubo.
+
+**Sucursal como columna** y **el nombre del cliente sin recortar** — son
+instituciones («ISSS, FONDO CIRCULANTE UM CHALATENANGO») y el nombre es el dato,
+no una etiqueta. Ahora envuelve en las líneas que haga falta; son ≤10 filas por
+mes, así que la altura de fila no se paga como en una tabla de 400.
+
+Las dos cosas cuestan ancho, y el ancho acá ya estaba al límite. Medido en 1280,
+1366, 1440, 1536 y 1920: con la columna nueva la tabla daba **1159 contra un
+contenedor de 1076** a 1536, y lo que quedaba fuera del visor era la columna de
+botones. **El NRC sale de la tabla y `Base` cede hasta 2xl**: son las dos que
+están a un clic —el documento trae NIT y NRC, y las dos van completas al CSV—,
+y la base es el retenido por cien. Con eso entra exacta en las cinco anchuras,
+con la misma cantidad de títulos que de celdas en todas.
+
+Verificado en el navegador: el botón baja el archivo **sin** abrir el modal, el
+clic en la fila **sí** lo abre, y la pestaña de PDF monta el visor con el
+documento y sus tres QR.
+
+_(pendiente de redactar)_
+
 ## v2.357.0 — El DTE de una venta, y el IVA que nos retuvieron
 
 Dos cosas que faltaban después de v2.355.0: la retención no estaba en la

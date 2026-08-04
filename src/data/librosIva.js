@@ -14,6 +14,43 @@
 // 400 filas contra el cap de 1000 de PostgREST. Si algún día se pidiera un año
 // completo, esto necesita `fetchAllRows`.
 import { supabase } from '../supabaseClient';
+import { getSignedFileUrl } from '../utils/storageFiles';
+
+// `client-zip` solo hace falta al apretar un botón, así que va por
+// `await import()` — regla de librerías pesadas de CLAUDE.md.
+let zipPromise = null;
+function getZipLib() {
+    if (!zipPromise) {
+        zipPromise = import('client-zip')
+            .catch(err => { zipPromise = null; throw err; });  // reintentar, no quedar roto
+    }
+    return zipPromise;
+}
+
+// El ZIP de UN documento se arma en el navegador, igual que en Facturas de
+// Compra: son dos archivos de ~186 kB, no amerita ida al servidor.
+//
+// Vive acá y no en la vista porque lo usan los dos lados: la tabla del libro y
+// el modal del documento.
+export async function descargarPaqueteDteVenta(row) {
+    const { downloadZip } = await getZipLib();
+    const base = String(row?.codigo_generacion || row?.erp_invoice_id || 'dte').toUpperCase();
+    const entradas = [];
+    for (const [ext, path] of [['json', row?.json_path], ['pdf', row?.pdf_path]]) {
+        if (!path) continue;
+        const url = await getSignedFileUrl(path);
+        if (!url) continue;
+        const res = await fetch(url);
+        if (res.ok) entradas.push({ name: `${base}.${ext}`, input: await res.blob() });
+    }
+    if (entradas.length === 0) throw new Error('Este documento no tiene archivos guardados.');
+
+    const blob = await downloadZip(entradas).blob();
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: `${base}.zip` });
+    a.click();
+    URL.revokeObjectURL(url);
+}
 
 const params = (desde, hasta, branchId) => ({
     p_desde: desde,

@@ -639,7 +639,7 @@ function MainApp() {
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
-                                    <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView /></PermissionGuard>} />
+                                    <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libro-compras-completo" element={<PermissionGuard moduleKey="libro_compras_completo"><LibroComprasCompletoView /></PermissionGuard>} />
                                     <Route path="corte-z" element={<PermissionGuard moduleKey="corte_z"><CorteZView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />

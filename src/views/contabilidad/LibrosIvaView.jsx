@@ -23,7 +23,7 @@ import {
     fetchVentasFueraDelLibro,
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
-    fetchNotasCreditoCompras, fetchRetencionVentas,
+    fetchNotasCreditoCompras, fetchRetencionVentas, descargarPaqueteDteVenta,
 } from '../../data/librosIva';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 
@@ -557,22 +557,8 @@ async function bajarArchivo(path, nombre) {
     dispararDescarga(await res.blob(), nombre);
 }
 
-// El ZIP de UN documento se arma en el navegador, igual que en Facturas de
-// Compra: son dos archivos de ~186 kB, no amerita ida al servidor.
-async function bajarPaqueteDte(row) {
-    const { downloadZip } = await getZipLib();
-    const base = String(row.codigo_generacion || row.erp_invoice_id || 'dte').toUpperCase();
-    const entradas = [];
-    for (const [ext, path] of [['json', row.json_path], ['pdf', row.pdf_path]]) {
-        if (!path) continue;
-        const url = await getSignedFileUrl(path);
-        if (!url) continue;
-        const res = await fetch(url);
-        if (res.ok) entradas.push({ name: `${base}.${ext}`, input: await res.blob() });
-    }
-    if (entradas.length === 0) throw new Error('Este documento no tiene archivos guardados.');
-    dispararDescarga(await downloadZip(entradas).blob(), `${base}.zip`);
-}
+// El ZIP de un documento vive en `librosIva.js` (`descargarPaqueteDteVenta`):
+// lo usan los dos lados, la tabla y el modal del documento.
 
 // ── Sección: el IVA que NOS retuvieron ──────────────────────────────────────
 //
@@ -588,15 +574,16 @@ async function bajarPaqueteDte(row) {
 const COLS_RET_VENTAS = [
     { key: 'n',      label: 'N.º',       align: 'right' },
     { key: 'fecha',  label: 'Fecha',     align: 'left'  },
+    { key: 'sucursal', label: 'Sucursal', align: 'left', hideBelow: 'lg' },
     { key: 'cliente', label: 'Cliente',  align: 'left'  },
-    // `2xl` en NRC y Base, y NO por gusto: con las ocho columnas la tabla medía
-    // 974 contra un contenedor de 844 a 1280 y 930 a 1366, y lo que quedaba
-    // fuera del visor era la columna DTE — o sea los botones, que son el motivo
-    // de la sección. Ceden estas dos porque el retenido y el documento se
-    // pueden leer sin ellas: el NRC está en el DTE que se abre al lado, y la
-    // base es el retenido por cien. Mismo criterio que el NIT en Contribuyentes.
-    { key: 'nrc',    label: 'NRC',       align: 'left', hideBelow: '2xl' },
-    { key: 'doc',    label: 'Documento', align: 'left', hideBelow: 'sm' },
+    // El NRC NO tiene columna, y `Base` cede hasta 2xl. Es cuestión de ancho
+    // medido, no de gusto: con las dos, la tabla daba 1159 contra un contenedor
+    // de 1076 a 1536 y lo que quedaba fuera del visor era la columna DTE — o
+    // sea los botones, que son el motivo de la sección. Ceden estas dos y no el
+    // cliente ni la sucursal porque son las únicas que están **a un clic**: la
+    // fila abre el documento, que trae NIT y NRC, y las dos van completas al
+    // CSV. La base además es el retenido por cien.
+    { key: 'doc',    label: 'Documento', align: 'left', hideBelow: '2xl' },
     { key: 'base',   label: 'Base',      align: 'right', hideBelow: '2xl' },
     { key: 'ret',    label: 'Retenido',  align: 'right' },
     { key: 'dte',    label: 'DTE',       align: 'center' },
@@ -618,7 +605,7 @@ const CSV_RET_VENTAS_HEADERS = ['N.', 'FECHA', 'CLIENTE', 'NRC', 'NIT', 'TIPO',
     'DOCUMENTO', 'NUMERO DE CONTROL', 'CODIGO DE GENERACION', 'SELLO',
     'BASE', 'IVA RETENIDO', 'TOTAL', 'ESTADO'];
 
-function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, onError }) {
+function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nombreSucursal, onAbrir, onError }) {
     const [bajando, setBajando] = useState(null);
 
     const total   = filas.reduce((s, r) => s + Number(r.retencion_iva || 0), 0);
@@ -664,33 +651,32 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, onE
 
             <DataTable columns={COLS_RET_VENTAS} loading={loading} empty={empty}>
                 {filas.map((r, i) => (
-                    <DataRow key={r.codigo_generacion || `${r.erp_invoice_id}-${i}`} index={i}>
+                    <DataRow key={r.codigo_generacion || `${r.erp_invoice_id}-${i}`} index={i}
+                        onClick={() => onAbrir(r)}>
                         <DataCell align="right">{i + 1}</DataCell>
                         <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
-                        {/* Cell propia y no `CeldaProveedor`: esa lleva 16rem, que
-                            acá se comía la columna de botones (medido: tabla 1133
-                            contra un contenedor de 1004 a 1440, con DTE fuera del
-                            visor). Los clientes que retienen son instituciones de
-                            nombre largo, así que sigue a dos líneas. */}
-                        <DataCell className="max-w-[11rem]">
+                        <DataCell hideBelow="lg" className="whitespace-nowrap">{nombreSucursal(r.branch_id)}</DataCell>
+                        {/* SIN recorte: el nombre del cliente es el dato, no una
+                            etiqueta, y acá son instituciones ("ISSS, FONDO
+                            CIRCULANTE UM CHALATENANGO"). Envuelve en las líneas
+                            que haga falta — son ≤10 filas por mes, no una tabla
+                            de 400 donde la altura de fila se paga. */}
+                        <DataCell className="min-w-[10rem]">
                             <div className="flex items-start gap-2 min-w-0">
-                                <span className="line-clamp-2 break-words leading-tight" title={r.cliente || undefined}>
-                                    {r.cliente || '—'}
-                                </span>
+                                <span className="break-words leading-tight">{r.cliente || '—'}</span>
                                 {r.anulada && <Badge variant="warning" size="sm" className="shrink-0">Anulada</Badge>}
                             </div>
+                        </DataCell>
+                        {/* El correlativo y no el número de control: el control son
+                            31 caracteres monoespaciados y vale ~230px de tabla. Va
+                            en el DTE, que se abre acá al lado. */}
+                        <DataCell hideBelow="2xl">
+                            <CeldaDocumento numero={soloNumero(r.correlativo)} />
                         </DataCell>
                         {/* `2xl` acá y `2xl` en COLS_RET_VENTAS: tienen que ser el
                             MISMO peldaño. Cuando no coinciden, la tabla queda con
                             más celdas que títulos y cada monto se lee bajo el
                             rótulo del vecino — ya pasó en Contribuyentes a 1440. */}
-                        <DataCell hideBelow="2xl"><CeldaNrc nrc={r.nrc} /></DataCell>
-                        {/* El correlativo y no el número de control: el control son
-                            31 caracteres monoespaciados y vale ~230px de tabla. Va
-                            en el DTE, que se abre acá al lado. */}
-                        <DataCell hideBelow="sm">
-                            <CeldaDocumento numero={soloNumero(r.correlativo)} />
-                        </DataCell>
                         <DataCell align="right" hideBelow="2xl"><CeldaMonto v={r.monto_sujeto} /></DataCell>
                         <DataCell align="right"><CeldaMonto fuerte v={r.retencion_iva} /></DataCell>
                         <DataCell align="center">
@@ -698,21 +684,25 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, onE
                                 está archivado: que el botón exista y no se pueda
                                 apretar dice "falta el archivo"; que no exista dice
                                 "acá no hay nada que abrir", que es otra cosa. */}
+                            {/* `stopPropagation` en los tres: la fila entera abre el
+                                documento, así que sin esto bajar un archivo abriría
+                                además el modal encima. */}
                             <div className="flex items-center justify-center gap-1">
                                 <Button tone="chart-1" iconOnly icon={FileJson}
                                     disabled={!r.json_path || bajando != null}
                                     title={r.json_path ? 'Descargar el JSON del documento' : 'El JSON de este documento no está guardado'}
-                                    onClick={() => correr(`${r.codigo_generacion}-json`,
-                                        () => bajarArchivo(r.json_path, `${String(r.codigo_generacion).toUpperCase()}.json`))} />
+                                    onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-json`,
+                                        () => bajarArchivo(r.json_path, `${String(r.codigo_generacion).toUpperCase()}.json`)); }} />
                                 <Button tone="chart-1" iconOnly icon={FileText}
                                     disabled={!r.pdf_path || bajando != null}
                                     title={r.pdf_path ? 'Descargar el PDF del documento' : 'El PDF de este documento no está guardado'}
-                                    onClick={() => correr(`${r.codigo_generacion}-pdf`,
-                                        () => bajarArchivo(r.pdf_path, `${String(r.codigo_generacion).toUpperCase()}.pdf`))} />
+                                    onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-pdf`,
+                                        () => bajarArchivo(r.pdf_path, `${String(r.codigo_generacion).toUpperCase()}.pdf`)); }} />
                                 <Button tone="chart-1" iconOnly icon={Archive}
                                     disabled={(!r.json_path && !r.pdf_path) || bajando != null}
                                     title="Descargar los dos en un ZIP"
-                                    onClick={() => correr(`${r.codigo_generacion}-zip`, () => bajarPaqueteDte(r))} />
+                                    onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-zip`,
+                                        () => descargarPaqueteDteVenta(r)); }} />
                             </div>
                         </DataCell>
                     </DataRow>
@@ -1105,13 +1095,24 @@ async function armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal }) {
     return { blob: await downloadZip(entradas).blob(), nombre: `libros-iva_${mes}.zip` };
 }
 
-export default function LibrosIvaView() {
-    const { getScope, user } = useAuth();
+export default function LibrosIvaView({ openModal }) {
+    const { getScope, user, hasPermission } = useAuth();
+    // Canon de permisos 2026-08-03. Cada pestaña es un LIBRO distinto, no un
+    // corte del mismo dato: un contador externo puede necesitar Compras y no las
+    // ventas. Exportar es aparte de mirar, y los montos también.
+    const canDownload = hasPermission('libros_iva_descargar');
+    const canVerMontos = hasPermission('libros_iva_ver_montos');
     const branches = useStaffStore((s) => s.branches);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const rawTab = searchParams.get('tab');
-    const activeTab = TABS.some(t => t.key === rawTab) ? rawTab : 'consumidor';
+    // Mismo patrón que Ventas/Productos/Facturación: la pestaña por defecto es la
+    // PRIMERA PERMITIDA, no `consumidor` fijo — si no, quien no tenga ese libro
+    // abre la vista en una pestaña que no puede ver.
+    const allowedTabs = TABS.filter(t => hasPermission(`libros_iva_tab_${t.key}`));
+    const activeTab = allowedTabs.some(t => t.key === rawTab)
+        ? rawTab
+        : (allowedTabs[0]?.key ?? 'consumidor');
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
     const [mes, setMes] = useState(mesActual);
@@ -1242,6 +1243,18 @@ export default function LibrosIvaView() {
     const hayRetencion = useMemo(
         () => contribuyente.some(r => Number(r.retencion_iva || 0) > 0),
         [contribuyente]);
+
+    // Abrir el DTE de una venta, como en Facturas de Compra: el documento
+    // completo, con su detalle y su PDF. Se le agrega el nombre de la sucursal
+    // porque la fila trae el id y el modal no tiene de dónde resolverlo.
+    const abrirDte = useCallback((row) => {
+        openModal?.('viewSalesDte', {
+            document: { ...row, sucursal: nombreSucursal(row.branch_id) },
+        });
+        useStaffStore.getState().appendAuditLog('LIBROS_IVA_VER_DTE', String(row.erp_invoice_id || ''), {
+            codigo_generacion: row.codigo_generacion,
+        });
+    }, [openModal, nombreSucursal]);
 
     // Lo mismo del lado de compras: sin NRC del proveedor el Art. 86 no se
     // cumple. Hoy son 2 proveedores del ERP a los que les falta el dato.
@@ -1393,7 +1406,7 @@ export default function LibrosIvaView() {
     // cuando la contadora pregunta por UN documento entre 467.
     const filtersContent = (
         <ViewTabBar
-            tabs={TABS}
+            tabs={allowedTabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             searchValue={busqueda}
@@ -1408,7 +1421,7 @@ export default function LibrosIvaView() {
         <FilterBar
             onClear={() => { setFilterBranch(''); setMes(mesActual()); }}
             activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}
-            acciones={[{
+            acciones={!canDownload ? [] : [{
                 key: 'exportar',
                 icon: Download,
                 label: 'Exportar',
@@ -1485,11 +1498,19 @@ export default function LibrosIvaView() {
                             sub={activeTab === 'consumidor'
                                 ? `${consumidor.length} ${filterBranch ? 'días' : 'filas'}`
                                 : undefined} />
-                        <StatCard icon={ETIQUETAS[activeTab].icon} label={ETIQUETAS[activeTab].monto}
-                            value={formatMoney(t.total)} sub="Del período" loading={loading} />
-                        <StatCard icon={Percent} label={ETIQUETAS[activeTab].impuesto}
-                            value={formatMoney(t.debito)} loading={loading}
-                            sub={activeTab === 'consumidor' ? 'Calculado 13%' : 'Documentado'} />
+                        {/* Las dos tarjetas de dinero van con `libros_iva_ver_montos`;
+                            la de Documentos no, porque contar cuántos documentos tiene
+                            el libro es lo que hace falta para saber si está completo,
+                            y eso no revela ninguna cifra. */}
+                        {canVerMontos && (
+                            <>
+                                <StatCard icon={ETIQUETAS[activeTab].icon} label={ETIQUETAS[activeTab].monto}
+                                    value={formatMoney(t.total)} sub="Del período" loading={loading} />
+                                <StatCard icon={Percent} label={ETIQUETAS[activeTab].impuesto}
+                                    value={formatMoney(t.debito)} loading={loading}
+                                    sub={activeTab === 'consumidor' ? 'Calculado 13%' : 'Documentado'} />
+                            </>
+                        )}
                         {/* Solo cuando el período la tiene: es un número que el
                             contador necesita para declarar (es impuesto ya
                             enterado por el cliente), pero una tarjeta en cero
@@ -1757,6 +1778,8 @@ export default function LibrosIvaView() {
                             `Sin retención de IVA en ${etiquetaMes(mes)}`,
                             'Ningún cliente practicó retención sobre las ventas del período.')}
                         sufijoArchivo={sufijoArchivo}
+                        nombreSucursal={nombreSucursal}
+                        onAbrir={abrirDte}
                         onError={setError}
                     />
                 )}

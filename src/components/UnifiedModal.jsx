@@ -36,6 +36,7 @@ const FormNursingRegents = React.lazy(() => import('./forms/FormNursingRegents')
 const FormBranchEmployees = React.lazy(() => import('./forms/FormBranchEmployees'));
 const FormDocumentViewer = React.lazy(() => import('./forms/FormDocumentViewer'));
 const FormPurchaseDteViewer = React.lazy(() => import('./forms/FormPurchaseDteViewer'));
+const FormSalesDteViewer = React.lazy(() => import('./forms/FormSalesDteViewer'));
 const FormServicePayment = React.lazy(() => import('./forms/FormServicePayment'));
 const FormRegisterPayment = React.lazy(() => import('./forms/FormRegisterPayment'));
 const FormLeadership = React.lazy(() => import('./forms/FormLeadership'));
@@ -50,8 +51,8 @@ const FormClienteDetail = React.lazy(() => import('./forms/FormClienteDetail'));
 const FormNewPayrollPeriod = React.lazy(() => import('./forms/FormNewPayrollPeriod'));
 const FormEditPayrollEntry = React.lazy(() => import('./forms/FormEditPayrollEntry'));
 
-const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument", "viewPurchaseDte"]);
-const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "editProveedor", "editCliente"]);
+const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument", "viewPurchaseDte", "viewSalesDte"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "viewSalesDte", "editProveedor", "editCliente"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -152,6 +153,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewBranchEmployees": return "max-w-2xl";
             case "viewDocument": return "max-w-5xl";
             case "viewPurchaseDte": return "max-w-5xl";
+            case "viewSalesDte": return "max-w-5xl";
             case "newEmployee":
             case "editEmployee": return "max-w-4xl";
             case "rehireEmployee": return "max-w-2xl";
@@ -731,7 +733,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     // (porcentaje) no resuelve de forma confiable como "definite" a través de este árbol
     // (scrollRef es overflow-y-auto) — confirmado con Playwright: el contenido colapsaba a
     // ~430px de los ~850px disponibles. Encadenar flex-1/min-h-0 en cada nivel es robusto.
-    const fillHeight = type === 'viewDocument' || type === 'viewPurchaseDte';
+    const fillHeight = type === 'viewDocument' || type === 'viewPurchaseDte' || type === 'viewSalesDte';
     const getModalHeightClass = () => fillHeight ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
     const hidesHeader = HIDES_HEADER.has(type);
     const hidesFooter = HIDES_FOOTER.has(type);
@@ -873,6 +875,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "viewWfmAnalytics" && <FormWfmAnalytics branches={branches} />}
                                 {type === "viewDocument" && <FormDocumentViewer formData={formData} onClose={onClose} />}
                                 {type === "viewPurchaseDte" && <FormPurchaseDteViewer formData={formData} onClose={onClose} />}
+                                {type === "viewSalesDte" && <FormSalesDteViewer formData={formData} onClose={onClose} />}
                                 {type === "manageService" && <FormServicePayment formData={formData} setFormData={setFormData} />}
                                 {type === "registerPayment" && <FormRegisterPayment formData={formData} setFormData={setFormData} />}
                                 {type === "editBranchLeadership" && <FormLeadership formData={formData} setFormData={setFormData} />}

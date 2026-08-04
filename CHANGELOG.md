@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.362.0 — Permisos: un solo acento, bitácora y las guardas que faltaban
+
+Auditoría de diseño de la vista de Permisos de Acceso. Puntuó **18/40** en las
+heurísticas de Nielsen: funcional, con deuda seria en prevención y recuperación
+de errores. Esto cierra los hallazgos que no dependen de rediseñar la forma.
+
+**El color deja de ser decoración.** Había una paleta de 7 colores repartida
+cíclicamente por índice (`ROLE_COLORS[idx % 7]`), así que con 25 cargos la
+columna era un arcoíris donde el tono no significaba nada: el color de "Regente"
+contra el de "Auxiliar de Bodega" solo decía en qué posición de la lista
+estaban. Ahora el acento entra en dos lugares y los dos informan — azul para el
+cargo que se está editando, ámbar para Super Usuario. De paso se fueron 43
+líneas muertas: `ROLE_META` y `ROLE_ORDER`, definidos y nunca usados, cargaban
+otras 6 paletas.
+
+**Ningún cambio de permisos quedaba registrado.** Cero llamadas a
+`appendAuditLog` en toda la vista, cuando la regla del proyecto exige anotar
+toda acción de usuario. Era la pantalla donde más importa saber quién le dio
+acceso a quién, y la única que no lo hacía. Ahora las seis acciones se anotan:
+cambio individual, Super Usuario, activar todo, copiar desde otro cargo,
+activar/apagar sección y nivel de precio.
+
+**Apagar un módulo ya apaga sus capacidades.** La tarjeta deja de dibujarlas
+cuando el módulo se apaga, así que quedaban encendidas en la base y sin forma de
+verlas desde la pantalla: **38 filas así, en 16 cargos**. Hoy todas eran
+`productos_tab_*` y ahí no concedían nada porque la ruta bloquea la vista
+entera, pero el mecanismo no distingue por clave —
+`purchase_receipts_select` consulta `minmax_ver_costos` **sin mirar al módulo
+padre**, así que apagar Min/Max no le habría quitado el costo de compra a nadie.
+El apagado en cascada evita que vuelva a pasar; la migración
+`20260804030625` limpió lo que ya estaba.
+
+**Las dos acciones menos reversibles ahora confirman.** Super Usuario era un
+switch idéntico a los otros sesenta y tres, y activar una sección entera
+tampoco preguntaba — mientras "Activar todo", que hace menos daño, sí. El aviso
+de Super Usuario dice lo que realmente pasa: ver y hacer todo, salarios y
+documentos fiscales incluidos.
+
+**Y dos arreglos de lectura.** Los módulos sin acceso iban a `opacity-55` sobre
+la tarjeta entera, lo que bajaba el texto junto con el fondo y lo dejaba por
+debajo del AA que fija `PRODUCT.md`; ahora el estado se comunica con la
+superficie y el borde, y las letras se leen igual. Y los 8 niveles de precio
+entraban en una fila con `flex-wrap` que no envolvía nada, porque
+`SegmentedControl` es un solo hijo: "Precio 7" quedaba cortado por el borde de
+su tarjeta a 1440. Lleva su propio scroll horizontal.
+
+Queda abierto lo que sí es rediseño: el buscador filtra cargos y no módulos, y
+no hay filtro "solo activos" ni deshacer.
+
 ## v2.361.3 — Metas: bonificaciones por producto y laboratorio en el plan
 
 Solo documentación: el plan pasa a «Metas y Bonificaciones» (§9-10 de

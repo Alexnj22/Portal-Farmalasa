@@ -19,6 +19,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { smartFilter } from '../utils/searchUtils';
+import { useStaffStore as useStaff } from '../store/staffStore';
 import Switch from '../components/common/Switch';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
@@ -38,59 +39,43 @@ const MODULES = MODULE_GROUPS.flatMap(g =>
 // Solo módulos principales (sin sub-permisos) para estadísticas y conteos
 const MAIN_MODULES = MODULES.filter(m => !m.isTab);
 
-// ─── Metadatos de roles (solo display — la lista real viene de la DB) ────────
-const ROLE_META = {
-    SUPERADMIN: {
-        label: 'Super Admin', locked: true,
-        desc: 'Acceso total e irrestricto al sistema. No modificable.',
-        color: 'from-warning to-chart-4', textColor: 'text-warning-text',
-        bg: 'bg-warning/10', border: 'border-warning/30',
-    },
-    ADMIN: {
-        label: 'Administrador', locked: false,
-        desc: 'Gestión completa del sistema y del personal.',
-        color: 'from-chart-3 to-chart-6', textColor: 'text-chart-3-text',
-        bg: 'bg-chart-3/10', border: 'border-chart-3/30',
-    },
-    JEFE: {
-        label: 'Jefe', locked: false,
-        desc: 'Aprobaciones, horarios y gestión de su equipo.',
-        color: 'from-chart-1 to-brand', textColor: 'text-chart-1-text',
-        bg: 'bg-chart-1/10', border: 'border-chart-1/30',
-    },
-    SUBJEFE: {
-        label: 'Sub-Jefe', locked: false,
-        desc: 'Apoyo en aprobaciones y gestión operativa.',
-        color: 'from-chart-9 to-chart-1', textColor: 'text-chart-9-text',
-        bg: 'bg-chart-9/10', border: 'border-chart-9/30',
-    },
-    SUPERVISOR: {
-        label: 'Supervisor', locked: false,
-        desc: 'Supervisión de asistencia y aprobaciones.',
-        color: 'from-success to-chart-9', textColor: 'text-chart-9-text',
-        bg: 'bg-chart-9/10', border: 'border-chart-9/30',
-    },
-    EMPLEADO: {
-        label: 'Empleado', locked: false,
-        desc: 'Acceso al portal de autogestión personal solamente.',
-        color: 'from-chart-8 to-chart-8-text', textColor: 'text-content-2',
-        bg: 'bg-surface-card-hover', border: 'border-border-card',
-    },
+// módulo → sus sub-permisos. Lo necesita el apagado en cascada: quitarle "Ver" a
+// un módulo tiene que apagar también sus pestañas y capacidades.
+//
+// Por qué no basta con esconderlas: la tarjeta ya no las dibuja cuando el módulo
+// está apagado, así que quedaban encendidas en la base y sin forma de verlas
+// desde la pantalla. La auditoría del 2026-08-03 encontró 38 filas así, en 16
+// cargos. En Productos era inofensivo porque la ruta bloquea la vista entera,
+// pero el mecanismo no distingue: `purchase_receipts_select` mira
+// `minmax_ver_costos` SIN consultar al módulo padre, así que apagar Min/Max no
+// le quitaba el costo de compra a nadie.
+const SUBS_DE = Object.fromEntries(
+    MODULE_GROUPS.flatMap(g => g.modules.map(m => [m.key, (m.sub || []).map(s => s.key)])),
+);
+
+// El cargo elegido usa UN acento, siempre el mismo. Antes había una paleta de 7
+// colores repartida cíclicamente por índice (`ROLE_COLORS[idx % 7]`), así que
+// con 25 cargos la columna era un arcoíris donde el color no decía nada: el
+// tono de "Regente" contra el de "Auxiliar de Bodega" no significaba ninguna
+// diferencia entre los dos cargos, solo su posición en la lista.
+//
+// El registro `product` de PRODUCT.md lo dice al derecho: el acento es para la
+// acción primaria, la selección actual y los indicadores de estado — no para
+// decorar. Acá quedan dos usos, y los dos informan:
+//   · chart-1  → este cargo es el que estás editando
+//   · warning  → este cargo es Super Usuario (acceso irrestricto)
+const SELECCION = {
+    icono:  'from-chart-1 to-brand',
+    texto:  'text-chart-1-text',
+    fondo:  'bg-chart-1/10',
+    borde:  'border-chart-1/30',
 };
-
-// Orden de presentación preferido
-const ROLE_ORDER = ['SUPERADMIN', 'ADMIN', 'JEFE', 'SUBJEFE', 'SUPERVISOR', 'EMPLEADO'];
-
-// Paleta de colores para roles organizacionales (cíclica por índice)
-const ROLE_COLORS = [
-    { color: 'from-chart-3 to-chart-6', textColor: 'text-chart-3-text', bg: 'bg-chart-3/10', border: 'border-chart-3/30' },
-    { color: 'from-chart-1 to-brand',   textColor: 'text-chart-1-text',   bg: 'bg-chart-1/10',   border: 'border-chart-1/30'   },
-    { color: 'from-success to-chart-9', textColor: 'text-chart-9-text',   bg: 'bg-chart-9/10',   border: 'border-chart-9/30'   },
-    { color: 'from-chart-6 to-chart-3', textColor: 'text-chart-6-text',   bg: 'bg-chart-6/10',   border: 'border-chart-6/30'   },
-    { color: 'from-warning to-chart-4', textColor: 'text-chart-4-text', bg: 'bg-chart-4/10', border: 'border-chart-4/30' },
-    { color: 'from-chart-9 to-chart-1', textColor: 'text-chart-9-text',   bg: 'bg-chart-9/10',   border: 'border-chart-9/30'   },
-    { color: 'from-chart-8 to-chart-8-text',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-border-card'  },
-];
+const SUPER_USUARIO = {
+    icono:  'from-warning to-chart-4',
+    texto:  'text-warning-text',
+    fondo:  'bg-warning/10',
+    borde:  'border-warning/30',
+};
 
 const PERMISSION_TYPES = [
     { key: 'can_view',    label: 'Ver',                          icon: Eye,          activeColor: 'bg-chart-1'    },
@@ -145,7 +130,12 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                        hover:shadow-[var(--shadow-glass-4)]
                        hover:translate-y-[var(--lift-card)] hover:scale-[1.018] hover:bg-surface-card
                        ${flash ? 'ring-2 ring-chart-1/45 shadow-[var(--shadow-glass-3)]' : ''}`
-                    : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-shine)] opacity-55 hover:opacity-80 hover:translate-y-[var(--lift-card)] hover:bg-surface-card'
+                    /* Sin acceso. NO se usa opacidad sobre la tarjeta entera: eso
+                       bajaba el texto junto con el fondo y dejaba el nombre y la
+                       descripción por debajo del contraste AA que fija PRODUCT.md.
+                       El estado se comunica con la superficie y el borde; las
+                       letras se leen igual que en una tarjeta encendida. */
+                    : 'bg-surface-card-hover/40 backdrop-blur-xl border-divider shadow-[var(--shadow-shine)] hover:translate-y-[var(--lift-card)] hover:bg-surface-card'
         }`}>
             <div className="p-4">
                 {/* Header */}
@@ -155,7 +145,10 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <p className={`text-body-sm font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-content' : 'text-content-3'}`}>
+                            {/* `text-content-2` y no `-3` en el estado apagado: el nombre
+                                del módulo es lo que se busca al recorrer la pantalla,
+                                también —sobre todo— entre los que el cargo NO tiene. */}
+                            <p className={`text-body-sm font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-content' : 'text-content-2'}`}>
                                 {module.label}
                             </p>
                             {saving && <Loader2 size={10} className="text-content-3 animate-spin flex-shrink-0" />}
@@ -293,6 +286,11 @@ const PermissionsView = () => {
     const [copyingFrom, setCopyingFrom] = useState(false);
     const [confirmActivate, setConfirmActivate] = useState(false);
     const [confirmCopy, setConfirmCopy] = useState(null); // roleId a copiar
+    // Las dos acciones menos reversibles de la pantalla no confirmaban nada,
+    // mientras "Activar todo" —que hace menos daño— sí. Hallazgo P0/P1 de la
+    // auditoría del 2026-08-03.
+    const [confirmSU, setConfirmSU] = useState(null);       // true|false a aplicar
+    const [confirmGroup, setConfirmGroup] = useState(null); // { modules, activate, group }
     const [searchQuery, setSearchQuery] = useState('');
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
@@ -359,11 +357,19 @@ const PermissionsView = () => {
         if (!roleId) return;
         const k = `${roleId}:${moduleKey}`;
 
+        // Apagar "Ver" de un módulo arrastra sus sub-permisos (ver SUBS_DE).
+        const arrastra = permType === 'can_view' && !value ? (SUBS_DE[moduleKey] || []) : [];
+
         setPermissions(prev => {
+            const next = { ...prev };
             const cur = { ...prev[k] };
             cur[permType] = value;
             if (permType === 'can_view' && !value) { cur.can_edit = false; cur.can_approve = false; }
-            return { ...prev, [k]: cur };
+            next[k] = cur;
+            for (const sk of arrastra) {
+                next[`${roleId}:${sk}`] = { ...(prev[`${roleId}:${sk}`] || {}), can_view: false, can_edit: false, can_approve: false };
+            }
+            return next;
         });
 
         setSaving(prev => ({ ...prev, [k]: true }));
@@ -382,26 +388,50 @@ const PermissionsView = () => {
             updated_at: new Date().toISOString(),
         });
 
+        if (!error && arrastra.length > 0) {
+            await upsertRolePermissionsBulk(arrastra.map(sk => ({
+                role_id: roleId, module_key: sk,
+                can_view: false, can_edit: false, can_approve: false,
+                scope: permissions[`${roleId}:${sk}`]?.scope || 'ALL',
+                updated_at: new Date().toISOString(),
+            })));
+        }
+
         setSaving(prev => ({ ...prev, [k]: false }));
         if (!error) {
             setSavedFlash(prev => ({ ...prev, [k]: true }));
             setTimeout(() => setSavedFlash(prev => ({ ...prev, [k]: false })), 1500);
         }
-    }, [selectedRoleId, permissions]);
+        // Toda acción de usuario va a la bitácora (regla de CLAUDE.md). Faltaba
+        // en TODA esta vista, que es justo donde más importa saber quién le dio
+        // acceso a quién — hallazgo P0 de la auditoría del 2026-08-03.
+        useStaff.getState().appendAuditLog('PERMISOS_CAMBIO', String(roleId), {
+            cargo: orgRoles.find(r => r.id === roleId)?.name,
+            modulo: moduleKey, permiso: permType, valor: value,
+            arrastro: arrastra.length || undefined,
+            error: error ? (error.message || 'error al guardar') : undefined,
+        });
+    }, [selectedRoleId, permissions, orgRoles]);
 
     // ── Nivel de precio por cargo ────────────────────────────────────────────
     const handlePriceLevelChange = useCallback(async (level) => {
         if (!selectedRoleId) return;
         setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: level }));
         await updateRoleMaxPriceLevel(selectedRoleId, level);
-    }, [selectedRoleId]);
+        useStaff.getState().appendAuditLog('PERMISOS_NIVEL_PRECIO', String(selectedRoleId), {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, nivel: level || 'sin límite',
+        });
+    }, [selectedRoleId, orgRoles]);
 
     // ── Toggle Super Usuario por cargo ───────────────────────────────────────
     const handleSuToggle = useCallback(async (value) => {
         if (!selectedRoleId) return;
         setRoleIsSU(prev => ({ ...prev, [selectedRoleId]: value }));
         await updateRoleIsSU(selectedRoleId, value);
-    }, [selectedRoleId]);
+        useStaff.getState().appendAuditLog('PERMISOS_SUPER_USUARIO', String(selectedRoleId), {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, valor: value,
+        });
+    }, [selectedRoleId, orgRoles]);
 
     // ── Activar todos los permisos (como SUPERADMIN) ─────────────────────────
     const handleActivateAll = useCallback(async () => {
@@ -435,8 +465,11 @@ const PermissionsView = () => {
             });
             setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: null }));
         }
+        useStaff.getState().appendAuditLog('PERMISOS_ACTIVAR_TODO', String(selectedRoleId), {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, modulos: MODULES.length,
+        });
         setActivatingAll(false);
-    }, [selectedRoleId, permissions]);
+    }, [selectedRoleId, permissions, orgRoles]);
 
     // ── Copiar permisos de otro cargo ────────────────────────────────────────
     const handleCopyFrom = useCallback(async (sourceRoleId) => {
@@ -475,8 +508,12 @@ const PermissionsView = () => {
             });
             setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: srcLevel }));
         }
+        useStaff.getState().appendAuditLog('PERMISOS_COPIAR_DESDE', String(selectedRoleId), {
+            cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
+            desde: orgRoles.find(r => r.id === sourceRoleId)?.name,
+        });
         setCopyingFrom(false);
-    }, [selectedRoleId, permissions, rolePriceLevels]);
+    }, [selectedRoleId, permissions, rolePriceLevels, orgRoles]);
 
     // ── Toggle de sección completa ────────────────────────────────────────────
     const handleGroupToggle = useCallback(async (groupModules, activate) => {
@@ -504,13 +541,18 @@ const PermissionsView = () => {
             updated_at: new Date().toISOString(),
         }));
         await upsertRolePermissionsBulk(rows);
-    }, [selectedRoleId, permissions]);
+        useStaff.getState().appendAuditLog(activate ? 'PERMISOS_ACTIVAR_SECCION' : 'PERMISOS_APAGAR_SECCION',
+            String(selectedRoleId), {
+                cargo: orgRoles.find(r => r.id === selectedRoleId)?.name,
+                modulos: groupModules.length,
+            });
+    }, [selectedRoleId, permissions, orgRoles]);
 
     const selectedOrgRole = orgRoles.find(r => r.id === selectedRoleId) ?? null;
 
-    // Color style derived from role index
-    const selectedOrgRoleIdx = orgRoles.findIndex(r => r.id === selectedRoleId);
-    const roleStyle = ROLE_COLORS[selectedOrgRoleIdx >= 0 ? selectedOrgRoleIdx % ROLE_COLORS.length : 0];
+    // Mismo criterio que la lista: el chip del header es el acento de selección,
+    // salvo que el cargo sea Super Usuario — ahí el warning es el dato.
+    const roleStyle = selectedRoleId && roleIsSU[selectedRoleId] ? SUPER_USUARIO : SELECCION;
 
     const { filteredRoles, isPermRoleFuzzy } = useMemo(() => {
         if (!searchQuery.trim()) return { filteredRoles: orgRoles, isPermRoleFuzzy: false };
@@ -534,11 +576,11 @@ const PermissionsView = () => {
             {selectedOrgRole && (
                 <>
                     <div className="hidden md:block w-px h-6 bg-divider mx-0.5" />
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${roleStyle.bg} ${roleStyle.border}`}>
-                        <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${roleStyle.color} flex items-center justify-center flex-shrink-0`}>
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${roleStyle.fondo} ${roleStyle.borde}`}>
+                        <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${roleStyle.icono} flex items-center justify-center flex-shrink-0`}>
                             <ShieldCheck size={11} className="text-white" strokeWidth={2} />
                         </div>
-                        <span className={`text-body font-black ${roleStyle.textColor} leading-tight`}>
+                        <span className={`text-body font-black ${roleStyle.texto} leading-tight`}>
                             {selectedOrgRole.name}
                         </span>
                     </div>
@@ -646,10 +688,13 @@ const PermissionsView = () => {
                                 Similares a &ldquo;{searchQuery}&rdquo;
                             </div>
                         )}
-                        {filteredRoles.map((r, idx) => {
+                        {filteredRoles.map((r) => {
                             const isActive = selectedRoleId === r.id;
-                            const cs = ROLE_COLORS[idx % ROLE_COLORS.length];
                             const isSURol = !!roleIsSU[r.id];
+                            // El color entra SOLO cuando dice algo: SU manda sobre
+                            // selección porque "acceso irrestricto" hay que verlo
+                            // aunque el cargo no sea el que se está editando.
+                            const cs = isSURol ? SUPER_USUARIO : SELECCION;
                             const viewCount = MAIN_MODULES.filter(m => permissions[`${r.id}:${m.key}`]?.can_view).length;
                             return (
                                 <button
@@ -658,15 +703,20 @@ const PermissionsView = () => {
                                     onClick={() => setSelectedRoleId(r.id)}
                                     className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-300 hover:translate-y-[var(--lift-hover)] active:scale-[0.98] transform-gpu ${
                                         isActive
-                                            ? isSURol
-                                                ? 'bg-gradient-to-br from-warning/10 to-chart-4/10 border-warning/30 shadow-[var(--shadow-glow-chart-4-lg)]'
-                                                : `${cs.bg} ${cs.border} shadow-[var(--shadow-elevation-md)]`
+                                            ? `${cs.fondo} ${cs.borde} shadow-[var(--shadow-elevation-md)]`
                                             : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[var(--shadow-elevation-sm)]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`relative w-8 h-8 rounded-xl bg-gradient-to-br ${isSURol ? 'from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)]' : cs.color + ' shadow-sm'} flex items-center justify-center flex-shrink-0`}>
-                                            <ShieldCheck size={13} className="text-white" strokeWidth={2} />
+                                        {/* El ícono lleva color solo si el cargo es SU o está
+                                            elegido. En reposo es neutro: 25 escudos de colores
+                                            distintos no distinguían nada. */}
+                                        <div className={`relative w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                            isSURol || isActive
+                                                ? `bg-gradient-to-br ${cs.icono} shadow-sm`
+                                                : 'bg-surface-card-hover'
+                                        }`}>
+                                            <ShieldCheck size={13} className={isSURol || isActive ? 'text-white' : 'text-content-3'} strokeWidth={2} />
                                             {isSURol && (
                                                 <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
                                                     <Sparkles size={8} className="text-warning" strokeWidth={2.5} />
@@ -675,14 +725,14 @@ const PermissionsView = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-body-sm font-black leading-tight truncate ${isActive ? (isSURol ? 'text-warning-text' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
+                                                <p className={`text-body-sm font-black leading-tight truncate ${isActive ? cs.texto : 'text-content-2'}`}>{r.name}</p>
                                                 {isSURol && <Badge variant="warning" tone="solid" size="sm">SU</Badge>}
                                             </div>
-                                            <p className={`text-caption font-medium mt-0.5 ${isActive ? (isSURol ? 'text-warning-text/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
+                                            <p className={`text-caption font-medium mt-0.5 ${isActive ? cs.texto : 'text-content-3'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
-                                        {isActive && <ChevronRight size={14} className={cs.textColor} strokeWidth={2.5} />}
+                                        {isActive && <ChevronRight size={14} className={cs.texto} strokeWidth={2.5} />}
                                     </div>
                                 </button>
                             );
@@ -737,7 +787,7 @@ const PermissionsView = () => {
                                             </div>
                                             <Toggle
                                                 value={isRoleSU}
-                                                onChange={v => canEdit && handleSuToggle(v)}
+                                                onChange={v => canEdit && setConfirmSU(v)}
                                                 color="bg-warning"
                                                 disabled={!canEdit}
                                             />
@@ -797,7 +847,12 @@ const PermissionsView = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-1.5">
+                                    {/* `flex-wrap` no servía de nada: `SegmentedControl` es UN
+                                        hijo que pinta los 8 niveles en una fila, así que no hay
+                                        dónde envolver — a 1440 "Precio 7" quedaba cortado por el
+                                        borde de la tarjeta. El contenido ancho lleva su propio
+                                        scroll horizontal; el cuerpo de la página nunca. */}
+                                    <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
                                         <SegmentedControl
                                             size="sm" disabled={!canEdit}
                                             options={PRICE_OPTS.map(opt => ({ value: opt.value ?? '_null', label: opt.label, icon: opt.icon }))}
@@ -833,7 +888,7 @@ const PermissionsView = () => {
                                             comunica el "a medias". */}
                                         <Switch
                                             checked={groupActive}
-                                            onChange={() => canEdit && handleGroupToggle(allGroupModules, !groupActive)}
+                                            onChange={() => canEdit && setConfirmGroup({ modules: allGroupModules, activate: !groupActive, group: g.group })}
                                             disabled={!canEdit}
                                             size="sm"
                                             variant={(g.color || '').replace('text-', '') || 'brand'}
@@ -906,6 +961,35 @@ const PermissionsView = () => {
             confirmText="Sí, copiar"
             isDestructive={false}
             isProcessing={copyingFrom}
+        />
+
+        {/* ── Confirmación: Super Usuario ──
+            Es la acción de mayor alcance de la pantalla y era la única sin
+            guarda: un switch idéntico a los otros sesenta y tres. `isDestructive`
+            al ENCENDER, que es el sentido peligroso — apagarlo solo quita. */}
+        <ConfirmModal
+            isOpen={confirmSU !== null}
+            onClose={() => setConfirmSU(null)}
+            onConfirm={() => { const v = confirmSU; setConfirmSU(null); handleSuToggle(v); }}
+            title={confirmSU ? '¿Dar acceso irrestricto?' : '¿Quitar el acceso irrestricto?'}
+            message={confirmSU
+                ? `El cargo "${selectedOrgRole?.name}" pasará a ver y hacer TODO en el portal, sin importar los permisos de abajo. Incluye salarios, documentos fiscales y la bitácora.`
+                : `El cargo "${selectedOrgRole?.name}" vuelve a regirse por los permisos de abajo.`}
+            confirmText={confirmSU ? 'Sí, dar acceso total' : 'Sí, quitarlo'}
+            isDestructive={!!confirmSU}
+        />
+
+        {/* ── Confirmación: sección completa ── */}
+        <ConfirmModal
+            isOpen={!!confirmGroup}
+            onClose={() => setConfirmGroup(null)}
+            onConfirm={() => { const c = confirmGroup; setConfirmGroup(null); handleGroupToggle(c.modules, c.activate); }}
+            title={confirmGroup?.activate ? `¿Activar toda la sección?` : `¿Apagar toda la sección?`}
+            message={confirmGroup
+                ? `${confirmGroup.activate ? 'Se habilitarán' : 'Se quitarán'} los ${confirmGroup.modules.length} permisos de "${confirmGroup.group}" para el cargo "${selectedOrgRole?.name}".`
+                : ''}
+            confirmText={confirmGroup?.activate ? 'Sí, activar' : 'Sí, apagar'}
+            isDestructive={confirmGroup ? !confirmGroup.activate : false}
         />
         </>
     );

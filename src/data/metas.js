@@ -77,6 +77,19 @@ export async function devolverMeta({ id, nota }) {
 // Devuelve una sola fila (o ninguna: sin permiso, sin sucursal asignada o
 // Bodega). El mes lo decide el servidor —siempre el que está corriendo— y el
 // scope también: con scope BRANCH el parámetro se ignora y manda su sala.
+// ── Fase 4: el bono de meta, persona por persona ─────────────────────────────
+// Un solo objeto JSON con la cabecera (bolsa, tramo, lo que se pierde) y el
+// detalle de la sala. El mes lo manda el llamador; el scope lo impone el
+// servidor igual que en el resto del módulo.
+export async function fetchBonoMetaSala(branchId, yearMonth) {
+    const { data, error } = await supabase.rpc('get_bono_meta_sala', {
+        p_branch_id: Number(branchId),
+        p_year_month: yearMonth,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
 export async function fetchMetaSala(branchId = null) {
     const { data, error } = await supabase.rpc('get_meta_sala', {
         p_branch_id: branchId != null ? Number(branchId) : null,

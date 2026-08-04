@@ -343,6 +343,79 @@ contra datos reales de `sales_daily_stats`/ventas antes de mostrar nada) y las
 reglas de siempre: migraciones con archivo local + gates, mockup antes de UI,
 bump por commit.
 
+## 12. El bono de meta: la regla real (2026-08-04)
+
+El usuario pasó su Excel y el Apps Script que lo mantenía. Esto **reemplaza** la
+descripción vaga de §1: el bono de meta no es un monto por persona, es una
+**bolsa de la sala que se reparte**.
+
+```
+bolsa = venta de la sala × 0.5%          si cumplió ≥ 100%
+      = venta de la sala × 0.5% × 50%    si quedó entre 95% y 100%
+      = 0                                 debajo de 95%
+
+jefatura = bolsa / 4     — fijo; no depende de lo que vendió el jefe
+equipo   = bolsa × 3/4   — proporcional a lo vendido, con la venta de la
+                           jefatura FUERA del denominador
+```
+
+El 0.5% quedó en `metas_config.bono_pct_venta`; el tramo medio reusa
+`pago_medio_pct` (50), así que 0.25% no es otra regla, es la misma pagada a la
+mitad. Los umbrales 100/95 ya estaban en `umbral_bono_total`/`umbral_bono_medio`.
+
+**Nada se redistribuye.** Lo que no tiene dueño se pierde: la parte de las
+ventas cuyo código de vendedor no da con nadie de la sala, y la mitad que no
+cobra quien está en período de prueba. Sacar esa venta del denominador
+repartiría la plata entre los demás — la regla explícitamente no lo hace.
+
+**Verificado contra el Excel de La Popular, julio 2026** (`get_bono_meta_sala`,
+migración 20260804160156): bolsa $215.64 = 43,127.94 × 0.5%; jefatura $53.91;
+base de reparto $35,618.98; y las seis filas al centavo — $45.24 / $41.14 /
+$34.46 / $15.18 / $0.00, con $25.71 sin pagar. Coincide en todo.
+
+### 12a. Quién entra al reparto — y el hueco de los horarios
+
+Criterio del usuario: **una venta a nombre de alguien de otra sala no da bono
+acá**; si no tenía turno en esta sala, lo más probable es un error de digitación
+del vendedor. El destino es cruzarlo contra la **cobertura de horarios**, módulo
+que se está terminando.
+
+**Hoy no se puede**: `schedule_coverage` tiene 0 filas, `attendance` 0, los 14
+`shifts` tienen `branch_id` NULL, y `timesheets` cubre 10 empleados. El proxy es
+la asignación del empleado (`employees.branch_id`), que es el criterio
+conservador — nunca paga a quien no corresponde — y reproduce el Excel exacto.
+
+**No es marginal, y hay que mirarlo** (julio 2026, venta hecha por gente
+registrada pero asignada a otra sala): Salud 2 **$11,875.48 (26% del mes)**,
+La Popular $5,529.95, Salud 1 $4,914.40, Salud 4 $2,663.62, Salud 3 $800.55.
+Contra eso, el código que no existe es chico: $132.74 en La Popular, $445.76 en
+Salud 3. La función devuelve las dos fugas **separadas**
+(`venta_codigo_inexistente` y `venta_otra_sala`) porque se arreglan distinto.
+
+Un caso concreto: **Marilyn Menjivar (código 157)** está asignada a Salud 5 y en
+julio hizo **521 documentos por $5,519.46 en La Popular** contra 88 documentos
+por $746.85 en Salud 5. Eso no es un error de digitación: trabaja en La Popular
+y su asignación está vieja. **Ronaldo Recinos (159)** sí es el caso que describe
+la regla: 895 documentos en Salud 1 (la suya) y **uno solo de $10.49** en La
+Popular.
+
+### 12b. PENDIENTES del bono de meta
+
+1. **Período de prueba — sin fuente de datos.** No existe un estado «en prueba»
+   (los 50 empleados activos están en `ACTIVO`) y solo **3 de 50** tienen
+   `hire_date`, así que tampoco se pueden calcular «los primeros 3 meses». La
+   función ya trae la regla implementada leyendo `hire_date`; hoy da falso para
+   casi todos. Hay que elegir: un estado propio del empleado, o completar las
+   fechas de ingreso. Decisión del usuario 2026-08-04: **queda pendiente y
+   documentado, pero integrado en el módulo**.
+2. **El tramo 90–95%.** El Apps Script tiene un bloque que, con la sala entre
+   90% y 95% y la bolsa en cero, pone en el total la suma de los bonos de los
+   cargos con «j», comentado como «cumplimiento de Reporte Mensual». Pero si la
+   bolsa es cero, esas celdas también son cero: el monto venía escrito a mano de
+   otro lado. **No se implementó** — no se inventa una regla sin definición.
+   Falta saber cuánto gana la jefatura en ese tramo y de dónde sale.
+3. **Cobertura de horarios** (12a), cuando el módulo esté listo.
+
 ## 11. La meta de la sala es un WIDGET, no una pantalla (2026-08-04)
 
 Decisión del usuario, reemplaza §6.2. El razonamiento: la meta es información

@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.370.0 — Metas: el bono de meta, calculado como manda la regla
+
+El cálculo del bono por cumplimiento de meta, tal como se venía haciendo a mano.
+Todavía sin pantalla — esto es el motor y su verificación.
+
+- **La bolsa de la sala es el 0.5% de lo que vendió** (la mitad si cerró entre
+  95% y 100%; nada por debajo). De ahí, **un cuarto para la jefatura** —fijo, no
+  depende de lo que ella misma vendió— y **tres cuartos repartidos entre el
+  resto**, en proporción a lo que vendió cada quien y con la venta de la
+  jefatura fuera del reparto.
+- **Lo que no tiene dueño se pierde, no se reparte**: la parte de las ventas
+  cuyo código de vendedor no corresponde a nadie de la sala, y la mitad que no
+  cobra quien está en período de prueba.
+- **Cuadra exacto con el cálculo anterior.** Se reprodujo La Popular de julio:
+  bolsa $215.64, jefatura $53.91, y las seis personas al centavo — $45.24,
+  $41.14, $34.46, $15.18, $0.00 — con $25.71 que no cobra nadie. Las siete
+  cifras coinciden.
+- **Y separa dos cosas que antes iban en el mismo saco.** Lo que se perdía se
+  anotaba junto como «código incorrecto»; ahora se ve por qué: en julio, en La
+  Popular, $132.74 eran códigos que no existen y **$5,529.95 eran ventas de
+  personal registrado pero asignado a otra sala**. En Salud 2 eso último llega a
+  **$11,875.48, el 26% del mes**. Son problemas distintos y se arreglan
+  distinto.
+
+Queda anotado en el plan lo que falta para cerrarlo: marcar el período de prueba
+(hoy no hay dónde: 3 de 50 personas tienen fecha de ingreso), cruzar contra la
+cobertura de horarios cuando el módulo esté listo, y definir cuánto gana la
+jefatura en el tramo 90–95%, que en el cálculo anterior era un monto escrito a
+mano sin regla.
+
 ## v2.369.1 — Metas sale de Comercial: ahora es un menú principal
 
 Pedido del usuario. **Metas** estaba dentro del acordeón de *Comercial*, junto a

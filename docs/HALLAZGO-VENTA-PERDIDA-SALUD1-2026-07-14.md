@@ -92,20 +92,51 @@ El cuadre diario (`check-sales-reconciliation`, cron 07:30 UTC) **lo detectó y
 avisó**: `sync_alert_log` tiene la alerta `ventas-cuadre` para `4|2026-07-14`
 con `-9.00`, enviada el 2026-08-02. La herramienta funcionó.
 
-## Las otras tres alertas abiertas son otra cosa
+## Las otras tres alertas abiertas son OTRO problema — y es del portal
+
+> **Corrección.** La primera lectura fue que eran ventas sin sello todavía, o
+> sea retraso que se corrige solo. **Era falsa**, y la delató medir en vez de
+> suponer: el exceso del libro del origen coincide al centavo con otra cosa.
 
 `4|2026-08-02` ($6.95), `29|2026-08-01` ($12.50) y `28|2026-08-01` ($62.60) van
-en la dirección contraria —el origen tiene más— y **no son documentos perdidos**:
-son ventas que el portal **sí tiene**, pero todavía **sin sello**, así que no
-entran al libro. Es retraso, no pérdida, y se corrige solo:
+en la dirección contraria: el origen tiene **más**. Y su feed de documentos
+coincide **exacto** con el portal en los tres días (98/$1,018.70,
+159/$1,351.89, 41/$477.30). Lo que difiere es su **libro**.
 
-| Antigüedad | Documentos sin sello | Monto |
+**El exceso es, en los tres, el documento `NULA` del día, al centavo:**
+
+| Sucursal | Día | Exceso del libro | Documento anulado |
+|---|---|---|---|
+| Salud 1 | 02/08 | $6.95 | $6.95 (1) |
+| Salud 4 | 01/08 | $62.60 | $62.60 (1) |
+| Salud 5 | 01/08 | $12.50 | $12.50 (1) |
+
+Y esos documentos **tienen sello de Hacienda** y **no están en el anexo de
+anulados** —verificado con una ventana de dos meses, no solo el día—, así que
+**nunca se invalidaron ante Hacienda**. Para Hacienda esas ventas siguen
+vigentes.
+
+**Entonces acá el que se equivoca es el portal:** filtra el libro por
+`estado = FINALIZADA` y las deja fuera. El origen las incluye, y tiene razón.
+
+No es un estado de paso: de los 6 documentos `NULA` con sello de toda la
+historia, dos son de agosto de 2025 y uno de febrero de 2026 — **siguen igual
+once y cinco meses después**.
+
+| | Documentos | Monto |
 |---|---|---|
-| Últimos 3 días | 120 | $1,630.36 |
-| De junio 2026 a hace 30 días | **0** | — |
-| Antes de junio 2026 | 2 (29/08/2025) | $38.00 |
+| `NULA` con sello, toda la historia | 6 | $99.80 |
+| …de esos, en el período contable | **3** | **$82.05** |
 
-Cero pendientes en el período contable con más de tres días: el sello llega.
+**Es una decisión del contador, no del portal**, y por eso no se cambió el
+filtro: o esas ventas se invalidan ante Hacienda como corresponde, o el libro
+tiene que llevarlas. Mientras tanto el libro declara **$82.05 de menos** en el
+período contable.
+
+Aparte, y sin efecto: 120 documentos sin sello de los últimos 3 días
+($1,630.36) —eso sí es retraso normal, y se resuelve— más 2 de agosto de 2025
+($38.00) que nunca lo recibieron. **Cero pendientes de más de tres días dentro
+del período contable.**
 
 ## Qué hacer
 
@@ -117,3 +148,20 @@ Cero pendientes en el período contable con más de tres días: el sello llega.
    monto no suma—, que es lo que permite ubicar el registro perdido.
 3. Los 2 documentos de agosto de 2025 sin sello ($38.00) quedan anotados: son
    anteriores al período contable y no afectan ninguna declaración.
+4. **Decidir qué se hace con las 3 ventas anuladas sin invalidar** ($82.05 en el
+   período contable). Son las únicas de esta auditoría donde el que declara de
+   menos es el portal.
+
+## Lo que quedó automatizado (v2.363.0)
+
+Los siete pasos de arriba son mecánicos y ahora los hace el cuadre diario: al
+encontrar un día que no cuadra baja al documento, lo clasifica y guarda el
+resultado en `ventas_cuadre_hallazgos`. El panel «Por qué difiere» del Corte Z
+lo muestra en vez de mandar a comparar a mano.
+
+Corrido sobre julio y agosto, los cuatro días quedan **explicados al centavo**
+(`sin_explicar = 0` en los cuatro): uno `origen_perdio_fila` y tres
+`anulado_sin_invalidar`. Ese contador de «sin explicar» es a propósito — un
+diagnóstico que dice «ya está» sobre una diferencia todavía abierta es peor que
+no diagnosticar, y fue justo lo que delató que la primera lectura de las tres
+alertas de agosto estaba mal.

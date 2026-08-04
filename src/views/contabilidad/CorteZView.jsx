@@ -116,8 +116,55 @@ const SeccionTicket = ({ titulo, datos = {} }) => (
 // así que compararlos de frente inventaba una diferencia que no existía —
 // Salud 3 aparecía con $42.92 y en realidad cuadraba. Lo que llega hasta este
 // panel es el residuo REAL: documentos que un lado tiene y el otro no.
+// Qué significa cada causa que encontró el cuadre diario, y qué hacer con ella.
+// El texto es de negocio: quien lee esto está armando una declaración, no
+// depurando un sync.
+const CAUSAS = {
+    // «El sistema perdió…» se leía como si el portal fuera el que la perdió, que
+    // es justo al revés. Se dice el HECHO —la venta ya no está registrada— sin
+    // atribuirlo, que además es la regla de no nombrar de dónde viene el dato.
+    origen_perdio_fila: {
+        que: 'Venta que ya no está registrada',
+        hacer: 'Tiene sello de Hacienda y sigue siendo válida, pero su registro se perdió. Volver a traerla no la recupera: hay que reportarlo para que la restauren.',
+    },
+    anulado_sin_invalidar: {
+        que: 'Venta anulada que nunca se invalidó ante Hacienda',
+        hacer: 'Tiene sello y no está en el anexo de anulados, así que para Hacienda sigue vigente. Hay que invalidarla como corresponde, o el libro tiene que llevarla.',
+    },
+    falta_en_portal: {
+        que: 'Falta esta venta',
+        hacer: 'Se recupera volviendo a traer ese día.',
+    },
+    sin_sello: {
+        que: 'Todavía sin el sello de Hacienda',
+        hacer: 'Sin sello no entra al libro. Se resuelve solo cuando el sello llega.',
+    },
+    anulado: {
+        que: 'Documento anulado',
+        hacer: 'El libro lo excluye con razón.',
+    },
+    dte_inexistente: {
+        que: 'El documento no existe en Hacienda',
+        hacer: 'Hay que revisarlo: el libro no puede llevar una venta sin documento.',
+    },
+    monto_distinto: {
+        que: 'El monto no coincide',
+        hacer: 'Se corrige volviendo a traer ese día.',
+    },
+    sin_clasificar: {
+        que: 'Sin causa determinada',
+        hacer: 'Hay que revisarlo a mano.',
+    },
+};
+
 const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
     const residuo = Number(fila.residuo) || 0;
+    // El cuadre diario ya bajó al documento y guardó la causa. Antes esto
+    // mandaba a comparar día por día A MANO contra el reporte del origen —
+    // que es exactamente lo que se automatizó (2026-08-03).
+    const hallazgos = Array.isArray(fila.hallazgos) ? fila.hallazgos : [];
+    const docs = hallazgos.flatMap(h => (h.documentos ?? []).map(d => ({ ...d, fecha: h.fecha })));
+    const sinExplicar = hallazgos.reduce((s, h) => s + Math.abs(Number(h.sin_explicar) || 0), 0);
 
     return (
         <div className="rounded-card border bg-warning/10 border-warning/30 text-warning-text p-3 space-y-2">
@@ -126,16 +173,48 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
                 Por qué difiere {formatMoney(Math.abs(residuo))}
             </h4>
 
-            <p className="text-micro leading-relaxed">
-                El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z, y ya está
-                descontada la retención. El Corte Z es mensual: no lista documentos. Para ubicarlo
-                hay que comparar día por día contra el reporte diario, y de ahí bajar al documento.
-                {!cuadra(fila.dif_ccf) && (
-                    <> Parte de la diferencia está en los créditos fiscales
-                    ({formatMoney(fila.dif_ccf)}), y esos se persiguen en el libro de
-                    contribuyentes, que los lista uno por uno.</>
-                )}
-            </p>
+            {docs.length > 0 ? (
+                <div className="space-y-1.5">
+                    {docs.map(d => {
+                        const c = CAUSAS[d.causa] || CAUSAS.sin_clasificar;
+                        return (
+                            <div key={`${d.fecha}-${d.erp_invoice_id}`}
+                                 className="rounded-card bg-surface-card-hover border border-divider p-2">
+                                <div className="flex items-baseline justify-between gap-2">
+                                    <span className="text-micro font-semibold text-content">{c.que}</span>
+                                    <span className="font-mono text-micro tabular-nums font-bold shrink-0 text-content">
+                                        {formatMoney(Math.abs(Number(d.impacto) || 0))}
+                                    </span>
+                                </div>
+                                <p className="text-micro text-content-3 mt-0.5">
+                                    {d.fecha} · documento {d.correlativo || d.erp_invoice_id}
+                                </p>
+                                <p className="text-micro text-content-2 mt-1 leading-relaxed">{c.hacer}</p>
+                            </div>
+                        );
+                    })}
+                    {sinExplicar >= CUADRA && (
+                        // Lo que las causas NO explican se dice. Un diagnóstico que
+                        // declara «ya está» sobre una diferencia todavía abierta es
+                        // peor que no diagnosticar.
+                        <p className="text-micro leading-relaxed">
+                            Quedan <b>{formatMoney(sinExplicar)}</b> sin explicar: hay que revisarlos
+                            a mano contra el reporte del día.
+                        </p>
+                    )}
+                </div>
+            ) : (
+                <p className="text-micro leading-relaxed">
+                    El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z, y ya está
+                    descontada la retención. Todavía no hay un diagnóstico de este período — se
+                    genera con el cuadre diario, que corre cada mañana.
+                    {!cuadra(fila.dif_ccf) && (
+                        <> Parte de la diferencia está en los créditos fiscales
+                        ({formatMoney(fila.dif_ccf)}), y esos se persiguen en el libro de
+                        contribuyentes, que los lista uno por uno.</>
+                    )}
+                </p>
+            )}
 
             {!dias && (
                 <Button size="sm" variant="secondary" onClick={onVerDias} disabled={cargandoDias}>

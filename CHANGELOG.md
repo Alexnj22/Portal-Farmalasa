@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.365.0 — El cuadre diagnostica la causa
+
+El cuadre diario encontraba el DÍA que no cuadra y ahí se detenía, con un aviso
+que decía siempre lo mismo: «faltan $X, hay que resincronizar». Auditando a mano
+la diferencia de $9.00 de Salud 1 del 14/07 resultó que **resincronizar no servía
+de nada** — el que había perdido el registro era el origen. El aviso recetaba una
+cura que no aplicaba.
+
+Los siete pasos de esa auditoría son mecánicos, así que ahora los hace el cuadre:
+al encontrar un día que no cuadra baja al documento, lo clasifica, y el panel
+«Por qué difiere» del Corte Z lo muestra en vez de mandar a comparar a mano.
+
+**Lo que distingue cada causa**, y cada regla salió de datos reales:
+
+| | Causa | Qué corresponde |
+|---|---|---|
+| Está en el origen y no en el portal | `falta_en_portal` | volver a traer ese día |
+| Está en los dos, sin sello de este lado | `sin_sello` | nada, se resuelve solo |
+| Solo acá · el DTE existe sellado · el origen **no puede ni generar su PDF** | `origen_perdio_fila` | reportarlo: resincronizar no la recupera |
+| Solo acá · está en el anexo de anulados | `anulado` | correcto, el libro lo excluye |
+| Con sello, anulado de este lado y **nunca invalidado ante Hacienda** | `anulado_sin_invalidar` | invalidarla como corresponde, o incluirla |
+| El DTE no existe | `dte_inexistente` | revisarlo |
+
+La que da el veredicto de `origen_perdio_fila` es fina y vale anotarla: el
+endpoint del JSON del DTE devuelve el documento entero —porque se escribió a
+disco al emitirlo— mientras el del PDF **revienta con `Undefined offset: 0`**,
+que es lo que prueba que la fila ya no está en la base.
+
+**Corrido sobre julio y agosto, los cuatro días quedan explicados al centavo**
+(`sin_explicar = 0` en los cuatro): uno `origen_perdio_fila` y tres
+`anulado_sin_invalidar`.
+
+Ese contador de «sin explicar» es a propósito, y ya se ganó el sueldo: en la
+primera versión los tres días de agosto salieron con **cero documentos y la
+diferencia entera sin explicar**, que es lo que delató que mi lectura era
+equivocada. Yo había dado por hecho que eran ventas sin sello todavía. No lo
+eran: **el libro del origen cuenta el documento anulado del día**, al centavo en
+los tres, y esos documentos tienen sello y no están en el anexo de anulados —
+para Hacienda siguen vigentes. Ahí el que declara de menos es el portal, y son
+$82.05 en el período contable. **No se cambió el filtro del libro: es una
+decisión del contador**, y está anotada en
+`docs/HALLAZGO-VENTA-PERDIDA-SALUD1-2026-07-14.md`.
+
+**Además**
+
+- Tabla `ventas_cuadre_hallazgos` (una fila por sucursal-día, con `resuelto_at`
+  para que un día que vuelve a cuadrar deje de explicarse).
+- El aviso ahora dice la causa y qué hacer, no una receta genérica.
+- El diagnóstico **no puede tumbar el cuadre**: si el origen no contesta el
+  listado del día, el hallazgo igual vale y se avisa.
+- El `select` del día va paginado. No es ceremonia: si PostgREST cortara en
+  1000, los documentos que la consulta no vio se reportarían como «falta en el
+  portal» — un diagnóstico al revés, silencioso y creíble.
+
 ## v2.364.1 — El modo de scroll fijo necesitaba min-h-0 en el cuerpo
 
 Completa el arreglo de v2.363.1, que estaba a medias: quitar la altura fija de

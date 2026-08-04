@@ -172,8 +172,8 @@ congela el RESULTADO del bono al cerrar el mes (columna o tabla
 
 1. **Tablero** (supervisor + gerente): 6 tarjetas de sala — meta, acumulado,
    %, proyección de cierre, semáforo de bono.
-2. **Mi sala** (scope BRANCH): su meta grande, avance, proyección. Solo la
-   suya.
+2. ~~**Mi sala** (scope BRANCH): su meta grande, avance, proyección. Solo la
+   suya.~~ **RETIRADA — es un widget del Inicio, ver §11** (2026-08-04).
 3. **Histórico**: por mes y sala — meta, venta real, %, bono logrado. Incluye
    «Agregar meta de un mes anterior» (can_edit) para el ingreso manual de las
    metas históricas (decisión §8.4).
@@ -325,7 +325,10 @@ autoría server-side, resultados congelados).
   5-7% de error), flujo confirmar→aprobar/devolver con candados de estado,
   pestaña Confirmación, ciclo diario (cron `metas-ciclo-diario` 8:00 SV) y
   notificaciones por rol. QA del ciclo entero 9/9.
-- **Fase 3**: vista «Mi sala» + quitar `comingSoon` + pulido + QA navegador.
+- **Fase 3 — HECHA a medias (v2.368.0)**: la meta de la sala salió como
+  **widget del Inicio**, no como la pantalla «Mi sala» de §6.2 (decisión del
+  usuario 2026-08-04, ver §11). Falta el resto de la fase: quitar `comingSoon`
+  del módulo y el pulido general.
 - **Fase 4**: bonificaciones — programas por producto y por laboratorio
   (config + cálculo + simulador), en modo informativo (interruptor apagado).
 - **Fase 5**: liquidación mensual unificada + exportable para planilla.
@@ -335,3 +338,41 @@ bonificaciones están suspendidas). Cada fase con su verificación (los cálculo
 contra datos reales de `sales_daily_stats`/ventas antes de mostrar nada) y las
 reglas de siempre: migraciones con archivo local + gates, mockup antes de UI,
 bump por commit.
+
+## 11. La meta de la sala es un WIDGET, no una pantalla (2026-08-04)
+
+Decisión del usuario, reemplaza §6.2. El razonamiento: la meta es información
+**ambiental** —la sala debería verla todos los días sin ir a buscarla, y el
+Inicio es lo primero que abre cualquiera— y es **puntual**: importa el avance
+de HOY, la proyección y cuánto falta, no una pantalla con tablas e histórico.
+El módulo Metas queda entero para supervisión y gerencia.
+
+Cómo quedó (`WidgetMetaSala.jsx` + RPC `get_meta_sala`):
+
+- Un widget «Meta del mes» en las pestañas General y Comercial del Inicio, con
+  su permiso propio `dash_meta_sala`. **Con scope ALL trae selector de sala;
+  con BRANCH el RPC ignora el parámetro y devuelve la propia** — el candado no
+  está en la pantalla, está en el servidor.
+- Muestra: acumulado y % de la meta, la barra con los umbrales del bono y el
+  rombo de la proyección, lo vendido HOY, y cuánto falta con su ritmo diario
+  (`falta / días restantes`, hoy incluido). Tres estados verificados en
+  navegador: con meta oficial, «Pendiente de aprobar» y «Sin meta».
+- Se refresca solo cada 5 minutos y al volver a la pestaña. Un widget que dice
+  «hoy llevas X» y se queda con el número de las 8 de la mañana miente.
+
+**Por qué el RPC es SECURITY DEFINER y no reusa `get_metas_dashboard` a secas**
+— es el hallazgo de la fase, y vale para cualquier dato que se le muestre a la
+sala: ese RPC es INVOKER y su venta de HOY sale de `sales_invoices`, cuya
+policy exige `ventas`/`minmax_ver_costos`/`dash_top_productos`. **Ningún rol de
+sala tiene esos permisos**, así que la lectura no falla: devuelve cero filas y
+el widget habría mostrado el mes sin el día de hoy. Medido con el JWT de una
+Jefa de Sala real: por el camino ingenuo $3,667.17, por el RPC nuevo $4,145.67
+— los $478.50 de ese día, en silencio. La matemática (proyección, tramo) sigue
+saliendo de `get_metas_dashboard`: el envoltorio solo la deja verla.
+
+**Pendiente de decidir**: los roles de sala (Jefe/a de Sala, Dependiente de
+Farmacia) **no tienen el módulo `overview`** — no pueden abrir el Inicio, así
+que otorgarles `dash_meta_sala` sin `overview` es un permiso muerto. Hoy el
+widget se otorgó solo a Administrador, Gerencia, Supervisión y QA (scope ALL);
+el reparto a las salas se hace desde la pantalla de Permisos y necesita las dos
+llaves.

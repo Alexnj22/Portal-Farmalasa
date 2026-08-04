@@ -280,6 +280,7 @@ export const MODULE_GROUPS = [
             { key: 'dash_annulment_req',  label: 'Widget: Solicitud de Anulación',desc: 'Crear solicitudes de anulación de facturas dentro del período de gracia de 3 días',  icon: Receipt,    hasApprove: false, hasScope: true },
             { key: 'dash_srs_inv',        label: 'Widget: Búsqueda SRS + Stock',  desc: 'Consultar el registro SRS de medicamentos y cruzar con inventario propio',            icon: FlaskConical,hasApprove: false, hasScope: true },
             { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Min/Max',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación del supervisor', icon: BarChart2, hasApprove: false, hasScope: true },
+            { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icon: Target, hasApprove: false, hasScope: true },
         ],
     },
     {

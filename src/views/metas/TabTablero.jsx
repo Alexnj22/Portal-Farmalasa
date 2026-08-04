@@ -6,40 +6,13 @@ import Notice from '../../components/common/Notice';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import { SkeletonText } from '../../components/common/StateViews';
+import BarraAvance from './BarraAvance';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { fetchMetasDashboard } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG } from './metasUtils';
 
 const fmtPct = (v) => formatPct(v);
-
-// La barra de avance lleva la regla del bono DIBUJADA: la marca ámbar es el
-// umbral del medio bono (95%) y la verde el del completo (100%). El rombo es
-// dónde cierra el mes según la proyección. Escala 0–110% de la meta para que
-// pasarse de la meta también se vea.
-function BarraAvance({ pct, pctProyectado, cerrado }) {
-    const escala = (v) => Math.max(0, Math.min(110, v ?? 0)) / 110 * 100;
-    return (
-        <div>
-            <div className="relative h-2.5 rounded-full bg-surface-card-hover mt-4 mb-1.5">
-                <div className="absolute inset-y-0 left-0 rounded-full bg-chart-1 transition-all" style={{ width: `${escala(pct)}%` }} />
-                <span className="absolute -inset-y-1 w-0.5 rounded-full bg-warning/80" style={{ left: `${escala(95)}%` }} />
-                <span className="absolute -inset-y-1 w-0.5 rounded-full bg-success" style={{ left: `${escala(100)}%` }} />
-                {!cerrado && pctProyectado != null && (
-                    <span
-                        className="absolute top-1/2 w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[3px] bg-surface-card border-2 border-chart-1"
-                        style={{ left: `${escala(pctProyectado)}%` }}
-                    />
-                )}
-            </div>
-            <div className="flex justify-between text-micro font-bold text-content-3">
-                <span>$0</span>
-                <span className="text-warning-text">95%</span>
-                <span className="text-success-text">meta</span>
-            </div>
-        </div>
-    );
-}
 
 export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm }) {
     const ymActual = ymHoySV();

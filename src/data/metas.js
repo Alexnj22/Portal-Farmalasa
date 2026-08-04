@@ -72,3 +72,15 @@ export async function devolverMeta({ id, nota }) {
     const { error } = await supabase.rpc('devolver_meta_gerente', { p_id: id, p_nota: nota });
     if (error) throw error;
 }
+
+// ── Fase 3: la meta de UNA sala, para el widget del Inicio ───────────────────
+// Devuelve una sola fila (o ninguna: sin permiso, sin sucursal asignada o
+// Bodega). El mes lo decide el servidor —siempre el que está corriendo— y el
+// scope también: con scope BRANCH el parámetro se ignora y manda su sala.
+export async function fetchMetaSala(branchId = null) {
+    const { data, error } = await supabase.rpc('get_meta_sala', {
+        p_branch_id: branchId != null ? Number(branchId) : null,
+    });
+    if (error) throw error;
+    return data?.[0] ?? null;
+}

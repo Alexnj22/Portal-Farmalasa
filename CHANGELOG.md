@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.368.0 — Metas: la meta de la sala, como widget del Inicio
+
+La meta de cada sala deja de ser una pantalla aparte y pasa a ser un widget del
+Inicio: es información que la sala tiene que ver todos los días sin ir a
+buscarla, y lo que importa es el momento —el avance de hoy, la proyección y
+cuánto falta—, no una tabla con histórico. El módulo Metas queda entero para
+supervisión y gerencia.
+
+- **Widget «Meta del mes»** en las pestañas General y Comercial: lo acumulado
+  del mes y su % de la meta, la barra con los umbrales del bono y el rombo de
+  la proyección de cierre, lo vendido **hoy**, y cuánto falta con su ritmo
+  diario («faltan $39,203 en 28 días · $1,400 por día»). Se refresca solo cada
+  5 minutos y al volver a la pestaña — un número que dice «hoy llevas» y se
+  queda con el de las 8 de la mañana miente.
+- **Permiso propio `dash_meta_sala`, con alcance**: con «todas las sucursales»
+  aparece el selector de sala; con «solo su sucursal» el servidor devuelve la
+  propia e ignora lo que pida la pantalla. Otorgado por ahora a Administrador,
+  Gerencia, Supervisión y QA; el reparto a las salas se hace desde Permisos.
+- **La venta de hoy ya no se perdía en silencio.** El cálculo del tablero es de
+  ejecución directa y su venta del día sale de una tabla que la sala no tiene
+  permiso de leer: la consulta no falla, devuelve cero, y el widget habría
+  mostrado el mes sin el día en curso. Medido con la cuenta de una jefa de sala
+  real: $3,667.17 por el camino ingenuo contra $4,145.67 por el nuevo — los
+  $478.50 de ese día. El cálculo (proyección, tramo del bono) no se duplicó:
+  sigue saliendo de un solo lugar.
+- La barra de avance pasó a componente compartido entre el tablero del módulo y
+  el widget, con los umbrales por parámetro.
+- El widget «Ajuste de Min/Max» aparecía en el Inicio pero no en Personalizar,
+  así que no se podía apagar. Ya está en la lista.
+
+Verificado en navegador con los tres estados (meta oficial, «Pendiente de
+aprobar» y «Sin meta»), el cambio de sala y el paso a Comercial, sin errores de
+consola. La meta de prueba que hizo falta para verlo se borró al terminar:
+`metas_sucursal` quedó en cero filas, sin notificaciones generadas.
+
 ## v2.367.4 — Permisos: vuelve la grilla, el multi-columna rompía la pantalla
 
 Revierte el cambio de v2.363.1. Se había pasado de grilla a `columns` para que

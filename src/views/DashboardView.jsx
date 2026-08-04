@@ -16,7 +16,7 @@ import {
   Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
-  FileText, Package, Receipt, ShoppingCart, Zap, FlaskConical
+  FileText, Package, Receipt, ShoppingCart, Zap, FlaskConical, Target
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,7 @@ import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
 import WidgetSrsInventory from './dashboard/WidgetSrsInventory';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
+import WidgetMetaSala from './dashboard/WidgetMetaSala';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
@@ -101,6 +102,7 @@ const WIDGET_SIZES = {
   annulment_req: { minCols: 2, minRows: 3, label: 'Anulaciones'  },
   srs_inv:       { minCols: 2, minRows: 3, label: 'Búsqueda SRS' },
   minmax_req:    { minCols: 2, minRows: 3, label: 'Ajuste Min/Max' },
+  meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
 };
 
 const getWidgetSize = (id) => {
@@ -123,10 +125,14 @@ const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5
 const MM_ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const MM_BRANCH_TO_ERP = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 
-const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req'];
+// Las salas que venden, en el orden del tablero de Metas. Bodega (30) queda
+// fuera: no vende, así que no tiene meta (el RPC también la rechaza).
+const META_SALA_IDS = [2, 4, 25, 27, 28, 29];
+
+const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req','meta_sala'];
 const TAB_WIDGETS = {
   general:   ALL_WIDGET_IDS,
-  comercial: ['kpi','cotizaciones','facturacion','top_productos','sales'],
+  comercial: ['kpi','meta_sala','cotizaciones','facturacion','top_productos','sales'],
   rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
   operacion: ['inv_search','annulment_req','srs_inv','minmax_req'],
 };
@@ -230,6 +236,8 @@ const WIDGET_DEFS = [
   { id: 'inv_search',   label: 'Consulta de Inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
   { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'srs_inv',      label: 'Búsqueda SRS + Inventario',permission: 'dash_srs_inv',      icon: FlaskConical, category: 'productos' },
+  { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
+  { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -821,6 +829,12 @@ const DashboardView = ({ openModal }) => {
   const [shiftBranch,    setShiftBranch]    = useState('');
   const [annulmentBranch, setAnnulmentBranch] = useState(() => String(user?.branchId ?? user?.branch_id ?? ''));
   const [minmaxErp, setMinmaxErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
+  // Arranca en la sala propia; si el usuario no está en una sala de venta
+  // (gerencia, bodega), en la primera de la lista.
+  const [metaBranch, setMetaBranch] = useState(() => {
+    const propia = Number(user?.branchId ?? user?.branch_id);
+    return String(META_SALA_IDS.includes(propia) ? propia : META_SALA_IDS[0]);
+  });
   const [absences,       setAbsences]       = useState([]);
   const [absLoading,     setAbsLoading]     = useState(true);
   const [todaySales,     setTodaySales]     = useState({});
@@ -2024,6 +2038,42 @@ const DashboardView = ({ openModal }) => {
           <div className="px-4 pb-4 pt-2 h-full">
             <WidgetMinMaxRequest selectedErp={isMmAllScope ? Number(minmaxErp) : ownErp} />
           </div>
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── META DE LA SALA ── */
+    if (wid === 'meta_sala') {
+      if (!showWidget('meta_sala', 'dash_meta_sala')) return null;
+      // Con scope BRANCH el RPC ignora el parámetro y devuelve su propia sala:
+      // el selector ni se ofrece. Con ALL, elegir sala es todo el sentido.
+      const isMetaAllScope = getScope('dash_meta_sala') === 'ALL';
+      const metaOpts = branches
+        .filter(b => META_SALA_IDS.includes(Number(b.id)))
+        .sort((a, b) => META_SALA_IDS.indexOf(Number(a.id)) - META_SALA_IDS.indexOf(Number(b.id)))
+        .map(b => ({ value: String(b.id), label: b.name }));
+      return wrapWidget('meta_sala',
+        <WidgetCard title="Meta del mes" icon={Target} category="ventas"
+          action={isMetaAllScope && metaOpts.length > 1 && (
+            <LiquidSelect
+              value={metaBranch}
+              onChange={val => setMetaBranch(val ?? String(META_SALA_IDS[0]))}
+              options={metaOpts}
+              placeholder="Sala..."
+              icon={Building2}
+              clearable={false}
+              compact
+              bare
+            />
+          )}
+        >
+          {/* `key` por sala: cambiar de sala remonta el widget y el skeleton
+              vuelve solo, sin un setState dentro del efecto. */}
+          <WidgetMetaSala
+            key={metaBranch}
+            selectedBranchId={isMetaAllScope ? Number(metaBranch) : null}
+            conSelector={isMetaAllScope && metaOpts.length > 1}
+          />
         </WidgetCard>
       , staggerIdx);
     }

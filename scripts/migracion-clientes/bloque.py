@@ -265,6 +265,55 @@ def descartar_los_que_son_la_ubicacion(hits, ubicacion):
     return quedan or hits          # si no queda ninguno, no se inventa nada
 
 
+def preferir_el_nombrado_mas_tarde(hits, direccion):
+    """Entre varios candidatos, el que la dirección nombra MÁS TARDE.
+
+    La dirección salvadoreña va de lo específico a lo general —barrio, cantón,
+    distrito, departamento—, así que entre dos topónimos el distrito es el que
+    aparece después. Caso real (erp 11603, bloque 30):
+
+        BARRIO LAS FLORES SAN JOSE CANCASQUE
+               └ barrio ┘ └── distrito ────┘
+
+    El sorteo eligió "Las Flores", que es el BARRIO. Mismo patrón en erp 4420
+    (`BA LAS FLORES SAN LUIS DEL CARMEN`, quedó mal) y en erp 2423
+    (`B LAS FLORES SAN JOSE CANCASQUE`, donde el sorteo acertó por suerte). Tres
+    casos del mismo error, y en los tres la dirección SÍ decía cuál era.
+
+    Va DESPUÉS de `descartar_los_que_son_la_ubicacion`, nunca antes: en
+    "NUEVA TRINIDAD, CHALATENANGO" el nombrado más tarde es el DEPARTAMENTO, y
+    la regla solo es válida una vez que ese candidato ya se descartó.
+
+    Si dos empatan en posición, o de alguno no se puede ubicar el nombre, no se
+    opina: se devuelven los `hits` intactos y decide el desempate de siempre.
+    Esta regla acota el sorteo, no lo reemplaza.
+    """
+    if len(hits) < 2:
+        return hits
+    dirn = norm(direccion)
+
+    def donde(etiqueta):
+        """Dónde EMPIEZA la mención de este candidato; None si no se ubica.
+
+        Por límite de palabra y no por substring pelado: `FLORES` no debe
+        matchear dentro de `FLORESTA`. Y se usa el token distintivo que aparece
+        PRIMERO, que es donde arranca el nombre del distrito en la dirección.
+        """
+        posiciones = []
+        for tok in (tokens_distintivos(etiqueta) or {norm(etiqueta)}):
+            m = re.search(rf'\b{re.escape(tok)}\b', dirn) if tok else None
+            if m:
+                posiciones.append(m.start())
+        return min(posiciones) if posiciones else None
+
+    ubicados = [(donde(t), v, t) for v, t in hits]
+    if any(p is None for p, _, _ in ubicados):
+        return hits
+    ultima = max(p for p, _, _ in ubicados)
+    ganan = [(v, t) for p, v, t in ubicados if p == ultima]
+    return ganan if len(ganan) == 1 else hits
+
+
 def elegir_distrito(portal_id, direccion, ops, ubicacion=None):
     """(value, motivo, candidatos). Siempre devuelve algo reproducible.
 
@@ -293,6 +342,12 @@ def elegir_distrito(portal_id, direccion, ops, ubicacion=None):
     # sortear entre los 20 del municipio, y queda en la tabla de ambiguos.
     hits = fuertes if len(fuertes) > 1 else debiles
     if len(hits) > 1:
+        # Último intento antes de sortear: el orden de la dirección. Los
+        # candidatos que llegan acá ya pasaron el filtro del departamento, que
+        # es la precondición de esta regla.
+        tarde = preferir_el_nombrado_mas_tarde(hits, direccion)
+        if len(tarde) == 1:
+            return tarde[0][0], 'dirección (el nombrado más tarde)', hits
         return hits[semilla % len(hits)][0], f'ambiguo ({len(hits)} candidatos)', hits
     return ops[semilla % len(ops)][0], 'determinista (dirección no dice)', []
 
@@ -616,6 +671,71 @@ REINTENTOS_RED = 4
 PAUSA_RED = 5.0
 
 
+# ── Conexión persistente ─────────────────────────────────────────────────────
+# `urlopen` abre TCP+TLS de cero en CADA petición, y el bloque hace TRES por
+# ficha: leer, escribir, releer para verificar. Medido el 2026-08-03 contra el
+# ERP real, 6 lecturas seguidas: 0.45s por petición con conexión nueva contra
+# 0.18s reusándola — el 61% del tiempo de cada petición era el handshake.
+#
+# Sobre los 2.79s por ficha son ~0.8s, y lo importante es que NO le agrega ni
+# una petición al servidor del proveedor: le llega el mismo trabajo con menos
+# conexiones. Por eso esta palanca se pudo tocar sin esperar el aviso a soporte
+# del ERP, y bajar las pausas no.
+_CONEXION = None
+
+
+def _conexion():
+    global _CONEXION
+    if _CONEXION is None:
+        u = urllib.parse.urlparse(BASE)
+        Conn = (http.client.HTTPSConnection if u.scheme == 'https'
+                else http.client.HTTPConnection)
+        _CONEXION = Conn(u.netloc, timeout=45)
+    return _CONEXION
+
+
+def _cerrar_conexion():
+    """Descarta la conexión. La siguiente petición abre una nueva."""
+    global _CONEXION
+    if _CONEXION is not None:
+        try:
+            _CONEXION.close()
+        except Exception:                       # pragma: no cover
+            pass
+        _CONEXION = None
+
+
+def _peticion_http(url, cuerpo, cab, saltos=3):
+    """Una petición sobre la conexión persistente, con la MISMA semántica que
+    `urlopen`: sigue redirecciones y convierte >=400 en HTTPError.
+
+    Las dos cosas hay que rehacerlas a mano porque `http.client` no las trae, y
+    perder cualquiera de las dos cambiaría el comportamiento en silencio: el
+    guard del 4xx de `pedir` depende de que siga llegando un HTTPError.
+    """
+    for _ in range(saltos + 1):
+        u = urllib.parse.urlparse(url)
+        camino = u.path + (f'?{u.query}' if u.query else '')
+        c = _conexion()
+        c.request('POST' if cuerpo is not None else 'GET', camino,
+                  body=cuerpo, headers=cab)
+        r = c.getresponse()
+        # El cuerpo se lee SIEMPRE y ENTERO, aunque sea un redirect o un error:
+        # una respuesta a medio leer deja la conexión inservible para la
+        # siguiente, que es justo lo que se está tratando de reusar.
+        datos = r.read()
+        destino = r.getheader('Location')
+        if r.status in (301, 302, 303, 307, 308) and destino:
+            url = urllib.parse.urljoin(url, destino)
+            if r.status in (301, 302, 303):
+                cuerpo = None                   # como urlopen: el POST se vuelve GET
+            continue
+        if r.status >= 400:
+            raise urllib.error.HTTPError(url, r.status, r.reason, r.headers, None)
+        return datos.decode('utf-8', 'replace')
+    raise http.client.HTTPException(f'demasiadas redirecciones para {url}')
+
+
 def pedir(url, datos=None, _reintentar=True):
     cab = {'Cookie': cookie(), 'User-Agent': 'Mozilla/5.0',
            'X-Requested-With': 'XMLHttpRequest', 'Referer': f'{BASE}/admin_cliente.php'}
@@ -623,13 +743,13 @@ def pedir(url, datos=None, _reintentar=True):
     if cuerpo:
         cab['Content-Type'] = 'application/x-www-form-urlencoded'
 
-    ultimo = None
-    for intento in range(1, REINTENTOS_RED + 1):
+    ultimo, intento, reconexion_gratis = None, 0, True
+    while intento < REINTENTOS_RED:
+        # Si había conexión viva, esta petición la REUSA. Se anota antes de
+        # mandarla porque el manejo del fallo depende de eso.
+        reusada = _CONEXION is not None
         try:
-            with urllib.request.urlopen(
-                    urllib.request.Request(url, data=cuerpo, headers=cab),
-                    timeout=45) as r:
-                h = r.read().decode('utf-8', 'replace')
+            h = _peticion_http(url, cuerpo, cab)
             break
         # OSError y no (socket.timeout, URLError, HTTPException): en CPython 3.9
         # `urllib` envuelve en URLError solo el ENVÍO del request —
@@ -644,8 +764,26 @@ def pedir(url, datos=None, _reintentar=True):
             # Un 4xx es una respuesta del ERP, no un corte: no se reintenta.
             if isinstance(e, urllib.error.HTTPError) and e.code < 500:
                 raise
+            # El socket quedó en estado indefinido: se descarta SIEMPRE. Reusar
+            # una conexión que acaba de fallar es peor que abrir otra.
+            _cerrar_conexion()
             ultimo = e
-            if intento == REINTENTOS_RED:
+            # Que el servidor cierre una conexión ociosa no es un fallo de red:
+            # es la vida normal del keep-alive, y antes de este cambio no podía
+            # pasar porque cada petición traía conexión nueva. Se reconecta y se
+            # repite EN EL ACTO, sin gastar uno de los cuatro intentos ni los 5s
+            # de backoff — si no, el ahorro del keep-alive se lo comería la
+            # espera. Una sola vez: si la conexión nueva también falla, ya es un
+            # corte de verdad y entra al camino de siempre.
+            #
+            # Repetir es seguro también para el POST: `process=edit` con id fijo
+            # y los 21 campos es idempotente — el mismo argumento por el que
+            # `escribir_ficha` ya reintenta.
+            if reusada and reconexion_gratis:
+                reconexion_gratis = False
+                continue
+            intento += 1
+            if intento >= REINTENTOS_RED:
                 raise
             print(f'          red: {type(e).__name__} — reintento {intento} '
                   f'de {REINTENTOS_RED - 1}')

@@ -866,5 +866,30 @@
   "faltan": [
    "departamento"
   ]
+ },
+ "15697": {
+  "erp_id": "15697",
+  "name": "JOSE GERARDO QUIJADA GUTIERREZ",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
+  ]
+ },
+ "16021": {
+  "erp_id": "16021",
+  "name": "DANIEL ELISEO MALDONADO VIVAS",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
  }
 }

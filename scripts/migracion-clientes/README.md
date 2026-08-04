@@ -4,7 +4,9 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 (`clientesdte3.oss.com.sv/farma_salud`) y espejar el resultado a
 `customers` en el portal.
 
-**Estado al 2026-08-02, 04:00 UTC.** Escrito para retomar sin contexto previo.
+**Estado al 2026-08-04, 00:25 UTC.** Escrito para retomar sin contexto previo.
+Los números del bloque de abajo los genera `estado.py`; esta fecha es de la
+prosa, que se escribe a mano.
 
 ---
 
@@ -12,19 +14,19 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 
 <!-- ESTADO:INICIO -->
 ```
-catálogo del ERP        27,602 fichas
-procesadas              15,648 fichas    (checkpoint.json)
-portadas al portal      12,751 de 24,576  (customers.erp_id no nulo)
-  de ellas con distrito 12,661
-pendientes              11,985          (24 bloques de 500)
+catálogo del ERP        27,659 fichas
+procesadas              16,142 fichas    (checkpoint.json)
+portadas al portal      13,180 de 24,611  (customers.erp_id no nulo)
+  de ellas con distrito 13,090
+pendientes              11,547          (24 bloques de 500)
 ```
 
-**Verificadas OK: 15,648 · a revisar: 0.** El frente secuencial va por `erp_id 15,623`; hay 31 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
+**Verificadas OK: 16,142 · a revisar: 0.** El frente secuencial va por `erp_id 16,118`; hay 30 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
 
-`revision_manual.json`: **290 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
+`revision_manual.json`: **302 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
 
-`faltantes_dte.json`: **102 fichas** no se pueden facturar todavía bajo DTE 2.0, 85 de ellas fiscales.
-Les falta: distrito 91 · departamento 15 · direccion 11 · sel_giro 9 · correo 6 · nrc 6 · nit 5 · telefono1 4 · municipio 4 · nombre 3.
+`faltantes_dte.json`: **104 fichas** no se pueden facturar todavía bajo DTE 2.0, 86 de ellas fiscales.
+Les falta: distrito 92 · departamento 17 · direccion 12 · sel_giro 10 · correo 7 · nrc 7 · nit 6 · telefono1 5 · municipio 5 · nombre 4.
 
 <sub>Generado por `python3 estado.py --escribir`. No editar a mano: los números se generan, las decisiones se escriben.</sub>
 <!-- ESTADO:FIN -->
@@ -45,6 +47,37 @@ al portal, que es el comportamiento correcto.
 
 Medición real: **1.37s por petición**, ~5.4s por ficha con las pausas. Un bloque
 de 500 son ~45 min y el catálogo completo ~34 horas.
+
+### La conexión se reusa (2026-08-03)
+
+`pedir()` mantiene **una conexión persistente** al ERP en vez de abrir TCP+TLS
+en cada petición. El bloque hace TRES por ficha —leer, escribir, releer para
+verificar—, así que el handshake se pagaba tres veces.
+
+Medido contra el ERP real, por el camino de `pedir()` y no por un banco
+sintético: **0.44s por petición con conexión nueva contra 0.16s reusándola,
+64%.** Sobre los 2.79s por ficha que se midieron en el bloque 30 son ~0.8s, o
+sea ~29% del bloque entero.
+
+Lo que hace a esta palanca distinta de bajar las pausas: **no le agrega ni una
+petición al servidor del proveedor** — le llega el mismo trabajo con menos
+conexiones. Por eso se pudo aplicar sin esperar el aviso a soporte del ERP, que
+sigue siendo la condición para tocar `--pausa-lectura`/`--pausa-escritura`.
+
+Dos cosas que `http.client` no trae y hubo que rehacer a mano, porque perder
+cualquiera de las dos cambiaría el comportamiento en silencio: **seguir
+redirecciones** y **convertir >=400 en `HTTPError`** (el guard del 4xx de
+`pedir` depende de que siga llegando esa excepción). Verificado en vivo: un 404
+llega como `HTTPError` en 0.36s, o sea sin gastar el backoff de 5s.
+
+Y aparece un modo de fallo que antes no podía existir: **el servidor cierra una
+conexión ociosa**. Eso no es un corte de red, es la vida normal del keep-alive,
+así que se reconecta y se repite en el acto — sin gastar uno de los 4 intentos
+ni los 5s de espera, o el ahorro se lo comería el backoff. Una sola vez por
+petición: si la conexión nueva también falla, ya es un corte de verdad y entra
+al camino de siempre. Repetir es seguro también para el POST, por el mismo
+argumento por el que `escribir_ficha` ya reintentaba: `process=edit` con id fijo
+y los 21 campos es idempotente.
 
 ### El hueco entre leer y escribir no era teórico
 
@@ -120,10 +153,36 @@ CARMEN; quedó en SAN LUIS CARMEN, que es el valor correcto —`BA LAS FLORES` e
 el barrio— pero salió de un sorteo, no de una regla. Se dejó porque revertirla
 sería escribir el valor peor.
 
-Y es **el primer dato malo que justifica implementar la regla pendiente**: la
+Y fue **el primer dato malo que justificó implementar la regla pendiente**: la
 dirección salvadoreña va de lo específico a lo general, así que con dos
-candidatos nombrados enteros gana el nombrado MÁS TARDE. Hasta acá el README la
-descartaba por falta de un caso real; `erp 4420` es ese caso.
+candidatos nombrados enteros gana el nombrado MÁS TARDE. Hasta ahí el README la
+descartaba por falta de un caso real; `erp 4420` fue ese caso.
+
+**Implementada el 2026-08-03** (`preferir_el_nombrado_mas_tarde`), después de
+que el bloque 30 aportara el segundo caso: `erp 11603`,
+`BARRIO LAS FLORES SAN JOSE CANCASQUE`, donde el sorteo eligió el BARRIO. Va
+después de `descartar_los_que_son_la_ubicacion` y nunca antes — en
+`NUEVA TRINIDAD, CHALATENANGO` el nombrado más tarde es el departamento, así que
+la regla solo es válida una vez descartado ese candidato. Si dos empatan en
+posición no opina y decide el desempate de siempre.
+
+Se releyeron del ERP **las 16 fichas que en todo el histórico eligieron distrito
+por sorteo** (el resto se resolvió por regla, donde la semilla no interviene).
+13 no se movieron —incluidas 176 y 380, corregidas antes a mano— y 3 cambiaron:
+
+| erp | dirección | tenía | quedó |
+|---|---|---|---|
+| 6437 | `DESVIO SAN RAFAEL EL TABLON, EL PARAISO` | SAN RAFAEL | EL PARAÍSO |
+| 11603 | `BARRIO LAS FLORES SAN JOSE CANCASQUE` | SAN JOSE FLORES | SAN J CANCASQUE |
+| 15599 | `LA LAGUNA, LAS VUELTAS, CHALATENANGO` | LA LAGUNA | LAS VUELTAS |
+
+En `erp 4420` la regla llega **al mismo valor que había puesto una persona a
+mano**, que es la validación más fuerte de que no es una hipótesis: reproduce la
+decisión humana en el caso donde ya se sabía la respuesta.
+
+No se subió `REGLAS`: hacerlo obligaría a releer las 16,142 fichas por tres
+correcciones. Es el mismo precedente del arreglo del matcher — se corrige el
+código y se nombran a mano las afectadas con `revisar_ambiguos.py --fichas`.
 
 ## 2. Puesta en marcha
 

@@ -10,7 +10,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-02 19:54:58"
+  "ts": "2026-08-03 14:58:35"
  },
  {
   "tipo": "rechazo-erp",
@@ -23,7 +23,7 @@
   "cambios_intentados": {
    "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-02 19:55:02"
+  "ts": "2026-08-03 14:58:38"
  },
  {
   "tipo": "rechazo-erp",
@@ -37,7 +37,7 @@
    "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
    "dui": "INVÁLIDO '08666142-6' -> se borra"
   },
-  "ts": "2026-08-02 19:55:15"
+  "ts": "2026-08-03 14:58:41"
  },
  {
   "tipo": "rechazo-erp",
@@ -50,7 +50,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
   },
-  "ts": "2026-08-02 19:55:18"
+  "ts": "2026-08-03 14:58:45"
  },
  {
   "tipo": "rechazo-erp",
@@ -63,17 +63,17 @@
   "cambios_intentados": {
    "distrito": "CHALATENANGO (dirección (nombre completo))"
   },
-  "ts": "2026-08-02 19:55:21"
+  "ts": "2026-08-03 14:58:47"
  },
  {
   "tipo": "distrito",
-  "portal_id": "erp:15599",
-  "erp_id": "15599",
-  "direccion": "LA LAGUNA, LAS VUELTAS, CHALATENANGO",
+  "portal_id": "erp:16102",
+  "erp_id": "16102",
+  "direccion": "CALLE HACIA TEJUTLA, BO LAS FLORES, EL PARAISO, CHALATENANGO",
   "candidatos": [
-   "LA LAGUNA",
-   "LAS VUELTAS"
+   "EL PARAÍSO",
+   "TEJUTLA"
   ],
-  "elegido": "LA LAGUNA (ambiguo (2 candidatos))"
+  "elegido": "EL PARAÍSO (ambiguo (2 candidatos))"
  }
 ]

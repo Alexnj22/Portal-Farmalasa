@@ -21,6 +21,100 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.354.0 — Permiso aparte para abrir y descargar el documento de compra
+
+Hasta hoy, en Facturas de Compra ver el listado y acceder al archivo eran la
+misma cosa: quien tenía `facturas_compra.can_view` podía clickear cualquier
+fila, abrir el detalle —que trae el JSON armado como factura y el PDF adentro—,
+bajarse el JSON, el PDF, el paquete de los dos, y el ZIP del mes entero. No
+había forma de dar lo primero sin lo segundo.
+
+Ahora es un permiso propio, **`facturas_compra_archivos`** ("Abrir y Descargar
+el Documento (JSON/PDF)"), que se reparte desde Permisos igual que "Cards
+Contables". Sin él quedan a la vista fecha, proveedor, tipo, número de control y
+monto, y nada más: la fila no se puede clickear, la columna de acciones no se
+dibuja, "Descargar" desaparece de la barra de filtros, los enlaces a la nota de
+crédito / al documento original / al PDF que justificó una anulación no se
+ofrecen, y en Revisión el nombre del adjunto queda como texto en vez de abrir el
+visor. "Detectar código" también va con este permiso, en las dos pestañas: baja
+el PDF y lo parsea en el navegador, o sea que es leer el documento.
+
+**El candado no es la pantalla.** Esconder botones no impide pedir la URL
+firmada por fuera de la vista, así que la clave se exige en los dos lugares
+donde se consigue el archivo: la policy de Storage `purchase_dte_storage_select`
+y la edge function `export-purchase-dte-manifest`, que es la que firma las ~1,700
+URLs de la descarga masiva. Verificado con una transacción que apaga el permiso y
+hace `ROLLBACK`: con el permiso, la cuenta ve los objetos del bucket; sin él,
+sigue viendo el módulo y el bucket le devuelve cero.
+
+**Nadie perdió acceso al desplegar.** Los 5 roles que ya veían el módulo
+—Gerente General, Jefe/a de Compras y Logística, Supervisor/a de Ventas,
+Contador Externo y la cuenta de QA— reciben el permiso en `true`; se apaga a
+mano a quien no deba tenerlo. Mismo criterio que el seed de
+`facturas_compra_ver_montos` en su día.
+
+Migración `20260804002749_facturas_compra_permiso_abrir_documento`.
+
+## v2.353.5 — La migración de clientes reusa la conexión y desempata el distrito por el orden de la dirección
+
+Dos cambios en `scripts/migracion-clientes/bloque.py`, más el bloque que había
+quedado cortado a mitad. Nada de esto toca el portal: es la herramienta que
+corrige las fichas en el ERP y las espeja a `customers`.
+
+**La conexión al ERP se reusa.** `pedir()` abría TCP+TLS de cero en cada
+petición y el bloque hace TRES por ficha —leer, escribir, releer para
+verificar—, así que el handshake se pagaba tres veces. Medido contra el ERP
+real, por el camino de `pedir()` y no por un banco sintético: **0.44s por
+petición contra 0.16s reusándola, 64%**; sobre los 2.79s por ficha del bloque
+30 son ~0.8s, ~29% del bloque entero.
+
+Lo que la hace distinta de bajar las pausas —la otra palanca, que sigue
+esperando— es que **no le agrega ni una petición al servidor del proveedor**:
+le llega el mismo trabajo con menos conexiones. Bajar las pausas duplicaría el
+ritmo, y eso depende de avisarle a soporte del ERP primero.
+
+`http.client` no trae dos cosas que `urlopen` sí, y hubo que rehacerlas porque
+perder cualquiera cambiaría el comportamiento en silencio: seguir redirecciones
+y convertir >=400 en `HTTPError` —el guard que distingue "el ERP dijo que no"
+de "se cortó la red" depende de esa excepción—. Verificado en vivo: un 404
+llega como `HTTPError` en 0.36s, sin gastar el backoff de 5s.
+
+Y aparece un modo de fallo que antes no podía existir: que el servidor cierre
+una conexión ociosa. Eso es la vida normal del keep-alive, no un corte, así que
+se reconecta y se repite en el acto **sin gastar uno de los 4 intentos ni los
+5s de espera** — si no, el backoff se comía el ahorro. Una sola vez por
+petición: si la conexión nueva también falla, ya es un corte de verdad.
+
+**El distrito se desempata por el orden de la dirección.** La dirección
+salvadoreña va de lo específico a lo general (barrio → cantón → distrito →
+departamento), así que entre dos candidatos gana el nombrado MÁS TARDE. Va
+después del filtro del departamento y nunca antes: en `NUEVA TRINIDAD,
+CHALATENANGO` el nombrado más tarde es el departamento.
+
+Estaba anotada como pendiente desde el 2026-08-02 por falta de casos; el bloque
+30 aportó el segundo (`erp 11603`, `BARRIO LAS FLORES SAN JOSE CANCASQUE`,
+donde el sorteo eligió el BARRIO). Se releyeron del ERP **las 16 fichas que en
+todo el histórico eligieron distrito por sorteo**: 13 no se movieron —incluidas
+las dos que una persona ya había corregido a mano— y 3 se corrigieron:
+
+| erp | dirección | tenía | quedó |
+|---|---|---|---|
+| 6437 | `DESVIO SAN RAFAEL EL TABLON, EL PARAISO` | SAN RAFAEL | EL PARAÍSO |
+| 11603 | `BARRIO LAS FLORES SAN JOSE CANCASQUE` | SAN JOSE FLORES | SAN J CANCASQUE |
+| 15599 | `LA LAGUNA, LAS VUELTAS, CHALATENANGO` | LA LAGUNA | LAS VUELTAS |
+
+En `erp 4420` la regla llega al mismo valor que había puesto una persona a mano.
+Es la validación más fuerte que tiene: reproduce la decisión humana en el caso
+donde ya se sabía la respuesta.
+
+No se subió `REGLAS` —obligaría a releer las 16,142 fichas por tres
+correcciones—, mismo criterio que el arreglo del matcher del 2026-08-02.
+
+**El bloque 30**, que se había cortado al cerrarse la sesión: +321 fichas, 0
+campos perdidos, 0 alterados. Migración en **16,142 de 27,659**. Los 5 rechazos
+son los duplicados de nombre ya conocidos en el ERP, que el script anota como
+hallazgo y no reintenta.
+
 ## v2.353.4 — Reparado el histórico del resumen de ventas por producto
 
 Sin cambios de código: es el registro de una reparación de datos en producción,

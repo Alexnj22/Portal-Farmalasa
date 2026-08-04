@@ -28,11 +28,17 @@ README §1.
 ## Correr un bloque
 
 ```bash
-python3 bloque.py --desde-erp 500 --escribir --una-pasada   # ~45 min
+python3 bloque.py --desde-erp 500 --escribir --una-pasada   # ~25-40 min
 python3 aplicar_espejo.py --aplicar                          # espeja al portal
 python3 revisar_ambiguos.py --corregir                       # los desempates
 python3 estado.py --escribir                                 # actualiza el README
 ```
+
+El rango del primer comando es ancho porque el ERP varía: el 2026-08-03 se
+midieron 4.93s por ficha a la mañana y 2.79s a la tarde, el mismo día y el mismo
+código. Desde ese día `pedir()` reusa la conexión (~29% menos, README §1), así
+que el piso bajó — pero el techo lo sigue poniendo el servidor del proveedor, no
+nosotros.
 
 **El paso de los ambiguos tampoco es opcional.** Un desempate no acierta la
 mitad: se equivoca la mitad **justo donde la dirección sí decía cuál era**.
@@ -70,14 +76,20 @@ escribían, y era un sorteo distinto, no una corrección: la herramienta sembrab
 con el `erp_id` pelado (`'4420'`) y el bloque con el `portal_id` (`'erp:4420'`),
 así que la ficha oscilaba entre dos valores a cada pasada. Ver README §1.
 
-**La regla pendiente ya tiene su caso.** Patrón: los DOS candidatos nombrados
-enteros — `B LAS FLORES SAN JOSE CANCASQUE` (erp 2423, quedó bien) y
-`BA LAS FLORES SAN LUIS DEL CARMEN` (**erp 4420, el sorteo lo puso mal**). La
-dirección salvadoreña va de lo específico a lo general (barrio → cantón →
-distrito → departamento), así que preferir el candidato nombrado MÁS TARDE los
-resuelve — pero solo después del filtro del departamento, porque
-`NUEVA TRINIDAD, CHALATENANGO` tiene el departamento al final. Sigue sin
-implementarse; lo que cambió es que ahora hay un dato malo que lo justifica.
+**La regla pendiente se implementó el 2026-08-03** (`preferir_el_nombrado_mas_tarde`).
+La dirección salvadoreña va de lo específico a lo general (barrio → cantón →
+distrito → departamento), así que entre dos candidatos gana el nombrado MÁS
+TARDE — pero solo **después** del filtro del departamento, porque
+`NUEVA TRINIDAD, CHALATENANGO` tiene el departamento al final.
+
+Se releyeron las 16 fichas que en todo el histórico eligieron distrito por
+sorteo: 13 quedaron igual y 3 se corrigieron (6437, 11603, 15599). Detalle y
+tabla en README §1. `REGLAS` NO se subió, por el mismo criterio que el arreglo
+del matcher: se nombran a mano las afectadas con `revisar_ambiguos.py --fichas`.
+
+**Si aparece un caso nuevo del mismo tipo**, la regla no lo va a resolver sola
+cuando los dos candidatos empatan en posición: ahí devuelve los candidatos
+intactos y vuelve a decidir el sorteo. Acota el sorteo, no lo reemplaza.
 
 ## Lo primero que va a pasar
 
@@ -135,10 +147,17 @@ espejó al portal. Si volvés a verla, ya coincide.
 
 ## Decisiones abiertas, del usuario
 
-1. **Avisarle a soporte del ERP** antes de seguir de corrido: los 51 bloques
-   son ~38 horas de tráfico contra el servidor del proveedor, y el riesgo real
-   es que alguien vea el cambio masivo y "restaure de backup". Es lo único que
-   falta para poder encadenar bloques sin parar.
+1. **Avisarle a soporte del ERP** antes de seguir de corrido: los bloques que
+   faltan son del orden de 6-9 horas de tráfico contra el servidor del
+   proveedor, y el riesgo real es que alguien vea el cambio masivo y "restaure
+   de backup". Es lo único que falta para poder encadenar bloques sin parar.
+
+   **Ese aviso es también lo que destraba bajar las pausas.** Hoy `pedir()` se
+   toma 1.4s por ficha entre `--pausa-lectura` y `--pausa-escritura`, que es la
+   mitad del tiempo de cada ficha. Bajarlas a ~0.4s corta otro tercio, pero
+   duplica el RITMO de peticiones contra el proveedor — al revés que el
+   keep-alive, que baja el tiempo sin agregar tráfico. Por eso una se aplicó ya
+   y la otra espera a que haya alguien avisado del otro lado.
 2. **Las 99 fichas de `faltantes_dte.json`** — no se pueden facturar bajo DTE
    2.0. 87 necesitan un solo campo (el distrito); 50 de ellas lo tienen escrito
    en su propia dirección y 49 las tiene que decidir una persona. 83 son

@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.371.2 — Metas: la propuesta automática, arreglada y calibrada
+
+**La función estaba rota y nadie lo había notado porque nunca se había corrido
+con metas cargadas.** `generar_propuestas_metas` escalaba el mismo mes del año
+pasado por el «ritmo reciente» —los últimos 3 meses contra los mismos 3 del año
+anterior— y guardaba ese denominador con la constante `>= '2025-05-01'`. Pero
+`sales_daily_stats` arranca el **18 de mayo de 2025**: ese mayo entraba con 14
+días de 31, el denominador quedaba corto y el ritmo salía entre 1.19 y 2.82
+(Salud 3 daba 1.581; Salud 5, 2.815 — comparaba 3 meses contra 2.4). El tope de
+1.25 lo disimulaba sin arreglarlo. Para agosto 2026 proponía **+11 % a +21 %
+sobre lo que las salas pueden vender**: las seis arrancaban el mes en ~84 % y
+ninguna cobraba.
+
+Ahora el mes incompleto se excluye **por construcción** (`dias_dato = dias_mes`)
+y no por una fecha escrita a mano que vuelve a quedar vieja.
+
+**La fórmula nueva**, con todo medido sobre los 19 meses de histórico cargados:
+
+```
+meta = ritmo diario de los 3 meses completos previos
+     × días del mes objetivo
+     × índice del mes        (estacionalidad medida, encogida por evidencia)
+     × (1.03 + empujón hacia el potencial, topado en 2 %)
+```
+
+- **1.03 y no 1.05.** Medido sobre 60 observaciones: el desvío propio de una sala
+  es 8.3 % y el total 12.1 %, así que 1.05 pide media desviación estándar y deja
+  el bono en 33 % de logro — **60 % de los meses cerraban sin bono**. El factor
+  que apenas empata la inercia es 1.008, o sea que 1.03 pide ~2 % real.
+- **El índice del mes se calcula, no se escribe.** Es cuánto rindió ese mes
+  calendario un año atrás contra el ritmo que traía, tomado como **mediana entre
+  salas** —así una sala en rampa o una que viene creciendo no arrastra el índice
+  de todas— y **encogido hacia 1 según cuántos años haya**: con uno pesa la
+  mitad, con tres, tres cuartos. Se afina solo cada año. Para agosto: bruto
+  0.984, aplicado 0.987.
+- **El empujón usa un ancla externa.** Venta por hora de apertura: La Popular
+  (1987, 84 h/sem), Salud 1 (2010, 105 h) y Salud 3 (2023, 95 h) caen las tres en
+  **109 $/hora con menos de medio punto de diferencia**. Esa mediana es la norma;
+  la brecha contra ella se pide cerrar al 15 %, **topada al 2 %**. El tope importa
+  más que la fórmula: la brecha de Salud 5 (146 %) y la de Salud 4 (12.7 %)
+  terminan las dos en ~1.05 porque una brecha estructural se cierra en muchos
+  meses o no se cierra.
+- **Las tres perillas viven en `metas_config`**, no en el cuerpo de la función:
+  cambiar cuánto se pide no puede exigir una migración.
+
+**Probado con agosto 2026** (6 propuestas, estado `propuesta`, esperando
+confirmación). Proyección al día 4: La Popular 100.7 % · Salud 3 99.3 % · Salud 2
+98.1 % · Salud 5 96.9 % · Salud 4 94.6 % · Salud 1 92.3 % — repartidas en los tres
+tramos, que es exactamente lo que la calibración buscaba.
+
+Lo que **no** está probado y queda escrito para no olvidarlo: cuál ancla es mejor
+a largo plazo. La versión vieja anclaba en el año anterior y ese instinto es
+correcto —la estacionalidad es real (enero −10 %, marzo −9 %, abril +6.7 %) y una
+ventana de 3 meses es ciega a ella—; acá la estacionalidad entra por el índice,
+que es más robusto con poca historia. Con dos o tres años se podrán comparar de
+verdad.
+
 ## v2.371.1 — La nota de dónde retomar el trabajo de autorización
 
 `docs/SEGURIDAD-AUTORIZACION-2026-08-04.md`: qué se cerró hoy (el login del cargo

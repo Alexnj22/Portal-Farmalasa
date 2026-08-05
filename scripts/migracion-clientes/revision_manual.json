@@ -3502,5 +3502,45 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "lenny maribel"
+ },
+ {
+  "erp_id": "23894",
+  "campo": "dui",
+  "valor": "05748267-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MAYRA JASMIN GUTIERRES MENJIVAR"
+ },
+ {
+  "erp_id": "23896",
+  "campo": "dui",
+  "valor": "78952015-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "OLGA DINORA ARAUJO PAZ"
+ },
+ {
+  "erp_id": "23940",
+  "campo": "dui",
+  "valor": "01179534-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "FELICITA CORTEZ DE VELASQUEZ"
+ },
+ {
+  "erp_id": "24002",
+  "campo": "dui",
+  "valor": "06004654-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "WIL JEOVANI FRANCO FRANCO"
+ },
+ {
+  "erp_id": "24058",
+  "campo": "dui",
+  "valor": "00194786-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "NIDIA ABELQUI CONTRERAS"
  }
 ]

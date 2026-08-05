@@ -859,5 +859,39 @@
   "faltan": [
    "distrito"
   ]
+ },
+ "23771": {
+  "erp_id": "23771",
+  "name": "DIANA TERESA HERNANDEZ",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
+  ]
+ },
+ "23830": {
+  "erp_id": "23830",
+  "name": "Jose manuel menjivar menjivar",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
+  ]
  }
 }

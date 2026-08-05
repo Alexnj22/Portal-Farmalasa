@@ -7,6 +7,7 @@ import ListRow from '../../components/common/ListRow';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
+import GraficasHistorico from './GraficasHistorico';
 import { fetchMetasHistorico } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymLabelCorto, TRAMO_CFG } from './metasUtils';
@@ -106,6 +107,12 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
                     action={<Button variant="secondary" icon={RefreshCw} onClick={() => setIntento((n) => n + 1)}>Reintentar</Button>}
                 />
             )}
+
+            {/* Las gráficas van ENCIMA de la tabla: contestan «cómo venimos» de
+                un vistazo, y la tabla está para buscar un mes concreto. Leen las
+                mismas filas ya filtradas, así que el recorte de la píldora las
+                alcanza igual que a la tabla. */}
+            {!loading && !error && <GraficasHistorico rows={filtered} />}
 
             {/* Teléfono: una fila por mes-sala (la tabla no reflowa, §32). El
                 vacío también es de acá: `DataTable` trae el suyo, pero vive en

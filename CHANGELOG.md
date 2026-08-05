@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.384.0 — Metas: las gráficas del histórico
+
+Dos gráficas encima de la tabla del Histórico, sobre los últimos 12 meses
+cerrados. Mockup mostrado y aprobado antes de construir.
+
+**Cumplimiento por mes** — la línea contra las dos marcas que deciden el bono, el
+95% y el 100%. Sin ellas la línea es un garabato; con ellas se ve de un vistazo
+qué meses pasaron. El encabezado nombra el mejor y el peor mes con su número.
+
+**Meta y venta** — la venta es la barra; la meta, un listón encima. Es la forma
+correcta para «cuánto contra un objetivo»: una sola cosa medida y su referencia.
+Dos barras lado a lado harían competir a la meta con la venta como si fueran
+categorías rivales, y no lo son. Los listones no se unen entre sí: cada mes se
+decide por separado y una línea continua sugeriría algo que no existe.
+
+Tres decisiones que vienen del mockup:
+
+- **Un solo eje por gráfica.** Los dólares y el porcentaje no comparten dibujo:
+  dos escalas en uno hace que cualquier cruce entre las líneas parezca
+  significar algo cuando no significa nada.
+- **Los puntos no se colorean por tramo del bono.** Verde contra ámbar quedan
+  demasiado cerca para quien no distingue rojo y verde; las marcas de referencia
+  dicen lo mismo sin depender del color.
+- **Las barras de dinero arrancan en cero** —truncar el eje de una barra la
+  vuelve mentirosa— pero el de porcentajes arranca cerca del 95%: son valores
+  alrededor del 100 y forzar el cero aplastaría toda la historia en una franja.
+
+Leen las mismas filas que la tabla, así que el filtro de sala de la píldora las
+recorta igual: elegir una sala deja su historia. Y salen de los meses ya
+congelados, así que muestran el resultado con las reglas que regían cada mes.
+
 ## v2.383.1 — Plan de materiales auditado — el modal recuperado y el reloj agendado
 
 `PLAN-MATERIALES-2026-08-02.md` reauditado contra el código de hoy y reescrito

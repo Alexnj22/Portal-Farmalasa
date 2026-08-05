@@ -8,7 +8,7 @@ import { tokenMatch, normSearch } from '../utils/searchUtils';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     X, Save, Loader2,
-    Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight, CheckCircle
+    Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight, CheckCircle2
 } from 'lucide-react';
 
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -714,7 +714,7 @@ const SchedulesView = ({ openModal, setView }) => {
     const puedePublicar = viewMode === 'calendar' && canEdit && getScope('schedules') !== 'BRANCH';
     const accionesHorarios = puedePublicar ? [{
         key: 'publicar',
-        icon: isPublishing ? Loader2 : weekIsPublished ? CheckCircle : Save,
+        icon: isPublishing ? Loader2 : weekIsPublished ? CheckCircle2 : Save,
         label: isPublishing ? 'Publicando…' : weekIsPublished ? 'Publicado' : 'Publicar',
         variant: weekIsPublished ? 'quiet' : 'primary',
         tone: 'success',

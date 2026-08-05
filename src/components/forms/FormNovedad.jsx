@@ -4,7 +4,7 @@ import Checkbox from '../common/Checkbox';
 import {
     GitPullRequest, MapPin, Briefcase,
     CalendarClock, FileText, AlertTriangle, DollarSign,
-    CalendarDays, XCircle, CheckCircle, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus, Printer, AlertCircle
+    CalendarDays, XCircle, CheckCircle2, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus, Printer, AlertCircle
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -326,7 +326,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {(isVacation || (isDisability && formData?.disabilityType === 'Maternidad')) && (
                 <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-glow-danger)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4)]' : 'bg-success/10 border-success/30'}`}>
-                    {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-chart-4-text shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-success shrink-0 mt-0.5" size={18}/>}
+                    {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-chart-4-text shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle2 className="text-success shrink-0 mt-0.5" size={18}/>}
                     <div>
                         <p className={`text-label font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success'}`}>Auditoría Legal</p>
                         <p className={`text-body-sm font-medium leading-tight mt-1 ${getHolidayInfo ? 'text-danger-text' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success-text'}`}>

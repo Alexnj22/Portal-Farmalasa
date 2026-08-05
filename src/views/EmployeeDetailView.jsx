@@ -7,9 +7,9 @@ import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
 import {
-    Edit, Mail, Phone, Shield,
+    Pencil, Mail, Phone, Shield,
     Clock, FileText, Paperclip,
-    CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
+    CheckCircle2, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse,
     Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
     KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight,
@@ -420,7 +420,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     {/* --- MINI-DASHBOARD (SIGNOS VITALES) --- */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 mb-4 md:mb-5">
                         <div data-surface="card" className="p-4 md:p-5 flex items-center gap-4 transition-all hover:bg-surface-card-hover">
-                            <div className="p-2.5 bg-success/10 text-success rounded-xl shadow-sm border border-success/30"><CheckCircle size={18} strokeWidth={2.5}/></div>
+                            <div className="p-2.5 bg-success/10 text-success rounded-xl shadow-sm border border-success/30"><CheckCircle2 size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Estado</p>
                                 <p className="text-body md:text-body-lg font-bold text-content">{emp.effectiveStatus || emp.status || 'Activo'}</p>
@@ -485,7 +485,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </span>
                                         {canEdit && (
                                             <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-300">
-                                                <Button icon={Edit} disabled={!canEdit} onClick={handleEditProfile}>Editar</Button>
+                                                <Button icon={Pencil} disabled={!canEdit} onClick={handleEditProfile}>Editar</Button>
                                                 <Button tone="warning" icon={KeyRound} onClick={handleResetPassword}>Contraseña</Button>
                                             </div>
                                         )}
@@ -670,7 +670,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         <Button tone="chart-4" icon={Paperclip} disabled={!canEdit} onClick={() => openModal('uploadDocument', {}, ev.id)}>Adjuntar Soporte</Button>
                                                                     )}
                                                                     {canEdit && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
-                                                                        <Button tone="chart-1" icon={Edit} disabled={!canEdit} onClick={() => openModal('newEvent', {
+                                                                        <Button tone="chart-1" icon={Pencil} disabled={!canEdit} onClick={() => openModal('newEvent', {
                                                                                 type: ev.type,
                                                                                 date: ev.date,
                                                                                 endDate: ev.metadata?.endDate,

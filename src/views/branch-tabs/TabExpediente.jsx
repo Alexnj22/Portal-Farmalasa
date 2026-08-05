@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import Button from '../../components/common/Button';
 import {
     FolderOpen, FileText, CheckCircle2, AlertTriangle, Eye, UploadCloud,
-    Calendar, ShieldCheck, Building2, Users, Clock, AlertCircle, Plus, Tags, Search, X, Edit3, Trash2, Layers, Sparkles
+    Calendar, ShieldCheck, Building2, Users, Clock, AlertCircle, Plus, Tags, Search, X, Pencil, Trash2, Layers, Sparkles
 } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -52,7 +52,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                     <Button variant="secondary" size="sm" icon={Eye} title="Ver PDF" iconOnly onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })} />
                 )}
 
-                <Button variant="secondary" size="sm" icon={Edit3} title="Editar/Actualizar Datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
+                <Button variant="secondary" size="sm" icon={Pencil} title="Editar/Actualizar Datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
 
                 {doc.isCustom && !doc.url && (
                     <Button variant="destructive" size="sm" icon={Trash2} title="Eliminar Espacio" iconOnly onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }} />

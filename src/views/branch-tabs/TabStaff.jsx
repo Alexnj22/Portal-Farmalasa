@@ -3,7 +3,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { AiThinkingState } from '../../components/common/StateViews';
 import {
-    ShieldCheck, Award, AlertTriangle, User, Edit3,
+    ShieldCheck, Award, AlertTriangle, User, Pencil,
     Star, HeartPulse, Briefcase, CalendarDays, Phone, MapPin,
     Copy, Check, MessageCircle, ShieldAlert, Calculator, Plus, FileX, Zap,
     CircleUserRound, BarChart3, TrendingUp, Clock, Hourglass, Sparkles, ArrowLeft, Activity, X
@@ -78,7 +78,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <p className="text-body-lg font-black text-content-2 leading-tight group-hover:text-danger-text transition-colors text-center">{missingText}</p>
                 <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
                 <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-surface-card shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger-solid group-hover:text-white transition-all">
-                    <Edit3 size={10} strokeWidth={2.5} /> <span className="text-micro font-black uppercase tracking-widest">Asignar</span>
+                    <Pencil size={10} strokeWidth={2.5} /> <span className="text-micro font-black uppercase tracking-widest">Asignar</span>
                 </div>
             </div>
         );
@@ -90,7 +90,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
             <div className="absolute top-3 right-3 z-base flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-white shadow-sm pointer-events-none">
-                <Edit3 size={10} strokeWidth={2.5} className="text-content-3" />
+                <Pencil size={10} strokeWidth={2.5} className="text-content-3" />
             </div>
 
             <div className="flex flex-col items-center justify-center relative z-base mb-3 mt-2">

@@ -6,7 +6,7 @@ import { EmptyState } from '../components/common/StateViews';
 import ViewTabBar from '../components/common/ViewTabBar';
 import {
   Clock,
-  CheckCircle,
+  CheckCircle2,
   AlertTriangle,
   Utensils,
   LogOut,
@@ -358,7 +358,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     switch (status) {
       case "WORKING":
         return (
-          <Badge variant="success" icon={CheckCircle}>En Turno</Badge>
+          <Badge variant="success" icon={CheckCircle2}>En Turno</Badge>
         );
       case "EXTRA_WORKING":
         return (

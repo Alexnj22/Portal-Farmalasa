@@ -5,7 +5,7 @@ import { EmptyState } from '../components/common/StateViews';
 import Badge from '../components/common/Badge';
 import {
     DollarSign, Plus, Printer, CheckCircle2, Banknote,
-    Building2, Search, Edit2, RotateCcw, Download, X, ListFilter,
+    Building2, Search, Pencil, RotateCcw, Download, X, ListFilter,
     AlertTriangle, LockKeyhole, ExternalLink, CalendarDays } from 'lucide-react';
 import { fetchUnapprovedTimesheetsCount } from '../data/payroll';
 import { useStaffStore } from '../store/staffStore';
@@ -352,7 +352,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                                     <Button variant="secondary" icon={Printer} title="Imprimir boleta individual" iconOnly onClick={() => onPrint(e)} />
                                                 )}
                                                 {!isPaid && (
-                                                    <Button tone="warning" icon={Edit2} title="Editar" iconOnly onClick={() => onEdit(e)} />
+                                                    <Button tone="warning" icon={Pencil} title="Editar" iconOnly onClick={() => onEdit(e)} />
                                                 )}
                                             </div>
                                         </DataCell>

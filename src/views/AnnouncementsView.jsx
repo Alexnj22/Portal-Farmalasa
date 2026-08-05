@@ -8,7 +8,7 @@ import Badge from '../components/common/Badge';
 import {
   Megaphone, Send, Trash2, Globe, Building2,
   Users, User, Target, X, Search, Plus, CheckCircle2,
-  Archive, Eye, AlertCircle, PartyPopper, ChevronLeft, ChevronRight, Clock, Flame, Edit3, Save, CalendarClock, Power, Timer
+  Archive, Eye, AlertCircle, PartyPopper, ChevronLeft, ChevronRight, Clock, Flame, Pencil, Save, CalendarClock, Power, Timer
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -56,7 +56,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
           <>
             {ann.readIds.length === 0 && (
               <Button
-                  icon={Edit3}
+                  icon={Pencil}
                   iconOnly
                   size="sm"
                   tone="warning"
@@ -564,7 +564,7 @@ const AnnouncementsView = ({ openModal }) => {
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-warning-solid' : 'bg-brand'}`}>
-                    {editingAnnId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
+                    {editingAnnId ? <Pencil size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                   </div>
                   <span className="font-black uppercase tracking-tight ml-1">{editingAnnId ? 'Editar Aviso' : 'Nuevo Aviso'}</span>
                 </h3>

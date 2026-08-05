@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Button from '../../../components/common/Button';
 import { SkeletonText } from '../../../components/common/StateViews';
-import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, CheckCheck } from 'lucide-react';
+import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, Check } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
@@ -195,7 +195,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         <div className="flex gap-2">
                             <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                             {employee && (
-                                <Button disabled={loading} onClick={confirmApoyo}>{loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
+                                <Button disabled={loading} onClick={confirmApoyo}>{loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                                     Confirmar</Button>
                             )}
                         </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
-import { Eye, EyeOff, KeyRound, Loader2, Lock, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Loader2, Lock, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
 import PortalInput from '../common/PortalInput';
@@ -28,7 +28,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
     if (done) return (
         <div className="flex flex-col items-center justify-center gap-3 py-10">
             <div className="w-14 h-14 rounded-full bg-success/10 border border-success/30 flex items-center justify-center">
-                <CheckCircle size={28} className="text-success" strokeWidth={2} />
+                <CheckCircle2 size={28} className="text-success" strokeWidth={2} />
             </div>
             <p className="text-label font-black uppercase tracking-widest text-success">Contraseña actualizada</p>
         </div>

@@ -8,8 +8,8 @@ import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ChevronDown, ArrowRight,
-  Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
-  Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
+  Bot, ShieldAlert, Pencil, Building2, X, Plus, ArrowRightLeft,
+  Palmtree, CheckCircle2, LogIn, LogOut, Clock, Calendar, Check,
   Baby, Coffee, Loader2, ShieldCheck, LockKeyhole, CalendarRange,
   Users, TrendingUp, Download,
 } from "lucide-react";
@@ -521,7 +521,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
         {/* Action buttons */}
         {!isOff && !isFuture && (
           <div className="flex flex-col gap-1.5 shrink-0">
-            <Button icon={Edit3} onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}>Corregir</Button>
+            <Button icon={Pencil} onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}>Corregir</Button>
             {isPendDay && onMarkReviewed && (
               <Button tone="warning" icon={ShieldCheck} onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}>Revisado</Button>
             )}

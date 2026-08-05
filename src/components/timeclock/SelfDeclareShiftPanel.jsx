@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
-import { Clock, SkipForward, CheckCircle } from 'lucide-react';
+import { Clock, SkipForward, CheckCircle2 } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
 
 const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
@@ -55,7 +55,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                         </div>
                     </div>
 
-                    <Button type="submit" tone="warning" soft size="lg" icon={CheckCircle}
+                    <Button type="submit" tone="warning" soft size="lg" icon={CheckCircle2}
                         className="w-full relative z-content pointer-events-auto">
                         Confirmar Horario
                     </Button>

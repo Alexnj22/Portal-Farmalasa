@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Badge from '../common/Badge';
-import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';

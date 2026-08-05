@@ -1,5 +1,5 @@
 import React from 'react';
-import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
 
@@ -61,7 +61,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
         const [ptYear, ptMonth] = paidThrough.split('-').map(Number);
         
         if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-            return { state: 'Estará Al Día', color: 'text-success-text bg-success/10 border-success/30', icon: CheckCircle };
+            return { state: 'Estará Al Día', color: 'text-success-text bg-success/10 border-success/30', icon: CheckCircle2 };
         }
         if (ptYear === currentYear && ptMonth === currentMonth - 1) {
             if (currentDay > parseInt(dueDay, 10)) return { state: 'Estará Vencido', color: 'text-danger-text bg-danger/10 border-danger/30', icon: AlertTriangle };

@@ -7,7 +7,7 @@ import { tokenMatch } from '../utils/searchUtils';
 import {
     PenLine, Plus, Trash2, Users, UserCheck, Save, ChevronDown, ChevronUp,
     Check, X, Building2, BarChart2, ClipboardList,
-    CalendarRange, Eye, EyeOff, Globe, Lock, Edit3, Search,
+    CalendarRange, Eye, EyeOff, Globe, Lock, Pencil, Search,
     AlertCircle, TrendingUp
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -503,7 +503,7 @@ export default function EncuestaAdminView() {
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-body-lg">
                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-warning-solid' : 'bg-brand'}`}>
-                                        {editingSurvey ? <Edit3 size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
+                                        {editingSurvey ? <Pencil size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-0.5">
                                         {editingSurvey ? 'Editar Encuesta' : 'Nueva Encuesta'}
@@ -751,7 +751,7 @@ export default function EncuestaAdminView() {
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning-solid' : 'bg-brand'}`}>
-                                        {editingResponse ? <Edit3 size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
+                                        {editingResponse ? <Pencil size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-1">
                                         {editingResponse ? 'Editar Respuesta' : 'Nueva Respuesta'}
@@ -1009,7 +1009,7 @@ export default function EncuestaAdminView() {
                                             )}
                                             {canManage && (
                                             <Button
-                                                icon={Edit3}
+                                                icon={Pencil}
                                                 iconOnly
                                                 size="sm"
                                                 tone="warning"
@@ -1188,7 +1188,7 @@ export default function EncuestaAdminView() {
                                                                                                 </div>
                                                                                             ) : canManage ? (
                                                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity justify-center">
-                                                                                                    <Button tone="warning" icon={Edit3} iconOnly onClick={() => openResponseForm(row)} />
+                                                                                                    <Button tone="warning" icon={Pencil} iconOnly onClick={() => openResponseForm(row)} />
                                                                                                     <Button variant="destructive" icon={Trash2} iconOnly onClick={() => setConfirmDelete(row.id)} />
                                                                                                 </div>
                                                                                             ) : null}

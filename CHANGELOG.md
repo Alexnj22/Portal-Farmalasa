@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.380.0 — Un concepto, un ícono — el mapa semántico de §12 y su gate
+
+F5 de `PLAN-IDENTIDAD-2026-07-29`. §12 fijaba la librería y los tamaños, pero
+nunca **qué ícono significa qué**: "Editar" se dibujaba con cuatro (`Edit3` 32 ·
+`Pencil` 21 · `Edit2` 10 · `Edit` 3) y "Confirmar" con otros cuatro.
+
+**El plan se equivocaba en el motivo, y el motivo real es peor.** Decía que
+`Edit`/`Edit2`/`Edit3` eran alias deprecados del mismo glifo — o sea, deuda de
+nombre sin consecuencia visual. Abriendo el paquete son **cuatro dibujos
+distintos**: `Edit`→`SquarePen` (lápiz en una caja), `Edit2`→`Pen` (pluma sin
+punta), `Edit3`→`PenLine` (pluma con subrayado) y `Pencil` (lápiz con punta).
+Lo mismo el check: `CheckCircle`→`CircleCheckBig` (círculo abierto, la marca se
+desborda) contra `CheckCircle2`→`CircleCheck` (círculo cerrado). El mismo botón
+"Editar" se veía distinto según la vista, y esto no era un renombre: son 40
+íconos que cambian de dibujo.
+
+- **Mapa semántico en §12**, cerrado: `Pencil` editar · `Trash2` eliminar ·
+  `Check` marca de selección · `CheckCircle2` estado exitoso · `X` cerrar ·
+  `XCircle` anular. `Check` y `CheckCircle2` **no son sinónimos** — uno es una
+  marca, el otro un estado.
+- **Migrados 40 identificadores en 28 archivos.** El migrador enmascara
+  comentarios y strings: 5 falsos positivos eran prosa (`{/* Edit reason */}`,
+  `// ── Edit mode ──`) y se habrían reescrito a "Pencil mode".
+- **Dos imports muertos** encontrados de paso (`CheckCheck` en `TabPedidos`,
+  `CheckCircle` en `FormRegisterPayment`: importados y nunca usados).
+- **`XCircle` auditado**: figuraba en la medición como segundo ícono de
+  "eliminar" y **no lo es en ningún sitio** — sus 14 usos son cancelar,
+  invalidar, revocar y "poner 0".
+- **`CheckCheck` retirado**: no hay concepto de doble confirmación. Sus 3 usos
+  (marcar leídas, confirmar apoyo, aprobar en bloque) son la marca simple.
+
+**Gate nuevo `icono-semantico`**, bloqueante en 0. Juzga el nombre **original**
+del import, así que `Edit2 as E2` no lo esquiva. Ejercitado contra un archivo con
+las 4 violaciones antes de darlo por bueno — no alcanza con verlo en verde.
+
 ## v2.379.3 — Clientes: releído el doc de retomar — 4 de 5 pendientes ya resueltos
 
 Segunda parte de la auditoría de planes (v2.379.2): verificar, ítem por ítem,

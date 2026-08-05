@@ -3,7 +3,7 @@ import Button from './Button';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Bell, BellRing, CheckCheck,
+    Bell, BellRing, Check,
     Megaphone, ChevronRight, Trash2, X, ArrowRight, Undo2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -390,7 +390,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                             title="Marcar todas como leídas"
                                             className={`flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
                                         >
-                                            <CheckCheck size={13} strokeWidth={2.5} />
+                                            <Check size={13} strokeWidth={2.5} />
                                             Leídas
                                         </button>
                                     )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
-import { Loader2, Check, X, Clock, Package, ArrowRight, Inbox, CheckCheck, TrendingUp, Building2 } from 'lucide-react';
+import { Loader2, Check, X, Clock, Package, ArrowRight, Inbox, TrendingUp, Building2 } from 'lucide-react';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import { fetchAllMinMaxChangeRequests } from '../../data/minmaxRequests';
@@ -344,7 +344,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
             filtro más. Va fuera. */}
         <div className="flex items-center gap-2 shrink-0">
           {tab === 'pending' && pendingInView > 0 && (
-            <Button tone="success" size="sm" icon={CheckCheck} loading={bulkBusy}
+            <Button tone="success" size="sm" icon={Check} loading={bulkBusy}
               disabled={bulkBusy} onClick={approveAll}>
               Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})
             </Button>

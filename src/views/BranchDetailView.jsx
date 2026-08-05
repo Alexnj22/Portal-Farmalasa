@@ -2,7 +2,7 @@ import React, { useMemo, useState, useLayoutEffect, useRef, useEffect } from 're
 import Button from '../components/common/Button';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
 import {
-    MapPin, Users, Monitor, Clock, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Edit3,
+    MapPin, Users, Monitor, Clock, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Pencil,
     Scale, Zap, ChevronRight, X, SlidersHorizontal, CircleUserRound, FolderOpen, ArrowLeft
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -322,7 +322,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {canEdit && (
                         <div inert={!isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
-                                <Button variant="secondary" size="sm" icon={Edit3} onClick={() => openModal && openModal('editBranch', liveBranch)}>General</Button>
+                                <Button variant="secondary" size="sm" icon={Pencil} onClick={() => openModal && openModal('editBranch', liveBranch)}>General</Button>
                                 <Button variant="secondary" size="sm" icon={CalendarClock} onClick={() => openModal && openModal('editBranchHorarios', liveBranch)}>Horarios</Button>
                                 <Button variant="secondary" size="sm" icon={Building2} onClick={() => openModal && openModal('editBranchInmueble', liveBranch)}>Local</Button>
                                 {hasServices && <Button variant="secondary" size="sm" icon={Zap} onClick={() => openModal && openModal('editBranchServicios', liveBranch)}>Serv.</Button>}

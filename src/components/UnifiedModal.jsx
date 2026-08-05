@@ -2,7 +2,7 @@ import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import Button from './common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
-    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2, Truck, Contact
+    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Pencil, Truck, Contact
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import LiquidModal from "./common/LiquidModal";
@@ -762,7 +762,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-brand-text`}><FilePlus size={22} strokeWidth={2.5} /></div>;
                                     if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-chart-3-text`}><Sparkles size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand-text`}><DollarSign size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Edit2 size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Pencil size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editProveedor") return <div className={`${squircleClass} text-brand-text`}><Truck size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editCliente") return <div className={`${squircleClass} text-brand-text`}><Contact size={22} strokeWidth={2.5} /></div>;
 

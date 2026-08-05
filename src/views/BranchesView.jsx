@@ -8,7 +8,7 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import { AiThinkingState, Skeleton, SkeletonText } from '../components/common/StateViews';
 import { useNavigate, Link } from "react-router-dom";
 import {
-    Building2, MapPin, Phone, Smartphone, Clock, Edit3, Trash2, Plus,
+    Building2, MapPin, Phone, Smartphone, Clock, Pencil, Trash2, Plus,
     Users, Eye, Monitor, AlertTriangle, CheckCircle2, Info, AlertCircle,
     Search, Filter, X, ArrowUpRight, Copy, MessageCircle, ChevronRight,
     Scale, Zap, Briefcase, Shield, Stethoscope, Sparkles, Activity, ArrowLeft
@@ -391,7 +391,7 @@ const BranchCard = memo(({
                         </>
                     )}
                     <Button size="sm" icon={Eye} title="Ver Perfil" iconOnly onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} />
-                    <Button tone="chart-3" size="sm" icon={Edit3} disabled={!canEdit} title="Ajustes Generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
+                    <Button tone="chart-3" size="sm" icon={Pencil} disabled={!canEdit} title="Ajustes Generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
 
                     {!deleteDisabled && (
                         <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar Sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} />

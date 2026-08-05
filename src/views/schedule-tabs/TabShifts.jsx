@@ -3,7 +3,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
-    X, Archive, Target, Edit3, Copy,
+    X, Archive, Target, Pencil, Copy,
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle,
     CheckCircle2, Sparkles, Bot, Zap
 } from 'lucide-react';
@@ -131,7 +131,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                     <>
                         <Button variant="secondary" icon={Copy} title="Duplicar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} />
                         <Button
-                            icon={Edit3}
+                            icon={Pencil}
                             iconOnly
                             size="sm"
                             tone="warning"
@@ -415,7 +415,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                     <div className="flex justify-between items-center mb-6 relative z-base">
                         <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-warning-solid' : 'bg-brand'}`}>
-                                {editingGroup ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
+                                {editingGroup ? <Pencil size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                             </div>
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
                         </h3>

@@ -5,7 +5,7 @@ import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
-    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2, Edit3,
+    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Pencil,
     Building2, ListFilter, Trash2, Sparkles, ShieldCheck, ArrowRight,
     MessageSquare, RefreshCw
 } from 'lucide-react';
@@ -719,7 +719,7 @@ const VacationPlanView = () => {
                                 <div className="flex items-center gap-2.5">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-warning' : 'bg-brand'}`}>
                                         {editingPlan
-                                            ? <Edit3 size={16} className="text-white" strokeWidth={2.5} />
+                                            ? <Pencil size={16} className="text-white" strokeWidth={2.5} />
                                             : <Plus size={16} className="text-white" strokeWidth={2.5} />
                                         }
                                     </div>
@@ -811,7 +811,7 @@ const VacationPlanView = () => {
                                     loading={isSubmitting}
                                     disabled={!canEdit || !empId || !startDate || !endDate}
                                     tone={confirmingEdit ? 'success' : editingPlan ? 'warning' : null}
-                                    icon={confirmingEdit ? Check : editingPlan ? Edit3 : Palmtree}
+                                    icon={confirmingEdit ? Check : editingPlan ? Pencil : Palmtree}
                                 >
                                     {isSubmitting
                                         ? 'Guardando…'
@@ -951,7 +951,7 @@ const VacationPlanView = () => {
                                                                     </div>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
-                                                                        <Badge variant="warning" size="sm" icon={Edit2} className="group/badge relative">
+                                                                        <Badge variant="warning" size="sm" icon={Pencil} className="group/badge relative">
                                                                             Editado
                                                                             <span data-surface="tooltip" className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 text-micro font-bold px-3 py-2 whitespace-nowrap z-sidebar pointer-events-none">
                                                                                 <span className="text-content-tooltip-2 font-black uppercase tracking-widest text-micro mb-0.5">Fecha original</span>
@@ -982,7 +982,7 @@ const VacationPlanView = () => {
                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <Button
-                                                                            icon={Edit2}
+                                                                            icon={Pencil}
                                                                             iconOnly
                                                                             size="xs"
                                                                             tone="warning"

@@ -749,6 +749,30 @@ const ILUSTRACION_DESDE = 49;
 // medición dice lo contrario — en el tramo 15-20px el `2.5` gana **146 a 12**.
 // Lo que sí es un sistema: trazo fino para ícono grande. Ver §12.
 const STROKE_ESCALA = new Set(['1', '1.5', '2', '2.5', '3']);
+
+// ── Categoría `icono-semantico` (F5 de PLAN-IDENTIDAD-2026-07-29) ───────────
+// «Un concepto, un ícono». El plan suponía que `Edit`/`Edit2`/`Edit3` eran alias
+// deprecados del MISMO glifo; al abrir el paquete resultó peor: son cuatro
+// dibujos distintos. `Edit`→SquarePen (lápiz dentro de una caja), `Edit2`→Pen
+// (pluma sin punta), `Edit3`→PenLine (pluma con subrayado) y `Pencil` (lápiz con
+// punta). El portal mostraba cuatro lápices para la misma acción. Igual
+// `CheckCircle`→CircleCheckBig (círculo abierto, check que se desborda) contra
+// `CheckCircle2`→CircleCheck (círculo cerrado, check adentro).
+//
+// Nota de convención: `CheckCircle2` y `XCircle` son a su vez alias del nombre
+// nuevo de Lucide (`CircleCheck`, `CircleX`), igual que `AlertTriangle` o
+// `AlertCircle`. El proyecto entero habla el nombrado viejo y se queda así — es
+// un renombre sin cambio visual, y mezclar las dos convenciones sería volver al
+// problema que esta categoría cierra. Lo que se prohíbe acá es tener DOS nombres
+// para el MISMO concepto, no el estilo del nombre.
+const ICONO_RETIRADO = {
+  Edit:        'Pencil',
+  Edit2:       'Pencil',
+  Edit3:       'Pencil',
+  CheckCircle: 'CheckCircle2',
+  CheckCheck:  'Check',
+};
+
 const MONEDA_A_MANO_RE = /\$\$\{[^}]*\.toFixed\(\s*[12]\s*\)/g;
 
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
@@ -1708,15 +1732,27 @@ function scanFile(path) {
     }
   }
 
-  if (!hasException(path, 'icono-rampa') || !hasException(path, 'icono-stroke')) {
+  if (!hasException(path, 'icono-rampa') || !hasException(path, 'icono-stroke') ||
+      !hasException(path, 'icono-semantico')) {
     // Nombres de íconos que este archivo importa de lucide-react
     const deLucide = new Set();
     LUCIDE_IMPORT_RE.lastIndex = 0;
     let mi;
     while ((mi = LUCIDE_IMPORT_RE.exec(text))) {
       for (const parte of mi[1].split(',')) {
-        const n = parte.trim().split(/\s+as\s+/).pop()?.trim();
-        if (n) deLucide.add(n);
+        const bruto = parte.trim();
+        if (!bruto) continue;
+        // `X as Y`: el que se juzga es el nombre ORIGINAL (lo que se trae de la
+        // librería); el alias local sólo cambia cómo se lo llama acá adentro.
+        const original = bruto.split(/\s+as\s+/)[0].trim();
+        const local = bruto.split(/\s+as\s+/).pop().trim();
+        if (local) deLucide.add(local);
+        if (!hasException(path, 'icono-semantico') && ICONO_RETIRADO[original]) {
+          const linea = text.slice(0, text.indexOf(bruto, mi.index)).split('\n').length;
+          findings.push({ line: linea,
+            label: `\`${original}\` está retirado — un concepto, un ícono: usá \`${ICONO_RETIRADO[original]}\` (§12)`,
+            category: 'icono-semantico', text: `import { ${original} } from 'lucide-react'` });
+        }
       }
     }
     const esIcono = (comp) =>

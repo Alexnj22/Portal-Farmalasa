@@ -5,7 +5,7 @@ import {
     FileText, Plus, Printer, Save, Trash2, X,
     ChevronLeft, User, CreditCard, Building2,
     Package, Hash, Receipt, Tag, Percent, CheckCircle2, AlertCircle, ShoppingCart, Calculator,
-    Edit2, Info, AlertTriangle, ChevronDown,
+    Pencil, Info, AlertTriangle, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -844,7 +844,7 @@ export default function CotizacionesView() {
                         <Button variant="secondary" icon={ChevronLeft} onClick={() => setMode('list')}>Lista</Button>
                         {cot.status === 'ACTIVA' && canEdit && (
                             <>
-                                <Button variant="secondary" icon={Edit2} onClick={() => startEdit(cot)}>Editar</Button>
+                                <Button variant="secondary" icon={Pencil} onClick={() => startEdit(cot)}>Editar</Button>
                                 <Button variant="destructive" onClick={() => setConfirmAnular(cot.id)}>Anular</Button>
                                 {canDownload && <Button icon={Printer} onClick={() => handlePrint(cot, itemsData)}>Imprimir / PDF</Button>}
                             </>
@@ -1088,7 +1088,7 @@ export default function CotizacionesView() {
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
                                     {!isAnulada && canEdit && (
                                         <>
-                                            <Button variant="secondary" size="xs" icon={Edit2} title="Editar" iconOnly onClick={() => startEdit(cot)} />
+                                            <Button variant="secondary" size="xs" icon={Pencil} title="Editar" iconOnly onClick={() => startEdit(cot)} />
                                             {canDownload && (
                                                 <Button tone="chart-1" size="xs" icon={Printer} title="Imprimir / PDF" iconOnly onClick={async () => {
                                                     const { data, error } = await fetchCotizacionItems(cot.id);

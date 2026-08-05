@@ -8,7 +8,7 @@ import {
     ShieldCheck, Plus, Trash2, Award, Users,
     CornerDownRight, Network, Target,
     ArrowUpRight, LayoutTemplate, Maximize, Minimize, Download,
-    PartyPopper, AlertCircle, Search, X, ChevronRight, GitMerge, Edit3, Save, ChevronDown, MapPin, Hash, Globe, Building2
+    PartyPopper, AlertCircle, Search, X, ChevronRight, GitMerge, Pencil, Save, ChevronDown, MapPin, Hash, Globe, Building2
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { toPng } from 'html-to-image';
@@ -511,7 +511,7 @@ const RolesView = ({ openModal }) => {
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingRoleId ? 'bg-warning-solid' : 'bg-brand'}`}>
-                                            {editingRoleId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
+                                            {editingRoleId ? <Pencil size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                                         </div>
                                         <span className="font-black uppercase tracking-tight ml-1">{editingRoleId ? 'Editar Cargo' : 'Nuevo Cargo'}</span>
                                     </h3>
@@ -695,7 +695,7 @@ const RolesView = ({ openModal }) => {
 
                                                 <div className={`flex items-center gap-1 transition-opacity ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
                                                     <Button
-                                                        icon={Edit3}
+                                                        icon={Pencil}
                                                         iconOnly
                                                         size="sm"
                                                         tone="warning"

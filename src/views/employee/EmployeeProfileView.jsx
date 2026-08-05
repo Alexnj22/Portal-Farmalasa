@@ -5,7 +5,7 @@ import { EmptyState } from '../../components/common/StateViews';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
     User, Phone, HeartPulse, Briefcase, KeyRound,
-    Clock, Edit3, Calendar, ArrowRightLeft, Sparkles, Palmtree,
+    Clock, Pencil, Calendar, ArrowRightLeft, Sparkles, Palmtree,
     MapPin, CreditCard, Coffee, Zap, Award, TrendingUp, SlidersHorizontal, ChevronDown, ChevronUp, X, Stethoscope, FileText,
     FolderOpen
 } from 'lucide-react';
@@ -260,7 +260,7 @@ const EmployeeProfileView = ({ openModal }) => {
             )}
             {(emp.phone || emp.dui) && <div className="hidden md:block w-px h-6 bg-divider mx-0.5 shrink-0" />}
             {/* Edit button */}
-            <Button icon={Edit3} onClick={() => openModal('editContact', emp)}><span className="hidden sm:inline">Editar</span></Button>
+            <Button icon={Pencil} onClick={() => openModal('editContact', emp)}><span className="hidden sm:inline">Editar</span></Button>
             {/* Password button */}
             <Button tone="warning" icon={KeyRound} title="Cambiar contraseña" iconOnly onClick={() => openModal('changeOwnPassword', {})} />
         </div>

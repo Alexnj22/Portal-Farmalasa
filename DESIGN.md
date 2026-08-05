@@ -1120,6 +1120,66 @@ Current files using framer-motion:
 
 **Library:** Lucide React v0.575.0 — sole icon library. No other sets.
 
+#### Un concepto, un ícono (F5, 2026-07-29)
+
+La sección fijaba la librería y los tamaños, pero nunca **qué ícono significa
+qué**. Medido: `Editar` se dibujaba con cuatro íconos (`Edit3` 32 · `Pencil` 21 ·
+`Edit2` 10 · `Edit` 3) y `Confirmar` con cuatro (`CheckCircle2` · `Check` ·
+`CheckCircle` · `CheckCheck`).
+
+Y no era sólo el nombre. Abriendo el paquete, los cuatro "lápices" son **cuatro
+dibujos distintos**:
+
+| Import | Glifo real | Qué se ve |
+|---|---|---|
+| `Edit` | `SquarePen` | lápiz dentro de una caja |
+| `Edit2` | `Pen` | pluma sin punta |
+| `Edit3` | `PenLine` | pluma con subrayado |
+| `Pencil` | `Pencil` | lápiz con punta |
+
+Lo mismo con el check: `CheckCircle` es `CircleCheckBig` (círculo abierto, la
+marca se desborda) y `CheckCircle2` es `CircleCheck` (círculo cerrado, marca
+adentro). O sea que la deriva no era de nomenclatura sino **de dibujo**: el mismo
+botón "Editar" se veía distinto según la vista.
+
+**El mapa. Es cerrado, y lo vigila la categoría `icono-semantico` del gate:**
+
+| Concepto | Canónico | Nota |
+|---|---|---|
+| Editar | `Pencil` | `Edit`, `Edit2`, `Edit3` retirados — eran otros tres glifos |
+| Eliminar | `Trash2` | |
+| Marca de selección | `Check` | checkbox, opción elegida, ítem tildado, acción de confirmar |
+| Estado exitoso | `CheckCircle2` | badge, toast, resultado de una operación |
+| Cerrar | `X` | |
+| Anular / rechazar | `XCircle` | *no* es eliminar: cancelar, invalidar, poner en cero |
+| Ver | `Eye` | |
+| Descargar | `Download` | ver §Storage sobre ver vs descargar |
+| Agregar | `Plus` | |
+| Buscar | `Search` | |
+| Filtrar | `SlidersHorizontal` | |
+| Advertencia | `AlertTriangle` | |
+| Información | `Info` | |
+
+`Check` y `CheckCircle2` **no son sinónimos**: uno es una marca, el otro es un
+estado. Una fila tildada lleva `Check`; un toast de "guardado" lleva
+`CheckCircle2`.
+
+`CheckCheck` queda retirado — no existe el concepto de "doble confirmación" en el
+portal. Sus 3 usos (marcar notificaciones leídas, confirmar apoyo, aprobar en
+bloque) son todos la marca simple.
+
+`XCircle` se auditó de paso porque figuraba en la medición como segundo ícono de
+"eliminar": **no lo es en ningún sitio**. Sus 14 usos son cancelar, invalidar,
+revocar y "poner 0" — que es justo lo que dice el mapa.
+
+**Sobre el nombrado:** `CheckCircle2`, `XCircle`, `AlertTriangle` y `AlertCircle`
+son a su vez alias de los nombres nuevos de Lucide (`CircleCheck`, `CircleX`,
+`TriangleAlert`, `CircleAlert`). El proyecto habla el nombrado viejo de punta a
+punta y se queda así: cambiarlo es un renombre sin ningún cambio visual, y
+mezclar las dos convenciones sería reabrir el problema que esta sección cierra.
+Lo que se prohíbe es tener **dos nombres para el mismo concepto**, no el estilo
+del nombre.
+
 #### La rampa, medida de verdad (F4, 2026-07-29)
 
 La versión anterior de esta sección decía "se midieron 1,287 íconos y hay 33

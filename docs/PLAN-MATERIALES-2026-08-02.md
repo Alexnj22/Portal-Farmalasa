@@ -11,7 +11,7 @@ criterio de verificación. Lo que sigue es ejecutable tal cual.
 
 | | |
 |---|---|
-| **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias) |
+| **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias). Sus bases están en §0.ter |
 | **Elementos sin definir** | barra de pestañas · sidebar |
 | **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el confirmado** — ver §0.bis |
 | **Bloqueo** | queda **una** decisión abierta que cambia los valores de §1: el alcance del vidrio (§10). **No se implementa §1 antes de cerrarla** |
@@ -60,6 +60,136 @@ La consecuencia práctica: si alguien lee §1.1 y escribe `-3px` sin leer §1.4,
 rompe el acuerdo entre código y doc sin enterarse. **El token y el texto de
 `DESIGN.md` §2 se cambian en el mismo commit** — es la fase H de §8, y es la
 única de las ocho que no se puede partir en dos.
+
+---
+
+## 0.ter. Los tokens son FACTORES, y faltaba la base que multiplican
+
+Encontrado el 2026-08-05 al medir el tema oscuro, y es el hallazgo que impedía
+que este documento fuera implementable.
+
+**`--glass-especular: 1.60` no es un valor: es un multiplicador.** Y el documento
+nunca dice qué multiplica. De los ~30 tokens de §1 a §5, **21 son factores
+adimensionales** (`especular`, `rim`, `lente`, `tono`, `sombra`, `anillo`,
+`hueco`, `luzinv`, `aclara`, `halo`, `glow`, `filo`…); los demás sí son absolutos
+(`7rem`, `-3px`, `60px`, `220ms`). Dos personas implementando de acá sacan dos
+portales distintos, los dos «cumpliendo» el contrato.
+
+No es teórico: **pasó al construir el mockup de revisión.** Con el mismo `1.60`,
+una base alta dibujaba una esfera con filo duro y una base baja un brillo suave.
+El token era idéntico; el material, otro.
+
+### La prueba: la tabla de §1.1 no se puede reproducir
+
+§1.1 justifica la técnica «núcleo claro + aro oscuro» con **1.30 sobre claros**.
+Medido sobre la superficie real del portal, barriendo la alfa base:
+
+| alfa base del núcleo | reflejo vs superficie |
+|---|---|
+| 0.17 *(la del mockup confirmado)* | 1.03:1 |
+| 0.32 | 1.10:1 |
+| 0.42 | 1.14:1 |
+| 0.70 *(un borrón blanco)* | 1.23:1 |
+
+**Ni reventándolo se llega a 1.30.** El número de §1.1 salió de otra medición —
+seguramente contra el fondo de página y no contra la superficie de la tarjeta —
+y como el documento no decía la base, nadie podía notar que no cerraba. La tabla
+se conserva como el *razonamiento* que llevó a elegir la técnica (que sigue
+siendo correcta: el aro es lo que hace legible un brillo sobre algo claro), pero
+**no como una medición reproducible**.
+
+### La base, ahora escrita — sale del mockup que el usuario confirmó
+
+Esto es lo que los factores multiplican. **Es normativo**: cambiar una de estas
+alfas cambia el material aunque el token siga diciendo `1.60`.
+
+```css
+/* §1 · Tarjeta — Liquid. Base: --surface-card + --border-card del tema. */
+.card { background: var(--surface-card); border: 1px solid var(--border-card);
+        backdrop-filter: blur(18px) saturate(180%);
+        box-shadow: 0 8px 32px rgba(15,23,42,.10); }
+
+/* reflejo (× --glass-especular) — el aro necesita MUCHAS paradas: con pocas se
+   ve como el filo de una esfera en vez de como la sombra de un brillo */
+.card .especular { background: radial-gradient(var(--glass-esp-radio) var(--glass-esp-radio) at var(--mx) var(--my),
+  rgba(255,255,255,calc(.17 * var(--glass-especular)))  0%,
+  rgba(255,255,255,calc(.13 * var(--glass-especular))) 26%,
+  rgba(255,255,255,calc(.05 * var(--glass-especular))) 44%,
+  rgba(255,255,255,0)                                  56%,
+  rgba(12,20,48,  calc(.035 * var(--glass-especular))) 68%,
+  rgba(12,20,48,  calc(.018 * var(--glass-especular))) 82%,
+  rgba(12,20,48,0)                                    100%); }
+
+/* canto vivo 1px (× --glass-rim) */
+.card .rim { background: conic-gradient(from var(--rim-ang,210deg),
+  rgba(255,255,255,calc(.95 * var(--glass-rim))),
+  rgba(255,255,255,calc(.10 * var(--glass-rim))) 28%,
+  rgba(255,255,255,calc(.06 * var(--glass-rim))) 58%,
+  rgba(255,255,255,calc(.75 * var(--glass-rim))) 82%,
+  rgba(255,255,255,calc(.95 * var(--glass-rim)))); }
+
+/* lente (× --glass-lente) — los CUATRO filos, no sólo arriba */
+.card { box-shadow: …,
+  inset  0  2px 0      rgba(255,255,255,calc(.62 * var(--glass-lente))),
+  inset  2px 0  6px -3px rgba(255,255,255,calc(.58 * var(--glass-lente))),
+  inset -2px 0  6px -3px rgba(255,255,255,calc(.58 * var(--glass-lente))),
+  inset  0 -1px 1px      rgba(255,255,255,calc(.31 * var(--glass-lente))); }
+
+/* §1 · Tarjeta — Solid */
+.card { box-shadow: 0 2px 6px rgba(15,23,42,calc(.07 * var(--solid-sombra))),
+                    0 1px 2px rgba(15,23,42,calc(.05 * var(--solid-sombra))); }
+.card:hover { background: var(--surface-card-hover);        /* × --solid-tono */
+              box-shadow: …, 0 0 0 3px rgba(15,23,42,calc(.10 * var(--solid-anillo))); }
+
+/* §2 · Botón — el aro NO escala con la intensidad: ése es el motivo de --btn-esp-aro */
+.btn .especular { background: radial-gradient(var(--btn-esp-radio) var(--btn-esp-radio) at var(--mx) var(--my),
+  rgba(255,255,255,calc(.55 * var(--btn-especular)))  0%,
+  rgba(255,255,255,calc(.30 * var(--btn-especular))) 30%,
+  rgba(255,255,255,0)                                50%,
+  rgba(12,20,48,  calc(.55 * var(--btn-esp-aro)))    66%,
+  rgba(12,20,48,  calc(.22 * var(--btn-esp-aro)))    82%,
+  rgba(12,20,48,0)                                  100%); }
+
+/* §3 · Campo — el hueco arriba, la luz ABAJO */
+.campo { box-shadow: inset 0  2px 8px rgba(15,23,42,calc(.09 * var(--campo-hueco))),
+                     inset 0 -1px 0   rgba(255,255,255,calc(.72 * var(--campo-luzinv))); }
+.campo:hover { background: color-mix(in srgb, var(--surface-input),
+                                     white calc(10% * var(--campo-aclara))); }
+
+/* §4 · Menú flotante */
+.menu { background: color-mix(in srgb, #f0f8ff calc(var(--menu-opacidad) * 100%), transparent);
+        backdrop-filter: blur(var(--menu-blur)) saturate(165%);
+        box-shadow: 0 24px 60px rgba(0,0,0,calc(.14 * var(--menu-sombra))),
+          inset 0 1px 0      rgba(255,255,255,calc(.90 * var(--menu-halo))),
+          inset 0 0 22px -6px rgba(120,140,255,calc(.45 * var(--menu-glow))); }
+
+/* §5 · Modal — el filo arriba, y el rim/lente de la tarjeta */
+.modal { box-shadow: 0 32px 80px rgba(0,0,0,calc(.18 * var(--modal-sombra))),
+          inset 0 2px 0 rgba(255,255,255,calc(.95 * var(--modal-filo))),
+          /* + las cuatro inset de lente, × --modal-lente */ ; }
+.velo  { background: rgba(3,11,28,calc(.50 * var(--velo-oscuridad)));
+         backdrop-filter: blur(var(--velo-blur)); }
+```
+
+### Liquid en tema oscuro — medido por primera vez
+
+§10 lo listaba como decisión abierta porque **ninguna medición del documento se
+había hecho sobre fondo oscuro**. Hecha ahora, con los valores confirmados:
+
+| | Liquid claro | Liquid oscuro |
+|---|---|---|
+| núcleo del reflejo vs superficie | 1.03:1 | **2.43:1** |
+| aro oscuro vs superficie | 1.02:1 | **1.01:1 — muerto** |
+
+**El mismo token da dos materiales distintos.** En oscuro el reflejo es más de
+dos veces más visible, y el aro oscuro —que en claro es lo que lo hace legible—
+sobre una superficie oscura no separa nada: es una capa que se compone para
+nada. Dos consecuencias para la fase D:
+
+1. `[data-theme="dark"]` necesita **su propio `--glass-especular`**, más bajo.
+   Heredar el `1.60` de `:root` deja un reflejo el doble de fuerte.
+2. En los dos temas oscuros el aro puede irse. No hace falta un token nuevo:
+   basta que la base del aro sea `0` ahí.
 
 ---
 
@@ -620,6 +750,21 @@ vidrio completo se reserva para navegación y flotantes, y las tarjetas de
 contenido llevan una versión atenuada. *Es la decisión más cara de posponer:
 cambia los valores de §1 para 225 superficies.*
 
+**Medido el 2026-08-05, que es lo que a esta decisión le faltaba:**
+
+| | Liquid claro | Liquid oscuro |
+|---|---|---|
+| tarjeta anidada vs la tarjeta que la contiene | **1.016:1** | **1.040:1** |
+| reflejo, con una capa de vidrio encima | 1.09:1 | 1.47:1 *(de 2.43)* |
+
+**Una tarjeta de vidrio dentro de otra es, en la práctica, invisible como
+superficie separada** — 1.016:1 no lo distingue ningún ojo. O sea que el vidrio
+anidado no comunica jerarquía: sólo agrega una capa de composición y **apaga el
+reflejo de la que está debajo** (en oscuro, de 2.43 a 1.47). Es el argumento
+duro a favor de la regla de Apple, y ya no hace falta discutirlo en abstracto:
+si el segundo vidrio no se ve, no está haciendo un trabajo que justifique su
+costo.
+
 **2 · Contraste sobre el peor fondo.** Una superficie translúcida cambia su
 contraste según lo que tenga detrás; es la crítica documentada más seria a
 Liquid Glass, y §4.1 ya la encontró en el menú (3.37:1 → se arregló oscureciendo
@@ -627,8 +772,10 @@ el texto, no subiendo la opacidad). Al cerrar los valores hay que medir sobre el
 peor fondo posible, **no sobre el lienzo del mockup**. El portal ya corrigió
 `--text-tertiary` por este mismo motivo.
 
-**3 · Liquid en tema oscuro.** Ver §8.1. Ninguna medición de este documento se
-hizo sobre fondo oscuro con el material de Liquid.
+**3 · Liquid en tema oscuro — MEDIDO, ya no es una incógnita.** Ver §0.ter: el
+reflejo pasa de 1.03:1 en claro a **2.43:1** en oscuro con el mismo token, y el
+aro oscuro queda muerto (1.01:1). Lo que falta no es medir sino **elegir el
+`--glass-especular` de `[data-theme="dark"]`**, que hoy hereda el de `:root`.
 
 **Resueltas el 2026-08-05** (ya no bloquean): el lift de Solid en `-1px`, la
 remoción del barrido, el velo del modal en `0.00`, la opacidad del panel en

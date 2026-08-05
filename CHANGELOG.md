@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.386.0 — Los tokens de materiales eran factores sin base — y Liquid medido en oscuro
+
+Apareció al medir el tema oscuro de `PLAN-MATERIALES`, y es el hallazgo que
+impedía que ese documento fuera implementable.
+
+**`--glass-especular: 1.60` no es un valor: es un multiplicador — y el plan
+nunca decía qué multiplica.** De sus ~30 tokens, **21 son factores
+adimensionales** (`especular`, `rim`, `lente`, `tono`, `sombra`, `anillo`,
+`hueco`, `luzinv`, `aclara`, `halo`, `glow`, `filo`). Dos personas implementando
+de ahí sacan dos portales distintos, las dos «cumpliendo» el contrato.
+
+No es teórico: pasó al construir el mockup de revisión. Con el mismo `1.60`, una
+alfa base alta dibujaba una esfera con filo duro y una baja un brillo suave.
+
+**La prueba:** §1.1 justifica la técnica con «1.30:1 sobre claros». Barriendo la
+alfa base sobre la superficie real —0.17 → 1.03:1, 0.42 → 1.14:1, 0.70 (un
+borrón blanco) → 1.23:1— **nunca se llega a 1.30**. El número salió de otra
+medición, y como el documento no decía la base, nadie podía notar que no cerraba.
+Se conserva como el razonamiento que eligió la técnica, no como medición.
+
+**El arreglo:** el mockup que el usuario confirmó es la base que faltaba, y
+quedó escrita en el nuevo §0.ter — normativa, con las alfas de cada capa de los
+cinco elementos.
+
+**Liquid en oscuro, medido por primera vez.** El plan lo listaba como decisión
+abierta porque ninguna de sus mediciones se había hecho sobre fondo oscuro:
+
+- el reflejo pasa de **1.03:1 en claro a 2.43:1 en oscuro** con el mismo token
+- el aro oscuro queda **muerto (1.01:1)**: sobre una superficie oscura no separa
+  nada, es una capa que se compone para nada
+
+O sea que `[data-theme="dark"]` necesita su propio `--glass-especular`, más bajo;
+heredar el `1.60` deja un reflejo el doble de fuerte.
+
+**Y la medición que le faltaba a la decisión bloqueante** (el alcance del
+vidrio): una tarjeta de vidrio dentro de otra da **1.016:1** en claro y
+**1.040:1** en oscuro — es invisible como superficie separada. El vidrio anidado
+no comunica jerarquía: sólo agrega una capa de composición y apaga el reflejo de
+la que está debajo (en oscuro, de 2.43 a 1.47). Es el argumento duro a favor de
+la regla de Apple, y ya no hay que discutirlo en abstracto.
+
 ## v2.385.0 — Metas: el gerente ajusta, la fórmula se explica, y el parpadeo de permisos
 
 **El gerente también puede mover el monto.** En «espera aprobación», quien aprueba

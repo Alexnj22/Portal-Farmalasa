@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.391.2 — El vidrio de los flotantes anclados y la raíz del backdrop
+
+Dos correcciones al sidebar de §12, y la primera es el hallazgo más reutilizable
+de toda la fase B.
+
+**§12.6 · Un `backdrop-filter` es la RAÍZ del backdrop de sus descendientes.**
+El flyout del modo compacto y el menú de configuración mostraban el texto del
+contenido de al lado **nítido detrás**, pisando el suyo — con el
+`backdrop-filter` aplicado y verificado en el estilo computado. La causa: el
+sidebar es vidrio, así que un flotante **adentro** sólo puede desenfocar lo que
+está dentro del sidebar. El contenido de al lado nunca entra a su muestra y se
+transparenta sin desenfocarse. **No hay opacidad que lo arregle** — sólo taparlo
+del todo, que es perder el vidrio.
+
+La regla: *un flotante que necesita desenfocar lo de atrás no puede vivir dentro
+de otra superficie con `backdrop-filter`; va portaleado.* Es de la misma familia
+que «`transform` mata `backdrop-filter`»: **el contexto de apilamiento define qué
+puede ver una capa**, y las dos trampas se manifiestan igual — el efecto está
+escrito, se computa, y no se ve. Explica por qué la app real ya portalea sus
+popovers anclados.
+
+**§12.7 · Se corrigió una sobrecorrección mía.** Le había puesto `0.94` de
+opacidad al popover para que el texto se leyera, y eso mata el vidrio — que es
+exactamente el camino que §4.1 descarta: ahí ya estaba medido que subir de `0.58`
+a `0.76` gana **0.22 y sigue fallando**, y que lo que arregla el texto es
+llevarlo a `--content` pleno. Con el flotante portaleado y a opacidad de vidrio,
+el texto da **12.52:1 en claro y 17.65:1 en oscuro**. La sobrecorrección no sólo
+era fea: era innecesaria.
+
+Queda anotado además cómo se mide esto: el contraste sobre vidrio va contra el
+**color dominante** del área, no contra el píxel más oscuro — a esa resolución el
+muestreo no distingue un glifo antialiaseado de un fondo y devuelve 1.00:1 sobre
+el texto mismo.
+
 ## v2.391.1 — El carril y la píldora en una fila, y un gate que lo vigila
 
 Corregido por el usuario sobre una captura de la pestaña «Por revisar»: la

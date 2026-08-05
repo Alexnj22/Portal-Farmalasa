@@ -1067,6 +1067,50 @@ son hermanos posicionados sin `z-index` — así que ganaba el que va después e
 DOM y **el popover quedaba detrás de la tarjeta**. El sidebar necesita
 `z-index: 2` contra el `1` del contenido.
 
+### 12.6 ⚠️ Un `backdrop-filter` es la RAÍZ del backdrop de sus descendientes
+
+El hallazgo más reutilizable de la fase B, y explica por qué la app real portalea
+sus popovers anclados.
+
+**Síntoma:** el flyout del modo compacto y el menú de configuración se veían con
+el texto del contenido de al lado **nítido detrás**, pisando el suyo. El
+`backdrop-filter` estaba aplicado —`blur(44px) saturate(2)`, verificado en el
+estilo computado— y no hacía nada.
+
+**Causa:** un elemento con `backdrop-filter` se convierte en **backdrop root**
+para sus descendientes. El sidebar es vidrio, así que un flotante *adentro* sólo
+puede desenfocar lo que está **dentro del sidebar**: el contenido de al lado
+nunca entra a su muestra, y como el flotante es translúcido, se transparenta
+sobre él sin desenfocarlo. No hay opacidad que arregle eso — sólo taparlo del
+todo, que es perder el vidrio.
+
+**La regla:** *un flotante que necesita desenfocar lo que hay detrás no puede
+vivir dentro de otra superficie con `backdrop-filter`.* Va portaleado. Es de la
+misma familia que «`transform` mata `backdrop-filter`» (§1.6): **el contexto de
+apilamiento define qué puede ver una capa**, y las dos trampas se manifiestan
+igual — el efecto está escrito, se computa, y no se ve.
+
+### 12.7 La opacidad del flotante: se corrigió una sobrecorrección
+
+Primero le puse `0.94` al popover para que el texto se leyera. **Eso mata el
+vidrio, y es justo el camino que §4.1 descarta**: ahí ya estaba medido que subir
+la opacidad de `0.58` a `0.76` gana **0.22 y sigue fallando**, y que lo que
+arregla el texto es llevarlo a `--content` pleno.
+
+Con el flotante portaleado y a opacidad de vidrio, medido sobre el fondo
+dominante del popover: **12.52:1 en claro y 17.65:1 en oscuro** — muy por encima
+de AA. La sobrecorrección no sólo era fea: era innecesaria.
+
+```css
+:root               { --cfg-bg: rgba(236,234,250,.62); --cfg-txt: var(--content); }
+[data-theme="dark"] { --cfg-bg: rgba(10,12,26,.66);    --cfg-txt: var(--content); }
+```
+
+> **Nota de medición:** el contraste del texto sobre una superficie de vidrio se
+> mide contra el **color dominante** (la moda) del área, no contra el píxel más
+> oscuro que se encuentre: a esta resolución el muestreo no distingue un glifo
+> antialiaseado de un fondo, y da 1.00:1 sobre el texto mismo.
+
 ### 12.6 La fluidez, medida
 
 Banco de §6 —CPU estrangulada por CDP, muestreo por cuadro, tres ciclos:

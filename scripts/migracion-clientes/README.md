@@ -321,6 +321,52 @@ puede llegar a ~38, todas esperadas. Lo que importa es si aparece un caso que
 | `bloque_plan.json` / `bloque_resultado.json` | plan y resultado del último bloque |
 | `duplicados_erp.json` | los 19 nombres duplicados del catálogo — lista de purga |
 | `faltantes_dte.json` | **fichas que no se pueden facturar todavía**: qué campo le falta a cada una para cumplir DTE 2.0, por categoría. Acumula entre bloques y una ficha que se completa sale sola. Es lista de trabajo de una persona — un NIT ausente no se deduce de nada |
+| `catalogo_snapshot.json` | la línea de base de `verificar.py`: el catálogo de la corrida anterior, para detectar renombres |
+| `verificar_rotacion.json` | por dónde va la rotación del `verificar.py --profundo` |
+
+## 3c. Enterarse de lo que cambió — `verificar.py`
+
+Desde que el barrido terminó (2026-08-05) el trabajo no es recorrer el catálogo
+sino enterarse de lo que se mueve. `verificar.py` es el informe, y **no escribe
+nada**: ni al ERP, ni al portal, ni al checkpoint.
+
+```bash
+python3 verificar.py                 # lo barato: altas, bajas, renombres, calidad
+python3 verificar.py --profundo 500  # + relee 500 fichas y las compara con el portal
+```
+
+Está partido en capas porque los costos son de órdenes distintos:
+
+| capa | cuesta | detecta |
+|---|---|---|
+| altas / bajas | 1 request al ERP | fichas nuevas y fichas borradas |
+| renombres | el mismo request | nombres que cambiaron desde la corrida anterior |
+| calidad del portal | 0 requests al ERP | sin distrito, fiscales sin NIT/NRC, altas y ediciones de 24 h |
+| `--profundo N` | **N requests al ERP** | cualquier otro campo: distrito, DUI, dirección, teléfono |
+
+**La cuarta es cara y no hay atajo.** El ERP no tiene ningún listado en bulk:
+`reporte_clientes.php` devuelve SOLO `<option value="id">NOMBRE` y
+`procesos/clientes.php` es el endpoint de escritura, así que el único lugar
+donde vive el distrito de una ficha es su propia página de edición. Releer las
+27,701 son ~18 h. Por eso `--profundo` rota y guarda la posición: 500 por día
+barren el catálogo entero en ~8 semanas a ~20 min diarios. La pausa por defecto
+(0.4 s) es la misma `--pausa-lectura` del bloque, así que **no sube el ritmo de
+peticiones** contra el proveedor — que es lo que espera la decisión abierta #1.
+
+**Los renombres se comparan contra el catálogo ANTERIOR, no contra el
+checkpoint.** Es la trampa que se descubrió al escribirlo: comparar contra el
+checkpoint marcó las 27,701 fichas como renombradas, porque el catálogo envuelve
+cada nombre en espacios al armar el `<option>` (`' JOSE RUTILIO… '`) y el
+checkpoint guarda el value crudo del formulario. Son dos renderizados del mismo
+dato. Y `strip()` no sirve: hay fichas cuya única diferencia real es un espacio
+al inicio (21807 vs 21776) y el ERP las considera clientes distintos, así que
+recortar borraría el caso que importa. La primera corrida no dice "0 renombres"
+—diría que miró cuando no hay con qué comparar—: dice que guardó la línea de
+base.
+
+**Lo que NINGUNA capa ve** es una edición hecha en el portal: esa viaja sola al
+ERP (`push-cliente-erp` + el cron cada 10 min, §4b). Si aparece en `--profundo`
+como diferencia, puede ser una edición que todavía no drenó.
 
 ## 4. El espejo al portal
 

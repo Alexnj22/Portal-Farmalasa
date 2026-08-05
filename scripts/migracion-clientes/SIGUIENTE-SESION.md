@@ -23,6 +23,22 @@ mira —40 fichas entre el arranque y el primer bloque del 5-ago, 8 más en las
 cinco horas siguientes— y esas altas entran sin distrito. Un bloque cada tanto
 las levanta; el procedimiento de abajo sigue valiendo tal cual.
 
+### La rutina de ahora en adelante
+
+```bash
+python3 verificar.py     # ¿cambió algo? ~10 s, 1 request al ERP
+```
+
+Dice cuántas altas hay sin procesar, si se borró o se renombró alguna ficha, y
+cómo está la calidad del portal (sin distrito, fiscales sin NIT). **Si sale todo
+en cero, no hay nada que hacer y no gastaste nada.** Si hay altas, corrés el
+bloque de abajo, que solo toca lo pendiente: 14 fichas tardaron 1 minuto.
+
+Una vez por semana, o cuando sospeches que alguien editó fichas directo en el
+ERP, `python3 verificar.py --profundo 500` relee 500 fichas rotando y las
+compara contra el portal (~20 min). Es la única capa que ve un distrito o un DUI
+cambiado, porque el catálogo solo trae el nombre — el detalle, en README §3c.
+
 **Leé primero `scripts/migracion-clientes/README.md`** — tiene el estado, las
 reglas, lo que hay que saber del ERP y las decisiones abiertas. Está escrito
 para retomar sin contexto previo.

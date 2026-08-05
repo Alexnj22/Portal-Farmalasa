@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.389.1 — El botón de alta no ofrece lotes en un conteo sencillo
+
+En un conteo sencillo el botón seguía diciendo **«Agregar Producto/Lote»** y su
+etiqueta accesible «agregar producto o lote al conteo», cuando el formulario que
+abre —correctamente— ya solo pide producto y presentación. Ahora dice «Agregar
+Producto» cuando el conteo no lleva lotes.
+
+Lo encontró el recorrido en el navegador del conteo de prueba de Salud 1, no un
+gate: los gates y el build pasaban en verde con el rótulo mal, porque un texto
+equivocado compila igual de bien que uno correcto. Es la misma lección que ya
+está escrita en `CLAUDE.md` sobre verificar la UI abriendo la vista.
+
+Del mismo recorrido salió confirmado el resto: 2,777 renglones sin un solo lote
+ni vencimiento, GATORADE X 600 ML pasando de 14 lotes indistinguibles (todos
+etiquetados «GENERICO») a un renglón de 61 unidades, la captura de una cantidad
+recalculando la diferencia contra el stock vivo, y la hoja impresa saliendo con
+las cinco columnas correctas —Producto, Presentación, Sistema, Físico, Nota— y
+«Detalle: solo cantidades» en el encabezado.
+
 ## v2.389.0 — El alcance del vidrio y la animación de la placa, cerrados
 
 Cae la última decisión que bloqueaba implementar `PLAN-MATERIALES`, y se cierra

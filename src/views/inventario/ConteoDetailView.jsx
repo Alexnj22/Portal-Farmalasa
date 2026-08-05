@@ -1647,8 +1647,12 @@ export default function ConteoDetailView() {
                     {/* En teléfono este botón NO va acá: vive en la barra flotante,
                         porque después de tres pantallas de scroll un botón que está
                         arriba dejó de existir. */}
+                    {/* "Producto/Lote" nombra las dos cosas que se pueden dar de alta,
+                        y en un conteo sencillo la segunda no existe. */}
                     {editable && canEdit && !compacto && (
-                        <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm(true)}>Agregar Producto/Lote</Button>
+                        <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm(true)}>
+                            {simple ? 'Agregar Producto' : 'Agregar Producto/Lote'}
+                        </Button>
                     )}
                     </div>
 
@@ -1770,7 +1774,7 @@ export default function ConteoDetailView() {
                     align="bottom"
                     maxWidthClass="max-w-none"
                     surface={null}
-                    ariaLabel="Agregar producto o lote al conteo"
+                    ariaLabel={simple ? 'Agregar producto al conteo' : 'Agregar producto o lote al conteo'}
                     surface={null}
                 >
                     {/* `HojaMovil` en vez del envoltorio a mano: traía su propio

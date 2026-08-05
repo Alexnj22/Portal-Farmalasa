@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.395.2 — El vidrio probado con energía de borde, y la tabla medida en la app
+
+Las tres verificaciones que pidió el usuario sobre §14/§15.
+
+**§14.1 · El tooltip sí es vidrio, no transparencia.** Son cosas distintas y hay
+cómo separarlas: el vidrio **desenfoca** lo de atrás, la transparencia lo **deja
+pasar tal cual**. Medido como energía de borde de un texto puesto detrás:
+
+| encima del texto | energía de borde |
+|---|---|
+| nada | 16.17 — nítido |
+| sólo `rgba(…,.70)` sin blur | **4.84** — se leería a través |
+| **`.70` + `blur(20px) saturate(180%)`** | **0.03** — la forma desaparece |
+| Solid, opaco | 0.00 |
+
+Transmite **color pero no detalle** — vidrio esmerilado. Y explica por qué a
+`0.86` parecía opaco: el blur ya borraba la forma y con esa opacidad tampoco
+pasaba color, así que no quedaba **nada** que delatara el material.
+
+**§15.1.bis · La tabla, medida en la app real** (`/dashboard`, 1440×900, píxeles
+compuestos de la fila contra el cuerpo que la contiene) en vez del mockup:
+
+| | hoy | con §1.5 | texto |
+|---|---|---|---|
+| Liquid claro | ΔE 9.15 — nítido | 10.44 | 8.93:1 → 7.62:1 |
+| **Liquid oscuro** | **ΔE 4.37 — apenas** | **11.48** ✅ | 12.51:1 → 10.95:1 |
+
+**El mockup se equivocaba sobre el tema claro**: daba ΔE 5.3 y la app da 9.15, o
+sea que en claro nunca hubo problema — el caso es **sólo el oscuro**, donde fila
+y cuerpo comparten el mismo navy y sólo las separa la línea divisoria. Acertó el
+diagnóstico y erró la extensión: una superficie sintética no reproduce lo que hay
+detrás del vidrio real, y el vidrio compone contra eso.
+
+**§15.2 · La paginación distribuida son tres zonas** —`cuántas páginas · pasar
+página · cuánto hay`— sobre una grilla `1fr auto 1fr`, no un `space-between` de
+dos bloques: así el paginador queda en el centro **real** del ancho y no se corre
+según lo largo que sea el texto de los costados.
+
+## v2.395.1 — El vidrio probado con energía de borde, y la tabla medida en la app
+
+_(pendiente de redactar)_
+
 ## v2.395.0 — Gestión de Stock: la pestaña que cargaba las otras dos
 
 La pestaña tardaba, y no por una sola razón. Tres, medidas por separado.

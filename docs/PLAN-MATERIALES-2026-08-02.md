@@ -1247,6 +1247,23 @@ diferencia existía y no se veía — o sea que el `blur(20px)` era decorativo.
 Baja a **`0.70`** (y `0.74` en el tema oscuro, que parte de un navy más claro).
 El texto no sufre: es blanco al 95% sobre navy.
 
+**Y sí es vidrio, no transparencia.** Son cosas distintas y hay cómo separarlas:
+el vidrio **desenfoca** lo de atrás, la transparencia lo **deja pasar tal cual**.
+Medido como energía de borde (cuánto cambia un píxel respecto al de al lado) de
+un texto puesto detrás:
+
+| lo que hay encima del texto | energía de borde |
+|---|---|
+| nada | 16.17 — nítido |
+| sólo `rgba(…,.70)`, sin blur | **4.84** — se leería a través |
+| **`.70` + `blur(20px) saturate(180%)`** | **0.03** — la forma desaparece |
+| Solid, opaco | 0.00 |
+
+O sea: **transmite color pero no detalle**. Eso es vidrio esmerilado, que es
+exactamente lo que tiene que ser — y es la razón de que a `0.86` pareciera
+opaco: el blur ya borraba la forma, y con tan poca opacidad tampoco pasaba
+color, así que no quedaba **nada** que delatara el material.
+
 ### 14.2 El destello corre AL ABRIRSE, no al apuntar
 
 §5.1 fija que el canto de una pieza donde *se lee* es fijo — pero eso habla de su
@@ -1311,20 +1328,29 @@ vidrio»*. Es cierto — `GlassViewLayout` le pone `data-surface="card"` al cuer
 cuando no es `transparentBody` ni móvil. Así que la tabla es **vidrio sobre
 vidrio a nivel de vista**, un nivel más arriba del que §1.5 tenía en mente.
 
-**Y §1.5 ya lo resuelve.** Medido con ΔE, tabla contra el cuerpo que la contiene:
+**Y §1.5 ya lo resuelve.** Medido **en la app**, no en un mockup: `/dashboard`
+a 1440×900, píxeles compuestos de la fila contra el cuerpo que la contiene,
+con y sin la regla inyectada.
 
-| | hoy | con §1.5 |
-|---|---|---|
-| Liquid claro | ΔE 5.3 — apenas | **6.0** |
-| **Liquid oscuro** | **ΔE 2.2 — se funden** | **11.2** ✅ |
+| | hoy | con §1.5 | texto |
+|---|---|---|---|
+| Liquid claro | ΔE 9.15 — nítido | 10.44 | 8.93:1 → 7.62:1 |
+| **Liquid oscuro** | **ΔE 4.37 — apenas** | **11.48** ✅ | 12.51:1 → 10.95:1 |
 
-En oscuro hoy son indistinguibles. **No hace falta ninguna regla nueva**: es la
-verificación de que la regla de la anidada sirve para *cualquier* superficie
-dentro de otra, no sólo para una fila dentro de una tarjeta. Vale la pena que
-quede escrito, porque §1.5 se redactó mirando el caso chico.
+**No hace falta ninguna regla nueva**: es la verificación de que la regla de la
+anidada sirve para *cualquier* superficie dentro de otra, no sólo para una fila
+dentro de una tarjeta. Vale la pena que quede escrito, porque §1.5 se redactó
+mirando el caso chico.
 
-*(El contraste del **texto** nunca fue el problema: pasa AA holgado en las dos
-configuraciones —12.43:1 y 10.08:1—. Lo que fallaba era que las **superficies**
+**El mockup se equivocaba sobre el tema claro.** Ahí daba ΔE 5.3 («apenas») y en
+la app real da 9.15 — o sea que en claro **nunca hubo problema**; el caso es
+**sólo el oscuro**, donde la fila y el cuerpo comparten el mismo navy y lo único
+que las separa es la línea divisoria. El mockup acertó el diagnóstico y erró la
+extensión: una superficie sintética no reproduce lo que hay detrás del vidrio
+real, y el vidrio compone contra eso.
+
+*(El contraste del **texto** nunca fue el problema: 12.51:1 hoy y 10.95:1 con la
+regla, las dos muy por encima de AA. Lo que fallaba era que las **superficies**
 se fundieran, y para eso el instrumento es ΔE, no el ratio. Ver §12.2.)*
 
 ### 15.2 Paginación: ya estaba bien
@@ -1341,10 +1367,21 @@ escrito: es la prueba de que el sistema ya cubre casos que nunca se miraron.
 esquina, que no es ni una cosa ni la otra. Dos disposiciones válidas, y hay que
 elegir una:
 
-| | cuándo |
+| | cómo |
 |---|---|
 | **Centrada** | la píldora se alinea al medio del ancho de la vista |
-| **Distribuida** | ocupa el ancho: el rango a la izquierda, los controles a la derecha |
+| **Distribuida** | tres zonas — `cuántas páginas · pasar página · cuánto hay` |
+
+La distribuida es una **grilla de tres columnas `1fr auto 1fr`**, no un
+`space-between` de dos bloques: así el paginador queda en el centro **real** del
+ancho y no se corre según lo largo que sea el texto de los costados.
+
+```css
+.paginacion { display:grid; grid-template-columns:1fr auto 1fr; align-items:center }
+.paginacion > :first-child { justify-self:start }   /* 52 páginas   */
+.paginacion > :nth-child(2){ justify-self:center }  /* ‹ 1/52 ›     */
+.paginacion > :last-child  { justify-self:end }     /* 1,284 items  */
+```
 
 Nunca pegada a un borde sin ocupar el ancho — eso lee como un elemento que se
 quedó donde cayó.

@@ -4,15 +4,24 @@ El espejo nunca crea filas: su RPC hace `JOIN customers c ON c.search_name =
 e.match_name` y solo UPDATE, así que una ficha del ERP sin fila en el portal se
 queda afuera para siempre. Al 2026-08-05 eran 3,747.
 
-Pero "no existe en el portal" NO es "no está vinculada por erp_id". Medido:
+Pero "no existe en el portal" NO es "no está vinculada por erp_id". Medido el
+2026-08-05, antes de la corrida:
 
     3,747 fichas del ERP sin fila
-      611  SÍ existen en el portal — el join las pierde por la ñ (ver abajo)
-       18  nombre exacto, pero la fila ya la tomó otro erp_id
-    3,118  no existen bajo ningún nombre
+      626  SÍ existen en el portal — el join las perdía por la ñ (§4c del README)
+       24  su NIT o su DUI ya es de otra fila — misma persona
+        1  balde de mostrador del POS
+    3,096  no existen bajo ningún nombre  -> creadas
 
-Crear las 611 sería fabricar 611 duplicados. Por eso este script decide la
-existencia con la CLAVE NORMALIZADA, no con el erp_id ni con el constraint.
+Crear las 626 habría sido fabricar 626 duplicados. Por eso este script decide
+la existencia con la CLAVE NORMALIZADA, no con el erp_id ni con el constraint.
+
+Con el bug de la ñ ya cerrado, el cubo `existe_por_nombre` dejó de ser ese caso
+y quedó siendo el que da nombre a la regla: **dos fichas del ERP para un solo
+cliente**. Su fila del portal ya la tomó la otra mitad del par —la que eligió
+`duplicados_resueltos.json`— y la perdedora no tiene a dónde ir. Crearla sería
+partir el cliente en dos. Al 2026-08-05 quedan 19 así, y no son trabajo
+pendiente: son la decisión abierta #3 del handoff.
 
 ── Por qué el constraint no alcanza para decidir "repetido" ─────────────────
 El índice único de nombre es `upper(btrim(name))`, que NO quita acentos. La
@@ -187,7 +196,7 @@ def main():
     print('\n── EXCLUIDAS (no se crean) ──')
     etiquetas = {
         'ya_vinculada':      'ya tienen fila (erp_id vinculado)',
-        'existe_por_nombre': 'YA EXISTEN en el portal — las pierde el join por la ñ',
+        'existe_por_nombre': 'YA EXISTEN en el portal — su fila es de otra ficha del ERP',
         'choca_entre_si':    'dos fichas del ERP con el mismo nombre normalizado',
         'nit_repetido':      'su NIT ya es de otra fila',
         'dui_repetido':      'su DUI ya es de otra fila',

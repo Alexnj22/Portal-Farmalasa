@@ -3622,5 +3622,61 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "ELIAS ORANTES"
+ },
+ {
+  "erp_id": "26161",
+  "campo": "dui",
+  "valor": "05967148-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "CRISTINA RUIZ"
+ },
+ {
+  "erp_id": "26170",
+  "campo": "dui",
+  "valor": "15311093-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JUAN ANTONIO GONZALEZ"
+ },
+ {
+  "erp_id": "26281",
+  "campo": "dui",
+  "valor": "0501384-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "saira yamileth duarte hernandez"
+ },
+ {
+  "erp_id": "26283",
+  "campo": "dui",
+  "valor": "11111111-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "fernanda gomez"
+ },
+ {
+  "erp_id": "26320",
+  "campo": "dui",
+  "valor": "01574412-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BLANCA LUZ TOBAR DE ALAS"
+ },
+ {
+  "erp_id": "26460",
+  "campo": "dui",
+  "valor": "0063152-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "GLADYS EMERITA POZOS DE PEREZ"
+ },
+ {
+  "erp_id": "26625",
+  "campo": "dui",
+  "valor": "03580403-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "AMILCAR MIRA"
  }
 ]

@@ -14,7 +14,7 @@ import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS } from './constants';
 import {
     upsertStockParams, upsertStockParamsReturning, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
     fetchStockParams, fetchStockParamsUpdates, fetchStockConfig, fetchEmployeeByEmail,
-    fetchEmployeesBasic, fetchAuditLogsForProduct, effectiveMinMax,
+    fetchEmployeesBasic, fetchAuditLogsForProduct, effectiveMinMaxPair,
 } from '../../../data/stockParams';
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
@@ -222,8 +222,9 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 if (!u) return row;
                 const pubMin  = u.min_units  ?? 0;
                 const pubMax  = u.max_units  ?? 0;
-                const effMin  = effectiveMinMax(u.min_units, u.manual_min) ?? 0;
-                const effMax  = effectiveMinMax(u.max_units, u.manual_max) ?? 0;
+                const efPar   = effectiveMinMaxPair(u);
+                const effMin  = efPar.min ?? 0;
+                const effMax  = efPar.max ?? 0;
                 const hasManual = u.manual_min !== null || u.manual_max !== null;
                 const stock = Number(row.current_stock ?? 0);
                 const alertStatus =

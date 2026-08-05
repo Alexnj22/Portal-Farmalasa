@@ -16,7 +16,7 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import { calcSolicitado } from './helpers';
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../hooks/useSearchToggle';
-import { fetchStockParamsForRevision, updateStockParams, effectiveMinMax } from '../../../data/stockParams';
+import { fetchStockParamsForRevision, updateStockParams, effectiveMinMaxPair } from '../../../data/stockParams';
 import PortalInput from '../../../components/common/PortalInput';
 
 const MINI_PAGE = 15;
@@ -346,9 +346,10 @@ export default function ItemSections({ allItems, loading }) {
             const em = {};
             for (const item of items) {
                 const psp = map[`${item.erp_product_id}_${item.erp_sucursal_id}`];
+                const ef = effectiveMinMaxPair(psp);
                 em[item.id] = {
-                    min: String(effectiveMinMax(psp?.min_units, psp?.manual_min) ?? 0),
-                    max: String(effectiveMinMax(psp?.max_units, psp?.manual_max) ?? 0),
+                    min: String(ef.min ?? 0),
+                    max: String(ef.max ?? 0),
                 };
             }
             setPspMap(map);
@@ -409,8 +410,8 @@ export default function ItemSections({ allItems, loading }) {
             // MIN/MAX de Productos usa para buscar cambios de un producto puntual.
             useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', String(row.erp_product_id), {
                 field: 'min+max', product: row.product_name, sucursal_id: row.erp_sucursal_id,
-                old_min: effectiveMinMax(prevPsp?.min_units, prevPsp?.manual_min) ?? 0,
-                old_max: effectiveMinMax(prevPsp?.max_units, prevPsp?.manual_max) ?? 0,
+                old_min: effectiveMinMaxPair(prevPsp).min ?? 0,
+                old_max: effectiveMinMaxPair(prevPsp).max ?? 0,
                 new_min: min, new_max: max,
                 pedido_id: row.pedido_id,
             });

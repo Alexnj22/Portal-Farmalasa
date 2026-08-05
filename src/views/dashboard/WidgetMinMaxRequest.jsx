@@ -15,7 +15,7 @@ import {
     fetchActiveProductsCount, fetchActiveProductsChunk,
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
-import { effectiveMinMax } from '../../data/stockParams';
+import { effectiveMinMaxPair } from '../../data/stockParams';
 import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
@@ -64,9 +64,10 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
     fetchCurrentStockParams(product.id, erp)
       .then(({ data }) => {
         if (cancelled) return;
+        const ef = effectiveMinMaxPair(data);
         setCurrent({
-          min: effectiveMinMax(data?.min_units, data?.manual_min),
-          max: effectiveMinMax(data?.max_units, data?.manual_max),
+          min: ef.min,
+          max: ef.max,
           sales6m: data?.units_sold_6m ?? null,
         });
         setLoadingCur(false);

@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.379.1 — Bodega: la escalera también al par efectivo
+
+Sale de la pregunta del usuario: «¿y si Bodega tiene valores manuales, cómo hace
+el recálculo?».
+
+**La respuesta corta es que no los toca, y eso está bien.** En Bodega el manual
+se guarda como **delta** sobre la Σ de sucursales (`efectivo = Σ + delta`,
+modelo aditivo de la Fase 1 de la auditoría 2026-07-17). Tanto
+`publish_stock_params` como el trigger listan explícitamente las columnas que
+escriben, y `manual_min`/`manual_max` no están: el recálculo reescribe solo la
+base. «Bodega guarda 1 más que las salas» sigue significando lo mismo cuando la
+Σ cambia, y no hay que volver a poner nada después de publicar.
+
+**Lo que sí faltaba: nadie vigilaba el par EFECTIVO.** `chk_min_lt_max` mira
+`min_units`/`max_units`; de `manual_*` solo se exige `manual_max >= manual_min`.
+Al bajar la Σ debajo del delta, el efectivo puede caer en una combinación que la
+propia regla prohíbe. Medido: 48 filas de Bodega con manual (todas `manual_max`,
+ninguna `manual_min`) y **3 con el efectivo inválido** — base `0·1` más un delta
+de `+1` da `0·2`, «con MIN 0 el MAX solo puede ser 0 o 1». Dos de las tres
+nacieron el mismo 2026-08-05 a las **16:14:55 y 16:16:57 UTC**: los instantes
+exactos en que se publicaron La Popular y Salud 5. La Σ bajó y el `+1` se quedó.
+
+Se aplica al par efectivo la misma escalera del publicado y el borrador. Las 3
+quedan en `1·2`, que **conserva** la intención de quien escribió «MAX 2» en vez
+de descartarle el delta.
+
+La escalera no se puede decidir columna por columna, así que `minmax_effective`
+—que sigue siendo la suma y sigue siendo correcta— no se toca: se agregan
+`minmax_eff_min`/`minmax_eff_max`, que ven el par. Los tres consumidores
+(`get_stock_analysis`, `get_network_summary_json`, `get_pedido_preview` — 11
+llamadas) se reescriben **desde `pg_get_functiondef`**, no transcribiendo 42 KB
+de cuerpo a mano: así lo único que cambia son las llamadas. Y como `replace()`
+no falla cuando la aguja no está, cada función se verifica exigiendo que no
+quede ni una `minmax_effective(` adentro — si el cuerpo cambió, revienta en vez
+de aplicar a medias.
+
+Simulado sobre las **18,978 filas** antes de aplicar y confirmado después:
+cambian 3, ninguna fuera de Bodega, 0 inválidas. `get_pedido_preview` usa la
+escalera también en su `WHERE`, o sea que decide qué entra al pedido — por eso
+se midió el radio antes de tocar nada.
+
+El gemelo en JS (`effectiveMinMaxPair`, 6 sitios: pedidos, el widget de
+solicitudes y el polling de MIN·MAX) lleva la misma escalera, y **preserva la
+propagación de `null`**: sin par no hay escalera que aplicar, así que las 323
+filas con `min_units` nulo siguen mostrando «—» y no un cero inventado.
+Verificado con 7 casos, incluido el del delta que empata (`0·0` con `+3/+3` →
+`3·4`).
+
 ## v2.379.0 — El ✕ es cromo: un solo canónico, y Estado gana su sitio en la píldora
 
 Sale de una pregunta del usuario sobre el ✕ del toast de v2.375.0: «¿lo dejaste

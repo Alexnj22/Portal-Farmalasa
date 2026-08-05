@@ -17,6 +17,29 @@ export function effectiveMinMax(base, manual) {
     return base == null ? null : base + (manual ?? 0);
 }
 
+// El par efectivo, con la MISMA escalera que aplican `publish_stock_params`,
+// el trigger de Bodega y —desde 2026-08-05— `minmax_eff_min`/`minmax_eff_max`
+// en la BD: si el MAX pasa de 1, el MIN sube a 1; si el MIN llegó a 1, el MAX
+// sube a MIN+1.
+//
+// Hace falta porque en Bodega el manual es un DELTA sobre la Σ de sucursales, y
+// la Σ se mueve sola cuando alguien publica: las restricciones vigilan la base
+// (`chk_min_lt_max`) y nadie vigilaba el efectivo, así que un `0·1` de base con
+// un delta de +1 quedaba en `0·2` — la combinación que la propia regla prohíbe.
+// Medidas 3 así el 2026-08-05, dos nacidas en las publicaciones de ese día.
+//
+// La escalera NO se puede decidir columna por columna: necesita ver el par. Por
+// eso esto y no un cambio dentro de `effectiveMinMax`, que sigue siendo la suma
+// y sigue propagando el null de "no hay base" —el llamador elige su fallback,
+// 0 para un input, '—' para un display—. Sin par no hay escalera que aplicar.
+export function effectiveMinMaxPair(row) {
+    const min = effectiveMinMax(row?.min_units, row?.manual_min);
+    const max = effectiveMinMax(row?.max_units, row?.manual_max);
+    if (min == null || max == null) return { min, max };
+    const nMin = Math.max(min, max > 1 ? 1 : 0);
+    return { min: nMin, max: nMin >= 1 ? Math.max(max, nMin + 1) : max };
+}
+
 // ── product_stock_params ─────────────────────────────────────────────────────
 
 export function upsertStockParams(payload) {

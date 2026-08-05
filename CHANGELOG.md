@@ -51,9 +51,19 @@ número, y de qué está hecho es una decisión de la empresa.
 botones de «más/menos exigente» mueven los $44,540.13; el gasto no se negocia,
 se arrastra. Si el ±1% se aplicara al total, multiplicaría también el gasto.
 
-Verificado en el navegador: la pestaña, el vacío, el modal con su vista previa
-($1,200 a 3 meses → $400 y $1,600 por mes, igual que la base), y que agosto —el
-mes en curso— no está entre los meses ofrecidos. Sin errores de consola.
+Verificado en el navegador de punta a punta, con permiso del usuario y sobre un
+mes que todavía no tiene nada (septiembre 2026): se cargó una meta de $43,666.79,
+se le puso un gasto de $1,200 a 3 meses, la meta subió a **$45,266.79** y volvió
+a revisión avisándolo antes de guardar, el Tablero y Confirmación mostraron
+«$43,666.79 de venta + $1,600.00 por gastos», y al apretar «más exigente» el
+total pasó a $45,703.46 con la venta en $44,103.46 y **el gasto intacto en
+$1,600.00** — que es justo lo que tenía que pasar. Después se quitó el gasto y la
+meta volvió a $43,666.79.
+
+Los cuatro pasos quedaron en la bitácora con sus montos. **Los datos de prueba se
+borraron**: 1 meta, 2 gastos con sus cuotas, 5 renglones y 1 aviso. La base
+volvió a sus 115 metas y agosto sigue en $241,503.53, igual que antes de empezar.
+Sin errores de consola.
 
 ## v2.375.0 — MIN·MAX: publicar todo ya no aborta, y los borradores viven en la píldora
 

@@ -3678,5 +3678,53 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "AMILCAR MIRA"
+ },
+ {
+  "erp_id": "26663",
+  "campo": "dui",
+  "valor": "06255685-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE DANIEL DOÑAN PORTILLO"
+ },
+ {
+  "erp_id": "26916",
+  "campo": "dui",
+  "valor": "05136096-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LUCIA YAMILETH MELGAR CALDERON"
+ },
+ {
+  "erp_id": "26939",
+  "campo": "dui",
+  "valor": "02111585-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANDRES PORTILLO"
+ },
+ {
+  "erp_id": "27047",
+  "campo": "dui",
+  "valor": "04562888-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BRENDA XIOMARA PINEDA DE MANCIA"
+ },
+ {
+  "erp_id": "27119",
+  "campo": "dui",
+  "valor": "00000000-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "roberto carlos vasquez mancia"
+ },
+ {
+  "erp_id": "27128",
+  "campo": "dui",
+  "valor": "02371172-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ELSA MARIBEL MIRANDA ORTIZ"
  }
 ]

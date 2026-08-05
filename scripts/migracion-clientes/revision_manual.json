@@ -3726,5 +3726,13 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "ELSA MARIBEL MIRANDA ORTIZ"
+ },
+ {
+  "erp_id": "27515",
+  "campo": "dui",
+  "valor": "05561566-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "nely carolina melgar monge"
  }
 ]

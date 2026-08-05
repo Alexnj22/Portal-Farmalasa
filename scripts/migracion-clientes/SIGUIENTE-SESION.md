@@ -6,6 +6,23 @@ Copiá esto tal cual:
 
 Retomá la migración de fichas de clientes ERP ↔ portal.
 
+## El barrido del catálogo TERMINÓ el 2026-08-05
+
+No queda catálogo que recorrer. Se procesaron las 27,701 fichas del catálogo y
+las 6 que faltan **son exactamente los 6 rechazos por duplicado** de la decisión
+abierta #3 — el ERP no las deja escribir y por diseño no se checkpointean, así
+que un bloque nuevo las vuelve a intentar y vuelve a fallar. Que el pendiente
+diga 6 no es trabajo pendiente: es esa decisión sin tomar.
+
+Once bloques ese día (g1-g11), +5,014 fichas, cero campos perdidos y cero
+alterados en todas.
+
+**Lo que queda NO son bloques, son las decisiones abiertas de abajo.** Corré un
+bloque solo por una razón: el catálogo sigue recibiendo altas mientras nadie
+mira —40 fichas entre el arranque y el primer bloque del 5-ago, 8 más en las
+cinco horas siguientes— y esas altas entran sin distrito. Un bloque cada tanto
+las levanta; el procedimiento de abajo sigue valiendo tal cual.
+
 **Leé primero `scripts/migracion-clientes/README.md`** — tiene el estado, las
 reglas, lo que hay que saber del ERP y las decisiones abiertas. Está escrito
 para retomar sin contexto previo.
@@ -147,7 +164,7 @@ que el hueco no se ve por ningún lado salvo en la cola del log del espejo.
 A diferencia de los tres pares del ERP, acá el NIT es **el mismo** en ambas, así
 que no es "pueden ser dos personas": son una. Decisión abierta #4.
 
-## Si vas a encadenar bloques desatendidos
+## Si vas a encadenar bloques desatendidos (y lo que se aprendió el 5-ago)
 
 Leé README §3, "Encadenar bloques desatendidos". El resumen: **esta Mac se
 duerme al minuto** (`pmset`: `sleep 1`, `powernap 1`) y tira las conexiones en
@@ -155,6 +172,18 @@ vuelo; `caffeinate -i` no frena el *Maintenance Sleep*. Sin `sudo pmset -a sleep
 0 powernap 0` no se puede evitar, así que el orquestador tiene que **sobrevivirlo**:
 decidir el corte por progreso real en el checkpoint —no por el código de salida—
 y reintentar el bloque, que retoma donde quedó.
+
+**Pasó en g10 y el mecanismo funcionó tal como está escrito**: el proceso murió
+a media ficha (la `erp 27523`), el log cortó sin error ninguno, y el relanzado
+tomó las 147 que faltaban y cerró. La ficha a medio escribir no se perdió porque
+el bloque solo checkpointea lo que verificó releyendo.
+
+**Y una trampa nueva, si medís el progreso desde afuera**: contar las líneas
+`^OK|^REVISAR|^SALTA` del log SUBESTIMA. Las fichas que salen `sin cambios`
+cierran con `ESPEJO   <nombre>   sin cambios`, que no empieza con ninguna de
+esas tres. En g10 el contador decía 365 cuando el checkpoint ya tenía 425 — 60
+fichas de diferencia, y en un bloque con muchas `sin cambios` es peor. Medí el
+`len()` del checkpoint, o contá `(portal erp:`, que sale una vez por ficha.
 
 Las 5 fichas reencoladas del handoff anterior (161, 176, 380, 1641, 1791) ya
 están: **176 quedó NUEVA TRINIDAD y 380 SAN ANTONIO DEL MONTE**, verificadas

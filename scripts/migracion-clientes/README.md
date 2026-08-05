@@ -14,19 +14,19 @@ prosa, que se escribe a mano.
 
 <!-- ESTADO:INICIO -->
 ```
-catálogo del ERP        27,699 fichas
-procesadas              27,127 fichas    (checkpoint.json)
-portadas al portal      23,418 de 24,663  (customers.erp_id no nulo)
-  de ellas con distrito 23,337
-pendientes                 572          (2 bloques de 500)
+catálogo del ERP        27,707 fichas
+procesadas              27,701 fichas    (checkpoint.json)
+portadas al portal      23,963 de 24,663  (customers.erp_id no nulo)
+  de ellas con distrito 23,882
+pendientes                   6          (1 bloques de 500)
 ```
 
-**Verificadas OK: 27,127 · a revisar: 0.** El frente secuencial va por `erp_id 27,134`; hay 0 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
+**Verificadas OK: 27,701 · a revisar: 0.** El frente secuencial va por `erp_id 27,708`; hay 0 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
 
-`revision_manual.json`: **466 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
+`revision_manual.json`: **467 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
 
-`faltantes_dte.json`: **100 fichas** no se pueden facturar todavía bajo DTE 2.0, 86 de ellas fiscales.
-Les falta: distrito 87 · departamento 21 · sel_giro 15 · direccion 15 · correo 12 · nrc 12 · nit 10 · nombre 8 · telefono1 8 · municipio 8.
+`faltantes_dte.json`: **101 fichas** no se pueden facturar todavía bajo DTE 2.0, 87 de ellas fiscales.
+Les falta: distrito 88 · departamento 22 · sel_giro 16 · direccion 16 · correo 13 · nrc 13 · nit 11 · nombre 9 · telefono1 9 · municipio 9.
 
 <sub>Generado por `python3 estado.py --escribir`. No editar a mano: los números se generan, las decisiones se escriben.</sub>
 <!-- ESTADO:FIN -->

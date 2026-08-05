@@ -435,7 +435,7 @@
  },
  "27117": {
   "erp_id": "27117",
-  "name": "EL ROSARIO SERVICIOS DE SALUD INTEGRAL, SOCIEDAD POR ACCIONES SIMPLIFICADA DE CAPITAL VARIABLE",
+  "name": "el rosario servicios de salud integral, sociedad por acciones simplificada de capital variable",
   "categoria": "Contribuyente",
   "faltan": [
    "distrito"
@@ -893,6 +893,23 @@
   "faltan": [
    "distrito",
    "nrc"
+  ]
+ },
+ "27507": {
+  "erp_id": "27507",
+  "name": "JUAN PEREZ",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
   ]
  }
 }

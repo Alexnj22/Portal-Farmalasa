@@ -368,6 +368,75 @@ base.
 ERP (`push-cliente-erp` + el cron cada 10 min, §4b). Si aparece en `--profundo`
 como diferencia, puede ser una edición que todavía no drenó.
 
+## 3d. Crear los que faltan — `crear_faltantes.py`
+
+El espejo **nunca crea filas**: hace `JOIN customers c ON c.search_name =
+e.match_name` y solo UPDATE. Al 2026-08-05 eran 3,747 fichas del ERP sin fila en
+el portal, y la pregunta "¿cuáles creo?" tiene una trampa adentro:
+
+```
+3,747 fichas del ERP sin fila
+  626  SÍ existen en el portal — el join las pierde por la ñ (§4c)
+   24  su NIT o su DUI ya es de otra fila — misma persona
+    1  balde de mostrador del POS
+3,097  no existen bajo ningún nombre  ← estas se crearon
+```
+
+**El constraint no sirve para decidir "repetido".** El índice único de nombre es
+`upper(btrim(name))`, que NO quita acentos; `search_name` es una generada que SÍ
+los quita. Entonces insertar `ABIGAIL MUÑOZ` teniendo ya `ABIGAIL MUNOZ` **no
+falla**: son distintas para el índice e iguales para el match, así que entra sin
+error y deja dos filas que el espejo ve como la misma. La base no frena el
+duplicado — el criterio tiene que estar en el código, y está en los dos lados:
+en `planificar()` y otra vez dentro del RPC, porque entre que el script lee el
+portal y escribe pasan minutos y el sync de ventas puede crear el mismo cliente.
+
+Todo lo dudoso se EXCLUYE y se informa: una ficha sin crear se ve en el informe
+y se crea después; un duplicado ya no se ve y hay que salir a buscarlo.
+
+```bash
+python3 crear_faltantes.py             # SIMULA, no escribe
+python3 crear_faltantes.py --aplicar   # crea en lotes de 200
+```
+
+El RPC es `crear_clientes_faltantes(json)`
+(`20260805204904_crear_clientes_faltantes_del_erp.sql`), SECURITY DEFINER con
+permiso `clientes`. Se probó con `BEGIN…ROLLBACK` antes de correrlo: de 6 filas
+entraron 2 y se rechazaron 4 — una ya existente, su variante sin acento, un
+balde de mostrador, y **una variante con acento de otra fila del mismo lote**,
+que es justo la que el índice único no habría frenado.
+
+Corrida del 2026-08-05: 3,097 creadas, `customers` 24,666 → 27,763, y cero
+duplicados por `search_name` o por `erp_id` en toda la tabla.
+
+## 4c. El bug de la ñ — ABIERTO
+
+`search_name` es una columna generada:
+
+```sql
+lower(translate(name, 'ÁÉÍÓÚÜÑáéíóúüñ', 'aeiouunaeiouun'))
+```
+
+Quita los acentos **y la ñ**. Pero `fila_portal()` arma su `match_name` con solo
+`.strip().lower()`, la ñ intacta, y el espejo hace el JOIN con eso. Entonces
+`'muñoz'` nunca es igual a `'munoz'` y **el match falla siempre**.
+
+Medido el 2026-08-05, antes de crear las 3,097:
+
+| | |
+|---|---|
+| clientes del portal con ñ o acento en el nombre | 614 |
+| de esos, **sin `erp_id`** | 610 |
+| de esos, **sin distrito** | **614 — todos** |
+
+Los 614 sin excepción, o sea que no es una tendencia sino el mecanismo. Eran
+**614 de los 783 sin distrito: el 78% del hueco de calidad del portal**.
+
+El arreglo es que `fila_portal` calcule `match_name` con el mismo `translate`
+que la columna generada. Es la regla de *snapshot y vivo necesitan la MISMA
+clave*: acá el espejo calculaba su clave distinto de la columna contra la que
+hace el join.
+
 ## 4. El espejo al portal
 
 `customers` **no tiene policy de escritura** — su única policy es

@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.386.1 — La explicación de la meta, completa
+
+La versión anterior mostraba los factores pero no lo que hay detrás de cada uno:
+el «× 0.9867» salía como un número caído del cielo, y el empuje **desaparecía
+cuando era cero** — así que una sala que rinde bien nunca se enteraba de que ese
+mecanismo existe ni de que quedó fuera justamente por rendir bien.
+
+Ahora son **tres pasos con el monto que va quedando**, y cada uno dice de dónde
+sale su número:
+
+1. **Su propio ritmo** — los tres meses cerrados y el promedio por día. Por día y
+   no por mes, para que uno de 30 y uno de 31 no digan cosas distintas.
+2. **El peso del mes** — cuánto vendió *esta* sala el mismo mes del año pasado
+   contra lo que le tocaba a su ritmo, y por qué **no se usa ese número sino la
+   mediana de las seis**: que un mes sea flojo es del calendario, no de una sala.
+3. **Lo que se pide de más** — el crecimiento, igual para todas, y el empuje, que
+   ahora **se muestra siempre**: valga cero o no, saber que una sala no lo lleva
+   es información — dice que vende por encima de la mediana por hora abierta.
+
+Lo que convence de que el cálculo es bueno ya no es una afirmación, es un
+número: **con el promedio en vez de la mediana, la meta de La Popular sería
+$42,661.55 en vez de $41,006.81 — $1,654.74 más**, por dos salas que tuvieron un
+agosto atípico el año pasado. Ahí se ve para qué sirve la mediana.
+
+Y sigue cerrando con la comprobación: el servidor rehace la cuenta y la pantalla
+verifica que dé el mismo monto que muestra la tarjeta.
+
 ## v2.386.0 — Los tokens de materiales eran factores sin base — y Liquid medido en oscuro
 
 Apareció al medir el tema oscuro de `PLAN-MATERIALES`, y es el hallazgo que

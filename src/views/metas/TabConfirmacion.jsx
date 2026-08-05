@@ -134,14 +134,26 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     // de agosto, cómo se va a calcular algo ya»).
     const mostrarMesSig = hayDelMesSig || diaHoySV() >= diaPropuesta;
 
-    // El monto que se va a confirmar, con el ajuste de exigencia aplicado. Vive
-    // acá y no dentro de la tarjeta para que «Confirmar todas» mande EXACTAMENTE
-    // lo que cada tarjeta muestra — si se calculara dos veces, un día divergen.
+    // La BASE de venta que se va a confirmar, con el ajuste de exigencia
+    // aplicado. Vive acá y no dentro de la tarjeta para que «Confirmar todas»
+    // mande EXACTAMENTE lo que cada tarjeta muestra — si se calculara dos veces,
+    // un día divergen.
+    //
+    // Corre sobre `monto_base` y NUNCA sobre `monto_meta`: la meta puede traer
+    // la recuperación de un gasto adentro, y aplicarle el ±1% multiplicaría
+    // también ese gasto, que no se negocia. Y arranca de la base actual, no de
+    // la propuesta original: una meta reabierta por un gasto ya venía ajustada.
     const montoDe = useCallback((r) => {
-        const base = Number(r.monto_propuesto ?? r.monto_meta ?? 0);
+        const base = Number(r.monto_base ?? r.monto_propuesto ?? 0);
         const pasos = ajustes[r.id] ?? 0;
         return base > 0 ? Math.round(base * (1 + PASO_FACTOR * pasos) * 100) / 100 : 0;
     }, [ajustes]);
+
+    // Lo que la sala va a perseguir: la base ajustada más lo que ya traiga de
+    // gastos. Es el número del rótulo de los botones, porque es el que significa
+    // algo; lo que viaja al servidor sigue siendo la base.
+    const recuperacionDe = (r) => Number(r.monto_recuperacion || 0);
+    const metaDe = useCallback((r) => montoDe(r) + recuperacionDe(r), [montoDe]);
 
     const esConfirmable = useCallback(
         (r) => canEdit && ['propuesta', 'devuelta'].includes(r.estado) && montoDe(r) > 0,
@@ -170,7 +182,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     const AccionesDelGrupo = ({ filas, mes }) => {
         const porConfirmar = filas.filter(esConfirmable);
         const porAprobar = filas.filter((r) => r.estado === 'confirmada_supervisor');
-        const totalConfirmar = porConfirmar.reduce((s, r) => s + montoDe(r), 0);
+        const totalConfirmar = porConfirmar.reduce((s, r) => s + metaDe(r), 0);
         const totalAprobar = porAprobar.reduce((s, r) => s + Number(r.monto_meta || 0), 0);
 
         const verConfirmar = porConfirmar.length >= 2;
@@ -285,6 +297,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         // misma. El ajuste corre desde ahí, no desde un campo en blanco.
         const pasos = ajustes[r.id] ?? 0;
         const montoNum = montoDe(r);
+        const recuperacion = recuperacionDe(r);
         const mover = (d) => setAjustes((a) => ({
             ...a, [r.id]: Math.max(-PASOS_MAX, Math.min(PASOS_MAX, pasos + d)),
         }));
@@ -344,7 +357,17 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                        monto se ve en dinero, con sus separadores. */
                     <div>
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Meta a confirmar</p>
-                        <p className="text-xl font-black tabular-nums mt-0.5">{formatMoney(montoNum)}</p>
+                        <p className="text-xl font-black tabular-nums mt-0.5">{formatMoney(montoNum + recuperacion)}</p>
+                        {/* De qué está hecha, y que la exigencia corre solo sobre
+                            la venta: el gasto no se negocia. */}
+                        {recuperacion > 0 && (
+                            <p className="text-micro font-semibold text-content-3 tabular-nums mt-0.5">
+                                {formatMoney(montoNum)} de venta
+                                {' + '}
+                                <span className="text-chart-1-text font-black">{formatMoney(recuperacion)}</span>
+                                {' por gastos'}
+                            </p>
+                        )}
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
                             <Button variant="secondary" size="sm" icon={Minus}
                                 disabled={busy != null || pasos <= -PASOS_MAX}
@@ -367,6 +390,14 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     <div className="mb-1">
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Meta</p>
                         <p className="text-xl font-black tabular-nums">{formatMoney(r.monto_meta)}</p>
+                        {recuperacion > 0 && (
+                            <p className="text-micro font-semibold text-content-3 tabular-nums mt-0.5">
+                                {formatMoney(r.monto_base)} de venta
+                                {' + '}
+                                <span className="text-chart-1-text font-black">{formatMoney(recuperacion)}</span>
+                                {' por gastos'}
+                            </p>
+                        )}
                     </div>
                 )}
 

@@ -1,17 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Target, Gauge, History, CalendarCheck, Coins } from 'lucide-react';
+import { Target, Gauge, History, CalendarCheck, Coins, Receipt } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
-import { fetchMetasConfig } from '../../data/metas';
+import { fetchMetasConfig, fetchMetasRows } from '../../data/metas';
 import TabTablero from './TabTablero';
 import TabHistorico from './TabHistorico';
 import TabConfirmacion from './TabConfirmacion';
 import TabBono from './TabBono';
+import TabGastos from './TabGastos';
 import MetaModal from './MetaModal';
-import { SALAS_VENTA } from './metasUtils';
+import GastoModal from './GastoModal';
+import { SALAS_VENTA, ymHoySV, ymSumar } from './metasUtils';
 
 // Metas por sala — docs/PLAN-METAS-2026-08-03.md. Tablero e Histórico (Fase 1)
 // + el flujo de confirmación supervisor→gerente (Fase 2). Este módulo es de
@@ -30,6 +32,9 @@ export default function MetasView() {
         { key: 'tablero',   label: 'Tablero',   icon: Gauge },
         { key: 'bono',      label: 'Bono',      icon: Coins },
         ...(canEdit || canApprove ? [{ key: 'confirmacion', label: 'Confirmación', icon: CalendarCheck }] : []),
+        // Los gastos por recuperar son una decisión de la empresa, no algo que
+        // se consulte: la pestaña solo existe para quien puede cargarlos.
+        ...(canEdit ? [{ key: 'gastos', label: 'Gastos', icon: Receipt }] : []),
         { key: 'historico', label: 'Histórico', icon: History },
     ], [canEdit, canApprove]);
 
@@ -39,6 +44,10 @@ export default function MetasView() {
 
     const [search, setSearch] = useState('');
     const [modal, setModal] = useState(null);          // { ym, branchId } | null
+    const [modalGasto, setModalGasto] = useState(false);
+    // Estado de las metas de los próximos meses, para que el modal de gasto
+    // pueda avisar CUÁLES vuelven a revisión antes de guardar.
+    const [metasPorClave, setMetasPorClave] = useState({});
     const [reloadKey, setReloadKey] = useState(0);
     const [bonificacionesActivas, setBonificacionesActivas] = useState(false);
     // El día en que el portal propone las metas del mes siguiente. Confirmación
@@ -56,6 +65,23 @@ export default function MetasView() {
             .catch(() => { /* sin config legible: se queda el aviso de suspendidas */ });
         return () => { alive = false; };
     }, []);
+
+    // Solo hace falta para el modal de gasto: saber cuáles de las metas que va a
+    // tocar ya estaban firmadas, para decirlo ANTES de guardar.
+    useEffect(() => {
+        if (!canEdit) return;
+        let alive = true;
+        const meses = Array.from({ length: 13 }, (_, i) => ymSumar(ymHoySV(), i));
+        fetchMetasRows(meses)
+            .then((rows) => {
+                if (!alive) return;
+                const map = {};
+                for (const r of rows) map[`${r.branch_id}|${r.year_month}`] = r.estado;
+                setMetasPorClave(map);
+            })
+            .catch(() => { /* sin esto el aviso previo no sale; el servidor igual decide */ });
+        return () => { alive = false; };
+    }, [canEdit, reloadKey]);
 
     const salaNombre = useCallback(
         (id) => (branches || []).find((b) => b.id === Number(id))?.name || `Sala ${id}`,
@@ -129,6 +155,16 @@ export default function MetasView() {
                     diaPropuesta={diaPropuesta}
                 />
             )}
+            {activeTab === 'gastos' && canEdit && (
+                <TabGastos
+                    canEdit={canEdit}
+                    reloadKey={reloadKey}
+                    onChanged={() => setReloadKey((k) => k + 1)}
+                    onAgregarGasto={() => setModalGasto(true)}
+                    searchTerm={search}
+                    onClearSearch={limpiarBusqueda}
+                />
+            )}
             {activeTab === 'historico' && (
                 <TabHistorico
                     salaNombre={salaNombre}
@@ -147,6 +183,14 @@ export default function MetasView() {
                 salaOptions={salaOptions}
                 initialYm={modal?.ym || null}
                 initialBranchId={modal?.branchId || null}
+            />
+
+            <GastoModal
+                isOpen={modalGasto}
+                onClose={() => setModalGasto(false)}
+                onSaved={() => setReloadKey((k) => k + 1)}
+                salaOptions={salaOptions}
+                metasPorClave={metasPorClave}
             />
         </GlassViewLayout>
     );

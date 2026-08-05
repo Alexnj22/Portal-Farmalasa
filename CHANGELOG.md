@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.376.0 — Metas: la pestaña de gastos por recuperar
+
+Las pantallas del motor que salió en v2.374.0. **Mockup aprobado antes de
+construir**, con dos correcciones del usuario ya aplicadas.
+
+**La pestaña Gastos** aparece solo para quien puede editar: cargar un gasto es
+una decisión de la empresa, no algo que se consulte. Cada gasto muestra su tabla
+mes por mes con **las tres columnas juntas** — lo que cuesta, lo que le agrega a
+la meta y en cuánto queda esa meta. Ver solo el gasto no dice nada; ver solo la
+meta esconde de dónde salió. Los meses que todavía no tienen meta calculada lo
+dicen («se calcula el 25») en vez de mostrar un guion que parecería un error. Un
+gasto quitado no desaparece: queda con su motivo, y sus meses ya arrancados
+siguen contando, tachados los que ya no.
+
+**El modal calcula mientras escribís, y el cálculo lo hace el servidor.** La
+vista previa se le pide al mismo lugar que después guarda, así que lo que se ve
+es lo que queda — no una cuenta hecha en el navegador que un día se desincroniza.
+El selector de mes **no ofrece los meses que ya arrancaron**: la regla se aplica
+sacando la opción, no explicándola con un error después de guardar. Y si alguna
+de las metas que va a tocar ya estaba aprobada, lo **avisa antes**, nombrándolas.
+
+**El desglose de la meta es solo administrativo.** Aparece en el Tablero y en
+Confirmación, dentro del módulo — «$44,540.13 de venta + $1,600.00 por gastos».
+El widget de la sala sigue mostrando su meta y nada más: la sala persigue su
+número, y de qué está hecho es una decisión de la empresa.
+
+**Y el ajuste de exigencia corre sobre la venta, nunca sobre el total.** Los
+botones de «más/menos exigente» mueven los $44,540.13; el gasto no se negocia,
+se arrastra. Si el ±1% se aplicara al total, multiplicaría también el gasto.
+
+Verificado en el navegador: la pestaña, el vacío, el modal con su vista previa
+($1,200 a 3 meses → $400 y $1,600 por mes, igual que la base), y que agosto —el
+mes en curso— no está entre los meses ofrecidos. Sin errores de consola.
+
 ## v2.375.0 — MIN·MAX: publicar todo ya no aborta, y los borradores viven en la píldora
 
 **«Publicar todo» en La Popular no publicaba nada.** Devolvía «MIN y MAX no

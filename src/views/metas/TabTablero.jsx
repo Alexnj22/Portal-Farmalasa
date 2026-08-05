@@ -10,7 +10,7 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { fetchMetasDashboard } from '../../data/metas';
+import { fetchMetasDashboard, fetchMetasRows } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG } from './metasUtils';
 
@@ -21,6 +21,11 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
     const ymMax = ymSumar(ymActual, 1);
     const [ym, setYm] = useState(ymActual);
     const [rows, setRows] = useState([]);
+    // Las dos mitades de la meta (venta y recuperación de gastos) para poder
+    // mostrar el desglose. Vienen aparte y no de `get_metas_dashboard` porque
+    // cambiarle las columnas a ese RPC obliga a recrearlo, y lo consumen además
+    // el widget de la sala y el bono.
+    const [desglose, setDesglose] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     // Contador de reintentos: es lo que le da SALIDA al estado de error (§18.1
@@ -32,8 +37,19 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
         let alive = true;
         setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- reset del skeleton antes de re-fetch al cambiar de mes
         setError(null);
-        fetchMetasDashboard(ym)
-            .then((data) => { if (alive) { setRows(data); setLoading(false); } })
+        Promise.all([fetchMetasDashboard(ym), fetchMetasRows([ym]).catch(() => [])])
+            .then(([data, filas]) => {
+                if (!alive) return;
+                setRows(data);
+                const d = {};
+                for (const f of filas) {
+                    if (Number(f.monto_recuperacion) > 0) {
+                        d[f.branch_id] = { base: Number(f.monto_base), recuperacion: Number(f.monto_recuperacion) };
+                    }
+                }
+                setDesglose(d);
+                setLoading(false);
+            })
             .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'Error al cargar las metas')); setLoading(false); } });
         return () => { alive = false; };
     }, [ym, reloadKey, intento]);
@@ -184,6 +200,20 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                                                 ? <>Vendido {cerrado ? 'en el mes' : 'este mes'} <strong className="text-content-2">{formatMoney(r.venta_acumulada)}</strong></>
                                                 : <>Meta <strong className="text-content-2">{formatMoney(r.monto_meta)}</strong></>}
                                         </p>
+                                        {/* De qué está hecha la meta. Solo cuando trae un
+                                            gasto adentro: en el resto de los meses sería
+                                            repetir el mismo número dos veces. Es información
+                                            administrativa — la sala no la ve en su widget. */}
+                                        {!sinMeta && desglose[r.branch_id] && (
+                                            <p className="text-micro font-semibold text-content-3 mt-0.5 tabular-nums">
+                                                {formatMoney(desglose[r.branch_id].base)} de venta
+                                                {' + '}
+                                                <span className="text-chart-1-text font-black">
+                                                    {formatMoney(desglose[r.branch_id].recuperacion)}
+                                                </span>
+                                                {' por gastos'}
+                                            </p>
+                                        )}
                                     </div>
                                     {sinMeta
                                         ? <Badge variant="neutral" size="sm">Sin meta</Badge>

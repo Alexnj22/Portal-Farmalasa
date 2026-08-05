@@ -42,7 +42,7 @@ export async function fetchMetasConfig() {
 export async function fetchMetasRows(yearMonths) {
     const { data, error } = await supabase
         .from('metas_sucursal')
-        .select('id, branch_id, year_month, monto_meta, monto_propuesto, estado, nota, nota_devolucion, supervisor_at, gerente_at, autorizado_por, autorizado_nota')
+        .select('id, branch_id, year_month, monto_meta, monto_base, monto_recuperacion, monto_propuesto, estado, nota, nota_devolucion, supervisor_at, gerente_at, autorizado_por, autorizado_nota')
         .in('year_month', yearMonths);
     if (error) throw error;
     return data ?? [];
@@ -133,6 +133,43 @@ export async function fetchBonoMetaSala(branchId, yearMonth) {
     });
     if (error) throw error;
     return data ?? null;
+}
+
+// ── Gastos por recuperar ─────────────────────────────────────────────────────
+// Un gasto se carga a una o varias salas y se suma a su meta convertido a venta
+// por el margen de ganancia: $1,000 ÷ 0.25 = $4,000. El reparto en meses y el
+// margen los resuelve el servidor — acá no se calcula nada.
+
+export async function fetchMetasGastos() {
+    const { data, error } = await supabase.rpc('get_metas_gastos');
+    if (error) throw error;
+    return data ?? [];
+}
+
+// El desglose mes × sala ANTES de guardar. Sale del mismo `metas_gasto_reparto`
+// que usa el alta, así que la vista previa no puede divergir de lo que se
+// guarda — que es exactamente cómo un día divergen dos cálculos gemelos.
+export async function previewMetaGasto({ salas, ymInicio, meses }) {
+    const { data, error } = await supabase.rpc('preview_metas_gasto', {
+        p_salas: salas, p_ym_inicio: ymInicio, p_meses: meses,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
+export async function crearMetaGasto({ concepto, salas, ymInicio, meses, nota }) {
+    const { data, error } = await supabase.rpc('crear_metas_gasto', {
+        p_concepto: concepto, p_salas: salas, p_ym_inicio: ymInicio,
+        p_meses: meses, p_nota: nota || null,
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function anularMetaGasto({ id, nota }) {
+    const { data, error } = await supabase.rpc('anular_metas_gasto', { p_id: id, p_nota: nota });
+    if (error) throw error;
+    return data;
 }
 
 export async function fetchMetaSala(branchId = null) {

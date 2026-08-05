@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.396.0 — El gate de vidrio a mano: 196, no 28
+
+**Nueva categoría `vidrio-a-mano` en el gate de diseño.** Marca todo
+`backdrop-blur*` / `backdrop-filter` en JSX cuyo tag contenedor no declare
+`data-surface`. Existe porque el hallazgo de §13.3 —un segundo sistema de vidrio
+corriendo en paralelo al de `data-surface`— no lo detectaba ningún gate: la regla
+vivía sólo en prosa, y una regla que sólo vive en prosa se rompe.
+
+**Y el número de §13.3 estaba mal por el mismo motivo que las otras dos
+afirmaciones**: «28 en 14 archivos» contaba sólo los archivos donde *ninguna* pieza
+declaraba superficie. Contando por elemento, que es la unidad real, son **196 en 71
+archivos** — vistas 115, kiosco 26, `forms/*` 25, `LoginView` 17, `common/*` 9,
+`layout/*` 4. Van tres correcciones a §13 y las tres son la misma: leer por archivo
+lo que se compone por árbol.
+
+Reparto:
+
+| | | |
+|---|---|---|
+| `LoginView` (17) + kiosco (26) | 43 | **excepción con motivo** — no son deuda |
+| chips tintados de `WidgetInventorySearch` | 3 | **corregidos** (§18.2: la tinta no lleva vidrio) |
+| el resto | **150** | **ratchet**: no puede subir |
+
+`LoginView` y el kiosco son excepción y **no** ratchet a propósito: el ratchet dice
+«esto hay que bajarlo» y estas dos no hay que bajarlas nunca — viven fuera del shell
+y por eso no pueden heredar su material.
+
+Los 150 restantes **no se convierten hoy** y el motivo quedó escrito: casi ninguno es
+una tarjeta canónica mal escrita. Son **paneles anidados** —`rounded-2xl` compila a
+`0.625rem` contra los `1.75rem` de `--card-radius`, así que `data-surface="card"` los
+volvería tarjetas de primer nivel, justo lo que §1.5 prohíbe— y su destino es
+aplanarse con `--anidada`, **token que todavía no existe**. Otros usan el borde para
+señalar estado, y `data-surface` gana la cascada. Son el trabajo de la Fase D; el
+ratchet garantiza que no crezcan mientras tanto.
+
+El tag se resuelve con `tagQueContiene` (cuenta llaves y comillas): un `[^>]*` se corta
+en el primer `>` y `=>` vive adentro de casi todo `onClick`.
+
 ## v2.395.4 — Encabezado y hoja: las dos superficies que faltaban
 
 Las dos superficies canónicas que §13 dejó sin definir, más la verificación de sus

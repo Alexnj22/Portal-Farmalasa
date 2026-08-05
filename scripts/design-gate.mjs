@@ -111,6 +111,22 @@ const EXCEPTIONS = {
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],
+  // ── `vidrio-a-mano`: las dos familias bespoke (PLAN-MATERIALES §18.1) ─────
+  // No son deuda: son las dos pantallas que **viven fuera del shell** y por eso
+  // no pueden heredar su material.
+  //
+  //  · `LoginView` se pinta antes de que exista sesión, tema de perfil ni
+  //    layout — es la única vista sin `GlassViewLayout` alrededor.
+  //  · El kiosco (`timeclock/*`) es oscuro en los CUATRO temas por decisión,
+  //    igual que el sidebar antes de §12: corre en una tablet fija de sucursal,
+  //    a un brazo de distancia, y su contraste está calibrado para eso.
+  //
+  // Que sean excepción y no ratchet es deliberado: el ratchet dice «esto hay
+  // que bajarlo», y estas dos no hay que bajarlas nunca. Confundirlas con deuda
+  // es lo que haría que alguien las «arreglara» rompiéndolas. Las siete
+  // entradas viven más abajo, sumadas a las que esos archivos ya tenían — este
+  // objeto asertea claves duplicadas, así que una familia nueva se AGREGA a la
+  // línea que ya existe, no se declara aparte.
   // Superficies fijas-oscuras (no siguen el tema activo, confirmado en DESIGN.md §6)
   // sidebar + blobs ambientales ('color'); 'search-toggle': searchOpen es el
   // modal ⌘K de navegación global — ya tiene su propio Escape + click en el
@@ -147,7 +163,7 @@ const EXCEPTIONS = {
   // de 16px un trazo de 2.5 se pierde, y ese glifo ES el estado del control —
   // si no se ve, el checkbox no comunica nada. No es un ícono de interfaz más.
   'src/components/common/Checkbox.jsx': ['icono-stroke'],
-  'src/components/timeclock/IdleScanPanel.jsx': ['color', 'white'], // kiosco
+  'src/components/timeclock/IdleScanPanel.jsx': ['color', 'white', 'vidrio-a-mano'], // kiosco
   'src/views/AttendanceMonitorView.jsx': ['color'], // wallboard isDarkConcept
   // Shimmer decorativo de IA idéntico (DESIGN.md §6)
   'src/views/branch-tabs/TabHistory.jsx': ['color'],
@@ -174,8 +190,8 @@ const EXCEPTIONS = {
   'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
   'src/views/TimeClockView.jsx': ['color', 'white', 'hex', 'inline-color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
-  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'white', 'hex', 'inline-color'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
-  'src/components/timeclock/KioskConfigModal.jsx': ['color', 'white', 'hex'],
+  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'white', 'hex', 'inline-color', 'vidrio-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
+  'src/components/timeclock/KioskConfigModal.jsx': ['color', 'white', 'hex', 'vidrio-a-mano'],
   'src/components/common/ThemeToggle.jsx': ['color', 'white'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
   // 'relleno-sin-solid': `selection:bg-success/30 selection:text-white` es el
@@ -222,7 +238,7 @@ const EXCEPTIONS = {
   // (§25.4). Ahí `bg-chart-6/10` no es un relleno claro sino un tinte sobre
   // negro, y el texto blanco encima mide de sobra — la regla del `-solid`
   // existe para rellenos sobre fondo claro.
-  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography', 'relleno-sin-solid', 'white', 'hex'],
+  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography', 'relleno-sin-solid', 'white', 'hex', 'vidrio-a-mano'],
   // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
   // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
@@ -280,9 +296,9 @@ const EXCEPTIONS = {
   // anclados al sidebar NO siguen el tema activo — son oscuros en los cuatro.
   // Ahí `bg-white/[0.06]` y `border-white/10` no son deuda: son la paleta
   // bespoke de esa superficie, que ya está documentada en DESIGN.md §6.
-  'src/components/timeclock/AuthPromptPanel.jsx': ['color', 'white', 'input-a-mano'],
-  'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['color', 'white'],
-  'src/components/timeclock/EarlyExitForm.jsx': ['color', 'white'],
+  'src/components/timeclock/AuthPromptPanel.jsx': ['color', 'white', 'input-a-mano', 'vidrio-a-mano'],
+  'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['color', 'white', 'vidrio-a-mano'],
+  'src/components/timeclock/EarlyExitForm.jsx': ['color', 'white', 'vidrio-a-mano'],
   'src/components/common/SidebarSettingsMenu.jsx': ['color', 'white'],
   // ListRow lleva la paleta `onDark` para las filas de los flyouts del sidebar,
   // que se quedan oscuras en los 4 temas (si no, cuelga un panel claro de un
@@ -1756,6 +1772,44 @@ function scanFile(path) {
           text: '<CarrilCards …',
         });
       }
+    }
+  }
+
+  // ── Categoría `vidrio-a-mano` (PLAN-MATERIALES §18.1) ─────────────────────
+  // Vidrio escrito a mano fuera de una superficie canónica. Existe porque el
+  // hallazgo de §13.3 —243 `backdrop-blur` en 81 archivos, un segundo sistema
+  // de vidrio corriendo en paralelo al de `data-surface`— no lo detectaba
+  // ningún gate: la regla vivía sólo en la prosa de DESIGN.md, y una regla que
+  // sólo vive en prosa se rompe.
+  //
+  // Importa más de lo que parece porque el material NO es solo estética: un
+  // `backdrop-filter` convierte al elemento en la RAÍZ del backdrop de sus
+  // descendientes (§12.6), así que un blur puesto a mano en un contenedor
+  // rompe el vidrio de todo lo que vive adentro — y eso no se ve leyendo el
+  // archivo donde está el bug, se ve en otro.
+  //
+  // Dos cosas NO son hallazgo:
+  //  · el velo de un modal (`bg-scrim`): no es superficie, es el fondo que se
+  //    oscurece, y ahí el blur es el patrón correcto (`ModalShell`);
+  //  · el elemento que YA declara `data-surface`: ahí el blur es redundante
+  //    pero no es un sistema paralelo — lo pisa la superficie canónica.
+  if (!hasException(path, 'vidrio-a-mano') && /\.jsx$/.test(path)) {
+    const VIDRIO_RE = /backdrop-blur(?:-\w+)?|backdrop-filter/g;
+    let v;
+    const yaVisto = new Set();
+    while ((v = VIDRIO_RE.exec(text))) {
+      const tag = tagQueContiene(text, v.index);
+      if (!tag || yaVisto.has(tag.ini)) continue;
+      yaVisto.add(tag.ini);
+      if (/data-surface/.test(tag.texto)) continue;   // canónico: la superficie manda
+      if (/bg-scrim/.test(tag.texto)) continue;       // velo, no superficie
+      findings.push({
+        line: text.slice(0, v.index).split('\n').length,
+        category: 'vidrio-a-mano',
+        label: 'vidrio a mano fuera de una superficie canónica — usar `data-surface`, '
+             + 'o entrar a EXCEPTIONS con el motivo escrito (PLAN-MATERIALES §18.1)',
+        text: v[0],
+      });
     }
   }
 

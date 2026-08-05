@@ -241,7 +241,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
       >
         <div className="flex items-center gap-2 mb-1.5 sticky top-0 z-base py-0.5">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-divider" />
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} shadow-sm`}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
             <span className={`text-caption font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
             <span className="w-px h-3 bg-divider mx-1" />
@@ -504,7 +504,7 @@ export default function WidgetInventorySearch() {
                 >
                   <div className="flex items-center gap-2 mb-1.5">
                     <div className={`h-px flex-1 bg-gradient-to-r from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-divider'}`} />
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} shadow-sm`}>
                       {branch.isVencidos
                         ? <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                         : <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />}
@@ -603,7 +603,7 @@ export default function WidgetInventorySearch() {
           <div className="mt-1">
             <div className="flex items-center gap-2 mb-2 mt-1">
               <div className="h-px flex-1 bg-danger/20" />
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30 backdrop-blur-sm shadow-sm">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30 shadow-sm">
                 <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                 <span className="text-caption font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
                 <span className="w-px h-3 bg-danger/20 mx-1" />

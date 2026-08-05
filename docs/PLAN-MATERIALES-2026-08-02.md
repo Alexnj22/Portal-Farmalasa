@@ -1486,14 +1486,71 @@ cruce **no ve la composición**.
 > cree estar haciendo: no dice «¿esta pieza tiene material?», dice «¿esta pieza lo declara *ella
 > misma*?».
 
-### 18.1 Los 28 sí quedan en pie, y ordenados por archivo se ven de otra manera
+### 18.1 No eran 28: son 196 — y el error tiene la MISMA causa ✅ REGLA ACTIVA
 
-| archivo | usos | qué es |
+Al escribir el detector quedó claro que «28 en 14 archivos» también estaba mal, y
+**por el mismo motivo que las dos afirmaciones de arriba**: ese número contaba sólo los
+archivos donde *ninguna* pieza declaraba superficie. Un archivo que tiene una tarjeta
+canónica y además cuatro vidrios a mano no aparecía. Contando **por elemento**, que es
+la unidad real:
+
+| grupo | vidrios a mano | archivos |
 |---|---|---|
-| `LoginView` | 18 | pantalla bespoke, vive fuera del shell — **excepción con motivo** |
-| `timeclock/*` (6 archivos) | 24 | el kiosco: oscuro en los 4 temas por decisión — **excepción con motivo** |
-| `WidgetInventorySearch` | 7 | widget del tablero — **éste sí debería ser canónico** |
-| `productos/*`, `pedidos/*`, `App` | 12 | vidrio a mano en vistas normales — **canónico o excepción con motivo** |
+| vistas | **115** | 42 |
+| el kiosco (`timeclock/*`) | 26 | 6 |
+| `components/forms/*` | 25 | 14 |
+| `LoginView` | 17 | 1 |
+| `components/common/*` | 9 | 7 |
+| `components/layout/*` | 4 | 1 |
+| **total** | **196** | **71** |
+
+Van **tres** correcciones a §13 y las tres son la misma: *leer por archivo lo que se
+compone por árbol*. Que el número se haya multiplicado por siete al mirarlo bien es el
+argumento más fuerte a favor de que esto sea un gate y no un párrafo.
+
+**La regla está activa: categoría `vidrio-a-mano` en `scripts/design-gate.mjs`.**
+Marca todo `backdrop-blur*` / `backdrop-filter` en JSX cuyo tag contenedor no declare
+`data-surface`. Dos cosas no son hallazgo, y el motivo está escrito en el gate:
+
+- **el velo de un modal** (`bg-scrim`) — no es superficie, es el fondo que se oscurece,
+  y ahí el blur es el patrón correcto (`ModalShell`);
+- **el elemento que ya declara `data-surface`** — ahí el blur es redundante, no un
+  sistema paralelo: lo pisa la superficie canónica.
+
+El tag se resuelve con `tagQueContiene`, que cuenta llaves y comillas. Un `[^>]*` se
+corta en el primer `>` y `=>` vive adentro de casi todo `onClick`: sería ciego justo a
+los tags que traen lógica.
+
+#### Cómo quedó repartido
+
+| | | |
+|---|---|---|
+| `LoginView` (17) + kiosco (26) | **43** | **excepción con motivo** — no son deuda |
+| chips tintados de `WidgetInventorySearch` | **3** | **corregidos** — §18.2, la tinta no lleva vidrio |
+| el resto | **150** | **ratchet**: no puede subir, y baja fase por fase |
+
+`LoginView` y el kiosco son **excepción y no ratchet a propósito**: el ratchet dice
+«esto hay que bajarlo», y estas dos no hay que bajarlas nunca — son las pantallas que
+viven **fuera del shell** y por eso no pueden heredar su material. Confundirlas con
+deuda es lo que haría que alguien las «arreglara» rompiéndolas.
+
+#### Por qué los 150 restantes NO se convierten hoy
+
+Al mirarlos uno por uno, casi ninguno es una tarjeta canónica mal escrita:
+
+- **Son paneles anidados.** `rounded-2xl` compila a `0.625rem` y `--card-radius` vale
+  `1.75rem` en Liquid: ponerles `data-surface="card"` los convertiría en tarjetas de
+  primer nivel, que es justo lo que **§1.5 dice que no deben ser**. Su destino es
+  aplanarse con `--anidada`… **y ese token todavía no existe** — §1.5 es decisión, no
+  código.
+- **Varios usan el borde para señalar estado** (`border-chart-9/30` cuando está
+  abierto). `data-surface` gana la cascada, así que convertirlos apagaría la señal.
+- **Dos son encabezados pegajosos dentro de un modal** (`RecepcionModal`), o sea el
+  caso que §15.1 ya nombró: una superficie pegajosa tiene que **ocluir**, y
+  `bg-surface-card` es una opacidad de acento.
+
+O sea que los 150 **no son una lista de arreglos sueltos: son el trabajo de la Fase D**,
+y el ratchet es lo que garantiza que no crezcan mientras tanto.
 
 ### 18.2 Lo que faltaba escribir sobre lo que NO es material
 

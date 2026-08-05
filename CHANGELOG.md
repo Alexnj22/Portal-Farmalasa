@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.393.1 — El inventario que el plan de materiales nunca hizo
+
+A pregunta del usuario —*«¿ya están todos los elementos? ¿tablas, alertas…?»*—
+resultó que **no**, y el motivo importa más que la lista: `PLAN-MATERIALES` fue
+elemento por elemento **a partir de una lista que nadie verificó**. Es el mismo
+modo de falla que ya apareció dos veces esta semana: los alias de íconos que no
+eran alias, y el `1.30` de §1.1 que no se podía reproducir.
+
+**El registro existía y nadie lo consultó.** `index.css` declara **10**
+`data-surface`; el plan trata **7**. Faltan:
+
+- **`tooltip` (16 usos)** — el hueco más grande. Tiene tokens propios desde la
+  decisión 1a, pero el plan nunca le dio canto, lente ni destello, y es la
+  tercera superficie más usada del portal.
+- **`page-header` (2)** y **`sheet` (1)**.
+
+**Lo preguntado, respondido:** las **tablas están cubiertas** (`DataTable` usa
+`data-surface="card"`); las **alertas a medias** — `AlertModal` declara `modal`
+pero **`ConfirmModal` no declara ninguna superficie**; y `Notice`/`Badge` tampoco,
+lo cual puede ser correcto —un chip es tinta, no vidrio— pero no está escrito en
+ningún lado.
+
+**Y el hallazgo grande: hay un segundo sistema de vidrio en paralelo.** De los
+**243** `backdrop-blur` del portal, **88 están en archivos sin superficie
+canónica**. De ésos, 60 son superficies bespoke ya reconocidas en `EXCEPTIONS`
+—legítimo— pero **28 en 14 archivos no son ni canónicos ni excepción**. El
+primero de la lista duele: **`ModalShell`, el canónico de modales, tiene 4
+`backdrop-blur` propios** — el componente que define cómo se ve un modal no usa
+la superficie de modal.
+
+Queda como **§13** con los seis ítems para cerrarlo, y **la fase D no puede darse
+por terminada sin eso**. La lección de método quedó escrita: *un plan que recorre
+«elemento por elemento» necesita que la lista de elementos salga de un registro,
+no de la memoria de quien lo escribe.*
+
 ## v2.393.0 — Fase C: los 89 easings que Solid nunca recibía
 
 Primera fase de `PLAN-MATERIALES` que **toca código**. Migrados los **89**

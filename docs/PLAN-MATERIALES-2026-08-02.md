@@ -12,9 +12,9 @@ criterio de verificación. Lo que sigue es ejecutable tal cual.
 | | |
 |---|---|
 | **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias). Sus bases están en §0.ter · **el alcance del vidrio y la animación de la placa, en §1.5 y §1.6** |
-| **Elementos sin definir** | **ninguno.** Barra de pestañas (§11) y sidebar (§12) cerrados el 2026-08-05 |
+| **Elementos sin definir** | ⚠️ **`tooltip`, `page-header` y `sheet`** — el inventario de §13 (2026-08-05) mostró que el plan cubre 7 de las 10 superficies canónicas |
 | **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el confirmado** — ver §0.bis |
-| **Bloqueo** | **ninguno.** El alcance del vidrio se cerró el 2026-08-05 (§1.5) y con él cayó la última decisión que frenaba la fase D |
+| **Bloqueo** | La fase D no puede cerrarse sin §13: hay **28 usos de vidrio a mano** fuera del sistema y fuera de toda excepción, incluidos 4 en `ModalShell`, que es el canónico de modales |
 
 > **Confirmación del 2026-08-05.** Los cinco elementos se revisaron renderizados
 > con sus valores exactos, Liquid contra Solid, sobre los fondos reales de cada
@@ -942,6 +942,10 @@ quedaron escritos en §1.4, §2.1, §5.3 y §5.4 — no en una conversación.
 
 ---
 
+> **Fase B CONFIRMADA por el usuario el 2026-08-05**, incluidas las dos
+> correcciones finales: el menú de ajustes vuelve a ser vidrio (§12.7) y los
+> flotantes anclados van portaleados (§12.6).
+
 ## 11. Barra de pestañas ✅ CERRADO 2026-08-05
 
 El riel es vidrio —`blur(40px)`, la única otra superficie con lift— y todo lo
@@ -1125,6 +1129,85 @@ Banco de §6 —CPU estrangulada por CDP, muestreo por cuadro, tres ciclos:
 sobre 33. **Salvedad:** es Chromium headless, el mismo banco que usó §6, y el
 repo tiene anotado que *headless miente sobre rendimiento*. Al implementar hay
 que repetirlo en un navegador real y, para el móvil, **en WebKit**.
+
+---
+
+## 13. ⚠️ El inventario que este plan nunca hizo
+
+Levantado el 2026-08-05, a pregunta del usuario: *«¿ya están todos los elementos?
+¿tablas, alertas…?»*. **No.** Y el motivo importa más que la lista: el plan fue
+elemento por elemento **a partir de una lista que nadie verificó** — es el mismo
+modo de falla que ya apareció dos veces acá (los alias de íconos que no eran
+alias, el `1.30` de §1.1 que no se podía reproducir).
+
+### 13.1 Las superficies canónicas: 10 declaradas, 7 cubiertas
+
+`index.css` declara **10** `data-surface`. El plan trata siete:
+
+| superficie | usos en JSX | ¿en el plan? |
+|---|---|---|
+| `card` | 227 | ✅ §1 |
+| `dropdown` | 22 | ✅ §4 |
+| `tooltip` | **16** | ❌ **falta** |
+| `input` | 10 | ✅ §3 |
+| `modal` | 7 | ✅ §5 |
+| `sidebar-popover` | 3 | ✅ §12.5 |
+| `page-header` | **2** | ❌ **falta** |
+| `sidebar` | 1 | ✅ §12 |
+| `tab-track` | 1 | ✅ §11 |
+| `sheet` | **1** | ❌ **falta** (§12.4 lo describe como hoja móvil, pero no como superficie con material) |
+
+**`tooltip` es el hueco más grande.** Tiene tokens propios desde la decisión 1a
+—es oscuro en los cuatro temas— pero el plan **nunca le dio canto, lente ni
+destello**, y con 16 usos es la tercera superficie más usada del portal.
+
+### 13.2 Lo que el usuario preguntó, respondido
+
+- **Tablas: cubiertas.** `DataTable` usa `data-surface="card"`, así que hereda
+  §1 completo. No necesita sección propia.
+- **Alertas: a medias.** `AlertModal` usa `data-surface="modal"` ✅, pero
+  **`ConfirmModal` no declara ninguna superficie** — es un modal que el sistema
+  no sabe que es un modal.
+- **`Notice` y `Badge` no declaran superficie.** Puede ser correcto —un chip es
+  tinta, no vidrio— pero **no está escrito en ningún lado**, y lo que no está
+  escrito se vuelve a preguntar.
+
+### 13.3 El hallazgo grande: hay un segundo sistema de vidrio corriendo en paralelo
+
+| | |
+|---|---|
+| usos de `backdrop-blur` en el portal | **243** en 81 archivos |
+| de ésos, en archivos **sin ninguna superficie canónica** | **88** en 29 archivos |
+| de ésos, ya reconocidos como bespoke en `EXCEPTIONS` | 60 en 15 archivos — legítimo |
+| **vidrio que no es ni canónico ni excepción** | **28 en 14 archivos** |
+
+Y el primero de esa lista duele: **`ModalShell` — el canónico de modales— tiene
+4 `backdrop-blur` propios**. O sea que el componente que define cómo se ve un
+modal no usa la superficie de modal.
+
+Los otros 13: `WidgetInventorySearch` (7), `TabLaboratorios` (4),
+`TabMinMaxNetwork`, `TabPoliticaVencimiento` (2 c/u), y ocho con uno cada uno.
+
+### 13.4 Qué hay que hacer con esto
+
+1. **Definir `tooltip`** como los otros siete: canto, lente, destello y su
+   comportamiento en los cuatro temas. Es superficie de primera clase.
+2. **Definir `page-header` y `sheet`**, o declarar por escrito que heredan de
+   `card` y no llevan material propio.
+3. **`ConfirmModal` declara `data-surface="modal"`.**
+4. **Escribir qué NO es material** — `Notice`, `Badge`, chips: son tinta sobre
+   una superficie, no superficies. Una frase alcanza, y evita la pregunta.
+5. **`ModalShell` usa la superficie de modal** en vez de su vidrio a mano.
+6. **Los 28 restantes**: cada uno pasa a una superficie canónica o entra a
+   `EXCEPTIONS` con su motivo escrito — el mismo tratamiento que F6 de
+   PLAN-IDENTIDAD le dio a los hex.
+
+> **Y la lección de método, que vale más que los seis ítems:** un plan que
+> recorre «elemento por elemento» necesita que **la lista de elementos salga de
+> un registro**, no de la memoria de quien lo escribe. Acá el registro existía
+> —los `data-surface` de `index.css`— y nadie lo consultó. Es la misma regla que
+> el repo ya tiene escrita para otros casos: *una lista a mano se desincroniza
+> del registro*.
 
 ---
 

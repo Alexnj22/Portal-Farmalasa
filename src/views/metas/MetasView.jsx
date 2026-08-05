@@ -130,6 +130,7 @@ export default function MetasView() {
                     bonificacionesActivas={bonificacionesActivas}
                     searchTerm={search}
                     onClearSearch={limpiarBusqueda}
+                    salaOptions={salaOptions}
                 />
             )}
             {activeTab === 'bono' && (

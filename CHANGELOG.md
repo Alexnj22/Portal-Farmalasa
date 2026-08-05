@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.381.0 — Metas: cómo va el mes y quién está vendiendo
+
+Dos tarjetas nuevas debajo del tablero, con su propio selector de sala, para el
+**mes en curso**. Mockups mostrados y elegidos antes de construir.
+
+**Cómo va el mes.** Con todas las salas juntas hay un interruptor entre dos
+maneras de mirarlo: **día por día** —una barra por día contra la raya de lo que
+hay que vender diario para llegar, con el día de hoy más claro porque todavía no
+termina— y el **termómetro**, que es lo vendido, la proyección y las dos marcas
+del bono en una sola barra. Con una sala elegida va el termómetro y nada más:
+ahí la pregunta es «¿cómo vamos?», no comparar formas de mirarlo.
+
+**Quién está vendiendo.** El ranking del mes con los dos primeros resaltados,
+**en rojo quien está bajo el promedio**, y para cada persona sus tickets, su
+ticket promedio, sus días y lo que vendió por día.
+
+**Y un interruptor que evita una injusticia.** Ordenar por total del mes castiga
+a quien faltó. Con agosto real: alguien vendió **un solo día** y ese día hizo
+$334.60 — más que quien trabajó cuatro. Por total queda 6ª; **por día trabajado,
+4ª**. Por eso el ranking se puede ordenar de las dos maneras, y las filas de
+quien trabajó pocos días lo llevan anotado en ámbar: un total bajo con un día no
+es lo mismo que un total bajo con el mes entero.
+
+Hoy «días» son los días en que efectivamente vendió, que es el único dato de
+asistencia que existe — las columnas para marcar incapacidades y vacaciones ya
+están en el sistema pero **no hay ni una registrada**. El día que se registren,
+el cálculo cambia de «días con venta» a «días que le tocaba trabajar» sin tocar
+ninguna pantalla.
+
+Los colores de la gráfica van como variable del tema directo al dibujo, no
+leídos y guardados: así cambia de tema sola. Verificado en el navegador que el
+navegador las resuelve de verdad — el relleno de las barras llega como
+`rgb(59, 130, 246)` y no como texto sin resolver.
+
 ## v2.380.0 — Un concepto, un ícono — el mapa semántico de §12 y su gate
 
 F5 de `PLAN-IDENTIDAD-2026-07-29`. §12 fijaba la librería y los tamaños, pero

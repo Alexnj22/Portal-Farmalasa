@@ -172,6 +172,18 @@ export async function anularMetaGasto({ id, nota }) {
     return data;
 }
 
+// ── El mes en curso: día a día y quién vende ─────────────────────────────────
+// Un solo objeto con la meta, la proyección, la venta de cada día y los
+// vendedores con su ticket promedio y sus días. `null` en branchId = todas las
+// salas juntas, y el servidor lo ignora si el alcance es de una sola.
+export async function fetchMesEnCurso(branchId = null) {
+    const { data, error } = await supabase.rpc('get_metas_mes_en_curso', {
+        p_branch_id: branchId != null ? Number(branchId) : null,
+    });
+    if (error) throw error;
+    return data ?? null;
+}
+
 export async function fetchMetaSala(branchId = null) {
     const { data, error } = await supabase.rpc('get_meta_sala', {
         p_branch_id: branchId != null ? Number(branchId) : null,

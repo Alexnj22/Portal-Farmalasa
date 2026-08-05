@@ -10,13 +10,16 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { fetchMetasDashboard, fetchMetasRows } from '../../data/metas';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import GraficaMes from './GraficaMes';
+import RankingVendedores from './RankingVendedores';
+import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG } from './metasUtils';
 
 const fmtPct = (v) => formatPct(v);
 
-export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm, onClearSearch }) {
+export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadKey, bonificacionesActivas, searchTerm, onClearSearch, salaOptions }) {
     const ymActual = ymHoySV();
     const ymMax = ymSumar(ymActual, 1);
     const [ym, setYm] = useState(ymActual);
@@ -32,6 +35,13 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
     // — un vacío sin acción es una pantalla muerta). Solo cambia de valor para
     // re-disparar el efecto.
     const [intento, setIntento] = useState(0);
+
+    // El mes en curso: cómo va y quién vende. Vive aparte del tablero porque
+    // responde otra pregunta y se pide por sala — '' es todas juntas.
+    const [salaMes, setSalaMes] = useState('');
+    const [vistaMes, setVistaMes] = useState('dias');
+    const [mes, setMes] = useState(null);
+    const [cargandoMes, setCargandoMes] = useState(true);
 
     useEffect(() => {
         let alive = true;
@@ -56,6 +66,21 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
 
     const esMesActual = ym === ymActual;
     const cerrado = ym < ymActual;
+
+    // Solo tiene sentido para el mes en curso: «cómo va» y «quién está
+    // vendiendo» son preguntas del presente. En un mes cerrado la respuesta ya
+    // está en la tarjeta y en el Histórico.
+    useEffect(() => {
+        if (!esMesActual) { setMes(null); return; }
+        let alive = true;
+        setCargandoMes(true); // eslint-disable-line react-hooks/set-state-in-effect -- reset del skeleton al cambiar de sala
+        fetchMesEnCurso(salaMes || null)
+            .then((d) => { if (alive) { setMes(d); setCargandoMes(false); } })
+            // Sin esto la sección no aparece y el resto del tablero sigue vivo:
+            // es un agregado, no el contenido principal.
+            .catch(() => { if (alive) { setMes(null); setCargandoMes(false); } });
+        return () => { alive = false; };
+    }, [esMesActual, salaMes, reloadKey, intento]);
 
     const visibles = useMemo(() => {
         if (!searchTerm?.trim()) return rows;
@@ -287,6 +312,37 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                         subtitle="Cuando una sala registre ventas, su tarjeta aparece acá."
                     />
                 )
+            )}
+
+            {/* Cómo va el mes y quién lo está vendiendo. Debajo de las tarjetas
+                porque es el detalle de lo que ellas resumen, y solo para el mes
+                en curso. El selector es de esta sección, no de la vista: manda
+                sobre las dos tarjetas de abajo y sobre nada más. */}
+            {esMesActual && (
+                <section className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <h2 className="text-body font-black">Cómo va {ymLabel(ym).toLowerCase()}</h2>
+                        <div className="w-full sm:w-64">
+                            <LiquidSelect
+                                value={salaMes} onChange={setSalaMes}
+                                options={[{ value: '', label: 'Todas las salas' }, ...(salaOptions || [])]}
+                                placeholder="Todas las salas"
+                            />
+                        </div>
+                    </div>
+
+                    {cargandoMes ? (
+                        <div className="grid gap-4 xl:grid-cols-2">
+                            <div data-surface="card" className="p-5"><SkeletonText lines={6} /></div>
+                            <div data-surface="card" className="p-5"><SkeletonText lines={6} /></div>
+                        </div>
+                    ) : mes ? (
+                        <div className="grid gap-4 xl:grid-cols-2">
+                            <GraficaMes data={mes} vista={vistaMes} onVista={setVistaMes} />
+                            <RankingVendedores data={mes} />
+                        </div>
+                    ) : null}
+                </section>
             )}
         </div>
     );

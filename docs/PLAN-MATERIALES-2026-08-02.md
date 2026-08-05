@@ -1367,10 +1367,12 @@ escrito: es la prueba de que el sistema ya cubre casos que nunca se miraron.
 esquina, que no es ni una cosa ni la otra. Dos disposiciones válidas, y hay que
 elegir una:
 
-| | cómo |
-|---|---|
-| **Centrada** | la píldora se alinea al medio del ancho de la vista |
-| **Distribuida** | tres zonas — `cuántas páginas · pasar página · cuánto hay` |
+**Elegida por el usuario el 2026-08-05: la DISTRIBUIDA.**
+
+| | cómo | |
+|---|---|---|
+| Centrada | la píldora se alinea al medio del ancho de la vista | descartada |
+| **Distribuida** | tres zonas — `cuántas páginas · pasar página · cuánto hay` | ✅ **elegida** |
 
 La distribuida es una **grilla de tres columnas `1fr auto 1fr`**, no un
 `space-between` de dos bloques: así el paginador queda en el centro **real** del
@@ -1385,6 +1387,120 @@ ancho y no se corre según lo largo que sea el texto de los costados.
 
 Nunca pegada a un borde sin ocupar el ancho — eso lee como un elemento que se
 quedó donde cayó.
+
+---
+
+---
+
+## 16. Encabezado flotante — su hover es ciego al tema ⏳ ESPERA DECISIÓN
+
+Todo el material de `page-header` sale de tokens por tema. **Su hover no:**
+
+```css
+[data-surface="page-header"]:hover {
+  box-shadow: 0 32px 64px -12px rgba(0,0,0,0.22);   /* ← a mano, en los 4 temas */
+  transform: translateY(var(--lift-hover));          /* ← este sí es token: -1px / 0px */
+}
+```
+
+En Liquid encaja. En **Solid** la sombra de reposo es `0 1px 4px rgba(0,0,0,.08)` y al pasar el
+mouse salta a una sombra de vidrio de 64px que no pertenece a ese material. Es el modo de falla
+de §1.7 otra vez —**un valor calibrado en un tema, guardado como universal**— y van cuatro.
+
+**Propuesta (más fuerte que tokenizar la sombra): el encabezado no reacciona al mouse en ningún
+tema.** §1.6 fijó que el hover de una superficie es el destello del canto, y eso vale para lo
+que *se apunta*. El encabezado no se apunta: se **cruza** para llegar a un control. Hoy
+cualquier viaje del mouse hacia el buscador levanta la barra entera. Lo que sí reacciona es cada
+control de adentro, que es lo que la persona está buscando.
+
+Si se prefiere conservar el gesto, la alternativa es un token `--header-shadow-hover` con valor
+por tema — pero entonces hay que responder qué significa «apuntar» una barra que ocupa el ancho
+de la pantalla.
+
+---
+
+## 17. Hoja táctil — paga por vidrio y por opacidad, y no cobra ninguno ⏳ ESPERA DECISIÓN
+
+`--surface-sheet` vale `0.985` **y encima declara `blur(20px)`**. El comentario que lo acompaña
+dice *«sigue siendo vidrio — el blur está»*. **Medido, no:** a esa opacidad el fondo cambia el
+píxel **1.012:1**, y el umbral de lo indistinguible de opaco es 1.00. Y es la superficie más
+cara del portal para llevar un blur: cubre **80% de la pantalla de un teléfono**.
+
+| configuración | pasa color | fantasma del texto | lectura |
+|---|---|---|---|
+| sin hoja (referencia) | — | 10.228 | el texto de atrás se lee entero |
+| 0.72 **sin** blur | — | **2.853** | fantasma legible — **esto es el bug que se reportó** |
+| **0.72 con blur** | 1.176:1 | **0.018** | nada se transparenta |
+| 0.985 sin blur | 1.001:1 | 0.176 | fantasma tenue |
+| 0.985 con blur *(hoy)* | 1.012:1 | 0.020 | igual que 0.72 con blur, pero sin material |
+
+**El renglón que decide es el segundo.** Con el blur puesto, 0.72 oculta el fondo *igual de bien*
+que 0.985 —0.018 contra 0.020, y medido en Chromium **y en WebKit** con la estructura real de
+`FilterBar`, los dos motores dan lo mismo—. O sea que la opacidad de 0.985 no defiende contra la
+transparencia: defiende contra **que el blur no se aplique**, que es el único estado donde el
+texto se lee.
+
+**No pude establecer por qué el blur no actuaba** cuando se reportó el bug en el iPhone 13
+(v2.100.0, 2026-07-27): la hoja usaba `data-surface="modal"`, o sea que tenía blur, y el prefijo
+`-webkit-` está presente en el CSS compilado de las **diez** superficies (verificado en
+`dist/assets/*.css`, que es donde la memoria del proyecto dice que hay que mirar).
+
+### Las dos opciones, y por qué recomiendo la segunda
+
+| | qué es | |
+|---|---|---|
+| **A · vidrio 0.72** | el material se ve en un teléfono | ⚠️ reabre una configuración cuyo fallo no entendemos |
+| **B · opaca 1.00 sin blur** | idéntica a hoy a la vista | ✅ **recomendada** |
+
+**Y el mockup destapó un efecto lateral que no había previsto: a 0.72 la hoja se ve gris sucio,
+no como vidrio.** El motivo es estructural — el velo que oscurece la app es **hermano** de la
+hoja y queda *detrás* de ella, así que forma parte de su backdrop; una hoja translúcida sobre un
+velo al 45% muestrea el velo. Para que A se viera como vidrio habría que sacar la hoja de encima
+del velo, o sea rehacer la estructura del modal.
+
+Entonces **B**: a la vista no cambia nada (a 0.985 ya se ve opaca) y quita un blur de pantalla
+completa del dispositivo donde más cuesta. Lo que **no** es defendible es quedarse en `0.985 +
+blur`, que paga los dos costos y no cobra ninguno.
+
+> **La regla general, que es la del tooltip vista al revés:** antes de poner un
+> `backdrop-filter`, comprobar que la opacidad **deja pasar algo**. Un blur bajo una superficie
+> opaca no es un adorno caro: es un costo invisible que nadie va a encontrar leyendo el CSS,
+> porque ahí *parece* que hay vidrio.
+
+---
+
+## 18. Dos afirmaciones de §13 eran falsas — y comparten la causa
+
+§13 se escribió cruzando los `data-surface` de `index.css` contra un grep **por archivo**. Ese
+cruce **no ve la composición**.
+
+| §13 afirmaba | lo que dice el código |
+|---|---|
+| *«`ModalShell` tiene 4 `backdrop-blur` propios; el componente que define cómo se ve un modal no usa la superficie de modal.»* | **Tiene uno**, y va en el **velo** (`bg-scrim backdrop-blur-sm`), que no es superficie sino el fondo que se oscurece. Y sí declara `data-surface={surface}` con `"modal"` por defecto. ❌ |
+| *«`ConfirmModal` no declara ninguna superficie.»* | Sus **dos** caminos la declaran: escritorio monta `ModalShell` sin prop (→ `"modal"`); táctil monta `ModalShell surface={null}` con `HojaMovil`, que trae la suya. ❌ |
+
+> **La lección es una variante de la que §13 ya había escrito.** Allá el problema era que la
+> lista no salía del registro. Acá el registro **sí** se consultó — lo que falló fue **leerlo por
+> archivo en vez de por árbol de render**. En un sistema donde la superficie se hereda del
+> envoltorio, `grep data-surface` sobre un archivo responde una pregunta distinta de la que uno
+> cree estar haciendo: no dice «¿esta pieza tiene material?», dice «¿esta pieza lo declara *ella
+> misma*?».
+
+### 18.1 Los 28 sí quedan en pie, y ordenados por archivo se ven de otra manera
+
+| archivo | usos | qué es |
+|---|---|---|
+| `LoginView` | 18 | pantalla bespoke, vive fuera del shell — **excepción con motivo** |
+| `timeclock/*` (6 archivos) | 24 | el kiosco: oscuro en los 4 temas por decisión — **excepción con motivo** |
+| `WidgetInventorySearch` | 7 | widget del tablero — **éste sí debería ser canónico** |
+| `productos/*`, `pedidos/*`, `App` | 12 | vidrio a mano en vistas normales — **canónico o excepción con motivo** |
+
+### 18.2 Lo que faltaba escribir sobre lo que NO es material
+
+**`Notice`, `Badge` y los chips no son superficies, son tinta.** Se apoyan sobre una superficie y
+toman su color de la paleta semántica; no llevan canto, ni lente, ni destello, ni
+`backdrop-filter`. **No declarar `data-surface` es lo correcto para ellos** — lo que faltaba no
+era el atributo, era la frase.
 
 ---
 

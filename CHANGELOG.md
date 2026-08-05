@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.395.4 — Encabezado y hoja: las dos superficies que faltaban
+
+Las dos superficies canónicas que §13 dejó sin definir, más la verificación de sus
+cabos sueltos — que corrigió dos afirmaciones del propio plan.
+
+**§16 · El hover del encabezado flotante es ciego al tema.** Su material sale de
+tokens, pero el hover lleva `box-shadow: 0 32px 64px -12px rgba(0,0,0,.22)` escrito
+a mano. En Solid la sombra de reposo es `0 1px 4px` y al pasar el mouse salta a una
+sombra de vidrio de 64px que no pertenece a ese material — §1.7 otra vez, y van
+cuatro. **Propuesta: el encabezado no reacciona al mouse en ningún tema.** §1.6 fijó
+que el hover es el destello del canto, y eso vale para lo que *se apunta*; una barra
+que ocupa el ancho de la pantalla se **cruza** para llegar a un control. Los
+controles de adentro sí responden.
+
+**§17 · La hoja táctil paga por vidrio y por opacidad, y no cobra ninguno.**
+`--surface-sheet` vale `0.985` y encima declara `blur(20px)`. El comentario dice
+«sigue siendo vidrio». Medido, no: el fondo cambia el píxel **1.012:1**, contra el
+1.00 de lo opaco. Y cubre el 80% de la pantalla de un teléfono.
+
+| configuración | pasa color | fantasma del texto |
+|---|---|---|
+| sin hoja | — | 10.228 |
+| 0.72 **sin** blur | — | **2.853** ← el bug que se reportó |
+| **0.72 con blur** | 1.176:1 | **0.018** |
+| 0.985 con blur *(hoy)* | 1.012:1 | 0.020 |
+
+Con el blur puesto, 0.72 oculta el fondo igual que 0.985 —y en Chromium y WebKit da
+lo mismo—, así que la opacidad no defiende contra la transparencia sino contra **que
+el blur no se aplique**. No pude establecer por qué no actuaba en el iPhone 13: la
+hoja usaba `data-surface="modal"` y el prefijo `-webkit-` está en el compilado de las
+diez superficies. **Recomendada la opción opaca 1.00 sin blur**: a la vista no cambia
+nada y quita un blur de pantalla completa. El mockup destapó además que a 0.72 la
+hoja se ve **gris sucio**, porque el velo es su hermano y queda dentro de su backdrop.
+
+**§18 · Dos afirmaciones de §13 eran falsas.** `ModalShell` tiene **un**
+`backdrop-blur`, en el velo, y sí declara `data-surface` con `"modal"` por defecto;
+`ConfirmModal` la declara por sus dos caminos. §13 cruzó el registro contra un grep
+**por archivo**, y eso no ve la composición: en un sistema donde la superficie se
+hereda del envoltorio, `grep data-surface` no dice «¿esta pieza tiene material?»,
+dice «¿esta pieza lo declara *ella misma*?». Los 28 blurs no canónicos sí quedan en
+pie —18 son `LoginView` y 24 el kiosco, ambos bespoke por decisión—. Y queda escrito
+que `Notice`, `Badge` y los chips **son tinta, no superficies**.
+
+**§15.2 · Paginación: elegida la distribuida.**
+
 ## v2.395.3 — Facturación, Clientes y Laboratorios: montar la pestaña al visitarla
 
 Auditoría del hallazgo que dejó v2.395.0: el `hidden` que esconde las pestañas

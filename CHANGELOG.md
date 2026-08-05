@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.375.0 — MIN·MAX: publicar todo ya no aborta, y los borradores viven en la píldora
+
+**«Publicar todo» en La Popular no publicaba nada.** Devolvía «MIN y MAX no
+forman un par válido» y abortaba el lote entero, las 371 fichas. La causa no
+estaba en las sucursales sino en Bodega: `publish_stock_params` recalcula el
+MIN/MAX de Bodega como Σ de las sucursales, y al par PUBLICADO le aplica una
+escalera que lo deja siempre válido (si el MAX pasa de 1, el MIN sube a 1), pero
+al par de BORRADOR lo escribía crudo. Y la Σ de varias sucursales en `0·1` da
+`0·2`, que el check `psp_draft_pair_valid` rechaza. Medido antes del arreglo:
+**109 de las 1,234 filas de Bodega** que iban a quedar con borrador lo violaban,
+todas de la forma `0·N` con N ≥ 2 — y una sola tumba la transacción completa.
+
+El trigger `sync_bodega_draft_from_branch_stmt` ya lo hacía bien: la función
+traía una copia de esa misma lógica que se quedó a mitad de camino. Ahora las
+dos aplican la escalera a los dos pares, y «¿hay borrador?» se compara entre
+pares ya saneados — con los crudos, una Σ de `0·2` contra un publicado de `1·2`
+se leía como cambio cuando las dos, saneadas, son `1·2`. Verificado sobre los
+datos reales: 0 violaciones, 1,230 filas con borrador legítimo.
+
+**Al editar un borrador, la celda de al lado mostraba el valor publicado.** Un
+producto en `2·4` de borrador y `1·2` publicado: al abrir el MIN, la caja del
+MAX pintaba **2** —el publicado— con los colores del borrador. Fuera del editor
+se veía bien. Las dos ramas del editor leían `effective_min`/`effective_max` en
+vez del borrador; el par que la fila muestra ahora se resuelve una sola vez
+(`vistaMin`/`vistaMax`) y lo usan el editor, la celda y Despacho.
+
+**Los borradores se mudaron a la píldora de filtros.** Eran una barra propia
+debajo de las tarjetas de costo —contador, «Solo borradores», «Cambios»,
+«Ocultar», «Descartar» y «Publicar todo», unos 640px—: o sea una segunda barra
+de filtros a 40px de la primera, que es justo lo que §17 existe para evitar.
+Ahora es una ranura más, y compacta: **sin números**, solo el punto que late y
+el rótulo. Las cuentas viven en el tooltip y en el panel, que es donde hay sitio
+para escribirlas. El panel lleva ver-solo-borradores, solo-los-que-cambian,
+descartar y —separado, porque es la única irreversible— publicar. En el teléfono
+se apila dentro de la hoja de filtros, con los botones enteros.
+
+**`FilterBar` aprendió a replegar sus acciones.** Sabía ceder el TEXTO de las
+acciones cuando faltaba ancho, y después de eso lo siguiente que cedía era una
+RANURA: la píldora escondía un filtro para dejar tres íconos a la vista. Ahora
+el orden es texto → acciones bajo un «Otros» (el mismo repliegue que el clúster
+táctil ya hacía) → ranuras vacías. La acción principal nunca entra al grupo.
+Medido a 1280px: sin esto, la ranura de borradores se iba a «más filtros» y
+publicar pasaba a ser dos clics a ciegas; con `fija` en la ranura —opt-in, para
+la que lleva la acción principal adentro— se queda anclada y ceden ABC y Estado.
+
+**El ✕ del toast.** Era `variant="destructive"` —una pastilla roja sólida— y el
+contenedor traía un `pr-12` de cuando el botón iba posicionado encima: quedaba
+flotando a media tarjeta con 48px de aire a su derecha, y en un toast de error
+competía con el rojo del ícono. Ahora es `ghost`, va al borde, y tiene
+`aria-label`.
+
+Archivos: `supabase/migrations/20260805154556_*`, `TabMinMax.jsx`,
+`tabminmax/BorradoresRanura.jsx` (nuevo), `common/FilterBar.jsx`,
+`common/LiquidToast.jsx`, `hooks/useAnclaje.js` (nuevo — el anclaje que ya
+compartían los paneles de la píldora, ahora que son tres).
+
 ## v2.374.0 — Metas: gastos por recuperar (motor)
 
 Pedido del usuario: poder cargar un gasto a una o varias salas y que se sume a

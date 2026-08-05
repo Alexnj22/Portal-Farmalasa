@@ -1,8 +1,11 @@
-import React, { memo, Children, isValidElement, useState, useEffect, useLayoutEffect, useId, useRef, createContext, useContext } from 'react';
+import React, { memo, Children, isValidElement, useState, useEffect, useLayoutEffect, useId, useRef, useCallback, createContext, useContext } from 'react';
 import AsaHoja from './AsaHoja';
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
 import useLayoutCompacto from '../../hooks/useLayoutCompacto';
+// El anclaje de los paneles de esta barra vive en `hooks/` desde que son tres
+// (desborde, otros, y el de borradores que TabMinMax mete como ranura).
+import useAnclaje from '../../hooks/useAnclaje';
 import Contador from './Contador';
 import BarraFlotante from './BarraFlotante';
 import TabBarAction from './TabBarAction';
@@ -105,6 +108,14 @@ const Section = memo(({
     // filtrar" de su propio control (a veces es '', a veces 'all', a veces el
     // mes en curso).
     active = false,
+    // Hay una prop más, `fija`, que NO se lee acá: la lee la píldora sobre
+    // `s.props.fija` al repartir el ancho, y significa "esta ranura no se va al
+    // control de desborde ni estando vacía". Es para la que además de filtrar
+    // lleva la ACCIÓN principal de la pantalla adentro —hoy solo los borradores
+    // de MIN·MAX, cuyo panel tiene el «Publicar todo»—: sin ella, a 1280px la
+    // barra la escondía tras «más filtros» y publicar pasaba a ser dos clics a
+    // ciegas (medido en captura). Opt-in y ha de seguir siendo rara — una barra
+    // con todas las ranuras fijas ya no puede degradar.
     onClear,
     label,
     className = '',
@@ -296,30 +307,9 @@ const rotuloDeSeccion = (sec) => {
 
 const PanelDesborde = memo(({ secciones, aplicadas }) => {
     const [abierto, setAbierto] = useState(false);
-    const [caja, setCaja] = useState(null);
-    const btnRef = useRef(null);
+    const cerrar = useCallback(() => setAbierto(false), []);
     const id = useId();
-
-    useEffect(() => {
-        if (!abierto) return undefined;
-        const medir = () => {
-            const r = btnRef.current?.getBoundingClientRect();
-            if (r) setCaja({ top: r.bottom + 8, right: window.innerWidth - r.right });
-        };
-        medir();
-        const alTeclear = e => { if (e.key === 'Escape') setAbierto(false); };
-        const alClic = e => { if (!btnRef.current?.contains(e.target) && !e.target.closest?.(`[data-panel="${id}"]`)) setAbierto(false); };
-        window.addEventListener('keydown', alTeclear);
-        window.addEventListener('resize', medir);
-        window.addEventListener('scroll', medir, true);
-        document.addEventListener('mousedown', alClic);
-        return () => {
-            window.removeEventListener('keydown', alTeclear);
-            window.removeEventListener('resize', medir);
-            window.removeEventListener('scroll', medir, true);
-            document.removeEventListener('mousedown', alClic);
-        };
-    }, [abierto, id]);
+    const { btnRef, caja } = useAnclaje(abierto, cerrar, id);
 
     return (
         <>
@@ -370,6 +360,70 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
     );
 });
 PanelDesborde.displayName = 'FilterBar.PanelDesborde';
+
+/**
+ * PanelAcciones — «Otros»: las acciones secundarias tras un solo control.
+ *
+ * Es el mismo repliegue que el clúster táctil ya hacía con `MoreHorizontal`
+ * («de dos secundarias para arriba se agrupan»), traído a la píldora de
+ * escritorio. Hasta el 2026-08-05 la barra solo sabía ceder el TEXTO de las
+ * acciones; cuando ni los íconos entraban, lo siguiente que cedía era una
+ * RANURA — o sea que la píldora escondía un filtro para dejar tres íconos a la
+ * vista, que es al revés de lo que la barra es.
+ *
+ * La acción principal nunca entra acá: es la que la pantalla existe para que
+ * se apriete. Lo que se agrupa son las de solo ícono —exportar, configurar,
+ * paneles— que ya venían sin rótulo.
+ */
+const PanelAcciones = memo(({ acciones, extra }) => {
+    const [abierto, setAbierto] = useState(false);
+    const cerrar = useCallback(() => setAbierto(false), []);
+    const id = useId();
+    const { btnRef, caja } = useAnclaje(abierto, cerrar, id);
+
+    // Un panel abierto adentro (config, laboratorios) tiene que verse desde
+    // afuera: si no, agrupar convierte un interruptor encendido en un estado
+    // invisible. Es la misma regla que «una ranura aplicada no se esconde».
+    const activas = acciones.filter(a => a.activo).length;
+
+    return (
+        <>
+            {/* `div` con la ref y no la ref en el botón: `TabBarAction` es un
+                `memo` sin `forwardRef`, y clonar sus 12 clases acá para poder
+                medirlo sería tener dos botones que hay que mantener iguales. */}
+            <div ref={btnRef} className="flex">
+                <TabBarAction size="sm" soloIcono icon={MoreHorizontal}
+                    label={activas > 0 ? `Otros (${activas} abierto${activas === 1 ? '' : 's'})` : 'Otros'}
+                    onClick={() => setAbierto(v => !v)}
+                    aria-expanded={abierto} aria-haspopup="dialog"
+                    aria-pressed={activas > 0}
+                    className={activas > 0 || abierto ? '!bg-brand/10 !border-brand/30 !text-brand-text' : ''} />
+            </div>
+
+            {abierto && caja && createPortal(
+                <div data-panel={id} role="dialog" aria-label="Otras acciones"
+                    data-surface="dropdown"
+                    style={{ top: caja.top, right: caja.right }}
+                    className="fixed z-dropdown w-[240px] p-2 flex flex-col gap-2
+                        animate-in fade-in zoom-in-95 duration-150 ease-out">
+                    {acciones.map(a => (
+                        <TabBarAction key={a.key} size="sm" icon={a.icon} tone={a.tone}
+                            as={a.as} href={a.href} target={a.target} rel={a.rel}
+                            disabled={a.disabled}
+                            onClick={a.disabled ? undefined : () => { a.onClick?.(); cerrar(); }}
+                            aria-pressed={a.activo != null ? !!a.activo : undefined}
+                            className="w-full justify-start">
+                            {a.label}
+                        </TabBarAction>
+                    ))}
+                    {extra && <div className="flex flex-col gap-2 [&>*]:w-full">{extra}</div>}
+                </div>,
+                document.body,
+            )}
+        </>
+    );
+});
+PanelAcciones.displayName = 'FilterBar.PanelAcciones';
 
 // ── El reparto del ancho (2026-07-30, aprobado sobre mockup) ─────────────
 // El cupo de ranuras NO es un número fijo: es el que entre en el ancho REAL.
@@ -735,28 +789,41 @@ const FilterBar = memo(({
 
     // ── Escritorio: la píldora ────────────────────────────────────────────
     // Cuántas ranuras entran, según el ancho REAL. Y el orden en que se cede:
-    //   1º el TEXTO de las acciones      2º las ranuras vacías
+    //   1º el TEXTO de las acciones   2º las acciones bajo «Otros»
+    //   3º las ranuras vacías
     // Una ranura APLICADA no se esconde nunca — una vista que recorta datos sin
-    // mostrar por qué es peor que una píldora ancha.
-    const idxAplicadas = secciones.map((s, i) => [s, i]).filter(([s]) => s.props?.active).map(([, i]) => i);
-    const idxVacias    = secciones.map((s, i) => [s, i]).filter(([s]) => !s.props?.active).map(([, i]) => i);
+    // mostrar por qué es peor que una píldora ancha. Tampoco una `fija`.
+    const anclada      = s => s.props?.active || s.props?.fija;
+    const idxAncladas  = secciones.map((s, i) => [s, i]).filter(([s]) => anclada(s)).map(([, i]) => i);
+    const idxVacias    = secciones.map((s, i) => [s, i]).filter(([s]) => !anclada(s)).map(([, i]) => i);
     // El ✕ de «limpiar todo» solo existe con DOS o más filtros: con uno alcanza
     // la × de la propia ranura. Cobrarlo siempre costaba 54px de gusto.
     const hayLimpiar = !!onClear && activeCount > 1;
 
     // Con las piezas ya medidas se calcula exacto; sin medir todavía se asume que
     // entra todo, que es el estado que `useMedidaPiezas` necesita para medir.
-    const anchoIconos = acciones.length
-        ? acciones.length * PX.accionIcono + (acciones.length - 1) * PX.accionGap + 8
-        : 0;
+    const anchoDe = n => n ? n * PX.accionIcono + (n - 1) * PX.accionGap + 8 : 0;
 
-    const medirCon = (n, conTexto) => {
+    // Qué se agrupa bajo «Otros» cuando ni los íconos entran. Mismo criterio que
+    // el clúster táctil: la principal queda fuera, el resto adentro, y solo tiene
+    // sentido con dos o más — agrupar una sola acción cambia un ícono por otro.
+    const principalPildora = acciones.find(a => a.principal ?? a.variant === 'primary') || null;
+    const agrupables       = acciones.filter(a => a !== principalPildora);
+    const puedeAgrupar     = agrupables.length > 1;
+
+    const anchoIconos   = anchoDe(acciones.length);
+    const anchoAgrupado = anchoDe((principalPildora ? 1 : 0) + 1);
+
+    // forma: 'texto' | 'iconos' | 'agrupado'
+    const medirCon = (n, forma) => {
         if (!piezas) return 0;
         const ranuras = piezas.ranuras.slice(0, n).reduce((a, b) => a + b, 0)
             + Math.max(0, n - 1) * PX.divisor;
         const desborde = n < secciones.length ? PX.desborde + PX.divisor : 0;
         const limpiar = hayLimpiar ? PX.limpiar + PX.divisor : 0;
-        const accs = conTexto ? piezas.accionesTexto : anchoIconos;
+        const accs = forma === 'texto'     ? piezas.accionesTexto
+                   : forma === 'agrupado'  ? anchoAgrupado
+                   :                         anchoIconos;
         return PX.relleno + ranuras + desborde + limpiar + (accs ? PX.divisor + accs : 0);
     };
 
@@ -772,18 +839,30 @@ const FilterBar = memo(({
     const cabenLasTarjetas = ancho =>
         !medidaFila.tarjetas || (medidaFila.fila - ancho - 24) >= carrilCompleto;
 
+    // El orden en que la píldora cede, de lo que menos duele a lo que más:
+    //   1º el TEXTO de las acciones   2º las acciones bajo «Otros»
+    //   3º las ranuras vacías, al control de desborde
+    // Las acciones ceden ANTES que una ranura porque esto es la barra de
+    // FILTROS: esconder un filtro para dejar tres íconos a la vista invierte
+    // lo que §17 dice que la barra es. Una ranura APLICADA no se esconde nunca.
     let conTextoAcciones = true;
+    let agrupado = false;
     if (piezas) {
-        const conTexto = medirCon(cupo, true);
+        const conTexto = medirCon(cupo, 'texto');
         conTextoAcciones = conTexto <= disponible && cabenLasTarjetas(conTexto);
-        while (cupo > idxAplicadas.length && cupo > 1 && medirCon(cupo, conTextoAcciones) > disponible) cupo--;
+        let forma = conTextoAcciones ? 'texto' : 'iconos';
+        if (forma === 'iconos' && puedeAgrupar && medirCon(cupo, forma) > disponible) {
+            forma = 'agrupado';
+            agrupado = true;
+        }
+        while (cupo > idxAncladas.length && cupo > 1 && medirCon(cupo, forma) > disponible) cupo--;
     }
 
     // Se ELIGEN por prioridad pero se DIBUJAN en su orden original: el orden de
     // ranuras de §17 (ámbito → entidad → tiempo → estado) es el orden en que una
     // persona lo diría en voz alta, y reordenarlo porque una esté aplicada lo
     // rompería — la píldora cambiaría de forma cada vez que se toca un filtro.
-    const visibles   = new Set([...idxAplicadas, ...idxVacias].slice(0, Math.max(cupo, idxAplicadas.length)));
+    const visibles   = new Set([...idxAncladas, ...idxVacias].slice(0, Math.max(cupo, idxAncladas.length)));
     const enLinea    = secciones.filter((_, i) => visibles.has(i));
     const enDesborde = secciones.filter((_, i) => !visibles.has(i));
 
@@ -848,7 +927,12 @@ const FilterBar = memo(({
                 <>
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
                     <div data-pieza="acciones" className="flex items-center gap-1 h-9 px-1">
-                        {acciones.map(a => {
+                        {/* `useMedidaPiezas` mide esta caja UNA vez por juego de
+                            rótulos, y esa primera pasada ocurre con `piezas` en
+                            null — o sea con la forma completa. Por eso agrupar
+                            acá no se muerde la cola: la medida de referencia ya
+                            está tomada cuando esta rama puede ser cierta. */}
+                        {(agrupado ? (principalPildora ? [principalPildora] : []) : acciones).map(a => {
                             // `soloIcono`: el ícono solo. Es para la acción
                             // secundaria y reconocible —ocultar montos, exportar—
                             // que con texto le come a la píldora el ancho que
@@ -881,7 +965,9 @@ const FilterBar = memo(({
                                 ? <LiquidTooltip key={a.key} content={a.label} side="bottom">{boton}</LiquidTooltip>
                                 : boton;
                         })}
-                        {accionesExtra}
+                        {agrupado
+                            ? <PanelAcciones acciones={agrupables} extra={accionesExtra} />
+                            : accionesExtra}
                     </div>
                 </>
             )}

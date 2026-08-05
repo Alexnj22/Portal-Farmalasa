@@ -34,7 +34,12 @@ const LiquidToast = () => {
     const toastContent = (
         <div
             data-surface="dropdown"
-            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-toast flex items-center gap-4 p-3 pr-12 animate-in slide-in-from-bottom-10 fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu max-w-[400px] transition-colors"
+            // `pr-12` era el resto de cuando el ✕ iba posicionado encima: dejaba
+            // 48px de aire DESPUÉS de un botón que hoy es un hijo más del flex,
+            // así que el ✕ quedaba flotando a media tarjeta con un hueco a su
+            // derecha. Con `p-3` parejo el botón vuelve al borde, que es donde
+            // se lo busca.
+            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-toast flex items-center gap-4 p-3 animate-in slide-in-from-bottom-10 fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu max-w-[400px] transition-colors"
         >
             <div className={`w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card transition-all ${config.iconContainer}`}>
                 {config.icon}
@@ -49,7 +54,12 @@ const LiquidToast = () => {
                 </p>
             </div>
 
-            <Button variant="destructive" size="sm" icon={X} iconOnly onClick={hideToast} />
+            {/* `destructive` no: cerrar un aviso no destruye nada, y en un toast
+                de error el rojo sólido del ✕ competía con el rojo del ícono —
+                dos pastillas del mismo color a 300px una de otra. El ✕ es la
+                acción secundaria de una tarjeta que además se va sola. */}
+            <Button variant="ghost" size="sm" icon={X} iconOnly
+                onClick={hideToast} aria-label="Cerrar el aviso" className="self-start shrink-0" />
         </div>
     );
 

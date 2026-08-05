@@ -9,9 +9,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, Loader2,
-    Building2, Package, X, Download, Trash2,
+    Building2, Package, X, Download,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight, History,
-    TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, FlaskConical, Search, MoreHorizontal, Filter,
+    TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, XCircle, Eye, BarChart2, FlaskConical, Search, MoreHorizontal, Filter,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -37,6 +37,7 @@ import RowActions from './tabminmax/RowActions';
 import ExpandedPanel from './tabminmax/ExpandedPanel';
 import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
+import BorradoresRanura from './tabminmax/BorradoresRanura';
 import { upsertStockParams } from '../../data/stockParams';
 import { useMinMaxData } from './tabminmax/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
@@ -570,6 +571,39 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 )}
                             </FilterBar.Section>
                         )}
+
+                        {/* Los borradores: última ranura porque es el filtro más
+                            angosto de todos —recorta lo que las otras cuatro ya
+                            dejaron— y porque desaparece sola cuando no hay
+                            ninguno, así que ir al final es lo que hace que las
+                            demás no se muevan de sitio al publicar. */}
+                        {draftCount > 0 && !loading && canManage && !isBodega && (
+                            <FilterBar.Section
+                                fija
+                                active={filterDraft || filterChangesOnly}
+                                onClear={() => { setFilterDraft(false); setFilterChangesOnly(false); }}
+                                label="borradores">
+                                <BorradoresRanura
+                                    draftCount={draftCount}
+                                    changesCount={changesCount}
+                                    hasPublishedData={hasPublishedData}
+                                    filterDraft={filterDraft}
+                                    filterChangesOnly={filterChangesOnly}
+                                    onSoloBorradores={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
+                                    onSoloCambios={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
+                                    hasActiveFilter={hasActiveFilter}
+                                    filterLabel={filterLabel}
+                                    filtradosCount={filtered.length}
+                                    filteredDraftIds={filteredDraftIds}
+                                    onOcultarFiltrados={() => setHideFilteredConfirm(true)}
+                                    ocultando={hidingFiltered}
+                                    onDescartar={() => setDiscardConfirm(true)}
+                                    descartando={discardingAll}
+                                    onPublicar={requestPublish}
+                                    publicando={publishing}
+                                />
+                            </FilterBar.Section>
+                        )}
                     </FilterBar>
                 </div>
             </div>
@@ -600,138 +634,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 </div>
             )}
 
-            {/* ── Filter bar — single row: [filter pill] [draft+publish] [clase A] ── */}
-            {!neverCalc && (
+            {/* ── Bodega: de dónde sale su MIN/MAX ──────────────────────────
+                Esta fila llegó a tener tres cosas: los filtros de estado, la
+                barra de borradores y este aviso. Las dos primeras son ranuras
+                de la píldora desde el 2026-08-05 (los filtros no pueden vivir
+                en dos sitios, §17), así que queda solo el aviso — y con él la
+                fila entera desaparece fuera de Bodega. */}
+            {!neverCalc && !loading && isBodega && (
                 <div className="flex items-center gap-2.5 flex-wrap">
-
-                    {/* La tira de filtros de estado vivía acá: 44px entre la
-                        matriz y la tabla. Ahora es una ranura de la píldora, con
-                        lo que los filtros dejan de estar en dos sitios. */}
-
-                    {/* Draft pill + Publicar — liquid glass, integrado a la derecha */}
-                    <AnimatePresence>
-                    {draftCount > 0 && !loading && canManage && !isBodega && (
-                        <motion.div
-                            key="draft-pub-pill"
-                            initial={{ opacity: 0, x: 12, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1, transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
-                            exit={{ opacity: 0, x: 12, scale: 0.95, transition: { duration: 0.18 } }}
-                            className="flex items-center rounded-2xl overflow-hidden shrink-0"
-                            style={{
-                                background: 'var(--surface-card)',
-                                backdropFilter: 'blur(24px)',
-                                WebkitBackdropFilter: 'blur(24px)',
-                                border: '1px solid var(--border-card)',
-                                boxShadow: 'var(--shadow-glass-2)',
-                            }}>
-                            {/* Dot + count */}
-                            <div className="flex items-center gap-1.5 px-3 py-2 shrink-0">
-                                <span className="relative flex h-2 w-2 shrink-0">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-chart-1 opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-chart-1" />
-                                </span>
-                                <span className="text-label font-black text-content tabular-nums">{draftCount}</span>
-                                <span className="text-caption text-content-3 font-medium">borrador{draftCount !== 1 ? 'es' : ''}</span>
-                            </div>
-                            <div className="h-4 w-px bg-divider shrink-0" />
-                            {/* Solo borradores */}
-                            <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
-                                onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
-                                className={`flex items-center gap-1 px-2.5 py-2 text-caption font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterDraft ? 'bg-surface-card-hover/80 text-content font-bold' : 'text-content-2 hover:bg-surface-card-hover/60 hover:text-content'}`}>
-                                {filterDraft ? <><X size={8} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : 'Solo borradores'}
-                            </motion.button>
-                            {/* Solo cambios */}
-                            {hasPublishedData && changesCount > 0 && (
-                                <>
-                                    <div className="h-4 w-px bg-divider shrink-0" />
-                                    <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
-                                        onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
-                                        className={`flex items-center gap-1 px-2.5 py-2 text-caption font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterChangesOnly ? 'bg-chart-3/20 text-chart-3-text font-bold' : 'text-content-2 hover:bg-surface-card-hover/60 hover:text-content'}`}>
-                                        {filterChangesOnly ? <><X size={8} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : `Cambios (${changesCount})`}
-                                    </motion.button>
-                                </>
-                            )}
-                            {/* Ocultar filtrados (7A.6) */}
-                            {hasActiveFilter && filtered.length > 0 && (
-                                <>
-                                    <div className="h-4 w-px bg-divider shrink-0" />
-                                    <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
-                                        onClick={() => setHideFilteredConfirm(true)}
-                                        disabled={hidingFiltered}
-                                        className="flex items-center gap-1 px-2.5 py-2 text-caption font-semibold text-danger/70 hover:bg-danger/10 hover:text-danger-text transition-[background-color,color] duration-100 whitespace-nowrap disabled:opacity-50">
-                                        {hidingFiltered ? <Loader2 size={9} className="animate-spin shrink-0" /> : <EyeOff size={9} className="shrink-0" />}
-                                        Ocultar {filterLabel} ({filtered.length})
-                                    </motion.button>
-                                </>
-                            )}
-                            {/* Descartar */}
-                            <>
-                                <div className="h-4 w-px bg-divider shrink-0" />
-                                <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
-                                    onClick={() => setDiscardConfirm(true)}
-                                    disabled={discardingAll}
-                                    className="flex items-center gap-1 px-2.5 py-2 text-caption font-semibold text-danger/70 hover:bg-danger/10 hover:text-danger-text transition-[background-color,color] duration-100 whitespace-nowrap disabled:opacity-50">
-                                    {discardingAll ? <Loader2 size={9} className="animate-spin shrink-0" /> : <Trash2 size={9} className="shrink-0" />}
-                                    Descartar
-                                </motion.button>
-                            </>
-                            {/* ─ Publicar liquid glass ─ */}
-                            <div className="h-4 w-px bg-warning/30 shrink-0 mx-0.5" />
-                            <div className="pr-1.5 pl-0.5 py-1.5">
-                                <AnimatePresence mode="wait">
-                                {hasActiveFilter && filteredDraftIds.length > 0 ? (
-                                    <motion.button key="pub-filtered"
-                                        initial={{ opacity: 0, scale: 0.88 }}
-                                        animate={{ opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 400, damping: 28 } }}
-                                        exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.12 } }}
-                                        whileHover={{ scale: 1.05, y: -1.5, transition: { type: 'spring', stiffness: 480, damping: 26 } }}
-                                        whileTap={{ scale: 0.94, y: 0, transition: { duration: 0.07 } }}
-                                        onClick={() => requestPublish(filteredDraftIds)}
-                                        disabled={publishing}
-                                        className="group relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-label font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
-                                        style={{
-                                            background: 'var(--brand)',
-                                            backdropFilter: 'blur(20px) saturate(180%)',
-                                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                                            border: '1px solid var(--border-input)',
-                                            boxShadow: 'var(--shadow-glow-brand)',
-                                            color: 'white',
-                                        }}>
-                                        <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '.25' }} />
-                                        {publishing ? <Loader2 size={10} className="animate-spin relative z-base" /> : <Upload size={10} className="relative z-base" />}
-                                        <span className="relative z-base">Publicar {filterLabel} ({filteredDraftIds.length})</span>
-                                    </motion.button>
-                                ) : (
-                                    <motion.button key="pub-all"
-                                        initial={{ opacity: 0, scale: 0.88 }}
-                                        animate={{ opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 400, damping: 28 } }}
-                                        exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.12 } }}
-                                        whileHover={{ scale: 1.05, y: -1.5, transition: { type: 'spring', stiffness: 480, damping: 26 } }}
-                                        whileTap={{ scale: 0.94, y: 0, transition: { duration: 0.07 } }}
-                                        onClick={() => requestPublish()}
-                                        disabled={publishing}
-                                        className="group relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-label font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
-                                        style={{
-                                            background: 'var(--brand)',
-                                            backdropFilter: 'blur(20px) saturate(180%)',
-                                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                                            border: '1px solid var(--border-input)',
-                                            boxShadow: 'var(--shadow-glow-brand)',
-                                            color: 'white',
-                                        }}>
-                                        <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '.25' }} />
-                                        {publishing ? <Loader2 size={10} className="animate-spin relative z-base" /> : <Upload size={10} className="relative z-base" />}
-                                        <span className="relative z-base">Publicar todo ({draftCount})</span>
-                                    </motion.button>
-                                )}
-                                </AnimatePresence>
-                            </div>
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-
-                    {/* Bodega info chip — inline para no ocupar fila extra */}
-                    {!loading && isBodega && (
                         <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl"
                              style={{
                                  background: 'var(--surface-card)',
@@ -756,8 +666,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 </>
                             ) : null}
                         </div>
-                    )}
-
                 </div>
             )}
 
@@ -806,6 +714,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         const canExpand  = stock > 0 || row.last_sale_date != null || row.is_catalog_only || (row.effective_min ?? 0) > 0 || (row.effective_max ?? 0) > 0 || v6m > 0;
                         const hasDraft   = row.draft_status === 'pending';
                         const isSparse   = row.draft_status === 'sparse_data';
+                        // El par que la fila MUESTRA. En una sucursal con borrador es el
+                        // borrador; en Bodega no, porque ahí el borrador va aparte en su
+                        // propia insignia y las cajas siguen siendo el valor vigente.
+                        // Vivía suelto dentro de la celda de Despacho, así que la celda de
+                        // MIN·MAX lo volvía a resolver a mano — y en el editor no lo hacía:
+                        // al editar el MIN, la caja del MAX de al lado pintaba el PUBLICADO
+                        // con los colores del borrador (2·4 en borrador se leía 2·2).
+                        const vistaMin   = (hasDraft && !isBodega) ? (row.draft_min ?? 0) : minN;
+                        const vistaMax   = (hasDraft && !isBodega) ? (row.draft_max ?? 0) : maxN;
                         const limitedData = hasDraft &&
                             row.draft_data_days != null &&
                             row.draft_data_days < (analysisConfig.analysis_days ?? 180);
@@ -993,7 +910,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             inputClassName="text-center font-black tabular-nums"
                                                         />
                                                         {sep}
-                                                        <div data-surface={hasDraft ? undefined : 'card'} className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
+                                                        <div data-surface={hasDraft ? undefined : 'card'} className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover'}`}>{vistaMax > 0 ? vistaMax.toLocaleString() : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-micro font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-warning-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                     {(dead || noHistory) && <div className="text-micro text-warning-text font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
@@ -1003,7 +920,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (isEditMax) return (
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-1.5">
-                                                        <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-warning bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : ((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—')}</div>
+                                                        <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-warning bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : ((vistaMin > 0 || vistaMax > 0) ? vistaMin.toLocaleString() : '—')}</div>
                                                         {sep}
                                                         <PortalInput
                                                             aria-label="Nuevo valor"
@@ -1173,8 +1090,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             // redondeado por la regla de despacho — se muestran debajo del
                                             // badge de presentación/regla (solo cuando hay regla + presentación
                                             // real, para no mostrar un redondeo basado en factores default=1).
-                                            const dispMin = (hasDraft && !isBodega) ? (row.draft_min ?? 0) : minN;
-                                            const dispMax = (hasDraft && !isBodega) ? (row.draft_max ?? 0) : maxN;
+                                            const dispMin = vistaMin;
+                                            const dispMax = vistaMax;
                                             const hasPres = pres.length > 0;
 
                                             // Catalog presentation label (always shown)

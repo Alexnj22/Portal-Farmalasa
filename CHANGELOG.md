@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.394.2 — Metas: el factor 1.00 sin cumplimiento medible, explícito
+
+Una sala sin cumplimiento que medir —recién abierta, o con el mes anterior sin
+meta cargada— recibía factor **1.10**: 10% de crecimiento exigido por no tener
+historia, que es exactamente lo contrario del criterio escrito. Y la tarjeta «De
+dónde sale» se contradecía a sí misma en tres renglones: el encabezado del paso 3
+decía «Por el factor 1.10», el cuerpo afirmaba «el factor queda en 1.00», y la
+tabla de tramos le marcaba en negrita el renglón «< 90%» a una sala que no tuvo
+meta ese mes.
+
+**El 1.00 nunca estuvo programado: venía prestado del tramo de más abajo.** La
+primera versión de `metas_factor_cumplimiento` era `(105, 1.08) (95, 1.05)
+(90, 1.02) (0, 1.00)`, así que el `COALESCE(pct, 0)` del cálculo caía en el tramo
+0 y devolvía 1.00 de casualidad. Cuando la corrección de cinco minutos después
+invirtió los tramos a `(95, 1.02) (90, 1.05) (0, 1.10)`, el caso «sin
+cumplimiento» se fue montado con el tramo de abajo y pasó a valer 1.10. Ninguna
+migración lo nombra, ningún test lo cubría, y el comentario que lo describe
+seguía tres líneas más arriba del código que ya devolvía otra cosa.
+
+Ahora el 1.00 vive en el RPC y no en un tramo: el LATERAL no devuelve fila cuando
+`pct` es NULL y el `COALESCE` pone el 1.00, así que reordenar, agregar o quitar
+tramos ya no puede cambiarlo en silencio. Aplicado a las dos funciones —la
+propuesta y la explicación— porque tienen que dar el mismo número: la tarjeta usa
+la segunda para rehacer la cuenta y avisar si no coincide con lo guardado.
+
+En pantalla, el texto ahora imprime el factor que devolvió el RPC en vez de un
+literal, y sin cumplimiento medible no marca ningún tramo.
+
+**Nada que corregir en los datos**: la rama nunca corrió. Las 6 salas tienen
+cumplimiento medible desde que existe el módulo y ninguna meta guardada salió por
+ahí (0 filas con esa nota). Verificado además que no hay regresión: las 6 metas de
+agosto se recalculan al centavo con los mismos factores de siempre.
+
+Salió de simular las dos fórmulas —la vigente y la anterior— sobre el año 2026 con
+ventas reales de enero a julio. De paso quedó medido que el mes flojo **no**
+predice el siguiente: agrupando por el factor que les tocó, el grupo «cerró <90%»
+rinde después 103.5% contra 100.6% del grupo «cerró ≥95%». La premisa del factor
+no aparece en los datos, pero eso es una decisión de negocio y queda anotada, no
+cambiada.
+
 ## v2.394.1 — El tooltip que no era vidrio, y la tabla dentro del cuerpo
 
 Tres correcciones a §14 y §15, todas levantadas por el usuario mirando el mockup.

@@ -1,61 +1,23 @@
 SET lock_timeout = '5s';
 
--- ═══ LA FÓRMULA DE LA META, REESCRITA ═══════════════════════════════════════
--- Decisión del usuario (2026-08-05). Reemplaza al cálculo con peso estacional y
--- empuje por productividad. La nueva:
+-- ═══ EL FACTOR SIN CUMPLIMIENTO MEDIBLE, EXPLÍCITO ══════════════════════════
+-- El «1.00 cuando no hay cumplimiento que medir» nunca estuvo programado: venía
+-- prestado del tramo de más abajo. La primera versión de la tabla tenía
+-- (105,1.08) (95,1.05) (90,1.02) (0,1.00), así que el `COALESCE(pct, 0)` caía en
+-- el tramo 0 y devolvía 1.00 de casualidad. Cuando la corrección de los tramos
+-- (20260805200804) los reemplazó por (95,1.02) (90,1.05) (0,1.10), el caso «sin
+-- cumplimiento» se fue montado con el tramo de abajo y pasó a valer 1.10: a una
+-- sala nueva se le pedía 10% de crecimiento por no tener historia, que es lo
+-- contrario del criterio escrito.
 --
---   Meta = [(venta m-3 + m-2 + m-1) ÷ (días m-3 + m-2 + m-1)]
---          × días del mes objetivo
---          × Factor
+-- Nadie lo vio porque la rama nunca corrió: las 6 salas tienen cumplimiento
+-- medible desde que existe el módulo, y ninguna meta guardada salió por ahí
+-- (verificado: 0 filas de metas_sucursal con esa nota). Se arregla antes de que
+-- abra una sala.
 --
---   Factor, según cómo cerró la sala el mes -1:
---     >= 105%          → 1.08
---     95% – 104.99%    → 1.05
---     90% – 94.99%     → 1.02
---     < 90%            → 1.00
---
--- ⚠️ ESTOS TRAMOS DURARON CINCO MINUTOS. `20260805200804` los invirtió —el
--- criterio es recuperar terreno, no premiar al que cumplió— y quedaron en
--- >=95 → 1.02 · 90-94.99 → 1.05 · <90 → 1.10. Leer aquel archivo, no éste.
--- Y con ellos se fue el 1.00 del caso "sin cumplimiento medible", que estaba
--- montado en el tramo de abajo: eso lo arregla `20260805231843`.
---
--- El cambio de fondo NO es de aritmética, es de criterio: el empuje le exigía
--- MÁS a la sala que rendía menos por hora abierta; el factor le pide más a la
--- que CUMPLIÓ. Medido sobre agosto: Salud 4, que venía en 94%, pasa de 41,825.10
--- a 41,221.47 — es la única que baja, y baja justamente por no haber cumplido.
---
--- La fórmula anterior queda documentada en
--- `docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md` §C2, con los valores que tenía
--- su configuración (crecimiento 1.03, peso del empuje 0.15, tope 0.02).
-
--- ── Los tramos, en tabla y no clavados ──────────────────────────────────────
--- En tabla para poder agregar o mover un tramo sin tocar la función. Se busca
--- el `desde_pct` más alto que no supere el cumplimiento.
-CREATE TABLE IF NOT EXISTS public.metas_factor_cumplimiento (
-  desde_pct  numeric PRIMARY KEY,
-  factor     numeric NOT NULL CHECK (factor > 0),
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.metas_factor_cumplimiento ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS metas_factor_cumplimiento_select ON public.metas_factor_cumplimiento;
-CREATE POLICY metas_factor_cumplimiento_select ON public.metas_factor_cumplimiento
-  FOR SELECT TO authenticated
-  USING ((SELECT public.auth_has_module_permission('metas', 'can_view')));
-
-INSERT INTO public.metas_factor_cumplimiento (desde_pct, factor) VALUES
-  (105, 1.08), (95, 1.05), (90, 1.02), (0, 1.00)
-ON CONFLICT (desde_pct) DO UPDATE SET factor = EXCLUDED.factor;
-
--- ── La configuración que deja de leerse ─────────────────────────────────────
--- Se ELIMINA en vez de dejarse: una columna que parece configurar el cálculo y
--- no lo hace es la trampa que `CLAUDE.md` describe con `xyz_x_cv_max`. Ninguna
--- pantalla las editaba (verificado con grep en `src/`).
-ALTER TABLE public.metas_config
-  DROP COLUMN IF EXISTS factor_crecimiento,
-  DROP COLUMN IF EXISTS empuje_peso,
-  DROP COLUMN IF EXISTS empuje_max;
+-- Ahora el 1.00 va explícito y NO depende de qué tramo esté abajo: el LATERAL no
+-- devuelve fila cuando `pct` es NULL, y el COALESCE pone el 1.00. Mover, agregar
+-- o quitar tramos ya no puede cambiarlo en silencio.
 
 -- ── La propuesta ────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.generar_propuestas_metas(p_year_month text)
@@ -120,11 +82,15 @@ BEGIN
     CROSS JOIN objetivo o
     JOIN cumpl c ON c.branch_id = r.branch_id
     -- Sin cumplimiento medible (sala nueva, o mes sin meta) el factor es 1.00:
-    -- no se pide crecimiento sobre algo que no se pudo medir.
+    -- no se pide crecimiento sobre algo que no se pudo medir. El 1.00 está acá
+    -- y no en un tramo de la tabla A PROPÓSITO: montado en el tramo de abajo
+    -- cambia solo el día que alguien reordena los tramos, que es como se rompió.
     LEFT JOIN LATERAL (
-      SELECT t.factor FROM public.metas_factor_cumplimiento t
-       WHERE t.desde_pct <= COALESCE(c.pct, 0)
-       ORDER BY t.desde_pct DESC LIMIT 1
+      SELECT COALESCE((
+        SELECT t.factor FROM public.metas_factor_cumplimiento t
+         WHERE c.pct IS NOT NULL AND t.desde_pct <= c.pct
+         ORDER BY t.desde_pct DESC LIMIT 1
+      ), 1.00) AS factor
     ) f ON true
     WHERE EXISTS (SELECT 1 FROM public.erp_sucursal_map m
                   WHERE m.branch_id = r.branch_id AND NOT m.es_bodega)
@@ -134,9 +100,14 @@ BEGIN
       (branch_id, year_month, monto_base, monto_recuperacion, monto_meta,
        monto_propuesto, estado, nota)
     SELECT c.branch_id, p_year_month, c.propuesta, 0, c.propuesta, c.propuesta, 'propuesta',
-           'Propuesta del sistema: el ritmo diario de los 3 meses cerrados por los días del mes, '
-           || 'con factor ' || c.factor || ' por haber cerrado el mes anterior en '
-           || COALESCE(c.pct::text || '%', 'sin meta')
+           CASE WHEN c.pct IS NULL THEN
+             'Propuesta del sistema: el ritmo diario de los 3 meses cerrados por los días del mes. '
+             || 'El mes anterior no tuvo meta, así que no hay cumplimiento que medir y no se pide '
+             || 'crecimiento (factor 1.00)'
+           ELSE
+             'Propuesta del sistema: el ritmo diario de los 3 meses cerrados por los días del mes, '
+             || 'con factor ' || c.factor || ' por haber cerrado el mes anterior en ' || c.pct || '%'
+           END
     FROM calc c WHERE c.propuesta IS NOT NULL
     ON CONFLICT (branch_id, year_month) DO NOTHING
     RETURNING id, branch_id, year_month, monto_meta
@@ -167,6 +138,8 @@ END;
 $function$;
 
 -- ── La explicación ──────────────────────────────────────────────────────────
+-- Mismo arreglo. Tiene que dar el MISMO factor que la propuesta: es la función
+-- que la tarjeta usa para rehacer la cuenta y avisar si no coincide.
 CREATE OR REPLACE FUNCTION public.explicar_meta_propuesta(
     p_branch_id bigint, p_year_month text)
 RETURNS json LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -234,9 +207,11 @@ BEGIN
   ) INTO r
   FROM ritmo r CROSS JOIN objetivo o CROSS JOIN cumpl cu
   LEFT JOIN LATERAL (
-    SELECT t.factor FROM public.metas_factor_cumplimiento t
-     WHERE t.desde_pct <= COALESCE(cu.pct, 0)
-     ORDER BY t.desde_pct DESC LIMIT 1
+    SELECT COALESCE((
+      SELECT t.factor FROM public.metas_factor_cumplimiento t
+       WHERE cu.pct IS NOT NULL AND t.desde_pct <= cu.pct
+       ORDER BY t.desde_pct DESC LIMIT 1
+    ), 1.00) AS factor
   ) f ON true;
 
   RETURN r;
@@ -245,13 +220,3 @@ $function$;
 
 REVOKE EXECUTE ON FUNCTION public.explicar_meta_propuesta(bigint, text) FROM PUBLIC, anon;
 GRANT  EXECUTE ON FUNCTION public.explicar_meta_propuesta(bigint, text) TO authenticated, service_role;
-
--- Verificado en prod como usuario autenticado. La Popular / agosto 2026:
---   119,744.50 ÷ 92 días = 1,301.57/día × 31 días = 40,348.69 × 1.08 = 43,576.59
---   (1.08 porque cerró jul-2026 en 108.6% de su meta de 39,709.35)
--- Las 6 salas dan: 43,576.59 · 53,042.96 · 46,353.10 · 48,994.68 · 41,221.47 ·
--- 16,559.64 — total 249,748.44 contra 241,503.53 de la fórmula anterior (+3.4%).
---
--- Las metas de agosto NO se regeneraron: ya estaban confirmadas esperando
--- aprobación, y cambiarlas por debajo habría movido un número que el supervisor
--- ya firmó. La tarjeta lo dice cuando el recálculo no coincide con lo guardado.

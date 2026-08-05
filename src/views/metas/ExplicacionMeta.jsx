@@ -14,6 +14,11 @@ import { ymLabelCorto } from './metasUtils';
 // esperaría: al que se quedó corto se le pide crecer más (1.10) y al que va bien
 // se le pide sostenerse (1.02). El criterio es recuperar terreno, no premiar.
 //
+// Sin cumplimiento medible —sala nueva, o un mes -1 sin meta— el factor es 1.00,
+// y desde 20260805231843 eso vive en el RPC, no en el tramo de abajo de la
+// tabla: cuando esos tramos se reordenaron, el caso "sin cumplimiento" se fue
+// montado con ellos y pasó a 1.10 sin que nada avisara.
+//
 // Es la misma dirección que tenía el empuje de la fórmula anterior —exigirle más
 // a la que viene floja— pero medida por cumplimiento en vez de por venta por
 // hora abierta, que es un dato que se entiende sin que se lo expliquen.
@@ -93,6 +98,10 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
                             </Paso>
 
                             <Paso n="3" titulo={`Por el factor ${Number(d.factor).toFixed(2)}`} monto={formatMoney(d.recalculada)}>
+                                {/* El factor lo dice el RPC, nunca un literal escrito acá: el
+                                    "1.00" que estaba clavado siguió afirmándose mientras el
+                                    cálculo devolvía 1.10, y el encabezado de este mismo paso
+                                    lo desmentía dos líneas más arriba. */}
                                 {d.pct_ultimo != null ? (
                                     <>
                                         Cerró <strong className="text-content-2">{ymLabelCorto(d.ym_ultimo)}</strong> en{' '}
@@ -104,13 +113,18 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
                                         )}.
                                     </>
                                 ) : (
-                                    <>Ese mes no tuvo meta, así que no hay cumplimiento que medir y el factor queda en 1.00.</>
+                                    <>Ese mes no tuvo meta, así que no hay cumplimiento que medir y el
+                                       factor queda en {Number(d.factor).toFixed(2)}: no se pide crecimiento
+                                       sobre algo que no se pudo medir.</>
                                 )}
                                 {/* La tabla completa, con el tramo de esta sala marcado: así se
-                                    ve que el factor no es un número elegido a dedo. */}
+                                    ve que el factor no es un número elegido a dedo. Sin
+                                    cumplimiento medible NO se marca ninguno — el 1.00 no es un
+                                    tramo, y marcar el de "<90%" le informaría a la sala que
+                                    cerró corta un mes en el que ni siquiera tuvo meta. */}
                                 <span className="mt-1.5 grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 max-w-[220px]">
                                     {(d.tramos || []).map((t, i, arr) => {
-                                        const esSuyo = Number(t.factor) === Number(d.factor);
+                                        const esSuyo = d.pct_ultimo != null && Number(t.factor) === Number(d.factor);
                                         const hasta = i === 0 ? null : Number(arr[i - 1].desde) - 0.01;
                                         return (
                                             <React.Fragment key={t.desde}>

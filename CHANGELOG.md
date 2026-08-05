@@ -21,6 +21,86 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.378.0 — Metas: el mes cerrado congela su resultado
+
+El histórico calculaba el tramo del bono **en vivo** contra la configuración
+actual. Eso quería decir que mover el 0.5% del bono o el umbral del 95% —dos
+números que están ahí para ser cambiados— **reescribía el resultado de los 19
+meses ya cerrados**, incluidos los bonos que ya se pagaron. Nadie se habría
+enterado hasta comparar contra una planilla vieja.
+
+Ahora cada mes cerrado guarda su resultado **con las reglas que regían ese mes**:
+la meta y sus dos mitades, la venta, el porcentaje, el tramo, la bolsa, y copia
+de los umbrales y porcentajes vigentes. Cambiar la configuración de acá en
+adelante afecta al mes en curso y a los que vengan; lo cerrado ya no se toca.
+
+Los 19 meses que ya existían quedaron congelados en esta versión. Verificado
+comparándolos **fila por fila y en las dos direcciones** contra la fórmula
+anterior: 109 filas de cada lado, ninguna que no coincida, ninguna que falte,
+ninguna de más. Y la prueba de fondo, con la configuración movida a umbral 80 y
+bono 2%: el histórico devolvió exactamente lo mismo — julio siguió en 108.6% y
+bono completo.
+
+Tres decisiones que vale anotar:
+
+- **Se congela el día 5, no el 1.** El repaso de ventas revisa los últimos 365
+  días cada mañana, así que el último día de un mes puede no estar completo el
+  día 1. Cuatro días de margen; y una vez congelado, no se vuelve a tocar.
+- **Corregir la meta de un mes cerrado vuelve a congelarlo.** El portal ya
+  permitía esa corrección exigiendo el porqué — pero sin esto, el histórico se
+  habría quedado con el monto viejo y la pantalla no se habría movido. Un cambio
+  que se acepta y no se muestra es peor que no aceptarlo.
+- **El histórico lee lo congelado y calcula solo lo que aún no lo está.** Entre
+  que un mes cierra y el día 5 que lo congela, esas filas tienen que seguir
+  apareciendo; si no, el histórico tendría un hueco de cuatro días cada mes.
+
+## v2.377.0 — El ✕ es cromo: un solo canónico, y Estado gana su sitio en la píldora
+
+Sale de una pregunta del usuario sobre el ✕ del toast de v2.375.0: «¿lo dejaste
+canónico? ¿y se corrigió en todos?». No, a las dos. Se había arreglado un botón.
+
+**Los 66 ✕ del portal estaban en tres variantes para tres trabajos distintos, y
+la variante no seguía al trabajo.** 19 `destructive`, 19 `secondary`, 28 `ghost`.
+`FinalizarCajasModal` tenía dos formas en el mismo archivo a nueve líneas una de
+otra; `EmployeeFormModal` quitaba siete filas de lista en `destructive` y la
+octava en `ghost`. Ahora la variante la decide **qué pasa al apretarlo** (§15.2):
+cerrar una superficie y quitar una fila que todavía no se guardó son `ghost`
+—ninguno de los dos destruye nada—, limpiar filtros es `tone="danger" soft`, y el
+borrado de verdad no lleva ✕ sino papelera. **El glifo separa los sentidos.**
+
+**Y el mismo `destructive` con el rótulo «Cancelar»: 16 sitios.** Cancelar un
+formulario es lo contrario de guardar; `ConfirmModal` —el canónico— ya lo dibuja
+`secondary`, y 21 de 45 sitios lo hacían bien. Quedan `destructive` los que sí
+destruyen: los cuatro «Rechazar» (deniegan una solicitud) y el «Cancelar» de
+`EmployeeDetailView`, que anula un evento y por eso lleva `Ban` y no `X`.
+
+Lo vigilan dos categorías nuevas del gate, las dos en cero absoluto:
+`equis-destructiva` y `cancelar-destructivo`. **Y hubo que arreglar el detector
+antes de confiar en él:** estaba escrito con `<Button[^>]*>`, y ese `[^>]` se
+corta en el primer `>` — que es el de `=>`, presente en casi todos los `onClick`.
+Con esa versión, el barrido de «Cancelar» arregló **8 de 16** y el gate habría
+dado verde sobre los otros 8. Ahora el tag se recorre contando llaves y comillas
+(`tagsJsx`, hermano del `tagQueContiene` que ya existía), y se verificó
+inyectando una violación con flecha adentro: la detecta.
+
+**`FilterBar`: qué ranura cede primero ya no lo decide el orden de lectura.**
+§17 ordena las ranuras de ámbito a estado porque es como uno lo diría en voz
+alta, pero eso hacía que la ÚLTIMA fuera siempre la primera en esconderse — y en
+MIN·MAX la última es «Estado», el filtro que se usa, mientras quedaba a la vista
+la matriz ABC. Nueva prop `prioridad` (0 por defecto, orden estable a igualdad):
+el orden de dibujo no se toca, se ordena la cola de a quién se le quita el sitio.
+Medido a 1280px: ahora cede ABC y Estado se queda.
+
+**El «Estado» de MIN·MAX ocupa lo que necesita.** Pedía 156px siempre, y vacío
+su contenido es una palabra: quedaba medio control en blanco. Ahora 104px vacío y
+156 con un valor puesto (que es «18 Sin movimiento», no cabe en menos). Para que
+la píldora reparta con la medida buena, su clave de medición pasó a incluir el
+`active` de cada ranura — antes solo miraba cuántas ranuras había y los rótulos
+de las acciones, así que un cambio de ancho no la despertaba.
+
+Archivos: 30 vistas y componentes con ✕ o «Cancelar», `DESIGN.md` §15.2,
+`scripts/design-gate.mjs`, `common/FilterBar.jsx`, `productos/TabMinMax.jsx`.
+
 ## v2.376.0 — Metas: la pestaña de gastos por recuperar
 
 Las pantallas del motor que salió en v2.374.0. **Mockup aprobado antes de

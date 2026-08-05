@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.391.0 — Fase B cerrada: pestañas, sidebar temado y sus cuatro variantes
+
+`PLAN-MATERIALES` queda **sin elementos por definir y sin decisiones
+bloqueantes**. Los dos que faltaban se cerraron sobre mockup, en los tres temas
+y sobre el fondo real del portal.
+
+**§11 · Barra de pestañas.** El sistema ya la resolvía: la píldora activa es el
+caso de §1.5 —región opaca dentro de una placa—, así que no lleva
+`backdrop-filter` pero sí canto propio. Lo nuevo:
+
+- **El hover de la inactiva** toma el relleno de la activa **al 55%** más 1px de
+  lift. Los dos extremos fallan: al 100% las dos se ven iguales y se pierde cuál
+  está puesta; sólo con color de texto no se siente clicable.
+- **Se retira el `scale(1.02)`** de la activa: con el canto vivo encima deforma
+  el borde de 1px y lo vuelve borroso. Un canto escalado deja de ser un canto.
+
+**§12 · Sidebar — deja de ser siempre-oscuro y sigue el tema.** Decisión del
+usuario, y **reescribe `DESIGN.md` §25.4**: el sidebar sale de la lista de
+superficies bespoke. Como con el lift de Solid, el token y el texto van en el
+mismo commit.
+
+**El hallazgo de método, que vale para todo el documento:** el sidebar no se
+despegaba del contenido, y medido con **ratio de contraste** parecía no haber
+salida — oscurecer topaba en 1.112 y cambiar el tono no movía el número. **El
+ratio mide luminancia**: sirve para saber si un texto se lee, no si dos
+superficies se ven distintas. Con **ΔE**:
+
+| sidebar vs tarjeta de contenido | ratio | ΔE |
+|---|---|---|
+| claro · blanco `.34` | 1.053 | **4.1** — la misma cosa |
+| claro · navy `.15` ✅ | 1.358 | **16.8** |
+| oscuro · navy `.62` | 1.006 | **3.2** — la misma cosa |
+| oscuro · negro `.60` ✅ | 1.097 | **14.4** |
+
+Nunca fue que no separaban: era que el número no las veía. **Para «¿estas dos
+superficies se ven distintas?» se mide ΔE, no ratio.**
+
+Y en oscuro **no se aclara**: fue la primera propuesta y el usuario la rechazó
+—aclarar el chrome contradice el modo oscuro—. Es la excepción a la inversión de
+§1.5, porque el sidebar no es una región dentro de una placa sino una superficie
+hermana.
+
+**Otras tres cosas que aparecieron:**
+
+- **El destello de las piezas anidadas no tenía bloom** — sólo lo llevaba el
+  canto de la placa. Sin él, en claro un destello blanco sobre una fila clara es
+  invisible: §1.1 por tercera vez.
+- **El menú de configuración sigue al sidebar, con opacidad de flotante.** El
+  principio de hoy («el popover sigue al sidebar») no cambia; cambia a qué obliga
+  ahora que el sidebar sigue el tema. Pero flota sobre contenido arbitrario, así
+  que necesita opacidad de capa flotante — mismo criterio, otro número, igual que
+  §5.3 con menú y modal. Y el sidebar necesita `z-index: 2` contra el contenido:
+  sin eso el popover quedaba detrás de la tarjeta.
+- **En móvil hay dos variantes, y las elige la ORIENTACIÓN, no el tamaño.** En
+  horizontal sobra ancho y falta alto: con ~390px los 13 grupos no entran, así
+  que la hoja obliga a scrollear justo cuando la pantalla ya es un pasillo. Gana
+  el **rail persistente** de 3.1rem — el 6% del ancho— que elimina el velo, la
+  hoja y el gesto de abrir.
+
+**Fluidez medida**, no mirada: banco de §6 con CPU estrangulada. Compactar
+(`width`), la hoja móvil (`translateX`) y el destello dan **16.7ms de mediana y
+cero cuadros sobre 33 hasta CPU ×6**. Compactar sale limpio aunque pase por
+layout porque es un gesto puntual, no un seguimiento por cuadro. Salvedad
+anotada: es headless, y el repo ya tiene escrito que headless miente sobre
+rendimiento — hay que repetirlo en navegador real y en WebKit para móvil.
+
 ## v2.390.0 — Clientes: pestaña «Por revisar» con las fichas que la migración no tocó
 
 **146 fichas que nadie podía ver.** Existían solo como archivos JSON de la

@@ -12,7 +12,7 @@ criterio de verificación. Lo que sigue es ejecutable tal cual.
 | | |
 |---|---|
 | **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias). Sus bases están en §0.ter · **el alcance del vidrio y la animación de la placa, en §1.5 y §1.6** |
-| **Elementos sin definir** | barra de pestañas · sidebar |
+| **Elementos sin definir** | **ninguno.** Barra de pestañas (§11) y sidebar (§12) cerrados el 2026-08-05 |
 | **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el confirmado** — ver §0.bis |
 | **Bloqueo** | **ninguno.** El alcance del vidrio se cerró el 2026-08-05 (§1.5) y con él cayó la última decisión que frenaba la fase D |
 
@@ -850,7 +850,7 @@ no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 | # | Fase | Bloqueada por | Se verifica con |
 |---|---|---|---|
 | **A** | ~~Cerrar el alcance del vidrio~~ ✅ hecho (§1.5) · quedan las 2 mediciones de §10 | — | Quedan escritas acá con su motivo |
-| **B** | Definir barra de pestañas y sidebar (mockup + valores) | — (paralelo a A) | Su sección en este documento, como §1-§5 |
+| **B** | ~~Definir barra de pestañas y sidebar~~ ✅ **hecho** (§11 y §12) | — | Sus secciones, con valores y mediciones |
 | **C** | El reloj: decidir si crece, y migrar los 89 easings | A | `npm run gate:design` con la categoría nueva en 0 |
 | **D** | Tokens de §1-§5 en `index.css`, **en los cuatro temas** | A, B | Captura de los 4 temas por elemento |
 | **E** | `data-interactive` en las tarjetas clicables | D | El gel se ve; el gate lo exige |
@@ -897,8 +897,10 @@ Por eso la fase C —bajar la deuda existente— va **antes** de que el gate exi
 
 El plan se cierra cuando, todo junto:
 
-- Los siete elementos (§1-§5 + pestañas + sidebar) tienen sus valores acá, en
-  los **cuatro** temas, y el código los lee de tokens.
+- Los siete elementos (§1-§5 + §11 pestañas + §12 sidebar) tienen sus valores
+  acá, en los **cuatro** temas, y el código los lee de tokens.
+- `DESIGN.md` §25.4 reescrito: el sidebar **sale** de las superficies bespoke
+  siempre-oscuras (§12.1), en el mismo commit que su token.
 - `npm run gate:design` verde con las **tres categorías nuevas en cero**.
 - El banco de §6 repetido sobre la implementación real: 60fps sostenidos, cero
   cuadros sobre 33ms, con la CPU estrangulada.
@@ -940,15 +942,145 @@ quedaron escritos en §1.4, §2.1, §5.3 y §5.4 — no en una conversación.
 
 ---
 
-## 11. Elementos pendientes de definir
+## 11. Barra de pestañas ✅ CERRADO 2026-08-05
 
-Cada uno se cierra con su mockup y sus valores antes de tocar código, igual que
-los cinco de arriba:
+El riel es vidrio —`blur(40px)`, la única otra superficie con lift— y todo lo
+demás sale de reglas ya escritas: la **píldora activa es el caso de §1.5**, una
+región opaca dentro de una placa, así que **no lleva `backdrop-filter` pero sí
+canto propio**. El lente va por tema (§1.7); en Solid es `0`.
 
-| elemento | por qué importa |
-|---|---|
-| Barra de pestañas | `tab-track` es la única otra superficie con lift |
-| Sidebar | oscuro en los cuatro temas — caso aparte |
+```css
+--lift-track: -2px;   /* NUEVO. Solid: 0 */
+/* el resto ya existe: --surface-tab-track, --surface-tab-active,
+   --tab-track-radius, --tab-track-backdrop */
+```
+
+### 11.1 El hover de la pestaña inactiva
+
+La pieza bajo el puntero toma **el relleno de la activa al 55%**, sube `1px` y
+enciende su canto. Los dos extremos se probaron y fallan: al 100% las dos se ven
+iguales mientras el mouse está encima y se pierde cuál está puesta; con sólo
+cambio de color de texto no se siente clicable. **El 55% más el lift es lo que
+las mantiene en dos niveles.**
+
+### 11.2 El `scale(1.02)` de la activa se retira
+
+`ViewTabBar` agranda hoy la pestaña activa un 2%. Con el canto vivo encima eso
+**deforma el borde de 1px y lo vuelve borroso** — un canto escalado deja de ser
+un canto. Es el mismo choque que §1.6 evita en la placa. La píldora ya se
+distingue por fondo, sombra y canto; la escala sobra.
+
+---
+
+## 12. Sidebar ✅ CERRADO 2026-08-05
+
+### 12.1 ⚠️ Deja de ser siempre-oscuro — y eso reescribe `DESIGN.md` §25.4
+
+**Decisión del usuario:** el sidebar **sigue el tema**. Hoy §25.4 dice que es
+*chrome* y que «oscuro es su identidad, igual que la barra lateral de un editor»,
+y por eso vive en la lista de superficies bespoke junto al kiosco y al splash.
+**Sale de esa lista.** Como con el lift de Solid en §1.4: el token y el texto se
+cambian **en el mismo commit**, o queda un contrato que nadie sabe si manda.
+
+### 12.2 El instrumento de medición estaba mal, y cambió la respuesta
+
+El sidebar no se despegaba del contenido, y al medirlo con **ratio de contraste**
+parecía que no había salida. **El ratio mide luminancia** —sirve para saber si un
+texto se lee, no si dos superficies se ven distintas—. El instrumento correcto es
+**ΔE**: ΔE ≥ 2.3 «apenas se nota», ΔE ≥ 5 «claramente distinto».
+
+| sidebar vs tarjeta de contenido | ratio | ΔE | |
+|---|---|---|---|
+| claro · blanco `.34` | 1.053 | **4.1** | la misma cosa |
+| **claro · navy `.15`** | 1.358 | **16.8** | ✅ elegido |
+| oscuro · navy `.62` | 1.006 | **3.2** | la misma cosa |
+| **oscuro · negro `.60`** | 1.097 | **14.4** | ✅ elegido |
+| oscuro · violeta del logo `.72` | 1.068 | 13.1 | funcionaba; se prefirió el negro |
+
+**Con el ratio, oscurecer topaba en 1.112 y el cambio de tono no movía el
+número.** Nunca fue que no separaban: era que el número no las veía.
+
+> **Regla que sale de acá y vale para todo el documento: para «¿estas dos
+> superficies se ven distintas?» se mide ΔE, no ratio de contraste.** El ratio
+> queda para lo que fue diseñado — texto sobre fondo.
+
+```css
+:root               { --sidebar-bg: rgba(30,41,80,.15); }  /* claro: OSCURECE */
+[data-theme="dark"] { --sidebar-bg: rgba(0,0,0,.60);    }  /* oscuro: OSCURECE más */
+```
+
+**Y en oscuro no se aclara.** Fue la primera propuesta (blanco `.11`, ΔE 13.0) y
+el usuario la rechazó con razón: aclarar el chrome contradice el modo oscuro. Es
+la **excepción** a la inversión de §1.5 —donde en oscuro se aclara— y el motivo
+es que el sidebar no es una región dentro de una placa: es una superficie
+hermana, y ahí la dirección la manda la identidad del tema, no el contraste.
+
+### 12.3 El destello de las piezas anidadas no tenía bloom
+
+El canto de la placa llevaba `drop-shadow`; las piezas anidadas —filas del menú,
+píldora de pestaña— se quedaron sin él. Sin bloom, en tema claro **un destello
+blanco sobre una fila clara es invisible**, que es §1.1 por tercera vez. Ahora lo
+tienen, con el color invertido por tema igual que el de la placa.
+
+### 12.4 Las cuatro variantes, y la que manda es la ORIENTACIÓN
+
+| variante | ancho | qué se anima | submenús |
+|---|---|---|---|
+| **Escritorio** | 13.5rem | — | acordeón en el lugar |
+| **Compacto** | 3.4rem | `width` 340ms + rótulos 220ms | flyout al apuntar |
+| **Móvil vertical** | hoja de 11.5rem sobre velo | `translateX` 280ms + velo 240ms | acordeón en la hoja |
+| **Móvil horizontal** | rail de 3.1rem, fijo | — | flyout |
+
+**El compacto anima `width`, no `transform`.** §6 prohíbe lo que corre por
+cuadro y §1.6 evita `transform` sobre superficies con `backdrop-filter` —lo
+mata—. Compactar es un gesto **puntual**: pasa por layout una vez cada varios
+minutos. Los rótulos se desvanecen en 220ms mientras la caja cierra en 340ms,
+así el texto se va **antes** de que el espacio desaparezca y no se ve recortarse.
+
+**En horizontal la escasez se da vuelta: sobra ancho y falta alto.** Con ~390px
+de alto los 13 grupos no entran, así que la hoja obliga a scrollear justo cuando
+la pantalla ya es un pasillo, y el velo tapa una superficie que tiene poca altura
+útil. El rail cuesta 3.1rem —el 6% de la pantalla— y a cambio **desaparecen el
+velo, la hoja y el gesto de abrir**. O sea que **no es «una variante móvil» sino
+dos, y la elige la orientación, no el tamaño de pantalla.**
+
+### 12.5 El menú de configuración: sigue al sidebar, con opacidad de flotante
+
+Es un popover **anclado al sidebar**, así que es una extensión suya y usa su
+material: mismo tono, mismo canto, mismo destello. La regla de hoy dice
+«bespoke oscuro, nunca tokens» — **el principio no cambia** (el popover sigue al
+sidebar), lo que cambia es a qué obliga ahora que el sidebar sigue el tema.
+
+Pero **flota sobre contenido arbitrario**, así que necesita la opacidad de una
+capa flotante, no la de la superficie: con la del sidebar, el texto de atrás se
+lee a través. Es exactamente lo que §5.3 fijó para menú y modal — **mismo
+criterio, otro número**.
+
+```css
+:root               { --cfg-bg: rgba(233,231,247,.94); }
+[data-theme="dark"] { --cfg-bg: rgba(9,11,22,.94);     }
+```
+
+**Y un detalle de apilamiento que costó encontrar:** el popover vive dentro del
+contexto de apilamiento del sidebar (`isolation:isolate`), y sidebar y contenido
+son hermanos posicionados sin `z-index` — así que ganaba el que va después en el
+DOM y **el popover quedaba detrás de la tarjeta**. El sidebar necesita
+`z-index: 2` contra el `1` del contenido.
+
+### 12.6 La fluidez, medida
+
+Banco de §6 —CPU estrangulada por CDP, muestreo por cuadro, tres ciclos:
+
+| gesto | CPU ×1 | ×4 | ×6 |
+|---|---|---|---|
+| compactar / expandir | 16.7ms · 0 malos | 16.6ms · 0 | 16.7ms · 0 |
+| hoja móvil | 16.7ms · 0 | 16.7ms · 0 | 16.7ms · 0 |
+| el destello por filas | 16.7ms · 0 | 16.7ms · 0 | 16.7ms · 0 |
+
+**60fps sostenidos en las tres hasta CPU ×6**, p95 bajo 17.6ms, cero cuadros
+sobre 33. **Salvedad:** es Chromium headless, el mismo banco que usó §6, y el
+repo tiene anotado que *headless miente sobre rendimiento*. Al implementar hay
+que repetirlo en un navegador real y, para el móvil, **en WebKit**.
 
 ---
 
@@ -963,6 +1095,11 @@ los cinco de arriba:
 - **Mockup consolidado de revisión — los 5 elementos con sus valores finales,
   sobre el que el usuario confirmó el 2026-08-05** ·
   `claude.ai/code/artifact/e9834d18-d35e-489c-adb7-9d7f4da21db1`
+- **Pestañas con hover y las dos propuestas de sidebar** (§11, §12) ·
+  `claude.ai/code/artifact/bcd95723-aeff-4062-a910-61380da312ff`
+- **Sidebar: contraste medido con ΔE, las 4 variantes, el menú de configuración
+  y el banco de fluidez** (§12) ·
+  `claude.ai/code/artifact/c5a38bd9-97ef-476b-a573-d196af0bf7e9`
 - **El alcance del vidrio — vidrio sobre vidrio, claro y oscuro** (§1.5) ·
   `claude.ai/code/artifact/ec8ca176-9cff-4239-846f-93d0d2af621f`
 - **Vidrio líquido — las tres animaciones, sobre el fondo real con los orbes**

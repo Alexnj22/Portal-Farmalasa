@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.389.0 — El alcance del vidrio y la animación de la placa, cerrados
+
+Cae la última decisión que bloqueaba implementar `PLAN-MATERIALES`, y se cierra
+la animación de la superficie. Las dos sobre mockup, en los dos temas y **sobre
+el fondo real del portal** — los cinco orbes de `AppLayout` con el verde y el
+magenta del logo, que es lo que el vidrio tiene que dejar pasar.
+
+**§1.5 · El alcance del vidrio: la anidada se aplana.** Una tarjeta de vidrio
+dentro de otra da **1.024:1** en claro y **1.022:1** en oscuro contra la que la
+contiene — el umbral de «se ven distintos» está en 1.1, así que es invisible como
+superficie separada. No comunica jerarquía: sólo agrega una capa de composición
+y **le apaga el reflejo a la de abajo** (en oscuro, de 2.43 a 1.47). Aplanada
+sube a **1.206** / **1.268**.
+
+Dos cosas que sólo aparecieron midiendo:
+
+- **`--surface-card-hover` no sirve**: fue el primer intento y dio 1.020 / 1.059,
+  casi lo mismo que el problema. Está calibrado como *estado de hover*, no como
+  escalón de jerarquía.
+- **La dirección del escalón se invierte por tema.** En claro hay que oscurecer
+  (aclarar sobre algo casi blanco no despega: blanco al 28% da 1.093); en oscuro
+  hay que aclarar (negro al 48% da 1.082, invisible). Es el principio de §3 con
+  la dirección atada al **tema**, no al elemento.
+
+No se reservó el vidrio a navegación y flotantes —la regla estricta de Apple—
+porque con las tarjetas opacas Liquid y Solid se parecen demasiado en una vista
+de listado. Apple puede permitírselo porque su contenido va sobre fotos y mapas;
+el portal muestra tablas sobre un gradiente propio.
+
+**§1.6 · La animación: el filo corre.** Se **retira el reflejo que persigue al
+puntero** —rechazado tras verlo renderizado: se lee como un halo pintado encima,
+no como luz en el material— y lo reemplaza un destello que recorre el canto. Va
+de 210° a 570°, o sea que termina en el mismo ángulo en que empezó y relanzarlo
+no da ningún salto. Cuatro decisiones salieron de iterarlo:
+
+- **El canto ES el borde.** La primera versión no se veía —cero píxeles de cambio
+  en claro— y no por no animar: el ángulo llegaba a 469°. Debajo había un borde
+  fijo, así que la parte apagada del cónico quedaba idéntica a la base.
+- **El bloom invierte su color por tema**: blanco con bloom oscuro en claro, al
+  revés en oscuro. Misma física que §1.1 midió para el reflejo.
+- **La anidada tiene canto propio**, y eso no la vuelve vidrio sobre vidrio: lo
+  caro era el `backdrop-filter`, no el borde. Un cónico de 1px no compone nada.
+- **Cada pieza lleva su propio ángulo.** Uno compartido hacía barrer a la placa y
+  a las tres filas a la vez. Con `--rim-ang` y `--fila-ang` en `inherits:false`,
+  barre sólo lo que está bajo el puntero.
+
+Es la **única animación que necesita JS**: ~10 líneas de `pointerover` delegado.
+
+**§1.7 · El «lente» era ciego al tema.** §1.1 lo define con alfas absolutas
+(`.62`/`.58`/`.31` de blanco). Sobre lavanda claro es un brillo sutil; sobre navy
+oscuro, **una franja casi blanca cruzando la tarjeta**: medido en reposo, la
+superficie daba `[14,23,60]` y su filo `[234,234,237]`. Con tokens por tema pasa
+a `[52,60,90]`.
+
+Y el efecto secundario que más enseña: **el destello en oscuro casi duplicó su
+fuerza (117 → 155 de pico, 61 → 111 de media) sin tocarle el brillo — sólo
+bajando el lente.** Con el canto en reposo tenue, el destello tiene contra qué
+destacarse. A veces se gana contraste apagando lo de al lado, no encendiendo lo
+que querés que se vea.
+
 ## v2.388.0 — Conteo de inventario sencillo: solo cantidades, sin lotes ni vencimientos
 
 El modal de Nuevo Conteo tiene ahora un segundo control, **Detalle del conteo**,

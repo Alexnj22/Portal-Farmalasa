@@ -11,10 +11,10 @@ criterio de verificación. Lo que sigue es ejecutable tal cual.
 
 | | |
 |---|---|
-| **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias). Sus bases están en §0.ter |
+| **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias). Sus bases están en §0.ter · **el alcance del vidrio y la animación de la placa, en §1.5 y §1.6** |
 | **Elementos sin definir** | barra de pestañas · sidebar |
 | **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el confirmado** — ver §0.bis |
-| **Bloqueo** | queda **una** decisión abierta que cambia los valores de §1: el alcance del vidrio (§10). **No se implementa §1 antes de cerrarla** |
+| **Bloqueo** | **ninguno.** El alcance del vidrio se cerró el 2026-08-05 (§1.5) y con él cayó la última decisión que frenaba la fase D |
 
 > **Confirmación del 2026-08-05.** Los cinco elementos se revisaron renderizados
 > con sus valores exactos, Liquid contra Solid, sobre los fondos reales de cada
@@ -307,6 +307,179 @@ una regla escrita que el código viola. Y ojo con el orden — hoy el código
 (`0px`) y `DESIGN.md` («no se mueve») están de acuerdo entre ellos; el que
 difiere es este plan. **Se cambian los dos en el mismo commit** (fase H de §8),
 nunca el token primero.
+
+---
+
+### 1.5 El alcance del vidrio — la anidada se APLANA ✅ CERRADO 2026-08-05
+
+Era la única decisión que bloqueaba la implementación. Se cerró sobre mockup, en
+los dos temas y sobre el fondo real del portal (los cinco orbes de `AppLayout`).
+
+**El hallazgo que la resolvió: una tarjeta de vidrio dentro de otra es invisible
+como superficie separada.** Medido sobre el patrón real —una tarjeta de sección
+con tarjetas adentro, que es lo que hacen `EmployeeDetailView` (5),
+`FormNovedad` (4) y el Dashboard (3):
+
+| | Liquid claro | Liquid oscuro |
+|---|---|---|
+| anidada de vidrio vs su contenedora | **1.024:1** | **1.022:1** |
+| reflejo de la contenedora, con una capa de vidrio encima | 1.09:1 | **1.47:1** *(de 2.43)* |
+| **anidada aplanada** vs su contenedora | **1.206:1** | **1.268:1** |
+
+El umbral de «se ven distintos» está cerca de 1.1:1, así que 1.02 no lo distingue
+nadie. El vidrio anidado **no comunica jerarquía**: sólo agrega una capa de
+composición y, peor, **le apaga el reflejo a la tarjeta de abajo**.
+
+**La regla:** un `data-surface="card"` dentro de otro **pierde el
+`backdrop-filter`** y pasa a un escalón de tono. Una sola regla por descendencia
+—no hay que tocar 225 llamadores ni inventar una prop que alguien se va a olvidar
+de pasar.
+
+```css
+/* El escalón INVIERTE su dirección según el tema. */
+:root                { --anidada: rgba(12,20,48,.09); }   /* claro: OSCURECE */
+[data-theme="dark"]  { --anidada: rgba(255,255,255,.09); } /* oscuro: ACLARA  */
+
+.card [data-surface="card"] {
+  background: var(--anidada);
+  border: 1px solid var(--border-card);
+  backdrop-filter: none;      /* sin reflejo, sin lente */
+}
+```
+
+**Dos cosas que sólo aparecieron midiendo:**
+
+1. **`--surface-card-hover` no sirve para esto.** Fue el primer intento: dio
+   **1.020:1** en claro y **1.059:1** en oscuro, casi lo mismo que el problema.
+   Ese token está calibrado como *estado de hover*, no como escalón de jerarquía.
+   La anidada necesita **token propio**.
+2. **La dirección del escalón se invierte por tema.** En claro hay que
+   **oscurecer**: aclarar sobre una superficie casi blanca no despega (blanco al
+   28% da 1.093, debajo del umbral). En oscuro hay que **aclarar**: oscurecer no
+   funciona ni al extremo (negro al 48% da 1.082, invisible), porque la tarjeta
+   ya está casi tan oscura como la página. Es el principio de §3 —*el hueco es un
+   escalón de tono*— pero con la dirección atada al **tema**, no al elemento.
+
+**Por qué no se reservó el vidrio a navegación y flotantes** (la regla estricta
+de Apple, que era la otra salida): con las tarjetas de contenido opacas, en una
+vista de listado —la mayoría del portal— Liquid y Solid se parecen demasiado, y
+el gradiente de página deja de verse a través de nada. Apple puede permitírselo
+porque su contenido va sobre fotos y mapas; **el portal muestra tablas sobre un
+gradiente propio**. El hallazgo nunca fue «hay demasiado vidrio» sino «el vidrio
+anidado no se ve», y apagarlo en todo el contenido es resolver un problema de
+jerarquía con una amputación.
+
+---
+
+### 1.6 La animación de la placa: EL FILO CORRE ✅ CERRADO 2026-08-05
+
+**Se retira el reflejo que persigue al puntero.** El usuario lo rechazó tras
+verlo renderizado: sobre una tarjeta con filas adentro se lee como un halo
+pintado encima, no como luz en el material. En su lugar, la identidad se mueve
+**por el canto**.
+
+**El gesto:** al entrar a una pieza, un destello recorre su perímetro una vez y
+se queda donde lo dejaste — como cuando inclinás un vidrio y el brillo viaja por
+el borde. La vuelta va de `210deg` a `570deg`: **termina en el mismo ángulo en
+que empezó**, así que relanzarla no produce ningún salto.
+
+```css
+@property --rim-ang  { syntax:'<angle>'; initial-value:210deg; inherits:false; }
+@property --fila-ang { syntax:'<angle>'; initial-value:210deg; inherits:false; }
+
+/* base tenue + arco ANGOSTO muy brillante, no medio perímetro */
+.rim { background: conic-gradient(from var(--rim-ang),
+  var(--rim-base) 0%, var(--rim-base) 2%,
+  var(--rim-glint) 7%, var(--rim-glint) 13%,
+  var(--rim-base) 18%, var(--rim-base) 100%);
+  filter: drop-shadow(0 0 9px var(--rim-bloom))
+          drop-shadow(0 0 4px var(--rim-bloom))
+          drop-shadow(0 0 1px var(--rim-bloom)); }
+
+@keyframes filo-corre { from { --rim-ang: 210deg } to { --rim-ang: 570deg } }
+```
+
+**Cuatro decisiones que salieron de iterarlo, y ninguna es cosmética:**
+
+**a) El canto ES el borde.** La primera versión no se veía —cero píxeles de
+cambio en claro— y no porque no animara: el ángulo llegaba a 469°. El problema
+era que **debajo del canto había un `border` fijo**, así que la parte apagada del
+cónico quedaba idéntica a la base y el destello no tenía contra qué leerse. El
+borde fijo se apaga y el canto lo reemplaza.
+
+**b) El bloom invierte su color por tema.** En claro el destello es blanco y su
+bloom **oscuro**; en oscuro, al revés. Es la misma física que §1.1 midió para el
+reflejo —*un brillo blanco sobre algo claro es matemáticamente invisible*— y la
+misma solución que el plan ya había elegido ahí: «núcleo claro + aro oscuro».
+
+**c) La anidada tiene canto propio.** No la convierte en vidrio sobre vidrio: lo
+caro y lo que medía 1.02:1 era el `backdrop-filter`, **no el borde**. Un cónico
+de 1px no compone ninguna capa. Y hay una lectura física que lo sostiene: la fila
+no es una segunda placa, es una **región rebajada dentro de la misma**, y un
+cambio de profundidad en el vidrio atrapa luz — es lo que hace visible al vidrio
+grabado. Usa la misma estructura de destello angosto que la placa; con un cónico
+ancho pegaba mucho menos.
+
+**d) Cada pieza lleva su PROPIO ángulo.** Un `--rim-ang` compartido y heredado
+hacía barrer a la placa y a las tres filas **a la vez** — se leía como si la
+tarjeta entera reaccionara a algo que pasó en un renglón. Con `--rim-ang` para la
+placa y `--fila-ang` para cada fila, ambos `inherits: false`, **barre sólo lo que
+está bajo el puntero**. Verificado: entrando a la fila 2, ella pasa a 336° y la
+placa y sus hermanas se quedan en 210°.
+
+**El disparador.** Es la **única de las animaciones que necesita JS**: unas 10
+líneas. Un `pointerover` delegado en la tarjeta calcula la pieza activa —la fila
+bajo el puntero, o la placa si no hay ninguna—, apaga la anterior y relanza la
+nueva quitando y reponiendo la clase con un reflow en el medio. Moverse dentro de
+la misma pieza no relanza; sólo cambiar de pieza.
+
+**Lo que se ve, medido comparando cuadros del recorrido:**
+
+| versión | claro | oscuro |
+|---|---|---|
+| primera — invisible | máx **3**/255 | máx 93/255 |
+| con bloom oscuro | máx 47 | máx 94 |
+| + arco más ancho y más bloom | máx 64 · medio 46 | máx 117 · medio 61 |
+| **+ lente por tema (§1.7)** | máx **64** · medio 47 | máx **155** · medio **111** |
+
+El salto final en oscuro **no vino de subirle el brillo al destello: vino de
+bajarle el lente**. Con el canto en reposo tenue, el destello tiene contra qué
+destacarse. *A veces se gana contraste apagando lo de al lado, no encendiendo lo
+que querés que se vea.*
+
+**Qué hace Solid:** nada. Su borde es nítido y fijo; no hay canto que recorrer.
+
+---
+
+### 1.7 ⚠️ El «lente» estaba clavado y es ciego al tema — CORREGIDO
+
+Encontrado al revisar el tema oscuro del mockup de §1.6. §1.1 define la capa de
+lente con **alfas absolutas** (`.62`, `.58`, `.31` de blanco, × `--glass-lente`),
+y §0.ter las guardó como base normativa. Están calibradas mirando **un solo
+tema**.
+
+Medido en la tarjeta oscura **en reposo**:
+
+| | |
+|---|---|
+| superficie de la placa | `[14,23,60]` |
+| su filo interior, con el lente clavado | **`[234,234,237]`** — casi blanco |
+| el mismo filo, con el lente por tema | `[52,60,90]` |
+
+Sobre lavanda claro, un blanco al `.90` es un brillo sutil en el filo. Sobre navy
+oscuro es **una franja blanca cruzando el tope de la tarjeta**. Es exactamente el
+defecto que §0.ter ya había encontrado con el reflejo: un número calibrado para
+un tema y guardado como si fuera universal.
+
+```css
+:root               { --lente-top: .62; --lente-lado: .58; --lente-bajo: .31; }
+[data-theme="dark"] { --lente-top: .10; --lente-lado: .07; --lente-bajo: .04; }
+```
+
+**Consecuencia para §0.ter:** su bloque de bases es normativo, pero **las alfas
+del lente y del filo del modal (§5) tienen que salir de estos tokens, no de los
+literales**. Al implementar la fase D hay que revisar cada base de §0.ter con la
+misma pregunta: *¿esto se midió en los dos temas o en uno?*
 
 ---
 
@@ -676,7 +849,7 @@ no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 
 | # | Fase | Bloqueada por | Se verifica con |
 |---|---|---|---|
-| **A** | Cerrar el alcance del vidrio y las 2 mediciones de §10 | — | Quedan escritas acá con su motivo |
+| **A** | ~~Cerrar el alcance del vidrio~~ ✅ hecho (§1.5) · quedan las 2 mediciones de §10 | — | Quedan escritas acá con su motivo |
 | **B** | Definir barra de pestañas y sidebar (mockup + valores) | — (paralelo a A) | Su sección en este documento, como §1-§5 |
 | **C** | El reloj: decidir si crece, y migrar los 89 easings | A | `npm run gate:design` con la categoría nueva en 0 |
 | **D** | Tokens de §1-§5 en `index.css`, **en los cuatro temas** | A, B | Captura de los 4 temas por elemento |
@@ -738,32 +911,15 @@ El plan se cierra cuando, todo junto:
 
 ## 10. Decisiones abiertas
 
-**Quedan tres, y la primera bloquea la fase D.** Mientras esté abierta,
-implementar §1 es trabajo que se rehace.
+**Quedaba una bloqueante y se cerró.** Las dos que siguen no frenan la fase D:
+son mediciones que hay que hacer al implementar, no elecciones pendientes.
 
-**1 · El alcance del vidrio.** Apple limita Liquid Glass a las capas de
-navegación y evita explícitamente el «vidrio sobre vidrio». El portal tiene
-**225** superficies de vidrio, algunas anidadas — ya se midió que una tarjeta
-dentro de otra acumulaba los dos lifts (4px contra 2px), corregido en v2.342.0
-con una regla, pero **el apilamiento de material sigue**. Falta decidir si el
-vidrio completo se reserva para navegación y flotantes, y las tarjetas de
-contenido llevan una versión atenuada. *Es la decisión más cara de posponer:
-cambia los valores de §1 para 225 superficies.*
-
-**Medido el 2026-08-05, que es lo que a esta decisión le faltaba:**
-
-| | Liquid claro | Liquid oscuro |
-|---|---|---|
-| tarjeta anidada vs la tarjeta que la contiene | **1.016:1** | **1.040:1** |
-| reflejo, con una capa de vidrio encima | 1.09:1 | 1.47:1 *(de 2.43)* |
-
-**Una tarjeta de vidrio dentro de otra es, en la práctica, invisible como
-superficie separada** — 1.016:1 no lo distingue ningún ojo. O sea que el vidrio
-anidado no comunica jerarquía: sólo agrega una capa de composición y **apaga el
-reflejo de la que está debajo** (en oscuro, de 2.43 a 1.47). Es el argumento
-duro a favor de la regla de Apple, y ya no hace falta discutirlo en abstracto:
-si el segundo vidrio no se ve, no está haciendo un trabajo que justifique su
-costo.
+**1 · El alcance del vidrio — ✅ CERRADO el 2026-08-05.** Se resolvió en **§1.5**:
+la tarjeta anidada pierde el `backdrop-filter` y pasa a un escalón de tono, con
+la dirección invertida por tema. El vidrio completo se queda en todas las
+superficies —no se reserva a navegación—, porque el hallazgo nunca fue «hay
+demasiado vidrio» sino «el vidrio anidado no se ve» (1.02:1). Ver §1.5 para los
+números y el motivo de descartar la regla estricta de Apple.
 
 **2 · Contraste sobre el peor fondo.** Una superficie translúcida cambia su
 contraste según lo que tenga detrás; es la crítica documentada más seria a
@@ -807,6 +963,11 @@ los cinco de arriba:
 - **Mockup consolidado de revisión — los 5 elementos con sus valores finales,
   sobre el que el usuario confirmó el 2026-08-05** ·
   `claude.ai/code/artifact/e9834d18-d35e-489c-adb7-9d7f4da21db1`
+- **El alcance del vidrio — vidrio sobre vidrio, claro y oscuro** (§1.5) ·
+  `claude.ai/code/artifact/ec8ca176-9cff-4239-846f-93d0d2af621f`
+- **Vidrio líquido — las tres animaciones, sobre el fondo real con los orbes**
+  (§1.6, la elegida es «el filo corre») ·
+  `claude.ai/code/artifact/857b127c-f3af-49fa-9e5c-ce39bb6e1a70`
 - Banco de movimiento (escala de duraciones) · `claude.ai/code/artifact/5f3e5bd4-19f9-4cdd-9b37-95f856c05427`
 - [Apple — Liquid Glass](https://www.apple.com/newsroom/2025/06/apple-introduces-a-delightful-and-elegant-new-software-design/)
 - [Refracción con CSS y SVG — kube.io](https://kube.io/blog/liquid-glass-css-svg/) · la refracción real

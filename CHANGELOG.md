@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.394.0 — Tooltip definido, y el encabezado de tabla que no ocluye
+
+Primeros tres ítems de §13, el inventario que `PLAN-MATERIALES` nunca había
+hecho.
+
+**§14 · Tooltip — la superficie que faltaba.** 16 usos, la tercera más usada del
+portal. Sus tokens existían desde la decisión 1a y ya eran por tema; lo que
+faltaba era **el material**. Se cierra heredando dos reglas ya tomadas, sin
+inventar nada: su **canto es fijo, no recorre** (§5.1 — un tooltip se lee, no se
+apunta) y **lleva tokens de canto propios** como el sidebar en §12.2, porque
+tampoco sigue el tema; con los del tema activo le tocarían valores de fondo claro
+sobre su navy, que es el defecto que §1.7 corrigió en el lente.
+
+**§15.1 · La tabla no era vidrio sobre vidrio — el problema es otro.**
+`DataTable` **ya cumple §1.5 sin saberlo**: es *una* placa con filas separadas por
+divisores, no tarjetas anidadas. Las tablas heredan §1 entero y no necesitan
+sección propia.
+
+Pero su `thead` es `sticky` con `bg-brand/[0.04]` — **4% de tinte sobre una placa
+que ya es translúcida**. Las filas que pasan por debajo **se leen a través del
+encabezado** y los dos textos se pisan. No es descuido de tema: ese tinte se
+pensó como *acento* (marcar que la fila de títulos es distinta), no como
+*oclusión*. Son dos trabajos y sólo se hizo uno.
+
+> La regla que sale de ahí, y vale más allá de la tabla: **una superficie
+> pegajosa tiene una obligación que una normal no tiene — tapar lo que pasa por
+> debajo.** Ninguna opacidad pensada para acento sirve para oclusión.
+
+**§15.2 · La paginación ya estaba bien.** Es una placa hermana de la tabla, no
+una región adentro, así que le toca §1 completo y sus botones siguen la regla de
+la anidada. **No necesitó ninguna regla nueva** — y por eso queda escrito: es la
+prueba de que el sistema ya cubre casos que nunca se miraron.
+
+Quedan de §13: `page-header` y `sheet`, y los **28 usos de vidrio a mano** fuera
+del sistema, con `ModalShell` a la cabeza.
+
 ## v2.393.1 — El inventario que el plan de materiales nunca hizo
 
 A pregunta del usuario —*«¿ya están todos los elementos? ¿tablas, alertas…?»*—

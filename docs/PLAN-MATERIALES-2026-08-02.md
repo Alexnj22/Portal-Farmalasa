@@ -12,7 +12,7 @@ criterio de verificación. Lo que sigue es ejecutable tal cual.
 | | |
 |---|---|
 | **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias). Sus bases están en §0.ter · **el alcance del vidrio y la animación de la placa, en §1.5 y §1.6** |
-| **Elementos sin definir** | ⚠️ **`tooltip`, `page-header` y `sheet`** — el inventario de §13 (2026-08-05) mostró que el plan cubre 7 de las 10 superficies canónicas |
+| **Elementos sin definir** | `page-header` (2 usos) y `sheet` (1) — **`tooltip` cerrado en §14**. Ver el inventario de §13 |
 | **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el confirmado** — ver §0.bis |
 | **Bloqueo** | La fase D no puede cerrarse sin §13: hay **28 usos de vidrio a mano** fuera del sistema y fuera de toda excepción, incluidos 4 en `ModalShell`, que es el canónico de modales |
 
@@ -1148,7 +1148,7 @@ alias, el `1.30` de §1.1 que no se podía reproducir).
 |---|---|---|
 | `card` | 227 | ✅ §1 |
 | `dropdown` | 22 | ✅ §4 |
-| `tooltip` | **16** | ❌ **falta** |
+| `tooltip` | **16** | ✅ **§14** (cerrado el 2026-08-05) |
 | `input` | 10 | ✅ §3 |
 | `modal` | 7 | ✅ §5 |
 | `sidebar-popover` | 3 | ✅ §12.5 |
@@ -1190,8 +1190,7 @@ Los otros 13: `WidgetInventorySearch` (7), `TabLaboratorios` (4),
 
 ### 13.4 Qué hay que hacer con esto
 
-1. **Definir `tooltip`** como los otros siete: canto, lente, destello y su
-   comportamiento en los cuatro temas. Es superficie de primera clase.
+1. ~~**Definir `tooltip`**~~ ✅ **hecho — §14.**
 2. **Definir `page-header` y `sheet`**, o declarar por escrito que heredan de
    `card` y no llevan material propio.
 3. **`ConfirmModal` declara `data-surface="modal"`.**
@@ -1211,6 +1210,84 @@ Los otros 13: `WidgetInventorySearch` (7), `TabLaboratorios` (4),
 
 ---
 
+## 14. Tooltip ✅ CERRADO 2026-08-05
+
+La superficie que §13 destapó. Sus tokens existen desde la **decisión 1a**
+(`--tooltip-bg`, `-border`, `-text`, `-text-2`, `-radius`, `-backdrop`, `-shadow`)
+y ya son por tema; lo que faltaba era **el material**: canto, lente y destello.
+
+**Es oscuro en los cuatro temas** — como el sidebar *antes* de §12. Acá esa
+condición se conserva: un tooltip no es una superficie de la pantalla, es una
+nota flotando encima, y ésa fue la razón original de la decisión 1a.
+
+**Dos cosas que hereda de decisiones ya tomadas y no se rediscuten:**
+
+1. **Su canto es FIJO, no recorre.** §5.1 lo fijó para el modal: en una pieza
+   donde *se lee u opera adentro* la luz viene de la escena y se queda quieta; el
+   destello que recorre es para lo que *se apunta*. **Un tooltip se lee.**
+2. **Su canto lleva tokens propios**, como el sidebar en §12.2, porque el tooltip
+   tampoco sigue el tema. Si usara los del tema activo, en claro le tocarían
+   valores calibrados para fondos claros sobre su navy — **exactamente el defecto
+   que §1.7 corrigió en el lente**.
+
+```css
+/* el canto del tooltip NO sale del tema: la superficie es siempre oscura */
+--tooltip-rim-base:  rgba(255,255,255,.16);
+--tooltip-rim-glint: #ffffff;
+--tooltip-rim-bloom: rgba(160,200,255,.75);
+[data-theme="solid"], [data-theme="solid-dark"] {
+  --tooltip-rim-glint: rgba(255,255,255,.10);   /* Solid no destella */
+  --tooltip-rim-bloom: transparent;
+}
+```
+
+---
+
+## 15. Tabla y paginación
+
+### 15.1 La tabla NO era vidrio sobre vidrio — pero su encabezado no ocluye
+
+**Buena noticia primero:** `DataTable` **ya cumple §1.5 sin saberlo**. Es *una*
+placa (`data-surface="card"`) con las filas separadas por `divide-y divide-divider`
+— no son tarjetas anidadas. No hay vidrio sobre vidrio que corregir, y por eso las
+tablas no necesitan sección de material propia: heredan §1 entero.
+
+**El defecto está en otro lado.** El `thead` es `sticky top-0` con
+`theadBg: 'bg-brand/[0.04]'` — **4% de tinte sobre una placa que ya es
+translúcida**. Cuando las filas pasan por debajo **se leen a través del
+encabezado**, y los dos textos se pisan.
+
+No es un descuido de tema: ese tinte se pensó como **acento** —marcar que la fila
+de títulos es distinta— no como **oclusión**. Son dos trabajos y sólo se hizo uno.
+
+**El arreglo respeta §1.5:** el encabezado es una región de la placa, así que
+lleva escalón de tono con la dirección invertida por tema —oscurece en claro,
+aclara en oscuro— pero **opaco**, porque además tiene que tapar. Es el mismo
+token que la fila anidada llevado a la opacidad que el trabajo exige.
+
+```css
+:root               { --thead-bg: rgba(228,230,244,.97); }
+[data-theme="dark"] { --thead-bg: rgba(20,28,58,.97);    }
+[data-theme="solid"]{ --thead-bg: #eef1f7;               }
+```
+
+> **La regla, que vale más allá de la tabla: una superficie pegajosa tiene una
+> obligación que una superficie normal no tiene — tapar lo que pasa por debajo.**
+> Ninguna opacidad pensada para *acento* sirve para *oclusión*. Al implementar,
+> revisar toda otra superficie `sticky` con el mismo criterio.
+
+### 15.2 Paginación: ya estaba bien
+
+Es una **placa hermana** de la tabla, no una región adentro — `DESIGN.md` §14 ya
+manda que vaya como hermana suelta y nunca envuelta. Así que **no aplica §1.5**:
+le corresponde el material completo de §1 (vidrio, canto, lente, destello), y sus
+botones son regiones adentro que sí siguen la regla de la anidada.
+
+**No necesitó ninguna regla nueva**, y por eso vale la pena que esté escrito: es
+la prueba de que el sistema ya cubre casos que nunca se miraron.
+
+---
+
 ## Referencias
 
 - Mockup de Liquid Glass, capa por capa · `claude.ai/code/artifact/33d118ae-ab63-422c-bb5a-f397b3dab434`
@@ -1222,6 +1299,8 @@ Los otros 13: `WidgetInventorySearch` (7), `TabLaboratorios` (4),
 - **Mockup consolidado de revisión — los 5 elementos con sus valores finales,
   sobre el que el usuario confirmó el 2026-08-05** ·
   `claude.ai/code/artifact/e9834d18-d35e-489c-adb7-9d7f4da21db1`
+- **Tooltip, tabla y paginación** (§14, §15) ·
+  `claude.ai/code/artifact/783e03f8-9b2c-42e6-9d5e-83abee19bb9c`
 - **Pestañas con hover y las dos propuestas de sidebar** (§11, §12) ·
   `claude.ai/code/artifact/bcd95723-aeff-4062-a910-61380da312ff`
 - **Sidebar: contraste medido con ΔE, las 4 variantes, el menú de configuración

@@ -15,7 +15,6 @@ import FilterBar from '../../components/common/FilterBar';
 import StatCard from '../../components/common/StatCard';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import TablePagination from '../../components/common/TablePagination';
-import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { smartFilter } from '../../utils/searchUtils';
 import { useNowTick } from '../../hooks/useNowTick';
@@ -152,10 +151,15 @@ function getSinMinMaxSugg(row) {
 
 // ─── Última venta cell ────────────────────────────────────────────────────────
 
-function UltimaVentaCell({ row, allBranches }) {
+// Tenía una segunda mitad, bajo `allBranches`, con el tooltip «Última venta por
+// suc.»: la fecha de cada sucursal, sacada de `row.ultima_venta_por_suc`. Nunca
+// se dibujó — el único sitio que monta esta celda pasa `allBranches={false}`
+// como literal, no como prop que alguien pueda encender. Y la columna que
+// alimentaba era el 32% del JSON de Bodega (611 de 1,899 kB), así que se fue
+// también del RPC. Si algún día se quiere el desglose, vuelve con su columna.
+function UltimaVentaCell({ row }) {
     const now = useNowTick();
     const fecha = row.ultima_venta;
-    const porSuc = row.ultima_venta_por_suc || [];
 
     if (!fecha) {
         return (
@@ -169,62 +173,11 @@ function UltimaVentaCell({ row, allBranches }) {
     const color = days > 365 ? 'text-danger' : days > 180 ? 'text-chart-4-text' : 'text-content-2';
     const label = new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
 
-    if (!allBranches) {
-        return (
-            <div>
-                <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-micro text-content-3">hace {days}d</span>
-            </div>
-        );
-    }
-
-    const fmtSucDate = (fecha) =>
-        new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
-
-    // Todas: if only 1 branch has ever sold it, show branch name inline
-    if (porSuc.length === 1) {
-        const s = porSuc[0];
-        const name = ERP_NAMES[s.esid] || `Suc.${s.esid}`;
-        const tipContent = (
-            <div className="flex items-center justify-between gap-6 whitespace-nowrap">
-                <span className="text-body-sm font-semibold text-content-2">{name}</span>
-                <span className="text-body-sm font-black tabular-nums text-brand-text">{fmtSucDate(s.fecha)}</span>
-            </div>
-        );
-        return (
-            <LiquidTooltip content={tipContent}>
-                <div>
-                    <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
-                    <span className="block text-micro text-content-3">{name}</span>
-                </div>
-            </LiquidTooltip>
-        );
-    }
-
-    // Multiple branches: show most recent + liquid tooltip with all
-    const sorted = [...porSuc].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-    const tipContent = (
-        <div className="space-y-1.5">
-            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
-            {sorted.map(s => {
-                const d = Math.floor((now - new Date(s.fecha)) / 86_400_000);
-                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand-text';
-                return (
-                    <div key={s.esid} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                        <span className="text-body-sm font-semibold text-content-2">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
-                        <span className={`text-body-sm font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
-                    </div>
-                );
-            })}
-        </div>
-    );
     return (
-        <LiquidTooltip content={tipContent}>
-            <div className="cursor-help">
-                <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-micro text-content-3">{porSuc.length} suc. ⓘ</span>
-            </div>
-        </LiquidTooltip>
+        <div>
+            <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
+            <span className="block text-micro text-content-3">hace {days}d</span>
+        </div>
     );
 }
 
@@ -447,7 +400,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 });
         }
 
-        MODES.forEach(m => loadMode(selectedErp, m.key));
+        // El modo que se ESTÁ viendo primero; el otro, cuando aquel ya respondió.
+        // Los dos en paralelo se estorbaban: son las dos consultas más pesadas de
+        // la pestaña contra el mismo pool, y la que el usuario mira terminaba
+        // esperando a la que no. El segundo solo alimenta el número del
+        // segmentado («Sin Min/Max · 591»), que hasta que llega muestra «…».
+        const otro = MODES.find(m => m.key !== mode).key;
+        loadMode(selectedErp, mode).then(() => loadMode(selectedErp, otro));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedErp]);
 
@@ -889,7 +848,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 : <span className="text-label text-content-3">—</span>}
                                         </DataCell>
                                         <DataCell hideBelow="md">
-                                            <UltimaVentaCell row={row} allBranches={false} />
+                                            <UltimaVentaCell row={row} />
                                         </DataCell>
                                         <DataCell>
                                             <div className="flex items-center gap-1.5 flex-wrap">

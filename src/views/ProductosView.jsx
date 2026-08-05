@@ -34,6 +34,26 @@ export default function ProductosView() {
         return () => clearTimeout(t);
     }, [rawSearch]);
 
+    // ── Qué pestañas están MONTADAS ──────────────────────────────────────────
+    // Las tres se montaban siempre y las dos inactivas se escondían con
+    // `hidden`. Esconder no desmonta: abrir una pestaña disparaba la carga de
+    // las tres, y como comparten el pool de PostgREST se hacían cola entre
+    // ellas. Medido al entrar a «Gestión de Stock»: 44 llamadas, y su RPC más
+    // pesado tardaba 5.6 s contra los 1.1 s que tarda el mismo RPC solo.
+    //
+    // Se montan al VISITARLAS y se quedan montadas — que es lo que el `hidden`
+    // compraba de verdad: volver a una pestaña no vuelve a pedir sus datos ni
+    // pierde su filtro. Lo que se tira es la carga de lo que nunca se abrió.
+    //
+    // El `set` se ajusta DURANTE el render, no en un efecto: es el patrón que
+    // React documenta para derivar estado de una prop que cambió, y acá además
+    // es lo correcto — en un efecto, la pestaña recién pedida se montaría un
+    // render TARDE, o sea que al cambiar de pestaña se vería un hueco antes de
+    // que apareciera. React descarta el render en curso y rehace este mismo
+    // componente enseguida, sin pintar el intermedio.
+    const [visitadas, setVisitadas] = useState(() => new Set([activeTab]));
+    if (!visitadas.has(activeTab)) setVisitadas(new Set(visitadas).add(activeTab));
+
     // ── Catálogo filters (live here, passed down to TabCatalogo which renders the pill) ──
     const [filterActivo,      setFilterActivo]      = useState('activos');
     const [filterLab,         setFilterLab]          = useState(null);
@@ -41,12 +61,18 @@ export default function ProductosView() {
     const [labs,              setLabs]               = useState([]);
     const [categorias,        setCategorias]         = useState([]);
 
+    // Sus dos catálogos solo alimentan los filtros de TabCatalogo, así que se
+    // piden cuando esa pestaña se abre — no al entrar a cualquiera de las tres.
+    // (TabInventario pide los suyos por su cuenta; por eso `product_categories`
+    // se veía dos veces en la red al abrir Inventario.)
+    const verCatalogo = visitadas.has('catalogo');
     useEffect(() => {
+        if (!verCatalogo) return;
         fetchLaboratoriosBasic()
             .then(({ data }) => setLabs(data || []));
         fetchProductCategories()
             .then(({ data }) => setCategorias((data || []).map(r => r.nombre)));
-    }, []);
+    }, [verCatalogo]);
 
     const labOptions = labs.map(l => ({ value: String(l.id), label: l.nombre }));
     const catOptions = categorias.map(c => ({ value: c, label: c }));
@@ -74,26 +100,32 @@ export default function ProductosView() {
 
     return (
         <GlassViewLayout icon={Package} title="Productos" filtersContent={filtersContent}>
-            <div className={activeTab === 'catalogo' ? '' : 'hidden'}>
-                <TabCatalogo
-                    searchTerm={debouncedSearch}
-                    filterActivo={filterActivo}
-                    setFilterActivo={setFilterActivo}
-                    filterLab={filterLab}
-                    setFilterLab={setFilterLab}
-                    filterCategoria={filterCategoria}
-                    setFilterCategoria={setFilterCategoria}
-                    labOptions={labOptions}
-                    catOptions={catOptions}
-                    onCategoryCreated={handleCategoryCreated}
-                />
-            </div>
-            <div className={activeTab === 'inventario' ? '' : 'hidden'}>
-                <TabInventario searchTerm={debouncedSearch} />
-            </div>
-            <div className={activeTab === 'sinventa' ? '' : 'hidden'}>
-                <TabSinVenta searchTerm={debouncedSearch} />
-            </div>
+            {visitadas.has('catalogo') && (
+                <div className={activeTab === 'catalogo' ? '' : 'hidden'}>
+                    <TabCatalogo
+                        searchTerm={debouncedSearch}
+                        filterActivo={filterActivo}
+                        setFilterActivo={setFilterActivo}
+                        filterLab={filterLab}
+                        setFilterLab={setFilterLab}
+                        filterCategoria={filterCategoria}
+                        setFilterCategoria={setFilterCategoria}
+                        labOptions={labOptions}
+                        catOptions={catOptions}
+                        onCategoryCreated={handleCategoryCreated}
+                    />
+                </div>
+            )}
+            {visitadas.has('inventario') && (
+                <div className={activeTab === 'inventario' ? '' : 'hidden'}>
+                    <TabInventario searchTerm={debouncedSearch} />
+                </div>
+            )}
+            {visitadas.has('sinventa') && (
+                <div className={activeTab === 'sinventa' ? '' : 'hidden'}>
+                    <TabSinVenta searchTerm={debouncedSearch} />
+                </div>
+            )}
         </GlassViewLayout>
     );
 }

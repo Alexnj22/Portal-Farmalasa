@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.395.0 — Gestión de Stock: la pestaña que cargaba las otras dos
+
+La pestaña tardaba, y no por una sola razón. Tres, medidas por separado.
+
+**Abrir una pestaña abría las tres.** `ProductosView` montaba Catálogo,
+Inventario y Gestión de Stock siempre, y escondía las dos que no tocaban con
+`hidden`. Esconder no desmonta: entrar a Gestión de Stock disparaba también las
+16 consultas de Catálogo (`products`, `product_precios`, los dos changelog
+paginados) y las 7 de Inventario, todas peleando por el mismo pool de PostgREST
+contra las de la pestaña que sí se estaba mirando. Ahora cada una se monta al
+visitarla y se queda montada — que es lo que el `hidden` compraba de verdad:
+volver a una pestaña no vuelve a pedir sus datos ni pierde su filtro. Verificado
+las cuatro cosas: Inventario en su primera visita pide sus 7, Catálogo sus 16,
+y volver a cualquiera de las dos pide **0**.
+
+**El RPC de stock retenido era cuadrático.** `get_stagnant_inventory` resolvía
+seis subconsultas correlacionadas en el SELECT final —la sugerencia, el min/max,
+la última venta— y cada una recorre un CTE, que no tiene índices, **una vez por
+fila**. En una sucursal son ~70-140 filas y no se veía; en Bodega son 3,305 y la
+función tardaba **15.3 s**. Pasadas a GROUP BY + LEFT JOIN, más el filtro de
+sucursal empujado hacia adentro: **914 ms**. Salud 1 981 → 773.
+
+**Un tercio del JSON no lo leía nadie.** `ultima_venta_por_suc` alimentaba un
+tooltip que nunca se dibuja: la celda que lo usaría recibe `allBranches={false}`
+como literal. Eran 611 de los 1,899 kB de Bodega. Fuera del RPC y fuera del
+componente.
+
+En el navegador, cambiar a Bodega: **5.1 s → 1.5 s**. La Popular ~1.0 s.
+
+El nuevo cuerpo del RPC se comparó contra el anterior en las 7 sucursales, las
+12 columnas, fila por fila con `EXCEPT` en las dos direcciones: 0 diferencias.
+La única que aparecía era de **desempate** —dos sucursales con el mismo ingreso
+salían en orden arbitrario— y se arregló de paso: como `sold_in[0]` es la
+sucursal que la vista recomienda para el traslado, la sugerencia podía cambiar
+sola entre dos cargas. Ahora desempata por id y es estable.
+
 ## v2.394.2 — Metas: el factor 1.00 sin cumplimiento medible, explícito
 
 Una sala sin cumplimiento que medir —recién abierta, o con el mes anterior sin

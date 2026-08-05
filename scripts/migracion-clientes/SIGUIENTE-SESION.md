@@ -93,7 +93,7 @@ intactos y vuelve a decidir el sorteo. Acota el sorteo, no lo reemplaza.
 
 ## Lo primero que va a pasar
 
-**Cinco fichas van a salir rechazadas, y está bien.** Son nombres duplicados en
+**Seis fichas van a salir rechazadas, y está bien.** Son nombres duplicados en
 el ERP: contesta `Ya se registro un cliente con estos datos!` al escribir
 cualquiera de las dos fichas de un par. El script no reintenta —ese rechazo es
 un hallazgo, no un glitch—, verifica que la ficha quedó intacta y **no la anota
@@ -103,7 +103,11 @@ en el checkpoint**, así que vuelve a intentarse en cada bloque y falla igual.
 |---|---|
 | 3883 / 8598 | FLOR DE MARIA GUARDADO GUARDADO |
 | 7280 / 7284 | WILLIAM ENRIQUE ALEMAN ALFARO |
-| 10290 | JOSE MARDOQUEO RAMIREZ MEJIA |
+| 10290 / 16421 | JOSE MARDOQUEO RAMIREZ MEJIA |
+
+Los tres pares están completos: al 2026-08-04 las seis rechazan en cada bloque
+(`ambiguos.json`, todas con `duplicado: true`). Cuando esto decía "cinco", la
+`16421` todavía no había sido cruzada por el frente.
 
 **Este número sube solo** a medida que el frente cruza cada ficha duplicada: hay
 19 nombres duplicados en el catálogo, así que puede llegar a ~38. No es
@@ -159,15 +163,25 @@ espejó al portal. Si volvés a verla, ya coincide.
    keep-alive, que baja el tiempo sin agregar tráfico. Por eso una se aplicó ya
    y la otra espera a que haya alguien avisado del otro lado.
 2. **Las 99 fichas de `faltantes_dte.json`** — no se pueden facturar bajo DTE
-   2.0. 87 necesitan un solo campo (el distrito); 50 de ellas lo tienen escrito
-   en su propia dirección y 49 las tiene que decidir una persona. 83 son
-   fiscales y quedan congeladas por decisión del usuario.
-3. **Dos nombres duplicados sin resolver**: FLOR DE MARIA GUARDADO GUARDADO
-   (3883/8598) y WILLIAM ENRIQUE ALEMAN ALFARO (7280/7284). Tienen DUI distintos
-   en cada ficha, así que pueden ser dos personas — no lo resuelve un script.
-   **La 3883 ya empezó a costar**: el ERP rechaza su escritura por duplicado en
-   cada bloque, y como no se checkpointea, se reintenta para siempre. La 7280 va
-   a hacer lo mismo cuando el frente llegue ahí.
+   2.0. **65 necesitan un solo campo, el distrito**; a 86 les falta el distrito
+   entre otros campos, y **85 son fiscales** (todo lo que no es `Consumidor`) y
+   quedan congeladas por decisión del usuario. Recontado del archivo el
+   2026-08-04; antes decía 87 y 83.
+
+   El desglose viejo —"50 lo tienen escrito en su propia dirección y 49 las
+   decide una persona"— **no se puede recomputar**: `faltantes_dte.json` guarda
+   `erp_id`, `name`, `categoria` y `faltan`, no la dirección. Sumaba 99 contra
+   un universo de 87, así que ya no cerraba. Para rehacerlo hay que releer las
+   direcciones del ERP y pasarlas por las reglas de `planificar`.
+3. **Tres nombres duplicados sin resolver**: FLOR DE MARIA GUARDADO GUARDADO
+   (3883/8598), WILLIAM ENRIQUE ALEMAN ALFARO (7280/7284) y JOSE MARDOQUEO
+   RAMIREZ MEJIA (10290/16421). Tienen DUI distintos en cada ficha, así que
+   pueden ser dos personas — no lo resuelve un script.
+
+   **Ya cuestan las seis.** El frente pasó los tres pares, así que el ERP rechaza
+   sus seis escrituras en cada bloque y, como no se checkpointean, se reintentan
+   para siempre (~15s por bloque). Esto antes decía "la 7280 va a hacer lo mismo
+   cuando el frente llegue ahí": llegó el 2026-08-04.
 4. **El reproceso completo**, si se quiere prolijidad del mecanismo de `REGLAS`:
    el matcher se arregló sin subirla, reencolando las 5 afectadas a mano. Está
    justificado en el README, pero si se prefiere, subir REGLAS a 7 relee las

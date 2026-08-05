@@ -149,10 +149,19 @@ def main():
     # cualquiera de los dos sería elegir a dedo qué datos ve el portal.
     RESUELTOS = f'{D}/duplicados_resueltos.json'
     resueltos = json.load(open(RESUELTOS)) if os.path.exists(RESUELTOS) else {}
+    # Las claves del archivo también se normalizan: si una trae una ñ, tiene que
+    # encontrarse con el grupo ya normalizado de abajo.
+    resueltos = {bloque.clave_portal(k): v for k, v in resueltos.items()}
 
+    # Se agrupa por la clave del PORTAL, no por el match_name crudo. La cola es
+    # append-only y arrastra líneas escritas antes del arreglo de la ñ
+    # (2026-08-05) con la clave vieja: normalizar acá las emparienta con las
+    # nuevas. Y si no se normalizara, 'MUÑOZ' y 'MUNOZ' pasarían las dos como
+    # únicas y las dos escribirían sobre la MISMA fila del portal — la última
+    # ganaría en silencio.
     por_nombre = {}
     for f in por_erp.values():
-        por_nombre.setdefault(f['match_name'], []).append(f)
+        por_nombre.setdefault(bloque.clave_portal(f['match_name']), []).append(f)
 
     elegidas, sin_resolver = [], []
     for nombre, grupo in por_nombre.items():

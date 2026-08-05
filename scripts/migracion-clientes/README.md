@@ -409,7 +409,7 @@ que es justo la que el índice único no habría frenado.
 Corrida del 2026-08-05: 3,097 creadas, `customers` 24,666 → 27,763, y cero
 duplicados por `search_name` o por `erp_id` en toda la tabla.
 
-## 4c. El bug de la ñ — ABIERTO
+## 4c. El bug de la ñ — CERRADO el 2026-08-05
 
 `search_name` es una columna generada:
 
@@ -432,10 +432,40 @@ Medido el 2026-08-05, antes de crear las 3,097:
 Los 614 sin excepción, o sea que no es una tendencia sino el mecanismo. Eran
 **614 de los 783 sin distrito: el 78% del hueco de calidad del portal**.
 
-El arreglo es que `fila_portal` calcule `match_name` con el mismo `translate`
-que la columna generada. Es la regla de *snapshot y vivo necesitan la MISMA
-clave*: acá el espejo calculaba su clave distinto de la columna contra la que
-hace el join.
+Es la regla de *snapshot y vivo necesitan la MISMA clave*: el espejo calculaba
+su clave distinto de la columna contra la que hace el join.
+
+**El arreglo, en tres lugares y con UNA sola definición:**
+
+| dónde | qué |
+|---|---|
+| `bloque.clave_portal()` | la única definición de la clave. `fila_portal` la usa |
+| `aplicar_espejo.py` | agrupa por esa clave, y normaliza las de `duplicados_resueltos.json` |
+| `aplicar_espejo_erp` (RPC) | normaliza en el CTE `filas` (`20260805210413`) |
+
+La normalización va **en el servidor** además del cliente por dos razones:
+`portal_pendiente.jsonl` es append-only y arrastra 27,707 líneas con la clave
+vieja —normalizar ahí las arregla sin regenerar el archivo—, y el JOIN vive ahí,
+así que cualquier cliente futuro queda cubierto.
+
+Y dentro del RPC va en el CTE `filas`, no en el JOIN: `conteo` y `unicas`
+deduplican por `match_name`, así que tienen que ver la misma clave normalizada.
+Si se normalizara solo en el JOIN, `MUÑOZ` y `MUNOZ` pasarían las dos como
+únicas y escribirían las dos sobre la misma fila del portal — la última ganaría
+en silencio. Sería cambiar un bug por otro más difícil de ver.
+
+**Resultado de la corrida siguiente:**
+
+| | antes | después |
+|---|---|---|
+| `sin_match` del espejo | 3,732 | **25** |
+| con ñ/acento sin distrito | 614 de 614 | **6 de 688** |
+| total sin distrito | 783 | **184** |
+| total sin `erp_id` | 702 | **98** |
+
+`crear_faltantes.py` tenía su propia copia de la transliteración y ahora importa
+`bloque.clave_portal`. Dos copias de esta transformación es exactamente cómo
+nació el bug: que no haya una segunda.
 
 ## 4. El espejo al portal
 

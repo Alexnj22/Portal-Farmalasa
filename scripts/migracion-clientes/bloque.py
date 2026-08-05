@@ -428,6 +428,31 @@ def planificar(cliente, campos, ops, notas=None):
 # ('Chalatenango'), que es lo que ya tienen las 93 fichas portadas. La fuente es
 # la ficha RELEÍDA después de corregir: el portal debe reflejar lo que el ERP
 # tiene ahora, incluido un DUI borrado o un distrito recién puesto.
+# ── La clave con la que el PORTAL compara nombres ────────────────────────────
+# `customers.search_name` es una columna GENERADA:
+#
+#     lower(translate(name, 'ÁÉÍÓÚÜÑáéíóúüñ', 'aeiouunaeiouun'))
+#
+# o sea que ignora acentos Y la ñ. Está bien que lo haga: es una columna de
+# búsqueda, y buscar "munoz" tiene que encontrar a MUÑOZ.
+#
+# El espejo hace `JOIN customers c ON c.search_name = e.match_name`, así que
+# cualquier clave que se compare contra ella TIENE que pasar por la misma
+# transformación. Hasta el 2026-08-05 acá se hacía solo `.strip().lower()`, con
+# la ñ intacta, y entonces 'peña' nunca era igual a 'pena': el JOIN fallaba
+# SIEMPRE para esos clientes. De los 614 clientes del portal con ñ o acento en
+# el nombre, los 614 estaban sin distrito — el 78% del hueco de calidad. No se
+# vio en meses porque un JOIN que no encuentra no falla: devuelve cero filas.
+#
+# Esta función es la única definición. Si alguna vez hay dos, el bug vuelve.
+TABLA_SEARCH_NAME = str.maketrans('ÁÉÍÓÚÜÑáéíóúüñ', 'aeiouunaeiouun')
+
+
+def clave_portal(nombre):
+    """El nombre tal como lo ve `customers.search_name`."""
+    return (nombre or '').translate(TABLA_SEARCH_NAME).strip().lower()
+
+
 CAMPO_A_COLUMNA = {
     'nit': 'nit', 'dui': 'dui', 'nrc': 'nrc', 'telefono1': 'phone',
     'telefono2': 'telefono2', 'correo': 'email', 'direccion': 'direccion',
@@ -443,11 +468,12 @@ def fila_portal(cliente, erp_id, campos, ops):
     """La fila que va a `customers`. NO toca `name`: es la clave del match.
 
     `match_name` es la llave para el UPDATE cuando el bloque se arma desde el
-    ERP y no conocemos el id del portal: `customers.search_name` es el nombre en
-    minúsculas y los 24,502 son únicos, así que empareja sin ambigüedad.
+    ERP y no conocemos el id del portal. Sale de `clave_portal()`, que replica
+    exactamente la columna generada `customers.search_name` — ver la nota larga
+    de esa función: hacer el `.lower()` a mano acá fue el bug de la ñ.
     """
     fila = {'id': cliente.get('id'), 'erp_id': str(erp_id),
-            'match_name': (campos.get('nombre') or '').strip().lower()}
+            'match_name': clave_portal(campos.get('nombre'))}
     for campo, col in CAMPO_A_COLUMNA.items():
         v = (campos.get(campo) or '').strip()
         fila[col] = v or None

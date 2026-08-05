@@ -45,11 +45,6 @@ import bloque          # noqa: E402
 import aplicar_espejo  # noqa: E402
 import verificar       # noqa: E402
 
-# La MISMA transliteración que la columna generada `customers.search_name`.
-# Si esto y la definición de la columna se separan, el duplicado vuelve —
-# es la lección de `snapshot y vivo necesitan la MISMA clave`.
-TABLA_SEARCH_NAME = str.maketrans('ÁÉÍÓÚÜÑáéíóúüñ', 'aeiouunaeiouun')
-
 # Los baldes de mostrador del POS. Espeja `public.es_cliente_mostrador`.
 MOSTRADOR = {'TODOS', 'CLIENTES VARIOS', 'CLIENTE FRECUENTE', 'CLIENTE FRECUENTE NUEVO'}
 
@@ -60,9 +55,10 @@ COLUMNAS = ('nit', 'dui', 'nrc', 'phone', 'telefono2', 'email', 'direccion',
 POR_LOTE = 200
 
 
-def clave(nombre):
-    """La clave con la que el portal compara nombres. Idéntica a search_name."""
-    return nombre.translate(TABLA_SEARCH_NAME).strip().lower()
+# La clave sale de `bloque.clave_portal` — UNA sola definición en todo el
+# proyecto. Tener dos copias de esta transformación es exactamente cómo nació el
+# bug de la ñ: el espejo calculaba la suya y no coincidía con la columna.
+clave = bloque.clave_portal
 
 
 def es_mostrador(nombre, erp_id):

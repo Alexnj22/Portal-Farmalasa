@@ -1,6 +1,24 @@
 # Plan — Metas: cierre de la auditoría + Gastos por recuperar
 
-**Fecha:** 2026-08-05 · **Estado:** ABIERTO, nada ejecutado todavía.
+**Fecha:** 2026-08-05 · **Estado: los 6 bloques de código, CERRADOS el mismo día.**
+
+| Bloque | Versión | Commit |
+|---|---|---|
+| A1 — candado de estado en el ingreso manual | v2.372.2 | `13cb85b5` |
+| A7 — bitácora `metas_historial` | v2.372.3 | `51f2f539` |
+| A3+A4+A5 — lote del gerente, avisos, aviso en Bono | v2.373.0 | `fbc6f8eb` |
+| B — gastos por recuperar (motor) | v2.374.0 | `4c85f8e9` |
+| B — gastos por recuperar (pantallas) | v2.376.0 | `52c3e2b1` |
+| A2 — congelar el resultado del mes | v2.378.0 | `b87fba61` |
+
+**Sigue ABIERTO, y depende del usuario, no del código:** A6 (permisos de sala —
+26 personas sin `overview` no ven su widget), A8 (período de prueba: 2 de 35 con
+`hire_date`), A9 (gráficas del Tablero), el tramo 90-95% de la jefatura, la
+cobertura de horarios, y las Fases 4 y 5 del plan original.
+
+Correcciones del usuario al mockup, ya aplicadas: el vacío de Gastos no explica
+la regla, y **el desglose de la meta es solo administrativo** — vive en Tablero y
+Confirmación, y el widget de la sala muestra únicamente su meta.
 **Antecede:** `docs/PLAN-METAS-2026-08-03.md` (diseño del módulo, Fases 1-3 hechas).
 Este documento es el que manda de acá en adelante para Metas.
 

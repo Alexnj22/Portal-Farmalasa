@@ -71,9 +71,25 @@ export async function confirmarMetasLote(items) {
     return data ?? 0;
 }
 
-export async function aprobarMeta(id) {
-    const { error } = await supabase.rpc('aprobar_meta_gerente', { p_id: id });
+// `monto` es opcional: si va, el gerente ajustó el número que había confirmado
+// el supervisor, y el servidor le avisa a él. Si no, se aprueba tal cual.
+export async function aprobarMeta({ id, monto = null }) {
+    const { error } = await supabase.rpc('aprobar_meta_gerente', {
+        p_id: id, p_monto: monto,
+    });
     if (error) throw error;
+}
+
+// De dónde sale la propuesta, pieza por pieza. Devuelve además el número
+// RECALCULADO para que la pantalla lo compare contra el guardado: un desglose
+// que no reproduce el monto de arriba explicaría otra cosa, y eso es peor que
+// no explicar nada.
+export async function explicarMetaPropuesta({ branchId, yearMonth }) {
+    const { data, error } = await supabase.rpc('explicar_meta_propuesta', {
+        p_branch_id: Number(branchId), p_year_month: yearMonth,
+    });
+    if (error) throw error;
+    return data ?? null;
 }
 
 // Aprueba varias de una vez, en UNA transacción: si alguna falla no quedan la
@@ -111,9 +127,9 @@ export async function fetchAutorizadores() {
 
 // Deja la meta oficial asentando que el gerente autorizó de palabra. El servidor
 // guarda las DOS personas: quien ejecutó y quien autorizó, y le avisa al segundo.
-export async function aprobarMetaPorAutorizacion({ id, autorizoPor, nota }) {
+export async function aprobarMetaPorAutorizacion({ id, autorizoPor, nota, monto = null }) {
     const { error } = await supabase.rpc('aprobar_meta_por_autorizacion', {
-        p_id: id, p_autorizo: autorizoPor, p_nota: nota,
+        p_id: id, p_autorizo: autorizoPor, p_nota: nota, p_monto: monto,
     });
     if (error) throw error;
 }

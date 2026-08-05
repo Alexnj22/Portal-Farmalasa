@@ -15,6 +15,7 @@ import {
     fetchAutorizadores, aprobarMetaPorAutorizacion,
     aprobarMetasLote, aprobarMetasPorAutorizacionLote,
 } from '../../data/metas';
+import ExplicacionMeta from './ExplicacionMeta';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from './metasUtils';
 
@@ -293,6 +294,12 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         const es = ESTADO_CFG[r.estado] || ESTADO_CFG.propuesta;
         const ctx = contexto[r.branch_id] || {};
         const editable = canEdit && ['propuesta', 'devuelta'].includes(r.estado);
+        // En «espera aprobación» el monto también se puede mover: quien aprueba
+        // —o quien registra la autorización del gerente— puede ajustarlo antes
+        // de dejarlo oficial (pedido del usuario, 2026-08-05). Si lo cambia, el
+        // servidor le avisa al supervisor, porque su número dejó de ser el que
+        // confirmó.
+        const ajustable = r.estado === 'confirmada_supervisor' && (canApprove || canEdit);
         // La base es lo que propuso el portal; si la meta se creó a mano, ella
         // misma. El ajuste corre desde ahí, no desde un campo en blanco.
         const pasos = ajustes[r.id] ?? 0;
@@ -346,18 +353,33 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <div className="col-span-2">
                             <p className="text-micro font-black uppercase tracking-widest text-content-3">Propuesta del sistema</p>
                             <p className="text-body-sm font-black tabular-nums text-chart-1-text">{formatMoney(r.monto_propuesto)}</p>
+                            <ExplicacionMeta
+                                branchId={r.branch_id}
+                                yearMonth={r.year_month}
+                                montoPropuesto={r.monto_propuesto}
+                            />
                         </div>
                     )}
                 </div>
 
-                {editable ? (
+                {editable || ajustable ? (
                     /* No se teclea el monto: se corre la exigencia. Un campo libre
                        invita a inventar una cifra redonda y pierde el cálculo que
                        hay detrás; acá cada toque es 1% sobre la propuesta y el
                        monto se ve en dinero, con sus separadores. */
                     <div>
-                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Meta a confirmar</p>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3">
+                            {ajustable ? 'Meta a aprobar' : 'Meta a confirmar'}
+                        </p>
                         <p className="text-xl font-black tabular-nums mt-0.5">{formatMoney(montoNum + recuperacion)}</p>
+                        {/* Al ajustar en «espera aprobación» se está cambiando un
+                            número que otra persona ya confirmó. Decirlo acá evita
+                            que se entere por la notificación. */}
+                        {ajustable && pasos !== 0 && (
+                            <p className="text-micro font-semibold text-warning-text mt-0.5">
+                                Cambiaste lo que confirmó el supervisor — le va a llegar el aviso.
+                            </p>
+                        )}
                         {/* De qué está hecha, y que la exigencia corre solo sobre
                             la venta: el gasto no se negocia. */}
                         {recuperacion > 0 && (
@@ -420,9 +442,17 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             <Button
                                 variant="primary" icon={CheckCircle2} disabled={busy != null}
                                 onClick={() => accion(
-                                    () => aprobarMeta(r.id),
-                                    r.id, 'METAS_APROBAR', { sala: salaNombre(r.branch_id), mes: r.year_month, monto: r.monto_meta },
-                                    'Meta aprobada', `${salaNombre(r.branch_id)} quedó oficial.`,
+                                    // Solo se manda el monto si de verdad se movió: mandarlo
+                                    // siempre haría que el servidor lo lea como un ajuste y
+                                    // le avisara al supervisor de un cambio que no hubo.
+                                    () => aprobarMeta({ id: r.id, monto: pasos !== 0 ? montoNum : null }),
+                                    r.id, 'METAS_APROBAR',
+                                    { sala: salaNombre(r.branch_id), mes: r.year_month,
+                                      monto: montoNum + recuperacion, ajustado: pasos !== 0 ? `${pasos}%` : undefined },
+                                    'Meta aprobada',
+                                    pasos !== 0
+                                        ? `${salaNombre(r.branch_id)} quedó oficial en ${formatMoney(montoNum + recuperacion)}. Al supervisor le llegó el aviso del cambio.`
+                                        : `${salaNombre(r.branch_id)} quedó oficial.`,
                                 )}
                             >
                                 {busy === r.id ? 'Aprobando…' : 'Aprobar'}
@@ -468,11 +498,18 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             variant="primary" icon={ShieldCheck}
                             disabled={busy != null || !quienAut || !notaAut.trim()}
                             onClick={() => accion(
-                                () => aprobarMetaPorAutorizacion({ id: r.id, autorizoPor: quienAut, nota: notaAut.trim() }),
+                                () => aprobarMetaPorAutorizacion({
+                                    id: r.id, autorizoPor: quienAut, nota: notaAut.trim(),
+                                    monto: pasos !== 0 ? montoNum : null,
+                                }),
                                 r.id, 'METAS_APROBAR_POR_AUTORIZACION',
-                                { sala: salaNombre(r.branch_id), mes: r.year_month, monto: r.monto_meta,
+                                { sala: salaNombre(r.branch_id), mes: r.year_month,
+                                  monto: montoNum + recuperacion, ajustado: pasos !== 0 ? `${pasos}%` : undefined,
                                   autorizo: autorizadores.find((a) => a.id === quienAut)?.name, nota: notaAut.trim() },
-                                'Meta oficial', 'Quedó registrada con la autorización, y a quien autorizó le llegó el aviso.',
+                                'Meta oficial',
+                                pasos !== 0
+                                    ? `Quedó en ${formatMoney(montoNum + recuperacion)} con esa autorización. Al supervisor le llegó el aviso del cambio.`
+                                    : 'Quedó registrada con la autorización, y a quien autorizó le llegó el aviso.',
                             )}
                         >
                             Dejar oficial con esta autorización

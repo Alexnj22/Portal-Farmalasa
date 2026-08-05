@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.385.0 — Metas: el gerente ajusta, la fórmula se explica, y el parpadeo de permisos
+
+**El gerente también puede mover el monto.** En «espera aprobación», quien aprueba
+—o quien registra la autorización— ajusta con los mismos botones que usó el
+supervisor, y aprueba con ese número. Si lo cambió, **al supervisor le llega el
+aviso**: el número que él confirmó dejó de ser el que quedó, y tiene que
+enterarse sin preguntar. La tarjeta lo avisa antes, mientras se ajusta.
+
+**Y ahora se puede ver de dónde sale la propuesta.** Debajo del monto hay un
+«De dónde sale» que abre el cálculo completo: los tres meses cerrados que se
+usaron con su venta y sus días, y después la cuenta —tanto por día, por los días
+del mes, por el peso del mes, por el crecimiento— hasta llegar al número.
+
+Lo que hace confiable ese desglose es que **el servidor rehace la cuenta y la
+pantalla compara el resultado contra el monto guardado**. Si coincide lo dice; si
+no, avisa que manda el guardado en vez de mostrar un desglose que explica otro
+número — que sería peor que no explicar nada, porque parece que sí lo explica.
+Verificado contra las seis metas de agosto: las seis reproducen al centavo.
+
+**Y el parpadeo de botones, arreglado — y era más grave de lo que parecía.** La
+tarjeta mostraba «Aprobar / Devolver» y unos segundos después se convertía en
+«Registrar la autorización del gerente». Midiéndolo en el navegador: la marca de
+superadministrador arrancaba activa y **a los ~3 segundos desaparecía sola**, no
+se apagaba — señal de que algo reconstruye el objeto de la sesión y pierde ese
+dato por el camino. O sea que **cualquier superadministrador quedaba degradado a
+mitad de sesión, en toda la app y en silencio**; en Metas se notaba solo porque
+ahí las dos opciones son visiblemente distintas.
+
+Esa marca ahora vive en su propio lugar, donde ningún refresco la pisa, y se
+recuerda entre recargas. También la lee el temporizador de inactividad, que por
+lo mismo estaba dejando a los administradores con el tiempo corto. Verificado:
+la pantalla se queda en una sola opción de punta a punta.
+
 ## v2.384.1 — Los cinco elementos de materiales, confirmados con su motivo escrito
 
 El usuario revisó los cinco elementos cerrados de `PLAN-MATERIALES` renderizados

@@ -61,6 +61,15 @@ const LS_USER  = "sb_user";
 const LS_LAST  = "sb_last_activity_at";
 const LS_PERMS = "sb_role_perms";
 const LS_PRICE = "sb_max_price_level";
+// `isSU` se guarda JUNTO a los permisos y no solo dentro del usuario, porque
+// `hasPermission` corta con `if (isSU) return true` — o sea que los dos datos
+// contestan la misma pregunta y tienen que llegar juntos. Vivían separados: los
+// permisos se restauraban del caché al instante y el `isSU` lo confirmaba una
+// llamada de red posterior, así que la pantalla decidía con la mitad del dato y
+// después se corregía sola. Se veía en Metas: la tarjeta ofrecía «registrar la
+// autorización del gerente» —el camino de quien NO puede aprobar— y un segundo
+// después se convertía en «Aprobar / Devolver».
+const LS_SU    = "sb_is_su";
 
 const ERP_CACHE_KEYS = [
   CACHE_KEYS.BRANCHES,
@@ -93,6 +102,21 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [rolePerms, setRolePerms] = useState(null);
   const [permsLoading, setPermsLoading] = useState(false);
+  // `isSU` vive en su PROPIO estado y no dentro del objeto del usuario.
+  //
+  // Medido el 2026-08-05: arrancaba en `true` y a los ~3.2s pasaba a
+  // `undefined` —no a `false`— mientras el caché seguía diciendo `true`. Esa
+  // firma es la de un objeto REEMPLAZADO entero por otro construido sin el
+  // campo, no la de un permiso que cambió. O sea que cualquier refresco que
+  // rearme el usuario degradaba a un superadministrador a mitad de sesión, en
+  // TODA la app y en silencio. Se veía en Metas porque ahí las dos ofertas son
+  // visiblemente distintas: la tarjeta mostraba «Aprobar / Devolver» y tres
+  // segundos después «Registrar la autorización del gerente».
+  //
+  // Se siembra del caché para que la primera pintada ya sepa la respuesta.
+  const [isSU, setIsSU] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_SU) || 'false'); } catch { return false; }
+  });
   // Candados de mantenimiento: { [module_key]: { locked_by_id, locked_by_name, reason, locked_at, expires_at } }
   const [moduleLocks, setModuleLocks] = useState({});
   const [maxPriceLevel, setMaxPriceLevel] = useState(null);
@@ -151,6 +175,7 @@ export const AuthProvider = ({ children }) => {
         const isSU  = roleData?.is_su ?? false;
         setRolePerms(map);
         setMaxPriceLevel(price);
+        setIsSU(isSU);   // el estado propio: nadie más lo pisa
         // Persist isSU on user object so idle-timeout survives page reload from cache
         setUser(prev => {
           if (!prev || prev.isSU === isSU) return prev;
@@ -162,6 +187,7 @@ export const AuthProvider = ({ children }) => {
         try {
           localStorage.setItem(LS_PERMS, JSON.stringify(map));
           localStorage.setItem(LS_PRICE, JSON.stringify(price));
+          localStorage.setItem(LS_SU, JSON.stringify(isSU));
         } catch { /* storage lleno — ignorar */ }
       })
       .catch(() => { setPermsLoading(false); });
@@ -259,6 +285,10 @@ export const AuthProvider = ({ children }) => {
   // -------------------------
   const getIdleLimitMs = (u) => {
     if (IS_MOBILE_SESSION) return IDLE_MOBILE_MS;
+    // El caché primero: `u.isSU` lo pierde cualquier refresco que rearme el
+    // usuario, y sin esto un superadministrador terminaba con el tiempo de
+    // inactividad corto sin que nadie lo hubiera decidido.
+    try { if (JSON.parse(localStorage.getItem(LS_SU) || 'false')) return IDLE_ADMIN_MS; } catch { /* sigue */ }
     if (u?.isSU) return IDLE_ADMIN_MS;
     try {
       const cached = localStorage.getItem(LS_PERMS);
@@ -301,6 +331,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(LS_LAST);
     localStorage.removeItem(LS_PERMS);
     localStorage.removeItem(LS_PRICE);
+    localStorage.removeItem(LS_SU);
     clearSignedUrlCache();
   };
 
@@ -308,6 +339,7 @@ export const AuthProvider = ({ children }) => {
     stopIdleWatcher();
     clearAuthCache();
     clearErpCache();
+    setIsSU(false);   // el estado propio también se apaga: si no, el próximo login arranca con el privilegio del anterior
     setUser(null);
     setRolePerms(null);
     setPermsLoading(false);
@@ -373,6 +405,15 @@ export const AuthProvider = ({ children }) => {
           } else {
             setPermsLoading(true); // first login — must fetch from network
           }
+          // El `isSU` del caché de permisos manda sobre el del usuario: los dos
+          // se escriben en la misma respuesta, pero el del usuario puede venir
+          // de un login viejo que todavía no lo tenía. Sin esto, la primera
+          // pintada decide con `isSU` en falso y se corrige sola al llegar la
+          // red — que es el parpadeo de botones que se veía en Metas.
+          try {
+            const su = localStorage.getItem(LS_SU);
+            if (su != null) parsed.isSU = JSON.parse(su);
+          } catch { /* caché corrupto — manda el del usuario */ }
           setUser(parsed);
           startIdleWatcher(parsed);
           // Re-firmar la foto (la firmada cacheada puede haber expirado)
@@ -701,7 +742,10 @@ export const AuthProvider = ({ children }) => {
   // 📦 Contexto expuesto
   // -------------------------
   const value = useMemo(() => {
-    const isSU = !!user?.isSU;
+    // Del estado propio, NO de `user.isSU`: ese campo lo pierde cualquier
+    // refresco que rearme el usuario (ver la nota del `useState` de arriba).
+    // Se sigue escribiendo en el usuario para el temporizador de inactividad,
+    // pero los permisos ya no dependen de que sobreviva ahí.
 
     const getScope = (moduleKey) => rolePerms?.[moduleKey]?.scope ?? 'ALL';
 
@@ -739,7 +783,7 @@ export const AuthProvider = ({ children }) => {
       login, loginWithEmail, loginWithUsername, logout,
       refreshPermissions,
     };
-  }, [user, loading, rolePerms, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, loading, isSU, rolePerms, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

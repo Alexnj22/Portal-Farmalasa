@@ -20,9 +20,14 @@ import { SALAS_VENTA, ymHoySV, ymSumar } from './metasUtils';
 // supervisión: la sala ve SU meta en el widget «Meta del mes» del Inicio
 // (`WidgetMetaSala`), no acá. Las bonificaciones llegan en fases siguientes.
 export default function MetasView() {
-    const { hasPermission, user } = useAuth();
+    const { hasPermission, user, permsLoading } = useAuth();
     const canEdit = hasPermission('metas', 'can_edit');
     const canApprove = hasPermission('metas', 'can_approve');
+    // Confirmación ofrece cosas DISTINTAS a quien puede aprobar y a quien no
+    // («Aprobar / Devolver» contra «Registrar la autorización del gerente»), así
+    // que no puede decidir con los permisos a medio cargar: la pantalla se
+    // pintaba con una opción y se corregía sola con la otra.
+    const permisosListos = !permsLoading;
     const branches = useStaffStore((s) => s.branches);
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -144,7 +149,7 @@ export default function MetasView() {
                         : SALAS_VENTA[0]}
                 />
             )}
-            {activeTab === 'confirmacion' && (canEdit || canApprove) && (
+            {activeTab === 'confirmacion' && permisosListos && (canEdit || canApprove) && (
                 <TabConfirmacion
                     salaNombre={salaNombre}
                     canEdit={canEdit}

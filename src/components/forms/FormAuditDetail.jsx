@@ -25,7 +25,7 @@ const FormAuditDetail = ({ data }) => {
     const iconBoxClass = "w-9 h-9 rounded-full bg-surface-card flex items-center justify-center shrink-0 border border-border-card shadow-sm";
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 h-full animate-in fade-in slide-in-from-bottom-4 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+        <div className="flex flex-col md:flex-row gap-6 h-full animate-in fade-in slide-in-from-bottom-4 duration-700 ease-[var(--ease-spring)]">
             
             {/* =========================================================
                 COLUMNA IZQUIERDA: EL CONTENEDOR ES EL ÚNICO CON HOVER

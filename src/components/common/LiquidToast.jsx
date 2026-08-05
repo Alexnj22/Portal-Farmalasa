@@ -39,7 +39,7 @@ const LiquidToast = () => {
             // así que el ✕ quedaba flotando a media tarjeta con un hueco a su
             // derecha. Con `p-3` parejo el botón vuelve al borde, que es donde
             // se lo busca.
-            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-toast flex items-center gap-4 p-3 animate-in slide-in-from-bottom-10 fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu max-w-[400px] transition-colors"
+            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-toast flex items-center gap-4 p-3 animate-in slide-in-from-bottom-10 fade-in zoom-in-95 duration-700 ease-[var(--ease-spring)] transform-gpu max-w-[400px] transition-colors"
         >
             <div className={`w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card transition-all ${config.iconContainer}`}>
                 {config.icon}

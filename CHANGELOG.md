@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.393.0 — Fase C: los 89 easings que Solid nunca recibía
+
+Primera fase de `PLAN-MATERIALES` que **toca código**. Migrados los **89**
+`cubic-bezier(0.23, 1, 0.32, 1)` escritos a mano — 85 como clase Tailwind y 4
+dentro de un `transition:` inline — a `var(--ease-spring)`.
+
+**No era higiene: Solid no estaba recibiendo su curva.** `--ease-spring` vale
+`cubic-bezier(0.23,1,0.32,1)` en Liquid y `cubic-bezier(0.2,0,0.2,1)` en Solid, y
+esos 89 sitios tenían clavada la de Liquid. Verificado en el navegador, con
+sesión real, en los cuatro temas:
+
+| tema | `--ease-spring` | lo que resuelve el elemento |
+|---|---|---|
+| liquid / dark | `cubic-bezier(0.23, 1, 0.32, 1)` | igual |
+| **solid / solid-dark** | `cubic-bezier(0.2, 0, 0.2, 1)` | **igual — antes seguía en la de Liquid** |
+
+Cero residuo de la curva en el repo, build y lint limpios, gate de diseño sin
+deuda nueva.
+
+**Y la hipótesis de §7.2 sobre las 224 duraciones fuera de escala resultó
+falsa.** El plan suponía que podían ser «animación ambiental que no pertenece al
+reloj de interacción». Clasificadas: **90 son entrada/salida y 69 son
+hover/foco** — interacción pura. Sólo 6 son carga. Y de los hover, buena parte es
+`islandHoverClass`: **la misma cadena copiada en 5 archivos `BranchTab*`**, con
+`duration-500` sobre el lift de tarjeta que el reloj fija en 300. Eso no es un
+escalón que falta, es deriva; las entradas de 500-700ms sí parecen decisión. La
+decisión de si el reloj crece queda para el usuario, con esos datos.
+
+## v2.392.0 — Descarga CSV en Gestión de Stock
+
+La pestaña tenía dos listas largas —hasta 591 productos en «Sin Min/Max»— y
+ninguna forma de sacarlas de la pantalla: lo que se necesitaba en una hoja de
+cálculo se copiaba fila por fila. Ahora la píldora de filtros lleva su botón de
+descarga, como el resto del portal.
+
+**Baja lo que está a la vista, no la tabla entera.** El archivo sale de las
+filas ya filtradas —sucursal, vista, sub-filtro, búsqueda y orden—, sin el
+recorte de la página, que es solo paginación. Verificado contra el número de
+cada tarjeta en La Popular: Con Min/Max 24, Sin stock + Min/Max 8, Sin Min/Max
+45 (24+45 = las 69 del total), y en la otra vista Agregar 2, Evaluar 137,
+Mayorista 1, Sin acción 320. Buscar «bayer» deja 1 fila y es del laboratorio
+buscado; cambiar a Salud 1 cambia el archivo, la columna y las 115 filas.
+
+**Lleva lo que en pantalla vive dentro de una celda.** El detalle de la
+sugerencia, el min/max sugerido, las uds./mes, los días sin venta y el vencimiento
+son texto chico bajo un badge: en una hoja de cálculo son columnas que se ordenan
+y se filtran, que es justo para lo que se pedía el archivo. El dinero va sin
+formato corto ni símbolo —`61.51`, no `$61.5`— porque el CSV se suma.
+
+Usa el `exportCsv` canónico (`src/utils/csvExport.js`), así que hereda el BOM, el
+`;` y el CRLF que Excel en es-SV necesita. Queda anotado en la bitácora como
+`EXPORT_SIN_VENTA` con la vista, la sucursal, el filtro y la búsqueda.
+
 ## v2.391.2 — El vidrio de los flotantes anclados y la raíz del backdrop
 
 Dos correcciones al sidebar de §12, y la primera es el hallazgo más reutilizable

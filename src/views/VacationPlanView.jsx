@@ -714,7 +714,7 @@ const VacationPlanView = () => {
                     {/* ── Panel izquierdo: Formulario (crear / editar) ── */}
                     <div ref={panelRef} className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div data-surface="card" data-tono={editingPlan ? 'warning' : undefined}
-                    className="p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative">
+                    className="p-6 transition-all duration-700 ease-[var(--ease-spring)] relative">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-warning' : 'bg-brand'}`}>

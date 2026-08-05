@@ -49,7 +49,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     return (
         <div
             data-surface="card" data-tono={isUrgent ? 'danger' : undefined}
-                    className="p-6 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer"
+                    className="p-6 flex flex-col gap-4 transition-all duration-700 ease-[var(--ease-spring)] group relative transform-gpu cursor-pointer"
             {...clickable(() => { if (!isRead) onRead(ann.id); })}
         >
             {/* Badges row */}
@@ -303,10 +303,10 @@ const UnreadStack = memo(({ list, onRead }) => {
         if (phase === 'check') return {
             animation: 'none',
             transform: 'scale(1.02)',
-            transition: 'transform 0.2s cubic-bezier(0.23,1,0.32,1)',
+            transition: 'transform 0.2s var(--ease-spring)',
         };
         return {
-            animation: 'card-enter 0.32s cubic-bezier(0.23,1,0.32,1) both',
+            animation: 'card-enter 0.32s var(--ease-spring) both',
         };
     })();
 
@@ -354,7 +354,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                             const done = i < doneCount;
                             const cur  = i === doneCount;
                             return (
-                                <div key={i} className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+                                <div key={i} className={`rounded-full transition-all duration-500 ease-[var(--ease-spring)] ${
                                     done ? 'w-2.5 h-2.5 bg-success shadow-[var(--shadow-glow-chart-9-sm)]' :
                                     cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-danger shadow-[var(--shadow-glow-danger-md)]' : 'bg-brand shadow-[var(--shadow-glow-brand-md)]') :
                                            'w-2.5 h-2.5 bg-surface-card-hover'
@@ -391,7 +391,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 transform: `translateY(${cfg.dy}px) rotate(${cfg.rot}deg) scale(${cfg.scale})`,
                                 transition: exiting
                                     ? 'opacity 0.12s ease'
-                                    : 'transform 0.42s cubic-bezier(0.23,1,0.32,1), opacity 0.38s ease',
+                                    : 'transform 0.42s var(--ease-spring), opacity 0.38s ease',
                                 zIndex: 4 - idx,
                                 pointerEvents: 'none',
                                 transformOrigin: 'center bottom',
@@ -409,7 +409,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
                         <div className="absolute inset-0 z-content flex flex-col items-center justify-center rounded-header bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[var(--shadow-glow-success)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[var(--shadow-glow-success)] animate-in zoom-in-50 duration-200 ease-[var(--ease-spring)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>
                             <p className="mt-3 text-label font-black text-success-text uppercase tracking-widest animate-in fade-in slide-in-from-bottom-1 duration-200 delay-75">Leído</p>
@@ -776,7 +776,7 @@ const EmployeeAnnouncementsView = () => {
                     )}
 
                     {filtered.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[var(--ease-spring)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-content-3" />
                                 <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 transform-gpu overflow-hidden">

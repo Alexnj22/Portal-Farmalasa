@@ -301,11 +301,11 @@ const SalesBranchSkeleton = () => (
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
   <div data-surface="card" {...clickable(onClick)}
-    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
+    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)]' : ''}`}>
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
-      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: tinte(color, 9.4), border: `1px solid ${tinte(color, 12.5)}` }}>
+      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[var(--ease-spring)] group-hover:scale-[1.08]" style={{ background: tinte(color, 9.4), border: `1px solid ${tinte(color, 12.5)}` }}>
         <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
       <p className="text-label font-semibold text-content-3 leading-snug">{label}</p>
@@ -322,7 +322,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => {
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
-    <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
+    <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
       {/* backdrop-filter on inner absolute div — Chrome bug: overflow-hidden + backdrop-filter on same element breaks blur */}
       <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
       {/* Glass shine */}
@@ -1185,7 +1185,7 @@ const DashboardView = ({ openModal }) => {
             toque a ~44px sin agrandar la píldora visible (v2.47.4). */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 focus-within:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
+          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 focus-within:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[var(--ease-spring)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
         >
           <div className="bg-surface-card border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
@@ -1199,7 +1199,7 @@ const DashboardView = ({ openModal }) => {
         {!dndActive && (
           <div
             data-resize-panel
-            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'}`}
+            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-200 ease-[var(--ease-spring)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'}`}
           >
             <Button
                 icon={Maximize2}
@@ -1396,7 +1396,7 @@ const DashboardView = ({ openModal }) => {
                         )}
                         {salesView==='DAYS'&&<p className="text-micro text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
-                      <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-base ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
+                      <div className={`w-full transition-[opacity,transform] duration-300 ease-[var(--ease-spring)] group-hover:opacity-80 origin-bottom shadow-sm z-base ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
                       <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-9-text transition-[opacity,color] whitespace-nowrap z-base">{item.label}</span>
                     </div>
                   ));
@@ -1434,7 +1434,7 @@ const DashboardView = ({ openModal }) => {
       const nowH=new Date().getHours();
       const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
       return wrapWidget(wid,
-        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden">
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)] overflow-hidden">
           {/* Mismas 2 capas que WidgetCard (blur + glass shine) — antes esta
               mini-card se pintaba a mano sin la capa de brillo, por eso se
               veía más opaca/gris que el resto de widgets del dashboard. */}
@@ -1716,7 +1716,7 @@ const DashboardView = ({ openModal }) => {
         : birthdaysOfMonth;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
-        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col overflow-hidden">
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)] flex flex-col overflow-hidden">
           <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
           {/* Mismas 2 capas que WidgetCard — este widget era hand-rolled sin
               el glass shine ni data-surface="card" (mismo bug que

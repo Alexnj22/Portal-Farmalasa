@@ -4,7 +4,7 @@ import LiquidSelect from './LiquidSelect';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
 import { usePublicarBuscador, useHayBarraFlotante } from './CanalDeVista';
 
-const spring = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
+const spring = 'ease-[var(--ease-spring)]';
 
 /**
  * La píldora del HEADER de una vista: navegación y buscador. Nada más.

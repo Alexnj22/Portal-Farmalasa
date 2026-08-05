@@ -151,7 +151,7 @@ const hasInjections = legal.injections === true;
                         return (
                             <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group relative overflow-hidden cursor-pointer rounded-3xl bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
                                 {/* Frente Normal */}
-                                <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-4 group-hover:opacity-0">
+                                <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-500 ease-[var(--ease-spring)] group-hover:-translate-y-4 group-hover:opacity-0">
                                     <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center font-black text-xl shrink-0 overflow-hidden shadow-inner ${!photoUrl ? COLOR_MAP[slot.color] : 'bg-surface-card-hover p-0'}`}>
                                         {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                     </div>
@@ -162,7 +162,7 @@ const hasInjections = legal.injections === true;
                                 </div>
                                 
                                 {/* 🚨 Panel Deslizante Liquid Glass */}
-                                <div className="absolute inset-0 bg-surface-card backdrop-blur-xl border-t border-border-card p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[var(--shadow-sticky-t)]">
+                                <div className="absolute inset-0 bg-surface-card backdrop-blur-xl border-t border-border-card p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[var(--ease-spring)] shadow-[var(--shadow-sticky-t)]">
                                     <div className="flex justify-between items-center mb-2 border-b border-divider pb-2">
                                         <span className="text-content font-black text-body-sm truncate">{emp.name}</span>
                                         <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center shadow-md">

@@ -8,7 +8,7 @@ import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
     TrendingUp, CheckCircle2, CircleDashed, PlusCircle, Minus, ShoppingBag,
-    EyeOff, Eye, Calendar,
+    EyeOff, Eye, Calendar, Download,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -20,6 +20,8 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import { smartFilter } from '../../utils/searchUtils';
 import { useNowTick } from '../../hooks/useNowTick';
 import { formatMoney, formatMoneyCorto } from '../../utils/formatNumber';
+import { exportCsv } from '../../utils/csvExport';
+import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -512,6 +514,88 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const filteredCost  = useMemo(() => filtered.reduce((s, r) => s + Number(r.cost_value || 0), 0), [filtered]);
     const totalRevenue  = useMemo(() => activeData.reduce((s, r) => s + Number(r.revenue || 0), 0), [activeData]);
 
+    // ─── Descarga CSV ─────────────────────────────────────────────────────────
+    // Sale de `filtered`, NO de `activeData` ni de `pageRows`: es lo que el
+    // usuario tiene delante — sucursal, vista, sub-filtro, búsqueda y orden ya
+    // aplicados— y sin el recorte de la página, que es solo paginación.
+    //
+    // Las columnas son las de la tabla más lo que en pantalla vive dentro de una
+    // celda (el detalle de la sugerencia, el min/max sugerido, los días sin
+    // venta): en una hoja de cálculo eso se filtra y se ordena, y era justo lo
+    // que había que copiar a mano.
+    const exportarCsv = useCallback(() => {
+        const suc  = ERP_NAMES[selectedErp] || `Suc.${selectedErp}`;
+        const hoy  = new Date().toISOString().slice(0, 10);
+        // Dinero sin formato corto ni símbolo: el CSV se suma en la hoja, y
+        // "$1.2K" no es un número. Punto decimal, que es el de es-SV.
+        const num  = (n) => (Number(n) || 0).toFixed(2);
+        const dia  = (f) => f ? new Date(f).toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+        const slug = suc.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+        let headers, rows, archivo;
+
+        if (mode === 'sin_gestion') {
+            headers = ['Sucursal', 'Producto', 'Laboratorio', 'Meses con venta', 'Uds. (6m)',
+                       'Uds./mes', 'Ingresos (6m)', 'Ingresos/mes', 'Facturas', 'Uds./factura',
+                       'Sugerencia', 'Motivo', 'Min sugerido', 'Max sugerido'];
+            rows = filtered.map(r => {
+                const s        = getSinMinMaxSugg(r);
+                const ignorado = ignoredSet.has(r.erp_product_id);
+                const units    = Number(r.units_sold) || 0;
+                const rev      = Number(r.revenue)    || 0;
+                return [
+                    suc,
+                    r.product_name || '',
+                    r.laboratorio  || '',
+                    `${s.months}/6`,
+                    units,
+                    (units / 6).toFixed(1),
+                    num(rev),
+                    num(rev / 6),
+                    s.invoices,
+                    s.avgPerInv.toFixed(1),
+                    ignorado ? 'No sugerir' : s.label,
+                    ignorado ? 'Descartado a mano' : s.reason,
+                    s.minSug ?? '',
+                    s.maxSug ?? '',
+                ];
+            });
+            archivo = `sin_minmax_${slug}_${hoy}.csv`;
+        } else {
+            headers = ['Sucursal', 'Producto', 'Laboratorio', 'Stock aquí', 'Costo retenido',
+                       'Min/Max', 'Min', 'Max', 'Vencimiento', 'Sugerencia', 'Detalle',
+                       'Última venta', 'Días sin venta', 'Vendido en (6m)'];
+            const ahora = Date.now();
+            rows = filtered.map(r => {
+                const sug    = getSuggestion(r);
+                const soldIn = r.sold_in || [];
+                return [
+                    suc,
+                    r.product_name || '',
+                    r.laboratorio  || '',
+                    Number(r.current_stock) || 0,
+                    num(r.cost_value),
+                    r.in_minmax ? 'Con Min/Max' : 'Sin Min/Max',
+                    r.in_minmax && r.min_qty != null ? Number(r.min_qty) : '',
+                    r.in_minmax && r.max_qty != null ? Number(r.max_qty) : '',
+                    dia(r.fecha_vencimiento_min),
+                    sug?.label  || '',
+                    sug?.detail || '',
+                    dia(r.ultima_venta),
+                    r.ultima_venta ? Math.floor((ahora - new Date(r.ultima_venta)) / 86_400_000) : '',
+                    soldIn.map(s => `${ERP_NAMES[s.esid] || `Suc.${s.esid}`}: ${Number(s.units).toLocaleString()}`).join(', '),
+                ];
+            });
+            archivo = `stock_retenido_${slug}_${hoy}.csv`;
+        }
+
+        exportCsv(headers, rows, archivo);
+        useStaff.getState().appendAuditLog('EXPORT_SIN_VENTA', null, {
+            vista: mode, sucursal: suc, filtro: filterMode,
+            busqueda: searchTerm || null, count: rows.length,
+        });
+    }, [filtered, mode, selectedErp, ignoredSet, filterMode, searchTerm]);
+
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const pageRows   = filtered.slice((page - 1) * pageSize, page * pageSize);
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
@@ -578,7 +662,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     escrito a mano con su propio badge de conteo: es
                     `SegmentedControl`, y la cuenta viaja en el label como en el
                     resto del portal. */}
-                <FilterBar>
+                <FilterBar
+                    acciones={[{
+                        key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true,
+                        disabled: activeLoading || filtered.length === 0,
+                        onClick: exportarCsv,
+                    }]}
+                >
                     <FilterBar.Section label="vista">
                         <SegmentedControl
                             size="sm"

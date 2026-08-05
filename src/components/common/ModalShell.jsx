@@ -493,7 +493,7 @@ export default function ModalShell({
             ? 'h-full w-[47%] max-w-[420px] min-w-[280px]'
             : 'w-full'} ${autoHoja && align !== "side"
             ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,env(safe-area-inset-bottom))]'
-            : align === "side" ? '' : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
+            : align === "side" ? '' : maxWidthClass} ${panelAnim} ease-[var(--ease-spring)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── La sombra de la hoja, como CAPA propia ───────────────────

@@ -75,7 +75,7 @@ const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h
 );
 
 const CameraScanner = ({ videoRef }) => (
-    <div style={{ animation: 'scannerReveal 450ms cubic-bezier(0.23,1,0.32,1) both' }} className="flex flex-col gap-2.5">
+    <div style={{ animation: 'scannerReveal 450ms var(--ease-spring) both' }} className="flex flex-col gap-2.5">
         <div className="relative w-full overflow-hidden border border-white/[0.14] shadow-[var(--shadow-glass-5)]"
             style={{ height: 224, borderRadius: '1.5rem' }}>
             <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-sm" />
@@ -502,7 +502,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 style={{ background:'radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%)' }}>
                 <style>{keyframeStyles}</style>
                 <AmbientBG />
-                <div className={`relative z-base w-full max-w-[420px] mx-5 transition-all duration-600 ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
+                <div className={`relative z-base w-full max-w-[420px] mx-5 transition-all duration-600 ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
                     <div className="rounded-header p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[var(--shadow-glass-5)] flex flex-col gap-6">
                         <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-header" />
                         <div className="relative flex flex-col items-center gap-3">
@@ -536,7 +536,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const renderMobileLayout = () => (
         <div className="flex flex-col items-center justify-between min-h-[100dvh] w-full px-5 py-8 gap-4">
-            <div className={`flex flex-col items-center gap-2 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
+            <div className={`flex flex-col items-center gap-2 transition-all duration-700 delay-[80ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
                 <div className="relative">
                     <div className="absolute -inset-3 rounded-modal blur-xl opacity-40 bg-gradient-to-tr from-chart-3/60 to-chart-1/40" />
                     <div className="relative w-16 h-16 rounded-3xl bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-2)]">
@@ -549,7 +549,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            <div className={`relative w-full max-w-[420px] transition-all duration-700 delay-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.94] translate-y-5'}`}>
+            <div className={`relative w-full max-w-[420px] transition-all duration-700 delay-[160ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.94] translate-y-5'}`}>
                 <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-header" />
                 <div className="rounded-header p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[var(--shadow-glass-5)] flex flex-col gap-4">
                     {renderLoginForm(true)}
@@ -576,7 +576,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            <div className={`flex gap-2 transition-all duration-700 delay-[260ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 translate-y-4'}`}>
+            <div className={`flex gap-2 transition-all duration-700 delay-[260ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0':'opacity-0 translate-y-4'}`}>
                 {[
                     {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Ventas',color:'#0052CC'},
                     {href:'https://farmalasa.com',Icon:Pill,label:'FarmaLasa',color:'#6929C4'},
@@ -593,7 +593,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const renderDesktopLayout = () => (
         <div className="relative flex items-center justify-center w-full min-h-[100dvh] px-6 py-10">
-            <div className={`relative w-full max-w-[480px] z-base transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
+            <div className={`relative w-full max-w-[480px] z-base transition-all duration-700 delay-[80ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
                 <div className="absolute -inset-6 rounded-header blur-2xl opacity-18 bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none" />
 
                 <div className="relative rounded-header px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[var(--shadow-glass-5)] flex flex-col gap-6 overflow-hidden">
@@ -644,7 +644,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             </div>
 
             {/* Quick links */}
-            <div className={`absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-content transition-all duration-700 delay-[300ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-x-0':'opacity-0 translate-x-8'}`}>
+            <div className={`absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-content transition-all duration-700 delay-[300ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-x-0':'opacity-0 translate-x-8'}`}>
                 <div className="rounded-modal p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[var(--shadow-glass-5)] flex flex-col gap-3 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-modal" />
                     <div className="relative flex items-center gap-2 px-1 mb-1">
@@ -681,7 +681,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const isMob = window.innerWidth < 1024;
 
     return (
-        <div className={`relative w-full min-h-[100dvh] overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${leaving?'opacity-0 scale-[1.03]':'opacity-100 scale-100'}`}
+        <div className={`relative w-full min-h-[100dvh] overflow-hidden transition-all duration-300 ease-[var(--ease-spring)] ${leaving?'opacity-0 scale-[1.03]':'opacity-100 scale-100'}`}
             style={{ background:'radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%)' }}>
             <style>{keyframeStyles}</style>
             <AmbientBG />

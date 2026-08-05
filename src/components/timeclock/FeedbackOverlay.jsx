@@ -54,7 +54,7 @@ export default function FeedbackOverlay({
 
   return (
     // Contenedor principal Liquidglass Black
-    <div className="fixed inset-0 z-bell-desktop flex flex-col items-center justify-center animate-in fade-in duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
+    <div className="fixed inset-0 z-bell-desktop flex flex-col items-center justify-center animate-in fade-in duration-500 ease-[var(--ease-spring)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
 
       {/* ORBE DE LUZ DE FONDO */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full blur-[140px] pointer-events-none transition-colors duration-1000 ${color === 'red' ? 'opacity-20' : 'opacity-10'} ${theme.glow}`}></div>
@@ -71,7 +71,7 @@ export default function FeedbackOverlay({
           <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 w-full">
 
             {/* COLUMNA IZQUIERDA: Info del Empleado */}
-            <div className="flex flex-col items-center justify-center flex-1 animate-in slide-in-from-left-8 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] w-full max-w-[500px]">
+            <div className="flex flex-col items-center justify-center flex-1 animate-in slide-in-from-left-8 duration-700 ease-[var(--ease-spring)] w-full max-w-[500px]">
 
               {/* 🚨 PIEZA UNIFICADA: Foto + Nombre Integrado */}
               <div className="relative mb-16 shrink-0 flex flex-col items-center">

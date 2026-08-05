@@ -88,7 +88,7 @@ const SearchInput = forwardRef(function SearchInput({
                 {...(open ? { 'data-surface': 'input' } : {})}
                 onClick={() => { if (!open && !disabled) { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 120); } }}
                 style={open && isFocused ? { borderColor: accentColor || 'var(--brand)' } : undefined}
-                className={`flex items-center h-8 transition-[flex-grow,flex-basis,background-color,border-color] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${
+                className={`flex items-center h-8 transition-[flex-grow,flex-basis,background-color,border-color] duration-300 ease-[var(--ease-spring)] overflow-hidden ${
                     open
                         ? 'flex-1 min-w-0 cursor-text'
                         : 'flex-none w-8 rounded-lg bg-surface-card-hover border border-border-card cursor-pointer'

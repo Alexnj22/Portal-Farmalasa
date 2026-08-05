@@ -397,7 +397,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             <div className="relative w-full max-w-5xl mx-auto py-2 flex-1">
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
-                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div data-surface="card" className="border-chart-3/30 p-8 md:p-12 relative overflow-hidden">
                         
                         {/* 🔮 Esferas de Energía Animatedas de Fondo */}
@@ -454,7 +454,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 </div>
 
                 {/* 🏢 VISTA NORMAL DE LÍNEA DE TIEMPO (HISTORIAL) */}
-                <div inert={aiMode ? true : undefined} className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={aiMode ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     
                     {/* Línea Central Estética */}
                     <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-[2px] bg-divider md:-translate-x-1/2 rounded-full"></div>
@@ -581,7 +581,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                         </div>
                                                                                     </div>
 
-                                                                                    <div className="absolute left-[20px] md:left-1/2 top-1 md:top-auto w-10 h-10 flex items-center justify-center -translate-x-[20px] md:-translate-x-1/2 z-tabs group-hover:scale-125 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                                                                                    <div className="absolute left-[20px] md:left-1/2 top-1 md:top-auto w-10 h-10 flex items-center justify-center -translate-x-[20px] md:-translate-x-1/2 z-tabs group-hover:scale-125 transition-transform duration-500 ease-[var(--ease-spring)]">
                                                                                         <div className={`absolute inset-0 rounded-full opacity-30 animate-pulse ${theme.dot}`}></div>
                                                                                         <div className={`w-4 h-4 rounded-full border-[3px] border-surface-card shadow-sm relative ${theme.dot} ${theme.shadow}`}></div>
                                                                                     </div>

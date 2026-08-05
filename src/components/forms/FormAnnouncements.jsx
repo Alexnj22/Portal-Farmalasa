@@ -60,7 +60,7 @@ const FormAnnouncements = ({ data }) => {
   const totalPendingPages = Math.ceil(pendingList.length / ITEMS_PER_PAGE);
 
   return (
-    <div className="w-full flex flex-col p-6 pt-14 md:p-10 md:pt-16 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] h-full">
+    <div className="w-full flex flex-col p-6 pt-14 md:p-10 md:pt-16 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-[var(--ease-spring)] h-full">
       
       {/* HEADER DEL REPORTE */}
       <div className="mb-5 pr-8 flex items-center gap-4 shrink-0">
@@ -110,7 +110,7 @@ const FormAnnouncements = ({ data }) => {
               Confirmados ({confirmedList.length})
             </div>
             <div className={`p-1 rounded-md transition-all duration-300 ${isConfirmedOpen ? 'bg-success/10 text-success' : 'bg-transparent text-success group-hover:bg-success/10'}`}>
-              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isConfirmedOpen ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[var(--ease-spring)] ${isConfirmedOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>
 
@@ -123,7 +123,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedConfirmed.map((emp) => (
                         <div
                           key={emp.id}
-                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group"
+                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[var(--ease-spring)] group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
@@ -164,7 +164,7 @@ const FormAnnouncements = ({ data }) => {
               Pendientes ({pendingList.length})
             </div>
             <div className={`p-1 rounded-md transition-all duration-300 ${isPendingOpen ? 'bg-warning/10 text-warning' : 'bg-transparent text-warning group-hover:bg-warning/10'}`}>
-              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isPendingOpen ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[var(--ease-spring)] ${isPendingOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>
 
@@ -177,7 +177,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedPending.map((emp) => (
                         <div
                           key={emp.id}
-                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-surface-card group"
+                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[var(--ease-spring)] hover:bg-surface-card group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">

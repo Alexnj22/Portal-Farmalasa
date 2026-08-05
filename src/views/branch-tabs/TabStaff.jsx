@@ -590,7 +590,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             <div className="relative w-full">
 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
-                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
                         <div data-surface="card" className="border-chart-3/30 p-8 md:p-12 relative overflow-hidden">
 
@@ -647,7 +647,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 </div>
 
                 {/* 🏢 VISTA NORMAL (ORGANIGRAMA Y DASHBOARD) */}
-                <div inert={aiMode ? true : undefined} className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={aiMode ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
 
                     {isLoadingWfm ? (
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */

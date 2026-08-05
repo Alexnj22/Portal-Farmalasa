@@ -42,7 +42,7 @@ const buildBranchOpts = (branches) => TYPE_ORDER.flatMap((type) => {
 // Mismas "islas" blancas con header de icono+título que usa EmployeeFormModal
 // para agrupar secciones — ver islandClass/islandHoverClass ahí.
 const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
+const islandHoverClass = "transition-all duration-500 ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
 
 const IslandHeader = ({ icon: Icon, title }) => (
     <div className="flex items-center gap-3 mb-4">

@@ -22,7 +22,7 @@ const BranchTabGeneral = ({
 
     // 🚨 DISEÑO COMPACTO: p-4 y rounded-3xl para ahorrar espacio vertical
     const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
+    const islandHoverClass = "transition-all duration-500 ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
     
     // Altura optimizada h-[40px] para encajar perfecto
     const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50";

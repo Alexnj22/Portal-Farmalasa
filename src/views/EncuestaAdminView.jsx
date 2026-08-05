@@ -498,7 +498,7 @@ export default function EncuestaAdminView() {
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && canManage && (
-                        <div data-surface="card" className={`p-5 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${ editingSurvey ? 'border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]' }`}>
+                        <div data-surface="card" className={`p-5 transition-all duration-700 ease-[var(--ease-spring)] relative overflow-visible ${ editingSurvey ? 'border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]' }`}>
 
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-body-lg">
@@ -990,7 +990,7 @@ export default function EncuestaAdminView() {
                             const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices, invertedIndices) : null;
 
                             return (
-                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
+                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-700 ease-[var(--ease-spring)] group relative transform-gpu ${
                                     isExpanded
                                         ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl z-base'
                                         : isEditing

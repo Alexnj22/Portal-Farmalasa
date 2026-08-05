@@ -93,7 +93,7 @@ const ScheduleChart = ({
 
                             {/* Bar with label inside */}
                             <div
-                                className={`relative w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-base overflow-hidden ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
+                                className={`relative w-full transition-all duration-300 ease-[var(--ease-spring)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-base overflow-hidden ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
                                 style={{ height: item.height, backgroundColor: item.color }}>
                                 <span className="absolute bottom-0.5 inset-x-0 text-center text-micro font-black text-white/90 leading-none pointer-events-none">
                                     {item.label}

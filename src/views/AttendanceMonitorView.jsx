@@ -440,7 +440,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const renderEmployeeCard = ({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => (
     <div
       key={emp.id}
-      data-surface="card" className="p-4 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu"
+      data-surface="card" className="p-4 transition-all duration-400 ease-[var(--ease-spring)] overflow-hidden transform-gpu"
     >
       <button
         type="button"

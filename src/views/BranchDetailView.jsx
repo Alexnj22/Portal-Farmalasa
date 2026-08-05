@@ -289,7 +289,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 ) : (
                     <div className="flex items-center h-full shrink-0 transform-gpu origin-right animate-in fade-in zoom-in-95 duration-300">
 
-                        <div inert={isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
+                        <div inert={isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-500 ease-[var(--ease-spring)] ${isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div ref={tabsRef} className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 w-max relative">
                                 <div
                                     className="absolute top-0 bottom-0 bg-white rounded-full shadow-[var(--shadow-elevation-sm)] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
@@ -320,7 +320,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         </div>
 
                         {canEdit && (
-                        <div inert={!isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
+                        <div inert={!isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-500 ease-[var(--ease-spring)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
                                 <Button variant="secondary" size="sm" icon={Pencil} onClick={() => openModal && openModal('editBranch', liveBranch)}>General</Button>
                                 <Button variant="secondary" size="sm" icon={CalendarClock} onClick={() => openModal && openModal('editBranchHorarios', liveBranch)}>Horarios</Button>

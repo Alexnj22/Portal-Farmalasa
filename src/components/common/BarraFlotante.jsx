@@ -451,7 +451,7 @@ const BarraPortal = ({
                         data-surface="dropdown"
                         className="pointer-events-auto w-full flex items-center gap-1.5 h-12 px-3 shadow-lg
                             animate-in fade-in slide-in-from-bottom-2 duration-200
-                            ease-[cubic-bezier(0.23,1,0.32,1)]"
+                            ease-[var(--ease-spring)]"
                     >
                         <Search size={15} strokeWidth={2.5} className="text-brand-text shrink-0" />
                         <input

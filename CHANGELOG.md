@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.383.1 — Plan de materiales auditado — el modal recuperado y el reloj agendado
+
+`PLAN-MATERIALES-2026-08-02.md` reauditado contra el código de hoy y reescrito
+para que sea ejecutable tal cual. Es el plan que define la identidad de Liquid
+Glass y Solid elemento por elemento; sigue **abierto** y sin implementar.
+
+**Lo que la auditoría encontró:**
+
+- **El modal tenía mockup desde el 2026-08-03 y no estaba en el documento.** La
+  sección de pendientes lo seguía listando. Recuperado como §5 con sus tokens,
+  el canto fijo (el vidrio se apunta o se opera adentro, no las dos) y la gota
+  ya decidida — `clip-path` en vidrio, `translate` en Solid.
+- **`--lift-card` es una contradicción viva.** El plan lo declara cerrado en
+  `-3px`/`-1px`; `index.css` tiene `-2px`/`0px`, y `DESIGN.md` §2 coincide con
+  el código. O sea que §1.4 describe un cambio de contrato que nunca se aplicó.
+  Los valores quedan marcados **decididos, no aplicados**, para que nadie
+  escriba `-3px` sin leer por qué.
+- **89 de los 101 easings son copia exacta de `--ease-spring` de Liquid**, y
+  `--ease-spring` es distinto por tema (`0.2,0,0.2,1` en Solid). Esos 89 sitios
+  **nunca reciben la curva de Solid**: es el mismo defecto que originó el plan,
+  pero en la curva y con 89 casos.
+- **El reloj tiene 3 escalones y el portal usa 6.** De 617 `duration-N`, 375
+  mapean limpio a `fast/base/slow`; los otros **224** (`500`, `700`, `1000`) no
+  tienen token porque la escala no llega. Hay que decidir si el reloj crece
+  antes de migrar.
+- **El plan diagnosticaba los 617 y los 101 y no los agendaba** — sólo pedía un
+  gate para los nuevos. Sin migrarlos, ese gate nace rojo y la única salida
+  sería baselinearlo, que es lo que la skill `design-gate` prohíbe.
+- **Los bloques CSS declaran dos temas, no cuatro.** Falta
+  `[data-theme="dark"]`, y ninguna medición del documento se hizo sobre fondo
+  oscuro con el material de Liquid.
+
+**Lo que se agregó:** orden de ejecución en 8 fases con su dependencia y su
+criterio de verificación, definición de terminado, y las tres categorías de gate
+que faltan (`material-a-mano`, `reloj-a-mano`, `puntero-lista` — hoy el gate
+tiene 41 categorías y **ninguna mira el movimiento**).
+
+Quedan **5 decisiones abiertas** que bloquean la implementación, la más cara el
+alcance del vidrio: si se reserva a navegación y flotantes, cambian los valores
+de §1 para las 225 superficies.
+
 ## v2.383.0 — Widget: Quién está vendiendo, en el Inicio
 
 El ranking del mes ahora también se puede poner en el Inicio, con su propio

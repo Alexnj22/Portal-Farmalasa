@@ -1,11 +1,54 @@
 # Plan de materiales — Liquid Glass y Solid (2026-08-02)
 
 Definición de la identidad de los dos temas, **elemento por elemento**, decidida
-sobre mockups interactivos con los tokens reales. Nada de esto está
-implementado todavía: este documento es el contrato que la implementación tiene
-que cumplir, y se va completando a medida que se cierra cada elemento.
+sobre mockups interactivos con los tokens reales. Este documento es el contrato
+que la implementación tiene que cumplir.
 
-**Estado:** superficie, botón, campo y select/menú CERRADOS · faltan modal, barra de pestañas y sidebar.
+**Auditado y reescrito el 2026-08-05** para que sea definitivo: cada número
+volvió a medirse contra el código de hoy, se incorporó el modal (que tenía
+mockup y no estaba acá), y las fases quedaron ordenadas con su dependencia y su
+criterio de verificación. Lo que sigue es ejecutable tal cual.
+
+| | |
+|---|---|
+| **Elementos cerrados** | superficie · botón · campo · select/menú · **modal** |
+| **Elementos sin definir** | barra de pestañas · sidebar |
+| **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el decidido** — ver §0.bis |
+| **Bloqueo** | §10 tiene una decisión abierta que cambia los valores de §1. **No se implementa §1 antes de cerrarla** |
+
+---
+
+## 0.bis. Auditoría del 2026-08-05 — qué dice el plan y qué dice el código
+
+El encabezado anterior decía *«nada de esto está implementado todavía»*. Es
+falso en dos puntos, y uno de ellos es una **contradicción viva**: hay un token
+en producción con un valor distinto del que este documento declara decidido.
+
+| lo que el plan afirmaba | medido hoy | veredicto |
+|---|---|---|
+| Nada implementado | El **reloj** (`--dur-fast/base/slow` = 150/200/300 en Liquid, 90/120/180 en Solid) y la **curva** (`--ease-spring`, distinta por tema) ya existen | La fila «reloj» de §1.3 **ya está**. No se reimplementa |
+| `--lift-card: -3px` (Liquid) · `-1px` (Solid) | `index.css`: **`-2px`** en `:root`, **`0px`** en los dos Solid | ⚠️ **Contradicción.** El token existe con otro valor. Ver abajo |
+| «lifts a mano: 79» | Corregidos en v2.342.0 (barrido de los 79) | Cerrado |
+| «duraciones clavadas: 616» | **617** `duration-N` | Sin cambio — y **§8 no lo agendaba**. Ahora sí: §7 |
+| «easings clavados: 101, de los cuales 89 son copia de `--ease-spring`» | **101**, y los 89 son copia **exacta** de la curva de *Liquid* | Sin cambio. Y es peor de lo que decía — ver §7 |
+| «220 `data-surface="card"`, 3 con `onClick`» | **225** hoy · **`data-interactive` no existe en ningún archivo** | Sin cambio |
+| Remover el barrido (`.sweep`) | Vivo: **16** en `index.css`, **10** en JSX (5 archivos), **3** en `DESIGN.md` | Sin cambio |
+
+### El conflicto de `--lift-card`, y por qué importa más de lo que parece
+
+`--lift-card` vale hoy `-2px` en Liquid y `0px` en Solid. Este documento declara
+cerrado `-3px` y `-1px`. Son tres estados distintos conviviendo:
+
+- **El código** dice Solid `0px` — no se mueve.
+- **`DESIGN.md` §2** dice Solid *«no se mueve; solo cambia de color»* — coincide con el código.
+- **Este plan (§1.4)** dice que el usuario eligió `-1px` y que por eso **hay que
+  cambiar el contrato de §2**.
+
+O sea que §1.4 describe un cambio de contrato que nunca se aplicó, y mientras
+tanto el código y `DESIGN.md` están de acuerdo entre ellos. **No es un bug: es
+una decisión pendiente de ejecutar.** Pero si alguien lee §1.1 y escribe `-3px`
+sin leer §1.4, rompe el acuerdo entre código y doc sin enterarse. Por eso el
+valor decidido va marcado en §1 como *pendiente de aplicar*, no como vigente.
 
 ---
 
@@ -42,7 +85,7 @@ luz). Se replican las tres, con estos valores aprobados:
   --glass-esp-radio: 7rem;   /* tamaño del halo */
   --glass-rim:       1.45;   /* canto vivo de 1px */
   --glass-lente:     1.45;   /* sombras interiores del filo */
-  --lift-card:      -3px;    /* movimiento al entrar y salir */
+  --lift-card:      -3px;    /* ⚠️ DECIDIDO, NO APLICADO — hoy vale -2px. Ver §0.bis */
 }
 ```
 
@@ -86,7 +129,7 @@ profundidad sale de **apilar superficies opacas**, no de desenfocar.
   --solid-tono:   2.00;   /* escalón de tinte sobre el fondo */
   --solid-sombra: 2.00;   /* corta y contrastada */
   --solid-anillo: 0.40;   /* aro nítido al apuntar */
-  --lift-card:   -1px;    /* ver §1.4 */
+  --lift-card:   -1px;    /* ⚠️ DECIDIDO, NO APLICADO — hoy vale 0px. Ver §1.4 y §0.bis */
 }
 ```
 
@@ -292,7 +335,96 @@ atrás se mueve **0.0px** con el menú abierto y **3.0px** con él cerrado.
 
 ---
 
-## 5. Rendimiento — medido, no estimado
+## 5. Modal — velo + panel ✅ CERRADO
+
+> **Recuperado en la auditoría del 2026-08-05.** El mockup existe desde el
+> 2026-08-03 («Paso 6 · el modal») con sus valores adentro, pero **nunca se
+> escribió acá**: la sección de pendientes lo seguía listando. Es exactamente el
+> modo de falla que este documento existe para evitar — una decisión tomada que
+> no se anota se vuelve a tomar. Los números de abajo son los que quedaron
+> guardados en el mockup; **confirmar el velo antes de implementar** (ver la
+> nota al pie).
+
+El modal es la única capa que **apaga el resto de la pantalla**, así que tiene
+dos piezas de material: el **velo** y el **panel**.
+
+**La decisión de fondo: el vidrio se unifica por lo que tiene DETRÁS, no por lo
+que lleva encima.** Menú y modal comparten opacidad y canto porque los dos
+flotan sobre contenido arbitrario. La tarjeta queda aparte —se apoya en el fondo
+de página, que es controlado— y por eso puede ser mucho más transparente.
+Medido sobre el párrafo del modal:
+
+| opacidad del panel | contraste del párrafo |
+|---|---|
+| 0.16 (la de la tarjeta) | 4.04:1 ❌ debajo de AA |
+| **0.58 (la del menú)** | **7.90:1** ✅ |
+
+```css
+:root {                                  /* Liquid Glass */
+  --velo-oscuridad: 0.00;   /* ⚠️ confirmar — ver nota */
+  --velo-blur:      1px;
+  --modal-opacidad: 0.51;
+  --modal-blur:     10px;
+  --modal-sombra:   2.00;
+  --modal-filo:     1.60;
+  --modal-rim:      1.45;   /* = --glass-rim de la tarjeta */
+  --modal-lente:    1.45;   /* = --glass-lente de la tarjeta */
+}
+
+[data-theme="solid"], [data-theme="solid-dark"] {
+  --velo-oscuridad: 0.17;
+  --velo-blur:      0px;    /* no existe: es la capa más cara */
+  --modal-opacidad: 1;      /* opaco */
+  --modal-blur:     0px;
+  --modal-sombra:   1.00;
+}
+```
+
+### 5.1 El canto vivo del modal es FIJO, no sigue al puntero
+
+El canto de 1px es del **material**, así que va en toda superficie de vidrio.
+Lo único que cambia es de dónde viene la luz:
+
+| tipo de pieza | luz del canto |
+|---|---|
+| tarjeta, botón — cosas que **apuntás** | sigue al puntero |
+| menú, modal — cosas donde **operás adentro** | viene de la escena y queda **fija** |
+
+Un canto que gira mientras leés un párrafo distrae; uno fijo dice «esto es
+vidrio» y se calla.
+
+### 5.2 La gota: no se reabre
+
+El movimiento del modal ya estaba decidido antes de este mockup, y con razones
+medidas:
+
+- **En vidrio se abre el RECORTE** (`clip-path: circle()`), **no se escala el
+  panel**. Escalarlo escalaría su `backdrop-filter`, y el vidrio llegaría al
+  final en vez de estar desde el principio.
+- **En Solid es deslizamiento** (`translate`), que es lo único que el compositor
+  mueve sin repintar.
+- Las dos ramas cuelgan de `__gota`, con `--gota-entrada`/`--gota-salida` por
+  tema (340/240ms en vidrio, 200ms en Solid).
+
+### 5.3 ⚠️ Lo único a confirmar: el velo
+
+`--velo-oscuridad: 0.00` en Liquid significa que **el velo no oscurece nada** —
+sólo desenfoca 1px. Es defendible (el vidrio del panel ya separa, y oscurecer
+además duplicaría el efecto), pero es un valor extremo y el resto de los tokens
+del modal no lo son. **Un sí o un no antes de implementar**; si es 0, conviene
+dejar escrito el motivo acá para que no se «corrija» solo en la próxima
+auditoría.
+
+Lo mismo aplica al par `--modal-opacidad: 0.51` / `--modal-blur: 10px`: el
+encabezado de esta sección dice que menú y modal comparten valor, y el menú
+(§4) es `0.58` / `60px`. Los
+del modal quedaron **más opacos y con mucho menos desenfoque**. O el mockup
+quedó movido, o la unificación es de *criterio* y no de *número* — hay que
+decidir cuál de las dos, porque el documento hoy afirma las dos cosas.
+
+---
+
+## 6. Rendimiento — medido, no estimado
 
 Banco de pruebas con la CPU estrangulada vía CDP, barrido continuo del puntero,
 muestreo por cuadro.
@@ -331,47 +463,157 @@ componer. Su promesa de eficiencia es real, no retórica.
 
 ---
 
-## 6. Lo que la implementación tiene que incluir
+## 7. El reloj y la curva — lo que el plan diagnosticaba y no agendaba
 
-Cuando se cierren todos los elementos:
+Este documento nace de §0: *«un valor clavado a mano no lo alcanza ningún
+tema»*. Pero el checklist anterior sólo pedía un gate para que **no entren
+valores nuevos** — los que ya están nunca se agendaron. Sin esta fase, el gate
+nace rojo el día uno y la única salida sería ponerle un número al baseline, que
+es justo lo que la skill `design-gate` prohíbe.
 
-- [ ] Tokens de §1 a §4 en `src/index.css`, en los cuatro temas.
-- [ ] `data-interactive` explícito en las tarjetas clicables — el gel y el
-      hundido no tienen dónde aplicarse sin él. Hoy de **220**
-      `data-surface="card"` apenas **3** declaran `onClick`.
-- [ ] Utilidad de seguimiento del puntero con las tres reglas de §5.
-- [ ] Remover el barrido (`.sweep`): marcado, `index.css` y la sección de `DESIGN.md`.
-- [ ] `DESIGN.md` §2 y §5 actualizados, incluido el cambio de contrato de §1.4.
-- [ ] Categorías de gate nuevas: que no se pueda clavar un valor de material a
-      mano, ni escribir un seguimiento de puntero que recorra la lista.
+### 7.1 La curva: 89 sitios que Solid nunca alcanza
+
+De los **101** `cubic-bezier()` escritos a mano, **89 son copia exacta de
+`cubic-bezier(0.23, 1, 0.32, 1)`** — el valor de `--ease-spring` **en Liquid**.
+Y `--ease-spring` **es distinto por tema**:
+
+| tema | `--ease-spring` |
+|---|---|
+| Liquid | `cubic-bezier(0.23, 1, 0.32, 1)` |
+| Solid | `cubic-bezier(0.2, 0, 0.2, 1)` |
+
+O sea que en Solid esos 89 sitios siguen animando con la curva elástica de
+Liquid. **Es el mismo defecto que originó el plan —un token de tema que el
+código puentea— pero en la curva en vez del lift**, y con 89 casos en vez de
+uno. Migrarlos es un reemplazo textual de un solo valor: `cubic-bezier(0.23, 1,
+0.32, 1)` → `var(--ease-spring)`. Los 12 restantes van uno por uno.
+
+### 7.2 El reloj: 617 duraciones, y 224 fuera de escala
+
+| valor | usos | ¿está en el reloj? |
+|---|---|---|
+| `duration-300` | 206 | sí → `--dur-slow` (Liquid) |
+| `duration-200` | 116 | sí → `--dur-base` |
+| `duration-150` | 53 | sí → `--dur-fast` |
+| `duration-500` | 150 | **no** |
+| `duration-700` | 68 | **no** |
+| `duration-1000` | 6 | **no** |
+
+**375 mapean limpio** a los tres escalones. Los otros **224 no tienen token
+porque el reloj no llega hasta ahí** — y ése es el hallazgo: no es que estén mal
+escritos, es que **la escala tiene tres escalones y el portal usa seis**. Antes
+de migrar hay que decidir si el reloj crece (un `--dur-lento` y un `--dur-muy-lento`,
+con su valor por tema) o si esos 224 son animación ambiental que no pertenece al
+reloj de interacción. **Decidirlo primero; migrar después.**
+
+De los 617, **77 están en los canónicos** (`components/common`) — ésos primero:
+casi todo el portal pasa por ellos, igual que en §2 con el trazo de los íconos.
 
 ---
 
-## 7. Decisiones abiertas
+## 8. Orden de ejecución
 
-**El alcance del vidrio.** Apple limita Liquid Glass a las capas de navegación y
-evita explícitamente el «vidrio sobre vidrio». El portal tiene **220**
-superficies de vidrio, algunas anidadas — ya se midió que una tarjeta dentro de
-otra acumulaba los dos lifts (4px contra 2px), corregido en v2.342.0 con una
-regla, pero el apilamiento de material sigue. Falta decidir si el vidrio
-completo se reserva para navegación y flotantes, y las tarjetas de contenido
-llevan una versión atenuada.
+Las fases están ordenadas por **dependencia real**, no por comodidad. Una fase
+no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 
-**Contraste.** Una superficie translúcida cambia su relación de contraste según
-lo que tenga detrás; es la crítica documentada más seria a Liquid Glass. Al
-cerrar los valores hay que medir el texto sobre el peor fondo posible, no sobre
-el lienzo del mockup. El portal ya corrigió `--text-tertiary` por este mismo
-motivo.
+| # | Fase | Bloqueada por | Se verifica con |
+|---|---|---|---|
+| **A** | Cerrar las 3 decisiones de §10 y las 2 de §5.3 | — | Quedan escritas acá con su motivo |
+| **B** | Definir barra de pestañas y sidebar (mockup + valores) | — (paralelo a A) | Su sección en este documento, como §1-§5 |
+| **C** | El reloj: decidir si crece, y migrar los 89 easings | A | `npm run gate:design` con la categoría nueva en 0 |
+| **D** | Tokens de §1-§5 en `index.css`, **en los cuatro temas** | A, B | Captura de los 4 temas por elemento |
+| **E** | `data-interactive` en las tarjetas clicables | D | El gel se ve; el gate lo exige |
+| **F** | Utilidad de seguimiento del puntero (§6) | D | Banco de 60fps repetido |
+| **G** | Remover el barrido (`.sweep`) | D | 0 en `index.css`, JSX y `DESIGN.md` |
+| **H** | `DESIGN.md` §2 y §5 + el cambio de contrato de §1.4 | D | El texto y el código dicen lo mismo |
+
+### 8.1 Detalle por fase
+
+- **D · los cuatro temas, no dos.** Los bloques CSS de §1-§5 declaran `:root` y
+  `[data-theme="solid"], [data-theme="solid-dark"]`. Falta
+  **`[data-theme="dark"]`**, que hereda de `:root` — y un reflejo especular
+  blanco no se comporta igual sobre una superficie oscura que sobre una clara.
+  Las tablas de contraste de §1.1 miden *«sobre claros»* y *«sobre
+  coloreados»*: **ninguna mide sobre oscuro.** Hay que medirlo antes de heredar
+  por omisión.
+- **E · `data-interactive`.** Hoy hay **225** `data-surface="card"` y **cero**
+  `data-interactive` en todo el proyecto. El gel y el hundido no tienen dónde
+  aplicarse sin él. Y la lista no sale de `onClick`: una tarjeta puede ser
+  clicable a través de un `wrapper`. Sale de recorrerlas.
+- **G · el barrido.** No es apagar un token: es **remover**. Vivo hoy en 16
+  lugares de `index.css`, 10 de JSX (`App`, `AppLayout`, `ErrorBoundary`,
+  `Button`, `LiquidAvatar`) y 3 de `DESIGN.md`. Si se apaga sin remover queda
+  DOM muerto, que es la deuda que el propio §2.1 quiere evitar.
+
+### 8.2 Los gates que faltan
+
+Hoy `design-gate.mjs` tiene 41 categorías y **ninguna mira el movimiento**:
+`dur-`, `duration` y `ease-spring` no aparecen en el archivo. Las tres que hay
+que agregar:
+
+| categoría | falla ante |
+|---|---|
+| `material-a-mano` | un valor de las capas de §1-§5 escrito literal en JSX o CSS en vez de salir de su token |
+| `reloj-a-mano` | `duration-N` / `cubic-bezier(...)` literal fuera de `index.css` |
+| `puntero-lista` | un handler de `pointermove` que recorra una lista o llame `getBoundingClientRect()` por evento (§6) |
+
+Ninguna va al baseline: una categoría ausente del JSON arranca bloqueante sola.
+Por eso la fase C —bajar la deuda existente— va **antes** de que el gate exista.
 
 ---
 
-## 8. Elementos pendientes de definir
+## 9. Definición de terminado
 
-Cada uno se cierra con su mockup y sus valores antes de tocar código:
+El plan se cierra cuando, todo junto:
+
+- Los siete elementos (§1-§5 + pestañas + sidebar) tienen sus valores acá, en
+  los **cuatro** temas, y el código los lee de tokens.
+- `npm run gate:design` verde con las **tres categorías nuevas en cero**.
+- El banco de §6 repetido sobre la implementación real: 60fps sostenidos, cero
+  cuadros sobre 33ms, con la CPU estrangulada.
+- Captura de cada elemento en los cuatro temas, y con `prefers-reduced-motion`.
+- `DESIGN.md` §2 y §5 dicen lo mismo que el código — incluido el lift de Solid.
+- Cero `.sweep` en el repo.
+- Este documento movido a `docs/planes-cerrados/`.
+
+---
+
+## 10. Decisiones abiertas
+
+**Las tres bloquean la fase D.** Mientras estén abiertas, implementar §1 es
+trabajo que se rehace.
+
+**1 · El alcance del vidrio.** Apple limita Liquid Glass a las capas de
+navegación y evita explícitamente el «vidrio sobre vidrio». El portal tiene
+**225** superficies de vidrio, algunas anidadas — ya se midió que una tarjeta
+dentro de otra acumulaba los dos lifts (4px contra 2px), corregido en v2.342.0
+con una regla, pero **el apilamiento de material sigue**. Falta decidir si el
+vidrio completo se reserva para navegación y flotantes, y las tarjetas de
+contenido llevan una versión atenuada. *Es la decisión más cara de posponer:
+cambia los valores de §1 para 225 superficies.*
+
+**2 · Contraste sobre el peor fondo.** Una superficie translúcida cambia su
+contraste según lo que tenga detrás; es la crítica documentada más seria a
+Liquid Glass, y §4.1 ya la encontró en el menú (3.37:1 → se arregló oscureciendo
+el texto, no subiendo la opacidad). Al cerrar los valores hay que medir sobre el
+peor fondo posible, **no sobre el lienzo del mockup**. El portal ya corrigió
+`--text-tertiary` por este mismo motivo.
+
+**3 · Liquid en tema oscuro.** Ver §8.1. Ninguna medición de este documento se
+hizo sobre fondo oscuro con el material de Liquid.
+
+**Y las dos de §5.3**: el velo en `0.00`, y si menú y modal comparten *número* o
+sólo *criterio*.
+
+---
+
+## 11. Elementos pendientes de definir
+
+Cada uno se cierra con su mockup y sus valores antes de tocar código, igual que
+los cinco de arriba:
 
 | elemento | por qué importa |
 |---|---|
-| Modal | la «gota» tiene tokens propios (340/240ms) |
 | Barra de pestañas | `tab-track` es la única otra superficie con lift |
 | Sidebar | oscuro en los cuatro temas — caso aparte |
 
@@ -384,6 +626,7 @@ Cada uno se cierra con su mockup y sus valores antes de tocar código:
 - Mockup del botón · `claude.ai/code/artifact/d46fc8d4-1297-499b-9f97-b0655a7f7eb0`
 - Mockup del campo · `claude.ai/code/artifact/5103da29-f54d-4d95-85d3-89a3630c3e9b`
 - Mockup del select abierto · `claude.ai/code/artifact/02c65fc4-24a7-4d6e-9be3-3e6a614b15e0`
+- Mockup del modal (paso 6) · `claude.ai/code/artifact/a502c611-3498-476f-ac3e-cd533bcb7985`
 - Banco de movimiento (escala de duraciones) · `claude.ai/code/artifact/5f3e5bd4-19f9-4cdd-9b37-95f856c05427`
 - [Apple — Liquid Glass](https://www.apple.com/newsroom/2025/06/apple-introduces-a-delightful-and-elegant-new-software-design/)
 - [Refracción con CSS y SVG — kube.io](https://kube.io/blog/liquid-glass-css-svg/) · la refracción real

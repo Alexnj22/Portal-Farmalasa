@@ -351110,5 +351110,7120 @@
   "espejado": true,
   "reglas": 5,
   "ts": "2026-08-05 10:59:47"
+ },
+ "25159": {
+  "portal_id": "erp:25159",
+  "name": "CINDY GALDAMEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT LA CRUZ (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:37"
+ },
+ "25160": {
+  "portal_id": "erp:25160",
+  "name": "GLORIA PORTILLO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:40"
+ },
+ "25161": {
+  "portal_id": "erp:25161",
+  "name": "francisco bautista",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'francisco bautista' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:42"
+ },
+ "25162": {
+  "portal_id": "erp:25162",
+  "name": "ROGELIO LEONEL MONGE ALAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA LAGUNA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:44"
+ },
+ "25163": {
+  "portal_id": "erp:25163",
+  "name": "BRENDA GUADALUPE VALTE AREVALO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:47"
+ },
+ "25164": {
+  "portal_id": "erp:25164",
+  "name": "CARLOS ARMANDO CALLES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:49"
+ },
+ "25165": {
+  "portal_id": "erp:25165",
+  "name": "nahum lopez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'nahum lopez' -> MAYÚSCULA",
+   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:51"
+ },
+ "25166": {
+  "portal_id": "erp:25166",
+  "name": "CLAUDIA MANCIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:53"
+ },
+ "25167": {
+  "portal_id": "erp:25167",
+  "name": "CLAUDIA ELIZABETH CARRILLO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:56"
+ },
+ "25168": {
+  "portal_id": "erp:25168",
+  "name": "JAVIER MEJIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FRANCISCO MORAZÁN (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:04:58"
+ },
+ "25169": {
+  "portal_id": "erp:25169",
+  "name": "rosanda cruz",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rosanda cruz' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:00"
+ },
+ "25170": {
+  "portal_id": "erp:25170",
+  "name": "RUTH LEON",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:02"
+ },
+ "25171": {
+  "portal_id": "erp:25171",
+  "name": "katherine rodriguez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'katherine rodriguez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:05"
+ },
+ "25172": {
+  "portal_id": "erp:25172",
+  "name": "HERBERT HUEZO CARDOZA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:07"
+ },
+ "25173": {
+  "portal_id": "erp:25173",
+  "name": "KINVERLY BEATRIZ PALACIOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:09"
+ },
+ "25174": {
+  "portal_id": "erp:25174",
+  "name": "EDWIN CONTRERAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:11"
+ },
+ "25175": {
+  "portal_id": "erp:25175",
+  "name": "JUDITH ESMERALDA ROMERO LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:14"
+ },
+ "25176": {
+  "portal_id": "erp:25176",
+  "name": "Celso Jovani Rivera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Celso Jovani Rivera' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:16"
+ },
+ "25177": {
+  "portal_id": "erp:25177",
+  "name": "Kamila Aguirre",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Kamila Aguirre' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:18"
+ },
+ "25178": {
+  "portal_id": "erp:25178",
+  "name": "OSCAR LUIS PEREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:20"
+ },
+ "25179": {
+  "portal_id": "erp:25179",
+  "name": "MILAGRO SORIANO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:23"
+ },
+ "25180": {
+  "portal_id": "erp:25180",
+  "name": "lenny escobar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'lenny escobar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:25"
+ },
+ "25181": {
+  "portal_id": "erp:25181",
+  "name": "WALTER BENJAMIN GALLARDO PERLERA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:27"
+ },
+ "25182": {
+  "portal_id": "erp:25182",
+  "name": "YENI LISSETH ENAMORADO JIMENEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:29"
+ },
+ "25183": {
+  "portal_id": "erp:25183",
+  "name": "MIGUEL ANGEL CALDERON GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:31"
+ },
+ "25184": {
+  "portal_id": "erp:25184",
+  "name": "erick alexander carrillo chavez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'erick alexander carrillo chavez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:34"
+ },
+ "25185": {
+  "portal_id": "erp:25185",
+  "name": "maritza hernandez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maritza hernandez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:36"
+ },
+ "25186": {
+  "portal_id": "erp:25186",
+  "name": "carlos delgado",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carlos delgado' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:38"
+ },
+ "25187": {
+  "portal_id": "erp:25187",
+  "name": "jose matias fuentes",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose matias fuentes' -> MAYÚSCULA",
+   "distrito": "SANTA RITA (determinista (dirección no dice))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:41"
+ },
+ "25188": {
+  "portal_id": "erp:25188",
+  "name": "Ronald Armando Lemus Sola",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Ronald Armando Lemus Sola' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:43"
+ },
+ "25189": {
+  "portal_id": "erp:25189",
+  "name": "yessica carolina pascacio sanchez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yessica carolina pascacio sanchez' -> MAYÚSCULA",
+   "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:45"
+ },
+ "25190": {
+  "portal_id": "erp:25190",
+  "name": "Jose Alexander Figueroa",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Jose Alexander Figueroa' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:47"
+ },
+ "25191": {
+  "portal_id": "erp:25191",
+  "name": "ELBA SERAFINA RAUDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:49"
+ },
+ "25192": {
+  "portal_id": "erp:25192",
+  "name": "samuel cardoza lopez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'samuel cardoza lopez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:52"
+ },
+ "25193": {
+  "portal_id": "erp:25193",
+  "name": "Maria Luisa Sanabria Abrego",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Maria Luisa Sanabria Abrego' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:54"
+ },
+ "25194": {
+  "portal_id": "erp:25194",
+  "name": "ROSA DELIA MEJIA LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AZACUALPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:56"
+ },
+ "25195": {
+  "portal_id": "erp:25195",
+  "name": "SALVADOR NUÑES ORTIZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "ARCATAO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:05:58"
+ },
+ "25196": {
+  "portal_id": "erp:25196",
+  "name": "lusi lemus",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'lusi lemus' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:00"
+ },
+ "25197": {
+  "portal_id": "erp:25197",
+  "name": "jose adan santos",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose adan santos' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:02"
+ },
+ "25198": {
+  "portal_id": "erp:25198",
+  "name": "Laura guillen",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Laura guillen' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:04"
+ },
+ "25199": {
+  "portal_id": "erp:25199",
+  "name": "angela trinidad castro",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'angela trinidad castro' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:07"
+ },
+ "25200": {
+  "portal_id": "erp:25200",
+  "name": "leonardo hernandez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'leonardo hernandez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:09"
+ },
+ "25201": {
+  "portal_id": "erp:25201",
+  "name": "ADA BEATRIZ PORTALES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "TEJUTEPEQUE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:11"
+ },
+ "25202": {
+  "portal_id": "erp:25202",
+  "name": "ROMILIA ARGENTINA ROJAS RECINOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "POTONICO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:13"
+ },
+ "25203": {
+  "portal_id": "erp:25203",
+  "name": "marta estela martinez lopez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marta estela martinez lopez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:15"
+ },
+ "25204": {
+  "portal_id": "erp:25204",
+  "name": "mayra griselda tobar peña",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'mayra griselda tobar peña' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:18"
+ },
+ "25205": {
+  "portal_id": "erp:25205",
+  "name": "ORFILIA ELIZABETH RAMIREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FERNANDO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:20"
+ },
+ "25206": {
+  "portal_id": "erp:25206",
+  "name": "ROMEL WILFIDO ANTONIO SANTOS GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:22"
+ },
+ "25207": {
+  "portal_id": "erp:25207",
+  "name": "KENIA NOHEMY PINEDA HERMNANDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:24"
+ },
+ "25208": {
+  "portal_id": "erp:25208",
+  "name": "JOSE FAUSTINO MARTINEZ ALAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:26"
+ },
+ "25209": {
+  "portal_id": "erp:25209",
+  "name": "ERICK ALAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:28"
+ },
+ "25210": {
+  "portal_id": "erp:25210",
+  "name": "RODRIGO DIAS ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN RAFAEL (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:30"
+ },
+ "25211": {
+  "portal_id": "erp:25211",
+  "name": "LUIS GUTIERRES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:33"
+ },
+ "25212": {
+  "portal_id": "erp:25212",
+  "name": "LUIS ALBERTO QUINTEROS COTO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:35"
+ },
+ "25213": {
+  "portal_id": "erp:25213",
+  "name": "MARIA DEL CARMEN LOPEZ MARTINEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:37"
+ },
+ "25214": {
+  "portal_id": "erp:25214",
+  "name": "ROBERTO ANDREZ PALCIOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA REINA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:39"
+ },
+ "25215": {
+  "portal_id": "erp:25215",
+  "name": "JOEL SARABIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:41"
+ },
+ "25216": {
+  "portal_id": "erp:25216",
+  "name": "maricela aleman",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maricela aleman' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:43"
+ },
+ "25217": {
+  "portal_id": "erp:25217",
+  "name": "MARIA PEREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:45"
+ },
+ "25218": {
+  "portal_id": "erp:25218",
+  "name": "elizabeth maldonado",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'elizabeth maldonado' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:47"
+ },
+ "25219": {
+  "portal_id": "erp:25219",
+  "name": "ELIO MENJIVAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:49"
+ },
+ "25220": {
+  "portal_id": "erp:25220",
+  "name": "mary molina",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'mary molina' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:52"
+ },
+ "25221": {
+  "portal_id": "erp:25221",
+  "name": "daniel vega",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'daniel vega' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:54"
+ },
+ "25222": {
+  "portal_id": "erp:25222",
+  "name": "JOSE CRUZ AYALA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NOMBRE DE JESUS (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:56"
+ },
+ "25223": {
+  "portal_id": "erp:25223",
+  "name": "MARIA DAYSI LEON DE CALLES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NOMBRE DE JESUS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:06:59"
+ },
+ "25224": {
+  "portal_id": "erp:25224",
+  "name": "INGRID MAGALI ROMERO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AZACUALPA (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:01"
+ },
+ "25225": {
+  "portal_id": "erp:25225",
+  "name": "JOSE LEON GALDAMEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:03"
+ },
+ "25226": {
+  "portal_id": "erp:25226",
+  "name": "JOSE LEONARDO RODRIGUEZ MENA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:05"
+ },
+ "25227": {
+  "portal_id": "erp:25227",
+  "name": "genesis sarabia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'genesis sarabia' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:08"
+ },
+ "25228": {
+  "portal_id": "erp:25228",
+  "name": "carmen kenia valle",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carmen kenia valle' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:10"
+ },
+ "25229": {
+  "portal_id": "erp:25229",
+  "name": "rafael antonio madrid",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rafael antonio madrid' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:12"
+ },
+ "25230": {
+  "portal_id": "erp:25230",
+  "name": "gabriela tejada",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'gabriela tejada' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:15"
+ },
+ "25231": {
+  "portal_id": "erp:25231",
+  "name": "FRANKLIN NOE FIGEROA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:17"
+ },
+ "25232": {
+  "portal_id": "erp:25232",
+  "name": "yolanda perlera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yolanda perlera' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:19"
+ },
+ "25233": {
+  "portal_id": "erp:25233",
+  "name": "ANDI ROBERTO TOBAR ARTEAGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:21"
+ },
+ "25234": {
+  "portal_id": "erp:25234",
+  "name": "carlos pineda",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carlos pineda' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:24"
+ },
+ "25235": {
+  "portal_id": "erp:25235",
+  "name": "MARY KARLA HERNANDEZ VENTURA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:26"
+ },
+ "25236": {
+  "portal_id": "erp:25236",
+  "name": "ROBERTO ANFDRES PALACIOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:28"
+ },
+ "25237": {
+  "portal_id": "erp:25237",
+  "name": "ROBERTO ANDRES PALACIOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:30"
+ },
+ "25238": {
+  "portal_id": "erp:25238",
+  "name": "EMELY JARITZA CORDOVA ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:32"
+ },
+ "25239": {
+  "portal_id": "erp:25239",
+  "name": "kimberli eunice perez vasquez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'kimberli eunice perez vasquez' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:35"
+ },
+ "25240": {
+  "portal_id": "erp:25240",
+  "name": "FRENCY ESMERALDA GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:37"
+ },
+ "25241": {
+  "portal_id": "erp:25241",
+  "name": "isidro pleitez hernandez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'isidro pleitez hernandez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:39"
+ },
+ "25242": {
+  "portal_id": "erp:25242",
+  "name": "DONATO ANTONIO HERNANDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "POTONICO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:42"
+ },
+ "25243": {
+  "portal_id": "erp:25243",
+  "name": "LISBETH DANIELA OLIVA ESCOBAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:44"
+ },
+ "25244": {
+  "portal_id": "erp:25244",
+  "name": "marta julia lopez cruz",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marta julia lopez cruz' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:46"
+ },
+ "25245": {
+  "portal_id": "erp:25245",
+  "name": "yessica carolina santos aguilar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yessica carolina santos aguilar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:48"
+ },
+ "25246": {
+  "portal_id": "erp:25246",
+  "name": "MANUEL ANTONIO CORTEZ TORRES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:50"
+ },
+ "25247": {
+  "portal_id": "erp:25247",
+  "name": "JESUS NEFTALY LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:53"
+ },
+ "25248": {
+  "portal_id": "erp:25248",
+  "name": "ivis monge",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'ivis monge' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:55"
+ },
+ "25249": {
+  "portal_id": "erp:25249",
+  "name": "ERICK LEONICIO PERAZA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NUEVA TRINIDAD (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:57"
+ },
+ "25250": {
+  "portal_id": "erp:25250",
+  "name": "SANDRA ROXANA PINEDA DE AGUILAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))",
+   "telefono1": "vacío -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:07:59"
+ },
+ "25251": {
+  "portal_id": "erp:25251",
+  "name": "cindy jassmin quijada figueroa",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'cindy jassmin quijada figueroa' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:01"
+ },
+ "25252": {
+  "portal_id": "erp:25252",
+  "name": "NUERIA CHACON",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:05"
+ },
+ "25253": {
+  "portal_id": "erp:25253",
+  "name": "JOSE ALFREDO TRUJILLO MEJIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:07"
+ },
+ "25254": {
+  "portal_id": "erp:25254",
+  "name": "MARIA DEYSI BARRARE MELENDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:13"
+ },
+ "25255": {
+  "portal_id": "erp:25255",
+  "name": "guadalupe quintanilla",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'guadalupe quintanilla' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:15"
+ },
+ "25256": {
+  "portal_id": "erp:25256",
+  "name": "luisana mancia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'luisana mancia' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:17"
+ },
+ "25257": {
+  "portal_id": "erp:25257",
+  "name": "blanca estela hercules",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'blanca estela hercules' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:19"
+ },
+ "25258": {
+  "portal_id": "erp:25258",
+  "name": "cristi cartagena",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'cristi cartagena' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:21"
+ },
+ "25259": {
+  "portal_id": "erp:25259",
+  "name": "delmi lorena perlera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'delmi lorena perlera' -> MAYÚSCULA",
+   "distrito": "SAN FERNANDO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:23"
+ },
+ "25260": {
+  "portal_id": "erp:25260",
+  "name": "brayan aguilar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'brayan aguilar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:25"
+ },
+ "25261": {
+  "portal_id": "erp:25261",
+  "name": "alexander martinez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'alexander martinez' -> MAYÚSCULA",
+   "distrito": "DULCE NOM MARÍA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:28"
+ },
+ "25262": {
+  "portal_id": "erp:25262",
+  "name": "zenaida briseida delgado",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'zenaida briseida delgado' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:30"
+ },
+ "25263": {
+  "portal_id": "erp:25263",
+  "name": "CRUZ MARIBEL PINEDA TEJADA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:32"
+ },
+ "25264": {
+  "portal_id": "erp:25264",
+  "name": "vanessa martinez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'vanessa martinez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:35"
+ },
+ "25265": {
+  "portal_id": "erp:25265",
+  "name": "ALEXANDER ANTONIO ARREAGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT RANCHOS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:37"
+ },
+ "25266": {
+  "portal_id": "erp:25266",
+  "name": "yeiumi umaya",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yeiumi umaya' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:39"
+ },
+ "25267": {
+  "portal_id": "erp:25267",
+  "name": "marta julia umaña",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marta julia umaña' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:42"
+ },
+ "25268": {
+  "portal_id": "erp:25268",
+  "name": "iris lisseth hernandez caseres",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'iris lisseth hernandez caseres' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:44"
+ },
+ "25269": {
+  "portal_id": "erp:25269",
+  "name": "reinaldo enriquez lopez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'reinaldo enriquez lopez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:46"
+ },
+ "25270": {
+  "portal_id": "erp:25270",
+  "name": "marlong patriz",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marlong patriz' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:49"
+ },
+ "25271": {
+  "portal_id": "erp:25271",
+  "name": "ESTEFANY YASMIN MOLINA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:51"
+ },
+ "25272": {
+  "portal_id": "erp:25272",
+  "name": "JOSE LEO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:57"
+ },
+ "25273": {
+  "portal_id": "erp:25273",
+  "name": "Heyvi Calderon",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Heyvi Calderon' -> MAYÚSCULA",
+   "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:08:59"
+ },
+ "25274": {
+  "portal_id": "erp:25274",
+  "name": "JOSE RANCISCO REYES MEDRANO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:01"
+ },
+ "25275": {
+  "portal_id": "erp:25275",
+  "name": "betty rodriguez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'betty rodriguez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:03"
+ },
+ "25276": {
+  "portal_id": "erp:25276",
+  "name": "ASOCIACION PRO-BUSQUEDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN SALVADOR (dirección (nombre completo))",
+   "dui": "INVÁLIDO '06141808-0' -> se borra"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:06"
+ },
+ "25277": {
+  "portal_id": "erp:25277",
+  "name": "YENSY YAMILETH GUARDADO LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:08"
+ },
+ "25278": {
+  "portal_id": "erp:25278",
+  "name": "Juan Antonio Palencia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Juan Antonio Palencia' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:10"
+ },
+ "25279": {
+  "portal_id": "erp:25279",
+  "name": "DIEGO SALVADOR SANCHEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NOMBRE DE JESUS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:13"
+ },
+ "25280": {
+  "portal_id": "erp:25280",
+  "name": "olga cruz",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'olga cruz' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:15"
+ },
+ "25281": {
+  "portal_id": "erp:25281",
+  "name": "MARIA YAMILETH RODRIGUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:17"
+ },
+ "25282": {
+  "portal_id": "erp:25282",
+  "name": "YAQUELINE ARELY LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN J CANCASQUE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:20"
+ },
+ "25283": {
+  "portal_id": "erp:25283",
+  "name": "JOSE EMILIANO GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:22"
+ },
+ "25284": {
+  "portal_id": "erp:25284",
+  "name": "pedro antonio deras",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'pedro antonio deras' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:25"
+ },
+ "25285": {
+  "portal_id": "erp:25285",
+  "name": "jovita isabel mojica quijada",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jovita isabel mojica quijada' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:27"
+ },
+ "25286": {
+  "portal_id": "erp:25286",
+  "name": "julio alexande escobar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'julio alexande escobar' -> MAYÚSCULA",
+   "distrito": "TEJUTLA (determinista (dirección no dice))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:29"
+ },
+ "25287": {
+  "portal_id": "erp:25287",
+  "name": "rafael antonio villanueva",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rafael antonio villanueva' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:32"
+ },
+ "25288": {
+  "portal_id": "erp:25288",
+  "name": "teodora modesta rivera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'teodora modesta rivera' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:34"
+ },
+ "25289": {
+  "portal_id": "erp:25289",
+  "name": "JEISSON GALDAMEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:37"
+ },
+ "25290": {
+  "portal_id": "erp:25290",
+  "name": "HARRY CASTRO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:39"
+ },
+ "25291": {
+  "portal_id": "erp:25291",
+  "name": "RICARDO ANTONIO LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:41"
+ },
+ "25292": {
+  "portal_id": "erp:25292",
+  "name": "NOEMI DEL CARMEN HENRIQUE MARTINEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:43"
+ },
+ "25293": {
+  "portal_id": "erp:25293",
+  "name": "EDUARDO ORTIZ GALDAMEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:46"
+ },
+ "25294": {
+  "portal_id": "erp:25294",
+  "name": "ALBERTO PEREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:48"
+ },
+ "25295": {
+  "portal_id": "erp:25295",
+  "name": "CRISTIAN RAMOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:50"
+ },
+ "25296": {
+  "portal_id": "erp:25296",
+  "name": "TERSA LILIANA GAVIDIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:53"
+ },
+ "25297": {
+  "portal_id": "erp:25297",
+  "name": "JOSE RAMIRO MELGAR MELGAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:09:58"
+ },
+ "25298": {
+  "portal_id": "erp:25298",
+  "name": "glenda menjivar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'glenda menjivar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:00"
+ },
+ "25299": {
+  "portal_id": "erp:25299",
+  "name": "roxana morales",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'roxana morales' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:02"
+ },
+ "25300": {
+  "portal_id": "erp:25300",
+  "name": "MARIA BARTOLA SERRANO DE TOBAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:04"
+ },
+ "25301": {
+  "portal_id": "erp:25301",
+  "name": "marta luz martinez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marta luz martinez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:06"
+ },
+ "25302": {
+  "portal_id": "erp:25302",
+  "name": "MELVIN AGUSTIN SALINAS SANCHEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:09"
+ },
+ "25303": {
+  "portal_id": "erp:25303",
+  "name": "vivina mayandy martinez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'vivina mayandy martinez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:11"
+ },
+ "25304": {
+  "portal_id": "erp:25304",
+  "name": "ever romero",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'ever romero' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:13"
+ },
+ "25305": {
+  "portal_id": "erp:25305",
+  "name": "ERICK ALEXANDER ALBERTO BARRERA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:15"
+ },
+ "25306": {
+  "portal_id": "erp:25306",
+  "name": "juan jorge ramirez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'juan jorge ramirez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:18"
+ },
+ "25307": {
+  "portal_id": "erp:25307",
+  "name": "ELSY URIAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:20"
+ },
+ "25308": {
+  "portal_id": "erp:25308",
+  "name": "JUAN CARLOS PEÑATE",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:22"
+ },
+ "25309": {
+  "portal_id": "erp:25309",
+  "name": "SADI TOBAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:25"
+ },
+ "25310": {
+  "portal_id": "erp:25310",
+  "name": "KATHERIN NOEMY VILLEDA AVALOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:27"
+ },
+ "25311": {
+  "portal_id": "erp:25311",
+  "name": "raquel sepeda",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'raquel sepeda' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:29"
+ },
+ "25312": {
+  "portal_id": "erp:25312",
+  "name": "VANESSA GARCIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "COMALAPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:31"
+ },
+ "25313": {
+  "portal_id": "erp:25313",
+  "name": "EMERSON STIVEN ALAS GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FRANCISCO LEMPA (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:33"
+ },
+ "25314": {
+  "portal_id": "erp:25314",
+  "name": "lidia tatiana orellana cruz",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'lidia tatiana orellana cruz' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:36"
+ },
+ "25315": {
+  "portal_id": "erp:25315",
+  "name": "marcos antonio rivas escobar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marcos antonio rivas escobar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:38"
+ },
+ "25316": {
+  "portal_id": "erp:25316",
+  "name": "SANTOS REYMUNDO GONZALES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:40"
+ },
+ "25317": {
+  "portal_id": "erp:25317",
+  "name": "medardo cortez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'medardo cortez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:42"
+ },
+ "25318": {
+  "portal_id": "erp:25318",
+  "name": "VILMA YANIRA ROBLES ROBLES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN RAFAEL (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:45"
+ },
+ "25319": {
+  "portal_id": "erp:25319",
+  "name": "Victor Alfaro",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Victor Alfaro' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:47"
+ },
+ "25320": {
+  "portal_id": "erp:25320",
+  "name": "liliam maudalena aguilar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'liliam maudalena aguilar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:49"
+ },
+ "25321": {
+  "portal_id": "erp:25321",
+  "name": "XIOMARA MABEL CRUZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:52"
+ },
+ "25322": {
+  "portal_id": "erp:25322",
+  "name": "maria rita orellana valle",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria rita orellana valle' -> MAYÚSCULA",
+   "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:54"
+ },
+ "25323": {
+  "portal_id": "erp:25323",
+  "name": "CARLOS ROGELIO HERNANDEZ URBINA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:55"
+ },
+ "25324": {
+  "portal_id": "erp:25324",
+  "name": "LUZ DEL CARMEN ALVARADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:10:57"
+ },
+ "25325": {
+  "portal_id": "erp:25325",
+  "name": "emely vanesa serrano",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'emely vanesa serrano' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:00"
+ },
+ "25326": {
+  "portal_id": "erp:25326",
+  "name": "Milagro del carmen rivera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Milagro del carmen rivera' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:02"
+ },
+ "25327": {
+  "portal_id": "erp:25327",
+  "name": "fatima vanesa ortega morales",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'fatima vanesa ortega morales' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:04"
+ },
+ "25328": {
+  "portal_id": "erp:25328",
+  "name": "Melany lemus",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Melany lemus' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:06"
+ },
+ "25329": {
+  "portal_id": "erp:25329",
+  "name": "JOEL AMILCAR GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT RANCHOS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:08"
+ },
+ "25330": {
+  "portal_id": "erp:25330",
+  "name": "MARIA ESTELA ARGUETA TOBAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT RANCHOS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:11"
+ },
+ "25331": {
+  "portal_id": "erp:25331",
+  "name": "MARIA SANTOS GALDAMEZ ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:13"
+ },
+ "25332": {
+  "portal_id": "erp:25332",
+  "name": "MARIA NICOLASA MARIN ALEMAN TIENDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NUEVA TRINIDAD (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:15"
+ },
+ "25333": {
+  "portal_id": "erp:25333",
+  "name": "SINDY LISSETH MALDONADO MALDONADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:17"
+ },
+ "25334": {
+  "portal_id": "erp:25334",
+  "name": "Belva Villa Franco",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Belva Villa Franco' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:20"
+ },
+ "25335": {
+  "portal_id": "erp:25335",
+  "name": "FATIMA BEATRIZ MARTINEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:22"
+ },
+ "25336": {
+  "portal_id": "erp:25336",
+  "name": "noe pineda",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'noe pineda' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:24"
+ },
+ "25337": {
+  "portal_id": "erp:25337",
+  "name": "MANUEL MURCIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:26"
+ },
+ "25338": {
+  "portal_id": "erp:25338",
+  "name": "delmi mejia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'delmi mejia' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:29"
+ },
+ "25339": {
+  "portal_id": "erp:25339",
+  "name": "ANA LUCIA MARTINEZ DE CARDOZA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:29"
+ },
+ "25340": {
+  "portal_id": "erp:25340",
+  "name": "carmela barrientos de lemus",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carmela barrientos de lemus' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:32"
+ },
+ "25341": {
+  "portal_id": "erp:25341",
+  "name": "Maria Marin Malacios",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Maria Marin Malacios' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:36"
+ },
+ "25342": {
+  "portal_id": "erp:25342",
+  "name": "RICARDO TEJADA ERAZO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:38"
+ },
+ "25343": {
+  "portal_id": "erp:25343",
+  "name": "MIGUEL ANTONIO DIAZ FUENTES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "TEJUTLA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:41"
+ },
+ "25344": {
+  "portal_id": "erp:25344",
+  "name": "RAFAEL MATA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:43"
+ },
+ "25345": {
+  "portal_id": "erp:25345",
+  "name": "MARIA CRUZ MONTEROSA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:44"
+ },
+ "25346": {
+  "portal_id": "erp:25346",
+  "name": "VANESSA ROMERO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:46"
+ },
+ "25347": {
+  "portal_id": "erp:25347",
+  "name": "JUAN MEJIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:49"
+ },
+ "25348": {
+  "portal_id": "erp:25348",
+  "name": "RINA ALAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FRANCISCO LEMPA (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:51"
+ },
+ "25349": {
+  "portal_id": "erp:25349",
+  "name": "julio eduardo torrez rodriguez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'julio eduardo torrez rodriguez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:53"
+ },
+ "25350": {
+  "portal_id": "erp:25350",
+  "name": "milton alexander aldana ramirez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'milton alexander aldana ramirez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:56"
+ },
+ "25351": {
+  "portal_id": "erp:25351",
+  "name": "CARLA RAMIREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:11:58"
+ },
+ "25352": {
+  "portal_id": "erp:25352",
+  "name": "BELLINY ARELY FLORES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:04"
+ },
+ "25353": {
+  "portal_id": "erp:25353",
+  "name": "ANA PATRICIA CORNEJO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT LA CRUZ (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:06"
+ },
+ "25354": {
+  "portal_id": "erp:25354",
+  "name": "sarai espectacion portillo galdamez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'sarai espectacion portillo galdamez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:08"
+ },
+ "25355": {
+  "portal_id": "erp:25355",
+  "name": "brenda cortez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'brenda cortez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:13"
+ },
+ "25356": {
+  "portal_id": "erp:25356",
+  "name": "ANA GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN RAFAEL (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:15"
+ },
+ "25357": {
+  "portal_id": "erp:25357",
+  "name": "jose angel aguilar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose angel aguilar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:20"
+ },
+ "25358": {
+  "portal_id": "erp:25358",
+  "name": "MARIA ROSIBEL GUEVARA RODRIGUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:22"
+ },
+ "25359": {
+  "portal_id": "erp:25359",
+  "name": "MARIA CONSUELO SOLA DE LANDAVERDE",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:24"
+ },
+ "25360": {
+  "portal_id": "erp:25360",
+  "name": "rosa estelia vaquero",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rosa estelia vaquero' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:29"
+ },
+ "25361": {
+  "portal_id": "erp:25361",
+  "name": "yamileth aguirre",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yamileth aguirre' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:32"
+ },
+ "25362": {
+  "portal_id": "erp:25362",
+  "name": "Jose Alexis Mendoza",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Jose Alexis Mendoza' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:34"
+ },
+ "25363": {
+  "portal_id": "erp:25363",
+  "name": "Jose Adelino Hernandez Pinto",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Jose Adelino Hernandez Pinto' -> MAYÚSCULA",
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:36"
+ },
+ "25364": {
+  "portal_id": "erp:25364",
+  "name": "MARIA CRISTINA RAMOS CORTEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:38"
+ },
+ "25365": {
+  "portal_id": "erp:25365",
+  "name": "camilo acevero",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'camilo acevero' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:40"
+ },
+ "25366": {
+  "portal_id": "erp:25366",
+  "name": "ana vanessa acosta",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'ana vanessa acosta' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:42"
+ },
+ "25367": {
+  "portal_id": "erp:25367",
+  "name": "daneli hernandez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'daneli hernandez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:45"
+ },
+ "25368": {
+  "portal_id": "erp:25368",
+  "name": "DANIEL ANTONIO RODRIGUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:47"
+ },
+ "25369": {
+  "portal_id": "erp:25369",
+  "name": "kinverly lemus",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'kinverly lemus' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:52"
+ },
+ "25370": {
+  "portal_id": "erp:25370",
+  "name": "ESTELA DEL CARMEN ERAZO DE ESTRADA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "ARCATAO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:54"
+ },
+ "25371": {
+  "portal_id": "erp:25371",
+  "name": "christopher aristides rivera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'christopher aristides rivera' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:56"
+ },
+ "25372": {
+  "portal_id": "erp:25372",
+  "name": "maria magdalena valle de flores",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria magdalena valle de flores' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:12:58"
+ },
+ "25373": {
+  "portal_id": "erp:25373",
+  "name": "carlos ernesto reina",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carlos ernesto reina' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:01"
+ },
+ "25374": {
+  "portal_id": "erp:25374",
+  "name": "MARIO HENRIQUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN LUIS CARMEN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:03"
+ },
+ "25375": {
+  "portal_id": "erp:25375",
+  "name": "adan castro",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'adan castro' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:05"
+ },
+ "25376": {
+  "portal_id": "erp:25376",
+  "name": "elsy noemi urias",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'elsy noemi urias' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:07"
+ },
+ "25377": {
+  "portal_id": "erp:25377",
+  "name": "yanci pleitez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yanci pleitez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:09"
+ },
+ "25378": {
+  "portal_id": "erp:25378",
+  "name": "EMERSON ENRIQUE RIVERA MURCIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT RANCHOS (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:11"
+ },
+ "25379": {
+  "portal_id": "erp:25379",
+  "name": "geremias ramires tejada",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'geremias ramires tejada' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:13"
+ },
+ "25380": {
+  "portal_id": "erp:25380",
+  "name": "MARTA CECILIA ALVARENGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:16"
+ },
+ "25381": {
+  "portal_id": "erp:25381",
+  "name": "KEVIN SORIANO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:18"
+ },
+ "25382": {
+  "portal_id": "erp:25382",
+  "name": "jose mercedes chicas",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose mercedes chicas' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:20"
+ },
+ "25383": {
+  "portal_id": "erp:25383",
+  "name": "maira milena lemus",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maira milena lemus' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:22"
+ },
+ "25384": {
+  "portal_id": "erp:25384",
+  "name": "wilfredo landaverde",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'wilfredo landaverde' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:24"
+ },
+ "25385": {
+  "portal_id": "erp:25385",
+  "name": "rosa dubon carabantes",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rosa dubon carabantes' -> MAYÚSCULA",
+   "distrito": "AZACUALPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:26"
+ },
+ "25386": {
+  "portal_id": "erp:25386",
+  "name": "FRANCISCO JAVIER MENDEZ RIVERA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL CARRIZAL (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:28"
+ },
+ "25387": {
+  "portal_id": "erp:25387",
+  "name": "FATIMA LORENZA GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:31"
+ },
+ "25388": {
+  "portal_id": "erp:25388",
+  "name": "joinel enrique de la hoz gonzales",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'joinel enrique de la hoz gonzales' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:38"
+ },
+ "25389": {
+  "portal_id": "erp:25389",
+  "name": "DANIEL ANDRES VIVAS ARDON",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:40"
+ },
+ "25390": {
+  "portal_id": "erp:25390",
+  "name": "MIRNA GUADALUPE VASQUEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:41"
+ },
+ "25391": {
+  "portal_id": "erp:25391",
+  "name": "ELSA DEL CARMEN LEMUS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:43"
+ },
+ "25392": {
+  "portal_id": "erp:25392",
+  "name": "BLANCA ESTELA MOLINDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "TEJUTLA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:45"
+ },
+ "25393": {
+  "portal_id": "erp:25393",
+  "name": "IRIS ALEJANDRA ROMERO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:47"
+ },
+ "25394": {
+  "portal_id": "erp:25394",
+  "name": "nayely elizabeth orellana",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'nayely elizabeth orellana' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:49"
+ },
+ "25395": {
+  "portal_id": "erp:25395",
+  "name": "MARIA CORINA VALLE DE ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "GUAZAPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:51"
+ },
+ "25396": {
+  "portal_id": "erp:25396",
+  "name": "ROSA VILMA GUILLEN",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN J CANCASQUE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:54"
+ },
+ "25397": {
+  "portal_id": "erp:25397",
+  "name": "CARLOS ANTONIO RAMIREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:56"
+ },
+ "25398": {
+  "portal_id": "erp:25398",
+  "name": "MARIA ENCARNACION LEON DE ARDON",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:58"
+ },
+ "25399": {
+  "portal_id": "erp:25399",
+  "name": "JOSE ANGEL ALEMAN MEJIA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:13:59"
+ },
+ "25400": {
+  "portal_id": "erp:25400",
+  "name": "FREDI ANTONIO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:01"
+ },
+ "25401": {
+  "portal_id": "erp:25401",
+  "name": "JUAN JOSE LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:03"
+ },
+ "25402": {
+  "portal_id": "erp:25402",
+  "name": "CLAUDIA CAROLINA PALMA ALAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:05"
+ },
+ "25403": {
+  "portal_id": "erp:25403",
+  "name": "JOSE LUIS GERMAN MARTINEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:08"
+ },
+ "25404": {
+  "portal_id": "erp:25404",
+  "name": "cindy vanessa garcia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'cindy vanessa garcia' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:12"
+ },
+ "25405": {
+  "portal_id": "erp:25405",
+  "name": "JOSE OFELIA CRUZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:14"
+ },
+ "25406": {
+  "portal_id": "erp:25406",
+  "name": "hector salguero",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'hector salguero' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:16"
+ },
+ "25407": {
+  "portal_id": "erp:25407",
+  "name": "margarita de vaquero",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'margarita de vaquero' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:18"
+ },
+ "25408": {
+  "portal_id": "erp:25408",
+  "name": "maria eugenia de levos",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria eugenia de levos' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:21"
+ },
+ "25409": {
+  "portal_id": "erp:25409",
+  "name": "EDGAR ERNESTO TOBIAS MELGAR",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:22"
+ },
+ "25410": {
+  "portal_id": "erp:25410",
+  "name": "NOLVIA MACIAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:24"
+ },
+ "25411": {
+  "portal_id": "erp:25411",
+  "name": "JOCELYN MELISSA SANTOS DORADEA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:26"
+ },
+ "25412": {
+  "portal_id": "erp:25412",
+  "name": "ELSY YANIRA MANCIA SERRANO DE REYES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FERNANDO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:31"
+ },
+ "25413": {
+  "portal_id": "erp:25413",
+  "name": "jose benjamin ortez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose benjamin ortez' -> MAYÚSCULA",
+   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:33"
+ },
+ "25414": {
+  "portal_id": "erp:25414",
+  "name": "EULICES AMIDES LOPEZ DELGADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "COMALAPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:35"
+ },
+ "25415": {
+  "portal_id": "erp:25415",
+  "name": "brayan giron",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'brayan giron' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:39"
+ },
+ "25416": {
+  "portal_id": "erp:25416",
+  "name": "DAYANA CRISTABEL RUANO ALFARO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:41"
+ },
+ "25417": {
+  "portal_id": "erp:25417",
+  "name": "elena gillen",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'elena gillen' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:43"
+ },
+ "25418": {
+  "portal_id": "erp:25418",
+  "name": "wilmer chacon",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'wilmer chacon' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:48"
+ },
+ "25419": {
+  "portal_id": "erp:25419",
+  "name": "gabriel alfredo martinez aguires",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'gabriel alfredo martinez aguires' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:50"
+ },
+ "25420": {
+  "portal_id": "erp:25420",
+  "name": "ROSALINA ALAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:53"
+ },
+ "25421": {
+  "portal_id": "erp:25421",
+  "name": "MARIA DELIA MARIN PALACIOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:14:55"
+ },
+ "25422": {
+  "portal_id": "erp:25422",
+  "name": "RENE VLADIMIR QUINTANILLA MANCIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:01"
+ },
+ "25423": {
+  "portal_id": "erp:25423",
+  "name": "carlos alfredo cardosa",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carlos alfredo cardosa' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:03"
+ },
+ "25424": {
+  "portal_id": "erp:25424",
+  "name": "Angela Patricia de Nuñez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Angela Patricia de Nuñez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:05"
+ },
+ "25425": {
+  "portal_id": "erp:25425",
+  "name": "RICARDO ALFARO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:07"
+ },
+ "25426": {
+  "portal_id": "erp:25426",
+  "name": "NOLVIA VERALI MANCIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:10"
+ },
+ "25427": {
+  "portal_id": "erp:25427",
+  "name": "ARTURO FRANCO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:12"
+ },
+ "25428": {
+  "portal_id": "erp:25428",
+  "name": "BLANCA HERRERA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:14"
+ },
+ "25429": {
+  "portal_id": "erp:25429",
+  "name": "Ricardo Carballo",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Ricardo Carballo' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:18"
+ },
+ "25430": {
+  "portal_id": "erp:25430",
+  "name": "Wilson Rivera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Wilson Rivera' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:21"
+ },
+ "25431": {
+  "portal_id": "erp:25431",
+  "name": "Nelson Garcia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Nelson Garcia' -> MAYÚSCULA",
+   "distrito": "DULCE NOM MARÍA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:24"
+ },
+ "25432": {
+  "portal_id": "erp:25432",
+  "name": "JOSE IGNACIO ALFARO IBAÑEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:24"
+ },
+ "25433": {
+  "portal_id": "erp:25433",
+  "name": "BLANCA LILIANA HERNANDEZ ORTEAGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:26"
+ },
+ "25434": {
+  "portal_id": "erp:25434",
+  "name": "Gloria Gonzales",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Gloria Gonzales' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:28"
+ },
+ "25435": {
+  "portal_id": "erp:25435",
+  "name": "MADELIN CRISTABEL LARA DE PEREZA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SANTA RITA (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:31"
+ },
+ "25436": {
+  "portal_id": "erp:25436",
+  "name": "MAYENI ENAMORADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:33"
+ },
+ "25437": {
+  "portal_id": "erp:25437",
+  "name": "ana dolores morales",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'ana dolores morales' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:35"
+ },
+ "25438": {
+  "portal_id": "erp:25438",
+  "name": "LEDY MARITZA LEON GUERRA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:37"
+ },
+ "25439": {
+  "portal_id": "erp:25439",
+  "name": "Delmi Liseth Gonzales Portillo",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Delmi Liseth Gonzales Portillo' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:40"
+ },
+ "25440": {
+  "portal_id": "erp:25440",
+  "name": "TIENDA ABY",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:42"
+ },
+ "25441": {
+  "portal_id": "erp:25441",
+  "name": "jose antonio chacon tejada",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose antonio chacon tejada' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:44"
+ },
+ "25442": {
+  "portal_id": "erp:25442",
+  "name": "faustino martinez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'faustino martinez' -> MAYÚSCULA",
+   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:46"
+ },
+ "25443": {
+  "portal_id": "erp:25443",
+  "name": "Silvia Carranza Castellon",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Silvia Carranza Castellon' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:48"
+ },
+ "25444": {
+  "portal_id": "erp:25444",
+  "name": "JOSE FRANCISCO ORELLANA CISNERO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:51"
+ },
+ "25445": {
+  "portal_id": "erp:25445",
+  "name": "Joselin Francisca Cisneros",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Joselin Francisca Cisneros' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:53"
+ },
+ "25446": {
+  "portal_id": "erp:25446",
+  "name": "MARIO ANIBAL LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:55"
+ },
+ "25447": {
+  "portal_id": "erp:25447",
+  "name": "REINA VICTORIA RIVERA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:15:57"
+ },
+ "25448": {
+  "portal_id": "erp:25448",
+  "name": "CAROLINA MENJIVAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:00"
+ },
+ "25449": {
+  "portal_id": "erp:25449",
+  "name": "ANGEL RENE HERNANDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AZACUALPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:02"
+ },
+ "25450": {
+  "portal_id": "erp:25450",
+  "name": "LUCIA LOPEZ CORDOVA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT RANCHOS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:04"
+ },
+ "25451": {
+  "portal_id": "erp:25451",
+  "name": "lisbeth desiren perez escobar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'lisbeth desiren perez escobar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:06"
+ },
+ "25452": {
+  "portal_id": "erp:25452",
+  "name": "adela de lemus",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'adela de lemus' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:09"
+ },
+ "25453": {
+  "portal_id": "erp:25453",
+  "name": "reyna mancia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'reyna mancia' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:11"
+ },
+ "25454": {
+  "portal_id": "erp:25454",
+  "name": "DORA SERRANO ROMERO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:13"
+ },
+ "25455": {
+  "portal_id": "erp:25455",
+  "name": "MARLON RAFAEL CORDOVA MENJIVAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:15"
+ },
+ "25456": {
+  "portal_id": "erp:25456",
+  "name": "jose portillo",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose portillo' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:18"
+ },
+ "25457": {
+  "portal_id": "erp:25457",
+  "name": "TOBIAS MENJIVAR LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN I LABRADOR (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:20"
+ },
+ "25458": {
+  "portal_id": "erp:25458",
+  "name": "patricia calderon",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'patricia calderon' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:22"
+ },
+ "25459": {
+  "portal_id": "erp:25459",
+  "name": "NANCY LISSETH LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN LUIS CARMEN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:25"
+ },
+ "25460": {
+  "portal_id": "erp:25460",
+  "name": "noe humberto pineda",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'noe humberto pineda' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:27"
+ },
+ "25461": {
+  "portal_id": "erp:25461",
+  "name": "AGUSTIN SERAFIN TOBAR MONGE",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:29"
+ },
+ "25462": {
+  "portal_id": "erp:25462",
+  "name": "CARLOS ANTONIO FERNANDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:32"
+ },
+ "25463": {
+  "portal_id": "erp:25463",
+  "name": "FREDY NAVAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:34"
+ },
+ "25464": {
+  "portal_id": "erp:25464",
+  "name": "LUIS ANTONIO SOSA MENA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:36"
+ },
+ "25465": {
+  "portal_id": "erp:25465",
+  "name": "ELMER MONGE",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:38"
+ },
+ "25466": {
+  "portal_id": "erp:25466",
+  "name": "ANASTASIA LOPEZ MONGE",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:40"
+ },
+ "25467": {
+  "portal_id": "erp:25467",
+  "name": "ZEPELIO SERRANO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN RAFAEL (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:42"
+ },
+ "25468": {
+  "portal_id": "erp:25468",
+  "name": "MERARY EUNICE RAMIREZ MENJIVAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:45"
+ },
+ "25469": {
+  "portal_id": "erp:25469",
+  "name": "CARMEN ELENA CASTILLO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA LAGUNA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:47"
+ },
+ "25470": {
+  "portal_id": "erp:25470",
+  "name": "INGRID GRICELDA CHAVEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:49"
+ },
+ "25471": {
+  "portal_id": "erp:25471",
+  "name": "YENI ELIZABETH MENDOZA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:51"
+ },
+ "25472": {
+  "portal_id": "erp:25472",
+  "name": "MARIA HENANDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:54"
+ },
+ "25473": {
+  "portal_id": "erp:25473",
+  "name": "SONIA MARLENE AGUILAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:56"
+ },
+ "25474": {
+  "portal_id": "erp:25474",
+  "name": "HECTOR ROLANDO HERNANDEZ VASQUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN SALVADOR (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:16:58"
+ },
+ "25475": {
+  "portal_id": "erp:25475",
+  "name": "raul calderon",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'raul calderon' -> MAYÚSCULA",
+   "distrito": "LA REINA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:01"
+ },
+ "25476": {
+  "portal_id": "erp:25476",
+  "name": "Karla Maria Aguilar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Karla Maria Aguilar' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:03"
+ },
+ "25477": {
+  "portal_id": "erp:25477",
+  "name": "JUAN PABLO ABARCA ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:05"
+ },
+ "25478": {
+  "portal_id": "erp:25478",
+  "name": "CRISTIAN WILFREDO PEREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NOMBRE DE JESUS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:10"
+ },
+ "25479": {
+  "portal_id": "erp:25479",
+  "name": "felix antonio corea",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'felix antonio corea' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:13"
+ },
+ "25480": {
+  "portal_id": "erp:25480",
+  "name": "angel guzman",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'angel guzman' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:15"
+ },
+ "25481": {
+  "portal_id": "erp:25481",
+  "name": "CLAUDIA ESTELA ZAMORA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:17"
+ },
+ "25482": {
+  "portal_id": "erp:25482",
+  "name": "WILFIDO ANTONIO SIBRIAN MENJIVAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:20"
+ },
+ "25483": {
+  "portal_id": "erp:25483",
+  "name": "ROMELL DANIEL MOLINA VASQUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:22"
+ },
+ "25484": {
+  "portal_id": "erp:25484",
+  "name": "SANDRA MARIA FLORES ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:24"
+ },
+ "25485": {
+  "portal_id": "erp:25485",
+  "name": "josselin abigail rodriguez aguilar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'josselin abigail rodriguez aguilar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:26"
+ },
+ "25486": {
+  "portal_id": "erp:25486",
+  "name": "henrry peñate",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'henrry peñate' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:29"
+ },
+ "25487": {
+  "portal_id": "erp:25487",
+  "name": "REINA GLORIA MONTEROSA DE CALLES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:31"
+ },
+ "25488": {
+  "portal_id": "erp:25488",
+  "name": "CAROLINA PLEITEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:33"
+ },
+ "25489": {
+  "portal_id": "erp:25489",
+  "name": "jode angel ortega",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jode angel ortega' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:35"
+ },
+ "25490": {
+  "portal_id": "erp:25490",
+  "name": "azucena velasquez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'azucena velasquez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:38"
+ },
+ "25491": {
+  "portal_id": "erp:25491",
+  "name": "lilian del carmen asebedo",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'lilian del carmen asebedo' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:40"
+ },
+ "25492": {
+  "portal_id": "erp:25492",
+  "name": "maria jimenes",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria jimenes' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:43"
+ },
+ "25493": {
+  "portal_id": "erp:25493",
+  "name": "CARMEN RIVAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:45"
+ },
+ "25494": {
+  "portal_id": "erp:25494",
+  "name": "LUIS ALVARADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA REINA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:50"
+ },
+ "25495": {
+  "portal_id": "erp:25495",
+  "name": "MARLON OSVALDO CRUZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "TEJUTLA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:52"
+ },
+ "25496": {
+  "portal_id": "erp:25496",
+  "name": "juan antonio cisneros",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'juan antonio cisneros' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:54"
+ },
+ "25497": {
+  "portal_id": "erp:25497",
+  "name": "brenda perlera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'brenda perlera' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:56"
+ },
+ "25498": {
+  "portal_id": "erp:25498",
+  "name": "edwin mauricio clementes",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'edwin mauricio clementes' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:17:58"
+ },
+ "25499": {
+  "portal_id": "erp:25499",
+  "name": "osmin valle",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'osmin valle' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:00"
+ },
+ "25500": {
+  "portal_id": "erp:25500",
+  "name": "JHOSSELYN MARISOL MENA VASQUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:02"
+ },
+ "25501": {
+  "portal_id": "erp:25501",
+  "name": "oralia beatriz rivera portillo",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'oralia beatriz rivera portillo' -> MAYÚSCULA",
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:05"
+ },
+ "25502": {
+  "portal_id": "erp:25502",
+  "name": "maria maudalena torrez rivas",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria maudalena torrez rivas' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:07"
+ },
+ "25503": {
+  "portal_id": "erp:25503",
+  "name": "meibelyn yaneth chinchilla de cerna",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'meibelyn yaneth chinchilla de cerna' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:09"
+ },
+ "25504": {
+  "portal_id": "erp:25504",
+  "name": "Julio Cesar Acencio",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Julio Cesar Acencio' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:11"
+ },
+ "25505": {
+  "portal_id": "erp:25505",
+  "name": "jose regalado",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose regalado' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:14"
+ },
+ "25506": {
+  "portal_id": "erp:25506",
+  "name": "marita cisneros",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marita cisneros' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:16"
+ },
+ "25507": {
+  "portal_id": "erp:25507",
+  "name": "CLARISSA LISSET GOMEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:18"
+ },
+ "25508": {
+  "portal_id": "erp:25508",
+  "name": "MARIA CRUZ SERRANO ALVARENGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN SALVADOR (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:20"
+ },
+ "25509": {
+  "portal_id": "erp:25509",
+  "name": "MARTA ELIZABETH MELENDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SANTA RITA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:23"
+ },
+ "25510": {
+  "portal_id": "erp:25510",
+  "name": "MARIO GUE CAL",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:25"
+ },
+ "25511": {
+  "portal_id": "erp:25511",
+  "name": "LUIS ARMANDO ALAS GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:27"
+ },
+ "25512": {
+  "portal_id": "erp:25512",
+  "name": "CARMEN MORENA MENJIVAR TOBAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:29"
+ },
+ "25513": {
+  "portal_id": "erp:25513",
+  "name": "NATANAEL DE JESUS RECINOS ERAZO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN LUIS CARMEN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:31"
+ },
+ "25514": {
+  "portal_id": "erp:25514",
+  "name": "mairia patricia maldonado",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'mairia patricia maldonado' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:34"
+ },
+ "25515": {
+  "portal_id": "erp:25515",
+  "name": "jose castillo",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose castillo' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:36"
+ },
+ "25516": {
+  "portal_id": "erp:25516",
+  "name": "SILVIA DOLORES CASTILLO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:39"
+ },
+ "25517": {
+  "portal_id": "erp:25517",
+  "name": "MAYDELIN MORAN",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:44"
+ },
+ "25518": {
+  "portal_id": "erp:25518",
+  "name": "MARTA ARELY MONGE GALDAMEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NUEVA TRINIDAD (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:46"
+ },
+ "25519": {
+  "portal_id": "erp:25519",
+  "name": "jose angel ortega",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose angel ortega' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:48"
+ },
+ "25520": {
+  "portal_id": "erp:25520",
+  "name": "ana guadalupe  cortez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'ana guadalupe  cortez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:50"
+ },
+ "25521": {
+  "portal_id": "erp:25521",
+  "name": "MARIA ENMA HERNANDEZ MALDONADO",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:51"
+ },
+ "25522": {
+  "portal_id": "erp:25522",
+  "name": "orlando bladimir gomez mojica",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'orlando bladimir gomez mojica' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:53"
+ },
+ "25523": {
+  "portal_id": "erp:25523",
+  "name": "JEANNETTE YANIRA LEMUS GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NOMBRE DE JESUS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:18:56"
+ },
+ "25524": {
+  "portal_id": "erp:25524",
+  "name": "REINA ELIZABETH PALACIOS ROGEL",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:01"
+ },
+ "25525": {
+  "portal_id": "erp:25525",
+  "name": "eulises enemias santos",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'eulises enemias santos' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:03"
+ },
+ "25526": {
+  "portal_id": "erp:25526",
+  "name": "JOEL DAVID TOBIAS BELLOSO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:05"
+ },
+ "25527": {
+  "portal_id": "erp:25527",
+  "name": "juan jose cruz rivas",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'juan jose cruz rivas' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:08"
+ },
+ "25528": {
+  "portal_id": "erp:25528",
+  "name": "WENDY VANESSA HENRIQUEZ HENRIQUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NOMBRE DE JESUS (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:10"
+ },
+ "25529": {
+  "portal_id": "erp:25529",
+  "name": "luis alfredo rosales",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'luis alfredo rosales' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:15"
+ },
+ "25530": {
+  "portal_id": "erp:25530",
+  "name": "fatima mendez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'fatima mendez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:17"
+ },
+ "25531": {
+  "portal_id": "erp:25531",
+  "name": "DIEGO HUEZO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:19"
+ },
+ "25532": {
+  "portal_id": "erp:25532",
+  "name": "MARICELA NOHEMY FLORES DE MORALES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:21"
+ },
+ "25533": {
+  "portal_id": "erp:25533",
+  "name": "JOSE COSME AREVALO",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:22"
+ },
+ "25534": {
+  "portal_id": "erp:25534",
+  "name": "MAURICIO ANTONIO SALINAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:24"
+ },
+ "25535": {
+  "portal_id": "erp:25535",
+  "name": "LUIS FRANCISCO ABREGO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:29"
+ },
+ "25536": {
+  "portal_id": "erp:25536",
+  "name": "JOSE ALFREDO DIAZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:31"
+ },
+ "25537": {
+  "portal_id": "erp:25537",
+  "name": "kevin acosta",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'kevin acosta' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:33"
+ },
+ "25538": {
+  "portal_id": "erp:25538",
+  "name": "MARIA RODRIGUEZ MELGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT LA CRUZ (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:35"
+ },
+ "25539": {
+  "portal_id": "erp:25539",
+  "name": "JOSE CAMPOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))",
+   "telefono1": "'111-1111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:38"
+ },
+ "25540": {
+  "portal_id": "erp:25540",
+  "name": "JONEL GUSTAVO CRUZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LAS VUELTAS (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:40"
+ },
+ "25541": {
+  "portal_id": "erp:25541",
+  "name": "mariela yaneth hernandez menjivar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'mariela yaneth hernandez menjivar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:42"
+ },
+ "25542": {
+  "portal_id": "erp:25542",
+  "name": "kenia maricela mancia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'kenia maricela mancia' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:45"
+ },
+ "25543": {
+  "portal_id": "erp:25543",
+  "name": "MARIA ANDREA SERRANO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:47"
+ },
+ "25544": {
+  "portal_id": "erp:25544",
+  "name": "jaime medina",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jaime medina' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:49"
+ },
+ "25545": {
+  "portal_id": "erp:25545",
+  "name": "ROXANA ALVARENGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:51"
+ },
+ "25546": {
+  "portal_id": "erp:25546",
+  "name": "JOSE ELIAS GONZALES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:53"
+ },
+ "25547": {
+  "portal_id": "erp:25547",
+  "name": "RONI OBETH BRIZUELA ALVAREGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:55"
+ },
+ "25548": {
+  "portal_id": "erp:25548",
+  "name": "ODIR JONATHAN HERNANDEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:56"
+ },
+ "25549": {
+  "portal_id": "erp:25549",
+  "name": "LAURA ELIZABETH MORALES DE OSEGUEDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:59"
+ },
+ "25550": {
+  "portal_id": "erp:25550",
+  "name": "JUAN GOMEZ HERNANDEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:19:59"
+ },
+ "25551": {
+  "portal_id": "erp:25551",
+  "name": "ROSI ESCOBAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:02"
+ },
+ "25552": {
+  "portal_id": "erp:25552",
+  "name": "GUADALUPE DEL ROSARIO AGUIRRE",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:06"
+ },
+ "25553": {
+  "portal_id": "erp:25553",
+  "name": "rosabel flores",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rosabel flores' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:09"
+ },
+ "25554": {
+  "portal_id": "erp:25554",
+  "name": "magdalena garcia guardado de garcia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'magdalena garcia guardado de garcia' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:11"
+ },
+ "25555": {
+  "portal_id": "erp:25555",
+  "name": "maria elena menjivar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria elena menjivar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:13"
+ },
+ "25556": {
+  "portal_id": "erp:25556",
+  "name": "yaquelin liseth ortiz de melendez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yaquelin liseth ortiz de melendez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:15"
+ },
+ "25557": {
+  "portal_id": "erp:25557",
+  "name": "KATHERINE DANIELA RAMIREZ GRANADOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:17"
+ },
+ "25558": {
+  "portal_id": "erp:25558",
+  "name": "YENIFER ALEXANDRA CRUZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:19"
+ },
+ "25559": {
+  "portal_id": "erp:25559",
+  "name": "BARBARA DANIELA QUINTANILLA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:21"
+ },
+ "25560": {
+  "portal_id": "erp:25560",
+  "name": "DAYANA MICHELLE ANAYA RIVAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN ANT RANCHOS (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:24"
+ },
+ "25561": {
+  "portal_id": "erp:25561",
+  "name": "GLADIS YANETH HERNANDEZ GALDAMEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:29"
+ },
+ "25562": {
+  "portal_id": "erp:25562",
+  "name": "TANIA LISETH CHACON",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:31"
+ },
+ "25563": {
+  "portal_id": "erp:25563",
+  "name": "GERSON DAVID TOBAR RECINOS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:34"
+ },
+ "25564": {
+  "portal_id": "erp:25564",
+  "name": "KATERYN MARTINEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:40"
+ },
+ "25565": {
+  "portal_id": "erp:25565",
+  "name": "NELSON ANTONIO RIVERA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA PALMA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:42"
+ },
+ "25566": {
+  "portal_id": "erp:25566",
+  "name": "YUVIANA CHAVEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:44"
+ },
+ "25567": {
+  "portal_id": "erp:25567",
+  "name": "juan jose guerra",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'juan jose guerra' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:46"
+ },
+ "25568": {
+  "portal_id": "erp:25568",
+  "name": "kimberlyn lisseth chacon lemus",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'kimberlyn lisseth chacon lemus' -> MAYÚSCULA",
+   "distrito": "SAN FERNANDO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:51"
+ },
+ "25569": {
+  "portal_id": "erp:25569",
+  "name": "AMANDA RODRIGUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:53"
+ },
+ "25570": {
+  "portal_id": "erp:25570",
+  "name": "KEVIN ALEXANDER SALAZAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA LAGUNA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:20:59"
+ },
+ "25571": {
+  "portal_id": "erp:25571",
+  "name": "LESVIA MARISOL ALVARENGA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:01"
+ },
+ "25572": {
+  "portal_id": "erp:25572",
+  "name": "MARINA YESICA LEIVA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:01"
+ },
+ "25573": {
+  "portal_id": "erp:25573",
+  "name": "DOUGLAS OMAR RUIZ ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "TEJUTLA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:03"
+ },
+ "25574": {
+  "portal_id": "erp:25574",
+  "name": "JAREL ENTRADA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:05"
+ },
+ "25575": {
+  "portal_id": "erp:25575",
+  "name": "SANDRA VANESSA VALLE",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:07"
+ },
+ "25576": {
+  "portal_id": "erp:25576",
+  "name": "HILDA ORELLANA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:09"
+ },
+ "25577": {
+  "portal_id": "erp:25577",
+  "name": "vicente gomez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'vicente gomez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:12"
+ },
+ "25578": {
+  "portal_id": "erp:25578",
+  "name": "marlyn dias",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'marlyn dias' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:14"
+ },
+ "25579": {
+  "portal_id": "erp:25579",
+  "name": "emerson medin",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'emerson medin' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:16"
+ },
+ "25580": {
+  "portal_id": "erp:25580",
+  "name": "maria enma portillo",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria enma portillo' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:18"
+ },
+ "25581": {
+  "portal_id": "erp:25581",
+  "name": "GLADYS YANIRA MARTINEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "ARCATAO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:21"
+ },
+ "25582": {
+  "portal_id": "erp:25582",
+  "name": "MERI MORENA AGUILAR QUIJADA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN RAFAEL (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:23"
+ },
+ "25583": {
+  "portal_id": "erp:25583",
+  "name": "DORA BORJA ORELLANA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:24"
+ },
+ "25584": {
+  "portal_id": "erp:25584",
+  "name": "Sinthia Nallely Gutierres",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Sinthia Nallely Gutierres' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:26"
+ },
+ "25585": {
+  "portal_id": "erp:25585",
+  "name": "jose guillen",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose guillen' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:28"
+ },
+ "25586": {
+  "portal_id": "erp:25586",
+  "name": "IVANIA ROMERO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:33"
+ },
+ "25587": {
+  "portal_id": "erp:25587",
+  "name": "EVELIA LEON",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:34"
+ },
+ "25588": {
+  "portal_id": "erp:25588",
+  "name": "INGRID MAGALY NAVARRO MENJIVAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:36"
+ },
+ "25589": {
+  "portal_id": "erp:25589",
+  "name": "asly pamela garcia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'asly pamela garcia' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:38"
+ },
+ "25590": {
+  "portal_id": "erp:25590",
+  "name": "MARIA LIDIA MORALES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NUEVA TRINIDAD (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:40"
+ },
+ "25591": {
+  "portal_id": "erp:25591",
+  "name": "josue enrique recinos amaya",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'josue enrique recinos amaya' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:44"
+ },
+ "25592": {
+  "portal_id": "erp:25592",
+  "name": "MARVIN JUAREZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:47"
+ },
+ "25593": {
+  "portal_id": "erp:25593",
+  "name": "alma xiomara rivas orellana",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'alma xiomara rivas orellana' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:49"
+ },
+ "25594": {
+  "portal_id": "erp:25594",
+  "name": "YESSICA BEATRIZ ORELLANA ALEMAN",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:50"
+ },
+ "25595": {
+  "portal_id": "erp:25595",
+  "name": "YANCI CASTRO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:55"
+ },
+ "25596": {
+  "portal_id": "erp:25596",
+  "name": "JUAN FRANCISCO ORELLANA REINA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN LUIS CARMEN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:21:57"
+ },
+ "25597": {
+  "portal_id": "erp:25597",
+  "name": "carmen abigail benavides",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carmen abigail benavides' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:22:02"
+ },
+ "25598": {
+  "portal_id": "erp:25598",
+  "name": "dinora mancia",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'dinora mancia' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:22:06"
+ },
+ "25599": {
+  "portal_id": "erp:25599",
+  "name": "sandra santos",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'sandra santos' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:22:09"
+ },
+ "25600": {
+  "portal_id": "erp:25600",
+  "name": "vivina mayandy",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'vivina mayandy' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:23:21"
+ },
+ "25601": {
+  "portal_id": "erp:25601",
+  "name": "Maricela Canales",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Maricela Canales' -> MAYÚSCULA",
+   "distrito": "AZACUALPA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:23:24"
+ },
+ "25602": {
+  "portal_id": "erp:25602",
+  "name": "maria mercedes guardado de cortez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria mercedes guardado de cortez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:11"
+ },
+ "25603": {
+  "portal_id": "erp:25603",
+  "name": "EDWIN JOSE VARGAS",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FERNANDO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:13"
+ },
+ "25604": {
+  "portal_id": "erp:25604",
+  "name": "MARIA BERTA BARRERA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA REINA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:16"
+ },
+ "25605": {
+  "portal_id": "erp:25605",
+  "name": "JOSE MAREL TEJADA AGUILAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:18"
+ },
+ "25606": {
+  "portal_id": "erp:25606",
+  "name": "yesenia de los reyes",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yesenia de los reyes' -> MAYÚSCULA",
+   "distrito": "SAN FRANCISCO MORAZÁN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:20"
+ },
+ "25607": {
+  "portal_id": "erp:25607",
+  "name": "JOSE ERASMO CARDOSA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FRANCISCO MORAZÁN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:22"
+ },
+ "25608": {
+  "portal_id": "erp:25608",
+  "name": "MARCOS ECHEVERRILLA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:25"
+ },
+ "25609": {
+  "portal_id": "erp:25609",
+  "name": "MARIA PASCUALA MARQUEZ MEJIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN J CANCASQUE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:27"
+ },
+ "25610": {
+  "portal_id": "erp:25610",
+  "name": "LUPE LOPEZ HENRIQUEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:29"
+ },
+ "25611": {
+  "portal_id": "erp:25611",
+  "name": "GUADALUPE ESMERALDA HUEZO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:31"
+ },
+ "25612": {
+  "portal_id": "erp:25612",
+  "name": "RUFINA HERNANDEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:32"
+ },
+ "25613": {
+  "portal_id": "erp:25613",
+  "name": "maria evelia hernandez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria evelia hernandez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:34"
+ },
+ "25614": {
+  "portal_id": "erp:25614",
+  "name": "MARIA LUISA PEÑA LOPEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:37"
+ },
+ "25615": {
+  "portal_id": "erp:25615",
+  "name": "karla beatriz portillo escobar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'karla beatriz portillo escobar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:39"
+ },
+ "25616": {
+  "portal_id": "erp:25616",
+  "name": "lissbeth valle",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'lissbeth valle' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:41"
+ },
+ "25617": {
+  "portal_id": "erp:25617",
+  "name": "yessenia martisol chavez bonilla",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'yessenia martisol chavez bonilla' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:43"
+ },
+ "25618": {
+  "portal_id": "erp:25618",
+  "name": "elmer rodriguez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'elmer rodriguez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:46"
+ },
+ "25619": {
+  "portal_id": "erp:25619",
+  "name": "GRISELDA YESENIA PERAZA LUNA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:48"
+ },
+ "25620": {
+  "portal_id": "erp:25620",
+  "name": "KRISELLA PINEDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:50"
+ },
+ "25621": {
+  "portal_id": "erp:25621",
+  "name": "roberto baltazar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'roberto baltazar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:52"
+ },
+ "25622": {
+  "portal_id": "erp:25622",
+  "name": "CARLOS SIGUENZA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:55"
+ },
+ "25623": {
+  "portal_id": "erp:25623",
+  "name": "carlos antonio pleites mendez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'carlos antonio pleites mendez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:57"
+ },
+ "25624": {
+  "portal_id": "erp:25624",
+  "name": "jose maria pineda",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'jose maria pineda' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:24:59"
+ },
+ "25625": {
+  "portal_id": "erp:25625",
+  "name": "Darlin serrano",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Darlin serrano' -> MAYÚSCULA",
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:01"
+ },
+ "25626": {
+  "portal_id": "erp:25626",
+  "name": "rosa aminta estrada",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rosa aminta estrada' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:04"
+ },
+ "25627": {
+  "portal_id": "erp:25627",
+  "name": "ROLANDO ALCIDES AREVALO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:06"
+ },
+ "25628": {
+  "portal_id": "erp:25628",
+  "name": "alexis marquez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'alexis marquez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:08"
+ },
+ "25629": {
+  "portal_id": "erp:25629",
+  "name": "beatriz barrientos",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'beatriz barrientos' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:11"
+ },
+ "25630": {
+  "portal_id": "erp:25630",
+  "name": "salvador enriquez mendez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'salvador enriquez mendez' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:13"
+ },
+ "25631": {
+  "portal_id": "erp:25631",
+  "name": "dora elizabeth rodriguez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'dora elizabeth rodriguez' -> MAYÚSCULA",
+   "distrito": "SAN RAFAEL (determinista (dirección no dice))",
+   "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:15"
+ },
+ "25632": {
+  "portal_id": "erp:25632",
+  "name": "AMINTA RIVERA MIRANDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NUEVA TRINIDAD (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:17"
+ },
+ "25633": {
+  "portal_id": "erp:25633",
+  "name": "MEREDITH NICOLLE MIRANDA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA LAGUNA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:20"
+ },
+ "25634": {
+  "portal_id": "erp:25634",
+  "name": "gloribel menjivar",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'gloribel menjivar' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:22"
+ },
+ "25635": {
+  "portal_id": "erp:25635",
+  "name": "CECY EVELIN MALDONADO ROMERO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SANTA RITA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:24"
+ },
+ "25636": {
+  "portal_id": "erp:25636",
+  "name": "ESTELA LISBETH CLADERON MANCIA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:27"
+ },
+ "25637": {
+  "portal_id": "erp:25637",
+  "name": "irene melara",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'irene melara' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:29"
+ },
+ "25638": {
+  "portal_id": "erp:25638",
+  "name": "SARAI YAMILETH ERAZOO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:31"
+ },
+ "25639": {
+  "portal_id": "erp:25639",
+  "name": "fabian contreras",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'fabian contreras' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:34"
+ },
+ "25640": {
+  "portal_id": "erp:25640",
+  "name": "ELIAS UMAÑA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:36"
+ },
+ "25641": {
+  "portal_id": "erp:25641",
+  "name": "maria de los angeles gonzales santamaria",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'maria de los angeles gonzales santamaria' -> MAYÚSCULA",
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:38"
+ },
+ "25642": {
+  "portal_id": "erp:25642",
+  "name": "EVA RODRIGES",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "LA REINA (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:40"
+ },
+ "25643": {
+  "portal_id": "erp:25643",
+  "name": "SANTOS CARABANTES",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:41"
+ },
+ "25644": {
+  "portal_id": "erp:25644",
+  "name": "KAREN SANDOVAL",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:43"
+ },
+ "25645": {
+  "portal_id": "erp:25645",
+  "name": "ARNULFO MENJIVAR MENJIVAR",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:46"
+ },
+ "25646": {
+  "portal_id": "erp:25646",
+  "name": "NORMA GUARDADO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:48"
+ },
+ "25647": {
+  "portal_id": "erp:25647",
+  "name": "ROSMERY DELGADO VDA DE ZELAYA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "ARCATAO (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:50"
+ },
+ "25648": {
+  "portal_id": "erp:25648",
+  "name": "JOSE MENDOZA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:53"
+ },
+ "25649": {
+  "portal_id": "erp:25649",
+  "name": "NORMA AYALA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "AGUA CALIENTE (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:55"
+ },
+ "25650": {
+  "portal_id": "erp:25650",
+  "name": "BERNARDINO AYALA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:25:57"
+ },
+ "25651": {
+  "portal_id": "erp:25651",
+  "name": "VANESA PORTILLO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:26:00"
+ },
+ "25652": {
+  "portal_id": "erp:25652",
+  "name": "RAINA ISABEL HENANDEZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "SAN FRANCISCO MORAZÁN (determinista (dirección no dice))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-05 11:26:02"
  }
 }

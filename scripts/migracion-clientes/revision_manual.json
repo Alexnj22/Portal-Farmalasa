@@ -3590,5 +3590,13 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "ROXANA TOLEDO"
+ },
+ {
+  "erp_id": "25276",
+  "campo": "dui",
+  "valor": "06141808-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ASOCIACION PRO-BUSQUEDA"
  }
 ]

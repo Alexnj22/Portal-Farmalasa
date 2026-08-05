@@ -142,7 +142,15 @@ export default function ConteoInventarioView() {
                 pantalla no es "cuántos conteos hay" sino "cuál me está esperando":
                 un finalizado sin aprobar bloquea a alguien, y un cerrado sin ajuste
                 registrado es trabajo a medias que antes solo se veía fila por fila. */}
-            <CarrilCards className="mb-4" ariaLabel="Resumen de conteos">
+            {/* §17.0: el carril y la píldora en UNA fila, no en dos renglones. No es
+                estética: `useMedidaFila` mira al abuelo de la píldora y busca el
+                carril con `[role="group"]`. En renglones separados lo encuentra
+                igual —es hermano dentro del `space-y-*` de la vista— y le descuenta
+                RESERVA_CARRIL (314px) por un carril que no tiene al lado. O sea que
+                el layout equivocado no falla: le roba 314px a la píldora en
+                silencio. El canónico es `StaffManagementView`. */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
+            <CarrilCards className="flex-1" ariaLabel="Resumen de conteos">
                 {/* Ésta NO es un filtro: es el total, y por eso no lleva `active` ni
                     `onClick`. Con `active` StatCard dibuja una × de "quitar este
                     filtro", y quitar "todos" no significa nada. */}
@@ -176,7 +184,7 @@ export default function ConteoInventarioView() {
             {/* §17: los filtros de la vista, en UNA píldora, en el cuerpo y a la
                 derecha. El segmentado pasa a bloque de 2 columnas en teléfono — en
                 riel sus cuatro opciones no caben en la hoja inferior. */}
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end min-w-0">
                 <FilterBar activeCount={(branchFilter && !isBranchScoped ? 1 : 0) + (foco !== 'TODOS' ? 1 : 0)}
                     onClear={() => { if (!isBranchScoped) setBranchFilter(''); setFoco('TODOS'); }}
                     acciones={canEdit ? [{
@@ -212,6 +220,7 @@ export default function ConteoInventarioView() {
                         />
                     </FilterBar.Section>
                 </FilterBar>
+            </div>
             </div>
 
             {isSearchFuzzy && search && (

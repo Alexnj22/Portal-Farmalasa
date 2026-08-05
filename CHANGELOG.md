@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.389.2 — El sistema en cero al imprimir un conteo sencillo, y el carril fuera del canónico
+
+**La hoja de conteo salía con la columna Sistema en cero en todos los renglones.**
+Reportado sobre una hoja de La Popular de 2,166 líneas: las 2,166 decían 0.
+
+La causa es la misma que ya se había corregido en otras tres funciones al
+agregar el modo sencillo, pero en dos que se quedaron fuera. El módulo lee el
+stock vigente uniendo `inventory` por `source_sync_key`, y en un conteo sencillo
+el renglón es la suma de varias filas, así que esa clave es NULL por definición:
+la unión no encuentra nada y el `COALESCE(…, 0)` de la salida entrega **cero**.
+
+- `get_conteo_items_jsonb` alimenta **toda** la impresión y el CSV. Es la que
+  produjo la hoja en blanco. Ahora suma el grupo: de los 2,166 renglones, 1,705
+  imprimen su existencia real y 461 están legítimamente en cero — 9,904 unidades
+  en total, que es exactamente el stock vivo de la sucursal.
+- `recontar_conteo_item` no daba cero, pero caía al atajo del snapshot y
+  comparaba el recuento del supervisor contra la foto congelada en vez del stock
+  vigente. Rompía la propiedad que el módulo construyó a propósito: un conteo en
+  caliente compara contra lo que el sistema dice **ahora**.
+
+**Por qué se escaparon: la lista de funciones a corregir salió de la memoria, no
+del catálogo.** Un barrido por `pg_get_functiondef ILIKE '%source_sync_key%'`
+devuelve **siete** funciones; se habían tocado tres. El hilo que las une es esa
+columna, y ahora está escrito en la migración para que el barrido no haya que
+reinventarlo. Peor todavía: el síntoma ya estaba a la vista en la hoja de prueba
+de Salud 1 —el único renglón con Sistema distinto de cero era justo el que se
+había contado a mano— y se explicó como «productos sin existencia» sin
+comprobarlo. Un residuo sin explicar delata el diagnóstico; éste lo delataba.
+
+**Y el carril de tarjetas volvió al canónico de §17.0.** `ConteoInventarioView`
+tenía las `StatCard` y la píldora de filtros en renglones separados: ahora van en
+UNA fila, carril `flex-1` a la izquierda y píldora anclada a la derecha, igual
+que `StaffManagementView`. No es solo estética — `useMedidaFila` busca el carril
+con `[role="group"]` mirando al abuelo de la píldora, lo encontraba igual estando
+en otro renglón, y le descontaba los 314px de `RESERVA_CARRIL` por un carril que
+no tenía al lado. Verificado a 1280 y a 1600. Estaba anotado desde el 2026-08-04
+que esta vista era la que faltaba.
+
 ## v2.389.1 — El botón de alta no ofrece lotes en un conteo sencillo
 
 En un conteo sencillo el botón seguía diciendo **«Agregar Producto/Lote»** y su

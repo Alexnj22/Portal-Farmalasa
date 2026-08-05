@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.379.3 — Clientes: releído el doc de retomar — 4 de 5 pendientes ya resueltos
+
+Segunda parte de la auditoría de planes (v2.379.2): verificar, ítem por ítem,
+que lo abierto siga abierto. `docs/RETOMAR-CLIENTES-2026-08-01.md` era el que más
+había derivado — cuatro de sus cinco pendientes se resolvieron entre el 1 y el 5
+de agosto y nadie lo anotó, así que el documento seguía pidiendo trabajo hecho.
+
+- **El distrito degradado del ERP ya se resuelve.** `elSalvadorGeo.js` ganó
+  `ABREVIATURAS_ERP` (11 entradas) sobre `sinTildes`. Corrido `normalizarGeo`
+  contra los 101 pares (departamento, municipio, distrito) reales de prod:
+  **21,412 de 21,438 fichas resuelven**. Las 26 que no son 11 valores, y **6 son
+  abreviaturas que la tabla no conoce** — `SAN RAF CEDROS`, `SN J VILLANUEVA`,
+  `STA C MICHAPA`, `STGO DE MARÍA`, `CONCEP DE OTE`, `STA ROSA GUACHI`.
+- **La Fase 2 existe**: `push-cliente-erp` + el cron `drain-cliente-erp-queue`
+  (cada 10 min, activo). 10 ediciones enviadas, 4 en cola.
+- **`1111-1111` ya no pasa la validación** (`telefonoValido` exige prefijo
+  `[2567]`). El número del documento estaba corto: son **4,958 fichas**, no 69.
+- El commit `02880141` está en `origin/main`.
+
+**Sigue abierto el punto 1, y es el urgente**: `aplicar_espejo_erp` no tiene
+`COALESCE`, así que el espejo del ERP pisa ediciones del portal sin dejar rastro
+en `customers_changelog`. Lo que cambió es la exposición, no el defecto: **no hay
+ningún cron que lo dispare**, así que hoy solo se materializa si alguien corre
+`aplicar_espejo.py` a mano — que es exactamente lo que hace la migración de
+fichas.
+
 ## v2.379.2 — Auditoría de planes: 12 documentos cerrados y movidos
 
 Barrido de los 22 planes y auditorías vivos del proyecto, cada uno verificado

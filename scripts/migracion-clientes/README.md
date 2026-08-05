@@ -15,15 +15,15 @@ prosa, que se escribe a mano.
 <!-- ESTADO:INICIO -->
 ```
 catálogo del ERP        27,699 fichas
-procesadas              24,166 fichas    (checkpoint.json)
-portadas al portal      20,569 de 24,657  (customers.erp_id no nulo)
-  de ellas con distrito 20,487
-pendientes               3,536          (8 bloques de 500)
+procesadas              24,660 fichas    (checkpoint.json)
+portadas al portal      21,048 de 24,658  (customers.erp_id no nulo)
+  de ellas con distrito 20,966
+pendientes               3,042          (7 bloques de 500)
 ```
 
-**Verificadas OK: 24,166 · a revisar: 0.** El frente secuencial va por `erp_id 24,170`; hay 3 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
+**Verificadas OK: 24,660 · a revisar: 0.** El frente secuencial va por `erp_id 24,664`; hay 3 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
 
-`revision_manual.json`: **443 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
+`revision_manual.json`: **446 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
 
 `faltantes_dte.json`: **100 fichas** no se pueden facturar todavía bajo DTE 2.0, 86 de ellas fiscales.
 Les falta: distrito 87 · departamento 21 · sel_giro 15 · direccion 15 · correo 12 · nrc 11 · nit 10 · nombre 8 · telefono1 8 · municipio 8.

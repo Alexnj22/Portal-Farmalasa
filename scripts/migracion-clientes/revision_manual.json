@@ -3542,5 +3542,29 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "NIDIA ABELQUI CONTRERAS"
+ },
+ {
+  "erp_id": "24304",
+  "campo": "dui",
+  "valor": "13161985-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LUIS ALONSO PINEDA"
+ },
+ {
+  "erp_id": "24341",
+  "campo": "dui",
+  "valor": "02330786-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ROSA MILAGRO POCASANGRE ALVARADO"
+ },
+ {
+  "erp_id": "24423",
+  "campo": "dui",
+  "valor": "05311250-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "DAVID SAMUEL GONZALEZ CALDERON"
  }
 ]

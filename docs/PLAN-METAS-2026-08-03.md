@@ -1,5 +1,11 @@
 # Plan — Módulo de Metas y Bonificaciones de Ventas
 
+> **Este documento es el DISEÑO del módulo (Fases 1-3, hechas). Lo que sigue
+> vive en `docs/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md`**: los 9 hallazgos de
+> la auditoría del 2026-08-05 y la funcionalidad de **gastos por recuperar**
+> (cargar un gasto a una o varias salas, que se suma a su meta convertido a
+> venta por un margen de 25%). Ese es el plan vigente.
+
 **Estado: FASE 1 COMPLETADA (v2.363.0 BD + v2.364.0 frontend, 2026-08-03).**
 Mockup aprobado por el usuario antes de construir; QA Playwright 14/14 en
 verde con los tres tramos del bono verificados contra ventas reales de julio.

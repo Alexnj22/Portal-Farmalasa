@@ -84,12 +84,34 @@ const REGLAS = [
     [/row-level security|permission denied|insufficient_privilege|must be owner/i,
         'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
 
+    // — Metas: el flujo de confirmación —
+    // Van ANTES del genérico porque son estados del flujo, no fallas: quien los
+    // ve necesita saber qué hacer a continuación, y el texto crudo del servidor
+    // trae `confirmada_supervisor` adentro, que `esTextoTecnico` descarta.
+    [/META_EN_APROBACION/i,
+        'Esta meta ya fue confirmada y espera al gerente. Si hay que cambiarle el monto, el gerente tiene que devolverla primero.'],
+    [/META_YA_OFICIAL/i,
+        'Esta meta ya está aprobada y la sala la está persiguiendo. Para corregirla, el gerente tiene que devolverla.'],
+    [/META_NO_EXISTE/i, 'Esa meta ya no existe. Recarga la pantalla.'],
+    [/ESTADO_INVALIDO/i, 'Esa meta cambió de estado mientras la tenías abierta. Recarga la pantalla.'],
+    [/AUTORIZANTE_INVALIDO/i,
+        'Quien autoriza tiene que ser un gerente activo, y no podés registrarte a vos mismo.'],
+    [/NOTA_REQUERIDA/i, 'Falta escribir el motivo: esta acción siempre lleva su porqué.'],
+    [/SUCURSAL_INVALIDA/i, 'Esa sucursal no lleva meta de venta.'],
+    [/MONTO_INVALIDO/i, 'El monto tiene que ser mayor que cero.'],
+    [/MES_INVALIDO/i, 'Ese mes no es válido.'],
+    [/SIN_EMPLEADO/i, 'No se pudo identificar tu usuario. Cierra sesión y vuelve a entrar.'],
+
     // — Mantenimiento y bloqueos de módulo —
     [/MODULE_LOCKED/i, 'El módulo está en mantenimiento: por ahora es solo lectura.'],
     [/ALREADY_LOCKED/i, 'Ese módulo ya está bloqueado por otra persona.'],
     [/UNKNOWN_MODULE/i, 'Ese módulo no existe.'],
     [/NO_EMPLOYEE/i, 'No se pudo identificar tu usuario. Cierra sesión y vuelve a entrar.'],
-    [/PERMISSION_DENIED/i, 'No tienes permiso para bloquear o liberar este módulo.'],
+    // `PERMISSION_DENIED` lo lanzan 24 funciones —pedidos, rutas, min/max,
+    // inventario, metas— y solo `lock_module`/`unlock_module` tienen que ver con
+    // bloquear un módulo. El mensaje decía «no podés bloquear o liberar este
+    // módulo» a las otras 22: no significaba nada en su contexto.
+    [/PERMISSION_DENIED/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
 
     // — Reglas de negocio MIN/MAX (F1.2/F1.3) —
     [/psp_draft_pair_valid|chk_min_lt_max|psp_calc_max_gte_min|mmcr_pair_valid/i,

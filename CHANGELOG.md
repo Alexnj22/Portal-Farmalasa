@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.372.2 — Metas: el ingreso manual deja de saltear la aprobación
+
+«Agregar meta» pisaba cualquier fila y la dejaba **oficial**, sin mirar en qué
+estado estaba: `upsert_meta_manual` hacía `ON CONFLICT DO UPDATE SET estado =
+'oficial'` a secas. Con solo el permiso de editar se podía tomar una meta en
+«Espera aprobación» y oficializarla sin que el gerente la viera — todo el flujo
+de confirmar→aprobar se evitaba desde un modal. El mismo camino reescribía la
+meta de un mes cerrado y ya pagado, sin dejar rastro.
+
+Ahora el servidor decide según el estado de destino: una meta **confirmada** no
+se toca (es del gerente); una **oficial del mes en curso o de uno que no
+arrancó** tampoco (es la que la sala está persiguiendo — se corrige
+devolviéndola); una **propuesta o devuelta** cambia de monto **conservando su
+estado**, sin oficializarse; un **mes cerrado** se puede corregir pero exige el
+porqué; y una fila que no existe entra oficial, que es el ingreso del histórico
+de siempre.
+
+El modal dice cuál de esos cinco casos es **antes** de apretar Guardar, con el
+campo bloqueado cuando no hay nada que guardar. Enterarse después es enterarse
+tarde.
+
+**Y los errores de Metas ahora se leen.** Ninguno tenía traducción: el texto del
+servidor trae `confirmada_supervisor` adentro, el traductor lo declara técnico y
+mostraba «No se pudo completar la operación». Además `PERMISSION_DENIED` —que
+lanzan **24** funciones de pedidos, rutas, min/max, inventario y metas— decía
+«no tienes permiso para bloquear o liberar este módulo», copy del candado de
+mantenimiento que solo aplica a 2 de esas 24.
+
+Verificado en prod dentro de una transacción revertida, los 7 casos del RPC, y
+en el navegador los tres que se ven: agosto en «espera aprobación» bloquea y no
+deja teclear; julio cerrado pide el motivo y sin él no habilita; septiembre sin
+meta guarda normal. Cero filas de prueba quedaron en la tabla.
+
 ## v2.372.1 — Metas: confirmar todas de una vez
 
 Botón **«Confirmar las N · $total»** en el encabezado del grupo sobre el que

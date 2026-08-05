@@ -3566,5 +3566,29 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "DAVID SAMUEL GONZALEZ CALDERON"
+ },
+ {
+  "erp_id": "24936",
+  "campo": "dui",
+  "valor": "00014442-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SONIA ELIZABETH HERNANDEZ FUENTES"
+ },
+ {
+  "erp_id": "25066",
+  "campo": "dui",
+  "valor": "02922593-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "Jeremias Ventura Galdamez"
+ },
+ {
+  "erp_id": "25141",
+  "campo": "dui",
+  "valor": "00977310-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ROXANA TOLEDO"
  }
 ]

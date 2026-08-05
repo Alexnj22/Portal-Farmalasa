@@ -249,6 +249,7 @@ const WIDGET_DEFS = [
   { id: 'srs_inv',      label: 'Búsqueda SRS + Inventario',permission: 'dash_srs_inv',      icon: FlaskConical, category: 'productos' },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
+  { id: 'vendedores',   label: 'Quién está vendiendo',    permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -2085,6 +2086,41 @@ const DashboardView = ({ openModal }) => {
             selectedBranchId={isMetaAllScope ? Number(metaBranch) : null}
             conSelector={isMetaAllScope && metaOpts.length > 1}
           />
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── QUIÉN ESTÁ VENDIENDO ── */
+    if (wid === 'vendedores') {
+      if (!showWidget('vendedores', 'dash_vendedores')) return null;
+      // Mismo criterio que la meta: con alcance de una sola sala el RPC ignora
+      // el parámetro y devuelve la suya, así que el selector ni se ofrece.
+      const isVendAllScope = getScope('dash_vendedores') === 'ALL';
+      const vendOpts = branches
+        .filter(b => META_SALA_IDS.includes(Number(b.id)))
+        .sort((a, b) => META_SALA_IDS.indexOf(Number(a.id)) - META_SALA_IDS.indexOf(Number(b.id)))
+        .map(b => ({ value: String(b.id), label: b.name }));
+      return wrapWidget('vendedores',
+        <WidgetCard title="Quién está vendiendo" icon={Users} category="ventas"
+          action={isVendAllScope && vendOpts.length > 1 && (
+            <LiquidSelect
+              value={metaBranch}
+              onChange={val => setMetaBranch(val ?? String(META_SALA_IDS[0]))}
+              options={vendOpts}
+              placeholder="Sala..."
+              icon={Building2}
+              clearable={false}
+              compact
+              bare
+            />
+          )}
+        >
+          <div className="px-4 pb-4 pt-2 h-full overflow-y-auto">
+            <WidgetVendedores
+              key={metaBranch}
+              selectedBranchId={isVendAllScope ? Number(metaBranch) : null}
+            />
+          </div>
         </WidgetCard>
       , staggerIdx);
     }

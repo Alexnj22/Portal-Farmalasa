@@ -31,7 +31,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck,
-    BookOpen, Contact, Wrench
+    BookOpen, Contact, Wrench, Users
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
@@ -281,6 +281,7 @@ export const MODULE_GROUPS = [
             { key: 'dash_srs_inv',        label: 'Widget: Búsqueda SRS + Stock',  desc: 'Consultar el registro SRS de medicamentos y cruzar con inventario propio',            icon: FlaskConical,hasApprove: false, hasScope: true },
             { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Min/Max',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación del supervisor', icon: BarChart2, hasApprove: false, hasScope: true },
             { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icon: Target, hasApprove: false, hasScope: true },
+            { key: 'dash_vendedores',     label: 'Widget: Quién está vendiendo',  desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icon: Users, hasApprove: false, hasScope: true },
         ],
     },
     {

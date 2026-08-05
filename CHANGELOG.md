@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.383.0 — Widget: Quién está vendiendo, en el Inicio
+
+El ranking del mes ahora también se puede poner en el Inicio, con su propio
+permiso — **«Widget: Quién está vendiendo»** en la pantalla de Permisos, para
+darlo cargo por cargo como cualquier otro.
+
+Es **el mismo componente** que usa el tablero del módulo: el ranking, el
+promedio, el ticket de cada persona y el interruptor «total del mes / por día
+trabajado» viven en un solo lugar. Si el Inicio trajera su propia copia, un día
+una pantalla diría una cosa y la otra otra.
+
+Con alcance de una sola sala el servidor devuelve la suya y el selector ni se
+ofrece; con alcance de todas, se elige desde la tarjeta. Se refresca solo cada
+5 minutos y al volver a la pestaña, igual que el widget de la meta: un ranking
+congelado desde las 8 de la mañana miente sobre quién va ganando.
+
+**Para que una sala lo vea hacen falta las dos llaves**: este permiso y el
+acceso al Inicio. Hoy los cargos de sala no tienen ninguno de los dos, así que
+el widget queda listo y esperando a que se otorguen.
+
 ## v2.382.3 — PLAN-IDENTIDAD cerrado — las seis fases, y dos premisas del plan que eran falsas
 
 `PLAN-IDENTIDAD-2026-07-29.md` pasa a `docs/planes-cerrados/`. Cerraba lo que el

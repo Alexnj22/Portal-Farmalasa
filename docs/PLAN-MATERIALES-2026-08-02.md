@@ -11,10 +11,18 @@ criterio de verificación. Lo que sigue es ejecutable tal cual.
 
 | | |
 |---|---|
-| **Elementos cerrados** | superficie · botón · campo · select/menú · **modal** |
+| **Elementos cerrados** | superficie · botón · campo · select/menú · modal — **los cinco CONFIRMADOS por el usuario el 2026-08-05** sobre el mockup consolidado (ver Referencias) |
 | **Elementos sin definir** | barra de pestañas · sidebar |
-| **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el decidido** — ver §0.bis |
-| **Bloqueo** | §10 tiene una decisión abierta que cambia los valores de §1. **No se implementa §1 antes de cerrarla** |
+| **Implementado** | nada de los tokens de material. El reloj y la curva **sí** existen (preexistían), y `--lift-card` existe **con otro valor que el confirmado** — ver §0.bis |
+| **Bloqueo** | queda **una** decisión abierta que cambia los valores de §1: el alcance del vidrio (§10). **No se implementa §1 antes de cerrarla** |
+
+> **Confirmación del 2026-08-05.** Los cinco elementos se revisaron renderizados
+> con sus valores exactos, Liquid contra Solid, sobre los fondos reales de cada
+> tema, y el usuario los aprobó **tal cual**. Eso resuelve cuatro de las cinco
+> preguntas que estaban abiertas: el lift de Solid en `-1px`, la remoción del
+> barrido, el velo del modal en `0.00` y el panel del modal en `0.51`/`10px`.
+> Los valores de este documento son ahora los definitivos; lo que falta es
+> **implementarlos**, no volver a discutirlos.
 
 ---
 
@@ -46,9 +54,12 @@ cerrado `-3px` y `-1px`. Son tres estados distintos conviviendo:
 
 O sea que §1.4 describe un cambio de contrato que nunca se aplicó, y mientras
 tanto el código y `DESIGN.md` están de acuerdo entre ellos. **No es un bug: es
-una decisión pendiente de ejecutar.** Pero si alguien lee §1.1 y escribe `-3px`
-sin leer §1.4, rompe el acuerdo entre código y doc sin enterarse. Por eso el
-valor decidido va marcado en §1 como *pendiente de aplicar*, no como vigente.
+una decisión pendiente de ejecutar**, y desde el 2026-08-05 está confirmada.
+
+La consecuencia práctica: si alguien lee §1.1 y escribe `-3px` sin leer §1.4,
+rompe el acuerdo entre código y doc sin enterarse. **El token y el texto de
+`DESIGN.md` §2 se cambian en el mismo commit** — es la fase H de §8, y es la
+única de las ocho que no se puede partir en dos.
 
 ---
 
@@ -85,7 +96,7 @@ luz). Se replican las tres, con estos valores aprobados:
   --glass-esp-radio: 7rem;   /* tamaño del halo */
   --glass-rim:       1.45;   /* canto vivo de 1px */
   --glass-lente:     1.45;   /* sombras interiores del filo */
-  --lift-card:      -3px;    /* ⚠️ DECIDIDO, NO APLICADO — hoy vale -2px. Ver §0.bis */
+  --lift-card:      -3px;    /* CONFIRMADO — hoy el código vale -2px. Ver §0.bis */
 }
 ```
 
@@ -129,7 +140,7 @@ profundidad sale de **apilar superficies opacas**, no de desenfocar.
   --solid-tono:   2.00;   /* escalón de tinte sobre el fondo */
   --solid-sombra: 2.00;   /* corta y contrastada */
   --solid-anillo: 0.40;   /* aro nítido al apuntar */
-  --lift-card:   -1px;    /* ⚠️ DECIDIDO, NO APLICADO — hoy vale 0px. Ver §1.4 y §0.bis */
+  --lift-card:   -1px;    /* CONFIRMADO 2026-08-05 — hoy el código vale 0px. Ver §1.4 */
 }
 ```
 
@@ -154,13 +165,18 @@ Los mismos roles, distinto material:
 | presión | gel: `scale(.978)` | hundido: `inset` + 1px hacia abajo |
 | reloj | 150/200/300ms | 90/120/180ms |
 
-### 1.4 ⚠️ El contrato de §2 hay que cambiarlo
+### 1.4 El contrato de `DESIGN.md` §2 hay que cambiarlo
 
 `DESIGN.md` §2 dice hoy, para Solid: *"no se mueve; solo cambia de color"*. El
-valor elegido es `--lift-card: -1px`, o sea que **sí se mueve**. Es una decisión
-deliberada del usuario y 1px es un guiño, no un salto — pero **el texto del
-contrato tiene que cambiar con él**. Dejarlo como está reproduce exactamente el
-bug que originó todo este trabajo: una regla escrita que el código viola.
+valor **confirmado el 2026-08-05** es `--lift-card: -1px`, o sea que **sí se
+mueve**. 1px es un guiño, no un salto — pero **el texto del contrato tiene que
+cambiar con él**.
+
+Dejarlo como está reproduce exactamente el bug que originó todo este trabajo:
+una regla escrita que el código viola. Y ojo con el orden — hoy el código
+(`0px`) y `DESIGN.md` («no se mueve») están de acuerdo entre ellos; el que
+difiere es este plan. **Se cambian los dos en el mismo commit** (fase H de §8),
+nunca el token primero.
 
 ---
 
@@ -361,7 +377,7 @@ Medido sobre el párrafo del modal:
 
 ```css
 :root {                                  /* Liquid Glass */
-  --velo-oscuridad: 0.00;   /* ⚠️ confirmar — ver nota */
+  --velo-oscuridad: 0.00;   /* CONFIRMADO — el velo NO oscurece, sólo desenfoca */
   --velo-blur:      1px;
   --modal-opacidad: 0.51;
   --modal-blur:     10px;
@@ -406,21 +422,33 @@ medidas:
 - Las dos ramas cuelgan de `__gota`, con `--gota-entrada`/`--gota-salida` por
   tema (340/240ms en vidrio, 200ms en Solid).
 
-### 5.3 ⚠️ Lo único a confirmar: el velo
+### 5.3 El velo y la opacidad del panel — CONFIRMADOS, con su motivo
 
-`--velo-oscuridad: 0.00` en Liquid significa que **el velo no oscurece nada** —
-sólo desenfoca 1px. Es defendible (el vidrio del panel ya separa, y oscurecer
-además duplicaría el efecto), pero es un valor extremo y el resto de los tokens
-del modal no lo son. **Un sí o un no antes de implementar**; si es 0, conviene
-dejar escrito el motivo acá para que no se «corrija» solo en la próxima
-auditoría.
+Las dos se revisaron renderizadas el 2026-08-05 y quedaron **tal cual**. Se
+escribe acá el motivo para que ninguna auditoría futura las «corrija» sola:
 
-Lo mismo aplica al par `--modal-opacidad: 0.51` / `--modal-blur: 10px`: el
-encabezado de esta sección dice que menú y modal comparten valor, y el menú
-(§4) es `0.58` / `60px`. Los
-del modal quedaron **más opacos y con mucho menos desenfoque**. O el mockup
-quedó movido, o la unificación es de *criterio* y no de *número* — hay que
-decidir cuál de las dos, porque el documento hoy afirma las dos cosas.
+**`--velo-oscuridad: 0.00` es deliberado.** El velo de Liquid **no oscurece**:
+sólo desenfoca 1px. El panel de vidrio ya separa por sí mismo —tiene su propio
+blur, su canto y su lente— y oscurecer además duplicaría el efecto. Solid sí
+oscurece (`0.17`) porque su panel es opaco y no tiene con qué separarse del
+fondo. **No es una omisión: es la diferencia entre los dos materiales.**
+
+**Menú y modal comparten CRITERIO, no número.** El menú es `0.58`/`60px`; el
+modal es `0.51`/`10px`. Lo que comparten es la razón por la que pueden ser
+translúcidos —los dos flotan sobre contenido arbitrario, y por eso ninguno puede
+bajar a la opacidad de la tarjeta (`0.16`, que daría 4.04:1 en el párrafo del
+modal)—. El número no tiene por qué ser el mismo: un menú es una lista corta que
+se lee de un vistazo y aguanta más vidrio; un modal lleva un párrafo que se lee
+entero, y ahí el blur bajo mantiene el texto quieto.
+
+### 5.4 El destructivo dentro del vidrio queda translúcido
+
+Apareció al revisar el mockup, no en el documento: el botón **Anular pedido**
+dentro del panel de vidrio se lee más pálido que el rojo macizo de Solid, porque
+§2 dice que en Liquid el botón es translúcido de verdad. **Se confirma así.** Un
+CTA destructivo pierde algo de peso, pero hacer una excepción opaca rompería la
+única regla que sostiene todo §2 —si no se ve lo que hay detrás, no es vidrio— y
+el modal ya avisa por texto, no sólo por color.
 
 ---
 
@@ -518,7 +546,7 @@ no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 
 | # | Fase | Bloqueada por | Se verifica con |
 |---|---|---|---|
-| **A** | Cerrar las 3 decisiones de §10 y las 2 de §5.3 | — | Quedan escritas acá con su motivo |
+| **A** | Cerrar el alcance del vidrio y las 2 mediciones de §10 | — | Quedan escritas acá con su motivo |
 | **B** | Definir barra de pestañas y sidebar (mockup + valores) | — (paralelo a A) | Su sección en este documento, como §1-§5 |
 | **C** | El reloj: decidir si crece, y migrar los 89 easings | A | `npm run gate:design` con la categoría nueva en 0 |
 | **D** | Tokens de §1-§5 en `index.css`, **en los cuatro temas** | A, B | Captura de los 4 temas por elemento |
@@ -580,8 +608,8 @@ El plan se cierra cuando, todo junto:
 
 ## 10. Decisiones abiertas
 
-**Las tres bloquean la fase D.** Mientras estén abiertas, implementar §1 es
-trabajo que se rehace.
+**Quedan tres, y la primera bloquea la fase D.** Mientras esté abierta,
+implementar §1 es trabajo que se rehace.
 
 **1 · El alcance del vidrio.** Apple limita Liquid Glass a las capas de
 navegación y evita explícitamente el «vidrio sobre vidrio». El portal tiene
@@ -602,8 +630,10 @@ peor fondo posible, **no sobre el lienzo del mockup**. El portal ya corrigió
 **3 · Liquid en tema oscuro.** Ver §8.1. Ninguna medición de este documento se
 hizo sobre fondo oscuro con el material de Liquid.
 
-**Y las dos de §5.3**: el velo en `0.00`, y si menú y modal comparten *número* o
-sólo *criterio*.
+**Resueltas el 2026-08-05** (ya no bloquean): el lift de Solid en `-1px`, la
+remoción del barrido, el velo del modal en `0.00`, la opacidad del panel en
+`0.51`/`10px` y el destructivo translúcido dentro del vidrio. Los motivos
+quedaron escritos en §1.4, §2.1, §5.3 y §5.4 — no en una conversación.
 
 ---
 
@@ -627,6 +657,9 @@ los cinco de arriba:
 - Mockup del campo · `claude.ai/code/artifact/5103da29-f54d-4d95-85d3-89a3630c3e9b`
 - Mockup del select abierto · `claude.ai/code/artifact/02c65fc4-24a7-4d6e-9be3-3e6a614b15e0`
 - Mockup del modal (paso 6) · `claude.ai/code/artifact/a502c611-3498-476f-ac3e-cd533bcb7985`
+- **Mockup consolidado de revisión — los 5 elementos con sus valores finales,
+  sobre el que el usuario confirmó el 2026-08-05** ·
+  `claude.ai/code/artifact/e9834d18-d35e-489c-adb7-9d7f4da21db1`
 - Banco de movimiento (escala de duraciones) · `claude.ai/code/artifact/5f3e5bd4-19f9-4cdd-9b37-95f856c05427`
 - [Apple — Liquid Glass](https://www.apple.com/newsroom/2025/06/apple-introduces-a-delightful-and-elegant-new-software-design/)
 - [Refracción con CSS y SVG — kube.io](https://kube.io/blog/liquid-glass-css-svg/) · la refracción real

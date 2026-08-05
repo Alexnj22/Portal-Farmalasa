@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.384.1 — Los cinco elementos de materiales, confirmados con su motivo escrito
+
+El usuario revisó los cinco elementos cerrados de `PLAN-MATERIALES` renderizados
+juntos —superficie, botón, campo, select/menú y modal, Liquid contra Solid, con
+sus valores exactos sobre los fondos reales de cada tema— y los aprobó tal cual.
+
+Eso cierra **cuatro de las cinco preguntas** que bloqueaban la implementación, y
+lo importante es que **cada una queda con su motivo escrito en el plan**, no en
+una conversación:
+
+- **El lift de Solid en `-1px`** (§1.4). Obliga a reescribir `DESIGN.md` §2, que
+  hoy dice «no se mueve». Anotado que el token y el texto van **en el mismo
+  commit**: hoy código y doc están de acuerdo entre ellos y el que difiere es el
+  plan, así que cambiar sólo el token rompe el acuerdo.
+- **El barrido (`.sweep`) se remueve** de los 29 lugares donde vive.
+- **El velo del modal en `0.00`** (§5.3). No oscurece: sólo desenfoca 1px. El
+  panel de vidrio ya separa por sí mismo, y oscurecer duplicaría el efecto.
+  Solid sí oscurece a `0.17` porque su panel es opaco y no tiene con qué
+  separarse. No es una omisión — es la diferencia entre los dos materiales.
+- **Menú y modal comparten criterio, no número** (§5.3). El menú es `0.58`/`60px`
+  y el modal `0.51`/`10px`. Lo que comparten es la razón por la que pueden ser
+  translúcidos: los dos flotan sobre contenido arbitrario. Un menú es una lista
+  corta que aguanta más vidrio; un modal lleva un párrafo que se lee entero, y
+  ahí el blur bajo mantiene el texto quieto.
+
+**Y una decisión nueva que apareció al renderizar** y no estaba en ningún
+documento (§5.4): el botón destructivo dentro del panel de vidrio queda más
+pálido que el rojo macizo de Solid. Se confirma así — hacer una excepción opaca
+rompería la única regla que sostiene todo §2, que si no se ve lo que hay detrás
+no es vidrio.
+
+Queda **una sola decisión bloqueante**: el alcance del vidrio.
+
 ## v2.384.0 — Metas: las gráficas del histórico
 
 Dos gráficas encima de la tabla del Histórico, sobre los últimos 12 meses

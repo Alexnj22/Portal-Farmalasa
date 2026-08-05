@@ -885,5 +885,14 @@
    "correo",
    "direccion"
   ]
+ },
+ "26017": {
+  "erp_id": "26017",
+  "name": "ISSS, FONDO CIRCULANTE CC SAN ANTONIO ABAD,  HOSPITAL POLICLÍNICO ZACAMIL",
+  "categoria": "Gran Contribuyente",
+  "faltan": [
+   "distrito",
+   "nrc"
+  ]
  }
 }

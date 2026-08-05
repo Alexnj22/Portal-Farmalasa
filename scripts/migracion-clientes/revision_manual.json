@@ -3598,5 +3598,29 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "ASOCIACION PRO-BUSQUEDA"
+ },
+ {
+  "erp_id": "25760",
+  "campo": "dui",
+  "valor": "00280957-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SANTOS HUMBERTO CHAVEZ"
+ },
+ {
+  "erp_id": "25985",
+  "campo": "dui",
+  "valor": "12365487-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MONICA MOLINA"
+ },
+ {
+  "erp_id": "26088",
+  "campo": "dui",
+  "valor": "04357576-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ELIAS ORANTES"
  }
 ]

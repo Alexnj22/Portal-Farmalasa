@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.382.1 — El filtro de sala va en la píldora, no suelto
+
+El selector de sala de las gráficas del mes había quedado suelto en el encabezado
+de su sección. Lo corrigió el usuario: **todo filtro va en la píldora, siempre.**
+
+Mi razonamiento al ponerlo aparte fue que ese filtro era «de esa sección y no de
+la vista» — y esa es exactamente la excusa que rompe el canon. Quien mira la
+píldora para saber qué tiene filtrado no se entera de que hay un recorte puesto
+hasta que baja hasta ese encabezado.
+
+Ahora vive en la píldora junto al mes, con su propia marca para soltarlo, y
+**recorta la vista entera**: elegir una sala deja su tarjeta y sus gráficas, en
+vez de recortar media pantalla y dejar la otra media con las seis. Que un filtro
+afecte a todo lo que se ve es lo que lo hace un filtro.
+
+La regla quedó escrita en `DESIGN.md` §17 con el caso: si el recorte de verdad
+solo tiene sentido para una sección, que filtre la vista entera; y si filtrar
+todo no tiene sentido, entonces no era un filtro — era un selector de contenido,
+y eso se resuelve dentro de la tarjeta, no con un control que parece un filtro y
+no está donde viven los filtros.
+
+## v2.382.0 — La fuga de excepciones del gate — 389 hallazgos que nadie contaba
+
+F6 de `PLAN-IDENTIDAD-2026-07-29`, y el hallazgo con más valor a futuro del
+plan: los otros cinco eran deuda de una vez, éste era **la razón por la que
+podía haber más deuda invisible**.
+
+El gate hacía `if (!hasException(path, 'color') && !hasException(path, 'hex'))`,
+y lo mismo para `white` e `inline-color`. O sea que una excepción escrita para
+`color` apagaba otras tres categorías que nadie decidió apagar. El comentario
+que lo justificaba —"están excepcionados por ser superficies de color fijo, el
+mismo motivo vale para su blanco y su hex"— confunde dos cosas: que una
+superficie sea de color fijo explica su `text-white`, **no** explica un hex
+suelto. Y no se sostenía ni en su propia lista: cuatro archivos ya listaban
+`white` aparte teniendo `color`.
+
+**Separadas las tres compuertas, aparecieron 389 hallazgos en 30 archivos** que
+el ratchet nunca contó. De esos, **86 eran deuda real en 13 vistas ordinarias**
+y están arreglados, no excepcionados:
+
+- **Aros de avatar y puntos de estado `border-white`** (17 sitios) → el
+  `border-surface-card` que §16.2 ya exigía: *"no blanco fijo: en tema oscuro un
+  borde blanco dibujaría un halo"*.
+- **Divisores `border-black/[0.04]`** (13) → `border-divider`.
+- **`bg-black/50` en el panel de log de sucursales** con texto
+  `--success-text`, que en los dos temas claros es `#0a7a46` — verde oscuro
+  sobre negro. Ilegible desde siempre, y por esa puerta.
+- **Cuatro divisores de tooltip** escritos `border-white/10` sobre un tooltip
+  `#16203D`. `--tooltip-border` existía y era por-tema desde la decisión 1a,
+  pero no tenía utilidad: se agrega `--color-border-tooltip`.
+- **El halo de `LifecycleTimeline`** era `rgba(99,102,241` —índigo— alrededor de
+  un punto violeta `chart-3`. Ahora sale del mismo token.
+- **Los KPI del Dashboard.** El plan decía que `#12B76A` y `#F79009` eran
+  *"verdes y ámbares que no están en la paleta cerrada"*. **No es así, y el caso
+  real es más difícil de ver:** son exactamente `--success` y `--warning`
+  clavados. No estaban fuera de la paleta, estaban **desatados** de ella — se
+  veían perfectos y cualquier cambio del token los habría dejado atrás en
+  silencio. Van a `var(--token)` y los tintes a `color-mix`, que reemplaza a los
+  `rgba(18,183,106,0.10)` escritos a mano.
+
+El resto son las superficies bespoke que `DESIGN.md` §6 ya documenta (sidebar
+siempre-oscuro, kiosco, splash, canvas, mapas, HTML de impresión). Quedan
+excepcionadas **con cada categoría escrita**, que es el punto: un `hex` nuevo en
+`LoginView` sigue pasando, pero uno nuevo en cualquier vista normal ahora falla.
+
+Barrido completo del repo en **cero hallazgos**, todas las categorías
+bloqueantes.
+
 ## v2.381.0 — Metas: cómo va el mes y quién está vendiendo
 
 Dos tarjetas nuevas debajo del tablero, con su propio selector de sala, para el

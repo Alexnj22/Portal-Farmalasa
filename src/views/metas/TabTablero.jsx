@@ -10,7 +10,6 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
-import LiquidSelect from '../../components/common/LiquidSelect';
 import GraficaMes from './GraficaMes';
 import RankingVendedores from './RankingVendedores';
 import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso } from '../../data/metas';
@@ -82,11 +81,18 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
         return () => { alive = false; };
     }, [esMesActual, salaMes, reloadKey, intento]);
 
+    // El filtro de sala de la píldora recorta la vista ENTERA: las tarjetas y
+    // las gráficas de abajo. Un filtro que solo tocara una sección dejaría a la
+    // píldora diciendo que no hay ninguno puesto (DESIGN.md §17).
     const visibles = useMemo(() => {
-        if (!searchTerm?.trim()) return rows;
-        const q = searchTerm.trim().toLowerCase();
-        return rows.filter((r) => (salaNombre(r.branch_id) || '').toLowerCase().includes(q));
-    }, [rows, searchTerm, salaNombre]);
+        let base = rows;
+        if (salaMes) base = base.filter((r) => String(r.branch_id) === salaMes);
+        if (searchTerm?.trim()) {
+            const q = searchTerm.trim().toLowerCase();
+            base = base.filter((r) => (salaNombre(r.branch_id) || '').toLowerCase().includes(q));
+        }
+        return base;
+    }, [rows, salaMes, searchTerm, salaNombre]);
 
     const resumen = useMemo(() => {
         const conMeta = rows.filter((r) => r.monto_meta != null);
@@ -165,8 +171,8 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
             <div className="flex justify-end min-w-0">
                 <FilterBar
                     title="Filtros de metas"
-                    activeCount={esMesActual ? 0 : 1}
-                    onClear={() => setYm(ymActual)}
+                    activeCount={(esMesActual ? 0 : 1) + (salaMes ? 1 : 0)}
+                    onClear={() => { setYm(ymActual); setSalaMes(''); }}
                     acciones={canEdit ? [{
                         key: 'agregar', icon: Plus, label: 'Agregar meta', variant: 'primary',
                         onClick: () => onAgregarMeta(ym, null),
@@ -191,6 +197,13 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                             resetLabel="Ir al mes actual"
                             prevDisabled={ym <= YM_INICIO_HISTORIA}
                             nextDisabled={ym >= ymMax}
+                        />
+                    </FilterBar.Section>
+                    <FilterBar.Section active={!!salaMes} onClear={() => setSalaMes('')} label="sala">
+                        <FilterBar.Sucursal
+                            value={salaMes || null}
+                            onChange={(v) => setSalaMes(v || '')}
+                            options={salaOptions || []}
                         />
                     </FilterBar.Section>
                 </FilterBar>
@@ -320,16 +333,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 sobre las dos tarjetas de abajo y sobre nada más. */}
             {esMesActual && (
                 <section className="space-y-4 pt-2">
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <h2 className="text-body font-black">Cómo va {ymLabel(ym).toLowerCase()}</h2>
-                        <div className="w-full sm:w-64">
-                            <LiquidSelect
-                                value={salaMes} onChange={setSalaMes}
-                                options={[{ value: '', label: 'Todas las salas' }, ...(salaOptions || [])]}
-                                placeholder="Todas las salas"
-                            />
-                        </div>
-                    </div>
+                    <h2 className="text-body font-black">Cómo va {ymLabel(ym).toLowerCase()}</h2>
 
                     {cargandoMes ? (
                         <div className="grid gap-4 xl:grid-cols-2">

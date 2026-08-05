@@ -2877,6 +2877,20 @@ sucursal, estado — **y todas sus acciones**. No es una decoración: es el luga
 único donde el usuario mira para saber qué está filtrando, para soltarlo y para
 ver qué puede hacer con lo que quedó.
 
+**Un filtro que solo afecta a UNA sección de la vista igual va en la píldora**
+(corregido por el usuario, 2026-08-05). En el Tablero de Metas puse un selector
+de sala suelto en el encabezado de la sección de gráficas, razonando que era «de
+esa sección y no de la vista». Es la excusa exacta que rompe el canon: el usuario
+no sabe que hay un filtro puesto hasta que hace scroll hasta ese encabezado, y la
+píldora —que es donde mira— dice que no hay ninguno.
+
+Si el recorte de verdad solo tiene sentido para una sección, entonces **que
+filtre la vista entera**: en Metas, elegir una sala deja su tarjeta y sus
+gráficas, que es más coherente que un recorte a media pantalla. Y si filtrar
+todo no tiene sentido, entonces no era un filtro — era un selector de contenido,
+y eso se resuelve con pestañas o con un `SegmentedControl` adentro de la tarjeta,
+no con un control que parece un filtro y no está donde viven los filtros.
+
 #### Las acciones son DESCRIPTORES, no JSX
 
 `acciones` es un array, no un ReactNode, y eso no es capricho: el mismo botón se

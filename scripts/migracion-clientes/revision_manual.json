@@ -3422,5 +3422,53 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "JESSICA ANAI BONILLA BONILLA"
+ },
+ {
+  "erp_id": "22863",
+  "campo": "dui",
+  "valor": "05726100-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "OSCAR DANIEL GALDAMEZ GUEVARA"
+ },
+ {
+  "erp_id": "22951",
+  "campo": "dui",
+  "valor": "03051999-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "YANETH YANIRA LEMUS"
+ },
+ {
+  "erp_id": "22954",
+  "campo": "dui",
+  "valor": "05430018-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "KEVIN JACIR RIVERA RIVERA"
+ },
+ {
+  "erp_id": "23008",
+  "campo": "dui",
+  "valor": "04852227-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "bernabe merari perez ardon"
+ },
+ {
+  "erp_id": "23050",
+  "campo": "dui",
+  "valor": "06315599-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JONATHAN ADONAY HERRERA CASTILLO"
+ },
+ {
+  "erp_id": "23117",
+  "campo": "dui",
+  "valor": "00024578-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "EMMA DE JESUS ALBERTO DE SERRANO"
  }
 ]

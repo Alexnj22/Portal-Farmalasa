@@ -109,15 +109,43 @@ Los tres pares están completos: al 2026-08-04 las seis rechazan en cada bloque
 (`ambiguos.json`, todas con `duplicado: true`). Cuando esto decía "cinco", la
 `16421` todavía no había sido cruzada por el frente.
 
-**Este número sube solo** a medida que el frente cruza cada ficha duplicada: hay
-19 nombres duplicados en el catálogo, así que puede llegar a ~38. No es
-deterioro. Si automatizás bloques, el corte NO puede ser un tope numérico de
+**Este número sube solo** a medida que el frente cruza cada ficha duplicada: al
+2026-08-05 hay **20** nombres duplicados en el catálogo, así que puede llegar a
+~40. No es deterioro. (Eran 19 hasta el refresco de catálogo del 2026-08-05, que
+además sumó 40 fichas nuevas: 27,659 → 27,699.) Si automatizás bloques, el corte NO puede ser un tope numérico de
 "a revisar" — tiene que comparar contra los rechazos con `duplicado: true` de
 `ambiguos.json` (ver README §3). Un tope de 3 cortó una cadena por falso
 positivo el 2026-08-02.
 
 Se resuelve purgando los duplicados en el ERP, que es decisión de persona
 (decisión abierta #3).
+
+**Y el espejo va a rechazar 2, que es OTRA cosa.** `aplicar_espejo.py` cierra con
+"2 ficha(s) que el portal RECHAZÓ" y un `HTTP 409 / 23505` sobre el índice único
+de `customers.nit`. No son los rechazos del ERP de arriba: estos los pone el
+PORTAL, y se repiten en todos los espejos desde el 2026-08-03 como mínimo
+(`espejo_b30.log` en adelante). Nadie los había anotado — el espejo dice "el
+resto sí se aplicó" y el total grande tapa las 2.
+
+| erp | fila portal | nombre | nit |
+|---|---|---|---|
+| 4324 | 17015 | FRANCISCO ANTONIO ALVARENGA ALVARENGA | `0407-051066-002-0` |
+| 14318 | 494 | ALVARENGA ALVARENGA FRANCISCO ANTONIO | **null** ← rechazada |
+| 15973 | 21268 | NERIS PALMA ORTIZ | `0462-3018--0` |
+| 20011 | 7414 | NERIS ORTIZ PALMA | **null** ← rechazada |
+
+Es la misma persona cargada dos veces en el ERP **con el nombre invertido**, así
+que el matcher por nombre no las junta. En el portal son dos filas distintas; el
+espejo le quiere escribir el NIT a la que lo tiene vacío y el índice único lo
+frena porque la otra ya lo ocupa.
+
+**El efecto es silencioso y permanente**: `erp 14318` y `erp 20011` se quedan con
+`nit` y `dui` en NULL en el portal para siempre, aunque en el ERP sí tengan el
+dato. No aparecen en `faltantes_dte.json` —que mira el ERP, no el portal—, así
+que el hueco no se ve por ningún lado salvo en la cola del log del espejo.
+
+A diferencia de los tres pares del ERP, acá el NIT es **el mismo** en ambas, así
+que no es "pueden ser dos personas": son una. Decisión abierta #4.
 
 ## Si vas a encadenar bloques desatendidos
 
@@ -182,7 +210,14 @@ espejó al portal. Si volvés a verla, ya coincide.
    sus seis escrituras en cada bloque y, como no se checkpointean, se reintentan
    para siempre (~15s por bloque). Esto antes decía "la 7280 va a hacer lo mismo
    cuando el frente llegue ahí": llegó el 2026-08-04.
-4. **El reproceso completo**, si se quiere prolijidad del mecanismo de `REGLAS`:
+4. **Las 2 filas del portal sin NIT** (`erp 14318` / `erp 20011`, detalle y tabla
+   en "Lo primero que va a pasar"). Son la misma persona duplicada en el ERP con
+   el nombre invertido, con el MISMO NIT en las dos fichas — no es ambigüedad,
+   es un duplicado. Hay que decidir cuál fila del portal sobrevive y fusionar,
+   o purgar la ficha duplicada en el ERP. Mientras tanto el espejo las rechaza
+   en cada bloque y esas dos filas del portal no se pueden facturar bajo DTE 2.0
+   aunque el ERP tenga el dato.
+5. **El reproceso completo**, si se quiere prolijidad del mecanismo de `REGLAS`:
    el matcher se arregló sin subirla, reencolando las 5 afectadas a mano. Está
    justificado en el README, pero si se prefiere, subir REGLAS a 7 relee las
    2,073 (≈1 h) y deja el checkpoint coherente por construcción.

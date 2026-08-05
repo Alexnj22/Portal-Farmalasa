@@ -13,6 +13,7 @@ import {
     fetchMetasRows, fetchMetasHistorico, generarPropuestas,
     confirmarMeta, confirmarMetasLote, aprobarMeta, devolverMeta,
     fetchAutorizadores, aprobarMetaPorAutorizacion,
+    aprobarMetasLote, aprobarMetasPorAutorizacionLote,
 } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, ymLabelCorto, diaHoySV, TRAMO_CFG } from './metasUtils';
@@ -47,6 +48,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
     const [devolviendo, setDevolviendo] = useState(null); // id → abre el campo de nota
     const [notaDev, setNotaDev] = useState('');
     const [autorizando, setAutorizando] = useState(null); // id → abre el registro de autorización
+    const [loteAut, setLoteAut] = useState(null);         // { mes, ids, cuantas, total } → el mismo registro, para todo el grupo
     const [notaAut, setNotaAut] = useState('');
     const [quienAut, setQuienAut] = useState('');
     const [autorizadores, setAutorizadores] = useState([]);
@@ -57,7 +59,15 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         setLoading(true);  
         setError(null);
         Promise.all([fetchMetasRows([ymActual, ymSig]), fetchMetasHistorico()])
-            .then(([r, h]) => { if (alive) { setRows(r); setHistorico(h); setAjustes({}); setLoading(false); } })
+            .then(([r, h]) => {
+                if (!alive) return;
+                setRows(r); setHistorico(h); setAjustes({});
+                // Los paneles abiertos apuntan a filas que acaban de cambiar de
+                // estado: dejarlos abiertos sería ofrecer una acción sobre algo
+                // que ya no está.
+                setLoteAut(null); setAutorizando(null); setDevolviendo(null);
+                setLoading(false);
+            })
             .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'Error al cargar el flujo')); setLoading(false); } });
         return () => { alive = false; };
     };
@@ -153,28 +163,117 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
         }
     };
 
-    // Acción del grupo, en el encabezado del grupo sobre el que actúa — el mismo
-    // sitio que «Aprobar todo» en Asistencia. Lleva la cuenta y el total en el
-    // rótulo: confirmar seis metas de golpe no puede ser un botón mudo.
-    // Con una sola fila no aparece: para eso está el botón de la tarjeta.
-    const ConfirmarTodas = ({ filas, mes }) => {
-        const lote = filas.filter(esConfirmable);
-        if (lote.length < 2) return null;
-        const total = lote.reduce((s, r) => s + montoDe(r), 0);
+    // Acciones del grupo, en el encabezado del grupo sobre el que actúan — el
+    // mismo sitio que «Aprobar todo» en Asistencia. Llevan la cuenta y el total
+    // en el rótulo: mover seis metas de golpe no puede ser un botón mudo.
+    // Con una sola fila no aparecen: para eso está el botón de la tarjeta.
+    const AccionesDelGrupo = ({ filas, mes }) => {
+        const porConfirmar = filas.filter(esConfirmable);
+        const porAprobar = filas.filter((r) => r.estado === 'confirmada_supervisor');
+        const totalConfirmar = porConfirmar.reduce((s, r) => s + montoDe(r), 0);
+        const totalAprobar = porAprobar.reduce((s, r) => s + Number(r.monto_meta || 0), 0);
+
+        const verConfirmar = porConfirmar.length >= 2;
+        // Quien puede aprobar, aprueba. Quien no, registra la autorización — y
+        // la pide UNA vez para todas, no seis veces el mismo dato.
+        const verAprobar = canApprove && porAprobar.length >= 2;
+        const verAutorizar = !canApprove && canEdit && porAprobar.length >= 2;
+        if (!verConfirmar && !verAprobar && !verAutorizar) return null;
+
+        const idsAprobar = porAprobar.map((r) => r.id);
+        const detalleAprobar = {
+            mes, cuantas: porAprobar.length, total: totalAprobar,
+            salas: porAprobar.map((r) => salaNombre(r.branch_id)).join(', '),
+        };
+
         return (
-            <Button
-                variant="primary" icon={CheckCircle2} disabled={busy != null}
-                onClick={() => accion(
-                    () => confirmarMetasLote(lote.map((r) => ({ id: r.id, monto: montoDe(r) }))),
-                    'lote', 'METAS_CONFIRMAR_LOTE',
-                    { mes, cuantas: lote.length, total,
-                      salas: lote.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', ') },
-                    'Metas confirmadas',
-                    `${lote.length} salas · ${formatMoney(total)}. Al confirmar todas, le llega al gerente.`,
+            <>
+                <div className="flex flex-wrap items-center gap-2 justify-end">
+                    {verConfirmar && (
+                        <Button
+                            variant="primary" icon={CheckCircle2} disabled={busy != null}
+                            onClick={() => accion(
+                                () => confirmarMetasLote(porConfirmar.map((r) => ({ id: r.id, monto: montoDe(r) }))),
+                                'lote-confirmar', 'METAS_CONFIRMAR_LOTE',
+                                { mes, cuantas: porConfirmar.length, total: totalConfirmar,
+                                  salas: porConfirmar.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', ') },
+                                'Metas confirmadas',
+                                `${porConfirmar.length} salas · ${formatMoney(totalConfirmar)}. Al confirmar todas, le llega al gerente.`,
+                            )}
+                        >
+                            {busy === 'lote-confirmar'
+                                ? 'Confirmando…'
+                                : `Confirmar las ${porConfirmar.length} · ${formatMoney(totalConfirmar)}`}
+                        </Button>
+                    )}
+                    {verAprobar && (
+                        <Button
+                            variant="primary" icon={CheckCircle2} disabled={busy != null}
+                            onClick={() => accion(
+                                () => aprobarMetasLote(idsAprobar),
+                                'lote-aprobar', 'METAS_APROBAR_LOTE', detalleAprobar,
+                                'Metas aprobadas',
+                                `${porAprobar.length} salas quedaron oficiales. Cada una ve la suya.`,
+                            )}
+                        >
+                            {busy === 'lote-aprobar'
+                                ? 'Aprobando…'
+                                : `Aprobar las ${porAprobar.length} · ${formatMoney(totalAprobar)}`}
+                        </Button>
+                    )}
+                    {verAutorizar && (
+                        <Button
+                            variant="secondary" icon={ShieldCheck} disabled={busy != null}
+                            onClick={() => {
+                                setAutorizando(null);
+                                setLoteAut(loteAut?.mes === mes ? null : { mes, ids: idsAprobar, cuantas: porAprobar.length, total: totalAprobar });
+                                setNotaAut(''); setQuienAut('');
+                            }}
+                        >
+                            {`Registrar la autorización de las ${porAprobar.length}`}
+                        </Button>
+                    )}
+                </div>
+
+                {loteAut?.mes === mes && (
+                    <div data-surface="card" data-tono="warning" className="w-full mt-3 p-3 space-y-2">
+                        <p className="text-label font-semibold text-content-2">
+                            Esto deja oficiales las {loteAut.cuantas} metas de golpe
+                            ({formatMoney(loteAut.total)}). Queda asentado que las ejecutaste vos
+                            con autorización de quien elijas, y a esa persona le llega el aviso.
+                        </p>
+                        <LiquidSelect
+                            value={quienAut} onChange={setQuienAut}
+                            options={autorizadores.map((a) => ({ value: a.id, label: a.name }))}
+                            placeholder="¿Quién autorizó?"
+                        />
+                        <PortalInput
+                            label="¿Cómo lo autorizó?" name={`nota-aut-lote-${mes}`}
+                            value={notaAut} onChange={(e) => setNotaAut(e.target.value)}
+                            placeholder="Ej. las aprobó por teléfono el 5 de agosto" required
+                        />
+                        <Button
+                            variant="primary" icon={ShieldCheck}
+                            disabled={busy != null || !quienAut || !notaAut.trim()}
+                            onClick={() => accion(
+                                () => aprobarMetasPorAutorizacionLote({
+                                    ids: loteAut.ids, autorizoPor: quienAut, nota: notaAut.trim(),
+                                }),
+                                'lote-autorizar', 'METAS_APROBAR_POR_AUTORIZACION_LOTE',
+                                { ...detalleAprobar,
+                                  autorizo: autorizadores.find((a) => a.id === quienAut)?.name,
+                                  nota: notaAut.trim() },
+                                'Metas oficiales',
+                                `${loteAut.cuantas} salas quedaron registradas con esa autorización, y a quien autorizó le llegó el aviso.`,
+                            )}
+                        >
+                            {busy === 'lote-autorizar'
+                                ? 'Registrando…'
+                                : `Dejar oficiales las ${loteAut.cuantas} con esta autorización`}
+                        </Button>
+                    </div>
                 )}
-            >
-                {busy === 'lote' ? 'Confirmando…' : `Confirmar las ${lote.length} · ${formatMoney(total)}`}
-            </Button>
+            </>
         );
     };
 
@@ -308,7 +407,11 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         el que sí puede, aprueba y listo. */}
                     {!canApprove && canEdit && r.estado === 'confirmada_supervisor' && (
                         <Button variant="secondary" icon={ShieldCheck} disabled={busy != null}
-                            onClick={() => { setAutorizando(autorizando === r.id ? null : r.id); setNotaAut(''); setQuienAut(''); }}>
+                            onClick={() => {
+                                setLoteAut(null);   // dos paneles abiertos a la vez piden lo mismo dos veces
+                                setAutorizando(autorizando === r.id ? null : r.id);
+                                setNotaAut(''); setQuienAut('');
+                            }}>
                             Registrar autorización del gerente
                         </Button>
                     )}
@@ -408,8 +511,8 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             : `${pendientesTodas.length} metas siguen sin oficializar`} — las salas la ven como pendiente.
                     </Notice>
                     {pendientesActual.length > 0 && (
-                        <div className="flex justify-end">
-                            <ConfirmarTodas filas={pendientesActual} mes={ymActual} />
+                        <div className="flex flex-wrap justify-end">
+                            <AccionesDelGrupo filas={pendientesActual} mes={ymActual} />
                         </div>
                     )}
                     {pendientesActual.length === 0 ? (
@@ -437,7 +540,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 {delMesSig.length > 0 && (
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <h2 className="text-body font-black">Metas de {ymLabel(ymSig).toLowerCase()}</h2>
-                        <ConfirmarTodas filas={delMesSig} mes={ymSig} />
+                        <AccionesDelGrupo filas={delMesSig} mes={ymSig} />
                     </div>
                 )}
 

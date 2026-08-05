@@ -53,6 +53,12 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
     const tramo = data?.tramo ? TRAMO_CFG[data.tramo] : null;
     const tramoProy = data?.tramo_proyectado ? TRAMO_CFG[data.tramo_proyectado] : null;
     const sinMeta = data != null && data.meta == null;
+    // La meta puede existir y NO estar aprobada todavía. El reparto se calcula
+    // igual —sirve para ver por dónde va— pero decir el monto de cada persona
+    // sobre una meta que el gerente aún puede devolver, sin avisarlo, es
+    // prometer un número que no está firmado. El Tablero ya lo marca; acá, que
+    // es la pantalla del dinero, faltaba.
+    const metaSinAprobar = data?.meta != null && data.estado_meta && data.estado_meta !== 'oficial';
 
     // Al día 4 la bolsa de HOY siempre es cero: si la tabla dependiera solo de
     // ella, el mes en curso —el único que todavía se puede cambiar— se vería
@@ -154,6 +160,14 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
                     subtitle={error}
                     action={<Button variant="secondary" icon={RefreshCw} onClick={() => setIntento((n) => n + 1)}>Reintentar</Button>}
                 />
+            )}
+
+            {!loading && !error && metaSinAprobar && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    La meta de {salaNombre(sala)} en {ymLabel(ym).toLowerCase()} todavía
+                    no está aprobada, así que este reparto es una referencia: si el monto
+                    de la meta cambia, cambia lo que le toca a cada persona.
+                </Notice>
             )}
 
             {/* El mes en curso todavía se mueve. Decir en cuánto va a cerrar es

@@ -76,6 +76,25 @@ export async function aprobarMeta(id) {
     if (error) throw error;
 }
 
+// Aprueba varias de una vez, en UNA transacción: si alguna falla no quedan la
+// mitad oficiales. Igual que `confirmarMetasLote`, del otro lado del flujo.
+export async function aprobarMetasLote(ids) {
+    const { data, error } = await supabase.rpc('aprobar_metas_lote', { p_ids: ids });
+    if (error) throw error;
+    return data ?? 0;
+}
+
+// Lo mismo por el camino de la autorización verbal: se pregunta UNA vez quién
+// autorizó y cómo, y se aplica a todas. Cada meta conserva su propio renglón en
+// la bitácora y su propio aviso a quien autorizó.
+export async function aprobarMetasPorAutorizacionLote({ ids, autorizoPor, nota }) {
+    const { data, error } = await supabase.rpc('aprobar_metas_por_autorizacion_lote', {
+        p_ids: ids, p_autorizo: autorizoPor, p_nota: nota,
+    });
+    if (error) throw error;
+    return data ?? 0;
+}
+
 export async function devolverMeta({ id, nota }) {
     const { error } = await supabase.rpc('devolver_meta_gerente', { p_id: id, p_nota: nota });
     if (error) throw error;

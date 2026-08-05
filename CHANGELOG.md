@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.373.0 — Metas: aprobar en lote y avisos que no se repiten
+
+Confirmar varias de una vez ya existía; del otro lado del flujo no. El gerente
+tenía que aprobar de a una, y quien registra la autorización verbal tenía que
+elegir a la persona y escribir el motivo **una vez por sala** — seis veces el
+mismo dato para el mismo hecho.
+
+Ahora el encabezado del grupo lleva la acción que corresponde a quien mira:
+**«Aprobar las N · $total»** para el gerente, **«Registrar la autorización de las
+N»** para quien no puede aprobar. El registro en lote pregunta **una sola vez**
+quién autorizó y cómo, y lo aplica a todas — cada meta conserva igual su propio
+renglón en la bitácora y su propio aviso a quien autorizó. Con una sola fila el
+botón de grupo no aparece: para eso está el de la tarjeta.
+
+Va en una transacción, como el de confirmar: **si una falla, no queda ninguna
+aprobada**. Verificado metiendo una meta en estado inválido dentro del lote —
+rechaza el lote entero y ninguna cambia.
+
+**Los recordatorios dejaron de apilarse.** El ciclo diario mandaba «la meta de X
+sigue pendiente» todos los días mientras el mes en curso no estuviera oficial, y
+se insertaba sin mirar si ya había uno igual: el 5 de agosto entraron 3 avisos en
+un día, ninguno leído, y venían otros 2 por día hasta aprobar agosto. Ahora, si
+ya hay uno **sin leer** del mismo asunto, se le refresca el número y la fecha en
+vez de agregar otro; y el aviso del mes en curso pasa de diario a los días 1, 3 y
+después semanal. Una vez leído, el siguiente sí vuelve a entrar.
+
+**Y la pestaña Bono dice cuándo la meta no está firmada.** Mostraba bolsa,
+jefatura y el reparto persona por persona de agosto como si fuera definitivo,
+cuando el gerente todavía puede devolver esa meta. El dato ya viajaba desde el
+servidor y no se usaba. El Tablero lo marcaba; la pantalla del dinero, no.
+
 ## v2.372.3 — Metas: bitácora del lado del servidor
 
 Las transiciones de una meta solo se anotaban desde el navegador. Un RPC llamado

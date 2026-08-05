@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.394.1 — El tooltip que no era vidrio, y la tabla dentro del cuerpo
+
+Tres correcciones a §14 y §15, todas levantadas por el usuario mirando el mockup.
+
+**§14.1 · A `0.86` el tooltip no se leía como vidrio.** Sí dejaba pasar el fondo,
+pero apenas: con dos objetos saturados detrás, el píxel cambiaba **1.125:1** entre
+uno y otro contra el **1.00** de Solid. La diferencia existía y no se veía — el
+`blur(20px)` era decorativo. Baja a **`0.70`** (1.390:1) y se lee como vidrio; el
+texto no sufre porque es blanco al 95% sobre navy.
+
+**§14.2 · El destello del tooltip corre AL ABRIRSE.** §5.1 fija que el canto de
+una pieza donde *se lee* es fijo — pero eso habla de su **reposo**, no de su
+**llegada**. Y un tooltip **no se puede apuntar**: si el barrido colgara del hover
+no correría nunca. Es un matiz que sólo aparece en piezas que nacen del hover *de
+otra cosa*: el modal se abre por un clic y puede animar su llegada como quiera; el
+tooltip aparece solo, y ése es su único instante para mostrar material.
+
+**§15.1.bis · La tabla vive dentro del cuerpo de vista, que también es vidrio** —
+`GlassViewLayout` le pone `data-surface="card"`. Es vidrio sobre vidrio **un nivel
+más arriba** del que §1.5 tenía en mente. **Y §1.5 ya lo resuelve:**
+
+| tabla vs cuerpo de vista | hoy | con §1.5 |
+|---|---|---|
+| Liquid claro | ΔE 5.3 — apenas | **6.0** |
+| **Liquid oscuro** | **ΔE 2.2 — se funden** | **11.2** ✅ |
+
+En oscuro hoy son indistinguibles. No hace falta regla nueva: es la verificación
+de que la regla de la anidada sirve para *cualquier* superficie dentro de otra, no
+sólo para una fila dentro de una tarjeta. El contraste del **texto** nunca fue el
+problema —pasa AA holgado en las dos configuraciones—; lo que fallaba era que las
+**superficies** se fundieran, y para eso el instrumento es ΔE.
+
+**§15.2 · La paginación se centra o se distribuye, nunca queda en una esquina.**
+Su material ya estaba bien; lo que faltaba era fijar la alineación.
+
 ## v2.394.0 — Tooltip definido, y el encabezado de tabla que no ocluye
 
 Primeros tres ítems de §13, el inventario que `PLAN-MATERIALES` nunca había

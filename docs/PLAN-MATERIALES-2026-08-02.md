@@ -1230,6 +1230,34 @@ nota flotando encima, y ésa fue la razón original de la decisión 1a.
    valores calibrados para fondos claros sobre su navy — **exactamente el defecto
    que §1.7 corrigió en el lente**.
 
+### 14.1 A `0.86` el tooltip no se leía como vidrio
+
+`--tooltip-bg` valía `rgba(13,20,48,0.86)`. **Sí dejaba pasar el fondo, pero
+apenas**: medido con dos objetos saturados detrás, el píxel del tooltip cambiaba
+**1.125:1** entre uno y otro, contra el **1.00** de Solid, que es opaco. La
+diferencia existía y no se veía — o sea que el `blur(20px)` era decorativo.
+
+| opacidad | el fondo se ve |
+|---|---|
+| 0.55 | 1.709:1 |
+| **0.70** | **1.390:1** ✅ elegido |
+| 0.86 *(antes)* | 1.125:1 — indistinguible de opaco |
+| 0.94 | 1.047:1 — ya no pasa nada |
+
+Baja a **`0.70`** (y `0.74` en el tema oscuro, que parte de un navy más claro).
+El texto no sufre: es blanco al 95% sobre navy.
+
+### 14.2 El destello corre AL ABRIRSE, no al apuntar
+
+§5.1 fija que el canto de una pieza donde *se lee* es fijo — pero eso habla de su
+**reposo**, no de su **llegada**. Y un tooltip **no se puede apuntar**: si el
+barrido colgara del hover no correría nunca. Corre **una vez al aparecer** y se
+queda quieto.
+
+Es un matiz de §5.1 que sólo aparece en piezas que nacen del hover *de otra
+cosa*: el modal se abre por un clic y puede animar su llegada como quiera; el
+tooltip aparece solo, y su única oportunidad de mostrar material es ese instante.
+
 ```css
 /* el canto del tooltip NO sale del tema: la superficie es siempre oscura */
 --tooltip-rim-base:  rgba(255,255,255,.16);
@@ -1276,6 +1304,29 @@ token que la fila anidada llevado a la opacidad que el trabajo exige.
 > Ninguna opacidad pensada para *acento* sirve para *oclusión*. Al implementar,
 > revisar toda otra superficie `sticky` con el mismo criterio.
 
+### 15.1.bis La tabla vive dentro del cuerpo de vista, que TAMBIÉN es vidrio
+
+Levantado por el usuario: *«normalmente una tabla está bajo un body que es otro
+vidrio»*. Es cierto — `GlassViewLayout` le pone `data-surface="card"` al cuerpo
+cuando no es `transparentBody` ni móvil. Así que la tabla es **vidrio sobre
+vidrio a nivel de vista**, un nivel más arriba del que §1.5 tenía en mente.
+
+**Y §1.5 ya lo resuelve.** Medido con ΔE, tabla contra el cuerpo que la contiene:
+
+| | hoy | con §1.5 |
+|---|---|---|
+| Liquid claro | ΔE 5.3 — apenas | **6.0** |
+| **Liquid oscuro** | **ΔE 2.2 — se funden** | **11.2** ✅ |
+
+En oscuro hoy son indistinguibles. **No hace falta ninguna regla nueva**: es la
+verificación de que la regla de la anidada sirve para *cualquier* superficie
+dentro de otra, no sólo para una fila dentro de una tarjeta. Vale la pena que
+quede escrito, porque §1.5 se redactó mirando el caso chico.
+
+*(El contraste del **texto** nunca fue el problema: pasa AA holgado en las dos
+configuraciones —12.43:1 y 10.08:1—. Lo que fallaba era que las **superficies**
+se fundieran, y para eso el instrumento es ΔE, no el ratio. Ver §12.2.)*
+
 ### 15.2 Paginación: ya estaba bien
 
 Es una **placa hermana** de la tabla, no una región adentro — `DESIGN.md` §14 ya
@@ -1283,8 +1334,20 @@ manda que vaya como hermana suelta y nunca envuelta. Así que **no aplica §1.5*
 le corresponde el material completo de §1 (vidrio, canto, lente, destello), y sus
 botones son regiones adentro que sí siguen la regla de la anidada.
 
-**No necesitó ninguna regla nueva**, y por eso vale la pena que esté escrito: es
-la prueba de que el sistema ya cubre casos que nunca se miraron.
+**No necesitó ninguna regla nueva** de material, y por eso vale la pena que esté
+escrito: es la prueba de que el sistema ya cubre casos que nunca se miraron.
+
+**Lo único que sí hay que fijar es su alineación.** Hoy queda pegada a una
+esquina, que no es ni una cosa ni la otra. Dos disposiciones válidas, y hay que
+elegir una:
+
+| | cuándo |
+|---|---|
+| **Centrada** | la píldora se alinea al medio del ancho de la vista |
+| **Distribuida** | ocupa el ancho: el rango a la izquierda, los controles a la derecha |
+
+Nunca pegada a un borde sin ocupar el ancho — eso lee como un elemento que se
+quedó donde cayó.
 
 ---
 

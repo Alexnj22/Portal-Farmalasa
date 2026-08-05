@@ -5,30 +5,28 @@ import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { explicarMetaPropuesta } from '../../data/metas';
 import { ymLabelCorto } from './metasUtils';
 
-// De dónde sale la propuesta, en tres pasos con el monto que va quedando.
+// De dónde sale la propuesta. La fórmula (decisión del usuario, 2026-08-05):
 //
-// Pedido del usuario (2026-08-05): que el gerente entienda la fórmula Y por qué
-// es un buen cálculo. La primera versión mostraba los factores pero no lo que
-// hay detrás de cada uno —el 0.9867 salía como un número caído del cielo— y
-// escondía el empuje cuando era cero, así que una sala que rinde bien nunca se
-// enteraba de que ese mecanismo existe ni de que quedó fuera por rendir bien.
+//   ritmo    = (venta m-3 + m-2 + m-1) ÷ (días m-3 + m-2 + m-1)
+//   propuesta = ritmo × días del mes objetivo × factor
 //
-// El argumento más fuerte es el contraste con el promedio, y por eso está con su
-// número al lado: sin él, «usamos la mediana» es una afirmación; con él, se ve
-// que evitó pedir $1,654 de más por el mes raro de otra sala.
+// El factor sale de cómo cerró la sala el mes -1, y va al REVÉS de lo que uno
+// esperaría: al que se quedó corto se le pide crecer más (1.10) y al que va bien
+// se le pide sostenerse (1.02). El criterio es recuperar terreno, no premiar.
 //
-// Se pide al ABRIR: son seis tarjetas y traer seis desgloses que casi nadie mira
-// serían seis llamadas por nada.
+// Es la misma dirección que tenía el empuje de la fórmula anterior —exigirle más
+// a la que viene floja— pero medida por cumplimiento en vez de por venta por
+// hora abierta, que es un dato que se entiende sin que se lo expliquen.
+//
+// Se pide al ABRIR: son seis tarjetas y traer seis desgloses que casi nadie
+// mira serían seis llamadas por nada.
 
-const Paso = ({ n, titulo, factor, monto, children }) => (
+const Paso = ({ n, titulo, monto, children }) => (
     <div className="flex gap-2.5">
         <span className="text-micro font-black text-content-3 tabular-nums pt-0.5 w-3 shrink-0">{n}</span>
         <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-                <p className="text-micro font-black uppercase tracking-widest text-content-3">
-                    {titulo}
-                    {factor && <span className="text-content-2 tabular-nums normal-case tracking-normal"> {factor}</span>}
-                </p>
+                <p className="text-micro font-black uppercase tracking-widest text-content-3">{titulo}</p>
                 <p className="text-label font-black tabular-nums text-content shrink-0">{monto}</p>
             </div>
             <div className="text-micro font-semibold text-content-3 leading-relaxed mt-0.5">{children}</div>
@@ -56,13 +54,6 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
     const coincide = d != null && montoPropuesto != null
         && Math.abs(Number(d.recalculada) - Number(montoPropuesto)) < 0.01;
 
-    // Cuánto se desvió ESTA sala el mismo mes del año pasado, y cuánto se cree
-    // de la señal: n/(n+1), o sea 86% con las 6 salas.
-    const desvioPropio = d ? (Number(d.idx_propio) - 1) * 100 : 0;
-    const confianza = d ? (Number(d.n_salas) / (Number(d.n_salas) + 1)) * 100 : 0;
-    const deMasConPromedio = d ? Number(d.con_promedio) - Number(d.recalculada) : 0;
-    const hayEmpuje = d && Number(d.empuje) > 0;
-
     return (
         <div className="mt-1">
             <button
@@ -84,85 +75,60 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
 
                     {d && (
                         <div className="space-y-2.5">
-                            <Paso n="1" titulo="Su propio ritmo" monto={formatMoney(d.sub_ritmo)}>
+                            <Paso n="1" titulo="Su ritmo diario" monto={`${formatMoney(d.ritmo_dia)}/día`}>
                                 {(d.meses_base || []).map((m, i) => (
                                     <span key={m.ym} className="tabular-nums">
                                         {i > 0 && ' · '}{ymLabelCorto(m.ym)} {formatMoney(m.venta)}
                                     </span>
                                 ))}
                                 <br />
-                                <strong className="text-content-2 tabular-nums">{formatMoney(d.ritmo_dia)} por día</strong>
-                                {' × '}{d.dias_mes} días del mes. Por día y no por mes, para que un mes de 30
-                                y uno de 31 no digan cosas distintas.
+                                <strong className="text-content-2 tabular-nums">{formatMoney(d.suma_venta)}</strong>
+                                {' entre los '}
+                                <strong className="text-content-2 tabular-nums">{d.suma_dias} días</strong>
+                                {' de esos tres meses. Se divide por días y no por meses, para que uno de 30 y uno de 31 no pesen distinto.'}
                             </Paso>
 
-                            <Paso
-                                n="2" titulo="El peso del mes"
-                                factor={`× ${Number(d.estacional).toFixed(4)}`}
-                                monto={formatMoney(d.sub_estacional)}
-                            >
-                                Este mismo mes del año pasado esta sala vendió{' '}
-                                <strong className="text-content-2 tabular-nums">{formatMoney(d.venta_ap)}</strong>
-                                {' '}y a su ritmo le tocaban{' '}
-                                <strong className="text-content-2 tabular-nums">{formatMoney(d.esperado_ap)}</strong>
-                                {' — '}
-                                <strong className={desvioPropio < 0 ? 'text-danger-text' : 'text-success-text'}>
-                                    {desvioPropio >= 0 ? '+' : ''}{desvioPropio.toFixed(1)}%
-                                </strong>.
-                                <br />
-                                {/* El contraste con el promedio es el argumento de por qué
-                                    el cálculo es bueno, y sin el número es solo una frase. */}
-                                Pero no se usa el de esta sala: se toma la{' '}
-                                <strong className="text-content-2">mediana de las {d.n_salas}</strong>{' '}
-                                (<span className="tabular-nums">{Number(d.idx_mediana).toFixed(4)}</span>),
-                                porque que un mes sea flojo es del calendario, no de una sala.
-                                {deMasConPromedio > 0.5 && (
-                                    <>
-                                        {' '}Con el <strong className="text-content-2">promedio</strong>{' '}
-                                        (<span className="tabular-nums">{Number(d.idx_promedio).toFixed(4)}</span>,
-                                        que dos salas atípicas empujan hacia arriba) esta meta sería{' '}
-                                        <strong className="text-warning-text tabular-nums">{formatMoney(d.con_promedio)}</strong>
-                                        {' — '}<strong className="text-warning-text tabular-nums">{formatMoney(deMasConPromedio)} más</strong>.
-                                    </>
-                                )}
-                                <br />
-                                Y se aplica al <strong className="text-content-2">{confianza.toFixed(0)}%</strong>:
-                                hay un solo año de historia y un dato no es una tendencia.
+                            <Paso n="2" titulo={`Por los ${d.dias_mes} días del mes`} monto={formatMoney(d.sub_ritmo)}>
+                                Lo que vendería el mes si mantuviera exactamente ese ritmo.
                             </Paso>
 
-                            <Paso
-                                n="3" titulo="Lo que se pide de más"
-                                factor={`× ${(Number(d.crecimiento) + Number(d.empuje)).toFixed(4)}`}
-                                monto={formatMoney(d.recalculada)}
-                            >
-                                <strong className="text-content-2">
-                                    {formatPct((Number(d.crecimiento) - 1) * 100, { decimales: 0 })} de crecimiento
-                                </strong>, igual para todas las salas.
-                                <br />
-                                {/* El empuje se muestra SIEMPRE, valga cero o no: que una
-                                    sala no lo lleve es información — dice que rinde por
-                                    encima de la mediana. */}
-                                {hayEmpuje ? (
+                            <Paso n="3" titulo={`Por el factor ${Number(d.factor).toFixed(2)}`} monto={formatMoney(d.recalculada)}>
+                                {d.pct_ultimo != null ? (
                                     <>
-                                        <strong className="text-warning-text">
-                                            +{formatPct(Number(d.empuje) * 100, { decimales: 2 })} de empuje
-                                        </strong>: vende{' '}
-                                        <span className="tabular-nums">{formatMoney(d.por_hora)}</span> por hora abierta
-                                        contra <span className="tabular-nums">{formatMoney(d.por_hora_med)}</span> de mediana.
-                                        {Number(d.empuje) >= Number(d.empuje_max) && (
-                                            <> Está en el tope de {formatPct(Number(d.empuje_max) * 100, { decimales: 0 })}.</>
-                                        )}
+                                        Cerró <strong className="text-content-2">{ymLabelCorto(d.ym_ultimo)}</strong> en{' '}
+                                        <strong className={Number(d.pct_ultimo) >= 100 ? 'text-success-text' : 'text-warning-text'}>
+                                            {formatPct(d.pct_ultimo)}
+                                        </strong>
+                                        {d.meta_ultimo != null && (
+                                            <> de su meta de <span className="tabular-nums">{formatMoney(d.meta_ultimo)}</span></>
+                                        )}.
                                     </>
                                 ) : (
-                                    <>
-                                        <strong className="text-success-text">Sin empuje</strong>: vende{' '}
-                                        <span className="tabular-nums">{formatMoney(d.por_hora)}</span> por hora abierta
-                                        contra <span className="tabular-nums">{formatMoney(d.por_hora_med)}</span> de
-                                        mediana. El empuje solo le suma hasta{' '}
-                                        {formatPct(Number(d.empuje_max) * 100, { decimales: 0 })} a las que rinden por
-                                        debajo — comparar ventas sin mirar las horas abiertas castigaría a la que abre menos.
-                                    </>
+                                    <>Ese mes no tuvo meta, así que no hay cumplimiento que medir y el factor queda en 1.00.</>
                                 )}
+                                {/* La tabla completa, con el tramo de esta sala marcado: así se
+                                    ve que el factor no es un número elegido a dedo. */}
+                                <span className="mt-1.5 grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 max-w-[220px]">
+                                    {(d.tramos || []).map((t, i, arr) => {
+                                        const esSuyo = Number(t.factor) === Number(d.factor);
+                                        const hasta = i === 0 ? null : Number(arr[i - 1].desde) - 0.01;
+                                        return (
+                                            <React.Fragment key={t.desde}>
+                                                <span className={`tabular-nums ${esSuyo ? 'text-content font-black' : ''}`}>
+                                                    {i === 0 ? `≥ ${t.desde}%` : Number(t.desde) === 0 ? `< ${hasta + 0.01}%` : `${t.desde}% – ${hasta}%`}
+                                                </span>
+                                                <span className={`tabular-nums text-right ${esSuyo ? 'text-content font-black' : ''}`}>
+                                                    {Number(t.factor).toFixed(2)}
+                                                </span>
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </span>
+                                <span className="block mt-1">
+                                    A la sala que se quedó corta se le pide crecer más, para que
+                                    <strong className="text-content-2"> recupere terreno</strong> en vez de
+                                    quedarse ahí. A la que va bien se le pide sostenerse.
+                                </span>
                             </Paso>
 
                             {/* La comprobación: rehacer la cuenta tiene que dar el mismo
@@ -175,9 +141,9 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
                                 <p className="text-micro font-semibold text-warning-text tabular-nums flex items-start gap-1 pt-0.5 border-t border-border-card">
                                     <AlertTriangle size={11} className="mt-0.5 shrink-0" />
                                     <span>
-                                        Rehaciendo la cuenta hoy da {formatMoney(d.recalculada)} y la propuesta
-                                        guardada es {formatMoney(montoPropuesto)}. Manda la guardada: es la que se
-                                        calculó el día que se propuso.
+                                        Con la fórmula de hoy da {formatMoney(d.recalculada)} y la propuesta
+                                        guardada es {formatMoney(montoPropuesto)}. Manda la guardada: es la que
+                                        se calculó el día que se propuso.
                                     </span>
                                 </p>
                             )}

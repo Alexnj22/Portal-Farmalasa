@@ -427,3 +427,113 @@ de 14 dígitos que devuelva el servidor.
   fuente — incluidos `title`/`aria-label`/`placeholder`.
 - Datos de prueba: creados y **borrados** al terminar, y dicho cuáles fueron.
   Sobre las metas reales no se toca nada sin permiso en el momento.
+
+---
+
+# PARTE C — La fórmula de la meta
+
+## C1. La vigente, desde 2026-08-05
+
+Decisión del usuario. Reemplazó al cálculo con peso estacional y empuje (§C2).
+
+```
+ritmo = (venta m-3 + venta m-2 + venta m-1) ÷ (días m-3 + días m-2 + días m-1)
+
+Meta = ritmo × días del mes objetivo × Factor
+```
+
+El **Factor** sale de cómo cerró la sala el **mes −1** —el más reciente de los
+tres que forman el ritmo, para que la fórmula use un solo conjunto de meses—:
+
+| Cumplimiento del mes −1 | Factor |
+|---|---:|
+| ≥ 95% | 1.02 |
+| 90% – 94.99% | 1.05 |
+| < 90% | 1.10 |
+
+**Va al revés de lo que uno esperaría, y es a propósito:** al que se quedó corto
+se le pide crecer **más**. El criterio no es premiar al que cumplió, es que la
+sala que bajó **recupere terreno** en vez de quedarse ahí; a la que va bien se le
+pide sostenerse con un 2%.
+
+Los tramos viven en `metas_factor_cumplimiento` (no clavados en la función), así
+que se agrega o se mueve uno sin tocar código. Sin cumplimiento medible —sala
+nueva, o mes sin meta— el factor es **1.00**: no se pide crecimiento sobre algo
+que no se pudo medir.
+
+Se dividen ventas entre **días** y no entre meses a propósito: así un mes de 30 y
+uno de 31 no pesan distinto. Y solo entran **meses completos** — uno a medias
+bajaría el ritmo sin que nadie hubiera vendido menos.
+
+**Qué cambia de fondo, y no es aritmética:** el empuje de la fórmula vieja
+empujaba en la misma dirección —exigirle más a la que viene floja— pero lo medía
+por **venta por hora abierta**, un número que hay que explicar. El factor lo mide
+por **cumplimiento**, que el gerente ya entiende. Medido sobre agosto 2026,
+Salud 4 —que cerró julio en 94%— pasa de $41,825.10 a $42,433.87: es la que más
+sube, y sube justamente por haberse quedado corta.
+
+Efecto completo sobre agosto (para referencia; **no se regeneraron**, esas metas
+ya estaban confirmadas):
+
+| Sala | Cerró jul | Factor | Con la nueva | Tenía |
+|---|---:|---:|---:|---:|
+| La Popular | 108.6% | 1.02 | $41,155.66 | $41,006.81 |
+| Salud 1 | 96.0% | 1.02 | $51,527.44 | $51,341.07 |
+| Salud 2 | 104.4% | 1.02 | $45,028.73 | $44,865.86 |
+| Salud 3 | 112.8% | 1.02 | $46,272.75 | $46,125.14 |
+| Salud 4 | 94.0% | 1.05 | $42,433.87 | $41,825.10 |
+| Salud 5 | 103.4% | 1.02 | $16,086.50 | $16,339.55 |
+
+Total **$242,504.95** contra $241,503.53 — un 0.4% más. La fórmula anterior y
+esta llegan casi al mismo número global; lo que cambia es **cómo se reparte**.
+
+## C2. La anterior — vigente del 2026-08-04 al 2026-08-05
+
+Queda escrita porque funcionó, estaba verificada al centavo, y si algún día se
+quiere volver, esto es lo que hay que reponer.
+
+```
+ritmo      = (venta m-3 + m-2 + m-1) ÷ (días m-3 + m-2 + m-1)
+estacional = 1 + (índice − 1) × n/(n+1)
+empuje     = mín(empuje_max, máx(0, norma_por_hora ÷ su_por_hora − 1) × empuje_peso)
+
+Meta = ritmo × días del mes × estacional × (factor_crecimiento + empuje)
+```
+
+Su configuración vivía en `metas_config`, en tres columnas que **esta migración
+eliminó** (`20260805…_metas_formula_ritmo_por_factor_de_cumplimiento`):
+
+| columna | valor |
+|---|---:|
+| `factor_crecimiento` | 1.03 |
+| `empuje_peso` | 0.15 |
+| `empuje_max` | 0.02 |
+
+Se eliminaron en vez de dejarse porque ninguna pantalla las editaba y una
+columna que **parece** configurar el cálculo sin hacerlo es la trampa que
+`CLAUDE.md` describe con `xyz_x_cv_max`.
+
+**El peso del mes** (`estacional`) comparaba, para cada sala, cuánto vendió el
+mismo mes del año pasado contra lo que le tocaba al ritmo que traía justo antes;
+de las 6 salas tomaba la **mediana** y encogía la desviación por `n/(n+1)`.
+
+- La mediana en vez del promedio no era un detalle: para agosto 2026 la mediana
+  daba 0.9845 y el promedio 1.0309 — **conclusiones opuestas** sobre si agosto es
+  flojo o fuerte. Con el promedio, la meta de La Popular habría sido $42,661.55
+  en vez de $41,006.81, **$1,654.74 más**, arrastrada por el agosto atípico de
+  Salud 3 (+19.6% sobre su ritmo).
+- El encogimiento existía porque hay **un solo agosto anterior** en la historia
+  del portal (las ventas arrancan en 2025-05). Con 6 salas creía el 86% de la
+  señal; con 2 habría creído el 67%.
+
+**El empuje** comparaba la venta por **hora abierta** de cada sala contra la
+mediana de las 6, y le sumaba hasta 2 puntos a la que rendía por debajo. Servía
+para no castigar a la que abre menos horas (Salud 1 abre 105 h/semana, Salud 5
+abre 81). Dos asimetrías conocidas: **solo sumaba, nunca restaba** —Salud 2
+rendía 11% sobre la mediana y aun así le pedían exactamente el 3%— y en Salud 5
+el tope hacía todo el trabajo: su empuje crudo daba 21.9% y quedaba recortado
+a 2%, así que el número no reflejaba su brecha real.
+
+**Por qué se cambió:** la fórmula era defendible pero no explicable. El peso del
+mes exigía tres párrafos para entenderse, dependía de un solo año de historia, y
+el empuje empujaba en la dirección contraria a la que el negocio quiere premiar.

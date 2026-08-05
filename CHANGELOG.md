@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.387.0 — Metas: la fórmula, reescrita
+
+Decisión del usuario. La meta que propone el portal se calcula así:
+
+```
+ritmo = (venta mes-3 + mes-2 + mes-1) ÷ (días mes-3 + mes-2 + mes-1)
+
+Meta  = ritmo × días del mes × Factor
+```
+
+| Cerró el mes anterior en | Factor |
+|---|---:|
+| ≥ 95% | 1.02 |
+| 90% – 94.99% | 1.05 |
+| < 90% | 1.10 |
+
+**Va al revés de lo que uno esperaría, y es a propósito:** a la sala que se quedó
+corta se le pide crecer **más**, para que recupere terreno en vez de quedarse
+ahí; a la que va bien se le pide sostenerse.
+
+Reemplaza al cálculo anterior, que multiplicaba por un «peso del mes» —sacado de
+comparar el mismo mes del año pasado contra el ritmo que traía, en las seis salas
+y por la mediana— y por un «empuje» que pedía más a la sala que vendía menos por
+hora abierta. Aquel era defendible pero **no explicable**: necesitaba tres
+párrafos, dependía de un solo año de historia y empujaba midiendo algo que hay
+que explicar antes de usarlo. Este se entiende leyéndolo.
+
+Los dos llegan casi al mismo total —$242,504.95 contra $241,503.53, un 0.4%
+más—; lo que cambia es **cómo se reparte**. La sala que cerró julio en 94% pasa a
+ser la que más sube, y antes era la que menos.
+
+Los tramos viven en una tabla, no clavados en el cálculo, así que se puede
+agregar o mover uno sin tocar código. Sin cumplimiento medible —sala nueva, o un
+mes sin meta— el factor es 1.00: no se pide crecimiento sobre algo que no se pudo
+medir.
+
+**Las metas de agosto no se regeneraron**, porque ya estaban confirmadas
+esperando aprobación y cambiarlas por debajo habría movido un número que el
+supervisor ya firmó. La tarjeta lo dice cuando el recálculo no coincide con lo
+guardado. La fórmula anterior queda documentada completa —con los valores de su
+configuración— por si algún día se quiere volver.
+
 ## v2.386.1 — La explicación de la meta, completa
 
 La versión anterior mostraba los factores pero no lo que hay detrás de cada uno:

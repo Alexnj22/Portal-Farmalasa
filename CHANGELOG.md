@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.388.0 — Conteo de inventario sencillo: solo cantidades, sin lotes ni vencimientos
+
+El modal de Nuevo Conteo tiene ahora un segundo control, **Detalle del conteo**,
+con dos opciones: *Por lote y vencimiento* —lo de siempre, y el default— o
+**Solo cantidades**. En sencillo el conteo pide **un número por producto y
+presentación**: nadie tiene que leer un lote del empaque ni una fecha de
+vencimiento para llenar el renglón.
+
+Es un eje aparte del alcance, no una opción más suya: se puede armar un cíclico
+sencillo o un total por lote, y por eso son dos controles. El conteo mensual
+automático del día 15 no cambia — sigue saliendo por lote.
+
+**La presentación NO se colapsa.** En este catálogo un mismo producto convive
+como PAQUETE (1x12) y como UNIDAD (1x1) —4,437 pares producto-sucursal tienen
+más de una—, y sumarlas daría un número imposible de ajustar contra el sistema,
+que lleva la existencia por presentación. Lo que se colapsa es el lote y su
+fecha. Medido en Salud 1: **3,383 renglones por lote contra 2,777 sencillos, con
+la misma suma de unidades (12,599)** — no se pierde cantidad, solo el desglose.
+El área de vencidos tampoco se mezcla con la buena.
+
+Lo que sigue igual en sencillo: el conteo a ciegas, el recuento del supervisor,
+la valuación del faltante y del sobrante, y que el «sistema» se relea **en vivo**
+al guardar cada renglón. Esto último es lo que costó: el módulo comparaba contra
+el stock del momento leyendo *una* fila por su clave, y un renglón agrupado no
+tiene una sola fila que leer. Ahora suma el grupo, tanto al guardar como al
+listar; sin eso el conteo habría comparado contra una foto vieja e inventado
+diferencias en cualquier sucursal que estuviera vendiendo.
+
+Lo que se va cuando no aplica, en vez de quedar vacío: el lápiz de «corregir
+lote», el badge de vencimiento, los campos de lote y vencimiento al agregar un
+producto a mano, y las columnas Lote/Vence de la hoja impresa, del reporte, del
+ajuste y del CSV. La hoja impresa dice «Detalle: solo cantidades» en el
+encabezado, para que no se lea como una hoja a la que le faltan columnas.
+
+De paso, dos correcciones en la misma zona: el traductor de errores devolvía «No
+se encontró el conteo» cuando el conteo sí existía pero ya estaba finalizado (el
+código corto tapaba a los largos porque busca por substring), y la columna
+`Codigo ERP` del CSV de ajustes pasó a llamarse **ID INTERNO**, que es lo que
+manda la regla de no nombrar sistemas de origen en lo que ve el usuario.
+
 ## v2.387.1 — Agosto recalculado con la fórmula nueva
 
 Las seis metas de agosto pasaron a los montos que da la fórmula nueva. Estaban

@@ -14,16 +14,26 @@ const ERRORES = {
     SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no está mapeada al ERP: no se puede tomar el inventario.',
     CONTEO_ABIERTO_EN_SUCURSAL: 'Ya hay un conteo abierto en esta sucursal. Finalizalo antes de empezar otro.',
     MUESTRA_CICLICA_VACIA: 'No hay productos con existencia para sortear la muestra de esta sucursal.',
+    MODO_INVALIDO: 'El detalle del conteo no es válido.',
     CONTEO_CERRADO_NO_EDITABLE: 'El conteo ya está cerrado y no admite cambios.',
-    CONTEO_NO_ENCONTRADO: 'No se encontró el conteo.',
+    // Los tres CONTEO_NO_ENCONTRADO_* van ANTES del genérico: el traductor
+    // busca por substring, así que con el corto primero un "ya finalizado"
+    // salía como "no se encontró el conteo" — el mensaje equivocado.
     CONTEO_NO_ENCONTRADO_O_YA_FINALIZADO: 'El conteo ya fue finalizado.',
     CONTEO_NO_ENCONTRADO_O_NO_FINALIZADO: 'El conteo no está finalizado todavía.',
+    CONTEO_NO_ENCONTRADO: 'No se encontró el conteo.',
     APROBADOR_ES_QUIEN_FINALIZO: 'No podés aprobar un conteo que vos mismo finalizaste: debe firmarlo otra persona.',
     ITEM_NO_ENCONTRADO: 'No se encontró el renglón.',
     ESTADO_INVALIDO: 'Estado de renglón inválido.',
     PRESENTACION_Y_LOTE_REQUERIDOS: 'Elige presentación y lote antes de agregar.',
+    PRESENTACION_REQUERIDA: 'Elige la presentación antes de agregar.',
     PRODUCTO_NO_ENCONTRADO: 'Ese producto no existe o está inactivo.',
     LINEA_YA_EXISTE: 'Ese producto ya está en el conteo con esa presentación y lote.',
+    // Un conteo sencillo no tiene lote, así que el motivo del rechazo es otro y
+    // el código también — ninguno de los dos es prefijo del otro, que es lo que
+    // el traductor por substring necesita para no confundirlos.
+    PRODUCTO_YA_EN_CONTEO: 'Ese producto ya está en el conteo con esa presentación.',
+    CONTEO_SIMPLE_SIN_LOTE: 'Este conteo no lleva lotes: no hay etiqueta que corregir.',
     CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',
     AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado en el ERP.',
     CONTEO_NO_ESTA_EN_REVISION: 'El recuento solo se hace entre finalizar y aprobar el conteo.',
@@ -59,12 +69,17 @@ export const createConteoInventarioSlice = (set, get) => ({
         }
     },
 
-    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, erpProductIds }) => {
+    // `modo` es el detalle del renglón, un eje aparte del alcance: 'LOTE' cuenta
+    // lote por lote (lo de siempre) y 'SIMPLE' un renglón por producto y
+    // presentación, sin lote ni vencimiento. Va con default explícito para que
+    // quien llame sin pensarlo obtenga el comportamiento histórico.
+    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, erpProductIds, modo = 'LOTE' }) => {
         const { data, error } = await supabase.rpc('crear_conteo_inventario', {
             p_branch_id: branchId,
             p_scope_type: scopeType,
             p_scope_filter: scopeFilter || null,
             p_erp_product_ids: erpProductIds || null,
+            p_modo: modo,
         });
         if (error) throw traducirError(error);
 
@@ -72,7 +87,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             timeline_title: 'Conteo de inventario iniciado',
             dimension: 'OPERATIVE',
             branch_id: branchId,
-            new_value: `Alcance: ${scopeType}`,
+            new_value: `Alcance: ${scopeType} · ${modo === 'SIMPLE' ? 'Sencillo (solo cantidades)' : 'Por lote y vencimiento'}`,
         });
 
         await get().fetchConteosInventario();

@@ -96,9 +96,13 @@ const FILTRO_PILLS = [
 //
 // Que el laboratorio deje de ser columna no lo vuelve inalcanzable: ahora hay
 // filtro por laboratorio en la píldora, que es como se lo usa de verdad.
-const columnas = (verSistema) => [
+// En un conteo sencillo el renglón no tiene lote: la columna que lo identificaba
+// pasa a llamarse por lo que de verdad lo distingue, la presentación. Cambia el
+// rótulo y no la posición porque la celda sigue cumpliendo el mismo papel —cuál
+// de los N renglones de este producto es éste— y moverla partiría la tabla.
+const columnas = (verSistema, simple = false) => [
     { key: 'producto', label: 'Producto', sortable: true },
-    { key: 'lote', label: 'Lote' },
+    { key: 'lote', label: simple ? 'Presentación' : 'Lote' },
     // Corte medido en 1440, no `lg` ni `xl`: es la columna más ancha después de
     // Producto (242px) y la tabla entra recién cuando el marco llega a 1028px.
     // Con `xl` (1280) se prendía antes de que hubiera lugar. La autoría no se
@@ -144,6 +148,13 @@ function vencimientoStatus(fechaVencimiento) {
     if (diffDias <= VENCE_UMBRAL_DIAS) return 'PROXIMO';
     return null;
 }
+// Cómo se nombra un renglón cuando hay que decirlo en palabras (aria-label,
+// encabezado del historial): en un conteo sencillo lo que lo distingue es la
+// presentación, no el lote — decir "lote sin lote" no orienta a nadie.
+const renglonEtiqueta = (item, simple) => (simple
+    ? (item.presentacion ? `presentación ${item.presentacion}` : 'sin presentación')
+    : `lote ${item.lote || 'sin lote'}`);
+
 function VencimientoBadge({ status }) {
     if (!status) return null;
     if (status === 'VENCIDO') return <Badge variant="danger" size="sm" className="shrink-0">Vencido</Badge>;
@@ -214,7 +225,7 @@ function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
 
 function ItemRow({
     item, index, editable, recuento, desbloqueada,
-    onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser,
+    onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false,
 }) {
     const { showToast } = useToastStore();
     const verSistema = !!item.ver_sistema;
@@ -413,8 +424,13 @@ function ItemRow({
                         fila medía el doble — un lápiz solo, debajo, sin nada que
                         indicara a qué lote pertenecía. */}
                     <span className="flex items-center gap-1 min-w-0">
-                        <span className="text-label font-bold text-content-2 tabular-nums truncate">{item.lote || '—'}</span>
-                        {editable && (
+                        <span className="text-label font-bold text-content-2 tabular-nums truncate">
+                            {simple ? (item.presentacion || '—') : (item.lote || '—')}
+                        </span>
+                        {/* Sin lote no hay etiqueta que corregir: el lápiz sale. Lo
+                            rechaza también `editar_lote_conteo_item`, porque una
+                            restricción que solo vive en el cliente es decorativa. */}
+                        {editable && !simple && (
                             <Button variant="ghost" icon={Pencil} disabled={saving} title="Corregir lote/vencimiento" iconOnly onClick={() => onEditLote(item)} />
                         )}
                         {/* El ERP separa el stock vencido en su propia área. Sin esta
@@ -424,10 +440,20 @@ function ItemRow({
                         {item.is_vencidos && <Badge variant="danger" size="sm" className="shrink-0">Vencidos</Badge>}
                         {item.es_agregado_manual && <Badge variant="chart-9" size="sm" className="shrink-0">Agregado</Badge>}
                     </span>
-                    <span className="flex items-center gap-1 min-w-0 text-micro text-content-3 tabular-nums">
-                        <span className="truncate">{item.presentacion || '—'} · {fmtDate(item.fecha_vencimiento)}</span>
-                        <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
-                    </span>
+                    {/* En sencillo la presentación YA es el renglón de arriba, así que
+                        esta segunda línea solo repetiría el mismo texto seguido de un
+                        vencimiento que no existe. Queda el detalle (ej. "1x12") si lo
+                        hay, que es lo único que agrega. */}
+                    {simple ? (
+                        item.detalle && (
+                            <span className="text-micro text-content-3 tabular-nums truncate">{item.detalle}</span>
+                        )
+                    ) : (
+                        <span className="flex items-center gap-1 min-w-0 text-micro text-content-3 tabular-nums">
+                            <span className="truncate">{item.presentacion || '—'} · {fmtDate(item.fecha_vencimiento)}</span>
+                            <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
+                        </span>
+                    )}
                 </div>
             </DataCell>
             <DataCell hideBelow="1440">
@@ -461,7 +487,7 @@ function ItemRow({
                                 </span>
                                 <Button variant="ghost" icon={Pencil} disabled={saving}
                                     title="Corregir esta cantidad — queda registrado en el historial"
-                                    aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, lote ${item.lote || 'sin lote'}`}
+                                    aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, ${renglonEtiqueta(item, simple)}`}
                                     iconOnly onClick={() => onUnlock(item.id, true)} />
                             </>
                         ) : (
@@ -531,7 +557,7 @@ function ItemRow({
     );
 }
 
-function ProductGroupRow({ product, index, verSistema }) {
+function ProductGroupRow({ product, index, verSistema, simple = false }) {
     const dif = product.diferencia_total;
     // Todos sus lotes confirmados: la banda deja de llamar. Es la señal que se
     // busca al recorrer un anaquel — qué falta, no qué ya está.
@@ -557,8 +583,12 @@ function ProductGroupRow({ product, index, verSistema }) {
             </DataCell>
             <DataCell>
                 <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Lo que cuenta el badge son los renglones del producto, y en
+                        sencillo esos renglones son presentaciones, no lotes. */}
                     <Badge uppercase={false} variant={completo ? 'success' : 'neutral'}>
-                        {product.item_count} lote{product.item_count === 1 ? '' : 's'}
+                        {simple
+                            ? `${product.item_count} presentaci${product.item_count === 1 ? 'ón' : 'ones'}`
+                            : `${product.item_count} lote${product.item_count === 1 ? '' : 's'}`}
                     </Badge>
                     {product.con_vencidos_count > 0 && <VencimientoBadge status="VENCIDO" />}
                     {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
@@ -591,7 +621,7 @@ function ProductGroupRow({ product, index, verSistema }) {
 // pasillo: una tarjeta por PRODUCTO con sus lotes adentro (el producto repetido
 // por lote se leía como dos productos distintos), campo de 56px y todo objetivo
 // táctil en 44px o más.
-function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser }) {
+function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false }) {
     const { showToast } = useToastStore();
     const [fisico, setFisico] = useState(recuento ? '' : (item.fisico_cantidad ?? ''));
     const [estadoItem, setEstadoItem] = useState(item.estado_item);
@@ -664,7 +694,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             <div className="flex items-center justify-between gap-2 flex-wrap mb-1.5">
                 <span className="flex items-center gap-1 min-w-0">
                     <span className={`text-label font-bold tabular-nums ${bloqueada ? 'text-success' : 'text-content-2'}`}>
-                        Lote {item.lote || '—'}
+                        {simple ? (item.presentacion || '—') : `Lote ${item.lote || '—'}`}
                     </span>
                     {/* Corregir el lote solo existía en la tabla, o sea solo en
                         escritorio (`hidden md:block`). Y el caso que lo necesita
@@ -676,7 +706,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         `max(…, var(--tap-min))`, que en un dedo son 44px. Escribirlo
                         acá era pelearle al canónico con una clase que puede perder o
                         ganar según el orden del CSS generado. */}
-                    {editable && onEditLote && (
+                    {editable && onEditLote && !simple && (
                         <Button variant="ghost" icon={Pencil} iconOnly disabled={saving}
                             className="shrink-0"
                             title="Corregir lote/vencimiento"
@@ -685,7 +715,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     )}
                 </span>
                 <span className="text-caption text-content-3 tabular-nums">
-                    {item.presentacion || '—'} · vence {fmtDate(item.fecha_vencimiento)}
+                    {simple ? (item.detalle || '') : `${item.presentacion || '—'} · vence ${fmtDate(item.fecha_vencimiento)}`}
                 </span>
             </div>
             <div className="flex items-center gap-2 min-w-0">
@@ -701,13 +731,13 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         </span>
                         <Button variant="secondary" icon={Pencil} iconOnly disabled={saving}
                             className="h-14 w-14 shrink-0"
-                            aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, lote ${item.lote || 'sin lote'}`}
+                            aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, ${renglonEtiqueta(item, simple)}`}
                             onClick={() => onUnlock(item.id, true)} />
                     </>
                 ) : (
                     <>
                         <PortalInput
-                            aria-label={`Cantidad de ${item.product_nombre || 'el producto'}, lote ${item.lote || 'sin lote'}`}
+                            aria-label={`Cantidad de ${item.product_nombre || 'el producto'}, ${renglonEtiqueta(item, simple)}`}
                             type="number" min="0" step="1" inputMode="numeric"
                             value={fisico}
                             onChange={(e) => setFisico(e.target.value)}
@@ -895,7 +925,7 @@ function PrintChooserModal({ open, documentos, busy, onClose, onPick }) {
 // otra mitad de lo que se reportaba como "se abre y cierra dos veces" (la
 // primera era el rebote de opacidad de ModalShell). Cuál es el renglón y si el
 // diálogo está visible son dos cosas distintas; tratarlas como una era el bug.
-function ItemHistoryModal({ open, item, onClose }) {
+function ItemHistoryModal({ open, item, onClose, simple = false }) {
     const fetchConteoItemHistory = useStaffStore((s) => s.fetchConteoItemHistory);
     const [history, setHistory] = useState(null);
 
@@ -913,7 +943,9 @@ function ItemHistoryModal({ open, item, onClose }) {
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
-                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">
+                        Historial de conteo · {simple ? (item?.presentacion || 'sin presentación') : (item?.lote || 'sin lote')}
+                    </p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
@@ -1257,6 +1289,11 @@ export default function ConteoDetailView() {
     ));
 
     const editable = conteo && ['BORRADOR', 'EN_PROGRESO'].includes(conteo.status);
+    // Conteo sencillo: un renglón por producto y presentación, sin lote ni
+    // vencimiento. Lo decide la cabecera al crearse y ya no cambia, así que toda
+    // la vista lee este único booleano en vez de adivinarlo por `item.lote`
+    // —que también es NULL en un renglón por lote al que le falta la etiqueta—.
+    const simple = conteo?.modo === 'SIMPLE';
     const canFinalize = editable && canEdit;
     const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove;
     const puedeRecontar = conteo?.status === 'FINALIZADO' && canApprove;
@@ -1428,7 +1465,7 @@ export default function ConteoDetailView() {
             // En táctil `FilterBar` ES la barra flotante, así que el buscador y la
             // acción principal se le pasan acá y no se cablean a mano: el canónico
             // decide dónde van en cada tamaño.
-            buscador={{ value: search, onChange: setSearch, placeholder: 'Producto, laboratorio o lote' }}
+            buscador={{ value: search, onChange: setSearch, placeholder: simple ? 'Producto o laboratorio' : 'Producto, laboratorio o lote' }}
             accionPrincipal={editable && canEdit ? { icon: Plus, label: 'Agregar', onClick: () => setShowAddForm(true) } : null}
         >
             {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
@@ -1478,7 +1515,7 @@ export default function ConteoDetailView() {
         <ViewTabBar
             searchValue={search}
             onSearchChange={setSearch}
-            placeholder="Buscar producto, laboratorio o lote..."
+            placeholder={simple ? 'Buscar producto o laboratorio...' : 'Buscar producto, laboratorio o lote...'}
             // En teléfono el buscador vive en la barra flotante, junto a los
             // filtros: dos accesos al mismo buscador —uno de ellos arriba, que se
             // va con el scroll— es peor que uno solo bien puesto.
@@ -1637,6 +1674,7 @@ export default function ConteoDetailView() {
                 {showAddForm && editable && conteo && !compacto && (
                     <AddManualItemForm
                         branchId={conteo.branch_id}
+                        simple={simple}
                         onAdd={async (payload) => {
                             await agregarProductoManualConteo(id, payload);
                             setShowAddForm(false);
@@ -1670,13 +1708,14 @@ export default function ConteoDetailView() {
                             onShowHistory={abrirHistorial}
                             onEditLote={abrirEditLote}
                             currentUser={user}
+                            simple={simple}
                         />
                     ))}
                 </div>
 
                 <div className="hidden md:block">
                     <DataTable
-                        columns={columnas(verSistema)}
+                        columns={columnas(verSistema, simple)}
                         sortKey={orden.key} sortDir={orden.dir} onSort={handleSort}
                         // `dense`: 7 columnas de captura densa. Con el padding normal
                         // (48px por columna) la tabla pedía 1203px en un marco de 1028
@@ -1689,9 +1728,9 @@ export default function ConteoDetailView() {
                             const lines = itemsByProduct[key];
                             return (
                                 <React.Fragment key={key}>
-                                    <ProductGroupRow product={product} index={i} verSistema={verSistema} />
+                                    <ProductGroupRow product={product} index={i} verSistema={verSistema} simple={simple} />
                                     {!lines && (
-                                        <tr><td colSpan={columnas(verSistema).length} className="py-4 px-6"><SkeletonText lines={2} /></td></tr>
+                                        <tr><td colSpan={columnas(verSistema, simple).length} className="py-4 px-6"><SkeletonText lines={2} /></td></tr>
                                     )}
                                     {lines && lines.map((item, j) => (
                                         <ItemRow
@@ -1707,6 +1746,7 @@ export default function ConteoDetailView() {
                                             onShowHistory={abrirHistorial}
                                             onEditLote={abrirEditLote}
                                             currentUser={user}
+                                            simple={simple}
                                         />
                                     ))}
                                 </React.Fragment>
@@ -1741,6 +1781,7 @@ export default function ConteoDetailView() {
                     <HojaMovil titulo="Agregar producto" subtitulo="Al conteo en curso" icono={PackagePlus}>
                         <AddManualItemForm
                             branchId={conteo.branch_id}
+                            simple={simple}
                             onAdd={async (payload) => {
                                 await agregarProductoManualConteo(id, payload);
                                 setShowAddForm(false);
@@ -1760,7 +1801,7 @@ export default function ConteoDetailView() {
                 onPick={handlePrint}
             />
 
-            <ItemHistoryModal open={historyOpen} item={historyItem} onClose={() => setHistoryOpen(false)} />
+            <ItemHistoryModal open={historyOpen} item={historyItem} onClose={() => setHistoryOpen(false)} simple={simple} />
             <EditLoteModal
                 open={editLoteOpen}
                 item={editLoteItem}
@@ -1853,7 +1894,7 @@ function CajaFecha({ inerte, titulo, children }) {
     );
 }
 
-function AddManualItemForm({ branchId, onAdd, onCancel }) {
+function AddManualItemForm({ branchId, onAdd, onCancel, simple = false }) {
     const { showToast } = useToastStore();
     const [results, setResults] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -1896,8 +1937,10 @@ function AddManualItemForm({ branchId, onAdd, onCancel }) {
         const tipos = [...new Set((precios || []).map((p) => p.presentaciones?.tipo).filter(Boolean))];
         setPresentacionOpts(tipos.map((t) => ({ value: t, label: t })));
 
+        // Los lotes solo se piden si el conteo los lleva: en sencillo esta
+        // consulta no alimentaría ningún campo.
         const erpIds = (erpMap || []).map((m) => m.erp_sucursal_id);
-        if (erpIds.length) {
+        if (erpIds.length && !simple) {
             const { data: lotes, error: lotesErr } = await fetchInventoryLotesForProduct(found.id, erpIds);
             if (lotesErr) console.error('handleSelectProduct: fetch lotes failed:', lotesErr.message);
             const seen = new Map();
@@ -1914,7 +1957,7 @@ function AddManualItemForm({ branchId, onAdd, onCancel }) {
     };
 
     const finalLote = lote === '__OTRO__' ? loteOtro.trim() : lote;
-    const canSubmit = selected && presentacion && finalLote;
+    const canSubmit = selected && presentacion && (simple || finalLote);
 
     // El costo ya no lo manda el cliente: lo pone agregar_item_conteo con el
     // mismo criterio que el snapshot (costo de la presentación de la línea).
@@ -1925,8 +1968,8 @@ function AddManualItemForm({ branchId, onAdd, onCancel }) {
             await onAdd({
                 erpProductId: selected.id,
                 presentacion,
-                lote: finalLote,
-                fechaVencimiento: fechaVencimiento || null,
+                lote: simple ? null : finalLote,
+                fechaVencimiento: simple ? null : (fechaVencimiento || null),
             });
             showToast('Producto agregado', selected.nombre, 'success');
         } catch (err) {
@@ -1954,22 +1997,27 @@ function AddManualItemForm({ branchId, onAdd, onCancel }) {
                 formulario en vez de su cierre. Las columnas son literales y no
                 calculadas: Tailwind escanea el fuente (`grid-cols-${n}` no
                 existiría en el CSS). */}
-            <div className={`grid grid-cols-1 gap-2 ${lote === '__OTRO__' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+            {/* En un conteo sencillo el renglón se identifica con producto y
+                presentación: los otros tres campos no describen nada que este
+                conteo guarde, así que no se muestran deshabilitados —se van—. */}
+            <div className={`grid grid-cols-1 gap-2 ${simple ? 'md:grid-cols-2' : lote === '__OTRO__' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                 <Campo label="Presentación">
                     <LiquidSelect value={presentacion || null} onChange={setPresentacion} options={presentacionOpts} placeholder={selected ? 'Presentación...' : 'Elige un producto primero'} disabled={!selected} clearable={false} ariaLabel="Presentación" />
                 </Campo>
-                <Campo label="Lote">
-                    <LiquidSelect
-                        value={lote || null}
-                        onChange={handleSelectLote}
-                        options={[...loteOpts.map((l) => ({ value: l.value, label: l.value })), { value: '__OTRO__', label: '+ Otro lote (nuevo)' }]}
-                        placeholder={selected ? 'Lote...' : 'Elige un producto primero'}
-                        disabled={!selected}
-                        clearable={false}
-                        ariaLabel="Lote"
-                    />
-                </Campo>
-                {lote === '__OTRO__' && (
+                {!simple && (
+                    <Campo label="Lote">
+                        <LiquidSelect
+                            value={lote || null}
+                            onChange={handleSelectLote}
+                            options={[...loteOpts.map((l) => ({ value: l.value, label: l.value })), { value: '__OTRO__', label: '+ Otro lote (nuevo)' }]}
+                            placeholder={selected ? 'Lote...' : 'Elige un producto primero'}
+                            disabled={!selected}
+                            clearable={false}
+                            ariaLabel="Lote"
+                        />
+                    </Campo>
+                )}
+                {!simple && lote === '__OTRO__' && (
                     <Campo label="Número de lote">
                         <PortalInput
                             aria-label="Número de lote nuevo"
@@ -1983,14 +2031,16 @@ function AddManualItemForm({ branchId, onAdd, onCancel }) {
                 {/* Un lote que ya existe en el ERP trae su vencimiento: se muestra
                     pero no se edita, porque cambiarlo acá no cambiaría el del ERP.
                     `aria-disabled` + `title` para que no sea solo un gris. */}
-                <Campo label={lote === '__OTRO__' ? 'Vencimiento' : 'Vencimiento (del lote)'}>
-                    <CajaFecha
-                        inerte={lote !== '__OTRO__'}
-                        titulo={lote !== '__OTRO__' ? 'El vencimiento lo trae el lote del ERP' : undefined}
-                    >
-                        <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
-                    </CajaFecha>
-                </Campo>
+                {!simple && (
+                    <Campo label={lote === '__OTRO__' ? 'Vencimiento' : 'Vencimiento (del lote)'}>
+                        <CajaFecha
+                            inerte={lote !== '__OTRO__'}
+                            titulo={lote !== '__OTRO__' ? 'El vencimiento lo trae el lote del ERP' : undefined}
+                        >
+                            <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
+                        </CajaFecha>
+                    </Campo>
+                )}
             </div>
 
             {/* El botón cierra el formulario, no es uno de sus campos: fila propia,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
-import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2 } from 'lucide-react';
+import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2, Layers, Hash } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import { useStaffStore } from '../../store/staffStore';
@@ -24,6 +24,15 @@ const SCOPE_OPTIONS = [
     { value: 'LABORATORIO', label: 'Por laboratorio', icon: FlaskConical },
     { value: 'BAJO_RECETA', label: 'Bajo Receta', icon: ShieldAlert },
     { value: 'MANUAL', label: 'Selección manual', icon: Search },
+];
+
+// El detalle del renglón es un eje APARTE del alcance: se puede querer un
+// cíclico sencillo o un total por lote. Por eso son dos controles y no siete
+// opciones de alcance — mezclarlos obligaría a inventar "Total sencillo",
+// "Cíclico sencillo", etc., que es la misma decisión escrita dos veces.
+const MODO_OPTIONS = [
+    { value: 'LOTE', label: 'Por lote y vencimiento', icon: Layers },
+    { value: 'SIMPLE', label: 'Solo cantidades', icon: Hash },
 ];
 
 const TAMANO_DEFAULT = 200;
@@ -69,6 +78,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
 
     const [branchId, setBranchId] = useState('');
     const [scopeType, setScopeType] = useState('TOTAL');
+    const [modo, setModo] = useState('LOTE');
     const [laboratorioId, setLaboratorioId] = useState('');
     const [laboratorios, setLaboratorios] = useState([]);
     const [manualResults, setManualResults] = useState([]);
@@ -83,6 +93,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
         if (!isOpen) return;
         setBranchId(isBranchScoped ? String(user?.branchId || '') : '');
         setScopeType('CICLICO');
+        setModo('LOTE');
         setLaboratorioId('');
         setManualResults([]);
         setManualSelected([]);
@@ -150,6 +161,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                     : scopeType === 'CICLICO' ? { tamano: tamanoNum }
                         : null,
                 erpProductIds: scopeType === 'MANUAL' ? manualSelected.map((p) => p.id) : null,
+                modo,
             });
             showToast('Conteo iniciado', 'Se generó el snapshot de inventario', 'success');
             onCreated?.(conteoId);
@@ -296,6 +308,39 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 )}
                             </div>
                         )}
+                    </div>
+
+                    {/* Isla propia y no un campo más de la de arriba: el detalle
+                        del renglón no depende del alcance ni lo modifica —cada
+                        alcance se puede contar de las dos formas—, y metido bajo
+                        "Alcance del conteo" se leía como una opción suya. */}
+                    <div className={islandClass}>
+                        <label className={fieldLabel}>Detalle del conteo</label>
+                        <SegmentedControl
+                            layout="block" columns={2} tone="chart-9"
+                            options={MODO_OPTIONS}
+                            value={modo} onChange={setModo} label="Detalle del conteo" />
+
+                        {/* El aviso cambia con la elección en vez de describir las
+                            dos: quien ya eligió no necesita leer la que descartó. */}
+                        <div className="mt-3">
+                            {modo === 'SIMPLE' ? (
+                                <Notice variant="info" icon={Hash}>
+                                    Se pide <strong>una sola cantidad</strong> por producto y presentación. No hay que anotar
+                                    lote ni fecha de vencimiento.
+                                </Notice>
+                            ) : (
+                                <Notice variant="info" icon={Layers}>
+                                    Un renglón por <strong>cada lote</strong>, con su fecha de vencimiento — es el detalle que
+                                    hace falta para corregir la existencia lote por lote.
+                                </Notice>
+                            )}
+                        </div>
+                        <p className="text-caption text-content-3 leading-snug mt-2">
+                            {modo === 'SIMPLE'
+                                ? 'Un mismo producto sigue separado por presentación (caja y unidad se cuentan aparte, como están en el anaquel). Se avisa igual de faltantes y sobrantes.'
+                                : 'Es la forma más detallada y la que permite ver qué está vencido o por vencer mientras se cuenta. En una sucursal completa son bastantes más renglones que contar.'}
+                        </p>
                     </div>
                 </div>
             </div>

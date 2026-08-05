@@ -47,13 +47,23 @@ function fmtMoney(n) {
 function num(n) {
     return n === null || n === undefined ? '—' : String(n);
 }
+// En un conteo sencillo el lote es NULL en todos los renglones, así que ese
+// desempate no desempata nada y dos presentaciones del mismo producto salían en
+// el orden en que vinieron — distinto entre la hoja y el reporte. La
+// presentación cierra el orden en los dos modos.
 function sortItems(items) {
     return [...items].sort((a, b) =>
         (a.laboratorio_nombre || '').localeCompare(b.laboratorio_nombre || '', 'es')
         || (a.product_nombre || '').localeCompare(b.product_nombre || '', 'es')
         || (a.lote || '').localeCompare(b.lote || '', 'es')
+        || (a.presentacion || '').localeCompare(b.presentacion || '', 'es')
     );
 }
+
+// Un conteo sencillo no lleva lote ni vencimiento: las columnas que los muestran
+// no van vacías, no van. Se deriva de la cabecera y no de `item.lote`, porque en
+// modo por lote también hay renglones sin etiqueta.
+const esSimple = (conteo) => conteo?.modo === 'SIMPLE';
 
 function headerBlock(conteo, subtitle) {
     return {
@@ -71,6 +81,12 @@ function headerBlock(conteo, subtitle) {
                 stack: [
                     { text: conteo.branches?.name || 'Sucursal', fontSize: 10, bold: true, alignment: 'right', color: '#111' },
                     { text: `Alcance: ${conteo.scope_type}`, fontSize: 8, alignment: 'right', color: '#666' },
+                    // Una hoja sin columna de lote tiene que decir que el conteo
+                    // no los lleva; si no, se lee como una hoja a la que le
+                    // faltan columnas y alguien las agrega a mano al margen.
+                    ...(esSimple(conteo)
+                        ? [{ text: 'Detalle: solo cantidades', fontSize: 8, alignment: 'right', color: '#666' }]
+                        : []),
                     { text: fmtFechaLarga(new Date(conteo.created_at)), fontSize: 8, alignment: 'right', color: '#666' },
                 ],
             },
@@ -99,14 +115,30 @@ function productCell(item) {
 // una columna vacía en el papel que además invita a preguntar qué debería ir
 // ahí (y a que alguien lo rellene a mano desde otra pantalla). El ancho que
 // libera se reparte entre Producto y Nota, que es donde se escribe.
+//
+// Mismo criterio para el conteo sencillo: sin Lote ni Vence son dos columnas
+// menos, no dos columnas en blanco. Lo que identifica el renglón pasa a ser la
+// presentación, y el ancho liberado va a Producto y Nota.
 const HOJA_COLS = {
-    normal: {
-        widths: ['26%', '18%', '11%', '11%', '10%', '24%'],
-        labels: ['Producto', 'Lote', 'Vence', 'Sistema', 'Físico', 'Nota'],
+    lote: {
+        normal: {
+            widths: ['26%', '18%', '11%', '11%', '10%', '24%'],
+            labels: ['Producto', 'Lote', 'Vence', 'Sistema', 'Físico', 'Nota'],
+        },
+        ciego: {
+            widths: ['31%', '18%', '11%', '12%', '28%'],
+            labels: ['Producto', 'Lote', 'Vence', 'Físico', 'Nota'],
+        },
     },
-    ciego: {
-        widths: ['31%', '18%', '11%', '12%', '28%'],
-        labels: ['Producto', 'Lote', 'Vence', 'Físico', 'Nota'],
+    simple: {
+        normal: {
+            widths: ['34%', '18%', '12%', '11%', '25%'],
+            labels: ['Producto', 'Presentación', 'Sistema', 'Físico', 'Nota'],
+        },
+        ciego: {
+            widths: ['38%', '20%', '13%', '29%'],
+            labels: ['Producto', 'Presentación', 'Físico', 'Nota'],
+        },
     },
 };
 
@@ -118,8 +150,18 @@ function loteCell(item) {
     return `${item.lote || '—'}${marca}`;
 }
 
+// El equivalente en un conteo sencillo. La marca de área vencidos sigue haciendo
+// falta por la misma razón: son dos renglones del mismo producto y presentación
+// que en papel se verían idénticos.
+function presentacionCell(item) {
+    const marca = item.is_vencidos ? ' · ÁREA VENCIDOS' : '';
+    const detalle = item.detalle ? ` (${item.detalle})` : '';
+    return `${item.presentacion || '—'}${detalle}${marca}`;
+}
+
 function buildHojaTable(conteo, items, ciego) {
-    const { widths, labels } = ciego ? HOJA_COLS.ciego : HOJA_COLS.normal;
+    const simple = esSimple(conteo);
+    const { widths, labels } = HOJA_COLS[simple ? 'simple' : 'lote'][ciego ? 'ciego' : 'normal'];
 
     const headerRow = labels.map((label) => ({
         text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
@@ -131,8 +173,14 @@ function buildHojaTable(conteo, items, ciego) {
         const bg = idx % 2 === 1 ? '#f7f7f7' : '#ffffff';
         return [
             { ...productCell(item), fillColor: bg },
-            { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
+            // La celda que identifica el renglón: presentación en sencillo, lote
+            // (con su marca de área) en el modo por lote.
+            ...(simple
+                ? [{ text: presentacionCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] }]
+                : [
+                    { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+                    { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
+                ]),
             // Sistema: la columna solo se emite si el dato vino. `num()` es la
             // red de seguridad — un `String(null)` imprime la palabra "null".
             ...(ciego ? [] : [{ text: num(item.sistema_cantidad), fontSize: 8.5, bold: true, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] }]),
@@ -187,9 +235,12 @@ export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
 // ── Reporte de resultados ────────────────────────────────────────────────────
 const RES_COL_WIDTHS = ['24%', '15%', '9%', '9%', '9%', '9%', '25%'];
 const RES_LABELS = ['Producto', 'Lote', 'Sistema', 'Físico', 'Dif.', 'Valor', 'Nota'];
+// Mismas columnas y mismos anchos: lo único que cambia es qué identifica el
+// renglón, así que solo cambia el rótulo de la segunda.
+const RES_LABELS_SIMPLE = ['Producto', 'Presentación', 'Sistema', 'Físico', 'Dif.', 'Valor', 'Nota'];
 
-function buildResultadosTable(items) {
-    const headerRow = RES_LABELS.map((label, i) => ({
+function buildResultadosTable(items, simple = false) {
+    const headerRow = (simple ? RES_LABELS_SIMPLE : RES_LABELS).map((label, i) => ({
         text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
         alignment: (i >= 2 && i <= 5) ? 'center' : 'left', margin: [4, 3, 4, 3],
     }));
@@ -204,7 +255,7 @@ function buildResultadosTable(items) {
             : '—';
         return [
             { ...productCell(item), fillColor: bg },
-            { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: simple ? presentacionCell(item) : loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: num(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: fisicoTxt, fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: dif != null ? (dif > 0 ? `+${dif}` : String(dif)) : '—', fontSize: 8.5, bold: true, color: difColor, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
@@ -275,6 +326,10 @@ function avisoParcialBlock(conteo) {
 
 const AJU_COL_WIDTHS = ['8%', '25%', '11%', '14%', '8%', '7%', '7%', '8%', '12%'];
 const AJU_LABELS = ['Código', 'Producto', 'Presentación', 'Lote', 'Vence', 'Sistema', 'Físico', 'Ajuste', 'Valor'];
+// Sin Lote ni Vence quedan siete columnas: el 22% que liberan va a Producto y
+// Presentación, que son las que se leen para ubicar el renglón al digitarlo.
+const AJU_COL_WIDTHS_SIMPLE = ['9%', '34%', '20%', '9%', '9%', '9%', '10%'];
+const AJU_LABELS_SIMPLE = ['Código', 'Producto', 'Presentación', 'Sistema', 'Físico', 'Ajuste', 'Valor'];
 
 const esAjuste = (i) => i.diferencia != null && i.diferencia !== 0;
 const valorAjuste = (i) => (i.costo_unitario != null ? i.diferencia * Number(i.costo_unitario) : null);
@@ -284,7 +339,8 @@ const valorAjuste = (i) => (i.costo_unitario != null ? i.diferencia * Number(i.c
 function sortParaDigitar(items) {
     return [...items].sort((a, b) =>
         (a.erp_product_id ?? 0) - (b.erp_product_id ?? 0)
-        || (a.lote || '').localeCompare(b.lote || '', 'es'));
+        || (a.lote || '').localeCompare(b.lote || '', 'es')
+        || (a.presentacion || '').localeCompare(b.presentacion || '', 'es'));
 }
 
 function loteAjusteCell(item) {
@@ -296,14 +352,27 @@ function loteAjusteCell(item) {
     return `${item.lote || '—'}${marcas.length ? ` · ${marcas.join(' · ')}` : ''}`;
 }
 
-function buildAjusteSection(titulo, color, fill, items) {
+// Las mismas marcas, colgadas de la presentación — en un conteo sencillo no hay
+// lote del que colgarlas. "ALTA" y no "ALTA DE LOTE": lo que no existía es el
+// producto en esa presentación, no un lote.
+function marcasAjusteSimple(item) {
+    const marcas = [];
+    if (item.is_vencidos) marcas.push('ÁREA VENCIDOS');
+    if (item.es_agregado_manual) marcas.push('ALTA');
+    return `${item.presentacion || '—'}${marcas.length ? ` · ${marcas.join(' · ')}` : ''}`;
+}
+
+function buildAjusteSection(titulo, color, fill, items, simple = false) {
     if (!items.length) return null;
     const totalQty = items.reduce((s, i) => s + i.diferencia, 0);
     const totalVal = items.reduce((s, i) => s + (valorAjuste(i) || 0), 0);
 
-    const headerRow = AJU_LABELS.map((label, i) => ({
+    // El corte del centrado es el índice de la primera columna numérica, y esa
+    // posición se corre dos lugares al desaparecer Lote y Vence.
+    const primeraNumerica = simple ? 3 : 5;
+    const headerRow = (simple ? AJU_LABELS_SIMPLE : AJU_LABELS).map((label, i) => ({
         text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
-        alignment: i >= 5 ? 'center' : 'left', margin: [4, 3, 4, 3],
+        alignment: i >= primeraNumerica ? 'center' : 'left', margin: [4, 3, 4, 3],
     }));
 
     const body = sortParaDigitar(items).map((item, idx) => {
@@ -312,9 +381,14 @@ function buildAjusteSection(titulo, color, fill, items) {
         return [
             { text: String(item.erp_product_id ?? '—'), fontSize: 8, bold: true, fillColor: bg, margin: [4, 3, 4, 3] },
             { text: item.product_nombre || '—', fontSize: 7.5, fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: item.presentacion || '—', fontSize: 7, color: '#555', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: loteAjusteCell(item), fontSize: 7, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: fmtFecha(item.fecha_vencimiento), fontSize: 7, color: '#555', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
+            // En sencillo la presentación absorbe las marcas que en el otro modo
+            // viajan pegadas al lote (área vencidos, alta a mano): sin ellas dos
+            // renglones distintos se digitarían como el mismo.
+            { text: simple ? marcasAjusteSimple(item) : (item.presentacion || '—'), fontSize: 7, color: '#555', fillColor: bg, margin: [4, 3, 4, 3] },
+            ...(simple ? [] : [
+                { text: loteAjusteCell(item), fontSize: 7, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+                { text: fmtFecha(item.fecha_vencimiento), fontSize: 7, color: '#555', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
+            ]),
             { text: num(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: num(item.fisico_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: item.diferencia > 0 ? `+${item.diferencia}` : String(item.diferencia), fontSize: 9, bold: true, color, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
@@ -328,7 +402,7 @@ function buildAjusteSection(titulo, color, fill, items) {
             fontSize: 9.5, bold: true, color, margin: [0, 12, 0, 4],
         },
         {
-            table: { headerRows: 1, dontBreakRows: true, widths: AJU_COL_WIDTHS, body: [headerRow, ...body] },
+            table: { headerRows: 1, dontBreakRows: true, widths: simple ? AJU_COL_WIDTHS_SIMPLE : AJU_COL_WIDTHS, body: [headerRow, ...body] },
             layout: {
                 hLineWidth: (i, node) => (i === 0 ? 0 : i === 1 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
                 vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
@@ -390,8 +464,8 @@ export async function printAjustesConteo(conteo, items) {
             fontSize: 10, bold: true, color: '#059669',
         });
     } else {
-        const secFalt = buildAjusteSection('FALTANTES — ajuste de SALIDA', '#dc2626', '#fef2f2', faltantes);
-        const secSobr = buildAjusteSection('SOBRANTES — ajuste de ENTRADA', '#2563eb', '#eff6ff', sobrantes);
+        const secFalt = buildAjusteSection('FALTANTES — ajuste de SALIDA', '#dc2626', '#fef2f2', faltantes, esSimple(conteo));
+        const secSobr = buildAjusteSection('SOBRANTES — ajuste de ENTRADA', '#2563eb', '#eff6ff', sobrantes, esSimple(conteo));
         if (secFalt) content.push(...secFalt);
         if (secSobr) content.push(...secSobr);
     }
@@ -412,10 +486,15 @@ export async function printAjustesConteo(conteo, items) {
 // Mismo contenido en CSV: para filtrar, ordenar o cargar en lote si el ERP lo
 // admite, sin volver a teclear lo que ya está medido.
 export function exportAjustesConteo(conteo, items) {
+    const simple = esSimple(conteo);
     const ajustes = sortParaDigitar(items.filter(esAjuste));
+    // Dos columnas menos en sencillo, no dos columnas de celdas vacías: quien
+    // abre la planilla filtra por lo que hay, y una columna «Lote» entera en
+    // blanco se lee como un dato que se perdió, no como uno que no existe.
     const headers = [
-        'Tipo', 'Codigo ERP', 'Codigo barras', 'Producto', 'Laboratorio', 'Presentacion',
-        'Lote', 'Vence', 'Area', 'Alta de lote', 'Sistema', 'Fisico', 'Ajuste',
+        'Tipo', 'ID INTERNO', 'Codigo barras', 'Producto', 'Laboratorio', 'Presentacion',
+        ...(simple ? [] : ['Lote', 'Vence']),
+        'Area', simple ? 'Alta a mano' : 'Alta de lote', 'Sistema', 'Fisico', 'Ajuste',
         'Costo unitario', 'Valor ajuste', 'Nota',
     ];
     const rows = ajustes.map((i) => [
@@ -425,8 +504,7 @@ export function exportAjustesConteo(conteo, items) {
         i.product_nombre ?? '',
         i.laboratorio_nombre ?? '',
         i.presentacion ?? '',
-        i.lote ?? '',
-        i.fecha_vencimiento ?? '',
+        ...(simple ? [] : [i.lote ?? '', i.fecha_vencimiento ?? '']),
         i.is_vencidos ? 'VENCIDOS' : 'NORMAL',
         i.es_agregado_manual ? 'SI' : 'NO',
         i.sistema_cantidad,
@@ -450,7 +528,7 @@ export async function printResultadosConteo(conteo, items, { soloDiferencias = f
         defaultStyle: { fontSize: 9 },
         content: [
             headerBlock(conteo, `Reporte de resultados${soloDiferencias ? ' (solo diferencias)' : ''}`),
-            buildResultadosTable(filtered),
+            buildResultadosTable(filtered, esSimple(conteo)),
             buildTotalesBlock(conteo, items),
             avisoParcialBlock(conteo),
         ].filter(Boolean),

@@ -31,6 +31,12 @@ const ESTADO_CFG = {
 
 const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECETA: 'Bajo Receta', MANUAL: 'Manual', CICLICO: 'Cíclico del mes' };
 
+// El alcance y el detalle en la misma celda, y solo cuando el detalle no es el
+// de siempre: "Por lote" en todas las filas sería ruido: es lo normal. La lista
+// tiene que dejar distinguirlos porque un conteo sencillo y uno por lote de la
+// misma sucursal se ven idénticos hasta que se abren.
+const alcanceLabel = (c) => `${SCOPE_LABEL[c.scope_type] || c.scope_type}${c.modo === 'SIMPLE' ? ' · Sencillo' : ''}`;
+
 const COLS = [
     { key: 'fecha', label: 'Fecha', align: 'left' },
     { key: 'sucursal', label: 'Sucursal', align: 'left' },
@@ -239,7 +245,7 @@ export default function ConteoInventarioView() {
                             // lo que falta ajustar es lo urgente de esta pantalla.
                             tone={faltaAjuste(c) ? 'peligro' : null}
                             title={c.branches?.name || '—'}
-                            subtitle={`${fmtDate(c.created_at)} · ${SCOPE_LABEL[c.scope_type] || c.scope_type}`}
+                            subtitle={`${fmtDate(c.created_at)} · ${alcanceLabel(c)}`}
                             onClick={() => navigate(`/conteo-inventario/${c.id}`)}
                             trailing={(
                                 <span className="flex flex-col items-end gap-1">
@@ -280,7 +286,7 @@ export default function ConteoInventarioView() {
                         <DataRow key={c.id} index={i} onClick={() => navigate(`/conteo-inventario/${c.id}`)}>
                             <DataCell><span className="text-body-sm font-semibold text-content-2">{fmtDate(c.created_at)}</span></DataCell>
                             <DataCell><span className="text-body-sm font-bold text-content">{c.branches?.name || '—'}</span></DataCell>
-                            <DataCell hideBelow="md"><span className="text-label text-content-3">{SCOPE_LABEL[c.scope_type] || c.scope_type}</span></DataCell>
+                            <DataCell hideBelow="md"><span className="text-label text-content-3">{alcanceLabel(c)}</span></DataCell>
                             <DataCell align="center" hideBelow="md">
                                 <div className="flex flex-col items-center gap-0.5">
                                     <span className="text-label tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span>

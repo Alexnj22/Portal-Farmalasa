@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.389.3 — El cuerpo de Conteo de Inventario, sin el padding del canónico
+
+El contenido de la vista nacía **sobre el filo** de su tarjeta: el carril de
+métricas y la tabla arrancaban a 1px del borde. Corregido por el usuario sobre
+una captura — *«las cards están pegadas al borde»*.
+
+La causa es que **el padding del cuerpo lo pone la vista, no `GlassViewLayout`**.
+El canónico `StaffManagementView` envuelve a sus hijos en
+`p-4 md:p-6 lg:p-8 space-y-6`; `ConteoInventarioView` no tenía ese envoltorio y
+sus bloques colgaban directos del contenedor. Medido a 1600px antes y después:
+el primer hijo pasó de **0px de padding a 32**, y la tabla quedó en x=362 · y=286
+· w=1164, que son exactamente las coordenadas de Personal en la misma pantalla.
+
+Los `mb-4` y `mb-3` sueltos que traía cada bloque salen: el ritmo entre bloques
+lo lleva el `space-y-6` del contenedor. Repartido en cada hijo se desincroniza en
+cuanto uno se esconde — que es justo lo que pasaba con el aviso de búsqueda
+difusa, visible solo al buscar.
+
+**El gate no lo veía y no podía verlo.** `gate:design` mide colores crudos y
+elementos nativos, no si una vista usa el canónico que le toca; pasó en verde
+antes y después. Lo mismo que ya está anotado en
+[[feedback_gate_verde_no_es_diseno_revisado]].
+
+**Queda dicho lo que no se tocó:** midiendo el padding efectivo de siete vistas
+salieron cinco valores distintos —Personal 32, Proveedores 24, Min/Max 16–20,
+Pedidos 16, y **Productos y Ventas también en 0**—. Solo se corrigió Conteo, que
+es lo que se reportó; las otras dos con el mismo defecto siguen abiertas.
+
 ## v2.389.2 — El sistema en cero al imprimir un conteo sencillo, y el carril fuera del canónico
 
 **La hoja de conteo salía con la columna Sistema en cero en todos los renglones.**

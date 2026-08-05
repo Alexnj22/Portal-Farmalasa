@@ -138,6 +138,14 @@ export default function ConteoInventarioView() {
 
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
+            {/* El padding del cuerpo lo pone la VISTA, no `GlassViewLayout` — el
+                canónico es `StaffManagementView`. Sin este envoltorio el contenido
+                nacía sobre el filo de la tarjeta: medido a 1600px, 0px de aire
+                contra los 32 de Personal. Y `space-y-6` reemplaza los `mb-*` sueltos
+                que traía cada bloque — el ritmo entre bloques es del contenedor, y
+                repartido en cada hijo se desincroniza en cuanto uno se esconde. */}
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-700">
+
             {/* Resumen arriba, y cada tarjeta es un FILTRO. La pregunta de esta
                 pantalla no es "cuántos conteos hay" sino "cuál me está esperando":
                 un finalizado sin aprobar bloquea a alguien, y un cerrado sin ajuste
@@ -149,7 +157,7 @@ export default function ConteoInventarioView() {
                 RESERVA_CARRIL (314px) por un carril que no tiene al lado. O sea que
                 el layout equivocado no falla: le roba 314px a la píldora en
                 silencio. El canónico es `StaffManagementView`. */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <CarrilCards className="flex-1" ariaLabel="Resumen de conteos">
                 {/* Ésta NO es un filtro: es el total, y por eso no lleva `active` ni
                     `onClick`. Con `active` StatCard dibuja una × de "quitar este
@@ -224,7 +232,7 @@ export default function ConteoInventarioView() {
             </div>
 
             {isSearchFuzzy && search && (
-                <Notice variant="warning" icon={Search} className="mb-3">
+                <Notice variant="warning" icon={Search}>
                     Resultados similares para &ldquo;{search}&rdquo; — no se encontraron coincidencias exactas
                 </Notice>
             )}
@@ -336,6 +344,7 @@ export default function ConteoInventarioView() {
                     );
                 })}
             </DataTable>
+            </div>
             </div>
 
             <NuevoConteoModal

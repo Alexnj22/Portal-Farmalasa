@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.374.0 — Metas: gastos por recuperar (motor)
+
+Pedido del usuario: poder cargar un gasto a una o varias salas y que se sume a
+su meta. Pero no como venta: como **ganancia a recuperar**. Con un margen de
+25%, recuperar $1,000 pide **$4,000** de venta.
+
+```
+Gasto $1,200 en Salud 3, repartido en 3 meses
+
+           gasto/mes   venta que agrega
+octubre       $400         $1,600
+noviembre     $400         $1,600
+diciembre     $400         $1,600
+```
+
+Y la meta de octubre pasó de $44,540.13 a **$46,140.13**. La aritmética cierra
+sobre sí misma: esos $1,600 de venta extra dejan $400 de ganancia, que es
+exactamente la cuota del mes.
+
+Esta versión es solo el motor — las pantallas vienen en la siguiente. Cómo
+quedó, y por qué:
+
+- **La meta ahora tiene sus dos mitades a la vista**: lo que se propuso como
+  venta y lo que se agregó por gastos. El total sigue siendo el mismo número
+  que leen el tablero, el widget de la sala y el bono, así que ninguno cambió
+  su cálculo. La base **verifica** que el total sea la suma de las dos, en vez
+  de confiar en que el próximo cambio se acuerde.
+- **Solo se cargan gastos a meses que todavía no arrancaron.** Nadie ve su meta
+  moverse a mitad de mes.
+- **Una meta ya confirmada o aprobada vuelve a revisión** cuando se le carga un
+  gasto, y el supervisor recibe el aviso. El número que el gerente firmó cambió:
+  tiene que volver a verlo.
+- **El margen se congela en cada gasto** al cargarlo. Cambiarlo mañana no
+  reescribe lo que ya se decidió — la misma regla que rige el resto del módulo.
+- **La vista previa y el alta usan el mismo cálculo.** Repartir dos veces es
+  cómo un día divergen y la pantalla promete un número que la base no guarda.
+- **El residuo del redondeo va al último mes**: $1,000 entre 3 da 333.33, 333.33
+  y 333.34, que suman $1,000.00 exactos — y sus ventas, $4,000.00 exactos.
+- **Anular un gasto quita solo los meses que no arrancaron.** Los que ya se
+  persiguieron con ese número quedan como estaban.
+
+**Nota deliberada sobre el 25%:** la meta se mide en venta con IVA (es el número
+que la sala ve en su corte del día), así que esos $4,000 recuperan $884.96 y no
+$1,000 — el 88.5%. Es una decisión tomada a conciencia: el 25% es una apuesta de
+negocio, no un cálculo contable. **No es un error.**
+
 ## v2.373.0 — Metas: aprobar en lote y avisos que no se repiten
 
 Confirmar varias de una vez ya existía; del otro lado del flujo no. El gerente

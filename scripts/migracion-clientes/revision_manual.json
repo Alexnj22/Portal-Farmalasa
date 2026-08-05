@@ -3470,5 +3470,37 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "EMMA DE JESUS ALBERTO DE SERRANO"
+ },
+ {
+  "erp_id": "23215",
+  "campo": "dui",
+  "valor": "01932278-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "KATYA LORENA LOPEZ DE MANCIA"
+ },
+ {
+  "erp_id": "23322",
+  "campo": "dui",
+  "valor": "02646531-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MAURICIO OTMAR VASQUE FUENTES"
+ },
+ {
+  "erp_id": "23471",
+  "campo": "dui",
+  "valor": "04414386-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "RUDY HERIBERTO MONGE"
+ },
+ {
+  "erp_id": "23488",
+  "campo": "dui",
+  "valor": "00963780-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "lenny maribel"
  }
 ]

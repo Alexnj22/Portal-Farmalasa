@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.395.3 — Facturación, Clientes y Laboratorios: montar la pestaña al visitarla
+
+Auditoría del hallazgo que dejó v2.395.0: el `hidden` que esconde las pestañas
+inactivas no las desmonta, así que abrir una vista carga **todas**. Se revisaron
+las cuatro vistas que quedaban con ese patrón.
+
+**Facturación era el peor caso, y peor de lo que parecía.** Sus cinco pestañas
+cargan sola al montarse —el `paused` que reciben apaga el sondeo de 60 s, no la
+carga inicial—, así que abrir «Anuladas» traía también el backlog de Pendiente
+MH, No Efectivo, Saltos y Observaciones: **6 lecturas de `sales_invoices`** (la
+tabla de 548K filas, paginada con `fetchAllRows`) por 231 kB, y
+`get_invoice_observations`, que con **2.9 s era la llamada más lenta de la
+vista** sin estar a la vista.
+
+| vista | antes | después |
+|---|---|---|
+| Facturación | 36 peticiones · 410 kB | **22 · 166 kB** |
+| Clientes | 21 · 282 kB | **20 · 174 kB** |
+| Laboratorios | 23 · 192 kB | **20 · 171 kB** |
+
+En Clientes lo que sobraba eran las ~150 fichas de «Por revisar» —108 kB, el
+payload más grande de la vista— para una pestaña que no se estaba mirando.
+Facturación además dejó de tener peticiones en vuelo pasados los 6 s.
+
+**Ventas NO estaba afectada**, aunque el grep la señalaba: monta «Vendedores» y
+«Productos» con `&&` y solo usa `hidden` en «Ventas», que está montada siempre a
+propósito porque es dueña del selector de período. Ya tenía el comentario que lo
+explica. Sus números no se movieron (27 peticiones · 217 kB antes y después),
+que es la confirmación de que la medición distingue.
+
+Verificado tabla por tabla que la carga diferida no rompe nada: cada pestaña no
+predeterminada pide sus datos en la primera visita (Pendiente MH 5, Saltos 4,
+No Efectivo 3, Observaciones 2, Política de vencimiento 3, Por revisar 1) y
+**toda revisita pide 0** — no re-pide ni pierde el filtro, que es lo que el
+`hidden` compraba. Sin errores de consola.
+
 ## v2.395.2 — El vidrio probado con energía de borde, y la tabla medida en la app
 
 Las tres verificaciones que pidió el usuario sobre §14/§15.

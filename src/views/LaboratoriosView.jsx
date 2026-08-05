@@ -26,6 +26,13 @@ export default function LaboratoriosView() {
         return () => clearTimeout(t);
     }, [rawSearch]);
 
+    // Montar al VISITAR, no al entrar. `hidden` esconde pero no desmonta, así
+    // que abrir «Ubicaciones» también cargaba «Política de vencimiento» —sus
+    // `laboratorios`, `proveedores` y `suppliers`—. Se quedan montadas después,
+    // que es lo que el `hidden` compra: volver no re-pide ni pierde el filtro.
+    const [visitadas, setVisitadas] = useState(() => new Set([activeTab]));
+    if (!visitadas.has(activeTab)) setVisitadas(new Set(visitadas).add(activeTab));
+
     const searchPlaceholder = activeTab === 'vencimiento'
         ? 'Buscar laboratorio o proveedor...'
         : 'Buscar laboratorio o ubicación...';
@@ -44,12 +51,16 @@ export default function LaboratoriosView() {
 
     return (
         <GlassViewLayout icon={FlaskConical} title="Laboratorios" filtersContent={filtersContent}>
-            <div className={activeTab === 'ubicaciones' ? '' : 'hidden'}>
-                <TabLaboratorios searchTerm={debouncedSearch} />
-            </div>
-            <div className={activeTab === 'vencimiento' ? '' : 'hidden'}>
-                <TabPoliticaVencimiento searchTerm={debouncedSearch} />
-            </div>
+            {visitadas.has('ubicaciones') && (
+                <div className={activeTab === 'ubicaciones' ? '' : 'hidden'}>
+                    <TabLaboratorios searchTerm={debouncedSearch} />
+                </div>
+            )}
+            {visitadas.has('vencimiento') && (
+                <div className={activeTab === 'vencimiento' ? '' : 'hidden'}>
+                    <TabPoliticaVencimiento searchTerm={debouncedSearch} />
+                </div>
+            )}
         </GlassViewLayout>
     );
 }

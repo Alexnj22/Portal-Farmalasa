@@ -2582,6 +2582,19 @@ export default function FacturacionView() {
     const rawTab      = searchParams.get('tab');
     const activeTab   = VALID_TABS.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
+
+    // Montar al VISITAR, no al entrar. `hidden` esconde pero no desmonta, y las
+    // cinco pestañas cargan sola al montarse (el `paused` que reciben apaga el
+    // sondeo de 60 s, no la carga inicial). O sea que abrir «Anuladas» traía
+    // también el backlog de Pendiente MH, No Efectivo, Saltos y Observaciones:
+    // medido, 6 lecturas de `sales_invoices` —la tabla de 548K filas, paginada
+    // con fetchAllRows— por 231 kB, más `get_invoice_observations`, que con
+    // 2.9 s era la llamada más lenta de la vista sin estar a la vista.
+    // Se quedan montadas después de visitarlas: volver no re-pide ni pierde el
+    // filtro, que es lo que el `hidden` compraba.
+    const [visitadas, setVisitadas] = useState(() => new Set([activeTab]));
+    if (!visitadas.has(activeTab)) setVisitadas(new Set(visitadas).add(activeTab));
+
     const [filterBranch, setFilterBranch] = useState(
         getScope('facturacion') === 'BRANCH' ? String(currentUser?.branchId || '') : ''
     );
@@ -2724,27 +2737,37 @@ export default function FacturacionView() {
                 vista aunque las cuatro pestañas estén en el DOM (las inactivas
                 van con `hidden` para no perder su estado). */}
             <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-3xl lg:rounded-header border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
-                <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                    <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
-                        paused={paused} barraFiltros={activeTab === 'anuladas' ? filtrosCuerpo : null} />
-                </div>
-                <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                    <TabPendienteMH canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
-                        paused={paused} barraFiltros={activeTab === 'pendiente_mh' ? filtrosCuerpo : null} />
-                </div>
-                <div className={activeTab === 'saltos' ? '' : 'hidden'}>
-                    <TabSaltos canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser}
-                        barraFiltros={activeTab === 'saltos' ? filtrosCuerpo : null} />
-                </div>
-                <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                    <TabNoEfectivo canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
-                        barraFiltros={activeTab === 'no_efectivo' ? filtrosCuerpo : null} selectedMonth={selectedMonth} />
-                </div>
-                <div className={activeTab === 'observaciones' ? '' : 'hidden'}>
-                    <TabObservaciones canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
-                        currentUser={currentUser} obsCode={obsCode} onConteos={setObsConteos}
-                        barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
-                </div>
+                {visitadas.has('anuladas') && (
+                    <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
+                        <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                            paused={paused} barraFiltros={activeTab === 'anuladas' ? filtrosCuerpo : null} />
+                    </div>
+                )}
+                {visitadas.has('pendiente_mh') && (
+                    <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
+                        <TabPendienteMH canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                            paused={paused} barraFiltros={activeTab === 'pendiente_mh' ? filtrosCuerpo : null} />
+                    </div>
+                )}
+                {visitadas.has('saltos') && (
+                    <div className={activeTab === 'saltos' ? '' : 'hidden'}>
+                        <TabSaltos canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser}
+                            barraFiltros={activeTab === 'saltos' ? filtrosCuerpo : null} />
+                    </div>
+                )}
+                {visitadas.has('no_efectivo') && (
+                    <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
+                        <TabNoEfectivo canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                            barraFiltros={activeTab === 'no_efectivo' ? filtrosCuerpo : null} selectedMonth={selectedMonth} />
+                    </div>
+                )}
+                {visitadas.has('observaciones') && (
+                    <div className={activeTab === 'observaciones' ? '' : 'hidden'}>
+                        <TabObservaciones canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
+                            currentUser={currentUser} obsCode={obsCode} onConteos={setObsConteos}
+                            barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
+                    </div>
+                )}
             </div>
         </GlassViewLayout>
     );

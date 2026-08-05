@@ -147,6 +147,12 @@ const TABS = [
 
 export default function ClientesView({ openModal }) {
     const [tab, setTab] = useState('lista');
+    // Montar al VISITAR, no al entrar. `hidden` esconde pero no desmonta: abrir
+    // la lista traía además las ~150 fichas de «Por revisar»
+    // (`get_clientes_por_revisar`), que son 108 kB — el payload más grande de la
+    // vista, para una pestaña que no se está mirando. Se queda montada después.
+    const [visitadas, setVisitadas] = useState(() => new Set([tab]));
+    if (!visitadas.has(tab)) setVisitadas(new Set(visitadas).add(tab));
     const { hasPermission } = useAuth();
     // Canon 2026-08-03: la ficha fiscal se completa igual sin ver cuánto
     // factura cada cliente — el monto acá es una columna más.
@@ -408,9 +414,11 @@ export default function ClientesView({ openModal }) {
             filtersContent={filtersContent}
             transparentBody
         >
-            <div className={tab === 'revisar' ? '' : 'hidden'}>
-                <TabPorRevisar openModal={openModal} />
-            </div>
+            {visitadas.has('revisar') && (
+                <div className={tab === 'revisar' ? '' : 'hidden'}>
+                    <TabPorRevisar openModal={openModal} />
+                </div>
+            )}
 
             <div className={tab === 'lista' ? 'p-5 md:p-6 space-y-5' : 'hidden'}>
                 {/* El carril y la píldora van en FILAS SEPARADAS, y no

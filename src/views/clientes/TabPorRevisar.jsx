@@ -96,8 +96,15 @@ export default function TabPorRevisar({ openModal }) {
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            <div className="flex flex-col gap-3">
-                <CarrilCards ariaLabel="Resumen de fichas por revisar">
+            {/* §17.0: el carril y la píldora van en UNA fila, no en dos
+                renglones. No es estética: `useMedidaFila` mira al ABUELO de la
+                píldora y busca el carril con `[role="group"]`. En renglones
+                separados lo encuentra igual —es hermano dentro del mismo
+                contenedor— y le descuenta RESERVA_CARRIL (314px) por un carril
+                que no tiene al lado. El layout equivocado no falla: le roba
+                314px a la píldora en silencio. Canónico: `StaffManagementView`. */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de fichas por revisar">
                     <StatCard icon={FileWarning} label="Por revisar"
                         value={(datos.congelado + datos.repetido).toLocaleString()}
                         iconBg="bg-warning/10" iconCls="text-warning"

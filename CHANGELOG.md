@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.391.1 — El carril y la píldora en una fila, y un gate que lo vigila
+
+Corregido por el usuario sobre una captura de la pestaña «Por revisar»: la
+píldora estaba en su propio renglón, debajo de las tarjetas.
+
+**El error no fue no saber la regla, fue heredar una excepción sin su motivo.**
+Copié el layout de `ClientesView`, que separa carril y píldora con un comentario
+que lo justifica por medición —su píldora son 975px con tres ranuras y tres
+chips, y a 1440px no entra junto a cinco tarjetas—. Mi píldora son **dos chips**:
+entraba de sobra. El razonamiento valía para esa vista, no para la mía.
+
+**Y el layout equivocado no falla, roba ancho en silencio.** `useMedidaFila` mira
+al *abuelo* de la píldora y busca el carril con `querySelector('[role="group"]')`.
+En renglones separados lo encuentra igual —es hermano dentro del mismo
+contenedor— y le descuenta `RESERVA_CARRIL` (314px) por un carril que no está a
+su lado.
+
+**Ahora hay un gate.** La regla ya estaba escrita en tres lugares —DESIGN.md
+§17.0, la memoria del proyecto y el comentario de `ConteoInventarioView`— y se
+rompió igual, así que se agregó la categoría `carril-pildora` a `gate:design`.
+Verificado reintroduciendo el error a propósito: el ratchet lo marcó
+`17 / 15 SUBIÓ +2`.
+
+Arrancó con **15 hallazgos en 10 vistas** de deuda preexistente (Pedidos,
+Productos, Clientes, Facturas de Compra, Auditoría de Asistencia), así que va por
+ratchet: no se puede agregar uno nuevo, y los 15 se bajan vista por vista. No es
+un cambio mecánico — §17.0 pide verificar a 1280 y 1600 porque angostar la
+tarjeta a 148px destapa truncamientos.
+
 ## v2.391.0 — Fase B cerrada: pestañas, sidebar temado y sus cuatro variantes
 
 `PLAN-MATERIALES` queda **sin elementos por definir y sin decisiones

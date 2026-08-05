@@ -3203,6 +3203,46 @@ Medido después de implementarlo, en Personal: 1280→2 tarjetas · 1440→3 ·
 1512→4 · 1728→5 · 1920→5 con detalle. Monótono: al agrandar la ventana nunca se
 ve menos que antes.
 
+#### El carril y la píldora van en UNA fila — y hay un gate (2026-08-05)
+
+```jsx
+<div className="flex flex-col lg:flex-row lg:items-center gap-3">
+  <CarrilCards className="flex-1" ariaLabel="…">…</CarrilCards>
+  <div className="flex justify-end min-w-0"><FilterBar …>…</FilterBar></div>
+</div>
+```
+
+Canónico: `StaffManagementView.jsx`. Las **dos** mitades son obligatorias — el
+`lg:flex-row` del contenedor y el `flex-1` del carril.
+
+**No es estética, y ahí está la trampa.** `useMedidaFila` (`FilterBar.jsx`) mira
+al **abuelo** de la píldora y busca el carril con `querySelector('[role="group"]')`.
+Con la píldora en su propio renglón lo **encuentra igual** —es hermano dentro del
+mismo contenedor— y le descuenta `RESERVA_CARRIL` (2×148+8+10 = **314px**) por un
+carril que no está a su lado. O sea: **el layout equivocado no falla, le roba
+314px a la píldora en silencio**, y todo el reparto de arriba asume la fila
+compartida.
+
+**Una excepción medida NO se copia.** `ClientesView` tiene el carril y la píldora
+en renglones separados con un comentario que lo justifica por medición (su
+píldora son 975px con tres ranuras y tres chips, y a 1440px no entran junto a
+cinco tarjetas). Ese razonamiento vale **para esa píldora**. El 2026-08-05 se
+copió ese layout a una pestaña nueva cuya píldora son **dos chips** —entraba de
+sobra— y se heredó la excepción sin el motivo. Antes de separarlos hay que
+volver a medir *esta* píldora; si no se midió, va el canónico.
+
+**Y verificar a dos anchos, siempre**: a 1280 el carril debe deslizar y la
+acción quedar en ícono; a 1600 todo entra. El cambio de layout destapa
+truncamientos que antes no se veían, porque la tarjeta se angosta a 148px.
+
+Lo vigila la categoría **`carril-pildora`** de `gate:design`, agregada el
+2026-08-05 justamente porque la regla ya estaba escrita en tres lugares —acá, en
+la memoria del proyecto y en el comentario de `ConteoInventarioView`— y se
+rompió igual. Arrancó con **15 hallazgos en 10 vistas** de deuda preexistente,
+así que va por ratchet: no se puede agregar uno nuevo, y los 15 se bajan vista
+por vista con verificación visual (cada una necesita sus dos anchos, no es un
+cambio mecánico).
+
 #### El cupo es de la VISTA, no del dato (2026-07-31)
 
 Las otras tres medidas de la tabla son de la tarjeta y viven en sus clases

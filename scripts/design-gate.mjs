@@ -103,7 +103,11 @@ const EXCEPTIONS = {
   // "opaco" y `transparent` es "invisible"— así que no hay ningún color que
   // pueda salir de un token ni que cambie con el tema. Un token para esto sería
   // un token que no significa nada.
-  'src/components/common/CarrilCards.jsx': ['hex', 'inline-color'],
+  // `carril-pildora` en su propio archivo es el EJEMPLO DE USO del JSDoc, no un
+  // layout: el bloque `── Uso ──` muestra `<CarrilCards><StatCard/></CarrilCards>`
+  // dentro de un comentario. Ahí no hay contenedor que pueda llevar `lg:flex-row`
+  // porque no hay vista, hay documentación.
+  'src/components/common/CarrilCards.jsx': ['hex', 'inline-color', 'carril-pildora'],
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],
@@ -1706,6 +1710,53 @@ function scanFile(path) {
         findings.push({ line: i + 1, label: `border-l decorativo: ${m[0]}`, category: 'left-border', text: line.trim().slice(0, 120) });
       }
     });
+  }
+
+  // ── Categoría `carril-pildora` (§17.0) ────────────────────────────────────
+  // El carril de tarjetas y la píldora de filtros van en UNA fila. Existe como
+  // gate y no solo como prosa porque la regla YA estaba escrita en tres lugares
+  // —DESIGN.md §17.0, la memoria del proyecto y el comentario de
+  // `ConteoInventarioView`— y se rompió igual: alguien copió el layout de una
+  // vista que tiene la excepción MEDIDA y se llevó la excepción sin el motivo.
+  //
+  // Y no es estética. `useMedidaFila` (FilterBar.jsx) mira al ABUELO de la
+  // píldora y busca el carril con `[role="group"]`. En renglones separados lo
+  // encuentra igual —es hermano dentro del mismo contenedor— y le descuenta
+  // RESERVA_CARRIL (2×148+8+10 = 314px) por un carril que no tiene al lado. El
+  // layout equivocado NO falla: le roba 314px a la píldora en silencio, y todo
+  // el reparto de §17.0 (primero cede el texto de las acciones, después las
+  // ranuras vacías, nunca una aplicada) asume la fila compartida.
+  //
+  // Se mira la apertura del `<div>` más cercano que envuelve al carril, no un
+  // `lg:flex-row` suelto en cualquier parte del archivo: mencionarlo en un
+  // comentario no arregla el layout.
+  if (!hasException(path, 'carril-pildora')) {
+    const CARRIL_RE = /<CarrilCards\b/g;
+    let c;
+    while ((c = CARRIL_RE.exec(text))) {
+      const linea = text.slice(0, c.index).split('\n').length;
+      const antes = text.slice(Math.max(0, c.index - 800), c.index);
+      const iDiv = antes.lastIndexOf('<div');
+      const apertura = iDiv >= 0 ? antes.slice(iDiv) : '';
+      if (!/lg:flex-row/.test(apertura)) {
+        findings.push({
+          line: linea, category: 'carril-pildora',
+          label: 'carril y píldora en renglones separados — §17.0 pide `lg:flex-row` '
+               + 'en el contenedor (si no, FilterBar le descuenta 314px en silencio)',
+          text: '<CarrilCards …',
+        });
+      }
+      // Sin `flex-1` el carril no cede el ancho sobrante y la píldora se come
+      // el renglón: es la otra mitad del canónico de `StaffManagementView`.
+      const tag = text.slice(c.index, c.index + 240);
+      if (!/flex-1/.test(tag)) {
+        findings.push({
+          line: linea, category: 'carril-pildora',
+          label: 'CarrilCards sin `flex-1` — no cede el ancho sobrante a la píldora (§17.0)',
+          text: '<CarrilCards …',
+        });
+      }
+    }
   }
 
   if (!hasException(path, 'copy-vacio')) {

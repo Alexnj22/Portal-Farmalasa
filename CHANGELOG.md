@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.372.3 — Metas: bitácora del lado del servidor
+
+Las transiciones de una meta solo se anotaban desde el navegador. Un RPC llamado
+por fuera del portal no dejaba nada; `monto_meta` se sobrescribía en sitio, así
+que el valor anterior se perdía; y las columnas de autoría guardan solo al
+**último** actor, de modo que una meta propuesta, confirmada, devuelta,
+reconfirmada y aprobada terminaba contando una sola de esas cinco cosas.
+
+Ahora los seis RPC que mueven una meta dejan su renglón en `metas_historial`:
+qué evento fue, de qué estado a cuál, de qué monto a cuál, quién y con qué nota.
+Las propuestas del portal quedan con **actor vacío** a propósito — no las decidió
+una persona, las calculó el sistema. Y corregir un mes cerrado se anota como un
+evento distinto de mover el monto de una propuesta viva, porque son dos cosas
+distintas: una toca un bono ya pagado.
+
+Es **append-only de verdad**, no por convención: la tabla no tiene policy de
+INSERT, UPDATE ni DELETE, y la función que escribe no es ejecutable por los
+usuarios. Verificado atacándola desde una sesión con permiso de editar Metas —
+la llamada directa da permiso denegado, el INSERT lo rechaza RLS, y el DELETE y
+el UPDATE afectan **0 filas** dejando el renglón y su monto intactos. Sin eso, la
+bitácora sería un texto que cualquiera puede reescribir, que es justo lo que la
+auditoría encontró en otra tabla del portal.
+
+El rastro **empieza hoy**: lo que pasó antes vive en las columnas de la meta y en
+la bitácora general del portal.
+
 ## v2.372.2 — Metas: el ingreso manual deja de saltear la aprobación
 
 «Agregar meta» pisaba cualquier fila y la dejaba **oficial**, sin mirar en qué

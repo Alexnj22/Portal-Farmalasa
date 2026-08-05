@@ -19,7 +19,7 @@ cobertura de horarios, y las Fases 4 y 5 del plan original.
 Correcciones del usuario al mockup, ya aplicadas: el vacío de Gastos no explica
 la regla, y **el desglose de la meta es solo administrativo** — vive en Tablero y
 Confirmación, y el widget de la sala muestra únicamente su meta.
-**Antecede:** `docs/PLAN-METAS-2026-08-03.md` (diseño del módulo, Fases 1-3 hechas).
+**Antecede:** `docs/planes-cerrados/PLAN-METAS-2026-08-03.md` (diseño del módulo, Fases 1-3 hechas).
 Este documento es el que manda de acá en adelante para Metas.
 
 Dos cosas distintas viven acá porque se tocan:

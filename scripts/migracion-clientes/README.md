@@ -615,4 +615,4 @@ que no nombra ningún distrito no puede nombrar dos.
 
 ## 9. Módulo de Clientes en el portal
 
-El prompt para construirlo está en `docs/PROMPT-MODULO-CLIENTES.md`.
+El prompt para construirlo está en `docs/planes-cerrados/PROMPT-MODULO-CLIENTES.md`.

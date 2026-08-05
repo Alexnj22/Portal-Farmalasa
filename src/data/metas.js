@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
 
-// Metas por sala (Fase 1 — docs/PLAN-METAS-2026-08-03.md). Los tres RPC
+// Metas por sala (Fase 1 — docs/planes-cerrados/PLAN-METAS-2026-08-03.md). Los tres RPC
 // devuelven pocas filas (6 salas × meses), así que no hay paginación que
 // cuidar. La base es el total facturado (con IVA), la misma del corte del día.
 

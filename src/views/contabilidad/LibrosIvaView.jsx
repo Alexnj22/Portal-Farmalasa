@@ -882,7 +882,7 @@ const construirLibro = (tab, d, tot) => {
         // para declarar. No era «no supimos en cuál columna»: no hay columna.
         //
         // Lo que SÍ quedó abierto es otra cosa y está en
-        // `docs/RETENCION-IVA-VENTAS-2026-08-04.md`: el literal l) pide el
+        // `docs/planes-cerrados/RETENCION-IVA-VENTAS-2026-08-04.md`: el literal l) pide el
         // «total de ventas por documento», que es la suma de las columnas
         // anteriores —la retención no está entre ellas, así que no se resta—, y
         // hoy acá va el total COBRADO. Son $48.95 del período contable. No se

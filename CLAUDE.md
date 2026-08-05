@@ -10,30 +10,14 @@
 - Cualquier `.select()` / `.rpc()` sin paginación explícita en tablas grandes
 
 **Patrón A — RPC que recibe array de IDs como parámetro:**
-Chunkear el *input*, no el output. Si cada chunk tiene ≤1000 IDs, la respuesta también será ≤1000 filas:
-```js
-const CHUNK = 1000;
-const chunks = [];
-for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
-const results = await Promise.all(
-    chunks.map(c => supabase.rpc('mi_funcion', { p_ids: c }))
-);
-const rows = results.flatMap(r => r.data || []);
-```
+Chunkear el *input*, no el output. Si cada chunk tiene ≤1000 IDs, la respuesta
+también será ≤1000 filas: partir `ids` en tandas de 1000 y `Promise.all` de un
+`.rpc()` por tanda, aplanando `r.data`.
 
 **Patrón B — RPC/select que pagina el output (ej. `get_stock_analysis`):**
-```js
-const CHUNK = 1000;
-// Primero el count, luego todos los chunks en paralelo
-const { data: count } = await supabase.rpc('get_X_count', params);
-const numChunks = Math.max(1, Math.ceil(count / CHUNK));
-const results = await Promise.all(
-    Array.from({ length: numChunks }, (_, i) =>
-        supabase.rpc('get_X', params).range(i * CHUNK, (i + 1) * CHUNK - 1)
-    )
-);
-const rows = results.flatMap(r => r.data || []);
-```
+Primero `get_X_count`, después `ceil(count / 1000)` llamadas en paralelo con
+`.range(i * 1000, (i + 1) * 1000 - 1)`. Es exactamente lo que hace
+`fetchAllRows` — usarlo, no reescribir el bucle.
 
 **Patrón C — RPC que devuelve JSON (no SETOF) — PREFERIDO para cargas grandes:**
 El límite no aplica cuando el RPC devuelve un único objeto JSON. Además evita re-ejecutar
@@ -155,45 +139,14 @@ Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2 (secretos de Vault
 en `cron.job.command`) — ambos sin incidentes.
 
 **Todo `apply_migration` necesita su archivo local en el mismo commit, nombrado
-con la versión que asignó el servidor** (incidente descubierto 2026-07-15,
-Bloque 3.5; resuelto en C2 el 2026-07-29). La tool `apply_migration` SOLO escribe
-en el servidor (`supabase_migrations.schema_migrations`) — nunca toca el disco.
-Guardar el archivo en `supabase/migrations/` es un paso manual aparte, y como
-olvidarlo no da ningún error, durante meses se hizo inconsistente: al cierre de C2
-el registro de prod tenía **731 migraciones contra 339 archivos locales, y solo 14
-de 699 versiones coincidían**. El repo no era un subconjunto de la historia real,
-era un set paralelo mantenido a mano — así que el esquema no se podía reconstruir
-desde los archivos, ni tener un staging fiel.
-
-Cómo quedó (`PLAN-SUPABASE-CIERRE.md` C2, v2.228.0):
-
-- `supabase/migrations/` tiene **un baseline generado del catálogo de prod**
-  (`20260101000000_baseline_schema.sql`, verificado aplicándolo a una rama limpia:
-  0 errores y las 15 categorías de la huella con md5 idéntico a prod) **más las
-  migraciones aplicadas después**. Las 339 heredadas viven en
-  `supabase/migrations-legacy/`: aplicarlas sobre el baseline falla por
-  construcción (esperan el esquema de abril, ej. `employees.is_admin`).
-- **El archivo se nombra `<versión>_<name>.sql` con la versión de 14 dígitos que
-  asignó el servidor**, no con el viejo `YYYYMMDD_nombre` (que es lo que generó la
-  deriva: no se corresponde con ninguna fila real). La versión la devuelve
-  `apply_migration`; si no, `select max(version) from
-  supabase_migrations.schema_migrations`. El `name` del `apply_migration` debe ser
-  idéntico al del archivo — sin resumir, sin combinar varias migraciones en uno — y
-  el archivo se crea en la misma sesión: nunca "lo consolido después".
-- **Si el SQL se redacta antes de aplicarlo, el borrador va al scratchpad, NO a
-  `supabase/migrations/`.** La versión la asigna el servidor al aplicar, así que un
-  archivo ahí adentro antes de aplicar no puede tener nombre válido — y el gate lo
-  marca con razón: es indistinguible de la deriva vieja. Primero `apply_migration`,
-  después el archivo con la versión que devolvió.
-- **Al cerrar cualquier trabajo con migraciones, correr `npm run gate:migrations`**
-  (chequeos locales, sin red) y `npm run gate:migrations -- --remote` para cruzar
-  contra el registro de prod — es el que detecta la migración aplicada sin archivo.
-  Existe porque el detector natural quedó ciego: `supabase migration list` y
-  `db push --dry-run` arrancan listando las 731 versiones pre-baseline sin archivo
-  local, así que una migración nueva sin archivo sería la fila 732 de una lista de
-  ruido. `db push` no se usa en este proyecto (se aplica con `apply_migration`).
-  La constante `CORTE` del gate **no se mueve** para silenciar un hallazgo: correrla
-  es declarar que una migración no necesita archivo, o sea la deriva misma.
+con la versión de 14 dígitos que devolvió el servidor** — `apply_migration` NUNCA
+toca el disco, y olvidarlo no da ningún error. El `name` del archivo idéntico al
+del `apply_migration`, creado en la misma sesión: nunca "lo consolido después". Si
+el SQL se redacta antes de aplicarlo, el borrador va al **scratchpad**, no a
+`supabase/migrations/`. Al cerrar, `npm run gate:migrations` y
+`npm run gate:migrations -- --remote`; su constante `CORTE` **no se mueve** para
+silenciar un hallazgo. El detalle —el baseline, `migrations-legacy/`, por qué el
+detector natural quedó ciego— vive en la skill **`migraciones`**.
 
 **Edge functions**: NUNCA ignorar el `error` de un query supabase-js
 (`const { data } = await ...` sin chequear `error`). Un select que falla en
@@ -341,7 +294,8 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
 
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)
 
-Confirmado el 2026-07-29 (F4.3 de `PLAN-MINMAX-Y-CANDADO-2026-07-29.md`): en
+Confirmado el 2026-07-29 (F4.3 de
+`docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md`): en
 `stock_config`, `reorder_x_days = reorder_y_days = reorder_z_days = 25`,
 `buffer_x/y/z_days = 0`, y `lead_time_days` es NULL en las 18,364 filas de
 `product_stock_params`. Entonces la fórmula real es, para **todo** producto:
@@ -445,43 +399,6 @@ emergencia real, no para silenciar un hallazgo.
   `docs/planes-cerrados/AUDITORIA-TEMA-2026-07.md` y memoria
   `project_theme_audit_2026_07_22`).
 
-  **Desde D0 de la auditoría de diseño (2026-07-26) el gate funciona por
-  ratchet, no por cero absoluto**
-  (`docs/planes-cerrados/AUDITORIA-DISENO-2026-07-26.md`): falla si
-  una categoría SUBE respecto a `scripts/design-gate-baseline.json`, no por
-  tenerla en rojo. Un gate permanentemente rojo no lo mira nadie — que es
-  exactamente cómo se acumuló esta deuda.
-
-  **Estado al 2026-07-29 (cierre del plan `PLAN-CIERRE-DISENO-2026-07-29.md`):
-  el baseline está VACÍO y las 24 categorías son bloqueantes en cero absoluto.**
-  Las cinco que arrancaron con deuda en D0 (`white` 1094, `typography` 4490,
-  `z-index` 552, `hex` 32, `motion` 30) se cerraron en D1/D2; la última con
-  ratchet era `input-a-mano`, cerrada al pasar sus 3 archivos —login, kiosco y
-  el campo del ⌘K, todas superficies bespoke de DESIGN.md §25.4— a `EXCEPTIONS`
-  **con su motivo escrito**, que es más fuerte que tolerarlos por número: ahora
-  un `<input>` a mano en cualquier OTRO archivo falla el gate.
-
-  Categoría nueva del mismo cierre: **`celda-a-mano`** (un `<td>` crudo dentro
-  de un `<DataRow>` — saltea `DataCell` y con él la densidad de fila).
-
-  **Cuidado con `EXCEPTIONS`:** es un objeto literal, así que una clave repetida
-  hace que la segunda pise a la primera **en silencio**. Había 4 duplicados sin
-  detectar. Lo verifica `assertSinClavesDuplicadas` al arrancar el gate: cada
-  archivo va en UNA entrada con todas sus categorías.
-
-  `chart-retirado` y `chip-a-mano` llegaron a **0 el 2026-07-28** y quedaron
-  bloqueantes: los 3 categóricos retirados se migraron a su destino (424
-  referencias en 51 archivos) y los 7 chips restantes se resolvieron uno por
-  uno. `chart-8` salió de la lista de retirados porque no lo estaba: es el
-  NEUTRO de la paleta y está vivo (`--chart-8-solid` tiene valor propio, el
-  `neutral` de `Badge` se apoya en él, y tiene familia completa de glows).
-
-  Las tres bloqueantes agregadas en D3/D4 — `button-name`, `paleta-cerrada`,
-  `input-sin-nombre` — no van al baseline: una categoría que no figura en el
-  JSON arranca bloqueante sola (`baseline[c] ?? 0`).
-
-  Al BAJAR deuda (cada fase del plan baja la suya), regenerar con
-  `npm run gate:design -- --update-baseline` y commitear el JSON. **Nunca
-  regenerarlo para tapar un hallazgo nuevo**: si una categoría subió, es
-  código nuevo que hay que arreglar. Cuando una categoría llega a 0 queda
-  bloqueante para siempre.
+  **Nunca regenerar el baseline para tapar un hallazgo nuevo** — si una
+  categoría subió, es código nuevo que hay que arreglar. El ratchet, el estado
+  de las 24 categorías y cuándo sí se regenera: skill **`design-gate`**.

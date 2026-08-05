@@ -4,7 +4,7 @@
  * consulta.
  *
  * Existe por la auditoría del 2026-08-03
- * (`docs/AUDITORIA-PERMISOS-2026-08-03.md`), que encontró a mano lo que este
+ * (`docs/planes-cerrados/AUDITORIA-PERMISOS-2026-08-03.md`), que encontró a mano lo que este
  * script encuentra en 200ms:
  *
  *   · `staff_salary` — "datos sensibles", activo en 2 roles, y no lo consulta
@@ -193,5 +193,5 @@ for (const p of problemas) {
   console.log(`    ${p.detalle}`);
   for (const i of p.items) console.log(`      · ${i}`);
 }
-console.log('\n  Canon y matriz: docs/AUDITORIA-PERMISOS-2026-08-03.md §7-bis / §7-ter\n');
+console.log('\n  Canon y matriz: docs/planes-cerrados/AUDITORIA-PERMISOS-2026-08-03.md §7-bis / §7-ter\n');
 process.exit(1);

@@ -15,7 +15,7 @@ import MetaModal from './MetaModal';
 import GastoModal from './GastoModal';
 import { SALAS_VENTA, ymHoySV, ymSumar } from './metasUtils';
 
-// Metas por sala — docs/PLAN-METAS-2026-08-03.md. Tablero e Histórico (Fase 1)
+// Metas por sala — docs/planes-cerrados/PLAN-METAS-2026-08-03.md. Tablero e Histórico (Fase 1)
 // + el flujo de confirmación supervisor→gerente (Fase 2). Este módulo es de
 // supervisión: la sala ve SU meta en el widget «Meta del mes» del Inicio
 // (`WidgetMetaSala`), no acá. Las bonificaciones llegan en fases siguientes.

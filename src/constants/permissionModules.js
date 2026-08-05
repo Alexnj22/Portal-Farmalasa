@@ -14,7 +14,7 @@
 //     tipo: 'tab' → una pestaña de la vista
 //     tipo: 'cap' → una capacidad (descargar, ver montos, ver costos, abrir)
 // La pantalla de Permisos las pinta en dos bloques separados. El canon de
-// nombres vive en docs/AUDITORIA-PERMISOS-2026-08-03.md §7-bis: la clave
+// nombres vive en docs/planes-cerrados/AUDITORIA-PERMISOS-2026-08-03.md §7-bis: la clave
 // empieza SIEMPRE por la del módulo, y `_tab_` es solo para pestañas.
 //
 // Vivía dentro de PermissionsView.jsx. Se extrajo el 2026-07-29 para que la vista

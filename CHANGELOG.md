@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.379.2 — Auditoría de planes: 12 documentos cerrados y movidos
+
+Barrido de los 22 planes y auditorías vivos del proyecto, cada uno verificado
+contra lo que dice el código y la base de producción, no contra lo que dice su
+propia cabecera. Doce quedaron cerrados y se movieron a `docs/planes-cerrados/`,
+con su evidencia de cierre escrita en el índice de esa carpeta.
+
+**Lo que la verificación desmintió, en las dos direcciones:**
+
+- `AUDITORIA-SUPABASE-2026-07-29` decía "21 tablas con escritura abierta". Hoy
+  son **4 policies** con `true` en UPDATE/DELETE/ALL — medido contra
+  `pg_policies`, no leído del informe. Su cadena (`PLAN-SUPABASE-100` →
+  `PLAN-SUPABASE-CIERRE`) queda cerrada entera; el residuo es PITR y compute
+  (decisiones de facturación) y el POS (proyecto aparte).
+- `AUDITORIA-COMPLETA-2026-07-30` **no** está cerrada, aunque su §4.2 sí lo
+  esté: `recibido_mh` ya se lee con `LIKE` sobre el sello, pero `is_admin` sigue
+  consultado en las tres funciones de `src/data/requests.js` y la columna **no
+  existe** en `employees` (confirmado en `information_schema`), y las dos
+  policies con `WITH CHECK (true)` siguen ahí — `audit_logs.admin_insert` y
+  `attendance.attendance_insert`. Fases B y C intactas: sin CSP en `vercel.json`,
+  sin `manualChunks`, `error-ignorado` en 28.
+- `PLAN-IDENTIDAD-2026-07-29` figura como F1–F4 aplicadas y así es, pero **F5 y
+  F6 nunca se hicieron**: el gate no tiene la categoría `icono-semantico`, en
+  `src/` viven 29 `Edit3` · 15 `CheckCircle` · 10 `Edit2` · 7 `CheckCheck`, y la
+  compuerta compartida de F6 sigue en `scripts/design-gate.mjs:873`
+  (`!hasException(path,'color') && !hasException(path,'hex')`).
+- `PLAN-CONTABILIDAD-2026-08-02` — **E1 no arrancó**. Es el único ítem
+  irreversible del documento ("lo que no se capture hoy no existe mañana") y
+  `sales_invoice_items` no tiene ninguna columna de costo. `libros_iva_cierres`
+  tampoco existe (Bloque D) y `retiene_renta` sigue en 0 proveedores (E3).
+- `PLAN-MEJORAS-DTE-PROVEEDORES-2026-07` tiene Fases A/B/C aplicadas, pero H5b
+  —la categoría contable como hecho del documento— sigue sin implementar:
+  `purchase_dte_documents.categoria_id` no existe.
+
+**Referencias.** Se corrigieron las 12 rutas que el movimiento rompía, en
+`src/`, `scripts/`, `supabase/functions/` y la documentación. Las de
+`supabase/migrations/` se dejaron intactas a propósito y el motivo quedó escrito
+en el índice: un archivo de migración es el registro de lo que se aplicó, y su
+comentario decía la verdad el día que se escribió.
+
 ## v2.379.1 — Bodega: la escalera también al par efectivo
 
 Sale de la pregunta del usuario: «¿y si Bodega tiene valores manuales, cómo hace

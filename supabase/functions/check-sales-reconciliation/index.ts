@@ -46,7 +46,7 @@ const TOLERANCIA = 0.011;
 // Encontrar el día era la mitad. La otra mitad —bajar al documento y decir POR
 // QUÉ— se hizo a mano el 2026-08-03 para la diferencia de $9.00 de Salud 1 del
 // 14/07, y resultó que cada paso es mecánico. Ver
-// `docs/HALLAZGO-VENTA-PERDIDA-SALUD1-2026-07-14.md`.
+// `docs/planes-cerrados/HALLAZGO-VENTA-PERDIDA-SALUD1-2026-07-14.md`.
 //
 // Importa porque el aviso recetaba una cura equivocada: decía «hay que
 // resincronizar» y en ese caso resincronizar no servía de nada — el que había

@@ -222,7 +222,7 @@ const GanttChart = ({ plans, year }) => {
                                 )}
                                 <div className="flex items-center gap-2 group/row">
                                     <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
-                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
+                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                             {(emp?.photo || emp?.photo_url)
                                                 ? <img src={emp?.photo || emp?.photo_url} alt={emp?.name} className="w-full h-full object-cover" />
                                                 : (emp?.name || '?').charAt(0).toUpperCase()
@@ -897,7 +897,7 @@ const VacationPlanView = () => {
                                         </thead>
                                         <tbody className="divide-y divide-divider">
                                             {Array.from({ length: 5 }).map((_, i) => (
-                                                <tr key={i} className="border-b border-black/[0.04]">
+                                                <tr key={i} className="border-b border-divider">
                                                     <td className="py-3 pr-4">
                                                         <div className="flex items-center gap-2.5">
                                                             <div className="w-7 h-7 skeleton rounded-full shrink-0" />
@@ -943,7 +943,7 @@ const VacationPlanView = () => {
                                                         <tr className={`group/row hover:bg-surface-card transition-colors ${isEditing ? 'bg-warning/10' : ''}`}>
                                                             <td className="py-3 pr-4">
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
-                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
+                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                                         {p.employee?.photo
                                                                             ? <img src={p.employee.photo} alt={p.employee.name} className="w-full h-full object-cover" />
                                                                             : (p.employee?.name || '?').charAt(0).toUpperCase()
@@ -1027,7 +1027,7 @@ const VacationPlanView = () => {
                                             <div key={req.id} className="bg-warning/10 border border-warning/30 rounded-2xl p-4">
                                                 <div className="flex flex-wrap items-start gap-3 justify-between">
                                                     <div className="flex items-center gap-2.5">
-                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                             {emp?.photo_url
                                                                 ? <img src={emp.photo || emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
                                                                 : (emp?.name || '?').charAt(0).toUpperCase()

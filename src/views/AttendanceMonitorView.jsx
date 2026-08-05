@@ -453,7 +453,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               "h-11 w-11 rounded-xl border-2 overflow-hidden flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-105",
               isLate && status !== "FINISHED"
                 ? "border-danger/30 bg-danger/10 text-danger"
-                : "border-white bg-surface-card text-content-3",
+                : "border-border-card bg-surface-card text-content-3",
             ].join(" ")}
           >
             {emp.photo ? (
@@ -489,7 +489,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       </div>
 
       {scheduleDetails?.start && (
-        <div className="bg-surface-card-hover/50 rounded-lg p-2 border border-black/[0.04] space-y-1 mb-2">
+        <div className="bg-surface-card-hover/50 rounded-lg p-2 border border-divider space-y-1 mb-2">
           <div className="flex items-center gap-1.5 text-micro font-semibold text-content-2">
             <Clock size={11} className="text-brand-text shrink-0" />
             <span className="truncate">
@@ -511,7 +511,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         </div>
       )}
 
-      <div className="flex items-center justify-between text-caption pt-2 border-t border-black/[0.04]">
+      <div className="flex items-center justify-between text-caption pt-2 border-t border-divider">
         <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1">
           <Timer size={11} /> Último
         </span>
@@ -526,7 +526,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       </div>
 
       {punches?.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-black/[0.04] flex flex-wrap gap-1.5">
+        <div className="mt-2 pt-2 border-t border-divider flex flex-wrap gap-1.5">
           {punches.slice(-3).reverse().map((p, idx) => {
             const Icon = punchIcon(p.type);
             const t = new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -538,7 +538,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                   "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-micro font-bold uppercase tracking-wider",
                   isLatest
                     ? "bg-surface-card border-chart-1/30 text-chart-1-text shadow-sm"
-                    : "bg-surface-card border-black/5 text-content-3",
+                    : "bg-surface-card border-divider text-content-3",
                 ].join(" ")}
               >
                 <Icon size={9} strokeWidth={2.5} />

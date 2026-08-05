@@ -1753,6 +1753,13 @@
   --color-border-input:  var(--border-input);
   --color-border-tab:    var(--border-tab);
   --color-border-muted:  var(--border-muted);
+  /* El divisor DENTRO de un tooltip. `--tooltip-border` existía desde la
+     decisión 1a y ya trae su valor por tema, pero no tenía utilidad: los
+     cuatro divisores de tooltip escritos a mano usaban `border-white/10` y
+     `border-white/15`, que en el tema sólido claro dibujan una línea blanca
+     sobre un tooltip #16203D. Se veían porque la excepción de `color` de
+     esos archivos apagaba también la categoría `white` (F6). */
+  --color-border-tooltip: var(--tooltip-border);
 
   /* Radios */
   --radius-card:   var(--card-radius);

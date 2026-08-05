@@ -891,7 +891,7 @@ export default function CotizacionesView() {
                     )}
 
                     {/* Items */}
-                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-surface-card shadow-sm">
+                    <div className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead>
@@ -919,7 +919,7 @@ export default function CotizacionesView() {
                                     {itemsData.map((it, i) => {
                                         const dsg = desglose(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1));
                                         return (
-                                            <tr key={it.id || i} className="border-t border-black/[0.04]">
+                                            <tr key={it.id || i} className="border-t border-divider">
                                                 <td className="px-4 py-2.5 text-label font-black text-content-3">{i + 1}</td>
                                                 <td className="px-4 py-2.5 text-body-sm font-bold text-content max-w-[200px] truncate">{it.product_nombre}</td>
                                                 <td className="px-4 py-2.5 text-label text-content-3">{it.presentacion_desc || '—'}</td>

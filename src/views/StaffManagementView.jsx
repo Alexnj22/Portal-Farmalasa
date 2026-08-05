@@ -314,7 +314,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
             {birthdayInfo?.isToday && (
-                <span role="img" className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-white shadow-sm z-content flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
+                <span role="img" className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-surface-card shadow-sm z-content flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
                     <span className="text-micro leading-none">🎂</span>
                 </span>
             )}

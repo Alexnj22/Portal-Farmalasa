@@ -213,11 +213,21 @@ const STATUS_CONFIG = {
   ABSENT:    { label: 'Sin marcar',    dot: 'bg-warning',   variante: 'warning' },
 };
 
+// El tinte de un acento: mismo color, bajado a un porcentaje. Reemplaza a los
+// `rgba(0,82,204,0.10)` escritos a mano, que clavaban el valor del token y se
+// quedaban con el color viejo el día que la paleta cambiara.
+const tinte = (color, pct) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+
+// F6 (PLAN-IDENTIDAD): estos cuatro eran `#0052CC`, `#12B76A`, `#F79009` y
+// `#6929C4` — o sea EXACTAMENTE `--brand`, `--success`, `--warning` y
+// `--brand-purple`, clavados. No estaban fuera de la paleta: estaban desatados
+// de ella, que es peor de detectar. Se veían bien y cualquier cambio del token
+// los habría dejado atrás en silencio.
 const CATEGORY_META = {
-  personal:  { label: 'Personal',   color: '#0052CC', accent: 'rgba(0,82,204,0.10)',   border: 'rgba(0,82,204,0.18)'   },
-  ventas:    { label: 'Ventas',     color: '#12B76A', accent: 'rgba(18,183,106,0.10)', border: 'rgba(18,183,106,0.18)' },
-  productos: { label: 'Productos',  color: '#F79009', accent: 'rgba(247,144,9,0.10)',  border: 'rgba(247,144,9,0.18)'  },
-  general:   { label: 'General',    color: '#6929C4', accent: 'rgba(105,41,196,0.10)', border: 'rgba(105,41,196,0.18)' },
+  personal:  { label: 'Personal',   color: 'var(--brand)'        },
+  ventas:    { label: 'Ventas',     color: 'var(--success)'      },
+  productos: { label: 'Productos',  color: 'var(--warning)'      },
+  general:   { label: 'General',    color: 'var(--brand-purple)' },
 };
 
 const WIDGET_DEFS = [
@@ -294,7 +304,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
-      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: color + '18', border: `1px solid ${color}20` }}>
+      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: tinte(color, 9.4), border: `1px solid ${tinte(color, 12.5)}` }}>
         <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
       <p className="text-label font-semibold text-content-3 leading-snug">{label}</p>
@@ -320,7 +330,7 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
       <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-border-card shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: cat.accent, border: `1px solid ${cat.border}` }}>
+            style={{ background: tinte(cat.color, 10), border: `1px solid ${tinte(cat.color, 18)}` }}>
             <Icon size={13} style={{ color: cat.color }} strokeWidth={2} />
           </div>
           <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
@@ -1268,12 +1278,12 @@ const DashboardView = ({ openModal }) => {
             ) : (
             <ChartContainer>
               <AreaChart data={trendData} margin={{top:5,right:5,left:-20,bottom:0}}>
-                <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0052CC" stopOpacity={0.25}/><stop offset="95%" stopColor="#0052CC" stopOpacity={0}/></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                <XAxis dataKey="day" tick={{fontSize:11,fill:'#64748b',fontWeight:600}} axisLine={false} tickLine={false}/>
+                <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--brand)" stopOpacity={0.25}/><stop offset="95%" stopColor="var(--brand)" stopOpacity={0}/></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false}/>
+                <XAxis dataKey="day" tick={{fontSize:11,fill:"var(--text-tertiary)",fontWeight:600}} axisLine={false} tickLine={false}/>
                 <YAxis hide/>
-                <Tooltip contentStyle={{background:'#1e293b',border:'none',borderRadius:'0.75rem',fontSize:12,color:'#f8fafc'}} labelStyle={{color:'#64748b',fontWeight:700}} formatter={(v,_,p)=>[v,`Presentes · ${p.payload?.date||''}`]}/>
-                <Area type="monotone" dataKey="total" stroke="#0052CC" strokeWidth={2.5} fill="url(#colorTotal)" dot={{fill:'#0052CC',strokeWidth:0,r:3}} activeDot={{r:5,fill:'#0052CC'}}/>
+                <Tooltip contentStyle={{background:"var(--tooltip-bg)",border:'none',borderRadius:'0.75rem',fontSize:12,color:"var(--tooltip-text)"}} labelStyle={{color:'var(--tooltip-text-2)',fontWeight:700}} formatter={(v,_,p)=>[v,`Presentes · ${p.payload?.date||''}`]}/>
+                <Area type="monotone" dataKey="total" stroke="var(--brand)" strokeWidth={2.5} fill="url(#colorTotal)" dot={{fill:"var(--brand)",strokeWidth:0,r:3}} activeDot={{r:5,fill:"var(--brand)"}}/>
               </AreaChart>
             </ChartContainer>
             )}
@@ -1374,7 +1384,7 @@ const DashboardView = ({ openModal }) => {
                   return chartData.map((item,i)=>(
                     <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
                       <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2.5 py-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center">
-                        <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2 mb-1 border-b border-white/15 pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
+                        <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2 mb-1 border-b border-border-tooltip pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>
                             <p className="text-label font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / hora punta (P75)</p>
@@ -1769,8 +1779,8 @@ const DashboardView = ({ openModal }) => {
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
-                          ?<img src={e.photo||e.photo_url} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-brand/30':e.isTomorrow?'border-warning/40':'border-white'}`}/>
-                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-body-sm ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning-solid text-white border-warning/40':'bg-surface-card-hover text-content-3 border-white'}`}>{initials}</div>
+                          ?<img src={e.photo||e.photo_url} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-brand/30':e.isTomorrow?'border-warning/40':'border-surface-card'}`}/>
+                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-body-sm ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning-solid text-white border-warning/40':'bg-surface-card-hover text-content-3 border-surface-card'}`}>{initials}</div>
                         }
                         {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
                         {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
@@ -2228,28 +2238,28 @@ const DashboardView = ({ openModal }) => {
           employees.length === 0
             ? <div key="kpi-general-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="#0052CC" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
-                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="#12B76A" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="#F79009" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'#F04438':'#12B76A'} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
               </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
           <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="#0052CC" sub="últ. 30 días" onClick={() => navigate('/cotizaciones')}/>
-            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={formatMoney(cotizStats.total, { decimales: 0 })} color="#12B76A" sub="en cotizaciones"/>
-            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="#6929C4" sub={factStats.count===1?'documento':'documentos'} onClick={() => navigate('/facturacion')}/>
-            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={formatMoney(factStats.total, { decimales: 0 })} color="#F79009" sub="total del día"/>
+            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="var(--brand)" sub="últ. 30 días" onClick={() => navigate('/cotizaciones')}/>
+            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={formatMoney(cotizStats.total, { decimales: 0 })} color="var(--success)" sub="en cotizaciones"/>
+            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="var(--brand-purple)" sub={factStats.count===1?'documento':'documentos'} onClick={() => navigate('/facturacion')}/>
+            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub="total del día"/>
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'rrhh' && (
           employees.length === 0
             ? <div key="kpi-rrhh-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="#0052CC"/>
-                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="#12B76A" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
-                <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="#F04438" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="#F79009" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)"/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
+                <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="var(--danger)" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
               </div>
         )}
           </>);
@@ -2299,7 +2309,7 @@ const DashboardView = ({ openModal }) => {
         <div style={{position:'fixed',top:calTooltip.y-10,left:calTooltip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
           data-surface="tooltip" className="overflow-hidden max-w-[220px] min-w-[140px] animate-in fade-in zoom-in-95 duration-150">
           {calTooltip.holidays?.length>0&&(
-            <div className="px-3 py-2 border-b border-white/10">
+            <div className="px-3 py-2 border-b border-border-tooltip">
               {calTooltip.holidays.map((h,i)=>(
                 <div key={i} className="flex items-center gap-1.5 text-label font-medium text-danger-text">
                   <span>📅</span><span>{h}</span>

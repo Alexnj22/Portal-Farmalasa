@@ -361,7 +361,7 @@ const BranchCard = memo(({
 
             {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA */}
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-tabs">
-                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-white hover:scale-105">
+                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-border-card hover:scale-105">
                     
                     {isFarmacia && (
                         <>
@@ -403,7 +403,7 @@ const BranchCard = memo(({
                             <alertStatus.icon size={14} strokeWidth={2.5} />
                         </div>
                         <div data-surface="tooltip" className="absolute top-full mt-2 right-0 w-max max-w-[220px] p-4 opacity-0 invisible group-hover/badge:opacity-100 focus-within:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 z-sidebar">
-                            <p className="text-micro text-content-tooltip-2 uppercase tracking-widest mb-2.5 font-black border-b border-white/15 pb-1.5 flex items-center justify-between">
+                            <p className="text-micro text-content-tooltip-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-tooltip pb-1.5 flex items-center justify-between">
                                 Problemas Detectados <span className="bg-danger/20 text-danger px-1.5 py-0.5 rounded text-micro">{alertStatus.list.length}</span>
                             </p>
                             <div className="space-y-2.5">

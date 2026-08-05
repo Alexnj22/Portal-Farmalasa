@@ -14,7 +14,11 @@ function fmtHM(iso) {
 const tlDot    = () => 'bg-chart-3';
 const tlLine   = () => 'bg-chart-3/40';
 const tlBorder = () => 'border-chart-3/60';
-const tlGlow   = () => 'rgba(99,102,241';
+// El halo del punto activo. Era `rgba(99,102,241` —un prefijo de cadena que se
+// cerraba con `,0.5)` en el sitio de uso— y ese índigo no es el violeta del
+// punto que rodea: los otros tres de acá arriba son `chart-3`. Ahora sale del
+// mismo token, así que el halo y el punto no se pueden separar (F6).
+const tlGlow   = () => 'color-mix(in srgb, var(--chart-3) 50%, transparent)';
 
 // ruta_entregado se inserta en índice 4; Llegada→5, Finalizado→6, extras→≥7
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 5, erp: 6 };
@@ -152,7 +156,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         isActive    ? `bg-surface-card border-2 ${tlBorder(idx)}` :
                                                       'bg-surface-card-hover border border-divider'
                                     }`}
-                                    style={{ animationDelay: `${idx * 60}ms`, '--glow': `${glowColor},0.5)` }}
+                                    style={{ animationDelay: `${idx * 60}ms`, '--glow': glowColor }}
                                 >
                                     {isDone && (
                                         <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
@@ -195,7 +199,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             {node.emp && (
                                 <div className="flex flex-col items-center gap-0.5 mt-1">
                                     {node.emp.photo
-                                        ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-md shrink-0" alt="" />
+                                        ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-surface-card shadow-md shrink-0" alt="" />
                                         : <span className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-content-3" /></span>
                                     }
                                     <span className="text-micro text-content-2 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
@@ -206,8 +210,8 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                 <div className="flex justify-center mt-0.5" style={{ paddingLeft: node.apoyo.length > 1 ? 6 : 0 }}>
                                     {node.apoyo.slice(0, 3).map((a, i) => (
                                         a.photo_url
-                                            ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-white shadow-sm shrink-0 relative" alt="" />
-                                            : <span key={a.id} role="img" title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-white flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
+                                            ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-surface-card shadow-sm shrink-0 relative" alt="" />
+                                            : <span key={a.id} role="img" title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-surface-card flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
                                     ))}
                                 </div>
                             )}

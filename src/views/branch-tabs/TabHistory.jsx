@@ -467,7 +467,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     <div className={`hidden md:block w-[45%] ${i % 2 === 0 ? 'text-left pl-12' : 'text-right pr-12'}`}>
                                         <div className={`h-4 skeleton rounded-full w-24 ${i % 2 === 0 ? 'mr-auto' : 'ml-auto'}`} />
                                     </div>
-                                    <div className="absolute left-[20px] md:left-1/2 w-8 h-8 skeleton rounded-full border-4 border-white -translate-x-[20px] md:-translate-x-1/2 z-tabs" />
+                                    <div className="absolute left-[20px] md:left-1/2 w-8 h-8 skeleton rounded-full border-4 border-surface-card -translate-x-[20px] md:-translate-x-1/2 z-tabs" />
                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 ${i % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
                                         <div className="h-32 bg-surface-card border border-border-card rounded-3xl p-5 w-full space-y-3">
                                             <div className="h-3 skeleton rounded-full w-1/3" />
@@ -583,7 +583,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                                     <div className="absolute left-[20px] md:left-1/2 top-1 md:top-auto w-10 h-10 flex items-center justify-center -translate-x-[20px] md:-translate-x-1/2 z-tabs group-hover:scale-125 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                                                                         <div className={`absolute inset-0 rounded-full opacity-30 animate-pulse ${theme.dot}`}></div>
-                                                                                        <div className={`w-4 h-4 rounded-full border-[3px] border-white shadow-sm relative ${theme.dot} ${theme.shadow}`}></div>
+                                                                                        <div className={`w-4 h-4 rounded-full border-[3px] border-surface-card shadow-sm relative ${theme.dot} ${theme.shadow}`}></div>
                                                                                     </div>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-content ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
@@ -609,7 +609,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                                                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-card">
                                                                                                     <div className="flex items-center gap-2">
-                                                                                                        <div className="w-6 h-6 rounded-full bg-surface-card-hover/80 border border-white flex items-center justify-center text-content-3 text-caption font-black shadow-inner uppercase overflow-hidden shrink-0">
+                                                                                                        <div className="w-6 h-6 rounded-full bg-surface-card-hover/80 border border-surface-card flex items-center justify-center text-content-3 text-caption font-black shadow-inner uppercase overflow-hidden shrink-0">
                                                                                                             {actorPhotoUrl ? (
                                                                                                                 <img
                                                                                                                     src={actorPhotoUrl}

@@ -334,7 +334,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             ) : (
               <div className="space-y-1.5">
                 {dayPunches.map(p => (
-                  <div key={p.id} data-surface="card" className="flex items-center gap-3 border-black/[0.06] px-4 py-2.5">
+                  <div key={p.id} data-surface="card" className="flex items-center gap-3 border-divider px-4 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-body-sm font-black text-content">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
                       <p className="text-label font-bold text-content-3">{fmtTimeCSTStr(p.timestamp)}</p>
@@ -364,7 +364,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               <LiquidSelect value={newType} onChange={setNewType} options={availablePunchTypes} placeholder="Tipo" compact clearable={false} />
               <TimePicker12
                 value={newTime} onChange={setNewTime}
-                className="bg-surface-card border border-black/[0.09] rounded-2xl"
+                className="bg-surface-card border border-divider rounded-2xl"
               />
             </div>
             <PortalTextarea
@@ -472,8 +472,8 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   const cardBg = isToday
     ? 'bg-brand/[0.09] border-brand/25 shadow-[var(--shadow-glow-brand-sm)]'
     : isFuture
-    ? 'bg-surface-card-hover border-black/[0.04]'
-    : 'bg-surface-card border-black/[0.07] shadow-[var(--shadow-elevation-sm)]';
+    ? 'bg-surface-card-hover border-divider'
+    : 'bg-surface-card border-divider shadow-[var(--shadow-elevation-sm)]';
 
   return (
     <div className={`rounded-card border p-4 transition-all duration-200 ${cardBg}`}>
@@ -729,7 +729,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         >
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">
-          <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
+          <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-surface-card shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
             {emp.photo
               ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
               : <span className="text-body-xl">{emp.name?.charAt(0) || '?'}</span>}

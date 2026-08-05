@@ -21,28 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.382.1 — El filtro de sala va en la píldora, no suelto
-
-El selector de sala de las gráficas del mes había quedado suelto en el encabezado
-de su sección. Lo corrigió el usuario: **todo filtro va en la píldora, siempre.**
-
-Mi razonamiento al ponerlo aparte fue que ese filtro era «de esa sección y no de
-la vista» — y esa es exactamente la excusa que rompe el canon. Quien mira la
-píldora para saber qué tiene filtrado no se entera de que hay un recorte puesto
-hasta que baja hasta ese encabezado.
-
-Ahora vive en la píldora junto al mes, con su propia marca para soltarlo, y
-**recorta la vista entera**: elegir una sala deja su tarjeta y sus gráficas, en
-vez de recortar media pantalla y dejar la otra media con las seis. Que un filtro
-afecte a todo lo que se ve es lo que lo hace un filtro.
-
-La regla quedó escrita en `DESIGN.md` §17 con el caso: si el recorte de verdad
-solo tiene sentido para una sección, que filtre la vista entera; y si filtrar
-todo no tiene sentido, entonces no era un filtro — era un selector de contenido,
-y eso se resuelve dentro de la tarjeta, no con un control que parece un filtro y
-no está donde viven los filtros.
-
-## v2.382.0 — La fuga de excepciones del gate — 389 hallazgos que nadie contaba
+## v2.382.2 — La fuga de excepciones del gate — 389 hallazgos que nadie contaba
 
 F6 de `PLAN-IDENTIDAD-2026-07-29`, y el hallazgo con más valor a futuro del
 plan: los otros cinco eran deuda de una vez, éste era **la razón por la que
@@ -88,6 +67,27 @@ excepcionadas **con cada categoría escrita**, que es el punto: un `hex` nuevo e
 
 Barrido completo del repo en **cero hallazgos**, todas las categorías
 bloqueantes.
+
+## v2.382.1 — El filtro de sala va en la píldora, no suelto
+
+El selector de sala de las gráficas del mes había quedado suelto en el encabezado
+de su sección. Lo corrigió el usuario: **todo filtro va en la píldora, siempre.**
+
+Mi razonamiento al ponerlo aparte fue que ese filtro era «de esa sección y no de
+la vista» — y esa es exactamente la excusa que rompe el canon. Quien mira la
+píldora para saber qué tiene filtrado no se entera de que hay un recorte puesto
+hasta que baja hasta ese encabezado.
+
+Ahora vive en la píldora junto al mes, con su propia marca para soltarlo, y
+**recorta la vista entera**: elegir una sala deja su tarjeta y sus gráficas, en
+vez de recortar media pantalla y dejar la otra media con las seis. Que un filtro
+afecte a todo lo que se ve es lo que lo hace un filtro.
+
+La regla quedó escrita en `DESIGN.md` §17 con el caso: si el recorte de verdad
+solo tiene sentido para una sección, que filtre la vista entera; y si filtrar
+todo no tiene sentido, entonces no era un filtro — era un selector de contenido,
+y eso se resuelve dentro de la tarjeta, no con un control que parece un filtro y
+no está donde viven los filtros.
 
 ## v2.381.0 — Metas: cómo va el mes y quién está vendiendo
 

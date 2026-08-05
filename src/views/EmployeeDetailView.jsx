@@ -459,18 +459,18 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 
                                 <div className="px-6 pb-8 pt-10 flex flex-col items-center relative z-base">
                                     
-                                    <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-surface-card border border-white shadow-xl backdrop-blur-md mb-5 group relative">
+                                    <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl backdrop-blur-md mb-5 group relative">
                                         <div className="h-full w-full rounded-full overflow-hidden bg-surface-card-hover relative shadow-inner">
                                             <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                         </div>
                                         {canEdit && (
-                                            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                                            <div className="absolute inset-0 rounded-full bg-scrim opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
                                                 onClick={handleEditProfile}>
                                                 <Camera size={24} className="text-white"/>
                                             </div>
                                         )}
                                         {(emp.effectiveStatus === 'Activo' || emp.effectiveStatus === 'En Apoyo') && (
-                                            <span className="absolute bottom-2 right-4 w-5 h-5 bg-success border-4 border-white rounded-full shadow-sm z-base"></span>
+                                            <span className="absolute bottom-2 right-4 w-5 h-5 bg-success border-4 border-surface-card rounded-full shadow-sm z-base"></span>
                                         )}
                                     </div>
                                     
@@ -579,7 +579,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
                                                 <Clock size={18} className="text-brand-text"/> Historial Operativo
                                             </h3>
-                                            <div className="px-3 py-1 bg-surface-card text-content-3 rounded-full text-micro font-black uppercase tracking-widest border border-white shadow-sm flex items-center gap-1.5">
+                                            <div className="px-3 py-1 bg-surface-card text-content-3 rounded-full text-micro font-black uppercase tracking-widest border border-border-card shadow-sm flex items-center gap-1.5">
                                                 {isLoadingTimeline && <Loader2 size={10} className="animate-spin"/>}
                                                 {timeline.length} Eventos
                                             </div>
@@ -631,7 +631,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                 return (
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
-                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-base ${isHiring ? 'border-success' : 'border-brand'}`}></div>
+                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-surface-card border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-base ${isHiring ? 'border-success' : 'border-brand'}`}></div>
                                                         
                                                         <div data-surface="card" className={`hover:bg-surface-card p-5 transition-all duration-300 ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
@@ -828,7 +828,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 z-tooltip min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 focus-within:opacity-100 transition-opacity duration-200 text-left">
                                                                     <p className="text-micro font-black uppercase tracking-widest text-content-tooltip-2 mb-1.5">{ds}</p>
                                                                     {tooltipLines.map((item, li) => (
-                                                                        <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-white/10' : ''}>
+                                                                        <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-border-tooltip' : ''}>
                                                                             <div className="flex items-center justify-between gap-3">
                                                                                 <span className="text-label font-black">{item.label}</span>
                                                                                 {item.hoursStr && <span className="text-caption font-bold text-warning whitespace-nowrap">{item.hoursStr}</span>}
@@ -955,7 +955,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     </h3>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="p-5 bg-gradient-to-br from-success/10 to-white rounded-3xl border border-success/30 shadow-sm">
+                                                    <div className="p-5 bg-gradient-to-br from-success/10 to-surface-card rounded-3xl border border-success/30 shadow-sm">
                                                         <p className="text-caption font-black uppercase tracking-widest text-success/70 mb-1">Salario Base Contractual</p>
                                                         <p className="text-2xl font-black text-success-text tracking-tight">${emp.salary || emp.base_salary || '0.00'}</p>
                                                     </div>
@@ -1043,7 +1043,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         {isLoadingEmpReqs ? (
                                             <div className="space-y-3">
                                                 {Array.from({ length: 4 }).map((_, i) => (
-                                                    <div key={i} data-surface="card" className="flex items-start gap-4 p-4 border-black/[0.06]">
+                                                    <div key={i} data-surface="card" className="flex items-start gap-4 p-4 border-divider">
                                                         <div className="w-9 h-9 skeleton rounded-2xl shrink-0" />
                                                         <div className="flex-1 space-y-2">
                                                             <div className="flex gap-2">

@@ -162,11 +162,11 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="flex items-center gap-3 mt-auto border-t border-border-card pt-4 relative z-base">
-                <div data-surface="card" className="flex-1 p-3 border-white">
+                <div data-surface="card" className="flex-1 p-3 border-border-card">
                     <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Entrada</span>
                     <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.start)}</span>
                 </div>
-                <div data-surface="card" className="flex-1 p-3 border-white">
+                <div data-surface="card" className="flex-1 p-3 border-border-card">
                     <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Salida</span>
                     <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.end)}</span>
                 </div>
@@ -410,7 +410,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
             {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
             <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar transform-gpu">
-                <div data-surface="card" className={`p-6 md:p-8 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card transform-gpu ${editingGroup ? 'border-warning/40 shadow-[var(--shadow-glass-3)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
+                <div data-surface="card" className={`p-6 md:p-8 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-border-card hover:bg-surface-card transform-gpu ${editingGroup ? 'border-warning/40 shadow-[var(--shadow-glass-3)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-base">
                         <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">

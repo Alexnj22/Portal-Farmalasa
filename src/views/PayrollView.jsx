@@ -656,9 +656,9 @@ const PayrollView = ({ openModal }) => {
                                             </div>
                                         </div>
                                         <table className="w-full text-caption">
-                                            <tbody className="divide-y divide-white/30">
+                                            <tbody className="divide-y divide-divider">
                                                 {Array.from({ length: 6 }).map((_, i) => (
-                                                    <tr key={i} className="border-b border-black/[0.04]">
+                                                    <tr key={i} className="border-b border-divider">
                                                         <td className="px-6 py-3.5">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="w-8 h-8 skeleton rounded-xl shrink-0" />

@@ -89,18 +89,18 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
-            <div className="absolute top-3 right-3 z-base flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-white shadow-sm pointer-events-none">
+            <div className="absolute top-3 right-3 z-base flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-border-card shadow-sm pointer-events-none">
                 <Pencil size={10} strokeWidth={2.5} className="text-content-3" />
             </div>
 
             <div className="flex flex-col items-center justify-center relative z-base mb-3 mt-2">
                 <div className="relative">
                     <div className={`w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr ${theme.gradient} shadow-sm group-hover:scale-105 transition-transform`}>
-                        <div className="w-full h-full rounded-full border-2 border-white overflow-hidden bg-surface-card-hover flex items-center justify-center text-content-3 font-black text-xl">
+                        <div className="w-full h-full rounded-full border-2 border-surface-card overflow-hidden bg-surface-card-hover flex items-center justify-center text-content-3 font-black text-xl">
                             {employee.photo ? <img src={employee.photo} alt={employee.name} className="w-full h-full object-cover" /> : employee.name.charAt(0)}
                         </div>
                     </div>
-                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-white shadow-sm ${theme.badge}`}>
+                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-surface-card flex items-center justify-center text-white shadow-sm ${theme.badge}`}>
                         <CardIcon size={10} strokeWidth={2.5} />
                     </div>
                 </div>
@@ -108,7 +108,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
             <div className="text-center relative z-base mb-3">
                 <p className="text-body-lg font-black text-content leading-tight group-hover:text-brand-text transition-colors truncate px-2">{employee.name}</p>
-                <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-surface-card border border-white rounded-full shadow-sm">
+                <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-surface-card border border-border-card rounded-full shadow-sm">
                     <div className={`w-1.5 h-1.5 rounded-full ${theme.badge}`}></div>
                     <p className={`text-micro font-black uppercase tracking-widest ${theme.text} truncate max-w-[120px]`}>{roleLabel || employee.role}</p>
                 </div>
@@ -127,7 +127,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="mt-auto pt-3 border-t border-border-card relative z-base flex flex-col gap-2 pb-1">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 overflow-hidden">
-                        <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Phone size={10} strokeWidth={2.5} /></div>
+                        <div className="w-6 h-6 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Phone size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col">
                             <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none">Teléfono</span>
                             <span className="text-caption font-bold text-content-2 truncate">{employee.phone || 'N/A'}</span>
@@ -143,7 +143,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 overflow-hidden pr-8">
-                        <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
+                        <div className="w-6 h-6 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col flex-1 overflow-hidden">
                             <span className="text-caption font-black text-content-2 uppercase tracking-widest leading-none flex items-center gap-1.5">
                                 Ingreso {hireDate && <Badge variant="chart-1" uppercase={false}>({getRelativeTime(hireDate)})</Badge>}
@@ -296,8 +296,8 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             )}
 
             {log && (
-                <div className="bg-black/50 rounded-lg p-3 border border-border-card">
-                    <p className="text-caption font-mono text-success-text tracking-wide leading-relaxed">{log}</p>
+                <div className="bg-scrim rounded-lg p-3 border border-border-card">
+                    <p className="text-caption font-mono text-success tracking-wide leading-relaxed">{log}</p>
                 </div>
             )}
         </div>
@@ -698,7 +698,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                     {wfmApplied ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                            <div className="bg-surface-card backdrop-blur-md rounded-xl p-3 border border-white shadow-[var(--shadow-elevation-xs)]">
+                                            <div className="bg-surface-card backdrop-blur-md rounded-xl p-3 border border-border-card shadow-[var(--shadow-elevation-xs)]">
                                                 <p className="text-micro font-black uppercase tracking-widest text-content-2">Registros Históricos</p>
                                                 <p className="text-title-sm font-black text-content mt-1">{historicalSales.length}</p>
                                                 <p className="text-micro font-bold text-content-3">Horas de venta analizadas</p>

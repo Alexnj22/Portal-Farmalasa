@@ -71,6 +71,24 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 //             hoy), 'capa-flotante' (el portal anclado del archivo es un
 //             TOOLTIP: sigue al puntero y no se navega, así que apagarle el
 //             hover del fondo sería pelearse consigo mismo).
+// ── F6 (PLAN-IDENTIDAD-2026-07-29): `color` YA NO ARRASTRA A NADIE ─────────
+// Hasta la v2.382.2 las categorías `white`, `hex` e `inline-color` compartían
+// compuerta con `color`: excepcionar un archivo para `color` apagaba las otras
+// tres sin que nadie lo decidiera. Escondía **389 hallazgos en 30 archivos**, y
+// el ratchet no podía verlos porque nunca los contó.
+//
+// Al separarlas, 13 vistas ordinarias resultaron tener deuda real —aros de
+// avatar `border-white` que en tema oscuro dibujan un halo, divisores
+// `border-black/[0.04]` invisibles sobre fondo oscuro, y un panel de log
+// `bg-black/50` con texto `--success-text`, que en los dos temas claros es
+// verde OSCURO sobre negro—. Todo eso está arreglado, no excepcionado.
+//
+// Lo que queda excepcionado abajo son las superficies bespoke que DESIGN.md §6
+// ya documenta (sidebar siempre-oscuro, kiosco, splash, canvas, mapas, HTML de
+// impresión), ahora **con cada categoría escrita**. La diferencia importa: que
+// una superficie sea de color fijo explica su `text-white`; NO explica un hex
+// suelto. Un `hex` nuevo en LoginView hoy sigue pasando, pero uno nuevo en
+// cualquier vista normal falla — que es lo que antes no ocurría.
 const EXCEPTIONS = {
   // Acá es donde los cuatro retirados se DEFINEN como alias — es la solución,
   // no la deuda. Y los canónicos los siguen aceptando a propósito para que las
@@ -98,7 +116,7 @@ const EXCEPTIONS = {
   // 'shadow-literal': el filo del ítem activo es el único glow BICOLOR del
   // portal (verde + magenta del logo). La escala --shadow-glow-* es de un color
   // por token; un token propio para esto sería una escala de uno.
-  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index', 'shadow-literal'],
+  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index', 'shadow-literal', 'white', 'hex', 'inline-color'],
   // `input-a-mano` (2026-07-29): los 4 que quedaban NO son deuda, son las
   // superficies bespoke de DESIGN.md §25.4 —lista CERRADA— más la paleta de
   // comandos. Pasan de ratchet a excepción nombrada para que la categoría
@@ -120,12 +138,12 @@ const EXCEPTIONS = {
   // `pointer-events-none`) — a 100px un trazo de la escala se ve como un dibujo,
   // no como una textura. Es el mismo criterio con que §12 saca a las marcas de
   // agua de la rampa de tamaños.
-  'src/components/forms/FormWfmAnalytics.jsx': ['color', 'icono-stroke'],
+  'src/components/forms/FormWfmAnalytics.jsx': ['color', 'icono-stroke', 'white', 'hex'],
   // El check y el guion del Checkbox van a `strokeWidth={4}`: dentro de una caja
   // de 16px un trazo de 2.5 se pierde, y ese glifo ES el estado del control —
   // si no se ve, el checkbox no comunica nada. No es un ícono de interfaz más.
   'src/components/common/Checkbox.jsx': ['icono-stroke'],
-  'src/components/timeclock/IdleScanPanel.jsx': ['color'], // kiosco
+  'src/components/timeclock/IdleScanPanel.jsx': ['color', 'white'], // kiosco
   'src/views/AttendanceMonitorView.jsx': ['color'], // wallboard isDarkConcept
   // Shimmer decorativo de IA idéntico (DESIGN.md §6)
   'src/views/branch-tabs/TabHistory.jsx': ['color'],
@@ -133,15 +151,15 @@ const EXCEPTIONS = {
   'src/views/branch-tabs/TabExpediente.jsx': ['color'],
   'src/components/forms/FormAiSchedulerPreview.jsx': ['color'],
   // Mapas/canvas/PDF — colores hex directos por naturaleza de la tecnología
-  'src/views/CotizacionesView.jsx': ['color'],
-  'src/views/pedidos/CrearRutaModal.jsx': ['color'], // marcadores Leaflet (L.divIcon HTML)
+  'src/views/CotizacionesView.jsx': ['color', 'hex'],
+  'src/views/pedidos/CrearRutaModal.jsx': ['color', 'white', 'hex', 'inline-color'], // marcadores Leaflet (L.divIcon HTML)
   // La boleta y la planilla son documentos legales que se imprimen, y la línea
   // 461 arma el archivo de banco (CSV): un separador de miles ahí rompe la
   // carga. La pantalla de la vista SÍ pasa por `formatMoney` (el helper `fmt`).
-  'src/views/PayrollView.jsx': ['color', 'formato-cifra'],
+  'src/views/PayrollView.jsx': ['color', 'formato-cifra', 'hex'],
   // Tooltips flotantes dark (DESIGN.md §6 — no siguen el tema activo por diseño)
   'src/components/forms/FormEditPayrollEntry.jsx': ['color'],
-  'src/components/common/SidebarSyncStatus.jsx': ['color'],
+  'src/components/common/SidebarSyncStatus.jsx': ['color', 'white'],
   'src/views/pedidos/tabpedidos/LifecycleTimeline.jsx': ['color'],
   'src/views/schedule-tabs/components/SalyCopilot.jsx': ['color'], // caja IA siempre-oscura, mismo patrón shimmer
   'src/views/schedule-tabs/components/ScheduleChart.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
@@ -151,23 +169,23 @@ const EXCEPTIONS = {
   'src/views/VentasView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
-  'src/views/TimeClockView.jsx': ['color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
-  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
-  'src/components/timeclock/KioskConfigModal.jsx': ['color'],
-  'src/components/common/ThemeToggle.jsx': ['color'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)
+  'src/views/TimeClockView.jsx': ['color', 'white', 'hex', 'inline-color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
+  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'white', 'hex', 'inline-color'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
+  'src/components/timeclock/KioskConfigModal.jsx': ['color', 'white', 'hex'],
+  'src/components/common/ThemeToggle.jsx': ['color', 'white'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
   // 'relleno-sin-solid': `selection:bg-success/30 selection:text-white` es el
   // resaltado de SELECCIÓN de texto, no un relleno de control — el usuario ve
   // ese par solo mientras arrastra sobre el bloque de código.
-  'src/components/forms/FormAuditDetail.jsx': ['color', 'relleno-sin-solid'], // mockup de ventana macOS (colores reales del semáforo Apple)
+  'src/components/forms/FormAuditDetail.jsx': ['color', 'relleno-sin-solid', 'hex'], // mockup de ventana macOS (colores reales del semáforo Apple)
   'src/views/AccessDeniedView.jsx': ['color'], // verde real de marca WhatsApp
   'src/views/NoAccessView.jsx': ['color'], // verde real de marca WhatsApp
-  'src/App.jsx': ['color'], // fondo splash bespoke (comparte gradiente con LoginView)
+  'src/App.jsx': ['color', 'hex'], // fondo splash bespoke (comparte gradiente con LoginView)
   // Vistas de diagnóstico/QA, no UI real de negocio
   'src/views/IOSTestView.jsx': ['color'],
   // Banner bespoke fijo (franja rayada ámbar/naranja con texto oscuro fijo,
   // no reactivo al tema — ver src/version.js v2.57.1)
-  'src/components/common/ThemeMigrationRibbon.jsx': ['color'],
+  'src/components/common/ThemeMigrationRibbon.jsx': ['color', 'hex', 'inline-color'],
   // Los componentes canónicos SON la implementación del select/date-picker/
   // modal — su interior legítimamente toca lo nativo que envuelven.
   'src/components/common/LiquidSelect.jsx': ['native'],
@@ -200,7 +218,7 @@ const EXCEPTIONS = {
   // (§25.4). Ahí `bg-chart-6/10` no es un relleno claro sino un tinte sobre
   // negro, y el texto blanco encima mide de sobra — la regla del `-solid`
   // existe para rellenos sobre fondo claro.
-  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography', 'relleno-sin-solid'],
+  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography', 'relleno-sin-solid', 'white', 'hex'],
   // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
   // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
@@ -290,12 +308,12 @@ const EXCEPTIONS = {
   // 'capa-flotante': es EL tooltip canónico. Mismo motivo que arriba.
   'src/components/common/LiquidTooltip.jsx': ['capa-flotante'],
   'src/components/common/LiquidWeekPicker.jsx': ['z-index'],
-  'src/components/common/PhotoEditorModal.jsx': ['color', 'z-index'],
+  'src/components/common/PhotoEditorModal.jsx': ['color', 'z-index', 'hex', 'inline-color'],
   'src/views/productos/tabminmax/RowActions.jsx': ['z-index'],
   'src/views/pedidos/RecepcionModal.jsx': ['z-index'],
-  'src/views/pedidos/RutaMapModal.jsx': ['color', 'z-index'],
+  'src/views/pedidos/RutaMapModal.jsx': ['color', 'z-index', 'hex', 'inline-color'],
   'src/views/employee/EmployeeAnnouncementsView.jsx': ['typography', 'z-index'],
-  'src/views/RawTestView.jsx': ['color', 'z-index'],
+  'src/views/RawTestView.jsx': ['color', 'z-index', 'hex', 'inline-color'],
   // AppLayout y LoginView: apilamiento INTERNO de sus propias superficies
   // bespoke (las capas del sidebar siempre-oscuro, los orbes del splash). La
   // escala canónica gobierna el apilamiento ENTRE componentes, no dentro de
@@ -878,12 +896,22 @@ function scanFile(path) {
     });
   }
 
-  // 'white' y 'hex' heredan la excepción de 'color': los archivos ya
-  // excepcionados lo están por ser superficies bespoke de color fijo
-  // (sidebar siempre-oscuro, kiosco, splash, canvas/PDF, marca de terceros)
-  // — exactamente el mismo motivo por el que su blanco y su hex son
-  // legítimos. Duplicar las ~25 entradas no agregaría información.
-  if (!hasException(path, 'color') && !hasException(path, 'white')) {
+  // F6 de PLAN-IDENTIDAD-2026-07-29 — LA COMPUERTA YA NO SE COMPARTE.
+  // Hasta la v2.382.2 esto decía `!hasException('color') && !hasException('white')`,
+  // y lo mismo `hex` e `inline-color`: una excepción de `color` apagaba otras tres
+  // categorías. El comentario que lo justificaba —"están excepcionados por ser
+  // superficies bespoke de color fijo, el mismo motivo vale para su blanco y su
+  // hex"— confunde dos cosas distintas. Que una superficie sea de color fijo
+  // explica que use `text-white` o una clase de Tailwind cruda; NO explica que
+  // lleve un hex que no está en la paleta cerrada. `DashboardView` estaba
+  // excepcionado para `color` (panel oscuro, motivo legítimo) y por esa puerta
+  // entraron `#12B76A` y `#F79009`, un verde y un ámbar que no existen en la
+  // paleta — y nadie los vio nunca, porque el ratchet no cuenta lo que el gate
+  // no mira. Cuatro archivos ya listaban `white` aparte teniendo `color`: la
+  // herencia no se sostenía ni en su propia lista.
+  // Cada categoría chequea SU excepción. Si un archivo necesita las cuatro, se
+  // escriben las cuatro, con su motivo.
+  if (!hasException(path, 'white')) {
     lines.forEach((line, i) => {
       if (isComment[i]) return;
       WHITE_RE.lastIndex = 0;
@@ -894,7 +922,7 @@ function scanFile(path) {
     });
   }
 
-  if (!hasException(path, 'color') && !hasException(path, 'hex')) {
+  if (!hasException(path, 'hex')) {
     lines.forEach((line, i) => {
       if (isComment[i] || !QUOTE_RE.test(line)) return;
       HEX_RE.lastIndex = 0;
@@ -942,7 +970,7 @@ function scanFile(path) {
     });
   }
 
-  if (!hasException(path, 'color') && !hasException(path, 'inline-color')) {
+  if (!hasException(path, 'inline-color')) {
     lines.forEach((line, i) => {
       if (isComment[i]) return;
       // Se quitan primero los shadow-[…] para no contar dos veces el mismo rgba

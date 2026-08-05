@@ -2159,7 +2159,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                                                     {/* Branch rotation */}
                                                                     {showBranch && (
-                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-divider p-4 shadow-sm">
+                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
                                                                             <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
                                                                             <div className="space-y-2.5">
                                                                                 {branchAgg.entries.map(([bid, neto], ci) => {
@@ -2189,7 +2189,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                                     {/* Trend */}
                                                                     {showTrend && (
-                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-divider p-4 shadow-sm">
+                                                                        <div className="rounded-2xl border border-divider bg-gradient-to-br from-surface-card to-divider p-4 shadow-sm">
                                                                             <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
                                                                             <div className="flex items-end gap-1.5" style={{ height: 80 }}>
                                                                                 {drillMonthly.map((m, i) => {

@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.382.3 — PLAN-IDENTIDAD cerrado — las seis fases, y dos premisas del plan que eran falsas
+
+`PLAN-IDENTIDAD-2026-07-29.md` pasa a `docs/planes-cerrados/`. Cerraba lo que el
+gate de diseño **no puede ver por construcción**: la palabra que lee el usuario,
+la cifra que le mostramos y el significado que le damos a un ícono.
+
+Lo que conviene recordar del cierre es que **las dos fases finales corrigieron al
+plan**, y en las dos el hallazgo real era peor que el escrito:
+
+- F5 daba `Edit`/`Edit2`/`Edit3` por alias deprecados del mismo glifo — deuda de
+  nombre. Son **cuatro dibujos distintos**, así que "Editar" se veía diferente
+  según la vista y la migración cambió 40 íconos de verdad.
+- F6 daba los hex del Dashboard por colores *fuera* de la paleta. Eran
+  `--success` y `--warning` **clavados**: no fuera de la paleta, sino desatados
+  de ella. Se veían perfectos, y ése es justamente el modo de falla difícil.
+
+**Verificado en navegador**, no solo compilado — el plan avisaba que este
+migrador ya había producido tres regresiones con build+lint+gate en verde:
+
+- `var()` en atributos SVG de presentación (`stroke=`, `stopColor=`) resuelve al
+  píxel `#0052cc` en **Chromium y WebKit**. Era el riesgo técnico del cambio de
+  gráfica y no se podía deducir leyendo código.
+- `Pencil` pintado en 5 vistas (5 · 8 · 23 · 2 · 1 usos) con los dos paths del
+  glifo correcto; cero `square-pen`, `pen`, `circle-check-big` o `check-check`.
+- `--color-border-tooltip` coincide con `--tooltip-border` en los cuatro temas.
+- Cero errores de consola en todas las rutas recorridas.
+
+Residuo verificado y correcto: `PenLine` sigue vivo como **ícono de identidad
+del módulo Encuestas**, no como la acción "editar" — el mapa gobierna conceptos
+de acción, no la identidad de un módulo. Salen del registro de nombres
+accesibles (`iconNames.js`) las entradas muertas `Edit2`/`Edit3`.
+
+El gate de diseño queda en **41 categorías, todas bloqueantes en cero absoluto**.
+
 ## v2.382.2 — La fuga de excepciones del gate — 389 hallazgos que nadie contaba
 
 F6 de `PLAN-IDENTIDAD-2026-07-29`, y el hallazgo con más valor a futuro del

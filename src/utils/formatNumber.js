@@ -2,7 +2,7 @@
  * formatNumber — el formato canónico de toda cifra que ve el usuario.
  *
  * Existe porque no existía. Al medirlo (2026-07-29, F1 de
- * `docs/PLAN-IDENTIDAD-2026-07-29.md`) el portal tenía **50 `toFixed(2)`**,
+ * `docs/planes-cerrados/PLAN-IDENTIDAD-2026-07-29.md`) el portal tenía **50 `toFixed(2)`**,
  * **15 combinaciones distintas de opciones `Intl`** y **4 locales** en uso
  * (`es-SV` 89, `es` 69, `es-ES` 20, `en-US` 17, más un `es-VE` suelto). Y las
  * locales no son intercambiables:

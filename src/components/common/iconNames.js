@@ -22,7 +22,7 @@ export const NOMBRE_POR_ICONO = {
     Trash2: 'Eliminar', Trash: 'Eliminar',
     Plus: 'Agregar', Minus: 'Quitar',
     Check: 'Confirmar', CheckCircle2: 'Confirmar',
-    Edit2: 'Editar', Edit3: 'Editar', Pencil: 'Editar', SquarePen: 'Editar',
+    Pencil: 'Editar', SquarePen: 'Editar',
     RefreshCw: 'Actualizar', RotateCcw: 'Deshacer',
     LogOut: 'Cerrar sesión', Menu: 'Abrir el menú',
     Maximize2: 'Ampliar', Minimize2: 'Reducir',
@@ -63,7 +63,7 @@ export const TONO_POR_ICONO = {
     // Mirar sin tocar.
     Eye: 'chart-1', EyeOff: 'chart-1', Search: 'chart-1', Maximize2: 'chart-1',
     // Modificar lo que ya existe.
-    Edit2: 'warning', Edit3: 'warning', Pencil: 'warning', SquarePen: 'warning',
+    Pencil: 'warning', SquarePen: 'warning',
     // Rehacer / volver a traer.
     RefreshCw: 'chart-1', RotateCcw: 'chart-1', Copy: 'chart-1',
     // Guardar fuera de la vista, sin destruir.

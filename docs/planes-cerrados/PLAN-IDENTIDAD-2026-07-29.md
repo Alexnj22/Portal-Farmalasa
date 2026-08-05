@@ -377,8 +377,52 @@ deuda de una vez; éste es la razón por la que podría haber más deuda invisib
 | F2 | Voz: §26 + ~45 strings | 2.239.0 | `copy-vacio`, `copy-trato` | **APLICADA** |
 | F3 | Los 50 `title=` no interactivos | 2.241.0 | `tooltip-no-control` | **APLICADA** |
 | F4 | Rampa + trazo + marcas de agua | 2.243.0 | `icono-rampa`, `icono-stroke` | **APLICADA** |
-| F5 | Mapa semántico de íconos | 2.244.0 | `icono-semantico` | |
-| F6 | Fuga de excepciones del gate | 2.245.0 | — (arregla el gate) | |
+| F5 | Mapa semántico de íconos | 2.380.0 | `icono-semantico` | **APLICADA** |
+| F6 | Fuga de excepciones del gate | 2.382.2 | — (arregla el gate) | **APLICADA** |
+
+**PLAN CERRADO — 2026-08-05.** Las seis fases aplicadas y verificadas en el
+navegador. Dos cosas que este plan afirmaba resultaron falsas al medirlas, y las
+dos importan más que el ítem que corregían:
+
+1. **F5 decía que `Edit`/`Edit2`/`Edit3` eran «alias deprecados de Lucide para
+   `Pencil`/`SquarePen`»** — o sea deuda de nombre, sin consecuencia visual.
+   Abriendo el paquete son **cuatro glifos distintos**: `SquarePen` (lápiz en una
+   caja), `Pen` (pluma sin punta), `PenLine` (pluma con subrayado) y `Pencil`. El
+   botón "Editar" se veía diferente según la vista. La migración no fue un
+   renombre: 40 íconos cambiaron de dibujo.
+2. **F6 decía que `#12B76A` y `#F79009` del Dashboard eran «verdes y ámbares que
+   no están en la paleta cerrada».** Son exactamente `--success` y `--warning`,
+   clavados. No estaban *fuera* de la paleta: estaban **desatados** de ella, que
+   es peor de detectar — se veían perfectos, y cualquier cambio del token los
+   habría dejado atrás en silencio.
+
+F6 además rindió más de lo previsto: separar las tres compuertas destapó **389
+hallazgos en 30 archivos**, de los cuales **86 eran deuda real en 13 vistas
+ordinarias** (aros de avatar `border-white` que en tema oscuro dibujan un halo,
+divisores `border-black/[0.04]`, y un panel de log con texto `#0a7a46` sobre
+negro, ilegible desde siempre en los dos temas claros). Todo eso está arreglado;
+lo excepcionado son las superficies bespoke que `DESIGN.md` §6 ya documentaba,
+ahora **con cada categoría escrita** en vez de heredada de `color`.
+
+El gate quedó en **41 categorías, todas bloqueantes en cero absoluto** — no las
+31 que preveía este plan: otras sesiones agregaron diez categorías mientras
+corría.
+
+**Verificación en navegador** (Chromium + WebKit, `npm run dev`):
+
+| Qué | Resultado |
+|---|---|
+| `var()` en atributo SVG (`stroke=`, `stopColor=`) — lo que usa Recharts | Píxel real `#0052cc` en **los dos motores**. Era el riesgo técnico del cambio de gráfica y no se podía deducir del código |
+| `color-mix()` en los tintes de KPI | `srgb 0 0.32 0.8 / 0.094` y sus pares de `--success`/`--warning` |
+| `Pencil` pintado | 5 · 8 · 23 · 2 · 1 usos en Avisos, Sucursales, Cargos, Mi Perfil y Vacaciones, con los dos paths del glifo correcto. Cero `square-pen` / `pen` / `circle-check-big` / `check-check` |
+| `--color-border-tooltip` | Coincide con `--tooltip-border` en los **cuatro** temas |
+| Errores de consola | 0 en todas las rutas recorridas |
+
+Un residuo verificado y correcto: `PenLine` sigue vivo, pero como **ícono de
+identidad del módulo Encuestas** (`moduleMap`, `AppLayout`, el encabezado de
+`EncuestaAdminView`), no como la acción "editar". El mapa gobierna conceptos de
+acción, no la identidad de un módulo. De paso salieron del registro de nombres
+accesibles (`iconNames.js`) las entradas muertas `Edit2`/`Edit3`.
 
 > Las versiones se corrieron una vez: el plan reservó 2.235.0–2.240.0, pero otra
 > sesión commiteó 2.235.0, 2.235.1 y 2.236.0 mientras F1 estaba en curso. **Este

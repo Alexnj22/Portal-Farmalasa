@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.390.0 — Clientes: pestaña «Por revisar» con las fichas que la migración no tocó
+
+**146 fichas que nadie podía ver.** Existían solo como archivos JSON de la
+carpeta de scripts, y son justamente las que necesitan una decisión de persona
+—no cosas que un script pueda resolver—. Ahora viven en `clientes_por_revisar`
+y se ven desde el portal:
+
+| | |
+|---|---|
+| **Fiscales congelados** | 101 · no se completan solas porque cada dato que se declara a Hacienda necesita una persona que lo confirme |
+| **Posible repetido** | 45 · no se crearon porque ya hay un cliente con ese nombre, DUI o NIT, y crearlas partiría al cliente en dos |
+
+**Va en pestaña y no en un filtro de la lista** por una razón de fondo: de las
+45 repetidas, **43 no existen en `customers`**. Son fichas que deliberadamente
+no se crearon, así que no hay fila que filtrar — por eso la tabla guarda su
+nombre y un snapshot de sus datos, para poder decidir sin salir del portal.
+
+Cada fila dice **contra qué choca** («Ya existe X (ficha #N)», «Su DUI 0312… ya
+es de otra ficha»), que es la diferencia entre una lista accionable y una lista
+de nombres. Las 93 que sí tienen ficha se abren con un clic; el botón «Ya lo
+revisé» anota la decisión para que la lista no vuelva a mostrarla — una decisión
+que no se anota se vuelve a tomar.
+
+El buscador se oculta en esta pestaña: son ~150 filas que entran de una, y un
+buscador que no filtra nada es peor que no tenerlo.
+
 ## v2.389.3 — El cuerpo de Conteo de Inventario, sin el padding del canónico
 
 El contenido de la vista nacía **sobre el filo** de su tarjeta: el carril de

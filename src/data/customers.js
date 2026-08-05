@@ -136,3 +136,36 @@ export async function pushClienteAlErp(id) {
         return { empujado: false, error: e?.message || String(e) };
     }
 }
+
+// ── Por revisar ──────────────────────────────────────────────────────────────
+//
+// Fichas que la migración de clientes NO tocó y que necesitan una decisión de
+// persona. Viven en `clientes_por_revisar` porque la mayoría **no existe en
+// `customers`**: son fichas que no se crearon para no duplicar un cliente que
+// ya está. Sin tabla propia no habría fila a la que apuntar.
+
+/** Las pendientes, con el conteo de cada familia para las píldoras.
+ *  `familia`: 'congelado' (fiscales) | 'repetido' (nombre/DUI/NIT ya usados). */
+export async function fetchClientesPorRevisar({ familia, page = 1, pageSize = 50 } = {}) {
+    const { data, error } = await supabase.rpc('get_clientes_por_revisar', {
+        p_familia: familia || null,
+        p_limit:   pageSize,
+        p_offset:  (page - 1) * pageSize,
+    });
+    if (error) throw error;
+    return {
+        total:     data?.total     ?? 0,
+        congelado: data?.congelado ?? 0,
+        repetido:  data?.repetido  ?? 0,
+        rows:      data?.filas     ?? [],
+    };
+}
+
+/** "Ya lo miré, no hay nada que hacer." Se anota para que la lista no vuelva a
+ *  mostrarlo — una decisión que no se anota se vuelve a tomar. */
+export async function descartarClientePorRevisar(id, deshacer = false) {
+    const { error } = await supabase.rpc('descartar_cliente_por_revisar', {
+        p_id: id, p_deshacer: deshacer,
+    });
+    if (error) throw error;
+}

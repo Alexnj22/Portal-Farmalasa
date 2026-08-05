@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
+import TabPorRevisar from './clientes/TabPorRevisar';
 import FilterBar from '../components/common/FilterBar';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
@@ -135,7 +136,17 @@ function UbicacionCell({ row }) {
 
 // ── Vista ────────────────────────────────────────────────────────────────────
 
+// «Por revisar» son las fichas que la migración NO tocó y que necesitan una
+// decisión de persona. Van en pestaña y no en un filtro de la lista porque la
+// mayoría **no existe en `customers`**: son fichas que no se crearon para no
+// duplicar un cliente que ya está, así que no hay fila que filtrar.
+const TABS = [
+    { key: 'lista',   label: 'Clientes',    icon: Contact     },
+    { key: 'revisar', label: 'Por revisar', icon: FileWarning },
+];
+
 export default function ClientesView({ openModal }) {
+    const [tab, setTab] = useState('lista');
     const { hasPermission } = useAuth();
     // Canon 2026-08-03: la ficha fiscal se completa igual sin ver cuánto
     // factura cada cliente — el monto acá es una columna más.
@@ -267,15 +278,17 @@ export default function ClientesView({ openModal }) {
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+    // El buscador solo existe en la lista: «Por revisar» son ~150 filas que
+    // entran de una, y un buscador que no filtra nada es peor que no tenerlo.
     const filtersContent = (
         <ViewTabBar
-            tabs={[]}
-            activeTab=""
-            onTabChange={() => {}}
+            tabs={TABS}
+            activeTab={tab}
+            onTabChange={setTab}
             searchValue={search}
             onSearchChange={setSearch}
             placeholder="Buscar por nombre, DUI, NIT, NRC, teléfono…"
-            showSearch
+            showSearch={tab === 'lista'}
         />
     );
 
@@ -395,7 +408,11 @@ export default function ClientesView({ openModal }) {
             filtersContent={filtersContent}
             transparentBody
         >
-            <div className="p-5 md:p-6 space-y-5">
+            <div className={tab === 'revisar' ? '' : 'hidden'}>
+                <TabPorRevisar openModal={openModal} />
+            </div>
+
+            <div className={tab === 'lista' ? 'p-5 md:p-6 space-y-5' : 'hidden'}>
                 {/* El carril y la píldora van en FILAS SEPARADAS, y no
                     compartiendo una como en Libros IVA.
                     Medido a 1440px: el área de contenido son ~1110px, la píldora

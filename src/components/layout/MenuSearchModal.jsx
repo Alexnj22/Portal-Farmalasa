@@ -88,7 +88,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                         placeholder="Buscar en el portal… (ej. venta de productos, fichas de empleados)"
                         className="flex-1 bg-transparent outline-none text-body-lg font-semibold text-content placeholder:text-content-3 placeholder:font-medium"
                     />
-                    <Button variant="secondary" icon={X} iconOnly onClick={onClose} />
+                    <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
                 </div>
 
                 {/* Results */}

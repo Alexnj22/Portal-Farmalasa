@@ -241,7 +241,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     <Badge size="sm" uppercase={false}>#{idx + 1}</Badge>
                     <p className="text-body-sm font-black text-content leading-tight truncate">{item.productName}</p>
                 </div>
-                <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => removeItem(item._id)} />
+                <Button variant="ghost" size="xs" icon={X} iconOnly onClick={() => removeItem(item._id)} />
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="col-span-1">

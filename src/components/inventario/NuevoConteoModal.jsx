@@ -174,7 +174,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Auditoría Física</p>
                     </div>
                 </div>
-                <Button variant="destructive" icon={X} iconOnly onClick={onClose} />
+                <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
             </div>
 
             <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-base w-full">

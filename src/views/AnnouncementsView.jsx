@@ -569,7 +569,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <span className="font-black uppercase tracking-tight ml-1">{editingAnnId ? 'Editar Aviso' : 'Nuevo Aviso'}</span>
                 </h3>
                 {editingAnnId && (
-                  <Button variant="destructive" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
+                  <Button variant="secondary" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
                 )}
               </div>
 

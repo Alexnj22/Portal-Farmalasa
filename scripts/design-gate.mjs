@@ -393,6 +393,41 @@ function tagQueContiene(txt, pos) {
   return null;
 }
 
+/**
+ * Todos los `<Nombre …>` de un archivo, como pares [inicio, fin).
+ *
+ * Hermano de `tagQueContiene`, que resuelve UNO desde una posición conocida;
+ * este los enumera. Comparten lo único que importa: el fin del tag se busca
+ * contando **llaves y comillas**, no con `[^>]*`. Ese `[^>]` se corta en el
+ * primer `>`, y `=>` vive adentro de casi todos los `onClick` — un detector
+ * escrito así encuentra los tags simples y es ciego justo a los que traen
+ * lógica. Medido el 2026-08-05 en el barrido de «Cancelar»: 8 de 16.
+ */
+function tagsJsx(txt, nombre) {
+  const fuera = [];
+  const abre = `<${nombre}`;
+  let i = 0;
+  while ((i = txt.indexOf(abre, i)) >= 0) {
+    // `<Button` no puede ser el prefijo de `<ButtonGroup`.
+    if (!/[\s/>]/.test(txt[i + abre.length] || '')) { i += abre.length; continue; }
+    let j = i + abre.length, llaves = 0, comilla = null;
+    while (j < txt.length) {
+      const c = txt[j];
+      if (comilla) {
+        if (c === '\\') { j += 2; continue; }
+        if (c === comilla) comilla = null;
+      } else if (c === '"' || c === "'" || c === '`') comilla = c;
+      else if (c === '{') llaves++;
+      else if (c === '}') llaves--;
+      else if (c === '>' && llaves === 0) break;
+      j++;
+    }
+    fuera.push([i, j + 1]);
+    i = j + 1;
+  }
+  return fuera;
+}
+
 function nearestOpenTag(lines, lineIdx) {
   for (let i = lineIdx; i >= 0 && i >= lineIdx - 20; i--) {
     const matches = [...lines[i].matchAll(TAG_OPEN_RE)];
@@ -1461,6 +1496,63 @@ function scanFile(path) {
         findings.push({ line: antes.split('\n').length, category: 'try-finally-mudo',
           label: 'try/finally sin catch: si falla, el usuario no se entera',
           text: sinComentarios2.slice(mf.index, mf.index + 60).replace(/\s+/g, ' ') });
+      }
+    }
+
+    // ── `equis-destructiva` (2026-08-05, CERO ABSOLUTO) ─────────────────
+    // Un `<Button variant="destructive" icon={X} iconOnly>`. El ✕ cierra o
+    // quita; el borrado de verdad lleva papelera. Ver DESIGN.md §15.2.
+    //
+    // Salió de una pregunta sobre el ✕ del toast: era `destructive`, o sea una
+    // pastilla roja sólida para cerrar un aviso, compitiendo con el rojo del
+    // ícono de error. Al medirlo, los 66 ✕ del portal estaban en TRES variantes
+    // para tres trabajos distintos y la variante no seguía al trabajo —
+    // `FinalizarCajasModal` tenía dos formas en el mismo archivo a nueve líneas
+    // una de otra. Los 19 `destructive` eran todos cerrar o quitar-de-una-lista;
+    // ninguno borraba nada al apretarlo.
+    //
+    // Se detecta sobre el TAG completo y no por línea: `EmployeeFormModal` los
+    // escribe en tres renglones, y un regex de línea encontraba 12 de 19.
+    //
+    // Y el tag se recorre contando LLAVES, no con `<Button[^>]*>`: ese `[^>]`
+    // se corta en el primer `>`, y `=>` está adentro de casi todos los
+    // `onClick`. Con la versión regex, el barrido de «Cancelar» de esta misma
+    // sesión arregló 8 de 16 y el detector habría dado verde sobre los otros 8
+    // — un gate ciego justo en el caso más común.
+    //
+    // Segundo hallazgo del mismo barrido: el mismo `variant="destructive"` con
+    // el rótulo «Cancelar». Cancelar un formulario es lo contrario de guardar,
+    // no un borrado; el canónico (`ConfirmModal`) ya lo dibuja `secondary`, y
+    // 21 de 45 sitios lo hacían bien. Se cuenta aparte porque el arreglo es
+    // otro: acá `secondary`, no `ghost`.
+    //
+    // Lo que NO cuenta: «Rechazar» y el «Cancelar» con `icon={Ban}` de
+    // `EmployeeDetailView`. Los dos SÍ destruyen —deniegan una solicitud,
+    // anulan un evento— y por eso llevan otro glifo o son la acción de verdad.
+    // El ícono es lo que separa los dos sentidos de la misma palabra.
+    for (const [ini, fin] of tagsJsx(sinComentarios2, 'Button')) {
+      const tag = sinComentarios2.slice(ini, fin);
+      if (!/variant="destructive"/.test(tag)) continue;
+      const linea = sinComentarios2.slice(0, ini).split('\n').length;
+      const corto = tag.replace(/\s+/g, ' ').slice(0, 90);
+
+      if (/icon=\{X\}/.test(tag) && /\biconOnly\b/.test(tag)) {
+        findings.push({ line: linea, category: 'equis-destructiva',
+          label: 'el ✕ cierra o quita, no borra — `ghost` (§15.2); si borra de verdad, va papelera',
+          text: corto });
+        continue;
+      }
+      // El GLIFO desempata los dos sentidos de «Cancelar»: con `X` (o sin
+      // ícono) es cerrar el formulario; con `Ban` o `Trash2` es anular la cosa
+      // en sí, y eso sí destruye. Sin esta condición el gate marcaba el
+      // «Cancelar» de `EmployeeDetailView`, que pasa un evento a CANCELLED.
+      const mIcon = tag.match(/icon=\{(\w+)\}/);
+      if (mIcon && mIcon[1] !== 'X') continue;
+      const cierre = sinComentarios2.indexOf('</Button>', fin);
+      if (cierre > 0 && sinComentarios2.slice(fin, cierre).trim() === 'Cancelar') {
+        findings.push({ line: linea, category: 'cancelar-destructivo',
+          label: 'Cancelar no destruye: es lo contrario de guardar — `secondary` (§15.2)',
+          text: corto });
       }
     }
 

@@ -477,7 +477,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                         <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} />
                                     </div>
                                     {(filterFrom || filterTo || filterType) && (
-                                        <Button variant="secondary" size="sm" icon={X} title="Limpiar filtros" iconOnly onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }} />
+                                        <Button tone="danger" soft size="sm" icon={X} title="Limpiar filtros" iconOnly onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }} />
                                     )}
                                 </div>
                                 {/* "Todos" estaba FUERA del `SegmentedControl` al que

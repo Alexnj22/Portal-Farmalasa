@@ -205,7 +205,7 @@ const FormTurnos = ({ branches }) => {
                                 <Loader2 size={16} className="animate-spin text-content-3" />
                             ) : isBeingDeleted ? (
                                 <>
-                                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={() => setConfirmingArchiveId(null)} />
+                                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={() => setConfirmingArchiveId(null)} />
                                     <Button variant="destructive" size="xs" icon={Check} iconOnly onClick={() => handleArchiveShift(shift)} />
                                 </>
                             ) : isArchived ? (
@@ -253,7 +253,7 @@ const FormTurnos = ({ branches }) => {
                         <p className="text-caption md:text-label font-bold text-content-2 uppercase tracking-widest">Configuración del Catálogo</p>
                     </div>
                     {editingShiftId && (
-                        <Button variant="secondary" size="sm" icon={X} iconOnly onClick={cancelEditing} />
+                        <Button variant="ghost" size="sm" icon={X} iconOnly onClick={cancelEditing} />
                     )}
                 </div>
 

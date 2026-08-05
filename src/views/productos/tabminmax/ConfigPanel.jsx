@@ -129,7 +129,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <Settings2 size={14} className="text-brand-text" />
                         <span className="text-body-sm font-black text-content">Configuración Min/Max</span>
                     </div>
-                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={onClose} />
+                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
                 )}
 

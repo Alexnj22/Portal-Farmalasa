@@ -163,7 +163,7 @@ const SelectorTactil = memo(({
                             {totalVisible} {totalVisible === 1 ? 'opción' : 'opciones'}
                         </p>
                     </div>
-                    <Button variant="destructive" size="sm" icon={X} iconOnly onClick={onClose} aria-label={`Cerrar ${title}`} />
+                    <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} aria-label={`Cerrar ${title}`} />
                 </div>
 
                 {/* Buscador fijo. `SearchInput` estático es lo que DESIGN.md §25

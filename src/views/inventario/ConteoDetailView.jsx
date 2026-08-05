@@ -869,7 +869,7 @@ function PrintChooserModal({ open, documentos, busy, onClose, onPick }) {
                     <h3 className="font-black text-content text-subtitle">Imprimir</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Elige el documento</p>
                 </div>
-                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={onClose} />
+                <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 flex flex-col gap-2 relative z-base">
                 {documentos.map((d) => (
@@ -915,7 +915,7 @@ function ItemHistoryModal({ open, item, onClose }) {
                     <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
                 </div>
-                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={onClose} />
+                <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-base">
                 {history === null ? (
@@ -993,7 +993,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
                     <h3 className="font-black text-content text-subtitle">Corregir lote</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
                 </div>
-                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={onClose} />
+                <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
                 <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
@@ -1049,7 +1049,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                     <h3 className="font-black text-content text-subtitle">Finalizar Conteo</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Se calculan los resultados</p>
                 </div>
-                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={handleClose} />
+                <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />
             </div>
 
             <div className="px-6 py-5 flex flex-col gap-3 relative z-base">

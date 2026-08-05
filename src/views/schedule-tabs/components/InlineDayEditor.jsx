@@ -329,7 +329,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             </p>
                         </div>
                     </div>
-                    <Button variant="destructive" size="sm" icon={X} iconOnly onClick={handleClose} />
+                    <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />
                 </div>
 
                 {coverageMeta && (

@@ -542,6 +542,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             hacía de todos modos. */}
                         {!neverCalc && opcionesEstado.length > 0 && (
                             <FilterBar.Section
+                                // Cede DESPUÉS de la clasificación: el usuario lo
+                                // dijo mirando la píldora a 1280px, donde quedaba
+                                // la matriz ABC y se escondía esto. §17 ordena
+                                // cómo se DIBUJAN las ranuras, no cuál importa.
+                                prioridad={2}
                                 active={estadoActivo}
                                 onClear={limpiarEstado}
                                 label="estado">
@@ -549,7 +554,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     icon={Filter}
                                     label="Estado"
                                     placeholder="Estado"
-                                    ancho="150px"
+                                    // Vacío pide una palabra; puesto pide el valor
+                                    // entero ("18 Sin movimiento"). Cobrar los 156
+                                    // siempre dejaba medio control en blanco.
+                                    ancho={estadoSel ? '156px' : '104px'}
                                     umbral={0}
                                     value={estadoSel}
                                     onChange={setEstadoSel}

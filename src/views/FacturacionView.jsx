@@ -309,7 +309,7 @@ function FilaConfirmar({ colSpan, notas, setNotas, archivo, setArchivo, guardand
                         <Button tone="success" disabled={guardando} onClick={onConfirmar}>
                             {guardando ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                         </Button>
-                        <Button variant="destructive" icon={X} onClick={onCancelar}>Cancelar</Button>
+                        <Button variant="secondary" icon={X} onClick={onCancelar}>Cancelar</Button>
                     </div>
                 </div>
             </td>
@@ -726,7 +726,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
  />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                    <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
+                                                                    <Button variant="secondary" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1169,7 +1169,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                                 />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                    <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
+                                                                    <Button variant="secondary" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1496,7 +1496,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
  />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <Button tone="success" disabled={saving} onClick={() => handleSolveGap(g)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                <Button variant="destructive" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
+                                                                <Button variant="secondary" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1598,7 +1598,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
  />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <Button tone="success" disabled={nullSaving} onClick={() => handleSolveNull(n)}>{nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                <Button variant="destructive" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
+                                                                <Button variant="secondary" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2459,7 +2459,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                                 />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
-                                                                    <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
+                                                                    <Button variant="secondary" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
                                                                 </div>
                                                             </div>
                                                         </div>

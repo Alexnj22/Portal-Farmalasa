@@ -256,7 +256,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                     clearable={false}
                 />
             </div>
-            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={() => setEditing(false)} />
+            <Button variant="ghost" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={() => setEditing(false)} />
         </div>
     );
 }
@@ -445,7 +445,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                     clearable={false}
                 />
             </div>
-            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
+            <Button variant="ghost" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
         </div>
     );
 }
@@ -521,7 +521,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
             </div>
             {error && <span className="text-caption text-danger-text shrink-0">{error}</span>}
             <Button tone="success" icon={CheckCircle2} disabled={saving || !documentId} title="Confirmar clasificación" iconOnly onClick={confirm} />
-            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
+            <Button variant="ghost" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
         </div>
     );
 }
@@ -594,7 +594,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
                     clearable={false}
                 />
             </div>
-            <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={() => setOpen(false)} />
+            <Button variant="ghost" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={() => setOpen(false)} />
         </div>
     );
 }

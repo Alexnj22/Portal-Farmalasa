@@ -1191,7 +1191,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                     </div>
-                                                    <Button variant="destructive" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removePhone(idx)} />
+                                                    <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removePhone(idx)} />
                                                 </div>
                                             );
                                         })}
@@ -1245,7 +1245,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div key={idx} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                                     <div className="flex items-center justify-between mb-3">
                                                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Dirección Alterna {idx + 1}</span>
-                                                        <Button variant="destructive" size="xs" icon={X} title="Quitar dirección" iconOnly onClick={() => removeAddress(idx)} />
+                                                        <Button variant="ghost" size="xs" icon={X} title="Quitar dirección" iconOnly onClick={() => removeAddress(idx)} />
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                         <div>
@@ -1499,7 +1499,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div key={idx} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Curso / Habilidad {idx + 1}</span>
-                                                    <Button variant="destructive" size="xs" icon={X} title="Quitar" iconOnly onClick={() => removeSkill(idx)} />
+                                                    <Button variant="ghost" size="xs" icon={X} title="Quitar" iconOnly onClick={() => removeSkill(idx)} />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div className="md:col-span-2">
@@ -1604,7 +1604,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div key={idx} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Persona {idx + 1}</span>
-                                                    <Button variant="destructive" size="xs" icon={X} title="Quitar persona" iconOnly onClick={() => removeDependent(idx)} />
+                                                    <Button variant="ghost" size="xs" icon={X} title="Quitar persona" iconOnly onClick={() => removeDependent(idx)} />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                     <div>
@@ -1691,7 +1691,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         return (
                                             <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-danger/30 text-danger text-label font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
                                                 {cond}
-                                                <Button variant="destructive" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
+                                                <Button variant="ghost" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
                                             </span>
                                         );
                                     })}
@@ -1722,7 +1722,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         />
                                                     )}
                                                 </div>
-                                                <Button variant="destructive" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
+                                                <Button variant="ghost" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
                                             </div>
                                         );
                                     })}
@@ -1829,7 +1829,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <input type="tel" value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                     </div>
-                                                    <Button variant="destructive" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removeEmergencyPhone(idx)} />
+                                                    <Button variant="ghost" size="sm" icon={X} title="Quitar teléfono" iconOnly onClick={() => removeEmergencyPhone(idx)} />
                                                 </div>
                                             );
                                         })}

@@ -224,7 +224,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                     </p>
                 </div>
                 {req.status === 'PENDING' && (
-                    <Button variant="destructive" icon={X} onClick={() => onCancel(req.id)}>Cancelar</Button>
+                    <Button variant="secondary" icon={X} onClick={() => onCancel(req.id)}>Cancelar</Button>
                 )}
             </div>
 

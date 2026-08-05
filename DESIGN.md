@@ -1666,6 +1666,35 @@ Se combina con `iconOnly`: un botón de ícono puede ser `tone="success" soft`
 para confirmar o `tone="danger" soft` para cerrar. `tone`, `soft`, `size` e
 `iconOnly` son ejes independientes.
 
+#### El ✕ es CROMO, no una acción de categoría (2026-08-05)
+
+Salió de una pregunta del usuario sobre el ✕ del toast —«no se ve bien, ¿es
+canónico?»— y la respuesta era que no había canónico. Al medirlo: **66 botones
+`icon={X} iconOnly` repartidos en tres variantes** (19 `destructive`, 19
+`secondary`, 28 `ghost`) para lo que son **tres trabajos** distintos, y la
+variante no seguía al trabajo. `FinalizarCajasModal` tenía las dos formas en el
+mismo archivo, a nueve líneas una de otra; `EmployeeFormModal` quitaba siete
+filas de lista en `destructive` y la octava en `ghost`.
+
+La variante la decide **qué pasa al apretarlo**, nunca dónde está dibujado:
+
+| El ✕… | variante | por qué |
+|---|---|---|
+| **Cierra o cancela** una superficie — modal, hoja, panel, popover, banner, toast, buscador desplegado, edición en línea | `ghost` | Cerrar no borra nada y no es la acción de la pantalla: es cromo. |
+| **Quita una fila** de algo que el usuario está armando y todavía no guardó — un teléfono del formulario, una línea de la cotización | `ghost` | Se deshace no guardando. Tampoco destruye nada todavía. |
+| **Limpia los filtros** aplicados | `tone="danger" soft` | Es la forma que `FilterBar` ya dibuja para su «limpiar todo». |
+| **Borra de verdad, ya** | *no lleva ✕* | Lleva `Trash2`. El glifo distingue los dos: **✕ = cerrar o quitar; papelera = borrar.** |
+
+De ahí la regla mecánica, y es la que vigila el gate: **`variant="destructive"`
+nunca va con `icon={X} iconOnly`.** Una pastilla roja sólida para cerrar miente
+sobre lo que pasa al apretarla, y en un toast de error competía con el rojo del
+ícono a 300px de distancia. Si de verdad hace falta un borrado sólido, el ícono
+correcto no es el ✕.
+
+Lo mismo con `secondary`: sigue siendo legítimo en un botón cualquiera, pero un
+✕ de cerrar en `secondary` es un botón con relleno y borde para un control que
+solo debe estar cuando se lo busca. Los 19 se unificaron a `ghost`.
+
 ### 15.3 `SegmentedControl` — una de N opciones
 
 Si el estilo depende de `X === valor`, **no es un botón con estado**: es este

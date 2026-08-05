@@ -225,7 +225,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                     {isDirty && (
                         <>
                             <div className="h-5 w-px bg-divider shrink-0" />
-                            <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }} />
+                            <Button tone="danger" soft size="xs" icon={X} iconOnly onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }} />
                         </>
                     )}
                 </div>

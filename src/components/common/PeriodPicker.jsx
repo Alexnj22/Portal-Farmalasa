@@ -341,7 +341,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                 </p>
                             </div>
                         </div>
-                        <Button variant="secondary" size="xs" icon={X} iconOnly onClick={close} />
+                        <Button variant="ghost" size="xs" icon={X} iconOnly onClick={close} />
                     </div>
 
                     {/* Presets */}

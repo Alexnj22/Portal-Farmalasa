@@ -502,7 +502,7 @@ const RangeDatePicker = ({
                             )}
                         </div>
                     </div>
-                    <Button variant="secondary" size="sm" icon={X} iconOnly onClick={handleClose} />
+                    <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />
                 </div>
 
                 {atajos && (

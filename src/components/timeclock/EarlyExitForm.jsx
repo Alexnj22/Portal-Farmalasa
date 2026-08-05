@@ -108,7 +108,7 @@ function EarlyExitForm({
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mt-1 sm:mt-2 shrink-0">
-            <Button variant="destructive" icon={XCircle} disabled={isProcessing} onClick={onCancel}>Cancelar</Button>
+            <Button variant="secondary" icon={XCircle} disabled={isProcessing} onClick={onCancel}>Cancelar</Button>
 
             <button
               type="submit"

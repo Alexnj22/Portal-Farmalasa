@@ -132,7 +132,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                         {screen === 1 ? 'Asignar cajas' : 'Página → Caja'}
                     </h3>
                 </div>
-                <Button variant="secondary" size="xs" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
+                <Button variant="ghost" size="xs" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>
 
             {/* Draft restore banner */}

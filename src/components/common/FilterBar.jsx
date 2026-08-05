@@ -108,6 +108,13 @@ const Section = memo(({
     // filtrar" de su propio control (a veces es '', a veces 'all', a veces el
     // mes en curso).
     active = false,
+    // Y otra, `prioridad` (número, 0 por defecto): cuál cede primero cuando
+    // faltan ranuras. Hasta el 2026-08-05 cedía la ÚLTIMA del orden de §17, y
+    // ese orden es de lectura —ámbito → entidad → tiempo → estado—, no de
+    // importancia: en MIN·MAX dejaba a la vista la matriz ABC y escondía
+    // «Estado», que es el filtro que la gente usa. El orden de dibujo no se
+    // toca; lo que se ordena es la cola de a quién se le quita el sitio.
+    //
     // Hay una prop más, `fija`, que NO se lee acá: la lee la píldora sobre
     // `s.props.fija` al repartir el ancho, y significa "esta ranura no se va al
     // control de desborde ni estando vacía". Es para la que además de filtrar
@@ -562,7 +569,13 @@ const FilterBar = memo(({
     const pildoraRef = useRef(null);
     const medidaFila = useMedidaFila(pildoraRef, !compacto);
     // La clave de medición: si cambian los rótulos, hay que volver a medir.
-    const claveRotulos = `${secciones.length}|${acciones.map(a => a.label).join('|')}`;
+    // Lleva el `active` de cada ranura porque una ranura puede CAMBIAR DE ANCHO
+    // al aplicarse: el «Estado» de MIN·MAX pide 104px vacío y 156 con un valor
+    // puesto (el valor es "18 Sin movimiento", el vacío es una palabra). Sin
+    // esto la píldora seguía repartiendo con la medida vieja.
+    const claveRotulos = `${secciones.length}|${
+        secciones.map(s => `${s.props?.label ?? ''}:${s.props?.active ? 1 : 0}`).join(',')
+    }|${acciones.map(a => a.label).join('|')}`;
     const piezas = useMedidaPiezas(pildoraRef, claveRotulos, !compacto);
 
     // Escape cierra la hoja, y mientras está abierta el fondo no scrollea:
@@ -795,7 +808,12 @@ const FilterBar = memo(({
     // mostrar por qué es peor que una píldora ancha. Tampoco una `fija`.
     const anclada      = s => s.props?.active || s.props?.fija;
     const idxAncladas  = secciones.map((s, i) => [s, i]).filter(([s]) => anclada(s)).map(([, i]) => i);
-    const idxVacias    = secciones.map((s, i) => [s, i]).filter(([s]) => !anclada(s)).map(([, i]) => i);
+    // Las que pueden ceder, de la que más aguanta a la que cede primero.
+    // `sort` de arrays es estable, así que a igual prioridad manda el orden de
+    // §17 — cede la última, que es lo que hacía antes de que esto existiera.
+    const idxVacias    = secciones.map((s, i) => [s, i]).filter(([s]) => !anclada(s))
+        .sort((a, b) => (b[0].props?.prioridad ?? 0) - (a[0].props?.prioridad ?? 0))
+        .map(([, i]) => i);
     // El ✕ de «limpiar todo» solo existe con DOS o más filtros: con uno alcanza
     // la × de la propia ranura. Cobrarlo siempre costaba 54px de gusto.
     const hayLimpiar = !!onClear && activeCount > 1;

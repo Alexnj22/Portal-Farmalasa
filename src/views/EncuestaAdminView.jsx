@@ -510,7 +510,7 @@ export default function EncuestaAdminView() {
                                     </span>
                                 </h3>
                                 {editingSurvey && (
-                                    <Button variant="destructive" icon={X} onClick={resetSurveyForm}>Cancelar</Button>
+                                    <Button variant="secondary" icon={X} onClick={resetSurveyForm}>Cancelar</Button>
                                 )}
                             </div>
 
@@ -757,7 +757,7 @@ export default function EncuestaAdminView() {
                                         {editingResponse ? 'Editar Respuesta' : 'Nueva Respuesta'}
                                     </span>
                                 </h3>
-                                <Button variant="destructive" icon={X} onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}>Cancelar</Button>
+                                <Button variant="secondary" icon={X} onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}>Cancelar</Button>
                             </div>
 
                             <div className="space-y-5">
@@ -1184,7 +1184,7 @@ export default function EncuestaAdminView() {
                                                                                             {confirmDelete === row.id ? (
                                                                                                 <div className="flex items-center gap-1 justify-center">
                                                                                                     <Button variant="destructive" size="xs" icon={Check} iconOnly onClick={() => handleDeleteResponse(row)} />
-                                                                                                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={() => setConfirmDelete(null)} />
+                                                                                                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={() => setConfirmDelete(null)} />
                                                                                                 </div>
                                                                                             ) : canManage ? (
                                                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity justify-center">

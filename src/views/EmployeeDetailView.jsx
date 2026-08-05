@@ -680,6 +680,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                                 _editingEventId: ev.id
                                                                             })}>Editar</Button>
                                                                     )}
+                                                                    {/* `destructive` a propósito, y por eso lleva `Ban` y no `X`: acá
+                                                                        «Cancelar» no cierra un diálogo, ANULA el evento del empleado
+                                                                        —pasa a CANCELLED y pide confirmación—. El glifo es lo que
+                                                                        separa los dos sentidos de la misma palabra (§15.2). */}
                                                                     {canEdit && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
                                                                         <Button variant="destructive" icon={Ban} disabled={!canEdit} onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}>Cancelar</Button>
                                                                     )}

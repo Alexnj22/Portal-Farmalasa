@@ -778,7 +778,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     )}
                                 </div>
                             </div>
-                            <Button variant="destructive" icon={X} iconOnly onClick={onClose} />
+                            <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
                         </div>
 
                         {(type === 'newEmployee' || type === 'editEmployee') && (
@@ -919,7 +919,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 ) : <div />}
 
                                 {/* CENTER: Cancelar */}
-                                <Button variant="destructive" disabled={isSaving} onClick={onClose}>Cancelar</Button>
+                                <Button variant="secondary" disabled={isSaving} onClick={onClose}>Cancelar</Button>
 
                                 {/* RIGHT: Siguiente y/o Guardar — en edición, Guardar siempre está
                                     presente (no hace falta llegar a Documentos para guardar) */}

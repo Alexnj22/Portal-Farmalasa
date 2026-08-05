@@ -334,7 +334,7 @@ const BranchCard = memo(({
                             <p className="text-micro font-bold text-chart-3-text uppercase tracking-widest mt-0.5 opacity-80">{branch.name}</p>
                         </div>
                     </div>
-                    <Button variant="secondary" size="sm" icon={X} iconOnly onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} />
+                    <Button variant="ghost" size="sm" icon={X} iconOnly onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} />
                 </div>
 
                 {/* Contenido del Overlay */}

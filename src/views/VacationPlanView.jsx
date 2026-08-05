@@ -728,7 +728,7 @@ const VacationPlanView = () => {
                                     </h3>
                                 </div>
                                 {editingPlan && (
-                                    <Button variant="destructive" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
+                                    <Button variant="secondary" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
                                 )}
                             </div>
 

@@ -516,7 +516,7 @@ const RolesView = ({ openModal }) => {
                                         <span className="font-black uppercase tracking-tight ml-1">{editingRoleId ? 'Editar Cargo' : 'Nuevo Cargo'}</span>
                                     </h3>
                                     {editingRoleId && (
-                                        <Button variant="destructive" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
+                                        <Button variant="secondary" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
                                     )}
                                 </div>
 

@@ -57,7 +57,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                             <p className="text-label text-content-3">Pedido #{numero}</p>
                         </div>
                     </div>
-                    <Button variant="secondary" size="xs" icon={X} iconOnly onClick={onClose} />
+                    <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
             </LiquidModal.Header>
 

@@ -52,7 +52,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
                     : <Sparkles size={16} className="text-chart-9 animate-pulse" />}
             </div>
 
-            <Button variant="secondary" icon={X} title="Ignorar aviso" iconOnly onClick={onDismiss} />
+            <Button variant="ghost" icon={X} title="Ignorar aviso" iconOnly onClick={onDismiss} />
 
             <div className="relative z-base flex-1">
                 <h4 className="font-black text-white text-body-xl leading-tight tracking-tight mb-2">{insight.branch}</h4>
@@ -420,7 +420,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
                         </h3>
                         {editingGroup && (
-                            <Button variant="destructive" icon={X} onClick={cancelEditing}>Cancelar</Button>
+                            <Button variant="secondary" icon={X} onClick={cancelEditing}>Cancelar</Button>
                         )}
                     </div>
 

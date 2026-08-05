@@ -201,7 +201,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
                     </div>
                 </div>
-                <Button variant="destructive" icon={X} iconOnly onClick={handleClose} />
+                <Button variant="ghost" icon={X} iconOnly onClick={handleClose} />
             </div>
 
             <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-base w-full">

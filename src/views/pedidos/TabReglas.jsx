@@ -174,7 +174,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             <AlertTriangle size={10} className="shrink-0" /> {saveError}
                         </span>
                     )}
-                    <Button variant="secondary" icon={X} iconOnly onClick={onCancel} />
+                    <Button variant="ghost" icon={X} iconOnly onClick={onCancel} />
                 </div>
             </div>
 

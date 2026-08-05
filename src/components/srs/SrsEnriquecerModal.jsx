@@ -386,7 +386,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <p className="text-label text-content-3">Busca y aplica principios activos del Registro Sanitario</p>
                             </div>
                         </div>
-                        <Button variant="secondary" size="sm" icon={X} iconOnly onClick={onClose} />
+                        <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
                     </div>
                 </LiquidModal.Header>
 
@@ -656,7 +656,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 inputClassName="text-body-xl text-content-2 text-center"
                                                                 className="w-[58px] shrink-0"
                                                             />
-                                                            <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => setManualItems(prev =>
+                                                            <Button variant="ghost" size="xs" icon={X} iconOnly onClick={() => setManualItems(prev =>
                                                                 prev.length > 1
                                                                     ? prev.filter(p => p._key !== item._key)
                                                                     : [{ nombre: '', concentracion: '', _key: Date.now() }]

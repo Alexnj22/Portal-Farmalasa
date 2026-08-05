@@ -432,9 +432,15 @@ de 14 dígitos que devuelva el servidor.
 
 # PARTE C — La fórmula de la meta
 
-## C1. La vigente, desde 2026-08-05
+## C1. La vigente, desde 2026-08-05 — **A PRUEBA**
 
 Decisión del usuario. Reemplazó al cálculo con peso estacional y empuje (§C2).
+
+> **Está a prueba, no cerrada.** El usuario la puso a consideración y avisó
+> (2026-08-05): *«cuando me confirmen, te digo, nos mantenemos, o volvemos a la
+> fórmula»*. Si la respuesta es volver, §C2 tiene todo lo necesario —los valores
+> de configuración incluidos— y las metas de agosto tendrían que recalcularse de
+> nuevo, igual que se hizo al cambiarla (§C3).
 
 ```
 ritmo = (venta m-3 + venta m-2 + venta m-1) ÷ (días m-3 + días m-2 + días m-1)
@@ -537,3 +543,34 @@ a 2%, así que el número no reflejaba su brecha real.
 **Por qué se cambió:** la fórmula era defendible pero no explicable. El peso del
 mes exigía tres párrafos para entenderse, dependía de un solo año de historia, y
 el empuje empujaba en la dirección contraria a la que el negocio quiere premiar.
+
+
+## C3. Agosto 2026, recalculado al cambiar la fórmula
+
+Pedido del usuario el mismo día. Las 6 metas estaban en «espera aprobación», y
+ningún RPC del flujo las deja tocar en ese estado —`confirmar_meta_supervisor`
+exige propuesta o devuelta, y `upsert_meta_manual` las rechaza a propósito desde
+v2.372.2—. Así que el recálculo fue una **operación administrativa explícita**,
+no un atajo por el flujo: migración propia, un renglón por meta en la bitácora
+con el monto de antes y el de después, y aviso al supervisor y al gerente.
+
+| Sala | Antes | Después | Factor | Cerró jul |
+|---|---:|---:|---:|---:|
+| La Popular | $41,006.81 | $41,155.66 | 1.02 | 108.6% |
+| Salud 1 | $51,341.07 | $51,527.44 | 1.02 | 96.0% |
+| Salud 2 | $44,865.86 | $45,028.73 | 1.02 | 104.4% |
+| Salud 3 | $46,125.14 | $46,272.75 | 1.02 | 112.8% |
+| **Salud 4** | $41,825.10 | **$42,433.87** | **1.05** | **94.0%** |
+| Salud 5 | $16,339.55 | $16,086.50 | 1.02 | 103.4% |
+| | $241,503.53 | **$242,504.95** | | |
+
+**No se cambió el estado**: siguen en «espera aprobación». Quien pidió el
+recálculo es el mismo supervisor que las había confirmado, así que devolverlas a
+«propuesta» le habría hecho reconfirmar seis metas por una decisión suya. Lo que
+sí quedó es el rastro.
+
+También se actualizó `monto_propuesto`, no solo el monto vigente: es «lo que
+propuso el sistema», y con la fórmula nueva la propuesta ES ese número. Si
+hubiera quedado el viejo, el «De dónde sale» de la tarjeta mostraría un desglose
+que no reproduce el monto que tiene encima — justo lo que esa comprobación
+existe para evitar.

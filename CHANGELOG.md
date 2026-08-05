@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.387.1 — Agosto recalculado con la fórmula nueva
+
+Las seis metas de agosto pasaron a los montos que da la fórmula nueva. Estaban
+en «espera aprobación», un estado donde el portal —bien— no deja tocarlas por
+ningún camino normal, así que el recálculo fue una operación administrativa con
+su rastro: cada meta tiene su renglón con el monto de antes y el de después, y
+tanto el supervisor como el gerente recibieron el aviso.
+
+| Sala | Antes | Después | Cerró julio |
+|---|---:|---:|---:|
+| La Popular | \,006.81 | \,155.66 | 108.6% |
+| Salud 1 | \,341.07 | \,527.44 | 96.0% |
+| Salud 2 | \,865.86 | \,028.73 | 104.4% |
+| Salud 3 | \,125.14 | \,272.75 | 112.8% |
+| **Salud 4** | \,825.10 | **\,433.87** | **94.0%** |
+| Salud 5 | \,339.55 | \,086.50 | 103.4% |
+
+Total \,504.95 contra \,503.53. Salud 4 es la que más sube —por haberse
+quedado en 94%— y Salud 5 la única que baja.
+
+**Siguen esperando al gerente**: no se les cambió el estado. Quien pidió el
+recálculo es el mismo supervisor que las había confirmado, y devolverlas a
+revisión le habría hecho reconfirmar seis metas por una decisión propia.
+
+La fórmula queda **a prueba**: si la respuesta es volver a la anterior, está
+documentada completa y agosto se recalcula igual que ahora.
+
 ## v2.387.0 — Metas: la fórmula, reescrita
 
 Decisión del usuario. La meta que propone el portal se calcula así:

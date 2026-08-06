@@ -454,7 +454,7 @@ const RangeDatePicker = ({
                 data-surface={esTactil ? "sheet" : "dropdown"}
                 className={esTactil
                     ? `fixed z-toast left-0 right-0 bottom-0 w-full rounded-t-modal rounded-b-none
-                       px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]
+                       px-4 pt-3 pb-[max(1rem,var(--sa-bottom))]
                        max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom duration-[var(--dur-slow)]`
                     : 'fixed z-toast p-6 max-w-[calc(100vw-32px)]'}
                 style={esTactil ? undefined : { ...popupStyle, width: months === 1 ? '332px' : '596px', maxWidth: 'calc(100vw - 32px)' }}

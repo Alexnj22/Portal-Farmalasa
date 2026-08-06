@@ -21,6 +21,76 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.450.0 — Las áreas seguras se vuelven medibles, y el toque deja de depender del destello
+
+Fases **3.1** y **3.4** de `PLAN-MOBILE-2026-07.md`.
+
+**El punto que llevaba un año sin poder verificarse.** Un emulador no tiene
+notch: `env(safe-area-inset-*)` resuelve a **0** en Playwright, en el navegador
+de escritorio y en cualquier captura. O sea que `px-4` y
+`pl-[max(1rem,env(safe-area-inset-left))]` se ven **idénticos** en toda prueba
+automatizada, y la única forma de saber cuál de los dos estaba escrito era leer
+el fuente. Por eso este punto del plan seguía abierto: no era difícil, era
+inverificable.
+
+Los cuatro insets pasan a ser un token —`--sa-top/right/bottom/left`— y con eso
+sí hay forma: la auditoría **pisa el token** con el inset real de un iPhone 13
+acostado (47/47/34/47) y mide si el chrome se corrió. Lo que no responde, no
+respeta el notch. Medido, las cinco sondas responden:
+
+```
+header · barra    paddingTop:  0px → 47px ✓
+header · fila     paddingLeft: 16px → 47px ✓   paddingRight: 16px → 47px ✓
+contenido         paddingLeft:  8px → 47px ✓   paddingRight:  8px → 47px ✓
+menú lateral      left:         8px → 47px ✓   marginTop: 8px → 47px ✓
+scroll horizontal de la página: 0px → 0px      (el relleno del notch no desborda)
+```
+
+**Y lo que la medición destapó: el shell ignoraba los insets LATERALES por
+completo.** No había ni una referencia a `safe-area-inset-left/right` en
+`AppLayout` fuera del margen del menú de escritorio. Acostado —que es
+justamente la orientación en la que el usuario dijo que «funcionan las cosas»—
+el inset lateral de un iPhone 13 vale **47px** y el ☰ vivía a 16 del borde:
+debajo del notch. Ahora el fondo del header sigue llegando a los bordes (tiene
+que pintar bajo la isla) y lo que se corre es el contenido.
+
+**El destello del navegador es el PISO del acuse, no el techo.** El plan pedía
+apagar el `-webkit-tap-highlight-color` y ya. Medido antes de aplicarlo,
+apagarlo a secas lo empeoraba: de los catorce variantes de `Button`, sólo
+`primary` y `destructive` traían un estado `active:` — `secondary`, `ghost` y
+los diez tonos rellenos no traían **ninguno**, y su `hover:` en un teléfono no
+existe. O sea que ese destello gris era el único acuse de recibo del toque en
+un botón secundario, y apagarlo dejaba el control mudo.
+
+Entonces se hacen las dos cosas: el destello se **tiñe con la marca** —deja de
+ser el gris del sistema— y se apaga sólo donde el control ya tiene acuse
+propio (`[class*="active:"]`, por subcadena del atributo, igual que la regla de
+hover de v2.448.0). Y `active:` sube a las clases base de `Button`, así que los
+catorce variantes reaccionan al dedo. Medido en las ocho vistas: entre 12 y 59
+tocables por vista siguen sin `active:` propio, y todos ellos reciben el
+destello teñido (`color(srgb 0 0.32 0.8 / 0.16)`).
+
+**El instrumento también mentía sobre el desborde, y en la dirección cómoda.**
+Reportaba 28 elementos «que se salen del viewport» en ocho vistas donde el
+scroll horizontal de la página medía **0 en todas**. Salirse y arrastrar a la
+página son cosas distintas: un elemento se sale sin mover la página cuando algo
+lo **recorta**, y ahí hay dos casos que no se parecen en nada —el buscador
+deslizante que espera fuera de cuadro (correcto) y contenido que existe, no se
+ve y no se alcanza (un bug). Sin nombrar al ancestro que recorta no se
+distinguen. Ahora se anota, y además un carril con `overflow-x:auto` deja de
+contarse como culpable: **es** la solución.
+
+Con eso los 27 restantes se ordenan en dos familias, que quedan escritas en el
+plan como la entrada a la fase 4 — una es el buscador cerrado y está bien; la
+otra recorta hasta **358px** de una fila en Productos, incluida la flecha del
+carril, que en un teléfono es inalcanzable.
+
+*(Escritorio verificado sin cambios tras la migración a tokens: `#main-scroll`
+`padding-left: 0px` / `padding-right: 8px`, márgenes del menú en 8px — los
+mismos valores exactos de antes. `lg:pl-0` reemplaza a `lg:px-0` a propósito:
+el atajo fija las dos propiedades y competía por orden contra los `pl-`/`pr-`
+nuevos.)*
+
 ## v2.449.0 — El `scale` en reposo y los grupos con nombre: blancos táctiles 91 → 7
 
 Cerrado el hallazgo que la versión anterior dejó abierto, y con él la fase 3.2.

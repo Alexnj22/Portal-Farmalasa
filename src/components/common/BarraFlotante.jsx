@@ -372,9 +372,9 @@ const BarraPortal = ({
                 // primer efecto— la barra se dibuje igual.
                 className="fixed inset-x-0 bottom-0 z-tabs
                     pt-2
-                    pl-[max(12px,env(safe-area-inset-left))]
-                    pr-[max(12px,env(safe-area-inset-right))]
-                    pb-[calc(var(--alto-nav-inferior,0px)+max(12px,env(safe-area-inset-bottom)))]
+                    pl-[max(12px,var(--sa-left))]
+                    pr-[max(12px,var(--sa-right))]
+                    pb-[calc(var(--alto-nav-inferior,0px)+max(12px,var(--sa-bottom)))]
                     [display:var(--barra-flotante-display,flex)] flex-col items-end gap-2 pointer-events-none"
             >
                 {/* El clúster: una sola pieza con su propio material, para que los

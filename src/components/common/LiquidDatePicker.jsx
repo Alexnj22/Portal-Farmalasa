@@ -319,7 +319,7 @@ const LiquidDatePicker = ({
             zClass="z-confirm"
             maxWidthClass="max-w-none"
             surface="sheet"
-            panelClassName="rounded-t-modal rounded-b-none px-4 pt-3 font-sans pb-[max(1rem,env(safe-area-inset-bottom))]"
+            panelClassName="rounded-t-modal rounded-b-none px-4 pt-3 font-sans pb-[max(1rem,var(--sa-bottom))]"
             ariaLabel="Elegir fecha"
         >
             <AsaHoja className="mb-3" />

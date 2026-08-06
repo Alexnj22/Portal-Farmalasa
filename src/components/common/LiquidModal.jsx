@@ -102,7 +102,7 @@ export default function LiquidModal({
                         // formulario en vez del asa y el arrastre no arrancaba
                         // nunca. Medido: el `pointerdown` aterrizaba en el cuerpo.
                         // Y `pr` para el área segura, que acostado se come ~59px.
-                        ? 'pl-6 pr-[env(safe-area-inset-right)]'
+                        ? 'pl-6 pr-[var(--sa-right)]'
                         : className}`}
             >
                 {enTactil && (
@@ -176,7 +176,7 @@ LiquidModal.Footer = function LiquidModalFooter({ children, className = '' }) {
     return (
         <div className={`flex-none border-t border-divider relative z-base shrink-0
             ${enTactil
-                ? 'flex flex-col-reverse gap-2 px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] [&>*]:w-full [&_button]:w-full'
+                ? 'flex flex-col-reverse gap-2 px-4 pt-3 pb-[max(16px,var(--sa-bottom))] [&>*]:w-full [&_button]:w-full'
                 : 'bg-transparent px-6 md:px-10 py-5 flex justify-between items-center'}
             ${className}`}>
             {children}

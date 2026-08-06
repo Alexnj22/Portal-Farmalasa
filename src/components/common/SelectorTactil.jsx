@@ -156,7 +156,7 @@ const SelectorTactil = memo(({
                 className="flex flex-col h-full overflow-hidden">
             <AsaHoja className="mt-3 mb-1" />
                 {/* Encabezado */}
-                <div className="flex-none flex items-center justify-between gap-3 px-4 pt-[max(12px,env(safe-area-inset-top))] pb-3 border-b border-border-card">
+                <div className="flex-none flex items-center justify-between gap-3 px-4 pt-[max(12px,var(--sa-top))] pb-3 border-b border-border-card">
                     <div className="min-w-0">
                         <h2 className="text-body-lg font-black text-content truncate">{title}</h2>
                         <p className="text-micro text-content-3 tabular-nums">
@@ -181,7 +181,7 @@ const SelectorTactil = memo(({
                     <div
                         ref={listaRef}
                         data-lista=""
-                        className="h-full overflow-y-auto overscroll-contain pb-[max(16px,env(safe-area-inset-bottom))]"
+                        className="h-full overflow-y-auto overscroll-contain pb-[max(16px,var(--sa-bottom))]"
                         style={{ paddingRight: RAIL_W }}
                     >
                         {clearable && !q && (

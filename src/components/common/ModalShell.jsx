@@ -493,7 +493,7 @@ export default function ModalShell({
             // que el panel no puede crecer hasta taparla. `max-w` en px y no en
             // `%` porque lo que limita la lectura es la medida del texto, no la
             // proporción de la pantalla.
-            // SIN relleno lateral acá. Estaba con `pr-[env(safe-area-inset-right)]`
+            // SIN relleno lateral acá. Estaba con `pr-[var(--sa-right)]`
             // y era un error de bulto: este envoltorio es TRANSPARENTE —la
             // superficie la pinta el hijo—, así que el relleno no corría el
             // contenido, encogía el panel y dejaba una franja por la que se veía
@@ -502,7 +502,7 @@ export default function ModalShell({
             // llegando al filo.
             ? 'h-full w-[47%] max-w-[420px] min-w-[280px]'
             : 'w-full'} ${autoHoja && align !== "side"
-            ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,env(safe-area-inset-bottom))]'
+            ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,var(--sa-bottom))]'
             : align === "side" ? '' : maxWidthClass} ${panelAnim} ease-[var(--ease-spring)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >

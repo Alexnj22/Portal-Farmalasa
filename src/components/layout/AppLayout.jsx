@@ -834,10 +834,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     // o pisan `data-theme`, así que nunca se pintan bajo solid.
                     data-bespoke-glass=""
                     className={`fixed lg:relative z-sidebar lg:z-sidebar-desktop lg:h-auto flex flex-col shrink-0
-                        my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
+                        my-[max(8px,var(--sa-top))] mb-[max(8px,var(--sa-bottom))]
                         ${isMobile
-                            ? `top-0 bottom-0 w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[var(--ease-spring)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
-                            : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(env(safe-area-inset-left,8px),8px)] transition-[width] duration-[220ms] ease-[var(--ease-spring)]`}
+                            ? `top-0 bottom-0 w-[85%] max-w-[280px] left-[max(8px,var(--sa-left))] transition-transform duration-[220ms] ease-[var(--ease-spring)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
+                            : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(8px,var(--sa-left))] transition-[width] duration-[220ms] ease-[var(--ease-spring)]`}
                         ${blurClasses}`}
                 >
                     <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-base pointer-events-none">
@@ -1099,16 +1099,25 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         background-color por tema no lo reintroduce. Ahora fondo, borde,
                         sombra y texto salen de --header-mobile*. */}
                     <div
+                        data-shell="header-movil"
                         className="lg:hidden shrink-0 w-full sticky top-0 z-tabs border-b"
                         style={{
-                            paddingTop: 'env(safe-area-inset-top, 0px)',
+                            paddingTop: 'var(--sa-top)',
                             background: 'var(--header-mobile)',
                             borderColor: 'var(--header-mobile-border)',
                             boxShadow: 'var(--header-mobile-shadow)',
                             color: 'var(--header-mobile-text)',
                         }}
                     >
-                        <div className="flex items-center justify-between px-4 py-2.5">
+                        {/* El FONDO llega a los bordes —tiene que pintar debajo del
+                            notch— pero el CONTENIDO se corre: acostado, el inset
+                            lateral de un iPhone 13 vale 47px y el ☰ vivía a 16px del
+                            borde, o sea debajo del notch. Era el único caso del plan
+                            que ninguna captura podía delatar: sin notch, `env()` vale
+                            0 y esto se ve idéntico a `px-4`. */}
+                        <div data-shell="header-movil-fila"
+                            className="flex items-center justify-between py-2.5
+                                pl-[max(1rem,var(--sa-left))] pr-[max(1rem,var(--sa-right))]">
                             <div className="flex items-center gap-4">
                                 <Button variant="ghost" icon={Menu} iconOnly onClick={() => setIsSidebarOpen(true)} />
                                 <div className="w-px h-6 rounded-full bg-divider" />
@@ -1141,7 +1150,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
 
                     {/* Content */}
-                    <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
+                    {/* `lg:pl-0 lg:pr-2` y no `lg:px-0 lg:pr-2`: el atajo `px-*` fija
+                        las DOS propiedades, así que compitiendo contra un
+                        `pl-[…]`/`pr-[…]` de la misma especificidad el ganador lo
+                        decide el orden en que Tailwind emitió las clases, que no es
+                        algo que uno controle. Escritas por lado no hay competencia y
+                        el escritorio queda exactamente como estaba. */}
+                    <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[calc(1rem+var(--sa-bottom))] lg:pb-4 lg:pr-2 pl-[max(0.5rem,var(--sa-left))] pr-[max(0.5rem,var(--sa-right))] lg:pl-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+var(--sa-bottom))]' : ''}`}>
                         {!isMobile && (
                             <div className="absolute top-4 right-5 z-bell-desktop hidden lg:block">
                                 <NotificationBell variant="desktop" />
@@ -1158,7 +1173,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     root (SIN ancestros con z-index/overflow que creen contexto de
                     apilamiento — el fixed anidado era lo que standalone no pintaba) */}
                 {hasSelfOnly && (
-                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition duration-[var(--dur-lento)] ${blurClasses}`}>
+                        <nav data-shell="tabs-movil"
+                            className={`lg:hidden fixed bottom-0 left-0 right-0 z-header pt-2
+                                pl-[max(1rem,var(--sa-left))] pr-[max(1rem,var(--sa-right))]
+                                pb-[max(16px,var(--sa-bottom))] transition duration-[var(--dur-lento)] ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-card px-2 py-2 border
                                 bg-[rgb(var(--sidebar-realce)/0.95)] border-[rgb(var(--sidebar-ink)/0.6)] shadow-[var(--shadow-sticky-t)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {

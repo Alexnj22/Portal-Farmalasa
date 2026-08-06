@@ -201,40 +201,82 @@ solo cubre el dev-only false positive.
    y arreglar la causa (medición estable, debounce del observer, o key fija).
 3. El ErrorBoundary actual reemplaza la vista pero deja el nav — correcto; mantener.
 
-### Fase 3 — Estándares iOS/Android del shell
+### Fase 3 — Estándares iOS/Android del shell ✅ CERRADA (2026-08-06, v2.447.0 → v2.450.0)
 
-1. **Safe areas completas**: header móvil `padding-top: max(env(safe-area-inset-top), 12px)`;
-   bottom-tabs `padding-bottom: max(env(safe-area-inset-bottom), 16px)`; drawer del
-   menú ya lo maneja. Verificar también `env(safe-area-inset-left/right)` en
-   landscape con notch.
-2. **Touch targets**: pasada por AppLayout + vistas: todo control interactivo ≥44×44pt
-   (efectivo, con padding cuenta). Lista corta ya detectada: botón colapsar (32px),
-   íconos de acción en tablas.
-3. **Teclado**: inputs con `font-size ≥ 16px` en móvil (iOS hace zoom automático si
-   es menor — auditar LiquidSelect y SearchInput); en vistas con input + botón fijo
-   inferior, usar `visualViewport` o `interactive-widget=resizes-content` en el
-   viewport meta.
-4. **Gestos**: `overscroll-behavior: contain` en `#main-scroll` y en todo modal/sheet
-   scrolleable (evita scroll-chaining); `-webkit-tap-highlight-color: transparent` +
-   estados `active:scale-[0.98]` consistentes (ya son el patrón del nav).
-5. **Modales**: en <640px los UnifiedModal deben comportarse como bottom-sheets
-   (100% ancho, pegados abajo, drag-handle visual, max-h con scroll interno y
-   safe-area-bottom) — patrón estándar iOS/Android. Auditar `body:has([role="dialog"])`
-   de App.css: con scroll interno ya no aplica al body; mover el lock al
-   `#main-scroll` si hace falta.
+Los cinco puntos, con lo que resultó ser cierto de cada uno. La medición vive en
+`tests/e2e/auditoria-movil.spec.js` y se reproduce con un comando.
 
-### Fase 4 — Pasada por vistas (adaptación de contenido)
+1. **Safe areas** ✅ v2.450.0. El punto no era difícil: era **inverificable**. Un
+   emulador no tiene notch, así que `env(safe-area-inset-*)` resuelve a 0 en
+   Playwright y en toda captura — `px-4` y `pl-[max(1rem,env(…-left))]` se ven
+   idénticos y la única forma de saber cuál estaba escrito era leer el fuente.
+   Los cuatro insets pasan a token (`--sa-top/right/bottom/left`, index.css) y la
+   auditoría los **pisa** con los de un iPhone 13 acostado (47/47/34/47) para
+   medir si el chrome se corre. Las cinco sondas responden y el relleno no
+   desborda la página.
+   Lo que destapó: **el shell ignoraba los insets laterales por completo** — ni
+   una referencia a `left/right` en `AppLayout` fuera del margen del menú de
+   escritorio. Acostado el inset vale 47px y el ☰ vivía a 16 del borde.
+   *Sin verificar*: las tabs inferiores (`[data-shell="tabs-movil"]`) sólo se
+   pintan con `hasSelfOnly`, y la cuenta de QA ve el menú completo. El cambio es
+   la misma forma que la del header, que sí respondió.
+2. **Touch targets** ✅ v2.447.0–v2.449.0. **91 → 7**, y los 7 no son deuda: son
+   las columnas del gráfico de tráfico, siete segmentos adyacentes que se
+   reparten 390px. Salieron tres formas canónicas —`.blanco-tactil`, el piso del
+   dedo en las clases base de `Button`, y revelar en táctil lo que se revela al
+   apuntar— no N parches por vista.
+3. **Teclado** ✅ ya estaba hecho, sin anotar. **Cero** inputs con fuente <16px en
+   las ocho vistas: iOS no hace zoom al enfocar.
+4. **Gestos** ✅ v2.450.0. El `overscroll-behavior: contain` en `#main-scroll`
+   quedó **obsoleto** en la fase 1: en móvil scrollea el documento y `auto` ahí
+   es deliberado (rebote nativo, reporte del usuario del 2026-07-23). Lo vigente
+   era el scroll-chaining dentro de hojas y modales, que ya está cubierto
+   (`overscroll-contain` en los cuerpos scrolleables) — la auditoría lo mide,
+   pero sólo dispara con un diálogo abierto, así que el barrido de vistas **no
+   lo prueba**. El destello del navegador: ver el changelog de v2.450.0 — se
+   tiñe y se apaga sólo donde hay acuse propio, porque apagarlo a secas dejaba
+   mudos a los doce variantes de `Button` que no tenían `active:`.
+5. **Modales como hojas** ✅ ya estaba hecho, sin anotar, y más completo que lo
+   pedido: `ModalShell` convierte **todo** modal en hoja en táctil desde
+   v2.265.0, `HojaMovil` es el cuerpo canónico (título a la izquierda, botones
+   apilados, asa de arrastre), y acostado la hoja entra de costado porque el
+   alto es lo escaso. Ver los encabezados de esos dos archivos.
 
-Por cada vista principal (orden: las que el personal usa en tienda primero —
-/home, /my-requests, /monitor, /pedidos, /minmax, /ventas):
+### Fase 4 — Pasada por vistas (adaptación de contenido) 🎯 EN CURSO
 
-1. Tablas anchas: contenedor propio `overflow-x-auto` (nunca desbordar el viewport;
-   la página no debe scrollear horizontal) o colapso a cards en <640px según DESIGN.md.
+**Punto de entrada, medido el 2026-08-06 (v2.450.0).** Correr
+`npx playwright test --project=webkit-movil -g "barrido"` con el preview arriba.
+
+El resumen decía «ninguna vista scrollea de lado» y era cierto — y estaba
+tapando el hallazgo. Un elemento se sale del viewport **sin** arrastrar a la
+página cuando algo lo recorta, así que la métrica verde y el contenido cortado
+conviven sin contradecirse. Nombrado el ancestro que recorta, los 27 restantes
+son dos familias:
+
+| Recorta | Vistas | Qué es | Veredicto |
+|---|---|---|---|
+| `div.flex.items-center.h-full` | monitor, personal, asistencia | el buscador deslizante del encabezado esperando fuera de cuadro (+167 el input, +219 el aspa de cerrar) | **correcto** — es el diseño |
+| `div.lg:absolute.lg:inset-0.lg:w-full` | inicio, solicitudes, productos | contenido de la vista cortado en seco | **a resolver** |
+
+De la segunda familia, lo concreto:
+
+- **/productos**: +358px de una fila del carril, y la flecha `.blanco-tactil` a
+  **+370px** — inalcanzable con el pulgar. Algo fuerza ~748px de ancho.
+- **/my-requests**: +157px de una fila de acciones; dos `button` quedan a +135 y
+  +10 del borde, o sea fuera.
+- **/**: menor — un tooltip (+31) y tres textos (+5 a +20).
+
+Lo demás de la fase, sin empezar:
+
+1. Tablas anchas ✅ **cero** tablas sin carril propio en las ocho vistas (medido
+   en v2.447.0, se vuelve a medir en cada corrida).
 2. Filter pills: wrap a 2 filas o scroll horizontal de la pill, sin romper §17.
 3. Headers de vista (`ViewTabBar`): verificar que el modo búsqueda deslizante
-   funciona con teclado móvil abierto.
+   funciona con teclado móvil abierto. (La auditoría ya confirma que **cerrado**
+   se recorta bien; falta abierto y con teclado.)
 4. Verificación visual barata por vista (1-2 screenshots WebKit iPhone) — regla de
-   memoria: la verificación visual NO es opcional.
+   memoria: la verificación visual NO es opcional. Las capturas de la corrida
+   quedan en `test-results/auditoria-movil/<vista>.png`.
 
 ### Fase 5 — Matriz de verificación final + limpieza
 

@@ -153,7 +153,7 @@ const HojaMovil = memo(({
             corre es lo que hay que poder leer y tocar. Acostado, el notch se
             come ~59px del costado derecho. */}
         <div className={`flex flex-col min-h-0 ${lateral
-            ? 'flex-1 pr-[env(safe-area-inset-right)]' : ''}`}>
+            ? 'flex-1 pr-[var(--sa-right)]' : ''}`}>
 
         {(titulo || Icono) && (
             <div className="flex items-start gap-3 px-4 pt-3 pb-3 shrink-0">
@@ -200,7 +200,7 @@ const HojaMovil = memo(({
             igual, y al envolver cae ARRIBA — que es donde llega el pulgar. */}
         {pie && (
             <div className="shrink-0 flex flex-row-reverse flex-wrap gap-2 px-4 pt-3 border-t border-divider
-                pb-[max(16px,env(safe-area-inset-bottom))] bg-surface-card-hover
+                pb-[max(16px,var(--sa-bottom))] bg-surface-card-hover
                 [&>*]:flex-1 [&>*]:basis-36 [&>*]:min-w-0">
                 {pie}
             </div>

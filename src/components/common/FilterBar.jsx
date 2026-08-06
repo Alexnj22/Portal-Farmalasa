@@ -772,7 +772,7 @@ const FilterBar = memo(({
                         <div id={idHoja} role="dialog" aria-modal="true" aria-label={title}
                             data-surface="sheet"
                             className="relative w-full max-h-[80vh] overflow-y-auto rounded-t-modal rounded-b-none
-                                px-4 pt-3 pb-[max(20px,env(safe-area-inset-bottom))]
+                                px-4 pt-3 pb-[max(20px,var(--sa-bottom))]
                                 animate-in slide-in-from-bottom duration-[var(--dur-slow)] ease-out">
                             {/* Tirador: no es decorativo, es lo que dice que la
                                 hoja se arrastra para cerrar. */}

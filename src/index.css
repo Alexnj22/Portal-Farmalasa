@@ -1611,6 +1611,30 @@ thead.sticky,
 :root { --tap-min: 0px; }
 @media (pointer: coarse) { :root { --tap-min: 44px; } }
 
+/* ── Las áreas seguras, como TOKEN y no como llamada suelta a `env()` ──────
+   Los cuatro insets se leían con `env(safe-area-inset-*)` escrito a mano en 14
+   archivos, y eso tenía dos costos:
+
+   · **Nadie podía verificarlo.** Un emulador no tiene notch: `env()` resuelve a
+     0 en Playwright, en el navegador de escritorio y en cualquier captura. O
+     sea que `px-4` y `pl-[max(1rem,env(safe-area-inset-left))]` se ven
+     EXACTAMENTE IGUAL en toda prueba automatizada, y la única forma de saber
+     cuál de los dos está escrito era leer el fuente. Es la misma trampa que la
+     verificación visual de la regla del portal: compilar no prueba nada sobre
+     lo que se ve. Con un token en el medio, una prueba lo pisa
+     (`style.setProperty('--sa-left','47px')`) y MIDE si el chrome se corrió.
+   · Un `env()` sin `max()` deja el borde pegado en los teléfonos sin notch, y
+     escrito a mano el `max()` se olvida — pasó en el header móvil.
+
+   El valor por defecto de cada token ya trae el `0px`, así que un llamador
+   puede escribir `var(--sa-left)` pelado sin repetir el fallback. */
+:root {
+  --sa-top:    env(safe-area-inset-top, 0px);
+  --sa-right:  env(safe-area-inset-right, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left:   env(safe-area-inset-left, 0px);
+}
+
 /* ── `.blanco-tactil` · el piso del dedo SIN cambiar el tamaño visual ──────
    `--tap-min` sirve cuando el control puede crecer. No sirve cuando el tamaño
    ES el diseño: la flecha del carril mide 28px porque tiene que caber en el
@@ -1652,6 +1676,27 @@ thead.sticky,
      tamaño movía: el layout ya daba 44, lo que encogía era la pintura. */
   [class*="group-hover"][class*=":opacity-100"] { opacity: 1 !important; }
   [class*="group-hover"][class*=":scale-100"]   { scale: 1 !important; }
+
+  /* ── El destello del navegador es el PISO del acuse, no el techo ────────
+     Al tocar cualquier cosa, WebKit y Blink pintan encima un rectángulo
+     translúcido —`rgba(0,0,0,0.18)` en iOS, más marcado en Android— que nadie
+     eligió y que no tiene nada que ver con el material del portal.
+
+     La salida escrita en el plan era apagarlo (`transparent`) y ya. Medido
+     antes de aplicarlo, apagarlo a secas EMPEORA la cosa: de los cuatro
+     variantes de `Button`, sólo `primary` y `destructive` traían un estado
+     `active:`; `secondary`, `ghost` y los diez tonos rellenos no traían
+     ninguno. Y su `hover:` en un teléfono NO EXISTE (misma lección de arriba).
+     O sea que hoy, en un botón secundario, ese destello es el ÚNICO acuse de
+     recibo del toque: apagarlo dejaba el control mudo.
+
+     Entonces el destello se tiñe con la marca —deja de ser el gris ajeno del
+     sistema— y se apaga sólo donde el control YA tiene su propio acuse. El
+     selector va por subcadena del atributo `class`, igual que la regla de
+     hover: alcanza a todo el que escribió `active:algo` sin pedirle que se
+     registre en ninguna lista. */
+  html { -webkit-tap-highlight-color: color-mix(in srgb, var(--brand) 16%, transparent); }
+  [class*="active:"] { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (pointer: coarse) {

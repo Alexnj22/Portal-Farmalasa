@@ -369,7 +369,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
                 {/* ── Header ── */}
                 <div className={`flex items-center justify-between px-5 border-b border-divider shrink-0
-                    ${enTactil ? 'pt-[max(16px,env(safe-area-inset-top))] pb-4' : 'py-4'}`}>
+                    ${enTactil ? 'pt-[max(16px,var(--sa-top))] pb-4' : 'py-4'}`}>
                     <div>
                         <p className="text-body-lg font-black text-content">
                             {brushMode ? 'Retocar fondo' : 'Editar foto'}

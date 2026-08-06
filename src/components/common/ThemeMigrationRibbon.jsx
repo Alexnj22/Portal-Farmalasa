@@ -6,7 +6,7 @@ import { Construction } from 'lucide-react';
 // inmune al modelo de alto de 100dvh que ya causó regresiones en móvil —
 // ver v2.30.0/v2.30.1 en version.js — así que no puede empujar contenido
 // por sí misma).
-export const RIBBON_HEIGHT = 'calc(2.25rem + env(safe-area-inset-top, 0px))';
+export const RIBBON_HEIGHT = 'calc(2.25rem + var(--sa-top))';
 
 // Aviso PERMANENTE (a pedido directo del usuario): a diferencia de
 // SystemUpdateBanner/UpdateIndicatorDot (v2.48.0/2.48.1, eliminados), esta

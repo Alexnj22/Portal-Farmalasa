@@ -113,7 +113,7 @@ const VARIANT_CLASSES = {
         shadow-[var(--shadow-glass-1)]
         hover:from-brand hover:to-brand-dark
         hover:shadow-[var(--shadow-glass-1)]
-        hover:translate-y-[var(--lift-hover)] active:translate-y-0 active:scale-[0.98]`,
+        hover:translate-y-[var(--lift-hover)]`,
     secondary: `text-content bg-gradient-to-b from-surface-card to-surface-card-hover
         border border-border-card shadow-sm
         hover:shadow-md hover:translate-y-[var(--lift-hover)]`,
@@ -121,7 +121,7 @@ const VARIANT_CLASSES = {
     destructive: `text-white bg-gradient-to-b from-danger-light to-danger
         shadow-[var(--shadow-glass-1)]
         hover:shadow-[var(--shadow-glass-1)]
-        hover:translate-y-[var(--lift-hover)] active:translate-y-0 active:scale-[0.98]`,
+        hover:translate-y-[var(--lift-hover)]`,
 };
 
 // ── Tamaños canónicos (D2.5, 2026-07-26) ─────────────────────────────────
@@ -227,8 +227,19 @@ const Button = memo(({
             // `min-width` y `width` son propiedades DISTINTAS, así que acá no hay
             // pelea de especificidad: el mínimo simplemente manda. En escritorio
             // `--tap-min` vale 0 y esto no hace nada.
+            //
+            // `active:` sube a las clases BASE por el mismo motivo (2026-08-06).
+            // Estaba escrito dentro de `primary` y `destructive`, así que
+            // `secondary`, `ghost` y los diez `tone` rellenos no tenían NINGÚN
+            // acuse de recibo al toque: su única reacción era el `hover:`, que
+            // en un teléfono no existe. En escritorio no se notaba porque el
+            // puntero sí dispara el hover; en el teléfono el botón parecía
+            // muerto hasta que la acción terminaba. Acá cubre a los catorce.
+            // `active:translate-y-0` viaja con él porque es lo que cancela el
+            // lift del hover en los que sí lo tienen.
             className={`group relative overflow-hidden inline-flex items-center justify-center font-bold tracking-[-0.005em]
                 min-w-[var(--tap-min)] min-h-[var(--tap-min)]
+                active:translate-y-0 active:scale-[0.98]
                 transition-[transform,box-shadow,background-color,color] duration-[var(--dur-fast)] ease-[var(--ease-spring)] whitespace-nowrap
                 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
                 ${SHAPE_CLASSES[shape] || SHAPE_CLASSES.box}

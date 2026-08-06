@@ -401,8 +401,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         className={`z-bell-dropdown origin-top-right
                             ${isDesktop
                                 ? 'absolute right-0 top-[3.25rem] w-[380px]'
-                                : `fixed left-2 right-2 top-[calc(3.5rem+env(safe-area-inset-top,0px))] w-auto
-                                   max-h-[calc(100vh-5rem-env(safe-area-inset-top,0px))] overflow-y-auto overscroll-contain`}`}
+                                : `fixed left-2 right-2 top-[calc(3.5rem+var(--sa-top))] w-auto
+                                   max-h-[calc(100vh-5rem-var(--sa-top))] overflow-y-auto overscroll-contain`}`}
                     >
                         <div data-surface="dropdown" className="overflow-hidden transform-gpu">
                             {/* Shimmer superior */}

@@ -61,20 +61,34 @@ const MEDIR = () => {
     );
 
     // 2 · Qué elementos se salen del viewport (los culpables del desborde)
+    //
+    // Salirse del viewport y HACER SCROLLEAR LA PÁGINA son cosas distintas, y
+    // la primera versión de este bloque las mezclaba: reportaba 28 elementos en
+    // ocho vistas donde el scroll horizontal de la página medía 0 en todas.
+    // Un elemento se sale sin arrastrar a la página cuando algo lo RECORTA, y
+    // ahí hay dos casos que no se parecen en nada:
+    //
+    //   · recortado a propósito — el buscador deslizante del encabezado espera
+    //     fuera de cuadro hasta que se lo abre. Está bien.
+    //   · recortado sin querer — contenido que existe, no se ve y no se alcanza.
+    //
+    // Sin nombrar al ancestro que recorta no se puede distinguir uno del otro,
+    // así que se anota. Y el recorrido arranca en el propio elemento: un carril
+    // con `overflow-x:auto` ES la solución, no el problema — contarlo era
+    // acusar otra vez a quien hizo bien el trabajo.
     const desbordan = [];
     document.querySelectorAll('*').forEach(el => {
         if (!visible(el)) return;
         const r = el.getBoundingClientRect();
         if (r.right > vw + 1 && r.width <= vw * 3) {
-            const cs = getComputedStyle(el);
-            // No cuenta lo que desborda DENTRO de su propio scroll horizontal:
-            // eso es el patrón correcto (una tabla en su carril).
-            let enCarril = false;
-            for (let p = el.parentElement; p; p = p.parentElement) {
+            let enCarril = false, recorte = null;
+            for (let p = el; p; p = p.parentElement) {
                 const s = getComputedStyle(p);
+                if (p !== el && !recorte && (s.overflowX === 'hidden' || s.overflowX === 'clip')) recorte = sel(p);
                 if (s.overflowX === 'auto' || s.overflowX === 'scroll') { enCarril = true; break; }
             }
-            if (!enCarril) desbordan.push({ sel: sel(el), sobra: Math.round(r.right - vw), overflowX: cs.overflowX });
+            if (!enCarril) desbordan.push({ sel: sel(el), sobra: Math.round(r.right - vw),
+                                            recorte: recorte || '(nada lo recorta)' });
         }
     });
 
@@ -151,10 +165,76 @@ const MEDIR = () => {
     const main = document.querySelector('#main-scroll');
     const overscroll = main ? getComputedStyle(main).overscrollBehavior : '(sin #main-scroll)';
 
+    // 7 · El acuse de recibo del toque (fase 3.4)
+    //
+    // En un teléfono, `hover:` no existe: si un control no declara un estado
+    // `active:`, lo único que confirma el toque es el destello que pinta el
+    // navegador — gris ajeno al material del portal, y que el plan pedía
+    // apagar. Apagarlo SIN acuse propio deja el control mudo, así que lo que
+    // hay que medir es cuántos dependen todavía de él.
+    //
+    // Se lee el atributo `class` literal y no una regla CSS: Tailwind escapa
+    // los dos puntos al generar la clase, pero el atributo conserva el texto
+    // (misma propiedad que usa la regla de `group-hover` de index.css).
+    const sinAcuse = [];
+    document.querySelectorAll('button, a[href], [role="button"]').forEach(el => {
+        if (!visible(el)) return;
+        if (el.getAttribute('aria-hidden') === 'true') return;
+        const clases = el.className?.toString?.() || '';
+        if (/active:/.test(clases)) return;
+        sinAcuse.push({ sel: sel(el),
+                        destello: getComputedStyle(el).webkitTapHighlightColor || '(no expuesto)',
+                        texto: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24) });
+    });
+
+    // 8 · Scroll-chaining dentro de hojas y modales (fase 3.4)
+    // Un contenedor scrolleable dentro de un diálogo que llega a su tope
+    // arrastra a la página de atrás. Es lo único que quedó vigente del punto
+    // 3.4 sobre `overscroll-behavior`: en `#main-scroll` el token es `auto` a
+    // propósito desde que el móvil scrollea el DOCUMENTO (v2.447.0).
+    const encadenan = [];
+    document.querySelectorAll('[role="dialog"] *, [data-hoja] *').forEach(el => {
+        const cs = getComputedStyle(el);
+        if (cs.overflowY !== 'auto' && cs.overflowY !== 'scroll') return;
+        if (el.scrollHeight <= el.clientHeight) return;
+        if (cs.overscrollBehaviorY === 'auto') encadenan.push({ sel: sel(el) });
+    });
+
     return { vw, desbordePagina, desbordan: desbordan.slice(0, 12), chicos: chicos.slice(0, 12),
              zoomIOS: zoomIOS.slice(0, 8), tablas, overscroll,
-             totales: { desbordan: desbordan.length, chicos: chicos.length, zoomIOS: zoomIOS.length } };
+             sinAcuse: sinAcuse.slice(0, 8), encadenan,
+             totales: { desbordan: desbordan.length, chicos: chicos.length, zoomIOS: zoomIOS.length,
+                        sinAcuse: sinAcuse.length, encadenan: encadenan.length } };
 };
+
+// ── Las áreas seguras, medidas de verdad ──────────────────────────────────
+// Un emulador no tiene notch: `env(safe-area-inset-*)` resuelve a 0 en
+// Playwright, así que `px-4` y `pl-[max(1rem,var(--sa-left))]` se ven
+// IDÉNTICOS en toda captura y en todo `getComputedStyle`. Por eso este punto
+// del plan llevaba un año sin poder verificarse: no había forma de distinguir
+// el shell que respeta el notch del que lo ignora.
+//
+// Desde que los cuatro insets pasan por un token (`--sa-*`, index.css), sí la
+// hay: se pisa el token en `:root` con el inset real de un iPhone 13 acostado
+// y se mide si el chrome se corrió. Lo que no responde, no respeta el notch.
+const INSETS = { top: 47, right: 47, bottom: 34, left: 47 };
+
+const SONDAS = [
+    { id: 'header · barra',    sel: '[data-shell="header-movil"]',      props: ['paddingTop'] },
+    { id: 'header · fila',     sel: '[data-shell="header-movil-fila"]', props: ['paddingLeft', 'paddingRight'] },
+    { id: 'tabs inferiores',   sel: '[data-shell="tabs-movil"]',        props: ['paddingLeft', 'paddingRight', 'paddingBottom'] },
+    { id: 'contenido',         sel: '#main-scroll',                     props: ['paddingLeft', 'paddingRight', 'paddingBottom'] },
+    { id: 'menú lateral',      sel: 'aside',                            props: ['left', 'marginTop', 'marginBottom'] },
+];
+
+const MEDIR_SONDAS = (sondas) => sondas.map(s => {
+    const el = document.querySelector(s.sel);
+    if (!el) return { id: s.id, ausente: true };
+    const cs = getComputedStyle(el);
+    const v = {};
+    s.props.forEach(p => { v[p] = cs[p]; });
+    return { id: s.id, v };
+});
 
 test.describe('Auditoría móvil · WebKit iPhone 13', () => {
     test.skip(!E2E_USER || !E2E_PASSWORD, 'Requiere E2E_USER/E2E_PASSWORD');
@@ -176,11 +256,14 @@ test.describe('Auditoría móvil · WebKit iPhone 13', () => {
             console.log(`   scroll horizontal de la PÁGINA: ${m.desbordePagina}px ${m.desbordePagina > 0 ? '← BUG' : 'ok'}`);
             console.log(`   overscroll-behavior de #main-scroll: ${m.overscroll}`);
             console.log(`   elementos que se salen: ${m.totales.desbordan}`);
-            m.desbordan.forEach(d => console.log(`      +${d.sobra}px  ${d.sel}`));
+            m.desbordan.forEach(d => console.log(`      +${d.sobra}px  ${d.sel}   recorta: ${d.recorte}`));
             console.log(`   blancos táctiles <44pt: ${m.totales.chicos}`);
             m.chicos.slice(0, 6).forEach(c => console.log(`      ${c.tam}  ${c.sel}  «${c.texto}»`));
             console.log(`   inputs que hacen zoom en iOS (<16px): ${m.totales.zoomIOS}`);
             m.zoomIOS.slice(0, 4).forEach(z => console.log(`      ${z.fontSize}px  ${z.sel}`));
+            console.log(`   tocables sin estado active: ${m.totales.sinAcuse}   (destello: ${m.sinAcuse[0]?.destello ?? '—'})`);
+            m.sinAcuse.slice(0, 4).forEach(a => console.log(`      ${a.sel}  «${a.texto}»`));
+            if (m.totales.encadenan) console.log(`   scroll encadenado en diálogos: ${m.encadenan.map(e => e.sel).join(', ')}`);
             if (m.tablas.length) console.log(`   tablas sin carril: ${m.tablas.map(t => `${t.sel} (${t.ancho}px)`).join(', ')}`);
         }
 
@@ -205,5 +288,49 @@ test.describe('Auditoría móvil · WebKit iPhone 13', () => {
         console.log(`\n  Blancos chicos que se repiten en VARIAS vistas → son una forma, no un bug suelto:`);
         formas.slice(0, 10).forEach(([s, v]) => console.log(`     ${v.size} vistas · ${s}`));
         console.log(`╚════════════════════════════════════════════╝`);
+    });
+
+    test('áreas seguras · el shell frente a un notch simulado', async ({ page }) => {
+        test.setTimeout(120_000);
+        fs.mkdirSync(SALIDA, { recursive: true });
+        await entrar(page);
+        await page.goto('/');
+        await page.waitForTimeout(3500);
+
+        // Sin notch: es el estado que ve cualquier captura, y el que NO debe
+        // cambiar con este trabajo (un teléfono sin isla no gana relleno).
+        const antes = await page.evaluate(MEDIR_SONDAS, SONDAS);
+        const desbordeAntes = await page.evaluate(() => Math.max(
+            document.documentElement.scrollWidth - document.documentElement.clientWidth, 0));
+
+        await page.evaluate((ins) => {
+            const r = document.documentElement.style;
+            r.setProperty('--sa-top', `${ins.top}px`);
+            r.setProperty('--sa-right', `${ins.right}px`);
+            r.setProperty('--sa-bottom', `${ins.bottom}px`);
+            r.setProperty('--sa-left', `${ins.left}px`);
+        }, INSETS);
+        await page.waitForTimeout(400);
+
+        const despues = await page.evaluate(MEDIR_SONDAS, SONDAS);
+        const desbordeDespues = await page.evaluate(() => Math.max(
+            document.documentElement.scrollWidth - document.documentElement.clientWidth, 0));
+        await page.screenshot({ path: `${SALIDA}/areas-seguras-notch.png` });
+
+        console.log(`\n╔══ ÁREAS SEGURAS — insets simulados ${JSON.stringify(INSETS)} ══╗`);
+        antes.forEach((a, i) => {
+            const d = despues[i];
+            if (a.ausente) { console.log(`  ${a.id.padEnd(18)} (no está en esta vista)`); return; }
+            const partes = Object.keys(a.v).map(p => {
+                const responde = a.v[p] !== d.v[p];
+                return `${p}: ${a.v[p]} → ${d.v[p]} ${responde ? '✓' : '← NO RESPONDE'}`;
+            });
+            console.log(`  ${a.id.padEnd(18)} ${partes.join('   ')}`);
+        });
+        console.log(`  scroll horizontal de la página: ${desbordeAntes}px → ${desbordeDespues}px ${desbordeDespues > 0 ? '← el relleno del notch DESBORDA' : 'ok'}`);
+        console.log(`╚════════════════════════════════════════════╝`);
+
+        fs.writeFileSync(`${SALIDA}/areas-seguras.json`,
+            JSON.stringify({ insets: INSETS, antes, despues, desbordeAntes, desbordeDespues }, null, 1));
     });
 });

@@ -90,6 +90,37 @@ interface Consulta {
  */
 const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toUpperCase();
 
+/**
+ * El concepto, en ASCII puro.
+ *
+ * El ERP sirve sus páginas en UTF-8 pero vuelve a leer los bytes como Latin-1
+ * al guardarlos y al imprimir el kardex: el `·` que mandábamos (C2 B7 en UTF-8)
+ * salió impreso como «Â·». No es algo que introduzca el portal —el propio
+ * `<option>` del ERP trae la Ñ en UTF-8 y le pasa lo mismo—, pero el concepto
+ * es el único rastro que queda del movimiento y tiene que leerse.
+ *
+ * Así que se transcribe: se separan las tildes de su letra y se descartan, el
+ * punto medio pasa a guion, y lo que quede fuera de ASCII se cae. «Se dañó en
+ * góndola» queda «Se dano en gondola» — sin tilde, pero legible, que es más de
+ * lo que se puede decir de «Se daÃ±Ã³».
+ *
+ * No se toca `iden`: ese valor es de la lista del ERP y viaja como él lo dio.
+ */
+function soloAscii(s: string): string {
+  return String(s ?? "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")   // saca las tildes
+    // Los signos que SÍ tienen equivalente se traducen en vez de desaparecer:
+    // un guion largo borrado deja dos palabras pegadas y cambia la frase.
+    .replace(/[·•]/g, "-")
+    .replace(/[—–]/g, "-")
+    .replace(/[«»“”„]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/…/g, "...")
+    .replace(/[^\x20-\x7E]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function leerConsulta(cuerpo: string): Consulta {
   let j: Record<string, unknown>;
   try { j = JSON.parse(cuerpo); } catch {
@@ -190,12 +221,22 @@ Deno.serve(async (req) => {
     const { data: solicitante } = await admin
       .from("employees").select("name").eq("id", sol.employee_id).maybeSingle();
     const causa = String(meta.reason ?? sol.note ?? "").trim();
-    const firma = ` · Solicita: ${solicitante?.name ?? "—"} · Aprueba: ${aprobador.name}`;
-    const cabeza = esCarga ? "CARGA" : String(meta.subtipo ?? "DESCARTE");
+    // Todo el concepto se transcribe a ASCII: el separador, los nombres y la
+    // causa, que la escribe una persona y en español lleva tildes. Se recorta
+    // DESPUÉS de transcribir, porque la transcripción cambia el largo.
+    // Cada pieza se transcribe SOLA y se une después. `soloAscii` recorta los
+    // extremos, así que armar la firma con su espacio adentro se lo comía y
+    // quedaba «...en gondola- Solicita:» pegado.
+    const firma = ` - Solicita: ${soloAscii(solicitante?.name ?? "-") || "-"}`
+                + ` - Aprueba: ${soloAscii(aprobador.name) || "-"}`;
+    const cabeza = soloAscii(esCarga ? "CARGA" : String(meta.subtipo ?? "DESCARTE"));
+    const causaAscii = soloAscii(causa);
     const espacio = CONCEPTO_MAX - cabeza.length - firma.length - 3;
-    const causaCorta = causa.length > espacio ? causa.slice(0, Math.max(0, espacio - 1)) + "…" : causa;
-    const concepto = `${cabeza} · ${causaCorta}${firma}`;
-    const conceptoRecortado = causaCorta !== causa;
+    const causaCorta = causaAscii.length > espacio
+        ? causaAscii.slice(0, Math.max(0, espacio - 3)) + "..."
+        : causaAscii;
+    const concepto = `${cabeza} - ${causaCorta}${firma}`;
+    const conceptoRecortado = causaCorta !== causaAscii;
 
     // ── Una sesión propia, y la sucursal antes que nada ───────────────────
     const cookie = await login();
@@ -249,15 +290,6 @@ Deno.serve(async (req) => {
                + `${c.presentaciones.map((p) => p.etiqueta).join(", ") || "ninguna"}.`,
         }, 409);
 
-      // El descarte no puede sacar más de lo que hay. Se relee ACÁ y no al
-      // crear la solicitud: entre pedirla y aprobarla se vendió, se trasladó o
-      // alguien más descartó. El ERP es el que sabe.
-      if (!esCarga && c.stock !== null && l.cantidad > c.stock)
-        return json({
-          ok: false, codigo: "SIN_EXISTENCIA",
-          error: `De ${l.descripcion ?? l.erp_product_id} quedan ${c.stock}, y se pidieron ${l.cantidad}.`,
-        }, 409);
-
       // Un perecedero cargado sin fecha de vencimiento queda sin control de
       // caducidad, que es justo lo que el módulo existe para vigilar.
       if (esCarga && c.perecedero && !l.vence)
@@ -266,23 +298,72 @@ Deno.serve(async (req) => {
           error: `${l.descripcion ?? l.erp_product_id} necesita fecha de vencimiento.`,
         }, 422);
 
-      // Costo y precio SIEMPRE del ERP. Un movimiento de existencias no es el
-      // lugar para cambiar precios, y mandarlos desde el portal sería hacerlo
-      // sin querer.
+      // ── El costo, el precio y el FACTOR son de la presentación elegida ────
+      // `consultar_stock` los devuelve de la presentación POR DEFECTO, no de la
+      // que se eligió. Medido en el producto 2215 el 2026-08-06: contesta
+      // costo 6.2076 y unidad 100 —la CAJA— aunque se vaya a mover una UNIDAD,
+      // que vale 0.0621 y trae factor 1. Usar esos valores habría hecho que un
+      // descarte de "1 unidad" sacara CIEN. La pantalla del ERP no tiene el
+      // problema porque al cambiar el <select> vuelve a pedir `getpresentacion`;
+      // acá hay que hacer lo mismo.
+      const p = await pedir(cookie, pagina, new URLSearchParams({
+        process: "getpresentacion", id_presentacion: elegida.id,
+      }), { extra: { Referer: pagina } });
+      let costo = c.costo, precio = c.precio, unidad = c.unidad;
+      try {
+        const jp = JSON.parse(p);
+        if (jp?.unidad) { costo = String(jp.costo); precio = String(jp.precio); unidad = String(jp.unidad); }
+        else throw new Error("sin unidad");
+      } catch {
+        return json({
+          ok: false,
+          error: `El sistema no devolvió el detalle de la presentación `
+               + `${l.presentacion_tipo} (${l.factor}) de ${l.descripcion ?? l.erp_product_id}.`,
+        }, 502);
+      }
+
+      // Coherencia final: el factor que dice el ERP tiene que ser el que se
+      // aprobó. Si no coincide, la presentación cambió de significado entre
+      // pedir y aplicar y la cantidad ya no quiere decir lo mismo.
+      if (Number(unidad) !== Number(l.factor))
+        return json({
+          ok: false, codigo: "FACTOR_CAMBIO",
+          error: `${l.descripcion ?? l.erp_product_id}: se aprobó `
+               + `${l.presentacion_tipo} de ${l.factor}, y hoy trae ${unidad}.`,
+        }, 409);
+
+      // El descarte no puede sacar más de lo que hay. Va DESPUÉS de resolver el
+      // factor porque las dos cifras están en unidades distintas: el ERP informa
+      // el stock en unidades base —1,891 para un producto con 18 cajas de 100—
+      // y la cantidad pedida está en la presentación elegida. Compararlas crudas
+      // dejaría pasar un descarte de 100 cajas contra 1,891 unidades.
+      //
+      // Se relee ACÁ y no al crear la solicitud: entre pedirla y aprobarla se
+      // vendió, se trasladó o alguien más descartó. El ERP es el que sabe.
+      if (!esCarga && c.stock !== null) {
+        const pedidoEnUnidades = Number(l.cantidad) * Number(unidad);
+        if (pedidoEnUnidades > c.stock)
+          return json({
+            ok: false, codigo: "SIN_EXISTENCIA",
+            error: `De ${l.descripcion ?? l.erp_product_id} quedan ${c.stock} unidades, `
+                 + `y se pidieron ${l.cantidad} × ${unidad} = ${pedidoEnUnidades}.`,
+          }, 409);
+      }
+
       const vence = esCarga ? (c.perecedero ? String(l.vence) : "NULL") : "";
       const cola  = esCarga ? String(l.numero_lote ?? "") : String(l.id_lote ?? 0);
       partes.push([
-        l.erp_product_id, c.costo, c.precio, l.cantidad, c.unidad, vence, elegida.id, cola,
+        l.erp_product_id, costo, precio, l.cantidad, unidad, vence, elegida.id, cola,
       ].join("|"));
 
-      total    += Number(c.costo || 0) * Number(l.cantidad);
+      total    += Number(costo || 0) * Number(l.cantidad);
       unidades += Number(l.cantidad);
       detalle.push({
         erp_product_id: l.erp_product_id, descripcion: l.descripcion,
         presentacion: `${l.presentacion_tipo} (${l.factor})`,
         id_presentacion_erp: elegida.id,       // el que se usó, para poder auditarlo
-        cantidad: l.cantidad,
-        costo: c.costo, precio: c.precio, stock_previo: c.stock,
+        cantidad: l.cantidad, unidad,
+        costo, precio, stock_previo: c.stock,
       });
     }
 
@@ -331,7 +412,10 @@ Deno.serve(async (req) => {
       erp_ubicacion_id: erpUbicacion,
       concepto,
       concepto_recortado: conceptoRecortado,
-      concepto_completo: conceptoRecortado ? `${cabeza} · ${causa}${firma}` : undefined,
+      // El texto íntegro y CON tildes queda acá: la solicitud es el registro de
+      // verdad, y el concepto del ERP es apenas su eco en el idioma que acepta.
+      causa_original: causa,
+      concepto_completo: conceptoRecortado ? `${cabeza} - ${causaAscii}${firma}` : undefined,
       lineas: partes.length,
       unidades,
       total: Number(total.toFixed(4)),

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.460.0 — El buscador de inventario como modal, y pedir desde los resultados
+
+Todo esto sale de probar las pantallas en el navegador. Ninguno de los cinco
+hallazgos se veía leyendo el código.
+
+**Buscar un producto no ofrecía pedirlo.** Era el hueco más grande: la búsqueda
+es justo el momento en que uno se entera —un cliente pregunta, se busca, y ahí
+se ve que otra sala lo tiene— y no había forma de pedirlo desde ahí. Había que
+cerrar, abrir el otro widget y esperar que el producto apareciera en la lista de
+faltantes. Ahora cada fila de resultado lleva su botón.
+
+**El buscador pasa a modal, como sus tres hermanos.** Metido en la tarjeta del
+tablero era una franja: el resultado de una búsqueda son siete secciones de
+sucursal con sus lotes, y entraban dos. La baldosa dice cuántos productos le
+faltan a la sala, que es el motivo real de abrirlo.
+
+**Quien no está en una sala ahora elige cuál mirar.** Administración son siete
+personas, Supervisión incluida, y a todas la lista de faltantes se les dibujaba
+vacía siempre — el widget se abría en blanco, que es exactamente lo que esa
+lista existe para evitar. Y sin sala tampoco hay destino para un traslado, así
+que el selector es además lo que enciende los botones de pedir.
+
+**Los otros dos modales, alineados.** Ajuste de Min/Max y Ajuste de Inventario
+tenían lo mismo que se corrigió en Traslados: abrían sin decir qué eran y con un
+alto forzado que sobraba. Los tres llevan ahora encabezado y crecen con su
+contenido.
+
+**Y el botón de pedir dejó de partirse en dos líneas.** En la columna angosta el
+ícono y la palabra caían uno sobre otro y el botón quedaba del doble de alto que
+la fila. En una lista densa el ícono no aportaba: quedó el texto solo.
+
 ## v2.459.0 — La fila se vuelve ficha en el teléfono
 
 El patrón A de la propuesta de tablas móviles, en el canónico. Bajo 1024&nbsp;px

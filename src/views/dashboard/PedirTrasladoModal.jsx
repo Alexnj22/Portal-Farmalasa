@@ -8,7 +8,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { crearSolicitudTraslado } from '../../data/traslados';
+import { crearSolicitudTraslado, fetchDondeHay } from '../../data/traslados';
 
 // Pedirle un producto a otra sala, desde la lista de faltantes.
 //
@@ -37,10 +37,25 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
     const [listo,    setListo]    = useState(false);
     const [error,    setError]    = useState('');
 
+    // La lista de faltantes ya trae sus salas; la búsqueda no. En ese caso se
+    // preguntan acá, para que el modal sea UNO solo y no dos que se parecen.
+    const [dondeTraido, setDondeTraido] = useState(null);
     const donde = useMemo(
-        () => (producto?.donde ?? []).filter(d => d?.erp_sucursal_id),
-        [producto],
+        () => ((producto?.donde ?? dondeTraido) ?? []).filter(d => d?.erp_sucursal_id),
+        [producto, dondeTraido],
     );
+
+    const miBranch = user?.branchId ?? user?.branch_id ?? null;
+    const miErp    = MI_ERP_POR_BRANCH[miBranch] ?? producto?.erp_sucursal_destino ?? null;
+
+    useEffect(() => {
+        if (producto?.donde || !producto?.erp_product_id || !miErp) return;
+        let cancelado = false;
+        fetchDondeHay(producto.erp_product_id, miErp).then(r => {
+            if (!cancelado && !r.error) setDondeTraido(r.donde);
+        });
+        return () => { cancelado = true; };
+    }, [producto?.erp_product_id, producto?.donde, miErp]);
 
     // La sala con más existencia va primera y queda elegida: es la que puede
     // ceder sin quedarse corta, y es el orden en que el listado ya las trae.
@@ -61,8 +76,6 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
         return () => { cancelado = true; };
     }, [producto?.erp_product_id]);
 
-    const miBranch = user?.branchId ?? user?.branch_id ?? null;
-    const miErp    = MI_ERP_POR_BRANCH[miBranch] ?? null;
     const sala     = donde.find(d => String(d.erp_sucursal_id) === String(salaId));
     const pres     = presentaciones[Number(presIdx)] ?? null;
 

@@ -138,6 +138,25 @@ export async function fetchDisponibilidadTraslado(requestId) {
 }
 
 /**
+ * En qué salas hay un producto, para poder pedirlo desde la búsqueda.
+ *
+ * La lista de faltantes ya trae sus salas adentro; la búsqueda no. Y el caso
+ * real es justamente ese: alguien busca porque un cliente está preguntando, ve
+ * que otra sala lo tiene y necesita poder pedirlo ahí mismo.
+ *
+ * Sale de la misma vista que todo lo demás, así que la existencia viene con lo
+ * que ya salió descontado. Contarlo en el navegador sobre las filas de la
+ * búsqueda mezclaría cajas con unidades.
+ */
+export async function fetchDondeHay(erpProductId, erpSucursalDestino) {
+    const { data, error } = await supabase.rpc('get_donde_hay', {
+        p_erp_product_id: Number(erpProductId),
+        p_erp_sucursal_destino: Number(erpSucursalDestino),
+    });
+    return { donde: data ?? [], error };
+}
+
+/**
  * Rechaza el traslado con su motivo, y con la sugerencia adentro.
  *
  * El motivo va en `metadata` y no solo en la nota porque un trigger lo valida

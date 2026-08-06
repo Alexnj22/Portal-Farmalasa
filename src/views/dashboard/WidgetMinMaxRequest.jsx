@@ -360,8 +360,23 @@ export default function WidgetMinMaxRequest(props) {
       vacio="Sin propuestas"
       tono="brand"
     >
+      {/* Sin `min-h`: sin nada buscado el modal se abría como una caja de 24rem
+          casi vacía. Y con encabezado, porque abría directo en un selector de
+          sucursal y un texto suelto, sin decir qué se había abierto. Las dos
+          cosas se vieron en el navegador el 2026-08-06, no leyendo el código. */}
       {() => (
-        <div className="p-5 max-h-[80dvh] min-h-[24rem] flex flex-col gap-3">
+        <div className="p-5 max-h-[80dvh] flex flex-col gap-3">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
+              <TrendingUp size={16} strokeWidth={2} className="text-brand-text" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-body-sm font-black text-content leading-tight">Ajuste de Min/Max</p>
+              <p className="text-micro text-content-3 mt-0.5">
+                Proponer un mínimo o un máximo distinto para un producto
+              </p>
+            </div>
+          </div>
           {/* El selector de sucursal vivía en la cabecera de la tarjeta del
               tablero. Al volverse baldosa esa cabecera desapareció y con ella
               el selector: quien tiene alcance sobre todas las salas se quedaba

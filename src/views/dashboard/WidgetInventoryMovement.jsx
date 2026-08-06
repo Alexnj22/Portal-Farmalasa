@@ -583,8 +583,22 @@ export default function WidgetInventoryMovement(props) {
             vacio="Nada vencido"
             tono="danger"
         >
+            {/* Encabezado y sin `min-h`, por lo mismo que sus dos hermanos: el
+                modal abría sin decir qué era y con un alto forzado que sobraba
+                cuando el contenido era corto. */}
             {(cerrar) => (
-                <div className="p-5 max-h-[80dvh] min-h-[24rem] flex flex-col">
+                <div className="p-5 max-h-[80dvh] flex flex-col gap-3">
+                    <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-danger/10 flex items-center justify-center shrink-0">
+                            <PackageMinus size={16} strokeWidth={2} className="text-danger-text" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-body-sm font-black text-content leading-tight">Ajuste de Inventario</p>
+                            <p className="text-micro text-content-3 mt-0.5">
+                                Cargar o descargar producto de tu sala
+                            </p>
+                        </div>
+                    </div>
                     <FormularioAjuste {...props} onHecho={cerrar} />
                 </div>
             )}

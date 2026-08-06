@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
-import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle, ArrowLeftRight } from 'lucide-react';
+import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -16,6 +16,9 @@ import { insertVentaPerdida } from '../../data/ventasPerdidas';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import SearchInput from '../../components/common/SearchInput';
+import LanzadorSolicitud from './LanzadorSolicitud';
 import PedirTrasladoModal from './PedirTrasladoModal';
 
 const ERP_BRANCH_MAP = {
@@ -235,7 +238,38 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
 }
 
 /* ─── Branch sections (shared between results and alternatives) ────────────── */
-function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
+/**
+ * El botón de pedir, en la fila de una sala que SÍ tiene.
+ *
+ * Existe porque la búsqueda es el momento en que uno se entera: un cliente
+ * pregunta, se busca, y ahí se ve que otra sala lo tiene. Hasta acá no había
+ * forma de pedirlo desde ahí —había que cerrar, abrir otro widget y esperar que
+ * el producto apareciera en la lista de faltantes—. Lo reportó el usuario
+ * probándolo el 2026-08-06.
+ *
+ * No se ofrece sobre la propia sala: pedirse a uno mismo no es un traslado.
+ */
+function PedirEnFila({ prod, branchName, onPedir }) {
+  if (!onPedir || onPedir.miSala === branchName) return null;
+  const id = prod?.lots?.[0]?.erp_product_id;
+  if (!id) return null;
+  return (
+    <Button
+      size="xs"
+      variant="secondary"
+      className="shrink-0"
+      aria-label={`Pedir ${prod.descripcion} a ${branchName}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPedir.abrir({ erp_product_id: id, descripcion: prod.descripcion });
+      }}
+    >
+      Pedir
+    </Button>
+  );
+}
+
+function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) {
   return branches.map((branch, bi) => {
     const theme       = NEUTRAL_THEME;
     const branchTotal = branch.products.reduce((s, p) => s + p.lots.reduce((ss, r) => ss + r.cantidad, 0), 0);
@@ -286,6 +320,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                             agrupa varias y cada una se lista con su lote. */}
                       </div>
                       <span className="text-caption font-black text-content-3 shrink-0 tabular-nums">{lotTotal} uds</span>
+                      <PedirEnFila prod={prod} branchName={branch.name} onPedir={onPedir} />
                       <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
                     </div>
                     <div className="divide-y divide-divider" style={{ background: 'var(--surface-card)' }}>
@@ -309,30 +344,39 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                     </div>
                   </div>
                 ) : (
-                  <button
-                    className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl hover:bg-surface-card transition-colors group text-left"
+                  // Un div con DOS botones adentro y no un botón entero: la
+                  // fila tiene dos acciones —abrir el producto y pedirlo— y un
+                  // botón dentro de otro no es HTML válido.
+                  <div
+                    className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl hover:bg-surface-card transition-colors group"
                     style={{ background: 'var(--surface-card-hover)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-1)' }}
-                    onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                   >
                     {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-label font-bold text-content truncate leading-tight">{prod.descripcion}</p>
-                      {prod.principioActivo && (
-                        <p className="text-micro text-chart-3-text font-semibold truncate">{prod.principioActivo}</p>
-                      )}
-                      {prod.presentacion && (
-                        <p className="text-micro text-content-3">{prod.presentacion}</p>
-                      )}
-                    </div>
-                    <span className="text-micro font-mono text-content-3 shrink-0 max-w-[60px] truncate">
-                      {prod.lots[0].lote || '—'}
-                    </span>
-                    <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
-                    <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">
-                      {prod.lots[0].cantidad} uds
-                    </span>
+                    <button
+                      type="button"
+                      className="flex-1 min-w-0 flex items-center gap-2 text-left"
+                      onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
+                    >
+                      <span className="flex-1 min-w-0 block">
+                        <span className="block text-label font-bold text-content truncate leading-tight">{prod.descripcion}</span>
+                        {prod.principioActivo && (
+                          <span className="block text-micro text-chart-3-text font-semibold truncate">{prod.principioActivo}</span>
+                        )}
+                        {prod.presentacion && (
+                          <span className="block text-micro text-content-3">{prod.presentacion}</span>
+                        )}
+                      </span>
+                      <span className="text-micro font-mono text-content-3 shrink-0 max-w-[60px] truncate">
+                        {prod.lots[0].lote || '—'}
+                      </span>
+                      <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
+                      <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">
+                        {prod.lots[0].cantidad} uds
+                      </span>
+                    </button>
+                    <PedirEnFila prod={prod} branchName={branch.name} onPedir={onPedir} />
                     <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
-                  </button>
+                  </div>
                 )}
               </div>
             );
@@ -357,7 +401,7 @@ function SectionLabel({ icon: Icon, label, color = 'text-content-3', bg = 'bg-su
 }
 
 /* ─── Main component ────────────────────────────────────────────────────────── */
-export default function WidgetInventorySearch({ query = '', onQueryChange }) {
+function PanelInventario({ query = '', onQueryChange }) {
   const { user }       = useAuth();
   const [results,      setResults]      = useState(null);
   const [loading,      setLoading]      = useState(false);
@@ -373,8 +417,26 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
   const debounceRef                     = useRef(null);
 
   // La sucursal de quien mira. El widget consulta TODAS las salas, pero
-  // "lo que falta" solo tiene sentido desde la propia.
-  const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
+  // "lo que falta" solo tiene sentido desde una sala concreta.
+  //
+  // Quien no está EN una sala —Administración son 7 personas, Supervisión
+  // incluida— no tenía ninguna: la lista de faltantes no se le dibujaba nunca y
+  // el widget se le abría en blanco, que es justo lo que la lista existe para
+  // evitar. Con alcance de todas las sucursales ahora puede elegir cuál mirar,
+  // igual que hacen Ajuste de Inventario y Meta del mes.
+  const miBranchErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
+  const [salaElegida, setSalaElegida] = useState(null);
+  const miErp = miBranchErp ?? salaElegida;
+  const eligeSala = !miBranchErp;
+
+  // Lo que las filas de resultado necesitan para ofrecer «Pedir»: a qué sala
+  // pertenece quien mira (para no ofrecerse pedirse a sí mismo) y cómo abrir el
+  // formulario. Va como un objeto y no como dos props sueltas para que agregar
+  // una tercera no obligue a tocar la firma de todos los componentes del medio.
+  const accionPedir = useMemo(
+    () => (miErp ? { miSala: ERP_BRANCH_MAP[miErp], abrir: setPedido } : null),
+    [miErp],
+  );
 
   const cargarFaltantes = useCallback(() => {
     if (!miErp) return;
@@ -614,6 +676,24 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
             La razón real por la que se abre este widget es que alguien
             preguntó por algo que no está — así que la pantalla en blanco lo
             adelanta en vez de esperar a que se escriba. */}
+        {/* Quien no está en una sala elige cuál. No solo para ver sus faltantes
+            —para eso nació— sino porque **es lo que decide a quién se le pide**:
+            sin sala propia no hay destino para un traslado, y los botones de
+            pedir no aparecen. Por eso se muestra SIEMPRE y no solo con la lista
+            de faltantes en pantalla: escondido detrás de «todavía no busqué»,
+            quien busca primero no llega nunca a él. */}
+        {!loading && eligeSala && (
+          <div className="mb-2">
+            <LiquidSelect
+              value={salaElegida != null ? String(salaElegida) : null}
+              onChange={v => setSalaElegida(v ? Number(v) : null)}
+              options={BRANCH_ORDER.map(id => ({ value: String(id), label: ERP_BRANCH_MAP[id] }))}
+              placeholder="Ver lo que le falta a..."
+              icon={Package}
+            />
+          </div>
+        )}
+
         {!loading && results === null && faltantes.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
@@ -642,13 +722,16 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
                   </span>
                   <span className="text-micro font-black text-content-3 shrink-0 tabular-nums">min {f.min_units}</span>
                 </button>
+                {/* `shrink-0` y sin envolver: en la columna angosta de la
+                    baldosa el botón se partía en dos líneas —ícono arriba,
+                    palabra abajo— y quedaba el doble de alto que la fila. */}
                 <Button
                   size="xs"
                   variant="secondary"
                   onClick={() => setPedido(f)}
                   aria-label={`Pedir ${f.descripcion} a otra sala`}
+                  className="shrink-0"
                 >
-                  <ArrowLeftRight size={12} strokeWidth={2.5} />
                   Pedir
                 </Button>
               </div>
@@ -672,6 +755,7 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
             branches={results}
             onDrill={setDrillProduct}
             onZoom={setLightboxUrl}
+            onPedir={accionPedir}
           />
         )}
 
@@ -767,6 +851,7 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
                   branches={alternatives}
                   onDrill={setDrillProduct}
                   onZoom={setLightboxUrl}
+                  onPedir={accionPedir}
                   animOffset={4}
                 />
               </div>
@@ -796,5 +881,75 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
 
       <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
+  );
+}
+
+/* ─── La baldosa del tablero ──────────────────────────────────────────────── */
+// A pedido del usuario (2026-08-06): «pasemos el buscador de productos como
+// modal también como los demás, así tenemos más espacio».
+//
+// Es el mismo argumento que movió a los otros tres: metida en la tarjeta del
+// tablero, la pantalla es una franja. Acá se notaba más que en ninguna — el
+// resultado de una búsqueda son siete secciones de sucursal con sus lotes, y
+// entraban dos.
+//
+// El buscador se va ADENTRO con ella. Vivía en la cabecera de la tarjeta, que
+// al volverse baldosa deja de existir.
+export default function WidgetInventorySearch() {
+  const { user } = useAuth();
+  const [faltan, setFaltan] = useState(null);
+  const [q, setQ] = useState('');
+
+  const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
+
+  // El número de la baldosa: cuántos productos le faltan a la sala y otra sí
+  // tiene. Es el motivo real por el que alguien abre esto.
+  useEffect(() => {
+    if (!miErp) { setFaltan(null); return; }
+    let cancelado = false;
+    fetchFaltantesConStockEnOtraSala(miErp, 40).then(r => {
+      if (!cancelado && !r.error) setFaltan(r.filas.length);
+    });
+    return () => { cancelado = true; };
+  }, [miErp]);
+
+  return (
+    <LanzadorSolicitud
+      icon={Package}
+      label="Consulta de Inventario"
+      pendientes={faltan}
+      etiquetaPendientes="sin existencia acá"
+      etiquetaPendientesPlural="sin existencia acá"
+      vacio="Buscar producto"
+      tono="warning"
+      maxWidth="max-w-3xl"
+    >
+      {() => (
+        <div className="p-5 max-h-[85dvh] flex flex-col gap-3">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
+              <Package size={16} strokeWidth={2} className="text-warning-text" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-body-sm font-black text-content leading-tight">Consulta de Inventario</p>
+              <p className="text-micro text-content-3 mt-0.5">
+                En qué sala hay un producto, y cómo pedirlo
+              </p>
+            </div>
+          </div>
+
+          <SearchInput
+            accentColor="var(--warning)"
+            value={q}
+            onChange={setQ}
+            placeholder="Buscar por nombre o principio activo..."
+          />
+
+          <div className="flex-1 min-h-[18rem] overflow-hidden">
+            <PanelInventario query={q} onQueryChange={setQ} />
+          </div>
+        </div>
+      )}
+    </LanzadorSolicitud>
   );
 }

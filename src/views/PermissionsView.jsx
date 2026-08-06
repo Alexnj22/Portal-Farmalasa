@@ -126,7 +126,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
             isComing
                 ? 'bg-surface-card border-border-card opacity-40 select-none'
                 : hasAnyPerm
-                    ? `bg-surface-card backdrop-blur-2xl border-border-card
+                    ? `bg-surface-card border-border-card
                        shadow-[var(--shadow-glass-2)]
                        hover:shadow-[var(--shadow-glass-4)]
                        hover:translate-y-[var(--lift-card)] hover:scale-[1.018] hover:bg-surface-card
@@ -136,7 +136,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                        descripción por debajo del contraste AA que fija PRODUCT.md.
                        El estado se comunica con la superficie y el borde; las
                        letras se leen igual que en una tarjeta encendida. */
-                    : 'bg-surface-card-hover/40 backdrop-blur-xl border-divider shadow-[var(--shadow-shine)] hover:translate-y-[var(--lift-card)] hover:bg-surface-card'
+                    : 'bg-surface-card-hover/40 border-divider shadow-[var(--shadow-shine)] hover:translate-y-[var(--lift-card)] hover:bg-surface-card'
         }`}>
             <div className="p-4">
                 {/* Header */}

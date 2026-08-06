@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.435.0 — `vidrio-a-mano` y `material-a-mano` en CERO
+
+Séptima y última tanda de §20. **Las dos categorías llegan a cero y quedan
+bloqueantes para siempre**: desde ahora un `backdrop-blur` fuera de una
+superficie canónica, o una capa de material con su valor literal, **falla el
+gate** en vez de sumar al ratchet.
+
+El baseline queda con **una sola categoría**: `carril-pildora`, en 15. Empezó
+esta bajada con tres y 168 hallazgos tolerados.
+
+**Lo que cerró esta tanda:**
+
+- **El botón de IA**, el mismo código en `BranchesView`, `TabStaff` y
+  `TabHistory`. Se le quitó el `backdrop-blur-sm`: en un disco de 30px, 4px de
+  desenfoque es imperceptible y cuesta una capa de composición. *Sigue siendo
+  el mismo bloque triplicado en tres vistas — corresponde volverlo componente,
+  y eso queda pendiente aparte de esto.*
+- **Las ramas de ternario que quedaron a medias** en tandas anteriores:
+  `TabGenerar`, `EncuestaAdminView`, `PermissionsView`, `TabLaboratorios`,
+  `TabPoliticaVencimiento` y `EmployeeRequestsView` tenían el estilo escrito una
+  vez por estado, y las tandas por criterio sólo alcanzaban la rama que
+  matcheaba. **Un estilo repartido en ramas necesita que se recorran todas.**
+- **El organigrama de `RolesView`**, las tarjetas de la columna congelada de
+  `ScheduleCalendar`, el carril de acciones de `BranchesView` y el hueco de
+  déficit de `TabStaff`.
+- **`AppLayout`**: el ítem del flyout del sidebar llevaba vidrio propio dentro de
+  un popover que ya es vidrio — §1.5 otra vez.
+- **`TimeClockView` entra a `EXCEPTIONS` con el motivo escrito**, que es la
+  quinta fila de §20.2: el kiosco vive **fuera del shell**, no hay
+  `data-surface` de la que colgar ni tema que respetar, y su tarjeta del reloj
+  usa `backdrop-blur-[60px]` sobre el fondo de cámara. Es la única excepción
+  nueva de toda la bajada.
+
+**El resumen de las siete tandas:** `vidrio-a-mano` 135 → 0 y `material-a-mano`
+18 → 0, con **una** excepción agregada y **tres roles de material nuevos**
+nombrados en el camino — `data-pegajoso`, `data-cobertura` y `data-velo`—, los
+tres por la misma razón: había superficies con la obligación de **tapar** que
+la estaban cumpliendo por accidente, con un desenfoque.
+
 ## v2.434.0 — La cobertura: el rol de material que faltaba nombrar
 
 Sexta tanda de §20. `vidrio-a-mano` **60 → 24**, `material-a-mano` **11 → 5**.

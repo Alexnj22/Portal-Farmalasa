@@ -189,7 +189,12 @@ const EXCEPTIONS = {
   'src/views/VentasView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
-  'src/views/TimeClockView.jsx': ['color', 'white', 'hex', 'inline-color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
+  // `vidrio-a-mano` + `material-a-mano` agregados el 2026-08-06 al cerrar §20:
+  // el kiosco vive FUERA del shell —no hay `data-surface` de la que colgar, ni
+  // tema que respetar: es siempre-oscuro por diseño— y su tarjeta del reloj usa
+  // `backdrop-blur-[60px]` sobre el fondo de cámara. Es la quinta fila de §20.2
+  // («bespoke → EXCEPTIONS con el motivo escrito»), no deuda sin clasificar.
+  'src/views/TimeClockView.jsx': ['material-a-mano', 'vidrio-a-mano', 'color', 'white', 'hex', 'inline-color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
   'src/views/LoginView.jsx': ['material-a-mano', 'color', 'z-index', 'input-a-mano', 'white', 'hex', 'inline-color', 'vidrio-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
   'src/components/timeclock/KioskConfigModal.jsx': ['material-a-mano', 'color', 'white', 'hex', 'vidrio-a-mano'],
   'src/components/common/ThemeToggle.jsx': ['color', 'white'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)

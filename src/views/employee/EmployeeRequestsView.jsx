@@ -191,9 +191,9 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
 
     const cardBg =
         req.status === 'PENDING'   ? 'border-brand/30 bg-surface-card' :
-        req.status === 'APPROVED'  ? 'border-success/40 bg-success/10 backdrop-blur-2xl' :
-        req.status === 'REJECTED'  ? 'border-danger/40 bg-surface-card backdrop-blur-xl' :
-        'border-border-card bg-surface-card backdrop-blur-md';
+        req.status === 'APPROVED'  ? 'border-success/40 bg-success/10' :
+        req.status === 'REJECTED'  ? 'border-danger/40 bg-surface-card' :
+        'border-border-card bg-surface-card';
 
     return (
         <div className={`rounded-header border flex flex-col transition-all duration-[var(--dur-slow)] relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${cardBg}`}>

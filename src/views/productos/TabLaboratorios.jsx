@@ -238,7 +238,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
             className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden ${
                 isOpen
                     ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card'
-                    : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
+                    : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card'
             }`}
         >
             <ListRow

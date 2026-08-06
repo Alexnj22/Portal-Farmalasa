@@ -1305,7 +1305,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     to="/profile"
                                     onClick={() => setFlyout(null)}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
-                                        bg-[#0D2040]/80 backdrop-blur-2xl backdrop-saturate-150 border border-[#1E3A6E]/60
+                                        bg-[#0D2040]/80 border border-[#1E3A6E]/60
                                         shadow-[var(--shadow-glass-3)]
                                         hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60 transition duration-[var(--dur-fast)] active:scale-[0.97] ${focusRing}`}
                                     type="button"

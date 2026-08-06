@@ -347,7 +347,7 @@ const RolesView = ({ openModal }) => {
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
 
         return (
-            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[var(--shadow-glass-3)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-slow)] min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
+            <div className={`org-node-card relative inline-flex flex-col items-center shadow-[var(--shadow-glass-3)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-slow)] min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
@@ -506,7 +506,7 @@ const RolesView = ({ openModal }) => {
 
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
                         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-[var(--dur-lento)] ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
-                            <div data-surface={editingRoleId ? 'card' : undefined} className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-[var(--dur-lento)] group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId ? 'border-warning/40' : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'}`}>
+                            <div data-surface={editingRoleId ? 'card' : undefined} className={`bg-surface-card p-6 md:p-8 rounded-header transition-all duration-[var(--dur-lento)] group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId ? 'border-warning/40' : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'}`}>
 
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
@@ -759,7 +759,7 @@ const RolesView = ({ openModal }) => {
                     <div className="animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
-                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-lento)] overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
+                            className={`relative flex flex-col select-none bg-surface-card border border-border-card shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-lento)] overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
@@ -778,7 +778,7 @@ const RolesView = ({ openModal }) => {
                                 <Button disabled={isExporting} onClick={toggleFullScreen}>{isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
                                     <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span></Button>
 
-                                <div className="ml-auto flex items-center gap-2 bg-surface-card backdrop-blur-sm border border-border-card rounded-xl px-2 py-1 shadow-sm">
+                                <div className="ml-auto flex items-center gap-2 bg-surface-card border border-border-card rounded-xl px-2 py-1 shadow-sm">
                                     <Button variant="secondary" onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}>-</Button>
                                     <span className="text-caption font-bold text-content-2 w-8 text-center">{Math.round(zoom * 100)}%</span>
                                     <Button variant="secondary" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</Button>

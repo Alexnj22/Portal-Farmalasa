@@ -573,13 +573,13 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
                     >
                         {aiMode ? (
-                            <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
+                            <div className="absolute inset-[1px] bg-chart-3/10 rounded-full z-0 flex items-center justify-center border border-chart-3/30">
                                 <X size={16} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
                             </div>
                         ) : (
                             <>
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
+                                <div className="absolute inset-[1px] bg-surface-card rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
                                 <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
                                 <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
                             </>
@@ -778,7 +778,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     ))}
 
                                     {(wfmApplied || isNewBranch || isStaffDeficit) && Array.from({ length: minStaff > coverageStaffCount ? minStaff - coverageStaffCount : 0 }).map((_, i) => (
-                                        <div key={`deficit-${i}`} {...clickable(handleEditHROperative)} className="group flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
+                                        <div key={`deficit-${i}`} {...clickable(handleEditHROperative)} className="group flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-warning/30 bg-warning/10 cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
                                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-tab-active border border-warning/30 text-warning-text group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>

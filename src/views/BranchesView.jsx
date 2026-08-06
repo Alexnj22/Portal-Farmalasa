@@ -184,7 +184,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
         evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
     }
 
-    const baseCardStyles = 'bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-4)]';
+    const baseCardStyles = '';
 
     if (alerts.length === 0) {
         return { hasAlerts: false, message: 'Operativa', cardStyles: baseCardStyles, badgeStyles: 'hidden', icon: CheckCircle2, list: [] };
@@ -361,7 +361,7 @@ const BranchCard = memo(({
 
             {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA */}
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-tabs">
-                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-[var(--dur-slow)] bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-border-card hover:scale-105">
+                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-[var(--dur-slow)] bg-surface-card p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-border-card hover:scale-105">
                     
                     {isFarmacia && (
                         <>
@@ -375,13 +375,13 @@ const BranchCard = memo(({
                             title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
                         >
                             {aiMode ? (
-                                <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
+                                <div className="absolute inset-[1px] bg-chart-3/10 rounded-full z-0 flex items-center justify-center border border-chart-3/30">
                                     <X size={14} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
                                 </div>
                             ) : (
                                 <>
                                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                    <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
+                                    <div className="absolute inset-[1px] bg-surface-card rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
                                     <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-chart-3 transition-colors z-base"></div>
                                     <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
                                 </>
@@ -518,7 +518,7 @@ const BranchCard = memo(({
                 </div>
             </div>
 
-            <div className="px-6 py-4 bg-surface-card backdrop-blur-xl border-t border-border-card shadow-[var(--shadow-shine)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">
+            <div className="px-6 py-4 bg-surface-card border-t border-border-card shadow-[var(--shadow-shine)] flex items-center justify-between shrink-0 rounded-b-[2.5rem]">
                 <button
                     type="button"
                     onClick={() => openModal && openModal("viewBranchEmployees", branch)}

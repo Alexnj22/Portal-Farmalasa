@@ -1024,7 +1024,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
             {/* ALERTA DE BORRADOR (solo en creación) */}
             {!isEditMode && hasDraft && (
-                <div className="mx-auto mb-4 bg-brand/10 border border-brand/30 p-3 rounded-2xl flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 w-full max-w-lg backdrop-blur-md">
+                <div className="mx-auto mb-4 bg-brand/10 border border-brand/30 p-3 rounded-2xl flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 w-full max-w-lg">
                     <div className="flex items-center gap-2 text-brand-text">
                         <RotateCcw size={16} strokeWidth={2.5} />
                         <span className="text-label font-bold">Tienes un borrador sin guardar.</span>

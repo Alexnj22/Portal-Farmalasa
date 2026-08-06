@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.462.1 — El barrido anota cada respuesta de Hacienda en el momento
+
+La versión anterior creó el registro de intentos, pero se llenaba a mano desde
+la bitácora vieja. Ahora lo escribe el propio barrido, en el momento, salga
+bien o mal: 10 envíos quedaron anotados en la primera corrida —2 con su sello,
+8 con el motivo del fallo.
+
+**Un rechazo ya no pierde el detalle.** Las observaciones de Hacienda viajaban
+concatenadas dentro del texto del error, así que el caso que sí se puede
+arreglar —el que señala un dato de la ficha del cliente— era justo el que
+llegaba sin estructura. Ahora viajan enteras y el portal puede decir qué campo
+hay que corregir.
+
+Se distinguen dos fallos que antes se veían iguales: los que **Hacienda**
+rechaza —traen su observación— y los que fallan **antes** de llegar, cuando no
+se pudo armar el documento. Son problemas distintos y se resuelven distinto.
+
+Si el registro falla, la corrida sigue: el trabajo real es enviar el documento,
+y perder la anotación de un intento es malo, pero abortar el barrido por eso
+es peor.
+
 ## v2.462.0 — El portal guarda lo que Hacienda contesta, y corrige la ficha que lo hizo fallar
 
 Tres facturas llevaban días sin sello y el barrido nocturno las reintentaba sin

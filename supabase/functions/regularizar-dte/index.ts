@@ -3,7 +3,7 @@ import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "
 // `anular_factura.php` NO se usa acá a propósito: estas facturas ya están
 // anuladas en el ERP —eso es lo que las puso en la bolsa— y lo único que
 // falta es el trámite ante Hacienda.
-import { login, formatearDui, enviarDteAlMH } from "../_shared/erp-dte.ts";
+import { login, formatearDui, enviarDteAlMH, RechazoMH } from "../_shared/erp-dte.ts";
 
 // Termina lo que quedó a medias entre el ERP y Hacienda.
 //
@@ -70,6 +70,48 @@ interface Pendiente {
   estado: string;
   fecha: string;
   bolsa: "anuladas" | "sin_sello";
+}
+
+/**
+ * Deja constancia del envío en `dte_mh_intentos`, salga bien o mal.
+ *
+ * Hasta acá la respuesta del MH vivía en tres lugares y ninguno servía para
+ * actuar: el ERP (`save_response_mh`), la respuesta HTTP —que se pierde al
+ * cerrar la pestaña— y el JSON de `audit_logs`. Una factura sellada CON
+ * observaciones se veía idéntica a una limpia.
+ *
+ * NUNCA tumba la corrida: si el insert falla, se anota en el log y se sigue.
+ * El trabajo real es el envío a Hacienda, y perder el registro de un intento es
+ * malo, pero abortar el barrido por eso es peor.
+ */
+async function registrarIntento(
+  admin: ReturnType<typeof createClient>,
+  f: Pendiente,
+  r: {
+    ok: boolean;
+    sello?: string | null;
+    codigo_msg?: string | null;
+    descripcion_msg?: string | null;
+    observaciones?: string[];
+    fh_procesamiento?: string | null;
+    error?: string | null;
+  },
+) {
+  const { error } = await admin.from("dte_mh_intentos").insert({
+    invoice_id: f.id,
+    erp_invoice_id: String(f.erp_invoice_id),
+    correlativo: f.correlativo,
+    branch_id: f.branch_id,
+    bolsa: f.bolsa,
+    ok: r.ok,
+    sello: r.sello ?? null,
+    codigo_msg: r.codigo_msg ?? null,
+    descripcion_msg: r.descripcion_msg ?? null,
+    observaciones: r.observaciones ?? [],
+    fh_procesamiento: r.fh_procesamiento ?? null,
+    error: r.error ?? null,
+  });
+  if (error) console.error(`dte_mh_intentos (factura ${f.id}):`, error.message);
 }
 
 Deno.serve(async (req) => {
@@ -199,6 +241,11 @@ Deno.serve(async (req) => {
           nombreResp: respCfg?.nombre,
           duiResp: respDui ?? undefined,
         });
+        await registrarIntento(admin, f, {
+          ok: true, sello: mh.sello, codigo_msg: mh.codigo,
+          descripcion_msg: mh.descripcion, observaciones: mh.observaciones,
+          fh_procesamiento: mh.fh,
+        });
         resueltas++;
         // Hacienda acepta con observaciones ("RECIBIDO CON OBSERVACIONES", visto
         // en la 344391 el 2026-08-06): hay sello, o sea que entró, pero el MH
@@ -214,7 +261,20 @@ Deno.serve(async (req) => {
         await new Promise(r => setTimeout(r, PAUSA_ENTRE_ENVIOS_MS));
       } catch (e) {
         fallidas++;
-        detalle.push({ ...base, ok: false, error: e instanceof Error ? e.message : String(e) });
+        const msg = e instanceof Error ? e.message : String(e);
+        // Un rechazo DE Hacienda trae sus observaciones enteras; un fallo ANTES
+        // de Hacienda (el ERP no armó el documento, la sesión se cayó) no tiene
+        // ninguna. La bandeja los separa por eso, así que no se mezclan acá.
+        const r = e instanceof RechazoMH ? e : null;
+        await registrarIntento(admin, f, {
+          ok: false, error: msg,
+          observaciones: r?.observaciones ?? [],
+          descripcion_msg: r?.descripcion ?? null,
+          codigo_msg: r?.codigo ?? null,
+          fh_procesamiento: r?.fh ?? null,
+        });
+        detalle.push({ ...base, ok: false, error: msg,
+                       ...(r?.observaciones.length ? { observaciones: r.observaciones } : {}) });
       }
     }
 

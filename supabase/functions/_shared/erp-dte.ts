@@ -143,6 +143,34 @@ export interface ResultadoMH {
 }
 
 /**
+ * Un rechazo de Hacienda, con las observaciones ENTERAS.
+ *
+ * Antes esto era un `Error` pelado y las observaciones viajaban concatenadas
+ * dentro del `message`. Justo el caso accionable —el que se arregla corrigiendo
+ * la ficha del cliente, `[receptor.direccion.distrito]`— era el que perdía la
+ * estructura, mientras que las que sí llegaban como array eran casi todas
+ * `[identificacion.fecEmi]`, que NO se arregla. Medido sobre el histórico: las
+ * 3 apariciones del distrito estaban las 3 en rechazos.
+ *
+ * Sigue siendo un Error y `message` no cambió, así que quien solo lo registra
+ * —`aplicar-solicitud-facturacion`— no se entera. Quien quiere actuar lee los
+ * campos.
+ */
+export class RechazoMH extends Error {
+  readonly esRechazoMH = true;
+  constructor(
+    message: string,
+    readonly observaciones: string[],
+    readonly descripcion: string,
+    readonly codigo: string,
+    readonly fh: string,
+  ) {
+    super(message);
+    this.name = "RechazoMH";
+  }
+}
+
+/**
  * Manda a Hacienda el documento de una factura y registra la respuesta.
  *
  * `anula: false` → emisión (la factura no tiene sello de recepción).
@@ -222,9 +250,13 @@ export async function enviarDteAlMH(
   }));
 
   if (!sello || sello === "null")
-    throw new Error(
+    throw new RechazoMH(
       `Hacienda rechazó el documento: ${mh.descripcionMsg ?? "sin descripción"}` +
-      (observaciones.length ? ` — ${observaciones.join("; ")}` : ""),
+        (observaciones.length ? ` — ${observaciones.join("; ")}` : ""),
+      observaciones,
+      String(mh.descripcionMsg ?? ""),
+      String(mh.codigoMsg ?? ""),
+      String(mh.fhProcesamiento ?? ""),
     );
 
   return {

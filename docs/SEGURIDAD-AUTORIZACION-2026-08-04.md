@@ -223,3 +223,58 @@ where coalesce(pg_get_expr(polqual,polrelid),'')      ilike '%user_metadata%'
 
 Los dos deben seguir dando **cero**. Si alguno vuelve a dar filas, se reintrodujo el
 bug.
+
+---
+
+# Barrido ejecutado — 2026-08-05
+
+La nota decía «no barrido» y era la razón principal de su existencia. Se corrió.
+
+## Las 5 funciones con identidad por parámetro: las 5 están bien
+
+| Función | Veredicto |
+|---|---|
+| `resolve_pedido_item(p_user_id)` | ✅ `v_actor := auth_employee_id()`; ignora `p_user_id` para la autoría y exige `pedidos.can_edit` |
+| `update_pedido_sucursal_lifecycle(p_user_id)` | ✅ usa `auth_employee_id()` cuando `pg_trigger_depth() = 0`; sólo cae a `p_user_id` dentro de un trigger, donde no hay cliente |
+| `set_kiosk_pin(p_employee_id)` | ✅ exige `staff_list.can_edit`; `p_employee_id` es el destinatario, no la identidad, y `rotated_by` sale de la sesión |
+| `verify_kiosk_pin` · `verify_kiosk_authorization` | ✅ pre-login por diseño: validan `device_token` contra `kiosk_devices`, limitan a 10 fallos / 5 min y comparan el PIN con bcrypt |
+
+## El hallazgo apareció al ampliar el barrido a la SUCURSAL como parámetro
+
+Es la misma forma —*el cliente elige de quién son los datos*— con otra llave. De
+las 37 funciones DEFINER que reciben `branch`/`sucursal`, 9 no chequean alcance y
+**sólo 3 son alcanzables por `authenticated`**. Una de ellas era un agujero real:
+
+> **`get_kiosk_coverage_employees(p_branch_id, p_week_start)`** era ejecutable por
+> **`anon`**, **no recibía `device_token`**, y devolvía `name`, `code`,
+> `photo_url`, `status` y **`kiosk_pin`** de cada empleado de la sucursal que se
+> pidiera. La llave anon viaja en el bundle, así que era efectivamente público.
+
+Se quedó afuera del rediseño de credenciales del kiosco del 2026-07-29: su
+hermana `get_kiosk_boot_payload` sí exige el token y ya **no** devuelve el PIN.
+**CLAUDE.md afirmaba que las 5 funciones con `anon` validan `device_token`
+internamente — era cierto para 4.**
+
+Corregido en `20260806001444` (v2.397.1): exige el par `device_id`/`device_token`,
+la sucursal sale del dispositivo y el PIN dejó de viajar.
+
+**Quedan dos, ninguna urgente:**
+
+- `notify_branch` / `notify_employees` — cualquier autenticado puede mandar una
+  notificación (con push) a una sucursal entera o a destinatarios arbitrarios,
+  con título y cuerpo libres. No filtra datos; el riesgo es suplantación y spam
+  interno. El frontend las llama a propósito, así que cerrarlas es decidir qué
+  permiso exigir, no revocar.
+- `resumen_ventas_diario(p_desde, p_hasta, p_branch_id)` — devuelve el resumen de
+  ventas de **cualquier** sucursal sin mirar el alcance de quien pregunta.
+
+## Los otros dos puntos de §4, cerrados el mismo día
+
+- Las policies `WITH CHECK (true)` de `attendance` y `audit_logs` → migración
+  `20260806000957`.
+- `employees.is_admin` en los tres fallbacks del enrutador de aprobadores →
+  `system_role IN ('ADMIN','SUPERADMIN')`.
+
+Sigue abierto de §3: las **6 cuentas `@staff.local`** y las **2 `@farmalasa.app`**
+huérfanas en `auth.users`. Y de §2, la UI que todavía se pinta con `user_metadata`
+(cosmético).

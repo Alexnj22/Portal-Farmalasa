@@ -464,7 +464,7 @@ y varias de sus cifras ya no son ciertas; acá está el estado real.
 | **D** — el cierre de período | 📄 **Documentado, pendiente de confirmación** | `docs/BLOQUE-D-CIERRE-DE-PERIODO.md` — diseño cerrado + la deriva MEDIDA + 4 decisiones abiertas |
 | **E3** — anexo de retención de Renta | ✅ Construido, ❌ **sin dato** | hay **0** proveedores marcados `retiene_renta`; el anexo sale vacío hasta que el contador marque cuáles de los 14 candidatos aplican |
 | **Cosas chicas** (Parte 3 §6) | ⬜ **Aprobadas, no hechas** | las 4 |
-| Los DTE de gastos fuera del libro | ⬜ **Sin investigar** | hoy son **436 documentos / $8,184.31** (el cruce se rehízo; ya no son 495) |
+| Los DTE de gastos fuera del libro | ✅ **Investigado el 2026-08-05** | el número mezclaba documentos de signo opuesto. Ver «Parte 10» al final |
 
 ### Cifras de este documento que quedaron desactualizadas
 
@@ -1146,3 +1146,64 @@ lado — pero **no se pudo abrir ese modal desde el chequeo automático** (la
 primera celda de la fila corta la propagación del clic). La pestaña **Renta** sí
 está verificada en el navegador: monta, muestra las tarjetas correctas y explica
 el vacío.
+
+---
+
+# Parte 10 — Los DTE fuera del libro, investigados (2026-08-05)
+
+El pendiente decía **436 documentos / $8,184.31** y estaba marcado «sin
+investigar». Al abrirlo aparece que **ese total suma documentos de signo
+opuesto**, así que no es una cifra que se pueda leer como «crédito fiscal que se
+está perdiendo».
+
+Cruce de junio-julio 2026, con el método que la Parte 8 dejó verificado (código
+de generación normalizado como clave real, más la heurística proveedor + monto
+exacto ±3 días), **deduplicando por código de generación**:
+
+| Tipo de DTE | Docs | Monto | «Crédito fiscal» | Proveedores |
+|---|---|---|---|---|
+| **03 · CCF** | **400** | $50,925.97 | **$5,825.31** | 55 |
+| 05 · Nota de crédito | 128 | $23,738.72 | $2,720.23 | 21 |
+| 01 · Factura consumidor | 15 | $8,143.90 | $211.55 | 8 |
+| 06 · Nota de débito | 4 | $639.80 | $73.56 | 4 |
+| 09 · Doc. contable de liquidación | 177 | — | 0 | 2 |
+| 07 · Comprobante de retención | 1 | — | — | 1 |
+
+**Las tres correcciones que salen de la tabla:**
+
+1. **Sólo la fila 03 es crédito fiscal reclamable.** Son **$5,825.31**, no
+   $8,184 ni $8,532.
+2. **Las notas de crédito (05) van al revés.** $2,720.23 en 128 documentos que
+   *reducen* el crédito, no que lo aumentan. Sumarlas al mismo total es contarlas
+   con el signo cambiado — y es exactamente el mismo hallazgo que la pregunta A1
+   al contador (el libro de compras no resta las notas de crédito, Art. 62).
+3. **La factura de consumidor (01) no genera crédito fiscal.** Esos $211.55 no
+   son reclamables por definición, estén donde estén.
+
+**Quiénes son los 400 CCF.** El nombre del pendiente —«DTE de *gastos*»— también
+engaña: los primeros de la lista son distribuidores de mercadería, no gastos
+operativos.
+
+| Emisor | Docs | Monto | Crédito |
+|---|---|---|---|
+| MONTREAL, S.A. DE C.V. | 47 | $19,177.23 | $2,187.30 |
+| STEINER, S.A. DE C.V. | 4 | $7,199.92 | $828.30 |
+| RONASA S.A. DE C.V. | 9 | $5,046.91 | $580.62 |
+| OMAR ARNULFO SERRANO CRESPIN | 2 | $2,938.00 | $338.00 |
+| COFARSAL | 8 | $2,902.36 | $331.09 |
+| LABORATORIOS VIJOSA | 2 | $2,764.80 | $315.28 |
+| Corporación CEFA | 7 | $2,204.25 | $251.37 |
+| CAESS (alumbrado eléctrico) | 3 | $785.97 | $90.46 |
+
+MONTREAL solo es el **38%** del crédito de la lista. Con VIJOSA, CEFA, RONASA,
+COFARSAL y REDIFAR adentro, la mayor parte de esto **no son gastos que nunca se
+registran: son compras de mercadería que no llegaron al sistema de origen** —la
+clase que la Parte 7 llamaba «la compra FALTA de verdad»—. CAESS sí es un gasto
+operativo puro.
+
+**Lo que sigue sin decidirse** (y no lo decide el código): el Art. 65-A pide que
+el gasto sea indispensable para el giro, así que **$5,825.31 es el techo, no lo
+confirmado**. Y la cautela de la Parte 7 sigue en pie: «no encontré una compra
+con ese monto» no es «no existe». Antes de reclamar nada, los 47 de MONTREAL se
+revisan documento por documento — son un solo proveedor y el 38% del total, así
+que es una tarde de trabajo, no un proyecto.

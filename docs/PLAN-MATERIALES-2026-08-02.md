@@ -109,8 +109,10 @@ alfas cambia el material aunque el token siga diciendo `1.60`.
         backdrop-filter: blur(18px) saturate(180%);
         box-shadow: 0 8px 32px rgba(15,23,42,.10); }
 
-/* reflejo (× --glass-especular) — el aro necesita MUCHAS paradas: con pocas se
-   ve como el filo de una esfera en vez de como la sombra de un brillo */
+/* ⛔ RETIRADO 2026-08-06 (§6.1.bis) — esta capa NO EXISTE y sus tokens ya no
+   están en index.css. Se conserva acá como registro de lo que se midió, no
+   como especificación vigente. Lo mismo vale para el bloque de `.btn .especular`
+   más abajo. */
 .card .especular { background: radial-gradient(var(--glass-esp-radio) var(--glass-esp-radio) at var(--mx) var(--my),
   rgba(255,255,255,calc(.17 * var(--glass-especular)))  0%,
   rgba(255,255,255,calc(.13 * var(--glass-especular))) 26%,
@@ -141,7 +143,7 @@ alfas cambia el material aunque el token siga diciendo `1.60`.
 .card:hover { background: var(--surface-card-hover);        /* × --solid-tono */
               box-shadow: …, 0 0 0 3px rgba(15,23,42,calc(.10 * var(--solid-anillo))); }
 
-/* §2 · Botón — el aro NO escala con la intensidad: ése es el motivo de --btn-esp-aro */
+/* ⛔ RETIRADO 2026-08-06 (§6.1.bis) — igual que el de la tarjeta */
 .btn .especular { background: radial-gradient(var(--btn-esp-radio) var(--btn-esp-radio) at var(--mx) var(--my),
   rgba(255,255,255,calc(.55 * var(--btn-especular)))  0%,
   rgba(255,255,255,calc(.30 * var(--btn-especular))) 30%,
@@ -451,6 +453,47 @@ que querés que se vea.*
 
 ---
 
+### 1.6.quater ⚠️ El DESTELLO también invierte — corregido 2026-08-06
+
+La tabla de arriba cierra con claro en **máx 64 · medio 47** contra oscuro en
+**máx 155 · medio 111**, y eso se dio por bueno. No lo era: el usuario, mirando
+los dos temas renderizados, dijo *«en modo claro no se ve del todo bien el
+efecto del borde, en modo oscuro es perfecto»*. Un factor de 2.4× entre los dos
+temas no es un matiz de calibración — es que en claro el gesto no se lee.
+
+**La causa, y estaba escrita tres párrafos más arriba.** El comentario de
+`--rim-*` en `index.css` ya decía *«EL FILO CONTRASTA CON SU SUPERFICIE: oscuro
+sobre claro, claro sobre oscuro»*… y la regla sólo se le había aplicado al
+**flanco**. El destello siguió siendo `rgba(255,255,255,1)` en los cuatro temas.
+
+| | borde en reposo | canto apagado | destello | qué se ve |
+|---|---|---|---|---|
+| Liquid **oscuro** | blanco **.10** | blanco .10 | blanco 1.0 | el destello nace de la nada — factor 10 |
+| Liquid **claro** (antes) | blanco **.72** | blanco .35 | blanco 1.0 | blanco sobre blanco: lo único legible era el flanco oscuro, o sea **un tajo que viaja**, no un brillo |
+
+Y hay un detalle de caja que lo explica del todo: **el canto se pinta contra la
+caja de _padding_**, o sea por DENTRO del borde de 1px, no encima. El borde
+nunca se tapa. Por eso su alfa manda sobre qué dirección de realce puede
+leerse, y por eso el mismo token da dos materiales distintos.
+
+**La corrección:** en `:root` el destello pasa a `rgba(12,20,48,.80)` y su
+flanco a `rgba(255,255,255,.95)`. El reposo no cambia en nada — sólo cambia lo
+que corre al apuntar. Se descartó la alternativa de bajar `--border-card` de
+`.72` a `.30`, que también funcionaba: habría cambiado cómo se ve **toda**
+tarjeta, campo, menú y modal en claro aunque nadie los apunte, o sea pagar en la
+pantalla quieta por algo que sólo pasa con el mouse.
+
+**Y trajo un arreglo de herencia que nadie había mirado:** `--rim-sombra` sólo
+estaba declarado en `:root`; los otros tres temas lo heredaban. Al invertirlo en
+claro, oscuro habría recibido un flanco **blanco** pegado a un destello blanco
+—rompiendo justo el tema que hoy se ve perfecto— y los dos Solid habrían pasado
+de un tajo oscuro a uno blanco en un material que no tiene canto vivo. Ahora los
+cuatro temas lo declaran: en oscuro `rgba(12,20,48,.45)`, y en los dos Solid
+**igual a `--rim-base`**, que deja el anillo plano. *Un token que invierte por
+tema no se puede heredar.*
+
+---
+
 ### 1.7 ⚠️ El «lente» estaba clavado y es ciego al tema — CORREGIDO
 
 Encontrado al revisar el tema oscuro del mockup de §1.6. §1.1 define la capa de
@@ -488,13 +531,14 @@ misma pregunta: *¿esto se midió en los dos temas o en uno?*
 El elemento más repetido del portal. Cuatro variantes reales: `primary`,
 `secondary`, `ghost`, `destructive`.
 
+> **⚠️ El especular se RETIRÓ el 2026-08-06 — ver §6.1.** Los cinco tokens que
+> este bloque declaraba (`--btn-especular`, `--btn-esp-radio`, `--btn-esp-aro`,
+> `--btn-rim`, `--btn-barrido`) ya no existen en `index.css`. Lo que queda del
+> §2 es el gel, el lift y el foco; el reflejo lo reemplaza el canto de §1.6,
+> que el botón ya recibe por la regla de `[data-surface] :is(button, …)`.
+
 ```css
 :root {                                  /* Liquid Glass */
-  --btn-especular: 0.40;
-  --btn-esp-radio: 3rem;
-  --btn-esp-aro:   0.10;   /* piso del aro — legibilidad sobre blancos */
-  --btn-rim:       1.00;
-  --btn-barrido:   0;
   --lift-hover:   -1px;
 }
 
@@ -518,15 +562,10 @@ El elemento más repetido del portal. Cuatro variantes reales: `primary`,
 no un degradado opaco. Si no se ve lo que hay detrás, no es vidrio — y así
 estaba el primer mockup, que el usuario rechazó por eso mismo.
 
-**Proporción del reflejo.** 3rem sobre un botón de ~150px es el mismo ~32% que
-7rem sobre una tarjeta de 320px: el reflejo se lee del mismo tamaño relativo en
-los dos elementos.
-
-**`--btn-esp-aro` existe porque el aro no puede escalar con la intensidad.** Al
-bajar la intensidad a 0.40 el aro caía a .052 y el botón blanco volvía a **1.11**
-de contraste — prácticamente el 1.06 del bug original. Con piso 0.10 sube a
-~1.20 sin cambiar nada en los coloreados. La intensidad gobierna el brillo; el
-aro garantiza la legibilidad. Son dos cosas distintas y por eso son dos tokens.
+*Los dos párrafos que seguían acá —la proporción 3rem/150px del reflejo y el
+motivo de `--btn-esp-aro`— describían la capa retirada. Se conservan en el
+historial de git; repetirlos acá haría que la sección siga leyéndose como
+especificación vigente, que es exactamente el modo de falla de §6.1.*
 
 **Solid no declara ninguna capa de vidrio.** Sin `backdrop-filter`, sin
 `::before`/`::after`, sin `mix-blend-mode`. Cada una de esas capas es una
@@ -797,17 +836,50 @@ y quedó huérfano sin que nadie lo notara porque nunca se había implementado.
 **Construirla igual sería agregar código muerto**, que es literalmente el argumento
 con el que §2.1 removió el barrido tres párrafos más arriba. Así que no se construye.
 
-Dos consecuencias que sí hay que atender:
+### 6.1.bis ✅ RESUELTO 2026-08-06 — el botón también la pierde
 
-1. **`--glass-especular`, `--glass-esp-radio`, `--btn-especular` y `--btn-esp-aro`
-   son factores de una capa que no existe.** Se dejan escritos porque son la
-   especificación de §1.1/§2 y el día que se decida el especular ya están medidos —
-   pero **hoy no multiplican nada**, y eso está anotado acá para que nadie los lea
-   como si estuvieran vivos.
-2. **Queda una pregunta para el usuario**, la única que este plan no puede
-   responderse solo: *§2 decidió un especular para el botón antes de que §1.6
-   descartara la luz que sigue al puntero. ¿El botón también pierde esa capa, o el
-   argumento valía sólo para la tarjeta?*
+La pregunta que quedaba —*¿el botón pierde la capa o el argumento valía sólo
+para la tarjeta?*— se resolvió mostrando **las tres salidas renderizadas** con
+los tokens reales en los cuatro temas, no discutiéndola: A sin especular, B con
+un especular fijo, C con seguimiento del puntero. El usuario eligió **A**.
+
+**Se borran ocho tokens de `index.css`**, tres más de los cuatro que esta
+sección había contado:
+
+| token | por qué se va |
+|---|---|
+| `--glass-especular` · `--glass-esp-radio` | factores del reflejo de la tarjeta, que §1.6 ya había retirado |
+| `--btn-especular` · `--btn-esp-radio` · `--btn-esp-aro` | los mismos, en el botón |
+| `--glass-rim` · `--btn-rim` | el canto **no se gradúa por pieza**: lo resuelven `--rim-base`/`--rim-glint`/`--rim-sombra` para todo el portal |
+| `--btn-barrido: 0` | el barrido no se apagó, la fase G lo **removió**. Un token en 0 que nadie lee no es un interruptor, es una nota vieja |
+
+**Tres cosas que sólo aparecieron al renderizarlo**, y que ninguna lectura del
+código habría dado:
+
+1. **En los dos temas Solid las tres opciones son idénticas** — §2 ya decía que
+   Solid no declara capas de vidrio. O sea que la capa en disputa sólo existía
+   en **2 de los 4 temas**.
+2. **En `ghost` y `secondary` el especular casi no se ve.** Sobre transparente o
+   sobre algo muy translúcido no hay superficie contra la que leerse: es el
+   1.06:1 de §1.1 otra vez. Sumado a lo anterior, la capa vivía en 2 variantes
+   de 4, en 2 temas de 4.
+3. **Quedarse con ella costaba un token MÁS, no menos.** §0.ter midió el mismo
+   factor dando 1.03:1 en claro y 2.43:1 en oscuro, con el aro muerto: el botón
+   habría necesitado su propio `--btn-especular` en `[data-theme="dark"]`.
+
+**Y el motivo de fondo no es el ahorro de tokens**: es que el portal quede con
+**un solo gesto de material**. El canto que corre ya está implementado, medido y
+confirmado, y cubre tarjeta, botón, fila y sidebar. Agregarle una segunda capa
+que sólo funciona en un cuarto de los casos es volver a tener dos sistemas
+conviviendo — el hallazgo de §13.3, en chico.
+
+> **La lección de método:** esta pregunta estuvo escrita como «decisión abierta»
+> desde que se redactó §6.1, y se resolvió en un intercambio en cuanto dejó de
+> ser una pregunta y pasó a ser tres cosas que se podían apuntar con el mouse.
+> Las tres observaciones de arriba estaban disponibles en el código todo el
+> tiempo y nadie las vio leyéndolo. Es la contracara de §19.5 —«tres
+> instrumentos mintieron»—: ahí medir de más engañó, acá **no renderizar**
+> mantuvo abierta una decisión durante todo el plan.
 
 **El gate `puntero-lista` se queda igual**, y ahora es puramente preventivo: vigila
 una utilidad que no existe, para el día que alguien la escriba. Es el único de los
@@ -973,7 +1045,7 @@ no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 | **C** | ~~El reloj~~ ✅ **hecho 2026-08-05** — 468 usos tokenizados, 0 literales | A | `reloj-a-mano` en 0 y bloqueante |
 | **D** | ~~Tokens de §1-§5 en los cuatro temas~~ ✅ **hecho 2026-08-05** | A, B | Medido en la app real, 4 temas |
 | **E** | ~~`data-interactive` + el filo que corre (§1.6)~~ ✅ **hecho 2026-08-05** | D | 6.672 px en la apuntada, 0 en la vecina |
-| **F** | ~~Utilidad de seguimiento del puntero~~ ⛔ **SIN CONSUMIDOR** — ver §6.1 | D | El gate `puntero-lista` queda de guardia |
+| **F** | ~~Utilidad de seguimiento del puntero~~ ⛔ **NO SE CONSTRUYE** — decidido 2026-08-06 (§6.1.bis) | D | 8 tokens borrados; el gate `puntero-lista` queda de guardia |
 | **G** | ~~Remover el barrido (`.sweep`)~~ ✅ **hecho 2026-08-05** | D | 0 en `index.css`, JSX y `DESIGN.md` |
 | **H** | ~~`DESIGN.md` §25.4 y el barrido~~ ✅ **hecho 2026-08-05** | D | El texto y el código dicen lo mismo |
 
@@ -1076,10 +1148,14 @@ el texto, no subiendo la opacidad). Al cerrar los valores hay que medir sobre el
 peor fondo posible, **no sobre el lienzo del mockup**. El portal ya corrigió
 `--text-tertiary` por este mismo motivo.
 
-**3 · Liquid en tema oscuro — MEDIDO, ya no es una incógnita.** Ver §0.ter: el
-reflejo pasa de 1.03:1 en claro a **2.43:1** en oscuro con el mismo token, y el
-aro oscuro queda muerto (1.01:1). Lo que falta no es medir sino **elegir el
-`--glass-especular` de `[data-theme="dark"]`**, que hoy hereda el de `:root`.
+**3 · Liquid en tema oscuro — ✅ CERRADO el 2026-08-06, y no como se esperaba.**
+La medición de §0.ter —el reflejo pasa de 1.03:1 en claro a **2.43:1** en oscuro
+con el mismo token, y el aro queda muerto (1.01:1)— iba a resolverse eligiendo
+un `--glass-especular` propio para `[data-theme="dark"]`. Se resolvió al revés:
+**§6.1.bis retiró la capa entera**, así que no hay token que elegir. Lo que sí
+sobrevivió del hallazgo es su física, y terminó aplicándose al canto: es
+exactamente el argumento de §1.6.quater —*la misma alfa da dos materiales
+distintos según el tema*— que obligó a invertir el destello en claro.
 
 **Resueltas el 2026-08-05** (ya no bloquean): el lift de Solid en `-1px`, la
 remoción del barrido, el velo del modal en `0.00`, la opacidad del panel en

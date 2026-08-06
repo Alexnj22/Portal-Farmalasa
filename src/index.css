@@ -340,9 +340,22 @@
      eso Solid simplemente no declara la mayoría. El motivo de que sean
      factores y no absolutos está en §0.ter: la tabla de §1.1 no se podía
      reproducir porque faltaba escribir la base que multiplican. */
-  --glass-especular: 1.60;   /* reflejo que sigue al puntero (§1.1) */
-  --glass-esp-radio: 7rem;
-  --glass-rim:       1.45;   /* canto vivo de 1px */
+  /* §6.1 · EL ESPECULAR NO EXISTE — decidido el 2026-08-06 mirando las tres
+     salidas renderizadas. §2 le había dado al botón un reflejo antes de que
+     §1.6 retirara de la tarjeta la luz que sigue al puntero, y nadie volvió a
+     mirar el botón: quedaron siete factores multiplicando una capa que nunca
+     se escribió (`--glass-especular`, `--glass-esp-radio`, `--btn-especular`,
+     `--btn-esp-radio`, `--btn-esp-aro`, más `--btn-rim` y `--glass-rim`, que
+     el canto tampoco gradúa por pieza).
+     El motivo de retirarla no es el ahorro: es que el portal quede con UN
+     gesto de material —el canto que corre— en la tarjeta, el botón, la fila y
+     el sidebar. La capa sólo se veía en 2 de los 4 temas (Solid no declara
+     vidrio) y en 2 de las 4 variantes de botón (sobre `ghost` y `secondary`
+     no hay superficie contra la que leerse: el 1.06:1 de §1.1), y en oscuro
+     habría necesitado un token MÁS, no menos — §0.ter midió 1.03:1 en claro
+     contra 2.43:1 en oscuro con el mismo factor.
+     `--btn-barrido: 0` se va con ellos: el barrido no se apagó, la fase G lo
+     removió entero. Un token en 0 que nadie lee no es un interruptor. */
   --glass-lente:     1.45;   /* sombras interiores del filo */
   /* El lente, por tema (§1.7): estaba clavado en absolutos calibrados en
      claro, y sobre una superficie oscura un inset blanco al 62% la lava. */
@@ -372,15 +385,22 @@
      contra qué leerse SIEMPRE, sin depender del fondo ni de un `drop-shadow`
      que un `overflow: hidden` pueda recortar. Es la §10.2 del plan —medir
      sobre el peor fondo, no sobre el lienzo— resuelta en el material. */
-  --rim-sombra:  rgba(12,20,48,.45);
-  --rim-glint:   rgba(255,255,255,1);
+  /* §1.6.quater · EL DESTELLO TAMBIÉN INVIERTE — antes era blanco en los
+     cuatro temas, y el comentario de arriba ya decía «oscuro sobre claro,
+     claro sobre oscuro»: la regla estaba escrita y sólo se le había aplicado
+     al FLANCO. En claro eso dejaba un destello blanco (1.0) corriendo pegado
+     a un borde que ya vale `--border-card: rgba(255,255,255,.72)`, así que lo
+     único que se leía era el flanco oscuro — un tajo que viaja, no un brillo.
+     En oscuro el borde vale .10 y el mismo destello nace de la nada: por eso
+     ahí siempre se vio bien y en claro no.
+     Confirmado mirando los dos (2026-08-06): en claro el destello es OSCURO y
+     su flanco blanco; en oscuro queda como estaba. Nótese que el canto se
+     pinta contra la caja de PADDING, o sea por DENTRO del borde de 1px y no
+     encima — el borde nunca se tapa, y por eso su alfa manda sobre qué
+     dirección de realce puede leerse. */
+  --rim-sombra:  rgba(255,255,255,.95);
+  --rim-glint:   rgba(12,20,48,.80);
   --rim-bloom:   transparent;
-  /* Botón (§2) — el aro NO escala con la intensidad: ése es --btn-esp-aro */
-  --btn-especular: 0.40;
-  --btn-esp-radio: 3rem;
-  --btn-esp-aro:   0.10;
-  --btn-rim:       1.00;
-  --btn-barrido:   0;
   /* Campo (§3) — un hueco no sobresale: sin reflejo, sin canto, sin lift */
   --campo-hueco:   2.00;
   --campo-luzinv:  1.25;
@@ -922,6 +942,12 @@ thead.sticky {
   --sidebar-pop-tint: 10 12 26;
   --sidebar-pop-fill: 0.66;
   --rim-glint:   #ffffff;
+  /* §1.6.quater · el flanco se declara acá EXPLÍCITAMENTE. Antes lo heredaba
+     de `:root`, y al invertir el destello en claro la herencia le habría dado
+     un flanco blanco pegado a un destello blanco — el destello se quedaba sin
+     contra qué leerse justo en el tema donde hoy se ve perfecto. Un token que
+     invierte por tema no se puede heredar: lo declara cada tema. */
+  --rim-sombra:  rgba(12,20,48,.45);
   --rim-bloom:   transparent;   /* §1.6.bis — el contraste va DENTRO del anillo */
   /* §12.1 · en oscuro el sidebar es el de siempre: tinta blanca y negro al 60% */
   --sidebar-tint:     0 0 0;
@@ -1133,6 +1159,11 @@ thead.sticky {
   --sidebar-pop-tint: 255 255 255;
   --sidebar-pop-fill: 1;
   --rim-glint:   rgba(148,163,184,.28);
+  /* §1.6.quater · el flanco iguala a la base, igual que el destello: en Solid
+     el canto NO CORRE, así que las tres paradas del cónico valen lo mismo y el
+     anillo queda plano. Heredarlo de `:root` dejaba un tajo —antes oscuro,
+     ahora blanco— asomando al apuntar en un material que no tiene canto vivo. */
+  --rim-sombra:  rgba(148,163,184,.28);
   --rim-bloom:   transparent;
   --sidebar-ink:      15 23 42;
   --thead-bg:    rgba(248,250,253,.98);
@@ -1317,6 +1348,7 @@ thead.sticky {
   --sidebar-pop-tint: 17 26 46;
   --sidebar-pop-fill: 1;
   --rim-glint:   rgba(148,163,184,.20);
+  --rim-sombra:  rgba(148,163,184,.20);   /* §1.6.quater — anillo plano, ver Solid claro */
   --rim-bloom:   transparent;
   --sidebar-tint:     7 3 26;
   --sidebar-ink:      255 255 255;

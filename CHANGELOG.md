@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.426.0 — El canto en claro y el especular que no fue
+
+Dos decisiones de `PLAN-MATERIALES` que llevaban abiertas todo el plan, las dos
+resueltas mirando mockups renderizados en vez de discutiéndolas.
+
+**El destello del canto ahora invierte por tema (§1.6.quater).** El usuario:
+*«en modo claro no se ve del todo bien el efecto del borde, en modo oscuro es
+perfecto»*. La causa estaba escrita en el propio `index.css` —*«EL FILO
+CONTRASTA CON SU SUPERFICIE: oscuro sobre claro, claro sobre oscuro»*— y sólo se
+le había aplicado al **flanco**: el destello seguía siendo blanco en los cuatro
+temas. En claro corría pegado a un `--border-card` que ya vale `.72` de blanco,
+así que lo único legible era el flanco oscuro — un tajo que viaja, no un brillo.
+En oscuro el borde vale `.10` y el mismo destello nace de la nada, que es por
+qué ahí siempre se vio bien.
+
+Ahora en `:root` el destello es `rgba(12,20,48,.80)` con flanco
+`rgba(255,255,255,.95)`. **El reposo no cambia en nada**: se descartó la
+alternativa de bajar `--border-card` a `.30`, que también funcionaba pero
+cambiaba cómo se ve toda tarjeta, campo, menú y modal en claro aunque nadie los
+apunte.
+
+De paso arregló una herencia que nadie había mirado: **`--rim-sombra` sólo
+estaba declarado en `:root`** y los otros tres temas lo heredaban. Al invertirlo
+en claro, oscuro habría recibido un flanco blanco pegado a un destello blanco
+—rompiendo justo el tema que se ve perfecto— y los dos Solid habrían pasado de
+un tajo oscuro a uno blanco en un material que no tiene canto vivo. Los cuatro
+temas ahora lo declaran; en Solid iguala a `--rim-base` y el anillo queda plano.
+*Un token que invierte por tema no se puede heredar.*
+
+**El especular se retira: 8 tokens borrados (§6.1.bis).** §2 le había dado al
+botón un reflejo antes de que §1.6 retirara de la tarjeta la luz que sigue al
+puntero, y nadie volvió a mirar el botón. Se fueron `--glass-especular`,
+`--glass-esp-radio`, `--btn-especular`, `--btn-esp-radio`, `--btn-esp-aro`,
+`--glass-rim`, `--btn-rim` y `--btn-barrido` — tres más de los cuatro que §6.1
+había contado.
+
+Tres cosas aparecieron sólo al renderizar las opciones, y ninguna lectura del
+código las habría dado: en los dos temas **Solid** las tres salidas son
+idénticas (Solid no declara vidrio); sobre `ghost` y `secondary` el especular
+casi no se ve (el 1.06:1 de §1.1), o sea que la capa vivía en 2 variantes de 4 y
+en 2 temas de 4; y quedarse con ella costaba un token **más**, no menos, porque
+el mismo factor da 1.03:1 en claro y 2.43:1 en oscuro. El motivo de fondo no es
+el ahorro: es dejar **un solo gesto de material** —el canto que corre— en
+tarjeta, botón, fila y sidebar.
+
+`DESIGN.md` documenta la inversión del destello y el detalle de caja que la
+explica: el canto se pinta contra la caja de *padding*, o sea por dentro del
+borde, que por eso nunca se tapa.
+
 ## v2.425.1 — La documentación al día: DESIGN.md, la skill y CLAUDE.md
 
 El plan estaba al día, pero **los tres lugares que otra sesión lee primero, no**.

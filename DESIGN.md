@@ -726,6 +726,12 @@ No hay lista que mantener: sale del DOM. Si escribís un control dentro de una
   tarjeta entera). Sale de `clickable()`, no se pone a mano.
 - Corre **sólo la pieza más interna** bajo el cursor. Si agregás una superficie nueva,
   no hace falta hacer nada: la guarda `:not(:has(…))` ya la contempla.
+- **El destello invierte su color por tema, y su flanco también.** En claro el destello
+  es oscuro (`--rim-glint`) sobre flanco blanco (`--rim-sombra`); en oscuro, al revés;
+  en los dos Solid ambos igualan a `--rim-base` y el anillo queda plano. El canto se
+  pinta contra la caja de *padding*, o sea **por dentro** del borde de 1px: el borde
+  nunca se tapa, así que su alfa decide qué dirección de realce se puede leer. En claro
+  `--border-card` vale `.72`, y por eso un destello blanco ahí no se ve.
 
 ### Cuatro reglas que se rompen solas si no se conocen
 

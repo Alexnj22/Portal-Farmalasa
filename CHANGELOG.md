@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.448.0 — El piso del dedo sobrevive a `className`, y el hover que no existe en táctil
+
+Las dos formas que la fase 1 dejó localizadas, hechas canónicas.
+
+**1 · `Button` garantizaba el piso del dedo y cualquier llamador podía anularlo.**
+Los cuatro tamaños ya se calculan con `max(…, var(--tap-min), …)`, pero
+`${className}` va **último** en la plantilla de clases, así que un `w-10 h-10`
+del llamador ganaba por orden y el botón bajaba del mínimo — en silencio, sin
+que nada lo señalara. Medido en WebKit iPhone 13: **29 botones del tablero** a
+42×42.
+
+Ahora el piso va como `min-w-[var(--tap-min)] min-h-[var(--tap-min)]` en las
+clases base. `min-width` y `width` son propiedades **distintas**, así que no hay
+pelea de especificidad ni de orden: el mínimo simplemente manda. Verificado en el
+dispositivo — `width: 44px`, `min-width: 44px`. En escritorio `--tap-min` vale 0
+y no cambia nada. Protege a los 193 `iconOnly` del proyecto y a todo botón futuro.
+
+**2 · En táctil, lo que se revela al apuntar NO EXISTE.**
+`opacity-0 group-hover:opacity-100` es el patrón del portal para las acciones que
+aparecen al pasar el mouse por una fila o una tarjeta, y está en **14 archivos**.
+En un teléfono no hay mouse: los enlaces de WhatsApp y de llamar de la lista de
+personal son **invisibles e intocables**. No es un problema de tamaño —por eso ni
+`--tap-min` ni `.blanco-tactil` lo tocaban— sino de existencia: `hover: none` no
+dispara nunca. Una regla bajo `@media (hover: none)` los revela siempre, y va por
+subcadena del atributo `class` para alcanzar los 14 sitios sin migrarlos ni
+depender de cómo escape el compilador.
+
+**Y una trampa de medición que conviene tener escrita.** La auditoría siguió
+reportando 42×42 después del arreglo, y el arreglo estaba bien:
+`getBoundingClientRect()` devuelve la caja **visual**, o sea ya transformada,
+mientras `getComputedStyle().width` devuelve la de **layout**. Los botones miden
+44 de layout y se pintan a 42 porque algo los escala en reposo (42/44 ≈
+`scale-95`). Las dos medidas son legítimas y responden preguntas distintas — para
+el dedo manda la visual—, así que **queda como el hallazgo abierto de la fase
+siguiente**: encontrar de dónde sale ese `scale` en reposo y decidir si el botón
+tiene que compensarlo.
+
+*(Verificado antes de escribir esto: `pointer: coarse`, `hover: none` y
+`--tap-min: 44px` resuelven correctamente en la emulación de WebKit — se probó
+directamente, porque todo lo anterior depende de que así sea.)*
+
 ## v2.447.0 — Auditoría móvil, fase 1: el área de impacto se vuelve canónica
 
 `PLAN-MOBILE-2026-07.md` **sale de `docs/planes-cerrados/`**: estaba archivado

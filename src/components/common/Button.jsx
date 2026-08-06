@@ -219,7 +219,16 @@ const Button = memo(({
             type={type}
             aria-label={nombreAuto}
             disabled={isDisabled}
+            // `min-w`/`min-h` y no `w`/`h`: el piso del dedo tiene que sobrevivir
+            // a `${className}`, que va ÚLTIMO y por eso puede pisar la clase de
+            // tamaño. Medido en WebKit iPhone 13 el 2026-08-06: 29 botones del
+            // tablero salían a 42×42 —dos píxeles por debajo del mínimo— porque
+            // su llamador pasaba su propio `w-*`/`h-*` y ganaba por orden.
+            // `min-width` y `width` son propiedades DISTINTAS, así que acá no hay
+            // pelea de especificidad: el mínimo simplemente manda. En escritorio
+            // `--tap-min` vale 0 y esto no hace nada.
             className={`group relative overflow-hidden inline-flex items-center justify-center font-bold tracking-[-0.005em]
+                min-w-[var(--tap-min)] min-h-[var(--tap-min)]
                 transition-[transform,box-shadow,background-color,color] duration-[var(--dur-fast)] ease-[var(--ease-spring)] whitespace-nowrap
                 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
                 ${SHAPE_CLASSES[shape] || SHAPE_CLASSES.box}

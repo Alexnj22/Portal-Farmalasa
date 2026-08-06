@@ -1627,6 +1627,23 @@ thead.sticky,
    `absolute`; para uno estático hay que agregarle `relative` a mano — no se
    fuerza desde acá porque re-anclaría a sus hijos absolutos (misma razón por la
    que §5 no compensó la banda muerta de la tarjeta). */
+/* ── En táctil, lo que se revela al APUNTAR se revela SIEMPRE ──────────────
+   `opacity-0 group-hover:opacity-100` es el patrón del portal para las acciones
+   que aparecen al pasar el mouse por una fila o una tarjeta. En un teléfono no
+   hay mouse: esas acciones **no existen**. Medido el 2026-08-06 en WebKit
+   iPhone 13 — los enlaces de WhatsApp y de llamar de la lista de personal son
+   invisibles e intocables, y el patrón está en 14 archivos.
+   No es un problema de tamaño —por eso `--tap-min` y `.blanco-tactil` no lo
+   arreglan— sino de existencia: `hover: none` no dispara nunca.
+   El selector va por subcadena del atributo `class` a propósito: Tailwind
+   escapa los dos puntos al generar la clase, pero el atributo conserva el texto
+   literal, así que esto alcanza a los 14 sitios sin migrarlos ni depender de
+   cómo escape el compilador. `!important` porque compite contra la utilidad
+   `opacity-0`, que tiene la misma especificidad. */
+@media (hover: none) {
+  [class*="group-hover:opacity-100"] { opacity: 1 !important; }
+}
+
 @media (pointer: coarse) {
   .blanco-tactil::before {
     content: '';

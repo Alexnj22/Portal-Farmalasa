@@ -361,7 +361,7 @@ export default function WidgetMinMaxRequest(props) {
       tono="brand"
     >
       {() => (
-        <div className="p-5 h-[78dvh] max-h-[720px] flex flex-col gap-3">
+        <div className="p-5 max-h-[80dvh] min-h-[24rem] flex flex-col gap-3">
           {/* El selector de sucursal vivía en la cabecera de la tarjeta del
               tablero. Al volverse baldosa esa cabecera desapareció y con ella
               el selector: quien tiene alcance sobre todas las salas se quedaba

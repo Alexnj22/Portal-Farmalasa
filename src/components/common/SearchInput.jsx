@@ -94,10 +94,13 @@ const SearchInput = forwardRef(function SearchInput({
                         : 'flex-none w-8 rounded-lg bg-surface-card-hover border border-border-card cursor-pointer'
                 } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
             >
+                {/* La lupa en `content-2` y no `content-3`: en el tono más
+                    tenue se perdía contra el hueco del campo y el buscador no
+                    se leía como buscador hasta escribir algo. */}
                 <div className="w-8 h-8 flex items-center justify-center shrink-0" style={accentColor ? { color: accentColor } : undefined}>
                     {loading
-                        ? <Loader2 size={14} className={`animate-spin ${accentColor ? '' : 'text-content-3'}`} />
-                        : <Search size={14} strokeWidth={2.5} className={accentColor ? '' : 'text-content-3'} />}
+                        ? <Loader2 size={14} className={`animate-spin ${accentColor ? '' : 'text-content-2'}`} />
+                        : <Search size={14} strokeWidth={2.5} className={accentColor ? '' : 'text-content-2'} />}
                 </div>
                 <input inert={!(open) ? true : undefined}
                     ref={inputRef}

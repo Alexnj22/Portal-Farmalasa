@@ -12,10 +12,37 @@ import { likePattern } from '../utils/searchUtils';
 
 // nombre (uppercase, trim) → foto_url, para enriquecer resultados de
 // búsqueda con miniatura. Paginado: puede haber >1000 productos con foto.
-export async function fetchProductPhotoMap() {
-    const rows = await fetchAllRows(() =>
-        supabase.from('products').select('nombre, foto_url').not('foto_url', 'is', null)
-    );
+/**
+ * Las fotos de UNOS productos, no las de todos.
+ *
+ * Antes esto bajaba `products` entero —todas las filas con foto, paginadas— en
+ * cada búsqueda, para después usar las tres o cuatro que aparecían en los
+ * resultados. Ese era el motivo de que las fotos tardaran en salir: no pesaban
+ * las imágenes, pesaba traer el catálogo para elegirlas.
+ *
+ * Se pide en tandas de 1000 porque el `in()` viaja como filtro y la respuesta
+ * se corta en 1000 filas sin avisar.
+ */
+export async function fetchProductPhotoMap(nombres = null) {
+    const pedir = async (lista) => {
+        let q = supabase.from('products').select('nombre, foto_url').not('foto_url', 'is', null);
+        if (lista) q = q.in('nombre', lista);
+        return q;
+    };
+
+    let rows;
+    if (Array.isArray(nombres) && nombres.length > 0) {
+        const unicos = [...new Set(nombres.filter(Boolean))];
+        const tandas = [];
+        for (let i = 0; i < unicos.length; i += 1000) tandas.push(unicos.slice(i, i + 1000));
+        const res = await Promise.all(tandas.map(pedir));
+        rows = res.flatMap(r => r.data ?? []);
+    } else {
+        // Sin lista sigue trayendo todo, paginado: es el camino de quien
+        // todavía no sabe qué productos va a mostrar.
+        rows = await fetchAllRows(() => pedir(null));
+    }
+
     const map = {};
     for (const p of rows || []) map[p.nombre.toUpperCase().trim()] = p.foto_url;
     return map;

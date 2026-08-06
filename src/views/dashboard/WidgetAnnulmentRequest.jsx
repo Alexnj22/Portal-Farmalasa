@@ -203,7 +203,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Info 2 columnas compacta */}
-        <div className="rounded-2xl border border-divider bg-surface-card overflow-hidden shrink-0">
+        <div data-surface="card" className="overflow-hidden shrink-0">
           <div className="grid grid-cols-2 divide-x divide-divider">
             <div>
               {[
@@ -249,7 +249,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
           ) : items.length === 0 ? (
             <p className="text-label text-content-3 text-center py-2">Sin detalle</p>
           ) : (
-            <div className="rounded-2xl border border-divider bg-surface-card overflow-hidden">
+            <div data-surface="card" className="overflow-hidden">
               {items.map((it, i) => (
                 <div key={i} className={`flex items-start gap-2 px-3 py-1.5 ${i > 0 ? 'border-t border-divider' : ''}`}>
                   <div className="flex-1 min-w-0">
@@ -523,7 +523,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="rounded-2xl px-3 py-2 flex items-center gap-2 bg-surface-card-hover border border-divider">
+        <div data-surface="card" className="px-3 py-2 flex items-center gap-2">
           <CreditCard size={13} className="text-content-3 shrink-0" strokeWidth={2.5} />
           <div>
             <p className="text-micro font-black text-content-2 uppercase tracking-widest">Forma de pago actual</p>
@@ -626,7 +626,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
       <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Vendedor actual */}
-        <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-divider">
+        <div data-surface="card" className="px-3 py-2">
           <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Vendedor actual</p>
           <div className="flex items-center gap-2.5">
             <VendorAvatar employee={currentVendor} size={8} />
@@ -642,14 +642,17 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           {vendorList.length === 0 ? (
             <p className="text-label text-content-3 text-center py-3">No hay otros vendedores en esta sucursal</p>
           ) : (
-            <div className="space-y-1">
+            /* Dos columnas: una fila entera por vendedor gastaba todo el
+               ancho para una foto y un nombre, y con ocho vendedores empujaba
+               el botón de enviar fuera de la vista. En una columna en pantalla
+               angosta, en dos donde hay lugar. */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {vendorList.map(emp => {
                 const isSelected = String(newVendorId) === String(emp.id);
                 return (
                   <button key={emp.id} aria-pressed={isSelected} onClick={() => setNewVendorId(String(emp.id))}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all ${
-                      isSelected ? 'bg-brand/5 border-brand/40' : 'bg-surface-card border-divider hover:border-divider'
-                    }`}>
+                    data-surface="card" data-tono={isSelected ? 'brand' : undefined}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all">
                     <VendorAvatar employee={emp} size={8} />
                     <p className={`text-body-sm font-black flex-1 truncate ${isSelected ? 'text-brand-text' : 'text-content-2'}`}>{emp.name}</p>
                     {isSelected && (
@@ -764,7 +767,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
       <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Cliente actual */}
-        <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-divider">
+        <div data-surface="card" className="px-3 py-2">
           <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
@@ -787,7 +790,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
           {/* Seleccionado */}
           {newClient && (
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl border bg-brand/5 border-brand/40">
+            <div data-surface="card" data-tono="brand" className="flex items-center gap-2.5 px-3 py-2">
               <div className="w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
                 <span className="text-brand-text font-black text-caption leading-none">{newClient.name?.charAt(0)}</span>
               </div>
@@ -1125,7 +1128,7 @@ export default function WidgetAnnulmentRequest(props) {
       tono="warning"
     >
       {() => (
-        <div className="p-5 h-[78dvh] max-h-[720px] flex flex-col gap-3">
+        <div className="p-5 max-h-[80dvh] min-h-[24rem] flex flex-col gap-3">
           {/* El selector de sucursal vivía en la cabecera de la tarjeta del
               tablero. Al volverse baldosa esa cabecera desapareció y con ella
               el selector: quien tiene alcance sobre todas las salas se quedaba

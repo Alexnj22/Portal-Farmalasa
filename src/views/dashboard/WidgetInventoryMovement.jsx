@@ -584,7 +584,7 @@ export default function WidgetInventoryMovement(props) {
             tono="danger"
         >
             {(cerrar) => (
-                <div className="p-5 h-[78dvh] max-h-[720px] flex flex-col">
+                <div className="p-5 max-h-[80dvh] min-h-[24rem] flex flex-col">
                     <FormularioAjuste {...props} onHecho={cerrar} />
                 </div>
             )}

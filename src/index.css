@@ -2791,6 +2791,16 @@ thead.sticky,
   }
 }
 
+/* …y acá es donde «se apaga abajo». El comentario de arriba lo prometía desde
+   siempre y NADIE lo cumplía: la regla del canto es
+   `[data-surface]:not([data-surface="sheet"])::after`, así que un hueco también
+   lo recibía. Al enfocar un buscador se veían TRES líneas encimadas —el borde,
+   la sombra interna del hueco y el canto— y con `accentColor` peor, porque el
+   borde se pinta de otro color y las tres se distinguen uña por uña.
+   Reportado sobre el buscador de Consulta de Inventario; le pasaba igual a
+   todos los `PortalInput` y `PortalTextarea`, que son la misma superficie. */
+[data-surface="input"]::after { content: none; }
+
 [data-surface="tab-track"] {
   background: var(--surface-tab-track);
   border: 1px solid var(--border-tab);

@@ -78,7 +78,10 @@ function groupInventory(rows, paMap, photoMap) {
     if (row.is_vencidos) continue; // vencidos handled separately
     const bName = ERP_BRANCH_MAP[row.erp_sucursal_id];
     if (!bName) continue;
-    const key = `${row.descripcion}||${row.presentacion || ''}`;
+    // La clave es el PRODUCTO. Antes incluía la presentación, así que un
+    // acetaminofén salía tres veces —UNIDAD, BLISTER y CAJA— como si fueran
+    // tres productos. La presentación pasa a ser un dato de cada lote.
+    const key = String(row.erp_product_id ?? row.descripcion);
     if (!map[bName])      map[bName]      = {};
     if (!map[bName][key]) map[bName][key] = {
       descripcion:     row.descripcion,
@@ -98,7 +101,7 @@ function groupVencidos(rows, paMap, photoMap) {
   const map = {};
   for (const row of rows || []) {
     if (!row.is_vencidos) continue;
-    const key = `${row.descripcion}||${row.presentacion || ''}`;
+    const key = String(row.erp_product_id ?? row.descripcion);
     if (!map[key]) map[key] = {
       descripcion:     row.descripcion,
       presentacion:    row.presentacion,
@@ -258,7 +261,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
 
             return (
               <div
-                key={`${prod.descripcion}||${prod.presentacion}`}
+                key={prod.descripcion}
                 className="rounded-xl overflow-hidden"
                 style={{ animation: `inv-fade-up 0.22s ease both`, animationDelay: `${(animOffset + bi) * 55 + pi * 25}ms` }}
               >
@@ -275,9 +278,8 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                         {prod.principioActivo && (
                           <p className="text-micro text-chart-3-text font-semibold mt-0.5 truncate">{prod.principioActivo}</p>
                         )}
-                        {prod.presentacion && (
-                          <p className="text-micro text-content-3 font-medium mt-0.5">{prod.presentacion}</p>
-                        )}
+                        {/* Ya no se nombra UNA presentación acá: el producto
+                            agrupa varias y cada una se lista con su lote. */}
                       </div>
                       <span className="text-caption font-black text-content-3 shrink-0 tabular-nums">{lotTotal} uds</span>
                       <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
@@ -287,7 +289,17 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                         <div key={li} className="flex items-center gap-2 px-3 py-1.5">
                           <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                           <ExpiryBadge date={row.fecha_vencimiento} />
-                          <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">{row.cantidad} uds</span>
+                          {/* La presentación va ANTES de la cantidad y en un
+                              tono que se lea: es lo que le da sentido al
+                              número —24 no quiere decir nada sin saber si son
+                              cajas o unidades—. Antes vivía como una línea
+                              gris bajo el nombre del producto. */}
+                          {row.presentacion && (
+                            <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
+                              {row.presentacion}
+                            </span>
+                          )}
+                          <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">{row.cantidad}</span>
                         </div>
                       ))}
                     </div>
@@ -368,16 +380,20 @@ export default function WidgetInventorySearch() {
       // 1. Parallel: photos + products matching by principio_activo
       // Ambos paginados (src/data/inventory.js) — evita el cap silencioso de
       // 1000 filas de PostgREST en tablas que pueden crecer sin tope.
-      const [photoMap, paData] = await Promise.all([
-        fetchProductPhotoMap(),
-        fetchProductsByPrincipioActivo(q),
-      ]);
+      const paData = await fetchProductsByPrincipioActivo(q);
 
       const paIds = paData.map(p => p.id);
       const paMap = new Map(paData.map(p => [p.id, p.principio_activo]));
 
       // 2. Query inventory by name OR principio_activo product IDs (include vencidos)
       const data = await searchInventory({ term: q, productIds: paIds });
+
+      // Las fotos se piden DESPUÉS y solo de lo que se va a mostrar. Antes
+      // salían en paralelo pero trayendo el catálogo entero, y eso —no el peso
+      // de las imágenes— era lo que hacía esperar.
+      const photoMap = await fetchProductPhotoMap(
+        [...new Set((data || []).map(r => r.descripcion).filter(Boolean))],
+      );
 
       const grouped  = groupInventory(data, paMap, photoMap);
       const vencidos = groupVencidos(data, paMap, photoMap);
@@ -619,7 +635,7 @@ export default function WidgetInventorySearch() {
                 const lotTotal = prod.lots.reduce((s, r) => s + r.cantidad, 0);
                 return (
                   <div
-                    key={`${prod.descripcion}||${prod.presentacion}`}
+                    key={prod.descripcion}
                     className="flex items-center gap-2 px-2.5 py-2.5 rounded-xl text-left"
                     style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid var(--danger)', boxShadow: 'var(--shadow-elevation-xs)', animationDelay: `${pi * 25}ms` }}
                   >

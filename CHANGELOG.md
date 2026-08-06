@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.441.0 — Inventario agrupado, fotos livianas, y los bordes de más
+
+**Los tres bordes del buscador.** Un campo enfocado mostraba tres líneas
+encimadas: su borde, la sombra interna del hueco y el «canto» de vidrio. El
+comentario del CSS prometía desde siempre que a un hueco se le apaga el canto
+—y nadie lo había escrito—. Le pasaba a todos los campos y áreas de texto del
+portal, no solo a este buscador.
+
+**Consulta de Inventario agrupa por producto.** Unidad, blíster y caja salían
+como tres productos distintos porque la clave del agrupado incluía la
+presentación. Ahora la presentación va con cada lote, **antes de la cantidad**
+y en un tono que se lee: un «24» no dice nada sin saber si son cajas o unidades.
+
+**Las fotos ya no hacen esperar.** Cada búsqueda descargaba el catálogo entero
+de productos con foto para usar las tres o cuatro de los resultados. Ahora pide
+solo las que va a mostrar.
+
+**En Modificar Facturación**: la lupa y las opciones sin elegir salían en el
+tono más tenue de la paleta y casi no se leían; los bloques de «estado actual»,
+las filas de vendedor y el cliente elegido no eran superficies de vidrio; y la
+lista de vendedores pasa a dos columnas, que era lo que empujaba el botón de
+enviar fuera de la vista.
+
+**Los modales se adaptan al contenido** en vez de medir siempre lo mismo.
+
 ## v2.440.1 — Facturación: la fila abre, el botón se ve, los selectores se acomodan
 
 Cuatro fallas del widget de **Modificar Facturación**, encontradas usándolo:

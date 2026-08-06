@@ -115,7 +115,13 @@ const SegmentedControl = memo(({
                             ${activa
                                 ? (ACTIVO[op.tone || tone] || ACTIVO.brand) + ' shadow-sm'
                                     + (enBloque ? ' border-transparent' : '')
-                                : 'text-content-3 hover:text-content-2'
+                                /* `content-2` y no `content-3`: en el tono más
+                                   tenue, una opción sin elegir casi no se leía
+                                   sobre la superficie de la tarjeta —reportado
+                                   sobre el selector de forma de pago—. La
+                                   jerarquía la sigue marcando el relleno del
+                                   activo, no el desvanecerse del resto. */
+                                : 'text-content-2 hover:text-content'
                                     + (enBloque ? ' bg-surface-card border-border-card hover:border-brand/40' : '')}`}>
                         {Icono && <Icono size={stacked ? 18 : s.icono} strokeWidth={stacked ? 1.8 : 2.5} />}
                         {op.label}

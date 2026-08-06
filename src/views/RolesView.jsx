@@ -765,7 +765,11 @@ const RolesView = ({ openModal }) => {
                             onMouseLeave={handleMouseUp}
                             style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
                         >
-                            <div className="flex gap-3 p-4 bg-surface-card backdrop-blur-md border-b border-border-card z-base shrink-0 absolute top-0 left-0 right-0 pointer-events-auto shadow-sm">
+                            {/* §15.1 · la barra flota FIJA sobre un lienzo que se
+                                arrastra, así que tiene la misma obligación que un
+                                encabezado pegajoso: tapar. Con `backdrop-blur-md`
+                                el organigrama se leía desenfocado por debajo. */}
+                            <div data-pegajoso className="flex gap-3 p-4 border-b border-border-card z-base shrink-0 absolute top-0 left-0 right-0 pointer-events-auto shadow-sm">
                                 <Button variant="secondary" size="sm" onClick={downloadOrgChart} icon={Download}
                                     disabled={isExporting} loading={isExporting}>
                                     {isExporting ? 'Procesando…' : 'Exportar PNG'}

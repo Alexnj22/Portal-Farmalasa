@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.429.0 — Las superficies pegajosas ocluyen, y el par -webkit- que borraba la estándar
+
+Primera tanda de la bajada de ratchets de §20, atacada **por criterio** y no por
+vista: todas las superficies pegajosas juntas. `vidrio-a-mano` **135 → 130**.
+
+**§15.1 ya decía «la regla vale más allá de la tabla» y no había forma de
+aplicarla.** El único lugar donde vivía era `thead.sticky`, así que los
+encabezados y pies pegajosos que no son un `<thead>` seguían con
+`bg-surface-card backdrop-blur-sm` — una superficie translúcida con la
+obligación de tapar. Un `backdrop-filter` no tapa: desenfoca lo que pasa por
+debajo y lo deja legible igual. Ahora la regla es
+`thead.sticky, [data-pegajoso]`, y el atributo lo llevan los cinco sitios que
+faltaban: los dos encabezados de `RecepcionModal` (§20.4 pedía justamente
+hacerlos con el resto), los pies de guardar de `FormClienteDetail` y
+`FormProveedorDetail`, y la barra de herramientas del organigrama en
+`RolesView`, que flota fija sobre un lienzo que se arrastra.
+
+**Y apareció un bug que llevaba meses shipeado.** `thead.sticky` declaraba
+`backdrop-filter: none` **y** `-webkit-backdrop-filter: none`, y Lightning CSS
+colapsa el par dejando **sólo el prefijado**. O sea que en Firefox —que sólo
+entiende la estándar— el `backdrop-blur` del encabezado nunca se apagó. El repo
+ya tenía el hallazgo escrito desde el 2026-07-27 y aplicado a las seis
+superficies, pero **dos reglas de apagado se habían quedado con el par**:
+
+- `[data-surface][data-vidrio="no"]` — el vidrio no se apagaba.
+- `[data-surface="card"] [data-surface="card"]` — **§1.5 no aplanaba nada**, así
+  que en Firefox una tarjeta anidada seguía siendo vidrio sobre vidrio: el
+  1.02:1 que §1.5 existe justamente para evitar.
+
+Las tres reglas quedan con la propiedad estándar sola y el prefijo lo agrega el
+compilador. Verificado contra `dist/`, que es el único lugar donde se ve.
+
+*No entraron en esta tanda* los tres de `ScheduleCalendar`: son tarjetas dentro
+de una columna congelada, o sea que el pegajoso es el `<td>` y no la tarjeta.
+Es otra clasificación y necesita verse en pantalla a dos anchos.
+
 ## v2.428.0 — El material que estaba escrito y nadie leía
 
 **Veintiún tokens de material no tenían un solo consumidor.** Apareció al medir

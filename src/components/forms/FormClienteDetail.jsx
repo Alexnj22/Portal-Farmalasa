@@ -562,7 +562,7 @@ const FormClienteDetail = ({ formData }) => {
             {/* Barra de guardar fija al fondo — este modal vive en HIDES_FOOTER de
                 UnifiedModal, igual que el detalle de proveedor. */}
             {editable && panel === 'ficha' && (
-                <div className="sticky bottom-0 z-content -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider space-y-2">
+                <div data-pegajoso className="sticky bottom-0 z-content -mx-1 px-1 pt-4 pb-1 mt-2 border-t border-divider space-y-2">
                     {error && (
                         <Notice variant="danger" icon={AlertTriangle} compact>{error}</Notice>
                     )}

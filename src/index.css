@@ -527,10 +527,23 @@
    obligación que una normal no tiene —tapar lo que pasa por debajo— y ninguna
    opacidad de acento sirve para eso. Al tocar otra superficie `sticky`,
    revisarla con el mismo criterio. */
-thead.sticky {
+/* `data-pegajoso` generaliza la regla al resto del portal (2026-08-06). Estaba
+   escrito arriba —«la regla vale más allá de la tabla»— y sin forma de
+   aplicarlo: los encabezados y pies pegajosos que NO son un `<thead>` seguían
+   con `bg-surface-card backdrop-blur-sm`, o sea una superficie translúcida con
+   la obligación de tapar. Un `backdrop-filter` no tapa: desenfoca lo que pasa
+   por debajo y lo deja legible igual.
+   Va como atributo y no como clase de Tailwind por el mismo motivo que
+   `[data-velo]`: es material, y el material vive acá. */
+/* El par `-webkit-` NO se escribe a mano: Lightning CSS colapsa los dos y deja
+   sólo el prefijado. Esta regla venía con las dos líneas desde que se escribió
+   y compilaba a `-webkit-backdrop-filter: none` a secas — o sea que en Firefox,
+   que sólo entiende la estándar, el `backdrop-blur` del thead NUNCA se apagó.
+   Escrita sola, el prefijo lo agrega el compilador. */
+thead.sticky,
+[data-pegajoso] {
   background: var(--thead-bg);
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 
 /* ── SIDEBAR ──────────────────────────────────────────────────────────
@@ -2368,8 +2381,10 @@ thead.sticky {
 
    El resto del material se conserva: fondo, borde, radio y sombra. */
 [data-surface][data-vidrio="no"] {
+  /* Sólo la estándar — ver la nota del colapso de Lightning CSS más arriba.
+     Con las dos escritas, esto compilaba a `-webkit-backdrop-filter: none` a
+     secas y en Firefox el vidrio NO se apagaba. */
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 
 /* ── Una card DENTRO de otra card no vuelve a difuminar ────────────────────
@@ -2575,8 +2590,11 @@ thead.sticky {
 }
 
 [data-surface="card"] [data-surface="card"] {
+  /* Sólo la estándar. Escritas las dos, Lightning CSS descartaba ésta y la
+     regla llegaba a Firefox como `-webkit-backdrop-filter: none` a secas: o
+     sea que ahí **§1.5 no aplanaba nada** y la anidada seguía siendo vidrio
+     sobre vidrio, que es justo el 1.02:1 que §1.5 existe para evitar. */
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   /* ── §1.5 · y además el ESCALÓN DE TONO ──────────────────────────────
      Apagar el blur ya estaba hecho, por rendimiento. Lo que faltaba era la
      otra mitad: sin un escalón de tono la anidada queda a 1.02:1 de su

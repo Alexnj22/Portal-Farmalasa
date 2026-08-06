@@ -80,7 +80,7 @@ const FormAnnouncements = ({ data }) => {
 
       {/* CONTENIDO DEL MENSAJE */}
       {(readersModal.content || readersModal.message || readersModal.body) && (
-        <div className="mb-8 shrink-0 relative overflow-hidden bg-surface-card backdrop-blur-sm rounded-2xl border border-border-card shadow-[var(--shadow-shine-lg)]">
+        <div data-surface="card" className="mb-8 shrink-0 relative overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand/40"></div>
             <div className="p-4 md:px-5 md:py-4">
                 {/* 🚨 SCROLL OCULTO EN EL TEXTO DEL MENSAJE */}

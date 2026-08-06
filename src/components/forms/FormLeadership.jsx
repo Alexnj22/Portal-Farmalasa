@@ -120,7 +120,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     {isSelected && <CheckCircle2 size={18} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                 </div>
                                 {isCurrentJefe && (
-                                    <div className="bg-warning/10 backdrop-blur-sm text-warning-text text-micro font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
+                                    <div className="bg-warning/10 text-warning-text text-micro font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
                                         Titular Actual
                                     </div>
                                 )}
@@ -179,7 +179,7 @@ const FormLeadership = ({ formData, setFormData }) => {
 
                         {/* ESTADO A: SI EL SELECCIONADO YA ES EL TITULAR */}
                         {isCurrentJefeSelected ? (
-                            <div className="bg-warning/10 backdrop-blur-md border border-warning/30 rounded-3xl p-6 text-center shadow-sm">
+                            <div className="bg-warning/10 border border-warning/30 rounded-3xl p-6 text-center shadow-sm">
                                 <ShieldCheck size={32} className="text-warning mx-auto mb-3" strokeWidth={2}/>
                                 <h4 className="text-body-lg font-black text-warning-text uppercase tracking-widest">Titular Actual</h4>
                                 <p className="text-label font-bold text-warning-text/80 mt-2 max-w-sm mx-auto leading-relaxed">
@@ -208,7 +208,7 @@ const FormLeadership = ({ formData, setFormData }) => {
 
                                 {/* 3. GESTIÓN DE RELEVO */}
                                 {isReplacing && (
-                                    <div className="bg-danger/10 backdrop-blur-md border border-danger/30 rounded-3xl p-5 shadow-sm relative overflow-hidden">
+                                    <div className="bg-danger/10 border border-danger/30 rounded-3xl p-5 shadow-sm relative overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3 border-b border-danger/30 pb-3">
                                             <UserMinus size={16} className="text-danger" strokeWidth={2.5}/>
                                             <span className="text-label font-black uppercase tracking-widest text-danger">Relevo de Personal</span>

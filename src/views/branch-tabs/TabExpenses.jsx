@@ -258,7 +258,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <p className="text-label font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="px-4 py-2 bg-success/10 text-success rounded-2xl border border-success/30 shadow-sm flex items-center gap-2 backdrop-blur-md">
+                    <div className="px-4 py-2 bg-success/10 text-success rounded-2xl border border-success/30 shadow-sm flex items-center gap-2">
                         <DollarSign size={16} strokeWidth={2.5} />
                         <span className="text-label font-black uppercase tracking-widest">Total Operativo Actual</span>
                         <span className="text-body-lg font-black">{formatMoney(totalMonthlyEst)}</span>
@@ -388,7 +388,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-[var(--dur-lento)] hover:shadow-md hover:translate-y-[var(--lift-card)]">
+                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-[var(--dur-lento)] hover:shadow-md hover:translate-y-[var(--lift-card)]">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-[var(--dur-lento)] group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-base">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-border-card">

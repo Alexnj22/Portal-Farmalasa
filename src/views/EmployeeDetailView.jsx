@@ -537,7 +537,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                             {/* TARJETA DE EMERGENCIA */}
                             {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                                <div className="w-full bg-danger/10 backdrop-blur-md rounded-modal border border-danger/30 shadow-sm p-6 relative overflow-hidden group">
+                                <div className="w-full bg-danger/10 rounded-modal border border-danger/30 shadow-sm p-6 relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-4 opacity-10 text-danger group-hover:scale-110 transition-transform duration-[var(--dur-lento)]"><HeartPulse size={80} /></div>
                                     <h3 className="text-caption font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2">
                                         <HeartPulse size={14} strokeWidth={3}/> Contacto de Emergencia

@@ -511,7 +511,7 @@ function GlassChip({ icon, label, sub, color }) {
         ? 'bg-gradient-to-r from-warning/10 to-warning/5 border-warning/30 text-warning-text'
         : 'bg-gradient-to-r from-chart-9/10 to-chart-9/5 border-chart-9/30 text-chart-9-text';
     return (
-        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-label font-semibold backdrop-blur-sm ${cls}`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-label font-semibold ${cls}`}>
             <span className="opacity-60">{icon}</span>
             <span>{label}</span>
             {sub && <span className="opacity-60 font-medium">· {sub}</span>}

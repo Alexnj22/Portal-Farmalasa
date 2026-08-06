@@ -118,7 +118,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             {missingDocs && missingDocs.length > 0 && (
-                <div className="mx-2 mb-3 mt-1 p-2 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-1.5 backdrop-blur-sm shadow-inner">
+                <div className="mx-2 mb-3 mt-1 p-2 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-1.5 shadow-inner">
                     <FileX size={12} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                     <div className="flex flex-col">
                         <span className="text-micro font-black text-danger-text uppercase tracking-widest leading-tight">Faltan Archivos</span>
@@ -702,26 +702,26 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                     {wfmApplied ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                            <div className="bg-surface-card backdrop-blur-md rounded-xl p-3 border border-border-card shadow-[var(--shadow-elevation-xs)]">
+                                            <div data-surface="card" className="p-3">
                                                 <p className="text-micro font-black uppercase tracking-widest text-content-2">Registros Históricos</p>
                                                 <p className="text-title-sm font-black text-content mt-1">{historicalSales.length}</p>
                                                 <p className="text-micro font-bold text-content-3">Horas de venta analizadas</p>
                                             </div>
-                                            <div className="bg-chart-1/10 backdrop-blur-md rounded-xl p-3 border border-chart-1/30 shadow-[var(--shadow-glow-brand)]">
+                                            <div className="bg-chart-1/10 rounded-xl p-3 border border-chart-1/30 shadow-[var(--shadow-glow-brand)]">
                                                 <p className="text-micro font-black uppercase tracking-widest text-chart-1-text">Pico Máximo Detectado</p>
                                                 <p className="text-subtitle font-black text-chart-1-text mt-1 flex items-center gap-1.5">
                                                     {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-chart-1-text" />
                                                 </p>
                                                 <p className="text-micro font-bold text-chart-1-text">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
                                             </div>
-                                            <div className="bg-warning/10 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[var(--shadow-glow-warning)]">
+                                            <div className="bg-warning/10 rounded-xl p-3 border border-warning/30 shadow-[var(--shadow-glow-warning)]">
                                                 <p className="text-micro font-black uppercase tracking-widest text-warning-text">Impacto en Plantilla</p>
                                                 <p className="text-title-sm font-black text-warning-text mt-1">+{extraVolumeHours} Hrs</p>
                                                 <p className="text-micro font-bold text-warning-text">Añadidas al presupuesto semanal</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-chart-3/10 backdrop-blur-md rounded-xl p-4 border border-chart-3/30 text-left flex items-start gap-4">
+                                        <div className="bg-chart-3/10 rounded-xl p-4 border border-chart-3/30 text-left flex items-start gap-4">
                                             <Hourglass size={28} className="text-chart-3-text shrink-0 mt-1" strokeWidth={2} />
                                             <div>
                                                 <p className="text-body-sm font-black uppercase tracking-widest text-chart-3-text mb-1">Fase de Incubación (Recolección de Datos)</p>

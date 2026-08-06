@@ -187,12 +187,11 @@ const HolidaysPanel = ({
                                     const dayNum  = d.getUTCDate();
                                     const dayName = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getUTCDay()];
                                     const isNat   = h.type === 'NATIONAL';
+                                    // §20.3 · el material y el lift los pone `data-surface="card"`;
+                                    // escribir el lift además en la clase los SUMA (DESIGN.md §5).
                                     return (
-                                        <div key={h.id}
+                                        <div key={h.id} data-surface="card"
                                             className="group relative flex items-center overflow-hidden
-                                                bg-surface-card backdrop-blur-md border border-border-card rounded-3xl
-                                                shadow-[var(--shadow-elevation-xs)]
-                                                hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)]
                                                 transition-all duration-[var(--dur-slow)]">
                                             {/* Color stripe */}
                                             <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-warning to-chart-4' : 'bg-gradient-to-b from-chart-1 to-brand'}`} />

@@ -64,7 +64,7 @@ const FormRoleEmployees = ({ formData }) => {
                         </div>
                     ))
                 ) : (
-                    <div className="text-center py-12 bg-surface-card backdrop-blur-md rounded-modal border-2 border-dashed border-divider">
+                    <div data-surface="card" data-tono="dashed" className="text-center py-12">
                         <User className="mx-auto text-content-3 mb-4" size={40} strokeWidth={1.5} />
                         <p className="text-content-3 font-bold text-subtitle">No hay empleados asignados.</p>
                         <p className="text-caption text-content-2 mt-1.5 uppercase tracking-widest font-bold px-4">

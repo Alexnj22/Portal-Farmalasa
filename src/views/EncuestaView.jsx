@@ -1223,7 +1223,7 @@ export default function EncuestaView() {
                         </div>
 
                         {personasBySucursal.map(([branchName, branchRows]) => (
-                            <div key={branchName} className="rounded-card border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden shadow-sm">
+                            <div key={branchName} data-surface="card" className="overflow-hidden">
                                 <div className="flex items-center gap-2 px-5 py-3 border-b border-divider bg-surface-card">
                                     <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
                                     <span className="text-body-sm font-black text-content-2">{branchName}</span>
@@ -1397,7 +1397,7 @@ export default function EncuestaView() {
                             <div
                                 key={seg.key}
                                 {...clickable(() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })))}
-                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-[var(--dur-base)] ${canToggle ? 'cursor-pointer hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:border-chart-3/50' : ''}`}
+                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-[var(--dur-base)] ${canToggle ? 'cursor-pointer hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:border-chart-3/50' : ''}`}
                             >
                                 {/* Segment header bar */}
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-chart-3/20 bg-gradient-to-r from-chart-3/10 to-chart-3/5">

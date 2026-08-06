@@ -122,7 +122,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
         : null;
 
     return (
-        <div className="p-5 rounded-modal border-2 border-chart-9/30 bg-gradient-to-br from-chart-9/10 to-[var(--card-tint-base)] backdrop-blur-2xl flex flex-col gap-4 shadow-[var(--shadow-glow-chart-9-lg)]">
+        <div className="p-5 rounded-modal border-2 border-chart-9/30 bg-gradient-to-br from-chart-9/10 to-[var(--card-tint-base)] flex flex-col gap-4 shadow-[var(--shadow-glow-chart-9-lg)]">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">

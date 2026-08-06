@@ -515,7 +515,7 @@ export default function EncuestaAdminView() {
                             </div>
 
                             {sfError && (
-                                <div className="mb-3 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-3 py-2 rounded-2xl text-label font-bold flex items-start gap-2">
+                                <div className="mb-3 bg-warning/10 border border-warning/30 text-warning-text px-3 py-2 rounded-2xl text-label font-bold flex items-start gap-2">
                                     <AlertCircle size={14} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                     <span className="leading-tight">{sfError}</span>
                                 </div>
@@ -692,7 +692,7 @@ export default function EncuestaAdminView() {
                                                     onChange={setSfEmpSearch}
                                                 />
                                                 {empResults.length > 0 && (
-                                                    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-elevation-lg)] overflow-hidden">
+                                                    <div data-surface="card" className="overflow-hidden">
                                                         {empResults.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
@@ -823,7 +823,7 @@ export default function EncuestaAdminView() {
                                     const isOpen = rfOpenBloques['general'];
                                     const answered = gqs.filter(p => rfAnswers[p.indice] !== null).length;
                                     return (
-                                        <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
+                                        <div data-surface="card" className="overflow-hidden">
                                             {/* La ranura `leading` de `ListRow` acepta una LETRA,
                                                 no solo un ícono — se agregó precisamente por estos
                                                 bloques de encuesta ("G", "B3"). */}
@@ -873,7 +873,7 @@ export default function EncuestaAdminView() {
                                     const answered = bqs.filter(p => rfAnswers[p.indice] !== null).length;
                                     const barCls = BAR_COLORS[bloque.color] || 'bg-content-3';
                                     return (
-                                        <div key={bloque.id} className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
+                                        <div key={bloque.id} data-surface="card" className="overflow-hidden">
                                             <ListRow density="sm"
                                                 leading={<span className="text-label font-black text-white">B{bloque.numero}</span>}
                                                 iconBoxClass={`${barCls} border-transparent`}
@@ -1096,7 +1096,7 @@ export default function EncuestaAdminView() {
 
                                             {/* Pending employees */}
                                             {pendingEmployees.length > 0 && (
-                                                <div className="p-4 rounded-3xl border border-warning/30 bg-warning/10 backdrop-blur-xl flex flex-col gap-2.5">
+                                                <div className="p-4 rounded-3xl border border-warning/30 bg-warning/10 flex flex-col gap-2.5">
                                                     <p className="text-caption font-black uppercase tracking-widest text-warning flex items-center gap-1.5">
                                                         <AlertCircle size={12} strokeWidth={2.5} />
                                                         Pendientes ({pendingEmployees.length})
@@ -1124,7 +1124,7 @@ export default function EncuestaAdminView() {
                                                 responsesByBranch.map(([branchName, group]) => {
                                                     const allRows = [...group.jefes, ...group.colabs];
                                                     return (
-                                                        <div key={branchName} className="rounded-card border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden">
+                                                        <div key={branchName} data-surface="card" className="overflow-hidden">
                                                             <div className="flex items-center gap-2 px-5 py-3 border-b border-border-card bg-surface-card">
                                                                 <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
                                                                 <span className="text-body-sm font-black text-content-2">{branchName}</span>

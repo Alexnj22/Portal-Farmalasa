@@ -158,7 +158,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
 
             {/* ── Oportunidades de traslado ── */}
             {!loading && transferOps.length > 0 && (
-                <div className="rounded-2xl border border-warning/30 bg-warning/10 backdrop-blur-sm p-4 flex flex-col gap-3"
+                <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4 flex flex-col gap-3"
                     style={{ boxShadow: 'var(--shadow-glass-1)' }}>
                     <div className="flex items-center gap-2">
                         <span className="text-micro font-black uppercase tracking-widest text-warning">Oportunidades de traslado</span>

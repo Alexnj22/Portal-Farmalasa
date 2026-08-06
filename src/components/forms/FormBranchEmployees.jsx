@@ -134,7 +134,7 @@ const hasInjections = legal.injections === true;
 
                         if (!emp) {
                             return (
-                                <div key={slot.id} className="flex items-center gap-4 p-5 rounded-3xl border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-sm h-[100px]">
+                                <div key={slot.id} className="flex items-center gap-4 p-5 rounded-3xl border-2 border-dashed border-danger/30 bg-danger/10 h-[100px]">
                                     <div className="w-12 h-12 rounded-2xl bg-surface-card flex items-center justify-center text-danger shadow-sm border border-danger/30 shrink-0">
                                         <slot.icon size={20} strokeWidth={2.5} />
                                     </div>

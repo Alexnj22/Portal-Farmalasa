@@ -279,7 +279,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-chart-1-text',  bg: 'bg-chart-1/10'  },
                             { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-warning', bg: 'bg-warning/10' },
                         ].map(({ label, value, icon: Icon, color, bg }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] cursor-default`}>
+                            <div key={label} className={`${bg} border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
                                 <p className="text-subtitle font-black text-content-2 leading-tight">{value}</p>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
@@ -295,7 +295,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10' },
                             { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] cursor-default`}>
+                            <div key={label} className={`${bg} border border-border-card rounded-2xl p-4 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">{label}</p>
                                 <p className="text-body font-black text-content-2 leading-tight">{value}</p>
@@ -339,7 +339,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                     {/* Emergencia */}
                     {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-modal p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:translate-y-[var(--lift-card)] transition-all duration-[var(--dur-slow)]">
+                        <div className="bg-danger/10 border border-danger/30 rounded-modal p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:translate-y-[var(--lift-card)] transition-all duration-[var(--dur-slow)]">
                             <SectionLabel icon={HeartPulse} label="Contacto de Emergencia" color="text-danger" />
                             <div className="space-y-2">
                                 <Field label="Avisar a"            value={emp.emergency_contact_name}  icon={User} />

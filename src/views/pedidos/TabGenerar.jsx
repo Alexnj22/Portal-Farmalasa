@@ -390,7 +390,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         // tarjeta, no un reflejo: en dark quedaban 6 pastillas blancas
                         // sobre la vista oscura. Ahora --card-tint-base[-soft] (v2.62.4).
                         const baseCls = urgLevel === 'high'
-                            ? 'bg-gradient-to-b from-danger/10 to-[var(--card-tint-base-soft)] border-danger/30 backdrop-blur-sm'
+                            ? 'bg-gradient-to-b from-danger/10 to-[var(--card-tint-base-soft)] border-danger/30'
                             : urgLevel === 'mid'
                                 ? 'bg-gradient-to-b from-warning/10 to-[var(--card-tint-base-soft)] border-warning/30 backdrop-blur-sm'
                                 : urgLevel === 'low'

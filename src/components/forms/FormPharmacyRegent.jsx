@@ -40,7 +40,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     // ==========================================
     if (possibleRegents.length === 0) {
         return (
-            <div className="bg-danger/10 backdrop-blur-xl border border-danger/30 p-8 rounded-modal flex flex-col items-center text-center shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] m-2">
+            <div className="bg-danger/10 border border-danger/30 p-8 rounded-modal flex flex-col items-center text-center shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] m-2">
                 <div className="w-16 h-16 bg-surface-card rounded-3xl shadow-sm border border-danger/30 flex items-center justify-center text-danger mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-danger/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-base" />

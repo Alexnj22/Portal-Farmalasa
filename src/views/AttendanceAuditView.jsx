@@ -711,7 +711,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
     : null;
 
   return (
-    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-card shadow-[var(--shadow-elevation-xs)] overflow-hidden transition-all duration-[var(--dur-base)] hover:shadow-[var(--shadow-elevation-sm)]">
+    <div data-surface="card" className="overflow-hidden transition-all duration-[var(--dur-base)]">
       {/* Fila colapsada.
           Era un `<button>` que CONTENÍA el `<Button>` de "Aprobar todo": HTML
           inválido (React lo avisa en cada carga de /audit) y dos paradas de
@@ -1275,7 +1275,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
         {/* SHIFT_EXCEPTION review panel */}
         {shiftExceptions.length > 0 && (
-          <div className="bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 rounded-2xl overflow-hidden">
+          <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl overflow-hidden">
             <div className="px-5 py-3 border-b border-chart-3/30 flex items-center gap-2">
               <ShieldAlert size={14} className="text-chart-3-text" strokeWidth={2.5} />
               <span className="text-label font-black text-chart-3-text uppercase tracking-widest">

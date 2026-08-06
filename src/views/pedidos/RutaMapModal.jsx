@@ -526,7 +526,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
 
           {/* Info recálculo automático — conductor */}
           {isConductor && gpsStatus === 'ok' && (
-            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-brand/90 backdrop-blur-sm rounded-lg px-2 py-1 text-micro font-semibold text-white shadow-sm">
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-brand/90 rounded-lg px-2 py-1 text-micro font-semibold text-white shadow-sm">
               <RefreshCw size={8} /> Recalcula c/2 min
             </div>
           )}

@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.433.0 — Las cajas con tinte semántico son tinta, y catorce contenedores a superficie
+
+Quinta tanda de §20, la más grande hasta ahora.
+`vidrio-a-mano` **103 → 60**, `material-a-mano` **12 → 11**.
+
+**31 cajas con tinte semántico dejaron el vidrio (§18.2).** Una caja cuyo fondo
+es `bg-warning/10`, `bg-danger/10`, `bg-success/10` o un degradado semántico —con
+su borde a juego— **es tinta**: se apoya sobre una superficie y toma su color de
+la paleta, no dobla la luz. Un criterio, 31 sitios, repartidos en 22 archivos:
+los avisos de regente y farmacovigilancia, las cajas de estado de
+`FormLeadership`, `EncuestaAdminView`, `TabStaff`, `TabExpenses`,
+`EmployeeProfileView`, `EmployeeDocumentsView`, la fila resaltada de
+`CotizacionesView`, la etiqueta del mapa de rutas, y el resto.
+
+**14 contenedores neutros pasaron a `data-surface="card"`.** Los que llevaban
+`bg-surface-card` + borde + radio + sombra + `backdrop-blur` escritos a mano y
+son, sencillamente, tarjetas: `TabRutas`, `EncuestaAdminView` (×4),
+`EncuestaView`, `AttendanceAuditView`, `PayrollView`, `SchedulesView`,
+`TabStaff`, `WidgetInventorySearch`, `FormAnnouncements` y `FormRoleEmployees`
+—éste con `data-tono="dashed"`, que es el token del borde punteado—.
+
+Dato útil para el resto de la bajada: **`rounded-card` ES `--card-radius`**, así
+que convertir un contenedor que ya lo usaba no mueve un píxel de radio. Los que
+usaban `rounded-2xl`/`rounded-xl` sí cambian, y por eso van con verificación
+visual.
+
+**El gate se ganó el sueldo dos veces más.** En `SchedulesView` dejé
+`hover:translate-y-[var(--lift-card)]` sobre un elemento que ya recibe el lift de
+su superficie: `lift-clavado` lo marcó al instante —se habrían **sumado**
+(DESIGN.md §5)—. Y otra vez metí un `{/* comentario */}` justo después de un
+`return (`, que no es JSX válido: **el gate pasó en verde con el archivo roto**,
+porque lee texto y no compila. Es la tercera vez en esta bajada; el build va
+después de cada tanda por eso mismo.
+
 ## v2.432.0 — El modal nunca llegaba a su opacidad, y los portaíconos sin vidrio
 
 Cuarta tanda de §20. `vidrio-a-mano` **116 → 103**, `material-a-mano` **15 → 12**.

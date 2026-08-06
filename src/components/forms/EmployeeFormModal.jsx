@@ -1067,7 +1067,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <>
                         {/* ALERTA DE HOMÓNIMOS */}
                         {isHomonymWarning && (
-                            <div className="bg-warning/10 backdrop-blur-md border border-warning/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-4 mb-2">
+                            <div className="bg-warning/10 border border-warning/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-4 mb-2">
                                 <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <div>
                                     <h4 className="text-label font-black uppercase tracking-widest text-warning-text">Posible Duplicado</h4>

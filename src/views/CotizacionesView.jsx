@@ -895,7 +895,7 @@ export default function CotizacionesView() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead>
-                                    <tr className="bg-brand/5 backdrop-blur-xl border-b border-brand/10">
+                                    <tr className="bg-brand/5 border-b border-brand/10">
                                         <th className="px-4 py-2.5 text-left text-micro font-black uppercase tracking-widest text-content-2">#</th>
                                         <th className="px-4 py-2.5 text-left text-micro font-black uppercase tracking-widest text-content-2">Producto</th>
                                         <th className="px-4 py-2.5 text-left text-micro font-black uppercase tracking-widest text-content-2">Pres.</th>

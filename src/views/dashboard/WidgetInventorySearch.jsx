@@ -193,7 +193,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
   };
 
   return (
-    <div className="rounded-xl border border-divider bg-surface-card backdrop-blur-sm px-3 py-2.5 flex flex-col gap-1.5">
+    <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-1.5">
       {/* Header row: nombre + estatus + reportar */}
       <div className="flex items-start gap-1.5">
         <p className="text-label font-black text-content leading-tight flex-1">{nombre || '—'}</p>

@@ -647,7 +647,7 @@ const PayrollView = ({ openModal }) => {
 
                                 {/* Entries */}
                                 {isLoadingPayroll ? (
-                                    <div className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card overflow-hidden">
+                                    <div data-surface="card" className="overflow-hidden">
                                         <div className="px-6 py-4 border-b border-border-card bg-surface-card flex items-center gap-3">
                                             <div className="w-8 h-8 skeleton rounded-xl" />
                                             <div className="space-y-1.5">

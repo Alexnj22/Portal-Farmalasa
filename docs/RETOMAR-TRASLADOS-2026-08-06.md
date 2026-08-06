@@ -66,10 +66,56 @@ tampoco se inventa: se lee de la pantalla que lo cachea.
 No inventarlo. Un `uniqid()` propio puede colisionar con la numeración del ERP
 y no hay forma de saberlo desde afuera.
 
-### La segunda mitad, y cómo se verifica
+### La segunda mitad, MAPEADA (sondeo de solo lectura, 2026-08-06)
 
-`recibir_traslado.php` existe: **el traslado se crea en origen y se recibe en
-destino**. Falta mapear su payload — es lo único del ERP que queda por leer.
+`recibir_traslado.php` — el JS que carga de verdad es
+`js/funciones/funciones_recibir_traslado.js`, confirmado por el `<script>` de la
+página y no por el nombre.
+
+**El GET usa un parámetro que se llama distinto de lo que lleva**: la pantalla
+se abre con `recibir_traslado.php?id_movimiento=<id_traslado>` —`id_movimiento`,
+aunque el valor es el id del traslado— y el servidor deja el hidden
+`id_traslado` con ese mismo número. Misma familia que `numero_doc` cargando el
+código de vendedor.
+
+Payload del `insert` (POST a `recibir_traslado.php`):
+
+```
+process      insert
+datos        id_prod|compra|venta|cant|unidad|vence|id_presentacion|esp#
+cuantos, total, fecha, concepto
+destino      la UBICACIÓN que recibe (8 para Salud 5, etc.)
+id_traslado  el traslado que se está recibiendo
+```
+
+**No lleva `numero_vale`.** El vale es solo del envío.
+
+⚠️ **El octavo campo de `datos` NO es el lote acá: es `esp`, lo ESPERADO.** El
+encabezado de la tabla lo dice —*… Esperado · Recibido · Lote · Vence*—: `cant`
+es lo **recibido** y `esp` lo que salió. El ERP deja recibir menos de lo enviado
+y esa diferencia es el dato. Mismo lugar del string, significado distinto que en
+`traslado_producto.php`, donde el octavo es `id_lote`.
+
+Todo lo demás lo pre-rellena el servidor y viaja readonly —producto,
+presentación (**una sola opción, ya resuelta**), costo, precio, vence—, así que
+**la trampa de la presentación de §5.3 del otro traspaso no existe en esta
+mitad**. El lote se muestra como texto y no se manda. El único campo editable es
+la cantidad recibida.
+
+Fila real leída del traslado 28149 (Salud 5, DEXA DOCEPLEX, 6 CAJA):
+
+```
+3640|3.2736|6.0600|6|1|2028-03-01|4489|6#
+```
+
+`concepto` viene con `INGRESO  DE TRASLADO` por defecto (dos espacios); `fecha1`
+está deshabilitado con el día de hoy.
+
+**La sesión tiene que estar en la sucursal que RECIBE**: el
+`<select id="destino">` trae una sola opción, la ubicación de esa sucursal. O
+sea que un traslado completo son **dos sesiones distintas** —origen para crear,
+destino para recibir— y por el corolario de la sesión PHP compartida, dos
+`login()` separados.
 
 **`admin_traslados_dt.php`** es el JSON que cierra el círculo. POST con
 `origen`, `pro`, `estado` + los de DataTables (`draw`, `start`, `length`):
@@ -99,6 +145,19 @@ distingue «enviado» de «recibido»**. Un traslado que B despacha queda en `pe
 hasta que A lo recibe, y ahí pasa a `fi`. Que A confirme la recepción no es un
 paso que agregue el portal — es el paso que al sistema ya le falta cuando nadie
 lo hace, y `estado=pe` es exactamente la lista de los que se quedaron a mitad.
+
+**Los valores reales de los tres filtros** (verificados, 2026-08-06): `origen` =
+`gen` o un **id de ubicación** —no de sucursal—; `pro` = `env` (enviados) |
+`rec` (recibidos); `estado` = `gen|fi|an|pe|gu`. Mandar `0` **no filtra nada** y
+devuelve las 27,024 filas con cara de éxito: `recordsFiltered` igual a
+`recordsTotal` es la señal de que el filtro no se aplicó.
+
+Y `pro=rec&estado=pe`, recorrido por las 7 sucursales, da hoy **20 traslados
+despachados que nadie recibió** —el más viejo del 29 de julio—: Bodega 7,
+Salud 2 6, Salud 4 4, Salud 3 2, Salud 5 1, Salud 1 y La Popular 0. El menú de
+esas filas es el único lugar del ERP donde aparece «Recibir Traslado». Es una
+lista que el portal puede mostrar desde el día uno, antes incluso de saber
+crear un traslado.
 
 También existe `anular_traslado.php` (`process=anular` + `id_traslado`), que es
 por dónde se cancela uno despachado.
@@ -174,7 +233,8 @@ Consecuencias concretas:
 
 ## 5 · Orden sugerido
 
-1. Leer `recibir_traslado.php` y su JS — es lo único que falta del ERP.
+1. ~~Leer `recibir_traslado.php` y su JS~~ — **hecho el 2026-08-06**, está en §2.
+   Del ERP ya no falta nada por leer.
 2. Tipo `INVENTORY_TRANSFER_REQUEST` en el CHECK de `approval_requests`, su
    validación (producto, cantidad, sala origen ≠ destino, y que la de origen
    siga por encima de su mínimo) y su rama en el aviso.

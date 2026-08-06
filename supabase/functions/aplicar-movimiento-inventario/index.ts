@@ -24,10 +24,16 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 // ── Las trampas del ERP que ya costaron caro ───────────────────────────────
 //  1. Contesta HTTP 200 con {"typeinfo":"Error"} cuando rechaza. Hay que leer
 //     el cuerpo: un rechazo silencioso se ve igual que un éxito.
-//  2. La presentación NO se elige por posición. `consultar_stock` devuelve un
-//     <select> en HTML con opciones de etiqueta idéntica, y el orden cambia
-//     entre la pantalla de carga y la de descarte. Acá se exige que el
-//     `id_presentacion` de la solicitud esté ENTRE las que el ERP ofrece.
+//  2. La presentación NO se elige por posición NI por el id del portal. Son
+//     DOS numeraciones distintas: para el producto 2 el portal tiene 1/102/230
+//     y el ERP ofrece 8421/7213/3. Mandar la del portal apuntaría a otra
+//     presentación existente y el ERP no protestaría.
+//     Y el orden tampoco sirve: el producto 105 pone UNIDAD al final y los
+//     productos 6/9/56 la ponen primera.
+//     Lo único estable es la ETIQUETA, que es «TIPO (FACTOR)» y coincide con
+//     `presentaciones.tipo` + `product_precios.factor` del portal. Así que la
+//     solicitud viaja con el SIGNIFICADO —"CAJA", 8— y el id del ERP se
+//     resuelve acá, contra lo que el ERP ofrece en ese momento.
 //  3. El costo y el precio salen del ERP, no de la solicitud: un descarte no
 //     debe poder mover precios de paso.
 
@@ -54,7 +60,8 @@ const CONCEPTO_MAX = 200;
 
 interface Linea {
   erp_product_id: number;
-  id_presentacion: number;
+  presentacion_tipo: string;   // "UNIDAD", "CAJA", "BLISTER X 10"…
+  factor: number;              // cuántas unidades trae
   cantidad: number;
   numero_lote?: string;
   id_lote?: number;
@@ -66,7 +73,7 @@ interface Linea {
 interface Consulta {
   ok: boolean;
   msg: string;
-  presentaciones: string[];
+  presentaciones: { id: string; etiqueta: string }[];
   costo: string;
   precio: string;
   unidad: string;
@@ -74,12 +81,22 @@ interface Consulta {
   perecedero: boolean;
 }
 
+/**
+ * La etiqueta de una presentación, comparable.
+ *
+ * El ERP escribe «PAQUETE  (12)» con dos espacios en un producto y con uno en
+ * otro, así que comparar el texto crudo perdería la coincidencia sin decir por
+ * qué. Se colapsan los espacios y se sube todo a mayúsculas.
+ */
+const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toUpperCase();
+
 function leerConsulta(cuerpo: string): Consulta {
   let j: Record<string, unknown>;
   try { j = JSON.parse(cuerpo); } catch {
     return { ok: false, msg: `Respuesta ilegible del ERP: ${cuerpo.slice(0, 160)}`,
              presentaciones: [], costo: "", precio: "", unidad: "", stock: null, perecedero: false };
   }
+  // fin del parseo defensivo
   // `ingreso_inventario.php` contesta con typeinfo; el descargo también. Si no
   // viene, la respuesta igual sirve mientras traiga el producto.
   const tipo = String(j.typeinfo ?? "").toLowerCase();
@@ -88,7 +105,8 @@ function leerConsulta(cuerpo: string): Consulta {
   return {
     ok,
     msg: String(j.msg ?? ""),
-    presentaciones: [...sel.matchAll(/<option value='(\d+)'/g)].map((m) => m[1]),
+    presentaciones: [...sel.matchAll(/<option value='(\d+)'>([^<]*)</g)]
+      .map((m) => ({ id: m[1], etiqueta: norm(m[2]) })),
     costo:  String(j.costop ?? ""),
     precio: String(j.preciop ?? ""),
     unidad: String(j.unidadp ?? "1"),
@@ -218,13 +236,17 @@ Deno.serve(async (req) => {
           error: `El sistema no reconoce el producto ${l.erp_product_id}${c.msg ? `: ${c.msg}` : ""}.`,
         }, 502);
 
-      // La presentación tiene que ser una de las que el ERP ofrece para ESE
-      // producto. Sin este chequeo, un id viejo o de otro producto entra sin
-      // protesta y el movimiento queda contra la presentación equivocada.
-      if (c.presentaciones.length && !c.presentaciones.includes(String(l.id_presentacion)))
+      // La presentación se resuelve por su SIGNIFICADO contra lo que el ERP
+      // ofrece ahora. Si el producto dejó de tener esa presentación, se corta:
+      // aplicar contra otra sería mover una cantidad distinta de la pedida.
+      const buscada = norm(`${l.presentacion_tipo} (${l.factor})`);
+      const elegida = c.presentaciones.find((p) => p.etiqueta === buscada);
+      if (!elegida)
         return json({
-          ok: false,
-          error: `La presentación elegida ya no existe para ${l.descripcion ?? l.erp_product_id}.`,
+          ok: false, codigo: "PRESENTACION_NO_EXISTE",
+          error: `${l.descripcion ?? l.erp_product_id} ya no tiene la presentación `
+               + `${l.presentacion_tipo} (${l.factor}). Ofrece: `
+               + `${c.presentaciones.map((p) => p.etiqueta).join(", ") || "ninguna"}.`,
         }, 409);
 
       // El descarte no puede sacar más de lo que hay. Se relee ACÁ y no al
@@ -250,14 +272,16 @@ Deno.serve(async (req) => {
       const vence = esCarga ? (c.perecedero ? String(l.vence) : "NULL") : "";
       const cola  = esCarga ? String(l.numero_lote ?? "") : String(l.id_lote ?? 0);
       partes.push([
-        l.erp_product_id, c.costo, c.precio, l.cantidad, c.unidad, vence, l.id_presentacion, cola,
+        l.erp_product_id, c.costo, c.precio, l.cantidad, c.unidad, vence, elegida.id, cola,
       ].join("|"));
 
       total    += Number(c.costo || 0) * Number(l.cantidad);
       unidades += Number(l.cantidad);
       detalle.push({
         erp_product_id: l.erp_product_id, descripcion: l.descripcion,
-        id_presentacion: l.id_presentacion, cantidad: l.cantidad,
+        presentacion: `${l.presentacion_tipo} (${l.factor})`,
+        id_presentacion_erp: elegida.id,       // el que se usó, para poder auditarlo
+        cantidad: l.cantidad,
         costo: c.costo, precio: c.precio, stock_previo: c.stock,
       });
     }

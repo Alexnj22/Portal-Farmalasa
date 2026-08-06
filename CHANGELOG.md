@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.439.0 — Los tres widgets de solicitudes: baldosa y modal
+
+**Modificar Facturación**, **Ajuste de Min/Max** y **Ajuste de Inventario**
+dejan de ser formularios metidos en una baldosa del tablero y pasan a ser una
+**baldosa de 1×1 que abre un modal**.
+
+El motivo salió de usarlo: en Ajuste de Inventario, con un solo producto
+agregado la lista de resultados quedaba en una franja de dos centímetros, y no
+había forma de darse cuenta de que se podían agregar más. Se podía —había que
+borrar la búsqueda y escribir otro producto— pero la pantalla no lo dejaba ver.
+
+La baldosa además **dice qué hay esperando**: cuántas líneas vencidas tiene la
+sala, cuántas solicitudes de facturación están pendientes, cuántas propuestas de
+Min/Max esperan decisión. Se enciende de color solo cuando hay algo — una
+baldosa siempre en color deja de señalar.
+
+Y pesan menos: el contenido se monta al abrir el modal, así que entrar al
+tablero ya no carga los catálogos de los tres formularios.
+
+El selector de sucursal, que vivía en la cabecera de cada tarjeta, se mudó
+adentro del modal — al volverse baldosa esa cabecera desaparecía y con ella la
+forma de cambiar de sala.
+
 ## v2.438.0 — El lift de Solid: la fase H estaba marcada hecha y no lo estaba
 
 Verificando el checklist de §9 punto por punto —en vez de darlo por bueno—

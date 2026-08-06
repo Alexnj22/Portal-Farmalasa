@@ -172,6 +172,27 @@ export async function fetchPerecederos(productIds) {
     };
 }
 
+/**
+ * Cuántas líneas vencidas hay en una sala. Es lo que la baldosa del tablero
+ * muestra para dar un motivo de abrirla: sin ese número, la puerta no dice
+ * nada de lo que hay del otro lado.
+ *
+ * `head: true` — se pide el CONTEO, no las filas: la baldosa no las dibuja.
+ */
+export async function contarVencidos({ erpSucursalId }) {
+    if (!erpSucursalId) return { total: 0, error: null };
+    const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const { count, error } = await supabase
+        .from('inventory')
+        .select('erp_product_id', { count: 'exact', head: true })
+        .eq('erp_sucursal_id', Number(erpSucursalId))
+        .eq('is_vencidos', false)
+        .gt('cantidad', 0)
+        .not('fecha_vencimiento', 'is', null)
+        .lt('fecha_vencimiento', hoy);
+    return { total: count ?? 0, error };
+}
+
 /** Crea la solicitud. El aviso al aprobador lo dispara el trigger, no esto. */
 export function insertMovimientoInventario(payload) {
     return insertApprovalRequestSilent(payload);

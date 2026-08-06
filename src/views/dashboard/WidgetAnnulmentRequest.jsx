@@ -7,15 +7,16 @@ import { SkeletonText } from '../../components/common/StateViews';
 import {
   Search, Loader2, AlertTriangle, CheckCircle2, Clock,
   Eye, ArrowLeft, AlertCircle, Ban, CreditCard, UserCog,
-  ChevronRight, Info, ShieldAlert, User, CalendarDays, Contact,
+  ChevronRight, Info, ShieldAlert, User, CalendarDays, Contact, Receipt,
 } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import SearchInput from '../../components/common/SearchInput';
 import { useStaffStore } from '../../store/staffStore';
+import LanzadorSolicitud from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
 import { normSearch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
-import { insertApprovalRequestSilent } from '../../data/requests';
+import { insertApprovalRequestSilent, contarSolicitudesFacturacionPendientes } from '../../data/requests';
 import {
   fetchInvoiceItemsForInvoice, fetchBranchInvoicesRecent,
   countBranchInvoices, searchBranchInvoices, WIDGET_INVOICE_PAGE,
@@ -833,7 +834,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 }
 
 /* ─── Main component ─────────────────────────────────────────────────────────── */
-export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId = null }) {
+function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   const { user }       = useAuth();
   const employees      = useStaffStore(s => s.employees);
   const branches       = useStaffStore(s => s.branches);
@@ -1088,5 +1089,42 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         })}
       </div>
     </div>
+  );
+}
+
+
+/* ─── La baldosa del tablero ──────────────────────────────────────────────── */
+export default function WidgetAnnulmentRequest(props) {
+  const [pendientes, setPendientes] = useState(null);
+
+  useEffect(() => {
+    let cancelado = false;
+    contarSolicitudesFacturacionPendientes().then(r => {
+      if (!cancelado) setPendientes(r.total);
+    });
+    return () => { cancelado = true; };
+  }, []);
+
+  return (
+    <LanzadorSolicitud
+      icon={Receipt}
+      label="Modificar Facturación"
+      pendientes={pendientes}
+      etiquetaPendientes="solicitud pendiente"
+      etiquetaPendientesPlural="solicitudes pendientes"
+      vacio="Sin pendientes"
+      tono="warning"
+    >
+      {() => (
+        <div className="p-5 h-[78dvh] max-h-[720px] flex flex-col gap-3">
+          {/* El selector de sucursal vivía en la cabecera de la tarjeta del
+              tablero. Al volverse baldosa esa cabecera desapareció y con ella
+              el selector: quien tiene alcance sobre todas las salas se quedaba
+              sin poder cambiar de sala. Se muda acá adentro. */}
+          {props.selectorSucursal}
+          <FormularioFacturacion {...props} />
+        </div>
+      )}
+    </LanzadorSolicitud>
   );
 }

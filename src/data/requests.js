@@ -200,6 +200,23 @@ export async function aplicarMovimientoInventarioEnErp(requestId, approverNote =
     }
 }
 
+/**
+ * Cuántas solicitudes de facturación esperan decisión.
+ *
+ * El RLS ya recorta lo que cada quien puede ver, así que el número que sale
+ * acá es el que esa persona podría resolver — no un total global que prometa
+ * trabajo ajeno.
+ */
+export async function contarSolicitudesFacturacionPendientes() {
+    const { count, error } = await supabase
+        .from('approval_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'PENDING')
+        .in('type', ['ANNULMENT_REQUEST', 'PAYMENT_CHANGE_REQUEST',
+                     'VENDOR_CHANGE_REQUEST', 'CLIENT_CHANGE_REQUEST']);
+    return { total: count ?? 0, error };
+}
+
 // ── approve/reject/cancel ────────────────────────────────────────────────────
 
 export function updateApprovalRequest(requestId, patch) {

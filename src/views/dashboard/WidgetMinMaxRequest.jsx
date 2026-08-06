@@ -6,11 +6,12 @@ import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from
 import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
+import LanzadorSolicitud from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
-    fetchActiveProductsCount, fetchActiveProductsChunk,
+    fetchActiveProductsCount, fetchActiveProductsChunk, contarMinMaxPendientes,
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '../../data/stockParams';
@@ -215,7 +216,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 }
 
 /* ── Main: busca producto → formulario ── */
-export default function WidgetMinMaxRequest({ selectedErp = null }) {
+function FormularioMinMax({ selectedErp = null }) {
   const { user }       = useAuth();
   const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
@@ -333,5 +334,42 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
         ))}
       </div>
     </div>
+  );
+}
+
+
+/* ─── La baldosa del tablero ──────────────────────────────────────────────── */
+export default function WidgetMinMaxRequest(props) {
+  const [pendientes, setPendientes] = useState(null);
+
+  useEffect(() => {
+    let cancelado = false;
+    contarMinMaxPendientes(props.selectedErp).then(r => {
+      if (!cancelado) setPendientes(r.total);
+    });
+    return () => { cancelado = true; };
+  }, [props.selectedErp]);
+
+  return (
+    <LanzadorSolicitud
+      icon={TrendingUp}
+      label="Ajuste de Min/Max"
+      pendientes={pendientes}
+      etiquetaPendientes="propuesta pendiente"
+      etiquetaPendientesPlural="propuestas pendientes"
+      vacio="Sin propuestas"
+      tono="brand"
+    >
+      {() => (
+        <div className="p-5 h-[78dvh] max-h-[720px] flex flex-col gap-3">
+          {/* El selector de sucursal vivía en la cabecera de la tarjeta del
+              tablero. Al volverse baldosa esa cabecera desapareció y con ella
+              el selector: quien tiene alcance sobre todas las salas se quedaba
+              sin poder cambiar de sala. Se muda acá adentro. */}
+          {props.selectorSucursal}
+          <FormularioMinMax {...props} />
+        </div>
+      )}
+    </LanzadorSolicitud>
   );
 }

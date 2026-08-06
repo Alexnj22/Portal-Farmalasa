@@ -100,8 +100,9 @@ const WIDGET_SIZES = {
   facturacion:   { minCols: 2, minRows: 2, label: 'Facturación'  },
   top_productos: { minCols: 2, minRows: 3, label: 'Top Productos'},
   inv_search:    { minCols: 2, minRows: 3, label: 'Inventario'   },
-  annulment_req: { minCols: 2, minRows: 3, label: 'Anulaciones'  },
-  minmax_req:    { minCols: 2, minRows: 3, label: 'Ajuste Min/Max' },
+  annulment_req: { minCols: 1, minRows: 1, label: 'Anulaciones'  },
+  minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
+  inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste Inventario' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
 };
 
@@ -2036,25 +2037,19 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'annulment_req') {
       if (!showWidget('annulment_req', 'dash_annulment_req')) return null;
       const isAnnAllScope = getScope('dash_annulment_req') === 'ALL';
-      const annBranchOpts = branches.filter(b => b.id).map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('annulment_req',
-        <WidgetCard title="Solicitar Modificación a Facturación" icon={Receipt} category="ventas"
-          action={isAnnAllScope && annBranchOpts.length > 0 && (
+        <WidgetAnnulmentRequest
+          selectedBranchId={isAnnAllScope ? annulmentBranch : null}
+          selectorSucursal={isAnnAllScope && branches.filter(b => b.id).length > 0 && (
             <LiquidSelect
               value={annulmentBranch}
               onChange={val => setAnnulmentBranch(val ?? String(user?.branchId ?? user?.branch_id ?? ''))}
-              options={annBranchOpts}
+              options={branches.filter(b => b.id).map(b => ({ value: String(b.id), label: b.name }))}
               placeholder="Sucursal..."
               clearable={false}
-              compact
-              bare
             />
           )}
-        >
-          <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetAnnulmentRequest selectedBranchId={isAnnAllScope ? annulmentBranch : null} />
-          </div>
-        </WidgetCard>
+        />
       , staggerIdx);
     }
 
@@ -2063,29 +2058,27 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('minmax_req', 'dash_minmax_req')) return null;
       const isMmAllScope = getScope('dash_minmax_req') === 'ALL';
       const ownErp = MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? null;
-      const mmErpOpts = MM_ERP_ORDER.map(id => ({ value: String(id), label: MM_ERP_NAMES[id] }));
       return wrapWidget('minmax_req',
-        <WidgetCard title="Ajuste de Min/Max" icon={BarChart2} category="productos"
-          action={isMmAllScope && (
+        <WidgetMinMaxRequest
+          selectedErp={isMmAllScope ? Number(minmaxErp) : ownErp}
+          selectorSucursal={isMmAllScope && (
             <LiquidSelect
               value={minmaxErp}
               onChange={val => setMinmaxErp(val ?? String(ownErp ?? 5))}
-              options={mmErpOpts}
+              options={MM_ERP_ORDER.map(id => ({ value: String(id), label: MM_ERP_NAMES[id] }))}
               placeholder="Sucursal..."
               clearable={false}
-              compact
-              bare
             />
           )}
-        >
-          <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetMinMaxRequest selectedErp={isMmAllScope ? Number(minmaxErp) : ownErp} />
-          </div>
-        </WidgetCard>
+        />
       , staggerIdx);
     }
 
-    /* ── CARGA Y DESCARTE DE INVENTARIO ── */
+    /* ── AJUSTE DE INVENTARIO ── */
+    // Baldosa 1×1 que abre el formulario en un modal: metido en la tarjeta del
+    // tablero no entraba —con un producto agregado la lista de resultados
+    // quedaba en una franja y no se veía que se podían sumar más—. El selector
+    // de sucursal se va adentro con él.
     if (wid === 'inv_movement') {
       if (!showWidget('inv_movement', 'dash_inv_movement')) return null;
       const isMovAllScope = getScope('dash_inv_movement') === 'ALL';
@@ -2095,28 +2088,21 @@ const DashboardView = ({ openModal }) => {
         Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === erpMov) ?? 0,
       ) || null;
       return wrapWidget('inv_movement',
-        <WidgetCard title="Ajuste de Inventario" icon={PackageMinus} category="productos"
-          action={isMovAllScope && (
+        <WidgetInventoryMovement
+          erpSucursalId={erpMov}
+          branchId={branchIdMov}
+          branchName={MM_ERP_NAMES[erpMov] ?? ''}
+          erpUbicacionId={ERP_UBICACION_POR_SUCURSAL[erpMov] ?? null}
+          selectorSucursal={isMovAllScope && (
             <LiquidSelect
               value={movimientoErp}
               onChange={val => setMovimientoErp(val ?? String(ownErpMov ?? 5))}
               options={MM_ERP_ORDER.map(id => ({ value: String(id), label: MM_ERP_NAMES[id] }))}
               placeholder="Sucursal..."
               clearable={false}
-              compact
-              bare
             />
           )}
-        >
-          <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetInventoryMovement
-              erpSucursalId={erpMov}
-              branchId={branchIdMov}
-              branchName={MM_ERP_NAMES[erpMov] ?? ''}
-              erpUbicacionId={ERP_UBICACION_POR_SUCURSAL[erpMov] ?? null}
-            />
-          </div>
-        </WidgetCard>
+        />
       , staggerIdx);
     }
 

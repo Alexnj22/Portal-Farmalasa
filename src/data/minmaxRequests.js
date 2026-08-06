@@ -48,3 +48,19 @@ export function fetchActiveProductsChunk(rangeFrom, rangeTo) {
         .order('nombre')
         .range(rangeFrom, rangeTo);
 }
+
+/**
+ * Cuántas propuestas de Min/Max están esperando decisión.
+ *
+ * Es lo que la baldosa del tablero muestra: sin un número, una puerta cerrada
+ * no da ningún motivo para abrirla. `head: true` pide el CONTEO, no las filas.
+ */
+export async function contarMinMaxPendientes(erpSucursalId = null) {
+    let q = supabase
+        .from('minmax_change_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'PENDING');
+    if (erpSucursalId) q = q.eq('erp_sucursal_id', Number(erpSucursalId));
+    const { count, error } = await q;
+    return { total: count ?? 0, error };
+}

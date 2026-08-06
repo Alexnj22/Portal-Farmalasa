@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     AlertTriangle, ArrowLeft, CalendarX2, CheckCircle2, ChevronRight, Loader2,
-    PackagePlus, Plus, Stethoscope, Trash2, X,
+    PackageMinus, PackagePlus, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import LanzadorSolicitud from './LanzadorSolicitud';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
@@ -14,7 +15,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import {
     fetchLotesPorVencer, buscarConExistencia, fetchPresentaciones, fetchLotesDeProducto,
-    fetchPerecederos, insertMovimientoInventario, TOPE_LISTA,
+    fetchPerecederos, insertMovimientoInventario, contarVencidos, TOPE_LISTA,
 } from '../../data/inventoryMovements';
 
 // Widget «Ajuste de Inventario».
@@ -161,7 +162,7 @@ function CabeceraMovimiento({ op, branchName, onBack, lineas, unidades }) {
     );
 }
 
-export default function WidgetInventoryMovement({ erpSucursalId, branchId, branchName, erpUbicacionId }) {
+function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId, selectorSucursal, onHecho }) {
     const { user } = useAuth();
     const employees = useStaffStore(s => s.employees);
     const appendAuditLog = useStaffStore(s => s.appendAuditLog);
@@ -342,7 +343,7 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
             // El aviso lo crea el trigger junto con la fila. Mandarlo desde acá
             // sería la llamada aparte que este módulo ya perdió una vez.
             setListo(true);
-            setTimeout(() => { setListo(false); volver(); }, 2800);
+            setTimeout(() => { setListo(false); volver(); onHecho?.(); }, 2800);
         } catch (e) {
             setError(String(e?.message ?? '').includes('row-level security')
                 ? 'No tienes permiso para crear solicitudes de inventario.'
@@ -365,7 +366,12 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
         );
     }
 
-    if (!op) return <SelectorOperacion onSelect={setOpKey} />;
+    if (!op) return (
+        <div className="flex flex-col gap-3 h-full min-h-0">
+            {selectorSucursal}
+            <SelectorOperacion onSelect={setOpKey} />
+        </div>
+    );
 
     return (
         <div className="flex flex-col gap-3 h-full min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
@@ -551,5 +557,37 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
                 </div>
             )}
         </div>
+    );
+}
+
+
+/* ─── La baldosa del tablero ──────────────────────────────────────────────── */
+export default function WidgetInventoryMovement(props) {
+    const [vencidos, setVencidos] = useState(null);
+
+    useEffect(() => {
+        let cancelado = false;
+        contarVencidos({ erpSucursalId: props.erpSucursalId }).then(r => {
+            if (!cancelado) setVencidos(r.total);
+        });
+        return () => { cancelado = true; };
+    }, [props.erpSucursalId]);
+
+    return (
+        <LanzadorSolicitud
+            icon={PackageMinus}
+            label="Ajuste de Inventario"
+            pendientes={vencidos}
+            etiquetaPendientes="línea vencida"
+            etiquetaPendientesPlural="líneas vencidas"
+            vacio="Nada vencido"
+            tono="danger"
+        >
+            {(cerrar) => (
+                <div className="p-5 h-[78dvh] max-h-[720px] flex flex-col">
+                    <FormularioAjuste {...props} onHecho={cerrar} />
+                </div>
+            )}
+        </LanzadorSolicitud>
     );
 }

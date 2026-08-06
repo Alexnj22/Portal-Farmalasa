@@ -27,6 +27,9 @@ import React, { createContext, useContext } from 'react';
 import Badge from './Badge';
 import { ArrowUp, ArrowDown, ChevronsUpDown, Inbox } from 'lucide-react';
 import Button from './Button';
+import useMediaQuery from '../../hooks/useMediaQuery';
+import ModalShell from './ModalShell';
+import HojaMovil from './HojaMovil';
 
 // `hideBelow` se armaba en runtime: `hidden ${hideBelow}:table-cell`. Tailwind
 // escanea el FUENTE, así que esa clase nunca existió por sí misma — funcionaba
@@ -124,6 +127,63 @@ const PAD = {
   dense:  'px-3',
 };
 
+// ── Los cuatro papeles de una fila en el teléfono ─────────────────────────────
+// Una tabla es una rejilla porque en escritorio se lee HACIA ABAJO, comparando
+// una columna entre filas. En 390px eso no se puede hacer: se busca UN registro.
+// Así que la fila deja de ser un pedazo de rejilla y pasa a tener cuatro papeles:
+//
+//   identidad → arriba a la izquierda (de quién es la fila)
+//   ancla     → arriba a la derecha   (el dato por el que se entró a la pantalla)
+//   chips     → la segunda línea      (el contexto que se mira de reojo)
+//   hoja      → todo lo demás         (se abre al tocar)
+//
+// Se INFIEREN de `columns` en vez de pedir una prop, porque una prop opt-in es
+// una prop olvidada: así las 32 tablas del portal heredan el patrón sin que nadie
+// tenga que acordarse, y la que necesita precisión la declara con `movil`.
+//
+// El ancla se busca por `align: 'right'` porque en este proyecto esa es la
+// convención de los números, y el número es casi siempre el motivo de la
+// pantalla. Medido el 2026-08-06 sobre las 32 tablas: en 4 de ellas `hideBelow`
+// borraba justamente esa columna en el teléfono, o sea que la vista abría sin
+// poder contestar su propia pregunta.
+function inferirPapeles(columns, movil) {
+  const utiles = columns.filter(c => (c.label || '').trim() !== '');
+  const acciones = columns.filter(c => (c.label || '').trim() === '');
+
+  if (movil && typeof movil === 'object') {
+    const buscar = k => columns.find(c => c.key === k);
+    const ancla = buscar(movil.ancla);
+    const identidad = buscar(movil.identidad);
+    const chips = (movil.chips || []).map(buscar).filter(Boolean);
+    const usadas = new Set([ancla, identidad, ...chips].filter(Boolean).map(c => c.key));
+    return { identidad, ancla, chips,
+             hoja: utiles.filter(c => !usadas.has(c.key)), acciones };
+  }
+
+  // Inferencia. El ancla: la última alineada a la derecha; si no hay ninguna,
+  // la última con etiqueta. La identidad: la primera que no sea el ancla.
+  const derechas = utiles.filter(c => c.align === 'right');
+  const ancla = derechas.length ? derechas[derechas.length - 1] : utiles[utiles.length - 1];
+  const identidad = utiles.find(c => c !== ancla);
+  const resto = utiles.filter(c => c !== ancla && c !== identidad);
+
+  // ── Los chips NO se infieren, y esto se midió ──────────────────────────
+  // La primera versión tomaba las tres primeras columnas restantes. El mapeo
+  // posicional entrega la celda correcta, pero una celda **no es un valor**:
+  // está escrita para una tabla y trae su decoración adentro. En Clientes, la
+  // celda de Ubicación son dos líneas («SAN J CANCASQUE / Chalatenango») y la
+  // de Ficha es una insignia con su propio color — metidas en una píldora de
+  // 11px quedaban como bloques deformes, y una celda vacía pintaba un chip con
+  // un guión solo.
+  //
+  // Así que por defecto la ficha lleva las dos anclas y nada más: nombre a la
+  // izquierda, número a la derecha, todo lo demás a un toque. Es limpio en las
+  // 32 tablas sin que nadie configure nada. Los chips se activan por vista, con
+  // `movil={{ chips: [...] }}`, cuando esa vista tenga celdas que sirvan como
+  // valor suelto — que es trabajo de vista y no del canónico.
+  return { identidad, ancla, chips: [], hoja: resto, acciones };
+}
+
 export function DataTable({
   columns = [],
   sortKey,
@@ -136,11 +196,29 @@ export function DataTable({
   footer,
   minWidth = '600px',
   dense = false,
+  // `false` vuelve a la tabla con carril en el teléfono. Es la salida para las
+  // tablas cuya fila no es un registro (matrices de precios, listas de tarifas).
+  // Un objeto `{ ancla, identidad, chips }` fija los papeles a mano.
+  movil,
   children,
 }) {
   const tk = { ...useTokens(), pad: dense ? PAD.dense : PAD.normal };
   const childCount = React.Children.count(children);
   const isEmpty = !loading && childCount === 0;
+  const enTelefono = useMediaQuery('(max-width: 1023.98px)');
+  const enFichas = enTelefono && movil !== false && !isEmpty && !loading;
+  const analisis = enFichas ? analizarFilas(children, columns) : null;
+
+  // Si el mapeo posicional no se cumple, se vuelve a la tabla: deslizar es peor
+  // que leer un dato bajo el rótulo equivocado, pero mucho menos malo.
+  if (enFichas && !analisis.desalineada && analisis.filas.length) {
+    return (
+      <TableCtx.Provider value={tk}>
+        <FichasMovil columns={columns} movil={movil} toolbar={toolbar} footer={footer}
+          filas={analisis.filas} descartadas={analisis.descartadas} />
+      </TableCtx.Provider>
+    );
+  }
 
   return (
     <TableCtx.Provider value={tk}>
@@ -291,6 +369,126 @@ export function DataTable({
 
       </div>
     </TableCtx.Provider>
+  );
+}
+
+// ── FichasMovil ───────────────────────────────────────────────────────────────
+// Cada `DataRow` se vuelve una ficha. El mapeo celda→columna es POSICIONAL: la
+// enésima `DataCell` corresponde a la enésima columna, que es el contrato que la
+// tabla ya tenía escrito en su `<thead>`.
+//
+// Dos guardas, y las dos importan más que la funcionalidad:
+//
+//  1. **Si el mapeo no se cumple, no se adivina.** Una vista que rinde celdas
+//     condicionales puede traer menos celdas que columnas, y ahí una ficha
+//     armada por posición mostraría el dato equivocado bajo el rótulo
+//     equivocado. Cuando los números no cuadran se vuelve a la tabla: es peor
+//     deslizar que leer un dato falso.
+//  2. **Las filas que no son `DataRow` se saltean.** Doce vistas del portal
+//     meten un `<tr colSpan>` de detalle expandido dentro del `<tbody>`; fuera
+//     de una tabla ese `<tr>` no se puede pintar. Se saltea y se avisa en
+//     desarrollo, porque el contenido de esa fila expandida todavía no tiene
+//     casa en el teléfono: es trabajo por vista, no del canónico.
+function analizarFilas(children, columns) {
+  const filas = [];
+  let descartadas = 0;
+  let desalineada = false;
+  React.Children.toArray(children).forEach((hijo, i) => {
+    if (!React.isValidElement(hijo) || hijo.type !== DataRow) { descartadas++; return; }
+    const celdas = React.Children.toArray(hijo.props.children);
+    if (celdas.length !== columns.length) { desalineada = true; return; }
+    filas.push({ clave: hijo.key ?? i, onClick: hijo.props.onClick, celdas });
+  });
+  return { filas, descartadas, desalineada };
+}
+
+function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
+  const [abierta, setAbierta] = React.useState(null);
+  const papeles = React.useMemo(() => inferirPapeles(columns, movil), [columns, movil]);
+
+  React.useEffect(() => {
+    if (descartadas && import.meta.env?.DEV) {
+      console.warn(`[DataTable] ${descartadas} fila(s) fuera de \`DataRow\` no se pintan como ficha.`);
+    }
+  }, [descartadas]);
+
+  const deCol = (fila, col) => (col ? fila.celdas[columns.indexOf(col)]?.props?.children : null);
+
+  return (
+    <div className="flex flex-col gap-2">
+      {toolbar && <div className="px-1 pb-1">{toolbar}</div>}
+
+      {filas.map((fila) => {
+        const abrir = () => setAbierta(fila);
+        return (
+          <button
+            key={fila.clave}
+            type="button"
+            onClick={fila.onClick || abrir}
+            data-surface="card"
+            className="w-full text-left px-3.5 py-3 rounded-card
+              transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
+              active:scale-[0.985]"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 truncate font-bold text-body-lg text-content">
+                {deCol(fila, papeles.identidad)}
+              </span>
+              <span className="shrink-0 font-black text-body-xl tabular-nums text-content">
+                {deCol(fila, papeles.ancla)}
+              </span>
+            </div>
+            {papeles.chips.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                {papeles.chips.map(col => {
+                  const v = deCol(fila, col);
+                  if (v == null || v === '' || v === '—') return null;
+                  // `Badge` y no un `<span>` con su propio relleno: §16. El chip
+                  // de la ficha es el mismo objeto que el de una celda, y un
+                  // canónico con dos dibujos no es un canónico.
+                  return <Badge key={col.key} size="sm" uppercase={false}>{v}</Badge>;
+                })}
+              </div>
+            )}
+          </button>
+        );
+      })}
+
+      {footer && <div className="px-1 pt-1">{footer}</div>}
+
+      {/* La hoja: el resto de las columnas, con su rótulo. `HojaMovil` es el
+          cuerpo canónico —título a la izquierda, botones apilados, asa, área
+          segura— así que acá no se dibuja ninguna hoja nueva. */}
+      <ModalShell open={!!abierta} onClose={() => setAbierta(null)} surface={null}>
+        {abierta && (
+          <HojaMovil
+            titulo={deCol(abierta, papeles.identidad)}
+            pie={papeles.acciones
+              .map(col => deCol(abierta, col))
+              .filter(Boolean)}
+          >
+            <div className="flex flex-col">
+              {[papeles.ancla, ...papeles.chips, ...papeles.hoja].filter(Boolean).map(col => {
+                const v = deCol(abierta, col);
+                if (v == null || v === '') return null;
+                return (
+                  <div key={col.key}
+                    className="flex items-baseline justify-between gap-4 py-2
+                      border-b border-divider last:border-b-0">
+                    <span className="text-micro font-black uppercase tracking-widest text-content-3">
+                      {col.label}
+                    </span>
+                    <span className="text-body font-bold text-right tabular-nums text-content">
+                      {v}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </HojaMovil>
+        )}
+      </ModalShell>
+    </div>
   );
 }
 

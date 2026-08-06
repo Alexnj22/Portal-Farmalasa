@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.459.0 — La fila se vuelve ficha en el teléfono
+
+El patrón A de la propuesta de tablas móviles, en el canónico. Bajo 1024&nbsp;px
+`DataTable` deja de pintar una rejilla y pinta fichas: identidad a la izquierda,
+**ancla** a la derecha, el resto a un toque.
+
+**Los papeles se INFIEREN de `columns`, no se piden por prop.** Una prop opt-in
+es una prop olvidada, así que las 32 tablas del portal heredan el patrón sin que
+nadie tenga que acordarse. El ancla se busca por `align: 'right'` —la convención
+de los números en este proyecto— porque el número suele ser el motivo de la
+pantalla. `movil={{ ancla, identidad, chips }}` fija los papeles a mano y
+`movil={false}` vuelve a la tabla con carril, para las tablas cuya fila no es un
+registro (matrices de precios, listas de tarifas).
+
+**Dos guardas, y valen más que la funcionalidad:**
+
+1. **Si el mapeo posicional no se cumple, no se adivina.** La enésima `DataCell`
+   corresponde a la enésima columna, que es el contrato que la tabla ya tenía en
+   su `<thead>`. Una vista con celdas condicionales trae menos celdas que
+   columnas, y ahí una ficha armada por posición mostraría el dato equivocado
+   bajo el rótulo equivocado. Cuando los números no cuadran se vuelve a la tabla:
+   deslizar es malo, leer un dato falso es peor. Medido: Ventas y Compras caen a
+   la tabla por esto, y está bien que caigan.
+2. **Las filas que no son `DataRow` se saltean, y avisan.** Doce vistas meten un
+   `<tr colSpan>` de detalle expandido dentro del `<tbody>`; fuera de una tabla
+   ese `<tr>` no se puede pintar.
+
+**La acción de la fila manda sobre la hoja genérica.** Siete vistas ya abren algo
+al tocar la fila (Ventas, Clientes, Compras, Proveedores, Conteo, Reglas,
+Facturas de compra); la ficha conserva ese `onClick` y no lo reemplaza. La hoja
+—`HojaMovil`, el cuerpo canónico— es para las filas que hoy no tienen adónde ir.
+
+**Y los chips no se infieren, porque se midió que no se puede.** La primera
+versión tomaba las tres primeras columnas restantes. El mapeo entrega la celda
+correcta, pero **una celda no es un valor**: está escrita para una tabla y trae
+su decoración adentro. En Clientes, la celda de Ubicación son dos líneas
+(«SAN J CANCASQUE / Chalatenango») y la de Ficha es una insignia con su color;
+metidas en una píldora de 11&nbsp;px quedaban como bloques deformes, y una celda
+vacía pintaba un chip con un guión solo. Así que por defecto la ficha lleva las
+dos anclas y nada más, que es limpio en las 32 sin configurar nada; los chips se
+activan por vista cuando esa vista tenga celdas que sirvan como valor suelto.
+
+Verificado en WebKit iPhone 13 y Chromium 1440:
+
+```
+Clientes    26 fichas · 62px de alto · scroll horizontal de página 0
+Pedidos     25 fichas · 50px de alto · scroll horizontal de página 0
+Ventas      cae a la tabla (mapeo no alineado) — la guarda funcionando
+escritorio  Clientes 7 col / 25 filas · Ventas 8 col / 50 filas — sin cambios
+```
+
+**Lo que Clientes gana es exactamente lo que la auditoría dijo que le faltaba:**
+antes quedaban dos columnas de siete y una de las cinco que se iban era
+*Facturado*, o sea el dato por el que se entra. Ahora el monto está en la ficha,
+a la derecha, siempre visible.
+
+*Pendiente, y es trabajo por vista:* declarar los papeles donde la inferencia no
+acierta, los chips con valores propios, y rehousar el contenido de las filas
+expandidas de las doce vistas que las usan. El corte por fecha (patrón C) va
+después.
+
 ## v2.458.0 — El widget que no existía en ninguna pestaña, y el gate que lo habría dicho
 
 Primera revisión en el navegador de las pantallas de Traslados. Los tres

@@ -5,6 +5,7 @@
 // .range()) que ya usaba el caller — Patrón B de CLAUDE.md, no es un
 // bug, solo se extrae el query builder.
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchProductPreciosForMinMax(productId) {
     return supabase.from('product_precios')
@@ -27,11 +28,13 @@ export function insertMinMaxChangeRequest(payload) {
 
 // ── TabMinMaxRequests.jsx (bandeja de aprobación — todas las solicitudes) ──
 
+// `.limit(1000)` está prohibido (CLAUDE.md): es el cap EXACTO de PostgREST, así
+// que el día que la tabla lo cruza trunca en silencio y la bandeja muestra 1000
+// de N sin decirlo. Se pagina con el helper canónico.
 export function fetchAllMinMaxChangeRequests() {
-    return supabase.from('minmax_change_requests')
+    return fetchAllRows(() => supabase.from('minmax_change_requests')
         .select('*')
-        .order('requested_at', { ascending: false })
-        .limit(1000);
+        .order('requested_at', { ascending: false }));
 }
 
 export function fetchActiveProductsCount() {

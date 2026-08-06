@@ -113,6 +113,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
     const canSeeAnnouncements = hasPermission('emp_announcements', 'can_view');
     const canApprove          = hasPermission('requests', 'can_approve');
+    const canApproveMinMax    = hasPermission('minmax', 'can_approve');
 
     const pendingIds = useMemo(() => {
         const s = new Set();
@@ -252,8 +253,16 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     // seguía ofreciendo Aprobar/Rechazar sobre algo ya decidido —la notificación
     // es una fila aparte de la solicitud y aprobar no la tocaba—, y el botón
     // llevaba a un diálogo que el servidor rechaza con 409.
+    // Cada tipo con SU permiso: quien aprueba solicitudes de personal no es
+    // necesariamente quien aprueba un ajuste de Min/Max. Usar `requests` para
+    // los dos habría mostrado botones que el servidor rechaza.
+    const PERMISO_POR_TIPO = {
+        REQUEST_PENDING: canApprove,
+        MINMAX_PENDING:  canApproveMinMax,
+    };
+
     const puedeDecidir = (n) =>
-        canApprove && n.type === 'REQUEST_PENDING'
+        PERMISO_POR_TIPO[n.type] === true
         && !!n.metadata?.request_id && !n.metadata?.resuelta;
 
     const RESUELTA_LABEL = { APPROVED: 'Aprobada', REJECTED: 'Rechazada', CANCELLED: 'Cancelada' };

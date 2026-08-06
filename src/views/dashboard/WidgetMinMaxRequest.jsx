@@ -3,13 +3,11 @@ import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
-import { notifyEmployees } from '../../utils/notify';
 import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
     fetchActiveProductsCount, fetchActiveProductsChunk,
@@ -107,22 +105,11 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         requested_min: newMin, requested_max: newMax, reason: reason.trim() || null,
       });
 
-      // Notificar al Supervisor de Ventas (o su jefe si está de vacaciones). No-fatal.
-      try {
-        const { data: ids, error: idsErr } = await supabase.rpc('get_minmax_approver_ids');
-        // El bloque es no-fatal a propósito, pero el error tiene que quedar
-        // escrito: sin él, "no hay aprobadores" y "el query falló" se ven igual.
-        if (idsErr) console.error('[minmax] get_minmax_approver_ids', idsErr.message);
-        if (ids && ids.length) {
-          await notifyEmployees(ids, {
-            type: 'MINMAX_PENDING',
-            title: '📊 Solicitud de ajuste Min/Max',
-            body: `${user?.name || 'Un empleado'} propone MIN ${newMin} · MAX ${newMax} para ${product.nombre} (${ERP_NAMES[Number(erp)] || erp})`,
-            link: '/minmax?tab=solicitudes',
-            push: true,
-          });
-        }
-      } catch { /* no-fatal */ }
+      // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
+      // `notificar_solicitud_minmax` en la misma transacción que la solicitud.
+      // Antes salía de un `try/catch` no-fatal después del insert, y el
+      // resultado medido fue cero notificaciones en toda la historia de la
+      // tabla: la solicitud quedaba creada y nadie se enteraba.
 
       onSuccess();
     } catch (e) {

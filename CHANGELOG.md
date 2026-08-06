@@ -21,9 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.424.0 — MIN·MAX: el aviso que nunca llegó, y los botones en la campana
+## v2.425.0 — MIN·MAX: el aviso que nunca llegó, y los botones en la campana
+
+Auditoría del widget de Ajuste Min/Max, a pedido del usuario. El formulario, el
+cálculo y las RPC de decisión están bien —la autoría la resuelve el servidor con
+`auth.email()`, que es lo correcto—, pero el aviso nunca funcionó.
+
+**Cero notificaciones `MINMAX_PENDING` en toda la historia de la tabla.** Tres
+solicitudes creadas, ninguna avisada. El aviso salía del navegador después del
+insert, dentro de un `try {} catch { /* no-fatal */ }`: si fallaba, fallaba en
+silencio por diseño. Y había una pendiente **desde el 30 de julio**, una semana
+sin que nadie la atendiera.
+
+Mismo arreglo que en Solicitudes: trigger `notificar_solicitud_minmax`
+(`AFTER INSERT`), misma transacción. Se conserva la exclusión del propio
+solicitante que ya hace `notify_employees` —cuando quien pide es el mismo que
+aprueba, avisarle de lo suyo es ruido—; lo que estaba mal era que tampoco
+llegara cuando el solicitante era otro.
+
+El cuerpo ahora dice lo necesario para decidir sin abrir la app: producto,
+sucursal, el de→a y el motivo. La sucursal sale de `erp_sucursal_map`, que es la
+tabla que mapea el id del ERP — el frontend ya tiene su copia del mapa en
+`tabminmax/constants.js` y una tercera lista en SQL era garantía de
+desincronizarse.
+
+**Botones en la campana.** `MINMAX_PENDING` ahora trae Aprobar y Rechazar, con
+su **propio permiso** (`minmax.can_approve`, no el de `requests`): quien aprueba
+solicitudes de personal no es necesariamente quien aprueba un ajuste de stock, y
+usar el mismo permiso habría mostrado botones que el servidor rechaza.
+
+El enlace lleva a `/minmax?tab=solicitudes&solicitud=N&accion=`. En la bandeja,
+`rechazar` abre el motivo —que el rechazo necesita igual— y `aprobar` abre una
+confirmación en vez de aprobar al montar: **una escritura disparada por una URL
+se vuelve a disparar con un F5**. La tarjeta apuntada queda resaltada.
+
+Y al decidirse, el aviso deja de ser accionable
+(`marcar_notificacion_minmax_resuelta`), igual que en Solicitudes.
+
+**Un `.limit(1000)` que estaba prohibido.** `fetchAllMinMaxChangeRequests` lo
+usaba, y es el cap exacto de PostgREST: el día que la tabla lo cruce, la bandeja
+mostraría 1000 de N sin decirlo. Pasa por `fetchAllRows`.
+
+Verificado contra la base, revertido: una solicitud de otra persona genera la
+notificación con su texto completo y su enlace, y al aprobarla queda
+`resuelta: APPROVED`.
+
+> Las tres solicitudes que había en la tabla eran pruebas y el usuario pidió
+> borrarlas. Se borraron tras dejar copia de sus filas en la conversación.
+
 
 _(pendiente de redactar)_
+
+
+_(pendiente de redactar)_
+
+## v2.424.0 — (el número se lo llevó otra sesión)
+
+El bump a esta versión quedó commiteado por otra sesión del árbol compartido
+antes de que su entrada estuviera redactada, así que el número existe pero no
+tiene trabajo propio: **lo que iba acá está documentado en v2.425.0**, que es
+donde terminó el cambio completo.
 
 ## v2.423.0 — La receta para bajar los ratchets (§20)
 

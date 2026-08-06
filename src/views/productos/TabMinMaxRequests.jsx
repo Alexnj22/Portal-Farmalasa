@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -45,15 +46,21 @@ function Avatar({ emp, name }) {
 }
 
 // ─── Card de solicitud ─────────────────────────────────────────────────────────
-function RequestCard({ r, emp, busy, onApprove, onReject }) {
-  const [rejecting, setRejecting] = useState(false);
+/* `foco` llega del aviso: la notificación trae `?solicitud=N&accion=`, y esta
+   es la tarjeta a la que apuntaba. `rechazar` abre el motivo —que es lo que el
+   rechazo necesita igual—; `aprobar` abre una confirmación en vez de aprobar al
+   montar: una escritura disparada por una URL se vuelve a disparar con un F5. */
+function RequestCard({ r, emp, busy, onApprove, onReject, foco = null, resaltada = false }) {
+  const [rejecting, setRejecting] = useState(foco === 'rechazar');
+  const [confirmando, setConfirmando] = useState(foco === 'aprobar');
   const [note, setNote]           = useState('');
   const st        = STATUS_CFG[r.status] ?? STATUS_CFG.pending;
   const isPending = r.status === 'pending';
   const name      = r.requested_by_name || emp?.name || r.requested_by;
 
   return (
-    <div data-surface="card" className="p-4 flex flex-col gap-3 transition-shadow">
+    <div data-surface="card"
+      className={`p-4 flex flex-col gap-3 transition-shadow ${resaltada ? 'ring-2 ring-brand/45' : ''}`}>
 
       {/* Header: solicitante + estado */}
       <div className="flex items-center gap-2.5">
@@ -103,10 +110,25 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       )}
 
       {/* Acciones */}
-      {isPending && !rejecting && (
+      {isPending && !rejecting && !confirmando && (
         <div className="flex items-center gap-2 mt-auto">
           <Button tone="success" size="sm" disabled={busy} onClick={() => onApprove(r)}>{busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar</Button>
           <Button variant="destructive" size="sm" icon={X} disabled={busy} onClick={() => setRejecting(true)}>Rechazar</Button>
+        </div>
+      )}
+
+      {/* Confirmación al llegar desde el aviso */}
+      {isPending && confirmando && (
+        <div className="flex flex-col gap-2 mt-auto">
+          <p className="text-label font-bold text-content-2">
+            ¿Aprobar este ajuste? Se publica MIN {r.requested_min} · MAX {r.requested_max}.
+          </p>
+          <div className="flex items-center gap-2">
+            <Button tone="success" size="sm" disabled={busy} onClick={() => onApprove(r)}>
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <Check size={13} />} Confirmar
+            </Button>
+            <Button variant="secondary" size="sm" disabled={busy} onClick={() => setConfirmando(false)}>Cancelar</Button>
+          </div>
         </div>
       )}
 
@@ -132,6 +154,12 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
 
 // ─── Tab principal ───────────────────────────────────────────────────────────
 export default function TabMinMaxRequests({ searchTerm = '' }) {
+  /* Deep-link desde el aviso: `?solicitud=N&accion=aprobar|rechazar`. Los
+     parámetros se consumen recién cuando la fila ya está cargada — si se
+     limpiaran en el primer render, el enlace no haría nada la mitad de las
+     veces. */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [foco, setFoco] = useState({ id: null, accion: null });
   const appendAuditLog = useStaff(s => s.appendAuditLog);
   const employees      = useStaff(s => s.employees);
   const empMap = useMemo(() => {
@@ -151,9 +179,11 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await fetchAllMinMaxChangeRequests();
-    if (error) setError(mensajeAmigable(error));
-    setRows(data || []);
+    // `fetchAllRows` devuelve el arreglo (o null si falló la primera página),
+    // no `{ data, error }`: el error ya quedó en consola dentro del helper.
+    const filas = await fetchAllMinMaxChangeRequests();
+    if (filas === null) setError(mensajeAmigable('No se pudo cargar la lista de solicitudes.'));
+    setRows(filas || []);
     setLoading(false);
   }, []);
 
@@ -212,6 +242,23 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         : mensajeAmigable(e, 'No se pudo procesar la solicitud.'));
     } finally { setBusyId(null); }
   }, [runDecision, load]);
+
+  useEffect(() => {
+    const id = searchParams.get('solicitud');
+    if (!id) return;
+    const fila = rows.find(r => String(r.id) === String(id));
+    if (!fila) return;
+
+    const accion = searchParams.get('accion');
+    setFoco({ id: fila.id, accion: accion === 'rechazar' ? 'rechazar' : accion === 'aprobar' ? 'aprobar' : null });
+    // La solicitud podría estar escondida detrás de la pestaña o el filtro.
+    setTab(fila.status === 'pending' ? 'pending' : 'resueltas');
+    setSucFilter('all');
+
+    const limpio = new URLSearchParams(searchParams);
+    limpio.delete('solicitud'); limpio.delete('accion');
+    setSearchParams(limpio, { replace: true });
+  }, [searchParams, setSearchParams, rows]);
 
   // ── Filtros / agrupación ──
   const tabRows = useMemo(
@@ -394,6 +441,8 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
               busy={busyId === r.id || bulkBusy}
               onApprove={() => decide(r, true)}
               onReject={(req, note) => decide(req, false, note)}
+              foco={foco.id === r.id ? foco.accion : null}
+              resaltada={foco.id === r.id}
             />
           ))}
         </div>

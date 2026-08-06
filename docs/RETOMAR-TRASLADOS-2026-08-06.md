@@ -66,12 +66,65 @@ tampoco se inventa: se lee de la pantalla que lo cachea.
 No inventarlo. Un `uniqid()` propio puede colisionar con la numeración del ERP
 y no hay forma de saberlo desde afuera.
 
-### La segunda mitad
+### La segunda mitad, y cómo se verifica
 
 `recibir_traslado.php` existe: **el traslado se crea en origen y se recibe en
 destino**. Falta mapear su payload — es lo único del ERP que queda por leer.
 
+**`admin_traslados_dt.php`** es el JSON que cierra el círculo. POST con
+`origen`, `pro`, `estado` + los de DataTables (`draw`, `start`, `length`):
+
+```json
+{"draw":0,"recordsTotal":27024,"data":[[
+  "1100","2025-05-01","8:06 AM","Sucursal 1 BODEGA…","Sucursal 1 Calle Morazán…",
+  "FERNANDO ESAU OLIVA","","<strong>FINALIZADA</strong>","<div class='btn-group'>…"
+]]}
+```
+
+Las columnas son id, fecha, hora, origen, destino, quién, (vacío), estado y un
+menú en HTML. 27,024 traslados históricos.
+
+**Y los estados los define el ERP, no nosotros:**
+
+| valor | etiqueta |
+|---|---|
+| `gu` | GUARDADO (borrador) |
+| `pe` | **NO RECIBIDO** |
+| `fi` | FINALIZADO |
+| `an` | ANULADO |
+| `gen` | GENERAL (todos) |
+
+Eso resuelve la duda de §3.3 sin necesidad de decidir nada: **el ERP ya
+distingue «enviado» de «recibido»**. Un traslado que B despacha queda en `pe`
+hasta que A lo recibe, y ahí pasa a `fi`. Que A confirme la recepción no es un
+paso que agregue el portal — es el paso que al sistema ya le falta cuando nadie
+lo hace, y `estado=pe` es exactamente la lista de los que se quedaron a mitad.
+
+También existe `anular_traslado.php` (`process=anular` + `id_traslado`), que es
+por dónde se cancela uno despachado.
+
 ---
+
+### El `concepto`, definido por el usuario
+
+Igual que en carga y descarte, el `concepto` es lo único que viaja al asiento,
+así que lleva la trazabilidad entera. **Son dos textos distintos, uno por
+mitad:**
+
+```
+al enviar    Solicita <quien pidió>, envia <quien despachó> - origen <sala de origen>
+al recibir   Recibe <quien aceptó>, envia <quien despachó> - origen <sala de origen>
+```
+
+Las tres personas son distintas y ninguna se puede deducir de las otras: quien
+pide está en A, quien despacha en B, y quien recibe en A pero puede no ser el
+que pidió. Las tres salen de la solicitud y del JWT de cada paso — **nunca de un
+parámetro del cliente**.
+
+**Va en ASCII**, como los otros: el ERP relee los bytes como Latin-1 y un
+acento sale partido en dos caracteres. `soloAscii()` ya está escrito en
+`aplicar-movimiento-inventario` y se reusa tal cual — transcribe las tildes en
+vez de borrarlas, así que «Nuñez» queda «Nunez» y no «Nuez».
 
 ## 3 · La diferencia que cambia el diseño
 
@@ -107,6 +160,17 @@ Consecuencias concretas:
 - El mapa de ubicaciones por sucursal (§5.2 del otro traspaso).
 
 ---
+
+## 4-bis · Las tres decisiones del usuario (2026-08-06)
+
+1. **El rechazo lleva motivo.** Con una lista de motivos por defecto y un campo
+   para «otro», igual que la anulación de factura. Falta definir la lista.
+2. **«Sucursal B» es quien está EN TURNO.** No una jefatura fija: el aviso va a
+   los empleados activos y con turno en esa sala en ese momento. Depende de que
+   Horarios y Turnos esté cargado con todos los empleados asignados — hasta
+   entonces hace falta un respaldo, porque una sala sin nadie en turno deja la
+   solicitud sin destinatario y muere en silencio.
+3. **La sesión se abre en la sala de ORIGEN**, confirmado.
 
 ## 5 · Orden sugerido
 

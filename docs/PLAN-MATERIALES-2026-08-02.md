@@ -780,7 +780,40 @@ JavaScript: el handler de `pointermove` llamaba `getBoundingClientRect()` sobre
 | ingenua — todas las piezas, rect en vivo | **27.6ms** → 36fps |
 | correcta — sólo la hovereada, rect cacheado, rAF | **16.7ms** → 60fps |
 
-### Regla obligatoria del seguimiento del puntero
+### 6.1 ⛔ La utilidad NO se construye: se quedó sin consumidor
+
+Al ir a escribirla apareció que **no hay nada que la use**. Medido en el código:
+`--mx`/`--my` aparecen **0 veces**, `.especular` como capa en JSX **0 veces**, y
+`--btn-especular` **1 vez** — el token que escribió la propia fase D.
+
+El motivo es una decisión posterior del propio plan. **§1.6 reemplazó la luz que
+sigue al puntero por el destello del canto**, después de que el usuario la
+descartara: *«mejor sin luz, no me convence»*. Esa decisión se tomó mirando la
+tarjeta, pero el argumento no era sobre la tarjeta — era sobre el **lenguaje**: una
+luz que persigue el mouse no comunica estado, y sobre vidrio-sobre-vidrio ni
+siquiera llega a verse. El especular del botón (§2) es la misma capa en otra pieza,
+y quedó huérfano sin que nadie lo notara porque nunca se había implementado.
+
+**Construirla igual sería agregar código muerto**, que es literalmente el argumento
+con el que §2.1 removió el barrido tres párrafos más arriba. Así que no se construye.
+
+Dos consecuencias que sí hay que atender:
+
+1. **`--glass-especular`, `--glass-esp-radio`, `--btn-especular` y `--btn-esp-aro`
+   son factores de una capa que no existe.** Se dejan escritos porque son la
+   especificación de §1.1/§2 y el día que se decida el especular ya están medidos —
+   pero **hoy no multiplican nada**, y eso está anotado acá para que nadie los lea
+   como si estuvieran vivos.
+2. **Queda una pregunta para el usuario**, la única que este plan no puede
+   responderse solo: *§2 decidió un especular para el botón antes de que §1.6
+   descartara la luz que sigue al puntero. ¿El botón también pierde esa capa, o el
+   argumento valía sólo para la tarjeta?*
+
+**El gate `puntero-lista` se queda igual**, y ahora es puramente preventivo: vigila
+una utilidad que no existe, para el día que alguien la escriba. Es el único de los
+tres que protege contra código futuro en vez de deuda presente.
+
+### Regla obligatoria del seguimiento del puntero (si algún día se construye)
 
 La versión ingenua es la primera que uno escribe, así que va con gate:
 
@@ -940,7 +973,7 @@ no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 | **C** | ~~El reloj~~ ✅ **hecho 2026-08-05** — 468 usos tokenizados, 0 literales | A | `reloj-a-mano` en 0 y bloqueante |
 | **D** | ~~Tokens de §1-§5 en los cuatro temas~~ ✅ **hecho 2026-08-05** | A, B | Medido en la app real, 4 temas |
 | **E** | `data-interactive` en las tarjetas clicables | D | El gel se ve; el gate lo exige |
-| **F** | Utilidad de seguimiento del puntero (§6) | D | Banco de 60fps repetido |
+| **F** | ~~Utilidad de seguimiento del puntero~~ ⛔ **SIN CONSUMIDOR** — ver §6.1 | D | El gate `puntero-lista` queda de guardia |
 | **G** | ~~Remover el barrido (`.sweep`)~~ ✅ **hecho 2026-08-05** | D | 0 en `index.css`, JSX y `DESIGN.md` |
 | **H** | ~~`DESIGN.md` §25.4 y el barrido~~ ✅ **hecho 2026-08-05** | D | El texto y el código dicen lo mismo |
 

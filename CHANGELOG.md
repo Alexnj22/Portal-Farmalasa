@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.406.1 — La utilidad del puntero se quedó sin consumidor
+
+**Fase F cerrada sin construirse, y el motivo importa.** Al ir a escribir la utilidad
+de seguimiento del puntero apareció que **no hay nada que la use**: `--mx`/`--my`
+aparecen **0 veces** en el código, `.especular` como capa en JSX **0 veces**, y
+`--btn-especular` **1 vez** — el token que escribió la propia fase D.
+
+La causa es una decisión posterior del mismo plan. **§1.6 reemplazó la luz que sigue
+al puntero por el destello del canto**, después de que el usuario la descartara. Esa
+decisión se tomó mirando la tarjeta, pero el argumento era sobre el **lenguaje**: una
+luz que persigue el mouse no comunica estado. El especular del botón (§2) es la misma
+capa en otra pieza y quedó huérfano sin que nadie lo notara, porque nunca llegó a
+implementarse.
+
+**Construirla igual habría sido agregar código muerto** — literalmente el argumento
+con el que se removió el barrido en la fase G.
+
+Queda anotado que `--glass-especular`, `--glass-esp-radio`, `--btn-especular` y
+`--btn-esp-aro` **son factores de una capa que no existe**: se dejan escritos porque
+son la especificación medida de §1.1/§2, pero hoy no multiplican nada.
+
+Y queda **una pregunta para el usuario**, la única que este plan no puede responderse
+solo: §2 decidió un especular para el botón *antes* de que §1.6 descartara la luz que
+sigue al puntero — ¿el botón también pierde esa capa, o el argumento valía sólo para
+la tarjeta?
+
+El gate `puntero-lista` se queda: ahora es puramente preventivo, vigilando una
+utilidad que no existe para el día que alguien la escriba.
+
 ## v2.406.0 — Resumen Fiscal — el movimiento del mes y el pago a cuenta, en una pantalla
 
 Módulo nuevo en Datos Contables. Consolida lo que ya estaba repartido en las

@@ -474,8 +474,17 @@ thead.sticky {
      panel claro de un panel oscuro— pero lleva más relleno que el panel:
      flota sobre el contenido de la vista, no sobre el fondo de página, y ahí
      un 72% deja leer lo de atrás. */
-  --sidebar-tint:     7 3 26;
-  --sidebar-fill:     0.72;
+  /* §12.1 · El sidebar DEJA DE SER SIEMPRE-OSCURO y sigue al tema. Junto con
+     el relleno hace falta la TINTA, en canales sueltos por el mismo motivo que
+     el fondo: así cada `text-white/55` conserva su alfa exacta y sólo cambia
+     la base. En los temas oscuros vale 255 255 255 —o sea, idéntico a lo que
+     había— y en los claros se invierte. Sin esto habría que colapsar ocho
+     alfas distintas en tres niveles, que es cambiar el diseño para poder
+     cambiar el color. Medido en §12.2: el panel claro contra la página da
+     ΔE 16.8, y el oscuro 14.4 — los dos muy por encima del umbral. */
+  --sidebar-tint:     30 41 80;
+  --sidebar-ink:      15 23 42;
+  --sidebar-fill:     0.15;
   --sidebar-pop-fill: 0.88;
   --sidebar-rim:      0.42;
 
@@ -813,6 +822,10 @@ thead.sticky {
   --lente-lado:  .07;
   --lente-bajo:  .04;
   --anidada:     rgba(255,255,255,.09);   /* acá el escalón ACLARA */
+  /* §12.1 · en oscuro el sidebar es el de siempre: tinta blanca y negro al 60% */
+  --sidebar-tint:     0 0 0;
+  --sidebar-ink:      255 255 255;
+  --sidebar-fill:     0.60;
   --thead-bg:    rgba(14,21,50,.97);
   --header-mobile:        rgba(10,15,38,0.98);
   --header-mobile-border: rgba(255,255,255,0.08);
@@ -1014,6 +1027,7 @@ thead.sticky {
      No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
      NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
   --anidada:      rgba(15,23,42,.09);   /* mismo 9% que Liquid, otra base */
+  --sidebar-ink:      15 23 42;
   --thead-bg:    rgba(248,250,253,.98);
   --solid-filo:   0;
   --solid-tono:   2.00;
@@ -1049,7 +1063,9 @@ thead.sticky {
   /* El sidebar sigue siendo oscuro —eso es su identidad, no su tema— pero el
      MATERIAL sí obedece: en Solid no hay vidrio en ninguna superficie, así
      que acá tampoco. Opaco y sin blur. */
-  --sidebar-tint:     11 16 32;
+  /* §12.1 · Solid claro también sigue al tema: panel claro, tinta oscura.
+     Este valor pisaba al de arriba — era el sidebar siempre-oscuro. */
+  --sidebar-tint:     241 245 251;
   --sidebar-fill:     1;
   --sidebar-pop-fill: 1;
   --sidebar-rim:      0.08;
@@ -1188,6 +1204,8 @@ thead.sticky {
   --dur-entrada:   130ms;
 
   --anidada:      rgba(255,255,255,.09);   /* solid-dark: el escalón ACLARA */
+  --sidebar-tint:     7 3 26;
+  --sidebar-ink:      255 255 255;
   --thead-bg:    rgba(23,33,54,.98);
   --tooltip-bg:      #33415C;
   --tooltip-border:  rgba(255,255,255,0.14);

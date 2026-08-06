@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.401.0 — El sidebar deja de ser siempre-oscuro
+
+**§12.1 · El sidebar sigue al tema en los cuatro temas.** Era oscuro en todos, y
+arrastraba **78 clases atadas a fondo oscuro** (`text-white/55`, `bg-white/8`,
+`from-black/30`…).
+
+**La migración no colapsó ninguna alfa.** El camino obvio —mapear ocho alfas
+distintas a tres niveles de texto— habría sido cambiar el diseño para poder cambiar
+el color. En vez de eso se agregó `--sidebar-ink` **en canales sueltos**, por el mismo
+motivo que ya tenía `--sidebar-tint`: así `text-white/55` pasa a
+`text-[rgb(var(--sidebar-ink)/0.55)]` y conserva su alfa exacta — en los temas
+oscuros la tinta vale `255 255 255`, o sea **idéntico a lo que había**.
+
+**Y los tres velos ambientales también estaban atados.** El de abajo era
+`from-black/30`: sobre un panel claro tapaba «Ajustes». Ahora salen de la tinta.
+
+**Un valor pisaba al otro sin que se notara.** El bloque de Solid ya traía su propio
+`--sidebar-tint: 11 16 32` **después** del que se agregó arriba, así que Solid claro
+salió con panel oscuro y tinta oscura — texto invisible. Lo delató la captura, no la
+medición: el instrumento comparaba colores **computados**, y sobre una superficie
+translúcida `getComputedStyle` devuelve `rgba(...,0.15)` que al parsear pierde la
+alfa y se lee como un color sólido oscuro. Para superficies translúcidas hay que
+medir **píxeles compuestos**, no colores declarados — la misma lección que las tablas.
+
 ## v2.400.0 — El widget de Facturación: el tipo que faltaba en el CHECK y las 3,700 facturas invisibles
 
 Auditoría del widget «Solicitar Modificación a Facturación». Ofrece cuatro

@@ -351,6 +351,11 @@
   /* La anidada (§1.5): una superficie DENTRO de otra pierde el vidrio y pasa
      a un escalón de tono. El escalón INVIERTE su dirección según el tema. */
   --anidada:     rgba(12,20,48,.09);
+  /* §1.6 · el canto: base tenue, destello puntual, y el BLOOM que lo hace
+     visible — sin él, en claro, no cambia un solo píxel. */
+  --rim-base:    rgba(255,255,255,.72);
+  --rim-glint:   #ffffff;
+  --rim-bloom:   rgba(12,20,48,.95);
   /* Botón (§2) — el aro NO escala con la intensidad: ése es --btn-esp-aro */
   --btn-especular: 0.40;
   --btn-esp-radio: 3rem;
@@ -822,6 +827,9 @@ thead.sticky {
   --lente-lado:  .07;
   --lente-bajo:  .04;
   --anidada:     rgba(255,255,255,.09);   /* acá el escalón ACLARA */
+  --rim-base:    rgba(255,255,255,.10);
+  --rim-glint:   #ffffff;
+  --rim-bloom:   rgba(190,220,255,.95);
   /* §12.1 · en oscuro el sidebar es el de siempre: tinta blanca y negro al 60% */
   --sidebar-tint:     0 0 0;
   --sidebar-ink:      255 255 255;
@@ -1027,6 +1035,9 @@ thead.sticky {
      No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
      NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
   --anidada:      rgba(15,23,42,.09);   /* mismo 9% que Liquid, otra base */
+  --rim-base:    rgba(148,163,184,.28);
+  --rim-glint:   rgba(148,163,184,.28);
+  --rim-bloom:   transparent;
   --sidebar-ink:      15 23 42;
   --thead-bg:    rgba(248,250,253,.98);
   --solid-filo:   0;
@@ -1204,6 +1215,9 @@ thead.sticky {
   --dur-entrada:   130ms;
 
   --anidada:      rgba(255,255,255,.09);   /* solid-dark: el escalón ACLARA */
+  --rim-base:    rgba(148,163,184,.20);
+  --rim-glint:   rgba(148,163,184,.20);
+  --rim-bloom:   transparent;
   --sidebar-tint:     7 3 26;
   --sidebar-ink:      255 255 255;
   --thead-bg:    rgba(23,33,54,.98);
@@ -2143,6 +2157,81 @@ thead.sticky {
    apilado de superficies —que sí es intencional— se ve igual. Y se limita a
    `card` dentro de `card`, que es el caso medido: un `dropdown` o un `modal`
    sobre una card SÍ flotan sobre contenido propio y su vidrio se gana. */
+/* ══ §1.6 · EL FILO CORRE — la animación de la placa ══════════════════════
+   Reemplaza al halo que seguía al puntero, descartado por el usuario: sobre
+   vidrio-sobre-vidrio la luz quedaba atrapada bajo la tarjeta de encima y
+   nunca pasaba a la de arriba. Acá no hay luz que perseguir — corre un
+   destello por el CANTO, una vez, y se queda.
+
+   Tres cosas que costaron encontrarlas y por eso están escritas:
+
+   1 · `inherits: false` no es opcional. Con una sola propiedad heredada, pasar
+       el mouse por una fila barría TODAS las filas y el vidrio padre de fondo:
+       el ángulo bajaba por el árbol y todos los cantos lo leían.
+   2 · El destello es un arco ANGOSTO (7%→13%), no medio perímetro. Con un
+       gradiente suave no se lee como un filo, se lee como un degradado que
+       gira.
+   3 · Sin el bloom oscuro es INVISIBLE en tema claro — medido: cero píxeles
+       cambiados. Es la física de §1.1 otra vez: un realce blanco sobre una
+       superficie clara no existe, y lo que lo hace visible es el entorno
+       oscuro, no subirle el brillo.
+
+   Va sólo en `[data-interactive]`: una superficie que no se apunta no tiene
+   por qué reaccionar. Es la misma regla que retiró el hover del encabezado. */
+@property --rim-ang { syntax: '<angle>'; initial-value: 210deg; inherits: false; }
+
+@keyframes filo-corre { from { --rim-ang: 210deg } to { --rim-ang: 570deg } }
+
+[data-surface="card"][data-interactive] { position: relative; }
+
+[data-surface="card"][data-interactive]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(from var(--rim-ang),
+    var(--rim-base) 0%,   var(--rim-base) 2%,
+    var(--rim-glint) 7%,  var(--rim-glint) 13%,
+    var(--rim-base) 18%,  var(--rim-base) 100%);
+  filter: drop-shadow(0 0 9px var(--rim-bloom))
+          drop-shadow(0 0 4px var(--rim-bloom))
+          drop-shadow(0 0 1px var(--rim-bloom));
+  /* el anillo de 1px: se pinta el borde y se recorta el relleno */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+@media (hover: hover) {
+  [data-surface="card"][data-interactive]:hover::after {
+    opacity: 1;
+    animation: filo-corre 1.9s cubic-bezier(.35, 0, .2, 1) forwards;
+  }
+}
+
+/* El gel: la superficie cede al presionarla. En Solid no hay gel —no hay
+   material que ceder— y en su lugar se hunde, que es su vocabulario. */
+[data-surface="card"][data-interactive]:active { transform: scale(.994); }
+[data-theme="solid"] [data-surface="card"][data-interactive]:active,
+[data-theme="solid-dark"] [data-surface="card"][data-interactive]:active {
+  transform: translateY(1px);
+}
+/* Solid no tiene canto vivo: su borde es fijo, así que no corre nada. */
+[data-theme="solid"] [data-surface="card"][data-interactive]::after,
+[data-theme="solid-dark"] [data-surface="card"][data-interactive]::after {
+  filter: none;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-surface="card"][data-interactive]:hover::after { animation: none; }
+}
+
 [data-surface="card"] [data-surface="card"] {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;

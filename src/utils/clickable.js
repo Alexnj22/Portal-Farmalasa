@@ -36,6 +36,15 @@ export function clickable(onClick, { disabled = false, label } = {}) {
         role: 'button',
         tabIndex: 0,
         onClick,
+        // PLAN-MATERIALES fase E. `data-interactive` marca las superficies que
+        // SE APUNTAN, que son las que reciben el gel al presionar y el destello
+        // del canto al pasar (§1.6). Sale de acá y no de una lista porque la
+        // lista no se puede escribir: la misma línea de JSX es clicable o no
+        // según los props —`StatCard` renderiza `<button>` o `<div>` según
+        // reciba `onClick`—, así que un barrido estático clasifica mal por
+        // construcción. El helper, en cambio, ya sabe la respuesta: si devuelve
+        // props, la superficie es interactiva; si devuelve `{}`, no lo es.
+        'data-interactive': '',
         ...(label ? { 'aria-label': label } : {}),
         onKeyDown: (e) => {
             // Sin esta guardia, el Enter de un control interno burbujea hasta

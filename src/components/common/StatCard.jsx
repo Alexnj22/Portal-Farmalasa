@@ -113,6 +113,10 @@ export default function StatCard({
     return (
         <Tag
             type={isClickable ? 'button' : undefined}
+            // fase E: el gel y el destello van sólo donde se apunta. Acá no
+            // pasa por `clickable()` porque cuando es clicable el elemento YA
+            // es un `<button>` nativo, que no necesita el contrato de teclado.
+            data-interactive={isClickable ? '' : undefined}
             onClick={onClick}
             // El DOM dice "12, Vencidos" porque el valor va primero; esto lo
             // devuelve al orden en que una persona lo diría.

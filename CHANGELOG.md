@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.405.0 — Fase E: el filo corre, y sólo donde se apunta
+
+**§1.6 implementado.** Un destello corre por el canto de la tarjeta al pasar el mouse,
+una vez, y se queda. Reemplaza al halo que seguía al puntero, descartado porque sobre
+vidrio-sobre-vidrio la luz quedaba atrapada bajo la tarjeta de encima.
+
+**Y la marca `data-interactive` no salió de una lista, porque la lista no se puede
+escribir.** La misma línea de JSX es clicable o no **según los props** — `StatCard`
+renderiza `<button>` o `<div>` según reciba `onClick`—, así que un barrido estático
+clasifica mal por construcción: encontró 8 de 226 y las demás las dio por estáticas.
+El lugar correcto es `clickable()`, el helper que **ya sabe la respuesta**: si devuelve
+props, la superficie es interactiva; si devuelve `{}`, no lo es. Con eso quedan
+marcadas las 29 que lo usan más las que son `<button>` nativo, en runtime y sin
+mantener ninguna lista.
+
+**Tres cosas del canto que quedaron escritas en el CSS porque costó encontrarlas:**
+
+1. **`inherits: false` no es opcional.** Con una propiedad heredada, pasar el mouse por
+   una fila barría **todas** las filas y el vidrio padre: el ángulo bajaba por el árbol
+   y todos los cantos lo leían.
+2. **El destello es un arco angosto (7%→13%)**, no medio perímetro. Con un gradiente
+   suave no se lee como un filo, se lee como un degradado que gira.
+3. **Sin el bloom oscuro es invisible en tema claro** — medido: cero píxeles cambiados.
+   Es la física de §1.1 otra vez: un realce blanco sobre una superficie clara no
+   existe, y lo que lo hace visible es el entorno oscuro, no subirle el brillo.
+
+Verificado en la app: apuntando una tarjeta cambian **6.672 píxeles dentro de ella y
+0 en la de al lado**.
+
+Va sólo en `[data-interactive]`: una superficie que no se apunta no reacciona — la
+misma regla que le quitó el hover al encabezado (§16). En Solid el canto es fijo y el
+gel se cambia por un hundido, que es su vocabulario.
+
 ## v2.404.0 — La conexión con el ERP: aprobar aplica el cambio, rechazar no toca nada
 
 Hasta ahora aprobar una solicitud de facturación no hacía nada fuera del

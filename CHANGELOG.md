@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.399.0 — Fase D: los materiales dejan de estar clavados
+
+**Los tokens de §0.ter–§5 escritos en los cuatro temas.** Son **factores**, no
+valores: cada capa se escribe una vez con su base y se multiplica por su factor. Un
+factor en 0 no «apaga» una capa — la capa **no existe** en ese tema, y por eso Solid
+simplemente no declara la mayoría.
+
+**§1.5 · El alcance del vidrio: la anidada se aplana.** Una superficie dentro de otra
+pierde el `backdrop-filter` y pasa a un escalón de tono. El motivo nunca fue «hay
+demasiado vidrio»: era que el vidrio anidado **no se ve** —1.02:1 contra su
+contenedor—, porque un blur que muestrea una superficie ya blureada no agrega nada.
+Y alcanza más arriba de lo que la sección pensaba: el **cuerpo de vista** también es
+`data-surface="card"`, así que la tabla que vive adentro es vidrio sobre vidrio a
+nivel de vista. Medido en la app real, tabla contra cuerpo, los cuatro temas:
+
+| tema | antes | ahora | texto |
+|---|---|---|---|
+| Liquid claro | 9.15 | **10.87** | 6.9:1 |
+| **Liquid oscuro** | **4.37 — se fundían** | **19.26** | 9.2:1 |
+| Solid | — | **7.41** | 14.8:1 |
+| Solid oscuro | — | **8.81** | 9.7:1 |
+
+**El escalón quedó en 9% en los cuatro temas**, cambiando sólo la dirección y la base:
+en claro oscurece, en oscuro aclara. Calibrado midiendo, no eligiendo — a 5% Solid
+daba 4.16 («apenas») y a 9% da 7.41. Un número es más fácil de defender que cuatro.
+
+**§1.7 · El lente sale de tokens por tema.** Estaba en absolutos calibrados en claro:
+sobre una superficie oscura un inset blanco al 62% la lava (medido: el inset daba
+[234,234,237] sobre un fondo [14,23,60]). Ahora `--lente-top/lado/bajo`, y en Solid
+vale 0 porque la capa no existe.
+
+**§16 · El encabezado deja de reaccionar al mouse, en todos los temas.** Su hover
+llevaba `box-shadow: 0 32px 64px -12px rgba(0,0,0,.22)` escrito a mano — en Solid el
+reposo es `0 1px 4px` y saltaba a una sombra de vidrio de 64px ajena a ese material.
+Además §1.6 fijó que el hover es el destello del canto, y eso vale para lo que *se
+apunta*: una barra del ancho de la pantalla se **cruza** para llegar a un control.
+
+**§17 · La hoja táctil pierde el `backdrop-filter`.** A 0.985 dejaba pasar 1.012:1
+—el umbral de lo indistinguible de opaco es 1.00—, así que se pagaba la capa más cara
+del portal, sobre el 80% de la pantalla de un teléfono, para producir nada.
+
+**§14.1 · El tooltip baja a 0.70** (0.74 en oscuro): a 0.86 el fondo sólo cambiaba el
+píxel 1.125:1 contra el 1.00 de Solid, o sea que el blur era decorativo.
+
+**§7.4 · El `130ms` de Solid deja de ser literal** y pasa a `--dur-entrada`. No era ni
+`--dur-fast` (90) ni `--dur-base` (120): tenía su propio valor sin token.
+
+Cero errores de consola en los cuatro temas.
+
 ## v2.398.3 — Fase C cerrada: cero duraciones a mano
 
 **Los 700 bajaron.** Retemplados los 69 `duration-700` y los 6 `duration-1000` a

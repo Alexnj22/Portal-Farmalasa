@@ -205,7 +205,7 @@
      TRAVÉS del calendario, todo encimado.
      Sigue siendo vidrio —el blur está— pero a una opacidad donde lo de atrás
      es luz, no texto. */
-  --surface-sheet:      rgba(244,250,255,0.985);
+  --surface-sheet:      rgba(244,250,255,1.00);
   --surface-input:      rgba(230,245,255,0.40);
   --surface-dropdown:   rgba(240,248,255,0.72);
   /* Corregido a los valores REALES de ViewTabBar.jsx (Fase T2) — el token
@@ -331,9 +331,63 @@
      eso NO se apagaba en Solid: la neutralización de tema sólo alcanza a las
      clases Tailwind, no a una regla de `data-surface`. Medido el 2026-08-01:
      dy=-2 en los tres temas, incluido el que promete no moverse. */
-  --lift-card:   -2px;
+  --lift-card:   -3px;
 
-  --tooltip-bg:      rgba(13,20,48,0.86);
+  /* ══ Materiales (PLAN-MATERIALES §0.ter) — son FACTORES, no valores ══
+     Cada capa se escribe UNA vez con su base y se multiplica por su factor.
+     Un factor en 0 no «apaga» una capa: la capa NO EXISTE en ese tema, y por
+     eso Solid simplemente no declara la mayoría. El motivo de que sean
+     factores y no absolutos está en §0.ter: la tabla de §1.1 no se podía
+     reproducir porque faltaba escribir la base que multiplican. */
+  --glass-especular: 1.60;   /* reflejo que sigue al puntero (§1.1) */
+  --glass-esp-radio: 7rem;
+  --glass-rim:       1.45;   /* canto vivo de 1px */
+  --glass-lente:     1.45;   /* sombras interiores del filo */
+  /* El lente, por tema (§1.7): estaba clavado en absolutos calibrados en
+     claro, y sobre una superficie oscura un inset blanco al 62% la lava. */
+  --lente-top:   .62;
+  --lente-lado:  .58;
+  --lente-bajo:  .31;
+  /* La anidada (§1.5): una superficie DENTRO de otra pierde el vidrio y pasa
+     a un escalón de tono. El escalón INVIERTE su dirección según el tema. */
+  --anidada:     rgba(12,20,48,.09);
+  /* Botón (§2) — el aro NO escala con la intensidad: ése es --btn-esp-aro */
+  --btn-especular: 0.40;
+  --btn-esp-radio: 3rem;
+  --btn-esp-aro:   0.10;
+  --btn-rim:       1.00;
+  --btn-barrido:   0;
+  /* Campo (§3) — un hueco no sobresale: sin reflejo, sin canto, sin lift */
+  --campo-hueco:   2.00;
+  --campo-luzinv:  1.25;
+  --campo-aclara:  1.00;
+  /* Menú flotante (§4) */
+  --menu-opacidad: 0.58;
+  --menu-blur:     60px;
+  --menu-sombra:   2.00;
+  --menu-halo:     1.00;
+  --menu-glow:     2.00;
+  --menu-entrada:  220ms;
+  /* Modal (§5) — el velo NO oscurece, sólo desenfoca (§5.3) */
+  --velo-oscuridad: 0.00;
+  --velo-blur:      1px;
+  --modal-opacidad: 0.51;
+  --modal-blur:     10px;
+  --modal-sombra:   2.00;
+  --modal-filo:     1.60;
+  --modal-rim:      1.45;
+  --modal-lente:    1.45;
+  /* Barra de pestañas (§11) */
+  --lift-track:    -2px;
+  /* El thead pegajoso (§15.1): una superficie que TAPA lo que pasa por
+     debajo. Ninguna opacidad pensada para acento sirve para oclusión. */
+  --thead-bg:      rgba(228,230,244,.97);
+
+  /* §14.1 · 0.86 SÍ era vidrio, pero apenas: el fondo detrás sólo cambiaba el
+     píxel 1.125:1 contra el 1.00 de Solid — indistinguible a ojo, o sea que el
+     blur era decorativo. A 0.70 sube a 1.390:1 y se lee como vidrio. El texto
+     no sufre: es blanco al 95% sobre navy. */
+  --tooltip-bg:      rgba(13,20,48,0.70);
   --tooltip-border:  rgba(255,255,255,0.14);
   --tooltip-text:    rgba(255,255,255,0.95);
   /* Texto secundario DENTRO del tooltip. Existe porque el tooltip es oscuro
@@ -725,7 +779,7 @@
   --surface-card-hover: rgba(17,26,60,0.70);
   --surface-header:     rgba(10,15,38,0.60);
   --surface-modal:      rgba(12,17,43,0.90);
-  --surface-sheet:      rgba(10,15,38,0.985);
+  --surface-sheet:      rgba(10,15,38,1.00);
   --surface-input:      rgba(13,20,48,0.55);
   --surface-dropdown:   rgba(10,15,38,0.88);
 
@@ -734,10 +788,17 @@
      desaparecería contra la página. Se LEVANTA a un navy más alto y se
      sube el borde. Es la contrapartida que anoté al decidir 1a: en tema
      oscuro la separación no la da el color, la dan el borde y la sombra. */
-  --tooltip-bg:      rgba(40,53,99,0.90);
+  --tooltip-bg:      rgba(40,53,99,0.74);   /* §14.1 — parte de un navy más claro */
   --tooltip-border:  rgba(255,255,255,0.20);
   --tooltip-shadow:  0 14px 36px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14);
   --surface-tab-track:  rgba(13,20,48,0.50);
+  /* ══ Materiales por tema (§1.7, §1.5, §15.1) ══
+     Liquid oscuro hereda los factores de :root; acá va sólo lo que cambia
+     de MAGNITUD o de DIRECCIÓN, que es lo que §1.7 encontró clavado. */
+  --lente-top:   .10;
+  --lente-lado:  .07;
+  --lente-bajo:  .04;
+  --anidada:     rgba(255,255,255,.09);   /* acá el escalón ACLARA */
   --header-mobile:        rgba(10,15,38,0.98);
   --header-mobile-border: rgba(255,255,255,0.08);
   --header-mobile-shadow: 0 4px 20px rgba(0,0,0,0.45);
@@ -934,6 +995,29 @@
      `rounded-full` fijos peleando contra su propio tema. */
   --lift-hover:  0px;
   --lift-card:   0px;
+  /* ══ Materiales — Solid (§1.2) ══
+     No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
+     NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
+  --anidada:      rgba(15,23,42,.09);   /* mismo 9% que Liquid, otra base */
+  --solid-filo:   0;
+  --solid-tono:   2.00;
+  --solid-sombra: 2.00;
+  --solid-anillo: 0.40;
+  --lente-top: 0; --lente-lado: 0; --lente-bajo: 0;
+  --campo-hueco:   2.00;
+  --menu-opacidad: 1;
+  --menu-blur:     0px;
+  --menu-sombra:   2.00;
+  --menu-entrada:  var(--dur-slow);
+  --velo-oscuridad: 0.17;
+  --velo-blur:      0px;      /* es la capa más cara y en Solid no existe */
+  --modal-opacidad: 1;
+  --modal-blur:     0px;
+  --modal-sombra:   1.00;
+  --lift-track:     0px;
+  /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
+     Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
+  --dur-entrada:   130ms;
 
   --tooltip-bg:      #16203D;
   --tooltip-border:  rgba(255,255,255,0.10);
@@ -1062,7 +1146,31 @@
      oscuro: dos oscuros iguales no se separan. */
   --lift-hover:  0px;
   --lift-card:   0px;
+  /* ══ Materiales — Solid (§1.2) ══
+     No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
+     NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
+  --anidada:      rgba(15,23,42,.09);   /* mismo 9% que Liquid, otra base */
+  --solid-filo:   0;
+  --solid-tono:   2.00;
+  --solid-sombra: 2.00;
+  --solid-anillo: 0.40;
+  --lente-top: 0; --lente-lado: 0; --lente-bajo: 0;
+  --campo-hueco:   2.00;
+  --menu-opacidad: 1;
+  --menu-blur:     0px;
+  --menu-sombra:   2.00;
+  --menu-entrada:  var(--dur-slow);
+  --velo-oscuridad: 0.17;
+  --velo-blur:      0px;      /* es la capa más cara y en Solid no existe */
+  --modal-opacidad: 1;
+  --modal-blur:     0px;
+  --modal-sombra:   1.00;
+  --lift-track:     0px;
+  /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
+     Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
+  --dur-entrada:   130ms;
 
+  --anidada:      rgba(255,255,255,.09);   /* solid-dark: el escalón ACLARA */
   --tooltip-bg:      #33415C;
   --tooltip-border:  rgba(255,255,255,0.14);
   --tooltip-radius:  0.5rem;
@@ -1358,7 +1466,11 @@
 [data-theme="solid"] .animate-out,
 [data-theme="solid-dark"] .animate-in,
 [data-theme="solid-dark"] .animate-out {
-  animation-duration: 130ms;
+  /* §7.4 · Esta regla GANA POR ESPECIFICIDAD a cualquier `duration-*`, así que
+     en Solid el reloj sólo gobierna las transiciones, no las entradas. Se
+     verificó en ejecución, no en el fuente: el fuente no delata que una regla
+     de tema esté pisando una utilidad. El valor era el literal 130ms. */
+  animation-duration: var(--dur-entrada);
   animation-timing-function: ease-out;
 }
 /* Excepción dentro de la excepción: el barrido del skeleton necesita durar lo
@@ -1912,7 +2024,15 @@
 [data-surface="card"] {
   background: var(--surface-card);
   border: 1px solid var(--border-card);
-  box-shadow: var(--card-shadow);
+  /* §1.7 · El lente —las sombras interiores del filo— era absoluto y estaba
+     calibrado en claro: sobre una superficie oscura un inset blanco al 62% la
+     lava. Medido, el inset daba [234,234,237] sobre un fondo [14,23,60]. Ahora
+     sale de --lente-* por tema, y en Solid vale 0 porque la capa no existe. */
+  box-shadow: var(--card-shadow),
+    inset  0   2px 0        rgba(255,255,255,calc(var(--lente-top)  * var(--glass-lente, 1))),
+    inset  2px 0   6px -3px rgba(255,255,255,calc(var(--lente-lado) * var(--glass-lente, 1))),
+    inset -2px 0   6px -3px rgba(255,255,255,calc(var(--lente-lado) * var(--glass-lente, 1))),
+    inset  0  -1px 1px      rgba(255,255,255,calc(var(--lente-bajo) * var(--glass-lente, 1)));
   border-radius: var(--card-radius);
   backdrop-filter: var(--backdrop-card);
   /* ── Histéresis al SALIR (2026-08-02) ─────────────────────────────────
@@ -2035,6 +2155,28 @@
   }
 }
 
+/* ══ §1.5 · El alcance del vidrio — la anidada se APLANA ══════════════════
+   Una superficie DENTRO de otra pierde el `backdrop-filter` y pasa a un
+   escalón de tono. El motivo no fue «hay demasiado vidrio»: fue que el vidrio
+   anidado NO SE VE — medido, 1.02:1 contra su contenedor. Un blur que
+   muestrea una superficie que ya está blureada no agrega información.
+
+   El escalón INVIERTE su dirección según el tema (--anidada), porque en claro
+   hay que oscurecer y en oscuro hay que aclarar. Es la misma física de §1.1.
+
+   Alcanza más arriba de lo que la sección tenía en mente: el CUERPO DE VISTA
+   también es `data-surface="card"` (GlassViewLayout), así que la tabla que
+   vive adentro es vidrio sobre vidrio a nivel de vista. Medido en la app real,
+   fila contra cuerpo: claro ΔE 9.15→10.44, oscuro **4.37→11.48**. En oscuro
+   hoy se funden, y ésta es la regla que los separa. */
+[data-surface="card"] [data-surface="card"] {
+  background: var(--anidada);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  /* sin lente ni sombra propia: una anidada no sobresale, se hunde un paso */
+  box-shadow: none;
+}
+
 [data-surface="page-header"] {
   background: var(--surface-header);
   border: 1px solid var(--border-header);
@@ -2044,12 +2186,14 @@
   transition: transform 300ms cubic-bezier(0.23,1,0.32,1),
               box-shadow 300ms cubic-bezier(0.23,1,0.32,1);
 }
-@media (hover: hover) {
-  [data-surface="page-header"]:hover {
-    box-shadow: 0 32px 64px -12px rgba(0,0,0,0.22);
-    transform: translateY(var(--lift-hover));
-  }
-}
+/* §16 · El encabezado NO reacciona al mouse, en ningún tema. §1.6 fijó que el
+   hover de una superficie es el destello del canto, y eso vale para lo que SE
+   APUNTA: una barra del ancho de la pantalla se CRUZA para llegar a un
+   control, así que cualquier viaje del mouse hacia el buscador levantaba la
+   barra entera. Lo que sí responde es cada control de adentro.
+   Además la sombra del hover era `0 32px 64px -12px rgba(0,0,0,.22)` escrita a
+   mano: en Solid el reposo es `0 1px 4px` y saltaba a una sombra de vidrio de
+   64px que no pertenece a ese material — §1.7 por cuarta vez. */
 
 [data-surface="modal"] {
   background: var(--surface-modal);
@@ -2096,11 +2240,17 @@
 }
 
 /* La hoja inferior táctil. Ver la nota de `--surface-sheet` en `:root`. */
+/* §17 · Sin `backdrop-filter`. A 0.985 la hoja dejaba pasar 1.012:1 —el umbral
+   de lo indistinguible de opaco es 1.00—, así que el blur era decorativo: se
+   pagaba la capa más cara del portal, sobre el 80% de la pantalla de un
+   teléfono, para producir nada. Medido: con blur el fantasma del texto de
+   atrás da 0.020 y sin blur 0.176, pero a opacidad 1.00 da 0.000.
+   La regla general, que es la del tooltip al revés: antes de poner un
+   `backdrop-filter`, comprobar que la opacidad DEJA PASAR algo. */
 [data-surface="sheet"] {
   background: var(--surface-sheet);
   border-top: 1px solid var(--border-modal);
   box-shadow: var(--modal-shadow);
-  backdrop-filter: var(--backdrop-modal);
 }
 
 /* El sidebar: superficie bespoke en COLOR (oscura en los 4 temas, igual que

@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.410.1 — El menú de Ajustes no abría: le pisé la posición
+
+Regresión de v2.409.0. Para anclar el destello de llegada le puse
+`position: relative` a los cuatro flotantes —popover, dropdown, tooltip, modal—, y
+**un flotante ya viene posicionado**: es `fixed`, con su `top`/`left` calculados en JS.
+Forzarle `relative` convierte esos valores en un desplazamiento respecto de su lugar en
+el flujo. Medido: el menú de Ajustes abría en **y = 1420 con la ventana en 960** — o
+sea abierto, sin errores en consola, y fuera de pantalla.
+
+**El `::after` no necesitaba esa línea**: se ancla al elemento porque el elemento ya
+está posicionado. La escribí por simetría con la regla de las tarjetas, que sí son
+estáticas.
+
+**La regla que queda escrita: una utilidad transversal nunca fija `position` sobre una
+superficie que existe PARA estar posicionada.** Y el modo de falla merece anotarse — no
+hubo error de consola, ni fallo de build, ni hallazgo de gate: el elemento se creaba,
+tenía tamaño y era visible según el DOM. Sólo estaba en otro lado.
+
+Verificado además que la regla de `[data-interactive]` no pisa a ningún otro
+posicionado: 19 elementos interactivos en tres vistas, **cero** con la posición
+sobrescrita.
+
 ## v2.410.0 — Validaciones: una factura anulada no admite solicitudes, y una pendiente por factura
 
 Dos errores que hasta ahora nada impedía cometer desde el widget de

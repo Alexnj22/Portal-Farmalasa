@@ -2289,11 +2289,14 @@ thead.sticky {
    barrido colgara de su propio hover no correría nunca. Corre una vez al
    aparecer y se queda quieto. Mismo argumento que cerró §14.2 para el tooltip,
    aplicado al resto de las piezas que nacen ya abiertas. */
-[data-surface="sidebar-popover"],
-[data-surface="dropdown"],
-[data-surface="tooltip"],
-[data-surface="modal"] { position: relative; }
-
+/* NO se les toca `position`. Un flotante YA viene posicionado —`fixed` con su
+   `top`/`left` calculados en JS—, así que forzarle `relative` convierte esos
+   valores en un desplazamiento respecto de su lugar en el flujo: medido, el
+   menú de Ajustes aterrizaba en y=1420 con la ventana de 960, o sea abierto y
+   fuera de pantalla. El `::after` no lo necesita: se ancla al elemento porque
+   el elemento ya está posicionado.
+   La regla general: una utilidad transversal nunca fija `position` sobre una
+   superficie que existe PARA estar posicionada. */
 [data-surface="sidebar-popover"]::after,
 [data-surface="dropdown"]::after,
 [data-surface="tooltip"]::after,

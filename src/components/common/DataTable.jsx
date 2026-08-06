@@ -167,21 +167,22 @@ function inferirPapeles(columns, movil) {
   const identidad = utiles.find(c => c !== ancla);
   const resto = utiles.filter(c => c !== ancla && c !== identidad);
 
-  // ── Los chips NO se infieren, y esto se midió ──────────────────────────
-  // La primera versión tomaba las tres primeras columnas restantes. El mapeo
-  // posicional entrega la celda correcta, pero una celda **no es un valor**:
-  // está escrita para una tabla y trae su decoración adentro. En Clientes, la
-  // celda de Ubicación son dos líneas («SAN J CANCASQUE / Chalatenango») y la
-  // de Ficha es una insignia con su propio color — metidas en una píldora de
-  // 11px quedaban como bloques deformes, y una celda vacía pintaba un chip con
-  // un guión solo.
+  // ── El contexto: dos columnas, y como LÍNEA, no como píldoras ──────────
+  // La primera versión las pintaba de a tres en píldoras y quedaban deformes:
+  // el mapeo entrega la celda correcta, pero una celda **no es un valor** —está
+  // escrita para una tabla y trae su decoración adentro—, y la de Ubicación de
+  // Clientes son dos líneas dentro de un chip de 11px.
   //
-  // Así que por defecto la ficha lleva las dos anclas y nada más: nombre a la
-  // izquierda, número a la derecha, todo lo demás a un toque. Es limpio en las
-  // 32 tablas sin que nadie configure nada. Los chips se activan por vista, con
-  // `movil={{ chips: [...] }}`, cuando esa vista tenga celdas que sirvan como
-  // valor suelto — que es trabajo de vista y no del canónico.
-  return { identidad, ancla, chips: [], hoja: resto, acciones };
+  // La segunda versión las quitó del todo, y el usuario reportó lo obvio: «la
+  // card sólo me da nombre y monto, no me da fecha ni nada más». Tenía razón:
+  // sin contexto la ficha no reemplaza a la fila, la empobrece.
+  //
+  // La forma que aguanta las dos cosas es una LÍNEA de texto tenue, no una
+  // hilera de píldoras: una insignia adentro de una línea se lee bien, adentro
+  // de una píldora de 11px no. Dos columnas y no tres, porque la tercera ya
+  // empuja a dos renglones en 390px.
+  const contexto = [...resto].sort((a, b) => (a.hideBelow ? 1 : 0) - (b.hideBelow ? 1 : 0)).slice(0, 2);
+  return { identidad, ancla, chips: contexto, hoja: resto.filter(c => !contexto.includes(c)), acciones };
 }
 
 export function DataTable({
@@ -435,11 +436,24 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
 
       {filas.map((fila) => {
         const abrir = () => setAbierta(fila);
+        // ── El toque abre LA HOJA, salvo que la vista diga lo contrario ─────
+        // La primera versión dejaba ganar al `onClick` de la fila «porque el
+        // modal de la vista es más rico». En la mitad de las vistas ese
+        // `onClick` no lleva a ningún lado: expande un `<tr>` hermano que en
+        // modo ficha no se pinta. El usuario lo reportó exacto — «en ventas, al
+        // clickear no se abre nada» —, y productos igual.
+        //
+        // Desde afuera no hay forma de saber si un manejador navega o expande,
+        // así que el default es lo que SIEMPRE existe: la hoja. Una vista cuyo
+        // toque va a un destino de verdad lo declara con
+        // `movil={{ usarAccionDeFila: true }}`. Es explícito, y es la única
+        // versión que no deja controles muertos.
+        const alTocar = (movil?.usarAccionDeFila && fila.onClick) || abrir;
         return (
           <button
             key={fila.clave}
             type="button"
-            onClick={fila.onClick || abrir}
+            onClick={alTocar}
             data-surface="card"
             className="w-full text-left px-3.5 py-3 rounded-card
               transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
@@ -454,14 +468,17 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
               </span>
             </div>
             {papeles.chips.length > 0 && (
-              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                {papeles.chips.map(col => {
+              <div className="flex items-center gap-2 mt-1 text-caption text-content-3
+                [&_*]:text-caption min-w-0 truncate">
+                {papeles.chips.map((col, i) => {
                   const v = deCol(fila, col);
                   if (v == null || v === '' || v === '—') return null;
-                  // `Badge` y no un `<span>` con su propio relleno: §16. El chip
-                  // de la ficha es el mismo objeto que el de una celda, y un
-                  // canónico con dos dibujos no es un canónico.
-                  return <Badge key={col.key} size="sm" uppercase={false}>{v}</Badge>;
+                  return (
+                    <span key={col.key} className="contents">
+                      {i > 0 && <span aria-hidden="true" className="opacity-40">·</span>}
+                      {v}
+                    </span>
+                  );
                 })}
               </div>
             )}

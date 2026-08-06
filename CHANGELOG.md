@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.460.3 — El toque que no abría nada, y el contexto que faltaba en la ficha
+
+Tres cosas reportadas por el usuario usando el portal en su teléfono, y las tres
+eran del canónico. *«En ventas, al clickear no se abre nada. Y la card sólo me da
+nombre y monto, no me da fecha ni nada más. Productos tampoco funciona al
+tocar.»*
+
+**1 · La ficha dejaba ganar a un manejador que no lleva a ningún lado.** La
+versión anterior respetaba el `onClick` de la fila «porque el modal de la vista
+es más rico». En la mitad de las vistas ese `onClick` no navega: **expande un
+`<tr>` hermano**, que en modo ficha no se pinta. O sea que el control existía,
+respondía y no pasaba nada.
+
+Desde afuera no hay forma de saber si un manejador navega o expande, así que el
+default pasa a ser lo que **siempre** existe: la hoja. Una vista cuyo toque va a
+un destino de verdad lo declara —`movil={{ usarAccionDeFila: true }}`—, y
+Clientes lo hace, porque ahí el toque abre el expediente completo. Es explícito,
+y es la única versión que no deja controles muertos.
+
+**2 · El contexto vuelve, pero como LÍNEA y no como píldoras.** Quitar los chips
+fue una sobrecorrección: sin contexto la ficha no reemplaza a la fila, la
+empobrece. Vuelven dos columnas, y en una línea de texto tenue en vez de una
+hilera de píldoras — porque el problema original sigue en pie (**una celda no es
+un valor**: trae la decoración que se le escribió para una tabla) y una insignia
+adentro de una línea se lee bien, adentro de una píldora de 11px no. Dos y no
+tres, porque la tercera ya empuja a dos renglones en 390px. Ventas declara las
+suyas: fecha y sucursal.
+
+**3 · Y el carril de resumen se estaba apoyando sobre la primera ficha.**
+`pt-6 pb-14 -mt-6 -mb-14` agranda la caja del carril **56px hacia abajo** para
+que la sombra de una tarjeta levantada no se recorte. Eso sólo pasa al apuntar
+con un mouse: en táctil no hay lift, así que esos 56px no dibujan nada y la caja
+los sigue ocupando, tapando lo que viene después. Con el modo ficha eso es
+literal — el toque sobre la primera fila de la lista no llegaba.
+
+Lo delató Playwright negándose a hacer clic: *«subtree intercepts pointer
+events»*. El `pointer-events-none` que neutraliza el carril no sirve acá y está
+bien que no sirva: en táctil el carril necesita el dedo para deslizarse. Lo que
+sobra es el sobrante, así que se va con la misma media query que el lift que lo
+justifica. Verificado que en escritorio no cambia: `pt=24px pb=56px mb=-56px`.
+
+Medido en WebKit iPhone 13, tocando de verdad cada ficha:
+
+```
+ventas     «MAYRA NOHEMY CARTAGENA DE PORTILLO · $24.00 · 2026-08-06 · 17:10»
+           toque ✓ → hoja con Total, Fecha, Sucursal, ID, Tipo, Vendedor, Método
+productos  toque ✓ → hoja con Estado, Laboratorio, Categoría
+pedidos    toque ✓ → hoja con Ventas 6m, Laboratorio, Solicitan
+escritorio Ventas 8 col / 50 filas — sin cambios
+```
+
 ## v2.460.2 — El modal del buscador no scrolleaba: la trampa de min-h-0
 
 Reportado por el usuario con una captura: la lista se cortaba al pie del modal y

@@ -182,9 +182,25 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                 ref={pistaRef}
                 role="group"
                 aria-label={ariaLabel}
+                /* ── El sobrante de 56px es para el LIFT, y el lift es del ratón ──
+                   `pt-6 pb-14 -mt-6 -mb-14` agranda la caja del carril sin mover
+                   nada, para que la sombra de una tarjeta levantada no se
+                   recorte. Eso sólo pasa al apuntar con un mouse.
+                   En táctil no hay lift, así que esos 56px de abajo no dibujan
+                   nada — pero la caja los sigue ocupando y **tapa lo que viene
+                   después**. Con el modo ficha eso es literal: el carril de
+                   resumen se apoya sobre la primera ficha de la lista y el toque
+                   no le llega. Se descubrió con Playwright negándose a hacer
+                   clic: *«subtree intercepts pointer events»*.
+                   El `pointer-events-none` que lo neutraliza no sirve acá porque
+                   está —bien— detrás de `hover:hover`: en táctil el carril tiene
+                   que recibir el dedo para poder deslizarse. Lo que sobra es el
+                   sobrante, así que se va con la misma media query que el lift
+                   que lo justifica. */
                 className={`flex items-stretch gap-2 scroll-smooth
                     [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-                    pt-6 pb-14 -mt-6 -mb-14
+                    [@media(hover:hover)]:pt-6 [@media(hover:hover)]:pb-14
+                    [@media(hover:hover)]:-mt-6 [@media(hover:hover)]:-mb-14
                     [@media(hover:hover)]:pointer-events-none [&>*]:pointer-events-auto
                     ${desliza ? 'overflow-x-auto' : 'overflow-visible'}`}
                 style={{

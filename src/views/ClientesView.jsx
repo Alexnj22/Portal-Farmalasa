@@ -476,6 +476,13 @@ export default function ClientesView({ openModal }) {
 
                 <DataTable
                     columns={cols}
+                    /* El toque de la fila acá SÍ va a un destino: `abrirFicha`
+                       abre el expediente completo del cliente, que es más de lo
+                       que puede mostrar la hoja genérica. Por eso se declara —
+                       el default del canónico es abrir la hoja, porque en la
+                       mitad de las vistas el `onClick` sólo expande una fila
+                       hermana que en el teléfono no existe. */
+                    movil={{ usarAccionDeFila: true }}
                     sortKey={sortCol}
                     sortDir={sortDir}
                     onSort={handleSort}

@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.437.3 — `DESIGN.md` deja de enseñar lo que el gate prohíbe
+
+Barrido de verificación sobre lo que quedaba abierto. Los cinco gates en verde
+—`design`, `version`, `doc`, `migrations`, `permisos`— y tres cosas que no lo
+estaban.
+
+**`gate:doc` tenía 3 hallazgos: el documento enseñaba lo que los gates
+prohíben.**
+
+- El banner de error global de §15 mostraba `bg-danger/10 backdrop-blur-sm`, o
+  sea **exactamente el patrón que la bajada de §20 le quitó a los cuatro
+  archivos que el propio ejemplo cita**. El documento quedó enseñando la deuda
+  que se acababa de pagar.
+- El ejemplo de entrada/salida de paneles usaba `duration-300` y `duration-150`
+  literales. Y no eran valores arbitrarios: **son exactamente `--dur-slow` y
+  `--dur-fast`**, escritos a mano al lado del reloj que los define. Substitución
+  directa, sin cambio de valor.
+
+**`DESIGN.md` §25.4 contradecía al código desde hacía un día.** Seguía listando
+el **sidebar** entre las superficies bespoke siempre-oscuras —*«oscuro es su
+identidad»*— cuando §12.1 decidió el 2026-08-05 que sigue el tema, y sus tokens
+ya lo aplican: en Liquid claro `--sidebar-tint` vale `236 234 250` con tinta
+`15 23 42`, o sea **un sidebar claro con texto oscuro**. La lista pasa de tres
+superficies a dos (kiosco y login).
+
+Es justo lo que §12.1 pedía evitar cuando exigía cambiar token y texto **en el
+mismo commit**: *«o queda un contrato que nadie sabe si manda»*. Quedó. §25.5,
+que abría con «el sidebar es oscuro en los cuatro temas», queda marcada como
+histórica y su lección reapuntada al kiosco y al login.
+
+**Y una corrección de este mismo trabajo:** §13.4 listaba
+*«`ConfirmModal` no declara ninguna superficie»* y se reportó dos veces como
+pendiente. **Ya la declaraba.** `ModalShell` tiene `surface = "modal"` por
+defecto y lo estampa en el panel, así que `ConfirmModal` lo recibe sin
+escribirlo; el `grep data-surface` sobre el archivo da cero porque el atributo
+lo pone el componente de abajo. Es la trampa que §13 documenta para sí mismo,
+un nivel más adentro: **el registro no es lo que el archivo dice, es lo que el
+componente renderiza.** También se cierra §13.4.2 — `page-header` y `sheet` ya
+tenían su material en §16 y §17.
+
 ## v2.437.2 — El selector de tipo, como en Facturación
 
 El widget abría con tres desplegables apilados a lo ancho —operación, motivo y

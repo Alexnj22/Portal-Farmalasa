@@ -1132,9 +1132,9 @@ popover, panel, toast. Es el movimiento que D2.4 clasifica como *funcional*.
 
 ```jsx
 // entrada estándar de un panel que aparece
-className="animate-in fade-in zoom-in-95 duration-300"
+className="animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]"
 // salida (el elemento tiene que seguir montado mientras dura)
-className="animate-out fade-out zoom-out-95 duration-150"
+className="animate-out fade-out zoom-out-95 duration-[var(--dur-fast)]"
 ```
 
 La duración sale de `duration-*` de Tailwind (`--tw-duration`), o sea que se
@@ -4160,20 +4160,32 @@ Hover lifts (`hover:-translate-y-*`) remain unaffected — they are already scop
 
 ---
 
-## 25.4 Las tres superficies bespoke — lista CERRADA (2026-07-28)
+## 25.4 Las DOS superficies bespoke — lista CERRADA (2026-07-28, reducida 2026-08-06)
 
 Regla: **el cuerpo de toda vista sigue el tema, sin excepción.** Modales,
 tarjetas, paneles, chips, gráficos — todo. Un fondo pintado con color fijo y
 texto adentro con tokens de tema es un bug de contraste esperando el tema
 contrario; pasó siete veces y se cerraron todas.
 
-Solo tres superficies quedan fuera, y esta lista **no se amplía**:
+Solo dos superficies quedan fuera, y esta lista **no se amplía**:
 
 | superficie | por qué |
 |---|---|
-| **Sidebar** (`AppLayout` + sus flyouts, ajustes, tema, campana) | Es *chrome*, no contenido. Oscuro es su identidad, igual que la barra lateral de un editor. Sus popovers anclados heredan la paleta bespoke `bg-white/N` — nunca `data-surface="dropdown"`. |
 | **Kiosco** (`components/timeclock/`) | Es una tablet montada en pared, muchas veces en sala con luz fuerte: el contraste alto sobre negro es parte de que se lea de lejos. Además nadie elige tema ahí — no hay sesión con preferencia. |
 | **Login** | Fuerza claro antes de que exista sesión. No puede seguir "el tema del usuario" porque todavía no sabe quién es. |
+
+> **⚠️ El sidebar SALIÓ de esta lista.** `PLAN-MATERIALES` §12.1 lo decidió el
+> 2026-08-05 —*«el sidebar sigue el tema»*— y sus tokens ya lo aplican: en Liquid
+> claro `--sidebar-tint` vale `236 234 250` con tinta `15 23 42`, o sea **un
+> sidebar claro con texto oscuro**. Este texto siguió diciendo *«oscuro es su
+> identidad»* durante un día entero después de que dejara de ser cierto, que es
+> exactamente el contrato-que-nadie-sabe-si-manda que §12.1 quería evitar
+> pidiendo cambiar token y texto **en el mismo commit**. Corregido el 2026-08-06.
+>
+> Lo que **sí** sigue valiendo del párrafo viejo: sus popovers anclados usan la
+> paleta del sidebar (`--sidebar-pop-tint`/`--sidebar-pop-fill`) y no
+> `data-surface="dropdown"` — son parte del chrome, aunque el chrome ya no sea
+> siempre-oscuro.
 
 Agregar una cuarta necesita decisión explícita, no un `bg-slate-900` puesto al
 pasar. La señal de "cuidado, esto es peligroso" se transmite con **color
@@ -4186,7 +4198,12 @@ es decoración: es lo que la hace leerse como salida de terminal.
 
 ### 25.5 Bespoke en COLOR no es bespoke en MATERIAL
 
-El sidebar es oscuro en los cuatro temas, pero eso no lo exime del material del
+*(El ejemplo de abajo es histórico: el sidebar dejó de ser oscuro en los cuatro
+temas — ver el aviso de §25.4. La lección **sí** sigue en pie, y ahora vale para
+el kiosco y el login: que una superficie tenga color propio no la exime del
+material del tema.)*
+
+El sidebar era oscuro en los cuatro temas, y eso no lo eximía del material del
 tema. Hasta el 2026-07-28 tenía las dos cosas: en liquid glass era un relleno
 del 80% con blur de 28px y un borde de `rgba(255,255,255,0.10)`, al lado de
 tarjetas del 16% con blur de 44px y borde de 0.72. Se leía como una losa opaca
@@ -4644,8 +4661,11 @@ Must be paired with `aria-invalid="true"` on the input and `aria-describedby` po
 ```jsx
 // Referencia: src/components/forms/FormRegisterPayment.jsx:185,
 // src/components/forms/FormSetPassword.jsx, src/views/LoginView.jsx
+{/* Sin `backdrop-filter`: un aviso es TINTA, no material — PLAN-MATERIALES
+    §18.2. Este ejemplo lo llevaba y los dos archivos que cita también, hasta
+    que la bajada de §20 se los quitó (v2.433.0). */}
 <div className="flex items-center gap-3 text-danger-text
-  bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl
+  bg-danger/10 px-4 py-3 rounded-2xl
   border border-danger/30 shadow-[var(--shadow-glow-danger)]
   animate-in fade-in slide-in-from-top-2">
   <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />

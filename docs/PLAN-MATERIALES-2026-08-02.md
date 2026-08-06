@@ -1413,9 +1413,17 @@ Los otros 13: `WidgetInventorySearch` (7), `TabLaboratorios` (4),
 ### 13.4 Qué hay que hacer con esto
 
 1. ~~**Definir `tooltip`**~~ ✅ **hecho — §14.**
-2. **Definir `page-header` y `sheet`**, o declarar por escrito que heredan de
-   `card` y no llevan material propio.
-3. **`ConfirmModal` declara `data-surface="modal"`.**
+2. ~~**Definir `page-header` y `sheet`**~~ ✅ **hecho** — los cubren §16
+   (encabezado flotante) y §17 (hoja táctil), los dos confirmados el 2026-08-05,
+   y las dos superficies tienen su regla y sus tokens en `index.css`.
+3. ~~**`ConfirmModal` declara `data-surface="modal"`.**~~ ✅ **ya lo declaraba**
+   — verificado el 2026-08-06. `ModalShell` tiene `surface = "modal"` **por
+   defecto** y lo estampa en el panel, así que `ConfirmModal` lo recibe sin
+   escribirlo. El ítem nació de un `grep data-surface` sobre el archivo, que da
+   cero porque el atributo lo pone el componente de abajo. *Es la misma trampa
+   que §13 documenta para sí mismo: la lista salió de mirar los archivos en vez
+   del registro — sólo que acá el registro es lo que el componente RENDERIZA, no
+   lo que su fuente dice.*
 4. **Escribir qué NO es material** — `Notice`, `Badge`, chips: son tinta sobre
    una superficie, no superficies. Una frase alcanza, y evita la pregunta.
 5. ~~**`ModalShell` usa la superficie de modal** en vez de su vidrio a mano.~~

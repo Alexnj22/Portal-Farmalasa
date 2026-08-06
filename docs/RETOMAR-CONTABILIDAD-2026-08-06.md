@@ -276,3 +276,48 @@ no este documento.
 con sello**; 70 invalidadas ante Hacienda, también selladas. **Cero sin sello.**
 El caso es hipotético para mayo — lo único realmente pendiente son las 13 de
 agosto.
+
+### 7.ter · CORRECCIÓN — no era hipotético: pasó, y el portal lo tenía
+
+§7 y §7.bis decían «mayo está limpio, cero sin sello, el caso es hipotético».
+**Era la medición equivocada.** Alex avisó: *«no hay nada pendiente porque envié
+esas facturas a Hacienda; en el portal ni en el ERP estarán pendientes. Eran
+alrededor de 10 facturas.»*
+
+Y tenía razón en lo primero: **medí el ESTADO ACTUAL cuando el evento estaba en
+la HISTORIA**. Una vez que el sello llega, el estado no conserva ningún rastro de
+que faltó. El rastro vive en `sales_invoice_changelog`, que registra el cambio de
+`recibido_mh` con su `detected_at`.
+
+**Lo que hay ahí, medido el 2026-08-06:**
+
+| Venta | Facturas | Total | IVA | Sello llegó | Demora |
+|---|---|---|---|---|---|
+| **Mayo 2026** | **21** | $236.60 | **$27.23** | 2026-08-02 | 65 a 87 días |
+| **Junio 2026** | **1** | $45.98 | **$5.29** | 2026-08-02 | 43 días |
+
+**22 facturas, $32.52 de IVA**, todas selladas el mismo día: el **2 de agosto**.
+Eran más de las ~10 que se recordaban — que es justamente para lo que sirve tener
+el registro.
+
+**No es artefacto del portal.** Las 22 estaban en `sales_invoices` **desde el día
+siguiente a la venta** (`created_at` de mayo/junio) y sin sello. O sea que el
+portal las tuvo 43-87 días sabiendo que les faltaba, y el sello apareció el día
+de la retransmisión. El confound a descartar era el revés —que el portal las
+hubiera cargado recién en agosto— y no es el caso.
+
+**La consecuencia fiscal, en concreto:** mayo se declaró a principios de junio y
+junio a principios de julio. Los dos **antes** del 2 de agosto. Así que hoy el
+libro de mayo tiene **$27.23** más de débito fiscal que cuando se declaró, y el
+de junio **$5.29** más. Por el Art. 101 la modificatoria hacia arriba se puede
+presentar en cualquier momento; el monto decide si vale la pena, y eso lo dice la
+contadora.
+
+**Lo que esto prueba, y es más valioso que los $32.52:** el libro **sí cambia
+después de declarado**, ya pasó dos veces, y el portal puede demostrarlo con
+fecha. Deja de ser el argumento teórico del Bloque D y pasa a ser evidencia.
+
+**Corrección al §7:** donde dice «el portal no puede distinguir si se transmitió o
+no» — cierto sobre el estado, **falso sobre la historia**. `sales_invoice_changelog`
+responde *cuándo llegó cada sello*, y esa consulta debería ser parte del cierre
+de cada mes: **¿llegó algún sello de un mes ya declarado?**

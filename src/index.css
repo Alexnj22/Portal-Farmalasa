@@ -362,7 +362,16 @@
      truco. Ahora el contraste vive DENTRO del anillo y sobrevive al recorte.
      Es la misma física que ya decidieron `--anidada` (§1.5) y el tinte del
      sidebar: la dirección del realce la manda el fondo, no el gusto. */
+  --rim-grosor:  1.5px;
   --rim-base:    rgba(255,255,255,.35);
+  /* El FLANCO del destello (§1.6.ter). El arco blanco competía contra lo que
+     hubiera detrás del panel translúcido: medido en 41 ítems del sidebar, su
+     contraste local iba de 1.60:1 a **1.03:1** — o sea que sobre las zonas
+     claras del fondo desaparecía. Un flanco oscuro pegado al destello le da
+     contra qué leerse SIEMPRE, sin depender del fondo ni de un `drop-shadow`
+     que un `overflow: hidden` pueda recortar. Es la §10.2 del plan —medir
+     sobre el peor fondo, no sobre el lienzo— resuelta en el material. */
+  --rim-sombra:  rgba(12,20,48,.45);
   --rim-glint:   rgba(255,255,255,1);
   --rim-bloom:   transparent;
   /* Botón (§2) — el aro NO escala con la intensidad: ése es --btn-esp-aro */
@@ -904,6 +913,7 @@ thead.sticky {
   --lente-lado:  0;
   --lente-bajo:  0;
   --anidada:     rgba(255,255,255,.09);   /* acá el escalón ACLARA */
+  --rim-grosor:  1.5px;
   --rim-base:    rgba(255,255,255,.10);
   --sidebar-pop-tint: 10 12 26;
   --sidebar-pop-fill: 0.66;
@@ -2304,12 +2314,14 @@ thead.sticky {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
+  padding: var(--rim-grosor, 1px);
   pointer-events: none;
   background: conic-gradient(from var(--rim-ang),
-    var(--rim-base) 0%,   var(--rim-base) 2%,
-    var(--rim-glint) 7%,  var(--rim-glint) 13%,
-    var(--rim-base) 18%,  var(--rim-base) 100%);
+    var(--rim-base) 0%,     var(--rim-base) 2%,
+    var(--rim-sombra) 5%,
+    var(--rim-glint) 9%,    var(--rim-glint) 19%,
+    var(--rim-sombra) 23%,
+    var(--rim-base) 27%,    var(--rim-base) 100%);
   filter: drop-shadow(0 0 9px var(--rim-bloom))
           drop-shadow(0 0 4px var(--rim-bloom))
           drop-shadow(0 0 1px var(--rim-bloom));
@@ -2379,12 +2391,14 @@ thead.sticky {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
+  padding: var(--rim-grosor, 1px);
   pointer-events: none;
   background: conic-gradient(from var(--rim-ang),
-    var(--rim-base) 0%,   var(--rim-base) 2%,
-    var(--rim-glint) 7%,  var(--rim-glint) 13%,
-    var(--rim-base) 18%,  var(--rim-base) 100%);
+    var(--rim-base) 0%,     var(--rim-base) 2%,
+    var(--rim-sombra) 5%,
+    var(--rim-glint) 9%,    var(--rim-glint) 19%,
+    var(--rim-sombra) 23%,
+    var(--rim-base) 27%,    var(--rim-base) 100%);
   filter: drop-shadow(0 0 9px var(--rim-bloom)) drop-shadow(0 0 4px var(--rim-bloom));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.419.0 — El destello no depende del fondo: flanco propio
+
+**«A veces se pierde» era literal, y medible.** El sidebar es translúcido, así que el
+arco blanco competía contra lo que hubiera **detrás** del panel. Medido en los ítems del
+sidebar en Liquid claro, el contraste local del destello iba de **1.60:1 a 1.03:1**: en
+las zonas claras del fondo, desaparecía.
+
+**Nuevo `--rim-sombra`: un flanco oscuro pegado al destello, dentro del anillo.** Así el
+arco tiene contra qué leerse **siempre**, sin depender del fondo ni de un `drop-shadow`
+que un `overflow: hidden` pueda recortar. Es la §10.2 del plan —medir sobre el peor
+fondo, no sobre el lienzo— resuelta en el material en vez de en una tabla.
+
+Y dos ajustes de legibilidad: el arco pasa de **6 % a 10 %** del perímetro y el anillo
+de 1 px a **1.5 px** en los dos Liquid. En un ítem ancho, un arco de 6 % es un punto que
+pasa rápido.
+
+**Nota de método: dos instrumentos dieron falsos negativos antes de encontrar el
+bueno.** El primero muestreaba 1 px bajo el borde del elemento y caía sobre su `border`
+propio, no sobre el anillo —que va por dentro—, así que devolvió números **idénticos
+byte a byte** antes y después del cambio. El segundo aislaba el anillo por diferencia
+con el estado sin hover, pero el hover cambia **todo** el elemento, así que terminaba
+midiendo texto contra fondo. Un diff de píxeles sobre algo que se mueve **y** cambia de
+fondo miente en las dos direcciones; lo que cerró el caso fue mirar la captura.
+
 ## v2.418.1 — El barrido dice cuántas quedan, y no se muere a mitad de camino
 
 Pregunta del usuario: *«¿qué pasa si hay 300 facturas pendientes de validar en

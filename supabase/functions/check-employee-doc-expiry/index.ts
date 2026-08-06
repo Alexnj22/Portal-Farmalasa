@@ -105,11 +105,14 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const { data: existing } = await supabase
+        // El antiduplicado de las notificaciones: si falla, al empleado le
+        // llega el mismo aviso de vencimiento en cada corrida.
+        const { data: existing, error: existingErr } = await supabase
           .from('notifications')
           .select('id')
           .filter('metadata->>check_key', 'eq', checkKey)
           .limit(1);
+        if (existingErr) throw new Error(`notifications(${checkKey}): ${existingErr.message}`);
         if (existing && existing.length > 0) continue;
 
         const recipients = Array.from(new Set([String(emp.id), ...hrIds]));

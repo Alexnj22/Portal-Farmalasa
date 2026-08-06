@@ -219,11 +219,14 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < erpProductIds.length; i += CHUNK) {
       const batchIds = erpProductIds.slice(i, i + CHUNK);
-      const { data: activeCombos } = await supabase
+      const { data: activeCombos, error: activeErr } = await supabase
         .from('product_precios')
         .select('id, product_id, id_presentacion')
         .in('product_id', batchIds)
         .eq('activo', true);
+      // Un error deja el lote sin nada que desactivar y el contador en cero:
+      // presentaciones muertas siguen vivas y el resumen dice que todo salió bien.
+      if (activeErr) throw new Error(`product_precios activos (lote ${i}): ${activeErr.message}`);
 
       // Recolectar los ids a desactivar y hacer UN solo UPDATE en lote
       // (antes era un UPDATE por combo → N+1).

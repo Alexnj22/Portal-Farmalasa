@@ -1007,8 +1007,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         tooltipCancelRef.current?.();
         let cancelled = false;
         tooltipCancelRef.current = () => { cancelled = true; };
-        const { data: branches } = await supabase.rpc('get_product_branch_summary', { p_erp_product_id: productId });
+        const { data: branches, error: branchesErr } = await supabase.rpc('get_product_branch_summary', { p_erp_product_id: productId });
         if (cancelled) return;
+        // Un tooltip vacío por error se lee como "no hay nada pendiente".
+        if (branchesErr) console.error('[minmax] get_product_branch_summary', branchesErr.message);
         const pending = (branches || []).filter(b => b.erp_sucursal_id !== 6 && b.draft_status === 'pending');
         setBodegaTooltip({ productId, pending, rect });
     }, [bodegaTooltip]);

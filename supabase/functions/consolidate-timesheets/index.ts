@@ -169,7 +169,9 @@ Deno.serve(async (req) => {
     const dayKey = String(new Date(workDate + 'T12:00:00').getDay());
 
     // 1. Holiday check
-    const { data: holidayRows } = await supabase
+    // Si esto falla en silencio, el día deja de ser asueto y las horas se
+    // consolidan como jornada normal — un error de planilla, no de sistema.
+    const { data: holidayRows, error: holidayErr } = await supabase
       .from('holidays')
       .select('id')
       .eq('holiday_date', workDate)
@@ -204,10 +206,12 @@ Deno.serve(async (req) => {
     const exceptionMap = new Map<string, DayException>();
 
     if (rosterEmpIds.length > 0) {
-      const { data: empRows } = await supabase
+      const { data: empRows, error: empRowsErr } = await supabase
         .from('employees')
         .select('id, exceptions')
         .in('id', rosterEmpIds);
+      // Sin excepciones cargadas, todas se aplican como si no existieran.
+      if (empRowsErr) throw new Error(`employees(exceptions): ${empRowsErr.message}`);
 
       for (const emp of empRows || []) {
         const list: DayException[] = Array.isArray(emp.exceptions) ? emp.exceptions : [];
@@ -217,11 +221,13 @@ Deno.serve(async (req) => {
     }
 
     // 4a. Load approved absence requests to classify justified absences
-    const { data: absenceRequests } = await supabase
+    // El error acá convierte una ausencia JUSTIFICADA en injustificada.
+    const { data: absenceRequests, error: absenceErr } = await supabase
       .from('approval_requests')
       .select('employee_id, type, metadata')
       .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
       .eq('status', 'APPROVED');
+    if (absenceErr) throw new Error(`approval_requests aprobadas: ${absenceErr.message}`);
 
     const absenceTypeMap = new Map<string, string>();
     for (const req of absenceRequests || []) {
@@ -262,11 +268,13 @@ Deno.serve(async (req) => {
     // Pre-cargar timesheets existentes del día en un Map (evita un SELECT por empleado)
     const timesheetIdMap = new Map<string, number>();
     if (rosterEmpIds.length > 0) {
-      const { data: existingTs } = await supabase
+      const { data: existingTs, error: existingTsErr } = await supabase
         .from('timesheets')
         .select('id, employee_id')
         .eq('work_date', workDate)
         .in('employee_id', rosterEmpIds);
+      // El Map vacío hace creer que no hay timesheet previo y se duplica el día.
+      if (existingTsErr) throw new Error(`timesheets del ${workDate}: ${existingTsErr.message}`);
       for (const t of existingTs || []) timesheetIdMap.set(String(t.employee_id), t.id);
     }
 

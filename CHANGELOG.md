@@ -21,6 +21,70 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.398.2 — Los 28 errores de query que se descartaban en silencio, en cero
+
+C1 de la Fase C de `AUDITORIA-COMPLETA-2026-07-30`. Eran 28 `const { data } =
+await supabase…` sin mirar el `error`; **25 en edge functions**, que es donde más
+duele: un select que falla deja Maps y listas vacías, la función devuelve éxito y
+el bug vive semanas (pasó con `presentaciones.descripcion`, un mes de errores por
+minuto en los logs de Postgres). El gate `error-ignorado` queda **bloqueante en
+cero**.
+
+Lo que estaba realmente roto detrás del contador — no son 28 casos iguales:
+
+- **Cuatro alertas que se enviaban a nadie.** `check-sync-health-alerts`,
+  `check-sales-alerts`, `check-purchases-reconciliation` y
+  `auto-copy-weekly-roster` resuelven sus destinatarios con un query cuyo error
+  se descartaba: la lista quedaba vacía, la alerta «se enviaba» y no llegaba.
+  `send-push-notification` devolvía `sent: 0` con cara de éxito.
+- **Tres antiduplicados invertidos.** En `check-doc-expiry` (×2) y
+  `check-employee-doc-expiry`, el query que comprueba si el aviso ya existe ES el
+  antiduplicado: si fallaba, `existing` quedaba vacío y el aviso se republicaba
+  **en cada corrida del cron**.
+- **Un reparador que no reparaba.** `heal-dte-sync` busca fechas fallidas y
+  huecos; con el error tragado no encontraba nada y devolvía éxito.
+- **Planilla.** En `consolidate-timesheets`, cuatro queries decidían si el día
+  era asueto, qué excepciones aplicaban, qué ausencias estaban justificadas y si
+  ya existía el timesheet. Cada uno fallando en silencio da un error de planilla
+  con forma de dato del negocio.
+- **Ventas y productos.** `sync-dte-sales` dejaba las facturas del lote sin
+  cliente y podía mezclar vencidos en el inventario regular de Bodega;
+  `sync-products` no desactivaba ninguna presentación y reportaba cero.
+
+Las 13 funciones se redesplegaron **respetando el `verify_jwt` de cada una** — 10
+con `--no-verify-jwt` y 3 sin el flag: redesplegar sin repetirlo lo resetea a
+`true` y rompe el cron con 401. Verificado después: las 6 sucursales del sync de
+ventas en verde y una factura nueva insertada.
+
+_(pendiente de redactar)_
+
+## v2.398.1 — Fase C cerrada: cero duraciones a mano
+
+**Los 700 bajaron.** Retemplados los 69 `duration-700` y los 6 `duration-1000` a
+`--dur-lento`: 700 ms para un `group-hover:scale-110` se siente lento, y el sentido
+de tener una escala es poder decir que no.
+
+**Y migrados también los 373 que sí mapeaban** (150→`--dur-fast`,
+200→`--dur-base`, 300→`--dur-slow`), porque mientras haya literales el gate
+`reloj-a-mano` no puede ser bloqueante.
+
+**La cola que la tabla de §7.2 tampoco listaba.** Al terminar quedaban **20 usos
+más** en cinco valores que esa tabla nunca mencionó: 75 (3), 100 (6), 250 (4), 400
+(4), 600 (1). El portal no usaba seis valores de duración: **usaba once**. Tercer
+subconteo del mismo documento, después de §13 y §18.1.
+
+Regla escrita para no volver a decidirlo: **al escalón más cercano, y los empates
+bajan** — más rápido se siente mejor que más lento, y 250 y 400 son empates exactos.
+75/100→fast, 250→base, 400→slow, 600→lento.
+
+**Y dos que el primer barrido no vio, por una variante:** `[&_svg]:duration-300`. El
+regex pedía espacio, comilla o llave antes del token y `:` no estaba en esa lista, así
+que era ciego a todo `duration-*` con variante (`md:`, `group-hover:`, `[&_svg]:`).
+
+**Resultado: cero literales `duration-N` en JSX**, 468 usos tokenizados en total. Los
+cuatro escalones emiten su utilidad en el bundle —verificado `--tw-duration` +
+`transition-duration`, no asumido— así que `reloj-a-mano` puede nacer bloqueante.
+
 ## v2.398.0 — E1 — el costo de venta se captura al momento de la venta
 
 Lo único irreversible de `PLAN-CONTABILIDAD-2026-08-02`: sin costo por línea no

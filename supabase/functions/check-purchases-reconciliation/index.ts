@@ -216,14 +216,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: roleRow } = await supabase
+    // El comentario de arriba ya dice que un control que falla en silencio es
+    // peor que no tenerlo; estos dos se habían quedado afuera de esa regla.
+    // Sin destinatarios, la reconciliación detecta las diferencias y no se las
+    // cuenta a nadie.
+    const { data: roleRow, error: roleErr } = await supabase
       .from('roles').select('id').eq('name', SYSTEM_ALERT_ROLE_NAME).maybeSingle();
+    if (roleErr) problemas.push(`roles(${SYSTEM_ALERT_ROLE_NAME}): ${roleErr.message}`);
     let recipientIds: string[] = [];
     if (roleRow?.id != null) {
-      const { data: recipients } = await supabase
+      const { data: recipients, error: recipErr } = await supabase
         .from('employees').select('id')
         .or(`role_id.eq.${roleRow.id},secondary_role_id.eq.${roleRow.id}`)
         .eq('status', 'ACTIVO');
+      if (recipErr) problemas.push(`employees del rol de alertas: ${recipErr.message}`);
       recipientIds = (recipients ?? []).map((e: { id: string }) => e.id);
     }
 

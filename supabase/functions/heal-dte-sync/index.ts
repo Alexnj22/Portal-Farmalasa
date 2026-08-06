@@ -39,12 +39,15 @@ Deno.serve(async (req) => {
     const since = new Date(hoy);
     since.setDate(since.getDate() - lookbackDays);
 
-    const { data: failedLogs } = await supabase
+    // Es una función que REPARA. Si el query falla en silencio no encuentra
+    // nada que reparar y devuelve éxito — el peor resultado posible acá.
+    const { data: failedLogs, error: failedErr } = await supabase
       .from('sync_log')
       .select('branch_id, fini, ffin')
       .eq('success', false)
       .gte('fini', fmt(since))
       .order('fini', { ascending: true });
+    if (failedErr) throw new Error(`sync_log fallidos: ${failedErr.message}`);
 
     const failedSet = new Map<string, Set<number>>();
     for (const row of (failedLogs ?? [])) {
@@ -69,7 +72,8 @@ Deno.serve(async (req) => {
       d.setDate(d.getDate() - i);
       const dateStr = fmt(d);
 
-      const { data: gaps } = await supabase.rpc('find_sync_gaps', { p_date: dateStr });
+      const { data: gaps, error: gapsErr } = await supabase.rpc('find_sync_gaps', { p_date: dateStr });
+      if (gapsErr) throw new Error(`find_sync_gaps(${dateStr}): ${gapsErr.message}`);
       if (gaps && gaps.length > 0) {
         const totalGaps = gaps.reduce((s: number, g: any) => s + g.gap_size, 0);
         summary.push({ date: dateStr, gaps: gaps.length, totalMissingIds: totalGaps, action: 'gap_detected_info_only' });

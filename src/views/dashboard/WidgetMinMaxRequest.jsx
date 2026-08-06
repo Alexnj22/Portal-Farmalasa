@@ -109,7 +109,10 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 
       // Notificar al Supervisor de Ventas (o su jefe si está de vacaciones). No-fatal.
       try {
-        const { data: ids } = await supabase.rpc('get_minmax_approver_ids');
+        const { data: ids, error: idsErr } = await supabase.rpc('get_minmax_approver_ids');
+        // El bloque es no-fatal a propósito, pero el error tiene que quedar
+        // escrito: sin él, "no hay aprobadores" y "el query falló" se ven igual.
+        if (idsErr) console.error('[minmax] get_minmax_approver_ids', idsErr.message);
         if (ids && ids.length) {
           await notifyEmployees(ids, {
             type: 'MINMAX_PENDING',

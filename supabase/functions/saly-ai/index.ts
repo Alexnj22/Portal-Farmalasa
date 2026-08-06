@@ -81,7 +81,10 @@ Deno.serve(async (req) => {
       }
       case 'generate-schedule': {
         const { branchId, employees, shifts, weeklyHours, otherEmployees } = payload;
-        const { data: salesData } = await supabase.from('branch_hourly_sales').select('sale_hour, transaction_count').eq('branch_id', branchId).order('sale_date', { ascending: false }).limit(3000);
+        const { data: salesData, error: salesErr } = await supabase.from('branch_hourly_sales').select('sale_hour, transaction_count').eq('branch_id', branchId).order('sale_date', { ascending: false }).limit(3000);
+        // Sin tráfico, el horario se propone a ciegas y parece una decisión del
+        // modelo en vez de un dato que no llegó.
+        if (salesErr) throw new Error(`branch_hourly_sales(${branchId}): ${salesErr.message}`);
 
         let trafficSummary = [];
         if (salesData && salesData.length > 0) {

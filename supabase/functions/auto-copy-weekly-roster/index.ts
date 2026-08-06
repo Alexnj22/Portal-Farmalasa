@@ -153,10 +153,14 @@ Deno.serve(async (req) => {
     // 5. Notify about conflicts using the priority chain
     if (conflicted.length > 0) {
       // Resolve names for conflicted employees
-      const { data: empRows } = await supabase
+      // Los cuatro queries de este bloque resuelven A QUIÉN se le avisa. Si
+      // fallan en silencio, la lista queda vacía, el aviso "se manda" y el
+      // conflicto de horarios no lo ve nadie.
+      const { data: empRows, error: empRowsErr } = await supabase
         .from('employees')
         .select('id, name, first_names, last_names')
         .in('id', conflicted.map(r => r.employee_id));
+      if (empRowsErr) throw new Error(`employees en conflicto: ${empRowsErr.message}`);
 
       const nameMap = new Map<string, string>();
       for (const emp of empRows || []) {
@@ -166,23 +170,27 @@ Deno.serve(async (req) => {
 
       // --- Notification recipient resolution ---
       // Step 1: get all active TH employees
-      const { data: thEmps } = await supabase
+      const { data: thEmps, error: thEmpsErr } = await supabase
         .from('employees')
         .select('id')
         .eq('role_id', TH_ROLE_ID)
         .eq('status', 'ACTIVO');
+      if (thEmpsErr) throw new Error(`employees de Talento Humano: ${thEmpsErr.message}`);
 
       const thIds = (thEmps || []).map(e => String(e.id));
 
       // Step 2: filter out TH employees who are themselves on a blocking event today
       let availableTH: string[] = [];
       if (thIds.length > 0) {
-        const { data: thBlocked } = await supabase
+        const { data: thBlocked, error: thBlockedErr } = await supabase
           .from('employee_events')
           .select('employee_id')
           .in('employee_id', thIds)
           .in('type', BLOCKING_EVENT_TYPES)
           .eq('date', todayStr);
+        // Tragarse este error invierte el resultado: nadie queda bloqueado y se
+        // le avisa a quien está de vacaciones.
+        if (thBlockedErr) throw new Error(`employee_events de TH: ${thBlockedErr.message}`);
 
         const thBlockedSet = new Set((thBlocked || []).map(e => String(e.employee_id)));
         availableTH = thIds.filter(id => !thBlockedSet.has(id));
@@ -196,11 +204,12 @@ Deno.serve(async (req) => {
         recipientIds  = availableTH;
         recipientLabel = 'Talento Humano';
       } else {
-        const { data: fallbackEmps } = await supabase
+        const { data: fallbackEmps, error: fallbackErr } = await supabase
           .from('employees')
           .select('id')
           .in('system_role', FALLBACK_SYSTEM_ROLES)
           .eq('status', 'ACTIVO');
+        if (fallbackErr) throw new Error(`employees de respaldo: ${fallbackErr.message}`);
 
         recipientIds  = (fallbackEmps || []).map(e => String(e.id));
         recipientLabel = 'Administración y Supervisión';

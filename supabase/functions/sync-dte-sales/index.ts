@@ -256,7 +256,10 @@ async function syncBranch(
 
   const customerIdMap = new Map<string, number>();
   if (customerNames.size > 0) {
-    const { data: customerData } = await supabase.rpc('upsert_customers', { names: [...customerNames] });
+    // Sin el mapa, ninguna factura del lote queda ligada a su cliente y el
+    // sync termina "bien": el hueco sólo se ve meses después.
+    const { data: customerData, error: customerErr } = await supabase.rpc('upsert_customers', { names: [...customerNames] });
+    if (customerErr) throw new Error(`upsert_customers: ${customerErr.message}`);
     for (const c of (customerData ?? [])) customerIdMap.set(c.customer_name, c.customer_id);
   }
   for (const inv of invoicesToUpsert) {
@@ -531,9 +534,12 @@ Deno.serve(async (req) => {
       // ahí es editable sin tocar el secret (que solo aporta credenciales).
       // Bodega usa [{id:1,regular},{id:2,vencidos}] — la ubicación 0 del ERP
       // mezcla el área de vencidos dentro del inventario regular.
-      const { data: ubicRows } = await supabase
+      const { data: ubicRows, error: ubicErr } = await supabase
         .from('erp_sucursal_map')
         .select('erp_sucursal_id, inv_ubicaciones');
+      // Con el Map vacío cada sucursal cae a su ubicación por defecto: Bodega
+      // mezclaría vencidos dentro del inventario regular sin avisar.
+      if (ubicErr) throw new Error(`erp_sucursal_map(inv_ubicaciones): ${ubicErr.message}`);
       const ubicByErpId = new Map<number, any>(
         (ubicRows ?? []).map((r: any) => [Number(r.erp_sucursal_id), r.inv_ubicaciones])
       );

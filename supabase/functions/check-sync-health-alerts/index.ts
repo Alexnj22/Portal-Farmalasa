@@ -87,17 +87,21 @@ serve(async (req) => {
 
   try {
     // Destinatarios: role_id primario O secondary_role_id apuntando al rol de sistema.
-    const { data: roleRow } = await supabase
+    // Un error acá NO puede tragarse: deja la lista de destinatarios vacía y la
+    // alerta "se envía" a nadie sin que nada falle. El silencio no es éxito.
+    const { data: roleRow, error: roleErr } = await supabase
       .from('roles').select('id').eq('name', SYSTEM_ALERT_ROLE_NAME).maybeSingle();
+    if (roleErr) throw new Error(`roles(${SYSTEM_ALERT_ROLE_NAME}): ${roleErr.message}`);
     const systemRoleId = roleRow?.id ?? null;
 
     let recipientIds: string[] = [];
     if (systemRoleId != null) {
-      const { data: recipients } = await supabase
+      const { data: recipients, error: recipErr } = await supabase
         .from('employees')
         .select('id')
         .or(`role_id.eq.${systemRoleId},secondary_role_id.eq.${systemRoleId}`)
         .eq('status', 'ACTIVO');
+      if (recipErr) throw new Error(`employees del rol de alertas: ${recipErr.message}`);
       recipientIds = (recipients ?? []).map((e: { id: string }) => e.id);
     }
 

@@ -32,11 +32,14 @@ serve(async (req) => {
 
   try {
     // ── Empleados supervisores con posibles push subscriptions ──────────────
-    const { data: supervisors } = await supabase
+    // Si esto falla en silencio, la lista de supervisores queda vacía y la
+    // alerta de ventas no le llega a nadie, sin ningún error a la vista.
+    const { data: supervisors, error: supErr } = await supabase
       .from('employees')
       .select('id')
       .in('role_id', SUPERVISOR_ROLE_IDS)
       .eq('status', 'ACTIVO');
+    if (supErr) throw new Error(`employees supervisores: ${supErr.message}`);
 
     const supervisorIds = (supervisors ?? []).map((e: { id: string }) => e.id);
 

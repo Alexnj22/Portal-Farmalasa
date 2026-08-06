@@ -42,10 +42,13 @@ serve(async (req) => {
       query = query.in('employee_id', target_value);
     } else if (target_type === 'BRANCH' && Array.isArray(target_value) && target_value.length > 0) {
       // Join through employees table to filter by branch
-      const { data: emps } = await supabase
+      // Sin este chequeo, un error acá devuelve `sent: 0` con cara de éxito:
+      // la sucursal entera se queda sin push y nadie se entera.
+      const { data: emps, error: empsErr } = await supabase
         .from('employees')
         .select('id')
         .in('branch_id', target_value);
+      if (empsErr) throw new Error(`employees por sucursal: ${empsErr.message}`);
       const empIds = (emps || []).map((e: { id: string }) => e.id);
       if (empIds.length === 0) return new Response(JSON.stringify({ sent: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       query = query.in('employee_id', empIds);

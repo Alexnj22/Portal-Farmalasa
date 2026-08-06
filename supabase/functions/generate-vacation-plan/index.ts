@@ -37,9 +37,12 @@ Deno.serve(async (req) => {
     if (empErr) throw empErr;
 
     // 2. Fetch branches for names
-    const { data: branches } = await supabase
+    const { data: branches, error: branchesErr } = await supabase
       .from("branches")
       .select("id, name");
+    // Sin nombre de sucursal el plan sale con ids crudos y parece un dato malo
+    // del negocio, no una consulta que falló.
+    if (branchesErr) throw new Error(`branches: ${branchesErr.message}`);
 
     const branchMap: Record<string, string> = {};
     (branches || []).forEach((b: { id: number; name: string }) => {
@@ -57,11 +60,13 @@ Deno.serve(async (req) => {
     }
 
     // 4. Fetch holidays for target year
-    const { data: holidays } = await supabase
+    const { data: holidays, error: holidaysErr } = await supabase
       .from("holidays")
       .select("holiday_date, name")
       .gte("holiday_date", `${year}-01-01`)
       .lte("holiday_date", `${year}-12-31`);
+    // Un fallo acá genera el plan como si el año no tuviera asuetos.
+    if (holidaysErr) throw new Error(`holidays ${year}: ${holidaysErr.message}`);
 
     // 5. Build prompt
     const empList = eligible.map((e: { id: string; name?: string; first_names?: string; last_names?: string; hire_date: string; branch_id: number }) => ({

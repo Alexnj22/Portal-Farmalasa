@@ -100,11 +100,15 @@ Deno.serve(async (req) => {
         // Already expired
         if (diffDays < 0) {
           const checkKey = `doc_expiry_${branch.id}_${doc.id}_expired`;
-          const { data: existing } = await supabase
+          // Este query ES el antiduplicado. Si falla en silencio, `existing`
+          // queda vacío, el aviso se vuelve a publicar y se repite en cada
+          // corrida del cron.
+          const { data: existing, error: existingErr } = await supabase
             .from('announcements')
             .select('id')
             .filter('metadata->>check_key', 'eq', checkKey)
             .limit(1);
+          if (existingErr) throw new Error(`announcements(${checkKey}): ${existingErr.message}`);
 
           if (!existing || existing.length === 0) {
             await supabase.from('announcements').insert([{
@@ -127,11 +131,13 @@ Deno.serve(async (req) => {
           if (diffDays > threshold.days) continue;
 
           const checkKey = `doc_expiry_${branch.id}_${doc.id}_${threshold.label}`;
-          const { data: existing } = await supabase
+          // Mismo antiduplicado que arriba, para los avisos por umbral.
+          const { data: existing, error: existingErr } = await supabase
             .from('announcements')
             .select('id')
             .filter('metadata->>check_key', 'eq', checkKey)
             .limit(1);
+          if (existingErr) throw new Error(`announcements(${checkKey}): ${existingErr.message}`);
 
           if (!existing || existing.length === 0) {
             await supabase.from('announcements').insert([{

@@ -311,10 +311,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const executeResetPassword = async () => {
         setIsResetting(true);
         try {
-            const { data } = await supabase.functions.invoke(
+            // Sin mirar el error, una edge function que falla cae en el `else`
+            // de abajo con un mensaje genérico y el motivo real se pierde.
+            const { data, error } = await supabase.functions.invoke(
                 'set-employee-password',
                 { body: { username: emp.username, password: '1234' } }
             );
+            if (error) throw error;
             if (data?.ok) {
                 setShowResetConfirm(false);
                 if (data.tempPassword) {
@@ -464,7 +467,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-lento)]" />
                                         </div>
                                         {canEdit && (
-                                            <div className="absolute inset-0 rounded-full bg-scrim opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                                            <div className="absolute inset-0 rounded-full bg-scrim opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-[var(--dur-slow)] flex items-center justify-center cursor-pointer"
                                                 onClick={handleEditProfile}>
                                                 <Camera size={24} className="text-white"/>
                                             </div>
@@ -484,7 +487,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             CÓD: {emp.code || 'S/N'}
                                         </span>
                                         {canEdit && (
-                                            <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-300">
+                                            <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-[var(--dur-slow)]">
                                                 <Button icon={Pencil} disabled={!canEdit} onClick={handleEditProfile}>Editar</Button>
                                                 <Button tone="warning" icon={KeyRound} onClick={handleResetPassword}>Contraseña</Button>
                                             </div>
@@ -631,9 +634,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                 return (
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
-                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-surface-card border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-base ${isHiring ? 'border-success' : 'border-brand'}`}></div>
+                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-surface-card border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-[var(--dur-slow)] z-base ${isHiring ? 'border-success' : 'border-brand'}`}></div>
                                                         
-                                                        <div data-surface="card" className={`hover:bg-surface-card p-5 transition-all duration-300 ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
+                                                        <div data-surface="card" className={`hover:bg-surface-card p-5 transition-all duration-[var(--dur-slow)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                                                                 <Badge variant={evVariante} size="sm">{label}</Badge>
                                                                 <Badge>{formatDate(ev.date)}</Badge>
@@ -811,7 +814,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                     return (
                                                         <div key={ds}
-                                                            className={`relative group/cal flex flex-col items-center justify-center rounded-lg transition-all duration-200 ${hasEvents ? 'cursor-pointer hover:scale-110 hover:z-content hover:shadow-md' : 'cursor-default'} ${cellBg}`}
+                                                            className={`relative group/cal flex flex-col items-center justify-center rounded-lg transition-all duration-[var(--dur-base)] ${hasEvents ? 'cursor-pointer hover:scale-110 hover:z-content hover:shadow-md' : 'cursor-default'} ${cellBg}`}
                                                             {...clickable(() => hasEvents && setAusenciasSelectedDay(prev => prev === ds ? null : ds))}>
                                                             <span className={`text-body-sm font-bold leading-none select-none ${isSelected || isToday ? 'text-white' : hasEvents ? 'text-content-2' : 'text-content-3'}`}>
                                                                 {day}
@@ -825,7 +828,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             )}
                                                             {/* Tooltip */}
                                                             {hasEvents && tooltipLines.length > 0 && (
-                                                                <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 z-tooltip min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 focus-within:opacity-100 transition-opacity duration-200 text-left">
+                                                                <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 z-tooltip min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-base)] text-left">
                                                                     <p className="text-micro font-black uppercase tracking-widest text-content-tooltip-2 mb-1.5">{ds}</p>
                                                                     {tooltipLines.map((item, li) => (
                                                                         <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-border-tooltip' : ''}>
@@ -886,10 +889,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             hover: 'hover:bg-warning/10 hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)]' };
 
                                                     return (
-                                                        <div key={ev.id || idx} className={`group/card ${cfg.bg} border ${cfg.border} rounded-3xl p-4 flex flex-col gap-3 ${cfg.hover} hover:translate-y-[var(--lift-card)] transition-all duration-300 shadow-sm cursor-default`}>
+                                                        <div key={ev.id || idx} className={`group/card ${cfg.bg} border ${cfg.border} rounded-3xl p-4 flex flex-col gap-3 ${cfg.hover} hover:translate-y-[var(--lift-card)] transition-all duration-[var(--dur-slow)] shadow-sm cursor-default`}>
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div className="flex items-center gap-2.5">
-                                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.badge} border group-hover/card:scale-110 transition-transform duration-300`}>
+                                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.badge} border group-hover/card:scale-110 transition-transform duration-[var(--dur-slow)]`}>
                                                                         <cfg.Icon size={15} strokeWidth={2}/>
                                                                     </div>
                                                                     <div>

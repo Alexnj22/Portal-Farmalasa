@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.416.0 — El canto sale del DOM, no de una lista
+
+**Tres rondas de «te faltaron éstos» eran la señal de que el criterio estaba mal, no la
+lista.** Primero el canto colgaba de `[data-interactive]` —29 sitios, los de
+`clickable()`— y faltaban el sidebar, los menús y el flotante. Después se marcaron 53 a
+mano y seguían faltando el avatar, el de salir, el buscador, el de compactar y todo el
+interior del menú de ajustes.
+
+**El registro de lo que es interactivo ya existe en el DOM**, y es el elemento que se
+usó para construirlo: `button`, `a[href]`, `[role="button"]`. El canto ahora cuelga de
+ahí —**108 controles dentro de superficies de vidrio**, contra 53 marcados a mano— y no
+hay lista que mantener. Es la misma corrección que llevó `data-interactive` a salir de
+`clickable()` en vez de un barrido estático: **preguntarle la respuesta a quien ya la
+tiene**.
+
+`position: relative` se salta lo que Tailwind ya posicionó (`.absolute`, `.fixed`,
+`.sticky`): forzárselo a un elemento posicionado es lo que dejó el menú de Ajustes
+fuera de pantalla en v2.409.0. Verificado en la app: **108 controles, cero posiciones
+sobrescritas**.
+
+La guarda de «sólo la pieza más interna» se extendió a los controles, porque si no,
+apuntar un botón dentro de una tarjeta barría los dos.
+
 ## v2.415.0 — La vista de solicitudes, canónica: fuera nueve colores por tipo
 
 **El color vuelve a significar estado.** `TYPE_COLORS` daba un relleno propio a

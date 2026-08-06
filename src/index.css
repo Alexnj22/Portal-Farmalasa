@@ -2262,15 +2262,28 @@ thead.sticky {
   to   { --rim-ang: 570deg; opacity: 0 }
 }
 
-/* Toda pieza de vidrio lleva canto: las diez superficies canónicas más
-   cualquier `[data-interactive]`. Antes colgaba SÓLO de `data-interactive`,
-   que son 29 sitios — por eso el destello no aparecía ni en el sidebar, ni
-   en los menús, ni en los ítems del flotante. En vidrio cada elemento es
-   una pieza, así que cada pieza tiene canto. */
-[data-interactive] { position: relative; }
+/* ══ Qué cuenta como «pieza de vidrio» ═══════════════════════════════════
+   Las diez superficies canónicas, y **todo control dentro de una de ellas**:
+   `button`, `a[href]`, `[role="button"]`.
+
+   La lista NO se escribe a mano. Primero colgaba de `[data-interactive]` —29
+   sitios— y faltaban el sidebar, los menús y el flotante; después se marcaron
+   53 a mano y seguían faltando el avatar, el de salir, el buscador, el de
+   compactar y todo el interior del menú de ajustes. Tres rondas de «te
+   faltaron éstos» son la señal de que el criterio estaba mal, no la lista:
+   **el registro de lo que es interactivo ya existe en el DOM**, y es el
+   elemento que se usó para construirlo. Es la misma corrección que llevó
+   `data-interactive` a salir de `clickable()` en vez de un barrido estático.
+
+   `position: relative` se salta lo que Tailwind ya posicionó: forzárselo a un
+   elemento posicionado es lo que dejó el menú de Ajustes fuera de pantalla en
+   v2.409.0. */
+[data-interactive],
+[data-surface] :is(button, a[href], [role="button"]):not(.absolute):not(.fixed):not(.sticky) { position: relative; }
 
 [data-surface]:not([data-surface="sheet"])::after,
-[data-interactive]::after {
+[data-interactive]::after,
+[data-surface] :is(button, a[href], [role="button"])::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -2301,8 +2314,9 @@ thead.sticky {
      los elementos vidrio y no en la que está el mouse?»).
      `inherits: false` en `--rim-ang` resuelve la mitad —que el ángulo baje por
      el árbol—; ésta resuelve la otra: que el hover SUBA. */
-  [data-surface]:not([data-surface="sheet"]):hover:not(:has(:is([data-surface],[data-interactive]):hover))::after,
-  [data-interactive]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after {
+  [data-surface]:not([data-surface="sheet"]):hover:not(:has(:is([data-surface],[data-interactive],button,a[href],[role="button"]):hover))::after,
+  [data-interactive]:hover:not(:has(:is([data-surface],[data-interactive],button,a[href],[role="button"]):hover))::after,
+  [data-surface] :is(button, a[href], [role="button"]):hover:not(:has(:is([data-surface],[data-interactive],button,a[href],[role="button"]):hover))::after {
     opacity: 1;
     animation: filo-corre 1.9s cubic-bezier(.35, 0, .2, 1) forwards;
   }
@@ -2316,6 +2330,8 @@ thead.sticky {
   transform: translateY(1px);
 }
 /* Solid no tiene canto vivo: su borde es fijo, así que no corre nada. */
+[data-theme="solid"] [data-surface] :is(button, a[href], [role="button"])::after,
+[data-theme="solid-dark"] [data-surface] :is(button, a[href], [role="button"])::after,
 [data-theme="solid"] [data-surface]::after,
 [data-theme="solid"] [data-interactive]::after,
 [data-theme="solid-dark"] [data-surface]::after,
@@ -2364,9 +2380,9 @@ thead.sticky {
    Sin esto el flotante destellaba al abrirse y nunca más, aunque uno saliera y
    volviera a entrar. */
 @media (hover: hover) {
-  [data-surface="sidebar-popover"]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after,
-  [data-surface="dropdown"]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after,
-  [data-surface="modal"]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after {
+  [data-surface="sidebar-popover"]:hover:not(:has(:is([data-surface],[data-interactive],button,a[href],[role="button"]):hover))::after,
+  [data-surface="dropdown"]:hover:not(:has(:is([data-surface],[data-interactive],button,a[href],[role="button"]):hover))::after,
+  [data-surface="modal"]:hover:not(:has(:is([data-surface],[data-interactive],button,a[href],[role="button"]):hover))::after {
     opacity: 1;
     animation: filo-corre 1.9s cubic-bezier(.35, 0, .2, 1) forwards;
   }

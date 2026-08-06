@@ -841,7 +841,7 @@ De los 617, **77 están en los canónicos** (`components/common`) — ésos prim
 casi todo el portal pasa por ellos, igual que en §2 con el trazo de los íconos.
 
 
-### 7.3 El reloj creció un escalón ✅ PARCIAL 2026-08-05
+### 7.3 El reloj creció un escalón ✅ CERRADO 2026-08-05
 
 **Primero, una premisa mía que no sobrevivió a la medición.** Al ofrecer las opciones
 escribí que los 224 huérfanos se repartían entre interacción (`duration-500`) y
@@ -869,13 +869,36 @@ no cuenta») se cae en cuanto se cuenta.
 Mismo factor 0.6 que los otros tres (150/200/300 → 90/120/180). **Migrados los 150
 `duration-500` → `duration-[var(--dur-lento)]`** en 52 archivos, cero restos.
 
-**Pendiente de decisión: los 69 de `duration-700`.** No son ambientales, así que la
-opción de dejarlos fuera del reloj no existe. Quedan dos: retemplarlos al escalón
-nuevo —700ms para un `group-hover:scale-110` se siente lento, y el sentido de tener
-escala es poder decir que no— o abrir un quinto escalón. **Recomiendo retemplar**, y
-va sin hacer porque **cambia el ritmo perceptible en 69 sitios** y eso se aprueba
-viéndolo, no leyéndolo. Hasta entonces van al ratchet del gate `reloj-a-mano`, que
-por eso todavía **no** se crea (§8.2: el gate va después de bajar la deuda).
+**Los 700 bajaron — decidido por el usuario el 2026-08-05.** 700ms para un
+`group-hover:scale-110` se siente lento, y el sentido de tener una escala es poder
+decir que no. Retemplados los 69 de `duration-700` y los 6 de `duration-1000`.
+
+### 7.3.bis La cola que la tabla de §7.2 tampoco listaba
+
+Al terminar quedaban **20 usos más** en cinco valores que la tabla de §7.2 nunca
+mencionó: `75` (3), `100` (6), `250` (4), `400` (4), `600` (1). O sea que el portal no
+usaba seis valores de duración: **usaba once**. Es el mismo subconteo que §13 y §18.1,
+tercera vez en el mismo documento.
+
+**La regla para cerrarlos, escrita para que no haya que volver a decidirla: al escalón
+más cercano, y los empates BAJAN.** Más rápido se siente mejor que más lento, y `250`
+y `400` son empates exactos.
+
+| | | |
+|---|---|---|
+| 75, 100 | → `--dur-fast` (150) | 9 usos |
+| 250 | → `--dur-base` (200) | empate, baja · 4 usos |
+| 400 | → `--dur-slow` (300) | empate, baja · 4 usos |
+| 600 | → `--dur-lento` (500) | 1 uso |
+
+**Y dos que el primer barrido no vio, por una variante:** `[&_svg]:duration-300`. El
+regex pedía espacio, comilla o llave antes del token, y `:` no estaba en esa lista —
+así que era ciego a todo `duration-*` con variante (`md:`, `group-hover:`,
+`[&_svg]:`). Corregido agregando `:` al delimitador.
+
+**Resultado: cero literales `duration-N` en JSX.** Los cuatro escalones emiten su
+utilidad en el bundle (verificado: `--tw-duration` + `transition-duration`), así que
+`reloj-a-mano` puede nacer bloqueante, sin baseline.
 
 ### 7.4 En Solid, la mitad «entrada» del reloj no existe — y está bien
 

@@ -201,7 +201,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                 <button key={pres.id_presentacion} type="button"
                                     aria-pressed={isActive}
                                     onClick={() => selectPres(pres.id_presentacion)}
-                                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-150 select-none text-left ${
+                                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-[var(--dur-fast)] select-none text-left ${
                                         isActive
                                             ? `${style.bg} border-transparent ${style.text} shadow-lg`
                                             : 'bg-surface-card border-divider text-content-2 hover:border-divider hover:bg-surface-card-hover'

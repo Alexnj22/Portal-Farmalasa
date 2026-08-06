@@ -47,7 +47,7 @@ const AuthPromptPanel = ({
 
         {/* TOP */}
         <div className="flex flex-col items-center text-center w-full mb-5 sm:mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
-          <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-3 sm:mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]">
+          <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-3 sm:mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-[var(--dur-slow)] border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]">
             <ShieldAlert size={40} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl sm:text-3xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5 transition-colors">

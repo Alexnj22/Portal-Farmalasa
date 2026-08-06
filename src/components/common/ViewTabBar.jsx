@@ -191,7 +191,7 @@ export default function ViewTabBar({
   const clearBtnCls  = 'text-content-3 hover:text-danger';
 
   return (
-    <div {...containerProps} ref={trackRef} data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
+    <div {...containerProps} ref={trackRef} data-surface="tab-track" className={`relative flex items-center transition-all duration-[var(--dur-lento)] ${spring}
       hover:translate-y-[var(--lift-card)] transform-gpu
       h-12 md:h-[3.25rem] p-0.5 md:p-1 w-max max-w-full
       shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]`}>
@@ -207,7 +207,7 @@ export default function ViewTabBar({
           limpiar y cerrar, y de paso lo oculta a los lectores de pantalla. */}
       <div inert={!buscando ? true : undefined}
         className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
-        transition-all duration-700 ${spring} origin-left
+        transition-all duration-[var(--dur-lento)] ${spring} origin-left
         ${buscando
           ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3'
           : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
@@ -243,7 +243,7 @@ export default function ViewTabBar({
           colapsados seguían tabulables. */}
       <div inert={buscando ? true : undefined}
         className={`flex items-center h-full shrink-0 transform-gpu overflow-visible
-        transition-all duration-700 ${spring} origin-right
+        transition-all duration-[var(--dur-lento)] ${spring} origin-right
         ${buscando
           ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0'
           : 'max-w-[1200px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
@@ -266,7 +266,7 @@ export default function ViewTabBar({
               <button key={tab.key}
                 onClick={() => { onTabChange?.(tab.key); setIsSearchMode(false); }}
                 className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-full text-micro md:text-caption font-black
-                  uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap
+                  uppercase tracking-widest transition-all duration-[var(--dur-slow)] transform-gpu whitespace-nowrap
                   border shrink-0 flex items-center gap-1.5
                   ${isActive ? activeTabCls : inactiveTabCls}`}>
                 {TabIcon && <TabIcon size={12} strokeWidth={2.5} />}
@@ -305,7 +305,7 @@ export default function ViewTabBar({
         {mostrarLupa && (
           <button aria-label="Buscar" onClick={openSearch}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
-              transition-[background-color,transform] duration-200 hover:translate-y-[var(--lift-hover)] active:scale-[0.97] transform-gpu relative
+              transition-[background-color,transform] duration-[var(--dur-base)] hover:translate-y-[var(--lift-hover)] active:scale-[0.97] transform-gpu relative
               bg-brand text-white hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchValue && (

@@ -144,7 +144,7 @@ export default function ConteoInventarioView() {
                 contra los 32 de Personal. Y `space-y-6` reemplaza los `mb-*` sueltos
                 que traía cada bloque — el ritmo entre bloques es del contenedor, y
                 repartido en cada hijo se desincroniza en cuanto uno se esconde. */}
-            <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-700">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-[var(--dur-lento)]">
 
             {/* Resumen arriba, y cada tarjeta es un FILTRO. La pregunta de esta
                 pantalla no es "cuántos conteos hay" sino "cuál me está esperando":

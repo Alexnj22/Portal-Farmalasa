@@ -221,7 +221,7 @@ const Button = memo(({
             aria-label={nombreAuto}
             disabled={isDisabled}
             className={`group relative overflow-hidden inline-flex items-center justify-center font-bold tracking-[-0.005em]
-                transition-[transform,box-shadow,background-color,color] duration-150 ease-[var(--ease-spring)] whitespace-nowrap
+                transition-[transform,box-shadow,background-color,color] duration-[var(--dur-fast)] ease-[var(--ease-spring)] whitespace-nowrap
                 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
                 ${SHAPE_CLASSES[shape] || SHAPE_CLASSES.box}
                 ${tone

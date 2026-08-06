@@ -6,7 +6,7 @@ import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight,
 const PaginationControls = ({ currentPage, totalPages, setPage }) => {
   if (totalPages <= 1) return null;
   return (
-    <div className="flex items-center justify-center gap-4 mt-5 animate-in fade-in duration-300">
+    <div className="flex items-center justify-center gap-4 mt-5 animate-in fade-in duration-[var(--dur-slow)]">
       <Button variant="secondary" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setPage(p => Math.max(1, p - 1))} />
       <div className="px-3 py-1 bg-surface-card border border-border-card rounded-full shadow-[var(--shadow-shine)]">
           <span className="text-caption font-black text-content-3 uppercase tracking-widest">
@@ -60,7 +60,7 @@ const FormAnnouncements = ({ data }) => {
   const totalPendingPages = Math.ceil(pendingList.length / ITEMS_PER_PAGE);
 
   return (
-    <div className="w-full flex flex-col p-6 pt-14 md:p-10 md:pt-16 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-[var(--ease-spring)] h-full">
+    <div className="w-full flex flex-col p-6 pt-14 md:p-10 md:pt-16 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] ease-[var(--ease-spring)] h-full">
       
       {/* HEADER DEL REPORTE */}
       <div className="mb-5 pr-8 flex items-center gap-4 shrink-0">
@@ -109,7 +109,7 @@ const FormAnnouncements = ({ data }) => {
               <CheckCircle2 size={16} strokeWidth={2.5}/> 
               Confirmados ({confirmedList.length})
             </div>
-            <div className={`p-1 rounded-md transition-all duration-300 ${isConfirmedOpen ? 'bg-success/10 text-success' : 'bg-transparent text-success group-hover:bg-success/10'}`}>
+            <div className={`p-1 rounded-md transition-all duration-[var(--dur-slow)] ${isConfirmedOpen ? 'bg-success/10 text-success' : 'bg-transparent text-success group-hover:bg-success/10'}`}>
               <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isConfirmedOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>
@@ -163,7 +163,7 @@ const FormAnnouncements = ({ data }) => {
               <AlertCircle size={16} strokeWidth={2.5}/> 
               Pendientes ({pendingList.length})
             </div>
-            <div className={`p-1 rounded-md transition-all duration-300 ${isPendingOpen ? 'bg-warning/10 text-warning' : 'bg-transparent text-warning group-hover:bg-warning/10'}`}>
+            <div className={`p-1 rounded-md transition-all duration-[var(--dur-slow)] ${isPendingOpen ? 'bg-warning/10 text-warning' : 'bg-transparent text-warning group-hover:bg-warning/10'}`}>
               <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isPendingOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>

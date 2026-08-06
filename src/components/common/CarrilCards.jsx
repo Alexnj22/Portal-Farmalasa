@@ -221,7 +221,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                         w-7 h-7 rounded-full grid place-items-center
                         bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)]
                         text-content-2 hover:bg-brand hover:border-brand hover:text-white
-                        transition-[background-color,border-color,color] duration-150">
+                        transition-[background-color,border-color,color] duration-[var(--dur-fast)]">
                     <ChevronLeft size={14} strokeWidth={2.5} />
                 </button>
             )}
@@ -231,7 +231,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                         w-7 h-7 rounded-full grid place-items-center
                         bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)]
                         text-content-2 hover:bg-brand hover:border-brand hover:text-white
-                        transition-[background-color,border-color,color] duration-150">
+                        transition-[background-color,border-color,color] duration-[var(--dur-fast)]">
                     <ChevronRight size={14} strokeWidth={2.5} />
                 </button>
             )}

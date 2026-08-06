@@ -186,7 +186,7 @@ const FormTurnos = ({ branches }) => {
         const isBusy = actionLoading === shift.id;
 
         return (
-            <div className={`bg-surface-card rounded-2xl border shadow-sm transition-all duration-300 relative overflow-hidden group ${isCurrentlyEditing ? 'border-brand shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/45' : 'border-divider'} ${isBeingDeleted ? 'bg-danger/10' : 'hover:border-brand/30 hover:shadow-md'}`}>
+            <div className={`bg-surface-card rounded-2xl border shadow-sm transition-all duration-[var(--dur-slow)] relative overflow-hidden group ${isCurrentlyEditing ? 'border-brand shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/45' : 'border-divider'} ${isBeingDeleted ? 'bg-danger/10' : 'hover:border-brand/30 hover:shadow-md'}`}>
                 
                 {isArchived && <div className="absolute top-0 right-0 w-2 h-full bg-content-3"></div>}
                 

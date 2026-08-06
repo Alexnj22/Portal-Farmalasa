@@ -688,7 +688,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     : 'Sin productos con ese filtro';
 
                 return (
-                    <div className={`transition-opacity duration-300 flex flex-col gap-4 ${activeRefreshing ? 'opacity-60' : ''}`}>
+                    <div className={`transition-opacity duration-[var(--dur-slow)] flex flex-col gap-4 ${activeRefreshing ? 'opacity-60' : ''}`}>
                         <DataTable
                             columns={columns}
                             sortKey={sortField}
@@ -716,7 +716,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 <span className="text-body font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? 'Copiado' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
+                                                <span className={`shrink-0 text-micro font-bold transition-all duration-[var(--dur-fast)] ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </Button>
@@ -798,7 +798,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 <span className="text-body font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? 'Copiado' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
+                                                <span className={`shrink-0 text-micro font-bold transition-all duration-[var(--dur-fast)] ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </Button>

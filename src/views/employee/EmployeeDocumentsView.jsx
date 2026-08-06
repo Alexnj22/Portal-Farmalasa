@@ -102,7 +102,7 @@ const DocCard = ({ doc }) => {
             : null;
 
     return (
-        <div data-surface="card" className={`group relative p-5 transition-all duration-300 ${cfg.glow} ${cfg.border} overflow-hidden`}>
+        <div data-surface="card" className={`group relative p-5 transition-all duration-[var(--dur-slow)] ${cfg.glow} ${cfg.border} overflow-hidden`}>
 
             {/* Accent bar izquierda */}
             <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${cfg.accent} opacity-60`} />
@@ -342,9 +342,9 @@ const EmployeeDocumentsView = () => {
                         )}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-[var(--dur-slow)]">
                         {filtered.map((doc, i) => (
-                            <div key={doc.id} className="animate-in fade-in slide-in-from-bottom-3 duration-300" style={{ animationDelay: `${i * 40}ms` }}>
+                            <div key={doc.id} className="animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-slow)]" style={{ animationDelay: `${i * 40}ms` }}>
                                 <DocCard doc={doc} />
                             </div>
                         ))}

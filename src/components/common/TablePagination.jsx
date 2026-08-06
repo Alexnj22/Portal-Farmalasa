@@ -40,7 +40,7 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
  */
 
 const NAV = `w-[max(36px,var(--tap-min))] h-[max(36px,var(--tap-min))] rounded-btn flex items-center justify-center shrink-0
-    text-content-3 transition-[background-color,color,transform] duration-150
+    text-content-3 transition-[background-color,color,transform] duration-[var(--dur-fast)]
     hover:bg-surface-card-hover hover:text-brand-text hover:translate-y-[var(--lift-hover)]
     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent
     disabled:hover:text-content-3 disabled:hover:translate-y-0`;
@@ -169,7 +169,7 @@ export default function TablePagination({
                         title="Ir a una página"
                         className="h-8 px-2.5 mx-0.5 rounded-btn text-body-sm text-content-2 tabular-nums
                             whitespace-nowrap hover:bg-surface-card-hover hover:text-content
-                            transition-colors duration-150">
+                            transition-colors duration-[var(--dur-fast)]">
                         pág. <b className="text-content font-black">{page}</b>
                         <span className="text-content-3">/{totalPages}</span>
                     </button>

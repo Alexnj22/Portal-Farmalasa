@@ -45,7 +45,7 @@ const KioskConfigModal = ({
   }));
 
   return (
-    <div className="absolute inset-0 z-sidebar-desktop bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+    <div className="absolute inset-0 z-sidebar-desktop bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-[var(--dur-slow)]">
       
       {/* Tarjeta Liquid Glass */}
       <div className="w-full max-w-[420px] max-h-full overflow-y-auto scrollbar-hide flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 shadow-[var(--shadow-glass-dark)] text-center relative">
@@ -55,7 +55,7 @@ const KioskConfigModal = ({
              ESTADO: KIOSCO VINCULADO (ACTIVO)
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
-            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[var(--shadow-glow-success-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-success-lg)]">
+            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-[var(--dur-slow)] border backdrop-blur-md bg-success/10 border-success/40 shadow-[var(--shadow-glow-success-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-success-lg)]">
               <MonitorCheck size={40} className="text-success drop-shadow-[var(--shadow-glow-success)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 
@@ -83,7 +83,7 @@ const KioskConfigModal = ({
              ESTADO: VINCULAR KIOSCO (SETUP)
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
-            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]">
+            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-[var(--dur-slow)] border backdrop-blur-md bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]">
               <Settings size={40} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 

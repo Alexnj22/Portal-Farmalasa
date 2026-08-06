@@ -105,7 +105,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                             onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
                             aria-pressed={filterAbc === abc}
                             aria-label={`Clase ${abc}: ${total} producto${total === 1 ? '' : 's'}`}
-                            className={`w-5 text-caption font-black shrink-0 transition-colors duration-150
+                            className={`w-5 text-caption font-black shrink-0 transition-colors duration-[var(--dur-fast)]
                                 ${filterAbc === abc ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                             {abc}
                         </button>
@@ -129,7 +129,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                                             outlineOffset: '-2px',
                                         }}
                                         className={`grid place-items-center min-w-0 text-micro font-black tabular-nums
-                                            transition-[filter] duration-150 hover:brightness-110
+                                            transition-[filter] duration-[var(--dur-fast)] hover:brightness-110
                                             ${xyz === 'Z' ? 'text-content-2' : 'text-white'}`}>
                                         {pct > 14 ? n : ''}
                                     </button>
@@ -184,7 +184,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                 aria-expanded={abierto} aria-haspopup="dialog"
                 aria-label="Clasificación ABC por XYZ"
                 className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-btn shrink-0
-                    text-body-sm font-bold transition-colors duration-150
+                    text-body-sm font-bold transition-colors duration-[var(--dur-fast)]
                     ${abierto || resumen ? 'text-brand-text' : 'text-content-2 hover:text-content'}`}>
                 <BarChart2 size={13} strokeWidth={2.5} className="text-brand-text" />
                 ABC
@@ -196,7 +196,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                 <div data-abc={id} role="dialog" aria-label="Clasificación ABC por XYZ"
                     data-surface="dropdown"
                     style={{ top: caja.top, left: caja.left }}
-                    className="fixed z-dropdown p-3 animate-in fade-in zoom-in-95 duration-150 ease-out">
+                    className="fixed z-dropdown p-3 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
                     <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">
                         Clasificación ABC × XYZ
                     </p>

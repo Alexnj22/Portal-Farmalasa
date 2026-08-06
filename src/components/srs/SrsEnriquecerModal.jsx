@@ -427,7 +427,7 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                             {/* Progress bar */}
                             <div className="h-2 bg-surface-card-hover rounded-full overflow-hidden">
-                                <div className="h-full bg-chart-3 rounded-full transition-all duration-300"
+                                <div className="h-full bg-chart-3 rounded-full transition-all duration-[var(--dur-slow)]"
                                     style={{ width: total ? `${(scanned / total) * 100}%` : '0%' }} />
                             </div>
 

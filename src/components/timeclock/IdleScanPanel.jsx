@@ -48,7 +48,7 @@ export default function IdleScanPanel({
 
         {/* TOP: Ícono y Títulos */}
         <div className="flex flex-col items-center text-center w-full mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
-          <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]'
+          <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-[var(--dur-slow)] border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]'
             }`}>
             {specialMode
               ? <ShieldAlert size={40} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />

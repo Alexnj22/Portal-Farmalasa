@@ -71,7 +71,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     if (isMissing) {
         return (
-            <div {...clickable(onEditRole)} data-surface="card" className="group relative overflow-hidden flex flex-col items-center justify-center p-5 border-2 border-dashed border-danger/30 bg-danger/10 hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 min-h-[260px]">
+            <div {...clickable(onEditRole)} data-surface="card" className="group relative overflow-hidden flex flex-col items-center justify-center p-5 border-2 border-dashed border-danger/30 bg-danger/10 hover:bg-surface-card cursor-pointer transition-all duration-[var(--dur-slow)] hover:border-danger/50 min-h-[260px]">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger-text group-hover:bg-danger/10 group-hover:text-danger-text transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
@@ -85,7 +85,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     }
 
     return (
-        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:translate-y-[var(--lift-card)] shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
+        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-[var(--dur-lento)] group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
@@ -280,7 +280,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <div className="w-full bg-surface-card-hover h-2.5 rounded-full overflow-hidden shadow-inner"
                      role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}
                      aria-label="Progreso de la sincronización histórica">
-                    <div className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                    <div className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-[var(--dur-slow)]" style={{ width: `${progress}%` }}></div>
                 </div>
             )}
 
@@ -491,7 +491,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
                                 </div>
                             </div>
-                            <div data-surface="dropdown" className="absolute top-full right-0 mt-2 w-72 p-4 opacity-0 invisible group-hover/wfm:opacity-100 focus-within:opacity-100 group-hover/wfm:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
+                            <div data-surface="dropdown" className="absolute top-full right-0 mt-2 w-72 p-4 opacity-0 invisible group-hover/wfm:opacity-100 focus-within:opacity-100 group-hover/wfm:visible transition-all duration-[var(--dur-slow)] z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
                                 {wfmApplied ? (
                                     <>
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3 border-b border-border-card pb-1">Desglose de Horas Hombre (WFM)</p>
@@ -540,10 +540,10 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <span className={`text-micro font-black leading-none ${textTheme}`}>{complianceScore}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
-                                <div className={`h-full transition-all duration-1000 ease-out ${scoreTheme}`} style={{ width: `${complianceScore}%` }}></div>
+                                <div className={`h-full transition-all duration-[var(--dur-lento)] ease-out ${scoreTheme}`} style={{ width: `${complianceScore}%` }}></div>
                             </div>
                         </div>
-                        <div data-surface="dropdown" className="absolute top-full right-0 mt-2 w-64 p-3 opacity-0 invisible group-hover/health:opacity-100 focus-within:opacity-100 group-hover/health:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
+                        <div data-surface="dropdown" className="absolute top-full right-0 mt-2 w-64 p-3 opacity-0 invisible group-hover/health:opacity-100 focus-within:opacity-100 group-hover/health:visible transition-all duration-[var(--dur-slow)] z-sidebar transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-border-card pb-1">Auditoría Regulatoria</p>
                             {complianceIssues.length > 0 ? (
                                 <ul className="space-y-2">
@@ -575,7 +575,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         ) : (
                             <>
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
+                                <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
                                 <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
                                 <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
                             </>
@@ -590,7 +590,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             <div className="relative w-full">
 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
-                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
                         <div data-surface="card" className="border-chart-3/30 p-8 md:p-12 relative overflow-hidden">
 
@@ -631,7 +631,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 relative z-base">
                                         {aiSummaryData?.split('\n').map((paragraph, index) => (
                                             <div key={index} className="relative mb-6 last:mb-0 group/p">
-                                                <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
+                                                <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-[var(--dur-slow)]"></div>
                                                 <p className="text-body md:text-subtitle font-medium text-content-2 leading-relaxed text-justify pl-5">
                                                     {paragraph.split('**').map((text, i) => (
                                                         i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
@@ -647,7 +647,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 </div>
 
                 {/* 🏢 VISTA NORMAL (ORGANIGRAMA Y DASHBOARD) */}
-                <div inert={aiMode ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={aiMode ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
 
                     {isLoadingWfm ? (
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */

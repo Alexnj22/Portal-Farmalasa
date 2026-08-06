@@ -48,7 +48,7 @@ const WEEK_DAYS = [
 ];
 
 const SectionCard = ({ children, className = '' }) => (
-    <div data-surface="card" className={`p-5 transition-all duration-300 ${className}`}>
+    <div data-surface="card" className={`p-5 transition-all duration-[var(--dur-slow)] ${className}`}>
         {children}
     </div>
 );
@@ -60,7 +60,7 @@ const SectionLabel = ({ icon: Icon, label, color = 'text-content-3' }) => (
 );
 
 const Field = ({ label, value, icon: Icon }) => (
-    <div data-surface="card" className="p-3.5 hover:bg-surface-card transition-all duration-200 cursor-default">
+    <div data-surface="card" className="p-3.5 hover:bg-surface-card transition-all duration-[var(--dur-base)] cursor-default">
         <div className="flex items-center gap-1.5 mb-0.5">
             {Icon && <Icon size={9} className="text-content-3 flex-shrink-0" />}
             <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em]">{label}</p>
@@ -196,7 +196,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
     if (!emp) return (
         <GlassViewLayout icon={User} title="Mi Perfil" transparentBody={true}>
-            <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 flex flex-col lg:flex-row gap-5 items-start animate-in fade-in duration-300">
+            <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 flex flex-col lg:flex-row gap-5 items-start animate-in fade-in duration-[var(--dur-slow)]">
                 <div className="w-full lg:w-[400px] shrink-0 space-y-4">
                     <div className="skeleton rounded-header h-80" />
                     <div className="grid grid-cols-2 gap-3">
@@ -279,7 +279,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-chart-1-text',  bg: 'bg-chart-1/10'  },
                             { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-warning', bg: 'bg-warning/10' },
                         ].map(({ label, value, icon: Icon, color, bg }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
+                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
                                 <p className="text-subtitle font-black text-content-2 leading-tight">{value}</p>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
@@ -295,7 +295,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10' },
                             { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
+                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">{label}</p>
                                 <p className="text-body font-black text-content-2 leading-tight">{value}</p>
@@ -339,7 +339,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                     {/* Emergencia */}
                     {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-modal p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:translate-y-[var(--lift-card)] transition-all duration-300">
+                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-modal p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:translate-y-[var(--lift-card)] transition-all duration-[var(--dur-slow)]">
                             <SectionLabel icon={HeartPulse} label="Contacto de Emergencia" color="text-danger" />
                             <div className="space-y-2">
                                 <Field label="Avisar a"            value={emp.emergency_contact_name}  icon={User} />
@@ -366,7 +366,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     // separados y el lift a mano se SUMABA al canónico en la rama de
                                     // tarjeta: la misma fila se movía 4px o 2px según la fecha.
                                     return (
-                                        <div key={vp.id} data-surface={isUpcoming ? undefined : 'card'} className={`flex items-center gap-3 p-3 border rounded-2xl hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30 hover:translate-y-[var(--lift-card)]' : ''}`}>
+                                        <div key={vp.id} data-surface={isUpcoming ? undefined : 'card'} className={`flex items-center gap-3 p-3 border rounded-2xl hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] ${isUpcoming ? 'bg-success/10 border-success/30 hover:translate-y-[var(--lift-card)]' : ''}`}>
                                             <div className={`p-2 rounded-xl flex-shrink-0 ${isUpcoming ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
                                                 <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={2} />
                                             </div>
@@ -403,7 +403,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                         PERMIT:     { label: 'Per', Icon: FileText,    bg: 'bg-success',   light: 'bg-success/10 border-success/30',     text: 'text-success-text'   },
                                     }[ev.type] : null;
                                     return (
-                                        <div key={d.id} className={`flex flex-col items-center rounded-2xl p-2 transition-all duration-200 ${
+                                        <div key={d.id} className={`flex flex-col items-center rounded-2xl p-2 transition-all duration-[var(--dur-base)] ${
                                             isToday   ? 'bg-chart-8 shadow-md'
                                             : evCfg   ? `${evCfg.light} border`
                                             : d.shift ? 'bg-surface-card border border-border-card'
@@ -466,7 +466,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                         {/* Filter panel */}
                         {showTimelineFilter && (
-                            <div data-surface="card" className="mb-4 p-3 bg-surface-card-hover/80 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <div data-surface="card" className="mb-4 p-3 bg-surface-card-hover/80 space-y-3 animate-in fade-in slide-in-from-top-1 duration-[var(--dur-base)]">
                                 {/* Date range */}
                                 <div className="flex items-center gap-2">
                                     <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
@@ -505,7 +505,7 @@ const EmployeeProfileView = ({ openModal }) => {
                         )}
 
                         {evLoading ? (
-                            <div className="space-y-3 animate-in fade-in duration-300">
+                            <div className="space-y-3 animate-in fade-in duration-[var(--dur-slow)]">
                                 {Array.from({ length: 4 }).map((_, i) => (
                                     <div key={i} className="flex gap-3 pl-7 relative">
                                         <div className="absolute -left-[10px] top-2 w-4 h-4 rounded-full skeleton" />
@@ -526,8 +526,8 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const isEdited    = meta.status === 'SUPERSEDED';
                                     return (
                                         <div key={ev.id || `ev-${idx}`} className="relative pl-7 group/ev">
-                                            <div className={`absolute -left-[9px] top-2.5 w-[14px] h-[14px] rounded-full bg-white border-2 shadow-sm group-hover/ev:scale-125 transition-transform duration-300 z-base ${theme.dot}`} />
-                                            <div data-surface="card" className={`p-4 transition-all duration-300 ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
+                                            <div className={`absolute -left-[9px] top-2.5 w-[14px] h-[14px] rounded-full bg-white border-2 shadow-sm group-hover/ev:scale-125 transition-transform duration-[var(--dur-slow)] z-base ${theme.dot}`} />
+                                            <div data-surface="card" className={`p-4 transition-all duration-[var(--dur-slow)] ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
                                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                                                     <Badge variant={theme.variante} size="sm">{label}</Badge>
                                                     <span className="text-caption font-bold text-content-3">{formatDate(ev.date)}</span>

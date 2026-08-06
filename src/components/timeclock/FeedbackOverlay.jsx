@@ -57,7 +57,7 @@ export default function FeedbackOverlay({
     <div className="fixed inset-0 z-bell-desktop flex flex-col items-center justify-center animate-in fade-in duration-[var(--dur-lento)] ease-[var(--ease-spring)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
 
       {/* ORBE DE LUZ DE FONDO */}
-      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full blur-[140px] pointer-events-none transition-colors duration-1000 ${color === 'red' ? 'opacity-20' : 'opacity-10'} ${theme.glow}`}></div>
+      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full blur-[140px] pointer-events-none transition-colors duration-[var(--dur-lento)] ${color === 'red' ? 'opacity-20' : 'opacity-10'} ${theme.glow}`}></div>
 
       <div className="flex flex-col items-center justify-center text-center w-full max-w-6xl h-full p-8 relative z-base">
 
@@ -71,7 +71,7 @@ export default function FeedbackOverlay({
           <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 w-full">
 
             {/* COLUMNA IZQUIERDA: Info del Empleado */}
-            <div className="flex flex-col items-center justify-center flex-1 animate-in slide-in-from-left-8 duration-700 ease-[var(--ease-spring)] w-full max-w-[500px]">
+            <div className="flex flex-col items-center justify-center flex-1 animate-in slide-in-from-left-8 duration-[var(--dur-lento)] ease-[var(--ease-spring)] w-full max-w-[500px]">
 
               {/* 🚨 PIEZA UNIFICADA: Foto + Nombre Integrado */}
               <div className="relative mb-16 shrink-0 flex flex-col items-center">
@@ -170,8 +170,8 @@ export default function FeedbackOverlay({
                     <p className={`text-subtitle md:text-body-xl font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-btn font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
-                    {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : isBirthday ? <><span className="text-body-xl">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-btn font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                    {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-[var(--dur-base)]" /> ¡Confirmado!</> : isBirthday ? <><span className="text-body-xl">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>
               </div>

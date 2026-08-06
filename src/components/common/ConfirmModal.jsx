@@ -95,7 +95,7 @@ const ConfirmModal = ({
             }`} />
 
             <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-base">
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm transition-all duration-300 ${
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm transition-all duration-[var(--dur-slow)] ${
                     isDestructive ? 'text-danger' : 'text-brand-text'
                 }`}>
                     {isProcessing ? (
@@ -111,7 +111,7 @@ const ConfirmModal = ({
                     {isProcessing ? "Procesando..." : title}
                 </h3>
 
-                <div className={`text-body font-medium leading-relaxed w-full transition-opacity duration-300 text-content-3 ${isProcessing ? 'opacity-60' : 'opacity-100'}`}>
+                <div className={`text-body font-medium leading-relaxed w-full transition-opacity duration-[var(--dur-slow)] text-content-3 ${isProcessing ? 'opacity-60' : 'opacity-100'}`}>
                     {isProcessing ? "No cierres esta ventana." : message}
                 </div>
             </div>

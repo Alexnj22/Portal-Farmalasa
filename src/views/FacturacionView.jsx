@@ -124,7 +124,7 @@ const ChipDoc = memo(({
         // que los segmentos hereden la altura del riel, así que se corrige acá
         // una vez en vez de en los tres. En escritorio `--tap-min` es 0: no
         // cambia nada.
-        <div className={`inline-flex items-stretch min-h-[var(--tap-min)] rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
+        <div className={`inline-flex items-stretch min-h-[var(--tap-min)] rounded-xl border overflow-hidden transition-all duration-[var(--dur-fast)] shadow-sm ${
             resuelto ? 'border-success shadow-emerald-100' : t.borde}`}>
             {/* Sin `onCopiar` el primer segmento NO es un botón. El de los
                 saltos de correlativo muestra un rango que no se copia, y
@@ -651,7 +651,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                     className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
                                     trailing={<>
                                         <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
-                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
                                     </>}
                                 />
                                 {!isCollapsed && <div className="divide-y divide-divider">
@@ -672,7 +672,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                                         const isCopied  = copiedId === r.erp_invoice_id;
                                                         const isVisited = visitedIds.has(String(r.erp_invoice_id));
                                                         return (
-                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
+                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-[var(--dur-slow)] ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
                                                                 <ChipDoc
                                                                     estado={isVisited ? 'visitado' : isCCF ? 'ccf' : 'normal'}
                                                                     copiado={isCopied}
@@ -684,7 +684,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                                                                 >
                                                                     <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
                                                                 </ChipDoc>
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-[var(--dur-fast)] ease-out w-[210px]">
                                                                     <div data-surface="card" className="px-3.5 py-3 space-y-2">
                                                                         <div>
                                                                             <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
@@ -752,7 +752,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                         onClick={() => setShowHistorial(v => !v)}
                         aria-expanded={showHistorial}
                         className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />}
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showHistorial ? 'rotate-180' : ''}`} />}
                     />
                     {showHistorial && (
                         <div className="border-t border-divider">
@@ -1072,7 +1072,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                     className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
                                     trailing={<>
                                         <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
-                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
                                     </>}
                                 />
 
@@ -1105,7 +1105,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                         const isVisited  = visitedIds.has(String(r.erp_invoice_id));
                                                         const hasNullCampos = nullCamposIds.has(r.id);
                                                         return (
-                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
+                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-[var(--dur-slow)] ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
                                                                 {/* Pill */}
                                                                 <ChipDoc
                                                                     estado={isVisited ? 'visitado' : hasNullCampos ? 'nulos' : isCCF ? 'ccf' : 'normal'}
@@ -1122,7 +1122,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                                 {/* Tooltip */}
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none
                                                                     opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100
-                                                                    transition-all duration-150 ease-out w-[210px]">
+                                                                    transition-all duration-[var(--dur-fast)] ease-out w-[210px]">
                                                                     <div data-surface="card" className="px-3.5 py-3">
                                                                         <div className="space-y-2">
                                                                             <div>
@@ -1195,7 +1195,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                         onClick={() => setShowResolved(v => !v)}
                         aria-expanded={showResolved}
                         className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showResolved ? 'rotate-180' : ''}`} />}
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showResolved ? 'rotate-180' : ''}`} />}
                     />
                     {showResolved && (
                         <div className="border-t border-divider">
@@ -1438,7 +1438,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                                         className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
                                         trailing={<>
                                             <span className="text-caption font-black text-content-3">{branchGaps.length} salto{branchGaps.length !== 1 ? 's' : ''}</span>
-                                            <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                            <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
                                         </>}
                                     />
                                     {!isCollapsed && (
@@ -1459,7 +1459,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                                                             >
                                                                 <span className="text-micro font-black uppercase select-none">{g.tipo_documento}</span>
                                                             </ChipDoc>
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-[var(--dur-fast)] ease-out w-[200px]">
                                                                 <div data-surface="card" className="px-3.5 py-3 space-y-2">
                                                                     <div>
                                                                         <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
@@ -1531,7 +1531,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                                         className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
                                         trailing={<>
                                             <span className="text-caption font-black text-content-3">{branchNulls.length} doc</span>
-                                            <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                            <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
                                         </>}
                                     />
                                     {!isCollapsed && (
@@ -1557,7 +1557,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                                                                 ))}
                                                                 {(n.campos_nulos || []).length > 2 && <span className="text-micro font-black">+{n.campos_nulos.length - 2}</span>}
                                                             </ChipDoc>
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-[var(--dur-fast)] ease-out w-[200px]">
                                                                 <div data-surface="card" className="px-3.5 py-3 space-y-2">
                                                                     {n.correlativo && <div>
                                                                         <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
@@ -1623,7 +1623,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                         onClick={() => setShowHistorial(v => !v)}
                         aria-expanded={showHistorial}
                         className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />}
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showHistorial ? 'rotate-180' : ''}`} />}
                     />
                     {showHistorial && (
                         <div className="border-t border-divider">
@@ -2370,7 +2370,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                     className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
                                     trailing={<>
                                         <span className="text-caption font-black text-content-3">{docs.length} doc</span>
-                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
                                     </>}
                                 />
 
@@ -2395,7 +2395,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                             // deja ver de un vistazo cuánto queda por recorrer.
                                                             // Mientras se solventa vuelve a opacidad plena — es la
                                                             // fila con la que se está trabajando.
-                                                            <div key={r.id} className={`flex items-start gap-3 flex-wrap rounded-xl border border-divider bg-surface-card-hover/40 px-3 py-2 transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
+                                                            <div key={r.id} className={`flex items-start gap-3 flex-wrap rounded-xl border border-divider bg-surface-card-hover/40 px-3 py-2 transition-opacity duration-[var(--dur-slow)] ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
                                                                 {/* El MISMO control de Pendiente MH: copiar el id del ERP │
                                                                     tipo de documento │ solventar. Acá el segmento del medio
                                                                     lleva el tipo, que antes era un `Badge` suelto. */}
@@ -2487,7 +2487,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                         onClick={() => setShowResolved(v => !v)}
                         aria-expanded={showResolved}
                         className="rounded-none border-x-0 border-t-0"
-                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showResolved ? 'rotate-180' : ''}`} />}
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-[var(--dur-slow)] ${showResolved ? 'rotate-180' : ''}`} />}
                     />
                     {showResolved && (
                         <div className="border-t border-divider">

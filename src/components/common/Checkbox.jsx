@@ -69,7 +69,7 @@ const Checkbox = memo(({
                 el input real es quien recibe el foco, pero quien se ve es esta caja. */}
             <span aria-hidden="true"
                 className={`shrink-0 mt-px flex items-center justify-center border
-                    transition-[background-color,border-color,transform] duration-150
+                    transition-[background-color,border-color,transform] duration-[var(--dur-fast)]
                     peer-focus-visible:outline peer-focus-visible:outline-2
                     peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--focus-ring-color)]
                     ${s.caja}

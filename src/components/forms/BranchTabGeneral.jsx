@@ -25,7 +25,7 @@ const BranchTabGeneral = ({
     const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
     
     // Altura optimizada h-[40px] para encajar perfecto
-    const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50";
+    const inputHoverClass = "transition-all duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50";
 
     return (
         // 🚨 COMPRESIÓN: space-y-4 en lugar de space-y-6

@@ -147,7 +147,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 <div className="flex gap-1.5 h-3 items-center">
                                     {Array.from({ length: Math.min(displayDots, 10) }).map((_, i) => (
                                         <div key={i}
-                                            className="w-2 h-2 rounded-full bg-chart-1 animate-in zoom-in duration-200"
+                                            className="w-2 h-2 rounded-full bg-chart-1 animate-in zoom-in duration-[var(--dur-base)]"
                                             style={{ animationDelay: `${i * 20}ms` }}
                                         />
                                     ))}
@@ -163,7 +163,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
 
                     {employee && (
                         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
-                            animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
                             {employee.photo_url
                                 ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-border-card shadow" alt="" />
                                 : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>

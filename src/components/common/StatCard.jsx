@@ -133,7 +133,7 @@ export default function StatCard({
             className={`
                 basis-[148px] grow shrink-0 min-w-0 max-w-[200px] h-full
                 flex items-center gap-3 pl-3 pr-4 py-3 rounded-card border
-                transition-[box-shadow,border-color,background-color,transform] duration-200
+                transition-[box-shadow,border-color,background-color,transform] duration-[var(--dur-base)]
                 ${isClickable ? 'cursor-pointer' : 'cursor-default select-none'}
                 ${isClickable && loading ? 'disabled:opacity-60 disabled:cursor-wait' : ''}
                 ${active ? '-translate-y-px' : ''}

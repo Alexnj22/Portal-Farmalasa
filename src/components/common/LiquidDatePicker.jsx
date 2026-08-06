@@ -329,7 +329,7 @@ const LiquidDatePicker = ({
         <div
             ref={popoverRef}
             style={{ top: coords.top, left: coords.left, transform: coords.transform }}
-            className={`absolute z-confirm animate-in fade-in zoom-in-95 duration-300 ${coords.origin}`}
+            className={`absolute z-confirm animate-in fade-in zoom-in-95 duration-[var(--dur-slow)] ${coords.origin}`}
         >
             <div data-surface="dropdown" className="p-4 md:p-5 w-[280px] font-sans">
                 {contenido}
@@ -379,7 +379,7 @@ const LiquidDatePicker = ({
                 </div>
 
                 {currentMode === 'days' && (
-                    <div className="animate-in fade-in duration-300" onMouseLeave={() => setHoverDate(null)}>
+                    <div className="animate-in fade-in duration-[var(--dur-slow)]" onMouseLeave={() => setHoverDate(null)}>
                         <div className="grid grid-cols-7 gap-1 mb-2">
                             {DAYS.map(d => <div key={d} className="text-center text-caption font-black text-content-2 uppercase tracking-wider">{d}</div>)}
                         </div>
@@ -463,7 +463,7 @@ const LiquidDatePicker = ({
                 )}
 
                 {currentMode === 'months' && (
-                    <div className="grid grid-cols-3 gap-3 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="grid grid-cols-3 gap-3 animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]">
                         {MONTHS_SHORT.map((month, index) => {
                             const isSelected = mVal === String(index + 1).padStart(2, '0') && yVal === String(currentYear);
                             return <button key={month} type="button" onClick={() => handleMonthSelect(index)} className={`py-3 rounded-2xl text-body-sm font-bold transition-all transform-gpu uppercase tracking-wide ${isSelected ? 'bg-brand text-white shadow-lg scale-105' : 'text-content-2 hover:bg-surface-card-hover hover:text-brand-text'}`}>{month}</button>;
@@ -472,7 +472,7 @@ const LiquidDatePicker = ({
                 )}
 
                 {currentMode === 'years' && (
-                    <div className="grid grid-cols-3 gap-3 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="grid grid-cols-3 gap-3 animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]">
                         {years.map((year) => {
                             const isSelected = yVal === String(year);
                             const isOutRange = year < startYear || year > startYear + 9;

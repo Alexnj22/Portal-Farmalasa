@@ -236,7 +236,7 @@ function ScoreCard({ pct, label, color, desc }) {
                 <span className={c.text}>{pct.toFixed(0)}<span className="text-body">%</span></span>
             </div>
             <div className="h-1.5 rounded-full bg-surface-card overflow-hidden">
-                <div className={`h-full rounded-full transition-all duration-700 ${c.bar}`}
+                <div className={`h-full rounded-full transition-all duration-[var(--dur-lento)] ${c.bar}`}
                     style={{ width: `${pct}%` }} />
             </div>
             <p className="text-micro text-content-3 leading-tight mt-0.5">{desc}</p>
@@ -720,7 +720,7 @@ export default function EncuestaView() {
                                             <div key={b.id} className="flex items-center gap-3">
                                                 <div className={`w-36 text-micro font-black uppercase tracking-wider ${c.text} leading-tight shrink-0`}>{b.nombre}</div>
                                                 <div className="flex-1 h-2.5 rounded-full bg-surface-card-hover overflow-hidden">
-                                                    <div className={`h-full rounded-full ${c.bar} transition-all duration-700`}
+                                                    <div className={`h-full rounded-full ${c.bar} transition-all duration-[var(--dur-lento)]`}
                                                         style={{ width: `${b.score}%` }} />
                                                 </div>
                                                 <div className="flex items-center gap-1 shrink-0">
@@ -794,7 +794,7 @@ export default function EncuestaView() {
                                                 {/* Gradient track */}
                                                 <div className="relative h-3 rounded-full overflow-hidden bg-gradient-to-r from-danger via-warning via-chart-1 to-success">
                                                     {avgPct != null && (
-                                                        <div className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-warning shadow-md transition-all duration-700"
+                                                        <div className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-warning shadow-md transition-all duration-[var(--dur-lento)]"
                                                             style={{ left: `calc(${avgPct}% - 7px)` }} />
                                                     )}
                                                 </div>
@@ -813,7 +813,7 @@ export default function EncuestaView() {
                                                     <div key={k} className="flex items-center gap-2">
                                                         <span className={`w-10 text-micro font-black shrink-0 ${text}`}>{label}</span>
                                                         <div className="flex-1 h-2 rounded-full bg-surface-card-hover overflow-hidden">
-                                                            <div className={`h-full rounded-full ${bar} transition-all duration-700`} style={{ width: `${pct}%` }} />
+                                                            <div className={`h-full rounded-full ${bar} transition-all duration-[var(--dur-lento)]`} style={{ width: `${pct}%` }} />
                                                         </div>
                                                         <span className="text-caption font-black text-content-3 w-14 text-right shrink-0">{n} <span className="font-normal text-content-3">({pct}%)</span></span>
                                                     </div>
@@ -1139,7 +1139,7 @@ export default function EncuestaView() {
                                                 <div className="text-micro text-content-3">{rows.length} personas · {jCount} jefe{jCount !== 1 ? 's' : ''}</div>
                                             </div>
                                             <div className="flex-1 h-3 rounded-full bg-surface-card-hover overflow-hidden">
-                                                <div className="h-full rounded-full bg-gradient-to-r from-chart-1 to-brand transition-all duration-700"
+                                                <div className="h-full rounded-full bg-gradient-to-r from-chart-1 to-brand transition-all duration-[var(--dur-lento)]"
                                                     style={{ width: `${score}%` }} />
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
@@ -1397,7 +1397,7 @@ export default function EncuestaView() {
                             <div
                                 key={seg.key}
                                 {...clickable(() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })))}
-                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-200 ${canToggle ? 'cursor-pointer hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:border-chart-3/50' : ''}`}
+                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-[var(--dur-base)] ${canToggle ? 'cursor-pointer hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:border-chart-3/50' : ''}`}
                             >
                                 {/* Segment header bar */}
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-chart-3/20 bg-gradient-to-r from-chart-3/10 to-chart-3/5">

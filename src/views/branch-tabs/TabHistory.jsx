@@ -336,7 +336,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 ) : (
                                     <>
                                         <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                        <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
+                                        <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
                                         <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
                                         <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
                                     </>
@@ -350,7 +350,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <Button variant="ghost" size="sm" icon={Download}>
                                     <span className="hidden sm:inline">Exportar</span>
                                 </Button>
-                                <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                                <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-[var(--dur-slow)] ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
                                     <div className="w-[160px] bg-surface-card backdrop-blur-xl border border-border-card shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
                                         <Button icon={Printer} onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }}>Reporte PDF</Button>
                                         <Button tone="success" icon={FileOutput} onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }}>Datos CSV</Button>
@@ -397,7 +397,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             <div className="relative w-full max-w-5xl mx-auto py-2 flex-1">
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
-                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div data-surface="card" className="border-chart-3/30 p-8 md:p-12 relative overflow-hidden">
                         
                         {/* 🔮 Esferas de Energía Animatedas de Fondo */}
@@ -437,7 +437,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 relative z-base animate-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                                     {aiSummaryData?.split('\n').map((paragraph, index) => (
                                         <div key={index} className="relative mb-6 last:mb-0 group/p">
-                                            <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
+                                            <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-[var(--dur-slow)]"></div>
                                             <p className="text-body md:text-subtitle font-medium text-content-2 leading-relaxed text-justify pl-5">
                                                 {paragraph.split('**').map((text, i) => (
                                                     i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
@@ -454,7 +454,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 </div>
 
                 {/* 🏢 VISTA NORMAL DE LÍNEA DE TIEMPO (HISTORIAL) */}
-                <div inert={aiMode ? true : undefined} className={`transition-all duration-700 ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div inert={aiMode ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     
                     {/* Línea Central Estética */}
                     <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-[2px] bg-divider md:-translate-x-1/2 rounded-full"></div>
@@ -589,7 +589,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-content ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
                                                                                         <div data-surface="card" className={`relative overflow-hidden p-5 transition-all duration-[var(--dur-lento)] hover:bg-surface-card-hover text-left`}>
 
-                                                                                            <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
+                                                                                            <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-[var(--dur-lento)] group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
 
                                                                                             <div className="relative z-base">
                                                                                                 <div className="mb-3">

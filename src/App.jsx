@@ -468,7 +468,7 @@ function MainApp() {
                 <GlobalBackground />
 
                 {/* Card */}
-                <div className="relative z-base animate-in fade-in zoom-in-95 duration-700 ease-out">
+                <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-out">
                     <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-header px-14 py-12 shadow-[var(--card-shadow)] flex flex-col items-center gap-7 min-w-[280px]">
 
                         {/* Shimmer line top */}

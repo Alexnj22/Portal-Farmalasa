@@ -319,9 +319,9 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
     return (
-        <tr className="group/row relative transition-[z-index] duration-150 hover:z-sidebar">
+        <tr className="group/row relative transition-[z-index] duration-[var(--dur-fast)] hover:z-sidebar">
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
-                <div className="min-h-[72px] h-full bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-glass-sm)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                <div className="min-h-[72px] h-full bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-glass-sm)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-[var(--dur-fast)] group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-shine)] overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-content-3" />}
                     </div>
@@ -368,7 +368,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             </div>
                             
                             <div className="h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden shadow-inner shrink-0">
-                                <div className={`h-full rounded-full transition-all duration-1000 ${barColor}`} style={{ width: `${Math.min((hours / 44) * 100, 100)}%` }} />
+                                <div className={`h-full rounded-full transition-all duration-[var(--dur-lento)] ${barColor}`} style={{ width: `${Math.min((hours / 44) * 100, 100)}%` }} />
                             </div>
                         </div>
 
@@ -411,7 +411,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
                     })}>
-                        <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col
+                        <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-[var(--dur-fast)] flex flex-col
                             ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
                             ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)]' :
                               conf ? conf.bg + ' border border-dashed ' + conf.border :
@@ -514,9 +514,9 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
     }, [homeRoster]);
 
     return (
-        <tr className="group/row relative transition-[z-index] duration-150 hover:z-sidebar">
+        <tr className="group/row relative transition-[z-index] duration-[var(--dur-fast)] hover:z-sidebar">
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
-                <div className="min-h-[72px] h-full bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 shadow-[var(--shadow-glass-2)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                <div className="min-h-[72px] h-full bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 shadow-[var(--shadow-glass-2)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-[var(--dur-fast)] group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30 overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-chart-3/40" />}
                     </div>
@@ -557,7 +557,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                 return (
                     <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-base hover:z-sidebar-desktop"
                         {...clickable(e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch))}>
-                        <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col group-hover/cell:scale-[1.03]
+                        <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-[var(--dur-fast)] flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay
                                 ? 'bg-chart-3/10 border border-chart-3/40 shadow-[var(--shadow-glow-chart-3-md)]'
                                 : hasShift
@@ -743,7 +743,7 @@ const ScheduleCalendar = memo(({
 
                                 return (
                                     <th key={date} className="p-0 text-center min-w-[118px] 2xl:min-w-[132px] align-bottom group relative z-base hover:z-dropdown">
-                                        <div className={`backdrop-blur-xl border shadow-sm rounded-3xl pt-4 pb-2 mx-1 mb-2 mt-4 flex flex-col items-center justify-center transition-[transform,box-shadow] duration-150 relative group-hover:-translate-y-1 group-hover:shadow-md ${headerBg}`}>
+                                        <div className={`backdrop-blur-xl border shadow-sm rounded-3xl pt-4 pb-2 mx-1 mb-2 mt-4 flex flex-col items-center justify-center transition-[transform,box-shadow] duration-[var(--dur-fast)] relative group-hover:-translate-y-1 group-hover:shadow-md ${headerBg}`}>
                                             
                                             <div className="absolute bottom-[105%] left-0 right-0 flex justify-center px-1 z-content pointer-events-none">
                                                 <div className="flex flex-wrap justify-center items-end gap-[3px] w-full max-h-[40px] overflow-hidden">

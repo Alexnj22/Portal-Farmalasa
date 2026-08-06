@@ -118,7 +118,7 @@ const DayRow = memo(({
     };
 
     return (
-        <div className={`rounded-2xl border transition-all duration-200 overflow-visible flex flex-col ${
+        <div className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-visible flex flex-col ${
             conflict ? `${conflict.bg} ${conflict.border} shadow-sm` 
             : isWorking ? 'bg-surface-card shadow-[var(--shadow-glass-1)] border-border-card' 
             : 'bg-surface-card border-border-card hover:bg-surface-card'
@@ -235,7 +235,7 @@ const DayRow = memo(({
 
                         {/* 🚨 BANNER HORARIO REAL (SOLO VISIBLE SI HAY MODIFICACIÓN LÓGICA) */}
                         {isPhysicalScheduleModified && (
-                            <div className="w-full flex items-center gap-3 bg-surface-card-hover/60 border border-divider p-2 rounded-xl mt-0.5 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="w-full flex items-center gap-3 bg-surface-card-hover/60 border border-divider p-2 rounded-xl mt-0.5 animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]">
                                 <div className="flex items-center gap-1.5 text-[8.5px] text-content-2 border-r border-divider pr-2.5">
                                     <Clock size={10} className="text-content-3"/> 
                                     <span className="font-black uppercase tracking-widest text-content-3">Horario Físico Real:</span>

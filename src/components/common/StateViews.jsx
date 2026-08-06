@@ -68,12 +68,12 @@ export const EmptyState = memo(({
     className = '',
 }) => (
     <div className={`flex flex-col items-center justify-center ${compact ? 'min-h-[200px]' : 'min-h-[400px]'}
-        animate-in fade-in zoom-in-95 duration-700 ease-[var(--ease-spring)] ${className}`}>
+        animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${className}`}>
         <div className="relative group flex flex-col items-center text-center">
             <div className={`absolute top-2 ${compact ? 'w-20 h-20' : 'w-28 h-28'} rounded-full blur-[40px] opacity-30 ${glowClass}`} />
             <div className={`relative z-base ${compact ? 'w-16 h-16 rounded-2xl mb-4' : 'w-24 h-24 rounded-modal mb-6'}
                 flex items-center justify-center bg-surface-card backdrop-blur-xl border border-border-card
-                shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[var(--ease-spring)]
+                shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)]
                 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${iconClass}`}>
                 <Icon size={compact ? 28 : 40} strokeWidth={2} />
             </div>

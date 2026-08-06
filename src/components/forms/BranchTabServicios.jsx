@@ -16,7 +16,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
     // 🚨 ESTILOS LIQUID GLASS CONSISTENTES
     const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)]";
     const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
+    const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const servicesList = [
         { id: 'light', icon: Zap, label: 'Energía Eléctrica', placeholder: 'Ej. CAESS', accountLabel: 'Nº de NIC / NPE', color: 'text-warning', bgIcon: 'bg-warning/10' },
@@ -75,7 +75,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                             <label className="text-caption font-black uppercase tracking-widest text-success ml-1 mb-2 flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado
                             </label>
-                            <div className="bg-success/10 rounded-2xl border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-success focus-within:ring-4 focus-within:ring-success/20">
+                            <div className="bg-success/10 rounded-2xl border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-success focus-within:ring-4 focus-within:ring-success/20">
                                 <LiquidDatePicker
                                     mode="month" 
                                     value={services[srv.id]?.paidThrough || ""} 

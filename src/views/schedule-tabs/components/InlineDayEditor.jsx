@@ -342,7 +342,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 )}
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-toast">
-                    <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger/45 shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
+                    <div className={`group/select hover:shadow-md transition-shadow duration-[var(--dur-slow)] rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger/45 shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
                         <LiquidSelect 
                             value={shiftId} 
                             onChange={setShiftId} 
@@ -357,7 +357,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 <div className="px-4 pb-4 space-y-4 overflow-y-auto editor-scrollbar flex-1 relative z-base">
                     
                     {shiftId === 'NO_SHIFTS' && (
-                        <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in zoom-in duration-300">
+                        <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in zoom-in duration-[var(--dur-slow)]">
                             <Bot size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div>
                                 <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-1">Auditoría Saly</h4>
@@ -387,7 +387,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                     <Clock size={10} /> Cálculo de Horas
                                 </span>
                                 {netHours !== null && timeAuditErrors.length === 0 && (
-                                    <div className={`px-2 py-[2px] rounded border text-micro font-black uppercase tracking-widest flex items-center gap-1 shadow-sm transition-all duration-300 ${Number(netHours) > 8 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
+                                    <div className={`px-2 py-[2px] rounded border text-micro font-black uppercase tracking-widest flex items-center gap-1 shadow-sm transition-all duration-[var(--dur-slow)] ${Number(netHours) > 8 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
                                         {Number(netHours) > 8 && <Flame size={10} className="animate-pulse" />}
                                         {netHours}H TOTALES
                                     </div>
@@ -395,11 +395,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="group/time hover:translate-y-[var(--lift-hover)] transition-transform duration-300">
+                                <div className="group/time hover:translate-y-[var(--lift-hover)] transition-transform duration-[var(--dur-slow)]">
                                     <label className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Entrada</label>
                                     <TimePicker12 value={customStart} onChange={setCustomStart} />
                                 </div>
-                                <div className="group/time hover:translate-y-[var(--lift-hover)] transition-transform duration-300">
+                                <div className="group/time hover:translate-y-[var(--lift-hover)] transition-transform duration-[var(--dur-slow)]">
                                     <label className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Salida</label>
                                     <TimePicker12 value={customEnd} onChange={setCustomEnd} />
                                 </div>
@@ -408,18 +408,18 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className="space-y-3 relative z-base animate-in fade-in duration-300">
+                        <div className="space-y-3 relative z-base animate-in fade-in duration-[var(--dur-slow)]">
                             
                             <div 
                                 {...clickable(() => setHasLunch(!hasLunch))}
-                                className="flex items-center justify-between bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-[var(--dur-slow)] group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <Checkbox checked={hasLunch} size="sm" />
                                     <span className="text-body-sm font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
                                 {hasLunch && (
-                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" {...clickable((e) => e.stopPropagation())}>
+                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-[var(--dur-slow)]" {...clickable((e) => e.stopPropagation())}>
                                         <TimePicker12 value={lunchStart} onChange={setLunchStart} />
                                     </div>
                                 )}
@@ -427,14 +427,14 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div 
                                 {...clickable(() => setHasLactation(!hasLactation))}
-                                className="flex items-center justify-between bg-surface-card-hover border border-chart-6/20 p-3 rounded-2xl hover:border-chart-6/40 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-surface-card-hover border border-chart-6/20 p-3 rounded-2xl hover:border-chart-6/40 transition-all duration-[var(--dur-slow)] group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <Checkbox checked={hasLactation} size="sm" />
                                     <span className="text-body-sm font-bold text-chart-6-text group-hover/row:text-chart-6-text transition-colors">Lactancia</span>
                                 </div>
                                 {hasLactation && (
-                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" {...clickable((e) => e.stopPropagation())}>
+                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-[var(--dur-slow)]" {...clickable((e) => e.stopPropagation())}>
                                         <TimePicker12 value={lactationStart} onChange={setLactationStart} />
                                     </div>
                                 )}
@@ -444,7 +444,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {timeAuditErrors.length > 0 && (
-                        <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in slide-in-from-bottom-2 duration-300 shadow-sm mt-2">
+                        <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in slide-in-from-bottom-2 duration-[var(--dur-slow)] shadow-sm mt-2">
                             <AlertTriangle size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div className="flex flex-col gap-1.5">
                                 <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-0.5">Error de Lógica</h4>

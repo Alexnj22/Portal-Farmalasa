@@ -399,7 +399,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     <DataCell>
                                         <div className="flex items-center gap-2">
                                             <ChevronDown size={12} strokeWidth={2.5}
-                                                className={`text-content-3 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand-text' : ''}`} />
+                                                className={`text-content-3 shrink-0 transition-transform duration-[var(--dur-base)] ${isExpanded ? 'rotate-180 text-brand-text' : ''}`} />
                                             <div className="min-w-0">
                                                 <span className="text-body font-medium text-content line-clamp-2 leading-tight">
                                                     {group.descripcion || '—'}

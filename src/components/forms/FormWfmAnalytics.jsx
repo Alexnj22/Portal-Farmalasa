@@ -242,7 +242,7 @@ const FormWfmAnalytics = ({ branches }) => {
             }
 
             return (
-                <div data-surface="tooltip" className="p-3.5 w-max z-modal animate-in fade-in duration-300 transform-gpu">
+                <div data-surface="tooltip" className="p-3.5 w-max z-modal animate-in fade-in duration-[var(--dur-slow)] transform-gpu">
                     <p className="font-black text-caption uppercase tracking-widest text-content-tooltip-2 mb-1 leading-none">{branchName}</p>
                     <p className="font-extrabold text-body-sm uppercase tracking-tight text-content-tooltip mb-2 pb-1.5 border-b border-white/15">{activeView === 'DAYS' ? 'Día' : 'Hora'}: {data.displayLabel}</p>
                     
@@ -273,17 +273,17 @@ const FormWfmAnalytics = ({ branches }) => {
     };
 
     return (
-        <div className="w-full flex flex-col gap-6 animate-in fade-in duration-700">
+        <div className="w-full flex flex-col gap-6 animate-in fade-in duration-[var(--dur-lento)]">
             {/* CONTROLES SUPERIORES (HEATMAP HEADER PILL STYLE) */}
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-card backdrop-blur-xl p-3.5 sm:p-4 rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] transform-gpu hover:translate-y-[var(--lift-card)] transition-transform duration-[var(--dur-lento)]">
                 <div className="w-full sm:w-auto flex items-center gap-3">
                      <div className="relative group/saly w-11 h-11 flex items-center justify-center rounded-full shrink-0 border-0 shadow-[var(--shadow-glow-chart-9-md)] hover:shadow-[var(--shadow-glow-chart-9-lg)] transition-shadow duration-[var(--dur-lento)]">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-30 group-hover/saly:opacity-100 transition-opacity duration-[var(--dur-lento)] group-hover/saly:animate-spin [animation-duration:4s]"></div>
                         <div className="absolute inset-[1px] bg-surface-card rounded-full border border-border-card"></div>
-                        <TrendingUp size={20} strokeWidth={2.5} className="text-chart-9-text group-hover/saly:text-chart-3-text relative z-base transition-colors duration-300" />
+                        <TrendingUp size={20} strokeWidth={2.5} className="text-chart-9-text group-hover/saly:text-chart-3-text relative z-base transition-colors duration-[var(--dur-slow)]" />
                     </div>
                     
-                    <div className="w-full sm:w-[250px] overflow-visible group/branch hover:translate-y-[var(--lift-hover)] transition-transform duration-300">
+                    <div className="w-full sm:w-[250px] overflow-visible group/branch hover:translate-y-[var(--lift-hover)] transition-transform duration-[var(--dur-slow)]">
                         <LiquidSelect value={selectedBranch} onChange={setSelectedBranch} options={branchOptions} clearable={false} compact icon={Building2} />
                     </div>
                 </div>
@@ -306,14 +306,14 @@ const FormWfmAnalytics = ({ branches }) => {
             </div>
 
             {/* GRÁFICA PRINCIPAL (GLASS CONTAINER) */}
-            <div data-surface="card" className="p-6 relative min-h-[380px] flex flex-col transform-gpu transition-all duration-700">
+            <div data-surface="card" className="p-6 relative min-h-[380px] flex flex-col transform-gpu transition-all duration-[var(--dur-lento)]">
 
                 {/* CABECERA DE GRÁFICA Y CONTROLES (TABS PILL STYLE) */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 pb-4">
                     <div className="flex items-center gap-3">
                         <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-[var(--dur-lento)] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]">
-                            <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
-                            <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-base transition-colors duration-300" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-[var(--dur-slow)]"></div>
+                            <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-base transition-colors duration-[var(--dur-slow)]" />
                         </div>
                         <h3 className="text-body-xl font-black text-content uppercase tracking-tight leading-none group-hover/branch:text-brand-text transition-colors">
                             {activeView === 'DAYS' ? 'Afluencia Histórica por Día' :
@@ -372,7 +372,7 @@ const FormWfmAnalytics = ({ branches }) => {
                                     radius={[5, 5, 0, 0]}
                                     onClick={handleBarClick}
                                     cursor={activeView === 'DAYS' ? 'pointer' : 'default'}
-                                    className="transform-gpu transition-all duration-300 hover:opacity-90"
+                                    className="transform-gpu transition-all duration-[var(--dur-slow)] hover:opacity-90"
                                 >
                                     {chartData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -384,7 +384,7 @@ const FormWfmAnalytics = ({ branches }) => {
                 )}
                 
                 {/* Sparkles de fondo sutiles para efecto liquidglass */}
-                <div className="absolute bottom-6 right-6 text-[#F79009]/15 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                <div className="absolute bottom-6 right-6 text-[#F79009]/15 pointer-events-none group-hover:scale-110 transition-transform duration-[var(--dur-lento)]">
                     <Sparkles size={100} strokeWidth={0.5} />
                 </div>
             </div>

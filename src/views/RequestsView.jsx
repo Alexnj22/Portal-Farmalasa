@@ -117,7 +117,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
     };
 
     return (
-        <div className={`rounded-modal border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${tc.hover} transition-all duration-400 ease-[var(--ease-spring)] overflow-hidden transform-gpu
+        <div className={`rounded-modal border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${tc.hover} transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] overflow-hidden transform-gpu
             ${isUrgent ? 'border-danger' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}
@@ -125,7 +125,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                 abierto/cerrado vivía solo en el giro del chevron. */}
             <button onClick={() => setExpanded(v => !v)}
                 aria-expanded={expanded}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 transition-colors duration-200">
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 transition-colors duration-[var(--dur-base)]">
 
                 {/* Colored circle avatar */}
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${tc.circle} ${tc.ring} shadow-sm`}>
@@ -155,11 +155,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                 </div>
 
                 <ChevronDown size={14} strokeWidth={2.5}
-                    className={`text-content-3 flex-shrink-0 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
+                    className={`text-content-3 flex-shrink-0 transition-transform duration-[var(--dur-slow)] ${expanded ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Expandable body */}
-            <div inert={!(expanded) ? true : undefined} className={`overflow-hidden transition-all duration-400 ease-[var(--ease-spring)] ${expanded ? 'max-h-[900px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div inert={!(expanded) ? true : undefined} className={`overflow-hidden transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] ${expanded ? 'max-h-[900px] opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="px-4 pb-4 pt-3 border-t border-border-card space-y-2.5">
 
                     {/* SHIFT_CHANGE */}
@@ -646,10 +646,10 @@ const RequestsView = () => {
                         ))}
                     </div>
                 ) : baseFiltered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[var(--ease-spring)]">
+                    <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
                         <div className="relative group flex flex-col items-center text-center">
                             <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-success' : statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'}`} />
-                            <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
+                            <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
                                 {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
                             </div>
                             <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
@@ -684,10 +684,10 @@ const RequestsView = () => {
                                     <span className="text-caption font-bold text-content-3">{cards.length}</span>
                                     <div className="flex-1 h-px bg-divider mx-1" />
                                     <ChevronDown size={13} strokeWidth={2.5}
-                                        className={`text-content-3 transition-transform duration-300 flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                        className={`text-content-3 transition-transform duration-[var(--dur-slow)] flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
                                 </button>
 
-                                <div inert={isCollapsed ? true : undefined} className={`transition-all duration-400 ease-[var(--ease-spring)] ${isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[9999px] opacity-100 overflow-visible'}`}>
+                                <div inert={isCollapsed ? true : undefined} className={`transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] ${isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[9999px] opacity-100 overflow-visible'}`}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 pb-2">
                                         {cards.map(req => (
                                             <RequestCard key={req.id} req={req}

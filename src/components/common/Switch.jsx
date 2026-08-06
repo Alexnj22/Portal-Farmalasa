@@ -62,7 +62,7 @@ const Switch = memo(({
 }) => {
     const s = SIZE[size] || SIZE.md;
     const track = `relative shrink-0 inline-flex rounded-full border border-border-card
-        transition-colors duration-200 ease-[var(--ease-spring)]
+        transition-colors duration-[var(--dur-base)] ease-[var(--ease-spring)]
         ${s.track} ${checked ? resolveOn(variant) : 'bg-surface-card-hover'}
         ${disabled ? 'opacity-45' : ''} ${className}`;
 
@@ -70,7 +70,7 @@ const Switch = memo(({
     const knob = (
         <span className={`absolute top-1/2 -translate-y-1/2 left-0 rounded-full bg-white
             shadow-[var(--shadow-elevation-sm)]
-            transition-transform duration-200 ease-[var(--ease-spring)]
+            transition-transform duration-[var(--dur-base)] ease-[var(--ease-spring)]
             ${s.knob} ${checked ? s.on : s.off}`} />
     );
 

@@ -59,7 +59,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/input:text-brand-text transition-colors">
                             N° Permiso / Licencia
                         </label>
-                        <div className="transition-all duration-300 transform-gpu hover:translate-y-[var(--lift-hover)] hover:shadow-md rounded-2xl">
+                        <div className="transition-all duration-[var(--dur-slow)] transform-gpu hover:translate-y-[var(--lift-hover)] hover:shadow-md rounded-2xl">
                             <PortalInput
                                 aria-label="N° de permiso del servicio de enfermería"
                                 type="text"
@@ -76,7 +76,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand-text transition-colors">
                             Vencimiento Permiso
                         </label>
-                        <div className="transition-all duration-300 transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
+                        <div className="transition-all duration-[var(--dur-slow)] transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
                              <div className="w-full relative -top-0.5">
                                 <LiquidDatePicker 
                                     value={legalData.nursingServicePermitExp || ""} 
@@ -121,7 +121,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                     <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
                                         Empleado en Planilla
                                     </label>
-                                    <div className="transition-all duration-300 transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-3xl">
+                                    <div className="transition-all duration-[var(--dur-slow)] transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-3xl">
                                         <LiquidSelect 
                                             value={nurse.employeeId} 
                                             onChange={(val) => updateNurse(index, 'employeeId', val)} 
@@ -175,7 +175,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         {/* Fecha Anualidad */}
                                         <div className="group/date-amber flex flex-col justify-end">
                                             <label className="text-micro font-black text-warning/80 uppercase tracking-widest ml-1 mb-1 block group-focus-within/date-amber:text-warning-text transition-colors">Vencimiento</label>
-                                            <div className="transition-all duration-300 transform-gpu hover:translate-y-[var(--lift-hover)] hover:shadow-md rounded-xl h-[46px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-glow-warning-sm)] flex items-center border border-warning/30 hover:border-warning focus-within:border-warning overflow-hidden">
+                                            <div className="transition-all duration-[var(--dur-slow)] transform-gpu hover:translate-y-[var(--lift-hover)] hover:shadow-md rounded-xl h-[46px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-glow-warning-sm)] flex items-center border border-warning/30 hover:border-warning focus-within:border-warning overflow-hidden">
                                                  <div className="w-full relative -top-0.5">
                                                     <LiquidDatePicker 
                                                         value={nurse.anualidadExp || ""} 

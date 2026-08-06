@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.398.3 — Fase C cerrada: cero duraciones a mano
+
+**Los 700 bajaron.** Retemplados los 69 `duration-700` y los 6 `duration-1000` a
+`--dur-lento`: 700 ms para un `group-hover:scale-110` se siente lento, y el sentido
+de tener una escala es poder decir que no.
+
+**Y migrados también los 373 que sí mapeaban** (150→`--dur-fast`,
+200→`--dur-base`, 300→`--dur-slow`), porque mientras haya literales el gate
+`reloj-a-mano` no puede ser bloqueante.
+
+**La cola que la tabla de §7.2 tampoco listaba.** Al terminar quedaban **20 usos
+más** en cinco valores que esa tabla nunca mencionó: 75 (3), 100 (6), 250 (4), 400
+(4), 600 (1). El portal no usaba seis valores de duración: **usaba once**. Tercer
+subconteo del mismo documento, después de §13 y §18.1.
+
+Regla escrita para no volver a decidirlo: **al escalón más cercano, y los empates
+bajan** — más rápido se siente mejor que más lento, y 250 y 400 son empates exactos.
+75/100→fast, 250→base, 400→slow, 600→lento.
+
+**Y dos que el primer barrido no vio, por una variante:** `[&_svg]:duration-300`. El
+regex pedía espacio, comilla o llave antes del token y `:` no estaba en esa lista, así
+que era ciego a todo `duration-*` con variante (`md:`, `group-hover:`, `[&_svg]:`).
+
+**Resultado: cero literales `duration-N` en JSX**, 468 usos tokenizados en total. Los
+cuatro escalones emiten su utilidad en el bundle —verificado `--tw-duration` +
+`transition-duration`, no asumido— así que `reloj-a-mano` puede nacer bloqueante.
+
 ## v2.398.2 — Los 28 errores de query que se descartaban en silencio, en cero
 
 C1 de la Fase C de `AUDITORIA-COMPLETA-2026-07-30`. Eran 28 `const { data } =
@@ -58,32 +85,6 @@ ventas en verde y una factura nueva insertada.
 
 _(pendiente de redactar)_
 
-## v2.398.1 — Fase C cerrada: cero duraciones a mano
-
-**Los 700 bajaron.** Retemplados los 69 `duration-700` y los 6 `duration-1000` a
-`--dur-lento`: 700 ms para un `group-hover:scale-110` se siente lento, y el sentido
-de tener una escala es poder decir que no.
-
-**Y migrados también los 373 que sí mapeaban** (150→`--dur-fast`,
-200→`--dur-base`, 300→`--dur-slow`), porque mientras haya literales el gate
-`reloj-a-mano` no puede ser bloqueante.
-
-**La cola que la tabla de §7.2 tampoco listaba.** Al terminar quedaban **20 usos
-más** en cinco valores que esa tabla nunca mencionó: 75 (3), 100 (6), 250 (4), 400
-(4), 600 (1). El portal no usaba seis valores de duración: **usaba once**. Tercer
-subconteo del mismo documento, después de §13 y §18.1.
-
-Regla escrita para no volver a decidirlo: **al escalón más cercano, y los empates
-bajan** — más rápido se siente mejor que más lento, y 250 y 400 son empates exactos.
-75/100→fast, 250→base, 400→slow, 600→lento.
-
-**Y dos que el primer barrido no vio, por una variante:** `[&_svg]:duration-300`. El
-regex pedía espacio, comilla o llave antes del token y `:` no estaba en esa lista, así
-que era ciego a todo `duration-*` con variante (`md:`, `group-hover:`, `[&_svg]:`).
-
-**Resultado: cero literales `duration-N` en JSX**, 468 usos tokenizados en total. Los
-cuatro escalones emiten su utilidad en el bundle —verificado `--tw-duration` +
-`transition-duration`, no asumido— así que `reloj-a-mano` puede nacer bloqueante.
 
 ## v2.398.0 — E1 — el costo de venta se captura al momento de la venta
 

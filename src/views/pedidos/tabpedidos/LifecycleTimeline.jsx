@@ -150,7 +150,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             <div className="flex items-center justify-center w-6 h-6">
                                 <div
                                     className={`w-4 h-4 rounded-full flex items-center justify-center z-base
-                                        animate-in zoom-in-50 fade-in duration-300 ${haloActivo ? 'anim-tl-halo' : ''} ${
+                                        animate-in zoom-in-50 fade-in duration-[var(--dur-slow)] ${haloActivo ? 'anim-tl-halo' : ''} ${
                                         isDone      ? `${tlDot(idx)} shadow-sm` :
                                         isPausedDot ? 'bg-warning shadow-md' :
                                         isActive    ? `bg-surface-card border-2 ${tlBorder(idx)}` :

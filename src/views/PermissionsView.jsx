@@ -149,7 +149,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                             {/* `text-content-2` y no `-3` en el estado apagado: el nombre
                                 del módulo es lo que se busca al recorrer la pantalla,
                                 también —sobre todo— entre los que el cargo NO tiene. */}
-                            <p className={`text-body-sm font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-content' : 'text-content-2'}`}>
+                            <p className={`text-body-sm font-black leading-tight transition-colors duration-[var(--dur-slow)] ${hasAnyPerm ? 'text-content' : 'text-content-2'}`}>
                                 {module.label}
                             </p>
                             {saving && <Loader2 size={10} className="text-content-3 animate-spin flex-shrink-0" />}
@@ -159,7 +159,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 </div>
 
                 {/* Toggles */}
-                <div className={`rounded-xl p-2.5 space-y-1.5 border transition-all duration-300 ${
+                <div className={`rounded-xl p-2.5 space-y-1.5 border transition-all duration-[var(--dur-slow)] ${
                     hasAnyPerm
                         ? 'bg-surface-card backdrop-blur-sm border-border-card shadow-[var(--shadow-shine)]'
                         : 'bg-surface-card border-border-card'
@@ -173,12 +173,12 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                         return (
                             <div
                                 key={pt.key}
-                                className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-300 ${
+                                className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-[var(--dur-slow)] ${
                                     needsView ? 'opacity-20 pointer-events-none' : ''
                                 } ${isFlashing ? (val ? 'bg-chart-1/10 scale-[1.02]' : 'bg-danger/10 scale-[0.99]') : ''}`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-[var(--dur-slow)] ${
                                         val
                                             ? `${pt.activeColor} shadow-sm ${isFlashing ? 'scale-125' : 'scale-100'}`
                                             : `bg-surface-card-hover/50 ${isFlashing ? 'scale-75' : 'scale-100'}`
@@ -186,7 +186,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                         <PtIcon size={9} className="text-white" strokeWidth={3} />
                                     </div>
                                     <LiquidTooltip content={PERM_DESC[pt.key]}>
-                                        <span className={`text-caption font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-content-2' : 'text-content-2'}`}>
+                                        <span className={`text-caption font-black uppercase tracking-widest transition-all duration-[var(--dur-slow)] ${val ? 'text-content-2' : 'text-content-2'}`}>
                                             {pt.label}
                                         </span>
                                     </LiquidTooltip>
@@ -245,8 +245,8 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                             {bloque.items.map(tab => {
                                 const tabPerm = tabPerms[tab.key] || { can_view: false };
                                 return (
-                                    <div key={tab.key} data-surface={tabPerm.can_view ? undefined : 'card'} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${tabPerm.can_view ? 'bg-chart-1/10 border-chart-1/30' : ''}`}>
-                                        <span className={`text-caption font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
+                                    <div key={tab.key} data-surface={tabPerm.can_view ? undefined : 'card'} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-[var(--dur-slow)] ${tabPerm.can_view ? 'bg-chart-1/10 border-chart-1/30' : ''}`}>
+                                        <span className={`text-caption font-bold transition-colors duration-[var(--dur-slow)] ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
                                             {tab.label}
                                         </span>
                                         <div className="flex items-center gap-1.5">
@@ -747,7 +747,7 @@ const PermissionsView = () => {
                                     key={r.id}
                                     aria-pressed={isActive}
                                     onClick={() => setSelectedRoleId(r.id)}
-                                    className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-300 hover:translate-y-[var(--lift-hover)] active:scale-[0.98] transform-gpu ${
+                                    className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-hover)] active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? `${cs.fondo} ${cs.borde} shadow-[var(--shadow-elevation-md)]`
                                             : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[var(--shadow-elevation-sm)]'
@@ -856,20 +856,20 @@ const PermissionsView = () => {
                                         {/* Label */}
                                         <div>
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-body-sm font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-warning-text' : 'text-content-2'}`}>
+                                                <p className={`text-body-sm font-black leading-tight transition-colors duration-[var(--dur-slow)] ${isRoleSU ? 'text-warning-text' : 'text-content-2'}`}>
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
                                                     <Badge variant="warning" tone="solid" size="sm">SU</Badge>
                                                 )}
                                             </div>
-                                            <p className={`text-micro font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>
+                                            <p className={`text-micro font-medium mt-0.5 leading-snug transition-colors duration-[var(--dur-slow)] ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>
                                                 {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso irrestricto al sistema'}
                                             </p>
                                         </div>
                                         {/* Warning badge */}
                                         {isRoleSU && (
-                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning/12 border border-warning/40 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning/12 border border-warning/40 animate-in fade-in slide-in-from-bottom-1 duration-[var(--dur-slow)]">
                                                 <Zap size={8} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                                 <p className="text-micro font-black text-warning-text uppercase tracking-wide">Permisos ignorados</p>
                                             </div>
@@ -897,7 +897,7 @@ const PermissionsView = () => {
                                 return (
                                 <div data-surface="card" className="p-4 md:col-span-2">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-300`}>
+                                        <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-[var(--dur-slow)]`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={2} />
                                         </div>
                                         <div className="flex-1 min-w-0">

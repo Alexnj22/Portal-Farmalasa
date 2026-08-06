@@ -135,7 +135,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         <Switch checked={data.hasIssueDate} size="md" variant="success" />
                     </div>
                     {data.hasIssueDate && (
-                        <div className="animate-in slide-in-from-top-2 fade-in duration-300 mt-1">
+                        <div className="animate-in slide-in-from-top-2 fade-in duration-[var(--dur-slow)] mt-1">
                             <LiquidDatePicker
                                 value={data.issueDate}
                                 onChange={(date) => updateField('issueDate', date)}
@@ -159,7 +159,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         <Switch checked={data.hasExpiration} size="md" variant="warning" />
                     </div>
                     {data.hasExpiration && (
-                        <div className="animate-in slide-in-from-top-2 fade-in duration-300 mt-1">
+                        <div className="animate-in slide-in-from-top-2 fade-in duration-[var(--dur-slow)] mt-1">
                             <LiquidDatePicker
                                 value={data.expDate}
                                 onChange={(date) => updateField('expDate', date)}

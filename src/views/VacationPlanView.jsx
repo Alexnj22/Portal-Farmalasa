@@ -714,7 +714,7 @@ const VacationPlanView = () => {
                     {/* ── Panel izquierdo: Formulario (crear / editar) ── */}
                     <div ref={panelRef} className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div data-surface="card" data-tono={editingPlan ? 'warning' : undefined}
-                    className="p-6 transition-all duration-700 ease-[var(--ease-spring)] relative">
+                    className="p-6 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] relative">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-[var(--dur-lento)] ${editingPlan ? 'bg-warning' : 'bg-brand'}`}>
@@ -797,7 +797,7 @@ const VacationPlanView = () => {
 
                                 {/* Confirmación inline al guardar edición */}
                                 {confirmingEdit && (
-                                    <div className="flex items-center gap-3 px-4 py-3 bg-warning/10 border border-warning/30 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-warning/10 border border-warning/30 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-[var(--dur-base)]">
                                         <AlertCircle size={14} className="text-warning shrink-0" strokeWidth={2.5} />
                                         <span className="text-label font-black text-warning-text flex-1">¿Confirmar cambios?</span>
                                         <Button variant="secondary" onClick={() => setConfirmingEdit(false)}>No</Button>
@@ -979,7 +979,7 @@ const VacationPlanView = () => {
                                                             </td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
                                                             <td className="py-3">
-                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-base)]">
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <Button
                                                                             icon={Pencil}

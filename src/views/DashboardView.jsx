@@ -301,11 +301,11 @@ const SalesBranchSkeleton = () => (
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
   <div data-surface="card" {...clickable(onClick)}
-    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)]' : ''}`}>
+    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)]' : ''}`}>
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
-      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[var(--ease-spring)] group-hover:scale-[1.08]" style={{ background: tinte(color, 9.4), border: `1px solid ${tinte(color, 12.5)}` }}>
+      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] group-hover:scale-[1.08]" style={{ background: tinte(color, 9.4), border: `1px solid ${tinte(color, 12.5)}` }}>
         <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
       <p className="text-label font-semibold text-content-3 leading-snug">{label}</p>
@@ -322,7 +322,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => {
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
-    <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
+    <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
       {/* backdrop-filter on inner absolute div — Chrome bug: overflow-hidden + backdrop-filter on same element breaks blur */}
       <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
       {/* Glass shine */}
@@ -377,7 +377,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
         {value.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}
       </Button>
       {open && createPortal(
-        <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
+        <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-[var(--dur-base)] origin-top" onMouseDown={e => e.stopPropagation()}>
           <div data-surface="card" className="p-4 w-[196px]">
             <div className="flex items-center justify-center mb-3 px-1">
               <PeriodStepper
@@ -1197,9 +1197,9 @@ const DashboardView = ({ openModal }) => {
             toque a ~44px sin agrandar la píldora visible (v2.47.4). */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 focus-within:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[var(--ease-spring)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
+          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 focus-within:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
         >
-          <div className="bg-surface-card border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
+          <div className="bg-surface-card border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-[var(--dur-fast)] group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
             <span className="text-micro font-black text-content-2 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
           </div>
@@ -1211,7 +1211,7 @@ const DashboardView = ({ openModal }) => {
         {!dndActive && (
           <div
             data-resize-panel
-            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-200 ease-[var(--ease-spring)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'}`}
+            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'}`}
           >
             <Button
                 icon={Maximize2}
@@ -1223,7 +1223,7 @@ const DashboardView = ({ openModal }) => {
             />
 
             {isResizeOpen && (
-              <div className="absolute bottom-full right-0 mb-2 animate-in fade-in zoom-in-95 origin-bottom-right duration-150">
+              <div className="absolute bottom-full right-0 mb-2 animate-in fade-in zoom-in-95 origin-bottom-right duration-[var(--dur-fast)]">
                 {/* gap ampliado + before:-inset-1 en mobile: mejora el touch target
                     de 24px a ~32px sin que las zonas de toque de números
                     vecinos se solapen (gap-1.5=6px era insuficiente, v2.47.4) */}
@@ -1396,7 +1396,7 @@ const DashboardView = ({ openModal }) => {
                   if (!chartData?.length) return <EmptyState compact icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
                     <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
-                      <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2.5 py-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center">
+                      <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2.5 py-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-[var(--dur-base)] pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center">
                         <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2 mb-1 border-b border-border-tooltip pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>
@@ -1408,7 +1408,7 @@ const DashboardView = ({ openModal }) => {
                         )}
                         {salesView==='DAYS'&&<p className="text-micro text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
-                      <div className={`w-full transition-[opacity,transform] duration-300 ease-[var(--ease-spring)] group-hover:opacity-80 origin-bottom shadow-sm z-base ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
+                      <div className={`w-full transition-[opacity,transform] duration-[var(--dur-slow)] ease-[var(--ease-spring)] group-hover:opacity-80 origin-bottom shadow-sm z-base ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
                       <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-9-text transition-[opacity,color] whitespace-nowrap z-base">{item.label}</span>
                     </div>
                   ));
@@ -1446,7 +1446,7 @@ const DashboardView = ({ openModal }) => {
       const nowH=new Date().getHours();
       const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
       return wrapWidget(wid,
-        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)] overflow-hidden">
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] overflow-hidden">
           {/* Mismas 2 capas que WidgetCard (blur + glass shine) — antes esta
               mini-card se pintaba a mano sin la capa de brillo, por eso se
               veía más opaca/gris que el resto de widgets del dashboard. */}
@@ -1673,7 +1673,7 @@ const DashboardView = ({ openModal }) => {
                     <div key={day}
                       onMouseEnter={e=>{if(!hasH)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({holidays:ev?.holidays||[],x:r.left+r.width/2,y:r.top});}}
                       onMouseLeave={()=>setCalTooltip(null)}
-                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-[background-color] duration-150 ${isToday?'bg-brand':hasH?'bg-danger/10 hover:bg-danger/10':'hover:bg-surface-card-hover/80'}`}>
+                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-[background-color] duration-[var(--dur-fast)] ${isToday?'bg-brand':hasH?'bg-danger/10 hover:bg-danger/10':'hover:bg-surface-card-hover/80'}`}>
                       <span className={`text-body-sm font-bold leading-none ${isToday?'text-white':hasH?'text-danger-text':'text-content-2'}`}>{day}</span>
                       {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-danger"/></div>}
                     </div>
@@ -1728,7 +1728,7 @@ const DashboardView = ({ openModal }) => {
         : birthdaysOfMonth;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
-        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)] flex flex-col overflow-hidden">
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] flex flex-col overflow-hidden">
           <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
           {/* Mismas 2 capas que WidgetCard — este widget era hand-rolled sin
               el glass shine ni data-surface="card" (mismo bug que
@@ -1788,7 +1788,7 @@ const DashboardView = ({ openModal }) => {
                     ? 'bg-surface-card border-border-card opacity-40'
                     : 'bg-surface-card border-border-card hover:bg-surface-card hover:border-divider hover:shadow-sm';
                   return (
-                    <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-[background-color,border-color,box-shadow] duration-200 ${cardCls}`}>
+                    <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)] ${cardCls}`}>
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
@@ -2201,7 +2201,7 @@ const DashboardView = ({ openModal }) => {
         variant={showConfig ? undefined : 'secondary'}
         tone={showConfig ? 'brand' : null}
         icon={Settings2}
-        className={showConfig ? '[&_svg]:rotate-[60deg] [&_svg]:transition-transform [&_svg]:duration-300' : '[&_svg]:transition-transform [&_svg]:duration-300'}
+        className={showConfig ? '[&_svg]:rotate-[60deg] [&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]' : '[&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]'}
         onClick={() => setShowConfig(v => !v)}
       >
         Personalizar
@@ -2219,7 +2219,7 @@ const DashboardView = ({ openModal }) => {
           const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
           return (
-            <div data-surface="card" className="animate-in fade-in slide-in-from-top-2 duration-150 p-4 space-y-3">
+            <div data-surface="card" className="animate-in fade-in slide-in-from-top-2 duration-[var(--dur-fast)] p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
@@ -2244,7 +2244,7 @@ const DashboardView = ({ openModal }) => {
                       aria-pressed={enabled && hasAccess}
                       disabled={!hasAccess}
                       onClick={() => hasAccess && toggleWidget(w.id)}
-                      className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
+                      className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-[var(--dur-fast)] ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
                       <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
                       {/* Indicador, no control: la fila entera ya es el botón.
@@ -2332,7 +2332,7 @@ const DashboardView = ({ openModal }) => {
                 pointerEvents:   'none',
                 zIndex: 25,
               }}
-              className={`rounded-card border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-warning/60 bg-warning/10'}`}
+              className={`rounded-card border-2 border-dashed transition-colors duration-[var(--dur-fast)] ${dndSnap.valid ? 'border-brand/50 bg-brand/5' : 'border-warning/60 bg-warning/10'}`}
             />
           )}
         </div>
@@ -2343,7 +2343,7 @@ const DashboardView = ({ openModal }) => {
       {/* Sales bar tooltip */}
       {salesBarTip && createPortal(
         <div style={{position:'fixed',top:salesBarTip.y-8,left:salesBarTip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
-          data-surface="tooltip" className="px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col items-center gap-0.5 min-w-[70px]">
+          data-surface="tooltip" className="px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] flex flex-col items-center gap-0.5 min-w-[70px]">
           <span className="text-micro text-content-tooltip-2 font-semibold">{salesBarTip.label}</span>
           {salesBarTip.amount&&<span className="text-caption text-success-text font-black">{salesBarTip.amount}</span>}
           {salesBarTip.txCount>0&&<span className="text-micro text-content-tooltip-2 font-semibold">{salesBarTip.txCount} tx</span>}
@@ -2355,7 +2355,7 @@ const DashboardView = ({ openModal }) => {
       {/* Calendar tooltip */}
       {calTooltip && createPortal(
         <div style={{position:'fixed',top:calTooltip.y-10,left:calTooltip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
-          data-surface="tooltip" className="overflow-hidden max-w-[220px] min-w-[140px] animate-in fade-in zoom-in-95 duration-150">
+          data-surface="tooltip" className="overflow-hidden max-w-[220px] min-w-[140px] animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]">
           {calTooltip.holidays?.length>0&&(
             <div className="px-3 py-2 border-b border-border-tooltip">
               {calTooltip.holidays.map((h,i)=>(
@@ -2373,7 +2373,7 @@ const DashboardView = ({ openModal }) => {
       {/* Drag ghost pill */}
       {dndActive && createPortal(
         <div style={{position:'fixed',left:dndPos.x,top:dndPos.y,transform:'translate(-50%,-50%) rotate(-2deg)',zIndex:99999,pointerEvents:'none'}}
-          className="bg-brand text-white text-label font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-in zoom-in-95 duration-100">
+          className="bg-brand text-white text-label font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-in zoom-in-95 duration-[var(--dur-fast)]">
           <GripVertical size={12}/>
           {getWidgetSize(dndActive).label}
         </div>,

@@ -175,7 +175,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                                 aria-label={`${lab.nombre}: ${hidden ? 'oculto, mostrar' : 'visible, ocultar'}`}
                                 onClick={() => toggle(lab)}
                                 disabled={saving === lab.id}
-                                className="flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all duration-200 disabled:opacity-60 hover:scale-[1.01] active:scale-[0.99]"
+                                className="flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all duration-[var(--dur-base)] disabled:opacity-60 hover:scale-[1.01] active:scale-[0.99]"
                                 style={hidden ? glass.rowOff : glass.row}>
                                 <div className="flex-1 min-w-0">
                                     <div className={`text-label font-semibold truncate ${hidden ? 'text-danger-text' : 'text-content-2'}`}>

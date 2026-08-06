@@ -56,10 +56,10 @@ const FormDispositivos = ({ formData }) => {
     };
 
     return (
-        <div className="w-full flex flex-col space-y-5 animate-in fade-in duration-300">
+        <div className="w-full flex flex-col space-y-5 animate-in fade-in duration-[var(--dur-slow)]">
 
             {/* BANNER DE ERROR DINÁMICO */}
-            <div inert={!(errorMsg) ? true : undefined} className={`transition-all duration-300 overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div inert={!(errorMsg) ? true : undefined} className={`transition-all duration-[var(--dur-slow)] overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-2xl text-label font-bold flex items-center gap-2 shadow-sm text-danger">
                     <AlertCircle size={16} strokeWidth={2.5} />
                     <span>{errorMsg}</span>
@@ -91,7 +91,7 @@ const FormDispositivos = ({ formData }) => {
 
                                 return (
                                     <div key={kiosk.id} data-surface="card" data-tono={isConfirming ? 'danger' : undefined}
-                                        className="flex flex-col p-4 transition-all duration-300">
+                                        className="flex flex-col p-4 transition-all duration-[var(--dur-slow)]">
                                         
                                         {/* FILA 1: INFORMACIÓN PRINCIPAL (Nunca se desborda gracias al min-w-0 y truncate) */}
                                         <div className="flex items-center justify-between gap-4">
@@ -117,7 +117,7 @@ const FormDispositivos = ({ formData }) => {
 
                                         {/* 🚨 FILA 2: BOTONES DE CONFIRMACIÓN (Usamos grid-cols-2 para que se adapten perfecto al 50% de la tarjeta) */}
                                         {isConfirming && (
-                                            <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-danger/30 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-danger/30 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-base)]">
                                                 <Button variant="secondary" disabled={isRevoking} onClick={() => setConfirmingId(null)}>Cancelar</Button>
                                                 <Button variant="destructive" disabled={isRevoking} onClick={() => executeRevoke(kiosk.id, kiosk.device_name)}>{isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}</Button>
                                             </div>

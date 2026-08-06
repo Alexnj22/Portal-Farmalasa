@@ -1020,7 +1020,7 @@ function TabDocumentos({
                         aria-label="Avance de la descarga"
                     >
                         <div
-                            className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-300"
+                            className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-[var(--dur-slow)]"
                             style={{ width: bulkProgress?.total > 0 ? `${(bulkProgress.hechos / bulkProgress.total) * 100}%` : '0%' }}
                         />
                     </div>

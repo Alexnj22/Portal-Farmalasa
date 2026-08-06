@@ -20,7 +20,7 @@ const DocumentRow = ({ doc }) => {
     const badge = getExpiryBadge(doc.expiry_date);
     const hasFile = !!doc.url;
     return (
-        <div data-surface="card" className="flex items-center gap-3 p-3.5 transition-all duration-200">
+        <div data-surface="card" className="flex items-center gap-3 p-3.5 transition-all duration-[var(--dur-base)]">
             <div className="w-9 h-9 rounded-xl bg-surface-card-hover border border-border-card flex items-center justify-center shrink-0">
                 {/* eslint-disable-next-line react-hooks/static-components -- Icon selecciona entre 4 íconos ya importados (docIcon), no crea un componente nuevo */}
                 <Icon size={15} className="text-content-3" strokeWidth={2} />
@@ -60,7 +60,7 @@ const EmployeeDocumentsList = ({ documents, emptyLabel = 'Sin documentos registr
 
     if (ordered.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[160px] animate-in fade-in zoom-in-95 duration-700">
+            <div className="flex flex-col items-center justify-center min-h-[160px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-2 w-20 h-20 rounded-full blur-[40px] opacity-20 bg-content-3" />
                     <div data-surface="dropdown" className="relative z-base w-12 h-12 flex items-center justify-center mb-3 text-content-3">

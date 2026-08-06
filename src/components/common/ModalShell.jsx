@@ -363,7 +363,7 @@ export default function ModalShell({
   // sola.
   const backdropAnim = !conVelo
     ? ""
-    : open ? "animate-in fade-in duration-[var(--dur-lento)]" : `animate-out fade-out duration-150 ${HOLD_EXIT}`;
+    : open ? "animate-in fade-in duration-[var(--dur-lento)]" : `animate-out fade-out duration-[var(--dur-fast)] ${HOLD_EXIT}`;
   // Una hoja inferior no hace zoom: sube y baja. Es la misma distinción que el
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.
@@ -393,8 +393,8 @@ export default function ModalShell({
   // terminar. Escalar al 95% no tiene ese problema: el blur pasa de 24px a ~23,
   // que no se ve. El velo ya aporta el desvanecido por su lado.
   const panelAnim = (animacionPropia || sinMovimiento || sinHover) ? "" : open
-    ? "animate-in zoom-in-95 duration-200"
-    : `animate-out zoom-out-95 duration-150 ${HOLD_EXIT}`;
+    ? "animate-in zoom-in-95 duration-[var(--dur-base)]"
+    : `animate-out zoom-out-95 duration-[var(--dur-fast)] ${HOLD_EXIT}`;
 
   const alignCls =
     align === "top"    ? "items-start justify-center pt-[10vh] px-4" :

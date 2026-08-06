@@ -246,7 +246,7 @@ const SelectorTactil = memo(({
                             {letras.map((l) => (
                                 <span
                                     key={l}
-                                    className={`text-micro font-black leading-none py-[1px] transition-colors duration-100
+                                    className={`text-micro font-black leading-none py-[1px] transition-colors duration-[var(--dur-fast)]
                                         ${l === letraActiva ? 'text-brand-text' : 'text-content-3'}`}
                                 >
                                     {l}
@@ -281,7 +281,7 @@ const Fila = memo(({ label, sublabel, badge, seleccionada, destacada, onClick })
         aria-selected={seleccionada}
         onClick={onClick}
         className={`w-full min-h-14 px-4 py-2 flex items-center gap-3 text-left
-            border-b border-border-card/60 transition-colors duration-100
+            border-b border-border-card/60 transition-colors duration-[var(--dur-fast)]
             ${seleccionada ? 'bg-brand/10' : 'active:bg-surface-card-hover'}`}
     >
         <span className="flex-1 min-w-0">

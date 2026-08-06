@@ -35,7 +35,7 @@ const AccessDeniedView = () => {
             <div className="absolute w-[40vw] h-[40vw] bg-chart-3/8 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDuration: '5s' }} />
 
             {/* Pulsing rings + icon */}
-            <div className="relative mb-10 animate-in zoom-in-75 duration-700 fill-mode-both">
+            <div className="relative mb-10 animate-in zoom-in-75 duration-[var(--dur-lento)] fill-mode-both">
                 <span className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-chart-3/15 animate-ping" style={{ animationDuration: '2.5s' }} />
                 <span className="absolute -inset-6 rounded-full bg-chart-3/10 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.8s' }} />
                 <div className="relative w-24 h-24 rounded-modal bg-surface-card border border-chart-3/20 shadow-[var(--shadow-glow-chart-3)] flex items-center justify-center">

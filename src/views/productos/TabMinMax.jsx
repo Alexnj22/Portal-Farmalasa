@@ -761,7 +761,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 )}
                                             </div>
                                             <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
-                                                <ChevronRight size={12} className={`text-content-3 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                <ChevronRight size={12} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isExpanded ? 'rotate-90' : ''}`} />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -996,7 +996,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div {...clickable(clickFn)}
-                                                    className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-100 ${colorCls} ${borderCls} ${clickFn ? 'cursor-pointer hover:brightness-95' : ''}`}>
+                                                    className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-[var(--dur-fast)] ${colorCls} ${borderCls} ${clickFn ? 'cursor-pointer hover:brightness-95' : ''}`}>
                                                     {val}
                                                 </div>
                                             );

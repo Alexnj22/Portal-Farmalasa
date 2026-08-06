@@ -32,7 +32,7 @@ import useMediaQuery from '../../hooks/useMediaQuery';
 const BASE = `rounded-full shrink-0 whitespace-nowrap
     inline-flex items-center justify-center gap-2 border
     text-micro md:text-caption font-black uppercase tracking-widest
-    transition-[background-color,border-color,color,transform] duration-200
+    transition-[background-color,border-color,color,transform] duration-[var(--dur-base)]
     ease-[var(--ease-spring)]
     hover:translate-y-[var(--lift-hover)] active:translate-y-0 active:scale-[0.97]
     disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0`;

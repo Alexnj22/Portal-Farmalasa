@@ -13,7 +13,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div data-surface="card" className="border border-border-card rounded-2xl px-4 py-1.5 shadow-[var(--shadow-glass-1)] flex flex-col h-full min-h-[80px] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-300 group/chart relative overflow-visible z-base">
+        <div data-surface="card" className="border border-border-card rounded-2xl px-4 py-1.5 shadow-[var(--shadow-glass-1)] flex flex-col h-full min-h-[80px] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-slow)] group/chart relative overflow-visible z-base">
 
             {/* Header: title + legend + toggle — compact single row */}
             <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0">
@@ -46,7 +46,7 @@ const ScheduleChart = ({
                             options={[{ value: 'HOURS', label: 'Horas' }, { value: 'DAYS', label: 'Días' }]}
                         />
                     </div>
-                    <div className="opacity-0 group-hover/chart:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+                    <div className="opacity-0 group-hover/chart:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-base)]">
                         <Button tone="chart-1" size="xs" icon={Maximize2} title="Expandir Análisis" iconOnly onClick={() => openModal && openModal('viewWfmAnalytics')} />
                     </div>
                 </div>
@@ -80,7 +80,7 @@ const ScheduleChart = ({
                             className={`flex-1 flex flex-col justify-end items-center group/bar h-full relative overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
 
                             {/* Tooltip */}
-                            <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2 py-1.5 opacity-0 group-hover/bar:opacity-100 focus-within:opacity-100 transition-all duration-150 pointer-events-none w-max z-modal translate-y-1 group-hover/bar:-translate-y-0">
+                            <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2 py-1.5 opacity-0 group-hover/bar:opacity-100 focus-within:opacity-100 transition-all duration-[var(--dur-fast)] pointer-events-none w-max z-modal translate-y-1 group-hover/bar:-translate-y-0">
                                 <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2">{item.label}</p>
                                 <p className="text-caption font-bold flex items-center gap-1 mt-0.5">
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -93,7 +93,7 @@ const ScheduleChart = ({
 
                             {/* Bar with label inside */}
                             <div
-                                className={`relative w-full transition-all duration-300 ease-[var(--ease-spring)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-base overflow-hidden ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
+                                className={`relative w-full transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-base overflow-hidden ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
                                 style={{ height: item.height, backgroundColor: item.color }}>
                                 <span className="absolute bottom-0.5 inset-x-0 text-center text-micro font-black text-white/90 leading-none pointer-events-none">
                                     {item.label}

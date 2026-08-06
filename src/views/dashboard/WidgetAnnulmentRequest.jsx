@@ -179,7 +179,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
   }, [inv.id]);
 
   return (
-    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-200">
+    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -294,7 +294,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
   ];
 
   return (
-    <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
+    <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
       <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">Tipo de solicitud</p>
       <div className="flex flex-col gap-2 flex-1">
@@ -372,7 +372,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
   };
 
   return (
-    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-200">
+    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -495,7 +495,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
   };
 
   return (
-    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-200">
+    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -592,7 +592,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
   };
 
   return (
-    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-200">
+    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={currentVendor} />
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -727,7 +727,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
   };
 
   return (
-    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-200">
+    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

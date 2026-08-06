@@ -249,7 +249,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
             <div data-surface="card" className={`flex items-center overflow-x-auto hide-scrollbar h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors ${showProfile ? 'bg-surface-card' : 'bg-surface-card'}`}>
 
                 {showProfile ? (
-                    <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                    <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-[var(--dur-slow)] w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-chart-1/10 text-brand-text flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
@@ -287,7 +287,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex items-center h-full shrink-0 transform-gpu origin-right animate-in fade-in zoom-in-95 duration-300">
+                    <div className="flex items-center h-full shrink-0 transform-gpu origin-right animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]">
 
                         <div inert={isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div ref={tabsRef} className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 w-max relative">
@@ -380,8 +380,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <span className="text-title md:text-title-lg font-black text-content leading-none tracking-tight">{liveBranch?.name || "Detalle de Sucursal"}</span>
                                 <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-success shadow-[var(--shadow-glow-success-md)] animate-pulse' : 'bg-content-3'}`} role="img" title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
 
-                                <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-brand border-brand text-white translate-x-1' : 'bg-brand/10 border-brand/20 text-brand-text group-hover/title:translate-x-0.5'}`}>
-                                    <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />
+                                <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-[var(--dur-slow)] ml-0.5 md:ml-1 ${showProfile ? 'bg-brand border-brand text-white translate-x-1' : 'bg-brand/10 border-brand/20 text-brand-text group-hover/title:translate-x-0.5'}`}>
+                                    <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-[var(--dur-slow)]" />
                                 </div>
                             </div>
                             <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">

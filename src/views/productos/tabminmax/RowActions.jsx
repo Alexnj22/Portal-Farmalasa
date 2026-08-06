@@ -45,7 +45,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
     const hasRestaura = canManage && (row.calc_min != null || hasDraft || row.has_manual);
     const hasDescarta = hasDraft && canManage && !isBodegaRow;
 
-    const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
+    const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-[var(--dur-fast)]';
     const sp = {
         whileTap: { scale: 0.87, transition: { type: 'spring', stiffness: 1200, damping: 40 } },
     };
@@ -164,7 +164,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                                 whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 1200, damping: 40 } }}
                                 disabled={item.disabled}
                                 onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
-                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-caption font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.dropCls ?? item.cls}`}>
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-caption font-semibold whitespace-nowrap transition-colors duration-[var(--dur-fast)] disabled:opacity-40 disabled:pointer-events-none ${item.dropCls ?? item.cls}`}>
                                 {item.icon}
                                 {item.label}
                             </motion.button>

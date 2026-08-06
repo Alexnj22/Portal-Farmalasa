@@ -166,7 +166,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                         {sectionLabs.length}
                                     </span>
                                     <div className="flex-1 h-px bg-divider ml-1" />
-                                    <ChevronDown className={`w-4 h-4 text-content-3 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                    <ChevronDown className={`w-4 h-4 text-content-3 flex-shrink-0 transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
                                 <AnimatePresence initial={false}>
@@ -235,7 +235,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
     return (
         <motion.div
             layout
-            className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+            className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden ${
                 isOpen
                     ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card backdrop-blur-sm'
                     : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
@@ -256,14 +256,14 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
                         <span className="hidden sm:flex items-center gap-1 mr-2">
                             {branches.map(b => (
                                 <span key={b.id} role="img" title={b.name}
-                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                    className={`w-2 h-2 rounded-full transition-all duration-[var(--dur-slow)] ${
                                         hasAny(locationMap[b.id] || {})
                                             ? b.type === 'BODEGA' ? 'bg-warning' : 'bg-chart-9'
                                             : 'bg-surface-card-hover'}`} />
                             ))}
                         </span>
                         <ChevronDown size={16} strokeWidth={2.5}
-                            className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-chart-9-text' : 'text-content-3'}`} />
+                            className={`transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180 text-chart-9-text' : 'text-content-3'}`} />
                     </>
                 }
             />
@@ -352,7 +352,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
             initial={{ opacity: 0, y: 8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.2, delay: index * 0.035, ease: [0.4, 0, 0.2, 1] }}
-            className={`relative rounded-xl overflow-hidden transition-shadow duration-200 ${
+            className={`relative rounded-xl overflow-hidden transition-shadow duration-[var(--dur-base)] ${
                 editing
                     ? isBodegaBranch
                         ? 'shadow-lg shadow-warning/10 ring-1 ring-warning/30'

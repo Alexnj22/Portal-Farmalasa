@@ -450,7 +450,7 @@ const BarraPortal = ({
                     <div
                         data-surface="dropdown"
                         className="pointer-events-auto w-full flex items-center gap-1.5 h-12 px-3 shadow-lg
-                            animate-in fade-in slide-in-from-bottom-2 duration-200
+                            animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]
                             ease-[var(--ease-spring)]"
                     >
                         <Search size={15} strokeWidth={2.5} className="text-brand-text shrink-0" />
@@ -485,7 +485,7 @@ const BarraPortal = ({
                             <button type="button" aria-label="Limpiar la búsqueda"
                                 onClick={() => { buscador.onChange?.(''); setBuscando(false); }}
                                 className="w-8 h-8 -mr-1 shrink-0 rounded-full flex items-center justify-center
-                                    text-danger-text hover:bg-danger/15 transition-colors duration-150">
+                                    text-danger-text hover:bg-danger/15 transition-colors duration-[var(--dur-fast)]">
                                 <X size={14} strokeWidth={3} />
                             </button>
                         )}
@@ -495,7 +495,7 @@ const BarraPortal = ({
                 <div
                     data-surface={MATERIAL_CLUSTER}
                     className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
-                        transition-transform duration-200 ease-out
+                        transition-transform duration-[var(--dur-base)] ease-out
                         max-w-full
                         ${visible || campoAbierto ? 'translate-y-0' : 'translate-y-[135%]'}`}
                 >
@@ -648,7 +648,7 @@ const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, badge, punto,
         className="w-[60px] shrink min-w-11 flex flex-col items-center gap-1 group/bf"
     >
         <span className={`relative grid place-items-center rounded-full
-            transition-[background-color,border-color] duration-150
+            transition-[background-color,border-color] duration-[var(--dur-fast)]
             ${principal
                 ? 'w-12 h-12 bg-chart-9-solid text-white shadow-md'
                 : `w-11 h-11 border ${tono === 'danger'

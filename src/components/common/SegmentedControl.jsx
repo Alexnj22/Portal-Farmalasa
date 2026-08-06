@@ -107,7 +107,7 @@ const SegmentedControl = memo(({
                         className={`inline-flex items-center justify-center gap-1.5
                             ${stacked ? 'rounded-card' : 'rounded-btn'}
                             font-black uppercase tracking-widest
-                            transition-[background-color,color,border-color] duration-200
+                            transition-[background-color,color,border-color] duration-[var(--dur-base)]
                             disabled:opacity-40 disabled:cursor-not-allowed
                             ${enBloque
                                 ? `w-full px-3 text-caption border ${stacked ? 'flex-col gap-1.5 py-3' : 'h-11'}`

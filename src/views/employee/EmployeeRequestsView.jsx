@@ -196,7 +196,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
         'border-border-card bg-surface-card backdrop-blur-md';
 
     return (
-        <div className={`rounded-header border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${cardBg}`}>
+        <div className={`rounded-header border flex flex-col transition-all duration-[var(--dur-slow)] relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${cardBg}`}>
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
@@ -994,7 +994,7 @@ const EmployeeRequestsView = () => {
 
     // ── Filtros ──────────────────────────────────────────────────────────────
     const renderFiltersContent = () => (
-        <div data-surface="card" className="flex items-center hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[var(--ease-spring)]  transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
+        <div data-surface="card" className="flex items-center hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)]  transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
             <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
                 <SegmentedControl
                     label="Estado de las solicitudes"
@@ -1018,8 +1018,8 @@ const EmployeeRequestsView = () => {
             <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                 {/* ── PANEL IZQUIERDO: Formulario ── */}
-                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-700 ease-[var(--ease-spring)] z-sidebar transform-gpu">
-                    <div data-surface="card" className="p-6 md:p-8 hover:shadow-[var(--shadow-glass-5)] transition-all duration-700 ease-[var(--ease-spring)]">
+                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar transform-gpu">
+                    <div data-surface="card" className="p-6 md:p-8 hover:shadow-[var(--shadow-glass-5)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
 
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-brand text-white shadow-sm">
@@ -1030,10 +1030,10 @@ const EmployeeRequestsView = () => {
                             <div className="flex items-center gap-1.5">
                                 {disabilityHeaderAlerts.overlap && (
                                     <div className="relative group/tip">
-                                        <div className="w-7 h-7 rounded-full bg-danger/10 border border-danger/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
+                                        <div className="w-7 h-7 rounded-full bg-danger/10 border border-danger/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-[var(--dur-base)]">
                                             <AlertTriangle size={13} className="text-danger" strokeWidth={2.5} />
                                         </div>
-                                        <div className="absolute right-0 top-full mt-1.5 w-64 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
+                                        <div className="absolute right-0 top-full mt-1.5 w-64 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-fast)]">
                                             <div className="bg-danger-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Ya tienes asignada una incapacidad del {fmtDisabilityPeriod(disabilityHeaderAlerts.overlap)} — las fechas seleccionadas se solapan con ese período.
                                             </div>
@@ -1042,10 +1042,10 @@ const EmployeeRequestsView = () => {
                                 )}
                                 {disabilityHeaderAlerts.needsISSS && (
                                     <div className="relative group/tip2">
-                                        <div className="w-7 h-7 rounded-full bg-warning/10 border border-warning/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
+                                        <div className="w-7 h-7 rounded-full bg-warning/10 border border-warning/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-[var(--dur-base)]">
                                             <Info size={13} className="text-warning" strokeWidth={2.5} />
                                         </div>
-                                        <div className="absolute right-0 top-full mt-1.5 w-72 z-sidebar pointer-events-none opacity-0 group-hover/tip2:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
+                                        <div className="absolute right-0 top-full mt-1.5 w-72 z-sidebar pointer-events-none opacity-0 group-hover/tip2:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-fast)]">
                                             <div className="bg-warning-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Desde el día 4, aplica cobertura del ISSS. El ISSS cubre el 75% de tu salario a partir del día 4. Es obligatorio presentar la boleta oficial de incapacidad del ISSS dentro de 3 días hábiles para que la empresa pueda tramitar el reembolso. Puedes adjuntarla ahora o desde tu solicitud pendiente.
                                             </div>
@@ -1202,14 +1202,14 @@ const EmployeeRequestsView = () => {
                                 ))}
                             </div>
                         ) : (filtered.length === 0 && filteredMinmax.length === 0) ? (
-                            <div key={statusFilter} className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[var(--ease-spring)] col-span-full">
+                            <div key={statusFilter} className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)] col-span-full">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 pointer-events-none ${
                                         statusFilter === 'PENDING' ? 'bg-brand' :
                                         statusFilter === 'APPROVED' ? 'bg-success' :
                                         statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'
                                     }`} />
-                                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
+                                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-brand-text' :
                                         statusFilter === 'APPROVED' ? 'text-success' :
                                         statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'

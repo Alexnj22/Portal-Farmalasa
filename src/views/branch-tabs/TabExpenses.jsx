@@ -71,7 +71,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
             <div className="flex justify-between items-start mb-4 relative z-base">
                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 group-hover:scale-110 ${isPendingReceipt ? 'text-chart-6 bg-surface-card border-chart-6/30' : colorMap[colorTheme]}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-[var(--dur-slow)] group-hover:scale-110 ${isPendingReceipt ? 'text-chart-6 bg-surface-card border-chart-6/30' : colorMap[colorTheme]}`}>
                         {isPendingReceipt ? <AlertCircle size={20} strokeWidth={2}/> : <Icon size={20} strokeWidth={2} />}
                     </div>
                     <div className="min-w-0 pr-2">
@@ -79,7 +79,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         <p className="text-micro font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div data-surface={isPendingReceipt ? undefined : 'card'} className={`px-2.5 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'group-hover:bg-surface-card-hover'}`}>
+                <div data-surface={isPendingReceipt ? undefined : 'card'} className={`px-2.5 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest shadow-sm border transition-colors duration-[var(--dur-slow)] ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'group-hover:bg-surface-card-hover'}`}>
                     {statusObj.label}
                 </div>
             </div>
@@ -355,7 +355,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                         fill="url(#colorTotal)" 
                                         radius={[8, 8, 8, 8]} 
                                         barSize={36}
-                                        className="transition-all duration-300 hover:opacity-90"
+                                        className="transition-all duration-[var(--dur-slow)] hover:opacity-90"
                                     >
                                         {historicalData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={index === historicalData.length - 1 ? 'var(--brand)' : 'url(#colorTotal)'} />
@@ -373,7 +373,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         <div data-surface="card" className="group p-6 flex-1 flex flex-col justify-center transition-all duration-[var(--dur-lento)] relative overflow-hidden">
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-lento)] pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
                             <div className="flex items-center gap-2 mb-3 relative z-base">
-                                <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
+                                <Activity size={16} className="text-content-3 transition-colors duration-[var(--dur-slow)] group-hover:text-content-2" strokeWidth={2.5}/>
                                 <h5 className="text-caption font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>
                             </div>
                             <div className="flex items-end gap-3 relative z-base">
@@ -389,7 +389,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
 
                         {/* Tarjeta de Servicio Más Caro */}
                         <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-[var(--dur-lento)] hover:shadow-md hover:translate-y-[var(--lift-card)]">
-                            <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
+                            <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-[var(--dur-lento)] group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-base">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-border-card">
                                     <Zap size={16} className="text-warning" strokeWidth={2.5}/>

@@ -114,7 +114,7 @@ export default function LiquidTooltip({
 
             {pos && content && createPortal(
                 <div id={id} role="tooltip"
-                    className="fixed z-toast pointer-events-none animate-in fade-in zoom-in-95 duration-150 ease-out"
+                    className="fixed z-toast pointer-events-none animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out"
                     style={estilo}>
 
                     <div ref={cuerpoRef} data-surface="tooltip"

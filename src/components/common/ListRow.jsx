@@ -118,7 +118,7 @@ const ListRow = memo(forwardRef(({
             {...(surface === 'card' && !onDark && !tone ? { 'data-surface': 'card' } : {})}
             className={`w-full flex items-center text-left border
                 ${surface === 'card' ? 'rounded-card' : 'rounded-btn'}
-                transition-[background-color,border-color,color] duration-200
+                transition-[background-color,border-color,color] duration-[var(--dur-base)]
                 ${d.fila}
                 ${onDark
                     ? (active || selected

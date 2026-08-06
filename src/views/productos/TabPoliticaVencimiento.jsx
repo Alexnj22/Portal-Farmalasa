@@ -322,7 +322,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
     return (
         <motion.div
             layout
-            className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+            className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden ${
                 isOpen
                     ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card backdrop-blur-sm'
                     : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
@@ -340,7 +340,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                     : `${proveedores.length} proveedor${proveedores.length === 1 ? '' : 'es'}${devolutivoCount ? ` · ${devolutivoCount} devolutivo${devolutivoCount === 1 ? '' : 's'}` : ''}`}
                 trailing={
                     <ChevronDown size={16} strokeWidth={2.5}
-                        className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-chart-9-text' : 'text-content-3'}`} />
+                        className={`transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180 text-chart-9-text' : 'text-content-3'}`} />
                 }
             />
 

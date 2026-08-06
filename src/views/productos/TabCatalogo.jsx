@@ -1069,7 +1069,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             )}
                             <button onClick={() => localFoto ? setLightboxSrc(localFoto) : fileRef.current?.click()}
                                 onContextMenu={handlePhotoContextMenu}
-                                className={`relative w-full h-[200px] max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group ${xk.photoBtn}`}>
+                                className={`relative w-full h-[200px] max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-[var(--dur-base)] group ${xk.photoBtn}`}>
                                 {localFoto ? (
                                     <>
                                         <img src={localFoto} alt="" className="w-full h-full object-contain bg-surface-card p-2" />
@@ -1689,7 +1689,7 @@ export default function TabCatalogo({
                         </FilterBar.Section>
 
                         <FilterBar.Section active={filterLab !== null} onClear={() => setFilterLab?.(null)} label="laboratorio">
-                            <div style={{ width: labW + 'px' }} className="transition-all duration-200">
+                            <div style={{ width: labW + 'px' }} className="transition-all duration-[var(--dur-base)]">
                                 <LiquidSelect
                                     value={filterLab ? String(filterLab) : ''}
                                     onChange={v => setFilterLab?.(v ? parseInt(v) : null)}
@@ -1702,7 +1702,7 @@ export default function TabCatalogo({
                         </FilterBar.Section>
 
                         <FilterBar.Section active={filterCategoria !== null} onClear={() => setFilterCategoria?.(null)} label="categoría">
-                            <div style={{ width: catW + 'px' }} className="transition-all duration-200">
+                            <div style={{ width: catW + 'px' }} className="transition-all duration-[var(--dur-base)]">
                                 <LiquidSelect
                                     value={filterCategoria || ''}
                                     onChange={v => setFilterCategoria?.(v || null)}
@@ -1800,7 +1800,7 @@ export default function TabCatalogo({
                                     <DataCell className="w-10 text-center">
                                         {isLoadingThis
                                             ? <Loader2 size={13} className="animate-spin text-chart-1-text mx-auto" />
-                                            : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? 'rotate-180 text-chart-1-text' : tk.textMid}`} />
+                                            : <ChevronDown size={13} className={`transition-transform duration-[var(--dur-base)] mx-auto ${isExpanded ? 'rotate-180 text-chart-1-text' : tk.textMid}`} />
                                         }
                                     </DataCell>
                                 </DataRow>

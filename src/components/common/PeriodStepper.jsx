@@ -88,7 +88,7 @@ const PeriodStepper = memo(({
                     // así que es un target: medido en iPhone 13 daba 104x23.
                     // `--tap-min` lo sube a 44 solo en táctil.
                     className={`flex flex-col items-center justify-center px-2 ${s.min} min-h-[var(--tap-min)] rounded-btn
-                        transition-colors duration-150 disabled:cursor-default
+                        transition-colors duration-[var(--dur-fast)] disabled:cursor-default
                         ${isCurrent ? '' : 'hover:bg-surface-card-hover'}`}>
                     {cuerpo}
                 </button>

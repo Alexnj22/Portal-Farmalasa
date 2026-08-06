@@ -440,7 +440,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const renderEmployeeCard = ({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => (
     <div
       key={emp.id}
-      data-surface="card" className="p-4 transition-all duration-400 ease-[var(--ease-spring)] overflow-hidden transform-gpu"
+      data-surface="card" className="p-4 transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] overflow-hidden transform-gpu"
     >
       <button
         type="button"
@@ -598,7 +598,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               aria-pressed={isActive}
               onClick={() => setStatusTab(card.id)}
               className={[
-                "text-left p-5 rounded-modal border transition-all duration-300 group relative overflow-hidden",
+                "text-left p-5 rounded-modal border transition-all duration-[var(--dur-slow)] group relative overflow-hidden",
                 card.bg, card.border,
                 isActive
                   ? "shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/45 scale-[1.02] -translate-y-0.5"
@@ -629,7 +629,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               </p>
 
               {isActive && (
-                <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
+                <div className="absolute bottom-3 right-3 animate-in zoom-in duration-[var(--dur-slow)]">
                   <div className="w-2.5 h-2.5 rounded-full bg-brand shadow-[var(--shadow-glow-brand)]" />
                 </div>
               )}

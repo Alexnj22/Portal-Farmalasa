@@ -135,7 +135,7 @@ const Section = memo(({
   return (
     <div data-pieza={compacto ? undefined : 'ranura'}
         className={`flex items-center min-w-0 ${compacto ? 'h-auto w-full px-2' : 'h-9 px-1'} ${className}`}>
-        <div className={`flex items-center gap-1 px-0.5 rounded-btn border transition-[background-color,border-color] duration-200
+        <div className={`flex items-center gap-1 px-0.5 rounded-btn border transition-[background-color,border-color] duration-[var(--dur-base)]
             ${compacto ? 'min-h-9 h-auto w-full flex-wrap' : 'h-9'}
             ${active ? 'bg-brand/10 border-brand/30' : 'border-transparent'}`}>
             {children}
@@ -144,7 +144,7 @@ const Section = memo(({
                     title={label ? `Quitar ${label.toLowerCase()}` : 'Quitar este filtro'}
                     aria-label={label ? `Quitar ${label.toLowerCase()}` : 'Quitar este filtro'}
                     className="w-[18px] h-[18px] mr-1 shrink-0 rounded-full flex items-center justify-center
-                        text-brand-text/60 hover:text-danger-text hover:bg-danger/15 transition-colors duration-150">
+                        text-brand-text/60 hover:text-danger-text hover:bg-danger/15 transition-colors duration-[var(--dur-fast)]">
                     <X size={11} strokeWidth={3} />
                 </button>
             )}
@@ -169,7 +169,7 @@ const Chip = memo(({ active, onToggle, tone = 'danger', children, ...rest }) => 
     <button type="button" onClick={onToggle} aria-pressed={active}
         className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-btn shrink-0
             text-caption font-black uppercase tracking-widest border whitespace-nowrap
-            transition-[background-color,border-color,color] duration-200
+            transition-[background-color,border-color,color] duration-[var(--dur-base)]
             ${active
                 ? (tone === 'danger'  ? 'bg-danger/12 border-danger/30 text-danger-text'
                  : tone === 'warning' ? 'bg-warning/12 border-warning/30 text-warning-text'
@@ -335,7 +335,7 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
                         ? `Más filtros: ${secciones.length} guardados, ${aplicadas} aplicado${aplicadas === 1 ? '' : 's'}`
                         : `Más filtros (${secciones.length})`}
                     className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-btn shrink-0 border
-                        transition-[background-color,border-color,color] duration-200
+                        transition-[background-color,border-color,color] duration-[var(--dur-base)]
                         ${aplicadas > 0 || abierto
                             ? 'bg-brand/10 border-brand/30 text-brand-text'
                             : 'bg-surface-card-hover border-border-card text-content-2 hover:text-content'}`}>
@@ -349,7 +349,7 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
                     data-surface="dropdown"
                     style={{ top: caja.top, right: caja.right }}
                     className="fixed z-dropdown w-[280px] p-3 flex flex-col gap-3
-                        animate-in fade-in zoom-in-95 duration-150 ease-out">
+                        animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
                     {secciones.map((s, i) => (
                         <div key={i} className="flex flex-col gap-1.5">
                             {s.props?.label && (
@@ -412,7 +412,7 @@ const PanelAcciones = memo(({ acciones, extra }) => {
                     data-surface="dropdown"
                     style={{ top: caja.top, right: caja.right }}
                     className="fixed z-dropdown w-[240px] p-2 flex flex-col gap-2
-                        animate-in fade-in zoom-in-95 duration-150 ease-out">
+                        animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
                     {acciones.map(a => (
                         <TabBarAction key={a.key} size="sm" icon={a.icon} tone={a.tone}
                             as={a.as} href={a.href} target={a.target} rel={a.rel}
@@ -730,7 +730,7 @@ const FilterBar = memo(({
                 <button type="button" onClick={() => setAbierto(true)}
                     aria-expanded={abierto} aria-controls={idHoja}
                     className={`inline-flex items-center gap-2 h-[max(40px,var(--tap-min))] px-3.5 rounded-card border shrink-0
-                        text-body-sm font-bold transition-[background-color,border-color] duration-200
+                        text-body-sm font-bold transition-[background-color,border-color] duration-[var(--dur-base)]
                         ${activeCount > 0
                             ? 'bg-brand/10 border-brand/30 text-brand-text'
                             : 'bg-surface-card border-border-card text-content-2'} ${className}`}
@@ -747,13 +747,13 @@ const FilterBar = memo(({
                     <div className="fixed inset-0 z-modal flex flex-col justify-end">
                         <button type="button" aria-label="Cerrar filtros"
                             onClick={() => setAbierto(false)}
-                            className="absolute inset-0 bg-scrim animate-in fade-in duration-200" />
+                            className="absolute inset-0 bg-scrim animate-in fade-in duration-[var(--dur-base)]" />
 
                         <div id={idHoja} role="dialog" aria-modal="true" aria-label={title}
                             data-surface="sheet"
                             className="relative w-full max-h-[80vh] overflow-y-auto rounded-t-modal rounded-b-none
                                 px-4 pt-3 pb-[max(20px,env(safe-area-inset-bottom))]
-                                animate-in slide-in-from-bottom duration-300 ease-out">
+                                animate-in slide-in-from-bottom duration-[var(--dur-slow)] ease-out">
                             {/* Tirador: no es decorativo, es lo que dice que la
                                 hoja se arrastra para cerrar. */}
                             <AsaHoja className="mb-3" />
@@ -894,7 +894,7 @@ const FilterBar = memo(({
             // entra se va al control de desborde en vez de envolver.
             className={`inline-flex items-center h-[52px] px-1.5 rounded-card border border-border-card
                 bg-surface-card shadow-[var(--shadow-glass-1)] max-w-full
-                transition-[border-color,box-shadow] duration-200 ${className}`}
+                transition-[border-color,box-shadow] duration-[var(--dur-base)] ${className}`}
             {...rest}
         >
             {enLinea.map((s, i) => (
@@ -928,7 +928,7 @@ const FilterBar = memo(({
                             className="w-9 h-9 rounded-btn flex items-center justify-center shrink-0
                                 text-danger-text/70 bg-danger/10 ring-1 ring-inset ring-danger/25
                                 hover:bg-danger/20 hover:text-danger-text
-                                transition-[background-color,color] duration-200">
+                                transition-[background-color,color] duration-[var(--dur-base)]">
                             <X size={15} strokeWidth={2.5} />
                         </button>
                     </div>

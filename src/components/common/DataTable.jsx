@@ -191,7 +191,7 @@ export function DataTable({
                         'text-micro md:text-caption font-black uppercase tracking-widest',
                         'select-none whitespace-nowrap',
                         tk.thText, alignCls, hideCls,
-                        sortable ? `transition-colors duration-150 ${tk.thHover}` : '',
+                        sortable ? `transition-colors duration-[var(--dur-fast)] ${tk.thHover}` : '',
                         col.className || '',
                       ].join(' ')}
                     >
@@ -332,7 +332,7 @@ export function DataRow({ children, index = 0, onClick, className = '', style, .
       style={{ '--stagger-delay': `${Math.min(index, 14) * 25}ms`, ...style }}
       className={[
         'animate-stagger-child group',
-        'transition-colors duration-150',
+        'transition-colors duration-[var(--dur-fast)]',
         tk.rowHover || '',
         clickable ? 'cursor-pointer' : '',
         className,

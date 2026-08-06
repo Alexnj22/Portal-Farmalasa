@@ -94,7 +94,7 @@ export default function LiquidModal({
                             // `[data-surface="modal"]`, selector de atributo que le gana
                             // por orden de hoja.
                             ? 'max-h-[88dvh] rounded-t-modal rounded-b-none!'
-                            : 'animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-[var(--ease-spring)]'}
+                            : 'animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-[var(--dur-slow)] ease-[var(--ease-spring)]'}
                     ${lateral
                         // `pl-5` reserva el carril del asa. Sin él, el contenido
                         // se dibuja ENCIMA —los dos llevan `z-base` y gana el que

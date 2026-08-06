@@ -23,7 +23,7 @@ const portalProps = {
     styles: { menuPortal: base => ({ ...base, zIndex: 99999 }) },
 };
 
-const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50';
+const inputHover = 'transition-all duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50';
 const island    = 'bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]';
 const reqBadge  = <Badge variant="danger" size="sm" uppercase={false}>Requerido</Badge>;
 

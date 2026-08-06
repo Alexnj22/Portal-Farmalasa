@@ -1080,14 +1080,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             {/* ÁREA DE FOTO DE PERFIL */}
                             <div className="flex flex-col sm:flex-row items-center gap-6 mb-6 pb-6 border-b border-divider">
                                 <div className="relative group cursor-pointer shrink-0">
-                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-4 border-border-card shadow-[var(--shadow-elevation-md)] overflow-hidden bg-surface-card-hover flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-4 border-border-card shadow-[var(--shadow-elevation-md)] overflow-hidden bg-surface-card-hover flex items-center justify-center transition-transform group-hover:scale-105 duration-[var(--dur-slow)]">
                                         {formData.photoPreview || formData.photo || formData.photo_url ? (
                                             <img src={formData.photoPreview || formData.photo || formData.photo_url} alt="Perfil" className="w-full h-full object-cover" />
                                         ) : (
                                             <User size={36} className="text-content-3" strokeWidth={2} />
                                         )}
                                     </div>
-                                    <div className="absolute inset-0 bg-scrim backdrop-blur-sm rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300">
+                                    <div className="absolute inset-0 bg-scrim backdrop-blur-sm rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-slow)]">
                                         <Camera size={24} className="text-white" />
                                     </div>
                                     <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} id="photo-upload" />
@@ -1291,7 +1291,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
 
                                 {formData.education_level === 'BASICA' && (
-                                    <div className="relative z-content animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                             <span>Grado Finalizado</span>
                                             {!formData.education_grade_completed && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1305,7 +1305,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     const isOtherSpecialty = isCatalogOther(formData.education_specialty, specialtyOptions);
                                     return (
                                         <>
-                                            <div className="relative z-content animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Especialidad</span>
                                                     {!formData.education_specialty && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1321,7 +1321,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 />
                                             </div>
                                             {isOtherSpecialty && (
-                                                <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
+                                                <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                         <span>Especifica la Especialidad</span>
                                                         {formData.education_specialty === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1343,7 +1343,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     const isOtherProfession = isCatalogOther(formData.profession, profesionesUniversitariasOptions);
                                     return (
                                         <>
-                                            <div className="relative z-content animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="relative z-content animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Profesión / Título</span>
                                                     {!formData.profession && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1359,7 +1359,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 />
                                             </div>
                                             {isOtherProfession && (
-                                                <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
+                                                <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                         <span>Especifica la Profesión / Título</span>
                                                         {formData.profession === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1378,7 +1378,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 })()}
 
                                 {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && !(formData.education_level === 'UNIVERSITARIO' && formData.has_maestria) && (
-                                    <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/30 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/30 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                         <Checkbox
                                 checked={!!formData.is_studying}
                                 onChange={(v) => handleSelectChange('is_studying', v)}
@@ -1415,7 +1415,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && (() => {
                                     const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
                                     return (
-                                        <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/20 animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/20 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                             <Checkbox
                                 checked={!!formData.has_maestria}
                                 onChange={(v) => handleSelectChange('has_maestria', v)}
@@ -1671,7 +1671,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <Button variant="ghost" icon={Plus} onClick={addDependent}>Agregar Persona</Button>
                         </div>
 
-                        <div className={`bg-danger/10 rounded-3xl p-4 md:p-5 border border-danger/30 shadow-[var(--shadow-elevation-xs)] transition-all duration-300 hover:translate-y-[var(--lift-card)] hover:shadow-md`}>
+                        <div className={`bg-danger/10 rounded-3xl p-4 md:p-5 border border-danger/30 shadow-[var(--shadow-elevation-xs)] transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md`}>
                             <h4 className="text-body-sm font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2"><HeartPulse size={16} strokeWidth={2.5} /> Ficha Médica y Emergencia</h4>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1689,7 +1689,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     {(formData.chronic_conditions || []).map((cond, idx) => {
                                         if (!cond || cond === OTRA_ESPECIALIDAD) return null;
                                         return (
-                                            <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-danger/30 text-danger text-label font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                                            <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-surface-tab-active border border-danger/30 text-danger text-label font-bold shadow-sm animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                 {cond}
                                                 <Button variant="ghost" icon={X} title="Quitar condición" iconOnly onClick={() => removeChronicCondition(idx)} />
                                             </span>
@@ -1743,7 +1743,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     const isOtherDisability = isCatalogOther(formData.disability_type, tipoDiscapacidadOptions);
                                     return (
                                         <>
-                                            <div className="relative z-base animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                 <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Tipo de Discapacidad</span>
                                                     {!formData.disability_type && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1758,7 +1758,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     placeholder="Tipo..."
                                                 />
                                             </div>
-                                            <div className="relative z-base animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                 <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Grado</span>
                                                     {!formData.disability_grade && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1771,7 +1771,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 label={<span className="text-label font-black text-content-2 uppercase tracking-wide">Cuenta con certificación (ISRI / CONAIPD)</span>}
                             />
                                             {isOtherDisability && (
-                                                <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-200">
+                                                <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-[var(--dur-base)]">
                                                     <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                                         <span>Especifica el Tipo de Discapacidad</span>
                                                         {formData.disability_type === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -1859,7 +1859,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <LiquidSelect invalid={!formData.branch_id} value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                         </div>
                                         {isExterna && (
-                                            <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-slow)]">
                                                 <label className="text-caption font-black uppercase tracking-widest text-chart-9-text ml-1 mb-1.5 block">Farmacias Asignadas</label>
                                                 <div className="flex flex-wrap gap-2 p-3 bg-chart-9/10 border border-chart-9/30 rounded-2xl min-h-[44px]">
                                                     {farmaciasOpts.map(opt => {

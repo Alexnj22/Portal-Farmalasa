@@ -401,10 +401,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                         const stateCls = isOn
                             ? 'suc-pop border-chart-1/80 shadow-[var(--shadow-glass-3)] ring-2 ring-chart-1/45 ring-offset-0'
                             : urgLevel === 'high'
-                                ? 'hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)] transition-all duration-200'
+                                ? 'hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)] transition-all duration-[var(--dur-base)]'
                                 : urgLevel === 'mid'
-                                    ? 'hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)] transition-all duration-200'
-                                    : 'hover:border-divider hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200';
+                                    ? 'hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)] transition-all duration-[var(--dur-base)]'
+                                    : 'hover:border-divider hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)]';
 
                         // El nivel de urgencia, como nombre de variante.
                         const urgVariante = urgLevel === 'high' ? 'danger'

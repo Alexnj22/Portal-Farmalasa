@@ -23,7 +23,7 @@ const BranchTabInmueble = ({
     };
 
     const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
+    const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const extinguisherOptions = useMemo(() => [
         { value: 'ABC', label: 'Polvo Químico Seco (ABC)' },
@@ -51,7 +51,7 @@ const BranchTabInmueble = ({
                         <Home size={16} strokeWidth={2.5} /> Inmueble y Arrendamiento
                     </h4>
 
-                    <div data-surface="card" className="flex items-center gap-4 px-5 py-2.5 transition-[box-shadow,background-color] duration-300">
+                    <div data-surface="card" className="flex items-center gap-4 px-5 py-2.5 transition-[box-shadow,background-color] duration-[var(--dur-slow)]">
                         <span className={`text-caption font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
                         <Switch label="Local alquilado" on={isRented} onToggle={() => {
                             const nextState = isRented ? "OWNED" : "RENTED";

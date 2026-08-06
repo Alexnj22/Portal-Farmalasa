@@ -44,10 +44,10 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
     return (
         <div data-surface="card" data-tono={isMissing ? 'dashed' : undefined}
-                            className="group relative flex flex-col p-5 transition-all duration-300 ease-out transform hover:z-sidebar">
+                            className="group relative flex flex-col p-5 transition-all duration-[var(--dur-slow)] ease-out transform hover:z-sidebar">
 
             {/* 🚨 HOVER ACTIONS NORMALES */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 z-base translate-y-2 group-hover:translate-y-0">
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-[var(--dur-slow)] z-base translate-y-2 group-hover:translate-y-0">
                 {doc.url && !isMissing && (
                     <Button variant="secondary" size="sm" icon={Eye} title="Ver PDF" iconOnly onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })} />
                 )}
@@ -108,7 +108,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                     </div>
 
                                     {/* Contenido */}
-                                    <div className="relative z-base max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
+                                    <div className="relative z-base max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-[var(--dur-slow)]"></div>
                                         <p className="text-label font-semibold text-content-2 leading-relaxed text-justify pl-3">
                                             {doc.aiSummary}
                                         </p>
@@ -120,7 +120,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 </div>
 
                 {/* Píldora de Estado */}
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border ${status.color} transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-content`}>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border ${status.color} transition-all duration-[var(--dur-slow)] group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-content`}>
                     <StatusIcon size={12} strokeWidth={2.5} /> {status.label}
                 </div>
             </div>
@@ -339,7 +339,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                                 <span className={`text-micro font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand-text'}`}>{progress}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
-                                <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-success' : 'bg-brand'}`} style={{ width: `${progress}%` }}></div>
+                                <div className={`h-full transition-all duration-[var(--dur-lento)] ease-out ${progress === 100 ? 'bg-success' : 'bg-brand'}`} style={{ width: `${progress}%` }}></div>
                             </div>
                         </div>
                     </div>

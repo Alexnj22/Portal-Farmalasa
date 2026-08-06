@@ -498,7 +498,7 @@ export default function EncuestaAdminView() {
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && canManage && (
-                        <div data-surface="card" className={`p-5 transition-all duration-700 ease-[var(--ease-spring)] relative overflow-visible ${ editingSurvey ? 'border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]' }`}>
+                        <div data-surface="card" className={`p-5 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] relative overflow-visible ${ editingSurvey ? 'border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]' }`}>
 
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-body-lg">
@@ -577,13 +577,13 @@ export default function EncuestaAdminView() {
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-[var(--dur-slow)]">
                                                 <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-[var(--dur-slow)]">
                                                 <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
@@ -807,7 +807,7 @@ export default function EncuestaAdminView() {
                                 {formPreguntas.length > 0 && (
                                     <div className="flex items-center gap-3">
                                         <div className="flex-1 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
-                                            <div className="h-full rounded-full bg-brand transition-all duration-300"
+                                            <div className="h-full rounded-full bg-brand transition-all duration-[var(--dur-slow)]"
                                                 style={{ width: `${(rfAnsweredCount / formPreguntas.length) * 100}%` }} />
                                         </div>
                                         <span className="text-label font-black text-content-3 shrink-0 tabular-nums">
@@ -910,7 +910,7 @@ export default function EncuestaAdminView() {
                                                                                     aria-pressed={isActive}
                                                                                     aria-label={`Calificación ${n} de 10`}
                                                                                     onClick={() => setRfAnswer(p.indice, exactMatch ? null : nStr)}
-                                                                                    className={`w-6 h-6 rounded-full text-caption font-black transition-all duration-150 ${isActive ? oc.on : oc.off}`}>
+                                                                                    className={`w-6 h-6 rounded-full text-caption font-black transition-all duration-[var(--dur-fast)] ${isActive ? oc.on : oc.off}`}>
                                                                                     {n}
                                                                                 </button>
                                                                             );
@@ -971,10 +971,10 @@ export default function EncuestaAdminView() {
                         {loadingSurveys ? (
                             <div className="h-40 py-4"><SkeletonText lines={5} /></div>
                         ) : surveys.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
+                            <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-brand" />
-                                    <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-700">
+                                    <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-[var(--dur-lento)]">
                                         <BarChart2 size={40} strokeWidth={2} />
                                     </div>
                                     <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Sin encuestas aún</h3>
@@ -990,7 +990,7 @@ export default function EncuestaAdminView() {
                             const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices, invertedIndices) : null;
 
                             return (
-                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-700 ease-[var(--ease-spring)] group relative transform-gpu ${
+                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group relative transform-gpu ${
                                     isExpanded
                                         ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl z-base'
                                         : isEditing
@@ -1003,7 +1003,7 @@ export default function EncuestaAdminView() {
                                         onClick={() => { if (!isExpanded) toggleExpand(s); }}>
 
                                         {/* Action buttons */}
-                                        <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
+                                        <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-[var(--dur-slow)] ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
                                             {isExpanded && (
                                                 <Button variant="secondary" size="sm" icon={ChevronUp} onClick={e => { e.stopPropagation(); toggleExpand(s); }}>Colapsar</Button>
                                             )}

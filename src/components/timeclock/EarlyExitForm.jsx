@@ -35,7 +35,7 @@ function EarlyExitForm({
       <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-7 shadow-[var(--shadow-glass-dark)] overflow-hidden transition-all duration-[var(--dur-lento)] hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
         
         <div className="flex flex-col items-center text-center w-full mb-4 sm:mb-5 shrink-0 group/icon">
-          <div className="inline-flex p-3 sm:p-4 rounded-3xl mb-2.5 sm:mb-3 transition-all duration-300 border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]">
+          <div className="inline-flex p-3 sm:p-4 rounded-3xl mb-2.5 sm:mb-3 transition-all duration-[var(--dur-slow)] border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]">
             <FileText size={36} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-10 sm:h-10" strokeWidth={1.5} />
           </div>
 
@@ -86,7 +86,7 @@ function EarlyExitForm({
 
   {/* 🚨 NUEVO: Feedback visual preventivo */}
   {exitReason === 'Omisión de Almuerzo' && (
-    <div className="mt-1 px-2 animate-in slide-in-from-top-1 duration-300">
+    <div className="mt-1 px-2 animate-in slide-in-from-top-1 duration-[var(--dur-slow)]">
       <p className="text-caption text-chart-4-text/80 leading-tight italic">
         * Requiere autorización previa. Solo válido 60 min antes de la salida.
       </p>
@@ -113,7 +113,7 @@ function EarlyExitForm({
             <button
               type="submit"
               disabled={isProcessing}
-              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-4/15 py-3 sm:py-3.5 rounded-btn border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[var(--shadow-glow-chart-4-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] bg-chart-4/15 py-3 sm:py-3.5 rounded-btn border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[var(--shadow-glow-chart-4-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               {isProcessing ? (
                 <span className="w-3.5 h-3.5 border-2 border-chart-4/30 border-t-chart-4 rounded-full animate-spin" />

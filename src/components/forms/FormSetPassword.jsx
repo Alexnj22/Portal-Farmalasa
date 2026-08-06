@@ -49,7 +49,7 @@ const FormSetPassword = ({ formData, onClose }) => {
 
     if (done) {
         return (
-            <div className="flex flex-col items-center justify-center gap-3 py-10 animate-in fade-in duration-300">
+            <div className="flex flex-col items-center justify-center gap-3 py-10 animate-in fade-in duration-[var(--dur-slow)]">
                 <div className="w-14 h-14 rounded-full bg-success/10 border border-success/30 flex items-center justify-center">
                     <CheckCircle2 size={28} className="text-success" strokeWidth={2} />
                 </div>
@@ -59,7 +59,7 @@ const FormSetPassword = ({ formData, onClose }) => {
     }
 
     return (
-        <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
+        <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-[var(--dur-slow)]">
             {/* Email pill */}
             <div className="px-4 py-3 bg-brand/5 border border-brand/15 rounded-2xl">
                 <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Usuario del Portal</p>

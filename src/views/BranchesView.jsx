@@ -47,7 +47,7 @@ const safeParse = (obj) => {
     try { return JSON.parse(obj) || {}; } catch { return {}; }
 };
 
-const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)] cursor-pointer transition-all duration-300 hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] active:scale-[0.97]";
+const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)] cursor-pointer transition-all duration-[var(--dur-slow)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] active:scale-[0.97]";
 
 // ============================================================================
 // 🧠 FUNCIONES PURAS
@@ -216,7 +216,7 @@ const TarjetaTelefono = memo(({ icono: Icono, etiqueta, numero, onAccion, onWhat
         <button onClick={onAccion}
             aria-label={`${etiqueta}: ${numero || 'sin número'}`}
             className="flex items-center gap-2 p-2.5 text-left flex-1 min-w-0 rounded-2xl">
-            <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/tel:scale-110 group-hover/tel:text-brand-text">
+            <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-[var(--dur-slow)] group-hover/tel:scale-110 group-hover/tel:text-brand-text">
                 <Icono size={14} strokeWidth={2.5} />
             </div>
             <div className="min-w-0 flex-1">
@@ -241,7 +241,7 @@ const PanelCompletitud = memo(({ icono: Icono, etiqueta, pct, titulo, disabled, 
         aria-label={`${titulo} \u2014 ${pct}% completo`}
         className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-2xl text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
         <div className="flex items-center justify-between w-full">
-            <Icono size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${pct === 0 ? 'text-danger' : pct === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
+            <Icono size={12} strokeWidth={2.5} className={`transition-colors duration-[var(--dur-slow)] ${pct === 0 ? 'text-danger' : pct === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
             <span className={`text-micro font-black uppercase tracking-widest transition-colors ${pct === 0 ? 'text-danger-text' : 'text-content-2 group-hover/prog:text-content-2'}`}>{etiqueta}</span>
         </div>
         {pct < 100 && (
@@ -311,7 +311,7 @@ const BranchCard = memo(({
         <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-[var(--dur-lento)] flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-5)]'}`}>
             
             {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
-            <div inert={!(aiMode) ? true : undefined} className={`absolute inset-0 z-sidebar bg-surface-card backdrop-blur-3xl transition-all duration-700 ease-[var(--ease-spring)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
+            <div inert={!(aiMode) ? true : undefined} className={`absolute inset-0 z-sidebar bg-surface-card backdrop-blur-3xl transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
                 
                 {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -342,10 +342,10 @@ const BranchCard = memo(({
                     {isGeneratingAi ? (
                         <AiThinkingState size="sm" title="Analizando Telemetría" steps="Ejecutando modelo neuronal" className="absolute inset-0" />
                     ) : (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                             {aiSummaryData?.split('\n').map((paragraph, index) => (
                                 <div key={index} className="relative mb-4 group/p">
-                                    <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
+                                    <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-[var(--dur-slow)]"></div>
                                     
                                     <p className="text-body font-medium text-content-2 leading-relaxed text-justify pl-4">
                                         {paragraph.split('**').map((text, i) => (
@@ -361,7 +361,7 @@ const BranchCard = memo(({
 
             {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA */}
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-tabs">
-                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-border-card hover:scale-105">
+                <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-[var(--dur-slow)] bg-surface-card backdrop-blur-md p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-border-card hover:scale-105">
                     
                     {isFarmacia && (
                         <>
@@ -381,7 +381,7 @@ const BranchCard = memo(({
                             ) : (
                                 <>
                                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                    <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
+                                    <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
                                     <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-chart-3 transition-colors z-base"></div>
                                     <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
                                 </>
@@ -402,7 +402,7 @@ const BranchCard = memo(({
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all cursor-help border ${alertStatus.badgeStyles}`}>
                             <alertStatus.icon size={14} strokeWidth={2.5} />
                         </div>
-                        <div data-surface="tooltip" className="absolute top-full mt-2 right-0 w-max max-w-[220px] p-4 opacity-0 invisible group-hover/badge:opacity-100 focus-within:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 z-sidebar">
+                        <div data-surface="tooltip" className="absolute top-full mt-2 right-0 w-max max-w-[220px] p-4 opacity-0 invisible group-hover/badge:opacity-100 focus-within:opacity-100 group-hover/badge:visible transition-all duration-[var(--dur-slow)] translate-y-2 group-hover/badge:translate-y-0 z-sidebar">
                             <p className="text-micro text-content-tooltip-2 uppercase tracking-widest mb-2.5 font-black border-b border-border-tooltip pb-1.5 flex items-center justify-between">
                                 Problemas Detectados <span className="bg-danger/20 text-danger px-1.5 py-0.5 rounded text-micro">{alertStatus.list.length}</span>
                             </p>
@@ -426,15 +426,15 @@ const BranchCard = memo(({
                                         se queda solo para dejar la sucursal activa en el store. */}
                                     <Link to={`/branches/${branch.id}`} onClick={() => onActivarSucursal?.(branch)}
                                         className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full pr-[140px]">
-                        <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
+                        <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-[var(--dur-slow)] group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 flex-1 flex flex-col justify-center">
                             <div className="flex items-center gap-2">
-                                <h3 className="text-title-sm font-bold text-content leading-tight group-hover/header:text-brand-text transition-colors duration-300 line-clamp-2">{branch.name}</h3>
+                                <h3 className="text-title-sm font-bold text-content leading-tight group-hover/header:text-brand-text transition-colors duration-[var(--dur-slow)] line-clamp-2">{branch.name}</h3>
                                 <div className="relative group/status flex items-center justify-center p-1.5 cursor-help shrink-0">
                                     {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[var(--shadow-glow-warning-md)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[var(--shadow-glow-success-md)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
-                                    <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 text-micro font-black uppercase tracking-widest opacity-0 invisible group-hover/status:opacity-100 focus-within:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-sidebar pointer-events-none">
+                                    <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 text-micro font-black uppercase tracking-widest opacity-0 invisible group-hover/status:opacity-100 focus-within:opacity-100 group-hover/status:visible transition-all duration-[var(--dur-slow)] translate-y-1 group-hover/status:translate-y-0 z-sidebar pointer-events-none">
                                         {isInactive ? 'Inactiva' : currentStatus.status === 'OPEN' ? 'Abierta Ahora' : 'Cerrada Ahora'}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 -mt-1 rotate-45" style={{ background: 'var(--tooltip-bg)' }}></div>
                                     </div>
@@ -459,10 +459,10 @@ const BranchCard = memo(({
 
                 <div className="flex flex-col gap-2.5 mt-2">
                     <a href={branch.settings?.location?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || branch.name)}`} target="_blank" rel="noreferrer" className={`group/map flex items-start gap-3 p-3.5 rounded-2xl ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Abrir en Maps">
-                        <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-brand-text border border-divider"><MapPin size={16} strokeWidth={2.5} /></div>
+                        <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-[var(--dur-slow)] group-hover/map:scale-110 group-hover/map:text-brand-text border border-divider"><MapPin size={16} strokeWidth={2.5} /></div>
                         <div className="flex-1 flex justify-between items-start gap-2 pr-1">
                             <div className="min-w-0 flex-1">
-                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-300 group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-[var(--dur-slow)] group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
                                 <p className="text-body-sm font-semibold text-content-2 leading-snug break-words">{[branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || "No registrada"}</p>
                             </div>
                             <div className="shrink-0 mt-0.5" onClick={e => e.stopPropagation()}>
@@ -479,10 +479,10 @@ const BranchCard = memo(({
                             onWhatsApp={(e) => handleWhatsAppAction(e, branch.cell)} />
                     </div>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-hover)]'}`} title="Configurar Horarios">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-[var(--dur-slow)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-hover)]'}`} title="Configurar Horarios">
                         <div className="flex items-center gap-2">
-                            <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand-text'}`} strokeWidth={2.5} />
-                            <span className={`text-caption font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
+                            <Clock size={14} className={`transition-colors duration-[var(--dur-slow)] ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand-text'}`} strokeWidth={2.5} />
+                            <span className={`text-caption font-black uppercase tracking-widest transition-colors duration-[var(--dur-slow)] ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
                                 {!scheduleDefined ? 'Falta Horario' : 'Horario (Hoy)'}
                             </span>
                         </div>
@@ -525,9 +525,9 @@ const BranchCard = memo(({
                     className={`flex flex-col gap-1.5 items-start group/personal hover:bg-surface-card p-2 -ml-2 -my-2 rounded-xl transition-all cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
                     title="Ver Listado de Personal"
                 >
-                    <div className="flex items-center gap-2 text-content-3 transition-colors duration-300 group-hover/personal:text-content-2">
-                        <Users size={14} className="transition-transform duration-300 group-hover/personal:scale-110 group-hover/personal:text-brand-text" strokeWidth={2.5} />
-                        <span className="text-caption font-bold uppercase tracking-widest transition-colors duration-300 group-hover/personal:text-content-2">Personal</span>
+                    <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/personal:text-content-2">
+                        <Users size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/personal:scale-110 group-hover/personal:text-brand-text" strokeWidth={2.5} />
+                        <span className="text-caption font-bold uppercase tracking-widest transition-colors duration-[var(--dur-slow)] group-hover/personal:text-content-2">Personal</span>
                     </div>
                     <div className="flex items-center gap-3 w-full pr-4">
                         <div className="flex-1 h-1.5 bg-surface-card shadow-[var(--shadow-shine)] rounded-full overflow-hidden border border-border-card">
@@ -541,9 +541,9 @@ const BranchCard = memo(({
                     <>
                         <div className="w-px h-8 bg-divider mx-2"></div>
                         <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
-                            <div className="flex items-center gap-2 text-content-3 transition-colors duration-300 group-hover/kiosk:text-content-2">
+                            <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/kiosk:text-content-2">
                                 <span className="text-caption font-bold uppercase tracking-widest">Kioscos</span>
-                                <Monitor size={14} className="transition-transform duration-300 group-hover/kiosk:scale-110 group-hover/kiosk:text-chart-3-text" strokeWidth={2.5} />
+                                <Monitor size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/kiosk:scale-110 group-hover/kiosk:text-chart-3-text" strokeWidth={2.5} />
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={`text-body-lg font-black leading-none ${activeKiosks > 0 ? 'text-chart-3-text' : 'text-content-3'}`}>{activeKiosks} <span className="text-caption font-bold text-content-3">/ 3</span></span>
@@ -784,7 +784,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         </div>
                     ) : filteredBranches.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
-                            <div data-surface="card" className={`p-6 mb-5 transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
+                            <div data-surface="card" className={`p-6 mb-5 transition-all duration-[var(--dur-slow)] ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>
                             <h3 className="text-title font-black text-content tracking-tight">

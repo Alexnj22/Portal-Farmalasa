@@ -158,11 +158,11 @@ const BorradoresRanura = memo(({
                     className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-btn shrink-0
                         text-body-sm font-bold text-content-2 whitespace-nowrap
                         hover:bg-surface-card-hover hover:text-content
-                        transition-[background-color,color] duration-200">
+                        transition-[background-color,color] duration-[var(--dur-base)]">
                     <Punto />
                     Borradores
                     <ChevronDown size={12} strokeWidth={2.5}
-                        className={`shrink-0 text-content-3 transition-transform duration-200 ${abierto ? 'rotate-180' : ''}`} />
+                        className={`shrink-0 text-content-3 transition-transform duration-[var(--dur-base)] ${abierto ? 'rotate-180' : ''}`} />
                 </button>
             </LiquidTooltip>
 
@@ -171,7 +171,7 @@ const BorradoresRanura = memo(({
                     data-surface="dropdown"
                     style={{ top: caja.top, right: caja.right }}
                     className="fixed z-dropdown w-[280px] p-2 flex flex-col gap-2
-                        animate-in fade-in zoom-in-95 duration-150 ease-out">
+                        animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
                     <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
                         <Punto />
                         <span className="text-body-sm font-black text-content tabular-nums">{draftCount.toLocaleString()}</span>

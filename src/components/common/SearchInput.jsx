@@ -88,7 +88,7 @@ const SearchInput = forwardRef(function SearchInput({
                 {...(open ? { 'data-surface': 'input' } : {})}
                 onClick={() => { if (!open && !disabled) { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 120); } }}
                 style={open && isFocused ? { borderColor: accentColor || 'var(--brand)' } : undefined}
-                className={`flex items-center h-8 transition-[flex-grow,flex-basis,background-color,border-color] duration-300 ease-[var(--ease-spring)] overflow-hidden ${
+                className={`flex items-center h-8 transition-[flex-grow,flex-basis,background-color,border-color] duration-[var(--dur-slow)] ease-[var(--ease-spring)] overflow-hidden ${
                     open
                         ? 'flex-1 min-w-0 cursor-text'
                         : 'flex-none w-8 rounded-lg bg-surface-card-hover border border-border-card cursor-pointer'
@@ -114,7 +114,7 @@ const SearchInput = forwardRef(function SearchInput({
                     autoFocus={autoFocus}
                     disabled={disabled}
                     tabIndex={open ? 0 : -1}
-                    className={`min-w-0 flex-1 bg-transparent border-none outline-none text-body-xl font-semibold text-content placeholder:text-content-3 transition-opacity duration-200 ${
+                    className={`min-w-0 flex-1 bg-transparent border-none outline-none text-body-xl font-semibold text-content placeholder:text-content-3 transition-opacity duration-[var(--dur-base)] ${
                         open ? 'opacity-100 pr-1' : 'opacity-0 w-0 pointer-events-none'
                     }`}
                 />
@@ -155,7 +155,7 @@ const SearchInput = forwardRef(function SearchInput({
                 disabled={disabled}
                 className={`w-full ${s.px} ${s.text} font-semibold
                     text-content placeholder:text-content-3
-                    outline-none transition-[outline-color] duration-200
+                    outline-none transition-[outline-color] duration-[var(--dur-base)]
                     focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60
                     disabled:opacity-50 disabled:cursor-not-allowed`}
             />

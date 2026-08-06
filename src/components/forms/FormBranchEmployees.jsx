@@ -207,7 +207,7 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group cursor-pointer p-3 rounded-2xl bg-surface-card-hover/50 backdrop-blur-sm border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
+                            <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group cursor-pointer p-3 rounded-2xl bg-surface-card-hover/50 backdrop-blur-sm border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-[var(--dur-slow)] flex items-center gap-3 active:scale-[0.97] h-[72px]">
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-caption border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-surface-card-hover border-divider p-0'}`}>
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>

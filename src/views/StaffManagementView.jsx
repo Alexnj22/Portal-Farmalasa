@@ -161,7 +161,7 @@ const PendingBadge = ({ emp }) => {
       <AlertCircle size={13} strokeWidth={2.5} className="text-warning" />
       {pos && createPortal(
         <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
-          className="animate-in fade-in duration-150 min-w-[190px]">
+          className="animate-in fade-in duration-[var(--dur-fast)] min-w-[190px]">
           <div data-surface="tooltip" className="px-3 py-2.5">
             <p className="text-micro font-black uppercase tracking-widest text-warning mb-1.5">Información pendiente</p>
             <ul className="space-y-1">
@@ -302,7 +302,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
   const rowCelebrationClass = birthdayInfo?.isToday
-    ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-chart-6/10 via-warning/10 to-chart-6/10 ring-1 ring-chart-6/30 shadow-[var(--shadow-glow-chart-6-md)]'
+    ? 'animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] bg-gradient-to-r from-chart-6/10 via-warning/10 to-chart-6/10 ring-1 ring-chart-6/30 shadow-[var(--shadow-glow-chart-6-md)]'
     : '';
 
   return (
@@ -368,7 +368,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 {emp.code || 'Sin código'}
               </p>
               {phoneDigits.length >= 8 && (
-                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300 translate-x-[-10px] group-hover:translate-x-0">
+                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-slow)] translate-x-[-10px] group-hover:translate-x-0">
                   <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="text-success hover:text-success hover:scale-110 hover:translate-y-[var(--lift-hover)] transition-all bg-success/10 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
                     <MessageCircle size={10} strokeWidth={3} />
                   </a>
@@ -864,7 +864,7 @@ const StaffManagementView = ({
       title="Gestión de Personal"
       filtersContent={filtersContent}
     >
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-700">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-[var(--dur-lento)]">
 
         {/* Dos columnas: tarjetas a la izquierda, píldora a la derecha (pedido del
             usuario, 2026-07-30). Antes iban una debajo de otra y la píldora

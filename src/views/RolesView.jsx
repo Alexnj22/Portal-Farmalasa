@@ -347,7 +347,7 @@ const RolesView = ({ openModal }) => {
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
 
         return (
-            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[var(--shadow-glass-3)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
+            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[var(--shadow-glass-3)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-slow)] min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
@@ -755,7 +755,7 @@ const RolesView = ({ openModal }) => {
                     </div>
                 ) : (
                     // VISTA 2: ORGANIGRAMA VISUAL 
-                    <div className="animate-in fade-in zoom-in-95 duration-700 ease-[var(--ease-spring)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
+                    <div className="animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
                             className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-lento)] overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
@@ -783,7 +783,7 @@ const RolesView = ({ openModal }) => {
                             <div className="flex-1 overflow-hidden mt-[72px]">
                                 <div
                                     ref={orgChartContentRef}
-                                    className="w-full h-full flex items-center justify-center transform-origin-center transition-transform duration-75 ease-out will-change-transform"
+                                    className="w-full h-full flex items-center justify-center transform-origin-center transition-transform duration-[var(--dur-fast)] ease-out will-change-transform"
                                     style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
                                 >
                                     <div ref={orgChartRef} className={`org-chart-tree-wrapper min-w-max flex flex-col items-center pb-12 ${isExporting ? 'p-12 bg-surface-page' : ''}`}>

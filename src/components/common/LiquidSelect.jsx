@@ -388,7 +388,7 @@ const LiquidSelect = ({
                     <button
                         type="button"
                         onClick={() => handleSelect('')}
-                        className="w-full text-left px-4 py-3 text-body-sm font-bold rounded-2xl transition-colors duration-200 text-content-3 hover:bg-surface-card-hover hover:text-content"
+                        className="w-full text-left px-4 py-3 text-body-sm font-bold rounded-2xl transition-colors duration-[var(--dur-base)] text-content-3 hover:bg-surface-card-hover hover:text-content"
                     >
                         {clearLabel}
                     </button>
@@ -425,7 +425,7 @@ const LiquidSelect = ({
                                 role="option"
                                 aria-selected={String(value) === String(opt.value)}
                                 onClick={() => !opt.disabled && handleSelect(opt.value)}
-                                className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-2xl transition-[background-color,color,border-color,box-shadow] duration-200 border border-transparent flex items-center gap-2.5 ${
+                                className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-2xl transition-[background-color,color,border-color,box-shadow] duration-[var(--dur-base)] border border-transparent flex items-center gap-2.5 ${
                                     opt.disabled
                                         ? 'opacity-40 cursor-not-allowed bg-transparent text-content-3'
                                         : String(value) === String(opt.value)
@@ -497,7 +497,7 @@ const LiquidSelect = ({
     // nada (ver memoria feedback_tailwind_v4_outline_solid_gotcha). El anillo de
     // foco va con `focus-visible` para que solo aparezca al navegar con teclado.
     const anilloFoco = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
-    const pillBaseClasses = `w-full transition-all duration-300 outline-none ${anilloFoco} ${minHeightClass} flex items-center text-content ${
+    const pillBaseClasses = `w-full transition-all duration-[var(--dur-slow)] outline-none ${anilloFoco} ${minHeightClass} flex items-center text-content ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
     } ${bare ? 'bg-transparent' : ''} ${
         !bare && isOpen ? 'outline-solid outline-1 outline-offset-[-1px] outline-brand/60' : ''
@@ -510,12 +510,12 @@ const LiquidSelect = ({
 
     return (
         <div
-            className={`relative group w-full transition-transform duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:translate-y-[var(--lift-hover)]' : ''}`}
+            className={`relative group w-full transition-transform duration-[var(--dur-slow)] transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:translate-y-[var(--lift-hover)]' : ''}`}
             ref={selectRef}
         >
             {/* ICONO IZQUIERDO — omitido en nano (steppers/grillas densas sin espacio) */}
             {!nano && (
-                <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-xl flex items-center justify-center transition-colors duration-300 z-base pointer-events-none ${isOpen
+                <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-xl flex items-center justify-center transition-colors duration-[var(--dur-slow)] z-base pointer-events-none ${isOpen
                         ? 'text-white bg-brand shadow-sm'
                         : bare
                             ? 'bg-transparent text-brand-text'
@@ -625,8 +625,8 @@ const LiquidSelect = ({
                     className={`absolute ${rightIconPos} ${clearTap} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center ${areaTocable}`}
                     title="Quitar selección"
                 >
-                    <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm bg-danger/10 hover:bg-danger-solid text-danger hover:text-white">
-                        <X size={12} strokeWidth={3} className="transition-transform duration-300 hover:rotate-90" />
+                    <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-[var(--dur-slow)] group-hover:shadow-sm bg-danger/10 hover:bg-danger-solid text-danger hover:text-white">
+                        <X size={12} strokeWidth={3} className="transition-transform duration-[var(--dur-slow)] hover:rotate-90" />
                     </div>
                 </button>
             ) : (
@@ -642,11 +642,11 @@ const LiquidSelect = ({
                     onClick={handleToggle}
                     className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-0.5 cursor-pointer flex items-center justify-center ${areaTocable}`}
                 >
-                    <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 ${isOpen
+                    <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-[var(--dur-slow)] ${isOpen
                             ? 'bg-brand/[0.12]'
                             : 'bg-transparent group-hover:bg-surface-card-hover hover:bg-surface-card-hover'
                         }`}>
-                        <ChevronDown size={iconSize} strokeWidth={3} className={`transition-transform duration-300 ${isOpen
+                        <ChevronDown size={iconSize} strokeWidth={3} className={`transition-transform duration-[var(--dur-slow)] ${isOpen
                                 ? 'rotate-180 text-brand-text'
                                 : 'text-content-3'
                             }`} />

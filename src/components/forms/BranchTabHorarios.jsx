@@ -26,7 +26,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
         <div className={cardClass}>
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                    <p className={`text-body-sm font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-danger' : 'text-brand-text') : 'text-content-2 group-hover:text-content-2'}`}>
+                    <p className={`text-body-sm font-black uppercase tracking-widest transition-colors duration-[var(--dur-slow)] ${open ? (isInvalid ? 'text-danger' : 'text-brand-text') : 'text-content-2 group-hover:text-content-2'}`}>
                         {day.name}
                     </p>
                     
@@ -50,7 +50,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <p className={`text-micro font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-danger' : 'text-content-3'}`}>
                             Apertura
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
+                        <div className="transition-all duration-[var(--dur-slow)] rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
                             <TimePicker12
                                 value={d.start || ""}
                                 defaultMeridiem="AM"
@@ -63,7 +63,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <p className={`text-micro font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-danger' : 'text-content-3'}`}>
                             Cierre
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
+                        <div className="transition-all duration-[var(--dur-slow)] rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
                             <TimePicker12
                                 value={d.end || ""}
                                 defaultMeridiem="PM"
@@ -73,8 +73,8 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </div>
                 </div>
             ) : (
-                <div data-surface="card" className="py-3.5 text-center bg-surface-card-hover/50 transition-colors duration-300 group-hover:bg-surface-card-hover">
-                    <p className="text-caption font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-300 group-hover:text-content-3">
+                <div data-surface="card" className="py-3.5 text-center bg-surface-card-hover/50 transition-colors duration-[var(--dur-slow)] group-hover:bg-surface-card-hover">
+                    <p className="text-caption font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-[var(--dur-slow)] group-hover:text-content-3">
                         Cerrado
                     </p>
                 </div>

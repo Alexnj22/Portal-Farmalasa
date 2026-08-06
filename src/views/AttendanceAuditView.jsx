@@ -476,7 +476,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
     : 'bg-surface-card border-divider shadow-[var(--shadow-elevation-sm)]';
 
   return (
-    <div className={`rounded-card border p-4 transition-all duration-200 ${cardBg}`}>
+    <div className={`rounded-card border p-4 transition-all duration-[var(--dur-base)] ${cardBg}`}>
       {/* Header row */}
       <div className="flex items-start gap-3">
         {/* Date pill */}
@@ -711,7 +711,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
     : null;
 
   return (
-    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-card shadow-[var(--shadow-elevation-xs)] overflow-hidden transition-all duration-200 hover:shadow-[var(--shadow-elevation-sm)]">
+    <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-card shadow-[var(--shadow-elevation-xs)] overflow-hidden transition-all duration-[var(--dur-base)] hover:shadow-[var(--shadow-elevation-sm)]">
       {/* Fila colapsada.
           Era un `<button>` que CONTENÍA el `<Button>` de "Aprobar todo": HTML
           inválido (React lo avisa en cada carga de /audit) y dos paradas de
@@ -719,7 +719,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           que el click de adentro no disparara el de afuera. Ahora la fila es un
           `<div>` y quien se expande es un disparador propio que ocupa la parte
           clickeable — el botón de aprobar queda al lado, no adentro. */}
-      <div className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-surface-card transition-all duration-150">
+      <div className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-surface-card transition-all duration-[var(--dur-fast)]">
         <button
           type="button"
           onClick={() => setExpanded(v => !v)}
@@ -836,7 +836,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           className="shrink-0 p-1 -m-1 rounded-full text-content-3 hover:text-content transition-colors">
           <ChevronDown
             size={16}
-            className={`transition-transform duration-300 ease-out ${expanded ? 'rotate-180' : ''}`}
+            className={`transition-transform duration-[var(--dur-slow)] ease-out ${expanded ? 'rotate-180' : ''}`}
             strokeWidth={2.5}
           />
         </button>
@@ -844,7 +844,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 
       {/* 15-day quincena detail */}
       {expanded && (
-        <div className="animate-in fade-in slide-in-from-top-3 duration-200 ease-out px-3 pb-3 pt-1 space-y-2 border-t border-border-card">
+        <div className="animate-in fade-in slide-in-from-top-3 duration-[var(--dur-base)] ease-out px-3 pb-3 pt-1 space-y-2 border-t border-border-card">
           {quinceaDates.map((dateStr, idx) => {
             const isMonday = new Date(dateStr + 'T12:00:00Z').getUTCDay() === 1;
             return (

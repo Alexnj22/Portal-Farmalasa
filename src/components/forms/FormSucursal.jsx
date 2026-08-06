@@ -145,7 +145,7 @@ const FormSucursal = ({ formData, setFormData, section = "general" }) => {
     }, [name, formData.address, formData.phone, formData.cell, location]);
 
     return (
-        // 🚨 FIX: Eliminamos `animate-in fade-in slide-in-from-bottom-2 duration-300`
+        // 🚨 FIX: Eliminamos `animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-slow)]`
         // Esto evita que el motor CSS intente recalcular opacidades y transformaciones al hacer scroll.
         // Hacemos el contenedor relative y le damos un ancho y alto plenos para que no colapse
         <div className="w-full h-full flex flex-col relative">

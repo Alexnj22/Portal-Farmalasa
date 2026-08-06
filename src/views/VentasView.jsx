@@ -194,7 +194,7 @@ function FilterControls({
             {/* 2 · entidad */}
             {showLab && (
                 <FilterBar.Section active={!!filterLab} onClear={() => setFilterLab('')} label="laboratorio">
-                    <div style={{ width: labW + 'px' }} className="transition-all duration-200">
+                    <div style={{ width: labW + 'px' }} className="transition-all duration-[var(--dur-base)]">
                         <LiquidSelect value={filterLab} onChange={setFilterLab}
                             options={labOptions} placeholder="Laboratorio" icon={FlaskConical} compact bare />
                     </div>
@@ -249,7 +249,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             </div>
             <div className="flex flex-col min-w-0">
                 <span className="text-micro font-bold uppercase tracking-wider text-content-2 leading-none mb-0.5">{label}</span>
-                <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
+                <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-[var(--dur-slow)] ${blurred ? 'blur-sm select-none' : ''}`}>
                     <span className={`text-subtitle font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
                     {!blurred && pct !== null && pct !== undefined && (
                         <span className={`flex items-center gap-0.5 text-caption font-black ${pct >= 0 ? 'text-success-text' : 'text-danger-text'}`}>
@@ -258,7 +258,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                         </span>
                     )}
                 </div>
-                {sub && !compacta && <span className={`text-micro text-content-3 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
+                {sub && !compacta && <span className={`text-micro text-content-3 font-medium leading-none mt-0.5 transition-all duration-[var(--dur-slow)] ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
             </div>
             {isFilter && !active && <ChevronDown size={11} className="text-warning-text ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-warning-text ml-0.5 shrink-0" />}
@@ -294,13 +294,13 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
             className={`px-2 py-3 select-none ${className}`}>
             <button onClick={() => onSort(col)}
                 aria-label={`Ordenar por ${label}${active && sortDir === 'asc' ? ', descendente' : ', ascendente'}`}
-                className={`group flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
+                className={`group flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-[var(--dur-fast)] ${
                     active
                         ? 'text-brand-text bg-brand/10'
                         : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover/70'
                 }`}>
                 {label}
-                <span className={`transition-opacity duration-150 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
+                <span className={`transition-opacity duration-[var(--dur-fast)] ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
                     {active
                         ? sortDir === 'asc'
                             ? <ChevronUp size={10} />
@@ -769,7 +769,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         )}
                                         <p className={`text-body font-black ${isCancelled ? 'line-through text-content-3' : 'text-content'}`}>{fmt(r.total)}</p>
                                         <ChevronDown size={12}
-                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-chart-1-text' : noData ? 'text-content-3' : 'text-content-3'}`} />
+                                            className={`transition-transform duration-[var(--dur-base)] shrink-0 ${isExpanded ? 'rotate-180 text-chart-1-text' : noData ? 'text-content-3' : 'text-content-3'}`} />
                                     </div>
                                 </DataCell>
                             </DataRow>
@@ -1186,7 +1186,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 </DataCell>
                                 <DataCell align="right" className="font-semibold text-body-sm">{fmtNum(r.count)}</DataCell>
                                 <DataCell align="right">
-                                    <div className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
+                                    <div className={`transition-all duration-[var(--dur-slow)] ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                         <p className="font-black text-body">{privacyMode ? '••••••' : fmt(r.total)}</p>
                                         <div className="mt-1 h-1 rounded-full bg-surface-card-hover">
                                             <div className="h-1 rounded-full bg-chart-1 transition-all" style={{ width: privacyMode ? '0%' : `${pct}%` }} />
@@ -1195,7 +1195,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 </DataCell>
                                 <DataCell align="right" hideBelow="md" className="text-body-sm">{fmt(ticket)}</DataCell>
                                 <DataCell>
-                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
+                                    <ChevronDown size={14} className={`transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
                                 </DataCell>
                             </DataRow>
                             {isOpen && !privacyMode && (
@@ -1243,7 +1243,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                         </DataCell>
                         <DataCell hideBelow="md" className="text-body-sm">—</DataCell>
                         <DataCell align="right" className="text-body-sm">{fmtNum(u.count)}</DataCell>
-                        <DataCell align="right" className="font-bold text-body"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{privacyMode ? '••••••' : fmt(u.total)}</span></DataCell>
+                        <DataCell align="right" className="font-bold text-body"><span className={`transition-all duration-[var(--dur-slow)] ${privacyMode ? 'blur-sm select-none' : ''}`}>{privacyMode ? '••••••' : fmt(u.total)}</span></DataCell>
                         <DataCell align="right" hideBelow="md" className="text-body-sm">{u.count > 0 ? fmt(u.total / u.count) : '—'}</DataCell>
                         <DataCell />
                     </DataRow>
@@ -1990,7 +1990,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     </div>
                                                     )}
                                                 </div>
-                                                <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
+                                                <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-[var(--dur-base)] ${isExpanded ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
                                             </div>
                                         </DataCell>
                                         <DataCell hideBelow="md" className="text-label text-content-3 font-semibold truncate max-w-[140px]">
@@ -2029,7 +2029,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </DataCell>
                                         <DataCell align="right" className="font-black text-body">
                                             {privacyMode ? (
-                                                <span className="transition-all duration-300 blur-sm select-none">••••••</span>
+                                                <span className="transition-all duration-[var(--dur-slow)] blur-sm select-none">••••••</span>
                                             ) : (
                                                 <LiquidTooltip content={
                                                     <div className="whitespace-nowrap">
@@ -2042,12 +2042,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             )}
                                         </DataCell>
                                         <DataCell align="right" hideBelow="lg" className="text-body-sm">
-                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
+                                            <span className={`transition-all duration-[var(--dur-slow)] ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                                 {privacyMode ? '••••••' : r.costo_total != null ? fmt(r.costo_total) : <span className="opacity-30">—</span>}
                                             </span>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm" className="text-body-sm font-bold">
-                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
+                                            <span className={`transition-all duration-[var(--dur-slow)] ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                                 {privacyMode ? '••••••' : r.utilidad != null
                                                     ? <span className={r.utilidad >= 0 ? 'text-success-text' : 'text-danger-text'}>{fmt(r.utilidad)}</span>
                                                     : <span className="opacity-30">—</span>}

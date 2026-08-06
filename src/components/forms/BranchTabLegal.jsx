@@ -22,7 +22,7 @@ const BranchTabLegal = ({
     // 🚨 ESTILOS LIQUID GLASS
     const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col h-full";
     const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
+    const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const regentOptions = useMemo(() =>
         availableRegents.map(e => ({ value: e.id, label: e.name }))
@@ -232,7 +232,7 @@ const BranchTabLegal = ({
                     <Switch label="Libros controlados" on={legal.controlledBooks || false} onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />
                 </div>
                 {legal.controlledBooks ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-[var(--dur-slow)]">
                         <div>
                             <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Nº Resolución Autorización</label>
                             <LazyInput
@@ -255,7 +255,7 @@ const BranchTabLegal = ({
                         </div>
                     </div>
                 ) : (
-                    <div data-surface="card" className="py-8 text-center border-2 border-dashed animate-in fade-in duration-300">
+                    <div data-surface="card" className="py-8 text-center border-2 border-dashed animate-in fade-in duration-[var(--dur-slow)]">
                         <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-1.5">
                             <AlertCircle size={14} /> Módulo Desactivado
                         </p>

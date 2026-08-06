@@ -191,13 +191,20 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                         {/* El número que importa es el de UNIDADES: la sala tiene
                             su existencia contada así, y una cantidad en cajas
                             contra una existencia en unidades deja pasar
-                            imposibles sin que nada avise. */}
+                            imposibles sin que nada avise.
+                            La existencia ya viene con lo que salió y todavía no
+                            volvió del conteo descontado. */}
                         {pres && Number(cantidad) > 0 && (
                             <p className={`text-micro font-semibold px-1 ${
                                 unidades > Number(sala?.unidades ?? 0) ? 'text-danger-text' : 'text-content-3'
                             }`}>
                                 {unidades} {unidades === 1 ? 'unidad' : 'unidades'}
                                 {sala && ` · ${sala.sala} tiene ${sala.unidades}`}
+                                {/* Que quede en cero no impide nada: se dice para
+                                    que quien pide sepa qué está pidiendo. */}
+                                {sala && Number(sala.minimo ?? 0) > 0
+                                  && (Number(sala.unidades) - unidades) < Number(sala.minimo)
+                                  && ` y quedaría en ${Math.max(Number(sala.unidades) - unidades, 0)}, bajo su mínimo de ${sala.minimo}`}
                             </p>
                         )}
 

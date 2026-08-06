@@ -129,12 +129,24 @@ function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
                 </div>
             </div>
 
-            {/* Lo que la sala tiene AHORA, no cuando se lo pidieron. */}
+            {/* Lo que la sala tiene AHORA, no cuando se lo pidieron — y ya con
+                lo que salió y todavía no aparece en el conteo descontado. */}
             {disp && !puede && (
                 <p className="text-micro font-semibold text-danger-text leading-snug">
                     Ya no puedes enviarlo: quedan {disp.origen?.unidades ?? 0}
-                    {(disp.origen?.minimo ?? 0) > 0 && ` y tu mínimo es ${disp.origen.minimo}`}.
+                    {(disp.origen?.en_vuelo ?? 0) > 0
+                        && ` (${disp.origen.en_vuelo} ya salieron y el conteo todavía no lo refleja)`}.
                     {alternativas.length > 0 && ` ${sugerencia}.`}
+                </p>
+            )}
+
+            {/* El mínimo INFORMA, no impide: que la sala quede en cero es
+                decisión de quien despacha. Decisión del usuario, 2026-08-06. */}
+            {disp && puede && (disp.origen?.minimo ?? 0) > 0
+              && (disp.origen.unidades - disp.pedido) < disp.origen.minimo && (
+                <p className="text-micro font-semibold text-warning-text leading-snug">
+                    Si lo envías, tu sala queda en {disp.origen.unidades - disp.pedido} y
+                    tu mínimo es {disp.origen.minimo}.
                 </p>
             )}
 

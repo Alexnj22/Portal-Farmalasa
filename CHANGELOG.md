@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.456.0 — El portal descuenta lo que ya salió, y el mínimo deja de bloquear
+
+Dos correcciones del usuario sobre el traslado entre salas.
+
+**La ventana en que el portal miente.** El inventario del portal se trae del
+sistema cada cierto tiempo, así que entre que una sala despacha y el conteo
+vuelve, la pantalla sigue mostrando producto que ya salió. Medido: el atraso de
+la última corrida iba de **2 a 48 minutos** según la sucursal. En esa ventana
+otra sala podía pedir lo que ya no está, y la pantalla le decía que sí.
+
+No era peligroso —al aplicar se relee la existencia real, así que el despacho
+falla en vez de mover algo que no existe— pero se creaban solicitudes que nacían
+condenadas. Ahora **el portal descuenta lo que él mismo despachó y todavía no
+volvió**: sabe cuándo salió cada traslado y cuándo corrió el último conteo de
+esa sala, y lo que está en el medio lo resta. Cuando el conteo vuelve, la resta
+se apaga sola. La pantalla lo dice: *«quedan 2, y 1 ya salió y el conteo todavía
+no lo refleja»*.
+
+**El mínimo informa, ya no impide.** La regla anterior no dejaba que una sala
+cediera si quedaba debajo de su propio mínimo. Es un dato útil convertido en
+candado: si B tiene 3 y le piden 2, puede darlos y quedarse en 1 — o en cero. Lo
+único que importa es que haya. El mínimo se sigue mostrando en las dos puntas —
+*«quedaría en 0, bajo su mínimo de 4»* al pedir, y *«si lo envías tu sala queda
+en 1 y tu mínimo es 4»* al confirmar— pero decide la persona, no la regla.
+
+**Y la cuenta de «cuánto hay» vive en un solo lugar.** Las tres pantallas que la
+preguntan —la lista de faltantes, el pedido y la confirmación— salen ahora de la
+misma vista. Estaba escrita tres veces, y así fue como el doble conteo de ayer
+sobrevivió en dos de ellas después de corregirse en la tercera.
+
 ## v2.455.0 — Cuando la sala ya no tiene: solo rechazar, y con la sugerencia adentro
 
 Sale de un caso que planteó el usuario: *«sala A pide 1 unidad a sala B, y B

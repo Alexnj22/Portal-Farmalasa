@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.436.0 — `carril-pildora`: cuatro falsos positivos y una excepción medida
+
+Se auditaron los 15 hallazgos uno por uno antes de tocar layout, y **ocho no
+eran deuda**. `carril-pildora` **15 → 7**.
+
+**El detector medía la LETRA de la regla, no lo que la regla protege.** Es la
+tercera vez que pasa en este gate —los `pointermove` de limpieza, los
+`backdrop-filter` dentro de comentarios— y las dos causas nuevas son:
+
+1. **Una vista sin píldora no tiene nada que mal-medir.** La reserva de 314px la
+   aplica `useMedidaFila`, que corre desde `FilterBar`: si la vista no la usa, el
+   layout del carril es libre. `TabMetricas` no tiene ni una referencia a
+   `FilterPill`/`FilterBar` y salía marcada dos veces.
+2. **`flex` a secas ya es una fila, y en TODOS los anchos** — o sea más fuerte
+   que `flex-col lg:flex-row`, que apila en móvil. Exigir el literal marcaba a
+   `FacturasCompraView` y `TabPedidos`, que lo hacen bien. Siguen contando
+   `flex-col` sin su `lg:flex-row` **y `flex-wrap`**, porque ése sí deja caer la
+   píldora a otro renglón cuando falta ancho, que es el caso que rompe la
+   medición.
+
+**Y `ClientesView` estaba en el ratchet siendo la excepción MEDIDA.** El motivo
+vive en la propia vista: a 1440px el área de contenido son ~1110px, su píldora
+mide 975 y cinco tarjetas necesitan 772 — juntas no entran, y el que cedía era el
+carril, que quedaba en **cero tarjetas visibles**. En dos filas entran las dos
+enteras. Tenerla como ratchet decía «esto hay que bajarlo» de un layout que **no
+hay que bajar**; pasa a `EXCEPTIONS` con la medición citada. Es un detalle con
+historia: *fue justo esta excepción la que otra vista copió sin el motivo*, y de
+ahí nació la categoría.
+
+**Los 7 que quedan son reales y NO se tocaron a propósito:**
+`AttendanceAuditView`, `TabCatalogo`, `TabInventario` y `TabSinVenta`. §17.0 pide
+verificarlos **a 1280 y a 1600** porque angostar la tarjeta a 148px destapa
+truncamientos, y eso se mira en pantalla, no se deduce del archivo. Dos de ellos
+—`TabCatalogo` y `AttendanceAuditView`— además tienen su `<CarrilCards>` como
+`return` de un subcomponente, así que **su contenedor vive en otro archivo** y el
+detector no cruza archivos: son hallazgos *sin verificar*, no hallazgos
+confirmados, y se dejan contando para que nadie los dé por buenos sin mirar.
+
 ## v2.435.0 — `vidrio-a-mano` y `material-a-mano` en CERO
 
 Séptima y última tanda de §20. **Las dos categorías llegan a cero y quedan

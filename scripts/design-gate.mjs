@@ -108,6 +108,17 @@ const EXCEPTIONS = {
   // dentro de un comentario. Ahí no hay contenedor que pueda llevar `lg:flex-row`
   // porque no hay vista, hay documentación.
   'src/components/common/CarrilCards.jsx': ['hex', 'inline-color', 'carril-pildora'],
+  // `carril-pildora` en ClientesView es la EXCEPCIÓN MEDIDA, no deuda — y estaba
+  // contando como ratchet, que es al revés de lo que hay que decir. El motivo
+  // está escrito en la propia vista: a 1440px el área de contenido son ~1110px,
+  // su píldora mide 975 (tres ranuras y tres chips) y cinco tarjetas necesitan
+  // 772 como mínimo. Juntas no entran, y el que cedía era el carril: quedaba en
+  // CERO tarjetas visibles, o sea el «una sola cortada parece un error de
+  // maquetación» que §17.0 existe para evitar. En dos filas entran las dos
+  // enteras. Dejarla en el ratchet decía «esto hay que bajarlo» de un layout que
+  // NO hay que bajar — y es justo esta excepción la que otra vista copió sin el
+  // motivo, que fue lo que hizo nacer la categoría.
+  'src/views/ClientesView.jsx': ['carril-pildora'],
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],
@@ -1782,7 +1793,28 @@ function scanFile(path) {
   // Se mira la apertura del `<div>` más cercano que envuelve al carril, no un
   // `lg:flex-row` suelto en cualquier parte del archivo: mencionarlo en un
   // comentario no arregla el layout.
-  if (!hasException(path, 'carril-pildora')) {
+  // ── Dos correcciones al detector (2026-08-06, al bajarlo a fondo) ─────────
+  // Se auditaron sus 15 hallazgos uno por uno y **cuatro no eran deuda**. El
+  // detector medía la LETRA de la regla en vez de lo que la regla protege, que
+  // es la tercera vez que pasa acá (los `pointermove` de limpieza, los
+  // `backdrop-filter` dentro de comentarios). Las dos causas:
+  //
+  //  1 · **Una vista sin píldora no tiene nada que mal-medir.** `useMedidaFila`
+  //      corre desde `FilterBar`: si la vista no la usa, no hay reserva de
+  //      314px que aplicar y el layout del carril es libre. `TabMetricas` no
+  //      tiene ni una referencia y salía marcada dos veces.
+  //  2 · **`flex` a secas YA es una fila**, y en TODOS los anchos — o sea más
+  //      fuerte que `flex-col lg:flex-row`, que apila en móvil. Pedir el
+  //      literal marcaba como deuda a `FacturasCompraView` y `TabPedidos`, que
+  //      lo hacen bien. Sí siguen contando `flex-col` sin su `lg:flex-row`, y
+  //      `flex-wrap`, porque ése SÍ deja caer la píldora a otro renglón cuando
+  //      falta ancho, que es exactamente el caso que rompe la medición.
+  //
+  // Lo que NO se tocó: un `<CarrilCards>` que es el `return` de un
+  // subcomponente tiene su contenedor en el archivo del padre y este detector
+  // no cruza archivos. Se dejan contando —son hallazgos sin verificar, no
+  // hallazgos descartados— para que nadie los dé por buenos sin mirar.
+  if (!hasException(path, 'carril-pildora') && /\bFilter(Pill|Bar)\b/.test(text)) {
     const CARRIL_RE = /<CarrilCards\b/g;
     let c;
     while ((c = CARRIL_RE.exec(text))) {
@@ -1790,7 +1822,11 @@ function scanFile(path) {
       const antes = text.slice(Math.max(0, c.index - 800), c.index);
       const iDiv = antes.lastIndexOf('<div');
       const apertura = iDiv >= 0 ? antes.slice(iDiv) : '';
-      if (!/lg:flex-row/.test(apertura)) {
+      // Es UNA fila si el contenedor es `flex` sin apilar (`flex-col`) y sin
+      // envolver (`flex-wrap`), o si declara el `lg:flex-row` del canónico.
+      const unaFila = /lg:flex-row/.test(apertura)
+        || (/\bflex\b/.test(apertura) && !/\bflex-col\b/.test(apertura) && !/\bflex-wrap\b/.test(apertura));
+      if (!unaFila) {
         findings.push({
           line: linea, category: 'carril-pildora',
           label: 'carril y píldora en renglones separados — §17.0 pide `lg:flex-row` '

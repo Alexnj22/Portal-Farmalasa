@@ -168,8 +168,11 @@ export function fetchInvoiceItemsForInvoice(invoiceId) {
 // Tres funciones porque son tres preguntas distintas: qué mostrar por defecto,
 // cuántas hay en total, y qué coincide con lo que se escribió.
 
+// `estado` viaja para que el widget no ofrezca modificar una factura anulada:
+// una NULA ya no es un documento vivo. La regla la impone la BD (trigger
+// `validar_solicitud_facturacion`), esto es para que se vea antes de intentarlo.
 const INVOICE_COLS =
-    'id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor';
+    'id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor, estado';
 
 // Tamaño de la lista por defecto y tope de resultados de búsqueda. NO es un cap
 // disimulado como el `.limit(500)` anterior: el conteo real del ámbito viaja

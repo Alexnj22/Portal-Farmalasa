@@ -338,16 +338,26 @@ Deno.serve(async (req) => {
 
     // ── Anulación: ERP y después Hacienda ────────────────────────────────
     if (esAnulacion) {
-      // Responsable de la anulación: quien aprueba. No se recibe del cliente
-      // — es un dato que va a un documento tributario.
-      const { data: resp } = await admin
-        .from("employees").select("name, dui").eq("id", aprobador.id).maybeSingle();
-      const dui = formatearDui(resp?.dui ?? "");
-      if (!dui)
+      // Responsable de la anulación ante Hacienda: SIEMPRE la misma persona,
+      // definida por la empresa — no quien apruebe esa vez. Es quien responde
+      // legalmente por la invalidación, así que no puede depender de qué
+      // supervisor estaba de turno ni llegar desde el cliente.
+      //
+      // Va en un secreto y no en el código porque el DUI es dato personal.
+      const respRaw = Deno.env.get("DTE_RESPONSABLE_ANULACION");
+      if (!respRaw)
         return json({
           ok: false,
-          error: "Tu ficha no tiene un DUI válido, y Hacienda lo exige para anular.",
-        }, 422);
+          error: "No está configurado el responsable de anulaciones ante Hacienda.",
+        }, 500);
+      const respCfg = JSON.parse(respRaw) as { nombre?: string; dui?: string };
+      const dui = formatearDui(respCfg.dui ?? "");
+      if (!respCfg.nombre || !dui)
+        return json({
+          ok: false,
+          error: "El responsable de anulaciones está mal configurado (falta nombre o DUI válido).",
+        }, 500);
+      const resp = { name: respCfg.nombre };
 
       // El endpoint destructivo solo se llama si hace falta. Si la factura ya
       // está anulada en el ERP, lo que falta es el paso ante Hacienda.
@@ -361,7 +371,7 @@ Deno.serve(async (req) => {
       }
 
       const mh = await anularEnHacienda(
-        cookie, erpId, String(factura.tipo_documento ?? ""), resp?.name ?? aprobador.name, dui,
+        cookie, erpId, String(factura.tipo_documento ?? ""), resp.name, dui,
       );
 
       const aplicadoAnu = {
@@ -371,7 +381,7 @@ Deno.serve(async (req) => {
         campo: "anulacion",
         anulada_en_erp_ahora: anuladaAhora,
         hacienda: { sello: mh.sello, descripcion: mh.descripcion, codigo: mh.codigo, fh: mh.fh },
-        responsable: { nombre: resp?.name ?? aprobador.name, dui },
+        responsable: { nombre: resp.name, dui },
       };
 
       const { error: updAnuErr } = await admin

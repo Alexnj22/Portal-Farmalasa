@@ -74,6 +74,20 @@ export function esTextoTecnico(texto) {
 // errores de bloqueo de módulo van arriba porque son los que una persona
 // provoca escribiendo, y son los únicos donde el detalle ayuda a corregir.
 const REGLAS = [
+    // — Solicitudes de facturación —
+    // Las levanta el trigger `validar_solicitud_facturacion` y el índice
+    // parcial de una-pendiente-por-factura. Van primero porque son estados
+    // legítimos del flujo, no fallas: quien los ve tiene que entender qué pasó
+    // sin leer un error de Postgres.
+    [/FACTURA_ANULADA/i,
+        'Esa factura ya está anulada. No se le pueden pedir cambios.'],
+    [/approval_requests_una_pendiente_por_factura|una_pendiente_por_factura/i,
+        'Esa factura ya tiene una solicitud pendiente. Espera a que se resuelva.'],
+    [/FACTURA_NO_EXISTE/i,
+        'Esa factura ya no está en el portal. Actualiza la lista.'],
+    [/SOLICITUD_SIN_FACTURA/i,
+        'La solicitud no quedó ligada a una factura. Vuelve a intentarlo.'],
+
     // — Sesión —
     [/JWT expired|token (is )?expired|refresh_token_not_found|invalid refresh token|session_not_found|session from session_id claim/i,
         'Tu sesión expiró. Vuelve a iniciar sesión para continuar.'],

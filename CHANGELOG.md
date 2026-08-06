@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.410.0 — Validaciones: una factura anulada no admite solicitudes, y una pendiente por factura
+
+Dos errores que hasta ahora nada impedía cometer desde el widget de
+Facturación: pedir la anulación de una factura **que ya está anulada** —el
+portal lo sabe, `sales_invoices.estado = 'NULA'`, y no lo miraba nadie— y
+mandar una segunda solicitud sobre la misma factura mientras la primera sigue
+pendiente.
+
+**Van en la base de datos, no solo en la pantalla.** El RLS de
+`approval_requests` deja ver a cada quien solo sus propias solicitudes, así que
+un empleado no puede comprobar desde el navegador si otro ya pidió lo mismo.
+Una validación que no puede ver el dato no es una validación. Migración
+`20260806015046`: trigger `validar_solicitud_facturacion` (BEFORE INSERT) para
+el estado de la factura, e índice único parcial para la solicitud duplicada —
+índice y no trigger, porque un índice no puede perder una carrera entre dos
+inserts simultáneos y un `SELECT` previo sí.
+
+Una sola pendiente por factura **sin importar el tipo**: las cuatro modifican
+el mismo documento y las decide la misma persona; dos decisiones abiertas sobre
+una factura es justo por donde se cuelan los errores.
+
+La pantalla acompaña: la lista trae `estado`, las anuladas llevan su distintivo
+y el botón de solicitar modificación queda inhabilitado, para que nadie llene
+un formulario que el servidor va a rechazar. Y los cuatro códigos del trigger
+tienen su mensaje en `errorMessages.js` — quien los ve entiende qué pasó sin
+leer un error de Postgres.
+
+**El responsable ante Hacienda es siempre el mismo.** Antes salía de la ficha
+de quien aprobaba; ahora viene del secreto `DTE_RESPONSABLE_ANULACION`. Es
+quien responde legalmente por la invalidación: no puede depender de qué
+supervisor estaba de turno. Va en un secreto y no en el código porque el DUI es
+dato personal.
+
+Verificado contra la base, con las dos reglas probadas sobre filas reales y
+revertidas: la anulación de la 344862 (anulada ante el MH hace un rato) queda
+rechazada con `FACTURA_ANULADA`, y una segunda solicitud sobre la 345641
+—hecha por **otro** empleado, que es el caso que el navegador no puede
+detectar— rebota contra el índice único.
+
+
+_(pendiente de redactar)_
+
 ## v2.409.0 — El canto de 0.42, y el destello que ahora sí corre
 
 **1 · Los bordes blancos de Liquid oscuro: `--sidebar-rim` valía `0.42`.** Y el token

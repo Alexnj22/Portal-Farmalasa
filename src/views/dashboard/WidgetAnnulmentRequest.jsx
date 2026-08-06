@@ -76,6 +76,12 @@ function isSameDay(dateStr) {
     today.getMonth() === d.getMonth() &&
     today.getDate() === d.getDate();
 }
+/* Una factura anulada ya no es un documento vivo: no se vuelve a anular, y
+   tampoco se le cambia el cliente, el pago ni el vendedor. La regla la impone
+   la BD (trigger `validar_solicitud_facturacion`); acá se muestra antes de que
+   alguien llene un formulario que el servidor va a rechazar. */
+function esAnulada(inv) { return String(inv?.estado ?? '').toUpperCase() === 'NULA'; }
+
 function fmtCurrency(n) { return formatMoney(n ?? 0); }
 function fmtDate(d) {
   if (!d) return '';
@@ -263,7 +269,11 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
         </div>
       </div>
 
-      <StickySubmit label="Solicitar Modificación" onClick={onModify} />
+      <StickySubmit
+        label={esAnulada(inv) ? 'Factura anulada — sin cambios posibles' : 'Solicitar Modificación'}
+        onClick={onModify}
+        disabled={esAnulada(inv)}
+      />
     </div>
   );
 }
@@ -1019,13 +1029,14 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         {!loading && buscando && enTope && (
           <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-caption text-warning-text font-semibold">
             <Search size={10} strokeWidth={2.5} className="shrink-0" />
-            Hay más coincidencias — agregá una palabra para acotar
+            Hay más coincidencias — agrega una palabra para acotar
           </div>
         )}
 
         {!loading && invoices.map(inv => {
           const age    = daysAgo(inv.fecha);
           const ok     = age <= GRACE_DAYS;
+          const anulada = esAnulada(inv);
           const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
           return (
             <div key={inv.id}
@@ -1037,6 +1048,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                   <span className="text-micro text-content-3 font-mono">{inv.correlativo}</span>
                   <DocBadge tipo={inv.tipo_documento} />
+                  {anulada && <Badge variant="danger" size="sm" className="shrink-0">Anulada</Badge>}
                   {inv.tipo_pago && <PayBadge tipo={inv.tipo_pago} />}
                   {/* Vendedor avatar + nombre aquí, no al inicio de la fila */}
                   <span className="inline-flex items-center gap-1">
@@ -1062,8 +1074,9 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                     iconOnly
                     size="xs"
                     variant="destructive"
+                    disabled={anulada}
                     onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
-                    title="Solicitar modificación"
+                    title={anulada ? 'Factura anulada — ya no admite cambios' : 'Solicitar modificación'}
                 />
               </div>
             </div>

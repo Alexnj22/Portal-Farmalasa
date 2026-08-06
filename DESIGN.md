@@ -365,9 +365,12 @@ revisar" — fueron evaluadas y decididas explícitamente):
   micro-acentos azules bespoke de la card del reloj (`from-blue-950/[0.30]`,
   `from-blue-400/[0.04]`, `via-blue-400/12`), un hero accent deliberado.
 - **`ThemeToggle.jsx`** variante `dark`: documentado inline en el propio
-  archivo — vive dentro de un host siempre-oscuro (`SidebarSettingsMenu`)
-  y usa clases bespoke `bg-white/N`, no tokens (que resolverían claros ahí
-  y quedarían ilegibles).
+  archivo — vivía dentro de un host siempre-oscuro (`SidebarSettingsMenu`).
+  **Desactualizado desde 2026-08-05**: el sidebar dejó de ser siempre-oscuro y
+  sigue al tema (PLAN-MATERIALES §12.1). Sus `bg-white/N` pasaron a
+  `rgb(var(--sidebar-ink)/N)`, que conserva la alfa exacta y sólo invierte la
+  base — en los temas oscuros la tinta vale `255 255 255`, o sea idéntico a lo
+  que había.
 - **Ilustraciones/branding de terceros**: `FormAuditDetail.jsx` (semáforo
   real de ventana macOS — colores exactos de Apple), `AccessDeniedView.jsx`
   / `NoAccessView.jsx` (verde real de marca WhatsApp `#25D366`),
@@ -1091,15 +1094,17 @@ les anulan las variables de geometría (`--tw-enter-scale`, `-translate-x/y`,
 > `rounded-full`. **Antes de dar por buena una clase, buscarla en el bundle**:
 > `grep -c '\.animate-in' dist/assets/*.css`.
 
-### Shimmer sweep (hover on buttons)
+### Barrido en botones — REMOVIDO (2026-08-05)
 
-All primary CTA buttons include an inner `<span>` shimmer overlay:
-```jsx
-<span className="absolute inset-0 overflow-hidden rounded-[1.5rem] pointer-events-none">
-  <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent
-                   -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
-</span>
-```
+La clase `.sweep` **ya no existe**. No se apagó: se removió, junto con sus seis
+`<span>` en el DOM — apagarla habría dejado nodos que existen, cuestan y no
+significan nada.
+
+Motivo: era una animación de 700 ms que recorría el botón sin comunicar **ningún
+estado**. Lo funcional del hover es el cambio de fondo, y el material del vidrio lo
+aporta el canto. En Solid ni siquiera se ejecutaba — la mitad de los temas ya vivían
+sin ella sin que nadie lo notara, que es la mejor prueba de que no hacía falta.
+Ver `docs/PLAN-MATERIALES-2026-08-02.md` §2.1.
 
 ### Framer-motion (inconsistency — do not add more)
 

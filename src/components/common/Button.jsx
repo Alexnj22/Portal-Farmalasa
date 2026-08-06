@@ -17,7 +17,6 @@ import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO, VARIANTES_RELLE
 //
 // Así queda en TODOS los primarios en vez de en 3 al azar, y se apaga solo
 // en el tema sólido (que ya desactiva el movimiento decorativo).
-const HAS_SWEEP = new Set(['primary', 'destructive']);
 
 // ── D3.3 (2026-07-27): los dos ejes que faltaban ─────────────────────────
 // Antes de migrar los 939 botones escritos a mano se midió qué formas existen
@@ -237,7 +236,6 @@ const Button = memo(({
                 es un tinte translúcido: no hay nada que refleje la luz, y el
                 barrido se vería como una mancha cruzando. Misma regla que ya
                 dejaba fuera a `ghost` y `secondary`. */}
-            {((tone && !soft) || HAS_SWEEP.has(variant)) && !isDisabled && <span className="sweep" aria-hidden="true" />}
             {loading ? (
                 <Loader2 size={ICON_PX[size] ?? 15} className="relative animate-spin" />
             ) : (

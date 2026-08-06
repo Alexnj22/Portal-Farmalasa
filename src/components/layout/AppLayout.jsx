@@ -630,7 +630,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     active:scale-[0.99] active:translate-y-0`}
             >
                 <span className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                    <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '0.08' }} />
                 </span>
 
                 {indent && (
@@ -740,7 +739,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         active:scale-[0.99] active:translate-y-0`}
                 >
                     <span className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                        <span className="sweep" aria-hidden="true" style={{ '--sweep-alpha': '0.08' }} />
                     </span>
                     <GroupIcon
                         size={20}

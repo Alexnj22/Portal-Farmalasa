@@ -2007,26 +2007,15 @@ thead.sticky {
    las adopten vista por vista.
    ═══════════════════════════════════════════════════════════════ */
 
-/* Barrido especular sobre botón de color (A15, 2026-07-27). Estaba copiado
-   8 veces: 6 idénticas (w-55%, translate-x 220%, 700ms) y 2 que se fueron por
-   su lado. El destello es blanco a propósito —el fondo del botón es de color
-   en los 4 temas— y su intensidad la fija --sweep-alpha, que cada host puede
-   ajustar según cuán oscuro sea su fondo. */
-@utility sweep {
-  position: absolute; inset-block: 0; left: 0; width: 55%;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,var(--sweep-alpha, .16)), transparent);
-  transform: translateX(-100%);
-  transition: transform 700ms cubic-bezier(.25,.46,.45,.94);
-}
-.group:hover > .sweep, .group:hover .sweep { transform: translateX(220%); }
-
-/* El barrido es puro brillo de vidrio: 700ms animando `transform` en cada
-   elemento hover-able. En Solid Modern —el tema de los equipos viejos— no
-   comunica nada de estado, así que no se ejecuta. El hover se sigue leyendo
-   por el cambio de fondo, que es lo funcional. */
-[data-theme="solid"] .sweep,
-[data-theme="solid-dark"] .sweep { display: none; }
+/* §2.1 · EL BARRIDO SE REMOVIÓ (PLAN-MATERIALES, 2026-08-05).
+   No se apagó: se removió. Apagarlo habría dejado seis `<span className="sweep">`
+   en el DOM sin pintar nada, que es exactamente la deuda que §2.1 quiere evitar
+   —un elemento que existe, cuesta un nodo y no significa nada—.
+   El motivo de fondo: el barrido es una animación de 700ms que recorre el botón
+   y no comunica NINGÚN estado. Lo funcional del hover es el cambio de fondo, y
+   el material del vidrio ya lo aporta el canto (§1.6). En Solid ni siquiera se
+   ejecutaba, así que la mitad de los temas ya vivían sin él sin que nadie lo
+   notara — que es la mejor prueba de que no hacía falta. */
 
 /* Estado y selección: acá el COLOR sí lleva significado y varía; lo que no
    tiene por qué variar es la geometría ni el alpha, que se elegían a mano

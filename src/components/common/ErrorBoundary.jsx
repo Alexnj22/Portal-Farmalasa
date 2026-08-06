@@ -61,7 +61,6 @@ export default class ErrorBoundary extends React.Component {
                             hover:shadow-[var(--shadow-glass-4)]
                             transition-all duration-[var(--dur-base)] active:scale-[0.97]">
                         <span className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-                            <span className="sweep" aria-hidden="true" />
                         </span>
                         <RefreshCw size={14} strokeWidth={2.5} />
                         Recargar

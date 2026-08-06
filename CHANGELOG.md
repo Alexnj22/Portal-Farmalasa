@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.402.0 — Se remueve el barrido, y DESIGN.md deja de mentir
+
+**Fase G · el barrido (`.sweep`) se removió.** No se apagó: **se removió**, junto con
+sus seis `<span className="sweep">` en el DOM. Apagarlo habría dejado nodos que
+existen, cuestan y no pintan nada — exactamente la deuda que §2.1 quiere evitar.
+
+Era una animación de 700 ms que recorría el botón sin comunicar **ningún estado**. Lo
+funcional del hover es el cambio de fondo, y el material del vidrio lo aporta el canto
+(§1.6). **En Solid ni siquiera se ejecutaba**, así que la mitad de los temas ya vivían
+sin él sin que nadie lo notara — que es la mejor prueba de que no hacía falta.
+
+**Fase H · `DESIGN.md` §25.4 decía algo que dejó de ser cierto.** Afirmaba que el
+menú de ajustes «vive dentro de un host siempre-oscuro» y que por eso usa `bg-white/N`
+en vez de tokens. El sidebar dejó de ser siempre-oscuro en v2.401.0. Corregido, con el
+apunte de que la migración conserva la alfa exacta.
+
+También se reescribió la sección «Shimmer sweep (hover on buttons)», que enseñaba a
+copiar un patrón que ya no existe. Un documento que enseña lo que el código quitó es
+peor que no tener documento.
+
 ## v2.401.0 — El sidebar deja de ser siempre-oscuro
 
 **§12.1 · El sidebar sigue al tema en los cuatro temas.** Era oscuro en todos, y

@@ -1846,6 +1846,75 @@ día que se toca la superficie sobre la que se midió — y el que la tocó fui 
 
 ---
 
+---
+
+## 20. La receta para bajar los ratchets
+
+Quedan **135 `vidrio-a-mano` + 18 `material-a-mano`** (13 de los 18 son el mismo sitio).
+No es una lista de arreglos sueltos: es un trabajo mecánico **una vez que se sabe
+clasificar**, y clasificar es lo único que requiere criterio.
+
+### 20.1 El desbloqueo que faltaba: la anidada tiene radio propio
+
+Hasta ahora la conversión era inviable por un detalle de geometría: los paneles
+escritos a mano usan `rounded-2xl` (**0.625rem**) y `data-surface="card"` impone
+`--card-radius` (**1.75rem** en Liquid). Convertirlos los volvía tarjetas de primer
+nivel.
+
+Resuelto con **`--card-radius-anidada`** (0.875rem Liquid / 0.5rem Solid) en la regla de
+§1.5. Y el motivo no es sólo práctico: **dos esquinas concéntricas con el mismo radio se
+ven mal** — la interna parece más redonda de lo que es, porque su curva arranca a la
+misma distancia del vértice pero recorre menos caja. La regla clásica es `radio interno
+= radio externo − separación`; acá se fija por tema en vez de calcularse, porque la
+separación varía por sitio y un `calc()` con la de un sitio sería igual de arbitrario.
+
+### 20.2 Cómo clasificar un sitio
+
+| lo que es | señal | qué se le pone |
+|---|---|---|
+| **Tarjeta** | contenedor con contenido propio | `data-surface="card"` — si vive dentro de otra, §1.5 la aplana sola |
+| **Carril** | grupo de controles en una caja redondeada | `data-surface="tab-track"` |
+| **Chip / badge** | píldora de estado, color semántico, sin contenido propio | **quitarle el vidrio** — es tinta (§18.2) |
+| **Encabezado pegajoso** | `sticky` dentro de un scroll | `--thead-bg`, **nunca** una opacidad de acento (§15.1) |
+| **Bespoke** | vive fuera del shell (login, kiosco) | `EXCEPTIONS` con el motivo escrito |
+
+De los cuatro primeros sitios que se miraron, salieron **tres categorías distintas** —una
+tarjeta, un carril y un chip—, así que no hay atajo por archivo ni por patrón de clases:
+la clasificación es por sitio.
+
+### 20.3 Qué se borra al convertir
+
+Todo lo que el token ya pone: `bg-*`, `border`, `border-*`, `rounded-*`, `shadow-*`,
+`backdrop-blur-*`. **Se conserva** el layout (`flex`, `gap`, `shrink-0`), las
+transiciones y el hover de posición — pero cambiando `--lift-card` por el que
+corresponda a la superficie (`--lift-track` en un carril).
+
+Ejemplo real, la píldora de filtros de `TabMinMaxNetwork`:
+
+```diff
+- <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card
+-      backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-[var(--dur-slow)]
+-      hover:shadow-[var(--shadow-glass-3)] hover:translate-y-[var(--lift-card)] shrink-0">
++ <div data-surface="tab-track" className="flex items-center gap-0
++      transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-track)] shrink-0">
+```
+
+### 20.4 Los que NO se convierten todavía
+
+- **Los que usan el borde para señalar estado** (`border-chart-9/30` al abrirse). El
+  borde de `data-surface` y la clase de Tailwind tienen la misma especificidad, así que
+  gana el orden del archivo — y eso no es una base sobre la que construir. Necesitan
+  primero mover la señal de estado a otra propiedad (fondo, o un `ring`).
+- **Los encabezados pegajosos de `RecepcionModal`**: son §15.1 aplicado dentro de un
+  modal, y conviene hacerlos junto con el resto de las superficies `sticky` del portal,
+  no de a uno.
+
+> **Y el dato que hace que valga la pena:** 13 de los 18 `material-a-mano` son el mismo
+> sitio que `vidrio-a-mano` ya marca. **Convertir un sitio baja los dos ratchets a la
+> vez** — no hay que recorrer las dos listas.
+
+---
+
 ## Referencias
 
 - Mockup de Liquid Glass, capa por capa · `claude.ai/code/artifact/33d118ae-ab63-422c-bb5a-f397b3dab434`

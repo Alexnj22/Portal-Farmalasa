@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.424.0 — MIN·MAX: el aviso que nunca llegó, y los botones en la campana
+
+_(pendiente de redactar)_
+
+## v2.423.0 — La receta para bajar los ratchets (§20)
+
+**El desbloqueo que faltaba era geometría.** Los paneles escritos a mano usan
+`rounded-2xl` (**0.625rem**) y `data-surface="card"` impone `--card-radius`
+(**1.75rem** en Liquid): convertirlos los volvía tarjetas de primer nivel, y por eso la
+conversión estaba parada. Nuevo **`--card-radius-anidada`** (0.875rem / 0.5rem) en la
+regla de §1.5.
+
+Y no es sólo práctico: **dos esquinas concéntricas con el mismo radio se ven mal** — la
+interna parece más redonda de lo que es, porque su curva arranca a la misma distancia
+del vértice pero recorre menos caja.
+
+**§20 escribe la receta**, que es lo que convierte 135 hallazgos en trabajo mecánico:
+cómo clasificar un sitio (tarjeta → `card`, carril → `tab-track`, chip → sin vidrio,
+encabezado pegajoso → `--thead-bg`, bespoke → excepción), qué se borra al convertir y
+qué se conserva.
+
+**No hay atajo por archivo ni por patrón de clases.** De los primeros cuatro sitios
+salieron **tres categorías distintas** —una tarjeta, un carril y un chip—: la
+clasificación es por sitio.
+
+Convertidos los dos primeros; el ratchet baja de **137 a 135**. Y queda anotado lo que
+hace que valga la pena: **13 de los 18 `material-a-mano` son el mismo sitio que
+`vidrio-a-mano` ya marca**, así que convertir uno baja los dos a la vez.
+
+También queda escrito qué **no** se convierte todavía: los que usan el borde para
+señalar estado —la clase de Tailwind y el borde de `data-surface` tienen la misma
+especificidad, así que gana el orden del archivo, y eso no es base para construir— y los
+encabezados pegajosos de `RecepcionModal`, que conviene hacer junto al resto de las
+superficies `sticky`.
+
 ## v2.422.0 — Gate `material-a-mano`: la cuarta y última de §8.2
 
 Marca una capa de §1-§5 escrita con su valor literal en vez de salir de su token:

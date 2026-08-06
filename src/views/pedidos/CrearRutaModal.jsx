@@ -565,7 +565,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               )}
               {/* Badge fuente */}
               {!mapError && (
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card backdrop-blur-sm rounded-lg px-2 py-1 text-micro font-semibold text-content-2 shadow-sm border border-border-card">
+                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card rounded-lg px-2 py-1 text-micro font-semibold text-content-2 shadow-sm border border-border-card">
                   {mapsMode
                     ? <><Navigation size={8} className="text-success" />Ruta real · Google</>
                     : <><MapPin size={8} className="text-warning" />Estimado · OpenStreetMap</>

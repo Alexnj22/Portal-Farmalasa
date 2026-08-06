@@ -303,6 +303,7 @@
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.40);
 
   --card-radius:   1.75rem;
+  --card-radius-anidada: 0.875rem;
   --modal-radius:  2rem;
   --header-radius: 2.5rem;
   --btn-radius:    9999px;
@@ -1108,6 +1109,7 @@ thead.sticky {
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.40);
 
   --card-radius:   0.75rem;  /* 12px, spec §7.2 */
+  --card-radius-anidada: 0.5rem;
   --modal-radius:  1rem;     /* 16px, spec §7.2 */
   --header-radius: 0.875rem;
   --btn-radius:    0.5rem;   /* 8px, ya coincidía */
@@ -1273,6 +1275,7 @@ thead.sticky {
   --shadow-elevation-xl: var(--modal-shadow);
 
   --card-radius:   0.75rem;  /* 12px, spec §7.2 */
+  --card-radius-anidada: 0.5rem;
   --modal-radius:  1rem;     /* 16px, spec §7.2 */
   --header-radius: 0.875rem;
   --btn-radius:    0.5rem;
@@ -2453,6 +2456,16 @@ thead.sticky {
      Solid 7.41, Solid oscuro 8.81. En oscuro antes se fundían. */
   background: var(--anidada);
   box-shadow: none;   /* una anidada no sobresale: se hunde un paso */
+  /* Y un radio MENOR. Dos esquinas concéntricas con el mismo radio se ven mal:
+     la interna parece más redonda de lo que es, porque su curva arranca a la
+     misma distancia del vértice pero recorre menos caja. La regla de siempre
+     es `radio interno = radio externo − separación`; acá se fija un valor por
+     tema en vez de calcularlo, porque la separación varía por sitio y un
+     `calc()` con la de un sitio sería igual de arbitrario.
+     Sin esto no se pueden convertir los paneles anidados escritos a mano: hoy
+     usan `rounded-2xl` (0.625rem) y heredarían los 1.75rem de la tarjeta de
+     primer nivel, que es justo lo que hacía inviable la conversión. */
+  border-radius: var(--card-radius-anidada);
 }
 
 [data-surface="card"][data-tono="warning"] { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning), var(--card-shadow); }

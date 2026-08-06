@@ -206,6 +206,15 @@ const EXCEPTIONS = {
   'src/components/timeclock/IdleScanPanel.jsx': ['material-a-mano', 'color', 'white', 'vidrio-a-mano'], // kiosco
   'src/views/AttendanceMonitorView.jsx': ['color'], // wallboard isDarkConcept
   // Shimmer decorativo de IA idéntico (DESIGN.md §6)
+  //
+  // 2026-08-06 · el anillo de degradado del botón de IA —`indigo-500` →
+  // `purple-500` → `cyan-500`, tres colores CRUDOS y a propósito: es el shimmer
+  // de IA, no una superficie del tema— vivía copiado en TRES vistas, así que la
+  // excepción estaba escrita tres veces. Ahora vive en `BotonIA` y la excepción
+  // también: **una, no tres**. Es la ventaja que el componente compra además de
+  // no divergir — y ya habían divergido, dos de las tres copias usaban
+  // `border-purple-400` donde la tercera usaba el token `chart-3`.
+  'src/components/common/BotonIA.jsx': ['color'],
   'src/views/branch-tabs/TabHistory.jsx': ['color'],
   'src/views/BranchesView.jsx': ['color'],
   'src/views/branch-tabs/TabExpediente.jsx': ['color'],

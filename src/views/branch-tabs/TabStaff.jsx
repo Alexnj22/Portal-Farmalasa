@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import BotonIA from '../../components/common/BotonIA';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { AiThinkingState } from '../../components/common/StateViews';
@@ -567,24 +568,13 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     </div>}
 
                     {/* 🤖 BOTÓN MAESTRO DE IA — solo farmacias */}
-                    {isFarmacia && <button
+                    {isFarmacia && <BotonIA
+                        className="ml-1 z-sidebar animate-in zoom-in-95"
+                        activo={aiMode}
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
-                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-[var(--dur-lento)] border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)] z-sidebar animate-in zoom-in-95"
-                        title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
-                    >
-                        {aiMode ? (
-                            <div className="absolute inset-[1px] bg-chart-3/10 rounded-full z-0 flex items-center justify-center border border-chart-3/30">
-                                <X size={16} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
-                            </div>
-                        ) : (
-                            <>
-                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                <div className="absolute inset-[1px] bg-surface-card rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
-                                <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
-                                <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
-                            </>
-                        )}
-                    </button>}
+                        etiqueta="Diagnóstico Inteligente WFM"
+                        etiquetaActiva="Cerrar Diagnóstico WFM"
+                    />}
                 </div>
             </div>
 

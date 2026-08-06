@@ -1,6 +1,6 @@
 ---
 name: design-gate
-description: Historia y reglas de operación de `npm run gate:design` — cómo funciona el ratchet contra `scripts/design-gate-baseline.json`, por qué el baseline HOY NO está vacío (3 categorías con ratchet, 44 en cero), la trampa de claves duplicadas en `EXCEPTIONS`, y cuándo se regenera el baseline. Cargar al trabajar en tema, estandarización visual, colores crudos, elementos nativos del navegador, o al tocar `scripts/design-gate.mjs` / el baseline.
+description: Historia y reglas de operación de `npm run gate:design` — cómo funciona el ratchet contra `scripts/design-gate-baseline.json`, por qué hoy el baseline está VACÍO (las 47 categorías en cero y bloqueantes desde el 2026-08-06), cómo se bajaron los 168 hallazgos que tenía, por qué cinco de ellos eran excepciones medidas mal clasificadas como deuda, la trampa de claves duplicadas en `EXCEPTIONS`, y cuándo se regenera el baseline. Cargar al trabajar en tema, estandarización visual, colores crudos, elementos nativos del navegador, o al tocar `scripts/design-gate.mjs` / el baseline.
 ---
 
 # Gate de diseño — cómo opera y por qué
@@ -22,22 +22,35 @@ exactamente cómo se acumuló esta deuda.
 
 ## Estado actual
 
-**Estado al 2026-08-06 — el baseline YA NO ESTÁ VACÍO, y eso es correcto.**
+**Estado al cierre del 2026-08-06 — el baseline VOLVIÓ A ESTAR VACÍO.**
 
-`47 categorías`. Tres tienen ratchet, **168 hallazgos tolerados**:
+`"categories": {}`. Las **47 categorías en cero y bloqueantes**: cualquier
+hallazgo nuevo falla el gate, ninguno suma al ratchet.
 
-| categoría | ratchet | por qué no está en cero |
-|---|---|---|
-| `vidrio-a-mano` | 135 | vidrio fuera de superficie canónica — se baja sitio por sitio con la receta de `PLAN-MATERIALES` §20 |
-| `material-a-mano` | 18 | valores de capa literales; **13 son el mismo sitio que `vidrio-a-mano`**, así que convertir uno baja los dos |
-| `carril-pildora` | 15 | anterior a este plan |
+Ese mismo día arrancó con tres categorías y **168 hallazgos tolerados**
+(`vidrio-a-mano` 135, `material-a-mano` 18, `carril-pildora` 15). Se bajaron con
+la receta de `PLAN-MATERIALES` §20, en siete tandas **por criterio y no por
+vista** — el error caro de esa bajada era clasificar mal, no editar mal.
 
-Las otras 44 son bloqueantes en cero, incluidas las cuatro que nacieron así en
-agosto: `reloj-a-mano`, `puntero-lista`, `tema-incompleto` y las de color.
+Cómo se bajó, porque el reparto sorprende:
 
-**No "limpiar" el baseline para dejarlo vacío otra vez.** Esos tres números son
-deuda real y medida, con su plan de bajada escrito. Vaciarlos a mano no cierra
-nada: apaga el único registro de cuánto falta.
+| vía | cuántos |
+|---|---|
+| conversión real (a `data-surface`, a tinta, a un rol nuevo) | la gran mayoría |
+| **excepciones MEDIDAS que estaban mal clasificadas como deuda** | 5 |
+| falsos positivos de un detector que medía la letra de la regla | 4 |
+| bespoke legítimo (`TimeClockView`, el kiosco fuera del shell) | 1 |
+
+**Las cinco excepciones medidas importan más de lo que parece.** `ClientesView`,
+`TabCatalogo`, `TabSinVenta`, `AttendanceAuditView` y `TabInventario` tienen el
+carril y la píldora en dos renglones **a propósito y con el número escrito**: no
+entran juntos ni a 1600px. Tenerlas en el ratchet decía «esto hay que bajarlo» de
+un layout que **no hay que bajar**. Un ratchet no distingue deuda de decisión —
+eso lo tiene que hacer quien lo lee.
+
+Tres roles de material nacieron en esa bajada —`data-pegajoso`,
+`data-cobertura`, `data-velo`— los tres por la misma causa: había superficies con
+la obligación de **tapar** que la cumplían por accidente, con un desenfoque.
 
 ---
 

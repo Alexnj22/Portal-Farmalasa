@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
+import BotonIA from '../components/common/BotonIA';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -365,28 +366,17 @@ const BranchCard = memo(({
                     
                     {isFarmacia && (
                         <>
-                        <button
+                        <BotonIA
+                            talla="sm"
+                            activo={aiMode}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }
                                 else { generateBranchAiSummary(e); }
                             }}
-                            className="relative group/ai-btn w-8 h-8 min-w-[var(--tap-min)] min-h-[var(--tap-min)] flex items-center justify-center rounded-full shrink-0 transition-all duration-[var(--dur-lento)] border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)]"
-                            title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
-                        >
-                            {aiMode ? (
-                                <div className="absolute inset-[1px] bg-chart-3/10 rounded-full z-0 flex items-center justify-center border border-chart-3/30">
-                                    <X size={14} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                    <div className="absolute inset-[1px] bg-surface-card rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
-                                    <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-chart-3 transition-colors z-base"></div>
-                                    <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
-                                </>
-                            )}
-                        </button>
+                            etiqueta="Diagnóstico Inteligente"
+                            etiquetaActiva="Cerrar Diagnóstico IA"
+                        />
                         <div className="w-px h-4 bg-divider mx-0.5"></div>
                         </>
                     )}

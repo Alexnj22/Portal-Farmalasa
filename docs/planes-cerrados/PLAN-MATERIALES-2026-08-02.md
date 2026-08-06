@@ -1124,6 +1124,30 @@ tiene las dos caras.
 
 ## 9. Definición de terminado
 
+> ## ✅ CERRADO el 2026-08-06
+>
+> Los ocho puntos de abajo están cumplidos y **verificados en el navegador**, no
+> por lectura. La verificación vive en el repo y se puede repetir:
+> `tests/e2e/materiales.spec.js` (tokens de los cuatro temas contra el bundle) y
+> `tests/e2e/banco-material.spec.js` (banco de §6 + las 16 capturas).
+>
+> **El banco se corre HEADED, siempre.** En headless no hay compositor con GPU,
+> el `backdrop-filter` cae a CPU y Liquid mide **8× más lento de lo que es**
+> (133ms contra 16.7ms, misma máquina y mismo recorrido). Solid no se entera
+> porque no tiene vidrio que componer. Un banco headless diría «el vidrio va a
+> 7fps» y mandaría a alguien a destruir el material por un problema inexistente.
+>
+> | tema | mediana CPU ×6, headed |
+> |---|---|
+> | Liquid claro | **16.7ms** |
+> | Liquid oscuro | **16.7ms** |
+> | Solid | **16.7ms** |
+> | Solid oscuro | **16.7ms** |
+>
+> Y el gate de diseño quedó con el **baseline vacío**: las 47 categorías en cero
+> y bloqueantes, contra las tres categorías y 168 hallazgos tolerados con que
+> empezó la bajada.
+
 El plan se cierra cuando, todo junto:
 
 - Los siete elementos (§1-§5 + §11 pestañas + §12 sidebar) tienen sus valores

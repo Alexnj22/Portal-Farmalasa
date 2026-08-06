@@ -719,7 +719,7 @@ disparador, así que no entra solo.
 
 ## 5.bis Material — lo que cambió en agosto 2026
 
-> Detalle completo y mediciones: `docs/PLAN-MATERIALES-2026-08-02.md`. Acá va lo
+> Detalle completo y mediciones: `docs/planes-cerrados/PLAN-MATERIALES-2026-08-02.md`. Acá va lo
 > que hay que saber para **no romperlo** al escribir una vista.
 
 ### Cada elemento es una pieza de vidrio
@@ -1169,7 +1169,7 @@ Motivo: era una animación de 700 ms que recorría el botón sin comunicar **nin
 estado**. Lo funcional del hover es el cambio de fondo, y el material del vidrio lo
 aporta el canto. En Solid ni siquiera se ejecutaba — la mitad de los temas ya vivían
 sin ella sin que nadie lo notara, que es la mejor prueba de que no hacía falta.
-Ver `docs/PLAN-MATERIALES-2026-08-02.md` §2.1.
+Ver `docs/planes-cerrados/PLAN-MATERIALES-2026-08-02.md` §2.1.
 
 ### Framer-motion (inconsistency — do not add more)
 

@@ -403,7 +403,8 @@ emergencia real, no para silenciar un hallazgo.
   categoría subió, es código nuevo que hay que arreglar. El ratchet, el estado
   de las 47 categorías y cuándo sí se regenera: skill **`design-gate`**.
 
-  **El baseline ya no está vacío, y es correcto**: `vidrio-a-mano` (135),
-  `material-a-mano` (18) y `carril-pildora` (15) son deuda medida con su plan
-  de bajada en `docs/PLAN-MATERIALES-2026-08-02.md` §20. Las otras 44 son
-  bloqueantes en cero.
+  **El baseline volvió a estar VACÍO el 2026-08-06**: las 47 categorías en cero
+  y bloqueantes. Empezó ese día con tres —`vidrio-a-mano` (135),
+  `material-a-mano` (18), `carril-pildora` (15)— y las tres se bajaron con la
+  receta de §20 de `docs/planes-cerrados/PLAN-MATERIALES-2026-08-02.md`.
+  O sea que hoy **cualquier hallazgo nuevo falla el gate**, no suma al ratchet.

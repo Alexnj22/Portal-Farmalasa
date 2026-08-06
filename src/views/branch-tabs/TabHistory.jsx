@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import BotonIA from '../../components/common/BotonIA';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -321,27 +322,14 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     accionesExtra={(
                         <div className="flex items-center gap-1.5">
                             {/* 🤖 BOTÓN MAESTRO DE IA ESTANDARIZADO 🤖 */}
-                            <button
-                                type="button"
-                                onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateGlobalAiSummary}
+                            <BotonIA
+                                className="z-sidebar animate-in zoom-in-95"
+                                activo={aiMode}
                                 disabled={printHistory.length === 0 && !aiMode}
-                                aria-pressed={aiMode}
-                                aria-label={aiMode ? 'Cerrar el resumen de IA' : 'Resumen inteligente del historial'}
-                                className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-[var(--dur-lento)] border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:translate-y-[var(--lift-hover)] active:scale-[0.97]'}`}
-                            >
-                                {aiMode ? (
-                                    <div className="absolute inset-[1px] bg-chart-3/10 rounded-full z-0 flex items-center justify-center border border-chart-3/30">
-                                        <X size={16} strokeWidth={3} className="text-chart-3-text group-hover/ai-btn:text-chart-3-text transition-colors" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                        <div className="absolute inset-[1px] bg-surface-card rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-[var(--dur-slow)]"></div>
-                                        <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
-                                        <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
-                                    </>
-                                )}
-                            </button>
+                                onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateGlobalAiSummary}
+                                etiqueta="Resumen inteligente del historial"
+                                etiquetaActiva="Cerrar el resumen de IA"
+                            />
 
                             {/* `branches_descargar` (canon 2026-08-03): el reporte y el
                                 CSV se llevan el historial de la sucursal fuera del portal. */}

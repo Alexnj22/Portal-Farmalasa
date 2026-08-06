@@ -117,27 +117,26 @@ export default function TablePagination({
         );
     }
 
-    // ── Escritorio: una sola píldora ──────────────────────────────────────
+    // ── Escritorio: una píldora en TRES ZONAS ─────────────────────────────
+    // PLAN-MATERIALES §15.2. Antes era un `inline-flex` que quedaba pegado a una
+    // esquina: ni centrado ni ocupando el ancho, o sea leyéndose como un
+    // elemento que se quedó donde cayó. Ahora es una grilla `1fr auto 1fr`
+    // —cuántas páginas · pasar página · cuánto hay— y NO un `space-between` de
+    // dos bloques: con la grilla el paginador queda en el centro REAL del ancho
+    // y no se corre según lo largo que sea el texto de los costados.
     return (
         <nav ref={rootRef} aria-label="Paginación"
-            className="inline-flex items-center h-[52px] px-1 rounded-card border border-border-card
-                bg-surface-card shadow-[var(--shadow-glass-1)] max-w-full">
+            className="grid grid-cols-[1fr_auto_1fr] items-center w-full h-[52px] px-3 rounded-card
+                border border-border-card bg-surface-card shadow-[var(--shadow-glass-1)]">
 
-            {/* 1 · el rango, primero: responde "dónde estoy" y "cuánto hay" */}
-            <span className="px-3 text-body-sm text-content-2 whitespace-nowrap tabular-nums" aria-live="polite">
-                <b className="text-content font-black">{desde.toLocaleString()}–{hasta.toLocaleString()}</b>
-                {' de '}
-                <b className="text-content font-black">{mostrado.toLocaleString()}</b>
-                {filteredTotal != null && filteredTotal !== total && (
-                    <span className="text-content-3"> ({total.toLocaleString()} sin filtrar)</span>
-                )}
-                <span className="text-content-3"> {unit}</span>
+            {/* zona 1 · cuántas páginas hay */}
+            <span className="justify-self-start text-body-sm text-content-2 whitespace-nowrap tabular-nums">
+                <b className="text-content font-black">{totalPages.toLocaleString()}</b>
+                <span className="text-content-3"> {totalPages === 1 ? 'página' : 'páginas'}</span>
             </span>
 
-            <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
-
-            {/* 2 · navegación */}
-            <span className="flex items-center px-1">
+            {/* zona 2 · pasar página — al centro real del ancho */}
+            <span className="justify-self-center flex items-center">
                 <button type="button" className={NAV} disabled={page <= 1}
                     onClick={() => navegar(() => onPageChange(page - 1))}
                     aria-label="Página anterior">
@@ -182,12 +181,23 @@ export default function TablePagination({
                 </button>
             </span>
 
-            {/* 3 · tamaño de página — un selector, no un segmentado azul: así
-                deja de competir con la página activa por significar "activo" */}
-            {onPageSizeChange && (
+            {/* zona 3 · cuánto hay — el rango y el total, a la derecha */}
+            <span className="justify-self-end flex items-center gap-2 min-w-0">
+                <span className="text-body-sm text-content-2 whitespace-nowrap tabular-nums" aria-live="polite">
+                    <b className="text-content font-black">{desde.toLocaleString()}–{hasta.toLocaleString()}</b>
+                    {' de '}
+                    <b className="text-content font-black">{mostrado.toLocaleString()}</b>
+                    {filteredTotal != null && filteredTotal !== total && (
+                        <span className="text-content-3"> ({total.toLocaleString()} sin filtrar)</span>
+                    )}
+                    <span className="text-content-3"> {unit}</span>
+                </span>
+                {/* el tamaño de página: un selector, no un segmentado azul — así
+                    deja de competir con la página activa por significar "activo" */}
+                {onPageSizeChange && (
                 <>
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
-                    <span className="flex items-center gap-1.5 pl-2 pr-1">
+                    <span className="flex items-center gap-1.5">
                         <span className="text-micro font-black uppercase tracking-widest text-content-3">Ver</span>
                         <LiquidSelect
                             value={String(pageSize)}
@@ -202,7 +212,8 @@ export default function TablePagination({
                         />
                     </span>
                 </>
-            )}
+                )}
+            </span>
         </nav>
     );
 }

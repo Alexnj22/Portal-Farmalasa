@@ -440,7 +440,21 @@
      de la tarjeta. Ese es el valor.
 
      El color NO cambia. Oscuro sigue siendo su identidad. */
-  /* ── SIDEBAR ──────────────────────────────────────────────────────────
+  /* ══ §15.1 · Una superficie PEGAJOSA tiene que ocluir ═════════════════════
+   El thead de DataTable es `sticky` y su fondo era `bg-brand/[0.04]` — una
+   opacidad pensada para ACENTO, no para oclusión: al desplazar, las filas
+   pasaban por debajo y se leían a través del encabezado.
+   La regla vale más allá de la tabla: una superficie pegajosa tiene una
+   obligación que una normal no tiene —tapar lo que pasa por debajo— y ninguna
+   opacidad de acento sirve para eso. Al tocar otra superficie `sticky`,
+   revisarla con el mismo criterio. */
+thead.sticky {
+  background: var(--thead-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────────
      Tres perillas, y todo lo demás sale de ellas. Cambiar el color del
      sidebar, o cómo se ve en móvil, es tocar UNA línea.
 
@@ -799,6 +813,7 @@
   --lente-lado:  .07;
   --lente-bajo:  .04;
   --anidada:     rgba(255,255,255,.09);   /* acá el escalón ACLARA */
+  --thead-bg:    rgba(14,21,50,.97);
   --header-mobile:        rgba(10,15,38,0.98);
   --header-mobile-border: rgba(255,255,255,0.08);
   --header-mobile-shadow: 0 4px 20px rgba(0,0,0,0.45);
@@ -999,6 +1014,7 @@
      No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
      NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
   --anidada:      rgba(15,23,42,.09);   /* mismo 9% que Liquid, otra base */
+  --thead-bg:    rgba(248,250,253,.98);
   --solid-filo:   0;
   --solid-tono:   2.00;
   --solid-sombra: 2.00;
@@ -1150,6 +1166,7 @@
      No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
      NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
   --anidada:      rgba(15,23,42,.09);   /* mismo 9% que Liquid, otra base */
+  --thead-bg:    rgba(248,250,253,.98);
   --solid-filo:   0;
   --solid-tono:   2.00;
   --solid-sombra: 2.00;
@@ -1171,6 +1188,7 @@
   --dur-entrada:   130ms;
 
   --anidada:      rgba(255,255,255,.09);   /* solid-dark: el escalón ACLARA */
+  --thead-bg:    rgba(23,33,54,.98);
   --tooltip-bg:      #33415C;
   --tooltip-border:  rgba(255,255,255,0.14);
   --tooltip-radius:  0.5rem;
@@ -2121,6 +2139,19 @@
 [data-surface="card"] [data-surface="card"] {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  /* ── §1.5 · y además el ESCALÓN DE TONO ──────────────────────────────
+     Apagar el blur ya estaba hecho, por rendimiento. Lo que faltaba era la
+     otra mitad: sin un escalón de tono la anidada queda a 1.02:1 de su
+     contenedor, o sea invisible. El escalón INVIERTE su dirección según el
+     tema —en claro oscurece, en oscuro aclara— porque es la misma física de
+     §1.1: un realce claro sobre una superficie clara no existe.
+     Alcanza más arriba de lo que §1.5 tenía en mente: el CUERPO DE VISTA
+     también es `data-surface="card"` (GlassViewLayout), así que la tabla que
+     vive adentro es vidrio sobre vidrio a nivel de vista. Medido en la app
+     real, tabla contra cuerpo: claro 9.15→10.87, oscuro **4.37→19.26**,
+     Solid 7.41, Solid oscuro 8.81. En oscuro antes se fundían. */
+  background: var(--anidada);
+  box-shadow: none;   /* una anidada no sobresale: se hunde un paso */
 }
 
 [data-surface="card"][data-tono="warning"] { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning), var(--card-shadow); }
@@ -2155,27 +2186,6 @@
   }
 }
 
-/* ══ §1.5 · El alcance del vidrio — la anidada se APLANA ══════════════════
-   Una superficie DENTRO de otra pierde el `backdrop-filter` y pasa a un
-   escalón de tono. El motivo no fue «hay demasiado vidrio»: fue que el vidrio
-   anidado NO SE VE — medido, 1.02:1 contra su contenedor. Un blur que
-   muestrea una superficie que ya está blureada no agrega información.
-
-   El escalón INVIERTE su dirección según el tema (--anidada), porque en claro
-   hay que oscurecer y en oscuro hay que aclarar. Es la misma física de §1.1.
-
-   Alcanza más arriba de lo que la sección tenía en mente: el CUERPO DE VISTA
-   también es `data-surface="card"` (GlassViewLayout), así que la tabla que
-   vive adentro es vidrio sobre vidrio a nivel de vista. Medido en la app real,
-   fila contra cuerpo: claro ΔE 9.15→10.44, oscuro **4.37→11.48**. En oscuro
-   hoy se funden, y ésta es la regla que los separa. */
-[data-surface="card"] [data-surface="card"] {
-  background: var(--anidada);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  /* sin lente ni sombra propia: una anidada no sobresale, se hunde un paso */
-  box-shadow: none;
-}
 
 [data-surface="page-header"] {
   background: var(--surface-header);

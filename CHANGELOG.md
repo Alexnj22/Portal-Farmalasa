@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.399.1 — Fase D: el thead que ocluye y la paginación en tres zonas
+
+**§15.1 · Una superficie pegajosa tiene que ocluir.** El `thead` de `DataTable` es
+`sticky` y su fondo era `bg-brand/[0.04]` — una opacidad pensada para **acento**, no
+para oclusión: al desplazar, las filas pasaban por debajo y se leían a través del
+encabezado. Ahora sale de `--thead-bg`, con su valor en los cuatro temas. La regla
+vale más allá de la tabla: una superficie pegajosa tiene una obligación que una
+normal no tiene, y ninguna opacidad de acento sirve para eso.
+
+**§15.2 · La paginación de escritorio, en tres zonas.** Era un `inline-flex` que
+quedaba pegado a una esquina: ni centrado ni ocupando el ancho, o sea leyéndose como
+un elemento que se quedó donde cayó. Ahora es `cuántas páginas · pasar página ·
+cuánto hay` sobre una grilla `1fr auto 1fr` — **no** un `space-between` de dos
+bloques: con la grilla el paginador queda en el centro **real** del ancho y no se
+corre según lo largo que sea el texto de los costados. Verificado en la app:
+columnas `430.094px 143.812px 430.094px`, simétricas al píxel.
+
+**Y un hallazgo al implementar §1.5: la mitad del trabajo ya estaba hecha, por otro
+motivo.** Existía desde antes una regla que apaga el `backdrop-filter` de las
+tarjetas anidadas — la puso una optimización de **rendimiento**, no de diseño. O sea
+que §1.5 redescubrió por razones visuales algo que el código ya hacía por costo, y lo
+que faltaba era la otra mitad: **el escalón de tono**. Sin él la anidada queda a
+1.02:1 de su contenedor, que es exactamente el «no se ve» que originó la sección. Las
+dos reglas quedaron fusionadas en una, con los dos motivos escritos juntos.
+
 ## v2.399.0 — Fase D: los materiales dejan de estar clavados
 
 **Los tokens de §0.ter–§5 escritos en los cuatro temas.** Son **factores**, no

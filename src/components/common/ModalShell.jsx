@@ -412,8 +412,18 @@ export default function ModalShell({
       // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina,
       // el navegador deja de monitorear cambios de opacidad, liberando el CPU.
+      // §5 · El velo es la segunda pieza de MATERIAL de un modal, junto al
+      // panel — así que su color y su desenfoque salen de una regla de
+      // `index.css` (`[data-velo]`), no de clases de Tailwind acá. Escrito a
+      // mano era `bg-scrim backdrop-blur-sm`: un vidrio fuera de toda
+      // superficie canónica, que es justo lo que el gate `vidrio-a-mano`
+      // persigue. En Liquid NO oscurece —el panel ya se separa con su propio
+      // blur, canto y lente— y sólo desenfoca 1px; en Solid oscurece 0.17
+      // porque su panel es opaco. `--scrim` se quedó donde corresponde: el
+      // fondo del sidebar móvil y los overlays de hover sobre fotos.
+      data-velo={conVelo ? 'si' : undefined}
       className={`fixed inset-0 ${zClass} flex ${alignCls} ${backdropAnim}
-        ${conVelo ? 'bg-scrim backdrop-blur-sm' : 'bg-transparent'}`}
+        ${conVelo ? '' : 'bg-transparent'}`}
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}

@@ -737,7 +737,8 @@ No hay lista que mantener: sale del DOM. Si escribís un control dentro de una
 
 | regla | por qué |
 |---|---|
-| **Un token de color se define en los CUATRO temas** | `:root` + Solid y nada en `dark` = Liquid oscuro hereda un valor calibrado en claro. Pasó tres veces. Lo vigila el gate `tema-incompleto`. |
+| **Un token de color se define en los CUATRO temas** | `:root` + Solid y nada en `dark` = Liquid oscuro hereda un valor calibrado en claro. Pasó **cinco** veces: las tres de siempre, más `--rim-sombra` y los 21 tokens de material de §3-§5, que salteaban `dark` entero. Lo vigila el gate `tema-incompleto`, **pero sólo mira tokens de COLOR** — alfas, longitudes y duraciones pasan de largo. |
+| **Una decisión CERRADA no es una decisión CABLEADA** | §2 a §5 estaban ✅ CERRADO y describían un material que el portal no tenía: 21 tokens escritos sin un solo `var()` que los leyera. Antes de dar por hecha una sección, grepear que alguien consuma sus tokens. |
 | **La dirección del realce la manda el ROL de la superficie** | la anidada **oscurece** porque se hunde; el panel del sidebar **aclara** porque flota; el hover **aclara siempre**. «En claro oscurecer» es falso. |
 | **Una superficie dentro de otra se aplana** | pierde el `backdrop-filter`, toma `--anidada` y `--card-radius-anidada`. Un vidrio sobre vidrio queda a 1.02:1 de su contenedor: invisible. |
 | **Una superficie `sticky` tiene que ocluir** | `--thead-bg`, nunca una opacidad de acento. Lo que pasa por debajo se lee a través. |

@@ -5,6 +5,7 @@ import useCoarsePointer from '../../hooks/useCoarsePointer';
 import useCapaFlotante from '../../utils/capaFlotante';
 import SelectorTactil from './SelectorTactil';
 import { AnimatePresence, motion } from 'framer-motion';
+import { msDelTema } from './gotaApertura';
 
 const normalize = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
@@ -378,7 +379,14 @@ const LiquidSelect = ({
             initial={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
-            transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+            /* §4 · La entrada del menú sale del TEMA (`--menu-entrada`): 220ms
+               en Liquid, `--dur-slow` (180) en Solid, que existe para responder
+               rápido. Estaba clavada en 0.15 acá, así que el tema veloz y el
+               expresivo abrían sus menús al mismo ritmo — el mismo hallazgo que
+               `tiemposGota()` resolvió para la hoja del modal, en la otra pieza
+               flotante. `msDelTema` lee la unidad porque Lightning CSS minifica
+               `220ms` a `.22s` y un parseFloat a secas daría 0.22 milisegundos. */
+            transition={{ duration: msDelTema('--menu-entrada', 220) / 1000, ease: [0.23, 1, 0.32, 1] }}
             className={`fixed z-confirm ${coords.transformOrigin} overflow-y-auto p-3
             transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
         >

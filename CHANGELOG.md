@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.428.0 — El material que estaba escrito y nadie leía
+
+**Veintiún tokens de material no tenían un solo consumidor.** Apareció al medir
+para responder la pregunta de §6.1, que contaba cuatro huérfanos. La causa es una
+sola y no es el especular: **§1 se cableó y §2 a §5 no**. Las superficies
+siguieron corriendo con la familia vieja (`--surface-*`, `--backdrop-*`,
+`--modal-shadow`), así que el campo, el menú, el modal y su velo nunca
+recibieron los valores que §5.3 marca como CONFIRMADOS renderizados el 5 de
+agosto. Las cuatro secciones estaban ✅ CERRADO: describían un material que el
+portal no tenía.
+
+**Se plegaron en la familia viva en vez de conectarse.** La forma-factor de
+§0.ter multiplica el alfa de una base fija —`#f0f8ff` para el menú— y eso no
+llega a describir un tema oscuro: el menú de Liquid oscuro no es ese color con
+otra alfa, es otro tono. La prueba de que no daba es que **`[data-theme="dark"]`
+no declaraba ninguno de los 21**, y el gate `tema-incompleto` no lo vio porque
+sólo mira tokens de color. Los doce que duplicaban una decisión ya expresable se
+borraron; los que describen una capa nueva —`--campo-hueco`, `--campo-luzinv`,
+`--campo-aclara`, `--menu-entrada`— se quedaron con sus alfas resueltas por tema
+y declarados en los cuatro.
+
+**Qué cambia en pantalla:**
+
+- **El velo del modal.** Todo modal del portal oscurecía la pantalla al 50%. Ese
+  `0.50` nunca fue una decisión de §5: era el `--scrim` genérico que el velo
+  pedía prestado. Ahora en los dos Liquid no oscurece —sólo desenfoca 1px, porque
+  el panel de vidrio ya se separa con su blur, su canto y su lente— y en los dos
+  Solid oscurece `0.17`, porque su panel es opaco y no tiene con qué separarse.
+- **El panel del modal** pasa de 0.85/48px a **0.51/10px** en claro y de 0.90 a
+  0.51 en oscuro. El blur baja a propósito: un modal lleva un párrafo que se lee
+  entero, y ahí el desenfoque bajo mantiene el texto quieto.
+- **El menú** tenía sombra prestada del modal y desenfoque de la tarjeta. Ahora
+  lleva `--dropdown-shadow` propia —proyectada, halo y glow— y
+  `--backdrop-dropdown` a 60px, con opacidad 0.58 en los dos Liquid.
+- **El campo** tenía el hueco clavado en `.04` y le faltaban el filo claro de
+  abajo y el aclarado al apuntar.
+- **La entrada del menú** era un `0.15` clavado en framer-motion, así que el tema
+  veloz y el expresivo abrían sus menús al mismo ritmo. Sale de `--menu-entrada`
+  vía `msDelTema()`, el mismo lector que ya usaba la gota del modal — que lee la
+  unidad, porque Lightning CSS minifica `220ms` a `.22s`.
+
+**Un bug que estaba en DOS temas.** `--surface-input` valía el mismo color que
+`--surface-card` en Solid claro (los dos `rgba(255,255,255,1)`) y en Liquid
+oscuro (`rgba(13,20,48,0.55)` contra `0.58` — tres centésimas), así que **un
+campo dentro de una tarjeta desaparecía en los dos**. Es lo que §3 describe desde
+el primer día; quedó sin arreglar porque el arreglo vivía en una sección que
+nunca se cableó. Solid claro toma ahora el valor de `--bg-page` y Liquid oscuro
+baja a `rgba(6,10,26,0.66)`.
+
+**Liquid oscuro tenía que elegirse entero**, porque no existía en ninguna parte
+del plan: velo, panel, menú y campo se eligieron mirando tres candidatos por
+pieza sobre el fondo real con orbes.
+
+**Y dos cosas de método.** `--rim-sombra` sólo estaba declarado en `:root`: al
+invertir el destello en claro, la herencia le habría dado a Liquid oscuro un
+flanco blanco pegado a un destello blanco, rompiendo el único tema que se veía
+perfecto — *un token que invierte por tema no se puede heredar*. Y no hay que
+escribir el par `-webkit-` a mano: Lightning CSS colapsa los dos y deja **sólo el
+prefijado**, o sea que la propiedad estándar desaparece del build.
+
+`ModalShell` quedó en cero `backdrop-blur` propios al mover el velo a
+`[data-velo]` en `index.css`, cerrando de paso el ítem 5 de §13.4 — «el canónico
+de modales no usa la superficie de modal». El gate `vidrio-a-mano` marcó el
+intento de escribirlo como clase de Tailwind apenas se guardó.
+
 ## v2.427.1 — El widget de carga y descarte
 
 La pantalla del widget, que es donde la idea se vuelve útil: en vez de buscar

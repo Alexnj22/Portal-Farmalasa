@@ -82,20 +82,36 @@ const SALIDA_MS = 240;
  * que hay que mantener sincronizada.
  */
 export function tiemposGota() {
-    const raiz = getComputedStyle(document.documentElement);
-    const ms = (nombre, respaldo) => {
-        // **La unidad hay que leerla.** El token se escribe `200ms`, pero
-        // Lightning CSS lo minifica a `.2s` — es más corto y vale lo mismo en
-        // CSS—, así que un `parseFloat` a secas devuelve 0.2 y la transición
-        // sale de **0.2 milisegundos**: instantánea, indistinguible de no tener
-        // animación. En `npm run dev` no pasa (no hay minificador), así que solo
-        // aparece contra el build, que es justo donde se probó y se vio.
-        const bruto = String(raiz.getPropertyValue(nombre)).trim();
-        const v = parseFloat(bruto);
-        if (!Number.isFinite(v) || v <= 0) return respaldo;
-        return /ms$/.test(bruto) ? v : /s$/.test(bruto) ? v * 1000 : v;
+    return {
+        entrada: msDelTema('--gota-entrada', ENTRADA_MS),
+        salida: msDelTema('--gota-salida', SALIDA_MS),
     };
-    return { entrada: ms('--gota-entrada', ENTRADA_MS), salida: ms('--gota-salida', SALIDA_MS) };
+}
+
+/**
+ * Lee una duración del tema activo y la devuelve en milisegundos.
+ *
+ * Se lee del elemento raíz en el momento de animar y no por contexto de React:
+ * el tema se cambia estampando `data-theme` en `<html>`, así que la hoja de
+ * estilos ya es la fuente de verdad y cualquier copia en JS sería una segunda
+ * que hay que mantener sincronizada.
+ *
+ * **La unidad hay que leerla.** El token se escribe `200ms`, pero Lightning CSS
+ * lo minifica a `.2s` — es más corto y vale lo mismo en CSS—, así que un
+ * `parseFloat` a secas devuelve 0.2 y la transición sale de **0.2
+ * milisegundos**: instantánea, indistinguible de no tener animación. En
+ * `npm run dev` no pasa (no hay minificador), así que solo aparece contra el
+ * build, que es justo donde se probó y se vio.
+ *
+ * Vive acá y se exporta porque ya no la usa sólo la gota: desde el cableado de
+ * §4 (2026-08-06) también la usa la entrada del menú flotante.
+ */
+export function msDelTema(nombre, respaldo) {
+    const bruto = String(getComputedStyle(document.documentElement)
+        .getPropertyValue(nombre)).trim();
+    const v = parseFloat(bruto);
+    if (!Number.isFinite(v) || v <= 0) return respaldo;
+    return /ms$/.test(bruto) ? v : /s$/.test(bruto) ? v * 1000 : v;
 }
 
 /**

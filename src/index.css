@@ -193,7 +193,11 @@
   --surface-card:       rgba(230,245,255,0.16);
   --surface-card-hover: rgba(230,245,255,0.26);
   --surface-header:     rgba(210,235,255,0.12);
-  --surface-modal:      rgba(240,248,255,0.85);
+  /* §5 · 0.51 CONFIRMADO renderizado el 2026-08-05 (§5.3), cableado el
+     2026-08-06 — valía 0.85. Menú y modal comparten CRITERIO, no número: los
+     dos flotan sobre contenido arbitrario, así que ninguno puede bajar al 0.16
+     de la tarjeta (daba 4.04:1 en el párrafo del modal, debajo de AA). */
+  --surface-modal:      rgba(240,248,255,0.51);
   /* ── La hoja táctil (2026-07-27) ────────────────────────────────────────
      La superficie que faltaba nombrar. En un teléfono, el selector de fecha,
      el de rango y `FilterBar` se abren como hoja inferior, y las tres usaban
@@ -207,7 +211,11 @@
      es luz, no texto. */
   --surface-sheet:      rgba(244,250,255,1.00);
   --surface-input:      rgba(230,245,255,0.40);
-  --surface-dropdown:   rgba(240,248,255,0.72);
+  /* §4 · 0.58 confirmado en el mockup del select abierto — valía 0.72.
+     Subirla no arreglaba el contraste del texto: de 0.58 a 0.76 sólo ganaba
+     0.22 y seguía fallando AA. Lo que lo arregla es que el texto vaya en
+     `--content` y no en `--content-2` (§4.1) — 3.37:1 → 5.53:1. */
+  --surface-dropdown:   rgba(240,248,255,0.58);
   /* Corregido a los valores REALES de ViewTabBar.jsx (Fase T2) — el token
      nunca se había consumido antes de T2, y el valor original (rgba(210,
      235,255,0.35), un azulado) no coincidía con el pill real (bg-white/10).
@@ -298,7 +306,17 @@
   --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.85), 0 8px 32px rgba(0,0,0,0.07);
   --card-shadow-hover:  inset 0 1px 0 rgba(255,255,255,0.90), 0 16px 40px rgba(0,0,0,0.10);
   --header-shadow:      0 24px 50px -12px rgba(0,0,0,0.18);
-  --modal-shadow:       0 32px 80px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.95);
+  /* §5 · la sombra del modal a ×2 (`--modal-sombra`) y su filo a ×1.6
+     (`--modal-filo`, tope 1). El rim y el lente NO se declaran acá: el modal
+     los recibe de `--rim-*` y `--lente-*` como toda superficie, que es lo que
+     `--modal-rim`/`--modal-lente` querían decir con «= el de la tarjeta». */
+  --modal-shadow:       0 32px 80px rgba(0,0,0,0.36), inset 0 2px 0 rgba(255,255,255,1);
+  /* §4 · el menú tiene sombra PROPIA: no es la del modal. Tres capas —la
+     proyectada, el halo del filo superior y el glow azulado interior— que
+     antes no existían porque el dropdown pedía prestado `--modal-shadow`. */
+  --dropdown-shadow:    0 24px 60px rgba(0,0,0,0.28),
+                        inset 0 1px 0 rgba(255,255,255,0.90),
+                        inset 0 0 22px -6px rgba(120,140,255,0.90);
   --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.28);
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.40);
 
@@ -401,26 +419,37 @@
   --rim-sombra:  rgba(255,255,255,.95);
   --rim-glint:   rgba(12,20,48,.80);
   --rim-bloom:   transparent;
-  /* Campo (§3) — un hueco no sobresale: sin reflejo, sin canto, sin lift */
-  --campo-hueco:   2.00;
-  --campo-luzinv:  1.25;
-  --campo-aclara:  1.00;
-  /* Menú flotante (§4) */
-  --menu-opacidad: 0.58;
-  --menu-blur:     60px;
-  --menu-sombra:   2.00;
-  --menu-halo:     1.00;
-  --menu-glow:     2.00;
+  /* Campo (§3) — ALFAS RESUELTAS, no factores. §0.ter las escribió como
+     factores sobre una base implícita (.09 y .72), y esa forma no sobrevive al
+     tema: `--campo-luzinv` pinta un inset BLANCO, que en oscuro lava la
+     superficie (§1.7). Un factor único no puede decir «esta capa vale 0 acá».
+     Se declaran en los CUATRO temas, que es lo que la forma-factor tampoco
+     hacía: `[data-theme="dark"]` no declaraba ninguno de los tres. */
+  --campo-hueco:   .18;   /* sombra interior de arriba — el hueco */
+  --campo-luzinv:  .90;   /* filo claro ABAJO: la luz entra por el borde bajo */
+  --campo-aclara:  10%;   /* al apuntar se aclara; un hueco no se levanta */
+  /* §4 y §5 · LOS FACTORES SE FUERON, los números quedaron. Doce tokens
+     (`--menu-opacidad/-blur/-sombra/-halo/-glow`, `--velo-oscuridad`,
+     `--modal-opacidad/-blur/-sombra/-filo/-rim/-lente`) describían capas que
+     la familia viva del portal ya expresa mejor, y por eso nunca los leyó
+     nadie: sus valores viven ahora en `--surface-dropdown`, `--surface-modal`,
+     `--backdrop-dropdown`, `--backdrop-modal`, `--dropdown-shadow`,
+     `--modal-shadow` y `--velo`, que se declaran POR TEMA y en los CUATRO.
+     La forma-factor no llegaba: multiplica el alfa de una base fija —#f0f8ff—
+     y el menú de Liquid oscuro no es ese color con otra alfa, es otro tono.
+     De hecho `[data-theme="dark"]` no declaraba NINGUNO de los doce.
+     `--modal-rim`/`--modal-lente` decían «= el de la tarjeta»: eso ya es
+     cierto sin token, porque el modal recibe `--rim-*` y `--lente-*` como
+     toda superficie. Ver §6.1.bis: es la misma lección que el especular. */
   --menu-entrada:  220ms;
-  /* Modal (§5) — el velo NO oscurece, sólo desenfoca (§5.3) */
-  --velo-oscuridad: 0.00;
+  /* §5 · EL VELO. Separado de `--scrim` a propósito: ese token lo comparten
+     doce sitios que no son el velo de un modal —el fondo del sidebar móvil,
+     los overlays de hover sobre fotos, el lightbox— y bajarlo a 0 los habría
+     borrado a todos. El velo de Liquid NO OSCURECE (§5.3): sólo desenfoca
+     1px, porque el panel de vidrio ya se separa solo con su blur, su canto y
+     su lente, y oscurecer además duplicaría el efecto. */
+  --velo:           rgba(3,11,28,0);
   --velo-blur:      1px;
-  --modal-opacidad: 0.51;
-  --modal-blur:     10px;
-  --modal-sombra:   2.00;
-  --modal-filo:     1.60;
-  --modal-rim:      1.45;
-  --modal-lente:    1.45;
   /* Barra de pestañas (§11) */
   --lift-track:    -2px;
   /* El thead pegajoso (§15.1): una superficie que TAPA lo que pasa por
@@ -446,7 +475,13 @@
 
   --backdrop-card:   blur(44px) saturate(200%);
   --backdrop-header: blur(32px) saturate(280%);
-  --backdrop-modal:  blur(48px) saturate(160%);
+  /* §5 · el modal baja a 10px A PROPÓSITO, y no es un ahorro. «Un menú es una
+     lista corta que se lee de un vistazo y aguanta más vidrio; un modal lleva
+     un párrafo que se lee entero, y ahí el blur bajo mantiene el texto
+     quieto» (§5.3). Por eso el menú sube a 60 y el modal baja a 10: comparten
+     criterio, no número. */
+  --backdrop-modal:    blur(10px) saturate(160%);
+  --backdrop-dropdown: blur(60px) saturate(165%);
 
   /* ── Sidebar (2026-07-27) ─────────────────────────────────────────────
      El sidebar es una superficie BESPOKE: es oscura en los cuatro temas, a
@@ -905,10 +940,22 @@ thead.sticky {
   --surface-card:       rgba(13,20,48,0.58);
   --surface-card-hover: rgba(17,26,60,0.70);
   --surface-header:     rgba(10,15,38,0.60);
-  --surface-modal:      rgba(12,17,43,0.90);
+  /* §3 · §4 · §5 · LOS VALORES DE LIQUID OSCURO — elegidos renderizados el
+     2026-08-06. Este tema no tenía ninguno: §3, §4 y §5 escribieron `:root` y
+     los dos Solid, así que los veintiún tokens de material saltearon
+     `[data-theme="dark"]` entero y acá se heredaban números calibrados sobre
+     un fondo lavanda. */
+  --surface-modal:      rgba(12,17,43,0.51);   /* valía 0.90 — «no era vidrio, era una losa» */
   --surface-sheet:      rgba(10,15,38,1.00);
-  --surface-input:      rgba(13,20,48,0.55);
-  --surface-dropdown:   rgba(10,15,38,0.88);
+  /* §3 · EL ESCALÓN DE TONO DEL CAMPO, segundo tema donde faltaba. Valía
+     `rgba(13,20,48,0.55)` contra una tarjeta en `rgba(13,20,48,0.58)`: el
+     MISMO color con tres centésimas de diferencia, o sea un campo que
+     desaparece dentro de una tarjeta. Es el hallazgo de §3 —«un campo blanco
+     desaparece dentro de ella»— que resultó estar en DOS temas, no en uno:
+     acá y en Solid claro. Los dos quedaron sin arreglar por el mismo motivo,
+     que §3 nunca se cableó. Ahora el hueco se hunde de verdad. */
+  --surface-input:      rgba(6,10,26,0.66);
+  --surface-dropdown:   rgba(10,15,38,0.58);   /* valía 0.88 */
 
   /* Tooltip — sigue siendo oscuro (1a), pero acá el fondo de página ya es
      navy casi negro: si el tooltip usara el mismo valor que en claro,
@@ -937,6 +984,24 @@ thead.sticky {
   --lente-lado:  0;
   --lente-bajo:  0;
   --anidada:     rgba(255,255,255,.09);   /* acá el escalón ACLARA */
+  /* Campo (§3) — este tema NO DECLARABA NINGUNO de los tres. La forma-factor
+     de §0.ter sólo escribía `:root` + los dos Solid, así que Liquid oscuro
+     heredaba de `:root` un filo blanco al .90 calibrado sobre lavanda. Es
+     literalmente el bug de §1.7 en otra capa, y el gate `tema-incompleto` no
+     lo veía porque sólo mira tokens de COLOR: éstos son alfas y longitudes.
+     El filo claro se apaga —igual que el lente— y el hueco hace el trabajo. */
+  --campo-hueco:   .18;
+  --campo-luzinv:  0;
+  --campo-aclara:  10%;
+  /* §5 · el velo se declara acá aunque valga lo mismo que `:root`. Los dos
+     Solid lo redefinen, y la regla del portal es que un token que un tema
+     redefine se escribe en los CUATRO: heredarlo es cómo `--rim-sombra` casi
+     rompe el canto de este mismo tema hace unas horas. Liquid oscuro tampoco
+     oscurece — elegido renderizado el 2026-08-06 contra 0.28 y 0.50: el panel
+     de vidrio ya se separa solo, y un velo oscuro competiría con lo que se ve
+     a través de él. */
+  --velo:        rgba(3,11,28,0);
+  --velo-blur:   1px;
   --rim-grosor:  1.5px;
   --rim-base:    rgba(255,255,255,.10);
   --sidebar-pop-tint: 10 12 26;
@@ -998,6 +1063,12 @@ thead.sticky {
   --card-shadow-hover:  inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.65);
   --header-shadow:      0 24px 50px -12px rgba(0,0,0,0.60);
   --modal-shadow:       0 32px 80px rgba(0,0,0,0.70), inset 0 2px 0 rgba(255,255,255,0.08);
+  /* §4 · el glow interior baja a 0.30: al 0.90 de claro, sobre navy, se lee
+     como niebla en vez de como luz atrapada en el filo. Confirmado
+     renderizado el 2026-08-06 junto con la opacidad del menú. */
+  --dropdown-shadow:    0 24px 60px rgba(0,0,0,0.60),
+                        inset 0 1px 0 rgba(255,255,255,0.08),
+                        inset 0 0 22px -6px rgba(120,140,255,0.30);
   --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.45);
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.60);
   /* backdrop-* sin cambios: mismo blur, el fondo oscuro se cuela a través del glass */
@@ -1054,7 +1125,8 @@ thead.sticky {
   :root {
     --backdrop-card:      blur(24px) saturate(160%);
     --backdrop-header:    blur(20px) saturate(200%);
-    --backdrop-modal:     blur(24px) saturate(140%);
+    --backdrop-modal:     blur(10px) saturate(140%);
+    --backdrop-dropdown:  blur(30px) saturate(150%);
     --tab-track-backdrop: blur(20px) saturate(140%);
     /* En móvil el sidebar es OPACO y sin blur, y no por rendimiento: es que
        el blur ahí no puede funcionar. El panel se desliza con `transform`, y
@@ -1092,7 +1164,16 @@ thead.sticky {
   --surface-header:     rgba(255,255,255,0.96);
   --surface-modal:      rgba(255,255,255,1.00);
   --surface-sheet:      rgba(255,255,255,1.00);
-  --surface-input:      rgba(255,255,255,1.00);
+  /* §3 · EL ESCALÓN DE TONO DEL CAMPO. Valía el MISMO blanco que
+     `--surface-card`, así que un campo dentro de una tarjeta desaparecía —
+     exactamente lo que §3 describe («un campo blanco desaparece dentro de
+     ella») y que quedó sin arreglar porque §3 nunca se cableó. En Solid la
+     profundidad es tono, no sombra: la sombra sola daba 1.03:1, o sea plano.
+     Toma el valor de `--bg-page`, que además lo hace leerse como lo que es:
+     un hueco de vuelta al fondo. Contraste contra la tarjeta blanca: 1.08:1.
+     En solid-dark no hace falta — ahí el campo (15,23,42) ya es más oscuro
+     que la tarjeta (30,41,59). */
+  --surface-input:      rgba(244,246,251,1.00);
   --surface-dropdown:   rgba(255,255,255,1.00);
   --surface-tab-track:  rgba(241,245,249,1.00);
   --header-mobile:        rgba(255,255,255,1.00);
@@ -1131,6 +1212,10 @@ thead.sticky {
   --card-shadow-hover:  0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
   --header-shadow:      0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
   --modal-shadow:       0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+  /* §4 · en Solid el menú no lleva halo ni glow: son capas de vidrio y este
+     material no las tiene. Queda la proyectada sola, a ×1 (`--menu-sombra`
+     valía 2.00 sobre la base de Liquid, no sobre ésta). */
+  --dropdown-shadow:    0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
   --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.28);
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.40);
 
@@ -1172,16 +1257,23 @@ thead.sticky {
   --solid-sombra: 2.00;
   --solid-anillo: 0.40;
   --lente-top: 0; --lente-lado: 0; --lente-bajo: 0;
-  --campo-hueco:   2.00;
-  --menu-opacidad: 1;
-  --menu-blur:     0px;
-  --menu-sombra:   2.00;
+  /* Campo (§3) — en Solid el filo claro NO EXISTE, igual que el lente y que
+     `--solid-filo`: el brillo interior no vive en ninguna superficie de este
+     material. La profundidad la da el escalón de tono de `--surface-input`
+     (§3: «la sombra sola daba 1.03:1, o sea plano»). */
+  --campo-hueco:   .18;
+  --campo-luzinv:  0;
+  --campo-aclara:  10%;
   --menu-entrada:  var(--dur-slow);
-  --velo-oscuridad: 0.17;
+  /* §5 · Solid SÍ oscurece: su panel es opaco y no tiene con qué separarse
+     del fondo (§5.3). Ésa es la diferencia entre los dos materiales, no una
+     omisión. Baja de 0.50 a 0.17 — el 0.50 de `--scrim` nunca fue una
+     decisión de §5, es el valor genérico que el velo pedía prestado.
+     ⚠️ §0.ter escribía `rgba(3,11,28, calc(.50 * --velo-oscuridad))`, o sea
+     0.085. Se toma 0.17 como el alfa directo porque §5.3 dice «Solid SÍ
+     oscurece» y 0.085 sobre una pantalla entera no oscurece nada. */
+  --velo:           rgba(3,11,28,0.17);
   --velo-blur:      0px;      /* es la capa más cara y en Solid no existe */
-  --modal-opacidad: 1;
-  --modal-blur:     0px;
-  --modal-sombra:   1.00;
   --lift-track:     0px;
   /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
      Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
@@ -1196,6 +1288,7 @@ thead.sticky {
   --backdrop-card:   none;
   --backdrop-header: none;
   --backdrop-modal:  none;
+  --backdrop-dropdown: none;   /* §4 — en Solid el desenfoque no existe */
   --tab-track-backdrop: none;
 
   /* El sidebar sigue siendo oscuro —eso es su identidad, no su tema— pero el
@@ -1293,6 +1386,7 @@ thead.sticky {
   --card-shadow-hover:  0 4px 12px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.25);
   --header-shadow:      0 1px 4px rgba(0,0,0,0.30);
   --modal-shadow:       0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);
+  --dropdown-shadow:    0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);  /* §4 — ver Solid claro */
   --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.45);
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.60);
 
@@ -1328,16 +1422,23 @@ thead.sticky {
   --solid-sombra: 2.00;
   --solid-anillo: 0.40;
   --lente-top: 0; --lente-lado: 0; --lente-bajo: 0;
-  --campo-hueco:   2.00;
-  --menu-opacidad: 1;
-  --menu-blur:     0px;
-  --menu-sombra:   2.00;
+  /* Campo (§3) — en Solid el filo claro NO EXISTE, igual que el lente y que
+     `--solid-filo`: el brillo interior no vive en ninguna superficie de este
+     material. La profundidad la da el escalón de tono de `--surface-input`
+     (§3: «la sombra sola daba 1.03:1, o sea plano»). */
+  --campo-hueco:   .18;
+  --campo-luzinv:  0;
+  --campo-aclara:  10%;
   --menu-entrada:  var(--dur-slow);
-  --velo-oscuridad: 0.17;
+  /* §5 · Solid SÍ oscurece: su panel es opaco y no tiene con qué separarse
+     del fondo (§5.3). Ésa es la diferencia entre los dos materiales, no una
+     omisión. Baja de 0.50 a 0.17 — el 0.50 de `--scrim` nunca fue una
+     decisión de §5, es el valor genérico que el velo pedía prestado.
+     ⚠️ §0.ter escribía `rgba(3,11,28, calc(.50 * --velo-oscuridad))`, o sea
+     0.085. Se toma 0.17 como el alfa directo porque §5.3 dice «Solid SÍ
+     oscurece» y 0.085 sobre una pantalla entera no oscurece nada. */
+  --velo:           rgba(3,11,28,0.17);
   --velo-blur:      0px;      /* es la capa más cara y en Solid no existe */
-  --modal-opacidad: 1;
-  --modal-blur:     0px;
-  --modal-sombra:   1.00;
   --lift-track:     0px;
   /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
      Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
@@ -1362,6 +1463,7 @@ thead.sticky {
   --backdrop-card:   none;
   --backdrop-header: none;
   --backdrop-modal:  none;
+  --backdrop-dropdown: none;   /* §4 — en Solid el desenfoque no existe */
   --tab-track-backdrop: none;
 
   /* El sidebar sigue siendo oscuro —eso es su identidad, no su tema— pero el
@@ -2559,12 +2661,36 @@ thead.sticky {
   backdrop-filter: var(--backdrop-modal);
 }
 
+/* §5 · EL VELO DEL MODAL. Es la segunda pieza de material de un modal —la
+   otra es el panel—, así que vive acá y no en clases de Tailwind dentro de
+   `ModalShell`. Escrito a mano era `bg-scrim backdrop-blur-sm`, o sea vidrio
+   fuera de toda superficie canónica: el gate `vidrio-a-mano` lo marcó apenas
+   se tocó, que es exactamente para lo que está.
+   En Liquid `--velo` es transparente y sólo queda el desenfoque de 1px; en
+   Solid oscurece 0.17 y no desenfoca nada. */
+/* NO escribir el par `-webkit-` a mano: Lightning CSS colapsa los dos y deja
+   SÓLO el prefijado, o sea que la propiedad estándar desaparece del build.
+   Escrita sola, el prefijo lo agrega él —verificado contra `dist/`, donde el
+   dropdown de acá al lado sale con las dos y este bloque salía con una. */
+[data-velo] {
+  background: var(--velo);
+  backdrop-filter: blur(var(--velo-blur));
+}
+
+/* §4 · EL MENÚ FLOTANTE tiene material PROPIO — cableado el 2026-08-06.
+   Antes se armaba con las piezas de otras superficies: la sombra del modal y
+   el desenfoque de la tarjeta. Sus cinco tokens (`--menu-opacidad`, `-blur`,
+   `-sombra`, `-halo`, `-glow`) estaban escritos desde la fase D sin que nadie
+   los leyera. Ahora la opacidad vive en `--surface-dropdown`, el desenfoque en
+   `--backdrop-dropdown` y las tres capas de sombra en `--dropdown-shadow`,
+   que es donde la familia de tokens del portal las pone — por tema y con los
+   CUATRO declarados, cosa que la forma-factor no hacía. */
 [data-surface="dropdown"] {
   background: var(--surface-dropdown);
   border: 1px solid var(--border-card);
-  box-shadow: var(--modal-shadow);
+  box-shadow: var(--dropdown-shadow);
   border-radius: var(--card-radius);
-  backdrop-filter: var(--backdrop-card);
+  backdrop-filter: var(--backdrop-dropdown);
 }
 
 /* El tooltip es la única superficie que NO cambia de claridad con el tema
@@ -2580,12 +2706,32 @@ thead.sticky {
   backdrop-filter: var(--tooltip-backdrop);
 }
 
+/* §3 · EL CAMPO ES UN HUECO, no una superficie — cableado el 2026-08-06.
+   Sus tres tokens estaban escritos desde la fase D y no los leía nadie: el
+   hueco era el literal `rgba(0,0,0,0.04)` de acá, el filo claro de abajo no
+   existía y el aclarado al apuntar tampoco.
+
+   Los alfas se resuelven POR TEMA, no por factor sobre una base fija. Es la
+   corrección de §1.7 aplicada acá antes de repetir el bug: `--campo-luzinv`
+   pinta un inset BLANCO, y un blanco calibrado en claro lava una superficie
+   oscura. Por eso en los dos temas oscuros vale 0 —el filo claro es un
+   fenómeno de tema claro, igual que el lente— y el hueco sube en su lugar. */
 [data-surface="input"] {
   background: var(--surface-input);
   border: 1px solid var(--border-input);
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: inset 0  2px 8px rgba(15,23,42,var(--campo-hueco)),
+              inset 0 -1px 0   rgba(255,255,255,var(--campo-luzinv));
   border-radius: var(--input-radius);
   backdrop-filter: var(--backdrop-card);
+  transition: background var(--dur-base) var(--ease-out);
+}
+/* «Al apuntar se ACLARA — un hueco no se levanta» (§3). Por eso no hay lift
+   ni canto acá: el canto lo recibiría por la regla de `[data-surface]`, y se
+   apaga abajo junto con el resto de las capas que un hueco no tiene. */
+@media (hover: hover) {
+  [data-surface="input"]:hover {
+    background: color-mix(in srgb, var(--surface-input), white var(--campo-aclara));
+  }
 }
 
 [data-surface="tab-track"] {

@@ -589,7 +589,7 @@ menos color. Solid queda con **2 capas activas** contra **6** de Liquid.
 
 ---
 
-## 3. Campo ✅ CERRADO
+## 3. Campo ✅ CERRADO · **cableado el 2026-08-06, ver §21**
 
 **El campo invierte el material: es un HUECO, no una superficie.** Una tarjeta y
 un botón sobresalen —la luz les pega arriba y se levantan al apuntarlos—; un
@@ -633,7 +633,7 @@ Tailwind.
 
 ---
 
-## 4. Select abierto · menú flotante ✅ CERRADO
+## 4. Select abierto · menú flotante ✅ CERRADO · **cableado el 2026-08-06, ver §21**
 
 **Dos materiales opuestos a 8px de distancia.** El disparador es un hueco (§3);
 el menú que sale de él es una capa flotante — y según Apple, la capa flotante es
@@ -693,7 +693,7 @@ atrás se mueve **0.0px** con el menú abierto y **3.0px** con él cerrado.
 
 ---
 
-## 5. Modal — velo + panel ✅ CERRADO
+## 5. Modal — velo + panel ✅ CERRADO · **cableado el 2026-08-06, ver §21**
 
 > **Recuperado en la auditoría del 2026-08-05.** El mockup existe desde el
 > 2026-08-03 («Paso 6 · el modal») con sus valores adentro, pero **nunca se
@@ -1418,7 +1418,9 @@ Los otros 13: `WidgetInventorySearch` (7), `TabLaboratorios` (4),
 3. **`ConfirmModal` declara `data-surface="modal"`.**
 4. **Escribir qué NO es material** — `Notice`, `Badge`, chips: son tinta sobre
    una superficie, no superficies. Una frase alcanza, y evita la pregunta.
-5. **`ModalShell` usa la superficie de modal** en vez de su vidrio a mano.
+5. ~~**`ModalShell` usa la superficie de modal** en vez de su vidrio a mano.~~
+   ✅ **hecho el 2026-08-06** — quedó en **cero** `backdrop-blur` propios al
+   mover el velo a `[data-velo]` en `index.css` (§21.4).
 6. **Los 28 restantes**: cada uno pasa a una superficie canónica o entra a
    `EXCEPTIONS` con su motivo escrito — el mismo tratamiento que F6 de
    PLAN-IDENTIDAD le dio a los hex.
@@ -1988,6 +1990,107 @@ Ejemplo real, la píldora de filtros de `TabMinMaxNetwork`:
 > **Y el dato que hace que valga la pena:** 13 de los 18 `material-a-mano` son el mismo
 > sitio que `vidrio-a-mano` ya marca. **Convertir un sitio baja los dos ratchets a la
 > vez** — no hay que recorrer las dos listas.
+
+---
+
+## 21. El cableado de §2-§5 — 21 tokens que nadie leía ✅ 2026-08-06
+
+**El hallazgo que abrió esto.** Al ir a responder la pregunta de §6.1 se midieron
+los consumidores reales de los tokens de material. §6.1 contaba cuatro huérfanos.
+Eran **veintiuno**:
+
+| bloque | tokens | con `var()` en `src/` |
+|---|---|---|
+| §1 tarjeta — `--rim-*`, `--lente-*`, `--anidada` | 9 | **9 vivos** |
+| §1 factores — `--glass-especular`, `-esp-radio`, `--glass-rim` | 3 | 0 |
+| §2 botón | 5 | 0 |
+| §3 campo | 3 | 0 |
+| §4 menú | 6 | 0 |
+| §5 modal + velo | 4 | 0 |
+
+**La causa es una sola y no es el especular: §1 se cableó y §2-§5 no.** Las
+superficies siguieron corriendo con la familia vieja —`--surface-*`,
+`--backdrop-*`, `--modal-shadow`— y por eso el campo, el menú, el modal y su
+velo nunca recibieron los valores que §5.3 dice **CONFIRMADOS renderizados el
+2026-08-05**. La fase D se dio por hecha con «tokens en los cuatro temas»: es
+cierto que estaban declarados; lo que nadie verificó es que alguien los leyera.
+
+### 21.1 Por qué se plegaron en la familia viva en vez de conectarlos
+
+La forma-factor de §0.ter multiplica el alfa de **una base fija** —`#f0f8ff` para
+el menú—, y eso no llega a describir un tema oscuro: el menú de Liquid oscuro no
+es ese color con otra alfa, **es otro tono**. La familia viva declara cada
+superficie por tema, que es estrictamente más expresivo.
+
+Y la prueba de que la forma-factor no daba: **`[data-theme="dark"]` no declaraba
+ninguno de los 21**. El gate `tema-incompleto` no lo vio porque sólo mira tokens
+de **color**, y éstos son alfas, longitudes y duraciones.
+
+Así que los doce que duplicaban una decisión ya expresable se borraron y su
+número se plegó donde vive el resto: `--surface-dropdown`, `--surface-modal`,
+`--surface-input`, `--backdrop-dropdown`, `--backdrop-modal`,
+`--dropdown-shadow`, `--modal-shadow` y `--velo`. Los que describen una capa que
+la familia viva no tenía —`--campo-hueco`, `--campo-luzinv`, `--campo-aclara`,
+`--menu-entrada`— se quedaron, **con sus alfas resueltas por tema en vez de como
+factores**, y declarados en los cuatro. Es la misma lección de §6.1.bis: un
+sistema, no dos.
+
+### 21.2 El bug que estaba en DOS temas
+
+`--surface-input` valía **el mismo color que `--surface-card`** en Solid claro
+(los dos `rgba(255,255,255,1)`) y en Liquid oscuro (`rgba(13,20,48,0.55)` contra
+`rgba(13,20,48,0.58)` — tres centésimas). O sea que **un campo dentro de una
+tarjeta desaparecía en los dos**.
+
+Es exactamente lo que §3 describe —*«un campo blanco desaparece dentro de
+ella»*— escrito desde el primer día y sin arreglar, porque el arreglo vivía en
+una sección que nunca se cableó. Ahora Solid claro toma el valor de `--bg-page`
+(el hueco se lee como una vuelta al fondo) y Liquid oscuro baja a
+`rgba(6,10,26,0.66)`.
+
+> **La lección:** una sección marcada ✅ CERRADO decía que la decisión estaba
+> tomada, no que estuviera aplicada. Cuatro secciones cerradas describían un
+> material que el portal no tenía. **Cerrar una decisión y cablearla son dos
+> estados distintos y hacen falta las dos marcas.**
+
+### 21.3 Los valores de Liquid oscuro, elegidos renderizados
+
+Ninguno existía. Se eligieron mirando tres candidatos por pieza sobre el fondo
+real con orbes (2026-08-06):
+
+| pieza | valía | queda | contra qué se eligió |
+|---|---|---|---|
+| velo | 0.50 · blur 4px | **0.00 · blur 1px** | 0.28 y 0.50 |
+| panel del modal | 0.90 | **0.51** | 0.72 y 0.90 |
+| menú | 0.88 | **0.58** | 0.72 y 0.88 |
+| campo | 0.55 (= la tarjeta) | **`rgba(6,10,26,0.66)`** | un escalón más fuerte, casi negro |
+
+El panel quedó en el mismo número que claro por decisión del usuario. Vale
+anotar que §5.3 dice *«menú y modal comparten CRITERIO, no número»*, así que si
+alguna vez el párrafo de un modal se ve apoyado sobre los orbes, **subirlo no
+contradice el plan**: es lo que el plan ya previó.
+
+### 21.4 Y el velo se separó de `--scrim`
+
+`--scrim` lo comparten doce sitios que no son el velo de un modal —el fondo del
+sidebar móvil, los overlays de hover sobre fotos, el lightbox—, así que bajarlo
+a 0 los habría borrado a todos. El velo pasó a `--velo`/`--velo-blur`, y su
+regla vive en `index.css` (`[data-velo]`) y no en clases de Tailwind dentro de
+`ModalShell`: **el gate `vidrio-a-mano` marcó el intento apenas se escribió**,
+que es exactamente para lo que está. Con eso `ModalShell` quedó en **cero**
+`backdrop-blur` propios y se cerró de paso el ítem 5 de §13.4.
+
+### 21.5 Dos cosas de método que costaron un rebuild cada una
+
+1. **`--rim-sombra` sólo estaba declarado en `:root`.** Al invertir el destello
+   en claro (§1.6.quater), la herencia le habría dado a Liquid oscuro un flanco
+   blanco pegado a un destello blanco — rompiendo el único tema que se veía
+   perfecto. *Un token que invierte por tema no se puede heredar.*
+2. **No escribir el par `-webkit-` a mano.** `[data-velo]` se escribió con
+   `backdrop-filter` y `-webkit-backdrop-filter`, y Lightning CSS los colapsó
+   dejando **sólo el prefijado**: la propiedad estándar desaparecía del build.
+   Escrita sola, el prefijo lo agrega él. Verificado contra `dist/`, donde el
+   dropdown de al lado salía con las dos y este bloque con una.
 
 ---
 

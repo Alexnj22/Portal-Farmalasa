@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.437.1 — Dos excepciones medidas más del carril, y por qué paro en 4
+
+`carril-pildora` **7 → 4**. Se auditaron los siete leyendo qué hace
+`useMedidaFila` de verdad: toma `pildora.parentElement.parentElement` y busca
+`[role="group"]` **entre sus descendientes**. Con eso cada sitio se puede decidir
+sin adivinar.
+
+**Dos eran excepciones medidas, con su número escrito al lado del layout** desde
+la auditoría responsive T4 (2026-07-23):
+
+- **`TabCatalogo`** — *«Sin `flex-1`, su ancho preferido hace que el `flex-wrap`
+  del padre lo baje a su propia línea completa cuando no cabe. Con `flex-1`
+  siempre reclama el sobrante: a 1024px el cluster de filtros ocupa ~500px y deja
+  ~330px al wrapper, forzando UNA tarjeta por fila.»*
+- **`TabSinVenta`** — *«Sin `flex-1`/`min-w-0` a propósito: mismo bug que
+  TabCatalogo, columna angosta a 1024×768.»*
+
+O sea que ahí el `flex-wrap` y la ausencia de `flex-1` **son el arreglo de un bug
+medido, no el bug**. Contarlas como ratchet decía «bajalas», y bajarlas
+reintroduce el 1024×768 que T4 cerró.
+
+**Y el gate se atrapó a sí mismo:** `TabCatalogo` ya tenía una entrada en
+`EXCEPTIONS` por `hex`, y agregarle una segunda línea disparó
+`assertSinClavesDuplicadas` — la verificación que existe porque un objeto literal
+con una clave repetida pierde la primera **en silencio**. Se unificó en una sola
+entrada, que es lo que la regla pide.
+
+### Por qué quedan 4 y no 0
+
+Son `AttendanceAuditView` y `TabInventario`, y **las dos necesitan una medición
+en pantalla que no se puede deducir del archivo**:
+
+- **`AttendanceAuditView` es un bug real.** Su píldora vive en un
+  `<div class="flex justify-end">` y el carril en otro renglón del mismo
+  `space-y-4`, así que `useMedidaFila` **sí lo encuentra** y le descuenta 314px
+  por un carril que no tiene al lado. Pero el arreglo —juntarlos en una fila—
+  puede ser justo lo que `ClientesView` midió y descartó: su píldora lleva
+  acciones y acciones extra, y cuatro tarjetas al lado pueden no entrar a 1280px.
+  **Si no entran, dos filas es lo correcto y lo que hay que arreglar es otra
+  cosa.** Eso se sabe midiendo, no leyendo.
+- **`TabInventario` tiene la misma forma que las dos excepciones de arriba, pero
+  sin su medición.** Darle la excepción por parecido sería exactamente el error
+  que hizo nacer esta categoría: *una excepción medida no se hereda*. Copiar el
+  layout de `ClientesView` sin su motivo fue lo que rompió `ConteoInventarioView`.
+
+Las dos se dejan en el ratchet a propósito: **el ratchet dice «esto hay que
+mirarlo», y es verdad**. Bajarlas a ciegas sería convertir una medición
+pendiente en una afirmación.
+
 ## v2.437.0 — Ajuste de Inventario: varios productos, lote y fecha
 
 El widget pasa a llamarse **Ajuste de Inventario** y ahora una solicitud lleva

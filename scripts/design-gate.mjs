@@ -119,6 +119,20 @@ const EXCEPTIONS = {
   // NO hay que bajar — y es justo esta excepción la que otra vista copió sin el
   // motivo, que fue lo que hizo nacer la categoría.
   'src/views/ClientesView.jsx': ['carril-pildora'],
+  // Las otras dos excepciones MEDIDAS del carril, y las dos con su número
+  // escrito al lado del layout desde la auditoría responsive T4 (2026-07-23):
+  //
+  //  · `TabCatalogo` — «Sin flex-1, su ancho preferido hace que el flex-wrap
+  //    del padre lo baje a su propia línea completa cuando no cabe. Con flex-1
+  //    siempre reclama el sobrante: a 1024px el cluster de filtros ocupa ~500px
+  //    y deja ~330px al wrapper, forzando UNA tarjeta por fila.»
+  //  · `TabSinVenta` — «Sin flex-1/min-w-0 a propósito en el wrapper de cards:
+  //    mismo bug que TabCatalogo, columna angosta a 1024×768.»
+  //
+  // O sea que acá el `flex-wrap` y la ausencia de `flex-1` son el ARREGLO de un
+  // bug medido, no el bug. Contarlas como ratchet decía «bajalas», y bajarlas
+  // reintroduce el 1024×768 que T4 cerró.
+  'src/views/productos/TabSinVenta.jsx': ['carril-pildora'],
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],
@@ -326,7 +340,8 @@ const EXCEPTIONS = {
   // en el canónico en vez de copiada en cada pantalla (2026-07-28).
   "src/components/common/PortalInput.jsx": ['white'],
   'src/components/common/NotificationBell.jsx': ['white'],
-  'src/views/productos/TabCatalogo.jsx': ['hex'],
+  // `carril-pildora`: excepción MEDIDA, ver la nota junto a ClientesView.
+  'src/views/productos/TabCatalogo.jsx': ['hex', 'carril-pildora'],
   'src/views/productos/tabminmax/constants.js': ['hex'],
   // ── D2.2, cierre (2026-07-27) ──────────────────────────────────────────
   // Los 20 `zIndex:` que quedaban son tooltips y popovers PORTALEADOS: se

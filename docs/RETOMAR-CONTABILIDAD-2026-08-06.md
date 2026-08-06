@@ -439,3 +439,62 @@ en el portal.
    Art. 261 sólo existe **mientras Hacienda no haya requerido nada**. Es la
    variable de mayor impacto y es la única que depende del reloj.
 3. **Las modificatorias** de mayo ($27.23) y junio ($5.29), que son lo chico.
+
+### 7.sexies · «Ese día falló Hacienda, salía undefined» — y la base lo prueba
+
+Alex, 2026-08-06. **Verificado, y cierra el círculo con algo ya documentado.**
+
+Las 22 facturas tenían, antes de su sello real del 2026-08-02, el valor
+`recibido_mh = 'undefined'` — **la cadena de texto, no un sello**. `undefined` es
+lo que produce JavaScript cuando una respuesta no trae el campo esperado.
+
+**Es el mismo caso que este plan ya documentaba como A3**, en «Dos conclusiones
+de la primera pasada eran incorrectas»: *«22 ventas con `recibido_mh='undefined'`»*.
+Ahí se verificaron seis contra `dteqr_json.php` del origen:
+
+```
+9f1e3a3e-… → sello = "undefined"   ← el origen mismo devuelve la cadena
+1e7e3dc5-… → BODY VACIO            ← el documento no existe en el servicio
+b9497a67-… → BODY VACIO
+6dffc754-… → BODY VACIO
+f49c05c1-… → BODY VACIO
+be0a21cd-… → BODY VACIO
+```
+
+**Son el mismo conjunto**: mismo tamaño (22), mismo rango de fechas (2026-05-07 a
+2026-06-20), mismo desenlace (sello real el 2026-08-02).
+
+#### Por qué esto importa para la exposición
+
+1. **No fue omisión ni descuido: fue una falla de transmisión**, y el sistema
+   registró el artefacto del error donde debía ir el sello.
+2. **Hay evidencia con fecha, en dos lugares independientes**: el
+   `sales_invoice_changelog` del portal (qué documento, qué valor tenía, qué día
+   cambió) y la respuesta del propio servicio de consulta del origen.
+3. **BODY VACIO en 5 de 6 significa que Hacienda nunca los tuvo.** La
+   retransmisión manual del 2 de agosto fue la primera transmisión exitosa, no
+   una duplicada.
+4. Si la plataforma de Hacienda estaba fallando ese día, la premisa del régimen de
+   contingencia —fuerza mayor que imposibilita transmitir— **se cumple**, y una
+   falla de la plataforma de la propia Administración no es atribuible al
+   contribuyente. **Esto es lo que hay que sostener ante la contadora**, con las
+   dos evidencias de arriba.
+
+#### El bug está prácticamente limpio — pero quedaron tres colgadas
+
+Estado al 2026-08-06 de todo lo que hoy no tiene sello válido:
+
+| Venta | Sucursal | Total | IVA | Días sin sello | |
+|---|---|---|---|---|---|
+| 2025-05-16 | 4 | $14.00 | $1.61 | **447** | `undefined` |
+| 2025-08-29 | 25 | $7.45 | $0.86 | **342** | NULL |
+| 2025-08-29 | 27 | $30.55 | $3.51 | **342** | NULL |
+| 13 de agosto 2026 | 2,4,27,28,29 | $172.80 | $19.89 | 1 a 5 | NULL |
+
+**Las tres primeras son de meses declarados hace más de un año y nadie las miró
+nunca.** $5.98 de IVA — la plata no es el punto: es que llevan 342 y 447 días
+invisibles, y sólo aparecieron porque se buscó a propósito.
+
+**Las 13 de agosto todavía están a tiempo**: si obtienen su sello antes de que se
+declare agosto, no hay modificatoria, no hay cadena y no hay exposición de ningún
+tipo. Ese es el caso en que la alerta paga sola.

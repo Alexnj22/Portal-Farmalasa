@@ -142,6 +142,36 @@ export function insertApprovalRequestSilent(payload) {
     return supabase.from('approval_requests').insert(payload);
 }
 
+/**
+ * Aplica en el ERP una solicitud de facturación aprobada.
+ *
+ * El navegador NO habla con el ERP: sus credenciales viven en un secreto de
+ * Supabase, y quien tiene esa sesión puede anular cualquier factura de
+ * cualquier sucursal. Toda la operación —verificar el permiso, traducir el id
+ * del portal al del ERP, escribir, releer para confirmar y recién entonces
+ * marcar APPROVED— pasa en la Edge Function.
+ *
+ * Devuelve `{ ok, aplicado }` o `{ ok:false, error }`. Nunca lanza: el llamador
+ * decide qué mostrar.
+ */
+export async function aplicarSolicitudEnErp(requestId, approverNote = '') {
+    try {
+        const { data, error } = await supabase.functions.invoke('aplicar-solicitud-facturacion', {
+            body: { request_id: requestId, approver_note: approverNote },
+        });
+        if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+
+        // `functions.invoke` marca error para cualquier status >= 400, pero el
+        // motivo real viaja en el cuerpo — sin leerlo, todo fallo se ve como
+        // un "Edge Function returned a non-2xx status code" indistinguible.
+        let detalle = '';
+        try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+        return { ok: false, error: detalle || error.message };
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
 // ── approve/reject/cancel ────────────────────────────────────────────────────
 
 export function updateApprovalRequest(requestId, patch) {

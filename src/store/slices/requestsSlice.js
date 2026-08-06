@@ -8,6 +8,7 @@ import {
     fetchBranchActiveEmployeeIds, fetchApprovalRequestsList, fetchEmployeesByIds, fetchEmployeeApprovalInfo,
     fetchEmployeeName, insertApprovalRequest, updateApprovalRequest, fetchApprovalRequestById,
     fetchEmployeeSystemRole, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
+    aplicarSolicitudEnErp,
 } from '../../data/requests';
 import { fetchEmployeeRosterSchedule } from '../../data/employees';
 import { upsertWeeklyRoster } from '../../data/system';
@@ -631,6 +632,50 @@ export const createRequestsSlice = (set, get) => ({
 
     // Helper interno: ejecuta todos los efectos de una aprobación final en un solo lugar.
     // Cualquier lógica nueva por tipo (OVERTIME, ADVANCE, etc.) se agrega aquí.
+    /**
+     * Aprobar una solicitud de facturación = aplicarla en el ERP.
+     *
+     * Todo el trabajo sensible vive en la Edge Function: valida el permiso
+     * contra el JWT, traduce el id del portal al del ERP, escribe, RELEE para
+     * confirmar que quedó el valor pedido (el ERP contesta "Success" con el
+     * mismo texto para dos operaciones distintas) y recién entonces marca
+     * APPROVED. Acá solo se refleja el resultado y se avisa.
+     *
+     * Si el ERP no acepta, esto devuelve false y la solicitud sigue PENDING:
+     * el supervisor ve el motivo y puede reintentar. Nunca queda una solicitud
+     * "aprobada" sobre una factura que no cambió.
+     */
+    _aprobarFacturacion: async (requestId, req, approverId, approverNote) => {
+        const { ok, error, aplicado } = await aplicarSolicitudEnErp(requestId, approverNote);
+
+        if (!ok) {
+            useToastStore.getState().showToast('No se aplicó el cambio', error, 'error');
+            return false;
+        }
+
+        set(state => ({
+            requests: state.requests.map(r =>
+                r.id === requestId
+                    ? { ...r, status: 'APPROVED', approver_id: approverId, approver_note: approverNote,
+                        metadata: { ...parseMeta(r.metadata), erp_aplicado: aplicado } }
+                    : r
+            ),
+        }));
+
+        if (req.employee?.id) {
+            await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED',
+                approverNote, parseMeta(req.metadata));
+        }
+
+        useToastStore.getState().showToast(
+            'Cambio aplicado',
+            `${REQUEST_TYPES[req.type]?.label ?? 'Solicitud'} — ${aplicado?.correlativo ?? ''} actualizada.`,
+            'success',
+        );
+        window.dispatchEvent(new CustomEvent('requests-updated'));
+        return true;
+    },
+
     _runFinalApproval: async (requestId, req, approverId, approverNote, newApprovals, toastMsg) => {
         const { error } = await updateApprovalRequest(requestId, { status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() });
         if (error) throw error;
@@ -768,6 +813,14 @@ export const createRequestsSlice = (set, get) => ({
         try {
             const req = _reqOverride || get().requests.find(r => r.id === requestId);
             if (!req) return false;
+
+            // Facturación: aprobar ES aplicar el cambio en el ERP. No pasa por
+            // el flujo genérico porque ese marca APPROVED primero y notifica
+            // después — acá, si el ERP no acepta, la solicitud tiene que
+            // quedarse PENDING. Rechazar no toca el ERP: eso sigue en
+            // `rejectRequest`, que solo cambia el estado.
+            if (FACTURACION_REQUEST_TYPES.has(req.type))
+                return await get()._aprobarFacturacion(requestId, req, approverId, approverNote);
 
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;

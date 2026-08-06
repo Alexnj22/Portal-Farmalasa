@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.404.0 — La conexión con el ERP: aprobar aplica el cambio, rechazar no toca nada
+
+Hasta ahora aprobar una solicitud de facturación no hacía nada fuera del
+portal: `_runFinalApproval` marcaba APPROVED, notificaba y terminaba. Alguien
+tenía que ir al ERP a repetir el cambio a mano, y nada garantizaba que lo
+hiciera ni que lo hiciera igual.
+
+Nueva Edge Function **`aplicar-solicitud-facturacion`**. Aprobar un cambio de
+cliente, de forma de pago o de vendedor lo aplica en el ERP. Rechazar no toca
+el ERP: `rejectRequest` solo cambia el estado, como antes.
+
+**Por qué en el servidor.** El ERP se maneja con usuario/contraseña y cookie de
+sesión PHP, y quien tiene esa sesión puede anular cualquier factura de
+cualquier sucursal. Esas credenciales no pueden viajar al navegador. Van en el
+secreto `ERP_FACTURACION_CREDS` — llave propia y no la del sync de compras,
+para poder rotarla sin tocar los otros syncs.
+
+**Primero el ERP, después APPROVED.** Si se marcara aprobada antes y el ERP
+fallara, quedaría una solicitud que dice «aplicada» sobre una factura intacta,
+y nadie volvería a mirarla. Acá manda el ERP: si no entra, la solicitud sigue
+PENDING y el supervisor ve el motivo. APPROVED significa siempre «ya está hecho».
+
+**El id del portal no es el id del ERP.** `metadata.invoice_id` es
+`sales_invoices.id` (6661083); el ERP espera `erp_invoice_id` (345608).
+Mandarle el del portal apuntaría a OTRA factura existente y no daría error. Lo
+mismo con el cliente: el widget guardaba solo el id del portal, así que ahora
+guarda además `new_client_erp_id`, y la función **no** tiene fallback al otro —
+un fallback ahí cambiaría la factura a un cliente distinto en silencio.
+
+**No se cree en la palabra del ERP.** Contesta HTTP 200 con
+`{"typeinfo":"Error"}` cuando rechaza, y `cambiar_cod` devuelve el mismo texto
+(«Numero actualizado») que la operación de cambiar el número de documento. El
+resultado no se da por bueno hasta releer la ficha y comparar el valor que
+quedó contra el que se pidió.
+
+Y el campo que no se toca viaja con su valor **actual**, leído recién, no con
+el que traía la solicitud: `cambiar_datos` manda cliente y forma de pago
+juntos, así que aplicar un cambio de cliente habría pisado un cambio de pago
+hecho en el medio por otra persona.
+
+Identidad siempre del JWT: quién aprueba nunca llega por parámetro. Se verifica
+además que el empleado siga activo y que su rol tenga `can_approve` en
+`requests`.
+
+**Fuera de alcance por ahora: la anulación.** `ANNULMENT_REQUEST` devuelve
+`TIPO_NO_AUTOMATIZADO` en vez de aplicarse a medias. Anular en el ERP sin
+anular después ante Hacienda deja la factura muerta en el portal y viva ante el
+MH — exactamente la divergencia que este módulo existe para detectar. Va con su
+paso de Hacienda o no va.
+
+También se eliminó la segunda CHECK de `status` en `approval_requests`
+(`chk_approval_requests_status`), duplicado exacto de
+`approval_requests_status_check` que agregó una auditoría de mayo. Migración
+`20260806011001`. Verificado que la regla sigue en pie: un status inventado
+sigue rebotando.
+
+
+_(pendiente de redactar)_
+
 ## v2.403.0 — Dos gates de movimiento, en cero y bloqueantes
 
 `design-gate.mjs` tenía 42 categorías y **ninguna miraba el movimiento**. Ahora dos, y

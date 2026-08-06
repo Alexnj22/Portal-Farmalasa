@@ -708,6 +708,10 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           branch_id: activeBranchId, branch_name: activeBranch?.name,
           current_cliente: inv.cliente ?? null,
           new_client_id: newClient.id,
+          // El id que entiende el ERP es OTRO que el del portal. Sin este
+          // campo la solicitud no se puede aplicar — y mandar el del portal
+          // apuntaría a un cliente distinto sin dar ningún error.
+          new_client_erp_id: newClient.erp_id ?? null,
           new_client_name: newClient.name,
           new_client_nit: newClient.nit ?? null,
           new_client_dui: newClient.dui ?? null,

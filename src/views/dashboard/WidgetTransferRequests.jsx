@@ -10,6 +10,7 @@ import { useStaffStore } from '../../store/staffStore';
 import {
     MOTIVOS_RECHAZO, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
     contarTrasladosPorConfirmar, despacharTraslado, recibirTraslado, rechazarTraslado,
+    fetchDisponibilidadTraslado,
 } from '../../data/traslados';
 
 // Widget «Traslados entre Salas».
@@ -58,8 +59,38 @@ function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
     const [texto,    setTexto]    = useState('');
     const [ocupado,  setOcupado]  = useState(false);
     const [error,    setError]    = useState('');
+    const [disp,     setDisp]     = useState(null);   // null = todavía no se sabe
 
     const meta = fila.metadata ?? {};
+
+    // Se pregunta al abrir y no al apretar: entre que alguien pide y alguien
+    // contesta, la sala pudo vender lo último que le quedaba —o habérselo
+    // enviado a otra sala que pidió antes—. Sin esto, quien confirma se entera
+    // recién cuando el sistema le rebota el despacho.
+    useEffect(() => {
+        let cancelado = false;
+        fetchDisponibilidadTraslado(fila.id).then(r => {
+            if (!cancelado && !r.error) setDisp(r.disponibilidad);
+        });
+        return () => { cancelado = true; };
+    }, [fila.id]);
+
+    const puede = disp === null ? true : Boolean(disp?.origen?.puede);
+    const alternativas = disp?.alternativas ?? [];
+    // El texto que viaja en el aviso de rechazo. Se arma acá y no en la base
+    // porque acá está el dato fresco que se acaba de mirar.
+    const sugerencia = alternativas.length > 0
+        ? `Sí hay en ${alternativas.slice(0, 3).map(a => `${a.sala} (${a.unidades})`).join(', ')}`
+        : '';
+
+    // Si ya no tiene, la única salida honesta es rechazar — y con el motivo que
+    // corresponde ya elegido, para no hacer buscar lo que el portal ya sabe.
+    useEffect(() => {
+        if (disp && !disp?.origen?.puede) {
+            setModo('rechazo');
+            setMotivo('Sin existencia en físico');
+        }
+    }, [disp]);
 
     const confirmar = async () => {
         setError(''); setOcupado(true);
@@ -71,7 +102,7 @@ function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
 
     const rechazar = async () => {
         setError(''); setOcupado(true);
-        const { error: e } = await rechazarTraslado(fila.id, motivo, texto);
+        const { error: e } = await rechazarTraslado(fila.id, motivo, texto, sugerencia);
         setOcupado(false);
         if (e) { setError(e.message ?? 'No se pudo rechazar.'); return; }
         onHecho();
@@ -98,6 +129,15 @@ function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
                 </div>
             </div>
 
+            {/* Lo que la sala tiene AHORA, no cuando se lo pidieron. */}
+            {disp && !puede && (
+                <p className="text-micro font-semibold text-danger-text leading-snug">
+                    Ya no puedes enviarlo: quedan {disp.origen?.unidades ?? 0}
+                    {(disp.origen?.minimo ?? 0) > 0 && ` y tu mínimo es ${disp.origen.minimo}`}.
+                    {alternativas.length > 0 && ` ${sugerencia}.`}
+                </p>
+            )}
+
             {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
 
             {modo !== 'rechazo' ? (
@@ -119,6 +159,13 @@ function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
                         placeholder="Motivo..."
                         clearable={false}
                     />
+                    {/* La sugerencia se muestra acá y además viaja en el aviso:
+                        quien pidió no tiene por qué volver a buscar dónde hay. */}
+                    {alternativas.length > 0 && (
+                        <p className="text-micro text-content-3 leading-snug px-1">
+                            Se le va a sugerir: {sugerencia}
+                        </p>
+                    )}
                     <PortalTextarea
                         value={texto}
                         onChange={e => setTexto(e.target.value)}
@@ -130,9 +177,13 @@ function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
                             {ocupado && <Loader2 size={13} className="animate-spin" />}
                             Rechazar
                         </Button>
-                        <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo(null)}>
-                            Volver
-                        </Button>
+                        {/* Sin «Volver» cuando ya no tiene: no hay a dónde
+                            volver — confirmar sería prometer lo que no está. */}
+                        {puede && (
+                            <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo(null)}>
+                                Volver
+                            </Button>
+                        )}
                     </div>
                 </div>
             )}

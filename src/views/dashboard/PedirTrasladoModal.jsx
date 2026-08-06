@@ -113,9 +113,20 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
             // El mensaje del trigger es el que explica de verdad qué pasó —que
             // la sala quedaría debajo de su mínimo, por ejemplo—, así que se
             // muestra tal cual en vez de taparlo con uno genérico.
-            setError(String(e?.message ?? '').includes('row-level security')
-                ? 'No tienes permiso para pedir traslados.'
-                : (e?.message ?? 'No se pudo enviar la solicitud.'));
+            //
+            // La excepción es el índice de duplicados: ahí Postgres contesta
+            // «duplicate key value violates unique constraint», que no le dice
+            // nada a nadie y encima suena a que el portal se rompió. Lo que hay
+            // que decir es qué hacer: la cantidad va en el mismo pedido.
+            const msg = String(e?.message ?? '');
+            setError(
+                msg.includes('approval_requests_un_traslado_pendiente')
+                    ? `Ya hay un pedido de este producto a ${sala?.sala ?? 'esa sala'} esperando respuesta. `
+                      + 'Si necesitas más, súbele la cantidad a ese pedido o pídeselo a otra sala.'
+                : msg.includes('row-level security')
+                    ? 'No tienes permiso para pedir traslados.'
+                : (e?.message ?? 'No se pudo enviar la solicitud.'),
+            );
             setEnviando(false);
         }
     };

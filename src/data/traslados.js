@@ -121,12 +121,32 @@ export const recibirTraslado = (requestId) =>
     invocar({ request_id: requestId, accion: 'recibir' });
 
 /**
- * Rechaza el traslado con su motivo.
+ * Si la sala de origen todavía puede, y quién más podría.
+ *
+ * Se pregunta al ABRIR la lista y no al apretar el botón: entre que alguien
+ * pide y alguien contesta, la sala pudo haber vendido lo último que le quedaba
+ * —o habérselo enviado a otra que pidió antes—. Sin esto, quien confirma se
+ * entera recién cuando el sistema le rebota el despacho.
+ *
+ * Las alternativas son las salas que sí podrían cederlo sin quedar debajo de su
+ * propio mínimo, excluyendo el origen y el destino.
+ */
+export async function fetchDisponibilidadTraslado(requestId) {
+    const { data, error } = await supabase
+        .rpc('get_traslado_disponibilidad', { p_request_id: requestId });
+    return { disponibilidad: data ?? null, error };
+}
+
+/**
+ * Rechaza el traslado con su motivo, y con la sugerencia adentro.
  *
  * El motivo va en `metadata` y no solo en la nota porque un trigger lo valida
  * contra la lista cerrada; «Otro» además exige que se escriba cuál.
+ *
+ * La `sugerencia` viaja en el mismo lugar porque el aviso de rechazo la lee de
+ * ahí: sin ella, quien pidió se entera de que no y vuelve a empezar de cero.
  */
-export async function rechazarTraslado(requestId, motivo, texto = '') {
+export async function rechazarTraslado(requestId, motivo, texto = '', sugerencia = '') {
     const { data: actual, error: errLeer } = await supabase
         .from('approval_requests')
         .select('metadata')
@@ -139,7 +159,11 @@ export async function rechazarTraslado(requestId, motivo, texto = '') {
         .update({
             status: 'REJECTED',
             approver_note: String(texto ?? '').trim() || null,
-            metadata: { ...(actual?.metadata ?? {}), rejection_reason: motivo },
+            metadata: {
+                ...(actual?.metadata ?? {}),
+                rejection_reason: motivo,
+                ...(sugerencia ? { sugerencia } : {}),
+            },
         })
         .eq('id', requestId)
         .eq('status', 'PENDING');   // no pisar si otro la resolvió en el medio

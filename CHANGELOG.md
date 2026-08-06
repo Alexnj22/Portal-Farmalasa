@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.455.0 — Cuando la sala ya no tiene: solo rechazar, y con la sugerencia adentro
+
+Sale de un caso que planteó el usuario: *«sala A pide 1 unidad a sala B, y B
+solo tiene 1. Sala C pide el mismo producto a B, pero B se lo envió a A: ya no
+debería poder enviárselo a C, solo rechazar, y en el rechazo sugerir a quién más
+pedirle.»*
+
+La mitad peligrosa ya estaba tapada —la aplicación relee la existencia real
+antes de escribir, así que B no puede despachar lo que no tiene— pero eso se
+descubría **apretando el botón**, y el rechazo le llegaba a C sin explicación.
+
+**Ahora la pantalla lo sabe antes.** Cada pedido consulta la existencia de la
+sala de origen al abrir la lista, no al confirmar. Si ya no alcanza —o si ceder
+la dejaría debajo de su propio mínimo— el botón de enviar no se ofrece: queda
+solo rechazar, con el motivo «sin existencia en físico» ya elegido y el número
+en pantalla, *«quedan 2 y tu mínimo es 2»*.
+
+**Y el rechazo le sirve a quien pidió.** Va con la lista de las salas que sí
+podrían cederlo sin quedarse cortas: *«Sí hay en Salud 1 (18), Salud 2 (17), La
+Popular (13)»*. Sin eso, quien pidió se entera de que no y vuelve a empezar de
+cero —abrir la consulta, buscar el producto, mirar qué sala lo tiene— cuando el
+portal ya tenía el dato.
+
+**Quien pidió por fin se entera de la respuesta.** Hasta acá no había ningún
+aviso de vuelta: la solicitud cambiaba de estado y solo se le cerraba el aviso a
+quien decidía. Ahora la sala que pidió recibe el resultado —«te lo van a
+enviar» o «no te lo pueden enviar», con el motivo y la sugerencia—, y le llega a
+la sala entera, no solo a la persona: si salió de turno, alguien tiene que
+enterarse igual.
+
+**De paso, el mensaje del pedido repetido dejó de ser jerga.** Pedir dos veces
+el mismo producto a la misma sala rebota —es un duplicado— pero contestaba
+*«duplicate key value violates unique constraint»*, que no le dice nada a nadie
+y suena a que el portal se rompió. Ahora dice qué hacer: si necesitas más,
+súbele la cantidad a ese pedido o pídeselo a otra sala.
+
 ## v2.454.0 — La sala ve y recibe sus traslados, no solo quien los pidió
 
 Pedido del usuario: que se vean todas las de la sala y no solo las propias, y

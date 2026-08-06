@@ -24,6 +24,18 @@ import { crearSolicitudTraslado, fetchDondeHay } from '../../data/traslados';
 // quién lo autoriza no sería una pantalla, sería un permiso.
 
 const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
+const NOMBRE_SALA = { 1:'Salud 1', 2:'Salud 2', 3:'Salud 3', 4:'Salud 4', 5:'La Popular', 6:'Bodega', 7:'Salud 5' };
+
+const fmtVence = (d) => d
+    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short', year: '2-digit' })
+    : '';
+
+/** Días hasta una fecha, en hora de El Salvador. Negativo = ya venció. */
+function diasHasta(d) {
+    if (!d) return null;
+    const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return Math.round((new Date(d + 'T12:00:00') - new Date(hoy + 'T12:00:00')) / 86400000);
+}
 
 export default function PedirTrasladoModal({ producto, onClose, onListo }) {
     const { user } = useAuth();
@@ -45,8 +57,11 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
         [producto, dondeTraido],
     );
 
+    // Para qué sala se pide: la de quien pide, y no se pregunta. Quien no está
+    // asignado a una sala —Supervisión, Administración— no pide traslados;
+    // decisión del usuario el 2026-08-06, después de probarlo.
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
-    const miErp    = MI_ERP_POR_BRANCH[miBranch] ?? producto?.erp_sucursal_destino ?? null;
+    const miErp    = MI_ERP_POR_BRANCH[miBranch] ?? null;
 
     useEffect(() => {
         if (producto?.donde || !producto?.erp_product_id || !miErp) return;
@@ -57,11 +72,17 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
         return () => { cancelado = true; };
     }, [producto?.erp_product_id, producto?.donde, miErp]);
 
-    // La sala con más existencia va primera y queda elegida: es la que puede
-    // ceder sin quedarse corta, y es el orden en que el listado ya las trae.
+    // Queda elegida la sala desde la que se apretó «Pedir» —la fila ya estaba
+    // bajo su encabezado— y, si no viene ninguna, la de más existencia, que es
+    // la que puede ceder sin quedarse corta.
     useEffect(() => {
-        if (donde.length > 0 && salaId === null) setSalaId(String(donde[0].erp_sucursal_id));
-    }, [donde, salaId]);
+        if (donde.length === 0 || salaId !== null) return;
+        const sugerida = producto?.origen_sugerido != null
+            && donde.some(d => String(d.erp_sucursal_id) === String(producto.origen_sugerido))
+            ? producto.origen_sugerido
+            : donde[0].erp_sucursal_id;
+        setSalaId(String(sugerida));
+    }, [donde, salaId, producto?.origen_sugerido]);
 
     // La presentación viaja por SIGNIFICADO —tipo + factor—, nunca por su id:
     // el portal y el sistema de origen las numeran distinto y solo la etiqueta
@@ -79,7 +100,45 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
     const sala     = donde.find(d => String(d.erp_sucursal_id) === String(salaId));
     const pres     = presentaciones[Number(presIdx)] ?? null;
 
-    const unidades = pres ? Number(cantidad || 0) * Number(pres.factor || 1) : 0;
+    const unidadesPedidas = pres ? Number(cantidad || 0) * Number(pres.factor || 1) : 0;
+
+    // ── El aviso de vencimiento ─────────────────────────────────────────────
+    // Pedido del usuario: «si una sucursal tiene una fecha de vence más corta,
+    // que avise». Es una preocupación de farmacia: recibir lo que está por
+    // vencerse mueve el problema, no lo resuelve.
+    //
+    // Avisa por DOS motivos distintos y dice cuál: que lo de esta sala esté
+    // pronto a vencer —eso vale aunque sea la única que lo tiene— o que otra
+    // sala tenga lo mismo con más vida por delante, que es la comparación que
+    // el usuario pidió. Sin la comparación, el aviso no ayuda a decidir.
+    const avisoVence = useMemo(() => {
+        if (!sala?.vence) return null;
+        const dias = diasHasta(sala.vence);
+        if (dias != null && dias <= 0)
+            return { grave: true, texto: `Lo de ${sala.sala} ya está vencido (${fmtVence(sala.vence)}).` };
+
+        const mejor = donde
+            .filter(d => d.erp_sucursal_id !== sala.erp_sucursal_id && d.unidades >= unidadesPedidas)
+            .filter(d => !d.vence || d.vence > sala.vence)
+            .sort((a, b) => (a.vence ? 1 : -1) - (b.vence ? 1 : -1))[0];
+
+        if (dias != null && dias <= 90) {
+            return {
+                grave: dias <= 30,
+                texto: `Lo de ${sala.sala} vence ${fmtVence(sala.vence)}`
+                     + (mejor ? ` — ${mejor.sala} lo tiene ${mejor.vence ? `hasta ${fmtVence(mejor.vence)}` : 'sin fecha de vencimiento'}.` : '.'),
+            };
+        }
+        if (mejor && mejor.vence && new Date(mejor.vence) - new Date(sala.vence) > 180 * 86400000) {
+            return {
+                grave: false,
+                texto: `${mejor.sala} lo tiene con más vida: vence ${fmtVence(mejor.vence)} contra ${fmtVence(sala.vence)} acá.`,
+            };
+        }
+        return null;
+    }, [sala, donde, unidadesPedidas]);
+
+    const unidades = unidadesPedidas;
     const puedeEnviar = Boolean(
         sala && pres && miErp && Number(cantidad) > 0 && causa.trim().length > 0
         && unidades > 0 && unidades <= Number(sala.unidades ?? 0),
@@ -98,7 +157,7 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                     reason: causa.trim(),
                     // Mi sala: la que recibe.
                     branch_id: miBranch,
-                    branch_name: user?.branchName ?? user?.branch_name ?? '',
+                    branch_name: user?.branchName ?? user?.branch_name ?? NOMBRE_SALA[miErp] ?? '',
                     erp_sucursal_id: miErp,
                     // La sala de origen: la que tiene el producto.
                     origen_erp_sucursal_id: sala.erp_sucursal_id,
@@ -171,7 +230,11 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                             onChange={v => setSalaId(v)}
                             options={donde.map(d => ({
                                 value: String(d.erp_sucursal_id),
-                                label: `${d.sala} — ${d.unidades} unidades`,
+                                // La fecha va en la etiqueta y no solo en el
+                                // aviso: así se ve al ELEGIR, que es cuando
+                                // sirve, y no después de haber elegido mal.
+                                label: `${d.sala} — ${d.unidades} unidades`
+                                     + (d.vence ? ` · vence ${fmtVence(d.vence)}` : ''),
                             }))}
                             placeholder="A qué sala..."
                             clearable={false}
@@ -207,6 +270,18 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                             imposibles sin que nada avise.
                             La existencia ya viene con lo que salió y todavía no
                             volvió del conteo descontado. */}
+                        {/* El aviso de vencimiento. Solo aparece si hay algo que
+                            decidir: que la sala elegida venza antes que otra que
+                            también puede darlo, o que lo suyo esté por vencerse.
+                            Un dato que aparece siempre deja de leerse. */}
+                        {avisoVence && (
+                            <p className={`text-micro font-semibold px-1 leading-snug ${
+                                avisoVence.grave ? 'text-danger-text' : 'text-warning-text'
+                            }`}>
+                                {avisoVence.texto}
+                            </p>
+                        )}
+
                         {pres && Number(cantidad) > 0 && (
                             <p className={`text-micro font-semibold px-1 ${
                                 unidades > Number(sala?.unidades ?? 0) ? 'text-danger-text' : 'text-content-3'

@@ -251,17 +251,28 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
  */
 function PedirEnFila({ prod, branchName, onPedir }) {
   if (!onPedir || onPedir.miSala === branchName) return null;
-  const id = prod?.lots?.[0]?.erp_product_id;
+  const id  = prod?.lots?.[0]?.erp_product_id;
+  const suc = prod?.lots?.[0]?.erp_sucursal_id;
   if (!id) return null;
   return (
+    // `primary` y `sm`: es LA acción de la fila y estaba compitiendo de igual a
+    // igual con el número de unidades. A pedido del usuario tras verlo.
     <Button
-      size="xs"
-      variant="secondary"
+      size="sm"
+      variant="primary"
       className="shrink-0"
       aria-label={`Pedir ${prod.descripcion} a ${branchName}`}
       onClick={(e) => {
         e.stopPropagation();
-        onPedir.abrir({ erp_product_id: id, descripcion: prod.descripcion });
+        // La sala VIAJA con el pedido. La fila ya está bajo el encabezado de su
+        // sucursal, así que preguntarla de nuevo en el formulario es pedir dos
+        // veces el mismo dato — el usuario lo marcó apretando «Pedir» sobre una
+        // fila de La Popular y encontrándose un selector de sucursales.
+        onPedir.abrir({
+          erp_product_id: id,
+          descripcion: prod.descripcion,
+          origen_sugerido: suc ?? null,
+        });
       }}
     >
       Pedir
@@ -424,15 +435,25 @@ function PanelInventario({ query = '', onQueryChange }) {
   // el widget se le abría en blanco, que es justo lo que la lista existe para
   // evitar. Con alcance de todas las sucursales ahora puede elegir cuál mirar,
   // igual que hacen Ajuste de Inventario y Meta del mes.
-  const miBranchErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
-  const [salaElegida, setSalaElegida] = useState(null);
-  const miErp = miBranchErp ?? salaElegida;
-  const eligeSala = !miBranchErp;
+  // Quien no está EN una sala —Administración son 7 personas, Supervisión
+  // incluida— no tiene «lo que me falta»: no hay sala desde la cual falte nada.
+  // Así que esa lista simplemente no se le muestra, y tampoco un selector para
+  // fabricarle una. Decisión del usuario, 2026-08-06: «si tiene alcance todos no
+  // muestres ver lo que falta, no es necesario».
+  //
+  // Lo que sí puede es PEDIR, y para eso hace falta un destino. Esa pregunta se
+  // hace en el formulario del pedido, que es donde se está decidiendo —no en la
+  // pantalla de consulta, que solo mira.
+  const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
 
-  // Lo que las filas de resultado necesitan para ofrecer «Pedir»: a qué sala
-  // pertenece quien mira (para no ofrecerse pedirse a sí mismo) y cómo abrir el
+  // Lo que las filas de resultado necesitan para ofrecer «Pedir»: de qué sala es
+  // quien mira (para no ofrecerle pedirse a sí mismo) y cómo abrir el
   // formulario. Va como un objeto y no como dos props sueltas para que agregar
   // una tercera no obligue a tocar la firma de todos los componentes del medio.
+  //
+  // Solo para quien TIENE sala: un traslado necesita un destino, y quien no
+  // está asignado a ninguna no puede recibirlo. Ofrecerle el botón lo lleva a un
+  // formulario que no puede completar, que es peor que no ofrecerlo.
   const accionPedir = useMemo(
     () => (miErp ? { miSala: ERP_BRANCH_MAP[miErp], abrir: setPedido } : null),
     [miErp],
@@ -676,24 +697,6 @@ function PanelInventario({ query = '', onQueryChange }) {
             La razón real por la que se abre este widget es que alguien
             preguntó por algo que no está — así que la pantalla en blanco lo
             adelanta en vez de esperar a que se escriba. */}
-        {/* Quien no está en una sala elige cuál. No solo para ver sus faltantes
-            —para eso nació— sino porque **es lo que decide a quién se le pide**:
-            sin sala propia no hay destino para un traslado, y los botones de
-            pedir no aparecen. Por eso se muestra SIEMPRE y no solo con la lista
-            de faltantes en pantalla: escondido detrás de «todavía no busqué»,
-            quien busca primero no llega nunca a él. */}
-        {!loading && eligeSala && (
-          <div className="mb-2">
-            <LiquidSelect
-              value={salaElegida != null ? String(salaElegida) : null}
-              onChange={v => setSalaElegida(v ? Number(v) : null)}
-              options={BRANCH_ORDER.map(id => ({ value: String(id), label: ERP_BRANCH_MAP[id] }))}
-              placeholder="Ver lo que le falta a..."
-              icon={Package}
-            />
-          </div>
-        )}
-
         {!loading && results === null && faltantes.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
@@ -726,8 +729,8 @@ function PanelInventario({ query = '', onQueryChange }) {
                     baldosa el botón se partía en dos líneas —ícono arriba,
                     palabra abajo— y quedaba el doble de alto que la fila. */}
                 <Button
-                  size="xs"
-                  variant="secondary"
+                  size="sm"
+                  variant="primary"
                   onClick={() => setPedido(f)}
                   aria-label={`Pedir ${f.descripcion} a otra sala`}
                   className="shrink-0"

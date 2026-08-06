@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.461.0 — El botón que se ve, la sala que ya se sabía, y el vencimiento que avisa
+
+Tres correcciones del usuario sobre la pantalla de consulta.
+
+**El botón de pedir se veía como un detalle.** Era la acción de la fila y
+competía de igual a igual con el número de unidades. Ahora es azul y del tamaño
+que le corresponde a lo único que ahí se puede hacer.
+
+**Se preguntaba dos veces el mismo dato.** Al apretar «Pedir» sobre una fila que
+está bajo el encabezado de La Popular, el formulario abría preguntando a qué
+sala pedirle. La fila ya lo sabía: ahora esa sala llega elegida, y el selector
+queda solo para cambiarla.
+
+**Y avisa cuando lo de esa sala vence antes.** Es una preocupación de farmacia,
+no de inventario: dos salas pueden tener lo mismo y pedirle a la que lo tiene
+por vencer mueve el problema en vez de resolverlo — llega algo que hay que
+descartar en un mes. La fecha va en la etiqueta de cada sala, para verla **al
+elegir** y no después; y hay aviso cuando lo de la elegida está por vencerse o
+cuando otra lo tiene con bastante más vida por delante. El caso no es teórico:
+del acetaminofén, Salud 3 tiene existencia vencida desde mayo y Bodega la tiene
+hasta diciembre.
+
+El aviso vale por los dos caminos —la lista de faltantes y la búsqueda—, que
+arman su lista de salas por separado. Dos listas que se parecen y contestan
+distinto según por dónde se entró es justo lo que este módulo lleva el día
+evitando.
+
 ## v2.460.3 — El toque que no abría nada, y el contexto que faltaba en la ficha
 
 Tres cosas reportadas por el usuario usando el portal en su teléfono, y las tres

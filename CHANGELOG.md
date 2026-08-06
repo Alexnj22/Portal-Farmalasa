@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.427.1 — El widget de carga y descarte
+
+La pantalla del widget, que es donde la idea se vuelve útil: en vez de buscar
+producto por producto, **el portal propone la lista y se tilda lo que va**.
+
+Para un descarte por **vencimiento** la lista sale sola —con plazo elegible: ya
+vencidos, o lo que vence en 30, 60 o 90 días— porque el portal ya guarda lote,
+fecha y cantidad de cada sucursal. Para los otros tres tipos de descarte y para
+las cargas no hay lista que proponer, así que se busca.
+
+El tope se anuncia: si una sucursal tiene más de 400 líneas por vencer, la
+pantalla lo dice y pide mandar la tanda y volver. Una lista recortada en
+silencio se lee como completa.
+
+Y la cantidad se frena contra la existencia antes de enviar, en vez de dejar
+que falle recién cuando alguien la aprueba.
+
 ## v2.427.0 — Cargas y descartes de inventario
 
 El portal ya podía **pedir** que se moviera inventario. Ahora lo **mueve**: una

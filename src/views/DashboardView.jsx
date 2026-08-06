@@ -16,7 +16,7 @@ import {
   Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
-  FileText, Package, Receipt, ShoppingCart, Zap, FlaskConical, Target
+  FileText, Package, Receipt, ShoppingCart, Zap, FlaskConical, Target, PackageMinus
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,7 @@ import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
 import WidgetSrsInventory from './dashboard/WidgetSrsInventory';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
+import WidgetInventoryMovement from './dashboard/WidgetInventoryMovement';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 import { SALAS_VENTA } from './metas/metasUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -126,16 +127,23 @@ const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5
 const MM_ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const MM_BRANCH_TO_ERP = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 
+// La ubicación con la que se mueve el inventario de cada sucursal. Leída del
+// propio sistema el 2026-08-06 y no adivinada: son numeraciones distintas de
+// las de sucursal, y la equivocada apunta a otro almacén sin dar error.
+// Bodega tiene dos (1 BODEGA, 2 BODEGA DE VENCIDOS); acá va la de operación,
+// porque la de vencidos es a donde llega lo descartado, no de donde sale.
+const ERP_UBICACION_POR_SUCURSAL = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 1, 7: 8 };
+
 // Las salas que venden (Bodega no tiene meta) — la lista vive en el módulo de
 // Metas, que es su dueño; acá solo se consume.
 const META_SALA_IDS = SALAS_VENTA;
 
-const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req','meta_sala'];
+const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req','inv_movement','meta_sala'];
 const TAB_WIDGETS = {
   general:   ALL_WIDGET_IDS,
   comercial: ['kpi','meta_sala','cotizaciones','facturacion','top_productos','sales'],
   rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
-  operacion: ['inv_search','annulment_req','srs_inv','minmax_req'],
+  operacion: ['inv_search','annulment_req','srs_inv','minmax_req','inv_movement'],
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -248,6 +256,7 @@ const WIDGET_DEFS = [
   { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'srs_inv',      label: 'Búsqueda SRS + Inventario',permission: 'dash_srs_inv',      icon: FlaskConical, category: 'productos' },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
+  { id: 'inv_movement', label: 'Carga y Descarte',        permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Quién está vendiendo',    permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
 ];
@@ -853,6 +862,7 @@ const DashboardView = ({ openModal }) => {
   const [shiftBranch,    setShiftBranch]    = useState('');
   const [annulmentBranch, setAnnulmentBranch] = useState(() => String(user?.branchId ?? user?.branch_id ?? ''));
   const [minmaxErp, setMinmaxErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
+  const [movimientoErp, setMovimientoErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
   // Arranca en la sala propia; si el usuario no está en una sala de venta
   // (gerencia, bodega), en la primera de la lista.
   const [metaBranch, setMetaBranch] = useState(() => {
@@ -2061,6 +2071,41 @@ const DashboardView = ({ openModal }) => {
         >
           <div className="px-4 pb-4 pt-2 h-full">
             <WidgetMinMaxRequest selectedErp={isMmAllScope ? Number(minmaxErp) : ownErp} />
+          </div>
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── CARGA Y DESCARTE DE INVENTARIO ── */
+    if (wid === 'inv_movement') {
+      if (!showWidget('inv_movement', 'dash_inv_movement')) return null;
+      const isMovAllScope = getScope('dash_inv_movement') === 'ALL';
+      const ownErpMov = MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? null;
+      const erpMov = isMovAllScope ? Number(movimientoErp) : ownErpMov;
+      const branchIdMov = Number(
+        Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === erpMov) ?? 0,
+      ) || null;
+      return wrapWidget('inv_movement',
+        <WidgetCard title="Carga y Descarte" icon={PackageMinus} category="productos"
+          action={isMovAllScope && (
+            <LiquidSelect
+              value={movimientoErp}
+              onChange={val => setMovimientoErp(val ?? String(ownErpMov ?? 5))}
+              options={MM_ERP_ORDER.map(id => ({ value: String(id), label: MM_ERP_NAMES[id] }))}
+              placeholder="Sucursal..."
+              clearable={false}
+              compact
+              bare
+            />
+          )}
+        >
+          <div className="px-4 pb-4 pt-2 h-full">
+            <WidgetInventoryMovement
+              erpSucursalId={erpMov}
+              branchId={branchIdMov}
+              branchName={MM_ERP_NAMES[erpMov] ?? ''}
+              erpUbicacionId={ERP_UBICACION_POR_SUCURSAL[erpMov] ?? null}
+            />
           </div>
         </WidgetCard>
       , staggerIdx);

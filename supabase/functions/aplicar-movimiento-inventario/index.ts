@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
       .eq("module_key", "requests")
       .maybeSingle();
     if (!permiso?.can_approve)
-      return json({ ok: false, error: "No tenés permiso para aprobar solicitudes." }, 403);
+      return json({ ok: false, error: "No tienes permiso para aprobar solicitudes." }, 403);
 
     // ── La solicitud se relee de la BD, no se recibe ──────────────────────
     const { data: sol, error: solErr } = await admin
@@ -293,7 +293,7 @@ Deno.serve(async (req) => {
       return json({
         ok: false, codigo: "SIN_TIEMPO",
         error: `No alcanzó el tiempo: se alcanzaron a verificar ${cortadoEn} de ${lineas.length} productos. `
-             + `Dividí la solicitud en tandas más chicas.`,
+             + `Divide la solicitud en tandas más chicas.`,
       }, 504);
 
     // ── El envío ─────────────────────────────────────────────────────────

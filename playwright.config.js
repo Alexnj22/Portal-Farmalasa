@@ -17,6 +17,14 @@ export default defineConfig({
     },
     projects: [
         { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+        // WebKit iPhone 13 para la auditoría móvil: los bugs de layout móvil de
+        // este proyecto han sido WebKit-only más de una vez, y Chromium móvil
+        // emula el TAMAÑO, no el motor. Sólo corre los specs de `*movil*`.
+        {
+            name: 'webkit-movil',
+            testMatch: /movil\.spec\.js/,
+            use: { ...devices['iPhone 13'] },
+        },
     ],
     webServer: process.env.E2E_BASE_URL ? undefined : {
         command: 'npm run build && npm run preview -- --port 4174',

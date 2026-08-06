@@ -1611,6 +1611,34 @@ thead.sticky,
 :root { --tap-min: 0px; }
 @media (pointer: coarse) { :root { --tap-min: 44px; } }
 
+/* ── `.blanco-tactil` · el piso del dedo SIN cambiar el tamaño visual ──────
+   `--tap-min` sirve cuando el control puede crecer. No sirve cuando el tamaño
+   ES el diseño: la flecha del carril mide 28px porque tiene que caber en el
+   canto de una tarjeta, y el aspa del select compacto mide 20 porque vive
+   dentro del campo. Estirarlos a 44 los rompe; dejarlos en 28 y 20 los vuelve
+   intocables con el pulgar.
+   La salida estándar es separar el ÁREA DE IMPACTO del tamaño pintado: un
+   pseudo-elemento centrado que crece hasta 44 y no dibuja nada. `max(100%, …)`
+   hace que en un control que ya llega no cambie nada, y `pointer-events` se
+   hereda, así que el área extra pertenece al botón y no tapa a su vecino.
+   Sólo en punteros gruesos: en escritorio un área invisible de 44px alrededor
+   de cada icono sí robaría clics.
+   ⚠️ El elemento tiene que estar POSICIONADO. Los dos que la usan hoy ya son
+   `absolute`; para uno estático hay que agregarle `relative` a mano — no se
+   fuerza desde acá porque re-anclaría a sus hijos absolutos (misma razón por la
+   que §5 no compensó la banda muerta de la tarjeta). */
+@media (pointer: coarse) {
+  .blanco-tactil::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: max(100%, var(--tap-min));
+    height: max(100%, var(--tap-min));
+  }
+}
+
 /* A1 — por qué la densidad no comprimía algunas filas (medido 2026-07-29).
    El hallazgo venía escrito como "la densidad no comprime filas". Al medirlo
    con datos reales a 1100px (ultra, --row-h: 32px) resultó ser falso como

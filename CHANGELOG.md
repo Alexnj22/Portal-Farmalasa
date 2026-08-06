@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.447.0 — Auditoría móvil, fase 1: el área de impacto se vuelve canónica
+
+`PLAN-MOBILE-2026-07.md` **sale de `docs/planes-cerrados/`**: estaba archivado
+como cerrado con sus fases 3, 4 y 5 sin una sola marca de cierre. Las fases 1 y 2
+sí lo estaban.
+
+**Se midió antes de tocar nada**, en WebKit iPhone 13 y sobre las ocho vistas que
+el personal usa en tienda (`tests/e2e/auditoria-movil.spec.js`). Y la medición
+llegó con buenas noticias que nadie había registrado:
+
+- **Ninguna vista scrollea de lado.** El síntoma que originó el plan —«no hay
+  scroll y el menú no aparece»— está cerrado por la fase 1.
+- **Cero inputs con fuente <16px**, o sea que iOS no hace zoom al enfocar. La
+  fase 3.3 estaba hecha sin anotarse.
+- **Cero tablas sin carril propio.** La fase 4.1, igual.
+
+**La forma que faltaba: separar el ÁREA DE IMPACTO del tamaño pintado.** El
+portal ya tenía `--tap-min` (0 en escritorio, 44px en táctil) y diez componentes
+canónicos lo usan. Pero no sirve cuando **el tamaño ES el diseño**: la flecha del
+carril mide 28px porque cabe en el canto de una tarjeta, y el aspa del select
+compacto mide 20 porque vive dentro del campo. Estirarlos rompe el layout;
+dejarlos los vuelve intocables con el pulgar.
+
+Nace **`.blanco-tactil`**: un pseudo-elemento centrado que crece hasta
+`--tap-min` y no dibuja nada. `max(100%, …)` hace que un control que ya llega no
+cambie, y sólo actúa en punteros gruesos — en escritorio un área invisible de
+44px alrededor de cada ícono robaría clics.
+
+**Y absorbió una copia inline que además estaba rota.** `LiquidSelect` ya tenía
+la misma técnica escrita a mano con utilidades `after:` — pero el `::after` de
+esos botones **ya está tomado por el canto que corre** (§1.6), así que se pisaban
+entre sí: o se apagaba el canto o se rompía el área, según cuál ganara el orden.
+`.blanco-tactil` usa `::before`, que está libre.
+
+Aplicado a `CarrilCards` y `LiquidSelect` —dos componentes canónicos— los dos
+blancos que se repetían **en cuatro vistas cada uno desaparecieron de las ocho**.
+Eso es lo que compra hacer canónica una forma.
+
+**Y el instrumento mintió dos veces, las dos a favor de reportar de más:**
+
+1. Medía `getBoundingClientRect()`, o sea la **caja**, no el área de impacto: daba
+   por chicos a los controles que ya habían resuelto el problema con un
+   pseudo-elemento. **Acusaba a quien hizo bien el trabajo.**
+2. Contaba elementos `aria-hidden` + `tabIndex={-1}`: el chevron de las filas de
+   asistencia es decorativo —el control real es la fila entera— y aportaba **49
+   hallazgos** en una vista donde no hay nada que tocar mal.
+
+Corregido, el número honesto es **91 → 31**, y **seis de las ocho vistas quedan
+en cero**. Los 31 son dos formas concretas, ya localizadas, para la fase
+siguiente.
+
+*Un ítem de la fase 3.4 quedó obsoleto:* pedía `overscroll-behavior: contain` en
+`#main-scroll`, pero la fase 1 cambió el modelo — en móvil scrollea el
+**documento**, no ese contenedor, y `overscroll-behavior-y: auto` ahí es
+deliberado para que el rebote nativo funcione (reporte del usuario del
+2026-07-23). Lo que sigue vigente de ese punto es el scroll-chaining **dentro de
+modales y hojas**, que es otra cosa.
+
 ## v2.446.1 — El filtro de Inventario al encabezado
 
 El buscador de Consulta de Inventario se había quedado **dentro** del cuerpo de

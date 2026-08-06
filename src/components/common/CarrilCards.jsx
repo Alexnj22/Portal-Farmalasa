@@ -217,7 +217,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                 el borde de la vista, así que no tapan la primera tarjeta. */}
             {desliza && !alInicio && (
                 <button type="button" onClick={() => correr(-1)} aria-label="Ver las métricas anteriores"
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 z-content
+                    className="blanco-tactil absolute -left-3 top-1/2 -translate-y-1/2 z-content
                         w-7 h-7 rounded-full grid place-items-center
                         bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)]
                         text-content-2 hover:bg-brand hover:border-brand hover:text-white
@@ -227,7 +227,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
             )}
             {desliza && !alFinal && (
                 <button type="button" onClick={() => correr(1)} aria-label="Ver las métricas siguientes"
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-content
+                    className="blanco-tactil absolute -right-3 top-1/2 -translate-y-1/2 z-content
                         w-7 h-7 rounded-full grid place-items-center
                         bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)]
                         text-content-2 hover:bg-brand hover:border-brand hover:text-white

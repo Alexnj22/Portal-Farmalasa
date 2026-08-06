@@ -99,7 +99,13 @@ const LiquidSelect = ({
     // pseudo-elemento — se ve igual de chico y se toca como un control de
     // 44px. Es el único control del portal por debajo del mínimo del dedo
     // que no se puede resolver con tamaño real (medido en iPhone 13: 20x20).
-    const areaTocable = "after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-[var(--tap-min)] after:h-[var(--tap-min)]";
+    // El área de impacto sale de `.blanco-tactil` (index.css) y no de utilidades
+    // `after:` escritas acá. Dos motivos: era la MISMA técnica repetida inline
+    // —el carril tenía su propia copia— y sobre todo el `::after` de estos
+    // botones YA está tomado por el canto que corre (§1.6), así que pisarlo con
+    // un área táctil apagaba el canto o rompía el área, según cuál ganara el
+    // orden. `.blanco-tactil` usa `::before`, que está libre.
+    const areaTocable = 'blanco-tactil';
     const iconSize = nano ? 10 : compact ? 11 : 14;
     // El disparador se quedaba en 40px fijos, así que en un teléfono el
     // combobox medía 40 donde el piso del dedo son 44 — medido en iPhone 13 el

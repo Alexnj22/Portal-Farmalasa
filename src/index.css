@@ -353,9 +353,18 @@
   --anidada:     rgba(12,20,48,.09);
   /* §1.6 · el canto: base tenue, destello puntual, y el BLOOM que lo hace
      visible — sin él, en claro, no cambia un solo píxel. */
-  --rim-base:    rgba(255,255,255,.72);
-  --rim-glint:   #ffffff;
-  --rim-bloom:   rgba(12,20,48,.95);
+  /* §1.6.bis · EL FILO CONTRASTA CON SU SUPERFICIE: oscuro sobre claro, claro
+     sobre oscuro. Antes el destello era blanco en los dos temas, y en claro se
+     veía SÓLO por su bloom —un `drop-shadow` oscuro alrededor—, así que
+     bastaba un `overflow: hidden` para borrarlo entero: el botón de salir y el
+     buscador lo tienen, y eran justo los dos que no mostraban nada.
+     Un efecto que depende de que nada lo recorte no es un material, es un
+     truco. Ahora el contraste vive DENTRO del anillo y sobrevive al recorte.
+     Es la misma física que ya decidieron `--anidada` (§1.5) y el tinte del
+     sidebar: la dirección del realce la manda el fondo, no el gusto. */
+  --rim-base:    rgba(12,20,48,.10);
+  --rim-glint:   rgba(12,20,48,.55);
+  --rim-bloom:   transparent;
   /* Botón (§2) — el aro NO escala con la intensidad: ése es --btn-esp-aro */
   --btn-especular: 0.40;
   --btn-esp-radio: 3rem;
@@ -893,7 +902,7 @@ thead.sticky {
   --sidebar-pop-tint: 10 12 26;
   --sidebar-pop-fill: 0.66;
   --rim-glint:   #ffffff;
-  --rim-bloom:   rgba(190,220,255,.95);
+  --rim-bloom:   transparent;   /* §1.6.bis — el contraste va DENTRO del anillo */
   /* §12.1 · en oscuro el sidebar es el de siempre: tinta blanca y negro al 60% */
   --sidebar-tint:     0 0 0;
   --sidebar-ink:      255 255 255;

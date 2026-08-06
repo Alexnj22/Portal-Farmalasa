@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.416.1 — El filo contrasta con su superficie, no con un bloom
+
+**El destello del canto sí estaba en el avatar, en el de salir y en el buscador** — se
+verificó por estado computado y por captura. Lo que fallaba era **verlo**, y sólo en
+tema claro.
+
+El destello era **blanco en los dos temas**, y sobre una superficie clara un arco blanco
+no existe: lo único que lo hacía visible era su **bloom**, un `drop-shadow` oscuro
+alrededor del anillo. Y un `drop-shadow` **lo recorta `overflow: hidden`**. El botón de
+salir y el buscador lo tienen — por eso eran justo esos dos los que no mostraban nada,
+mientras el avatar (que no lo tiene) sí.
+
+**Un efecto que depende de que nada lo recorte no es un material, es un truco.** Ahora
+el contraste vive **dentro del anillo**: el filo es oscuro sobre claro y claro sobre
+oscuro, y el bloom desaparece de los dos temas Liquid.
+
+Es exactamente la misma física que ya habían decidido `--anidada` (§1.5) —oscurece en
+claro, aclara en oscuro— y el tinte del sidebar: **la dirección del realce la manda el
+fondo**. La quinta vez que aparece en esta sesión, y la primera en que se aplicó sin que
+hiciera falta medirla de nuevo.
+
 ## v2.416.0 — El canto sale del DOM, no de una lista
 
 **Tres rondas de «te faltaron éstos» eran la señal de que el criterio estaba mal, no la

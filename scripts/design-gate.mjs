@@ -133,6 +133,21 @@ const EXCEPTIONS = {
   // bug medido, no el bug. Contarlas como ratchet decía «bajalas», y bajarlas
   // reintroduce el 1024×768 que T4 cerró.
   'src/views/productos/TabSinVenta.jsx': ['carril-pildora'],
+  // Las dos últimas, MEDIDAS EN PANTALLA el 2026-08-06 a 1280 y a 1600 con
+  // Playwright (`tests/e2e/materiales.spec.js`), que es lo que §17.0 pide y lo
+  // que no se puede deducir del archivo:
+  //
+  //  · `AttendanceAuditView` — carril 4×200 + huecos = 836, píldora 421 → hacen
+  //    falta 1257px. Disponibles: 886 a 1280 y **1182 a 1600**. No entran juntos
+  //    en NINGUNO de los dos anchos.
+  //  · `TabInventario` — carril 5×148 = 772, píldora 553 → hacen falta 1337px.
+  //    Disponibles: 772 en los dos anchos.
+  //
+  // O sea el mismo caso que `ClientesView`, sólo que ahí el número ya estaba
+  // escrito y acá había que ir a buscarlo. En dos filas entran enteras; forzar
+  // `lg:flex-row` dejaría el carril en una o dos tarjetas visibles, que es el
+  // «una sola cortada parece un error de maquetación» que §17.0 evita.
+  'src/views/productos/TabInventario.jsx': ['carril-pildora'],
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],
@@ -210,7 +225,8 @@ const EXCEPTIONS = {
   'src/views/schedule-tabs/components/ScheduleChart.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/schedule-tabs/TabShifts.jsx': ['color'], // caja IA siempre-oscura
   'src/views/EmployeeDetailView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
-  'src/views/AttendanceAuditView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
+  // `carril-pildora`: excepción MEDIDA en pantalla, ver la nota junto a TabInventario.
+  'src/views/AttendanceAuditView.jsx': ['color', 'carril-pildora'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/VentasView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño

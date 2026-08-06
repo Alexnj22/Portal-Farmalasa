@@ -475,7 +475,27 @@ function useMedidaFila(ref, activo) {
         if (!activo || !fila) return undefined;
         const medir = () => {
             const carril = fila.querySelector('[role="group"]');
-            const tarjetas = carril ? carril.children.length : 0;
+            // El carril sólo descuenta ancho si REALMENTE está al lado. Antes
+            // bastaba con que existiera entre los descendientes del abuelo, y
+            // eso es falso en las tres vistas donde la píldora y el carril van
+            // en renglones separados a propósito porque no entran juntos
+            // (medido el 2026-08-06: AttendanceAudit necesita 1257px y tiene
+            // 1182 aun a 1600; TabInventario necesita 1337 y tiene 772). Ahí la
+            // píldora perdía 314px de presupuesto por un vecino que no tenía al
+            // lado, y degradaba ranuras sin motivo — en silencio, que es lo
+            // peor: el layout no fallaba, sólo repartía mal.
+            // Se compara por CENTRO vertical y no por solapamiento de bandas:
+            // dos bloques apilados con márgenes negativos se solapan unos
+            // píxeles y un test de bandas los daría por vecinos.
+            let tarjetas = 0;
+            if (carril && ref.current) {
+                const rp = ref.current.getBoundingClientRect();
+                const rc = carril.getBoundingClientRect();
+                const centro = (r) => r.top + r.height / 2;
+                const compartenFila =
+                    Math.abs(centro(rp) - centro(rc)) < Math.min(rp.height, rc.height) / 2;
+                if (compartenFila) tarjetas = carril.children.length;
+            }
             setMedida({
                 ancho: fila.clientWidth - (tarjetas ? RESERVA_CARRIL : 0),
                 fila: fila.clientWidth,
@@ -888,6 +908,11 @@ const FilterBar = memo(({
         <BarraCtx.Provider value={{ compacto: false }}>
         <div
             ref={pildoraRef}
+            // `data-pildora` marca la raíz de la píldora. No es decorativo: es el
+            // otro extremo del contrato de §17.0 —el carril se identifica con
+            // `[role="group"]`— y sin él la píldora sólo se podía localizar por
+            // sus clases, que cambian. Lo usa la verificación de §17.0.
+            data-pildora
             // 52px: 36 del control + 8 de aire arriba y abajo. Vuelve a ser un
             // alto FIJO y una sola línea: desde que el cupo de ranuras se calcula
             // contra el ancho real, la píldora ya no puede desbordar — lo que no

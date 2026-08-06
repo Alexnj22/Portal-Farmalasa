@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.442.0 — El baseline del gate de diseño queda VACÍO
+
+**Las 47 categorías del gate de diseño están en cero y bloqueantes.** El baseline
+arrancó esta sesión con tres categorías y 168 hallazgos tolerados; queda
+`"categories": {}`.
+
+**El último tramo salió de medir en el navegador, no de leer.** Los cuatro
+`carril-pildora` que quedaban se midieron con Playwright a 1280 y a 1600, que es
+lo que §17.0 pide y lo que el archivo no puede contestar:
+
+| vista | carril + píldora | disponible @1280 | @1600 | ¿entran? |
+|---|---|---|---|---|
+| `AttendanceAuditView` | 836 + 421 = **1257** | 886 | **1182** | no, en ninguno |
+| `TabInventario` | 772 + 553 = **1337** | 772 | 772 | no, en ninguno |
+
+O sea el mismo caso que `ClientesView`, sólo que ahí el número ya estaba escrito
+y acá había que ir a buscarlo. En dos filas entran enteras; forzar `lg:flex-row`
+dejaría el carril en una o dos tarjetas visibles — el *«una sola cortada parece
+un error de maquetación»* que §17.0 existe para evitar. Las dos entran a
+`EXCEPTIONS` con su medición citada.
+
+**Y la medición destapó el bug de verdad, que no era el layout.** Las dos vistas
+dan `¿misma fila? false` **y aun así** `useMedidaFila` les descontaba los 314px
+de `RESERVA_CARRIL`: le bastaba con que existiera un `[role="group"]` entre los
+descendientes del abuelo de la píldora. Resultado: la píldora repartía su ancho
+creyendo tener 314px menos de los que tenía, y degradaba ranuras sin motivo **en
+silencio** — el layout no fallaba, sólo repartía mal. Ahora el carril sólo
+descuenta si comparte renglón, comparando **centros verticales** y no
+solapamiento de bandas (dos bloques apilados con márgenes negativos se solapan
+unos píxeles y un test de bandas los daría por vecinos).
+
+`FilterBar` estrena `data-pildora` en su raíz. No es decorativo: es el otro
+extremo del contrato de §17.0 —el carril ya se identificaba con `[role="group"]`—
+y sin él la píldora sólo se podía localizar por sus clases, que cambian.
+
+**Verificación nueva y permanente: `tests/e2e/materiales.spec.js`.** Comprueba
+contra el *bundle* —no contra el fuente— que en los cuatro temas el destello del
+canto invierte en la dirección correcta, que el filo del campo vale 0 fuera del
+tema claro, que el velo sólo oscurece en Solid, que la geometría del carril es la
+del material, que el campo nunca comparte color con su contenedor, que los ocho
+tokens del especular **no resuelven**, y que una tarjeta anidada pierde el
+`backdrop-filter` **estándar** (no sólo el prefijado). Las dos trampas que
+justifican mirar el bundle ya nos costaron caro: el par `-webkit-` que Lightning
+CSS colapsaba, y `.modal-glass-layer`, que dejaba el `0.51` del modal en ~0.76.
+
+**Y un test del smoke estaba roto desde antes de esta sesión.** «Pedidos carga
+sin errores» buscaba el texto **exacto** `Pedidos`, que en esa pantalla sólo
+existe en dos nodos y los dos invisibles a 1280px: un clon de medición
+(`visibility:hidden`) y el encabezado móvil (`lg:hidden`). El encabezado real
+dice «Pedidos a Sucursales». Confirmado corriéndolo también contra `d0655360`
+—el commit anterior al primero de esta sesión—, donde falla igual: **no era
+regresión**. Ahora se ancla al `role=heading`.
+
 ## v2.441.0 — Inventario agrupado, fotos livianas, y los bordes de más
 
 **Los tres bordes del buscador.** Un campo enfocado mostraba tres líneas

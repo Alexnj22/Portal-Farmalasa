@@ -55,7 +55,15 @@ test.describe('Flujos autenticados', () => {
 
     test('Pedidos carga sin errores', async ({ page }) => {
         await page.goto('/pedidos');
-        await expect(page.getByText('Pedidos', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+        // El encabezado de la vista es «Pedidos a Sucursales», no «Pedidos».
+        // El locator viejo pedía el texto EXACTO «Pedidos», que en esta pantalla
+        // sólo existe en dos nodos y los dos invisibles a 1280px: un clon de
+        // medición (`visibility:hidden`) y el encabezado móvil (`lg:hidden`).
+        // O sea que el test fallaba aunque la página cargara perfecta —
+        // verificado el 2026-08-06 corriéndolo también contra `d0655360`, donde
+        // falla igual. Se ancla al `role=heading`, que es lo que el usuario ve.
+        await expect(page.getByRole('heading', { name: 'Pedidos a Sucursales' }).first())
+            .toBeVisible({ timeout: 15_000 });
     });
 
     test('Modal de Editar Empleado no muestra campos sensibles vacíos por race condition', async ({ page }) => {

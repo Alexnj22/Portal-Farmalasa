@@ -190,7 +190,7 @@ const FILTER_CARD_CSS = `
   from { opacity: 0; transform: translateY(8px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)   scale(1); }
 }
-.filter-card-anim { animation: cardIn 0.22s cubic-bezier(0.22,1,0.36,1) both; }
+.filter-card-anim { animation: cardIn 0.22s var(--ease-spring) both; }
 `;
 
 function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {

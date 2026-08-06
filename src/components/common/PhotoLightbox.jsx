@@ -36,7 +36,7 @@ export default function PhotoLightbox({ src, alt, onClose, zClass = 'z-flyout' }
         >
             <div
                 className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-4)]"
-                style={{ animation: 'lightbox-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}
+                style={{ animation: 'lightbox-in 0.22s var(--ease-spring) both' }}
                 onClick={e => e.stopPropagation()}
             >
                 <img src={src} alt={alt} className="block max-w-[90vw] max-h-[90vh] object-contain" />

@@ -298,7 +298,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             animation: 'none',
             transform: 'translateY(-110px) rotate(-8deg) scale(0.65)',
             opacity: 0,
-            transition: 'transform 0.18s cubic-bezier(0.4,0,1,1), opacity 0.14s ease',
+            transition: 'transform 0.18s var(--ease-spring), opacity 0.14s ease',
         };
         if (phase === 'check') return {
             animation: 'none',

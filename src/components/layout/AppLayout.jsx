@@ -780,7 +780,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div
                     id={`nav-group-${key}`}
                     inert={!(isExpanded && isOpen) ? true : undefined}
-                    className={`grid transition duration-[var(--dur-slow)] ease-[cubic-bezier(0.25,0.8,0.25,1)]
+                    className={`grid transition duration-[var(--dur-slow)] ease-[var(--ease-spring)]
                         ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
                 >
                     <div className="overflow-hidden">
@@ -834,8 +834,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     className={`fixed lg:relative z-sidebar lg:z-sidebar-desktop lg:h-auto flex flex-col shrink-0
                         my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
                         ${isMobile
-                            ? `top-0 bottom-0 w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
-                            : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(env(safe-area-inset-left,8px),8px)] transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]`}
+                            ? `top-0 bottom-0 w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[var(--ease-spring)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
+                            : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(env(safe-area-inset-left,8px),8px)] transition-[width] duration-[220ms] ease-[var(--ease-spring)]`}
                         ${blurClasses}`}
                 >
                     <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-base pointer-events-none">

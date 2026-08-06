@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.403.0 — Dos gates de movimiento, en cero y bloqueantes
+
+`design-gate.mjs` tenía 42 categorías y **ninguna miraba el movimiento**. Ahora dos, y
+las dos **nacen bloqueantes, sin baseline** — que es la razón por la que la fase C iba
+primero: un gate que arranca con deuda no protege nada.
+
+**`reloj-a-mano`** — duración o curva escrita literal en JSX. Migradas de paso las
+**12 `cubic-bezier(` que quedaban**, a `--ease-spring` / `--ease-out`.
+
+**Y se acotó a las transiciones, a propósito.** `animationDuration` **no** se mira: los
+24 que había son bucles ambientales —shimmer a 4 s, blobs escalonados a 2/3/5 s— y el
+período de un bucle no es una duración de interacción. Meterlos en la escala haría que
+los tres blobs derivaran al unísono, que es exactamente lo que el escalonado evita:
+sería usar el reloj para romper el diseño.
+
+**`puntero-lista`** — un handler de puntero que recorre la lista o mide el rect por
+evento (§6). Es **preventivo**: todavía no existe ninguna utilidad de seguimiento del
+puntero, y la versión ingenua es la primera que uno escribe.
+
+**Su primera versión daba cuatro falsos positivos, y el motivo vale escribirlo:**
+miraba cualquier mención de `pointermove`. Tres de los cuatro eran
+`removeEventListener` de limpieza y el otro una prop apuntando a un handler definido
+veinte líneas más arriba. **Un detector que mira la referencia en vez del cuerpo no
+mide lo que cree medir** — acusa a quien desmonta el listener igual que a quien lo
+escribe mal. Ahora sólo dispara donde el cuerpo está ahí mismo.
+
+Los dos verificados contra una violación sintética: muerden ahí y callan sobre el
+código real.
+
 ## v2.402.0 — Se remueve el barrido, y DESIGN.md deja de mentir
 
 **Fase G · el barrido (`.sweep`) se removió.** No se apagó: **se removió**, junto con

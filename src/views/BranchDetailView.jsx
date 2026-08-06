@@ -292,7 +292,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         <div inert={isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div ref={tabsRef} className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 w-max relative">
                                 <div
-                                    className="absolute top-0 bottom-0 bg-white rounded-full shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-lento)] ease-[cubic-bezier(0.25,0.8,0.25,1)]"
+                                    className="absolute top-0 bottom-0 bg-white rounded-full shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)]"
                                     style={{ left: `${pill.left}px`, width: `${pill.width}px`, opacity: pill.show ? 1 : 0 }}
                                 ></div>
 

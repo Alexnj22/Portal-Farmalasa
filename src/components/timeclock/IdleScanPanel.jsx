@@ -15,8 +15,8 @@ function ScanReadyRing({ specialMode }) {
   return (
     <div className="w-full flex flex-col items-center gap-3.5 [@media(max-height:800px)]:gap-1.5 py-2 [@media(max-height:800px)]:py-0.5">
       <div className="relative w-24 h-24 [@media(max-height:800px)]:w-14 [@media(max-height:800px)]:h-14 flex items-center justify-center">
-        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_cubic-bezier(0.4,0,0.6,1)_infinite]`} />
-        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_cubic-bezier(0.4,0,0.6,1)_infinite]`} style={{ animationDelay: '1.1s' }} />
+        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_var(--ease-spring)_infinite]`} />
+        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_var(--ease-spring)_infinite]`} style={{ animationDelay: '1.1s' }} />
         <div className={`relative w-16 h-16 [@media(max-height:800px)]:w-10 [@media(max-height:800px)]:h-10 rounded-full border flex items-center justify-center ${core}`}>
           {specialMode
             ? <ShieldAlert size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={2} />

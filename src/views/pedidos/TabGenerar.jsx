@@ -64,7 +64,7 @@ const SUC_ANIM_CSS = `
   70%  { transform: scale(0.96); }
   100% { transform: scale(1); }
 }
-.suc-pop { animation: suc-pop 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+.suc-pop { animation: suc-pop 0.28s var(--ease-spring) both; }
 `;
 
 // ── Main component ───────────────────────────────────────────────────────────

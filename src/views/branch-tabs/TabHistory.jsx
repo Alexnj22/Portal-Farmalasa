@@ -503,7 +503,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                             <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
                                         </div>
 
-                                        <div className={`grid transition-all duration-[var(--dur-lento)] ease-[cubic-bezier(0.4,0,0.2,1)] ${isYearOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                        <div className={`grid transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isYearOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                                             <div className={`overflow-hidden transition-all duration-[var(--dur-lento)] ${isYearOpen ? 'px-2 -mx-2 pb-2 -mb-2' : 'px-0 mx-0 pb-0 mb-0'}`}>
 
                                                 {yearGroup.months.map((monthGroup) => {
@@ -522,7 +522,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                 <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
                                                             </div>
 
-                                                            <div className={`grid transition-all duration-[var(--dur-lento)] ease-[cubic-bezier(0.4,0,0.2,1)] ${isMonthOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                                            <div className={`grid transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isMonthOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                                                                 <div className={`overflow-hidden transition-all duration-[var(--dur-lento)] ${isMonthOpen ? 'px-6 -mx-6 pb-8 -mb-8 pt-2 -mt-2' : 'px-0 mx-0 pb-0 mb-0 pt-0 mt-0'}`}>
                                                                     <div className="space-y-4 py-1">
                                                                         {monthGroup.events.map((item) => {

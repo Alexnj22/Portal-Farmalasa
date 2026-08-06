@@ -1813,6 +1813,78 @@ function scanFile(path) {
     }
   }
 
+  // ── Categoría `reloj-a-mano` (PLAN-MATERIALES §7, §8.2) ───────────────────
+  // Una duración o una curva escrita literal en JSX en vez de salir del reloj.
+  //
+  // Nace BLOQUEANTE y sin baseline porque la fase C dejó los `duration-N` en
+  // CERO: 468 usos tokenizados, incluida una cola de cinco valores —75, 100,
+  // 250, 400, 600— que la tabla del plan nunca listó. El portal no usaba seis
+  // duraciones, usaba once. Un gate que arranca con deuda no protege nada:
+  // protege cuando el número que vigila es 0 y cualquier reincidencia lo rompe.
+  //
+  // La regla para elegir escalón, escrita para no volver a decidirla: al MÁS
+  // CERCANO, y los empates BAJAN — más rápido se siente mejor que más lento.
+  if (!hasException(path, 'reloj-a-mano') && /\.jsx$/.test(path)) {
+    // `:` cuenta como delimitador previo: sin eso el detector es ciego a todo
+    // `duration-*` con variante (`md:`, `group-hover:`, `[&_svg]:`), que fue
+    // exactamente cómo se escaparon dos en la migración.
+    for (const [re, label] of [
+      [/(^|[\s"'`{:])duration-\d+(?![\d[])/g, 'duración literal — sale del reloj (`duration-[var(--dur-*)]`)'],
+      [/cubic-bezier\(/g, 'curva literal — sale de `--ease-spring` / `--ease-out`'],
+      // Sólo `transitionDuration`: una TRANSICIÓN es interacción y sale del
+      // reloj. `animationDuration` NO se mira — los 24 que había son bucles
+      // ambientales (shimmer a 4s, blobs escalonados a 2/3/5s) y su período no
+      // es una duración de interacción. Meterlos en la escala haría que los
+      // tres blobs derivaran al unísono, que es exactamente lo que el
+      // escalonado evita: sería usar el reloj para romper el diseño.
+      [/transitionDuration:\s*['"`]?\d/g, 'duración de transición literal en estilo inline'],
+    ]) {
+      let m;
+      while ((m = re.exec(text))) {
+        findings.push({
+          line: text.slice(0, m.index).split('\n').length,
+          category: 'reloj-a-mano', label,
+          text: m[0].trim().slice(0, 60),
+        });
+      }
+    }
+  }
+
+  // ── Categoría `puntero-lista` (PLAN-MATERIALES §6) ────────────────────────
+  // Un handler de puntero que recorre la lista o mide por evento.
+  //
+  // Es un gate PREVENTIVO: hoy no hay ninguna utilidad de seguimiento del
+  // puntero, y la versión ingenua es la primera que uno escribe. Las tres
+  // reglas de §6: tocar sólo el elemento bajo el cursor, cachear el rect e
+  // invalidarlo en scroll/resize, y throttlear a un rAF — los `pointermove`
+  // llegan más seguido que los cuadros.
+  if (!hasException(path, 'puntero-lista') && /\.jsx$/.test(path)) {
+    // Sólo donde el CUERPO está ahí mismo: `onPointerMove={(e) => {…}}` o
+    // `addEventListener('pointermove', e => {…})`. La primera versión miraba
+    // cualquier mención y daba cuatro falsos positivos — tres eran
+    // `removeEventListener` de limpieza y el otro una prop que apunta a un
+    // handler definido veinte líneas más arriba. Un detector que mira la
+    // REFERENCIA en vez del cuerpo no está midiendo lo que cree medir: acusa
+    // al que desmonta el listener igual que al que lo escribe mal.
+    const PTR = /(?:onPointerMove|onMouseMove)\s*=\s*\{\s*(?:\(|[A-Za-z_$]+\s*=>)|addEventListener\(\s*['"`](?:pointermove|mousemove)['"`]\s*,\s*(?:\(|[A-Za-z_$]+\s*=>)/g;
+    let m;
+    while ((m = PTR.exec(text))) {
+      // el cuerpo empieza en el match: una arrow function normal entra en 600
+      const cuerpo = text.slice(m.index, m.index + 600);
+      const pecado = /getBoundingClientRect\s*\(/.test(cuerpo) ? 'mide el rect por evento (§6.2: cachearlo)'
+        : /querySelectorAll|\.forEach\s*\(|\.map\s*\(/.test(cuerpo) ? 'recorre una lista por evento (§6.1: sólo el elemento bajo el cursor)'
+        : null;
+      if (pecado && !/requestAnimationFrame/.test(cuerpo)) {
+        findings.push({
+          line: text.slice(0, m.index).split('\n').length,
+          category: 'puntero-lista',
+          label: `handler de puntero que ${pecado}`,
+          text: m[0],
+        });
+      }
+    }
+  }
+
   if (!hasException(path, 'copy-vacio')) {
     // Se recorre el texto completo, no línea por línea: un `<EmptyState>` suele
     // venir partido en varias líneas y los atributos hay que leerlos del bloque.

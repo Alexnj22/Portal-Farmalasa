@@ -274,12 +274,29 @@ function PanelTraslados({ onCambio }) {
 
     return (
         <div className="flex flex-col gap-4 flex-1 min-h-0">
+            {/* El encabezado NO es decoración: sin él el modal se abre en una
+                caja con un mensaje suelto y no dice qué se abrió. Los otros
+                widgets de la familia se explican solos por su contenido —cinco
+                tarjetas rotuladas, un buscador—; este puede estar vacío, y un
+                vacío sin título no se entiende. Visto en el navegador. */}
+            <div className="flex items-center gap-2.5 shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
+                    <ArrowLeftRight size={16} strokeWidth={2} className="text-brand-text" />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-body-sm font-black text-content leading-tight">Traslados entre Salas</p>
+                    <p className="text-micro text-content-3 mt-0.5">
+                        Lo que te piden de tu sala y lo que viene en camino
+                    </p>
+                </div>
+            </div>
+
             {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
             {cargando && <SkeletonText lines={3} />}
 
             {vacio && (
-                <div className="flex flex-col items-center justify-center flex-1 gap-2 py-10">
+                <div className="flex flex-col items-center justify-center flex-1 gap-2 py-8">
                     <CheckCircle2 size={28} strokeWidth={1.5} className="text-content-3" />
                     <p className="text-label font-semibold text-content-3 text-center leading-snug">
                         Nada por confirmar<br />ni por recibir
@@ -331,9 +348,12 @@ export default function WidgetTransferRequests() {
             etiquetaPendientesPlural="te piden"
             vacio="Nada pendiente"
             tono="brand"
+            maxWidth="max-w-lg"
         >
+            {/* Sin `min-h`: el modal se abría como una caja de 20rem casi vacía
+                cuando no había nada que hacer. Que crezca con lo que tiene. */}
             {() => (
-                <div className="p-5 max-h-[80dvh] min-h-[20rem] flex flex-col overflow-y-auto">
+                <div className="p-5 max-h-[80dvh] flex flex-col overflow-y-auto">
                     <PanelTraslados onCambio={contar} />
                 </div>
             )}

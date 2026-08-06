@@ -152,6 +152,60 @@ if (usadasSinDeclarar.length) {
   });
 }
 
+// ── Baldosas del tablero que no viven en ninguna pestaña ───────────────────
+// Es la misma falla que `declaradasSinUso` con otro disfraz, y por eso vive
+// acá: el permiso existe, el widget existe, el render existe — pero
+// `TAB_WIDGETS` decide en qué pestaña aparece cada uno, y un id que no está en
+// ninguna **no se ve nunca**, ni en el tablero ni en Personalizar. No hay
+// error, no hay hueco: simplemente no existe.
+//
+// Pasó dos veces sin que nada avisara (`traslados` y `vendedores`, 2026-08-06)
+// y las dos se descubrieron abriendo el navegador. Con el gate, se descubre
+// antes de commitear.
+const DASHBOARD = 'src/views/DashboardView.jsx';
+const dashTxt = fuentes.get(DASHBOARD) ?? (() => {
+  try { return readFileSync(join(RAIZ, DASHBOARD), 'utf8'); } catch { return ''; }
+})();
+if (dashTxt) {
+  // Los ids del registro de widgets.
+  const defsBloque = dashTxt.match(/const WIDGET_DEFS\s*=\s*\[([\s\S]*?)\n\];/)?.[1] ?? '';
+  const idsDefinidos = [...defsBloque.matchAll(/\bid:\s*'([a-z0-9_]+)'/g)].map(m => m[1]);
+  // Los ids que TAB_WIDGETS reparte por pestaña. `general` puede estar derivado
+  // (un getter sobre WIDGET_DEFS) — en ese caso cubre todo y no hay nada que
+  // buscar; si vuelve a ser una lista literal, sus ids se leen igual que los de
+  // las otras pestañas.
+  const tabsBloque = dashTxt.match(/const TAB_WIDGETS\s*=\s*\{([\s\S]*?)\n\};/)?.[1] ?? '';
+  const generalDerivada = /get\s+general\s*\(\)/.test(tabsBloque);
+  const idsEnPestanas = new Set([...tabsBloque.matchAll(/'([a-z0-9_]+)'/g)].map(m => m[1]));
+
+  // Una pestaña puede apuntar a una constante en vez de traer la lista adentro
+  // (`general: ALL_WIDGET_IDS`). Sin seguir esa indirección, sus ids se leen
+  // como ausentes y el gate acusa widgets que sí están — probado: reportaba
+  // `branches`. Se resuelve leyendo el array de esa constante.
+  for (const [, ident] of tabsBloque.matchAll(/^\s*\w+:\s*([A-Z][A-Z0-9_]+)\s*,/gm)) {
+    const arr = dashTxt.match(new RegExp(`const ${ident}\\s*=\\s*\\[([\\s\\S]*?)\\];`))?.[1] ?? '';
+    for (const [, id] of arr.matchAll(/'([a-z0-9_]+)'/g)) idsEnPestanas.add(id);
+  }
+
+  const huerfanos = generalDerivada ? [] : idsDefinidos.filter(id => !idsEnPestanas.has(id));
+  if (huerfanos.length) {
+    problemas.push({
+      titulo: 'Widgets del tablero que no están en NINGUNA pestaña',
+      detalle: 'Registrados en WIDGET_DEFS y ausentes de TAB_WIDGETS: no se ven ni en el tablero ni en Personalizar.',
+      items: huerfanos,
+    });
+  }
+
+  const inventados = [...idsEnPestanas].filter(id => !idsDefinidos.includes(id));
+  if (inventados.length) {
+    problemas.push({
+      titulo: 'Pestañas del tablero que reparten un widget inexistente',
+      detalle: 'Ids en TAB_WIDGETS que WIDGET_DEFS no define — quedan reservando un hueco que nunca se llena.',
+      items: inventados,
+    });
+  }
+}
+
 const capsQueParecenTab = subs.filter(s => s.tipo === 'cap' && s.key.includes('_tab_'));
 if (capsQueParecenTab.length) {
   problemas.push({

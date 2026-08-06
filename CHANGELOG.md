@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.458.0 — El widget que no existía en ninguna pestaña, y el gate que lo habría dicho
+
+Primera revisión en el navegador de las pantallas de Traslados. Los tres
+hallazgos aparecieron al abrirla, no leyendo el código — y dos llevaban rato
+escondidos.
+
+**La baldosa no se veía en ningún lado.** Estaba registrada, tenía su permiso y
+su render, pero el tablero decide qué mostrar con una **segunda lista escrita a
+mano**, y ahí no estaba. Un id que falta en esa lista no da error ni deja hueco:
+el widget simplemente no existe, ni en el tablero ni en Personalizar. Ahora la
+pestaña General se **deriva** del registro, así que no puede volver a
+desincronizarse.
+
+**Y no era el único.** «Quién está vendiendo» tenía el mismo problema desde
+antes — y encima escondía un segundo bug: su componente estaba **usado y nunca
+importado**. Al hacerlo visible, el tablero entero se caía a la pantalla de
+error. Los dos bugs se tapaban entre sí: como el widget no estaba en ninguna
+pestaña, el crash no se disparaba nunca. Ambos corregidos.
+
+**El gate que lo habría dicho.** `npm run gate:permisos` ahora también cruza los
+widgets del tablero contra las pestañas que los reparten, en las dos
+direcciones: registrado y sin pestaña, o repartido y sin registrar. Probado
+contra el estado roto —señala exactamente `traslados` y `vendedores`, sin falsos
+positivos— y contra el sano, donde pasa.
+
+**El modal de Traslados no decía qué era.** Se abría en una caja grande con un
+mensaje suelto en el medio. Los otros widgets de la familia se explican solos
+por su contenido; este puede estar vacío, y un vacío sin título no se entiende.
+Ahora lleva encabezado y crece con lo que tiene.
+
 ## v2.457.0 — La matriz de cinco perfiles, y las burbujas del login
 
 Fases **4.3** y **5** de `PLAN-MOBILE-2026-07.md`. La matriz corre con

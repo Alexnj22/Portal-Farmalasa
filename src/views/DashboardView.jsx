@@ -30,6 +30,10 @@ import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import WidgetInventoryMovement from './dashboard/WidgetInventoryMovement';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
+// Estaba USADO y sin importar: el componente existe, su rama de render está
+// completa y su permiso registrado, pero faltaba esta línea. No se veía porque
+// `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
+import WidgetVendedores from './dashboard/WidgetVendedores';
 import { SALAS_VENTA } from './metas/metasUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -139,12 +143,22 @@ const ERP_UBICACION_POR_SUCURSAL = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 1, 7: 8 };
 // Metas, que es su dueño; acá solo se consume.
 const META_SALA_IDS = SALAS_VENTA;
 
-const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','minmax_req','inv_movement','meta_sala'];
+// ⚠️ `general` NO se escribe a mano — se deriva de `WIDGET_DEFS` (más abajo).
+//
+// Era una lista paralela y se desincronizó dos veces sin que nada avisara: un
+// widget registrado, con su permiso y su render, que no estaba acá **no aparece
+// en ninguna pestaña ni en el panel de Personalizar**. No hay error, no hay
+// hueco visible: simplemente no existe. Así se perdieron «Traslados entre
+// Salas» y «Quién está vendiendo», y los dos se descubrieron abriendo el
+// tablero, no leyendo el código.
+//
+// Las otras tres pestañas SÍ son listas a mano, porque son una curaduría: qué
+// mirar cuando uno entra a Comercial. Ahí la lista corta es el punto.
 const TAB_WIDGETS = {
-  general:   ALL_WIDGET_IDS,
-  comercial: ['kpi','meta_sala','cotizaciones','facturacion','top_productos','sales'],
+  get general() { return WIDGET_DEFS.map(w => w.id); },
+  comercial: ['kpi','meta_sala','cotizaciones','facturacion','top_productos','sales','vendedores'],
   rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
-  operacion: ['inv_search','annulment_req','minmax_req','inv_movement'],
+  operacion: ['inv_search','annulment_req','minmax_req','inv_movement','traslados'],
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -456,7 +470,7 @@ const initTabLayouts = (userId) => {
       if (saved) {
         const p = JSON.parse(saved);
         const vigentes = Object.fromEntries(
-          Object.entries(p).filter(([id]) => ALL_WIDGET_IDS.includes(id))
+          Object.entries(p).filter(([id]) => TAB_WIDGETS.general.includes(id))
         );
         if (Object.keys(vigentes).length) { result[tab.id] = vigentes; return; }
       }

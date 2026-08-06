@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.450.1 — Traslados entre salas: el permiso propio y el aprobador por sala de origen
+
+Pasos 2 y 3 de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Todavía no hay pantalla:
+esto es la base sobre la que se apoya.
+
+**La primera solicitud donde quien aprueba no es un rol fijo.** En una carga o
+un descarte, quien pide es quien tiene el problema y Supervisión decide. En un
+traslado quien pide es la sala que **no** tiene, y la única que puede decir «sí,
+me sobra» es la que **sí** tiene. Así que el aprobador se resuelve en la base de
+datos a partir del dato de la solicitud, y el que mande el navegador se
+descarta — acá dejarlo del lado del cliente sería dejar elegir quién aprueba.
+
+**La cascada, y el hueco que tapa.** El aviso va a quien está en turno en la
+sala de origen. Pero Horarios y Turnos está a medio cargar: **8 de 50 activos**
+tienen horario publicado esta semana, solo Salud 3 tiene su sala completa, y La
+Popular, Salud 2, Salud 4 y Salud 5 no tienen a nadie. Sin respaldo, una
+solicitud a esas cuatro salas moría en silencio. Son tres escalones —turno →
+jefatura de la sala → Supervisión— y **el que resolvió queda escrito**: cuando
+los horarios estén cargados, `escalon_aviso <> 'TURNO'` es exactamente la lista
+de salas a las que les falta.
+
+**El primer aviso que le llega a más de una persona.** Un traslado se le pide a
+una sala, no a alguien: quien esté ahí atiende. El reparto sale de
+`metadata.destinatarios` con respaldo en el aprobador, así que los quince tipos
+anteriores siguen dando exactamente una notificación. Y cuando una persona
+decide, a las otras se les cierra el aviso en la misma transacción.
+
+**Un permiso propio, `Traslados entre Salas`.** El módulo de Solicitudes es
+«permisos, vacaciones e incapacidades»: darle aprobación ahí a una jefatura de
+sala para que pueda confirmar un traslado le entregaría de arrastre las
+vacaciones y los anticipos de su gente. Confirma la jefatura siempre, y el
+dependiente solo si estaba en turno cuando entró la solicitud.
+
+**Dos cosas que aparecieron al probar y no al leer.** El RLS resolvía la
+visibilidad por la sala de quien pide, y en un traslado son dos salas distintas
+por definición: el destinatario del aviso abría el enlace y no encontraba nada
+—y cero filas no falla, así que se lee como «ya lo tomaron»—. Y la cascada
+avisaba a cualquiera que estuviera en turno, incluida una persona de Canales
+Digitales cuyo rol no tiene el permiso: recibía el aviso y llegaba a una
+pantalla vacía. Hoy quien recibe el aviso ve la solicitud y quien no la recibe
+no la ve, verificado impersonando a seis personas con la transacción revertida.
+
 ## v2.450.0 — Las áreas seguras se vuelven medibles, y el toque deja de depender del destello
 
 Fases **3.1** y **3.4** de `PLAN-MOBILE-2026-07.md`.

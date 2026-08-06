@@ -18,6 +18,11 @@ que se ve**. Los números están verificados contra la base; el render no.
 DOM pintado más `title`/`aria-label`/`placeholder`, y confirmar que ningún texto
 nombra el sistema de origen.
 
+**Y lo segundo, que tiene fecha de vencimiento:** las **13 facturas de agosto sin
+sello** (§8.2). Si obtienen el suyo antes de que agosto se declare, no hay
+exposición de ningún tipo. Después, sí. Ver §7 y §8 completos — el incidente de
+los sellos es lo más denso de este documento.
+
 ---
 
 ## 1. El cambio de encuadre más importante de la sesión
@@ -498,3 +503,72 @@ invisibles, y sólo aparecieron porque se buscó a propósito.
 **Las 13 de agosto todavía están a tiempo**: si obtienen su sello antes de que se
 declare agosto, no hay modificatoria, no hay cadena y no hay exposición de ningún
 tipo. Ese es el caso en que la alerta paga sola.
+
+---
+
+## 8. Acciones pendientes del incidente de sellos
+
+Alex pidió **sólo documentar** el 2026-08-06 — nada de esto está construido.
+
+### 8.1 · Las tres facturas colgadas desde 2025 · **nadie las ha tocado**
+
+| Venta | Sucursal | Total | IVA | Días |
+|---|---|---|---|---|
+| 2025-05-16 | 4 | $14.00 | $1.61 | 447 (`undefined`) |
+| 2025-08-29 | 25 | $7.45 | $0.86 | 342 (NULL) |
+| 2025-08-29 | 27 | $30.55 | $3.51 | 342 (NULL) |
+
+Hay que decidir qué se hace: ¿se retransmiten como las 22, se invalidan, o se
+dejan? **No decidir también es una decisión** — llevan más de un año así.
+
+### 8.2 · Las 13 de agosto 2026 · **la ventana se cierra con el mes**
+
+$172.80 · $19.89 de IVA · sucursales 2, 4, 27, 28, 29 · del 1 al 5 de agosto.
+Con sello antes de que se declare agosto: **cero exposición**. Después: la
+cadena de modificatorias del §7.bis.
+
+### 8.3 · La alerta — especificación, para que no haya que volver a derivarla
+
+**Qué vigilar.** `sales_invoices` con `estado = 'FINALIZADA'` y sello inválido.
+Son **dos formas distintas** y la segunda es la peligrosa:
+
+- `recibido_mh IS NULL` — no llegó respuesta. Se ve como lo que es.
+- `recibido_mh = 'undefined'` (o cualquier largo ≠ 40) — **parece que hay
+  sello**. Es la forma que produjo el incidente de mayo y la que engañó al
+  módulo de facturación en su momento (ver el comentario de
+  `src/data/facturacion.js`: `IS NOT NULL` **no** significa «tiene sello»).
+
+**Dos disparadores, no uno:**
+
+1. **Sello pendiente por más de N días.** Sugerido: 2 días hábiles para avisar, y
+   un aviso más fuerte cuando falten pocos días para el cierre del mes — que es
+   el punto donde el problema pasa de barato a caro.
+2. **Un sello que aterriza sobre un mes ya declarado.** Consulta al
+   `sales_invoice_changelog`: `campo = 'recibido_mh'`, `valor_nuevo` de 40
+   caracteres, y `detected_at` en un mes posterior al de `sales_invoices.fecha`.
+   Ese es el aviso de «hay que modificar una declaración», y es el que hubiera
+   cantado el 2 de agosto.
+
+**A quién.** El rol **«Sistema — Alertas Técnicas»** ya existe y ya está asignado;
+es el mismo que usa el toast de sync (ver
+[[project_auditoria_notificaciones_2026_08_01]]). No hay que inventar destinatario.
+
+**Dónde.** `check-sales-reconciliation` **ya detecta** la causa `sin_sello`, pero
+la trata como transitoria: *«se corrige solo cuando el sello llega»*. El hueco es
+ese «se corrige solo» — a los 447 días reporta igual que a las 5 horas. Lo más
+barato es agregarle el umbral ahí, no crear una función nueva.
+
+**Por qué vale la pena.** El incidente de mayo estuvo **87 días invisible** y sólo
+apareció porque se buscó a propósito. Las tres de 2025 llevan más de un año. La
+alerta las hubiera cantado el día siguiente, cuando arreglarlo era gratis.
+
+### 8.4 · Lo que hay que llevarle a la contadora
+
+1. ¿Se hizo evento de contingencia el 2 de agosto? **(Respuesta: no — fue manual,
+   una por una.)** Con eso, el literal en juego es el g) del Art. 239-A.
+2. Con la evidencia del `undefined` y del `BODY VACIO`: ¿se sostiene la fuerza
+   mayor por falla de la plataforma?
+3. ¿Conviene subsanar voluntariamente **ya**, para asegurar el atenuante del 75%
+   del Art. 261 antes de que Hacienda requiera algo?
+4. Las modificatorias de mayo ($27.23) y junio ($5.29).
+5. Qué se hace con las tres de 2025 (§8.1).

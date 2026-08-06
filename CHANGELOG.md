@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.460.2 — El modal del buscador no scrolleaba: la trampa de min-h-0
+
+Reportado por el usuario con una captura: la lista se cortaba al pie del modal y
+no había forma de bajar.
+
+Medido en el navegador en vez de adivinado: la caja que envuelve la lista tenía
+**708 píxeles de alto contra 1.134 de contenido**, y estaba en `overflow-hidden`
+— recortaba sin dejar scrollear. Y el scroller que el panel ya trae adentro
+nunca se activaba: su `h-full` no resuelve contra un padre de alto automático,
+así que crecía hasta el contenido entero y no le quedaba nada que desplazar.
+
+Es la trampa de siempre con flexbox: **un hijo flex no baja de su contenido sin
+`min-h-0`**, así que el desbordamiento sube por la cadena hasta que alguien lo
+recorta — y el que recorta no es el que scrollea. Corregido en los tres
+eslabones. Verificado midiendo: 940 de alto contra 2.850 de contenido, y el
+desplazamiento responde.
+
 ## v2.460.1 — Los fragmentos que escondían las filas, y la identidad de Ventas
 
 **Vistas que rinden ficha en el teléfono: 2 → 5 de 9 medidas**, y entre ellas

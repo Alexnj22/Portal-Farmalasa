@@ -563,7 +563,7 @@ function PanelInventario({ query = '', onQueryChange }) {
     );
 
     return (
-      <div className="flex flex-col gap-2.5 h-full">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0">
         <div className="flex items-center gap-2.5 shrink-0">
           <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={() => setDrillProduct(null)} />
 
@@ -593,7 +593,7 @@ function PanelInventario({ query = '', onQueryChange }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {drillBranches.length === 0 ? (
             <EmptyState compact icon={Package} title="Sin stock en ninguna sucursal" />
           ) : (
@@ -662,12 +662,12 @@ function PanelInventario({ query = '', onQueryChange }) {
   const emptyResults = results !== null && results.length === 0;
 
   return (
-    <div className="flex flex-col gap-2.5 h-full">
+    <div className="flex flex-col gap-2.5 flex-1 min-h-0">
 
       {error && <p className="shrink-0 px-1 text-label text-danger-text font-medium">{error}</p>}
 
       {/* Results area */}
-      <div className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Skeleton */}
         {loading && <><SkeletonSection rows={3} /><SkeletonSection rows={2} /></>}
@@ -945,7 +945,15 @@ export default function WidgetInventorySearch() {
             placeholder="Buscar por nombre o principio activo..."
           />
 
-          <div className="flex-1 min-h-[18rem] overflow-hidden">
+          {/* `min-h-0` y NO `overflow-hidden`.
+              Medido el 2026-08-06: con `overflow-hidden` esta caja quedaba en
+              708px con 1134 de contenido —lo recortaba y no dejaba scrollear— y
+              el scroller propio del panel nunca se activaba, porque su `h-full`
+              no resuelve contra un padre de alto automático y crecía hasta el
+              contenido entero. Es la trampa de siempre: un hijo flex no baja de
+              su contenido sin `min-h-0`, así que el scroll se va hacia arriba en
+              la cadena y no lo agarra nadie. */}
+          <div className="flex-1 min-h-0 flex flex-col">
             <PanelInventario query={q} onQueryChange={setQ} />
           </div>
         </div>

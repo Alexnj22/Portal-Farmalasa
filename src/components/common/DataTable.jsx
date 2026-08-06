@@ -393,12 +393,27 @@ function analizarFilas(children, columns) {
   const filas = [];
   let descartadas = 0;
   let desalineada = false;
-  React.Children.toArray(children).forEach((hijo, i) => {
-    if (!React.isValidElement(hijo) || hijo.type !== DataRow) { descartadas++; return; }
+
+  // Se atraviesan los FRAGMENTOS, y no es un detalle: diez vistas envuelven cada
+  // fila en `<React.Fragment key={id}>` para poder colgarle al lado su `<tr>` de
+  // detalle expandido. La primera versión miraba sólo el tipo del hijo directo,
+  // así que en esas vistas descartaba TODAS las filas y caía a la tabla sin
+  // decir por qué — Ventas, que es la pantalla que originó este trabajo, era una
+  // de ellas. El fragmento no es una fila: es el envoltorio de una.
+  const tomar = (hijo, clave) => {
+    if (!React.isValidElement(hijo)) { descartadas++; return; }
+    if (hijo.type === React.Fragment) {
+      React.Children.toArray(hijo.props.children)
+        .forEach(nieto => tomar(nieto, hijo.key ?? clave));
+      return;
+    }
+    if (hijo.type !== DataRow) { descartadas++; return; }
     const celdas = React.Children.toArray(hijo.props.children);
     if (celdas.length !== columns.length) { desalineada = true; return; }
-    filas.push({ clave: hijo.key ?? i, onClick: hijo.props.onClick, celdas });
-  });
+    filas.push({ clave: hijo.key ?? clave, onClick: hijo.props.onClick, celdas });
+  };
+
+  React.Children.toArray(children).forEach((hijo, i) => tomar(hijo, i));
   return { filas, descartadas, desalineada };
 }
 

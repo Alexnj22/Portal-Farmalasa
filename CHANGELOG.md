@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.460.1 — Los fragmentos que escondían las filas, y la identidad de Ventas
+
+**Vistas que rinden ficha en el teléfono: 2 → 5 de 9 medidas**, y entre ellas
+Ventas, que es la pantalla que originó todo este trabajo.
+
+**El clasificador miraba sólo el hijo directo, y diez vistas envuelven cada fila
+en un fragmento.** `<React.Fragment key={id}>` es lo que usan para colgarle a la
+fila su `<tr>` de detalle expandido. Como el fragmento no es un `DataRow`, se
+descartaba entero: en esas vistas se descartaban TODAS las filas y `DataTable`
+caía a la tabla sin decir por qué. Ahora se atraviesa: el fragmento no es una
+fila, es el envoltorio de una.
+
+**Y en Ventas la identidad estaba mal, lo cual sólo se ve mirando.** La
+inferencia toma la primera columna, y ahí esa es la fecha: la ficha decía
+«2026-08-06 · 16:56 · $1.75», que identifica el momento y no la venta. A una
+lista de ventas se entra buscando a quién se le vendió. Con
+`movil={{ identidad: 'cliente', ancla: 'total' }}` la ficha pasa a decir
+**«MELVIN JOSUE CASTRO DELGADO · $4.00»**, que es el par del mockup.
+
+*Una trampa de medición, anotada porque casi me hace revertir un cambio bueno:*
+la primera corrida contra el build dijo que Clientes había perdido sus fichas.
+No era cierto — mientras la vista carga, `DataTable` pinta el esqueleto de
+tabla, y la sonda lo leyó como «cayó a la tabla». En el servidor de desarrollo,
+con la carga terminada, Clientes rendía sus 26 fichas. La verificación buena
+espera a que el esqueleto se vaya, no un número fijo de segundos.
+
+Medido en WebKit iPhone 13, con la carga terminada:
+
+```
+ventas       50 fichas · sin tabla · scroll horizontal de página 0
+clientes     25 fichas · sin tabla · 0
+pedidos      25 fichas · sin tabla · 0
+productos    25 fichas · sin tabla · 0
+cotizaciones  1 ficha   · sin tabla · 0
+compras       cae a la tabla   personal   cae a la tabla
+escritorio   Ventas 8 col / 50 filas · Clientes 7 col / 25 filas — sin cambios
+```
+
 ## v2.460.0 — El buscador de inventario como modal, y pedir desde los resultados
 
 Todo esto sale de probar las pantallas en el navegador. Ninguno de los cinco

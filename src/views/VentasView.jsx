@@ -669,6 +669,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     { key: 'metodo',     label: 'Método pago',  sortable: true, hideBelow: 'sm' },
                     { key: 'total',      label: 'Total',        sortable: true, align: 'right' },
                 ]}
+                /* La inferencia toma la PRIMERA columna como identidad, y acá esa
+                   es la fecha: la ficha decía «2026-08-06 · 16:56 · $1.75», que
+                   identifica el momento y no la venta. A una lista de ventas se
+                   entra buscando a quién se le vendió. El ancla ya la acertaba
+                   sola —Total es la única alineada a la derecha— pero se declara
+                   junto a la identidad para que se lea el par completo. */
+                movil={{ identidad: 'cliente', ancla: 'total' }}
                 sortKey={sortCol}
                 sortDir={sortDir}
                 onSort={handleSort}

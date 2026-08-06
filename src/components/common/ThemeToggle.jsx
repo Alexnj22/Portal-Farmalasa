@@ -26,18 +26,18 @@ const inactiveTabCls = 'bg-transparent text-content-3 hover:bg-surface-tab-activ
 
 // Variante "dark": para cuando el picker vive dentro de un host siempre-
 // oscuro (SidebarSettingsMenu) en vez de un data-surface="dropdown"
-// reactivo al tema — mismas clases bespoke bg-white/N que el resto del
+// reactivo al tema — mismas clases bespoke bg-[rgb(var(--sidebar-ink))]/N que el resto del
 // sidebar, no tokens (que resolverían claros y quedarían ilegibles).
 const activeTabClsDark = 'bg-surface-card text-slate-900 shadow-md scale-[1.02]';
-const inactiveTabClsDark = 'bg-transparent text-white/50 hover:bg-white/[0.08] hover:text-white/85';
+const inactiveTabClsDark = 'bg-transparent text-[rgb(var(--sidebar-ink)/0.5)] hover:bg-[rgb(var(--sidebar-ink)/0.08)] hover:text-[rgb(var(--sidebar-ink)/0.85)]';
 
 function SegmentedRow({ label, options, activeKey, onPick, dark }) {
   return (
     <div>
-      <p className={`text-[9.5px] font-black uppercase tracking-widest px-0.5 mb-1.5 ${dark ? 'text-white/40' : 'text-content-3'}`}>{label}</p>
+      <p className={`text-[9.5px] font-black uppercase tracking-widest px-0.5 mb-1.5 ${dark ? 'text-[rgb(var(--sidebar-ink)/0.4)]' : 'text-content-3'}`}>{label}</p>
       <div
         {...(dark ? {} : { 'data-surface': 'tab-track' })}
-        className={`flex items-center gap-1 p-1 rounded-full ${dark ? 'bg-white/[0.06] border border-white/[0.09]' : ''}`}
+        className={`flex items-center gap-1 p-1 rounded-full ${dark ? 'bg-[rgb(var(--sidebar-ink)/0.06)] border border-[rgb(var(--sidebar-ink)/0.09)]' : ''}`}
       >
         {Object.entries(options).map(([key, { label: optLabel, Icon }]) => (
           <button
@@ -186,8 +186,8 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
           className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
             border transition-colors duration-[var(--dur-fast)] ${className}
             ${isOpen
-              ? 'bg-white/12 border-white/20 text-white/90'
-              : 'bg-white/6 border-white/12 text-white/60 hover:text-white/90 hover:bg-white/10'}`}
+              ? 'bg-[rgb(var(--sidebar-ink)/0.12)] border-[rgb(var(--sidebar-ink)/0.2)] text-[rgb(var(--sidebar-ink)/0.9)]'
+              : 'bg-[rgb(var(--sidebar-ink)/0.06)] border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.9)] hover:bg-[rgb(var(--sidebar-ink)/0.1)]'}`}
         >
           <StyleIcon size={16} strokeWidth={2} />
         </button>
@@ -211,7 +211,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
         className={className}
         trailing={
           <ChevronDown size={13} strokeWidth={2.5}
-            className={`text-white/35 transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180' : ''}`} />
+            className={`text-[rgb(var(--sidebar-ink)/0.35)] transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180' : ''}`} />
         }
       />
       {createPortal(<AnimatePresence>{isOpen ? popoverContent : null}</AnimatePresence>, document.body)}

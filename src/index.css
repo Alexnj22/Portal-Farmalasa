@@ -490,13 +490,21 @@ thead.sticky {
   --sidebar-tint:     30 41 80;
   --sidebar-ink:      15 23 42;
   --sidebar-fill:     0.15;
-  --sidebar-pop-fill: 0.88;
+  /* §12.5/§12.7 · El flotante tiene TINTE PROPIO, no el del panel a otra alfa.
+     Compartirlo se rompió en cuanto el sidebar dejó de ser siempre-oscuro
+     (§12.1): con `30 41 80` al 15% el panel queda claro y el MISMO tinte al
+     88% queda navy oscuro — o sea un menú oscuro colgando de un panel claro,
+     que es exactamente lo que §12.5 quería evitar. Una perilla que sirve a dos
+     superficies con alfas muy distintas deja de ser una perilla el día que su
+     valor cambia de signo. */
+  --sidebar-pop-tint: 236 234 250;
+  --sidebar-pop-fill: 0.62;
   --sidebar-rim:      0.42;
 
   --sidebar-bg:           rgb(var(--sidebar-tint) / var(--sidebar-fill));
   --sidebar-border:       rgb(255 255 255 / var(--sidebar-rim));
   --sidebar-backdrop:     var(--backdrop-card);
-  --sidebar-pop-bg:       rgb(var(--sidebar-tint) / var(--sidebar-pop-fill));
+  --sidebar-pop-bg:       rgb(var(--sidebar-pop-tint) / var(--sidebar-pop-fill));
   --sidebar-pop-border:   rgb(255 255 255 / var(--sidebar-rim));
   --sidebar-pop-backdrop: var(--sidebar-backdrop);
 
@@ -823,11 +831,24 @@ thead.sticky {
   /* ══ Materiales por tema (§1.7, §1.5, §15.1) ══
      Liquid oscuro hereda los factores de :root; acá va sólo lo que cambia
      de MAGNITUD o de DIRECCIÓN, que es lo que §1.7 encontró clavado. */
-  --lente-top:   .10;
-  --lente-lado:  .07;
-  --lente-bajo:  .04;
+  /* §1.7.bis · EN OSCURO EL LENTE NO EXISTE (corregido 2026-08-05 a reclamo
+     del usuario: «tiene esos brillos blancos, que dijimos que no»).
+     Bajarlo de los absolutos de claro a .10 no alcanzó: medido en la app, el
+     filo superior queda **23 unidades de luminancia** por encima del cuerpo de
+     la tarjeta — se lee como una LÍNEA blanca, no como un lente.
+     Y el motivo es la física de §1.1 leída al revés. Un realce claro necesita
+     un entorno oscuro para leerse *como volumen*; sobre una superficie oscura
+     el entorno ya es oscuro, así que el realce no gana volumen: gana borde.
+     El lente es un fenómeno de tema claro.
+     En oscuro la separación la dan el borde y la sombra — que es exactamente lo
+     que ya estaba escrito para el tooltip en este mismo archivo. */
+  --lente-top:   0;
+  --lente-lado:  0;
+  --lente-bajo:  0;
   --anidada:     rgba(255,255,255,.09);   /* acá el escalón ACLARA */
   --rim-base:    rgba(255,255,255,.10);
+  --sidebar-pop-tint: 10 12 26;
+  --sidebar-pop-fill: 0.66;
   --rim-glint:   #ffffff;
   --rim-bloom:   rgba(190,220,255,.95);
   /* §12.1 · en oscuro el sidebar es el de siempre: tinta blanca y negro al 60% */
@@ -1036,6 +1057,8 @@ thead.sticky {
      NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
   --anidada:      rgba(15,23,42,.09);   /* mismo 9% que Liquid, otra base */
   --rim-base:    rgba(148,163,184,.28);
+  --sidebar-pop-tint: 255 255 255;
+  --sidebar-pop-fill: 1;
   --rim-glint:   rgba(148,163,184,.28);
   --rim-bloom:   transparent;
   --sidebar-ink:      15 23 42;
@@ -1216,6 +1239,8 @@ thead.sticky {
 
   --anidada:      rgba(255,255,255,.09);   /* solid-dark: el escalón ACLARA */
   --rim-base:    rgba(148,163,184,.20);
+  --sidebar-pop-tint: 17 26 46;
+  --sidebar-pop-fill: 1;
   --rim-glint:   rgba(148,163,184,.20);
   --rim-bloom:   transparent;
   --sidebar-tint:     7 3 26;

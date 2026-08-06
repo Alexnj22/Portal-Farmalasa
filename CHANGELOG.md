@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.407.1 — Tres bugs del sidebar: Ajustes, el flotante y los brillos
+
+Los tres los reportó el usuario con capturas, y los tres los introdujo la migración
+del sidebar de v2.401.0.
+
+**1 · «Ajustes» no se veía en Solid ni en Liquid claro.** Su color era **blanco al 80%
+en los tres temas**. La migración tocó `AppLayout`, pero el disparador de Ajustes es un
+`ListRow` con `onDark`, y **ese componente vive en otro archivo** — junto con
+`SidebarSettingsMenu`, `SidebarSyncStatus` y `ThemeToggle`, 44 clases más atadas a
+fondo oscuro que el primer barrido nunca miró. **Migrar «el sidebar» tocando el archivo
+que se llama como el sidebar no migra el sidebar**: la superficie es un componente, su
+contenido son cinco.
+
+**2 · El flotante salía oscuro colgando de un panel claro.** `--sidebar-pop-bg` se
+derivaba del **mismo tinte** que el panel, sólo que al 88%: con `30 41 80` al 15% el
+panel queda claro y ese mismo tinte al 88% queda navy. Ahora el flotante tiene tinte
+propio (§12.5/§12.7). **Una perilla que sirve a dos superficies con alfas muy distintas
+deja de ser una perilla el día que su valor cambia de signo.**
+
+**3 · Los brillos blancos en Liquid oscuro: el lente.** Bajarlo de los absolutos de
+claro a `.10` no alcanzó — medido en la app, el filo superior queda **23 unidades de
+luminancia** por encima del cuerpo de la tarjeta: se lee como una **línea** blanca, no
+como un lente. **En Liquid oscuro el lente pasa a no existir.**
+
+El motivo no es «bajarlo», es la física de §1.1 leída al revés: un realce claro
+necesita un entorno oscuro para leerse **como volumen**; sobre una superficie oscura el
+entorno ya es oscuro, así que el realce no gana volumen, **gana borde**. El lente es un
+fenómeno de tema claro. En oscuro la separación la dan el borde y la sombra — que es
+exactamente lo que este mismo archivo ya tenía escrito para el tooltip.
+
+**Y un daño colateral del migrador, encontrado al buscar el primero:** el regex no
+contemplaba las alfas **entre corchetes**, así que `border-white/[0.07]` quedó como
+`border-[rgb(var(--sidebar-ink))]/[0.07]` — una clase inválida que Tailwind descarta en
+silencio. **30 clases en 4 archivos**, reparadas. Compilaba igual: un borde que
+desaparece no rompe el build.
+
+## v2.407.0 — La anulación completa: ERP y Hacienda, en un solo paso
+
+_(pendiente de redactar)_
+
 ## v2.406.1 — La utilidad del puntero se quedó sin consumidor
 
 **Fase F cerrada sin construirse, y el motivo importa.** Al ir a escribir la utilidad

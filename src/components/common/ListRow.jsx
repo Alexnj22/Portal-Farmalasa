@@ -122,8 +122,8 @@ const ListRow = memo(forwardRef(({
                 ${d.fila}
                 ${onDark
                     ? (active || selected
-                        ? 'bg-white/10 border-white/15 text-white/90'
-                        : `bg-white/5 border-white/[0.08] text-white/80 ${interactiva ? 'hover:bg-white/10 hover:border-white/15' : ''}`)
+                        ? 'bg-[rgb(var(--sidebar-ink)/0.1)] border-[rgb(var(--sidebar-ink)/0.15)] text-[rgb(var(--sidebar-ink)/0.9)]'
+                        : `bg-[rgb(var(--sidebar-ink)/0.05)] border-[rgb(var(--sidebar-ink)/0.08)] text-[rgb(var(--sidebar-ink)/0.8)] ${interactiva ? 'hover:bg-[rgb(var(--sidebar-ink)/0.1)] hover:border-[rgb(var(--sidebar-ink)/0.15)]' : ''}`)
                     : (tone && TONO[tone]
                         ? `${TONO[tone].fila} text-content ${interactiva ? 'hover:brightness-[1.04]' : ''}`
                         : selected
@@ -139,9 +139,9 @@ const ListRow = memo(forwardRef(({
         >
             {(Icono || leading) && (
                 <span className={`${d.caja} shrink-0 ${surface === 'card' ? 'rounded-input' : 'rounded-btn'} border flex items-center justify-center
-                    ${iconBoxClass ?? (onDark ? 'bg-white/10 border-white/[0.08]'
+                    ${iconBoxClass ?? (onDark ? 'bg-[rgb(var(--sidebar-ink)/0.1)] border-[rgb(var(--sidebar-ink)/0.08)]'
                         : (tone && TONO[tone] ? TONO[tone].caja : 'bg-surface-card-hover border-border-card'))}
-                    ${onDark ? 'text-white/70' : (tone && TONO[tone] ? TONO[tone].icono : iconClass)}`}>
+                    ${onDark ? 'text-[rgb(var(--sidebar-ink)/0.7)]' : (tone && TONO[tone] ? TONO[tone].icono : iconClass)}`}>
                     {Icono ? <Icono size={d.icono} strokeWidth={2.5} /> : leading}
                 </span>
             )}
@@ -151,7 +151,7 @@ const ListRow = memo(forwardRef(({
                 largo saca el badge de la derecha fuera del contenedor. */}
             <span className="min-w-0 flex-1">
                 {title && <span className="block text-body-sm font-bold truncate">{title}</span>}
-                {subtitle && <span className={`block text-label font-medium truncate ${onDark ? 'text-white/45' : 'text-content-3'}`}>{subtitle}</span>}
+                {subtitle && <span className={`block text-label font-medium truncate ${onDark ? 'text-[rgb(var(--sidebar-ink)/0.45)]' : 'text-content-3'}`}>{subtitle}</span>}
                 {children}
             </span>
 

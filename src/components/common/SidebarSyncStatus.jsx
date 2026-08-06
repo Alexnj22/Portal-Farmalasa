@@ -56,11 +56,11 @@ export default function SidebarSyncStatus() {
   // Vive sobre fondo siempre-oscuro (sidebar / SidebarSettingsMenu — ambos
   // bespoke, no reaccionan al tema a propósito, ver DESIGN.md §2 "Sidebar:
   // se mantiene oscura e invariante al tema").
-  const cardCls    = 'bg-white/[0.06] border-white/[0.09]';
-  const labelCls   = 'text-white/45';
-  const dimIconCls = 'text-white/30';
-  const dotIdleCls = 'bg-white/15';
-  const timeAgoCls = 'text-white/25';
+  const cardCls    = 'bg-[rgb(var(--sidebar-ink)/0.06)] border-[rgb(var(--sidebar-ink)/0.09)]';
+  const labelCls   = 'text-[rgb(var(--sidebar-ink)/0.45)]';
+  const dimIconCls = 'text-[rgb(var(--sidebar-ink)/0.3)]';
+  const dotIdleCls = 'bg-[rgb(var(--sidebar-ink)/0.15)]';
+  const timeAgoCls = 'text-[rgb(var(--sidebar-ink)/0.25)]';
 
   return (
     <div className="grid grid-cols-2 gap-1.5">
@@ -118,7 +118,7 @@ export default function SidebarSyncStatus() {
             ${bellGranted
               ? 'bg-success/[0.10] border-success/[0.18] cursor-default'
               : bellDenied
-              ? 'bg-white/[0.03] border-white/[0.05] cursor-not-allowed opacity-40'
+              ? 'bg-[rgb(var(--sidebar-ink)/0.03)] border-[rgb(var(--sidebar-ink)/0.05)] cursor-not-allowed opacity-40'
               : `${cardCls} hover:bg-chart-3/[0.12] hover:border-chart-3/[0.18] hover:scale-[1.02] active:scale-[0.98]`
             }`}
         >
@@ -134,7 +134,7 @@ export default function SidebarSyncStatus() {
             </span>
           </div>
           <span className={`text-micro font-black text-center leading-tight ${
-            bellGranted ? 'text-success' : bellDenied ? timeAgoCls : 'text-white/55'
+            bellGranted ? 'text-success' : bellDenied ? timeAgoCls : 'text-[rgb(var(--sidebar-ink)/0.55)]'
           }`}>
             {bellGranted ? 'Activas' : bellDenied ? 'Bloqueadas' : 'Activar'}
           </span>

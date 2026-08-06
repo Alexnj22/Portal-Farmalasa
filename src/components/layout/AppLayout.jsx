@@ -558,7 +558,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink))]/[0.08] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]';
+        const navItemInactive   = 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink)/0.08)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]';
         const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-[rgb(var(--sidebar-ink)/0.42)] group-hover:text-[rgb(var(--sidebar-ink)/0.8)]';
         const accentBarInactive = 'bg-[rgb(var(--sidebar-ink)/0.2)]';
@@ -734,7 +734,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         ${isExpanded ? 'gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3' : 'justify-center gap-0 px-0 py-2.5 xl:py-3'}
                         ${hasActiveChild
                             ? 'text-[rgb(var(--sidebar-ink))]'
-                            : 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink))]/[0.08] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]'}
+                            : 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink)/0.08)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]'}
                         ${focusRing}
                         active:scale-[0.99] active:translate-y-0`}
                 >
@@ -863,7 +863,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </div>
 
                         <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.06)] to-transparent pointer-events-none z-ambient" />
-                        <div className="absolute left-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/30 via-white/10 to-white/3 pointer-events-none z-ambient" />
+                        <div className="absolute left-0 inset-y-0 w-[1px] bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.3)] via-[rgb(var(--sidebar-ink)/0.1)] to-[rgb(var(--sidebar-ink)/0.03)] pointer-events-none z-ambient" />
                         <div className="absolute right-0 inset-y-0 w-[1px] bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.08)] via-transparent to-transparent pointer-events-none z-ambient" />
                         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[rgb(var(--sidebar-tint)/0.30)] to-transparent pointer-events-none z-ambient" />
 
@@ -877,7 +877,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             para la misma acción, reportado como "raro" por el usuario). Colapsado:
                             se apila debajo del logo en vez de a un lado (el rail es muy angosto
                             para una fila horizontal). */}
-                        <div className={`relative z-base flex border-b border-[rgb(var(--sidebar-ink))]/[0.06]
+                        <div className={`relative z-base flex border-b border-[rgb(var(--sidebar-ink)/0.06)]
                             ${isExpanded ? 'items-center px-4 py-3.5 justify-between' : 'flex-col items-center gap-2 px-2 py-3'}`}>
                             <div className="absolute inset-0 bg-gradient-to-b from-logo-magenta/[0.06] to-transparent pointer-events-none" />
                             <div className="absolute bottom-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
@@ -893,7 +893,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         shadow-[var(--shadow-glass-2)]
                                         group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-[rgb(var(--sidebar-ink)/0.18)]
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
-                                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
+                                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.2)] to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                         <img src="/Logo192.png" alt="FLS"
                                             className={`object-contain relative z-base transition-transform duration-[var(--dur-slow)] group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                     </div>
@@ -945,8 +945,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 title={`Buscar en el menú (${SHORTCUT_LABEL})`}
                                 className={`w-full flex items-center rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
                                     ${isExpanded ? 'gap-2.5 px-3 py-3 xl:px-4 xl:py-3.5' : 'justify-center gap-0 px-0 py-3 xl:py-3.5'}
-                                    bg-[rgb(var(--sidebar-ink))]/[0.045] border border-[rgb(var(--sidebar-ink))]/[0.07]
-                                    text-[rgb(var(--sidebar-ink)/0.65)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink))]/[0.09] hover:border-[rgb(var(--sidebar-ink))]/[0.12] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]
+                                    bg-[rgb(var(--sidebar-ink)/0.045)] border border-[rgb(var(--sidebar-ink)/0.07)]
+                                    text-[rgb(var(--sidebar-ink)/0.65)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink)/0.09)] hover:border-[rgb(var(--sidebar-ink)/0.12)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]
                                     ${focusRing}
                                     active:scale-[0.99] active:translate-y-0`}
                             >
@@ -958,7 +958,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </>
                                 )}
                             </button>
-                            <div className="h-px bg-[rgb(var(--sidebar-ink))]/[0.07] mx-1 my-2" />
+                            <div className="h-px bg-[rgb(var(--sidebar-ink)/0.07)] mx-1 my-2" />
 
                             <div
                                 className={`absolute left-2 right-2 rounded-xl transform-gpu pointer-events-none
@@ -986,8 +986,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </div>
 
                         {/* ── Footer ── */}
-                        <div className="relative z-base px-3 pb-4 pt-3 border-t border-[rgb(var(--sidebar-ink))]/[0.07] flex flex-col gap-2.5">
-                            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+                        <div className="relative z-base px-3 pb-4 pt-3 border-t border-[rgb(var(--sidebar-ink)/0.07)] flex flex-col gap-2.5">
+                            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[rgb(var(--sidebar-ink)/0.15)] to-transparent" />
 
                             {isExpanded ? (
                                 <>
@@ -1011,9 +1011,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
                                         <Link to="/profile"
-                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-ink))]/[0.06] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
+                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-ink)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
-                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-[rgb(var(--sidebar-ink)/0.12)] shadow-[var(--shadow-elevation-xl)] bg-[rgb(var(--sidebar-ink))]/[0.08] text-[rgb(var(--sidebar-ink)/0.55)] group-hover/user:border-[rgb(var(--sidebar-ink)/0.2)]">
+                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-[rgb(var(--sidebar-ink)/0.12)] shadow-[var(--shadow-elevation-xl)] bg-[rgb(var(--sidebar-ink)/0.08)] text-[rgb(var(--sidebar-ink)/0.55)] group-hover/user:border-[rgb(var(--sidebar-ink)/0.2)]">
                                                     {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
@@ -1055,9 +1055,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             }}
                                             onMouseLeave={closeFlyout} aria-label="Mi Perfil"
                                             className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:translate-y-[var(--lift-hover)] active:scale-[0.97]
-                                                bg-[rgb(var(--sidebar-ink))]/[0.08] border border-[rgb(var(--sidebar-ink))]/[0.12] text-[rgb(var(--sidebar-ink)/0.55)]
+                                                bg-[rgb(var(--sidebar-ink)/0.08)] border border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.55)]
                                                 shadow-[var(--shadow-glass-1)]
-                                                hover:bg-[rgb(var(--sidebar-ink))]/[0.14] hover:border-[rgb(var(--sidebar-ink))]/[0.20] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
+                                                hover:bg-[rgb(var(--sidebar-ink)/0.14)] hover:border-[rgb(var(--sidebar-ink)/0.20)] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
                                             {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} strokeWidth={1.5} />}
                                         </Link>
                                         {myBirthday && (
@@ -1204,11 +1204,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         shadow-[var(--shadow-glass-3)]
                                         transition duration-[var(--dur-fast)] active:scale-[0.97] group/fi ${focusRing}
-                                        ${flyout.isActive ? 'bg-[rgb(var(--sidebar-ink))]/[0.10]' : 'hover:bg-[rgb(var(--sidebar-ink))]/[0.08]'}`}
+                                        ${flyout.isActive ? 'bg-[rgb(var(--sidebar-ink)/0.10)]' : 'hover:bg-[rgb(var(--sidebar-ink)/0.08)]'}`}
                                     type="button"
                                 >
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                                        ${flyout.isActive ? 'bg-chart-1/25' : 'bg-[rgb(var(--sidebar-ink))]/[0.08] group-hover/fi:bg-chart-1/20'}`}>
+                                        ${flyout.isActive ? 'bg-chart-1/25' : 'bg-[rgb(var(--sidebar-ink)/0.08)] group-hover/fi:bg-chart-1/20'}`}>
                                         <flyout.icon
                                             size={16}
                                             strokeWidth={flyout.isActive ? 2 : 1.5}

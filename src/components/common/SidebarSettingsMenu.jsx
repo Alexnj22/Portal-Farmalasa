@@ -25,13 +25,13 @@ function CodeCard({ label, value, copied, onCopy }) {
   return (
     <button type="button" onClick={onCopy}
       className="group/code relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2
-        border border-white/[0.09] bg-white/[0.06] hover:bg-white/[0.11] hover:border-white/[0.14] transition active:scale-[0.97]">
+        border border-[rgb(var(--sidebar-ink)/0.09)] bg-[rgb(var(--sidebar-ink)/0.06)] hover:bg-[rgb(var(--sidebar-ink)/0.11)] hover:border-[rgb(var(--sidebar-ink)/0.14)] transition active:scale-[0.97]">
       <div className="flex items-center gap-1 mb-0.5">
-        <span className="text-micro font-bold uppercase tracking-wider text-white/55">{label}</span>
+        <span className="text-micro font-bold uppercase tracking-wider text-[rgb(var(--sidebar-ink)/0.55)]">{label}</span>
       </div>
       <div className="relative h-4 flex items-center justify-center w-full">
-        <span className={`absolute text-body-sm font-black tracking-widest font-mono text-white transition duration-[var(--dur-slow)] ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
-        <Copy size={12} className={`absolute text-white/50 transition duration-[var(--dur-slow)] ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 focus-within:opacity-100 group-hover/code:scale-100'}`} />
+        <span className={`absolute text-body-sm font-black tracking-widest font-mono text-[rgb(var(--sidebar-ink))] transition duration-[var(--dur-slow)] ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
+        <Copy size={12} className={`absolute text-[rgb(var(--sidebar-ink)/0.5)] transition duration-[var(--dur-slow)] ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 focus-within:opacity-100 group-hover/code:scale-100'}`} />
         <CheckCircle2 size={12} className={`absolute text-success transition duration-[var(--dur-slow)] ${copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
       </div>
     </button>
@@ -141,7 +141,7 @@ export default function SidebarSettingsMenu({
     >
       {(showPin || showSu) && (
         <div>
-          <p className="text-[9.5px] font-black uppercase tracking-widest text-white/50 px-0.5 mb-1.5">Códigos</p>
+          <p className="text-[9.5px] font-black uppercase tracking-widest text-[rgb(var(--sidebar-ink)/0.5)] px-0.5 mb-1.5">Códigos</p>
           <div className={`grid gap-1.5 ${showPin && showSu ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {showPin && <CodeCard label="PIN" value={authPin} copied={isCopied} onCopy={onCopyPin} />}
             {showSu && <CodeCard label="SU" value={`${authPin}${suSuffix}`} copied={isSuCopied} onCopy={onCopySuPin} />}
@@ -150,11 +150,11 @@ export default function SidebarSettingsMenu({
       )}
 
       <div>
-        <p className="text-[9.5px] font-black uppercase tracking-widest text-white/50 px-0.5 mb-1.5">Sistema</p>
+        <p className="text-[9.5px] font-black uppercase tracking-widest text-[rgb(var(--sidebar-ink)/0.5)] px-0.5 mb-1.5">Sistema</p>
         <SidebarSyncStatus />
       </div>
 
-      <div className="h-px bg-white/[0.08]" />
+      <div className="h-px bg-[rgb(var(--sidebar-ink)/0.08)]" />
 
       <ThemeAxisPicker dark />
     </motion.div>
@@ -171,8 +171,8 @@ export default function SidebarSettingsMenu({
           className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
             border transition-colors duration-[var(--dur-fast)] ${className}
             ${isOpen
-              ? 'bg-white/12 border-white/20 text-white/90'
-              : 'bg-white/6 border-white/12 text-white/60 hover:text-white/90 hover:bg-white/10'}`}
+              ? 'bg-[rgb(var(--sidebar-ink)/0.12)] border-[rgb(var(--sidebar-ink)/0.2)] text-[rgb(var(--sidebar-ink)/0.9)]'
+              : 'bg-[rgb(var(--sidebar-ink)/0.06)] border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.9)] hover:bg-[rgb(var(--sidebar-ink)/0.1)]'}`}
         >
           <Settings size={16} strokeWidth={2} />
         </button>
@@ -195,7 +195,7 @@ export default function SidebarSettingsMenu({
         className={className}
         trailing={
           <ChevronDown size={13} strokeWidth={2.5}
-            className={`text-white/40 transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180' : ''}`} />
+            className={`text-[rgb(var(--sidebar-ink)/0.4)] transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180' : ''}`} />
         }
       />
       {createPortal(<AnimatePresence>{isOpen ? popoverContent : null}</AnimatePresence>, document.body)}

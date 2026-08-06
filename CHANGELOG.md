@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.421.0 — Si el barrido falla, te enterás a las 8 de la mañana
+
+El barrido nocturno de DTE dejaba su registro en `audit_logs`, pero nadie lo
+miraba: si se rompía, uno se enteraba porque las bolsas dejaban de bajar. Es
+exactamente cómo un backup de este proyecto estuvo **17 días sin correr en
+silencio**.
+
+Nueva función `alertar_barrido_dte()` + cron `alerta-barrido-dte-8am-sv`
+(`0 14` UTC = 08:00 de El Salvador). Avisa por el canal de sistema, o sea a
+quien tenga el rol *Sistema — Alertas Técnicas*.
+
+**A las 8 y no a las 23** — decisión del usuario, y es la correcta: el aviso
+sirve cuando hay alguien para leerlo. A las 23:00 la alerta suena y se duerme.
+
+**En SQL y no en otra Edge Function.** El barrido vive en una función con
+`--no-verify-jwt`, y uno de sus modos de falla es un redeploy que la deja
+devolviendo 401 antes de ejecutar nada. Un vigilante desplegado igual se
+apagaría junto con lo que vigila; dentro de Postgres sobrevive a los redeploys.
+
+**Avisa por dos cosas:** que no haya corrido —el caso más importante, y el único
+que el propio registro no puede contar— y que haya corrido con fallas.
+Deliberadamente **no** avisa por cola pendiente: drenar un atraso de 300 en
+tandas es el comportamiento correcto, y avisar diez días seguidos de algo que va
+bien es cómo se entrena a la gente a ignorar las alertas. La cola sí viaja en el
+cuerpo cuando ya hay algo que avisar.
+
+Y si nadie tiene el rol de alertas, la alerta «se manda» a nadie sin que nada
+falle — así que ese caso queda anotado en la bitácora como `CRITICAL`. El
+silencio tiene que ser visible.
+
+Verificado en sus tres caminos, todos revertidos: corrida limpia → no avisa;
+corrida con fallas → una notificación a EDWIN NUÑEZ; sin corrida → avisa. Y en
+el camino se corrigió la concordancia del mensaje, que decía «3 facturas no se
+pudo completar».
+
+
+_(pendiente de redactar)_
+
 ## v2.420.0 — Gate `tema-incompleto`: el fallo que apareció tres veces
 
 Marca un token con **color fuerte** definido en `:root`, redefinido en algún bloque

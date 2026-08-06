@@ -5,7 +5,6 @@ import { EmptyState } from '../../components/common/StateViews';
 import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
-import SearchInput from '../../components/common/SearchInput';
 import {
   fetchProductPhotoMap,
   fetchProductsByPrincipioActivo,
@@ -357,9 +356,8 @@ function SectionLabel({ icon: Icon, label, color = 'text-content-3', bg = 'bg-su
 }
 
 /* ─── Main component ────────────────────────────────────────────────────────── */
-export default function WidgetInventorySearch() {
+export default function WidgetInventorySearch({ query = '', onQueryChange }) {
   const { user }       = useAuth();
-  const [query,        setQuery]        = useState('');
   const [results,      setResults]      = useState(null);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState(null);
@@ -457,12 +455,21 @@ export default function WidgetInventorySearch() {
     }
   }, []);
 
-  const handleInput = (val) => {
-    setQuery(val);
+  // El texto llega por prop; acá solo se reacciona a que cambie. `handleInput`
+  // se conserva porque la lista de faltantes lo usa para buscar al tocar un
+  // producto — escribe en el buscador de arriba, que es lo que se espera.
+  const handleInput = (val) => onQueryChange?.(val);
+
+  useEffect(() => {
     clearTimeout(debounceRef.current);
-    if (!val.trim()) { setResults(null); setDrillProduct(null); setSrsResults(null); setAlternatives([]); setVencidosProds([]); return; }
-    debounceRef.current = setTimeout(() => doSearch(val), 380);
-  };
+    if (!query.trim()) {
+      setResults(null); setDrillProduct(null); setSrsResults(null);
+      setAlternatives([]); setVencidosProds([]);
+      return;
+    }
+    debounceRef.current = setTimeout(() => doSearch(query), 380);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, doSearch]);
 
   /* ── DRILL-DOWN VIEW ────────────────────────────────────────────────────── */
   if (drillProduct) {
@@ -592,20 +599,6 @@ export default function WidgetInventorySearch() {
 
   return (
     <div className="flex flex-col gap-2.5 h-full">
-
-      {/* El buscador a lo ancho y siempre abierto. Plegado ocupaba un cuadrito
-          de 32px en la esquina y no se leía como buscador —había que descubrir
-          que se podía tocar—, que es todo lo contrario de lo que hace un
-          widget cuyo trabajo ES buscar. */}
-      <div className="shrink-0">
-        <SearchInput
-          accentColor="var(--warning)"
-          value={query}
-          onChange={handleInput}
-          placeholder="Buscar por nombre o principio activo..."
-          loading={loading}
-        />
-      </div>
 
       {error && <p className="shrink-0 px-1 text-label text-danger-text font-medium">{error}</p>}
 

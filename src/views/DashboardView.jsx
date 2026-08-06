@@ -24,6 +24,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
+import SearchInput from '../components/common/SearchInput';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import WidgetInventoryMovement from './dashboard/WidgetInventoryMovement';
@@ -876,6 +877,7 @@ const DashboardView = ({ openModal }) => {
   const [shiftBranch,    setShiftBranch]    = useState('');
   const [annulmentBranch, setAnnulmentBranch] = useState(() => String(user?.branchId ?? user?.branch_id ?? ''));
   const [minmaxErp, setMinmaxErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
+  const [invQuery, setInvQuery] = useState('');
   const [movimientoErp, setMovimientoErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
   // Arranca en la sala propia; si el usuario no está en una sala de venta
   // (gerencia, bodega), en la primera de la lista.
@@ -2025,9 +2027,18 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'inv_search') {
       if (!showWidget('inv_search', 'dash_inv_search')) return null;
       return wrapWidget('inv_search',
-        <WidgetCard title="Consulta de Inventario" icon={Package} category="productos">
+        <WidgetCard title="Consulta de Inventario" icon={Package} category="productos"
+          action={
+            <SearchInput
+              accentColor="var(--warning)"
+              value={invQuery}
+              onChange={setInvQuery}
+              placeholder="Buscar por nombre o principio activo..."
+            />
+          }
+        >
           <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetInventorySearch />
+            <WidgetInventorySearch query={invQuery} onQueryChange={setInvQuery} />
           </div>
         </WidgetCard>
       , staggerIdx);

@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.446.1 — El filtro de Inventario al encabezado
+
+El buscador de Consulta de Inventario se había quedado **dentro** del cuerpo de
+la tarjeta, comiéndose un renglón entero antes del primer resultado. Ahora va en
+el encabezado, junto al título — que es donde ya viven los filtros del resto del
+tablero.
+
+Para eso el texto del buscador subió al tablero y baja por prop, el mismo
+reparto que ya usaban los selectores de sucursal: la cabecera la dibuja la
+tarjeta, así que el control tiene que vivir donde la tarjeta lo pueda recibir.
+
+**La regla queda escrita**: los filtros de un widget van en su encabezado.
+
 ## v2.446.0 — `BotonIA`, el banco headed, y `PLAN-MATERIALES` CERRADO
 
 **El botón de IA era el mismo bloque escrito tres veces** —`BranchesView`,

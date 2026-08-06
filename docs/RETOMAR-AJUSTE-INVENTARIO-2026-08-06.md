@@ -148,57 +148,140 @@ quedan** — un tope que no se anuncia se lee como «ya está todo».
 
 ---
 
-## 5 · El widget de Ajuste de Inventario
+## 5 · Cargas y descartes de inventario
 
-### Lo que ya se sabe (sondeo de solo lectura, 2026-08-06)
+> **No es «Ajuste».** Decidido con el usuario el 2026-08-06, ya con el sondeo
+> hecho: `ajuste_inventario.php` es el camino complicado —ajusta contra la
+> existencia contada, arrastra la matriz de lotes de productos regulados y tiene
+> dos armados distintos de su payload—. Las dos operaciones que hacen falta son
+> **carga** (`ingreso_inventario.php`) y **descarte** (`descargo_inventario.php`),
+> que son más simples y cubren el caso real. El título del archivo quedó viejo.
 
-| página | título | campos del formulario |
+### 5.1 · Mapeado, con sondeo de solo lectura (2026-08-06)
+
+**Leer el JS que la página carga de verdad.** `ingreso_inventario.php` **no**
+carga `funciones_ingreso_inventario.js` —ese archivo existe, está obsoleto y
+arma 9 celdas contra un encabezado de 11— sino
+**`js/funciones/funciones_inventario.js`**. El del descarte sí es
+`funciones_descargo_inventario.js`. Confirmarlo con un grep del `<script>`,
+no por el nombre.
+
+| | **carga** | **descarte** |
 |---|---|---|
-| `ajuste_inventario.php` | Ajuste Inventario | `categoria`, `concepto`, `cu`, `destino`, `fecha1`, `filas`, `id_sucursal_dom`, `params`, `process`, `producto_buscar` |
-| `admin_ajuste.php` | Administrar Ajuste | `fini`, `ffin`, `sucursal`, `origen` |
+| página | `ingreso_inventario.php` | `descargo_inventario.php` |
+| JS real | `js/funciones/funciones_inventario.js` | `js/funciones/funciones_descargo_inventario.js` |
+| lookup | `process=consultar_stock` + `tipo`(C\|D) + `id_producto` | idem + `ubicacion` |
+| presentación | `process=getpresentacion` + `id_presentacion` | idem |
+| escribe | `process=insert` | `process=insert` |
+| campos del insert | `datos`, `cuantos`, `total`, `fecha`, `concepto`, `destino` | `datos`, `cuantos`, `total`, `fecha`, `concepto`, `origen`, `iden` |
+| `datos`, separado por `#` | `id_prod\|compra\|venta\|cant\|unidad\|vence\|id_presentacion\|numero_lote` | `id_prod\|compra\|venta\|cant\|unidad\|vence(vacío)\|id_presentacion\|id_lote` |
 
-También existen `ingreso_inventario.php`, `descargo_inventario.php`,
-`admin_traslados.php`, `reporte_kardex.php` y `generar_kardex_lote.php`.
+`iden` del descarte es el **Tipo**, y son cuatro exactos:
+`VENCIMIENTO`, `DESCARTE`, `PRODUCTO DAÑADO`, `CONSUMO INTERNO`.
 
-El JS a leer es **`js/funciones/funciones_ajuste_inventario.js`** — es donde van
-a estar los `process=` reales, igual que `funciones_fact_rangos.js` tenía el
-`process=deleted` de la anulación.
+Dos detalles del `datos` que no se adivinan: en la carga el lote es **texto
+libre** (`numero_lote`), en el descarte es el **id de un lote existente**
+(`id_lote`, 0 si el producto no es regulado). Y `vence` viaja con la cadena
+literal `'NULL'` cuando el producto no es perecedero, no vacío.
 
-### ⚠️ La diferencia que hay que resolver primero
+`admin_ingreso.php` y `admin_descargo.php` **no existen** (404 los cuatro
+nombres probados). La verificación de que una carga o un descarte entró es el
+**kardex** (`reporte_kardex.php`), no un listado propio.
 
-Los endpoints de DTE resuelven por `id_factura` y **una sola sesión alcanzó
-para todas las sucursales**. `ajuste_inventario.php` tiene un campo
-**`id_sucursal_dom`**, lo que sugiere que el ajuste **sí depende del contexto
-de sucursal de la sesión**. Si es así hace falta `cambio_sesion.php` antes de
-cada ajuste — el patrón ya existe en `sync-erp-purchases` y
-`check-purchases-reconciliation` (`SESION_URL`).
+### 5.2 · ⚠️ RESUELTA: la sucursal SÍ es estado de sesión
 
-**Averiguarlo antes de escribir nada**, con lecturas: abrir
-`ajuste_inventario.php` con la sesión en una sucursal y ver si el `<select>` de
-sucursal viene fijo o elegible, y si `admin_ajuste.php` lista ajustes de otras
-sucursales.
+Era la pregunta bloqueante y la respuesta es **sí**, al revés que en DTE.
+Verificado recorriendo las 7 sucursales: `cambio_sesion.php` con
+`process=set_sucursal&id_sucursal=N` devuelve `{"success":true}` y **las dos
+páginas siguen a la sesión** — cambia el `id_sucursal_dom` y el `<select>` de
+ubicación se re-renderiza con la ubicación de esa sucursal y solo esa.
 
-### Orden sugerido
+El `$('#sucursal').change(...)` que aparece en los tres JS es **código muerto**:
+ninguna de las dos páginas tiene ese `<select>`. La sucursal no es un parámetro
+que se pueda mandar; hay que cambiarla en la sesión antes.
 
-1. Leer `funciones_ajuste_inventario.js` y anotar los `process=`.
-2. Resolver la pregunta de la sucursal (arriba).
-3. Probar en **lectura** el listado `admin_ajuste.php` para entender la forma
-   de un ajuste ya hecho.
-4. Recién entonces: tabla de solicitudes + trigger de notificación + trigger de
-   validación + Edge Function que aplica, reusando `_shared/erp-dte.ts` para
-   login/pedir/reintentos.
-5. Una prueba con **un** ajuste chico, reversible, y confirmarlo en el kardex
-   antes de soltar nada masivo.
+Un solo usuario (`edwin`, el de `ERP_FACTURACION_CREDS`) alcanza para las 7.
+El patrón ya existe en `sync-erp-purchases` (`SESION_URL`).
 
-### Lo que hay que decidir con el usuario
+**Corolario que hay que respetar: la sucursal es estado global de la sesión
+PHP.** Dos operaciones sobre sucursales distintas que compartan cookie se pisan.
+Cada aplicación tiene que hacer su propio `login()` —cookie nueva— o serializar.
+No reusar un `cookieCache` entre sucursales.
 
-- **¿Qué se ajusta y quién lo aprueba?** El ajuste de inventario mueve
-  existencias reales: probablemente no debería aplicarse de un clic como el
-  cambio de vendedor.
-- **¿Es reversible?** La anulación de una factura no lo era y por eso el
-  «Aprobar» abre confirmación. Si un ajuste tampoco lo es, mismo tratamiento.
-- **¿Hay tope de cantidad o de valor** por encima del cual haga falta otro
-  nivel de aprobación?
+**El mapa de ubicaciones, leído del ERP** (`obtener_ubicaciones.php`), que es lo
+que va en `destino`/`origen`. `erp_sucursal_map.inv_ubicaciones` solo lo tiene
+para Bodega; las otras seis están en NULL:
+
+| sucursal ERP | branch_id | ubicación |
+|---|---|---|
+| 1 Salud 1 | 4 | 3 · LOCAL DE VENTA |
+| 2 Salud 2 | 25 | 4 · LOCAL DE VENTA |
+| 3 Salud 3 | 27 | 5 · LOCAL DE VENTA |
+| 4 Salud 4 | 28 | 6 · LOCAL DE VENTA |
+| 5 La Popular | 2 | 7 · LOCAL DE VENTA |
+| 6 Bodega | 30 | 1 · BODEGA · 2 · BODEGA DE VENCIDOS |
+| 7 Salud 5 | 29 | 8 · LOCAL DE VENTA |
+
+### 5.3 · La trampa de la presentación
+
+`consultar_stock` no devuelve las presentaciones como datos: devuelve un
+`<select>` **en HTML**. Para el producto 2 en Salud 1 son tres opciones con la
+misma etiqueta —`UNIDAD (1)`, ids 8421 / 7213 / 3— y **el orden cambia entre las
+dos pantallas**: la carga las manda 8421 primero, el descarte manda 3 primero.
+Quien lo hace a mano acepta la primera sin saber que hay tres.
+
+El portal **tiene que mandar `id_presentacion` explícito**, resuelto por dato y
+no por posición. Es la misma familia de error que `numero_doc` cargando el
+código de vendedor: un nombre que no distingue lo que identifica.
+
+El descarte además devuelve `stock` —27.0000 para ese producto, que cuadra con
+`inventory.cantidad`— y un `lotes_select` con `data-regulado`. Para regulados
+hay que elegir lote; para el resto viene deshabilitado e `id_lote` va en 0.
+
+Y confirma la trampa 1 de §3: un producto inexistente contesta **HTTP 200** con
+`{"typeinfo":"Error","msg":"El codigo ingresado no pertenece a ningun producto"}`.
+
+### 5.4 · Lo que el portal puede hacer mejor que la pantalla del ERP
+
+En el ERP hay que estar en la sesión de esa sucursal, buscar cada producto de a
+uno y tipear la cantidad. El portal ya tiene el dato que haría falta buscar:
+`inventory` guarda **lote, fecha de vencimiento, cantidad y presentación por
+sucursal**. Hoy, con stock a mano:
+
+**347 líneas ya vencidas siguen en las 7 sucursales, fuera de la Bodega de
+Vencidos** — 994 unidades. Salud 5 (88), Salud 1 (57), Salud 3 (54), Bodega
+(51), Salud 2 (46), La Popular (34), Salud 4 (17). Otras 250 líneas vencen en
+los próximos 90 días.
+
+O sea que el portal puede dar vuelta el trabajo: en vez de que alguien busque
+producto por producto, **la pantalla propone la lista y el usuario confirma**. Y
+como `datos` es una cadena separada por `#`, los N productos entran en **un solo
+`process=insert`**.
+
+### 5.5 · Orden sugerido
+
+1. ~~Leer el JS y anotar los `process=`~~ — hecho, §5.1.
+2. ~~Resolver la pregunta de la sucursal~~ — hecha, §5.2: es estado de sesión.
+3. ~~Entender la forma de uno ya hecho~~ — hecho: no hay listado propio, se
+   verifica en el kardex.
+4. Tabla de solicitudes + trigger de notificación + trigger de validación +
+   Edge Function que aplica, reusando `_shared/erp-dte.ts` para
+   login/`pedir`/`conReintento`.
+5. Una prueba con **un** descarte chico y confirmarlo en el kardex antes de
+   soltar nada masivo.
+
+### 5.6 · Lo que hay que decidir con el usuario
+
+- **¿Quién aprueba?** Carga y descarte mueven existencias reales: no deberían
+  aplicarse de un clic como el cambio de vendedor.
+- **No es reversible.** Deshacer un descarte es hacer una carga por la misma
+  cantidad, con otro asiento en el kardex. Mismo tratamiento que la anulación:
+  confirmación explícita al aprobar.
+- **¿Hay tope de cantidad o de valor** por encima del cual haga falta otro nivel
+  de aprobación?
+- **La carga deja editar costo y precio** (el descarte los manda de solo
+  lectura). Si el portal no los va a dejar tocar, hay que mandarlos tal como los
+  devolvió `consultar_stock`.
 
 ---
 

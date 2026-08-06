@@ -16,7 +16,7 @@ import {
   Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
-  FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus
+  FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,7 @@ import SearchInput from '../components/common/SearchInput';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import WidgetInventoryMovement from './dashboard/WidgetInventoryMovement';
+import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 import { SALAS_VENTA } from './metas/metasUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -256,6 +257,7 @@ const WIDGET_DEFS = [
   { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Ajuste de Inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
+  { id: 'traslados',    label: 'Traslados entre Salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Quién está vendiendo',    permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
 ];
@@ -2115,6 +2117,16 @@ const DashboardView = ({ openModal }) => {
           )}
         />
       , staggerIdx);
+    }
+
+    /* ── TRASLADOS ENTRE SALAS ── */
+    // La otra mitad de la lista de faltantes de Consulta de Inventario: allá se
+    // pide lo que no hay, acá la sala que lo tiene confirma. No necesita
+    // selector de sucursal — el RLS ya decide qué solicitudes son suyas, y
+    // ofrecer un desplegable de salas sugeriría un alcance que no existe.
+    if (wid === 'traslados') {
+      if (!showWidget('traslados', 'dash_traslados')) return null;
+      return wrapWidget('traslados', <WidgetTransferRequests />, staggerIdx);
     }
 
     /* ── META DE LA SALA ── */

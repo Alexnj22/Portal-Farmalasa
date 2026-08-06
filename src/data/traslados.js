@@ -1,0 +1,146 @@
+import { supabase } from '../supabaseClient';
+
+// Datos del traslado entre salas.
+//
+// Es la cuarta operación de la familia solicitud → aprobación → aplicación, y
+// la primera donde quien pide y quien decide están en salas distintas: pide la
+// sala que NO tiene y confirma la que SÍ tiene.
+//
+// ── Lo que este archivo NO hace ────────────────────────────────────────────
+// No elige el aprobador. Lo resuelve un trigger de la base a partir de la sala
+// de origen —turno → jefatura → Supervisión— y descarta el `approver_id` que
+// mande el navegador. Acá depende del dato y de la hora, así que dejarlo del
+// lado del cliente sería dejar elegir quién aprueba.
+//
+// Tampoco avisa. La notificación nace en la misma transacción que la fila; una
+// llamada aparte desde el navegador es justo lo que dejó a Min/Max con cero
+// avisos en toda su historia.
+
+/**
+ * Los motivos de rechazo, dictados por el usuario el 2026-08-06.
+ *
+ * La lista vive TAMBIÉN en la base (`validar_rechazo_traslado`), que es la que
+ * manda: una validación que solo existe en la pantalla es una sugerencia. Si se
+ * agrega uno acá sin agregarlo allá, el rechazo rebota — a propósito.
+ */
+export const MOTIVOS_RECHAZO = [
+    'Producto ya encargado',
+    'Sin existencia en físico',
+    'Producto dañado',
+    'Otro',
+];
+
+/** Crea la solicitud. El aviso y el aprobador los pone la base, no esto. */
+export function crearSolicitudTraslado(payload) {
+    return supabase.from('approval_requests').insert(payload);
+}
+
+/**
+ * Los traslados que esta sala tiene que confirmar.
+ *
+ * No filtra por sala: **el RLS ya lo hace**, y con una regla que el navegador no
+ * podría reproducir —estar entre los destinatarios que dejó la cascada, o ser
+ * jefatura de la sala de origen—. Filtrar de nuevo acá con un criterio parecido
+ * pero no idéntico es la forma de que las dos se separen y una esconda lo que
+ * la otra muestra.
+ */
+export async function fetchTrasladosPorConfirmar() {
+    const { data, error } = await supabase
+        .from('approval_requests')
+        .select('id, employee_id, note, metadata, created_at')
+        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: true })
+        .range(0, 200);
+    return { filas: data ?? [], error };
+}
+
+/**
+ * Cuántos hay esperando. Es lo que la baldosa muestra para dar un motivo de
+ * abrirla: sin ese número, la puerta no dice nada de lo que hay del otro lado.
+ *
+ * `head: true` — se pide el CONTEO, no las filas.
+ */
+export async function contarTrasladosPorConfirmar() {
+    const { count, error } = await supabase
+        .from('approval_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
+        .eq('status', 'PENDING');
+    return { total: count ?? 0, error };
+}
+
+/** Lo que esta sala pidió y ya salió: sirve para saber qué falta recibir. */
+export async function fetchTrasladosPorRecibir() {
+    const { data, error } = await supabase
+        .from('approval_requests')
+        .select('id, employee_id, note, metadata, updated_at')
+        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
+        .eq('status', 'APPROVED')
+        .order('updated_at', { ascending: true })
+        .range(0, 200);
+    // Ya despachado y todavía sin recibir. Se filtra acá y no en la consulta
+    // porque son dos claves dentro del mismo jsonb y el filtro de PostgREST
+    // sobre ausencia de clave anidada no distingue «no existe» de «es null».
+    const filas = (data ?? []).filter(r => r.metadata?.erp_traslado && !r.metadata?.erp_recibido);
+    return { filas, error };
+}
+
+/**
+ * Despacha el traslado en el sistema y recién entonces lo marca aprobado.
+ *
+ * El navegador NO habla con el sistema de origen: sus credenciales viven en un
+ * secreto y quien tiene esa sesión puede mover inventario de cualquier sala.
+ * Todo —verificar el permiso, releer la existencia, resolver la presentación,
+ * escribir y recién ahí marcar APPROVED— pasa en la Edge Function.
+ *
+ * Nunca lanza: devuelve `{ ok, ... }` y el llamador decide qué mostrar.
+ */
+async function invocar(body) {
+    try {
+        const { data, error } = await supabase.functions.invoke('aplicar-traslado-inventario', { body });
+        if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+
+        // `functions.invoke` marca error para cualquier status >= 400, pero el
+        // motivo real viaja en el cuerpo — sin leerlo, todo fallo se ve como un
+        // "non-2xx status code" indistinguible.
+        try {
+            const cuerpo = await error.context?.json?.();
+            if (cuerpo) return cuerpo;
+        } catch { /* el cuerpo no era JSON */ }
+        return { ok: false, error: error.message ?? 'No se pudo aplicar.' };
+    } catch (e) {
+        return { ok: false, error: e?.message ?? String(e) };
+    }
+}
+
+export const despacharTraslado = (requestId, nota = '') =>
+    invocar({ request_id: requestId, approver_note: nota, accion: 'enviar' });
+
+export const recibirTraslado = (requestId) =>
+    invocar({ request_id: requestId, accion: 'recibir' });
+
+/**
+ * Rechaza el traslado con su motivo.
+ *
+ * El motivo va en `metadata` y no solo en la nota porque un trigger lo valida
+ * contra la lista cerrada; «Otro» además exige que se escriba cuál.
+ */
+export async function rechazarTraslado(requestId, motivo, texto = '') {
+    const { data: actual, error: errLeer } = await supabase
+        .from('approval_requests')
+        .select('metadata')
+        .eq('id', requestId)
+        .maybeSingle();
+    if (errLeer) return { error: errLeer };
+
+    return supabase
+        .from('approval_requests')
+        .update({
+            status: 'REJECTED',
+            approver_note: String(texto ?? '').trim() || null,
+            metadata: { ...(actual?.metadata ?? {}), rejection_reason: motivo },
+        })
+        .eq('id', requestId)
+        .eq('status', 'PENDING');   // no pisar si otro la resolvió en el medio
+}

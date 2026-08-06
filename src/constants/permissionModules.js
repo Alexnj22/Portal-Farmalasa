@@ -76,6 +76,11 @@ export const MODULE_GROUPS = [
                 { key: 'schedules_tab_holidays', label: 'Feriados',           tipo: 'tab' },
             ]},
             { key: 'requests',     label: 'Solicitudes',            desc: 'Revisión y aprobación de permisos, vacaciones e incapacidades', icon: ClipboardList, hasApprove: true,  hasScope: true },
+            // Módulo aparte de `requests` a propósito: acá `can_approve` habilita
+            // confirmar un traslado de la propia sala y NADA más. Metido dentro de
+            // Solicitudes, dárselo a una jefatura de sala le entregaría de arrastre
+            // las vacaciones y los anticipos de su gente.
+            { key: 'traslados',    label: 'Traslados entre Salas',  desc: 'Confirmar el envío de producto que otra sala pide y no tiene',  icon: Truck,         hasApprove: true,  hasScope: true },
             { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false, hasScope: true },
             { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true,  hasScope: true, sub: [
                 // La boleta y la planilla impresas se llevan el salario de cada
@@ -282,6 +287,7 @@ export const MODULE_GROUPS = [
             { key: 'dash_annulment_req',  label: 'Widget: Solicitud de Anulación',desc: 'Crear solicitudes de anulación de facturas dentro del período de gracia de 3 días',  icon: Receipt,    hasApprove: false, hasScope: true },
             { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Min/Max',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación del supervisor', icon: BarChart2, hasApprove: false, hasScope: true },
             { key: 'dash_inv_movement',   label: 'Widget: Ajuste de Inventario',  desc: 'Solicitar que se cargue o se descargue producto —vencimiento, descarte, producto dañado o consumo interno—; el inventario se mueve al aprobarla', icon: PackageMinus, hasApprove: false, hasScope: true },
+            { key: 'dash_traslados',      label: 'Widget: Traslados entre Salas', desc: 'Ver lo que otra sala pide del inventario propio y lo que uno pidió y viene en camino', icon: Truck, hasApprove: false, hasScope: true },
             { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icon: Target, hasApprove: false, hasScope: true },
             { key: 'dash_vendedores',     label: 'Widget: Quién está vendiendo',  desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icon: Users, hasApprove: false, hasScope: true },
         ],

@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.452.0 — Traslados entre salas: la vista completa, de la lista de faltantes al kardex
+
+Pasos 4 y 5 de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Con esto el circuito está
+armado de punta a punta; falta la prueba con una unidad real.
+
+**El pedido nace donde aparece el problema.** La lista «Sin existencia, puedes
+solicitar en estas sucursales» de Consulta de Inventario ya decía qué falta y
+qué sala lo tiene. Ahora cada renglón lleva su botón: se elige a cuál pedirle,
+cuánto y para qué, y listo. La pantalla avisa cuántas **unidades** son —no
+cuántas cajas— porque la existencia de la otra sala está contada así, y comparar
+cajas contra unidades deja pasar imposibles.
+
+**El widget «Traslados entre Salas» es el otro extremo**, con dos listas porque
+son dos momentos: lo que otra sala te pide de la tuya, y lo que pediste y viene
+en camino. La segunda existe porque un traslado despachado y no recibido queda
+en tránsito y nadie vuelve a mirarlo — hoy hay **20 así**, el más viejo del 29
+de julio.
+
+**Confirmar o no poder.** El rechazo lleva motivo de una lista cerrada —producto
+ya encargado, sin existencia en físico, producto dañado, u otro— y «otro» exige
+que se escriba cuál. La lista vive en la base además de en la pantalla: una
+validación que solo existe en el navegador es una sugerencia.
+
+**El permiso `Traslados entre Salas` ya se administra desde Permisos.** Es un
+módulo aparte de Solicitudes a propósito: ese es «permisos, vacaciones e
+incapacidades», y darle aprobación ahí a una jefatura de sala para que confirme
+un traslado le entregaría de arrastre las vacaciones y los anticipos de su
+gente. Confirma la jefatura siempre y el dependiente mientras esté en turno.
+
+**Lo que el portal hace que la pantalla del sistema no.** Allá hay que estar en
+la sesión de esa sucursal, buscar el producto por su código y tipearlo. Acá el
+producto, la sala, la presentación y la existencia ya están sobre la mesa, y el
+portal completa solo lo que el sistema pide y no se puede adivinar: el vale, la
+ubicación de origen y el identificador correcto de la presentación —que en esa
+pantalla se rotula solo con el tipo, así que hay productos con tres opciones
+llamadas igual y elegir la primera movería otra cantidad—.
+
 ## v2.451.0 — Los siete tooltips que tapaban el gráfico, y el contenido que se recortaba en silencio
 
 Fase 4 de `PLAN-MOBILE-2026-07.md`. **Elementos que se salen del viewport en

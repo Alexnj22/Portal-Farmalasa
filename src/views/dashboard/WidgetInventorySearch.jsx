@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
-import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle, ArrowLeftRight } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -16,6 +16,7 @@ import { insertVentaPerdida } from '../../data/ventasPerdidas';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
+import PedirTrasladoModal from './PedirTrasladoModal';
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -365,6 +366,7 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
   const [lightboxUrl,    setLightboxUrl]    = useState(null);
   const [vencidosProds,  setVencidosProds]  = useState([]);
   const [faltantes,      setFaltantes]      = useState([]);
+  const [pedido,         setPedido]         = useState(null);   // el faltante que se está pidiendo
   const [srsResults,     setSrsResults]     = useState(null);
   const [srsLoading,   setSrsLoading]   = useState(false);
   const [alternatives, setAlternatives] = useState([]);
@@ -374,14 +376,14 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
   // "lo que falta" solo tiene sentido desde la propia.
   const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
 
-  useEffect(() => {
+  const cargarFaltantes = useCallback(() => {
     if (!miErp) return;
-    let cancelado = false;
     fetchFaltantesConStockEnOtraSala(miErp, 20).then(r => {
-      if (!cancelado && !r.error) setFaltantes(r.filas);
+      if (!r.error) setFaltantes(r.filas);
     });
-    return () => { cancelado = true; };
   }, [miErp]);
+
+  useEffect(() => { cargarFaltantes(); }, [cargarFaltantes]);
 
   const doSearch = useCallback(async (q) => {
     if (!q.trim()) { setResults(null); return; }
@@ -617,22 +619,39 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
               Sin existencia, puedes solicitar en estas sucursales
             </p>
+            {/* La fila es un div y no un botón: tiene DOS acciones —mirar el
+                producto y pedirlo— y un botón adentro de otro no es HTML
+                válido. El área grande sigue siendo la de buscar. */}
             {faltantes.map(f => (
-              <button
+              <div
                 key={f.erp_product_id}
                 data-surface="card"
-                onClick={() => handleInput(f.descripcion)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all"
+                className="w-full flex items-center gap-2 px-3 py-2 transition-all"
               >
-                <PackageMinus size={13} className="text-warning-text shrink-0" strokeWidth={2.5} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-label font-black text-content truncate leading-tight">{f.descripcion}</p>
-                  <p className="text-micro text-content-3 truncate mt-0.5">
-                    {(f.donde ?? []).slice(0, 3).map(d => `${d.sala} ${d.unidades}`).join(' · ')}
-                  </p>
-                </div>
-                <span className="text-micro font-black text-content-3 shrink-0 tabular-nums">min {f.min_units}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleInput(f.descripcion)}
+                  className="flex-1 min-w-0 flex items-center gap-2 text-left"
+                >
+                  <PackageMinus size={13} className="text-warning-text shrink-0" strokeWidth={2.5} />
+                  <span className="flex-1 min-w-0 block">
+                    <span className="block text-label font-black text-content truncate leading-tight">{f.descripcion}</span>
+                    <span className="block text-micro text-content-3 truncate mt-0.5">
+                      {(f.donde ?? []).slice(0, 3).map(d => `${d.sala} ${d.unidades}`).join(' · ')}
+                    </span>
+                  </span>
+                  <span className="text-micro font-black text-content-3 shrink-0 tabular-nums">min {f.min_units}</span>
+                </button>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => setPedido(f)}
+                  aria-label={`Pedir ${f.descripcion} a otra sala`}
+                >
+                  <ArrowLeftRight size={12} strokeWidth={2.5} />
+                  Pedir
+                </Button>
+              </div>
             ))}
           </div>
         )}
@@ -764,6 +783,17 @@ export default function WidgetInventorySearch({ query = '', onQueryChange }) {
       </div>
 
       <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} zClass="z-toast" />
+
+      {/* Se monta SOLO al pedir: si no, cada faltante de la lista traería sus
+          presentaciones al abrir el widget. */}
+      {pedido && (
+        <PedirTrasladoModal
+          producto={pedido}
+          onClose={() => setPedido(null)}
+          onListo={cargarFaltantes}
+        />
+      )}
+
       <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );

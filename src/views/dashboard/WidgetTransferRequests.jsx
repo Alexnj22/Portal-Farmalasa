@@ -1,0 +1,279 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeftRight, CheckCircle2, Loader2, PackageCheck, Truck, X } from 'lucide-react';
+import Button from '../../components/common/Button';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import LanzadorSolicitud from './LanzadorSolicitud';
+import PortalTextarea from '../../components/common/PortalTextarea';
+import { SkeletonText } from '../../components/common/StateViews';
+import { useAuth } from '../../context/AuthContext';
+import { useStaffStore } from '../../store/staffStore';
+import {
+    MOTIVOS_RECHAZO, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
+    contarTrasladosPorConfirmar, despacharTraslado, recibirTraslado, rechazarTraslado,
+} from '../../data/traslados';
+
+// Widget «Traslados entre Salas».
+//
+// Es el otro extremo de la lista de faltantes de Consulta de Inventario: allá
+// una sala pide lo que no tiene, y acá la sala que lo tiene confirma o dice que
+// no. Las dos mitades del mismo movimiento.
+//
+// ── Por qué no vive en Solicitudes ────────────────────────────────────────
+// Porque quien confirma un traslado no tiene por qué poder aprobar vacaciones.
+// El permiso es `traslados`, aparte de `requests`, y esta pantalla es la única
+// que lo consulta. Mandar el aviso a /requests dejaría a una jefatura de sala
+// mirando una vista que su permiso no abre.
+//
+// ── Dos listas, porque son dos momentos ───────────────────────────────────
+// «Por confirmar» es lo que otra sala me pide. «Por recibir» es lo que yo pedí,
+// ya salió y todavía no entró — el estado que el sistema llama NO RECIBIDO y
+// que hoy tiene 20 traslados parados, el más viejo de hace más de una semana.
+// Sin la segunda, el producto queda en tránsito y nadie vuelve a mirarlo.
+
+const fmtCuando = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const hoy = new Date();
+    const mismoDia = d.toDateString() === hoy.toDateString();
+    return mismoDia
+        ? d.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })
+        : d.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
+};
+
+/** Lo que se pide, en una línea legible. */
+function resumenItems(meta) {
+    const items = Array.isArray(meta?.items) ? meta.items : [];
+    if (items.length === 0) return 'Sin detalle';
+    if (items.length === 1) {
+        const i = items[0];
+        return `${i.cantidad} ${i.presentacion_tipo} · ${i.descripcion ?? i.erp_product_id}`;
+    }
+    return `${items.length} productos · ${meta?.total_unidades ?? 0} unidades`;
+}
+
+/* ─── Una solicitud, con sus dos respuestas ───────────────────────────────── */
+function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
+    const [modo,     setModo]     = useState(null);   // null | 'rechazo'
+    const [motivo,   setMotivo]   = useState(MOTIVOS_RECHAZO[0]);
+    const [texto,    setTexto]    = useState('');
+    const [ocupado,  setOcupado]  = useState(false);
+    const [error,    setError]    = useState('');
+
+    const meta = fila.metadata ?? {};
+
+    const confirmar = async () => {
+        setError(''); setOcupado(true);
+        const r = await despacharTraslado(fila.id);
+        setOcupado(false);
+        if (!r?.ok) { setError(r?.error ?? 'No se pudo despachar.'); return; }
+        onHecho();
+    };
+
+    const rechazar = async () => {
+        setError(''); setOcupado(true);
+        const { error: e } = await rechazarTraslado(fila.id, motivo, texto);
+        setOcupado(false);
+        if (e) { setError(e.message ?? 'No se pudo rechazar.'); return; }
+        onHecho();
+    };
+
+    // «Otro» sin texto no explica nada: es el motivo vacío con otro nombre, y la
+    // base lo rechaza igual. Se avisa acá para no gastar el viaje.
+    const puedeRechazar = motivo !== 'Otro' || texto.trim().length > 0;
+
+    return (
+        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+                <ArrowLeftRight size={13} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                <div className="flex-1 min-w-0">
+                    <p className="text-label font-black text-content leading-tight">
+                        {resumenItems(meta)}
+                    </p>
+                    <p className="text-micro text-content-3 mt-0.5 truncate">
+                        {nombrePor(fila.employee_id)} · {meta.branch_name ?? 'otra sala'} · {fmtCuando(fila.created_at)}
+                    </p>
+                    {fila.note && (
+                        <p className="text-micro text-content-2 mt-1 leading-snug">{fila.note}</p>
+                    )}
+                </div>
+            </div>
+
+            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+
+            {modo !== 'rechazo' ? (
+                <div className="flex gap-2">
+                    <Button size="sm" disabled={ocupado} onClick={confirmar}>
+                        {ocupado && <Loader2 size={13} className="animate-spin" />}
+                        {ocupado ? 'Enviando...' : 'Confirmar y enviar'}
+                    </Button>
+                    <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo('rechazo')}>
+                        No puedo
+                    </Button>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-2">
+                    <LiquidSelect
+                        value={motivo}
+                        onChange={v => setMotivo(v ?? MOTIVOS_RECHAZO[0])}
+                        options={MOTIVOS_RECHAZO.map(m => ({ value: m, label: m }))}
+                        placeholder="Motivo..."
+                        clearable={false}
+                    />
+                    <PortalTextarea
+                        value={texto}
+                        onChange={e => setTexto(e.target.value)}
+                        rows={2}
+                        placeholder={motivo === 'Otro' ? 'Escribe el motivo' : 'Algo más que agregar (opcional)'}
+                    />
+                    <div className="flex gap-2">
+                        <Button size="sm" variant="destructive" disabled={ocupado || !puedeRechazar} onClick={rechazar}>
+                            {ocupado && <Loader2 size={13} className="animate-spin" />}
+                            Rechazar
+                        </Button>
+                        <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo(null)}>
+                            Volver
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ─── Lo que pedí y ya salió ──────────────────────────────────────────────── */
+function FilaPorRecibir({ fila, onHecho }) {
+    const [ocupado, setOcupado] = useState(false);
+    const [error,   setError]   = useState('');
+    const meta = fila.metadata ?? {};
+
+    const recibir = async () => {
+        setError(''); setOcupado(true);
+        const r = await recibirTraslado(fila.id);
+        setOcupado(false);
+        if (!r?.ok) { setError(r?.error ?? 'No se pudo recibir.'); return; }
+        onHecho();
+    };
+
+    return (
+        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+                <Truck size={13} className="text-warning-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                <div className="flex-1 min-w-0">
+                    <p className="text-label font-black text-content leading-tight">{resumenItems(meta)}</p>
+                    <p className="text-micro text-content-3 mt-0.5 truncate">
+                        Enviado por {meta.erp_traslado?.by_name ?? 'la otra sala'} · {fmtCuando(fila.updated_at)}
+                    </p>
+                </div>
+            </div>
+            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            <Button size="sm" disabled={ocupado} onClick={recibir}>
+                {ocupado ? <Loader2 size={13} className="animate-spin" /> : <PackageCheck size={13} />}
+                {ocupado ? 'Recibiendo...' : 'Ya llegó, recibir'}
+            </Button>
+        </div>
+    );
+}
+
+/* ─── El contenido del modal ──────────────────────────────────────────────── */
+function PanelTraslados({ onCambio }) {
+    const { hasPermission } = useAuth();
+    const employees = useStaffStore(s => s.employees);
+    const [porConfirmar, setPorConfirmar] = useState(null);
+    const [porRecibir,   setPorRecibir]   = useState(null);
+    const [error,        setError]        = useState('');
+
+    // Confirmar un traslado es el permiso `traslados`; recibir lo que uno pidió
+    // no lo necesita. Son dos cosas distintas y por eso son dos secciones: la
+    // primera solo aparece para quien puede decidir sobre el producto de su
+    // sala. El RLS ya no le mostraría las filas de todos modos — esto evita el
+    // encabezado de una lista que siempre va a estar vacía.
+    const puedeConfirmar = hasPermission('traslados', 'can_approve');
+
+    const nombrePor = useCallback((id) => {
+        const e = (employees ?? []).find(x => x.id === id);
+        return e?.name ?? 'Alguien';
+    }, [employees]);
+
+    const cargar = useCallback(async () => {
+        const [a, b] = await Promise.all([fetchTrasladosPorConfirmar(), fetchTrasladosPorRecibir()]);
+        if (a.error || b.error) setError((a.error ?? b.error).message ?? 'No se pudo leer.');
+        setPorConfirmar(a.filas);
+        setPorRecibir(b.filas);
+        onCambio?.();
+    }, [onCambio]);
+
+    useEffect(() => { cargar(); }, [cargar]);
+
+    const cargando = porConfirmar === null || porRecibir === null;
+    const vacio = !cargando
+        && (!puedeConfirmar || porConfirmar.length === 0)
+        && porRecibir.length === 0;
+
+    return (
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+            {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+
+            {cargando && <SkeletonText lines={3} />}
+
+            {vacio && (
+                <div className="flex flex-col items-center justify-center flex-1 gap-2 py-10">
+                    <CheckCircle2 size={28} strokeWidth={1.5} className="text-content-3" />
+                    <p className="text-label font-semibold text-content-3 text-center leading-snug">
+                        Nada por confirmar<br />ni por recibir
+                    </p>
+                </div>
+            )}
+
+            {!cargando && puedeConfirmar && porConfirmar.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                        Te piden de tu sala
+                    </p>
+                    {porConfirmar.map(f => (
+                        <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={cargar} />
+                    ))}
+                </div>
+            )}
+
+            {!cargando && porRecibir.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                        En camino a tu sala
+                    </p>
+                    {porRecibir.map(f => (
+                        <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ─── La baldosa del tablero ──────────────────────────────────────────────── */
+export default function WidgetTransferRequests() {
+    const [pendientes, setPendientes] = useState(null);
+
+    const contar = useCallback(() => {
+        contarTrasladosPorConfirmar().then(r => setPendientes(r.total));
+    }, []);
+
+    useEffect(() => { contar(); }, [contar]);
+
+    return (
+        <LanzadorSolicitud
+            icon={ArrowLeftRight}
+            label="Traslados entre Salas"
+            pendientes={pendientes}
+            etiquetaPendientes="te piden"
+            etiquetaPendientesPlural="te piden"
+            vacio="Nada pendiente"
+            tono="brand"
+        >
+            {() => (
+                <div className="p-5 max-h-[80dvh] min-h-[20rem] flex flex-col overflow-y-auto">
+                    <PanelTraslados onCambio={contar} />
+                </div>
+            )}
+        </LanzadorSolicitud>
+    );
+}

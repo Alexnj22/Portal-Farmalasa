@@ -111,3 +111,22 @@ export function fetchInventorySyncLogRecent() {
         .order('synced_at', { ascending: false })
         .limit(60);
 }
+
+/**
+ * Lo que le falta a una sala y otra sí tiene.
+ *
+ * Tres condiciones, y cada una descarta un falso positivo: el producto está en
+ * el min/max de la sala (si no, saldría medio catálogo), la sala no tiene ni
+ * una unidad, y la que lo tiene queda por encima de su propio mínimo después
+ * de ceder una — no se le saca el único que le queda para tapar el hueco de
+ * otra. Todo eso vive en el RPC, no acá: son cuatro tablas cruzadas y traerlas
+ * al navegador para filtrarlas sería el camino largo al mismo número.
+ */
+export async function fetchFaltantesConStockEnOtraSala(erpSucursalId, limite = 40) {
+    if (!erpSucursalId) return { filas: [], error: null };
+    const { data, error } = await supabase.rpc('get_faltantes_con_stock_en_otra_sala', {
+        p_erp_sucursal_id: Number(erpSucursalId),
+        p_limite: limite,
+    });
+    return { filas: data ?? [], error };
+}

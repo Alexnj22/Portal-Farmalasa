@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.443.0 — Lo que falta acá y hay en otra sala
+
+**Consulta de Inventario ya no abre en blanco.** Sin escribir nada muestra los
+productos que **tu sala no tiene y otra sí**, con dónde están y cuánto hay.
+Tocando uno se busca. Es la razón real por la que alguien abre este widget —un
+cliente preguntó por algo que no está—, adelantada.
+
+Tres condiciones, y cada una descarta un falso positivo:
+
+1. **El producto está en el min/max de tu sala.** Sin eso saldría medio
+   catálogo: algo que esa sala nunca vendió no le falta.
+2. **Tu sala no tiene ni una unidad.** Si tiene poco, es otra conversación.
+3. **La sala que lo tiene queda por encima de su propio mínimo** después de
+   ceder una. No se le saca el único que le queda para tapar el hueco de otra:
+   eso mueve el problema, no lo resuelve.
+
+La existencia se cuenta en unidades reales: el inventario guarda una fila por
+presentación, así que sumar en crudo haría que un producto con una caja de 100
+contara como 1.
+
+**Y el scroll de Modificar Facturación**, que se había roto al hacer que el
+modal se adaptara al contenido: la lista crecía en vez de desplazarse.
+
 ## v2.442.0 — El baseline del gate de diseño queda VACÍO
 
 **Las 47 categorías del gate de diseño están en cero y bloqueantes.** El baseline

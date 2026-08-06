@@ -201,7 +201,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex-1 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Info 2 columnas compacta */}
         <div data-surface="card" className="overflow-hidden shrink-0">
           <div className="grid grid-cols-2 divide-x divide-divider">
@@ -317,7 +317,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
   ];
 
   return (
-    <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
+    <div className="flex flex-col gap-3 flex-1 min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
       <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">Tipo de solicitud</p>
       <div className="flex flex-col gap-2 flex-1">
@@ -1004,7 +1004,7 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
 
   /* ── Lista ── */
   return (
-    <div className="flex flex-col gap-2.5 h-full">
+    <div className="flex flex-col gap-2.5 flex-1 min-h-0">
       <div className="flex items-center justify-between shrink-0">
         <p className="text-caption font-black text-content-2 uppercase tracking-widest">
           Ventas del mes — {activeBranch?.name || 'Tu sucursal'}
@@ -1029,7 +1029,7 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
 
         {!loading && invoices.length === 0 && (

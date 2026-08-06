@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
@@ -11,6 +11,7 @@ import {
   fetchProductsByPrincipioActivo,
   searchInventory,
   fetchInventoryByProductIds,
+  fetchFaltantesConStockEnOtraSala,
 } from '../../data/inventory';
 import { insertVentaPerdida } from '../../data/ventasPerdidas';
 import PortalInput from '../../components/common/PortalInput';
@@ -27,6 +28,9 @@ const ERP_BRANCH_MAP = {
   7: 'Salud 5',
 };
 const BRANCH_ORDER = [5, 1, 2, 3, 4, 7, 6];
+// branch del portal → sucursal del sistema de origen. Son numeraciones
+// distintas; el mismo mapa que usa el tablero.
+const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
 
 const NEUTRAL_THEME = { dot: 'var(--chart-8)', pill: 'bg-surface-card-hover border-divider', label: 'text-content-2' };
 const VENCIDOS_THEME = { dot: 'var(--danger)', pill: 'bg-danger/10 border-danger/30', label: 'text-danger-text' };
@@ -362,10 +366,24 @@ export default function WidgetInventorySearch() {
   const [drillProduct,   setDrillProduct]   = useState(null);
   const [lightboxUrl,    setLightboxUrl]    = useState(null);
   const [vencidosProds,  setVencidosProds]  = useState([]);
+  const [faltantes,      setFaltantes]      = useState([]);
   const [srsResults,     setSrsResults]     = useState(null);
   const [srsLoading,   setSrsLoading]   = useState(false);
   const [alternatives, setAlternatives] = useState([]);
   const debounceRef                     = useRef(null);
+
+  // La sucursal de quien mira. El widget consulta TODAS las salas, pero
+  // "lo que falta" solo tiene sentido desde la propia.
+  const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
+
+  useEffect(() => {
+    if (!miErp) return;
+    let cancelado = false;
+    fetchFaltantesConStockEnOtraSala(miErp, 20).then(r => {
+      if (!cancelado && !r.error) setFaltantes(r.filas);
+    });
+    return () => { cancelado = true; };
+  }, [miErp]);
 
   const doSearch = useCallback(async (q) => {
     if (!q.trim()) { setResults(null); return; }
@@ -595,8 +613,37 @@ export default function WidgetInventorySearch() {
         {/* Skeleton */}
         {loading && <><SkeletonSection rows={3} /><SkeletonSection rows={2} /></>}
 
+        {/* Sin búsqueda: lo que falta acá y otra sala sí tiene.
+            La razón real por la que se abre este widget es que alguien
+            preguntó por algo que no está — así que la pantalla en blanco lo
+            adelanta en vez de esperar a que se escriba. */}
+        {!loading && results === null && faltantes.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+              Sin existencia acá · hay en otra sala
+            </p>
+            {faltantes.map(f => (
+              <button
+                key={f.erp_product_id}
+                data-surface="card"
+                onClick={() => handleInput(f.descripcion)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all"
+              >
+                <PackageMinus size={13} className="text-warning-text shrink-0" strokeWidth={2.5} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-label font-black text-content truncate leading-tight">{f.descripcion}</p>
+                  <p className="text-micro text-content-3 truncate mt-0.5">
+                    {(f.donde ?? []).slice(0, 3).map(d => `${d.sala} ${d.unidades}`).join(' · ')}
+                  </p>
+                </div>
+                <span className="text-micro font-black text-content-3 shrink-0 tabular-nums">min {f.min_units}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Initial state */}
-        {!loading && results === null && (
+        {!loading && results === null && faltantes.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <Package size={28} strokeWidth={1.5} className="text-content-3" />
             <p className="text-label font-semibold text-content-3 text-center leading-snug">

@@ -122,7 +122,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
   };
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col gap-3 flex-1 min-h-0">
       <div className="flex items-center gap-2 shrink-0">
         <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} />
         <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">
@@ -297,7 +297,7 @@ function FormularioMinMax({ selectedErp = null }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col gap-3 flex-1 min-h-0">
       <div className="flex items-center justify-end gap-1.5 shrink-0">
         <SearchInput expandable accentColor="var(--warning)" value={search} onChange={setSearch} placeholder="Buscar producto para ajustar Min/Max…" />
       </div>

@@ -112,7 +112,7 @@ let contador = 0;
 /* ─── Paso 1 · qué se va a hacer ──────────────────────────────────────────── */
 function SelectorOperacion({ onSelect }) {
     return (
-        <div className="flex flex-col gap-3 h-full">
+        <div className="flex flex-col gap-3 flex-1 min-h-0">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 shrink-0">
                 Tipo de movimiento
             </p>
@@ -367,14 +367,14 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     }
 
     if (!op) return (
-        <div className="flex flex-col gap-3 h-full min-h-0">
+        <div className="flex flex-col gap-3 flex-1 min-h-0">
             {selectorSucursal}
             <SelectorOperacion onSelect={setOpKey} />
         </div>
     );
 
     return (
-        <div className="flex flex-col gap-3 h-full min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
+        <div className="flex flex-col gap-3 flex-1 min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
             <CabeceraMovimiento
                 op={op} branchName={branchName} onBack={volver}
                 lineas={totales.lineas} unidades={totales.unidades}

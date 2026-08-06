@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { AlertTriangle, CheckCircle2, PackageMinus, PackagePlus, Plus, X } from 'lucide-react';
+import {
+    AlertTriangle, ArrowLeft, CalendarX2, CheckCircle2, ChevronRight, Loader2,
+    PackagePlus, Plus, Stethoscope, Trash2, X,
+} from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -16,38 +19,57 @@ import {
 
 // Widget «Ajuste de Inventario».
 //
-// Se piden varios productos en una sola solicitud. Para el descarte por
-// vencimiento la lista se PROPONE —el portal ya sabe qué venció en cada sala,
-// lote por lote— y en el resto se busca y se agrega.
+// Sigue la forma del widget de Facturación: primero se elige QUÉ se va a hacer
+// —una columna de tarjetas, no tres desplegables apilados— y recién después se
+// arma la solicitud, con su encabezado, su vuelta atrás y su botón al pie.
 //
 // La solicitud no mueve nada: la crea, Supervisión la aprueba y recién ahí se
 // aplica, con la existencia releída en ese momento.
 //
-// ── Lo que cada línea necesita, y por qué ──────────────────────────────────
-// Medido contra el sistema de origen el 2026-08-06, no supuesto:
+// ── Lo que cada línea necesita, medido y no supuesto (2026-08-06) ──────────
+//   · CON control de lote: la descarga ELIGE un lote existente; la carga elige
+//     uno o agrega nuevo con su fecha. La identidad de un lote es número +
+//     fecha: hay productos con dos lotes del mismo número y vencimientos
+//     distintos, y son existencias separadas.
+//   · Perecedero sin control de lote: la carga pide fecha; el lote va vacío a
+//     propósito — ponerle un número le inventa un lote que no debería existir.
+//   · Ninguno de los dos: ni lote ni fecha.
 //
-//   · Producto CON control de lote (regulado) — descarte: se ELIGE un lote de
-//     los que existen. Carga: se elige uno o se agrega nuevo, con su fecha.
-//     La identidad de un lote es número + fecha, no el número: GLIMEPIRIDA
-//     tiene dos «L31800» con vencimientos distintos y son existencias aparte.
-//
-//   · Producto perecedero sin control de lote — la carga pide fecha; el lote
-//     va VACÍO a propósito. Mandarle un número le inventa un lote que no
-//     debería existir (pasó en la prueba del 2026-08-06).
-//
-//   · Ninguno de los dos — ni lote ni fecha.
-//
-// Quién lleva control de lote no se puede deducir del portal: `es_antibiotico`
-// acertó 49 de 52 y la señal de "tiene lote real" 50 — glimepirida, prednisona
-// y ciprofibrato son regulados sin ser antibióticos. Acá se ofrece el selector
-// cuando el producto TIENE lotes reales, y quien decide de verdad es el
-// sistema de origen al aplicar.
+// Quién lleva control de lote NO se puede deducir de acá: `es_antibiotico`
+// acertó 49 de 52 productos probados. Se ofrece el selector cuando el producto
+// tiene lotes, y quien decide de verdad es el sistema de origen al aplicar.
 
-const SUBTIPOS = [
-    { value: 'VENCIMIENTO',     label: 'Vencimiento' },
-    { value: 'DESCARTE',        label: 'Descarte' },
-    { value: 'PRODUCTO DAÑADO', label: 'Producto dañado' },
-    { value: 'CONSUMO INTERNO', label: 'Consumo interno' },
+const OPERACIONES = [
+    {
+        key: 'VENCIMIENTO', movimiento: 'DESCARTE', icon: CalendarX2,
+        label: 'Descargar por vencimiento',
+        desc: 'La lista sale sola con lo vencido de la sala',
+        color: 'text-danger-text', bg: 'bg-danger/10 border-danger/30', iconBg: 'bg-danger/10',
+    },
+    {
+        key: 'DESCARTE', movimiento: 'DESCARTE', icon: Trash2,
+        label: 'Descargar por descarte',
+        desc: 'Producto que se retira sin estar vencido',
+        color: 'text-warning-text', bg: 'bg-warning/10 border-warning/20', iconBg: 'bg-warning/10',
+    },
+    {
+        key: 'PRODUCTO DAÑADO', movimiento: 'DESCARTE', icon: AlertTriangle,
+        label: 'Descargar por daño',
+        desc: 'Producto roto, golpeado o inservible',
+        color: 'text-chart-6-text', bg: 'bg-chart-6/10 border-chart-6/30', iconBg: 'bg-chart-6/10',
+    },
+    {
+        key: 'CONSUMO INTERNO', movimiento: 'DESCARTE', icon: Stethoscope,
+        label: 'Descargar por consumo interno',
+        desc: 'Usado en inyecciones, curaciones o la sala',
+        color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30', iconBg: 'bg-chart-3/10',
+    },
+    {
+        key: 'CARGA', movimiento: 'CARGA', icon: PackagePlus,
+        label: 'Cargar producto',
+        desc: 'Ingresar existencia que no entró por compra',
+        color: 'text-success-text', bg: 'bg-success/10 border-success/30', iconBg: 'bg-success/10',
+    },
 ];
 
 const PLAZOS = [
@@ -59,10 +81,7 @@ const PLAZOS = [
 
 const SUPERVISOR_ROLE_ID = 13; // Supervisor/a de Ventas
 
-/**
- * Quién resuelve: SIEMPRE Supervisión, no la jefatura de la sala. La jefatura
- * se entera del RESULTADO, y de eso se encarga un trigger.
- */
+/** Quién resuelve: SIEMPRE Supervisión. La jefatura se entera del resultado. */
 function findTargetEmployee(employees) {
     const disponible = employees.find(e => {
         if (e.status !== 'ACTIVO') return false;
@@ -80,7 +99,6 @@ const fmtFecha = (d) => {
     return `${dd}/${m}/${a.slice(2)}`;
 };
 
-/** Días entre hoy (El Salvador) y una fecha. Negativo = ya pasó. */
 function diasHasta(fecha) {
     if (!fecha) return null;
     const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -90,21 +108,73 @@ function diasHasta(fecha) {
 const LOTE_NUEVO = '__nuevo__';
 let contador = 0;
 
+/* ─── Paso 1 · qué se va a hacer ──────────────────────────────────────────── */
+function SelectorOperacion({ onSelect }) {
+    return (
+        <div className="flex flex-col gap-3 h-full">
+            <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 shrink-0">
+                Tipo de movimiento
+            </p>
+            <div className="flex flex-col gap-2 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {OPERACIONES.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
+                    <button
+                        key={key}
+                        onClick={() => onSelect(key)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left hover:translate-y-[var(--lift-hover)] transition-all ${bg}`}
+                    >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+                            <Icon size={15} strokeWidth={2} className={color} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className={`text-body-sm font-black ${color}`}>{label}</p>
+                            <p className="text-caption text-content-3 mt-0.5">{desc}</p>
+                        </div>
+                        <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ─── Encabezado del armado ───────────────────────────────────────────────── */
+function CabeceraMovimiento({ op, branchName, onBack, lineas, unidades }) {
+    const Icon = op.icon;
+    return (
+        <div className="flex flex-col gap-1 shrink-0 pb-2 border-b border-divider">
+            <div className="flex items-center gap-2">
+                <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} aria-label="Volver" />
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${op.iconBg}`}>
+                    <Icon size={13} strokeWidth={2} className={op.color} />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-body-sm font-black text-content truncate leading-tight">{op.label}</p>
+                    <p className="text-micro text-content-3 leading-tight">{branchName}</p>
+                </div>
+                {lineas > 0 && (
+                    <p className="text-body-sm font-black text-content shrink-0">
+                        {lineas} · {unidades}u
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function WidgetInventoryMovement({ erpSucursalId, branchId, branchName, erpUbicacionId }) {
     const { user } = useAuth();
     const employees = useStaffStore(s => s.employees);
     const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
-    const [movimiento, setMovimiento] = useState('DESCARTE');
-    const [subtipo,    setSubtipo]    = useState('VENCIMIENTO');
-    const [plazo,      setPlazo]      = useState('0');
-    const [busqueda,   setBusqueda]   = useState('');
+    const [opKey, setOpKey] = useState(null);      // null = paso 1
+    const [plazo, setPlazo] = useState('0');
+    const [busqueda, setBusqueda] = useState('');
 
     const [candidatos, setCandidatos] = useState([]);
     const [hayMas,     setHayMas]     = useState(false);
     const [cargando,   setCargando]   = useState(false);
 
-    const [lineas, setLineas] = useState([]);   // lo que va en la solicitud
+    const [lineas, setLineas] = useState([]);
     const [presPorProducto, setPresPorProducto] = useState(new Map());
     const [lotesPorProducto, setLotesPorProducto] = useState(new Map());
     const [perecederos, setPerecederos] = useState(new Set());
@@ -114,8 +184,15 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
     const [error, setError]       = useState('');
     const [listo, setListo]       = useState(false);
 
-    const esCarga = movimiento === 'CARGA';
-    const porVencimiento = !esCarga && subtipo === 'VENCIMIENTO';
+    const op = OPERACIONES.find(o => o.key === opKey) ?? null;
+    const esCarga = op?.movimiento === 'CARGA';
+    const porVencimiento = opKey === 'VENCIMIENTO';
+
+    const volver = useCallback(() => {
+        setOpKey(null); setLineas([]); setCausa(''); setBusqueda(''); setError('');
+    }, []);
+
+    useEffect(() => { volver(); }, [erpSucursalId, volver]);
 
     // ── La lista propuesta: lo que venció en esta sala ────────────────────
     useEffect(() => {
@@ -124,16 +201,14 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
         setCargando(true);
         fetchLotesPorVencer({ erpSucursalId, dias: Number(plazo) }).then(r => {
             if (cancelado) return;
-            setCandidatos(r.filas);
-            setHayMas(r.hayMas);
-            setCargando(false);
+            setCandidatos(r.filas); setHayMas(r.hayMas); setCargando(false);
         });
         return () => { cancelado = true; };
     }, [erpSucursalId, plazo, porVencimiento]);
 
     // ── El buscador, para todo lo demás ───────────────────────────────────
     useEffect(() => {
-        if (porVencimiento) return;
+        if (!op || porVencimiento) return;
         const q = busqueda.trim();
         if (q.length < 2) { setCandidatos([]); return; }
         let cancelado = false;
@@ -141,8 +216,8 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
         const t = setTimeout(() => {
             buscarConExistencia({ erpSucursalId, texto: q }).then(r => {
                 if (cancelado) return;
-                // Un producto por fila, no un renglón por lote: el lote se
-                // elige después, y verlo repetido en el buscador confunde.
+                // Un producto por fila: el lote se elige después, y verlo
+                // repetido en el buscador confunde.
                 const vistos = new Set();
                 setCandidatos((r.filas ?? []).filter(f => {
                     if (vistos.has(f.erp_product_id)) return false;
@@ -153,7 +228,7 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
             });
         }, 300);
         return () => { cancelado = true; clearTimeout(t); };
-    }, [busqueda, erpSucursalId, porVencimiento]);
+    }, [busqueda, erpSucursalId, porVencimiento, op]);
 
     useEffect(() => {
         const ids = candidatos.map(f => f.erp_product_id);
@@ -167,29 +242,21 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
         return () => { cancelado = true; };
     }, [candidatos]);
 
-    // Cambiar de operación o de sala invalida lo elegido.
-    useEffect(() => { setLineas([]); setError(''); }, [movimiento, subtipo, erpSucursalId]);
-
-    // ── Agregar una línea ─────────────────────────────────────────────────
     const agregar = useCallback(async (fila) => {
         const pres = presPorProducto.get(fila.erp_product_id) ?? [];
         const unidad = pres.find(p => p.factor === 1) ?? pres[0];
-        const id = `l${++contador}`;
-
         setLineas(prev => [...prev, {
-            id,
+            id: `l${++contador}`,
             erp_product_id: fila.erp_product_id,
             descripcion: fila.descripcion,
             tipo:   unidad?.tipo ?? 'UNIDAD',
             factor: unidad?.factor ?? 1,
             cantidad: String(fila.cantidad ?? 1),
             existencia: fila.cantidad ?? null,
-            // Si vino de la lista propuesta, ya trae su lote y su fecha.
             lote:  fila.lote && fila.lote !== 'GENERICO' ? fila.lote : '',
             vence: fila.fecha_vencimiento ?? '',
             loteNuevo: false,
         }]);
-
         if (!lotesPorProducto.has(fila.erp_product_id)) {
             const { lotes } = await fetchLotesDeProducto({
                 erpProductId: fila.erp_product_id, erpSucursalId,
@@ -198,7 +265,7 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
         }
     }, [presPorProducto, lotesPorProducto, erpSucursalId]);
 
-    const quitar = useCallback((id) => setLineas(prev => prev.filter(l => l.id !== id)), []);
+    const quitar = useCallback(id => setLineas(prev => prev.filter(l => l.id !== id)), []);
     const editar = useCallback((id, patch) =>
         setLineas(prev => prev.map(l => (l.id === id ? { ...l, ...patch } : l))), []);
 
@@ -207,10 +274,8 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
         unidades: lineas.reduce((s, l) => s + (Number(l.cantidad) || 0), 0),
     }), [lineas]);
 
-    /** Lo que a cada línea le falta. Vacío = está lista. */
     const faltantes = useMemo(() => lineas.map(l => {
-        const lotes = lotesPorProducto.get(l.erp_product_id) ?? [];
-        const llevaLote = lotes.length > 0;
+        const llevaLote = (lotesPorProducto.get(l.erp_product_id) ?? []).length > 0;
         const problemas = [];
         if (!(Number(l.cantidad) > 0)) problemas.push('cantidad');
         if (!esCarga && l.existencia != null && Number(l.cantidad) > Number(l.existencia))
@@ -251,8 +316,8 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
                 status: 'PENDING',
                 note: causa.trim(),
                 metadata: {
-                    movimiento,
-                    subtipo: esCarga ? undefined : subtipo,
+                    movimiento: op.movimiento,
+                    subtipo: esCarga ? undefined : opKey,
                     reason: causa.trim(),
                     branch_id: branchId,
                     branch_name: branchName,
@@ -271,21 +336,17 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
             await appendAuditLog(
                 esCarga ? 'INVENTARIO_CARGA_SOLICITADA' : 'INVENTARIO_DESCARTE_SOLICITADO',
                 String(branchId ?? ''),
-                { subtipo, lineas: totales.lineas, unidades: totales.unidades, causa: causa.trim() },
+                { subtipo: opKey, lineas: totales.lineas, unidades: totales.unidades, causa: causa.trim() },
             );
 
             // El aviso lo crea el trigger junto con la fila. Mandarlo desde acá
             // sería la llamada aparte que este módulo ya perdió una vez.
             setListo(true);
-            setLineas([]);
-            setCausa('');
-            setBusqueda('');
-            setTimeout(() => setListo(false), 2800);
+            setTimeout(() => { setListo(false); volver(); }, 2800);
         } catch (e) {
             setError(String(e?.message ?? '').includes('row-level security')
                 ? 'No tienes permiso para crear solicitudes de inventario.'
                 : (e?.message || 'No se pudo enviar la solicitud.'));
-        } finally {
             setEnviando(false);
         }
     };
@@ -304,31 +365,31 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
         );
     }
 
+    if (!op) return <SelectorOperacion onSelect={setOpKey} />;
+
     return (
-        <div className="flex flex-col gap-3 h-full min-h-0">
-            {/* Qué se hace */}
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <LiquidSelect
-                    nano value={movimiento} onChange={setMovimiento}
-                    options={[
-                        { value: 'DESCARTE', label: 'Descargar' },
-                        { value: 'CARGA',    label: 'Cargar' },
-                    ]}
-                />
-                {!esCarga && <LiquidSelect nano value={subtipo} onChange={setSubtipo} options={SUBTIPOS} />}
-                {porVencimiento && <LiquidSelect nano value={plazo} onChange={setPlazo} options={PLAZOS} />}
-                {!porVencimiento && (
-                    <SearchInput
-                        expandable accentColor="var(--warning)"
-                        value={busqueda} onChange={setBusqueda}
-                        placeholder="Buscar producto para agregar…"
-                    />
-                )}
+        <div className="flex flex-col gap-3 h-full min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
+            <CabeceraMovimiento
+                op={op} branchName={branchName} onBack={volver}
+                lineas={totales.lineas} unidades={totales.unidades}
+            />
+
+            {/* Cómo se agregan productos */}
+            <div className="shrink-0">
+                {porVencimiento
+                    ? <LiquidSelect nano value={plazo} onChange={setPlazo} options={PLAZOS} />
+                    : (
+                        <SearchInput
+                            accentColor="var(--warning)"
+                            value={busqueda} onChange={setBusqueda}
+                            placeholder="Buscar producto para agregar…"
+                        />
+                    )}
             </div>
 
-            {/* Lo elegido */}
+            {/* Lo que ya va en la solicitud */}
             {lineas.length > 0 && (
-                <div className="shrink-0 max-h-[45%] overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="shrink-0 max-h-[42%] overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {lineas.map(l => {
                         const pres = presPorProducto.get(l.erp_product_id) ?? [];
                         const lotes = lotesPorProducto.get(l.erp_product_id) ?? [];
@@ -340,12 +401,8 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
                                     <p className="flex-1 min-w-0 text-body-sm font-black text-content truncate">
                                         {l.descripcion}
                                     </p>
-                                    <Button
-                                        variant="ghost" nano aria-label="Quitar producto"
-                                        onClick={() => quitar(l.id)}
-                                    >
-                                        <X size={13} strokeWidth={2.5} />
-                                    </Button>
+                                    <Button variant="ghost" size="xs" icon={X} iconOnly
+                                        aria-label="Quitar producto" onClick={() => quitar(l.id)} />
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -368,8 +425,6 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
                                         />
                                     )}
 
-                                    {/* El lote: se elige de los que hay, y en una carga
-                                        además se puede agregar uno nuevo. */}
                                     {llevaLote && (
                                         <LiquidSelect
                                             nano
@@ -394,12 +449,10 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
                                         <PortalInput
                                             value={l.lote}
                                             onChange={e => editar(l.id, { lote: e.target.value })}
-                                            placeholder="N.º de lote"
-                                            className="w-32"
+                                            placeholder="N.º de lote" className="w-32"
                                         />
                                     )}
 
-                                    {/* La fecha: en una carga, si el producto la lleva. */}
                                     {esCarga && (llevaLote || perecederos.has(l.erp_product_id)) && (
                                         <PortalInput
                                             type="date" value={l.vence ?? ''}
@@ -434,7 +487,7 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
 
                 {!cargando && candidatos.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3 px-4 text-center py-6">
-                        {esCarga ? <PackagePlus size={26} strokeWidth={1.5} /> : <PackageMinus size={26} strokeWidth={1.5} />}
+                        <op.icon size={26} strokeWidth={1.5} />
                         <p className="text-body-sm font-semibold">
                             {porVencimiento
                                 ? 'No hay nada por vencer en este plazo'
@@ -475,19 +528,12 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
             {/* La causa y el envío */}
             {totales.lineas > 0 && (
                 <div className="shrink-0 flex flex-col gap-2 pt-2 border-t border-divider">
-                    <div className="flex items-center justify-between gap-2">
-                        <p className="text-caption font-black text-content-3 uppercase tracking-widest">
-                            {totales.lineas} {totales.lineas === 1 ? 'producto' : 'productos'}
-                            {' · '}
-                            {totales.unidades} {totales.unidades === 1 ? 'unidad' : 'unidades'}
-                        </p>
-                        {incompletas.length > 0 && (
-                            <span className="flex items-center gap-1 text-micro text-danger-text font-semibold">
-                                <AlertTriangle size={12} strokeWidth={2.5} />
-                                {incompletas.length} sin completar
-                            </span>
-                        )}
-                    </div>
+                    {incompletas.length > 0 && (
+                        <span className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1">
+                            <AlertTriangle size={12} strokeWidth={2.5} />
+                            {incompletas.length} {incompletas.length === 1 ? 'línea sin completar' : 'líneas sin completar'}
+                        </span>
+                    )}
 
                     <PortalTextarea
                         value={causa}
@@ -498,8 +544,9 @@ export default function WidgetInventoryMovement({ erpSucursalId, branchId, branc
 
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
-                    <Button variant="primary" onClick={enviar} disabled={!puedeEnviar} loading={enviando}>
-                        {esCarga ? 'Enviar solicitud de carga' : 'Enviar solicitud de descarga'}
+                    <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
+                        {enviando && <Loader2 size={14} className="animate-spin" />}
+                        {enviando ? 'Enviando...' : (esCarga ? 'Enviar solicitud de carga' : 'Enviar solicitud de descarga')}
                     </Button>
                 </div>
             )}

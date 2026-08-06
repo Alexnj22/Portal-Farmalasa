@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.437.2 — El selector de tipo, como en Facturación
+
+El widget abría con tres desplegables apilados a lo ancho —operación, motivo y
+plazo— que ocupaban media tarjeta antes de mostrar un solo producto. Ahora
+sigue la forma del widget de Facturación: **una columna de tarjetas** con las
+cinco cosas que se pueden hacer —descargar por vencimiento, por descarte, por
+daño, por consumo interno, o cargar— y recién al elegir una se entra al armado,
+con su encabezado, su vuelta atrás y el contador de lo que llevás.
+
 ## v2.437.1 — Dos excepciones medidas más del carril, y por qué paro en 4
 
 `carril-pildora` **7 → 4**. Se auditaron los siete leyendo qué hace

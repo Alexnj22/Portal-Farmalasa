@@ -972,7 +972,7 @@ no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 | **B** | ~~Definir barra de pestañas y sidebar~~ ✅ **hecho** (§11 y §12) | — | Sus secciones, con valores y mediciones |
 | **C** | ~~El reloj~~ ✅ **hecho 2026-08-05** — 468 usos tokenizados, 0 literales | A | `reloj-a-mano` en 0 y bloqueante |
 | **D** | ~~Tokens de §1-§5 en los cuatro temas~~ ✅ **hecho 2026-08-05** | A, B | Medido en la app real, 4 temas |
-| **E** | `data-interactive` en las tarjetas clicables | D | El gel se ve; el gate lo exige |
+| **E** | ~~`data-interactive` + el filo que corre (§1.6)~~ ✅ **hecho 2026-08-05** | D | 6.672 px en la apuntada, 0 en la vecina |
 | **F** | ~~Utilidad de seguimiento del puntero~~ ⛔ **SIN CONSUMIDOR** — ver §6.1 | D | El gate `puntero-lista` queda de guardia |
 | **G** | ~~Remover el barrido (`.sweep`)~~ ✅ **hecho 2026-08-05** | D | 0 en `index.css`, JSX y `DESIGN.md` |
 | **H** | ~~`DESIGN.md` §25.4 y el barrido~~ ✅ **hecho 2026-08-05** | D | El texto y el código dicen lo mismo |

@@ -228,7 +228,7 @@ luz). Se replican las tres, con estos valores aprobados:
   --glass-esp-radio: 7rem;   /* tamaño del halo */
   --glass-rim:       1.45;   /* canto vivo de 1px */
   --glass-lente:     1.45;   /* sombras interiores del filo */
-  --lift-card:      -3px;    /* CONFIRMADO — hoy el código vale -2px. Ver §0.bis */
+  --lift-card:      -3px;    /* CONFIRMADO · APLICADO */
 }
 ```
 
@@ -272,7 +272,7 @@ profundidad sale de **apilar superficies opacas**, no de desenfocar.
   --solid-tono:   2.00;   /* escalón de tinte sobre el fondo */
   --solid-sombra: 2.00;   /* corta y contrastada */
   --solid-anillo: 0.40;   /* aro nítido al apuntar */
-  --lift-card:   -1px;    /* CONFIRMADO 2026-08-05 — hoy el código vale 0px. Ver §1.4 */
+  --lift-card:   -1px;    /* CONFIRMADO 2026-08-05 · APLICADO 2026-08-06 */
 }
 ```
 
@@ -297,7 +297,18 @@ Los mismos roles, distinto material:
 | presión | gel: `scale(.978)` | hundido: `inset` + 1px hacia abajo |
 | reloj | 150/200/300ms | 90/120/180ms |
 
-### 1.4 El contrato de `DESIGN.md` §2 hay que cambiarlo
+### 1.4 El contrato de `DESIGN.md` §2 hay que cambiarlo ✅ HECHO 2026-08-06
+
+> **Aplicado el 2026-08-06, y tarde.** La fase H de §8 estaba marcada ✅ desde el
+> 2026-08-05 con `--lift-card` de Solid todavía en `0px` y `DESIGN.md` todavía
+> diciendo «no se mueve». O sea que la fase que existía **para que el texto y el
+> código dijeran lo mismo** se cerró dejándolos de acuerdo entre ellos y en
+> desacuerdo con la decisión. Es el modo de falla exacto que el párrafo de abajo
+> describe, ocurrido sobre el párrafo mismo.
+>
+> De paso salió otro desfase que nadie había mirado: `DESIGN.md` publicaba
+> `--lift-card` de Liquid como **`-2px`** en dos lugares cuando el código vale
+> **`-3px`** desde §1.1. Los tres números quedan alineados.
 
 `DESIGN.md` §2 dice hoy, para Solid: *"no se mueve; solo cambia de color"*. El
 valor **confirmado el 2026-08-05** es `--lift-card: -1px`, o sea que **sí se

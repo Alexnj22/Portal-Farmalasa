@@ -1260,7 +1260,12 @@ thead.sticky,
      superficie, y ponerlo solo acá sería el mismo error que los 54
      `rounded-full` fijos peleando contra su propio tema. */
   --lift-hover:  0px;
-  --lift-card:   0px;
+  /* §1.4 · CONFIRMADO el 2026-08-05 y aplicado el 2026-08-06: en Solid la
+     tarjeta SÍ se mueve, 1px. Es un guiño, no un salto. La fase H se había
+     marcado hecha con este token todavía en 0 y con DESIGN.md diciendo «no se
+     mueve» — el código y el contrato coincidían entre ellos, y el que difería
+     era el plan. Se cambian los dos juntos, que es lo que §1.4 pedía. */
+  --lift-card:   -1px;
   /* ══ Materiales — Solid (§1.2) ══
      No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
      NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */
@@ -1436,7 +1441,12 @@ thead.sticky,
      escalón sobre la tarjeta (#1e293b) por el mismo motivo que en Liquid
      oscuro: dos oscuros iguales no se separan. */
   --lift-hover:  0px;
-  --lift-card:   0px;
+  /* §1.4 · CONFIRMADO el 2026-08-05 y aplicado el 2026-08-06: en Solid la
+     tarjeta SÍ se mueve, 1px. Es un guiño, no un salto. La fase H se había
+     marcado hecha con este token todavía en 0 y con DESIGN.md diciendo «no se
+     mueve» — el código y el contrato coincidían entre ellos, y el que difería
+     era el plan. Se cambian los dos juntos, que es lo que §1.4 pedía. */
+  --lift-card:   -1px;
   /* ══ Materiales — Solid (§1.2) ══
      No declara --glass-*, --menu-glow ni --modal-rim a propósito: esas capas
      NO EXISTEN en este material, no están apagadas. Lo que sí tiene es suyo. */

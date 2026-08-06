@@ -132,7 +132,7 @@ literalmente el artefacto que hace que algo lea como vidrio.
 | forma | píldora (`9999px`), tarjeta muy redondeada | rectángulo tenso (8–12px) | `--btn-radius`, `--card-radius` |
 | sombra | doble eje: elevación **+ brillo interior** | solo elevación, y más corta | `--shadow-glass-*`, `--shadow-shine*` |
 | color de acento | halo difuso de 8–40px | **aro nítido** de 1–3px | `--shadow-glow-*` |
-| hover | **se levanta**: el control `-1px`, la superficie `-2px` | no se mueve; solo cambia de color | `--lift-hover`, `--lift-card` |
+| hover | **se levanta**: el control `-1px`, la superficie `-3px` | el control no se mueve; la superficie cede **`-1px`** — un guiño, no un salto | `--lift-hover`, `--lift-card` |
 | movimiento | entradas, deriva ambiental, barrido | apagado | reglas `[data-theme="solid"] .animate-*` |
 
 **Consecuencias para escribir código nuevo**
@@ -542,15 +542,22 @@ salto, 1px en la tarjeta no se ve.
 
 | token | quién lo usa | liquid / dark | solid / solid-dark |
 |---|---|---|---|
-| `--lift-card` | `data-surface="card"` | `-2px` | `0px` |
+| `--lift-card` | `data-surface="card"` | `-3px` | `-1px` |
 | `--lift-hover` | `Button`, `TablePagination`, `data-surface="page-header"` | `-1px` | `0px` |
 
 Existe porque el lift de la tarjeta estaba **clavado en `-2px`**, y por eso no
 se apagaba en Solid: la neutralización de tema (`index.css`) sólo alcanza a las
 clases Tailwind `[class*="hover:-translate-y"]`, nunca a una regla de
 `data-surface`. Medido antes del arreglo: `dy=-2` en los tres temas, incluido el
-que promete no moverse. Verificado después: `-2` en liquid y dark, `0` en solid
-y solid-dark.
+que entonces prometía no moverse.
+
+**Los valores de hoy son otros, y por dos razones distintas** (`PLAN-MATERIALES`
+§1.1 y §1.4, aplicados el 2026-08-06): Liquid subió a **`-3px`** porque con el
+material nuevo `-2` casi no se leía, y Solid **dejó de valer `0`**: cede
+**`-1px`**. Ese `-1` es una decisión, no un descuido — un guiño de que la pieza
+responde, sin el salto que contradiría la promesa de eficiencia del material.
+El texto de arriba decía «no se mueve» un día más que el código, que es el
+mismo desfase que este bloque existe para contar.
 
 > **Nunca clavar el número.** Una superficie nueva usa `var(--lift-card)`; un
 > control, `var(--lift-hover)`. Clavar `-2px` es exactamente el bug que esto

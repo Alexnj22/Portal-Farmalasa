@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.438.0 — El lift de Solid: la fase H estaba marcada hecha y no lo estaba
+
+Verificando el checklist de §9 punto por punto —en vez de darlo por bueno—
+aparecieron **tres desfases entre el código y el contrato**, todos en la misma
+línea de trabajo que la fase H debía cerrar.
+
+**En Solid la tarjeta ahora cede `-1px` al apuntarla.** §1.4 lo confirmó el
+2026-08-05 y dejó escrito el orden: *«hoy el código (`0px`) y `DESIGN.md` («no se
+mueve») están de acuerdo entre ellos; el que difiere es este plan. Se cambian los
+dos en el mismo commit (fase H), nunca el token primero.»* **No pasó.** La fase H
+quedó marcada ✅ con el token todavía en `0px` y el texto todavía diciendo «no se
+mueve» — o sea que la fase que existía **para que el texto y el código dijeran lo
+mismo** se cerró dejándolos de acuerdo entre ellos y en desacuerdo con la
+decisión. El modo de falla exacto que ese párrafo describe, ocurrido sobre el
+párrafo mismo.
+
+Ese `-1px` es una decisión, no un descuido: un guiño de que la pieza responde,
+sin el salto que contradiría la promesa de eficiencia del material.
+
+**Y `DESIGN.md` publicaba `--lift-card` de Liquid como `-2px` en dos lugares**
+cuando el código vale **`-3px`** desde §1.1. Nadie lo había mirado porque el
+número viejo seguía siendo plausible. Los tres valores quedan alineados: `-3px`
+en los dos Liquid, `-1px` en los dos Solid, verificado contra `dist/`.
+
+**Lo que la verificación NO encontró**, y vale anotarlo para no volver a
+buscarlo: los cinco gates en verde, `.sweep` en cero, los tokens de §11 y §12 en
+los cuatro temas, y `--velo`/`--campo-*`/`--dropdown-shadow` con consumidor real.
+
+*Queda una pregunta abierta, no un bug:* **`--tab-track-radius` se declara una
+sola vez** (`2.5rem`, en `:root`), así que en los dos temas Solid el carril de
+pestañas es una píldora completamente redonda mientras sus tarjetas son de
+`0.75rem`. Puede ser deliberado —un segmentado es una píldora en casi todo
+sistema, incluidos los planos— o puede ser el mismo olvido que tuvieron el lente
+y el flanco del canto. No se tocó sin decidirlo.
+
 ## v2.437.3 — `DESIGN.md` deja de enseñar lo que el gate prohíbe
 
 Barrido de verificación sobre lo que quedaba abierto. Los cinco gates en verde

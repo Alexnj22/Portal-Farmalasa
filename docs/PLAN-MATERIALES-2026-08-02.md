@@ -1455,7 +1455,7 @@ quedó donde cayó.
 
 ---
 
-## 16. Encabezado flotante — su hover es ciego al tema ⏳ ESPERA DECISIÓN
+## 16. Encabezado flotante — su hover es ciego al tema ✅ CONFIRMADO 2026-08-05
 
 Todo el material de `page-header` sale de tokens por tema. **Su hover no:**
 
@@ -1470,8 +1470,8 @@ En Liquid encaja. En **Solid** la sombra de reposo es `0 1px 4px rgba(0,0,0,.08)
 mouse salta a una sombra de vidrio de 64px que no pertenece a ese material. Es el modo de falla
 de §1.7 otra vez —**un valor calibrado en un tema, guardado como universal**— y van cuatro.
 
-**Propuesta (más fuerte que tokenizar la sombra): el encabezado no reacciona al mouse en ningún
-tema.** §1.6 fijó que el hover de una superficie es el destello del canto, y eso vale para lo
+**Confirmado por el usuario el 2026-08-05.** La propuesta va más fuerte que tokenizar
+la sombra: **el encabezado no reacciona al mouse en ningún tema.** §1.6 fijó que el hover de una superficie es el destello del canto, y eso vale para lo
 que *se apunta*. El encabezado no se apunta: se **cruza** para llegar a un control. Hoy
 cualquier viaje del mouse hacia el buscador levanta la barra entera. Lo que sí reacciona es cada
 control de adentro, que es lo que la persona está buscando.
@@ -1482,7 +1482,7 @@ de la pantalla.
 
 ---
 
-## 17. Hoja táctil — paga por vidrio y por opacidad, y no cobra ninguno ⏳ ESPERA DECISIÓN
+## 17. Hoja táctil — paga por vidrio y por opacidad, y no cobra ninguno ✅ CONFIRMADO 2026-08-05
 
 `--surface-sheet` vale `0.985` **y encima declara `blur(20px)`**. El comentario que lo acompaña
 dice *«sigue siendo vidrio — el blur está»*. **Medido, no:** a esa opacidad el fondo cambia el
@@ -1521,8 +1521,10 @@ hoja y queda *detrás* de ella, así que forma parte de su backdrop; una hoja tr
 velo al 45% muestrea el velo. Para que A se viera como vidrio habría que sacar la hoja de encima
 del velo, o sea rehacer la estructura del modal.
 
-Entonces **B**: a la vista no cambia nada (a 0.985 ya se ve opaca) y quita un blur de pantalla
-completa del dispositivo donde más cuesta. Lo que **no** es defendible es quedarse en `0.985 +
+**Confirmada la B por el usuario el 2026-08-05**: a la vista no cambia nada (a 0.985 ya se ve
+opaca) y quita un blur de pantalla completa del dispositivo donde más cuesta. Se implementa en
+la Fase D; la auditoría móvil —que el usuario decidió hacer aparte y después— puede revisarla,
+pero con el blur ya fuera no hay nada que se vea distinto para revisar. Lo que **no** es defendible es quedarse en `0.985 +
 blur`, que paga los dos costos y no cobra ninguno.
 
 > **La regla general, que es la del tooltip vista al revés:** antes de poner un

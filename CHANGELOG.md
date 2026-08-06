@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.427.0 — Cargas y descartes de inventario
+
+El portal ya podía **pedir** que se moviera inventario. Ahora lo **mueve**: una
+carga o un descarte se solicita desde el portal, alguien lo aprueba, y recién
+entonces se aplica. Es la cuarta pieza de la misma familia que las
+modificaciones a facturación, y reusa su patrón entero en vez de rediseñarlo.
+
+**Los cuatro tipos de descarte** son los del sistema y no se inventan:
+`VENCIMIENTO`, `DESCARTE`, `PRODUCTO DAÑADO` y `CONSUMO INTERNO`. La validación
+los exige exactos —«PRODUCTO DANADO» sin tilde se rechaza— porque un valor que
+no reconozcan se descubriría después de aprobar.
+
+**El concepto lleva la trazabilidad entera**: tipo, causa, quién lo solicitó y
+quién lo aprobó. Es lo único que viaja al asiento del movimiento, así que la
+causa es obligatoria desde la base de datos.
+
+**Lo que hace distinto a un descarte de un cambio de factura** es que mueve
+existencias reales y no se deshace con un clic: revertirlo es hacer una carga
+por la misma cantidad, con su propio asiento. Por eso el stock se relee **justo
+antes de aplicar** y no al pedirlo — entre una cosa y la otra se pudo haber
+vendido—, el costo y el precio salen del sistema de origen y nunca de la
+solicitud (un movimiento de existencias no es lugar para mover precios), y si
+no alcanza el tiempo para verificar todas las líneas no se manda nada: media
+solicitud aplicada es peor que ninguna.
+
+**El aviso al aprobador nace con la solicitud**, en la misma transacción, y su
+cuerpo alcanza para decidir sin abrir la app: «Fulano solicita descartar 12
+productos (47 unidades · $38.20) por VENCIMIENTO en Salud 3 — lote vencido en
+góndola».
+
 ## v2.426.0 — El canto en claro y el especular que no fue
 
 Dos decisiones de `PLAN-MATERIALES` que llevaban abiertas todo el plan, las dos

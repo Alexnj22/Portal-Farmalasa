@@ -9,6 +9,7 @@ import {
     fetchEmployeeName, insertApprovalRequest, updateApprovalRequest, fetchApprovalRequestById,
     fetchEmployeeSystemRole, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
     aplicarSolicitudEnErp,
+    aplicarMovimientoInventarioEnErp,
 } from '../../data/requests';
 import { fetchEmployeeRosterSchedule } from '../../data/employees';
 import { upsertWeeklyRoster } from '../../data/system';
@@ -39,6 +40,8 @@ export const REQUEST_TYPES = {
     PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
     VENDOR_CHANGE_REQUEST:  { label: 'Cambio de Vendedor',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
+    INVENTORY_LOAD_REQUEST:    { label: 'Carga de Inventario',    color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
+    INVENTORY_DISCARD_REQUEST: { label: 'Descarte de Inventario', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
 };
 
 /**
@@ -62,6 +65,26 @@ export const FACTURACION_REQUEST_TYPES = new Set([
     'PAYMENT_CHANGE_REQUEST',
     'VENDOR_CHANGE_REQUEST',
     'CLIENT_CHANGE_REQUEST',
+]);
+
+/**
+ * Las dos que mueven EXISTENCIAS: la carga y el descarte de inventario.
+ *
+ * Valen las mismas dos razones que para facturación —un nivel de aprobación, y
+ * nada que anotar en el legajo de quien la pide— más una tercera propia:
+ * aprobar ES sacar o meter producto de verdad, y no se puede deshacer con un
+ * clic. Revertir un descarte es hacer una carga por la misma cantidad, con otro
+ * asiento en el kardex.
+ */
+export const INVENTARIO_REQUEST_TYPES = new Set([
+    'INVENTORY_LOAD_REQUEST',
+    'INVENTORY_DISCARD_REQUEST',
+]);
+
+/** Las que se aplican en un sistema externo al aprobarlas. */
+export const REQUEST_TYPES_QUE_SE_APLICAN = new Set([
+    ...FACTURACION_REQUEST_TYPES,
+    ...INVENTARIO_REQUEST_TYPES,
 ]);
 
 // Bucket A — severidad real del estado de la solicitud.
@@ -665,6 +688,54 @@ export const createRequestsSlice = (set, get) => ({
         return true;
     },
 
+    /**
+     * Aprobar una carga o un descarte = moverlo de verdad.
+     *
+     * Misma forma que `_aprobarFacturacion` y por el mismo motivo: la Edge
+     * Function valida el permiso contra el JWT, abre su propia sesión, relee el
+     * stock justo antes de escribir y recién entonces marca APPROVED. Si no
+     * entra, esto devuelve false y la solicitud sigue PENDING con el motivo a
+     * la vista.
+     */
+    _aprobarInventario: async (requestId, req, approverId, approverNote) => {
+        const { ok, error, aplicado } = await aplicarMovimientoInventarioEnErp(requestId, approverNote);
+
+        if (!ok) {
+            useToastStore.getState().showToast('No se aplicó el movimiento', error, 'error');
+            return false;
+        }
+
+        set(state => ({
+            requests: state.requests.map(r =>
+                r.id === requestId
+                    ? { ...r, status: 'APPROVED', approver_id: approverId, approver_note: approverNote,
+                        metadata: { ...parseMeta(r.metadata), erp_aplicado: aplicado } }
+                    : r
+            ),
+        }));
+
+        if (req.employee?.id) {
+            await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED',
+                approverNote, parseMeta(req.metadata));
+        }
+
+        const esCarga = req.type === 'INVENTORY_LOAD_REQUEST';
+        const partes = [
+            `${aplicado?.lineas ?? 0} ${aplicado?.lineas === 1 ? 'producto' : 'productos'}`,
+            `${aplicado?.unidades ?? 0} ${aplicado?.unidades === 1 ? 'unidad' : 'unidades'}`,
+        ];
+        // Un recorte que no se anuncia se lee como que entró completo.
+        if (aplicado?.concepto_recortado) partes.push('el detalle se guardó abreviado');
+
+        useToastStore.getState().showToast(
+            esCarga ? 'Carga aplicada' : 'Descarte aplicado',
+            partes.join(' · '),
+            'success',
+        );
+        window.dispatchEvent(new CustomEvent('requests-updated'));
+        return true;
+    },
+
     _runFinalApproval: async (requestId, req, approverId, approverNote, newApprovals, toastMsg) => {
         const { error } = await updateApprovalRequest(requestId, { status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() });
         if (error) throw error;
@@ -679,10 +750,11 @@ export const createRequestsSlice = (set, get) => ({
             const meta = parseMeta(req.metadata);
             await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
 
-            // Una solicitud de facturación no es un evento del legajo: habla de
-            // una factura, no de la persona. Ver FACTURACION_REQUEST_TYPES.
+            // Ni una solicitud de facturación ni una de inventario son eventos
+            // del legajo: hablan de una factura o de una existencia, no de la
+            // persona. Ver REQUEST_TYPES_QUE_SE_APLICAN.
             const registerEmployeeEvent = get().registerEmployeeEvent;
-            if (registerEmployeeEvent && !FACTURACION_REQUEST_TYPES.has(req.type)) {
+            if (registerEmployeeEvent && !REQUEST_TYPES_QUE_SE_APLICAN.has(req.type)) {
                 await registerEmployeeEvent(req.employee.id, {
                     type: req.type,
                     date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
@@ -811,6 +883,11 @@ export const createRequestsSlice = (set, get) => ({
             if (FACTURACION_REQUEST_TYPES.has(req.type))
                 return await get()._aprobarFacturacion(requestId, req, approverId, approverNote);
 
+            // Inventario: igual, pero moviendo existencias. Rechazar tampoco
+            // toca nada afuera — eso sigue en `rejectRequest`.
+            if (INVENTARIO_REQUEST_TYPES.has(req.type))
+                return await get()._aprobarInventario(requestId, req, approverId, approverNote);
+
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;
             const newApprovals = [...(Array.isArray(req.approvals) ? req.approvals : []), {
@@ -852,7 +929,7 @@ export const createRequestsSlice = (set, get) => ({
 
             const maxLevels = req.type === 'SHIFT_CHANGE' ? 2
                 : req.type === 'DISABILITY' ? 1
-                : FACTURACION_REQUEST_TYPES.has(req.type) ? 1   // Supervisión decide y cierra
+                : REQUEST_TYPES_QUE_SE_APLICAN.has(req.type) ? 1   // Supervisión decide y cierra
                 : 3;
 
             if (nextLevel <= maxLevels) {

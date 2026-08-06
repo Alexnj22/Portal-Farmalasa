@@ -172,6 +172,34 @@ export async function aplicarSolicitudEnErp(requestId, approverNote = '') {
     }
 }
 
+/**
+ * Aplica una carga o un descarte de inventario aprobado.
+ *
+ * Mismo reparto que arriba: el navegador no habla con el sistema de origen. Y
+ * acá pesa más todavía, porque la sucursal es estado de la sesión de ese
+ * sistema — dos aplicaciones simultáneas que compartieran sesión podrían
+ * terminar moviendo existencias de la sucursal equivocada. Cada aplicación abre
+ * la suya dentro de la Edge Function.
+ *
+ * Devuelve `{ ok, aplicado }` o `{ ok:false, error }`. Nunca lanza.
+ */
+export async function aplicarMovimientoInventarioEnErp(requestId, approverNote = '') {
+    try {
+        const { data, error } = await supabase.functions.invoke('aplicar-movimiento-inventario', {
+            body: { request_id: requestId, approver_note: approverNote },
+        });
+        if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+
+        // El motivo real viaja en el cuerpo; sin leerlo todo fallo se ve como
+        // un "non-2xx status code" indistinguible.
+        let detalle = '';
+        try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+        return { ok: false, error: detalle || error.message };
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
 // ── approve/reject/cancel ────────────────────────────────────────────────────
 
 export function updateApprovalRequest(requestId, patch) {

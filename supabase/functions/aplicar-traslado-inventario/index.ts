@@ -376,10 +376,15 @@ Deno.serve(async (req) => {
         lineas: partes.length, unidades, total: Number(total.toFixed(4)),
         msg: resp.msg,
       };
+      // `is: null` en la condición y no un chequeo previo: dos personas de la
+      // sala que aprieten «ya llegó» a la vez pasan las dos la lectura de más
+      // arriba. Acá la segunda no escribe — aunque en la práctica el sistema ya
+      // la habría frenado, porque un traslado recibido deja de mostrar líneas.
       const { error: updErr } = await admin
         .from("approval_requests")
         .update({ metadata: { ...meta, erp_recibido: recibido }, updated_at: new Date().toISOString() })
-        .eq("id", sol.id);
+        .eq("id", sol.id)
+        .is("metadata->erp_recibido", null);
       if (updErr) throw updErr;
 
       return json({ ok: true, recibido });
@@ -569,6 +574,34 @@ Deno.serve(async (req) => {
              + `Divide la solicitud en tandas más chicas.`,
       }, 504);
 
+    // ── El candado: una sola escritura por solicitud ─────────────────────
+    // El aviso le llega a VARIAS personas de la sala y cualquiera puede
+    // confirmarlo. Sin esto, dos que aprieten a la vez pasan las dos el chequeo
+    // de PENDING —que es una LECTURA— y las dos escriben en el sistema: el
+    // producto sale dos veces y solo una de las dos actualiza la solicitud.
+    //
+    // El candado se toma acá y no al principio a propósito: así una validación
+    // que falla —sin existencia, presentación que cambió— no deja la solicitud
+    // trabada. Y caduca a los 3 minutos, más que los 150 s que vive una
+    // invocación, así que una que muera a mitad se destraba sola.
+    const ahora = new Date();
+    const caduco = new Date(ahora.getTime() - 3 * 60_000).toISOString();
+    const { data: tomada } = await admin
+      .from("approval_requests")
+      .update({
+        metadata: { ...meta, despachando_at: ahora.toISOString(), despachando_by: quien.id },
+      })
+      .eq("id", sol.id)
+      .eq("status", "PENDING")
+      .or(`metadata->>despachando_at.is.null,metadata->>despachando_at.lt.${caduco}`)
+      .select("id")
+      .maybeSingle();
+    if (!tomada)
+      return json({
+        ok: false, codigo: "YA_EN_CURSO",
+        error: "Alguien más de tu sala está despachando este traslado en este momento.",
+      }, 409);
+
     // ── El envío ─────────────────────────────────────────────────────────
     // La foto de ANTES: el id del traslado nuevo es el que no estaba. Es la
     // única forma sin ambigüedad de saber cuál es el propio, porque el `insert`
@@ -588,8 +621,14 @@ Deno.serve(async (req) => {
       id_ubicacion_destino: "0",
       numero_vale: vale,
     }), { extra: { Referer: TRASLADO } }));
-    if (!resp.ok)
+    if (!resp.ok) {
+      // Se suelta el candado en vez de esperar a que caduque: el rechazo del
+      // sistema suele ser algo que se corrige y se reintenta enseguida, y hacer
+      // esperar tres minutos por un error ajeno no protege de nada.
+      await admin.from("approval_requests")
+        .update({ metadata: meta }).eq("id", sol.id).eq("status", "PENDING");
       return json({ ok: false, error: `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}` }, 502);
+    }
 
     // ── Recién ahora la solicitud es APPROVED ────────────────────────────
     // El propio es el que aparece y antes no estaba. Si en el medio otra

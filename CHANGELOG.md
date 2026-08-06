@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.453.0 — El botón de tamaño entra a Personalizar, y el fantasma tenía una segunda mitad
+
+_(pendiente de redactar)_
+
+## v2.452.2 — El candado que faltaba: dos personas confirmando el mismo traslado
+
+Sale de una pregunta del usuario —«¿qué pasa si al mismo tiempo solicitan
+traslados y llegan traslados?»— y el repaso encontró un hueco real.
+
+**El aviso de un traslado le llega a varias personas de la sala y cualquiera
+puede confirmarlo.** El chequeo de que la solicitud sigue pendiente es una
+LECTURA, así que dos que apretaran a la vez lo pasaban las dos, escribían las
+dos en el sistema y el producto salía **dos veces** — solo una de las dos
+alcanzaba a marcar la solicitud, así que la segunda salida quedaba sin registro
+en el portal.
+
+Ahora la solicitud se reclama con una escritura condicional antes de tocar el
+sistema: la segunda no entra y ve «alguien más de tu sala está despachando este
+traslado». El candado se toma **tarde**, justo antes de escribir, para que una
+validación que falla no deje la solicitud trabada; caduca a los tres minutos
+—más que los 150 segundos que vive el proceso— así que una interrupción se
+destraba sola; y si el sistema rechaza el traslado se suelta en el acto, porque
+hacer esperar tres minutos por un error ajeno no protege de nada.
+
+Lo mismo del lado de recibir: el «ya llegó» ahora se escribe con la condición de
+que nadie lo haya escrito antes, en vez de mirar primero y escribir después.
+
 ## v2.452.1 — El traslado, probado contra el sistema — y dos bugs que solo aparecieron ahí
 
 Paso 6 y último de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Una unidad de

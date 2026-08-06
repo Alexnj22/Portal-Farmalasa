@@ -21,6 +21,86 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.418.0 — El hover aclara y el filo es blanco en los dos Liquid
+
+**1 · El hover del sidebar se veía gris sucio en claro.** Salía de `--sidebar-ink`, que
+en tema claro es tinta oscura: apoyar el mouse **oscurecía**. Nuevo token
+`--sidebar-realce`, y la regla que lo justifica: **en vidrio el realce siempre aclara,
+en los dos modos** — apoyar el dedo sobre vidrio deja pasar más luz, no menos. En Solid
+sí sale de la tinta, porque ahí no hay luz que dejar pasar: el realce es un escalón de
+color. Migrados **40 fondos** en cinco archivos.
+
+**2 · Y el filo vuelve a ser blanco en los dos Liquid — la corrección anterior estaba
+mal.** En v2.416.1 lo invertí a un arco oscuro para claro, razonando que un arco blanco
+sobre superficie clara no se ve. Eso era cierto **cuando el panel era casi blanco**;
+desde v2.408.1 el panel de Liquid claro es **lavanda `rgb(183,187,206)`**, y sobre eso
+un destello blanco contrasta de sobra.
+
+O sea que apliqué una regla correcta (§1.1: el realce necesita contraste) contra una
+medición vencida. **La física no cambió; cambió la superficie.** Lo que sí se conserva
+de esa corrección, y era la mitad buena, es que **el contraste vive dentro del anillo**:
+el bloom por `drop-shadow` desapareció de los dos temas, así que el filo ya no depende
+de que ningún `overflow: hidden` lo deje pasar — que era el motivo real de que el botón
+de salir y el buscador no mostraran nada.
+
+## v2.417.0 — Lo que quedó a medias con Hacienda se termina solo a las 22:30
+
+Dos bolsas del módulo de Facturación que nadie cerraba, y que resultaron ser el
+mismo trámite inconcluso: **un documento que el ERP ya tiene y el Ministerio
+todavía no.**
+
+| bolsa | qué es | había |
+|---|---|---|
+| `anuladas` | anulada en el ERP, sin invalidar ante el MH (`estado = 'NULA'`) | 14 |
+| `sin_sello` | emitida y sin sello de recepción (`recibido_mh IS NULL`) | 15 |
+
+Repartidas en cinco sucursales, **con casos de mayo de 2025** — más de un año
+esperando a que alguien entrara al ERP factura por factura.
+
+Nueva Edge Function **`regularizar-dte`**, con tres alcances: una factura, una
+sucursal, o todas. La corre el cron `regularizar-dte-2230-sv` a las 22:30 de El
+Salvador (`30 4` UTC — el país no tiene horario de verano, así que el offset es
+fijo), y también el botón **«Completar ante Hacienda»** que aparece en las
+pestañas de Anuladas y Pendientes MH.
+
+El alcance del botón sale del filtro de sucursal que ya está puesto: si hay una
+elegida, corrige esa; si no, todas. No se agregó un selector aparte — la píldora
+de arriba ya dice sobre qué se está trabajando, y dos formas de decir lo mismo
+es como se llega a que no coincidan.
+
+**La cadena de Hacienda se mudó a `_shared/erp-dte.ts`.** Es la misma para los
+dos casos —cambia el `anula` que viaja en cada paso y, en la invalidación, los
+datos del responsable—, y ahora la usan tanto esta función como
+`aplicar-solicitud-facturacion`. Tenerla dos veces era garantizar que una de las
+copias se quedara vieja.
+
+**El éxito es el sello, y las observaciones no se tragan.** Hacienda puede
+aceptar con reparos: la 344391 volvió con «RECIBIDO CON OBSERVACIONES» y su
+sello. Eso es un éxito con advertencia, no un éxito liso — las observaciones se
+guardan, se cuentan aparte y suben la severidad del registro a WARNING.
+
+**El sello lo sigue poniendo el sync, no el portal.** Tras regularizar se le
+pide a `sync-dte-sales` que relea esa fecha y esa sucursal. `dte-resync-mes-hora`
+ya lo haría dentro de la hora, así que esto no es lo que evita que se pierda: es
+lo que evita que quien aprieta el botón tenga que esperar, y que una corrida
+reintente algo resuelto diez minutos antes.
+
+Cada corrida queda en `audit_logs` **aunque no resuelva nada**: un barrido que no
+deja rastro es indistinguible de uno que no corrió.
+
+Verificado de punta a punta, una factura de cada bolsa, por el mismo camino que
+usa el cron: la 344391 (sin sello) volvió con `2026C3845B9A4EDB…` y la 345319
+(anulada) con `2026E1F66708402A…`, «Invalidación Recibida y Procesada».
+
+> La función va con `--no-verify-jwt` y está anotado en su encabezado: el cron
+> manda el `admin_invoke_secret` como Bearer, que no es un JWT, así que con
+> `verify_jwt=true` la plataforma responde 401 antes de ejecutar una línea —
+> pasó en el primer intento. El control de acceso está adentro: secreto para el
+> cron, JWT + `facturacion.can_edit` para las personas.
+
+
+_(pendiente de redactar)_
+
 ## v2.416.1 — El filo contrasta con su superficie, no con un bloom
 
 **El destello del canto sí estaba en el avatar, en el de salir y en el buscador** — se

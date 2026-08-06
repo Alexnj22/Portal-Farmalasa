@@ -25,7 +25,7 @@ function CodeCard({ label, value, copied, onCopy }) {
   return (
     <button type="button" onClick={onCopy}
       className="group/code relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2
-        border border-[rgb(var(--sidebar-ink)/0.09)] bg-[rgb(var(--sidebar-ink)/0.06)] hover:bg-[rgb(var(--sidebar-ink)/0.11)] hover:border-[rgb(var(--sidebar-ink)/0.14)] transition active:scale-[0.97]">
+        border border-[rgb(var(--sidebar-ink)/0.09)] bg-[rgb(var(--sidebar-realce)/0.06)] hover:bg-[rgb(var(--sidebar-realce)/0.11)] hover:border-[rgb(var(--sidebar-ink)/0.14)] transition active:scale-[0.97]">
       <div className="flex items-center gap-1 mb-0.5">
         <span className="text-micro font-bold uppercase tracking-wider text-[rgb(var(--sidebar-ink)/0.55)]">{label}</span>
       </div>
@@ -154,7 +154,7 @@ export default function SidebarSettingsMenu({
         <SidebarSyncStatus />
       </div>
 
-      <div className="h-px bg-[rgb(var(--sidebar-ink)/0.08)]" />
+      <div className="h-px bg-[rgb(var(--sidebar-realce)/0.08)]" />
 
       <ThemeAxisPicker dark />
     </motion.div>
@@ -171,8 +171,8 @@ export default function SidebarSettingsMenu({
           className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
             border transition-colors duration-[var(--dur-fast)] ${className}
             ${isOpen
-              ? 'bg-[rgb(var(--sidebar-ink)/0.12)] border-[rgb(var(--sidebar-ink)/0.2)] text-[rgb(var(--sidebar-ink)/0.9)]'
-              : 'bg-[rgb(var(--sidebar-ink)/0.06)] border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.9)] hover:bg-[rgb(var(--sidebar-ink)/0.1)]'}`}
+              ? 'bg-[rgb(var(--sidebar-realce)/0.12)] border-[rgb(var(--sidebar-ink)/0.2)] text-[rgb(var(--sidebar-ink)/0.9)]'
+              : 'bg-[rgb(var(--sidebar-realce)/0.06)] border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.9)] hover:bg-[rgb(var(--sidebar-realce)/0.1)]'}`}
         >
           <Settings size={16} strokeWidth={2} />
         </button>

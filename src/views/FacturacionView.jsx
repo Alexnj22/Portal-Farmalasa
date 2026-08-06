@@ -8,7 +8,7 @@ import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History,
     ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, Copy, Info,
-    Pause, Play
+    Pause, Play, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -29,6 +29,7 @@ import FileField from '../components/common/FileField';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { formatMoney } from '../utils/formatNumber';
 import {
+    regularizarDte,
     fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices,
     fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
     fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
@@ -411,6 +412,60 @@ function BloqueFormaPago({
 }
 
 // ─── Tab: Anuladas ────────────────────────────────────────────────────────────
+/**
+ * Termina el trámite pendiente ante Hacienda de lo que se está mirando.
+ *
+ * El alcance sale del filtro de sucursal que ya está puesto: si hay una
+ * elegida, corrige esa; si no, todas. No se inventa un selector aparte — la
+ * píldora de arriba ya dice sobre qué se está trabajando, y tener dos formas de
+ * decir lo mismo es como se llega a que no coincidan.
+ *
+ * Lo mismo que corre solo cada noche a las 22:30; esto es para no esperar.
+ */
+function BotonRegularizar({ filterBranch, branches, bolsa, canEdit, onDone, pendientes }) {
+    const [corriendo, setCorriendo] = useState(false);
+    if (!canEdit || !pendientes) return null;
+
+    const sucursal = branches.find(b => String(b.id) === String(filterBranch));
+    const ambito   = filterBranch ? (sucursal?.name || 'esta sucursal') : 'todas las sucursales';
+
+    const correr = async () => {
+        setCorriendo(true);
+        const r = await regularizarDte({
+            alcance:  filterBranch ? 'sucursal' : 'todas',
+            branchId: filterBranch || null,
+            bolsa,
+        });
+        setCorriendo(false);
+
+        if (!r.ok) {
+            useToastStore.getState().showToast('No se pudo completar', mensajeAmigable(r.error), 'error');
+            return;
+        }
+        // Se dice lo que pasó, no "listo": una corrida que resolvió 3 de 8 no es
+        // un éxito, y una que resolvió 0 porque no había nada tampoco es un fallo.
+        const partes = [`${r.resueltas} de ${r.revisadas}`];
+        if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
+        if (r.fallidas)         partes.push(`${r.fallidas} sin resolver`);
+        useToastStore.getState().showToast(
+            r.revisadas === 0 ? 'No había nada pendiente' : 'Trámite enviado a Hacienda',
+            partes.join(' · '),
+            r.fallidas ? 'warning' : 'success',
+        );
+        onDone?.();
+    };
+
+    return (
+        <Button
+            variant="secondary" size="sm" icon={ShieldCheck}
+            loading={corriendo} onClick={correr}
+            title={`Completar ante Hacienda lo pendiente de ${ambito}`}
+        >
+            {corriendo ? 'Enviando…' : 'Completar ante Hacienda'}
+        </Button>
+    );
+}
+
 function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit, paused, barraFiltros }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
@@ -603,7 +658,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                         />
                     )}
                 </CarrilCards>
-                {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
+                <div className="flex items-center justify-end gap-2 min-w-0">
+                    <BotonRegularizar
+                        filterBranch={filterBranch} branches={branches} bolsa="anuladas"
+                        canEdit={canEdit} pendientes={filtered.length} onDone={loadData} />
+                    {barraFiltros}
+                </div>
             </div>
 
             {loading ? (
@@ -1022,7 +1082,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                         />
                     )}
                 </CarrilCards>
-                {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
+                <div className="flex items-center justify-end gap-2 min-w-0">
+                    <BotonRegularizar
+                        filterBranch={filterBranch} branches={branches} bolsa="sin_sello"
+                        canEdit={canEdit} pendientes={filtered.length} onDone={loadData} />
+                    {barraFiltros}
+                </div>
             </div>
 
             {/* Pending list */}

@@ -1,5 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import {
+  BASE, ANULAR, login, pedir, leerRespuesta, formatearDui, estaAnulada, enviarDteAlMH,
+} from "../_shared/erp-dte.ts";
 
 // Aplica en el ERP la solicitud que el supervisor acaba de aprobar.
 //
@@ -33,14 +36,7 @@ import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.t
 // propio id (`erp_invoice_id`, ej. 345608). Mandar el del portal apuntaría a
 // OTRA factura existente, no daría error. La traducción es obligatoria.
 
-const BASE       = "https://clientesdte3.oss.com.sv/farma_salud";
-const LOGIN_URL  = `${BASE}/login.php`;
 const REIMPRIMIR = `${BASE}/reimprimir_factura.php`;
-const ANULAR     = `${BASE}/anular_factura.php`;
-const ANULAR_DTE = `${BASE}/anular_dte.php`;
-const HELPER_DTE = `${BASE}/_helper_dte_class.php`;
-const GENERAR_DTE = `${BASE}/generar_dte.php`;
-const PROXY_DTE  = `${BASE}/proxydte.php`;
 
 const TIPOS_SOPORTADOS = new Set([
   "PAYMENT_CHANGE_REQUEST",
@@ -58,85 +54,6 @@ const PAGO_A_ERP: Record<string, string> = {
 const ERP_A_PAGO: Record<string, string> = Object.fromEntries(
   Object.entries(PAGO_A_ERP).map(([k, v]) => [v, k]),
 );
-
-// Llave propia y no la del sync de compras: ese usuario existe para otro
-// módulo y esto escribe sobre facturas emitidas. Separarlas permite rotar una
-// sin tocar los otros syncs, y deja en el log del ERP quién hizo qué.
-// Una factura anulada no es un documento vivo. Son DOS estados, no uno:
-// medido el 2026-08-06, 975 facturas en 'DTE INVALIDADO EN MH' contra 14 en
-// 'NULA'. 'NULA' es el paso intermedio —anulada en el ERP, todavía sin
-// invalidar ante Hacienda—; el final es el otro. Mirar solo 'NULA' cubría el
-// 1.4% de los casos. Mismo criterio que `factura_esta_anulada()` en la BD.
-const ESTADOS_ANULADA = new Set(["NULA", "DTE INVALIDADO EN MH"]);
-const estaAnulada = (estado: string | null) =>
-  ESTADOS_ANULADA.has(String(estado ?? "").toUpperCase());
-
-function getCreds(): { username: string; password: string } {
-  const raw = Deno.env.get("ERP_FACTURACION_CREDS") ?? Deno.env.get("ERP_PURCHASES_CREDS");
-  if (!raw) throw new Error("Falta el secreto ERP_FACTURACION_CREDS.");
-  return JSON.parse(raw);
-}
-
-async function login(): Promise<string> {
-  const { username, password } = getCreds();
-  const res = await fetch(LOGIN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ username, password, m: "1" }).toString(),
-    redirect: "manual",                       // la cookie viaja en el 302
-    signal: AbortSignal.timeout(20_000),
-  });
-  const cookie = res.headers.get("set-cookie")?.split(";")[0];
-  if (!cookie) throw new Error("El ERP no devolvió cookie de sesión.");
-  return cookie;
-}
-
-async function conReintento<T>(fn: () => Promise<T>, veces = 3, pausaMs = 1500): Promise<T> {
-  let ultimo: unknown;
-  for (let i = 0; i < veces; i++) {
-    try { return await fn(); } catch (e) {
-      ultimo = e;
-      if (i < veces - 1) await new Promise(r => setTimeout(r, pausaMs * (i + 1)));
-    }
-  }
-  throw ultimo;
-}
-
-interface OpcionesPedido {
-  /** Cuerpo JSON en vez de form-urlencoded (solo lo usa `proxydte.php`). */
-  cuerpoJson?: unknown;
-  /** Cabeceras extra — el proxy del MH espera el token en `Authorization`. */
-  extra?: Record<string, string>;
-  timeoutMs?: number;
-}
-
-async function pedir(
-  cookie: string, url: string, datos?: URLSearchParams, opts: OpcionesPedido = {},
-): Promise<string> {
-  const { cuerpoJson, extra, timeoutMs = 45_000 } = opts;
-  const hayCuerpo = datos !== undefined || cuerpoJson !== undefined;
-  return await conReintento(async () => {
-    const res = await fetch(url, {
-      method: hayCuerpo ? "POST" : "GET",
-      headers: {
-        Cookie: cookie,
-        "User-Agent": "Mozilla/5.0",
-        "X-Requested-With": "XMLHttpRequest",
-        Referer: `${BASE}/admin_factura_rangos.php`,
-        ...(cuerpoJson !== undefined ? { "Content-Type": "application/json" }
-            : datos !== undefined ? { "Content-Type": "application/x-www-form-urlencoded" }
-            : {}),
-        ...(extra ?? {}),
-      },
-      body: cuerpoJson !== undefined ? JSON.stringify(cuerpoJson) : datos?.toString(),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    const texto = await res.text();
-    if (/name\s*=\s*["']password/i.test(texto.slice(0, 4000)))
-      throw new Error("La sesión del ERP caducó (devolvió el login).");
-    return texto;
-  });
-}
 
 /** Estado de los tres campos editables, leído de la pantalla del ERP. */
 type Ficha = { cliente: string | null; clienteNombre: string; credito: string | null; vendedor: string | null };
@@ -160,112 +77,6 @@ async function leerFicha(cookie: string, erpId: string): Promise<Ficha> {
   if (ficha.cliente === null && ficha.credito === null && ficha.vendedor === null)
     throw new Error(`El ERP no devolvió la ficha de la factura ${erpId}.`);
   return ficha;
-}
-
-/** Lee el `{typeinfo,msg}` del ERP. Un rechazo llega con HTTP 200. */
-function leerRespuesta(cuerpo: string): { ok: boolean; msg: string } {
-  try {
-    const j = JSON.parse(cuerpo);
-    return { ok: String(j.typeinfo).toLowerCase() === "success", msg: String(j.msg ?? "") };
-  } catch {
-    return { ok: false, msg: `Respuesta ilegible del ERP: ${cuerpo.slice(0, 200)}` };
-  }
-}
-
-// ── Anulación ante Hacienda ────────────────────────────────────────────────
-//
-// Cuatro pasos, todos contra el propio ERP: el navegador NUNCA habla directo
-// con el MH, va por `proxydte.php`. Mapeado leyendo `getAuth.js` y verificado
-// de punta a punta contra la factura 344862 el 2026-08-05.
-//
-// EL ORDEN NO ES DECORATIVO. `anular_dte.php` no es solo la pantalla: al
-// abrirla el ERP se autentica contra Hacienda y **cachea el token en la sesión
-// PHP**. Sin ese GET previo, `get_dte` responde
-// {"detalles":null,"typeinfo":"Error","msg":"Token no pudo ser cargado"} — lo
-// comprobé saltándomelo. Por eso el token se lee de esa pantalla en vez de
-// pedirlo aparte: la llamada que lo entrega es la misma que deja la sesión lista.
-//
-// Y el paso 4 no es opcional: si se envía al MH y no se registra la respuesta,
-// Hacienda tiene la anulación y el ERP no la anota. Esa es exactamente la
-// divergencia que el módulo de Facturación existe para detectar.
-
-/** El DUI viaja con el formato que valida el ERP (`isDUI`): 00000000-0. */
-function formatearDui(bruto: string): string | null {
-  const d = String(bruto ?? "").replace(/\D/g, "");
-  if (d.length !== 9) return null;
-  return `${d.slice(0, 8)}-${d.slice(8)}`;
-}
-
-interface ResultadoMH {
-  sello: string;
-  descripcion: string;
-  codigo: string;
-  fh: string;
-  observaciones: string[];
-}
-
-async function anularEnHacienda(
-  cookie: string, erpId: string, tipodoc: string,
-  nombreResp: string, duiResp: string,
-): Promise<ResultadoMH> {
-  // 1 · La pantalla: entrega el token y deja la sesión autenticada ante el MH.
-  const modal = await pedir(cookie, `${ANULAR_DTE}?id_factura=${erpId}&tipodoc=${tipodoc}&anula=1`);
-  const token    = modal.match(/id=\s*"tok"[^>]*>([^<]+)<\/textarea>/)?.[1]?.trim();
-  const ambiente = modal.match(/id="ambiente"\s+value="([^"]+)"/)?.[1] ?? "01";
-  if (!token) throw new Error("El ERP no entregó el token de Hacienda.");
-
-  // 2 · Armar el DTE de anulación (queda firmado del lado del ERP).
-  const creado = leerRespuesta(await pedir(cookie, HELPER_DTE, new URLSearchParams({
-    process: "creaJsonDTe", id_factura: erpId, tipodoc,
-    anula: "1", nombreResp, duiResp,
-  })));
-  if (!creado.ok) throw new Error(`No se pudo generar la anulación: ${creado.msg}`);
-
-  // 3 · Leer el documento firmado.
-  const doc = JSON.parse(await pedir(cookie, GENERAR_DTE, new URLSearchParams({
-    process: "get_dte", id_factura: erpId, tipodoc, anula: "1",
-  })))?.detalles;
-  if (!doc?.encodeDte) throw new Error("El ERP no devolvió el documento de anulación firmado.");
-
-  // 4 · Al MH, por el proxy del ERP.
-  const bruto = await pedir(cookie, PROXY_DTE, undefined, {
-    cuerpoJson: { ambiente, idEnvio: doc.id_envio, version: doc.version, documento: doc.encodeDte },
-    extra: { Authorization: token },
-  });
-  let mh: Record<string, unknown>;
-  try { mh = JSON.parse(bruto); }
-  catch { throw new Error(`Hacienda devolvió algo ilegible: ${bruto.slice(0, 200)}`); }
-
-  const sello = String(mh.selloRecibido ?? "");
-  const observaciones = Array.isArray(mh.observaciones) ? mh.observaciones.map(String) : [];
-
-  // 5 · Registrar la respuesta en el ERP — pase lo que pase. Si Hacienda
-  // rechazó, sus observaciones también tienen que quedar anotadas allá.
-  await pedir(cookie, GENERAR_DTE, new URLSearchParams({
-    process: "save_response_mh", id_factura: erpId, tipodoc, anula: "1",
-    clasificaMsg:    String(mh.clasificaMsg ?? ""),
-    codigoMsg:       String(mh.codigoMsg ?? ""),
-    descripcionMsg:  String(mh.descripcionMsg ?? ""),
-    selloRecibido:   sello,
-    observaciones:   JSON.stringify(observaciones),
-    fhProcesamiento: String(mh.fhProcesamiento ?? ""),
-  }));
-
-  // El sello es el criterio de éxito, no el HTTP 200: el proxy contesta 200
-  // igual cuando Hacienda rechaza, y ahí el sello viene nulo.
-  if (!sello || sello === "null")
-    throw new Error(
-      `Hacienda rechazó la anulación: ${mh.descripcionMsg ?? "sin descripción"}` +
-      (observaciones.length ? ` — ${observaciones.join("; ")}` : ""),
-    );
-
-  return {
-    sello,
-    descripcion: String(mh.descripcionMsg ?? ""),
-    codigo: String(mh.codigoMsg ?? ""),
-    fh: String(mh.fhProcesamiento ?? ""),
-    observaciones,
-  };
 }
 
 Deno.serve(async (req) => {
@@ -379,9 +190,9 @@ Deno.serve(async (req) => {
         anuladaAhora = true;
       }
 
-      const mh = await anularEnHacienda(
-        cookie, erpId, String(factura.tipo_documento ?? ""), resp.name, dui,
-      );
+      const mh = await enviarDteAlMH(cookie, erpId, String(factura.tipo_documento ?? ""), {
+        anula: true, nombreResp: resp.name, duiResp: dui,
+      });
 
       const aplicadoAnu = {
         at: new Date().toISOString(),

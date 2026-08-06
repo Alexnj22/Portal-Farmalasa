@@ -362,8 +362,8 @@
      truco. Ahora el contraste vive DENTRO del anillo y sobrevive al recorte.
      Es la misma física que ya decidieron `--anidada` (§1.5) y el tinte del
      sidebar: la dirección del realce la manda el fondo, no el gusto. */
-  --rim-base:    rgba(12,20,48,.10);
-  --rim-glint:   rgba(12,20,48,.55);
+  --rim-base:    rgba(255,255,255,.35);
+  --rim-glint:   rgba(255,255,255,1);
   --rim-bloom:   transparent;
   /* Botón (§2) — el aro NO escala con la intensidad: ése es --btn-esp-aro */
   --btn-especular: 0.40;
@@ -506,6 +506,12 @@ thead.sticky {
      se aclara. La dirección la decide el rol de la superficie, no el tema. */
   --sidebar-tint:     236 234 250;
   --sidebar-ink:      15 23 42;
+  --sidebar-realce:   255 255 255;
+  /* El realce (hover, activo) SIEMPRE ACLARA en vidrio, en los dos modos:
+     apoyar el dedo sobre vidrio deja pasar más luz, no menos. Salía de
+     `--sidebar-ink`, que en claro es tinta oscura, así que el hover se veía
+     GRIS SUCIO en vez de escarchado. En Solid sí sale de la tinta, porque ahí
+     no hay luz que dejar pasar: el realce es un escalón de color. */
   --sidebar-fill:     0.55;
   /* §12.5/§12.7 · El flotante tiene TINTE PROPIO, no el del panel a otra alfa.
      Compartirlo se rompió en cuanto el sidebar dejó de ser siempre-oscuro
@@ -1152,6 +1158,7 @@ thead.sticky {
   /* §12.1 · Solid claro también sigue al tema: panel claro, tinta oscura.
      Este valor pisaba al de arriba — era el sidebar siempre-oscuro. */
   --sidebar-tint:     241 245 251;
+  --sidebar-realce:   15 23 42;   /* Solid: el realce es tinta, no luz */
   --sidebar-fill:     1;
   --sidebar-pop-fill: 1;
   --sidebar-rim:      0.08;

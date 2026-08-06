@@ -558,10 +558,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink)/0.08)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]';
+        const navItemInactive   = 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-realce)/0.08)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]';
         const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-[rgb(var(--sidebar-ink)/0.42)] group-hover:text-[rgb(var(--sidebar-ink)/0.8)]';
-        const accentBarInactive = 'bg-[rgb(var(--sidebar-ink)/0.2)]';
+        const accentBarInactive = 'bg-[rgb(var(--sidebar-realce)/0.2)]';
         const accentBarActive   = 'bg-gradient-to-b from-logo-green to-logo-magenta shadow-[var(--shadow-glow-logo-magenta-md)]';
 
         if (comingSoon) {
@@ -736,7 +736,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         ${isExpanded ? 'gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3' : 'justify-center gap-0 px-0 py-2.5 xl:py-3'}
                         ${hasActiveChild
                             ? 'text-[rgb(var(--sidebar-ink))]'
-                            : 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink)/0.08)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]'}
+                            : 'text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-realce)/0.08)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]'}
                         ${focusRing}
                         active:scale-[0.99] active:translate-y-0`}
                 >
@@ -891,9 +891,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition duration-[var(--dur-lento)] bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
                                         transition duration-[var(--dur-slow)] group-hover/logo:scale-105
-                                        bg-[rgb(var(--sidebar-ink)/0.12)] border border-logo-magenta/20
+                                        bg-[rgb(var(--sidebar-realce)/0.12)] border border-logo-magenta/20
                                         shadow-[var(--shadow-glass-2)]
-                                        group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-[rgb(var(--sidebar-ink)/0.18)]
+                                        group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-[rgb(var(--sidebar-realce)/0.18)]
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.2)] to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                         <img src="/Logo192.png" alt="FLS"
@@ -947,8 +947,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 title={`Buscar en el menú (${SHORTCUT_LABEL})`}
                                 className={`w-full flex items-center rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
                                     ${isExpanded ? 'gap-2.5 px-3 py-3 xl:px-4 xl:py-3.5' : 'justify-center gap-0 px-0 py-3 xl:py-3.5'}
-                                    bg-[rgb(var(--sidebar-ink)/0.045)] border border-[rgb(var(--sidebar-ink)/0.07)]
-                                    text-[rgb(var(--sidebar-ink)/0.65)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-ink)/0.09)] hover:border-[rgb(var(--sidebar-ink)/0.12)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]
+                                    bg-[rgb(var(--sidebar-realce)/0.045)] border border-[rgb(var(--sidebar-ink)/0.07)]
+                                    text-[rgb(var(--sidebar-ink)/0.65)] hover:text-[rgb(var(--sidebar-ink)/0.95)] hover:bg-[rgb(var(--sidebar-realce)/0.09)] hover:border-[rgb(var(--sidebar-ink)/0.12)] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]
                                     ${focusRing}
                                     active:scale-[0.99] active:translate-y-0`}
                             >
@@ -960,7 +960,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </>
                                 )}
                             </button>
-                            <div className="h-px bg-[rgb(var(--sidebar-ink)/0.07)] mx-1 my-2" />
+                            <div className="h-px bg-[rgb(var(--sidebar-realce)/0.07)] mx-1 my-2" />
 
                             <div
                                 className={`absolute left-2 right-2 rounded-xl transform-gpu pointer-events-none
@@ -1013,9 +1013,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
                                         <Link to="/profile"
-                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-ink)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
+                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-realce)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
-                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-[rgb(var(--sidebar-ink)/0.12)] shadow-[var(--shadow-elevation-xl)] bg-[rgb(var(--sidebar-ink)/0.08)] text-[rgb(var(--sidebar-ink)/0.55)] group-hover/user:border-[rgb(var(--sidebar-ink)/0.2)]">
+                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-[rgb(var(--sidebar-ink)/0.12)] shadow-[var(--shadow-elevation-xl)] bg-[rgb(var(--sidebar-realce)/0.08)] text-[rgb(var(--sidebar-ink)/0.55)] group-hover/user:border-[rgb(var(--sidebar-ink)/0.2)]">
                                                     {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
@@ -1057,9 +1057,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             }}
                                             onMouseLeave={closeFlyout} aria-label="Mi Perfil"
                                             className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:translate-y-[var(--lift-hover)] active:scale-[0.97]
-                                                bg-[rgb(var(--sidebar-ink)/0.08)] border border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.55)]
+                                                bg-[rgb(var(--sidebar-realce)/0.08)] border border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.55)]
                                                 shadow-[var(--shadow-glass-1)]
-                                                hover:bg-[rgb(var(--sidebar-ink)/0.14)] hover:border-[rgb(var(--sidebar-ink)/0.20)] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
+                                                hover:bg-[rgb(var(--sidebar-realce)/0.14)] hover:border-[rgb(var(--sidebar-ink)/0.20)] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
                                             {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} strokeWidth={1.5} />}
                                         </Link>
                                         {myBirthday && (
@@ -1160,7 +1160,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {hasSelfOnly && (
                         <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition duration-[var(--dur-lento)] ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-card px-2 py-2 border
-                                bg-[rgb(var(--sidebar-ink)/0.95)] border-[rgb(var(--sidebar-ink)/0.6)] shadow-[var(--shadow-sticky-t)]">
+                                bg-[rgb(var(--sidebar-realce)/0.95)] border-[rgb(var(--sidebar-ink)/0.6)] shadow-[var(--shadow-sticky-t)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {
                                     const pathSeg = path.replace(/^\//, '').split('/')[0];
                                     const isActive = activeId === pathSeg;
@@ -1206,11 +1206,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         shadow-[var(--shadow-glass-3)]
                                         transition duration-[var(--dur-fast)] active:scale-[0.97] group/fi ${focusRing}
-                                        ${flyout.isActive ? 'bg-[rgb(var(--sidebar-ink)/0.10)]' : 'hover:bg-[rgb(var(--sidebar-ink)/0.08)]'}`}
+                                        ${flyout.isActive ? 'bg-[rgb(var(--sidebar-realce)/0.10)]' : 'hover:bg-[rgb(var(--sidebar-realce)/0.08)]'}`}
                                     type="button"
                                 >
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                                        ${flyout.isActive ? 'bg-chart-1/25' : 'bg-[rgb(var(--sidebar-ink)/0.08)] group-hover/fi:bg-chart-1/20'}`}>
+                                        ${flyout.isActive ? 'bg-chart-1/25' : 'bg-[rgb(var(--sidebar-realce)/0.08)] group-hover/fi:bg-chart-1/20'}`}>
                                         <flyout.icon
                                             size={16}
                                             strokeWidth={flyout.isActive ? 2 : 1.5}
@@ -1248,7 +1248,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 <div key={m.key}
                                                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-50 cursor-default select-none"
                                                 >
-                                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[rgb(var(--sidebar-ink)/0.06)]">
+                                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[rgb(var(--sidebar-realce)/0.06)]">
                                                         <MIcon size={14} strokeWidth={1.5} className="text-[rgb(var(--sidebar-ink)/0.4)]" />
                                                     </div>
                                                     <span className="text-body font-medium text-[rgb(var(--sidebar-ink)/0.55)] flex-1 whitespace-nowrap">{m.label}</span>
@@ -1269,12 +1269,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                             // La marca de "seleccionado" es el ACENTO, que ya
                                                             // existe en los cuatro temas.
                                                             ? 'bg-brand/15 text-[rgb(var(--sidebar-ink))] border border-brand/35'
-                                                            : 'text-[rgb(var(--sidebar-ink))] hover:bg-[rgb(var(--sidebar-ink)/0.08)]'}`}
+                                                            : 'text-[rgb(var(--sidebar-ink))] hover:bg-[rgb(var(--sidebar-realce)/0.08)]'}`}
                                                 >
                                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition duration-[var(--dur-fast)]
                                                         ${m.isActive
                                                             ? 'bg-brand/25 shadow-[var(--shadow-glow-chart-1)]'
-                                                            : 'bg-[rgb(var(--sidebar-ink)/0.08)] group-hover/fi:bg-[rgb(var(--sidebar-ink)/0.14)]'}`}>
+                                                            : 'bg-[rgb(var(--sidebar-realce)/0.08)] group-hover/fi:bg-[rgb(var(--sidebar-realce)/0.14)]'}`}>
                                                         <MIcon
                                                             size={14}
                                                             strokeWidth={m.isActive ? 2 : 1.5}
@@ -1310,7 +1310,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60 transition duration-[var(--dur-fast)] active:scale-[0.97] ${focusRing}`}
                                     type="button"
                                 >
-                                    <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 border border-[rgb(var(--sidebar-ink)/0.2)] bg-[rgb(var(--sidebar-ink)/0.1)] flex items-center justify-center">
+                                    <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 border border-[rgb(var(--sidebar-ink)/0.2)] bg-[rgb(var(--sidebar-realce)/0.1)] flex items-center justify-center">
                                         {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-[#7DB8FF]" />}
                                     </div>
                                     <div className="flex flex-col items-start pr-1">

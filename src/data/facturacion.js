@@ -6,6 +6,38 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 
+/**
+ * Termina el trámite pendiente ante Hacienda: invalida las anuladas que no se
+ * invalidaron, y manda las emitidas que se quedaron sin sello.
+ *
+ * El navegador no habla con el ERP ni con el MH — las credenciales viven en un
+ * secreto y la cadena son cinco pasos encadenados. Todo eso pasa en la Edge
+ * Function `regularizar-dte`, que es la misma que corre el barrido de las
+ * 22:30; acá solo se elige el alcance.
+ *
+ *   alcance 'una'      + invoiceId → una factura puntual
+ *   alcance 'sucursal' + branchId  → todo lo pendiente de esa sucursal
+ *   alcance 'todas'                → todo
+ *
+ * Nunca lanza: devuelve `{ ok, resueltas, fallidas, detalle }` o
+ * `{ ok:false, error }` para que la vista decida qué mostrar.
+ */
+export async function regularizarDte({ alcance, invoiceId = null, branchId = null, bolsa = null } = {}) {
+    try {
+        const { data, error } = await supabase.functions.invoke('regularizar-dte', {
+            body: { alcance, invoice_id: invoiceId, branch_id: branchId, bolsa },
+        });
+        if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+        // El motivo real viaja en el cuerpo: sin leerlo, todo fallo se ve como
+        // un "non-2xx status code" indistinguible.
+        let detalle = '';
+        try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+        return { ok: false, error: detalle || error.message };
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
 // ── Facturas NULA / con estado nulo ──────────────────────────────────────────
 // sales_invoices está en la lista de CLAUDE.md de tablas que requieren
 // paginación — el backlog de NULA/nulo puede superar 1000 filas.

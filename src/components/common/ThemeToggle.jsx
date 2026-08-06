@@ -33,8 +33,8 @@ const inactiveTabCls = 'bg-transparent text-content-3 hover:bg-surface-tab-activ
 // siempre-oscuro: al seguir el tema (§12.1), en oscuro quedaba una superficie
 // oscura con texto casi negro encima — el segmento activo era el ÚNICO
 // ilegible, justo el que dice cuál está puesto.
-const activeTabClsDark = 'bg-[rgb(var(--sidebar-ink)/0.16)] text-[rgb(var(--sidebar-ink))] shadow-md scale-[1.02]';
-const inactiveTabClsDark = 'bg-transparent text-[rgb(var(--sidebar-ink)/0.5)] hover:bg-[rgb(var(--sidebar-ink)/0.08)] hover:text-[rgb(var(--sidebar-ink)/0.85)]';
+const activeTabClsDark = 'bg-[rgb(var(--sidebar-realce)/0.16)] text-[rgb(var(--sidebar-ink))] shadow-md scale-[1.02]';
+const inactiveTabClsDark = 'bg-transparent text-[rgb(var(--sidebar-ink)/0.5)] hover:bg-[rgb(var(--sidebar-realce)/0.08)] hover:text-[rgb(var(--sidebar-ink)/0.85)]';
 
 function SegmentedRow({ label, options, activeKey, onPick, dark }) {
   return (
@@ -42,7 +42,7 @@ function SegmentedRow({ label, options, activeKey, onPick, dark }) {
       <p className={`text-[9.5px] font-black uppercase tracking-widest px-0.5 mb-1.5 ${dark ? 'text-[rgb(var(--sidebar-ink)/0.4)]' : 'text-content-3'}`}>{label}</p>
       <div
         {...(dark ? {} : { 'data-surface': 'tab-track' })}
-        className={`flex items-center gap-1 p-1 rounded-full ${dark ? 'bg-[rgb(var(--sidebar-ink)/0.06)] border border-[rgb(var(--sidebar-ink)/0.09)]' : ''}`}
+        className={`flex items-center gap-1 p-1 rounded-full ${dark ? 'bg-[rgb(var(--sidebar-realce)/0.06)] border border-[rgb(var(--sidebar-ink)/0.09)]' : ''}`}
       >
         {Object.entries(options).map(([key, { label: optLabel, Icon }]) => (
           <button
@@ -191,8 +191,8 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
           className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
             border transition-colors duration-[var(--dur-fast)] ${className}
             ${isOpen
-              ? 'bg-[rgb(var(--sidebar-ink)/0.12)] border-[rgb(var(--sidebar-ink)/0.2)] text-[rgb(var(--sidebar-ink)/0.9)]'
-              : 'bg-[rgb(var(--sidebar-ink)/0.06)] border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.9)] hover:bg-[rgb(var(--sidebar-ink)/0.1)]'}`}
+              ? 'bg-[rgb(var(--sidebar-realce)/0.12)] border-[rgb(var(--sidebar-ink)/0.2)] text-[rgb(var(--sidebar-ink)/0.9)]'
+              : 'bg-[rgb(var(--sidebar-realce)/0.06)] border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.6)] hover:text-[rgb(var(--sidebar-ink)/0.9)] hover:bg-[rgb(var(--sidebar-realce)/0.1)]'}`}
         >
           <StyleIcon size={16} strokeWidth={2} />
         </button>

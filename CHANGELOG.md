@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.415.0 — La vista de solicitudes, canónica: fuera nueve colores por tipo
+
+**El color vuelve a significar estado.** `TYPE_COLORS` daba un relleno propio a
+cada tipo de solicitud —chart-1, chart-3, chart-4, chart-6, chart-8, chart-9,
+success, warning, danger— y lo aplicaba al círculo, al borde de la tarjeta, al
+resplandor del hover, al encabezado de sección y a cada bloque de detalle.
+
+Se fue por dos motivos. §6 dice que un `chart-N` solo se usa cuando el color
+distingue una categoría que el usuario reconoce, y que `chart-8` es de los
+cuatro que «no se usan para nada nuevo» — acá el color no distinguía nada, el
+tipo ya está escrito con todas sus letras y tiene su ícono. Pero el motivo de
+fondo es el otro: con nueve tintes compitiendo, **el dato que importa —pendiente,
+aprobada, rechazada— quedaba escondido en un punto de 8 px**.
+
+Ahora la tarjeta es `data-surface="card"` como cualquier otra superficie del
+portal, el tipo se lee por ícono y nombre, y el borde solo se colorea por estado
+(una incapacidad pendiente es urgente; una rechazada, cerrada).
+
+**Y trae el ID de la venta.** Los cuatro bloques de facturación lo muestran, y
+sale de `erp_invoice_id` —que el widget ahora guarda en la solicitud— o de lo
+que quedó registrado al aplicarla. **Nunca cae al id interno del portal**: son
+dos numeraciones distintas y mostrarlas bajo la misma etiqueta manda a buscar la
+venta equivocada.
+
+### Dos correcciones que salieron de verificar la primera anulación real
+
+**La notificación seguía ofreciendo Aprobar / Rechazar sobre algo ya decidido.**
+La notificación es una fila aparte de la solicitud, y resolverla no la tocaba;
+la campana solo miraba el tipo y el permiso. Tocar el botón llevaba a un diálogo
+que el servidor rechaza con 409. Ahora un trigger
+(`marcar_notificacion_solicitud_resuelta`, migración `20260806022300`) marca el
+aviso en el mismo momento en que la solicitud cambia de estado, y la campana
+muestra en qué terminó en vez de invitar a revisarla. Va en el servidor porque
+la campana es global y `requests` puede no estar cargado.
+
+**La validación de «factura ya anulada» miraba el estado equivocado.** Bloqueaba
+`estado = 'NULA'`, que resultó ser el raro:
+
+| estado | facturas |
+|---|---|
+| FINALIZADA | 341,226 |
+| DTE INVALIDADO EN MH | 975 |
+| NULA | 14 |
+
+`NULA` es el paso intermedio —anulada en el ERP, todavía sin invalidar ante
+Hacienda—; el estado final es el otro. La validación cubría el 1.4% de los casos.
+Lo delató la factura de la prueba, que quedó en `DTE INVALIDADO EN MH`. El
+criterio pasa a ser «no está viva» y vive en una función
+(`factura_esta_anulada`, migración `20260806022058`) que usan el trigger, el
+widget y la Edge Function, para que el día que aparezca otro estado terminal se
+agregue en un solo lugar.
+
+
+_(pendiente de redactar)_
+
 ## v2.414.0 — Cada elemento es una pieza de vidrio
 
 **El destello no aparecía casi en ningún lado, y el motivo era el alcance.** La fase E

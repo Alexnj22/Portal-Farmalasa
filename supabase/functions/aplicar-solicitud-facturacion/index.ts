@@ -62,6 +62,15 @@ const ERP_A_PAGO: Record<string, string> = Object.fromEntries(
 // Llave propia y no la del sync de compras: ese usuario existe para otro
 // módulo y esto escribe sobre facturas emitidas. Separarlas permite rotar una
 // sin tocar los otros syncs, y deja en el log del ERP quién hizo qué.
+// Una factura anulada no es un documento vivo. Son DOS estados, no uno:
+// medido el 2026-08-06, 975 facturas en 'DTE INVALIDADO EN MH' contra 14 en
+// 'NULA'. 'NULA' es el paso intermedio —anulada en el ERP, todavía sin
+// invalidar ante Hacienda—; el final es el otro. Mirar solo 'NULA' cubría el
+// 1.4% de los casos. Mismo criterio que `factura_esta_anulada()` en la BD.
+const ESTADOS_ANULADA = new Set(["NULA", "DTE INVALIDADO EN MH"]);
+const estaAnulada = (estado: string | null) =>
+  ESTADOS_ANULADA.has(String(estado ?? "").toUpperCase());
+
 function getCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_FACTURACION_CREDS") ?? Deno.env.get("ERP_PURCHASES_CREDS");
   if (!raw) throw new Error("Falta el secreto ERP_FACTURACION_CREDS.");
@@ -330,7 +339,7 @@ Deno.serve(async (req) => {
     // Para los tres cambios de datos, una factura anulada es un callejón sin
     // salida. Para la anulación NO es un error: puede estar anulada en el ERP
     // y pendiente ante Hacienda, que es justo el caso que hay que terminar.
-    if (factura.estado === "NULA" && !esAnulacion)
+    if (estaAnulada(factura.estado) && !esAnulacion)
       return json({ ok: false, error: "La factura ya está anulada." }, 409);
 
     const erpId = String(factura.erp_invoice_id);
@@ -362,7 +371,7 @@ Deno.serve(async (req) => {
       // El endpoint destructivo solo se llama si hace falta. Si la factura ya
       // está anulada en el ERP, lo que falta es el paso ante Hacienda.
       let anuladaAhora = false;
-      if (factura.estado !== "NULA") {
+      if (!estaAnulada(factura.estado)) {
         const r = leerRespuesta(await pedir(cookie, ANULAR, new URLSearchParams({
           process: "deleted", id_factura: erpId,
         })));

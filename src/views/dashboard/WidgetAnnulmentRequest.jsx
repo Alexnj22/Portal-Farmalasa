@@ -77,9 +77,18 @@ function isSameDay(dateStr) {
 }
 /* Una factura anulada ya no es un documento vivo: no se vuelve a anular, y
    tampoco se le cambia el cliente, el pago ni el vendedor. La regla la impone
-   la BD (trigger `validar_solicitud_facturacion`); acá se muestra antes de que
-   alguien llene un formulario que el servidor va a rechazar. */
-function esAnulada(inv) { return String(inv?.estado ?? '').toUpperCase() === 'NULA'; }
+   la BD (`factura_esta_anulada` + trigger `validar_solicitud_facturacion`); acá
+   se muestra antes de que alguien llene un formulario que el servidor va a
+   rechazar.
+
+   Son DOS estados, no uno. Medido el 2026-08-06: 975 facturas en
+   'DTE INVALIDADO EN MH' contra 14 en 'NULA'. 'NULA' es el paso intermedio
+   —anulada en el ERP, todavía sin invalidar ante Hacienda—; el estado final es
+   el otro. Mirar solo 'NULA' cubría el 1.4% de los casos. */
+const ESTADOS_ANULADA = ['NULA', 'DTE INVALIDADO EN MH'];
+function esAnulada(inv) {
+  return ESTADOS_ANULADA.includes(String(inv?.estado ?? '').toUpperCase());
+}
 
 function fmtCurrency(n) { return formatMoney(n ?? 0); }
 function fmtDate(d) {
@@ -356,7 +365,11 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         type: 'ANNULMENT_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
         metadata: {
-          invoice_id: inv.id, correlativo: inv.correlativo, fecha: inv.fecha,
+          invoice_id: inv.id,
+          // El id con el que se ubica la venta fuera del portal. El de arriba
+          // es el interno y no sirve para buscarla: son dos numeraciones.
+          erp_invoice_id: inv.erp_invoice_id ?? null,
+          correlativo: inv.correlativo, fecha: inv.fecha,
           total: inv.total, tipo_documento: inv.tipo_documento, tipo_pago: inv.tipo_pago,
           branch_id: activeBranchId, branch_name: activeBranch?.name,
           reason, comment: comment.trim() || null,
@@ -475,7 +488,11 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         type: 'PAYMENT_CHANGE_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
         metadata: {
-          invoice_id: inv.id, correlativo: inv.correlativo, fecha: inv.fecha,
+          invoice_id: inv.id,
+          // El id con el que se ubica la venta fuera del portal. El de arriba
+          // es el interno y no sirve para buscarla: son dos numeraciones.
+          erp_invoice_id: inv.erp_invoice_id ?? null,
+          correlativo: inv.correlativo, fecha: inv.fecha,
           total: inv.total, tipo_documento: inv.tipo_documento,
           current_pago: inv.tipo_pago, new_pago: newPayment,
           branch_id: activeBranchId, branch_name: activeBranch?.name,
@@ -565,7 +582,11 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         type: 'VENDOR_CHANGE_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
         metadata: {
-          invoice_id: inv.id, correlativo: inv.correlativo, fecha: inv.fecha,
+          invoice_id: inv.id,
+          // El id con el que se ubica la venta fuera del portal. El de arriba
+          // es el interno y no sirve para buscarla: son dos numeraciones.
+          erp_invoice_id: inv.erp_invoice_id ?? null,
+          correlativo: inv.correlativo, fecha: inv.fecha,
           total: inv.total, tipo_documento: inv.tipo_documento,
           branch_id: activeBranchId, branch_name: activeBranch?.name,
           current_vendor_code: inv.cod_vendedor,
@@ -697,7 +718,11 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         type: 'CLIENT_CHANGE_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
         metadata: {
-          invoice_id: inv.id, correlativo: inv.correlativo, fecha: inv.fecha,
+          invoice_id: inv.id,
+          // El id con el que se ubica la venta fuera del portal. El de arriba
+          // es el interno y no sirve para buscarla: son dos numeraciones.
+          erp_invoice_id: inv.erp_invoice_id ?? null,
+          correlativo: inv.correlativo, fecha: inv.fecha,
           total: inv.total, tipo_documento: inv.tipo_documento,
           branch_id: activeBranchId, branch_name: activeBranch?.name,
           current_cliente: inv.cliente ?? null,

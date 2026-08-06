@@ -172,7 +172,7 @@ export function fetchInvoiceItemsForInvoice(invoiceId) {
 // una NULA ya no es un documento vivo. La regla la impone la BD (trigger
 // `validar_solicitud_facturacion`), esto es para que se vea antes de intentarlo.
 const INVOICE_COLS =
-    'id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor, estado';
+    'id, erp_invoice_id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor, estado';
 
 // Tamaño de la lista por defecto y tope de resultados de búsqueda. NO es un cap
 // disimulado como el `.limit(500)` anterior: el conteo real del ámbito viaja

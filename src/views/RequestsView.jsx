@@ -42,27 +42,38 @@ const CREATABLE_TYPES = [
 // dos listas era garantía de que se desincronizaran.
 const TYPE_ICONS = ICONO_POR_TIPO;
 
-// circle = card colored avatar; section = section label color.
-// Tokenizado T7 (AUDITORIA-TEMA-2026-07.md, propuesta de estandarización de
-// color aprobada por el usuario 2026-07-24): 11 tipos → 9 son categóricos
-// genuinos (paleta cerrada cat-1..9, sin significado de severidad) + 2 SÍ
-// son severidad real, no solo "otra categoría más" — DISABILITY (ausencia
-// médica) y ANNULMENT_REQUEST (pide deshacer algo ya enviado, necesita
-// revisión) pasan a los tokens semánticos danger/warning en vez de un
-// color categórico arbitrario.
-const TYPE_COLORS = {
-    VACATION:     { circle: 'bg-chart-1',  ring: 'ring-chart-1/30', section: 'text-chart-1-text', border: 'border-chart-1/30', hover: 'hover:shadow-[var(--shadow-glow-chart-1)]',  sectionIcon: 'text-chart-1-text bg-chart-1/10 border-chart-1/30'  },
-    PERMIT:       { circle: 'bg-success',  ring: 'ring-success/30', section: 'text-success-text', border: 'border-success/30', hover: 'hover:shadow-[var(--shadow-glow-success)]',  sectionIcon: 'text-success-text bg-success/10 border-success/30'  },
-    SHIFT_CHANGE: { circle: 'bg-chart-3',  ring: 'ring-chart-3/30', section: 'text-chart-3-text', border: 'border-chart-3/30', hover: 'hover:shadow-[var(--shadow-glow-chart-3)]',  sectionIcon: 'text-chart-3-text bg-chart-3/10 border-chart-3/30'  },
-    OVERTIME:     { circle: 'bg-chart-4',  ring: 'ring-chart-4/30', section: 'text-chart-4-text', border: 'border-chart-4/30', hover: 'hover:shadow-[var(--shadow-glow-chart-4)]',  sectionIcon: 'text-chart-4-text bg-chart-4/10 border-chart-4/30'  },
-    ADVANCE:      { circle: 'bg-chart-9',  ring: 'ring-chart-9/30', section: 'text-chart-9-text', border: 'border-chart-9/30', hover: 'hover:shadow-[var(--shadow-glow-chart-9-lg)]',   sectionIcon: 'text-chart-9-text bg-chart-9/10 border-chart-9/30'  },
-    CERTIFICATE:  { circle: 'bg-chart-6',  ring: 'ring-chart-6/30', section: 'text-chart-6-text', border: 'border-chart-6/30', hover: 'hover:shadow-[var(--shadow-glow-chart-6-lg)]',  sectionIcon: 'text-chart-6-text bg-chart-6/10 border-chart-6/30'  },
-    DISABILITY:             { circle: 'bg-danger',  ring: 'ring-danger/30',  section: 'text-danger-text',  border: 'border-danger/30',  hover: 'hover:shadow-[var(--shadow-glow-danger)]',   sectionIcon: 'text-danger-text bg-danger/10 border-danger/30'   },
-    ANNULMENT_REQUEST:      { circle: 'bg-warning', ring: 'ring-warning/30', section: 'text-warning-text', border: 'border-warning/30', hover: 'hover:shadow-[var(--shadow-glow-warning-lg)]',   sectionIcon: 'text-warning-text bg-warning/10 border-warning/30' },
-    PAYMENT_CHANGE_REQUEST: { circle: 'bg-warning',  ring: 'ring-warning/30', section: 'text-warning-text', border: 'border-warning/30', hover: 'hover:shadow-[var(--shadow-glow-warning)]',   sectionIcon: 'text-warning-text bg-warning/10 border-warning/30'  },
-    VENDOR_CHANGE_REQUEST:  { circle: 'bg-chart-8',  ring: 'ring-chart-8/30', section: 'text-chart-8-text', border: 'border-chart-8/30', hover: 'hover:shadow-[var(--shadow-glow-chart-8)]', sectionIcon: 'text-chart-8-text bg-chart-8/10 border-chart-8/30'  },
-    CLIENT_CHANGE_REQUEST:  { circle: 'bg-chart-9',  ring: 'ring-chart-9/30', section: 'text-chart-9-text', border: 'border-chart-9/30', hover: 'hover:shadow-[var(--shadow-glow-chart-9-lg)]',  sectionIcon: 'text-chart-9-text bg-chart-9/10 border-chart-9/30'  },
+// Acá vivía `TYPE_COLORS` (tokenizado en T7, AUDITORIA-TEMA-2026-07.md): un color de relleno por cada tipo de solicitud —
+// chart-1, chart-3, chart-4, chart-6, chart-8, chart-9, success, warning,
+// danger— aplicado al círculo, al borde de la tarjeta, al resplandor del hover,
+// al encabezado de sección y a cada bloque de detalle.
+//
+// Se fue por dos motivos, y el segundo es el que manda:
+//
+//  1. §6 dice que un `chart-N` solo se usa cuando el color distingue una
+//     CATEGORÍA que el usuario reconoce, y que `chart-8` es de los cuatro que
+//     "no se usan para nada nuevo". Acá el color no distinguía nada: el tipo ya
+//     está escrito con todas sus letras y tiene su ícono.
+//  2. Con nueve tintes compitiendo, **el color dejaba de significar estado**.
+//     Una tarjeta rechazada y una de vacaciones se distinguían por matiz, y el
+//     dato que de verdad importa —pendiente, aprobada, rechazada— quedaba
+//     escondido en un punto de 8px.
+//
+// El canon queda: superficie neutra (`data-surface="card"`), el tipo se lee por
+// ícono + nombre, y **el color se reserva para el estado**, en su insignia.
+
+// El ID con el que se ubica la venta. Sale de la solicitud (`erp_invoice_id`,
+// que el widget guarda desde v2.414.0) o de lo que quedó registrado al
+// aplicarla. NUNCA cae al id interno del portal: son dos numeraciones distintas
+// y mostrarlas bajo la misma etiqueta manda a buscar la venta equivocada.
+const idDeVenta = (meta) =>
+    meta?.erp_invoice_id ?? meta?.erp_aplicado?.erp_invoice_id ?? null;
+
+const IdVenta = ({ meta }) => {
+    const id = idDeVenta(meta);
+    if (!id) return null;
+    return <p className="text-caption text-content-3 font-mono mt-0.5">ID de venta {id}</p>;
 };
+
 
 const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 const fmtDateFull = (iso) => !iso ? '—' : new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -106,7 +117,6 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
     const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
-    const tc        = TYPE_COLORS[req.type] || { circle: 'bg-content-3', ring: 'ring-divider', border: 'border-border-card', hover: '', sectionIcon: '' };
     const meta      = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
     const isRejected = req.status === 'REJECTED';
     const isUrgent   = req.type === 'DISABILITY' && req.status === 'PENDING';
@@ -116,9 +126,13 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
         return emp ? `${emp.name}${emp.role ? ` · ${emp.role}` : ''}` : `Nivel ${ap.level}`;
     };
 
+    // Superficie canónica. El borde solo se colorea por ESTADO —una incapacidad
+    // pendiente es urgente, una rechazada quedó cerrada—, nunca por tipo: eso
+    // era lo que hacía competir nueve matices por decir algo que el nombre ya
+    // dice.
     return (
-        <div className={`rounded-modal border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${tc.hover} transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] overflow-hidden transform-gpu
-            ${isUrgent ? 'border-danger' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
+        <div data-surface="card" className={`transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] overflow-hidden transform-gpu
+            ${isUrgent ? '!border-danger' : isRejected ? '!border-danger/30' : ''}`}>
 
             {/* Compact header — click to expand */}
             {/* Encabezado plegable. Le faltaba `aria-expanded`: el estado
@@ -127,9 +141,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                 aria-expanded={expanded}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 transition-colors duration-[var(--dur-base)]">
 
-                {/* Colored circle avatar */}
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${tc.circle} ${tc.ring} shadow-sm`}>
-                    <TypeIcon size={15} strokeWidth={2} className="text-white" />
+                {/* El ícono dice el tipo; el color, el estado. Antes el círculo
+                    iba relleno del color del tipo y era lo más brillante de la
+                    tarjeta — el ojo iba ahí y no al estado. */}
+                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-surface-card-hover border border-divider">
+                    <TypeIcon size={15} strokeWidth={2} className="text-content-2" />
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -201,7 +217,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                             {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
                                             {meta.days && <span className="text-danger font-medium ml-1.5">· {meta.days}d</span>}
                                         </p>
-                                        {Number(meta.days) > 3 && <p className="text-caption text-warning-text font-black mt-0.5">Requiere boleta ISSS</p>}
+                                        {Number(meta.days) > 3 && <p className="text-caption text-content-2 font-black mt-0.5">Requiere boleta ISSS</p>}
                                     </div>
                                 </div>
                             )}
@@ -211,9 +227,9 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <FileImage size={12} strokeWidth={2} />{meta.docName || 'Ver certificado adjunto'}
                                 </a>
                             ) : (
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-warning/10 border border-warning/30">
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card-hover border border-divider">
                                     <AlertTriangle size={11} className="text-warning flex-shrink-0" strokeWidth={2} />
-                                    <p className="text-caption text-warning-text font-medium">Sin certificado adjunto.</p>
+                                    <p className="text-caption text-content-2 font-medium">Sin certificado adjunto.</p>
                                 </div>
                             )}
                         </div>
@@ -246,22 +262,22 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* ADVANCE */}
                     {req.type === 'ADVANCE' && meta.amount && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-9/10 border border-chart-9/30">
-                            <Banknote size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card-hover border border-divider">
+                            <Banknote size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-caption font-black uppercase tracking-widest text-chart-9-text mb-0.5">Monto solicitado</p>
-                                <p className="text-body font-black text-chart-9-text">${Number(meta.amount).toLocaleString('es-SV')}</p>
+                                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Monto solicitado</p>
+                                <p className="text-body font-black text-content-2">${Number(meta.amount).toLocaleString('es-SV')}</p>
                             </div>
                         </div>
                     )}
 
                     {/* CERTIFICATE */}
                     {req.type === 'CERTIFICATE' && meta.certificateType && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-6/10 border border-chart-6/30">
-                            <FileCheck2 size={13} className="text-chart-6-text flex-shrink-0" strokeWidth={2} />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card-hover border border-divider">
+                            <FileCheck2 size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-caption font-black uppercase tracking-widest text-chart-6-text mb-0.5">Tipo</p>
-                                <p className="text-body-sm font-bold text-chart-6-text">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Tipo</p>
+                                <p className="text-body-sm font-bold text-content-2">
                                     {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                                 </p>
                             </div>
@@ -271,12 +287,13 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* ANNULMENT_REQUEST */}
                     {req.type === 'ANNULMENT_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
-                                <Ban size={13} className="text-warning-text flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
+                                <Ban size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">Factura a anular</p>
-                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                                    {meta.fecha && <p className="text-caption text-warning-text">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura a anular</p>
+                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
+                                    {meta.fecha && <p className="text-caption text-content-2">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
+                                    <IdVenta meta={meta} />
                                 </div>
                                 {meta.tipo_documento && (
                                     <Badge variant={meta.tipo_documento === 'CCF' ? 'danger' : 'neutral'} size="sm" className="shrink-0">{meta.tipo_documento}</Badge>
@@ -294,11 +311,12 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* PAYMENT_CHANGE_REQUEST */}
                     {req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
-                                <CreditCard size={13} className="text-warning-text flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
+                                <CreditCard size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura</p>
+                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
+                                    <IdVenta meta={meta} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -306,8 +324,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
                                     <p className="text-body-sm font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
                                 </div>
-                                <div className="bg-warning/10 border border-warning/30 rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-warning-text uppercase tracking-widest mb-0.5">Cambiar a</p>
+                                <div className="bg-surface-card-hover border border-divider rounded-2xl p-2.5">
+                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Cambiar a</p>
                                     <p className="text-body-sm font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                                 </div>
                             </div>
@@ -317,11 +335,12 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* VENDOR_CHANGE_REQUEST */}
                     {req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-8/10 border border-chart-8/30">
-                                <Receipt size={13} className="text-chart-8-text flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
+                                <Receipt size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-chart-8-text mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-chart-8-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura</p>
+                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
+                                    <IdVenta meta={meta} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -333,8 +352,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <p className="text-label font-black text-content-2">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
                                     {meta.current_vendor_code && <p className="text-micro text-content-3 font-mono">#{meta.current_vendor_code}</p>}
                                 </div>
-                                <div className="bg-chart-8/10 border border-chart-8/30 rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-chart-8-text uppercase tracking-widest mb-0.5">Asignar a</p>
+                                <div className="bg-surface-card-hover border border-divider rounded-2xl p-2.5">
+                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Asignar a</p>
                                     {meta.new_vendor_photo && (
                                         <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
@@ -348,11 +367,12 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* CLIENT_CHANGE_REQUEST */}
                     {req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-9/10 border border-chart-9/30">
-                                <Receipt size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
+                                <Receipt size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-chart-9-text mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-chart-9-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
+                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura</p>
+                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
+                                    <IdVenta meta={meta} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -363,10 +383,10 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     </div>
                                     <p className="text-label font-black text-content-2 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
                                 </div>
-                                <div className="bg-chart-9/10 border border-chart-9/30 rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-1">Cambiar a</p>
-                                    <div className="w-6 h-6 rounded-full bg-chart-9/10 flex items-center justify-center mb-1">
-                                        <span className="text-chart-9-text font-black text-caption leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
+                                <div className="bg-surface-card-hover border border-divider rounded-2xl p-2.5">
+                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Cambiar a</p>
+                                    <div className="w-6 h-6 rounded-full bg-surface-card border border-divider flex items-center justify-center mb-1">
+                                        <span className="text-content-2 font-black text-caption leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
                                     </div>
                                     <p className="text-label font-black text-content-2 leading-tight">{meta.new_client_name}</p>
                                     {(meta.new_client_nit || meta.new_client_dui) && (
@@ -381,9 +401,9 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                         cambio ocurra fuera del portal se ve igual que aprobar
                         y que no ocurra nada — que es como estaba antes. */}
                     {meta.erp_aplicado && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30 space-y-1">
-                            <p className="text-micro font-black uppercase tracking-widest text-success">Aplicado</p>
-                            <p className="text-label font-bold text-success-text">
+                        <div className="px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider space-y-1">
+                            <p className="text-micro font-black uppercase tracking-widest text-content-2">Aplicado</p>
+                            <p className="text-label font-bold text-content">
                                 {meta.erp_aplicado.campo === 'anulacion'
                                     ? 'Factura anulada'
                                     : `${meta.erp_aplicado.de || '—'} → ${meta.erp_aplicado.a || '—'}`}
@@ -720,17 +740,16 @@ const RequestsView = () => {
                     {groupedByType.map(([type, cards]) => {
                         const TypeIcon  = TYPE_ICONS[type] || FileText;
                         const typeConf  = REQUEST_TYPES[type] || { label: type };
-                        const tc        = TYPE_COLORS[type] || { sectionIcon: 'text-content-2 bg-surface-card-hover border-divider', section: 'text-content-2' };
                         const isCollapsed = collapsedSections.has(type);
 
                         return (
                             <section key={type}>
                                 <button onClick={() => toggleSection(type)} aria-expanded={!isCollapsed}
                                     className="w-full flex items-center gap-2 mb-3">
-                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center border ${tc.sectionIcon}`}>
+                                    <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-divider bg-surface-card-hover text-content-2">
                                         <TypeIcon size={12} strokeWidth={2} />
                                     </div>
-                                    <h3 className={`text-label font-black uppercase tracking-widest ${tc.section}`}>{typeConf.label}</h3>
+                                    <h3 className="text-label font-black uppercase tracking-widest text-content-2">{typeConf.label}</h3>
                                     <span className="text-caption font-bold text-content-3">{cards.length}</span>
                                     <div className="flex-1 h-px bg-divider mx-1" />
                                     <ChevronDown size={13} strokeWidth={2.5}

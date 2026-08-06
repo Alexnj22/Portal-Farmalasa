@@ -247,8 +247,16 @@ const NotificationBell = ({ variant = 'desktop' }) => {
        un diálogo que el servidor va a rechazar. `request_id` lo escribe el
        trigger `notificar_solicitud_creada`; las notificaciones viejas no lo
        tienen y siguen comportándose como antes. */
+    // `resuelta` la escribe el trigger `marcar_notificacion_solicitud_resuelta`
+    // en el momento en que la solicitud deja de estar PENDING. Sin eso, el aviso
+    // seguía ofreciendo Aprobar/Rechazar sobre algo ya decidido —la notificación
+    // es una fila aparte de la solicitud y aprobar no la tocaba—, y el botón
+    // llevaba a un diálogo que el servidor rechaza con 409.
     const puedeDecidir = (n) =>
-        canApprove && n.type === 'REQUEST_PENDING' && !!n.metadata?.request_id;
+        canApprove && n.type === 'REQUEST_PENDING'
+        && !!n.metadata?.request_id && !n.metadata?.resuelta;
+
+    const RESUELTA_LABEL = { APPROVED: 'Aprobada', REJECTED: 'Rechazada', CANCELLED: 'Cancelada' };
 
     const irADecidir = (n, accion) => {
         if (!n.read_at) markNotificationRead(n.id);
@@ -482,7 +490,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                 const isFlash = flashIds.has(n.id);
                                                 const pendingOne = pendingEntryByNotifId.get(n.id);
                                                 const inPendingAll = pendingAll?.ids.includes(n.id);
-                                                const actionLabel = n.link ? (ACTION_LABEL[n.type] || 'Ver') : null;
+                                                // Una solicitud ya decidida no se "revisa": el verbo tiene
+                                                // que decir en qué terminó, no invitar a algo que ya pasó.
+                                                const resuelta    = n.metadata?.resuelta;
+                                                const actionLabel = resuelta
+                                                    ? (RESUELTA_LABEL[resuelta] || 'Resuelta')
+                                                    : (n.link ? (ACTION_LABEL[n.type] || 'Ver') : null);
 
                                                 // Fila en ventana de deshacer (borrado individual)
                                                 if (pendingOne) {
@@ -532,10 +545,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                 <div className="flex items-center gap-2 mt-1.5">
                                                                     <span className={`text-caption font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
                                                                     {actionLabel && (
-                                                                        <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5
-                                                                            ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}>
+                                                                        <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest transition-transform
+                                                                            ${resuelta ? cx.chipMuted : `group-hover:translate-x-0.5 ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}`}>
                                                                             {actionLabel}
-                                                                            <ArrowRight size={10} strokeWidth={3} />
+                                                                            {/* La flecha promete "esto lleva a algún lado".
+                                                                                En una solicitud ya decidida no lleva a nada
+                                                                                que haya que hacer. */}
+                                                                            {!resuelta && <ArrowRight size={10} strokeWidth={3} />}
                                                                         </span>
                                                                     )}
                                                                 </div>

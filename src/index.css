@@ -507,13 +507,22 @@ thead.sticky {
      valor cambia de signo. */
   --sidebar-pop-tint: 236 234 250;
   --sidebar-pop-fill: 0.62;
-  --sidebar-rim:      0.42;
+  /* §1.7.bis · El canto del sidebar sale de la TINTA, no de blanco fijo, y su
+     fuerza baja de 0.42 a 0.10. El 0.42 se eligió cuando el panel era
+     `rgb(7 3 26 / .72)` —casi negro— y ahí un 42% de blanco leía como un filo
+     fino. Pero sólo se bajaba en los dos temas Solid, así que **Liquid oscuro
+     heredaba el 0.42** y mostraba un contorno blanco alrededor del panel, del
+     flotante y del menú de ajustes.
+     Es la misma regla que le quitó el lente a Liquid oscuro: sobre una
+     superficie oscura un realce claro no gana volumen, gana BORDE — y un borde
+     blanco de 1px no es material, es un contorno dibujado. */
+  --sidebar-rim:      0.10;
 
   --sidebar-bg:           rgb(var(--sidebar-tint) / var(--sidebar-fill));
-  --sidebar-border:       rgb(255 255 255 / var(--sidebar-rim));
+  --sidebar-border:       rgb(var(--sidebar-ink) / var(--sidebar-rim));
   --sidebar-backdrop:     var(--backdrop-card);
   --sidebar-pop-bg:       rgb(var(--sidebar-pop-tint) / var(--sidebar-pop-fill));
-  --sidebar-pop-border:   rgb(255 255 255 / var(--sidebar-rim));
+  --sidebar-pop-border:   rgb(var(--sidebar-ink) / var(--sidebar-rim));
   --sidebar-pop-backdrop: var(--sidebar-backdrop);
 
   /* Hover de un ítem. Antes usaba `--shadow-glass-2`, que es una sombra para
@@ -2215,9 +2224,21 @@ thead.sticky {
 
 @keyframes filo-corre { from { --rim-ang: 210deg } to { --rim-ang: 570deg } }
 
-[data-surface="card"][data-interactive] { position: relative; }
+/* La variante de las piezas que aparecen: además de correr, SE APAGA.
+   Sin esto el destello queda estacionado en el perímetro para siempre —el
+   `forwards` congela el ángulo final y el arco brillante se queda donde
+   cayó—, o sea que un barrido pensado como transitorio termina dibujando
+   exactamente el borde blanco que §1.7.bis acaba de quitar. El canto en
+   reposo es el `border` del elemento, no este pseudo. */
+@keyframes filo-llega {
+  from { --rim-ang: 210deg; opacity: 1 }
+  72%  { opacity: 1 }
+  to   { --rim-ang: 570deg; opacity: 0 }
+}
 
-[data-surface="card"][data-interactive]::after {
+[data-interactive] { position: relative; }
+
+[data-interactive]::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -2241,7 +2262,7 @@ thead.sticky {
 }
 
 @media (hover: hover) {
-  [data-surface="card"][data-interactive]:hover::after {
+  [data-interactive]:hover::after {
     opacity: 1;
     animation: filo-corre 1.9s cubic-bezier(.35, 0, .2, 1) forwards;
   }
@@ -2249,20 +2270,66 @@ thead.sticky {
 
 /* El gel: la superficie cede al presionarla. En Solid no hay gel —no hay
    material que ceder— y en su lugar se hunde, que es su vocabulario. */
-[data-surface="card"][data-interactive]:active { transform: scale(.994); }
-[data-theme="solid"] [data-surface="card"][data-interactive]:active,
-[data-theme="solid-dark"] [data-surface="card"][data-interactive]:active {
+[data-interactive]:active { transform: scale(.994); }
+[data-theme="solid"] [data-interactive]:active,
+[data-theme="solid-dark"] [data-interactive]:active {
   transform: translateY(1px);
 }
 /* Solid no tiene canto vivo: su borde es fijo, así que no corre nada. */
-[data-theme="solid"] [data-surface="card"][data-interactive]::after,
-[data-theme="solid-dark"] [data-surface="card"][data-interactive]::after {
+[data-theme="solid"] [data-interactive]::after,
+[data-theme="solid-dark"] [data-interactive]::after {
   filter: none;
   animation: none;
 }
 
+/* ══ §14.2 extendido · las piezas que APARECEN barren AL ABRIRSE ══════════
+   §5.1 fija que el canto de una pieza donde se LEE es fijo, pero eso habla de
+   su reposo, no de su llegada. Y un flotante, un menú o un tooltip **no se
+   pueden apuntar**: nacen del hover o del clic de OTRA cosa, así que si el
+   barrido colgara de su propio hover no correría nunca. Corre una vez al
+   aparecer y se queda quieto. Mismo argumento que cerró §14.2 para el tooltip,
+   aplicado al resto de las piezas que nacen ya abiertas. */
+[data-surface="sidebar-popover"],
+[data-surface="dropdown"],
+[data-surface="tooltip"],
+[data-surface="modal"] { position: relative; }
+
+[data-surface="sidebar-popover"]::after,
+[data-surface="dropdown"]::after,
+[data-surface="tooltip"]::after,
+[data-surface="modal"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(from var(--rim-ang),
+    var(--rim-base) 0%,   var(--rim-base) 2%,
+    var(--rim-glint) 7%,  var(--rim-glint) 13%,
+    var(--rim-base) 18%,  var(--rim-base) 100%);
+  filter: drop-shadow(0 0 9px var(--rim-bloom)) drop-shadow(0 0 4px var(--rim-bloom));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: filo-llega 1.6s cubic-bezier(.35, 0, .2, 1) forwards;
+}
+[data-theme="solid"]      [data-surface="sidebar-popover"]::after,
+[data-theme="solid"]      [data-surface="dropdown"]::after,
+[data-theme="solid"]      [data-surface="tooltip"]::after,
+[data-theme="solid"]      [data-surface="modal"]::after,
+[data-theme="solid-dark"] [data-surface="sidebar-popover"]::after,
+[data-theme="solid-dark"] [data-surface="dropdown"]::after,
+[data-theme="solid-dark"] [data-surface="tooltip"]::after,
+[data-theme="solid-dark"] [data-surface="modal"]::after { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
-  [data-surface="card"][data-interactive]:hover::after { animation: none; }
+  [data-interactive]:hover::after,
+  [data-surface="sidebar-popover"]::after,
+  [data-surface="dropdown"]::after,
+  [data-surface="tooltip"]::after,
+  [data-surface="modal"]::after { animation: none; }
 }
 
 [data-surface="card"] [data-surface="card"] {

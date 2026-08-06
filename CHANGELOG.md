@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.409.0 — El canto de 0.42, y el destello que ahora sí corre
+
+**1 · Los bordes blancos de Liquid oscuro: `--sidebar-rim` valía `0.42`.** Y el token
+del borde era **blanco fijo**, no salía de la tinta. El `0.42` se eligió cuando el panel
+era `rgb(7 3 26 / .72)` —casi negro—, donde un 42 % de blanco lee como un filo fino;
+pero **sólo se bajaba en los dos temas Solid**, así que Liquid oscuro heredaba el valor
+de `:root` y dibujaba un contorno blanco alrededor del panel, del flotante y del menú
+de ajustes. Ahora sale de `--sidebar-ink` y vale `0.10`.
+
+Es la misma regla que le quitó el lente a Liquid oscuro: **sobre una superficie oscura
+un realce claro no gana volumen, gana borde** — y un borde blanco de 1 px no es
+material, es un contorno dibujado.
+
+**2 · El destello no se veía porque sólo corría en las tarjetas.** La fase E lo colgó de
+`[data-surface="card"][data-interactive]`, y ni el flotante, ni el menú de ajustes, ni
+los ítems del sidebar son tarjetas. Ahora corre en **cualquier `[data-interactive]`**.
+
+**Y las piezas que aparecen barren al abrirse**, extendiendo el argumento de §14.2 más
+allá del tooltip: un flotante, un menú o un modal **no se pueden apuntar** —nacen del
+hover o del clic de *otra* cosa—, así que un barrido colgado de su propio hover no
+correría nunca.
+
+**3 · El barrido de llegada tenía que apagarse, y ese detalle importaba.** Con
+`forwards` el ángulo final queda congelado y **el arco brillante se estaciona en el
+perímetro para siempre**: un efecto pensado como transitorio terminaba dibujando
+exactamente el borde blanco que el punto 1 acababa de quitar. Se vio en el aviso de
+notificaciones, que quedaba con un contorno blanco permanente. La variante `filo-llega`
+corre y se desvanece; **el canto en reposo es el `border` del elemento, no el pseudo**.
+
 ## v2.408.1 — El panel que aclara, el segmento legible y el navy fijo
 
 Cuatro correcciones más del sidebar, todas reportadas con capturas.

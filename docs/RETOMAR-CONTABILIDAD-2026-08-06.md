@@ -386,3 +386,56 @@ Art. 238 y **no lo verifiqué** — es punto para la contadora.
 - Qué literal considera aplicable Hacienda: es interpretación, no aritmética.
 - Si el Decreto 487 tuvo reformas posteriores a lo que hay en `docs/legal/`.
 - Si Hacienda perseguiría un caso de $32.52 de impuesto. Eso es criterio, no norma.
+
+### 7.quinquies · Dato de Alex: fue manual, una por una, sin evento de contingencia
+
+> **Alex, 2026-08-06:** *«no fue por contingencia, fue manualmente uno por uno.»*
+
+Eso responde la pregunta que decidía el caso, y en la dirección mala: **el
+exculpante del Art. 119-F no aplica**, porque exige el evento de contingencia
+más el lote.
+
+**Pero mueve el caso fuera del peor literal, no hacia él.** El literal **d)**
+—«omitir la transmisión»— es 100% del monto **de cada operación** con piso de 9
+salarios mínimos. Haber transmitido, aunque tarde y a mano, es exactamente lo que
+saca el caso de ahí. Las 22 obtuvieron sello.
+
+**El literal que queda en juego es g)**: omitir la transmisión del Evento de
+Contingencia → **9 salarios mínimos = $3,679.20**, y —esto es lo que importa—
+**monto fijo, no por documento**. Con el atenuante del 75% del Art. 261 por
+subsanación voluntaria: **≈$919.80**.
+
+#### La lectura peor, y el argumento en contra
+
+Existe una lectura más dura: el literal **c)** —transmitir «sin cumplir con las
+reglas establecidas por la AT para el otorgamiento de sello de recepción»— es 30%
+del monto **por documento**, con piso de **2 salarios mínimos por documento**. Con
+22 documentos serían **≈$17,987**.
+
+**El argumento en contra es fuerte y sale del propio texto:** c) castiga
+transmitir *sin cumplir las reglas para el otorgamiento del sello*, **y el sello
+se otorgó**. El Art. 119-D dice que con el sello «se tendrá por efectuada su
+transmisión». Si la plataforma lo concedió, la transmisión cumplió sus reglas.
+Lo que faltó fue el **evento**, que es g).
+
+#### Una pregunta previa que puede cambiar el literal
+
+El Art. 119-F abre el régimen de contingencia **«en caso se presenten situaciones
+de fuerza mayor que imposibiliten la transmisión»** — caída de conexión, de
+internet, de energía.
+
+**Si lo que falló no fue fuerza mayor** (un error del sistema, una operación mal
+hecha, un lote que no salió), entonces el régimen de contingencia **no era el
+camino aplicable** y difícilmente pueda reprocharse haber omitido su evento.
+Saber **qué falló el 7 de mayo** es lo primero que hay que reconstruir, y no está
+en el portal.
+
+#### El orden de lo que conviene hacer
+
+1. **Reconstruir qué falló** en las fechas afectadas (7, 9, 26 y 29 de mayo;
+   20 de junio). Determina si hubo fuerza mayor y por lo tanto qué literal se
+   discute.
+2. **Decidir con la contadora si se subsana voluntariamente ya.** El 75% del
+   Art. 261 sólo existe **mientras Hacienda no haya requerido nada**. Es la
+   variable de mayor impacto y es la única que depende del reloj.
+3. **Las modificatorias** de mayo ($27.23) y junio ($5.29), que son lo chico.

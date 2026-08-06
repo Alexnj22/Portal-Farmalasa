@@ -258,30 +258,43 @@ producto por producto, **la pantalla propone la lista y el usuario confirma**. Y
 como `datos` es una cadena separada por `#`, los N productos entran en **un solo
 `process=insert`**.
 
-### 5.5 · Orden sugerido
+### 5.5 · Lo construido (2026-08-06, v2.427.1)
 
-1. ~~Leer el JS y anotar los `process=`~~ — hecho, §5.1.
-2. ~~Resolver la pregunta de la sucursal~~ — hecha, §5.2: es estado de sesión.
-3. ~~Entender la forma de uno ya hecho~~ — hecho: no hay listado propio, se
-   verifica en el kardex.
-4. Tabla de solicitudes + trigger de notificación + trigger de validación +
-   Edge Function que aplica, reusando `_shared/erp-dte.ts` para
-   login/`pedir`/`conReintento`.
-5. Una prueba con **un** descarte chico y confirmarlo en el kardex antes de
-   soltar nada masivo.
+Las cuatro piezas, con las decisiones del usuario ya tomadas: **solicitud +
+aprobación** (nadie mueve existencias de un clic), **sin tope** de monto ni de
+cantidad, y el `concepto` armado con **causa + quién solicita + quién aprueba**.
 
-### 5.6 · Lo que hay que decidir con el usuario
+| pieza | dónde |
+|---|---|
+| Tipos, validación y aviso | `20260806162302_movimientos_inventario_solicitud_validacion_aviso.sql` |
+| La presentación por significado | `20260806163452_movimiento_inventario_presentacion_por_significado.sql` |
+| La que aplica | `supabase/functions/aplicar-movimiento-inventario/` |
+| Aprobar = aplicar | `requestsSlice.js` → `_aprobarInventario` |
+| Datos | `src/data/inventoryMovements.js` |
+| Widget | `src/views/dashboard/WidgetInventoryMovement.jsx` |
 
-- **¿Quién aprueba?** Carga y descarte mueven existencias reales: no deberían
-  aplicarse de un clic como el cambio de vendedor.
-- **No es reversible.** Deshacer un descarte es hacer una carga por la misma
-  cantidad, con otro asiento en el kardex. Mismo tratamiento que la anulación:
-  confirmación explícita al aprobar.
-- **¿Hay tope de cantidad o de valor** por encima del cual haga falta otro nivel
-  de aprobación?
-- **La carga deja editar costo y precio** (el descarte los manda de solo
-  lectura). Si el portal no los va a dejar tocar, hay que mandarlos tal como los
-  devolvió `consultar_stock`.
+Se cuelga de `approval_requests` con dos tipos nuevos
+(`INVENTORY_LOAD_REQUEST`, `INVENTORY_DISCARD_REQUEST`) en vez de estrenar
+tabla: ahí ya viven el RLS, los triggers de aviso, la campana y `/requests`.
+**El CHECK `approval_requests_type_check` había que ampliarlo** — sin eso los
+dos tipos rebotan, y lo destapó la prueba de inserts reales, no la lectura.
+
+### 5.6 · Lo que falta: la prueba chica
+
+Todo lo anterior está desplegado y verificado *salvo contra un movimiento
+real*. Falta lo que el orden sugerido dejaba último, y necesita permiso porque
+escribe en producción:
+
+1. Un **descarte de una unidad** de un producto vencido, aprobado desde el
+   portal.
+2. Confirmarlo en el **kardex** (`reporte_kardex.php`) — no hay
+   `admin_descargo.php`, el kardex es la única verificación.
+3. **Medir ahí el largo real del `concepto`.** Se recorta a 200 por precaución
+   y el código lo avisa, pero el tope verdadero no se conoce: el ERP no lo
+   declara y no hay forma de leerlo sin escribir una vez. Si entra completo, se
+   sube el `CONCEPTO_MAX`.
+
+Hasta que eso se haga, no soltar nada masivo.
 
 ---
 

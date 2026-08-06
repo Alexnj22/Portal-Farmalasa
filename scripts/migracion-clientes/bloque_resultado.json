@@ -1,138 +1,283 @@
 [
  {
-  "id": "erp:3883",
-  "name": "FLOR DE MARIA GUARDADO GUARDADO",
-  "_erp": "3883",
-  "erp_id": "3883",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "3883",
-   "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-   "dui": "01404969-2",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7635-7102",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "BARRIO EL CENTRO,  ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {
-   "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
-  },
-  "portal": {
-   "id": "erp:3883",
-   "erp_id": "3883",
-   "match_name": "flor de maria guardado guardado",
-   "nit": null,
-   "dui": "01404969-2",
-   "nrc": null,
-   "phone": "7635-7102",
-   "telefono2": null,
-   "email": null,
-   "direccion": "BARRIO EL CENTRO,",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Sur",
-   "distrito": null,
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "3883",
-   "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-   "dui": "01404969-2",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7635-7102",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "BARRIO EL CENTRO,  ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "28",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "listo",
-  "respuesta": {
-   "typeinfo": "Error",
-   "msg": "Ya se registro un cliente con estos datos!",
-   "intentos": 1
-  },
-  "verificacion": {
-   "ok": false,
+  "id": "portal:156",
+  "name": "MIGUEL ANTONIO CALLES    1",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:521",
+  "name": "MARIA DEL CARMEN ALAS CERNOS",
+  "_erp": "12793",
+  "erp_id": "12793",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:12793",
+   "name": "MARIA DEL CARMEN ALAS CERNA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
    "perdidos": [],
-   "alterados": [
-    "distrito: envié '28', quedó ''"
-   ],
-   "aplicados": {
-    "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-    "dui": "01404969-2",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7635-7102",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "direccion": "BARRIO EL CENTRO,  ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   },
-   "despues": {
-    "id_cliente": "3883",
-    "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-    "dui": "01404969-2",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7635-7102",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "process": "edit",
-    "direccion": "BARRIO EL CENTRO,  ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   }
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 14:29:14"
   }
  },
  {
-  "id": "erp:7280",
+  "id": "portal:556",
+  "name": "IRENE PASTORA",
+  "_erp": "24436",
+  "erp_id": "24436",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:24436",
+   "name": "Irene Pineda",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'Irene Pineda' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 10:20:21"
+  }
+ },
+ {
+  "id": "portal:564",
+  "name": "ROLANDO BONILLA",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:987",
+  "name": "MIGUEL ANGEL ALVARNEGA PEÑA",
+  "_erp": "10137",
+  "erp_id": "10137",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:10137",
+   "name": "MIGUEL ANGEL ALVARENGA PEÑA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 09:26:50"
+  }
+ },
+ {
+  "id": "portal:1619",
+  "name": "ABEL ENOC VAQUEZ",
+  "_erp": "25753",
+  "erp_id": "25753",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:25753",
+   "name": "ABEL ENOC VASQUEZ",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "TEJUTLA (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:34:51"
+  }
+ },
+ {
+  "id": "portal:1670",
+  "name": "NORMA DEL CARMEN MARTINEZ DE HERNANDEZ",
+  "_erp": "17416",
+  "erp_id": "17416",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:17416",
+   "name": "NORMA DEL CARMEN MARTINEZ MEJIA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "OJOS DE AGUA (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 19:32:58"
+  }
+ },
+ {
+  "id": "portal:1990",
+  "name": "JOSE RAFAEL PEÃ±A PINEDA",
+  "_erp": "11967",
+  "erp_id": "11967",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:11967",
+   "name": "JOSE RAFAEL PEÑA PINEDA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 13:44:32"
+  }
+ },
+ {
+  "id": "portal:2278",
+  "name": "DAYSI MENJIVA",
+  "_erp": "18859",
+  "erp_id": "18859",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:18859",
+   "name": "DAYSI MENJIVAR ALEMAN",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NUEVA TRINIDAD (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 21:43:01"
+  }
+ },
+ {
+  "id": "portal:2480",
+  "name": "MARIO ALOSO LIRA FUENTES",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:2895",
+  "name": "LUZ PATRICIA ABREGO",
+  "_erp": "21000",
+  "erp_id": "21000",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:21000",
+   "name": "LUZ PATRICIA ABREGO AMAYA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NOMBRE DE JESUS (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-04 11:15:30"
+  }
+ },
+ {
+  "id": "portal:2911",
+  "name": "PABLO ARTURO PINEDA PINEDA",
+  "_erp": "19199",
+  "erp_id": "19199",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:19199",
+   "name": "PABLO ARTURO PINEDA PINEDA TIENDA)",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 21:58:32"
+  }
+ },
+ {
+  "id": "portal:3105",
+  "name": "BLANCA FELIX CHACON DE ROGUIGUEZ",
+  "_erp": "17721",
+  "erp_id": "17721",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:17721",
+   "name": "BLANCA FELIX CHACON DE RODRIGUEZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 20:48:20"
+  }
+ },
+ {
+  "id": "portal:3352",
+  "name": "MARIA CLAUDIA MARTINEZ DE GUILLEN",
+  "_erp": "5578",
+  "erp_id": "5578",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:5578",
+   "name": "MARIA CLAUDIA MARTINEZ GALDAMEZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 23:47:16"
+  }
+ },
+ {
+  "id": "portal:3766",
+  "name": "MARIA ELBA ALBERTO DE GARCIA (5)",
+  "_erp": "17015",
+  "erp_id": "17015",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:17015",
+   "name": "MARIA ELBA ALBERTO DE GARCIA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 19:15:20"
+  }
+ },
+ {
+  "id": "portal:4200",
+  "name": "ROSA DILMA PINEDA LEMUZ",
+  "_erp": "1166",
+  "erp_id": "1166",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:1166",
+   "name": "ROSA DILMA PINEDA LEMUS",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 14:23:05"
+  }
+ },
+ {
+  "id": "portal:4404",
   "name": "WILLIAM ENRIQUE ALEMAN ALFARO",
   "_erp": "7280",
   "erp_id": "7280",
@@ -161,10 +306,10 @@
    "porcentaje": ""
   },
   "cambios": {
-   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
   },
   "portal": {
-   "id": "erp:7280",
+   "id": "portal:4404",
    "erp_id": "7280",
    "match_name": "william enrique aleman alfaro",
    "nit": null,
@@ -200,7 +345,7 @@
    "apunte": "",
    "departamento": "4",
    "municipio": "36",
-   "distrito": "30",
+   "distrito": "23",
    "categoria": "1",
    "sel_giro": "",
    "porcentaje": ""
@@ -215,7 +360,7 @@
    "ok": false,
    "perdidos": [],
    "alterados": [
-    "distrito: envié '30', quedó ''"
+    "distrito: envié '23', quedó ''"
    ],
    "aplicados": {
     "nombre": "WILLIAM ENRIQUE ALEMAN ALFARO",
@@ -264,405 +409,179 @@
   }
  },
  {
-  "id": "erp:7284",
-  "name": "WILLIAM ENRIQUE ALEMAN ALFARO",
-  "_erp": "7284",
-  "erp_id": "7284",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "7284",
-   "nombre": "WILLIAM ENRIQUE ALEMAN ALFARO",
-   "dui": "08666142-6",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7886-0676",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "1973-07-17",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "SANTA CECILIA ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {
-   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
-   "dui": "INVÁLIDO '08666142-6' -> se borra"
-  },
-  "portal": {
-   "id": "erp:7284",
-   "erp_id": "7284",
-   "match_name": "william enrique aleman alfaro",
-   "nit": null,
-   "dui": "08666142-6",
-   "nrc": null,
-   "phone": "7886-0676",
-   "telefono2": null,
-   "email": null,
-   "direccion": "SANTA CECILIA",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Sur",
-   "distrito": null,
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "7284",
-   "nombre": "WILLIAM ENRIQUE ALEMAN ALFARO",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7886-0676",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "1973-07-17",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "SANTA CECILIA ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "6",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "listo",
-  "respuesta": {
-   "typeinfo": "Error",
-   "msg": "Ya se registro un cliente con estos datos!",
-   "intentos": 1
-  },
-  "verificacion": {
-   "ok": false,
-   "perdidos": [],
-   "alterados": [
-    "dui: envié '', quedó '08666142-6'",
-    "distrito: envié '6', quedó ''"
-   ],
-   "aplicados": {
-    "nombre": "WILLIAM ENRIQUE ALEMAN ALFARO",
-    "dui": "08666142-6",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7886-0676",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "1973-07-17",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "direccion": "SANTA CECILIA ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
+  "id": "portal:4513",
+  "name": "EVELYN ALEXANDRA MENJIVAR HERNANDEZ",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:4890",
+  "name": "ROSA LEMUS",
+  "_erp": "25679",
+  "erp_id": "25679",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:25679",
+   "name": "rosa lidia blanca lemus de rivera",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'rosa lidia blanca lemus de rivera' -> MAYÚSCULA",
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
    },
-   "despues": {
-    "id_cliente": "7284",
-    "nombre": "WILLIAM ENRIQUE ALEMAN ALFARO",
-    "dui": "08666142-6",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7886-0676",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "1973-07-17",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "process": "edit",
-    "direccion": "SANTA CECILIA ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   }
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:31:59"
   }
  },
  {
-  "id": "erp:8598",
-  "name": "FLOR DE MARIA GUARDADO GUARDADO",
-  "_erp": "8598",
-  "erp_id": "8598",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "8598",
-   "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-   "dui": "02055661-5",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7852-9201",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "1978-10-10",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "LAS FLORES,  ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {
-   "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
-  },
-  "portal": {
-   "id": "erp:8598",
-   "erp_id": "8598",
-   "match_name": "flor de maria guardado guardado",
-   "nit": null,
-   "dui": "02055661-5",
-   "nrc": null,
-   "phone": "7852-9201",
-   "telefono2": null,
-   "email": null,
-   "direccion": "LAS FLORES,",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Sur",
-   "distrito": null,
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "8598",
-   "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-   "dui": "02055661-5",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7852-9201",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "1978-10-10",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "LAS FLORES,  ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "28",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "listo",
-  "respuesta": {
-   "typeinfo": "Error",
-   "msg": "Ya se registro un cliente con estos datos!",
-   "intentos": 1
-  },
-  "verificacion": {
-   "ok": false,
-   "perdidos": [],
-   "alterados": [
-    "distrito: envié '28', quedó ''"
-   ],
-   "aplicados": {
-    "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-    "dui": "02055661-5",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7852-9201",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "1978-10-10",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "direccion": "LAS FLORES,  ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
+  "id": "portal:5498",
+  "name": "MAURICIO FIGUEROA",
+  "_erp": "25009",
+  "erp_id": "25009",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:25009",
+   "name": "JULIO MAURICIO FIGUEROA ZAMORA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "SAN J CANCASQUE (determinista (dirección no dice))"
    },
-   "despues": {
-    "id_cliente": "8598",
-    "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
-    "dui": "02055661-5",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7852-9201",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "1978-10-10",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "process": "edit",
-    "direccion": "LAS FLORES,  ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   }
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 10:52:30"
   }
  },
  {
-  "id": "erp:10290",
-  "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
-  "_erp": "10290",
-  "erp_id": "10290",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "10290",
-   "nombre": "JOSE MARDOQUEO RAMIREZ MEJIA",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "CHALATENANGO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {
-   "distrito": "CHALATENANGO (dirección (nombre completo))"
-  },
-  "portal": {
-   "id": "erp:10290",
-   "erp_id": "10290",
-   "match_name": "jose mardoqueo ramirez mejia",
-   "nit": null,
-   "dui": null,
-   "nrc": null,
-   "phone": "1111-1111",
-   "telefono2": null,
-   "email": null,
-   "direccion": "CHALATENANGO",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Sur",
-   "distrito": null,
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "10290",
-   "nombre": "JOSE MARDOQUEO RAMIREZ MEJIA",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "CHALATENANGO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "7",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "listo",
-  "respuesta": {
-   "typeinfo": "Error",
-   "msg": "Ya se registro un cliente con estos datos!",
-   "intentos": 1
-  },
-  "verificacion": {
-   "ok": false,
-   "perdidos": [],
-   "alterados": [
-    "distrito: envié '7', quedó ''"
-   ],
-   "aplicados": {
-    "nombre": "JOSE MARDOQUEO RAMIREZ MEJIA",
-    "dui": "",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "1111-1111",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "direccion": "CHALATENANGO",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
+  "id": "portal:5917",
+  "name": "CARLOS MIGUEL GUARDADO",
+  "_erp": "10305",
+  "erp_id": "10305",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:10305",
+   "name": "CARLOS MIGUEL GUARDADO PEREZ",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
    },
-   "despues": {
-    "id_cliente": "10290",
-    "nombre": "JOSE MARDOQUEO RAMIREZ MEJIA",
-    "dui": "",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "1111-1111",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "process": "edit",
-    "direccion": "CHALATENANGO",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "36",
-    "distrito": "",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   }
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 09:35:19"
   }
  },
  {
-  "id": "erp:16421",
+  "id": "portal:6154",
+  "name": "ANGELA BEATRIZ MALDONADO DE FLORES",
+  "_erp": "8801",
+  "erp_id": "8801",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:8801",
+   "name": "ANGELA BEATRIZ MALDONADO DE FLORES (Tienda Mi Rey?)",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'ANGELA BEATRIZ MALDONADO DE FLORES (Tienda Mi Rey?)' -> MAYÚSCULA",
+    "distrito": "TEJUTLA (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 08:14:38"
+  }
+ },
+ {
+  "id": "portal:6184",
+  "name": "DORA ALICIA CISNERROS AGUILAR",
+  "_erp": "22619",
+  "erp_id": "22619",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:22619",
+   "name": "DORA ALICIA CISNEROS DE ESCAMILLA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-04 12:35:42"
+  }
+ },
+ {
+  "id": "portal:6283",
+  "name": "RODOLFO RIVERA LOPEZ (MAYOREO)",
+  "_erp": "5999",
+  "erp_id": "5999",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:5999",
+   "name": "RODOLFO RIVERA LOPEZ",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "SAN ANT LA CRUZ (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 00:25:17"
+  }
+ },
+ {
+  "id": "portal:6526",
+  "name": "DIHARE SOCIEDAD ANONIMA DE CAPITAL VARIABLE",
+  "_erp": "16403",
+  "erp_id": "16403",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:16403",
+   "name": "DIHARE SOCIEDAD ANONIMA DE CAPITAL VARIABLE",
+   "ok": true,
+   "estado": "SALTADO (categoría ?) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 18:45:39"
+  }
+ },
+ {
+  "id": "portal:6633",
+  "name": "JOSE LUIS ARGETA FLORES",
+  "_erp": "21083",
+  "erp_id": "21083",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:21083",
+   "name": "JOSE LUIS ARGUETA FLORES",
+   "ok": true,
+   "estado": "SALTADO (categoría Contribuyente) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-04 11:18:50"
+  }
+ },
+ {
+  "id": "portal:6997",
   "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
   "_erp": "16421",
   "erp_id": "16421",
@@ -691,10 +610,10 @@
    "porcentaje": ""
   },
   "cambios": {
-   "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
   },
   "portal": {
-   "id": "erp:16421",
+   "id": "portal:6997",
    "erp_id": "16421",
    "match_name": "jose mardoqueo ramirez mejia",
    "nit": null,
@@ -730,7 +649,7 @@
    "apunte": "",
    "departamento": "4",
    "municipio": "36",
-   "distrito": "18",
+   "distrito": "23",
    "categoria": "1",
    "sel_giro": "",
    "porcentaje": ""
@@ -745,7 +664,7 @@
    "ok": false,
    "perdidos": [],
    "alterados": [
-    "distrito: envié '18', quedó ''"
+    "distrito: envié '23', quedó ''"
    ],
    "aplicados": {
     "nombre": "JOSE MARDOQUEO RAMIREZ MEJIA",
@@ -794,543 +713,688 @@
   }
  },
  {
-  "id": "erp:27701",
-  "name": "jaime sandoval",
-  "_erp": "27701",
-  "erp_id": "27701",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "27701",
-   "nombre": "jaime sandoval",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7365-6902",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "nueva concepcion",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "16",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {
-   "nombre": "'jaime sandoval' -> MAYÚSCULA"
-  },
-  "portal": {
-   "id": "erp:27701",
-   "erp_id": "27701",
-   "match_name": "jaime sandoval",
-   "nit": null,
-   "dui": null,
-   "nrc": null,
-   "phone": "7365-6902",
-   "telefono2": null,
-   "email": null,
-   "direccion": "nueva concepcion",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Centro",
-   "distrito": "NVA CONCEPCIÓN",
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "27701",
-   "nombre": "JAIME SANDOVAL",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7365-6902",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "nueva concepcion",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "16",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "listo",
-  "respuesta": {
-   "typeinfo": "Success",
-   "msg": "Registro insertado con exito!",
-   "process": "insert",
-   "id_cliente": "27701",
-   "intentos": 1
-  },
-  "verificacion": {
+  "id": "portal:7314",
+  "name": "MARIA FRANCISCA PLEITEZ PLEITEZ",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:7498",
+  "name": "CORLEO ALBERTO PLEITEZ",
+  "_erp": "24925",
+  "erp_id": "24925",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:24925",
+   "name": "CORLEO ADALBERTO PLEITEZ",
    "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+   },
    "perdidos": [],
    "alterados": [],
-   "aplicados": {
-    "nombre": "JAIME SANDOVAL",
-    "dui": "",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7365-6902",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "direccion": "nueva concepcion",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "35",
-    "distrito": "16",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   },
-   "despues": {
-    "id_cliente": "27701",
-    "nombre": "JAIME SANDOVAL",
-    "dui": "",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "7365-6902",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "process": "edit",
-    "direccion": "nueva concepcion",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "35",
-    "distrito": "16",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   }
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 10:48:13"
   }
  },
  {
-  "id": "erp:27702",
-  "name": "JOSE ROMERO",
-  "_erp": "27702",
-  "erp_id": "27702",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "27702",
-   "nombre": "JOSE ROMERO",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "EL PARAISO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {},
-  "portal": {
-   "id": "erp:27702",
-   "erp_id": "27702",
-   "match_name": "jose romero",
-   "nit": null,
-   "dui": null,
-   "nrc": null,
-   "phone": "1111-1111",
-   "telefono2": null,
-   "email": null,
-   "direccion": "EL PARAISO",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Centro",
-   "distrito": "EL PARAÍSO",
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "27702",
-   "nombre": "JOSE ROMERO",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "EL PARAISO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "sin cambios"
- },
- {
-  "id": "erp:27703",
-  "name": "MARIO VELASQUEZ",
-  "_erp": "27703",
-  "erp_id": "27703",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "27703",
-   "nombre": "MARIO VELASQUEZ",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "EL PARAISO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {},
-  "portal": {
-   "id": "erp:27703",
-   "erp_id": "27703",
-   "match_name": "mario velasquez",
-   "nit": null,
-   "dui": null,
-   "nrc": null,
-   "phone": "1111-1111",
-   "telefono2": null,
-   "email": null,
-   "direccion": "EL PARAISO",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Centro",
-   "distrito": "EL PARAÍSO",
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "27703",
-   "nombre": "MARIO VELASQUEZ",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "EL PARAISO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "sin cambios"
- },
- {
-  "id": "erp:27704",
-  "name": "teodora miranda de portillo",
-  "_erp": "27704",
-  "erp_id": "27704",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "27704",
-   "nombre": "teodora miranda de portillo ",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "nueva concepcion  col . el castaño ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "16",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {
-   "nombre": "'teodora miranda de portillo' -> MAYÚSCULA"
-  },
-  "portal": {
-   "id": "erp:27704",
-   "erp_id": "27704",
-   "match_name": "teodora miranda de portillo",
-   "nit": null,
-   "dui": null,
-   "nrc": null,
-   "phone": "1111-1111",
-   "telefono2": null,
-   "email": null,
-   "direccion": "nueva concepcion  col . el castaño",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Centro",
-   "distrito": "NVA CONCEPCIÓN",
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "27704",
-   "nombre": "TEODORA MIRANDA DE PORTILLO ",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "nueva concepcion  col . el castaño ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "16",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "listo",
-  "respuesta": {
-   "typeinfo": "Success",
-   "msg": "Registro insertado con exito!",
-   "process": "insert",
-   "id_cliente": "27704",
-   "intentos": 1
-  },
-  "verificacion": {
+  "id": "portal:8339",
+  "name": "IDALIA VANESSA RODIRGUEZ DE MEJIA",
+  "_erp": "1344",
+  "erp_id": "1344",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:1344",
+   "name": "IDALIA VANESSA RODRIGUEZ DE MEJIA",
    "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "POTONICO (determinista (dirección no dice))"
+   },
    "perdidos": [],
    "alterados": [],
-   "aplicados": {
-    "nombre": "TEODORA MIRANDA DE PORTILLO ",
-    "dui": "",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "1111-1111",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "direccion": "nueva concepcion  col . el castaño ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "35",
-    "distrito": "16",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   },
-   "despues": {
-    "id_cliente": "27704",
-    "nombre": "TEODORA MIRANDA DE PORTILLO ",
-    "dui": "",
-    "nit": "",
-    "nrc": "",
-    "telefono1": "1111-1111",
-    "telefono2": "",
-    "correo": "",
-    "fecha1": "0000-00-00",
-    "pasaporte": "",
-    "retiene": "",
-    "hi_retiene": "0",
-    "process": "edit",
-    "direccion": "nueva concepcion  col . el castaño ",
-    "apunte": "",
-    "departamento": "4",
-    "municipio": "35",
-    "distrito": "16",
-    "categoria": "1",
-    "sel_giro": "",
-    "porcentaje": ""
-   }
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 14:33:38"
   }
  },
  {
-  "id": "erp:27705",
-  "name": "jose rutilio lopez guardado",
-  "_erp": "27705",
-  "erp_id": "27705",
+  "id": "portal:8845",
+  "name": "EDIS MEJIVAR DE CARRILLO",
+  "_erp": "23863",
+  "erp_id": "23863",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:23863",
+   "name": "EDIS MEJINVAR DE CARRILLO",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 09:49:50"
+  }
+ },
+ {
+  "id": "portal:8909",
+  "name": "MARIA DOLORES TEJADA TEJADA",
+  "_erp": "1231",
+  "erp_id": "1231",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:1231",
+   "name": "MARIA DOLORES TEJADA TEJADA - TIENDA YAMILETH",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 14:27:03"
+  }
+ },
+ {
+  "id": "portal:9295",
+  "name": "MARIA INES AVALOS DE CHACON",
+  "_erp": "1261",
+  "erp_id": "1261",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:1261",
+   "name": "MARIA INES AVALOS ARDON",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 14:29:09"
+  }
+ },
+ {
+  "id": "portal:9401",
+  "name": "DAVID SOLA LEMUS",
+  "_erp": "7817",
+  "erp_id": "7817",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:7817",
+   "name": "DAVID SOLA LEMUS (TIENDA)",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "ARCATAO (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 07:18:31"
+  }
+ },
+ {
+  "id": "portal:9575",
+  "name": "JESUS ANTONIO ALVARADO",
+  "_erp": "21504",
+  "erp_id": "21504",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:21504",
+   "name": "JESUS ANTONIO ALVARADO CARBAJAL",
+   "ok": true,
+   "estado": "SALTADO (categoría Contribuyente) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-04 11:44:37"
+  }
+ },
+ {
+  "id": "portal:9635",
+  "name": "ROSARIO ELIZABETH OCHOA TEJADA",
+  "_erp": "1233",
+  "erp_id": "1233",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:1233",
+   "name": "ROSARIO ELIZABETH OCHOA TEJADA(mayoreo)",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'ROSARIO ELIZABETH OCHOA TEJADA(mayoreo)' -> MAYÚSCULA",
+    "distrito": "SAN LUIS CARMEN (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 14:27:09"
+  }
+ },
+ {
+  "id": "portal:10124",
+  "name": "ROSA AMELIA  PLEITEZ DE PALENCIA",
+  "_erp": "24027",
+  "erp_id": "24027",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:24027",
+   "name": "rosa amelia pleitez de palencia",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'rosa amelia pleitez de palencia' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 09:56:41"
+  }
+ },
+ {
+  "id": "portal:10607",
+  "name": "REINA ARELI VARGA",
+  "_erp": "8459",
+  "erp_id": "8459",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:8459",
+   "name": "REINA ARELI VARGAS VILLEGAS",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 07:53:55"
+  }
+ },
+ {
+  "id": "portal:10741",
+  "name": "KARINA BEATRIZ CARDOSA PASCACIO",
+  "_erp": "18291",
+  "erp_id": "18291",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:18291",
+   "name": "KARINA BEATRIZ CARDOZA PASCACIO",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 21:12:54"
+  }
+ },
+ {
+  "id": "portal:10947",
+  "name": "JEYBI CALDERON",
+  "_erp": "25273",
+  "erp_id": "25273",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:25273",
+   "name": "Heyvi Calderon",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'Heyvi Calderon' -> MAYÚSCULA",
+    "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:08:59"
+  }
+ },
+ {
+  "id": "portal:11808",
+  "name": "ERIKA ANGELINA ESCOBAR LANDAVERDE",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:12128",
+  "name": "HEIDI JHOANA SERRANO LOZANO",
+  "_erp": "7297",
+  "erp_id": "7297",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:7297",
+   "name": "HEIDI JOHANA SERRANO LOZANO",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "ARCATAO (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 06:50:07"
+  }
+ },
+ {
+  "id": "portal:12430",
+  "name": "MARIA DE LOS ANGELES DE PORTILLO",
+  "_erp": "24115",
+  "erp_id": "24115",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:24115",
+   "name": "maria de los angeles  portillo",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'maria de los angeles  portillo' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 10:00:16"
+  }
+ },
+ {
+  "id": "portal:12623",
+  "name": "MARLENI YANETH FUENTES",
+  "_erp": "15837",
+  "erp_id": "15837",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:15837",
+   "name": "MARLENY JANETH FUENTES",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 15:00:39"
+  }
+ },
+ {
+  "id": "portal:12888",
+  "name": "ARQUIMIDES FORNOS",
+  "_erp": "19024",
+  "erp_id": "19024",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:19024",
+   "name": "arquimides fernandez",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'arquimides fernandez' -> MAYÚSCULA",
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 21:49:47"
+  }
+ },
+ {
+  "id": "portal:13627",
+  "name": "STTEFANY GRISSEL ALVARENGA DE MARAVILLA",
+  "_erp": "691",
+  "erp_id": "691",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:691",
+   "name": "STTEFANY GRISSEL ALVARENGA DE MARAVILLA",
+   "ok": true,
+   "estado": "SALTADO (categoría ?) — solo se guarda en el portal",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 09:41:07"
+  }
+ },
+ {
+  "id": "portal:14191",
+  "name": "UBILCIDO SERRANO TOBAR TIENDA",
+  "_erp": "500",
+  "erp_id": "500",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:500",
+   "name": "UBILCIDO SERRANO TOBAR (TIENDA)",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NOMBRE DE JESUS (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-07-31 23:36:09"
+  }
+ },
+ {
+  "id": "portal:14606",
+  "name": "DIANA TERESA HERNANDEZ",
+  "_erp": "23771",
+  "erp_id": "23771",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:23771",
+   "name": "DIANA TERESA HERNANDEZ",
+   "ok": true,
+   "estado": "SALTADO (categoría ?) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 09:45:49"
+  }
+ },
+ {
+  "id": "portal:15180",
+  "name": "BENEDICTO ENRRIQUE HERNADEZ HERNANDEZ",
+  "_erp": "15630",
+  "erp_id": "15630",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:15630",
+   "name": "BENEDICTO ENRRIQUE HERNANDEZ HERNANDEZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 14:22:47"
+  }
+ },
+ {
+  "id": "portal:15234",
+  "name": "DUGLAS ALEXANDER LOPEZ PINEDA",
+  "_erp": "15944",
+  "erp_id": "15944",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:15944",
+   "name": "DUGLAS ALEXANDER LOPEZ PINEDA [5]",
+   "ok": true,
+   "estado": "SALTADO (categoría Contribuyente) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 15:05:37"
+  }
+ },
+ {
+  "id": "portal:16409",
+  "name": "DENNIS EDUARDADO MENENDEZ ESCOBAR",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:16417",
+  "name": "MARIA DE LOS ANGELES LEMUS GUARDADO",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:16686",
+  "name": "VICENTA PEÃ±A",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:17062",
+  "name": "TRANCITO CENTENO CASTRO",
+  "_erp": "23184",
+  "erp_id": "23184",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:23184",
+   "name": "TRANCITO DE MARIA CENTENO CASTRO",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 09:16:15"
+  }
+ },
+ {
+  "id": "portal:17529",
+  "name": "FREDYS ADALBERTO ESCOBAR",
+  "_erp": "22556",
+  "erp_id": "22556",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:22556",
+   "name": "FREDY ADALBERTO ESCOBAR",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-04 12:33:13"
+  }
+ },
+ {
+  "id": "portal:17565",
+  "name": "SERGIO VENTURA",
+  "_erp": "2790",
+  "erp_id": "2790",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:2790",
+   "name": "SERGIO DE JESUS VENTURA OLIVA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 16:51:41"
+  }
+ },
+ {
+  "id": "portal:17718",
+  "name": "RENE ARNULFO ALBERTO CALDERON",
+  "_erp": "21911",
+  "erp_id": "21911",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:21911",
+   "name": "RENE ARNULFO ALBERTO CALDERON",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-04 12:04:25"
+  }
+ },
+ {
+  "id": "portal:17769",
+  "name": "MARIA URBINA VDA. DE MORALES",
+  "_erp": "21526",
+  "erp_id": "21526",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:21526",
+   "name": "NO APARECE",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-04 11:45:39"
+  }
+ },
+ {
+  "id": "portal:17860",
+  "name": "FLOR DE MARIA GUARDADO GUARDADO",
+  "_erp": "3883",
+  "erp_id": "3883",
   "categoria": "Consumidor",
   "campos": {
-   "id_cliente": "27705",
-   "nombre": "jose rutilio lopez guardado",
-   "dui": "00465310-6",
+   "id_cliente": "3883",
+   "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
+   "dui": "01404969-2",
    "nit": "",
    "nrc": "",
-   "telefono1": "6676-4504",
+   "telefono1": "7635-7102",
    "telefono2": "",
    "correo": "",
-   "fecha1": "1978-02-09",
+   "fecha1": "0000-00-00",
    "pasaporte": "",
    "retiene": "",
    "hi_retiene": "0",
    "process": "edit",
-   "direccion": "las vueltas chalatenango",
+   "direccion": "BARRIO EL CENTRO,  ",
    "apunte": "",
    "departamento": "4",
    "municipio": "36",
-   "distrito": "7",
+   "distrito": "",
    "categoria": "1",
    "sel_giro": "",
    "porcentaje": ""
   },
   "cambios": {
-   "nombre": "'jose rutilio lopez guardado' -> MAYÚSCULA"
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
   },
   "portal": {
-   "id": "erp:27705",
-   "erp_id": "27705",
-   "match_name": "jose rutilio lopez guardado",
+   "id": "portal:17860",
+   "erp_id": "3883",
+   "match_name": "flor de maria guardado guardado",
    "nit": null,
-   "dui": "00465310-6",
+   "dui": "01404969-2",
    "nrc": null,
-   "phone": "6676-4504",
+   "phone": "7635-7102",
    "telefono2": null,
    "email": null,
-   "direccion": "las vueltas chalatenango",
+   "direccion": "BARRIO EL CENTRO,",
    "pasaporte": null,
    "departamento": "Chalatenango",
    "municipio": "Chalatenango Sur",
-   "distrito": "CHALATENANGO",
+   "distrito": null,
    "categoria": "Consumidor",
    "giro": null,
    "retencion_pct": null
   },
   "nuevos": {
-   "id_cliente": "27705",
-   "nombre": "JOSE RUTILIO LOPEZ GUARDADO",
-   "dui": "00465310-6",
+   "id_cliente": "3883",
+   "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
+   "dui": "01404969-2",
    "nit": "",
    "nrc": "",
-   "telefono1": "6676-4504",
+   "telefono1": "7635-7102",
    "telefono2": "",
    "correo": "",
-   "fecha1": "1978-02-09",
+   "fecha1": "0000-00-00",
    "pasaporte": "",
    "retiene": "",
    "hi_retiene": "0",
    "process": "edit",
-   "direccion": "las vueltas chalatenango",
+   "direccion": "BARRIO EL CENTRO,  ",
    "apunte": "",
    "departamento": "4",
    "municipio": "36",
-   "distrito": "7",
+   "distrito": "23",
    "categoria": "1",
    "sel_giro": "",
    "porcentaje": ""
   },
   "estado": "listo",
   "respuesta": {
-   "typeinfo": "Success",
-   "msg": "Registro insertado con exito!",
-   "process": "insert",
-   "id_cliente": "27705",
+   "typeinfo": "Error",
+   "msg": "Ya se registro un cliente con estos datos!",
    "intentos": 1
   },
   "verificacion": {
-   "ok": true,
+   "ok": false,
    "perdidos": [],
-   "alterados": [],
+   "alterados": [
+    "distrito: envié '23', quedó ''"
+   ],
    "aplicados": {
-    "nombre": "JOSE RUTILIO LOPEZ GUARDADO",
-    "dui": "00465310-6",
+    "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
+    "dui": "01404969-2",
     "nit": "",
     "nrc": "",
-    "telefono1": "6676-4504",
+    "telefono1": "7635-7102",
     "telefono2": "",
     "correo": "",
-    "fecha1": "1978-02-09",
+    "fecha1": "0000-00-00",
     "pasaporte": "",
     "retiene": "",
     "hi_retiene": "0",
-    "direccion": "las vueltas chalatenango",
+    "direccion": "BARRIO EL CENTRO,  ",
     "apunte": "",
     "departamento": "4",
     "municipio": "36",
-    "distrito": "7",
+    "distrito": "",
     "categoria": "1",
     "sel_giro": "",
     "porcentaje": ""
    },
    "despues": {
-    "id_cliente": "27705",
-    "nombre": "JOSE RUTILIO LOPEZ GUARDADO",
-    "dui": "00465310-6",
+    "id_cliente": "3883",
+    "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
+    "dui": "01404969-2",
     "nit": "",
     "nrc": "",
-    "telefono1": "6676-4504",
+    "telefono1": "7635-7102",
     "telefono2": "",
     "correo": "",
-    "fecha1": "1978-02-09",
+    "fecha1": "0000-00-00",
     "pasaporte": "",
     "retiene": "",
     "hi_retiene": "0",
     "process": "edit",
-    "direccion": "las vueltas chalatenango",
+    "direccion": "BARRIO EL CENTRO,  ",
     "apunte": "",
     "departamento": "4",
     "municipio": "36",
-    "distrito": "7",
+    "distrito": "",
     "categoria": "1",
     "sel_giro": "",
     "porcentaje": ""
@@ -1338,225 +1402,1329 @@
   }
  },
  {
-  "id": "erp:27706",
-  "name": "GERARDO MENJIVAR",
-  "_erp": "27706",
-  "erp_id": "27706",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "27706",
-   "nombre": "GERARDO MENJIVAR",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "EL PARAISO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {},
-  "portal": {
-   "id": "erp:27706",
-   "erp_id": "27706",
-   "match_name": "gerardo menjivar",
-   "nit": null,
-   "dui": null,
-   "nrc": null,
-   "phone": "1111-1111",
-   "telefono2": null,
-   "email": null,
-   "direccion": "EL PARAISO",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Centro",
-   "distrito": "EL PARAÍSO",
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "27706",
-   "nombre": "GERARDO MENJIVAR",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "1111-1111",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "EL PARAISO",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "sin cambios"
+  "id": "portal:18023",
+  "name": "EDUARDO MARTINEZ MORALES",
+  "_erp": "14587",
+  "erp_id": "14587",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:14587",
+   "name": "EDUARDO MARTINEZ MORALES (4P)",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 17:31:20"
+  }
  },
  {
-  "id": "erp:27707",
-  "name": "DORA GLADIS LOPES RIVERA",
-  "_erp": "27707",
-  "erp_id": "27707",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "27707",
-   "nombre": "DORA GLADIS LOPES RIVERA",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7138-3520",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "7",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {},
-  "portal": {
-   "id": "erp:27707",
-   "erp_id": "27707",
-   "match_name": "dora gladis lopes rivera",
-   "nit": null,
-   "dui": null,
-   "nrc": null,
-   "phone": "7138-3520",
-   "telefono2": null,
-   "email": null,
-   "direccion": null,
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Sur",
-   "distrito": "CHALATENANGO",
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "27707",
-   "nombre": "DORA GLADIS LOPES RIVERA",
-   "dui": "",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7138-3520",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "36",
-   "distrito": "7",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "sin cambios"
+  "id": "portal:18372",
+  "name": "FRANCISCO ANTONIO TORREZ SERRANO",
+  "_erp": "4754",
+  "erp_id": "4754",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:4754",
+   "name": "FRANCISCO ANTONIO TORREZ SERRANO (5P)",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 22:54:44"
+  }
  },
  {
-  "id": "erp:27708",
-  "name": "MELANY ESTEFANY DUBON QUINTANILLA",
-  "_erp": "27708",
-  "erp_id": "27708",
-  "categoria": "Consumidor",
-  "campos": {
-   "id_cliente": "27708",
-   "nombre": "MELANY ESTEFANY DUBON QUINTANILLA",
-   "dui": "06975501-0",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7728-2756",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "CAS. LA ANGOSTURA ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "cambios": {},
-  "portal": {
-   "id": "erp:27708",
-   "erp_id": "27708",
-   "match_name": "melany estefany dubon quintanilla",
-   "nit": null,
-   "dui": "06975501-0",
-   "nrc": null,
-   "phone": "7728-2756",
-   "telefono2": null,
-   "email": null,
-   "direccion": "CAS. LA ANGOSTURA",
-   "pasaporte": null,
-   "departamento": "Chalatenango",
-   "municipio": "Chalatenango Centro",
-   "distrito": "EL PARAÍSO",
-   "categoria": "Consumidor",
-   "giro": null,
-   "retencion_pct": null
-  },
-  "nuevos": {
-   "id_cliente": "27708",
-   "nombre": "MELANY ESTEFANY DUBON QUINTANILLA",
-   "dui": "06975501-0",
-   "nit": "",
-   "nrc": "",
-   "telefono1": "7728-2756",
-   "telefono2": "",
-   "correo": "",
-   "fecha1": "0000-00-00",
-   "pasaporte": "",
-   "retiene": "",
-   "hi_retiene": "0",
-   "process": "edit",
-   "direccion": "CAS. LA ANGOSTURA ",
-   "apunte": "",
-   "departamento": "4",
-   "municipio": "35",
-   "distrito": "10",
-   "categoria": "1",
-   "sel_giro": "",
-   "porcentaje": ""
-  },
-  "estado": "sin cambios"
+  "id": "portal:18476",
+  "name": "MANUEL DE JESUS ARREAGA DÃAZ",
+  "_erp": "9707",
+  "erp_id": "9707",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:9707",
+   "name": "MANUEL DE JESUS ARREAGA DIAZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 09:02:55"
+  }
+ },
+ {
+  "id": "portal:19177",
+  "name": "DORA SERRANO",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:19407",
+  "name": "CARLOS ALBERTO TOBIAS",
+  "_erp": "3451",
+  "erp_id": "3451",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:3451",
+   "name": "CARLOS ALBERTO TOBIAS SOLIS",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "EL CARRIZAL (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 21:13:41"
+  }
+ },
+ {
+  "id": "portal:20631",
+  "name": "ANGELA HENRRIQUEZ DE REYES",
+  "_erp": "3132",
+  "erp_id": "3132",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:3132",
+   "name": "ANGELA MERISI HENRIQUEZ DE REYES",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "COMALAPA (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 20:57:37"
+  }
+ },
+ {
+  "id": "portal:20946",
+  "name": "MARIA TERESA ALVARENGA",
+  "_erp": "1746",
+  "erp_id": "1746",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:1746",
+   "name": "MARIA TERESA ALVARENGA DE ORELLANA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 15:02:21"
+  }
+ },
+ {
+  "id": "portal:21449",
+  "name": "FRANKLIN ROSA ABEL SOLIS MOLINA",
+  "_erp": "19520",
+  "erp_id": "19520",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:19520",
+   "name": "franklin rosa abel solis molina",
+   "ok": true,
+   "estado": "SALTADO (categoría ?) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 22:15:59"
+  }
+ },
+ {
+  "id": "portal:21882",
+  "name": "TIFFANY LIZETH NAVARRO GUARDADO",
+  "_erp": "18435",
+  "erp_id": "18435",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:18435",
+   "name": "TYFFANY LIZETH NAVARRO GUARDADO",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "ILOBASCO (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 21:19:12"
+  }
+ },
+ {
+  "id": "portal:21894",
+  "name": "RHINA PATRICIA COTO DE RODRIGUEZ",
+  "_erp": "4467",
+  "erp_id": "4467",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:4467",
+   "name": "RHINA PATRICIA COTO FUENTES",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "SAN ANT RANCHOS (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 22:16:47"
+  }
+ },
+ {
+  "id": "portal:21915",
+  "name": "JOSUE RAFAEL CASTILLO",
+  "_erp": "11012",
+  "erp_id": "11012",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:11012",
+   "name": "JOSUE RAFAEL CASTILLO FRANCO",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 12:50:48"
+  }
+ },
+ {
+  "id": "portal:22007",
+  "name": "JOSE ALEXANDER MELGAR ALVARENGA",
+  "_erp": "3219",
+  "erp_id": "3219",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:3219",
+   "name": "JOSE ALEXANDER MELGAR ALVARENGA (S1)",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 21:01:46"
+  }
+ },
+ {
+  "id": "portal:364166",
+  "name": "DENIS ALBERTO BE BENITES TEJADA",
+  "_erp": "25863",
+  "erp_id": "25863",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:25863",
+   "name": "DENNIS ALBERTO  BENITES TEJADA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:38:56"
+  }
+ },
+ {
+  "id": "portal:819689",
+  "name": "MARGARITA RAUDA",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:1840536",
+  "name": "EDUARDO  ENRIQUE CARDOSA PINEDA",
+  "_erp": "26054",
+  "erp_id": "26054",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:26054",
+   "name": "EDUARDO ENRIQUE CARDOZA PINEDA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:46:11"
+  }
+ },
+ {
+  "id": "portal:1852495",
+  "name": "ISSS, FONDO CIRCULANTE CC SAN ANTONIO ABAD,  HOSPITAL POLICLÍNICO ZACAMIL",
+  "_erp": "26017",
+  "erp_id": "26017",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:26017",
+   "name": "ISSS, FONDO CIRCULANTE CC SAN ANTONIO ABAD,  HOSPITAL POLICLÍNICO ZACAMIL",
+   "ok": true,
+   "estado": "SALTADO (categoría Gran Contribuyente) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:44:46"
+  }
+ },
+ {
+  "id": "portal:2075603",
+  "name": "TIENDA ALCIDES",
+  "_erp": "26147",
+  "erp_id": "26147",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:26147",
+   "name": "TIENDA ALCIDES  (JULIO ALCIDES HERNANDEZ)",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "AGUA CALIENTE (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:55:44"
+  }
+ },
+ {
+  "id": "portal:2077746",
+  "name": "VIRGINIA DE LOS ANGELES PEÑATE [5]",
+  "_erp": "2726",
+  "erp_id": "2726",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:2726",
+   "name": "VIRGINIA DE LOS ANGELES PEÑATE",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 16:48:30"
+  }
+ },
+ {
+  "id": "portal:2081854",
+  "name": "ERIKA MARIN MORALES",
+  "_erp": "26196",
+  "erp_id": "26196",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:26196",
+   "name": "ERIKA MARINA MENJIVAR MORALES",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NUEVA TRINIDAD (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 11:57:34"
+  }
+ },
+ {
+  "id": "portal:2101932",
+  "name": "BLANCA LLUZ TOBAR DE ALAS",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:2208881",
+  "name": "MARVIN OMARA GONZALEZ",
+  "_erp": "26344",
+  "erp_id": "26344",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:26344",
+   "name": "marvin omar gonzalez",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'marvin omar gonzalez' -> MAYÚSCULA",
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))",
+    "telefono1": "'1111-111' tiene 7 dígitos, no 8 -> 23010013"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 12:03:01"
+  }
+ },
+ {
+  "id": "portal:2454345",
+  "name": "EVELIN ARITA",
+  "_erp": "26383",
+  "erp_id": "26383",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:26383",
+   "name": "EVELYN MARAI ARITA CASTANEDA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 12:04:32"
+  }
+ },
+ {
+  "id": "portal:2794781",
+  "name": "MARIA ROSARIO ALVARENG",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:3153186",
+  "name": "MARIA ANTONIA DUBRON",
+  "_erp": "10516",
+  "erp_id": "10516",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:10516",
+   "name": "MARIA ANTONIA DUBON",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 09:46:26"
+  }
+ },
+ {
+  "id": "portal:3158729",
+  "name": "JOSE ALEXANDER MELGAR ALVARENGA(SALUD 1)",
+  "_erp": "3219",
+  "erp_id": "3219",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:3219",
+   "name": "JOSE ALEXANDER MELGAR ALVARENGA (S1)",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-01 21:01:46"
+  }
+ },
+ {
+  "id": "portal:3170516",
+  "name": "JOSE BENJAMIN ABARCA",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:3175240",
+  "name": "JESUS CASERES",
+  "_erp": "27135",
+  "erp_id": "27135",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27135",
+   "name": "JESUS CACERES",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 13:38:59"
+  }
+ },
+ {
+  "id": "portal:3179121",
+  "name": "HERMERLINDA ELIZABETH URBINA ALEMAN",
+  "_erp": "27217",
+  "erp_id": "27217",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27217",
+   "name": "HERMELINDA ELIZABETH URBINA ALEMAN",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "EL CARRIZAL (determinista (dirección no dice))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 13:42:09"
+  }
+ },
+ {
+  "id": "portal:3180634",
+  "name": "YANIRA DEL CARMENGOMEZ DE ALVARENGA",
+  "_erp": "27252",
+  "erp_id": "27252",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27252",
+   "name": "YANIRA DEL CARMEN GOMEZ DE ALVARENGA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 13:43:26"
+  }
+ },
+ {
+  "id": "portal:3188492",
+  "name": "SANTOS PALENCIA",
+  "_erp": "27450",
+  "erp_id": "27450",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27450",
+   "name": "santos alexander palencia flores",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'santos alexander palencia flores' -> MAYÚSCULA",
+    "distrito": "NVA CONCEPCIÓN (dirección (abreviatura))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 13:51:18"
+  }
+ },
+ {
+  "id": "portal:3188530",
+  "name": "MARIA ADELA OCHOA",
+  "_erp": "27452",
+  "erp_id": "27452",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27452",
+   "name": "maria adela ochoa de cardoza",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'maria adela ochoa de cardoza' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 13:51:22"
+  }
+ },
+ {
+  "id": "portal:3192001",
+  "name": "MELVIN IMAEL SALAZAR",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:3194809",
+  "name": "ABEL ANTONIO ALBERTO HENRIQUEZ, NOMBRE DE JESUS",
+  "estado": "AMBIGUO — sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "id": "portal:3195192",
+  "name": "IMELDA MELADY SALES",
+  "_erp": "18757",
+  "erp_id": "18757",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:18757",
+   "name": "IMELDA MELANY SALES",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-03 21:38:44"
+  }
+ },
+ {
+  "id": "portal:3195303",
+  "name": "CELVIN ALEXIS TORREZ ROAMOS",
+  "_erp": "27694",
+  "erp_id": "27694",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27694",
+   "name": "CELVIN ALEXIS TORREZ RAMOS",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 13:58:41"
+  }
+ },
+ {
+  "id": "portal:3195654",
+  "name": "SINFORIANO LOPEZ ALVARENGA",
+  "_erp": "14547",
+  "erp_id": "14547",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:14547",
+   "name": "SINFONELO LOPEZ ALVARENGA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 17:11:36"
+  }
+ },
+ {
+  "id": "portal:3195843",
+  "name": "MARILIN MONGE BONILLA",
+  "_erp": "27709",
+  "erp_id": "27709",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27709",
+   "name": "MARILIN MONGE BONILLA",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "telefono1": "'7550-412' tiene 7 dígitos, no 8 -> 23010013"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:38:55"
+  }
+ },
+ {
+  "id": "portal:3195858",
+  "name": "MARIA RAQUEL CASTELLON",
+  "_erp": "27710",
+  "erp_id": "27710",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27710",
+   "name": "MARIA RAQUEL CASTELLON",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:38:57"
+  }
+ },
+ {
+  "id": "portal:3195868",
+  "name": "INGRID MARICELA GALDAMEZ MARTINEZ",
+  "_erp": "27711",
+  "erp_id": "27711",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27711",
+   "name": "INGRID MARICELA GALDAMEZ MARTINEZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:38:59"
+  }
+ },
+ {
+  "id": "portal:3198189",
+  "name": "LORENA NOHEMY CARRILLO NAVARRATE",
+  "_erp": "14269",
+  "erp_id": "14269",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:14269",
+   "name": "LORENA NOHEMY CARRILLO NAVARRATE",
+   "ok": true,
+   "estado": "SALTADO (categoría ?) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 16:55:46"
+  }
+ },
+ {
+  "id": "portal:3198894",
+  "name": "CARLOS RIVERA",
+  "_erp": "24094",
+  "erp_id": "24094",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:24094",
+   "name": "Carlos Rivera",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'Carlos Rivera' -> MAYÚSCULA",
+    "departamento": "Chalatenango (default: ficha sin municipio)",
+    "municipio": "Chalatenango Sur (default: ficha sin municipio)",
+    "distrito": "7 (default: ficha sin municipio)",
+    "telefono1": "vacío -> 23010013"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 09:59:21"
+  }
+ },
+ {
+  "id": "portal:3198929",
+  "name": "JUAN PEREZ",
+  "_erp": "27507",
+  "erp_id": "27507",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27507",
+   "name": "JUAN PEREZ",
+   "ok": true,
+   "estado": "SALTADO (categoría ?) — se corrige desde el portal, no acá",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 13:53:21"
+  }
+ },
+ {
+  "id": "portal:3198951",
+  "name": "RAFAEL ANTONIO",
+  "_erp": "23533",
+  "erp_id": "23533",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:23533",
+   "name": "RAFAEL ANTONIO",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "departamento": "Chalatenango (default: ficha sin municipio)",
+    "municipio": "36 (default: ficha sin municipio)",
+    "distrito": "7 (default: ficha sin municipio)",
+    "telefono1": "vacío -> 23010013"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-05 09:29:32"
+  }
+ },
+ {
+  "id": "portal:3198978",
+  "name": "ALEJANDRA ODALIS GUZMAN ALFARO",
+  "_erp": "27712",
+  "erp_id": "27712",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27712",
+   "name": "ALEJANDRA ODALIS GUZMAN ALFARO",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:02"
+  }
+ },
+ {
+  "id": "portal:3198983",
+  "name": "JOSE ROBERTO DELGADO LANDAVERDE",
+  "_erp": "27713",
+  "erp_id": "27713",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27713",
+   "name": "JOSE ROBERTO DELGADO LANDAVERDE",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:05"
+  }
+ },
+ {
+  "id": "portal:3199010",
+  "name": "KAREN MARIELOS RAMOS GALDAMEZ",
+  "_erp": "27714",
+  "erp_id": "27714",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27714",
+   "name": "KAREN MARIELOS RAMOS GALDAMEZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:06"
+  }
+ },
+ {
+  "id": "portal:3199016",
+  "name": "MARIA ISMELDA MENJIVA MANCIA",
+  "_erp": "27715",
+  "erp_id": "27715",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27715",
+   "name": "MARIA ISMELDA MENJIVA MANCIA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:07"
+  }
+ },
+ {
+  "id": "portal:3199157",
+  "name": "SAUL CLAVEL",
+  "_erp": "27716",
+  "erp_id": "27716",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27716",
+   "name": "SAUL CLAVEL",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:08"
+  }
+ },
+ {
+  "id": "portal:3199214",
+  "name": "KATHERINE MARTINEZ",
+  "_erp": "27717",
+  "erp_id": "27717",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27717",
+   "name": "KATHERINE MARTINEZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:08"
+  }
+ },
+ {
+  "id": "portal:3199344",
+  "name": "MILAGRO ANDREA MORALES ORELLANA",
+  "_erp": "27720",
+  "erp_id": "27720",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27720",
+   "name": "MILAGRO ANDREA MORALES ORELLANA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:11"
+  }
+ },
+ {
+  "id": "portal:3199385",
+  "name": "KATYA TEJADA",
+  "_erp": "27721",
+  "erp_id": "27721",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27721",
+   "name": "KATYA TEJADA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:12"
+  }
+ },
+ {
+  "id": "portal:3199404",
+  "name": "JOSSELIN BEATRIZ ARGUETA LANDAVERDE",
+  "_erp": "27723",
+  "erp_id": "27723",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27723",
+   "name": "josselin beatriz argueta landaverde",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'josselin beatriz argueta landaverde' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:14"
+  }
+ },
+ {
+  "id": "portal:3199419",
+  "name": "CARLOS ALBERTO RIVERA RIVERA",
+  "_erp": "27724",
+  "erp_id": "27724",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27724",
+   "name": "CARLOS ALBERTO RIVERA RIVERA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:14"
+  }
+ },
+ {
+  "id": "portal:3199429",
+  "name": "IRMA BEATRIZ ALVARENGA",
+  "_erp": "27725",
+  "erp_id": "27725",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27725",
+   "name": "Irma Beatriz Alvarenga",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'Irma Beatriz Alvarenga' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:18"
+  }
+ },
+ {
+  "id": "portal:3199457",
+  "name": "ROSABEL ISABEL HERNANDEZ",
+  "_erp": "27726",
+  "erp_id": "27726",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27726",
+   "name": "rosabel isabel hernandez",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'rosabel isabel hernandez' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:21"
+  }
+ },
+ {
+  "id": "portal:3199520",
+  "name": "ASTRID MILENA  SACHEZ",
+  "_erp": "27727",
+  "erp_id": "27727",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27727",
+   "name": "astrid milena  sachez",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'astrid milena  sachez' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:23"
+  }
+ },
+ {
+  "id": "portal:3199521",
+  "name": "JAQUELINE RIVERA MENA",
+  "_erp": "27728",
+  "erp_id": "27728",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27728",
+   "name": "JAQUELINE RIVERA MENA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:24"
+  }
+ },
+ {
+  "id": "portal:3199526",
+  "name": "EDWAR MAURICIO LANDAVERDE",
+  "_erp": "27729",
+  "erp_id": "27729",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27729",
+   "name": "EDWAR MAURICIO LANDAVERDE",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:30"
+  }
+ },
+ {
+  "id": "portal:3199582",
+  "name": "NORA RIVERA",
+  "_erp": "27731",
+  "erp_id": "27731",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27731",
+   "name": "nora rivera",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'nora rivera' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:38"
+  }
+ },
+ {
+  "id": "portal:3199584",
+  "name": "MARCOS ANTONIO DUEÑAS DIAZ",
+  "_erp": "27730",
+  "erp_id": "27730",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27730",
+   "name": "MARCOS ANTONIO DUEÑAS DIAZ",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:37"
+  }
+ },
+ {
+  "id": "portal:3199590",
+  "name": "JOSE BENITO SARAVIA SARAVIA",
+  "_erp": "27733",
+  "erp_id": "27733",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27733",
+   "name": "JOSE BENITO SARAVIA SARAVIA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:40"
+  }
+ },
+ {
+  "id": "portal:3199649",
+  "name": "ESTIBEN ORELLANA",
+  "_erp": "27734",
+  "erp_id": "27734",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27734",
+   "name": "ESTIBEN ORELLANA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:41"
+  }
+ },
+ {
+  "id": "portal:3199653",
+  "name": "CRUZ MORALES",
+  "_erp": "27735",
+  "erp_id": "27735",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27735",
+   "name": "CRUZ MORALES",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:42"
+  }
+ },
+ {
+  "id": "portal:3199656",
+  "name": "WILLIAM ARMANDO CARDOZA",
+  "_erp": "27736",
+  "erp_id": "27736",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27736",
+   "name": "WILLIAM ARMANDO CARDOZA",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:43"
+  }
+ },
+ {
+  "id": "portal:3199670",
+  "name": "NANCY CARABANTES",
+  "_erp": "27737",
+  "erp_id": "27737",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27737",
+   "name": "Nancy carabantes",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "nombre": "'Nancy carabantes' -> MAYÚSCULA"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:45"
+  }
+ },
+ {
+  "id": "portal:3199730",
+  "name": "ARQUIMIDES NATANAEL ESPINAL",
+  "_erp": "27738",
+  "erp_id": "27738",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27738",
+   "name": "ARQUIMIDES NATANAEL ESPINAL",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:46"
+  }
+ },
+ {
+  "id": "portal:3199731",
+  "name": "JOSUE ISRAEL GUARDADO",
+  "_erp": "27739",
+  "erp_id": "27739",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27739",
+   "name": "JOSUE ISRAEL GUARDADO",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:47"
+  }
+ },
+ {
+  "id": "portal:3199739",
+  "name": "ESPERANZA CRUZ MENJIVAR",
+  "_erp": "27740",
+  "erp_id": "27740",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27740",
+   "name": "ESPERANZA CRUZ MENJIVAR",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:47"
+  }
+ },
+ {
+  "id": "portal:3199764",
+  "name": "JOSE CATARINO ALAS",
+  "_erp": "13059",
+  "erp_id": "13059",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:13059",
+   "name": "JOSE ALAS",
+   "ok": true,
+   "estado": "listo",
+   "cambios": {
+    "distrito": "CHALATENANGO (dirección (nombre completo))"
+   },
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-02 14:43:07"
+  }
+ },
+ {
+  "id": "portal:3199783",
+  "name": "MARLON ISAIAS MELGAR",
+  "_erp": "27741",
+  "erp_id": "27741",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27741",
+   "name": "MARLON ISAIAS MELGAR",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:48"
+  }
+ },
+ {
+  "id": "portal:3199788",
+  "name": "FLOR GIRON",
+  "_erp": "27742",
+  "erp_id": "27742",
+  "estado": "YA HECHO (checkpoint)",
+  "checkpoint": {
+   "portal_id": "erp:27742",
+   "name": "FLOR GIRON",
+   "ok": true,
+   "estado": "sin cambios",
+   "cambios": {},
+   "perdidos": [],
+   "alterados": [],
+   "espejado": true,
+   "reglas": 5,
+   "ts": "2026-08-06 17:39:49"
+  }
  }
 ]

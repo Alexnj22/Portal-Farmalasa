@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.462.0 — El portal guarda lo que Hacienda contesta, y corrige la ficha que lo hizo fallar
+
+Tres facturas llevaban días sin sello y el barrido nocturno las reintentaba sin
+avanzar. El motivo estaba en la ficha del cliente: **el distrito vacío**, que
+DTE 2.0 exige en el receptor. Corregido el dato, las tres entraron —dos con la
+evidencia sacada de su propia dirección, `CHALATENANGO` y `EL PARAÍSO`.
+
+**Lo que Hacienda contesta ahora se guarda.** Vivía en tres lugares y ninguno
+servía para actuar: el sistema de origen, la respuesta HTTP que se pierde al
+cerrar la pestaña, y un JSON enterrado en la bitácora. La tabla nueva
+`dte_mh_intentos` anota cada envío con su sello, su respuesta y sus
+observaciones —51 intentos reconstruidos del histórico— y además **qué se
+corrigió antes de cada intento**. Eso último es lo que faltaba: una factura se
+resolvió cambiándole un dato a mano, entró, y por qué funcionó se perdió con la
+persona que lo hizo.
+
+**Un rechazo no traía las observaciones como lista.** Llegaban concatenadas
+dentro del texto del error, así que justo el caso accionable —el que se arregla
+corrigiendo la ficha— era el que perdía la estructura, mientras que las que sí
+llegaban como lista eran casi todas la de fecha de emisión, que no se arregla.
+Sobre el histórico: las 3 apariciones del distrito estaban las 3 en rechazos, o
+sea invisibles.
+
+**Y la corrida de una vez al día.** `resolver_observaciones.py --diario`
+refresca el índice de fichas, toma las nuevas del sistema de origen —el único
+paso con riesgo real: ~22 por día, y una ficha sin distrito no puede
+facturar—, empareja las que el portal tenía sueltas y copia los datos. El
+emparejamiento va **por la factura y no por el nombre**: los nombres sueltos
+salen de cómo se escribió la factura, con espacios de más y acentos rotos, y
+así nunca coincidían. En la primera corrida resolvió 107 de 123.
+
+Nota de alcance: solo se tocan fichas de consumidor. Los datos de un
+contribuyente se declaran a Hacienda y no los decide una corrida automática.
+
 ## v2.461.1 — La hoja que repetía la ficha, y la flecha que no llevaba a ningún lado
 
 Reportado por el usuario en Productos: *«solo abre prácticamente la misma info de

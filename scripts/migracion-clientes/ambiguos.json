@@ -1,81 +1,153 @@
 [
  {
-  "tipo": "rechazo-erp",
-  "portal_id": "erp:3883",
-  "name": "FLOR DE MARIA GUARDADO GUARDADO",
-  "erp_id": "3883",
-  "motivo": "Ya se registro un cliente con estos datos!",
-  "intentos": 1,
-  "duplicado": true,
-  "cambios_intentados": {
-   "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
-  },
-  "ts": "2026-08-05 14:03:59"
+  "tipo": "nombre",
+  "portal_id": "portal:156",
+  "name": "MIGUEL ANTONIO CALLES    1",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:564",
+  "name": "ROLANDO BONILLA",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:2480",
+  "name": "MARIO ALOSO LIRA FUENTES",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
  },
  {
   "tipo": "rechazo-erp",
-  "portal_id": "erp:7280",
+  "portal_id": "portal:4404",
   "name": "WILLIAM ENRIQUE ALEMAN ALFARO",
   "erp_id": "7280",
   "motivo": "Ya se registro un cliente con estos datos!",
   "intentos": 1,
   "duplicado": true,
   "cambios_intentados": {
-   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
   },
-  "ts": "2026-08-05 14:04:01"
+  "ts": "2026-08-06 17:42:41"
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:4513",
+  "name": "EVELYN ALEXANDRA MENJIVAR HERNANDEZ",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
  },
  {
   "tipo": "rechazo-erp",
-  "portal_id": "erp:7284",
-  "name": "WILLIAM ENRIQUE ALEMAN ALFARO",
-  "erp_id": "7284",
-  "motivo": "Ya se registro un cliente con estos datos!",
-  "intentos": 1,
-  "duplicado": true,
-  "cambios_intentados": {
-   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
-   "dui": "INVÁLIDO '08666142-6' -> se borra"
-  },
-  "ts": "2026-08-05 14:04:03"
- },
- {
-  "tipo": "rechazo-erp",
-  "portal_id": "erp:8598",
-  "name": "FLOR DE MARIA GUARDADO GUARDADO",
-  "erp_id": "8598",
-  "motivo": "Ya se registro un cliente con estos datos!",
-  "intentos": 1,
-  "duplicado": true,
-  "cambios_intentados": {
-   "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
-  },
-  "ts": "2026-08-05 14:04:05"
- },
- {
-  "tipo": "rechazo-erp",
-  "portal_id": "erp:10290",
-  "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
-  "erp_id": "10290",
-  "motivo": "Ya se registro un cliente con estos datos!",
-  "intentos": 1,
-  "duplicado": true,
-  "cambios_intentados": {
-   "distrito": "CHALATENANGO (dirección (nombre completo))"
-  },
-  "ts": "2026-08-05 14:04:07"
- },
- {
-  "tipo": "rechazo-erp",
-  "portal_id": "erp:16421",
+  "portal_id": "portal:6997",
   "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
   "erp_id": "16421",
   "motivo": "Ya se registro un cliente con estos datos!",
   "intentos": 1,
   "duplicado": true,
   "cambios_intentados": {
-   "distrito": "OJOS DE AGUA (determinista (dirección no dice))"
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
   },
-  "ts": "2026-08-05 14:04:09"
+  "ts": "2026-08-06 17:42:43"
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:7314",
+  "name": "MARIA FRANCISCA PLEITEZ PLEITEZ",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:11808",
+  "name": "ERIKA ANGELINA ESCOBAR LANDAVERDE",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:16409",
+  "name": "DENNIS EDUARDADO MENENDEZ ESCOBAR",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:16417",
+  "name": "MARIA DE LOS ANGELES LEMUS GUARDADO",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:16686",
+  "name": "VICENTA PEÃ±A",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "portal:17860",
+  "name": "FLOR DE MARIA GUARDADO GUARDADO",
+  "erp_id": "3883",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "SAN FRANCISCO LEMPA (determinista (dirección no dice))"
+  },
+  "ts": "2026-08-06 17:42:45"
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:19177",
+  "name": "DORA SERRANO",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:819689",
+  "name": "MARGARITA RAUDA",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:2101932",
+  "name": "BLANCA LLUZ TOBAR DE ALAS",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:2794781",
+  "name": "MARIA ROSARIO ALVARENG",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:3170516",
+  "name": "JOSE BENJAMIN ABARCA",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:3192001",
+  "name": "MELVIN IMAEL SALAZAR",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
+ },
+ {
+  "tipo": "nombre",
+  "portal_id": "portal:3194809",
+  "name": "ABEL ANTONIO ALBERTO HENRIQUEZ, NOMBRE DE JESUS",
+  "motivo": "sin match en el ERP",
+  "candidatos": []
  }
 ]

@@ -387315,5 +387315,431 @@
   "espejado": true,
   "reglas": 5,
   "ts": "2026-08-05 14:04:21"
+ },
+ "27718": {
+  "portal_id": "portal:3199320",
+  "name": "NELSON ORLANDO PONCE CRUZ",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 16:36:37"
+ },
+ "27722": {
+  "portal_id": "portal:3199383",
+  "name": "BLANCA FRANCO",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "distrito": "EL PARAÍSO (dirección (nombre completo))"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 16:36:39"
+ },
+ "27709": {
+  "portal_id": "erp:27709",
+  "name": "MARILIN MONGE BONILLA",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "telefono1": "'7550-412' tiene 7 dígitos, no 8 -> 23010013"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:38:55"
+ },
+ "27710": {
+  "portal_id": "erp:27710",
+  "name": "MARIA RAQUEL CASTELLON",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:38:57"
+ },
+ "27711": {
+  "portal_id": "erp:27711",
+  "name": "INGRID MARICELA GALDAMEZ MARTINEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:38:59"
+ },
+ "27712": {
+  "portal_id": "erp:27712",
+  "name": "ALEJANDRA ODALIS GUZMAN ALFARO",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:02"
+ },
+ "27713": {
+  "portal_id": "erp:27713",
+  "name": "JOSE ROBERTO DELGADO LANDAVERDE",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:05"
+ },
+ "27714": {
+  "portal_id": "erp:27714",
+  "name": "KAREN MARIELOS RAMOS GALDAMEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:06"
+ },
+ "27715": {
+  "portal_id": "erp:27715",
+  "name": "MARIA ISMELDA MENJIVA MANCIA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:07"
+ },
+ "27716": {
+  "portal_id": "erp:27716",
+  "name": "SAUL CLAVEL",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:08"
+ },
+ "27717": {
+  "portal_id": "erp:27717",
+  "name": "KATHERINE MARTINEZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:08"
+ },
+ "27719": {
+  "portal_id": "erp:27719",
+  "name": "ANA MELIDA AGUIRRE GUILLEN",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:09"
+ },
+ "27720": {
+  "portal_id": "erp:27720",
+  "name": "MILAGRO ANDREA MORALES ORELLANA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:11"
+ },
+ "27721": {
+  "portal_id": "erp:27721",
+  "name": "KATYA TEJADA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:12"
+ },
+ "27723": {
+  "portal_id": "erp:27723",
+  "name": "josselin beatriz argueta landaverde",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'josselin beatriz argueta landaverde' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:14"
+ },
+ "27724": {
+  "portal_id": "erp:27724",
+  "name": "CARLOS ALBERTO RIVERA RIVERA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:14"
+ },
+ "27725": {
+  "portal_id": "erp:27725",
+  "name": "Irma Beatriz Alvarenga",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Irma Beatriz Alvarenga' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:18"
+ },
+ "27726": {
+  "portal_id": "erp:27726",
+  "name": "rosabel isabel hernandez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'rosabel isabel hernandez' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:21"
+ },
+ "27727": {
+  "portal_id": "erp:27727",
+  "name": "astrid milena  sachez",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'astrid milena  sachez' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:23"
+ },
+ "27728": {
+  "portal_id": "erp:27728",
+  "name": "JAQUELINE RIVERA MENA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:24"
+ },
+ "27729": {
+  "portal_id": "erp:27729",
+  "name": "EDWAR MAURICIO LANDAVERDE",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:30"
+ },
+ "27730": {
+  "portal_id": "erp:27730",
+  "name": "MARCOS ANTONIO DUEÑAS DIAZ",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:37"
+ },
+ "27731": {
+  "portal_id": "erp:27731",
+  "name": "nora rivera",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'nora rivera' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:38"
+ },
+ "27732": {
+  "portal_id": "erp:27732",
+  "name": "JOSE MARIA RIVERA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:39"
+ },
+ "27733": {
+  "portal_id": "erp:27733",
+  "name": "JOSE BENITO SARAVIA SARAVIA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:40"
+ },
+ "27734": {
+  "portal_id": "erp:27734",
+  "name": "ESTIBEN ORELLANA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:41"
+ },
+ "27735": {
+  "portal_id": "erp:27735",
+  "name": "CRUZ MORALES",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:42"
+ },
+ "27736": {
+  "portal_id": "erp:27736",
+  "name": "WILLIAM ARMANDO CARDOZA",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:43"
+ },
+ "27737": {
+  "portal_id": "erp:27737",
+  "name": "Nancy carabantes",
+  "ok": true,
+  "estado": "listo",
+  "cambios": {
+   "nombre": "'Nancy carabantes' -> MAYÚSCULA"
+  },
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:45"
+ },
+ "27738": {
+  "portal_id": "erp:27738",
+  "name": "ARQUIMIDES NATANAEL ESPINAL",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:46"
+ },
+ "27739": {
+  "portal_id": "erp:27739",
+  "name": "JOSUE ISRAEL GUARDADO",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:47"
+ },
+ "27740": {
+  "portal_id": "erp:27740",
+  "name": "ESPERANZA CRUZ MENJIVAR",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:47"
+ },
+ "27741": {
+  "portal_id": "erp:27741",
+  "name": "MARLON ISAIAS MELGAR",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:48"
+ },
+ "27742": {
+  "portal_id": "erp:27742",
+  "name": "FLOR GIRON",
+  "ok": true,
+  "estado": "sin cambios",
+  "cambios": {},
+  "perdidos": [],
+  "alterados": [],
+  "espejado": true,
+  "reglas": 5,
+  "ts": "2026-08-06 17:39:49"
  }
 }

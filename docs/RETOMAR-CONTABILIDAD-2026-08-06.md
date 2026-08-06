@@ -321,3 +321,68 @@ fecha. Deja de ser el argumento teórico del Bloque D y pasa a ser evidencia.
 no» — cierto sobre el estado, **falso sobre la historia**. `sales_invoice_changelog`
 responde *cuándo llegó cada sello*, y esa consulta debería ser parte del cierre
 de cada mes: **¿llegó algún sello de un mes ya declarado?**
+
+### 7.quater · La exposición del incidente — qué dice el Art. 239-A
+
+**Esto no es asesoría legal.** Es el texto de la norma con los números puestos,
+para que la conversación con la contadora empiece con datos.
+
+El **Art. 239-A** (introducido por el Decreto 487, en `docs/legal/`) tiene diez
+literales y la diferencia entre ellos es enorme. Los que podrían tocar este caso:
+
+| Literal | Supuesto | Sanción |
+|---|---|---|
+| **d)** | **Omitir** la transmisión | 100% del monto **de cada operación**, mínimo **9 salarios mínimos** |
+| **c)** | Transmitir sin cumplir las reglas de la AT para el sello | 30% del monto **por documento**, mínimo 2 SM |
+| **g)** | **Omitir** la transmisión del Evento de Contingencia | **9 salarios mínimos** |
+| **h)** | Transmitir el Evento de Contingencia **fuera del plazo** | **9 salarios mínimos** |
+
+**Dos diferencias de redacción que cambian todo:**
+
+1. **d) y c) son POR DOCUMENTO. g) y h) NO** — dicen «multa equivalente a nueve
+   salarios mínimos mensuales», sin «por cada documento». Son monto fijo. Con 22
+   facturas, la diferencia entre una lectura y otra es de dos órdenes de
+   magnitud.
+2. **d) dice «omitir»**, y acá **no se omitió**: se transmitió tarde y las 22
+   obtuvieron sello el 2026-08-02. El literal que castiga el atraso del evento es
+   h), no d).
+
+**El exculpante está en el Art. 119-F**, último inciso: transmitido el evento de
+contingencia y el lote, y obtenido el sello, **«no le será aplicable la sanción
+del Art. 239-A literales g) y h)»**.
+
+### La pregunta que decide el caso
+
+> **¿Se transmitió un Evento de Contingencia por esas 22 facturas?**
+
+- **Sí, y en plazo** → el Art. 119-F exime de g) y h). Queda sólo lo declarativo.
+- **No, o fuera de plazo** → g) o h): **9 salarios mínimos**, monto fijo.
+
+Salario mínimo de comercio y servicios 2026: **$408.80**. Nueve son **$3,679.20**.
+
+### El atenuante del 75% — Art. 261
+
+> «Cuando el infractor **subsanare en forma voluntaria** los incumplimientos,
+> omisiones o inexactitudes en que hubiere incurrido, **toda vez que la
+> Administración Tributaria no le hubiere requerido o emplazado** […] la sanción
+> será **atenuada en un setenta y cinco por ciento**.»
+
+Si Hacienda todavía no ha requerido nada, corregir por iniciativa propia baja los
+$3,679.20 a **≈$919.80**. Si Hacienda requiere primero, el atenuante cae al 30%; y
+si se deja pasar el plazo que dé, **no hay atenuante**.
+
+**El reloj corre a favor de moverse ahora**, no de esperar.
+
+### Lo declarativo, que es un asunto aparte y chico
+
+Mayo quedó corto **$27.23** y junio **$5.29** de débito fiscal. Eso es impuesto
+más intereses, y la modificatoria hacia arriba se puede presentar en cualquier
+momento (Art. 101). Si además hay multa por declaración incorrecta, sale del
+Art. 238 y **no lo verifiqué** — es punto para la contadora.
+
+### Lo que NO puedo determinar desde acá
+
+- Si se transmitió el Evento de Contingencia (no está en el portal).
+- Qué literal considera aplicable Hacienda: es interpretación, no aritmética.
+- Si el Decreto 487 tuvo reformas posteriores a lo que hay en `docs/legal/`.
+- Si Hacienda perseguiría un caso de $32.52 de impuesto. Eso es criterio, no norma.

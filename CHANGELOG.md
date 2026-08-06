@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.430.0 — Fuera el widget de búsqueda SRS
+
+Se retira **Búsqueda SRS + Inventario**. Era redundante: **Consulta de
+Inventario ya consulta el registro del SRS**, solo que en el otro sentido y
+cuando de verdad hace falta —si buscás algo y no lo tenemos, ahí sale a
+consultarlo, te propone alternativas por principio activo y te deja registrar
+la venta perdida—. El widget retirado hacía el camino inverso, listar el
+registro y marcar qué de eso teníamos, que es la pregunta que casi nunca se
+hace desde el tablero.
+
+Se va todo: la vista, su declaración de permiso, su entrada del catálogo y el
+ayudante de datos que solo él usaba. **La consulta al SRS no se toca** — la
+siguen usando Consulta de Inventario y los dos componentes del buscador.
+
+De paso, un tablero guardado ahora se filtra contra los widgets que existen. La
+posición de cada uno vive en el navegador, no en el código, así que el id de un
+widget retirado seguía reservando su hueco en la grilla para siempre y nada lo
+borraba nunca.
+
 ## v2.429.0 — Las superficies pegajosas ocluyen, y el par -webkit- que borraba la estándar
 
 Primera tanda de la bajada de ratchets de §20, atacada **por criterio** y no por

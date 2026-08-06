@@ -73,12 +73,6 @@ export async function fetchInventoryByProductIds(productIds) {
     ) || [];
 }
 
-// WidgetSrsInventory.jsx — cruza resultados del SRS contra inventario propio
-// para marcar cuáles ya tenemos en stock.
-export function fetchInventoryStockFlags(erpIds) {
-    return supabase.from('inventory').select('erp_product_id').in('erp_product_id', erpIds).gt('cantidad', 0);
-}
-
 // SyncHealthBanner.jsx / SidebarSyncStatus.jsx — mismo query base (el banner
 // del dashboard además lee items_count; select en superset, filtros idénticos).
 export function fetchInventorySyncLogRecent() {

@@ -40,13 +40,22 @@ const PLAZOS = [
     { value: '90', label: 'Vencen en 90 días' },
 ];
 
-/** Rol que resuelve estas solicitudes, con el mismo respaldo que facturación. */
+const SUPERVISOR_ROLE_ID = 13; // Supervisor/a de Ventas
+
+/**
+ * Quién resuelve: SIEMPRE Supervisión, no la jefatura de la sucursal.
+ *
+ * Decidido con el usuario el 2026-08-06. La primera versión de esto buscaba al
+ * jefe o subjefe y encima lo hacía sobre TODA la lista de empleados, así que una
+ * solicitud de Salud 3 podía caerle al jefe de Salud 1. La jefatura sí se entera
+ * —pero del RESULTADO, y por un trigger, no desde el navegador—.
+ */
 function findTargetEmployee(employees) {
     const disponible = employees.find(e => {
         if (e.status !== 'ACTIVO') return false;
+        if (e.role_id !== SUPERVISOR_ROLE_ID && e.roleId !== SUPERVISOR_ROLE_ID) return false;
         const ev = e.activeEventType ?? e.active_event_type;
-        return ['JEFE', 'SUBJEFE'].includes(String(e.system_role ?? '').toUpperCase())
-            && (!ev || !['VACATION', 'DISABILITY'].includes(ev));
+        return !ev || !['VACATION', 'DISABILITY'].includes(ev);
     });
     if (disponible) return disponible;
     return employees.find(e => ['ADMIN', 'SUPERADMIN'].includes(String(e.system_role ?? '').toUpperCase()));

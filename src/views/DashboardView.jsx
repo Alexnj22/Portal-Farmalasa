@@ -16,7 +16,7 @@ import {
   Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
-  FileText, Package, Receipt, ShoppingCart, Zap, FlaskConical, Target, PackageMinus
+  FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -24,7 +24,6 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
-import WidgetSrsInventory from './dashboard/WidgetSrsInventory';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import WidgetInventoryMovement from './dashboard/WidgetInventoryMovement';
@@ -102,7 +101,6 @@ const WIDGET_SIZES = {
   top_productos: { minCols: 2, minRows: 3, label: 'Top Productos'},
   inv_search:    { minCols: 2, minRows: 3, label: 'Inventario'   },
   annulment_req: { minCols: 2, minRows: 3, label: 'Anulaciones'  },
-  srs_inv:       { minCols: 2, minRows: 3, label: 'Búsqueda SRS' },
   minmax_req:    { minCols: 2, minRows: 3, label: 'Ajuste Min/Max' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
 };
@@ -138,12 +136,12 @@ const ERP_UBICACION_POR_SUCURSAL = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 1, 7: 8 };
 // Metas, que es su dueño; acá solo se consume.
 const META_SALA_IDS = SALAS_VENTA;
 
-const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req','inv_movement','meta_sala'];
+const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','minmax_req','inv_movement','meta_sala'];
 const TAB_WIDGETS = {
   general:   ALL_WIDGET_IDS,
   comercial: ['kpi','meta_sala','cotizaciones','facturacion','top_productos','sales'],
   rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
-  operacion: ['inv_search','annulment_req','srs_inv','minmax_req','inv_movement'],
+  operacion: ['inv_search','annulment_req','minmax_req','inv_movement'],
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -254,7 +252,6 @@ const WIDGET_DEFS = [
   { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package,      category: 'productos' },
   { id: 'inv_search',   label: 'Consulta de Inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
   { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
-  { id: 'srs_inv',      label: 'Búsqueda SRS + Inventario',permission: 'dash_srs_inv',      icon: FlaskConical, category: 'productos' },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Carga y Descarte',        permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
@@ -442,7 +439,17 @@ const initTabLayouts = (userId) => {
   TABS.forEach(tab => {
     try {
       const saved = localStorage.getItem(`portal_dash_layout_${userId||'guest'}_${tab.id}`);
-      if (saved) { const p = JSON.parse(saved); if (Object.keys(p).length) { result[tab.id] = p; return; } }
+      // Se filtra contra los widgets que existen HOY. Un tablero guardado
+      // conserva el id de un widget retirado —le pasó a `srs_inv` al quitarlo—
+      // y sin esto queda reservando su hueco en la grilla para siempre, porque
+      // nada lo borra: la posición vive en localStorage, no en el código.
+      if (saved) {
+        const p = JSON.parse(saved);
+        const vigentes = Object.fromEntries(
+          Object.entries(p).filter(([id]) => ALL_WIDGET_IDS.includes(id))
+        );
+        if (Object.keys(vigentes).length) { result[tab.id] = vigentes; return; }
+      }
     } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
     const order = (TAB_WIDGETS[tab.id] || []).filter(id => id !== 'kpi');
     result[tab.id] = autoPlaceOrder(order, {});
@@ -2182,17 +2189,6 @@ const DashboardView = ({ openModal }) => {
       , staggerIdx);
     }
 
-    /* ── SRS INVENTORY ── */
-    if (wid === 'srs_inv') {
-      if (!showWidget('srs_inv', 'dash_srs_inv')) return null;
-      return wrapWidget('srs_inv',
-        <WidgetCard title="Búsqueda SRS + Inventario" icon={FlaskConical} category="productos">
-          <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetSrsInventory />
-          </div>
-        </WidgetCard>
-      , staggerIdx);
-    }
 
     return null;
   };

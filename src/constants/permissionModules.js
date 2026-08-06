@@ -31,7 +31,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck,
-    BookOpen, Contact, Wrench, Users
+    BookOpen, Contact, Wrench, Users, Calculator
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
@@ -221,10 +221,12 @@ export const MODULE_GROUPS = [
                 { key: 'corte_z_descargar',  label: 'Descargar el PDF', tipo: 'cap' },
                 { key: 'corte_z_ver_montos', label: 'Ver montos',       tipo: 'cap' },
             ]},
-            { key: 'libro_compras_completo', label: 'Libro de Compras Completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras del ERP más los DTE recibidos por correo que nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sale del ERP y sirve para cotejarse contra el archivo del origen. Exporta el número de documento completo, no el cortado a 20 caracteres', icon: BookOpen, hasApprove: false, hasScope: true, sub: [
+            { key: 'libro_compras_completo', label: 'Libro de Compras Completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras registradas más los documentos del proveedor que llegaron por correo y nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sirve para cotejarse contra el archivo original. Exporta el número de documento completo, no el cortado a 20 caracteres', icon: BookOpen, hasApprove: false, hasScope: true, sub: [
                 { key: 'libro_compras_completo_descargar',  label: 'Exportar el libro (CSV)', tipo: 'cap' },
                 { key: 'libro_compras_completo_ver_montos', label: 'Ver montos',              tipo: 'cap' },
             ]},
+
+            { key: 'resumen_fiscal', label: 'Resumen Fiscal', desc: 'El movimiento fiscal del mes en un número por concepto: débito por ventas, crédito por compras (incluidas las que llegaron como documento y no se registraron), notas de crédito y débito, percepción, retención, y el pago a cuenta del 1.75% sobre ventas (Art. 151). Es un indicador: NO incluye el saldo a favor del mes anterior, así que no reemplaza a la declaración', icon: Calculator, hasApprove: false, hasScope: true },
         ],
     },
     {

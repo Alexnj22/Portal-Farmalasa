@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.406.0 — Resumen Fiscal — el movimiento del mes y el pago a cuenta, en una pantalla
+
+Módulo nuevo en Datos Contables. Consolida lo que ya estaba repartido en las
+pestañas de Libros IVA —débito, crédito, percepción, retención, notas— y agrega
+el **pago a cuenta**, que no vivía en ninguna pantalla.
+
+**Por qué hacía falta.** El cálculo de julio da saldo *a favor* de IVA, y sin
+embargo la empresa paga impuestos todos los meses. No es contradicción: son dos
+impuestos distintos. El pago a cuenta se calcula sobre las **ventas**, no sobre
+el IVA, así que se paga siempre — entre $3,400 y $3,900 mensuales de marzo a
+julio. Esa es la pieza que faltaba para que el número tuviera sentido.
+
+**Las dos tasas salen de la ley, no de una suposición**, y su fundamento viaja
+en el dato que devuelve el servidor para que no haya números mágicos en el
+frontend:
+
+- **1.75%** sobre ingresos brutos — **Art. 151 del Código Tributario**,
+  verificado en `docs/legal/codigo_tributario.pdf`. La tasa reducida del 0.3%
+  del mismo artículo **no aplica**: es para personas naturales distribuidoras de
+  bebidas, comestibles o higiene personal con precios sugeridos por el
+  proveedor, y para transporte público.
+- **2%** sobre lo cobrado con tarjeta — **Art. 162-A**, que apareció al leer el
+  Código y **no estaba en ningún cálculo previo**. Lo retiene el procesador de
+  la tarjeta, no la farmacia, así que va **aparte y marcado como estimado**: el
+  portal sabe cuánto se cobró con tarjeta, pero no puede ver la liquidación. En
+  julio son $407.15 que nadie estaba contando.
+
+Las dos declaraciones vencen el mismo día: los **primeros diez días hábiles** del
+mes siguiente (Ley de IVA Art. 94 y CT Art. 151).
+
+**Lo que la pantalla dice de sí misma, arriba de los números:** es un
+**indicador, no una declaración**. Le falta a propósito una línea que el portal
+no puede saber — el saldo a favor que viene del mes anterior. El impuesto es
+encadenado y ese saldo sólo existe en lo que se declaró, que hoy no se guarda en
+ningún lado. Por eso da el **movimiento** del mes y nunca el **saldo a pagar**.
+Es la mejor justificación que tiene el Bloque D: sin él, este cálculo no se
+termina nunca.
+
+El RPC devuelve un objeto JSON único (Patrón C), resuelve el alcance por
+sucursal del lado del servidor y responde `FORBIDDEN` a quien no tenga el
+permiso. El módulo hereda los roles y el alcance que ya tenía Libros IVA, así
+que la contadora externa lo ve sin tocar nada.
+
+De paso: la descripción de **Compras Completo** en Permisos de Acceso nombraba
+al sistema de origen dos veces. Esa pantalla la ve el usuario, así que pasa a
+hablar de «las compras registradas» y «el archivo original».
+
+_(pendiente de redactar)_
+
 ## v2.405.1 — Los gates leían prosa: 12 de 150 eran comentarios
 
 Al cerrar la fase E el ratchet de `vidrio-a-mano` **subió +1**, y el archivo señalado

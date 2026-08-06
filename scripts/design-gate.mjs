@@ -412,6 +412,37 @@ const TAG_OPEN_RE = /<([A-Za-z][\w.]*)/g;
  * exactamente el falso negativo de `AnnouncementsView` (2026-08-02), detectado
  * midiendo 4px en el navegador con el gate en verde.
  */
+/**
+ * El mismo texto con los COMENTARIOS reemplazados por espacios.
+ *
+ * Existe porque `vidrio-a-mano` contaba un `backdrop-filter` escrito dentro de
+ * un comentario de `StatCard` —un archivo que no tiene ni un vidrio a mano— y,
+ * peor, el número se MOVÍA al editar cualquier otra parte del archivo: el match
+ * caía en una posición distinta y `tagQueContiene` resolvía otro tag, así que a
+ * veces quedaba dentro de uno con `data-surface` (y se saltaba) y a veces no.
+ * Un detector que lee prosa no sólo acusa de más: es INESTABLE, y un ratchet
+ * que se mueve solo deja de ser un ratchet.
+ *
+ * Se reemplaza por espacios y no se borra para que los offsets —y por lo tanto
+ * los números de línea y `tagQueContiene`— sigan siendo los del archivo real.
+ */
+function sinComentarios(txt) {
+  let out = '', i = 0;
+  while (i < txt.length) {
+    const dos = txt.slice(i, i + 2);
+    if (dos === '//') {
+      const fin = txt.indexOf('\n', i);
+      const hasta = fin === -1 ? txt.length : fin;
+      out += ' '.repeat(hasta - i); i = hasta;
+    } else if (dos === '/*') {
+      const fin = txt.indexOf('*/', i + 2);
+      const hasta = fin === -1 ? txt.length : fin + 2;
+      out += txt.slice(i, hasta).replace(/[^\n]/g, ' '); i = hasta;
+    } else { out += txt[i]; i++; }
+  }
+  return out;
+}
+
 function tagQueContiene(txt, pos) {
   let ini = txt.lastIndexOf('<', pos);
   while (ini > 0 && !/[A-Za-z]/.test(txt[ini + 1] || '')) ini = txt.lastIndexOf('<', ini - 1);
@@ -1797,7 +1828,8 @@ function scanFile(path) {
     const VIDRIO_RE = /backdrop-blur(?:-\w+)?|backdrop-filter/g;
     let v;
     const yaVisto = new Set();
-    while ((v = VIDRIO_RE.exec(text))) {
+    const limpio = sinComentarios(text);   // un `backdrop-filter` en prosa no es vidrio
+    while ((v = VIDRIO_RE.exec(limpio))) {
       const tag = tagQueContiene(text, v.index);
       if (!tag || yaVisto.has(tag.ini)) continue;
       yaVisto.add(tag.ini);
@@ -1825,6 +1857,7 @@ function scanFile(path) {
   // La regla para elegir escalón, escrita para no volver a decidirla: al MÁS
   // CERCANO, y los empates BAJAN — más rápido se siente mejor que más lento.
   if (!hasException(path, 'reloj-a-mano') && /\.jsx$/.test(path)) {
+    const limpioReloj = sinComentarios(text);   // una duración citada en prosa no es una duración
     // `:` cuenta como delimitador previo: sin eso el detector es ciego a todo
     // `duration-*` con variante (`md:`, `group-hover:`, `[&_svg]:`), que fue
     // exactamente cómo se escaparon dos en la migración.
@@ -1840,7 +1873,7 @@ function scanFile(path) {
       [/transitionDuration:\s*['"`]?\d/g, 'duración de transición literal en estilo inline'],
     ]) {
       let m;
-      while ((m = re.exec(text))) {
+      while ((m = re.exec(limpioReloj))) {
         findings.push({
           line: text.slice(0, m.index).split('\n').length,
           category: 'reloj-a-mano', label,
@@ -1859,6 +1892,7 @@ function scanFile(path) {
   // invalidarlo en scroll/resize, y throttlear a un rAF — los `pointermove`
   // llegan más seguido que los cuadros.
   if (!hasException(path, 'puntero-lista') && /\.jsx$/.test(path)) {
+    const limpioPtr = sinComentarios(text);
     // Sólo donde el CUERPO está ahí mismo: `onPointerMove={(e) => {…}}` o
     // `addEventListener('pointermove', e => {…})`. La primera versión miraba
     // cualquier mención y daba cuatro falsos positivos — tres eran
@@ -1868,9 +1902,12 @@ function scanFile(path) {
     // al que desmonta el listener igual que al que lo escribe mal.
     const PTR = /(?:onPointerMove|onMouseMove)\s*=\s*\{\s*(?:\(|[A-Za-z_$]+\s*=>)|addEventListener\(\s*['"`](?:pointermove|mousemove)['"`]\s*,\s*(?:\(|[A-Za-z_$]+\s*=>)/g;
     let m;
-    while ((m = PTR.exec(text))) {
-      // el cuerpo empieza en el match: una arrow function normal entra en 600
-      const cuerpo = text.slice(m.index, m.index + 600);
+    while ((m = PTR.exec(limpioPtr))) {
+      // el cuerpo empieza en el match: una arrow function normal entra en 600.
+      // También sin comentarios: un `getBoundingClientRect()` NOMBRADO en un
+      // comentario del handler no es una llamada — es justamente lo contrario,
+      // suele ser la nota que explica por qué NO se llama.
+      const cuerpo = limpioPtr.slice(m.index, m.index + 600);
       const pecado = /getBoundingClientRect\s*\(/.test(cuerpo) ? 'mide el rect por evento (§6.2: cachearlo)'
         : /querySelectorAll|\.forEach\s*\(|\.map\s*\(/.test(cuerpo) ? 'recorre una lista por evento (§6.1: sólo el elemento bajo el cursor)'
         : null;

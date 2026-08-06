@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.405.1 — Los gates leían prosa: 12 de 150 eran comentarios
+
+Al cerrar la fase E el ratchet de `vidrio-a-mano` **subió +1**, y el archivo señalado
+—`StatCard`— **no tiene ni un vidrio a mano**. Su único `backdrop-filter` está dentro
+de un comentario que explica un bug viejo.
+
+**Y lo grave no es que contara de más: es que el número se movía solo.** El match caía
+en una posición distinta según cuánto texto hubiera antes, así que `tagQueContiene`
+resolvía un tag distinto — a veces uno con `data-surface` (y se saltaba) y a veces no.
+Editar cualquier otra parte del archivo cambiaba el conteo. **Un ratchet que se mueve
+solo deja de ser un ratchet.**
+
+Los tres gates de este plan enmascaran ahora los comentarios antes de buscar. Los
+comentarios se reemplazan **por espacios y no se borran**, para que los offsets —y por
+lo tanto los números de línea y `tagQueContiene`— sigan siendo los del archivo real.
+
+**Resultado: `vidrio-a-mano` baja de 150 a 138.** Doce de los «hallazgos» eran prosa,
+incluida la que documenta por qué algo *no* lleva vidrio. Es el mismo modo de falla
+que ya había aparecido en esta sesión con el migrador de íconos, que iba a reescribir
+`// ── Edit mode ──` como «Pencil mode»: **un detector que no distingue código de
+prosa no acusa de más, acusa de otra cosa.**
+
+Verificado que siguen mordiendo: una sonda sintética con `backdrop-blur`,
+`duration-300` y un `onPointerMove` que recorre el DOM dispara los tres.
+
 ## v2.405.0 — Fase E: el filo corre, y sólo donde se apunta
 
 **§1.6 implementado.** Un destello corre por el canto de la tarjeta al pasar el mouse,

@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.420.0 — Gate `tema-incompleto`: el fallo que apareció tres veces
+
+Marca un token con **color fuerte** definido en `:root`, redefinido en algún bloque
+Solid, y **ausente de `[data-theme="dark"]`** — o sea que Liquid oscuro hereda un valor
+calibrado sobre una superficie clara. Es el fallo de §19.1: el lente, `--sidebar-rim` en
+0.42 y once tokens de sombra, los tres idénticos.
+
+**Que Solid lo redefina es la condición, no un detalle.** Si nadie lo redefine, el token
+es geometría o tiempo —un radio, un blur, una duración— y compartir valor entre claro y
+oscuro es lo correcto: un primer intento sin esa condición marcaba **28 tokens**, casi
+todos radios y desenfoques que **deben** compartirse. Lo que delata a un token de color
+es que alguien ya decidió que su valor depende del material.
+
+**Y el parser de bloques tuvo que contar llaves.** El ingenuo, que corta en el primer
+`}`, cierra `:root` en la primera regla anidada: medido, veía **0 tokens en vez de
+402** — y devolvía «cero huérfanos», que es la respuesta que uno quiere oír.
+
+Al activarlo quedaba **un solo caso vivo**, `--sidebar-item-hover-shadow`, que se cerró
+en el mismo commit. Nace **en 0 y bloqueante**, verificado contra una sonda sintética:
+muerde ahí y calla sobre el archivo real.
+
 ## v2.419.1 — El plan aprende de su propia implementación (§19)
 
 Las fases C–H se ejecutaron y el usuario revisó el resultado tema por tema: salieron

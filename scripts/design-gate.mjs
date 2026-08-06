@@ -2157,11 +2157,96 @@ function loadBaseline() {
   catch { return {}; }
 }
 
+/**
+ * Categoría `tema-incompleto` (PLAN-MATERIALES §19.1).
+ *
+ * Un token con COLOR FUERTE definido en `:root`, redefinido en algún bloque
+ * Solid, y **ausente de `[data-theme="dark"]`** — o sea que Liquid oscuro
+ * hereda un valor calibrado sobre una superficie clara.
+ *
+ * Apareció TRES veces en una sola sesión: el lente de §1.7 (`.62` de blanco
+ * lavaba la superficie oscura), `--sidebar-rim` en `0.42` (contorno blanco
+ * alrededor del panel, del flotante y del menú), y **once tokens de la escala
+ * `--shadow-glass-*`**, todos con un `inset … rgba(255,255,255,.4–.95)`.
+ *
+ * Lo que los disfraza es justamente que Solid SÍ los redefine: leyendo el
+ * archivo parecen tokens con tratamiento por tema. La pregunta «¿este token
+ * cambia por tema?» devuelve *sí*; la correcta es **«¿cambia en los cuatro?»**.
+ *
+ * Que Solid lo redefina es la condición, no un detalle: si nadie lo redefine,
+ * el token es geometría o tiempo —un radio, un blur, una duración— y compartir
+ * valor entre claro y oscuro es lo correcto. Lo que delata a un token de COLOR
+ * es que alguien ya decidió que su valor depende del material.
+ */
+function temaIncompleto() {
+  const RUTA = 'src/index.css';
+  if (!existsSync(RUTA)) return [];
+  const lineas = readFileSync(RUTA, 'utf8').split('\n');
+
+  // Bloques de primer nivel, por profundidad de llaves. Un parser ingenuo que
+  // corta en el primer `}` cierra `:root` en la primera regla anidada y se
+  // pierde el 80% de los tokens (medido: 0 en vez de 402).
+  const bloques = [];
+  let actual = null, prof = 0;
+  lineas.forEach((l, i) => {
+    if (!actual) {
+      const m = l.match(/^(:root|\[data-theme=[^{]*)\s*\{/);
+      if (m) { actual = { sel: m[1].trim(), tokens: new Map() }; prof = 1; }
+      return;
+    }
+    prof += (l.match(/\{/g) || []).length - (l.match(/\}/g) || []).length;
+    if (prof <= 0) { bloques.push(actual); actual = null; prof = 0; return; }
+    const t = l.match(/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/i);
+    if (t) actual.tokens.set(t[1], { valor: t[2].trim(), linea: i + 1 });
+  });
+  if (actual) bloques.push(actual);
+
+  const unir = (pred) => {
+    const m = new Map();
+    for (const b of bloques) if (pred(b.sel)) for (const [k, v] of b.tokens) if (!m.has(k)) m.set(k, v);
+    return m;
+  };
+  const root  = unir(sel => sel === ':root');
+  const dark  = unir(sel => /\[data-theme="dark"\]/.test(sel));
+  const solid = unir(sel => /\[data-theme="solid(-dark)?"\]/.test(sel));
+
+  // «Color fuerte»: un canal con alfa ≥ .30, o un hex. Por debajo de .30 el
+  // valor es un matiz y heredarlo entre claro y oscuro rara vez se nota.
+  const fuerte = (v) => {
+    if (/#[0-9a-f]{3,8}\b/i.test(v)) return true;
+    for (const m of v.matchAll(/rgba?\(\s*[\d\s,./]+?[,/]\s*(\.?\d*\.?\d+)\s*\)/g))
+      if (parseFloat(m[1]) >= 0.30) return true;
+    return false;
+  };
+
+  const out = [];
+  for (const [tok, { valor, linea }] of root) {
+    if (!fuerte(valor) || dark.has(tok) || !solid.has(tok)) continue;
+    out.push({
+      line: linea, category: 'tema-incompleto',
+      label: `\`${tok}\` tiene color fuerte, Solid lo redefine y \`[data-theme="dark"]\` no — `
+           + 'Liquid oscuro hereda un valor calibrado en claro (§19.1)',
+      text: valor.slice(0, 60),
+    });
+  }
+  return out;
+}
+
 function main() {
   const files = listFiles();
   const byFile = {};
   const byCategory = {};
   let total = 0;
+
+  // ── `tema-incompleto`: se corre UNA vez sobre index.css ──────────────────
+  {
+    const tema = temaIncompleto();
+    if (tema.length) {
+      byFile['src/index.css'] = (byFile['src/index.css'] || []).concat(tema);
+      total += tema.length;
+      byCategory['tema-incompleto'] = (byCategory['tema-incompleto'] || 0) + tema.length;
+    }
+  }
 
   for (const file of files) {
     if (EXCLUDE_FILES.has(file)) continue;

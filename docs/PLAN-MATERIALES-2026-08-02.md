@@ -1007,6 +1007,7 @@ que agregar:
 | `reloj-a-mano` | `duration-N` / `cubic-bezier(...)` literal en JSX | ✅ **activa, en 0 y bloqueante** |
 | `puntero-lista` | un handler de puntero que recorra una lista o mida el rect por evento | ✅ **activa, en 0 y bloqueante** |
 | `material-a-mano` | un valor de las capas de §1-§5 escrito literal | ⏳ falta |
+| `tema-incompleto` | un token de color que `[data-theme="dark"]` hereda del tema claro | ✅ **activa, en 0 y bloqueante** |
 
 **`reloj-a-mano` mira las transiciones, no las animaciones — a propósito.**
 `animationDuration` queda fuera: los 24 que había son **bucles ambientales** (shimmer
@@ -1719,9 +1720,21 @@ parecen tokens con tratamiento por tema. La pregunta que yo me hacía —«¿est
 cambia por tema?»— devolvía *sí*. La pregunta correcta es **«¿cambia en los cuatro?»**.
 
 > **Esto es detectable automáticamente y es el único de los modos de falla de esta
-> sesión que lo es.** Gate propuesto `tema-incompleto`: un token cuyo valor contenga un
-> color fuerte, definido en `:root` y en algún bloque Solid, y ausente de
-> `[data-theme="dark"]`.
+> sesión que lo es.** ✅ **Gate `tema-incompleto` activo, en 0 y bloqueante**: marca un
+> token con color fuerte definido en `:root`, redefinido en algún bloque Solid, y
+> **ausente de `[data-theme="dark"]`**.
+
+**Que Solid lo redefina es la condición, no un detalle.** Si nadie lo redefine, el token
+es geometría o tiempo —un radio, un blur, una duración— y compartir valor entre claro y
+oscuro es lo correcto: un primer intento sin esa condición marcaba 28 tokens, casi todos
+radios y desenfoques que **deben** compartirse. Lo que delata a un token de color es que
+alguien ya decidió que su valor depende del material.
+
+Umbral: **alfa ≥ .30 o un hex**. Por debajo de .30 el valor es un matiz y heredarlo
+entre claro y oscuro rara vez se nota.
+
+Al activarlo quedaba **un solo caso vivo** —`--sidebar-item-hover-shadow`—, que se
+cerró. Verificado contra una sonda sintética: muerde ahí y calla sobre el archivo real.
 
 ### 19.2 La causa que apareció CINCO veces: la dirección del realce la manda el fondo
 

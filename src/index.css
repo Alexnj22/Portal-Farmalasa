@@ -832,6 +832,9 @@ thead.sticky {
 
 /* ─── Dark LiquidGlass ─── */
 [data-theme="dark"] {
+  /* §19.1 · el hover del ítem: sin realce blanco y con la sombra más honda.
+     Lo encontró el gate `tema-incompleto` — era el último que quedaba. */
+  --sidebar-item-hover-shadow: 0 6px 18px rgb(0 0 0 / .50);
 
   /* ══ §1.7.bis · LA ESCALA DE SOMBRAS, SIN REALCE BLANCO ═══════════════════
      Once tokens de sombra llevaban un `inset ... rgba(255,255,255,.4–.95)` y

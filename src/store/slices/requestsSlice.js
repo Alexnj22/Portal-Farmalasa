@@ -40,6 +40,29 @@ export const REQUEST_TYPES = {
     CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
 };
 
+/**
+ * Las cuatro solicitudes que hablan de una FACTURA, no del expediente de quien
+ * las pide. Salen del widget «Solicitar Modificación a Facturación».
+ *
+ * Se distinguen del resto por dos cosas, y las dos estaban mal:
+ *
+ *  1. **Un solo nivel de aprobación.** El escalado genérico las llevaba a tres:
+ *     supervisor → supervisor/admin → Talento Humano. RRHH no tiene nada que
+ *     decidir sobre la anulación de una factura, y el widget ya le promete a
+ *     quien la envía que resuelve Supervisión ("Supervisión fue notificada y
+ *     revisará la solicitud").
+ *  2. **No dejan rastro en el legajo.** `registerEmployeeEvent` las anotaba en
+ *     `employee_events` con `type: 'ANNULMENT_REQUEST'`, o sea que pedir anular
+ *     una venta quedaba en el historial laboral del vendedor junto a permisos,
+ *     vacaciones e incapacidades. La tabla no tiene CHECK que lo frenara.
+ */
+export const FACTURACION_REQUEST_TYPES = new Set([
+    'ANNULMENT_REQUEST',
+    'PAYMENT_CHANGE_REQUEST',
+    'VENDOR_CHANGE_REQUEST',
+    'CLIENT_CHANGE_REQUEST',
+]);
+
 // Bucket A — severidad real del estado de la solicitud.
 export const REQUEST_STATUS = {
     PENDING:   { label: 'Pendiente',  color: 'bg-warning/10 text-warning-text',  border: 'border-warning/30',  dot: 'bg-warning', variante: 'warning' },
@@ -622,8 +645,10 @@ export const createRequestsSlice = (set, get) => ({
             const meta = parseMeta(req.metadata);
             await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
 
+            // Una solicitud de facturación no es un evento del legajo: habla de
+            // una factura, no de la persona. Ver FACTURACION_REQUEST_TYPES.
             const registerEmployeeEvent = get().registerEmployeeEvent;
-            if (registerEmployeeEvent) {
+            if (registerEmployeeEvent && !FACTURACION_REQUEST_TYPES.has(req.type)) {
                 await registerEmployeeEvent(req.employee.id, {
                     type: req.type,
                     date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
@@ -783,7 +808,10 @@ export const createRequestsSlice = (set, get) => ({
                 return true;
             }
 
-            const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : req.type === 'DISABILITY' ? 1 : 3;
+            const maxLevels = req.type === 'SHIFT_CHANGE' ? 2
+                : req.type === 'DISABILITY' ? 1
+                : FACTURACION_REQUEST_TYPES.has(req.type) ? 1   // Supervisión decide y cierra
+                : 3;
 
             if (nextLevel <= maxLevels) {
                 const nextApprover = await resolveNextApprover(nextLevel, req.employee?.branch_id, approverId);

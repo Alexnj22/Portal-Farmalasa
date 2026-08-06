@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.400.0 — El widget de Facturación: el tipo que faltaba en el CHECK y las 3,700 facturas invisibles
+
+Auditoría del widget «Solicitar Modificación a Facturación». Ofrece cuatro
+tipos de solicitud; ninguno había producido jamás una fila en
+`approval_requests` (0 en toda la historia de la tabla). Seis hallazgos:
+
+**«Cambio de Cliente» no podía funcionar.** El CHECK de `approval_requests.type`
+conocía tres tipos, no cuatro: `CLIENT_CHANGE_REQUEST` nunca se agregó. El
+formulario buscaba el cliente contra las 24K fichas, validaba, armaba el
+payload — y el INSERT rebotaba con violación de constraint, mostrado como
+«Error al enviar solicitud». Migración `20260806005703`. Verificado con un
+INSERT real dentro de una transacción revertida.
+
+**El widget veía el 12% del mes.** `fetchBranchInvoicesForMonth` cerraba con
+`.limit(500)` y filtraba en el navegador; las sucursales facturan 3,700-5,300
+documentos al mes, así que buscar una factura de principio de mes devolvía «Sin
+resultados» aunque existiera, y el encabezado anunciaba «500 facturas» como si
+fuera el total. El filtro de fecha era peor: se aplicaba en el navegador *sobre
+la lista ya recortada*, o sea que elegir un día viejo no mostraba nada.
+
+No se arregló con `fetchAllRows`: un mes de una sucursal son 317 kB y cinco
+viajes secuenciales, y esto es un widget del tablero. Se movió la búsqueda al
+servidor, que es el patrón que este mismo widget ya usaba para clientes.
+Ahora son tres preguntas separadas — `fetchBranchInvoicesRecent`,
+`countBranchInvoices`, `searchBranchInvoices` — y el encabezado dice «últimas
+150 de 4,353» en vez de hacer pasar la página por el total. Buscar por nombre
+de vendedor sigue funcionando: `sales_invoices` guarda el código, así que el
+nombre se resuelve contra los empleados del store y al servidor viajan códigos.
+
+**La aprobación escalaba hasta Talento Humano.** `maxLevels` genérico las
+llevaba a tres niveles: supervisor → supervisor/admin → RRHH. Nadie de RRHH
+decide sobre la anulación de una factura, y el widget ya promete que resuelve
+Supervisión. Un solo nivel para los cuatro tipos.
+
+**Y dejaba rastro en el legajo.** La aprobación final llamaba a
+`registerEmployeeEvent` con `type: 'ANNULMENT_REQUEST'`: pedir anular una venta
+quedaba en el historial laboral del vendedor, junto a permisos e incapacidades.
+`employee_events` no tiene CHECK que lo frenara.
+
+**La lista de vendedores dejaba fuera a quien sí vende ahí.** Filtraba por
+`branch_id` del empleado, pero hay códigos que facturan donde no están
+asignados (123, 142, 107, 157 el 2026-08-05). Ahora incluye también a quien
+tiene ventas efectivas en la sucursal.
+
+Verificado: la sintaxis `or=` contra PostgREST (un filtro malformado da
+PGRST100, los seis reales dan 42501 — parsean y los frena RLS) y la semántica
+de los cinco casos de búsqueda contra datos reales.
+
+
+_(pendiente de redactar)_
+
 ## v2.399.1 — Fase D: el thead que ocluye y la paginación en tres zonas
 
 **§15.1 · Una superficie pegajosa tiene que ocluir.** El `thead` de `DataTable` es

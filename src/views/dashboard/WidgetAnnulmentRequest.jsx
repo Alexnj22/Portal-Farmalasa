@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
@@ -13,11 +13,14 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import SearchInput from '../../components/common/SearchInput';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
-import { smartFilter } from '../../utils/searchUtils';
+import { normSearch } from '../../utils/searchUtils';
 import { notifyEmployees } from '../../utils/notify';
 import { formatMoney } from '../../utils/formatNumber';
 import { insertApprovalRequestSilent } from '../../data/requests';
-import { fetchInvoiceItemsForInvoice, fetchBranchInvoicesForMonth } from '../../data/facturacion';
+import {
+  fetchInvoiceItemsForInvoice, fetchBranchInvoicesRecent,
+  countBranchInvoices, searchBranchInvoices, WIDGET_INVOICE_PAGE,
+} from '../../data/facturacion';
 import { searchCustomersByTokens } from '../../data/customers';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import ListRow from '../../components/common/ListRow';
@@ -535,17 +538,21 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
 }
 
 /* ─── Vendor change form ─────────────────────────────────────────────────────── */
-function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog }) {
+function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog, codigosVistos }) {
   const [newVendorId, setNewVendorId] = useState('');
   const [comment,     setComment]     = useState('');
   const [submitting,  setSubmitting]  = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   const currentVendor  = employees.find(e => String(e.code) === String(inv.cod_vendedor));
+  // Asignados a la sucursal **o** con ventas efectivas en ella. Solo lo primero
+  // dejaba fuera a quien factura donde no está asignado, y a esa persona no se
+  // le podía reasignar una venta que ella misma hizo.
   const vendorList     = employees.filter(e =>
     e.status === 'ACTIVO' &&
-    String(e.branch_id ?? e.branchId) === String(activeBranchId) &&
-    String(e.code) !== String(inv.cod_vendedor)
+    String(e.code) !== String(inv.cod_vendedor) &&
+    (String(e.branch_id ?? e.branchId) === String(activeBranchId) ||
+     codigosVistos?.has(String(e.code)))
   );
   const selectedVendor = employees.find(e => String(e.id) === String(newVendorId));
 
@@ -821,56 +828,108 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   const [view,        setView]        = useState('list');
   const [prevView,    setPrevView]    = useState('list');
   const [invoices,    setInvoices]    = useState([]);
+  const [total,       setTotal]       = useState(0);
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
   const [dateFilter,  setDateFilter]  = useState('');
   const [focused,     setFocused]     = useState(null);
+  const [reloadKey,   setReloadKey]   = useState(0);
   const [successInfo, setSuccessInfo] = useState({ type: 'annul', supervisor: '' });
 
-  const loadInvoices = useCallback(async () => {
-    if (!activeBranchId) { setLoading(false); setInvoices([]); return; }
-    setLoading(true);
+  /* Ámbito de la consulta: el mes en curso, o el día elegido en el filtro. Se
+     resuelve en el servidor — antes el filtro de fecha se aplicaba en el
+     navegador sobre una lista ya truncada, así que elegir un día del principio
+     del mes no mostraba nada. */
+  const ambito = useMemo(() => {
+    if (dateFilter) return { fecha: dateFilter };
     const now  = svToday();
     const y    = now.getFullYear();
     const m    = String(now.getMonth() + 1).padStart(2, '0');
-    const from = `${y}-${m}-01`;
-    const to   = `${y}-${m}-${String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+    const last = String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0');
+    return { from: `${y}-${m}-01`, to: `${y}-${m}-${last}` };
+  }, [dateFilter]);
 
-    const { data, error } = await fetchBranchInvoicesForMonth(activeBranchId, from, to);
+  /* Índice nombre→código de los vendedores. `sales_invoices` guarda el código,
+     no el nombre, así que buscar "marta" tiene que traducirse a códigos ANTES
+     de ir al servidor. Los empleados ya están en el store: no cuesta un viaje. */
+  const vendorIndex = useMemo(
+    () => (employees || [])
+      .filter(e => e.code)
+      .map(e => ({ code: String(e.code), norm: normSearch(e.name || '') })),
+    [employees],
+  );
 
-    if (error) console.error('WidgetAnnulmentRequest:', error.message);
-    setInvoices(data || []);
-    setLoading(false);
-  }, [activeBranchId]);
+  const buildTokens = useCallback((q) => (
+    q.split(/\s+/).filter(Boolean).slice(0, 5)
+      .map((bruto) => {
+        // Se saca lo que rompería la sintaxis de `or=` de PostgREST (la coma
+        // separa ramas, los paréntesis agrupan). El guion bajo se CONSERVA:
+        // los correlativos lo llevan ("0000080360_COF").
+        const texto = bruto.normalize('NFD').replace(/[̀-ͯ]/g, '')
+          .replace(/[,()"']/g, '').trim();
+        if (!texto) return null;
+        const norm = normSearch(texto);
+        const codigos = norm
+          ? vendorIndex.filter(v => v.norm.includes(norm)).map(v => v.code).slice(0, 25)
+          : [];
+        return { texto, codigos };
+      })
+      .filter(Boolean)
+  ), [vendorIndex]);
 
-  useEffect(() => { loadInvoices(); }, [loadInvoices]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar de sucursal
+  /* Conteo real del ámbito. Va aparte de la lista porque no depende de lo que
+     se escriba en el buscador — y es lo que permite que el encabezado diga la
+     verdad en vez de anunciar como total lo que entró en la página. */
+  useEffect(() => {
+    if (!activeBranchId) { setTotal(0); return; } // eslint-disable-line react-hooks/set-state-in-effect -- limpieza al quedarse sin sucursal; el resto del efecto es un fetch
+    let cancelado = false;
+    countBranchInvoices(activeBranchId, ambito).then(({ count, error }) => {
+      if (cancelado) return;
+      if (error) console.error('WidgetAnnulmentRequest (conteo):', error.message);
+      setTotal(count ?? 0);
+    });
+    return () => { cancelado = true; };
+  }, [activeBranchId, ambito, reloadKey]);
+
+  /* Lista: las últimas N del ámbito, o los resultados de la búsqueda. Siempre
+     server-side. El debounce solo aplica cuando se está escribiendo. */
+  useEffect(() => {
+    if (!activeBranchId) { setInvoices([]); setLoading(false); return; } // eslint-disable-line react-hooks/set-state-in-effect -- limpieza al quedarse sin sucursal
+    const q = search.trim();
+    const buscando = q.length >= 2;
+    setLoading(true);
+    let cancelado = false;
+    const t = setTimeout(async () => {
+      const { data, error } = buscando
+        ? await searchBranchInvoices(activeBranchId, ambito, buildTokens(q))
+        : await fetchBranchInvoicesRecent(activeBranchId, ambito);
+      if (cancelado) return;
+      if (error) console.error('WidgetAnnulmentRequest:', error.message);
+      setInvoices(data || []);
+      setLoading(false);
+    }, buscando ? 300 : 0);
+    return () => { cancelado = true; clearTimeout(t); };
+  }, [activeBranchId, ambito, search, buildTokens, reloadKey]);
+
   useEffect(() => { setView('list'); setFocused(null); setSearch(''); setDateFilter(''); }, [propBranchId]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea el widget al cambiar de sucursal
 
-  /* Search: by client, vendor name/code, invoice number, ID, payment type, amount */
-  const buildCorpus = useCallback((inv) => {
-    const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
-    return [
-      inv.correlativo,
-      inv.cliente,
-      inv.tipo_pago,
-      String(inv.id),
-      String(Number(inv.total || 0).toFixed(2)),
-      vendor?.name ?? '',
-      String(inv.cod_vendedor ?? ''),
-    ];
-  }, [employees]);
-
-  const { results: afterSearch, isFuzzy } = !search.trim()
-    ? { results: invoices, isFuzzy: false }
-    : smartFilter(search, invoices, buildCorpus);
-
-  const filtered = dateFilter ? afterSearch.filter(inv => inv.fecha === dateFilter) : afterSearch;
+  const buscando  = search.trim().length >= 2;
+  const enTope    = invoices.length >= WIDGET_INVOICE_PAGE;
+  const parcial   = !buscando && total > invoices.length;
 
   const handleSuccess = (type, supervisor) => {
     setSuccessInfo({ type, supervisor });
     setView('success');
-    setTimeout(() => { setView('list'); setFocused(null); loadInvoices(); }, 4000);
+    setTimeout(() => { setView('list'); setFocused(null); setReloadKey(k => k + 1); }, 4000);
   };
+
+  /* Vendedores que REALMENTE facturan en esta sucursal, además de los que la
+     tienen asignada: hay códigos que venden donde no están asignados (123, 142,
+     107, 157 el 2026-08-05), y sin esto no se les puede reasignar una venta. */
+  const codigosVistos = useMemo(
+    () => new Set(invoices.map(i => String(i.cod_vendedor)).filter(Boolean)),
+    [invoices],
+  );
 
   const sharedProps = { user, activeBranch, activeBranchId, employees, appendAuditLog };
 
@@ -907,7 +966,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   /* ── Sub-views ── */
   if (view === 'annul'        && focused) return <AnnulForm         inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
   if (view === 'pay_change'   && focused) return <PaymentChangeForm inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
-  if (view === 'vendor_change'&& focused) return <VendorChangeForm  inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
+  if (view === 'vendor_change'&& focused) return <VendorChangeForm  inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} codigosVistos={codigosVistos} {...sharedProps} />;
   if (view === 'client_change'&& focused) return <ClientChangeForm  inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
   if (view === 'type_select'  && focused) return <TypeSelector inv={focused} onBack={() => setView(prevView)} onSelect={key => setView(key)} employees={employees} />;
   if (view === 'detail'       && focused) return (
@@ -922,8 +981,12 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         <p className="text-caption font-black text-content-2 uppercase tracking-widest">
           Ventas del mes — {activeBranch?.name || 'Tu sucursal'}
         </p>
+        {/* El conteo sale del servidor, no del largo de la lista: si solo se
+            trajeron las últimas N, se dice — no se hace pasar N por el total. */}
         <span className="text-caption font-bold text-content-3">
-          {filtered.length !== invoices.length ? `${filtered.length} / ${invoices.length}` : `${invoices.length} facturas`}
+          {buscando   ? `${invoices.length}${enTope ? '+' : ''} de ${total}`
+           : parcial  ? `últimas ${invoices.length} de ${total}`
+                      : `${total} factura${total === 1 ? '' : 's'}`}
         </span>
       </div>
 
@@ -941,20 +1004,22 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
 
-        {!loading && filtered.length === 0 && (
+        {!loading && invoices.length === 0 && (
           <div className="py-8 text-center text-body-sm text-content-3 font-medium">
-            {search || dateFilter ? 'Sin resultados con estos filtros' : 'No hay facturas este mes'}
+            {buscando || dateFilter ? 'Sin resultados con estos filtros' : 'No hay facturas este mes'}
           </div>
         )}
 
-        {!loading && isFuzzy && search && (
+        {/* Un tope alcanzado se avisa. Callarlo es lo que hacía el `.limit(500)`:
+            una lista recortada se lee como "esto es todo lo que hay". */}
+        {!loading && buscando && enTope && (
           <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-caption text-warning-text font-semibold">
             <Search size={10} strokeWidth={2.5} className="shrink-0" />
-            Similares a &ldquo;{search}&rdquo;
+            Hay más coincidencias — agregá una palabra para acotar
           </div>
         )}
 
-        {!loading && filtered.map(inv => {
+        {!loading && invoices.map(inv => {
           const age    = daysAgo(inv.fecha);
           const ok     = age <= GRACE_DAYS;
           const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));

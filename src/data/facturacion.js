@@ -151,14 +151,99 @@ export function fetchInvoiceItemsForInvoice(invoiceId) {
         .order('total_linea', { ascending: false });
 }
 
-export function fetchBranchInvoicesForMonth(branchId, from, to) {
+// ── Facturas de la sucursal para el widget de solicitudes ───────────────────
+//
+// Acá vivía `fetchBranchInvoicesForMonth`, que cerraba con `.limit(500)` y
+// filtraba en el navegador. Las sucursales facturan 3,700-5,300 documentos al
+// mes (medido el 2026-08-05), así que el widget veía el 12% del mes y el resto
+// era invisible: buscar una factura del día 2 devolvía "Sin resultados" aunque
+// existiera, y el encabezado anunciaba "500 facturas" como si fuera el total.
+//
+// No alcanzaba con cambiar el 500 por `fetchAllRows`: un mes de una sucursal
+// son 317 kB y cinco viajes SECUENCIALES (el bucle de `fetchAllRows` espera
+// cada página), y esto es un widget del tablero. El patrón correcto ya estaba
+// en este mismo widget para clientes —`searchCustomersByTokens` sobre 23K
+// fichas— y es el que se aplica: el servidor filtra, el navegador solo pinta.
+//
+// Tres funciones porque son tres preguntas distintas: qué mostrar por defecto,
+// cuántas hay en total, y qué coincide con lo que se escribió.
+
+const INVOICE_COLS =
+    'id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor';
+
+// Tamaño de la lista por defecto y tope de resultados de búsqueda. NO es un cap
+// disimulado como el `.limit(500)` anterior: el conteo real del ámbito viaja
+// aparte (`countBranchInvoices`) y la vista dice "últimas N de M", así que el
+// número en pantalla nunca miente sobre lo que hay detrás.
+export const WIDGET_INVOICE_PAGE = 150;
+
+// El ámbito es el mes, salvo que haya filtro de día — que también se resuelve
+// en el servidor. Antes el filtro de fecha se aplicaba en el navegador SOBRE la
+// lista ya truncada, o sea que elegir un día viejo del mes no mostraba nada.
+function aplicarAmbito(q, { from, to, fecha }) {
+    return fecha ? q.eq('fecha', fecha) : q.gte('fecha', from).lte('fecha', to);
+}
+
+function enSucursal(branchId) {
     return supabase.from('sales_invoices')
-        .select('id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor')
-        .eq('branch_id', Number(branchId))
-        .gte('fecha', from).lte('fecha', to)
-        .order('fecha', { ascending: false })
+        .select(INVOICE_COLS)
+        .eq('branch_id', Number(branchId));
+}
+
+function masRecientesPrimero(q, limit) {
+    return q.order('fecha', { ascending: false })
         .order('correlativo', { ascending: false })
-        .limit(500);
+        .limit(limit);
+}
+
+/** Las últimas `limit` facturas del ámbito. Lo que se ve al abrir el widget. */
+export function fetchBranchInvoicesRecent(branchId, ambito, limit = WIDGET_INVOICE_PAGE) {
+    return masRecientesPrimero(aplicarAmbito(enSucursal(branchId), ambito), limit);
+}
+
+/** Cuántas facturas hay realmente en el ámbito. `head: true` no trae filas. */
+export function countBranchInvoices(branchId, ambito) {
+    return aplicarAmbito(
+        supabase.from('sales_invoices')
+            .select('id', { count: 'exact', head: true })
+            .eq('branch_id', Number(branchId)),
+        ambito,
+    );
+}
+
+/**
+ * Búsqueda server-side sobre TODO el ámbito.
+ *
+ * `tokens` son `{ texto, codigos }`: cada palabra escrita debe coincidir (AND
+ * de tokens — encadenar `.or()` los combina con AND, igual que en
+ * `searchCustomersByTokens`), y dentro de cada token se busca en cliente,
+ * correlativo y código de vendedor.
+ *
+ * `codigos` existe porque `sales_invoices` guarda el CÓDIGO del vendedor, no su
+ * nombre: escribir "marta" no puede matchear una columna que dice "150". El
+ * nombre se resuelve contra los empleados que el store ya tiene cargados y al
+ * servidor viajan códigos. Sin esto se perdería la búsqueda por vendedor, que
+ * es de las más usadas del widget.
+ */
+export function searchBranchInvoices(branchId, ambito, tokens, limit = WIDGET_INVOICE_PAGE) {
+    let q = aplicarAmbito(enSucursal(branchId), ambito);
+
+    for (const { texto, codigos } of tokens) {
+        const like = `%${texto}%`;
+        const ramas = [
+            `cliente.ilike.${like}`,
+            `correlativo.ilike.${like}`,
+            `cod_vendedor.ilike.${like}`,
+        ];
+        // `total` es numeric: ilike no aplica. Si el token es un número se
+        // compara por igualdad, que además es lo que uno quiere al escribir
+        // "8.55" — no algo parecido.
+        if (/^\d+(?:\.\d+)?$/.test(texto)) ramas.push(`total.eq.${texto}`);
+        if (codigos.length) ramas.push(`cod_vendedor.in.(${codigos.join(',')})`);
+        q = q.or(ramas.join(','));
+    }
+
+    return masRecientesPrimero(q, limit);
 }
 
 export function fetchInvoiceResolutionsHistorial(columns) {

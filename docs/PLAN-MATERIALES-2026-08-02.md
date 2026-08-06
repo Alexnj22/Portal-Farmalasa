@@ -1006,7 +1006,7 @@ que agregar:
 | `vidrio-a-mano` | `backdrop-blur` fuera de una superficie canónica | ✅ **activa** — ratchet en 150 |
 | `reloj-a-mano` | `duration-N` / `cubic-bezier(...)` literal en JSX | ✅ **activa, en 0 y bloqueante** |
 | `puntero-lista` | un handler de puntero que recorra una lista o mida el rect por evento | ✅ **activa, en 0 y bloqueante** |
-| `material-a-mano` | un valor de las capas de §1-§5 escrito literal | ⏳ falta |
+| `material-a-mano` | una capa de §1-§5 con su valor literal en vez de su token | ✅ **activa** — ratchet en 18 |
 | `tema-incompleto` | un token de color que `[data-theme="dark"]` hereda del tema claro | ✅ **activa, en 0 y bloqueante** |
 
 **`reloj-a-mano` mira las transiciones, no las animaciones — a propósito.**
@@ -1023,6 +1023,19 @@ acusa a quien desmonta el listener igual que a quien lo escribe mal.
 
 Ninguna va al baseline: una categoría ausente del JSON arranca bloqueante sola.
 Por eso la fase C —bajar la deuda existente— va **antes** de que el gate exista.
+
+**Dos de las cuatro cumplieron eso; `material-a-mano` no, y el motivo está medido.**
+Sus 18 hallazgos son todos `backdrop-blur-[Npx]` con valores que **no mapean a ningún
+token**: 2, 3, 15, 18, 20, 30, 44 y 60 px. Sólo tres coinciden con algo
+(`44px`=`--backdrop-card`, `60px`=`--menu-blur`, `2-3px`≈velo). Los demás necesitan
+decidir **qué superficie es cada sitio** antes de poder tokenizarlo, y eso es
+exactamente el trabajo de la fase D sobre los 137 de `vidrio-a-mano`.
+
+**Y no es casualidad que sea el mismo trabajo: 13 de los 18 son el MISMO sitio que
+`vidrio-a-mano` ya marca.** Convertir uno a superficie canónica baja los dos ratchets a
+la vez. Dos gates distintos mirando la misma deuda desde dos ángulos —«¿esto es una
+superficie?» y «¿este valor sale de un token?»— no es duplicación: es que la deuda
+tiene las dos caras.
 
 ---
 

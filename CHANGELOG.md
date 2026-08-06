@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.422.0 — Gate `material-a-mano`: la cuarta y última de §8.2
+
+Marca una capa de §1-§5 escrita con su valor literal en vez de salir de su token:
+`backdrop-blur-[24px]` en vez de `--backdrop-card`, un `backdrop-filter` inline, o un
+realce interior a mano (`inset … rgba(255,255,255,…)`) en vez de `--lente-*`.
+
+**El token no es cosmética: es lo que sabe que en Solid la capa NO EXISTE.** Un literal
+la enciende en los cuatro temas. Y el realce a mano es literalmente el fallo de §19.1
+escrito en JSX — un blanco calibrado en claro que ningún tema apaga.
+
+**No mira `filter: blur()` a secas.** Un blob decorativo desenfocado no es una
+superficie, y confundirlos infla el número con cosas que están bien: el primer patrón
+daba 39 hallazgos y 5 eran eso.
+
+**Arranca con ratchet en 18, no en 0, y el motivo está medido.** Los 18 son
+`backdrop-blur-[Npx]` con valores que no mapean a ningún token —2, 3, 15, 18, 20, 30,
+44 y 60 px—; sólo tres coinciden con algo. Los demás necesitan decidir **qué superficie
+es cada sitio**, que es el trabajo de la fase D.
+
+**Y 13 de los 18 son el mismo sitio que `vidrio-a-mano` ya marca**: convertir uno baja
+los dos ratchets a la vez. Dos gates mirando la misma deuda desde dos ángulos —«¿esto es
+una superficie?» y «¿este valor sale de un token?»— no es duplicación: es que la deuda
+tiene las dos caras.
+
+Con esto **§8.2 queda cerrada**: las cuatro categorías de movimiento y material están
+activas.
+
 ## v2.421.0 — Si el barrido falla, te enterás a las 8 de la mañana
 
 El barrido nocturno de DTE dejaba su registro en `audit_logs`, pero nadie lo

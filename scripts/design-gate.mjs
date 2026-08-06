@@ -163,7 +163,7 @@ const EXCEPTIONS = {
   // de 16px un trazo de 2.5 se pierde, y ese glifo ES el estado del control —
   // si no se ve, el checkbox no comunica nada. No es un ícono de interfaz más.
   'src/components/common/Checkbox.jsx': ['icono-stroke'],
-  'src/components/timeclock/IdleScanPanel.jsx': ['color', 'white', 'vidrio-a-mano'], // kiosco
+  'src/components/timeclock/IdleScanPanel.jsx': ['material-a-mano', 'color', 'white', 'vidrio-a-mano'], // kiosco
   'src/views/AttendanceMonitorView.jsx': ['color'], // wallboard isDarkConcept
   // Shimmer decorativo de IA idéntico (DESIGN.md §6)
   'src/views/branch-tabs/TabHistory.jsx': ['color'],
@@ -190,8 +190,8 @@ const EXCEPTIONS = {
   'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
   'src/views/TimeClockView.jsx': ['color', 'white', 'hex', 'inline-color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
-  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'white', 'hex', 'inline-color', 'vidrio-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
-  'src/components/timeclock/KioskConfigModal.jsx': ['color', 'white', 'hex', 'vidrio-a-mano'],
+  'src/views/LoginView.jsx': ['material-a-mano', 'color', 'z-index', 'input-a-mano', 'white', 'hex', 'inline-color', 'vidrio-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
+  'src/components/timeclock/KioskConfigModal.jsx': ['material-a-mano', 'color', 'white', 'hex', 'vidrio-a-mano'],
   'src/components/common/ThemeToggle.jsx': ['color', 'white'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
   // 'relleno-sin-solid': `selection:bg-success/30 selection:text-white` es el
@@ -238,7 +238,7 @@ const EXCEPTIONS = {
   // (§25.4). Ahí `bg-chart-6/10` no es un relleno claro sino un tinte sobre
   // negro, y el texto blanco encima mide de sobra — la regla del `-solid`
   // existe para rellenos sobre fondo claro.
-  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography', 'relleno-sin-solid', 'white', 'hex', 'vidrio-a-mano'],
+  'src/components/timeclock/FeedbackOverlay.jsx': ['material-a-mano', 'color', 'typography', 'relleno-sin-solid', 'white', 'hex', 'vidrio-a-mano'],
   // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
   // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
@@ -296,9 +296,9 @@ const EXCEPTIONS = {
   // anclados al sidebar NO siguen el tema activo — son oscuros en los cuatro.
   // Ahí `bg-white/[0.06]` y `border-white/10` no son deuda: son la paleta
   // bespoke de esa superficie, que ya está documentada en DESIGN.md §6.
-  'src/components/timeclock/AuthPromptPanel.jsx': ['color', 'white', 'input-a-mano', 'vidrio-a-mano'],
-  'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['color', 'white', 'vidrio-a-mano'],
-  'src/components/timeclock/EarlyExitForm.jsx': ['color', 'white', 'vidrio-a-mano'],
+  'src/components/timeclock/AuthPromptPanel.jsx': ['material-a-mano', 'color', 'white', 'input-a-mano', 'vidrio-a-mano'],
+  'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['material-a-mano', 'color', 'white', 'vidrio-a-mano'],
+  'src/components/timeclock/EarlyExitForm.jsx': ['material-a-mano', 'color', 'white', 'vidrio-a-mano'],
   'src/components/common/SidebarSettingsMenu.jsx': ['color', 'white'],
   // ListRow lleva la paleta `onDark` para las filas de los flyouts del sidebar,
   // que se quedan oscuras en los 4 temas (si no, cuelga un panel claro de un
@@ -1842,6 +1842,41 @@ function scanFile(path) {
              + 'o entrar a EXCEPTIONS con el motivo escrito (PLAN-MATERIALES §18.1)',
         text: v[0],
       });
+    }
+  }
+
+  // ── Categoría `material-a-mano` (PLAN-MATERIALES §8.2) ────────────────────
+  // Una capa de §1-§5 escrita con su valor literal en vez de salir de su token.
+  //
+  // Dos formas, y las dos se ven mucho:
+  //  · `backdrop-blur-[24px]` — un desenfoque arbitrario en vez de
+  //    `--backdrop-card` / `--backdrop-modal` / `--menu-blur`. Es el token el
+  //    que sabe que en Solid la capa NO EXISTE; un literal la enciende en los
+  //    cuatro temas.
+  //  · un realce interior a mano (`inset … rgba(255,255,255,…)`) en vez de
+  //    `--lente-*` o `--shadow-*`. Éste es exactamente el fallo de §19.1
+  //    escrito en JSX: un blanco calibrado en claro que ningún tema apaga.
+  //
+  // NO se mira `filter: blur()` a secas: un blob decorativo desenfocado no es
+  // una superficie, y confundirlos infla el número con cosas que están bien.
+  if (!hasException(path, 'material-a-mano') && /\.jsx$/.test(path)) {
+    const limpioMat = sinComentarios(text);
+    for (const [re, label] of [
+      [/backdrop-blur-\[\s*[\d.]+px\s*\]/g,
+       'desenfoque arbitrario — sale de `--backdrop-*` / `--menu-blur`, que es lo que sabe que en Solid la capa no existe'],
+      [/backdrop-?[Ff]ilter[^;'"`]{0,30}blur\(\s*[\d.]+px\s*\)/g,
+       '`backdrop-filter` literal en estilo inline — sale de su token'],
+      [/inset[^;'"`)]{0,40}rgba?\(\s*255\s*[,\s]\s*255\s*[,\s]\s*255/g,
+       'realce interior a mano — sale de `--lente-*` / `--shadow-*` (§19.1: un blanco calibrado en claro que ningún tema apaga)'],
+    ]) {
+      let m;
+      while ((m = re.exec(limpioMat))) {
+        findings.push({
+          line: text.slice(0, m.index).split('\n').length,
+          category: 'material-a-mano', label,
+          text: m[0].trim().slice(0, 60),
+        });
+      }
     }
   }
 

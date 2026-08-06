@@ -275,10 +275,10 @@ const FormWfmAnalytics = ({ branches }) => {
     return (
         <div className="w-full flex flex-col gap-6 animate-in fade-in duration-700">
             {/* CONTROLES SUPERIORES (HEATMAP HEADER PILL STYLE) */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-card backdrop-blur-xl p-3.5 sm:p-4 rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] transform-gpu hover:translate-y-[var(--lift-card)] transition-transform duration-500">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-card backdrop-blur-xl p-3.5 sm:p-4 rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] transform-gpu hover:translate-y-[var(--lift-card)] transition-transform duration-[var(--dur-lento)]">
                 <div className="w-full sm:w-auto flex items-center gap-3">
-                     <div className="relative group/saly w-11 h-11 flex items-center justify-center rounded-full shrink-0 border-0 shadow-[var(--shadow-glow-chart-9-md)] hover:shadow-[var(--shadow-glow-chart-9-lg)] transition-shadow duration-500">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-30 group-hover/saly:opacity-100 transition-opacity duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
+                     <div className="relative group/saly w-11 h-11 flex items-center justify-center rounded-full shrink-0 border-0 shadow-[var(--shadow-glow-chart-9-md)] hover:shadow-[var(--shadow-glow-chart-9-lg)] transition-shadow duration-[var(--dur-lento)]">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-30 group-hover/saly:opacity-100 transition-opacity duration-[var(--dur-lento)] group-hover/saly:animate-spin [animation-duration:4s]"></div>
                         <div className="absolute inset-[1px] bg-surface-card rounded-full border border-border-card"></div>
                         <TrendingUp size={20} strokeWidth={2.5} className="text-chart-9-text group-hover/saly:text-chart-3-text relative z-base transition-colors duration-300" />
                     </div>
@@ -311,7 +311,7 @@ const FormWfmAnalytics = ({ branches }) => {
                 {/* CABECERA DE GRÁFICA Y CONTROLES (TABS PILL STYLE) */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 pb-4">
                     <div className="flex items-center gap-3">
-                        <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-500 shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]">
+                        <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-[var(--dur-lento)] shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]">
                             <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
                             <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-base transition-colors duration-300" />
                         </div>
@@ -390,7 +390,7 @@ const FormWfmAnalytics = ({ branches }) => {
             </div>
 
             {/* LEYENDA DEL HEATMAP (GLASS PILL STYLE) */}
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-surface-card backdrop-blur-xl rounded-full py-3.5 px-6 border border-border-card shadow-[var(--shadow-glass-sm)] mt-2 transition-shadow duration-500 hover:shadow-[var(--shadow-glass-lg)]">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-surface-card backdrop-blur-xl rounded-full py-3.5 px-6 border border-border-card shadow-[var(--shadow-glass-sm)] mt-2 transition-shadow duration-[var(--dur-lento)] hover:shadow-[var(--shadow-glass-lg)]">
                 <div className="flex items-center gap-2.5 text-caption sm:text-label font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#64748b] shadow-sm"></div> Valle / Muerta</div>
                 <div className="flex items-center gap-2.5 text-caption sm:text-label font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-brand shadow-sm"></div> Tráfico Normal</div>
                 <div className="flex items-center gap-2.5 text-caption sm:text-label font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#F79009] shadow-sm"></div> Hora Pico (Aviso)</div>

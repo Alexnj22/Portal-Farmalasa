@@ -628,7 +628,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {/* Barra de progreso solo cuando activa */}
                                         {!isCompletada && (
                                             <div className="w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden shrink-0">
-                                                <div className="h-full bg-chart-3 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                                                <div className="h-full bg-chart-3 rounded-full transition-all duration-[var(--dur-lento)]" style={{ width: `${pct}%` }} />
                                             </div>
                                         )}
                                     </div>

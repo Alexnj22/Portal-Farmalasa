@@ -228,7 +228,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     // el ancho final va en `style` y `transition-[width]`
                                     // se encarga del recorrido.
                                     <div
-                                        className={`absolute top-0 left-0 h-0.5 rounded-full transition-[width] duration-500 ease-out ${tlLine(idx)}`}
+                                        className={`absolute top-0 left-0 h-0.5 rounded-full transition-[width] duration-[var(--dur-lento)] ease-out ${tlLine(idx)}`}
                                         style={{ width: isDone ? '100%' : '50%', transitionDelay: `${idx * 80}ms` }}
                                     />
                                 )}

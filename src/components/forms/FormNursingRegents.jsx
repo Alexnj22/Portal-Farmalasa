@@ -43,10 +43,10 @@ const FormNursingRegents = ({ formData, setFormData }) => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] pb-2 pt-2">
 
             {/* 📝 PERMISO DEL ESTABLECIMIENTO (TARJETA PADRE 1) */}
-            <div data-surface="card" className="p-6 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
+            <div data-surface="card" className="p-6 hover:bg-surface-card transition-all duration-[var(--dur-lento)] transform-gpu space-y-5">
                 <div className="flex items-center gap-2 mb-2">
                     <Award size={16} className="text-brand-text" strokeWidth={2.5}/>
                     <h4 className="text-label font-black uppercase tracking-widest text-content">
@@ -111,7 +111,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                 <div className="space-y-6">
                     {nursingRegents.map((nurse, index) => (
                         /* TARJETA PADRE 2 (DINÁMICA) */
-                        <div key={nurse.id || index} data-surface="card" className="p-5 md:p-6 relative group hover:bg-surface-card transition-all duration-500 transform-gpu">
+                        <div key={nurse.id || index} data-surface="card" className="p-5 md:p-6 relative group hover:bg-surface-card transition-all duration-[var(--dur-lento)] transform-gpu">
                             
                             <Button variant="destructive" size="sm" icon={Trash2} iconOnly onClick={() => removeNurse(index)} />
                             
@@ -153,7 +153,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                 </div>
 
                                 {/* ZONA DE ANUALIDAD */}
-                                <div className="bg-gradient-to-br from-warning/10 to-warning/20 p-4 rounded-2xl border border-warning/30 shadow-inner mt-2 transition-all duration-500 hover:shadow-sm">
+                                <div className="bg-gradient-to-br from-warning/10 to-warning/20 p-4 rounded-2xl border border-warning/30 shadow-inner mt-2 transition-all duration-[var(--dur-lento)] hover:shadow-sm">
                                     <div className="flex items-center gap-2 mb-3">
                                         <Receipt size={14} className="text-warning" strokeWidth={2.5}/>
                                         <h5 className="text-caption font-black uppercase tracking-widest text-warning-text">Control de Anualidad</h5>
@@ -193,7 +193,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     ))}
                     
                     {nursingRegents.length === 0 && (
-                        <div {...clickable(addNurse)} className="cursor-pointer border-2 border-dashed border-divider rounded-modal transition-all duration-500 hover:translate-y-[var(--lift-card)] hover:shadow-md mt-4">
+                        <div {...clickable(addNurse)} className="cursor-pointer border-2 border-dashed border-divider rounded-modal transition-all duration-[var(--dur-lento)] hover:translate-y-[var(--lift-card)] hover:shadow-md mt-4">
                             <EmptyState compact icon={Plus} title="Sin profesionales asignados"
                                 subtitle="Haz clic aquí o en Añadir Profesional para comenzar." />
                         </div>

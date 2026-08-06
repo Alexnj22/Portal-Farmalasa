@@ -53,7 +53,7 @@ const NoAccessView = () => {
                 </div>
 
                 {/* Text */}
-                <div className="animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '150ms' }}>
+                <div className="animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both" style={{ animationDelay: '150ms' }}>
                     <h1 className="text-display-lg font-black text-content tracking-tight leading-none mb-3">
                         Sin acceso
                     </h1>
@@ -63,7 +63,7 @@ const NoAccessView = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col items-center gap-3 w-full animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '300ms' }}>
+                <div className="flex flex-col items-center gap-3 w-full animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both" style={{ animationDelay: '300ms' }}>
                     {/* WhatsApp support */}
                     <Button
                         size="lg"

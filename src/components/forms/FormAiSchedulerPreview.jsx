@@ -220,7 +220,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
     // 🚨 VISTA ALTERNATIVA: HORARIO IMPOSIBLE DE CUBRIR
     if (hasCriticalDeficit) {
         return (
-            <div className="w-full flex flex-col gap-5 p-2 animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-full flex flex-col gap-5 p-2 animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
                 <div className="bg-danger/10 border border-danger/30 rounded-2xl p-6 flex flex-col items-center text-center shadow-sm">
                     <div className="w-16 h-16 bg-danger/10 text-danger rounded-full flex items-center justify-center mb-4 shadow-inner">
                         <AlertTriangle size={32} strokeWidth={2.5} />
@@ -260,7 +260,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
     // RENDER: TABLA DE HORARIO VIABLE
     // =========================================================================
     return (
-        <div className="w-full flex flex-col gap-4 animate-in fade-in duration-500">
+        <div className="w-full flex flex-col gap-4 animate-in fade-in duration-[var(--dur-lento)]">
             {/* RAZONAMIENTO */}
             <div className="bg-chart-3/10 border border-chart-3/20 rounded-xl p-4 relative overflow-hidden shadow-sm">
                 <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-chart-3/30 opacity-50 -rotate-12 pointer-events-none" strokeWidth={1} />

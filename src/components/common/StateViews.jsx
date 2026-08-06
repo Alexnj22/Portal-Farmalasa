@@ -155,7 +155,7 @@ export const AiThinkingState = memo(({
     const icon = size === 'sm' ? 18 : 28;
     return (
         <div className={`flex flex-col items-center justify-center text-center
-            animate-in fade-in duration-500 ${size === 'sm' ? 'py-10' : 'py-20'} px-6 ${className}`}>
+            animate-in fade-in duration-[var(--dur-lento)] ${size === 'sm' ? 'py-10' : 'py-20'} px-6 ${className}`}>
             <div className={`relative ${box} flex items-center justify-center mb-6`}>
                 <div className="absolute inset-0 border-2 border-chart-3/30 rounded-full animate-ping [animation-duration:2s]" />
                 <div className="absolute inset-1 border-t-2 border-b-2 border-logo-green rounded-full animate-spin [animation-duration:1.5s]" />

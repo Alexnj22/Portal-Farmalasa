@@ -225,7 +225,7 @@ const TimeClockView = ({ setView }) => {
               border border-white/[0.10]
               rounded-header px-5 py-7 [@media(max-height:800px)]:py-3
               shadow-[var(--shadow-glass-5)]
-              transition-all duration-500 hover:border-white/[0.16] hover:translate-y-[var(--lift-card)]
+              transition-all duration-[var(--dur-lento)] hover:border-white/[0.16] hover:translate-y-[var(--lift-card)]
               hover:shadow-[var(--shadow-glass-5)]"
             style={{ animationDelay: '60ms' }}
           >

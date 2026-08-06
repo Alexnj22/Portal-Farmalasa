@@ -327,7 +327,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 disabled={printHistory.length === 0 && !aiMode}
                                 aria-pressed={aiMode}
                                 aria-label={aiMode ? 'Cerrar el resumen de IA' : 'Resumen inteligente del historial'}
-                                className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:translate-y-[var(--lift-hover)] active:scale-[0.97]'}`}
+                                className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-[var(--dur-lento)] border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:translate-y-[var(--lift-hover)] active:scale-[0.97]'}`}
                             >
                                 {aiMode ? (
                                     <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
@@ -335,7 +335,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
                                         <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
                                         <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
                                         <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
@@ -434,7 +434,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 </div>
                             ) : (
                                 /* RESULTADO DE LA IA */
-                                <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 relative z-base animate-in slide-in-from-bottom-4 duration-500">
+                                <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 relative z-base animate-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                                     {aiSummaryData?.split('\n').map((paragraph, index) => (
                                         <div key={index} className="relative mb-6 last:mb-0 group/p">
                                             <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
@@ -503,8 +503,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                             <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
                                         </div>
 
-                                        <div className={`grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isYearOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                                            <div className={`overflow-hidden transition-all duration-500 ${isYearOpen ? 'px-2 -mx-2 pb-2 -mb-2' : 'px-0 mx-0 pb-0 mb-0'}`}>
+                                        <div className={`grid transition-all duration-[var(--dur-lento)] ease-[cubic-bezier(0.4,0,0.2,1)] ${isYearOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                            <div className={`overflow-hidden transition-all duration-[var(--dur-lento)] ${isYearOpen ? 'px-2 -mx-2 pb-2 -mb-2' : 'px-0 mx-0 pb-0 mb-0'}`}>
 
                                                 {yearGroup.months.map((monthGroup) => {
                                                     const isMonthCollapsed = collapsedMonths[monthGroup.id] || false;
@@ -522,8 +522,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                 <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
                                                             </div>
 
-                                                            <div className={`grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isMonthOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                                                                <div className={`overflow-hidden transition-all duration-500 ${isMonthOpen ? 'px-6 -mx-6 pb-8 -mb-8 pt-2 -mt-2' : 'px-0 mx-0 pb-0 mb-0 pt-0 mt-0'}`}>
+                                                            <div className={`grid transition-all duration-[var(--dur-lento)] ease-[cubic-bezier(0.4,0,0.2,1)] ${isMonthOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                                                <div className={`overflow-hidden transition-all duration-[var(--dur-lento)] ${isMonthOpen ? 'px-6 -mx-6 pb-8 -mb-8 pt-2 -mt-2' : 'px-0 mx-0 pb-0 mb-0 pt-0 mt-0'}`}>
                                                                     <div className="space-y-4 py-1">
                                                                         {monthGroup.events.map((item) => {
                                                                             globalEventIndex++;
@@ -572,7 +572,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                             }
 
                                                                             return (
-                                                                                <div key={item.id} className={`relative flex flex-col md:flex-row justify-between items-start md:items-center w-full group animate-in slide-in-from-bottom-4 fade-in duration-500 ${!isLeftDesktop ? 'md:flex-row-reverse' : ''}`}>
+                                                                                <div key={item.id} className={`relative flex flex-col md:flex-row justify-between items-start md:items-center w-full group animate-in slide-in-from-bottom-4 fade-in duration-[var(--dur-lento)] ${!isLeftDesktop ? 'md:flex-row-reverse' : ''}`}>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 mb-3 md:mb-0 z-content ${isLeftDesktop ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'}`}>
                                                                                         <div className="inline-flex items-center gap-2">
@@ -581,13 +581,13 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                         </div>
                                                                                     </div>
 
-                                                                                    <div className="absolute left-[20px] md:left-1/2 top-1 md:top-auto w-10 h-10 flex items-center justify-center -translate-x-[20px] md:-translate-x-1/2 z-tabs group-hover:scale-125 transition-transform duration-500 ease-[var(--ease-spring)]">
+                                                                                    <div className="absolute left-[20px] md:left-1/2 top-1 md:top-auto w-10 h-10 flex items-center justify-center -translate-x-[20px] md:-translate-x-1/2 z-tabs group-hover:scale-125 transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
                                                                                         <div className={`absolute inset-0 rounded-full opacity-30 animate-pulse ${theme.dot}`}></div>
                                                                                         <div className={`w-4 h-4 rounded-full border-[3px] border-surface-card shadow-sm relative ${theme.dot} ${theme.shadow}`}></div>
                                                                                     </div>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-content ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
-                                                                                        <div data-surface="card" className={`relative overflow-hidden p-5 transition-all duration-500 hover:bg-surface-card-hover text-left`}>
+                                                                                        <div data-surface="card" className={`relative overflow-hidden p-5 transition-all duration-[var(--dur-lento)] hover:bg-surface-card-hover text-left`}>
 
                                                                                             <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
 
@@ -648,7 +648,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     )}
 
                     {!showAllHistory && syntheticHistory.length > filteredHistory.length && !dateFilter.start && !dateFilter.end && searchQuery === '' && typeFilter === 'ALL' && (
-                        <div className="pt-8 text-center animate-in fade-in duration-500 relative z-base">
+                        <div className="pt-8 text-center animate-in fade-in duration-[var(--dur-lento)] relative z-base">
                             <Button variant="secondary" onClick={() => setShowAllHistory(true)}>Cargar historial completo</Button>
                         </div>
                     )}

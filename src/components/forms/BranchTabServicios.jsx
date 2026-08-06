@@ -15,7 +15,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
 
     // 🚨 ESTILOS LIQUID GLASS CONSISTENTES
     const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)]";
-    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
+    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const servicesList = [

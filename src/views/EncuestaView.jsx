@@ -139,7 +139,7 @@ function DistBar({ dist, invertida = false }) {
         <div className="flex items-center gap-1.5 w-full">
             <div className="flex-1 flex h-2.5 rounded-full overflow-hidden gap-px bg-surface-card-hover">
                 {bars.map(({ key, n, cls }) => n > 0 && (
-                    <div key={key} className={`${cls} transition-all duration-500`}
+                    <div key={key} className={`${cls} transition-all duration-[var(--dur-lento)]`}
                         style={{ width: `${(n / total) * 100}%` }}
                         role="img" title={`${key}: ${n} (${pct(n)}%)`} />
                 ))}

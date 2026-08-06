@@ -505,8 +505,8 @@ const RolesView = ({ openModal }) => {
                     <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
-                        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
-                            <div data-surface={editingRoleId ? 'card' : undefined} className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId ? 'border-warning/40' : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'}`}>
+                        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-[var(--dur-lento)] ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
+                            <div data-surface={editingRoleId ? 'card' : undefined} className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-[var(--dur-lento)] group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId ? 'border-warning/40' : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'}`}>
 
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
@@ -649,7 +649,7 @@ const RolesView = ({ openModal }) => {
                                         <div
                                             key={role.id}
                                             data-surface="card" data-tono={isEditingThis ? 'warning' : undefined}
-                                className={`p-5 flex flex-col group relative transition-all duration-500 transform-gpu ${
+                                className={`p-5 flex flex-col group relative transition-all duration-[var(--dur-lento)] transform-gpu ${
                                     isEditingThis ? 'animate-subtle-shake z-base' : ''
                                 }`}
                                         >
@@ -758,7 +758,7 @@ const RolesView = ({ openModal }) => {
                     <div className="animate-in fade-in zoom-in-95 duration-700 ease-[var(--ease-spring)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
-                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-4)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
+                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-lento)] overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}

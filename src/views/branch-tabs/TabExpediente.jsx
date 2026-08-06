@@ -62,7 +62,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             {/* HEADER DE LA TARJETA */}
             <div className="flex justify-between items-start mb-4 relative z-content">
                 <div className="flex items-center gap-2">
-                    <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-content-3' : 'text-brand-text'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
+                    <div className={`transition-transform duration-[var(--dur-lento)] ease-out ${isMissing ? 'text-content-3' : 'text-brand-text'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
                         <FileText size={20} strokeWidth={1.5} />
                     </div>
 
@@ -80,7 +80,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                             />
 
                             {/* 🔮 EL TOOLTIP HOLOGRÁFICO */}
-                            <div className="absolute left-0 top-full mt-3 opacity-0 pointer-events-none group-hover/ai:opacity-100 focus-within:opacity-100 group-hover/ai:pointer-events-auto transition-all duration-500 ease-[var(--ease-spring)] w-[280px] translate-y-3 group-hover/ai:translate-y-0 z-modal">
+                            <div className="absolute left-0 top-full mt-3 opacity-0 pointer-events-none group-hover/ai:opacity-100 focus-within:opacity-100 group-hover/ai:pointer-events-auto transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] w-[280px] translate-y-3 group-hover/ai:translate-y-0 z-modal">
 
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>
@@ -298,7 +298,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
     const isSearchEmpty = permisosDocs.length === 0 && personalDocs.length === 0 && infraDocs.length === 0 && filteredCustomDocs.length === 0;
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 relative pb-6">
+        <div className="space-y-8 animate-in fade-in duration-[var(--dur-lento)] relative pb-6">
 
             <ConfirmModal
                 isOpen={deleteModalOpen}
@@ -406,7 +406,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
             {/* SECCIÓN 1: LICENCIAS Y PERMISOS */}
             {(permisosDocs.length > 0 || customDocsByCategory['Permisos y Licencias']?.length > 0) && (
-                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] delay-100">
                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <ShieldCheck size={12} className="text-success" strokeWidth={3} /> Licencias y Permisos
                     </h4>
@@ -419,7 +419,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
             {/* SECCIÓN 2: CREDENCIALES DE PERSONAL */}
             {(personalDocs.length > 0 || customDocsByCategory['Recursos Humanos']?.length > 0) && (
-                <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
+                <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] delay-150">
                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <Users size={12} className="text-chart-3-text" strokeWidth={3} /> Credenciales de Personal
                     </h4>
@@ -432,7 +432,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
             {/* SECCIÓN 3: INFRAESTRUCTURA Y OPERATIVOS */}
             {(infraDocs.length > 0 || customDocsByCategory['Operativo y Logística']?.length > 0) && (
-                <div className="space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+                <div className="space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] delay-200">
                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <Building2 size={12} className="text-warning" strokeWidth={3} /> Infraestructura y Locales
                     </h4>
@@ -449,7 +449,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                 if (!docs || docs.length === 0) return null;
 
                 return (
-                    <div key={category} className={`space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500`} style={{ animationDelay: `${(index + 3) * 50}ms` }}>
+                    <div key={category} className={`space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]`} style={{ animationDelay: `${(index + 3) * 50}ms` }}>
                         <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                             <Tags size={12} className="text-brand-text" strokeWidth={3} /> {category}
                         </h4>

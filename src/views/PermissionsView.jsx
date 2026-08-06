@@ -122,7 +122,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
     };
 
     return (
-        <div className={`rounded-3xl border transition-all duration-500 ease-out transform-gpu ${
+        <div className={`rounded-3xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu ${
             isComing
                 ? 'bg-surface-card backdrop-blur-xl border-border-card opacity-40 select-none'
                 : hasAnyPerm
@@ -141,7 +141,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
             <div className="p-4">
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-3.5">
-                    <div data-surface={hasAnyPerm ? undefined : 'card'} className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${hasAnyPerm ? 'bg-gradient-to-br from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] scale-100' : 'text-content-3 scale-90'}`}>
+                    <div data-surface={hasAnyPerm ? undefined : 'card'} className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-[var(--dur-lento)] ${hasAnyPerm ? 'bg-gradient-to-br from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] scale-100' : 'text-content-3 scale-90'}`}>
                         <ModIcon size={15} strokeWidth={2} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -833,12 +833,12 @@ const PermissionsView = () => {
                             {(() => {
                                 const isRoleSU = !!roleIsSU[selectedRoleId];
                                 return (
-                                <div data-surface={isRoleSU ? undefined : 'card'} className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${isRoleSU ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]' : ''}`}>
+                                <div data-surface={isRoleSU ? undefined : 'card'} className={`relative overflow-hidden rounded-2xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu md:col-span-1 ${isRoleSU ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]' : ''}`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-warning/30 blur-xl pointer-events-none" />}
                                     <div className="relative p-3.5 flex flex-col gap-3">
                                         {/* Icon + toggle row */}
                                         <div className="flex items-center justify-between">
-                                            <div data-surface={isRoleSU ? undefined : 'card'} className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isRoleSU ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)] scale-100' : 'scale-90'}`}>
+                                            <div data-surface={isRoleSU ? undefined : 'card'} className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-[var(--dur-lento)] ${isRoleSU ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)] scale-100' : 'scale-90'}`}>
                                                 <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={2} />
                                                 {isRoleSU && (
                                                     <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow flex items-center justify-center">
@@ -1009,7 +1009,7 @@ const PermissionsView = () => {
                                             return (
                                                 <div
                                                     key={m.key}
-                                                    className="animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both"
+                                                    className="animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both"
                                                     style={{ animationDelay: `${(gi * 3 + i) * 40}ms` }}
                                                 >
                                                     <ModuleCard

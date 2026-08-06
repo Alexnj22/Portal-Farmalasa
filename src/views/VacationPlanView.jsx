@@ -717,7 +717,7 @@ const VacationPlanView = () => {
                     className="p-6 transition-all duration-700 ease-[var(--ease-spring)] relative">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-warning' : 'bg-brand'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-[var(--dur-lento)] ${editingPlan ? 'bg-warning' : 'bg-brand'}`}>
                                         {editingPlan
                                             ? <Pencil size={16} className="text-white" strokeWidth={2.5} />
                                             : <Plus size={16} className="text-white" strokeWidth={2.5} />
@@ -778,7 +778,7 @@ const VacationPlanView = () => {
 
                                 {/* Días calculados */}
                                 {computedDays > 0 && (
-                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-warning/10 border-warning/20' : 'bg-brand/8 border-brand/15'}`}>
+                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-[var(--dur-lento)] ${editingPlan ? 'bg-warning/10 border-warning/20' : 'bg-brand/8 border-brand/15'}`}>
                                         <Calendar size={13} className={editingPlan ? 'text-warning' : 'text-brand-text'} strokeWidth={2.5} />
                                         <span className={`text-body-sm font-black ${editingPlan ? 'text-warning-text' : 'text-brand-text'}`}>{computedDays} días calendario</span>
                                     </div>
@@ -869,7 +869,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Gantt */}
-                        <div data-surface="card" className="p-6 transition-all duration-500">
+                        <div data-surface="card" className="p-6 transition-all duration-[var(--dur-lento)]">
                             <div className="flex items-center justify-between mb-5">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
@@ -880,7 +880,7 @@ const VacationPlanView = () => {
                         </div>
 
                         {/* Tabla */}
-                        <div data-surface="card" className="p-6 transition-all duration-500">
+                        <div data-surface="card" className="p-6 transition-all duration-[var(--dur-lento)]">
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>

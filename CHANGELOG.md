@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.397.0 — El reloj crece un escalón
+
+**Fase C, primera mitad.** La escala tenía tres escalones (150/200/300 ms) y el
+portal usaba **seis**: de 617 duraciones, 224 no tenían token.
+
+**Y la premisa con la que se ofreció la decisión era mía y estaba mal.** Dije que
+los 224 se repartían entre interacción (`duration-500`) y animación ambiental
+(700/1000). Contados:
+
+| | 500 | 700 | 1000 |
+|---|---|---|---|
+| bucles (shimmer, pulse, spin) | 0 | **0** | **0** |
+| transiciones de UI | 88 | 43 | 6 |
+| entradas (`animate-in`) | 62 | 23 | 0 |
+| halos/blobs decorativos | 0 | 3 | 6 |
+
+**De los 224, sólo 9 son decoración.** El portal no usa seis escalones porque tenga
+animación ambiental: los usa porque nadie estaba eligiendo de una escala.
+
+**Nuevo token `--dur-lento`**: 500 ms en Liquid, 300 ms en Solid — mismo factor 0.6
+que los otros tres. **Migrados los 150 `duration-500`** a
+`duration-[var(--dur-lento)]` en 52 archivos, cero restos.
+
+**Queda pendiente el retemplado de los 69 `duration-700`**, que no son ambientales:
+o bajan al escalón nuevo o se abre un quinto. Va sin hacer porque cambia el ritmo
+perceptible en 69 sitios y eso se aprueba viéndolo. Por eso el gate `reloj-a-mano`
+tampoco se crea todavía.
+
+**Y un hallazgo al verificar en ejecución sobre el bundle:** en Solid la entrada da
+**0.13 s**, no 0.3. No es un fallo de la migración —`[data-theme="solid"]
+.animate-in` fija `animation-duration: 130ms` por decisión D2.4 y **gana por
+especificidad a cualquier `duration-*`**—, así que en Solid el escalón sólo gobierna
+las transiciones. Dos consecuencias para toda la fase C: verificar un token del reloj
+exige mirar **los cuatro temas por separado**, porque una regla de tema con más
+especificidad lo pisa sin que el fuente lo delate; y ese `130ms` es **un literal
+fuera de la escala** (ni 90 ni 120), la misma familia que la sombra a mano de §16
+pero al revés — específico de un tema y sin token.
+
 ## v2.396.0 — El gate de vidrio a mano: 196, no 28
 
 **Nueva categoría `vidrio-a-mano` en el gate de diseño.** Marca todo

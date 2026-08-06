@@ -303,7 +303,7 @@ const EmployeeDocumentsView = () => {
 
                 {/* Stats rápidos */}
                 {!loading && allDocs.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-lento)]">
                         {[
                             { label: 'Total',         value: allDocs.length,                                               color: 'text-content-2',    bg: 'bg-surface-card'       },
                             { label: 'Incapacidades', value: allDocs.filter(d => d.type === 'DISABILITY').length,           color: 'text-danger',      bg: 'bg-danger/10'      },

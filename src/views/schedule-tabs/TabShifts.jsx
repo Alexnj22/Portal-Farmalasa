@@ -126,7 +126,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                 </div>
             )}
 
-            <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[var(--ease-spring)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100 focus-within:opacity-100'}`}>
+            <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100 focus-within:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
                         <Button variant="secondary" icon={Copy} title="Duplicar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} />
@@ -432,7 +432,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                             </p>
                         </div>
 
-                        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-[var(--dur-lento)]">
                             <div className="pt-2 grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
@@ -445,7 +445,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                             </div>
                         </div>
 
-                        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-[var(--dur-lento)]">
                             <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
                             <div className="flex gap-2 mb-2">
                                 <SegmentedControl
@@ -464,7 +464,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         </div>
 
                         {currentForm.start && currentForm.end && (
-                            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="animate-in fade-in slide-in-from-top-4 duration-[var(--dur-lento)]">
                                 <div data-surface="card" className="rounded-2xl p-4 border border-chart-9/30 shadow-[var(--shadow-glass-3)] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-chart-9 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-base">

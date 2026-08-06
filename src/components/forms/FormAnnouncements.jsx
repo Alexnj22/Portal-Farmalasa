@@ -110,20 +110,20 @@ const FormAnnouncements = ({ data }) => {
               Confirmados ({confirmedList.length})
             </div>
             <div className={`p-1 rounded-md transition-all duration-300 ${isConfirmedOpen ? 'bg-success/10 text-success' : 'bg-transparent text-success group-hover:bg-success/10'}`}>
-              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[var(--ease-spring)] ${isConfirmedOpen ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isConfirmedOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>
 
           {/* CONTENIDO */}
           {isConfirmedOpen && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-[var(--dur-lento)]">
               {confirmedList.length > 0 ? (
                 <div>
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                     {paginatedConfirmed.map((emp) => (
                         <div
                           key={emp.id}
-                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[var(--ease-spring)] group"
+                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
@@ -164,20 +164,20 @@ const FormAnnouncements = ({ data }) => {
               Pendientes ({pendingList.length})
             </div>
             <div className={`p-1 rounded-md transition-all duration-300 ${isPendingOpen ? 'bg-warning/10 text-warning' : 'bg-transparent text-warning group-hover:bg-warning/10'}`}>
-              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-500 ease-[var(--ease-spring)] ${isPendingOpen ? 'rotate-180' : 'rotate-0'}`} />
+              <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isPendingOpen ? 'rotate-180' : 'rotate-0'}`} />
             </div>
           </button>
 
           {/* CONTENIDO */}
           {isPendingOpen && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-[var(--dur-lento)]">
               {pendingList.length > 0 ? (
                 <div>
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                     {paginatedPending.map((emp) => (
                         <div
                           key={emp.id}
-                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[var(--ease-spring)] hover:bg-surface-card group"
+                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:bg-surface-card group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">

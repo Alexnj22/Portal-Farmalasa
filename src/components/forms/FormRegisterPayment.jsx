@@ -110,7 +110,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
     // Manejador para el archivo
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] pb-2">
 
             {/* 🎨 HEADER LIQUID GLASS */}
             <div className="relative overflow-hidden rounded-modal p-5 border border-success/30 bg-gradient-to-br from-success/10 to-success/20 backdrop-blur-xl shadow-[var(--shadow-glow-success)]">

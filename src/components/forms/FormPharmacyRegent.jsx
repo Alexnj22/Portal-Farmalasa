@@ -40,7 +40,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     // ==========================================
     if (possibleRegents.length === 0) {
         return (
-            <div className="bg-danger/10 backdrop-blur-xl border border-danger/30 p-8 rounded-modal flex flex-col items-center text-center shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
+            <div className="bg-danger/10 backdrop-blur-xl border border-danger/30 p-8 rounded-modal flex flex-col items-center text-center shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] m-2">
                 <div className="w-16 h-16 bg-surface-card rounded-3xl shadow-sm border border-danger/30 flex items-center justify-center text-danger mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-danger/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-base" />
@@ -58,10 +58,10 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     // FORMULARIO PRINCIPAL
     // ==========================================
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] pb-2 pt-2">
             
             {/* TARJETA CONTENEDOR PADRE (Efecto Hover Liquid Glass aplicado) */}
-            <div data-surface="card" className="p-6 md:p-8 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-6">
+            <div data-surface="card" className="p-6 md:p-8 hover:bg-surface-card transition-all duration-[var(--dur-lento)] transform-gpu space-y-6">
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">

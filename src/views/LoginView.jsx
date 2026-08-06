@@ -602,7 +602,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {/* Logo */}
                     <div className="relative flex flex-col items-center gap-3">
                         <div className="relative group/logo">
-                            <div className="absolute -inset-4 rounded-header blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-500 bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
+                            <div className="absolute -inset-4 rounded-header blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-[var(--dur-lento)] bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
                             <div className="relative w-[88px] h-[88px] rounded-card bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-4)]"
                                 style={{ animation:'lgn-logo 4.5s ease-in-out infinite' }}>
                                 <img src="/Logo192.png" alt="FarmaLasa" className="w-[58px] h-[58px] object-contain" />

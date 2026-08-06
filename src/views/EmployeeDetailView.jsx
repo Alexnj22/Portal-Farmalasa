@@ -413,7 +413,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             filtersContent={headerControls}
             transparentBody={true}
         >
-            <div className="w-full relative z-base animate-in fade-in duration-500">
+            <div className="w-full relative z-base animate-in fade-in duration-[var(--dur-lento)]">
                 <div className="max-w-7xl mx-auto w-full pb-12">
 
 
@@ -461,7 +461,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     
                                     <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl backdrop-blur-md mb-5 group relative">
                                         <div className="h-full w-full rounded-full overflow-hidden bg-surface-card-hover relative shadow-inner">
-                                            <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-lento)]" />
                                         </div>
                                         {canEdit && (
                                             <div className="absolute inset-0 rounded-full bg-scrim opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
@@ -535,7 +535,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             {/* TARJETA DE EMERGENCIA */}
                             {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
                                 <div className="w-full bg-danger/10 backdrop-blur-md rounded-modal border border-danger/30 shadow-sm p-6 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10 text-danger group-hover:scale-110 transition-transform duration-500"><HeartPulse size={80} /></div>
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 text-danger group-hover:scale-110 transition-transform duration-[var(--dur-lento)]"><HeartPulse size={80} /></div>
                                     <h3 className="text-caption font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2">
                                         <HeartPulse size={14} strokeWidth={3}/> Contacto de Emergencia
                                     </h3>
@@ -574,7 +574,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 
                                 {/* PESTAÑA 1: HISTORIAL */}
                                 {currentTab === 'history' && (
-                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
                                         <div className="flex justify-between items-center mb-6">
                                             <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
                                                 <Clock size={18} className="text-brand-text"/> Historial Operativo
@@ -707,7 +707,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 
                                 {/* PESTAÑA 2: DOCUMENTOS */}
                                 {currentTab === 'documents' && (
-                                    <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
                                          <div className="flex justify-between items-center mb-6">
                                             <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
                                                 <FileText size={18} className="text-brand-text"/> Expediente Digital
@@ -721,7 +721,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 {currentTab === 'permissions' && (() => {
                                     const todayStr = new Date().toISOString().split('T')[0];
                                     return (
-                                    <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5">
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)] space-y-5">
 
                                         {/* ── Cabecera ── */}
                                         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -945,7 +945,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                 {/* PESTAÑA 4: HORARIOS */}
                                 {currentTab === 'payroll' && (
-                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
                                         
                                         {canEdit && (
                                             <div>
@@ -1030,7 +1030,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                 {/* PESTAÑA 5: SOLICITUDES */}
                                 {currentTab === 'requests' && (
-                                    <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
 
                                         {/* Solo lectura — crear/aprobar vive en Gestión de Solicitudes */}
                                         <div className="flex items-center justify-between">

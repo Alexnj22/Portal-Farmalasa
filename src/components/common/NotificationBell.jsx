@@ -494,7 +494,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         animate={{ opacity: inPendingAll ? 0.35 : 1, y: 0 }}
                                                         exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
                                                         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                                                        className={`relative group transition-colors duration-500
+                                                        className={`relative group transition-colors duration-[var(--dur-lento)]
                                                             ${inPendingAll ? 'pointer-events-none' : ''}
                                                             ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10') : unread ? cx.rowUnread : ''}`}
                                                     >

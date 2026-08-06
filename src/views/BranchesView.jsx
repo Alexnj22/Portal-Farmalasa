@@ -246,7 +246,7 @@ const PanelCompletitud = memo(({ icono: Icono, etiqueta, pct, titulo, disabled, 
         </div>
         {pct < 100 && (
             <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
-                <div className={`h-full transition-all duration-500 ${pct === 0 ? 'bg-danger' : 'bg-warning'}`} style={{ width: `${Math.max(pct, 5)}%` }} />
+                <div className={`h-full transition-all duration-[var(--dur-lento)] ${pct === 0 ? 'bg-danger' : 'bg-warning'}`} style={{ width: `${Math.max(pct, 5)}%` }} />
             </div>
         )}
     </button>
@@ -308,7 +308,7 @@ const BranchCard = memo(({
     };
 
     return (
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-5)]'}`}>
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-[var(--dur-lento)] flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-5)]'}`}>
             
             {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
             <div inert={!(aiMode) ? true : undefined} className={`absolute inset-0 z-sidebar bg-surface-card backdrop-blur-3xl transition-all duration-700 ease-[var(--ease-spring)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
@@ -371,7 +371,7 @@ const BranchCard = memo(({
                                 if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }
                                 else { generateBranchAiSummary(e); }
                             }}
-                            className="relative group/ai-btn w-8 h-8 min-w-[var(--tap-min)] min-h-[var(--tap-min)] flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)]"
+                            className="relative group/ai-btn w-8 h-8 min-w-[var(--tap-min)] min-h-[var(--tap-min)] flex items-center justify-center rounded-full shrink-0 transition-all duration-[var(--dur-lento)] border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)]"
                             title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
                         >
                             {aiMode ? (
@@ -380,7 +380,7 @@ const BranchCard = memo(({
                                 </div>
                             ) : (
                                 <>
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
                                     <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
                                     <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-chart-3 transition-colors z-base"></div>
                                     <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
@@ -783,7 +783,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                             ))}
                         </div>
                     ) : filteredBranches.length === 0 ? (
-                        <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
+                        <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
                             <div data-surface="card" className={`p-6 mb-5 transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>

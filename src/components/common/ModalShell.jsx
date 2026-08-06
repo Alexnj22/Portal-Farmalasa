@@ -363,7 +363,7 @@ export default function ModalShell({
   // sola.
   const backdropAnim = !conVelo
     ? ""
-    : open ? "animate-in fade-in duration-500" : `animate-out fade-out duration-150 ${HOLD_EXIT}`;
+    : open ? "animate-in fade-in duration-[var(--dur-lento)]" : `animate-out fade-out duration-150 ${HOLD_EXIT}`;
   // Una hoja inferior no hace zoom: sube y baja. Es la misma distinción que el
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.

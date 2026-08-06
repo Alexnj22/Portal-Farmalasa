@@ -51,7 +51,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
                         : isScheduled ? 'border-chart-3/30 shadow-[var(--shadow-glow-chart-3-lg)] bg-chart-3/10' : ''
                     }`}
     >
-      <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ease-[var(--ease-spring)] ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
+      <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
         {canEdit && !ann.isCompleted && (
           <>
             {ann.readIds.length === 0 && (

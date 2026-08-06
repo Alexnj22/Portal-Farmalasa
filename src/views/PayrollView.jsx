@@ -280,13 +280,13 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
     ];
 
     return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
             {grouped.map(({ branch, entries: grp }, gi) => {
                 const branchNet = grp.reduce((s, e) => s + round2(e.net_pay), 0);
                 const branchName = branch?.name || 'Otras áreas';
                 return (
                     <div key={branch?.id || '__none__'}
-                        className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card shadow-[var(--shadow-glass-3)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
+                        className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card shadow-[var(--shadow-glass-3)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-lento)]"
                         style={{ animationDelay: `${gi * 80}ms` }}>
 
                         {/* Branch header */}
@@ -574,7 +574,7 @@ const PayrollView = ({ openModal }) => {
                     {/* ── Main content ── */}
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
                         {!activePeriod ? (
-                            <div data-surface="card" className="p-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                            <div data-surface="card" className="p-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-[var(--dur-lento)]">
                                 <div className="w-16 h-16 bg-gradient-to-tr from-brand to-brand-purple rounded-2xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
@@ -584,7 +584,7 @@ const PayrollView = ({ openModal }) => {
                         ) : (
                             <>
                                 {/* Period summary card */}
-                                <div data-surface="card" className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div data-surface="card" className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
                                             <h2 className="text-body-xl font-black text-content tracking-tight">{activePeriod.name}</h2>
@@ -683,7 +683,7 @@ const PayrollView = ({ openModal }) => {
                                         </table>
                                     </div>
                                 ) : filteredEntries.length === 0 ? (
-                                    <div data-surface="card" className="p-12 text-center text-content-3 text-body-sm animate-in fade-in duration-500">
+                                    <div data-surface="card" className="p-12 text-center text-content-3 text-body-sm animate-in fade-in duration-[var(--dur-lento)]">
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (

@@ -276,7 +276,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-success -translate-y-10" />
-                    <div className="relative z-base w-28 h-28 rounded-modal flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-500">
+                    <div className="relative z-base w-28 h-28 rounded-modal flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-[var(--dur-lento)]">
                         <Sparkles size={40} strokeWidth={1.5} />
                     </div>
                     <h3 className="font-black text-display text-content tracking-tight mb-2">¡Todo al día!</h3>
@@ -331,7 +331,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div className="text-center">
                         <p className="text-micro font-black text-content-3 uppercase tracking-[0.3em] mb-0.5">Sin leer</p>
                         <span
-                            className="text-[72px] font-black leading-none tracking-tighter transition-all duration-500"
+                            className="text-[72px] font-black leading-none tracking-tighter transition-all duration-[var(--dur-lento)]"
                             style={{
                                 fontVariantNumeric: 'tabular-nums',
                                 background: isUrgent
@@ -354,7 +354,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                             const done = i < doneCount;
                             const cur  = i === doneCount;
                             return (
-                                <div key={i} className={`rounded-full transition-all duration-500 ease-[var(--ease-spring)] ${
+                                <div key={i} className={`rounded-full transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${
                                     done ? 'w-2.5 h-2.5 bg-success shadow-[var(--shadow-glow-chart-9-sm)]' :
                                     cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-danger shadow-[var(--shadow-glow-danger-md)]' : 'bg-brand shadow-[var(--shadow-glow-brand-md)]') :
                                            'w-2.5 h-2.5 bg-surface-card-hover'
@@ -417,7 +417,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     )}
 
                     <div
-                        className={`rounded-header border flex flex-col transition-all duration-500 group/card hover:translate-y-[var(--lift-card)] ${
+                        className={`rounded-header border flex flex-col transition-all duration-[var(--dur-lento)] group/card hover:translate-y-[var(--lift-card)] ${
                             phase === 'check'
                                 ? 'border-success/50 shadow-[var(--shadow-glow-success-lg)] bg-surface-card'
                                 : isUrgent

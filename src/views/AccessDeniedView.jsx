@@ -44,7 +44,7 @@ const AccessDeniedView = () => {
             </div>
 
             {/* Text */}
-            <div className="relative animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '150ms' }}>
+            <div className="relative animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both" style={{ animationDelay: '150ms' }}>
                 <h1 className="text-display-lg font-black text-content tracking-tight leading-none mb-2">
                     Acceso denegado
                 </h1>
@@ -54,7 +54,7 @@ const AccessDeniedView = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '280ms' }}>
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both" style={{ animationDelay: '280ms' }}>
                 <Button variant="secondary" icon={ArrowLeft} onClick={() => navigate(-1)}>Volver</Button>
 
                 <Button variant="ghost" icon={MessageCircle} onClick={handleWhatsApp}>Contactar soporte</Button>

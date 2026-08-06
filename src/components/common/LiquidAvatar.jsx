@@ -70,7 +70,7 @@ const LiquidAvatar = ({ src, alt, fallbackText, className = "", optimize = true 
                     if (optimize && !useOriginal) { setUseOriginal(true); return; }
                     setHasError(true);
                 }}
-                className={`absolute inset-0 w-full h-full object-cover z-base transition-opacity duration-500 ease-in-out ${isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
+                className={`absolute inset-0 w-full h-full object-cover z-base transition-opacity duration-[var(--dur-lento)] ease-in-out ${isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
             />
         </div>
     );

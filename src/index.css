@@ -160,6 +160,12 @@
   --dur-fast: 150ms;
   --dur-base: 200ms;
   --dur-slow: 300ms;
+  /* Cuarto escalón (PLAN-MATERIALES §7.3, 2026-08-05). La escala tenía tres
+     escalones y el portal usaba SEIS: de 617 duraciones, 224 no tenían token.
+     Y no era animación ambiental —medido: de esas 224 sólo 9 son decorativas,
+     el resto es UI de verdad—, era que nadie estaba eligiendo de una escala.
+     Absorbe los 150 `duration-500`: 88 transiciones y 62 entradas. */
+  --dur-lento: 500ms;
 
   /* ── La gota, por tema ──────────────────────────────────────────────────
      Tokens propios y no `--dur-slow`: los 340ms de la entrada se ajustaron a
@@ -1271,6 +1277,7 @@
   --dur-fast:  90ms;
   --dur-base: 120ms;
   --dur-slow: 180ms;
+  --dur-lento: 300ms;   /* mismo factor 0.6 que los otros tres */
   /* La gota es LA MISMA en los cuatro temas —mismo recorte, mismo recorrido,
      mismo gesto bajo el dedo—: lo que cambia es el reloj. Son los 340/240 de
      liquid por el mismo 0.6 que ya aplican las tres duraciones de arriba, así

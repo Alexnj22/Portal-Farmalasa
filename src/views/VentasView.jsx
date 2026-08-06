@@ -2178,7 +2178,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
-                                                                                                <div className={`h-2 rounded-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                                                                                                <div className={`h-2 rounded-full ${color} transition-all duration-[var(--dur-lento)]`} style={{ width: `${pct}%` }} />
                                                                                             </div>
                                                                                         </div>
                                                                                     );
@@ -2208,7 +2208,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             </div>
                                                                                             <div className="w-full flex flex-col justify-end rounded-t-lg overflow-hidden" style={{ height: 44 }}>
                                                                                                 <div
-                                                                                                    className={`w-full transition-all duration-500 rounded-t-lg ${isLatest ? 'bg-gradient-to-t from-chart-1 to-chart-1/70' : 'bg-gradient-to-t from-chart-1/30 to-chart-1/20'}`}
+                                                                                                    className={`w-full transition-all duration-[var(--dur-lento)] rounded-t-lg ${isLatest ? 'bg-gradient-to-t from-chart-1 to-chart-1/70' : 'bg-gradient-to-t from-chart-1/30 to-chart-1/20'}`}
                                                                                                     style={{ height: `${Math.max(barPct, 5)}%` }}
                                                                                                 />
                                                                                             </div>

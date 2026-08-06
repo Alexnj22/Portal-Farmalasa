@@ -393,7 +393,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                         </div>
                     </div>
                     <div className="h-1.5 bg-surface-card rounded-full overflow-hidden shadow-inner border border-border-card">
-                        <div className={`h-full rounded-full transition-all duration-500 ease-out ${currentStats.isExcess ? 'bg-danger' : 'bg-brand'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
+                        <div className={`h-full rounded-full transition-all duration-[var(--dur-lento)] ease-out ${currentStats.isExcess ? 'bg-danger' : 'bg-brand'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
                     </div>
                 </div>
 

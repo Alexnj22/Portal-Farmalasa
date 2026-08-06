@@ -888,7 +888,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             <div className="flex items-center gap-3 relative z-base">
                                 <Link to="/" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`}>
-                                    <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
+                                    <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition duration-[var(--dur-lento)] bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
                                         transition duration-[var(--dur-slow)] group-hover/logo:scale-105
                                         bg-white/12 border border-logo-magenta/20
@@ -1036,7 +1036,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </p>
                                 </>
                             ) : (
-                                <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-500">
+                                <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-[var(--dur-lento)]">
                                     <SidebarSettingsMenu
                                         variant="compact"
                                         showPin={hasPermission('kiosk_pin', 'can_view')}
@@ -1158,7 +1158,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     root (SIN ancestros con z-index/overflow que creen contexto de
                     apilamiento — el fixed anidado era lo que standalone no pintaba) */}
                 {hasSelfOnly && (
-                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition duration-500 ${blurClasses}`}>
+                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition duration-[var(--dur-lento)] ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-card px-2 py-2 border
                                 bg-white/95 border-white/60 shadow-[var(--shadow-sticky-t)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {

@@ -840,6 +840,69 @@ reloj de interacción. **Decidirlo primero; migrar después.**
 De los 617, **77 están en los canónicos** (`components/common`) — ésos primero:
 casi todo el portal pasa por ellos, igual que en §2 con el trazo de los íconos.
 
+
+### 7.3 El reloj creció un escalón ✅ PARCIAL 2026-08-05
+
+**Primero, una premisa mía que no sobrevivió a la medición.** Al ofrecer las opciones
+escribí que los 224 huérfanos se repartían entre interacción (`duration-500`) y
+**animación ambiental** (700/1000). Contados:
+
+| | 500 | 700 | 1000 |
+|---|---|---|---|
+| bucles (shimmer, pulse, spin) | 0 | **0** | **0** |
+| transiciones de UI | 88 | 43 | 6 |
+| entradas (`animate-in`) | 62 | 23 | 0 |
+| halos/blobs decorativos | 0 | 3 | 6 |
+
+**De los 224, sólo 9 son decoración.** El portal no usa seis escalones porque tenga
+animación ambiental: los usa porque **nadie estaba eligiendo de una escala**. Es el
+mismo hallazgo que §13 en otra dimensión — el diagnóstico cómodo («eso es ambiental,
+no cuenta») se cae en cuanto se cuenta.
+
+**Decidido y hecho: `--dur-lento`, cuarto escalón.**
+
+```css
+:root                        { --dur-lento: 500ms; }
+[data-theme="solid"], [data-theme="solid-dark"] { --dur-lento: 300ms; }
+```
+
+Mismo factor 0.6 que los otros tres (150/200/300 → 90/120/180). **Migrados los 150
+`duration-500` → `duration-[var(--dur-lento)]`** en 52 archivos, cero restos.
+
+**Pendiente de decisión: los 69 de `duration-700`.** No son ambientales, así que la
+opción de dejarlos fuera del reloj no existe. Quedan dos: retemplarlos al escalón
+nuevo —700ms para un `group-hover:scale-110` se siente lento, y el sentido de tener
+escala es poder decir que no— o abrir un quinto escalón. **Recomiendo retemplar**, y
+va sin hacer porque **cambia el ritmo perceptible en 69 sitios** y eso se aprueba
+viéndolo, no leyéndolo. Hasta entonces van al ratchet del gate `reloj-a-mano`, que
+por eso todavía **no** se crea (§8.2: el gate va después de bajar la deuda).
+
+### 7.4 En Solid, la mitad «entrada» del reloj no existe — y está bien
+
+Verificado en ejecución sobre el bundle, no en el fuente:
+
+| | transición | entrada |
+|---|---|---|
+| Liquid | 0.5 s ✅ | 0.5 s ✅ |
+| Solid | 0.3 s ✅ | **0.13 s** |
+
+No es un fallo de la migración. `[data-theme="solid"] .animate-in` fija
+`animation-duration: 130ms` (decisión D2.4: en Solid las entradas son cortas y
+lineales) y **gana por especificidad a cualquier `duration-*`**. O sea que en Solid el
+escalón sólo gobierna las **transiciones**: las 62 entradas migradas no tienen ni
+tenían variante en ese tema.
+
+Dos cosas que se siguen de esto, y que valen para toda la fase C:
+
+1. **Verificar un token del reloj exige mirar los cuatro temas por separado**, igual
+   que el material. Una duración que «funciona» puede estar siendo pisada por una
+   regla de tema con más especificidad, y el fuente no lo delata.
+2. **Ese `130ms` es un literal fuera de la escala** — ni `--dur-fast` (90) ni
+   `--dur-base` (120). Es la misma familia que la sombra a mano de §16, sólo que al
+   revés: no es ciego al tema, es específico de un tema y sin token. Al crear
+   `reloj-a-mano` hay que decidir si se vuelve `--dur-entrada-solid` o se ajusta a un
+   escalón existente.
+
 ---
 
 ## 8. Orden de ejecución

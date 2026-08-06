@@ -53,7 +53,7 @@ const AlertModal = ({
 
                 <div className="p-8 text-center flex flex-col items-center relative z-base">
                     {/* ÍCONO SQUIRCLE */}
-                    <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 transition-transform duration-500 hover:scale-105 border border-border-card bg-surface-card-hover shadow-sm ${currentConfig.iconColor}`}>
+                    <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 transition-transform duration-[var(--dur-lento)] hover:scale-105 border border-border-card bg-surface-card-hover shadow-sm ${currentConfig.iconColor}`}>
                         <Icon size={36} strokeWidth={2.5} />
                     </div>
 

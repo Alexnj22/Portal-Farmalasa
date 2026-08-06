@@ -54,7 +54,7 @@ export default function FeedbackOverlay({
 
   return (
     // Contenedor principal Liquidglass Black
-    <div className="fixed inset-0 z-bell-desktop flex flex-col items-center justify-center animate-in fade-in duration-500 ease-[var(--ease-spring)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
+    <div className="fixed inset-0 z-bell-desktop flex flex-col items-center justify-center animate-in fade-in duration-[var(--dur-lento)] ease-[var(--ease-spring)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
 
       {/* ORBE DE LUZ DE FONDO */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full blur-[140px] pointer-events-none transition-colors duration-1000 ${color === 'red' ? 'opacity-20' : 'opacity-10'} ${theme.glow}`}></div>
@@ -81,7 +81,7 @@ export default function FeedbackOverlay({
                 
                 {/* Contenedor de la Foto */}
                 <div
-                  className={`relative h-36 w-36 md:h-44 md:w-44 rounded-modal md:rounded-header flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[var(--shadow-glass-5)] overflow-hidden transition-all duration-500 ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
+                  className={`relative h-36 w-36 md:h-44 md:w-44 rounded-modal md:rounded-header flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[var(--shadow-glass-5)] overflow-hidden transition-all duration-[var(--dur-lento)] ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
                   {(employee?.photo || employee?.photo_url) ? (
                     <img
                       src={employee.photo || employee.photo_url}
@@ -144,15 +144,15 @@ export default function FeedbackOverlay({
 
             {/* COLUMNA DERECHA: Tarjeta de Aviso Liquid Glass */}
             {announcement && (
-              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-modal overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[var(--shadow-glass-dark)] hover:translate-y-[var(--lift-card)] ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
+              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-modal overflow-hidden transition-all duration-[var(--dur-lento)] animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[var(--shadow-glass-dark)] hover:translate-y-[var(--lift-card)] ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
                 {isBirthday && (
                   <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-modal">
                     <div className="absolute -top-8 -right-8 text-[120px] opacity-[0.07] select-none">🎂</div>
                     <div className="absolute -bottom-4 -left-4 text-[80px] opacity-[0.07] select-none">🎉</div>
                   </div>
                 )}
-                <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[var(--shadow-shine-lg)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
+                <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-[var(--dur-lento)] ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[var(--shadow-shine-lg)] border shrink-0 transition-transform duration-[var(--dur-lento)] group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
                     {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
                   <div className="flex flex-col text-left">
@@ -181,12 +181,12 @@ export default function FeedbackOverlay({
           /* =========================================================
              PANTALLAS DE ERROR / INFO
              ========================================================= */
-          <div className="flex flex-col items-center justify-center animate-in zoom-in-95 duration-500 w-full max-w-lg mx-auto">
+          <div className="flex flex-col items-center justify-center animate-in zoom-in-95 duration-[var(--dur-lento)] w-full max-w-lg mx-auto">
 
             <div className="relative mb-8 shrink-0">
               <div className={`absolute inset-0 rounded-header blur-2xl opacity-60 ${theme.glow}`}></div>
               <div
-                className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 rounded-header md:rounded-header flex items-center justify-center border backdrop-blur-3xl transition-all duration-500 
+                className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 rounded-header md:rounded-header flex items-center justify-center border backdrop-blur-3xl transition-all duration-[var(--dur-lento)] 
                 ${color === 'red'
                     ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-shine-lg)] animate-[pulse_2s_infinite]'
                     : 'bg-white/[0.03] border-white/10 shadow-[var(--shadow-glass-dark)]'
@@ -207,7 +207,7 @@ export default function FeedbackOverlay({
               {message}
             </h1>
 
-            <div className={`backdrop-blur-2xl rounded-3xl px-8 py-4 border shadow-lg text-center transition-colors duration-500 max-w-[95%] w-fit mx-auto
+            <div className={`backdrop-blur-2xl rounded-3xl px-8 py-4 border shadow-lg text-center transition-colors duration-[var(--dur-lento)] max-w-[95%] w-fit mx-auto
               ${color === 'red' ? 'bg-danger/15 border-danger/30' : 'bg-white/5 border-white/10'}
             `}>
               <p className={`text-sm md:text-body-xl font-bold uppercase tracking-widest text-balance leading-relaxed

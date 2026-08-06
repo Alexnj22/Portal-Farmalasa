@@ -1008,7 +1008,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
     const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-    const islandHoverClass = "transition-all duration-500 ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
+    const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
 
     // 🚨 Propiedades base para que los selects floten libres del Modal
     const portalSelectProps = {
@@ -1060,7 +1060,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             )}
 
             {/* CONTENEDOR ANIMADO */}
-            <div key={activeTab} className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-500 ease-[var(--ease-spring)] fill-mode-both">
+            <div key={activeTab} className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)] fill-mode-both">
                 
                 {/* TAB 1: DATOS PERSONALES */}
                 {activeTab === 'personal' && (

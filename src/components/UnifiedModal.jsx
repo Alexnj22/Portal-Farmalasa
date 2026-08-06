@@ -790,7 +790,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     return (
                                         <React.Fragment key={step.key}>
                                             {idx > 0 && (
-                                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-500 ${empStepCompletion[EMP_STEPS[idx - 1].key] ? 'bg-success' : 'bg-divider'}`} />
+                                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-[var(--dur-lento)] ${empStepCompletion[EMP_STEPS[idx - 1].key] ? 'bg-success' : 'bg-divider'}`} />
                                             )}
                                             <button
                                                 type="button"

@@ -41,10 +41,10 @@ export default function IdleScanPanel({
 }) {
 
   return (
-    <div className="relative z-content w-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-500 pointer-events-auto">
+    <div className="relative z-content w-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-[var(--dur-lento)] pointer-events-auto">
 
       {/* 🚨 CAJA PRINCIPAL CENTRAL */}
-      <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] transition-all duration-500 hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
+      <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] transition-all duration-[var(--dur-lento)] hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
 
         {/* TOP: Ícono y Títulos */}
         <div className="flex flex-col items-center text-center w-full mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
@@ -75,7 +75,7 @@ export default function IdleScanPanel({
 
       {/* Lunch alerts banner */}
       {!specialMode && lunchAlerts.length > 0 && (
-        <div className="w-full max-w-[420px] mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="w-full max-w-[420px] mt-3 animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-lento)]">
           <div className="bg-chart-4/10 backdrop-blur-xl border border-chart-4/25 rounded-3xl px-4 py-3 shadow-[var(--shadow-glow-chart-4)]">
             <div className="flex items-center gap-2 mb-2">
               <Bell size={13} className="text-chart-4-text shrink-0" strokeWidth={2.5} />

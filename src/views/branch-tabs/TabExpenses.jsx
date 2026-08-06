@@ -64,10 +64,10 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
     return (
         <div
-            className={`group relative backdrop-blur-md rounded-modal p-5 transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:translate-y-[var(--lift-card)] hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
+            className={`group relative backdrop-blur-md rounded-modal p-5 transition-all duration-[var(--dur-lento)] animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:translate-y-[var(--lift-card)] hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
             style={{ animationDelay: `${delay}ms`, willChange: 'transform, opacity' }}
         >
-            <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-lento)] pointer-events-none"></div>
 
             <div className="flex justify-between items-start mb-4 relative z-base">
                 <div className="flex items-center gap-3">
@@ -309,14 +309,14 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 </div>
             ) : (
                 /* DASHBOARD REAL */
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-[var(--dur-lento)] slide-in-from-bottom-4">
                     {/* Gráfico de Barras */}
-                    <div data-surface="card" className="group lg:col-span-2 p-6 flex flex-col relative overflow-hidden transition-all duration-500">
-                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
+                    <div data-surface="card" className="group lg:col-span-2 p-6 flex flex-col relative overflow-hidden transition-all duration-[var(--dur-lento)]">
+                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand/5 to-transparent pointer-events-none transition-opacity duration-[var(--dur-lento)] group-hover:opacity-100 opacity-50"></div>
                         
                         <div className="flex justify-between items-start mb-6 relative z-base">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-surface-card text-brand-text rounded-2xl flex items-center justify-center border border-border-card shadow-sm transition-transform duration-500 group-hover:scale-110">
+                                <div className="w-12 h-12 bg-surface-card text-brand-text rounded-2xl flex items-center justify-center border border-border-card shadow-sm transition-transform duration-[var(--dur-lento)] group-hover:scale-110">
                                     <BarChart3 size={22} strokeWidth={2.5}/>
                                 </div>
                                 <div>
@@ -370,8 +370,8 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <div className="flex flex-col gap-5">
                         
                         {/* Tarjeta de Variación Mensual */}
-                        <div data-surface="card" className="group p-6 flex-1 flex flex-col justify-center transition-all duration-500 relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
+                        <div data-surface="card" className="group p-6 flex-1 flex flex-col justify-center transition-all duration-[var(--dur-lento)] relative overflow-hidden">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-lento)] pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
                             <div className="flex items-center gap-2 mb-3 relative z-base">
                                 <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
                                 <h5 className="text-caption font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>
@@ -388,7 +388,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:translate-y-[var(--lift-card)]">
+                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-[var(--dur-lento)] hover:shadow-md hover:translate-y-[var(--lift-card)]">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-base">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-border-card">

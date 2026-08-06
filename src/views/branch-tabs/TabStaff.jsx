@@ -87,7 +87,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     return (
         <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:translate-y-[var(--lift-card)] shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
 
-            <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
+            <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-[var(--dur-lento)] group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
             <div className="absolute top-3 right-3 z-base flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-border-card shadow-sm pointer-events-none">
                 <Pencil size={10} strokeWidth={2.5} className="text-content-3" />
@@ -565,7 +565,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     {/* 🤖 BOTÓN MAESTRO DE IA — solo farmacias */}
                     {isFarmacia && <button
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
-                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)] z-sidebar animate-in zoom-in-95"
+                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-[var(--dur-lento)] border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)] z-sidebar animate-in zoom-in-95"
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
                     >
                         {aiMode ? (
@@ -574,7 +574,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             </div>
                         ) : (
                             <>
-                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-[var(--dur-lento)] group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
                                 <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
                                 <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
                                 <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
@@ -685,7 +685,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <div className="pt-2">
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-3xl p-5 shadow-sm relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-3xl p-5 shadow-sm relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand-text flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />

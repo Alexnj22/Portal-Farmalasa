@@ -241,7 +241,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500 relative z-base w-full pb-8">
+        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)] relative z-base w-full pb-8">
             
             {/* SELECTOR PRINCIPAL */}
             <div className="relative z-sidebar-desktop">

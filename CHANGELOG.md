@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.398.0 — E1 — el costo de venta se captura al momento de la venta
+
+Lo único irreversible de `PLAN-CONTABILIDAD-2026-08-02`: sin costo por línea no
+hay costo de ventas, no hay margen real y no hay Estado de Resultados — y **cada
+día que pasaba era historia que no se recuperaba**. Desde hoy se guarda.
+
+**De dónde sale el costo.** El cruce evidente —`product_precios` por
+`(product_id, id_presentacion)`— da **cero** coincidencias, y por eso esto
+parecía imposible: `sales_invoice_items.id_presentacion` está en **NULL en las
+584,750 filas** de la tabla, es columna muerta. La llave que sí funciona es
+**(erp_product_id, factor_unidades)** contra `product_precios(product_id,
+factor)`: sobre las 8,927 líneas de la última semana resuelve un costo único en
+el **96.8%**, deja **1.3%** con más de un costo distinto y **2.0%** sin ninguno.
+
+**Dos columnas, no una.** `costo_unitario` y `costo_ambiguo`. Ese 1.3% se marca
+en vez de esconderse detrás del desempate: un promedio o un «el primero» haría
+que el número se leyera como exacto cuando no lo es, y quien audite el margen no
+tendría cómo enterarse.
+
+**El trigger va en la base, no en el sync.** Hay cuatro caminos que insertan
+líneas de venta (`sync-dte-sales`, `backfill-dte-sales`, `heal-dte-sync` y las
+correcciones manuales); uno solo que se olvide deja un hueco permanente, y el
+hueco no avisa.
+
+**Lo que NO hace, a propósito.** No rellena el pasado: el costo de la lista de
+hoy no es el que tenía el producto en junio, y escribirlo hacia atrás inventaría
+un dato con apariencia de medido. Las filas viejas quedan en NULL, que es la
+verdad. Por el mismo motivo el trigger **no estampa nada sobre ventas de más de
+15 días** — `sync-dte-sales` tiene una bandera `forceItems` que borra y
+reinserta, y sin ese guardarraíl un re-sync forzado de junio habría quedado con
+el costo de agosto adentro.
+
+Nada consume el dato todavía: esto sólo guarda. Margen y costo de ventas son
+trabajo posterior — y ahora es posible, que era el punto.
+
+_(pendiente de redactar)_
+
 ## v2.397.2 — Fase B de rendimiento: dos escrituras por carga, un viaje de red que serializaba el arranque y el catálogo del tablero
 
 Cuatro de los seis puntos de la Fase B de `AUDITORIA-COMPLETA-2026-07-30`. Los

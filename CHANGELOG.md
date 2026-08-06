@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.445.0 — Los filtros al encabezado
+
+**El buscador deja de ser un cuadrito.** En Consulta de Inventario y en
+Modificar Facturación estaba plegado en una esquina de 32 px: no se leía como
+buscador y había que descubrir que se podía tocar. Ahora va abierto y a lo
+ancho, que es lo que corresponde a un widget cuyo trabajo es buscar.
+
+**En Facturación los filtros van en el mismo renglón del título.** Antes
+ocupaban una franja propia debajo — dos alturas para dos controles.
+
+**Y el selector de fecha ya no se activa solo al abrir.** El buscador plegado
+renderizaba su campo como `inert`, así que el primer campo enfocable del modal
+era el «DD» de la fecha y el foco caía ahí. Con el buscador abierto, el foco
+llega a donde tenía que llegar.
+
+**Fuera la leyenda «últimas 150 de 787».** Ese número hablaba de la tubería
+—cuántas filas se trajeron— y no de las facturas. Con él se fue también la
+consulta de conteo que corría en cada apertura del widget.
+
+## v2.444.0 — `BotonIA`, el banco headed, y `PLAN-MATERIALES` CERRADO
+
+**El botón de IA era el mismo bloque escrito tres veces** —`BranchesView`,
+`TabStaff`, `TabHistory`— y, como pasa siempre, las tres copias ya habían
+divergido: dos usaban `hover:border-purple-400`, un color **crudo**, donde la
+tercera usaba el token `chart-3`; sólo una traía `aria-pressed` y `aria-label`
+(las otras se apoyaban en un `title`, que un lector de pantalla no anuncia como
+estado); y los tamaños se habían separado a ojo. Nace `BotonIA`, con lo mejor de
+cada una y dos tallas nombradas.
+
+De regalo, **la excepción del gate pasa de tres a una**: el degradado crudo del
+anillo (`indigo` → `purple` → `cyan`) es el shimmer de IA de DESIGN.md §6, no una
+superficie del tema, y estaba excepcionado en los tres archivos. Ahora vive donde
+vive el código.
+
+**⚠️ El banco de §6 se corre HEADED, y esto casi nos hace romper el material.**
+Corrido en headless daba, con CPU ×6:
+
+| tema | headless | headed |
+|---|---|---|
+| Liquid claro | **133.2ms** | **16.7ms** |
+| Liquid oscuro | **133.1ms** | **16.7ms** |
+| Solid | 16.7ms | 16.7ms |
+| Solid oscuro | 16.7ms | 16.7ms |
+
+Misma máquina, mismo recorrido, misma CPU estrangulada. En headless no hay
+compositor con GPU, así que el `backdrop-filter` cae a CPU y **Liquid mide ocho
+veces más lento de lo que es**; a Solid no lo toca, porque no tiene vidrio que
+componer. Un banco headless habría dicho «el vidrio va a 7fps» y mandado a
+alguien a destruir el material por un problema inexistente. El test ahora **se
+niega a correr en headless** en vez de devolver un número falso, con el motivo en
+el mensaje del skip: un banco que miente es peor que uno que no corre.
+
+Los cuatro temas quedan en **16.7ms de mediana — 60fps sostenidos con CPU ×6**,
+que es lo que §6 pedía verificar sobre la implementación real.
+
+**Las 16 capturas** (§9) quedan en `test-results/capturas-material/`: tres
+pantallas × cuatro temas, más las cuatro con `prefers-reduced-motion`.
+
+**`PLAN-MATERIALES-2026-08-02.md` se mueve a `docs/planes-cerrados/`.** Sus ocho
+condiciones de cierre están cumplidas y **verificadas en el navegador**, no por
+lectura, con la verificación versionada para repetirla. Se actualizaron las tres
+referencias a su ruta vieja (`DESIGN.md` ×2, `CLAUDE.md`), y `CLAUDE.md` y la
+skill `design-gate` dejaron de afirmar que el baseline no está vacío — porque lo
+está.
+
 ## v2.443.0 — Lo que falta acá y hay en otra sala
 
 **Consulta de Inventario ya no abre en blanco.** Sin escribir nada muestra los

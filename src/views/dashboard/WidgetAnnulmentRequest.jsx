@@ -20,7 +20,7 @@ import { formatMoney } from '../../utils/formatNumber';
 import { insertApprovalRequestSilent, contarSolicitudesFacturacionPendientes } from '../../data/requests';
 import {
   fetchInvoiceItemsForInvoice, fetchBranchInvoicesRecent,
-  countBranchInvoices, searchBranchInvoices, WIDGET_INVOICE_PAGE,
+  searchBranchInvoices, WIDGET_INVOICE_PAGE,
 } from '../../data/facturacion';
 import { searchCustomersByTokens } from '../../data/customers';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -856,7 +856,6 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   const [view,        setView]        = useState('list');
   const [prevView,    setPrevView]    = useState('list');
   const [invoices,    setInvoices]    = useState([]);
-  const [total,       setTotal]       = useState(0);
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
   const [dateFilter,  setDateFilter]  = useState('');
@@ -905,19 +904,9 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
       .filter(Boolean)
   ), [vendorIndex]);
 
-  /* Conteo real del ámbito. Va aparte de la lista porque no depende de lo que
-     se escriba en el buscador — y es lo que permite que el encabezado diga la
-     verdad en vez de anunciar como total lo que entró en la página. */
-  useEffect(() => {
-    if (!activeBranchId) { setTotal(0); return; } // eslint-disable-line react-hooks/set-state-in-effect -- limpieza al quedarse sin sucursal; el resto del efecto es un fetch
-    let cancelado = false;
-    countBranchInvoices(activeBranchId, ambito).then(({ count, error }) => {
-      if (cancelado) return;
-      if (error) console.error('WidgetAnnulmentRequest (conteo):', error.message);
-      setTotal(count ?? 0);
-    });
-    return () => { cancelado = true; };
-  }, [activeBranchId, ambito, reloadKey]);
+  /* El conteo del ámbito se quitó junto con la leyenda «últimas 150 de 787»:
+     era una consulta por cada apertura del widget para alimentar un número que
+     hablaba de la tubería —cuántas filas se trajeron— y no de las facturas. */
 
   /* Lista: las últimas N del ámbito, o los resultados de la búsqueda. Siempre
      server-side. El debounce solo aplica cuando se está escribiendo. */
@@ -942,8 +931,10 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   useEffect(() => { setView('list'); setFocused(null); setSearch(''); setDateFilter(''); }, [propBranchId]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea el widget al cambiar de sucursal
 
   const buscando  = search.trim().length >= 2;
+  // `parcial` y su leyenda «últimas 150 de 787» se quitaron a pedido del
+  // usuario: el número contaba de la tubería —cuántas filas se trajeron— y no
+  // de las facturas, que es lo único que importa mirando la lista.
   const enTope    = invoices.length >= WIDGET_INVOICE_PAGE;
-  const parcial   = !buscando && total > invoices.length;
 
   const handleSuccess = (type, supervisor) => {
     setSuccessInfo({ type, supervisor });
@@ -1005,26 +996,25 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   /* ── Lista ── */
   return (
     <div className="flex flex-col gap-2.5 flex-1 min-h-0">
-      <div className="flex items-center justify-between shrink-0">
-        <p className="text-caption font-black text-content-2 uppercase tracking-widest">
-          Ventas del mes — {activeBranch?.name || 'Tu sucursal'}
+      {/* Los filtros van EN el encabezado, en un solo renglón con el título.
+          Antes ocupaban una franja propia debajo —título arriba, buscador y
+          fecha abajo— y eran dos alturas para dos controles. Y el buscador ya
+          no es expandible: plegado se leía como un botón sin nombre y había
+          que descubrirlo. */}
+      <div className="flex items-center gap-2 shrink-0">
+        <p className="text-caption font-black text-content-2 uppercase tracking-widest shrink-0">
+          Ventas del mes
         </p>
-        {/* El conteo sale del servidor, no del largo de la lista: si solo se
-            trajeron las últimas N, se dice — no se hace pasar N por el total. */}
-        <span className="text-caption font-bold text-content-3">
-          {buscando   ? `${invoices.length}${enTope ? '+' : ''} de ${total}`
-           : parcial  ? `últimas ${invoices.length} de ${total}`
-                      : `${total} factura${total === 1 ? '' : 's'}`}
-        </span>
-      </div>
-
-      {/* Toolbar — filtro de fecha siempre a la derecha, buscador expandible
-          crece hacia la izquierda desde su lado (ver DESIGN.md §24). */}
-      <div className="flex items-center justify-end gap-1.5 shrink-0">
-        <SearchInput expandable accentColor="var(--success)" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
-
+        <div className="flex-1 min-w-0">
+          <SearchInput
+            accentColor="var(--success)"
+            value={search}
+            onChange={setSearch}
+            placeholder="Cliente, vendedor, factura..."
+          />
+        </div>
         {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
-        <div className="h-8 shrink-0 rounded-lg border border-divider bg-surface-card flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">
+        <div className="h-8 shrink-0 rounded-lg border border-divider bg-surface-card flex items-center">
           <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
         </div>
       </div>

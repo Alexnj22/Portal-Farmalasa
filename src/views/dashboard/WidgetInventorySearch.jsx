@@ -593,10 +593,12 @@ export default function WidgetInventorySearch() {
   return (
     <div className="flex flex-col gap-2.5 h-full">
 
-      {/* Toolbar — buscador expandible, filtros (si los hubiera) siempre a la derecha */}
-      <div className="flex items-center justify-end gap-1.5 shrink-0">
+      {/* El buscador a lo ancho y siempre abierto. Plegado ocupaba un cuadrito
+          de 32px en la esquina y no se leía como buscador —había que descubrir
+          que se podía tocar—, que es todo lo contrario de lo que hace un
+          widget cuyo trabajo ES buscar. */}
+      <div className="shrink-0">
         <SearchInput
-          expandable
           accentColor="var(--warning)"
           value={query}
           onChange={handleInput}
@@ -620,7 +622,7 @@ export default function WidgetInventorySearch() {
         {!loading && results === null && faltantes.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-              Sin existencia acá · hay en otra sala
+              Sin existencia, puedes solicitar en estas sucursales
             </p>
             {faltantes.map(f => (
               <button

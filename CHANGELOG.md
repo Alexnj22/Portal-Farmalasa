@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.456.1 — El margen del borde: el sync anota la hora al terminar, no al leer
+
+Sale de una pregunta del usuario —«al confirmar se descuenta, y cuando el JSON
+vuelve a correr se actualiza, ¿quedaría igual?»— y al ir a comprobarlo apareció
+un error de uno en el borde.
+
+El descuento de lo que ya salió se apoyaba en comparar la hora del traslado
+contra la del último conteo de esa sala. La suposición escondida era que esa
+hora marca **cuándo se leyó** el sistema. No lo marca: se anota **al terminar**
+la corrida, después de haber leído el JSON y escrito las filas.
+
+Un traslado despachado entre esas dos cosas caía en el peor lugar posible: el
+JSON que se leyó no lo tenía, así que el conteo no lo reflejaba, pero su hora
+era anterior a la anotada, así que tampoco contaba como en camino. El portal lo
+mostraba disponible hasta la corrida siguiente.
+
+Medido: la corrida completa tarda **entre 1,7 y 2,3 segundos**, así que la
+ventana son un par de segundos por minuto. Chica, pero el modo de fallar era el
+peor de los dos —prometer producto que ya salió—, y ahora la cubre un margen de
+15 segundos.
+
+**Y la respuesta a la pregunta es sí: queda igual.** Verificado moviendo el
+inventario y el registro del conteo dentro de una transacción revertida: 1891
+disponibles antes, 1890 con el traslado despachado y el conteo sin volver, y
+1890 después del conteo. El número no se mueve — el descuento pasa de «en
+camino» al inventario real sin restarse dos veces.
+
 ## v2.456.0 — El portal descuenta lo que ya salió, y el mínimo deja de bloquear
 
 Dos correcciones del usuario sobre el traslado entre salas.

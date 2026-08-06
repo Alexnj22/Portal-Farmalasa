@@ -196,7 +196,17 @@ const GlassViewLayout = ({
                         )}
                     </div>
                     {filtersContent && (
-                        <div className="flex-shrink-0 flex items-center">
+                        /* `max-w-full`: `flex-shrink-0` dice "no cedas espacio", y con
+                           `flex-wrap` eso significa bajar a la segunda línea cuando no
+                           entra al lado del título — pero NO impide pasarse del ancho de
+                           esa segunda línea. Medido en /my-requests en un iPhone 13: este
+                           envoltorio media 531px en una fila de 374, y los 157 que
+                           sobraban se los comía el `overflow-x-hidden` del scroll
+                           container de más arriba. O sea que dos botones existían, no se
+                           veían y no se podían tocar, sin que la página scrolleara de
+                           lado ni nada delatara nada. El tope no cambia a quien ya
+                           entraba; sólo obliga al que no, a resolverlo adentro. */
+                        <div className="flex-shrink-0 flex items-center max-w-full">
                             {filtersContent}
                         </div>
                     )}

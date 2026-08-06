@@ -42,11 +42,20 @@ const entrar = async (page) => {
 // Todo lo que se mide, en una sola pasada por el DOM pintado.
 const MEDIR = () => {
     const vw = document.documentElement.clientWidth;
+    // Se recorre la CADENA, no el elemento solo: la opacidad de un ancestro
+    // apaga a toda su descendencia, pero `getComputedStyle` del hijo sigue
+    // diciendo `opacity: 1`. Mirando sólo el elemento, los cuatro textos de un
+    // tooltip apagado se contaban como visibles y desbordados — el tooltip
+    // desaparecía del informe y sus párrafos se quedaban. Cuarta vez que este
+    // proyecto mide la referencia en vez del cuerpo.
     const visible = (el) => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) return false;
-        const cs = getComputedStyle(el);
-        return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
+        for (let p = el; p; p = p.parentElement) {
+            const cs = getComputedStyle(p);
+            if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
+        }
+        return true;
     };
     const sel = (el) => {
         const id = el.id ? `#${el.id}` : '';

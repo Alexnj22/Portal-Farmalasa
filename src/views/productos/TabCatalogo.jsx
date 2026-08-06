@@ -1647,7 +1647,19 @@ export default function TabCatalogo({
                 2026-07-23). */}
             <div className="flex items-start gap-3 flex-wrap">
                 {/* Stat cards */}
-                <div className="flex items-center gap-3 flex-wrap">
+                {/* `min-w-0` sólo bajo lg, y las dos mitades importan.
+                    Un flex-item trae `min-width: auto`, o sea que se niega a
+                    bajar del ancho mínimo de su contenido: en un iPhone 13 este
+                    envoltorio medía **724px** dentro de un padre de 342, así que
+                    el carril se cortaba y su flecha quedaba a +370px del borde —
+                    inalcanzable con el pulgar. No lo delataba nada porque
+                    `GlassViewLayout` recorta con `overflow-x-hidden`: la página
+                    NO scrollea de lado, el contenido simplemente desaparece.
+                    Y `lg:min-w-[auto]` devuelve el comportamiento de escritorio
+                    a propósito — el ancho preferido de este envoltorio es lo que
+                    hace que el `flex-wrap` del padre lo baje a su propia línea a
+                    1024px (auditoría responsive T4, ver la nota de arriba). */}
+                <div className="flex items-center gap-3 flex-wrap min-w-0 lg:min-w-[auto]">
                     <MarginStatCards
                         stats={marginStats}
                         loading={statsLoading}

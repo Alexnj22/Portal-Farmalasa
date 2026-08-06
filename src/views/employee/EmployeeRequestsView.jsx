@@ -996,7 +996,13 @@ const EmployeeRequestsView = () => {
     // ── Filtros ──────────────────────────────────────────────────────────────
     const renderFiltersContent = () => (
         <div data-surface="card" className="flex items-center hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)]  transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
-            <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
+            {/* El carril del uno-de-N. Cinco estados no entran en 390px y el
+                encabezado ya no deja que se pasen del ancho de la fila, así que
+                el que resuelve es este: se deslizan con el dedo, que es el
+                patrón del proyecto para contenido más ancho que la pantalla
+                (una tabla en su carril). En escritorio entran de sobra y el
+                `overflow-x` no llega a activarse. */}
+            <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3 min-w-0 overflow-x-auto scrollbar-hide">
                 <SegmentedControl
                     label="Estado de las solicitudes"
                     tone="neutro"

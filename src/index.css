@@ -1674,8 +1674,25 @@ thead.sticky,
      un 5% más chico. En el tablero eso bajaba un botón de 44px a **41.8**, y
      ése fue el «42×42» que la auditoría reportaba y que ningún arreglo de
      tamaño movía: el layout ya daba 44, lo que encogía era la pintura. */
-  [class*="group-hover"][class*=":opacity-100"] { opacity: 1 !important; }
-  [class*="group-hover"][class*=":scale-100"]   { scale: 1 !important; }
+  /* ── Y sólo lo que se puede TOCAR ───────────────────────────────────────
+     La primera versión revelaba todo lo que se revela al apuntar, y eso es
+     más de lo que la regla quería decir. Medido en las ocho vistas: de 67
+     coincidencias, **44 no eran acciones** — 7 tooltips, 22 elementos con
+     `pointer-events: none` y 15 adornos (el tinte del avatar, las etiquetas
+     de los días). Y el peor caso se veía a simple vista: los **siete
+     tooltips** del gráfico de tráfico quedaban pintados encima del gráfico,
+     apilados, tapando el título y desbordando por los dos costados. Un
+     tooltip que está siempre visible no es un tooltip.
+
+     El criterio correcto no es «se revela al apuntar» sino «se revela al
+     apuntar Y SE PUEDE TOCAR»: un adorno no se alcanza con el dedo aunque se
+     lo pinte, así que revelarlo no arregla nada y sí tapa contenido.
+     `:has()` lo dice literal —el elemento es un control o contiene uno— y ya
+     estaba en uso en el proyecto (`body:has([role="dialog"])`). */
+  [class*="group-hover"][class*=":opacity-100"]:is(a[href], button, [role="button"],
+      :has(a[href], button, [role="button"])) { opacity: 1 !important; }
+  [class*="group-hover"][class*=":scale-100"]:is(a[href], button, [role="button"],
+      :has(a[href], button, [role="button"]))   { scale: 1 !important; }
 
   /* ── El destello del navegador es el PISO del acuse, no el techo ────────
      Al tocar cualquier cosa, WebKit y Blink pintan encima un rectángulo

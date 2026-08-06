@@ -244,39 +244,42 @@ Los cinco puntos, con lo que resultó ser cierto de cada uno. La medición vive 
 
 ### Fase 4 — Pasada por vistas (adaptación de contenido) 🎯 EN CURSO
 
-**Punto de entrada, medido el 2026-08-06 (v2.450.0).** Correr
-`npx playwright test --project=webkit-movil -g "barrido"` con el preview arriba.
+**Reproducir**: levantar el preview (`OUT_DIR=dist-movil npm run build` +
+`OUT_DIR=dist-movil QA_PORT=4174 npm run preview`) y correr
+`E2E_BASE_URL=http://localhost:4174 npx playwright test --project=webkit-movil`.
 
-El resumen decía «ninguna vista scrollea de lado» y era cierto — y estaba
-tapando el hallazgo. Un elemento se sale del viewport **sin** arrastrar a la
-página cuando algo lo recorta, así que la métrica verde y el contenido cortado
-conviven sin contradecirse. Nombrado el ancestro que recorta, los 27 restantes
-son dos familias:
+**Estado al 2026-08-06 (v2.451.0)**: elementos que se salen del viewport en las
+ocho vistas, **27 → 0**. Scroll horizontal de página: 0 en las ocho. Tablas sin
+carril: 0. Inputs con zoom de iOS: 0. Blancos táctiles <44pt: 7, y son la
+restricción medida de las columnas del gráfico.
 
-| Recorta | Vistas | Qué es | Veredicto |
-|---|---|---|---|
-| `div.flex.items-center.h-full` | monitor, personal, asistencia | el buscador deslizante del encabezado esperando fuera de cuadro (+167 el input, +219 el aspa de cerrar) | **correcto** — es el diseño |
-| `div.lg:absolute.lg:inset-0.lg:w-full` | inicio, solicitudes, productos | contenido de la vista cortado en seco | **a resolver** |
+De los 27 originales, **12 eran reales y 15 eran ruido del medidor** (contaba
+como visible al hijo de un ancestro con `opacity: 0` — cuarta vez que este
+proyecto mide la referencia en vez del cuerpo). Los 12 reales, resueltos:
+Productos (`min-w-0` bajo `lg` en el envoltorio de las tarjetas), Mis
+Solicitudes (tope `max-w-full` en el encabezado + carril del uno-de-N) y los
+siete tooltips del tablero (la regla de hover de v2.448.0 se pasaba de largo).
 
-De la segunda familia, lo concreto:
+1. Tablas anchas ✅ cero tablas sin carril propio en las ocho vistas.
+2. Filter pills ✅ para el caso medido: `GlassViewLayout` ya no deja que el grupo
+   de acciones del encabezado se pase del ancho de su fila, y el uno-de-N de Mis
+   Solicitudes desliza. Falta barrer las píldoras de las vistas que la auditoría
+   no recorre.
+3. Headers de vista (`ViewTabBar`): el buscador deslizante **cerrado** está bien
+   (queda apagado y fuera de cuadro, verificado). Falta **abierto y con el
+   teclado móvil arriba**, que es lo que pide el punto.
+4. Verificación visual por vista — las capturas de cada corrida quedan en
+   `test-results/auditoria-movil/<vista>.png`. Hechas: el gráfico del tablero
+   (antes/después de los tooltips), la píldora de Mis Solicitudes, y escritorio
+   a 1024 y 1440 para las dos vistas tocadas.
 
-- **/productos**: +358px de una fila del carril, y la flecha `.blanco-tactil` a
-  **+370px** — inalcanzable con el pulgar. Algo fuerza ~748px de ancho.
-- **/my-requests**: +157px de una fila de acciones; dos `button` quedan a +135 y
-  +10 del borde, o sea fuera.
-- **/**: menor — un tooltip (+31) y tres textos (+5 a +20).
-
-Lo demás de la fase, sin empezar:
-
-1. Tablas anchas ✅ **cero** tablas sin carril propio en las ocho vistas (medido
-   en v2.447.0, se vuelve a medir en cada corrida).
-2. Filter pills: wrap a 2 filas o scroll horizontal de la pill, sin romper §17.
-3. Headers de vista (`ViewTabBar`): verificar que el modo búsqueda deslizante
-   funciona con teclado móvil abierto. (La auditoría ya confirma que **cerrado**
-   se recorta bien; falta abierto y con teclado.)
-4. Verificación visual barata por vista (1-2 screenshots WebKit iPhone) — regla de
-   memoria: la verificación visual NO es opcional. Las capturas de la corrida
-   quedan en `test-results/auditoria-movil/<vista>.png`.
+**Abierto, y es una decisión de producto, no un bug:** desde v2.448.0 los
+botones de redimensionar del tablero se ven **siempre** en un teléfono — son
+controles, así que la regla nueva los sigue revelando a propósito — y uno de
+ellos se apoya sobre la última columna del gráfico de tráfico (se ve en
+`test-results/auditoria-movil/tooltips-despues.png`). ¿Se redimensiona un
+tablero con el pulgar? Si la respuesta es no, esos botones deberían esconderse
+en táctil en vez de revelarse.
 
 ### Fase 5 — Matriz de verificación final + limpieza
 

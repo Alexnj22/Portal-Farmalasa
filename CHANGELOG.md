@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.451.0 — Los siete tooltips que tapaban el gráfico, y el contenido que se recortaba en silencio
+
+Fase 4 de `PLAN-MOBILE-2026-07.md`. **Elementos que se salen del viewport en
+las ocho vistas de tienda: 27 → 0.**
+
+**La regla de v2.448.0 se pasó de largo, y se veía a simple vista.** «En táctil,
+lo que se revela al apuntar se revela siempre» arregló los enlaces de WhatsApp y
+de llamar, y de paso alcanzó a todo lo demás que usa ese patrón. Medido en las
+ocho vistas: de 67 coincidencias, **44 no eran acciones** — 7 tooltips, 22
+elementos con `pointer-events: none` y 15 adornos. El peor caso: los **siete
+tooltips** del gráfico de tráfico quedaban pintados encima del gráfico,
+apilados, tapando el título «Ventas por día» y desbordando por los dos costados.
+Un tooltip siempre visible no es un tooltip.
+
+El criterio no era «se revela al apuntar» sino **«se revela al apuntar y se
+puede tocar»**: un adorno no se alcanza con el dedo aunque se lo pinte, así que
+revelarlo no arregla nada y sí tapa contenido. `:has()` lo dice literal —el
+elemento es un control o contiene uno— y ya estaba en uso en el proyecto.
+
+**Y el resumen verde tapaba el hallazgo.** «Ninguna vista scrollea de lado» era
+cierto **y era el síntoma**: `GlassViewLayout` recorta con `overflow-x-hidden`,
+así que el contenido que no entra no mueve la página — desaparece. Salirse del
+viewport y arrastrar a la página son cosas distintas, y el instrumento las
+mezclaba. Ahora nombra al ancestro que recorta, que es lo único que distingue lo
+correcto de lo roto. Con eso, dos bugs concretos:
+
+- **Productos**: el envoltorio de las tarjetas de resumen medía **724px dentro
+  de un padre de 342** — un flex-item trae `min-width: auto` y se niega a bajar
+  del ancho mínimo de su contenido. El carril se cortaba y su flecha quedaba a
+  **+370px** del borde, inalcanzable. `min-w-0` sólo bajo `lg`, porque en
+  escritorio el ancho preferido de ese envoltorio es justo lo que hace que el
+  `flex-wrap` del padre lo baje a su propia línea a 1024px (auditoría T4).
+  Verificado a 1024 y a 1440: idéntico, 772px y `min-width: auto`.
+- **Mis Solicitudes**: el grupo de acciones del encabezado móvil medía 531px en
+  una fila de 374. `flex-shrink-0` dice «no cedas espacio», y con `flex-wrap`
+  eso significa bajar a la segunda línea — pero no impide pasarse del ancho de
+  esa segunda línea. Dos pestañas existían, no se veían y no se podían tocar.
+  El encabezado ahora tapa el ancho (`max-w-full`) y el uno-de-N resuelve
+  adentro con un carril: medido, 340px visibles sobre 513 de contenido y
+  **desliza los 173** que antes estaban perdidos.
+
+**El instrumento medía la referencia y no el cuerpo, por cuarta vez.** Después
+de apagar los tooltips seguían apareciendo sus cuatro párrafos como desbordados:
+la opacidad de un ancestro apaga a toda su descendencia, pero
+`getComputedStyle` del hijo sigue diciendo `opacity: 1`. Mirando sólo el
+elemento, un tooltip apagado desaparecía del informe y su texto se quedaba.
+Recorrida la cadena, los 15 «restantes» eran los cuatro párrafos del tooltip más
+el buscador deslizante cerrado — o sea que de los 27 originales, **12 eran
+reales y 15 eran ruido del medidor**.
+
+*Queda anotado, sin tocar:* los botones de redimensionar del tablero se ven
+siempre en un teléfono desde v2.448.0 (son controles, así que la regla nueva los
+sigue revelando a propósito) y uno de ellos se apoya sobre la última columna del
+gráfico. Es una decisión de producto —¿se redimensiona un tablero con el
+pulgar?— y está escrita en el plan, no resuelta acá.
+
 ## v2.450.1 — Traslados entre salas: el permiso propio y el aprobador por sala de origen
 
 Pasos 2 y 3 de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Todavía no hay pantalla:

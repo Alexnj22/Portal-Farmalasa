@@ -15,6 +15,7 @@ import { useStaffStore } from '../../store/staffStore';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
 import { normSearch } from '../../utils/searchUtils';
+import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
 import { insertApprovalRequestSilent, contarSolicitudesFacturacionPendientes } from '../../data/requests';
 import {
@@ -396,7 +397,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {isCreditPay && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-chart-3/10 border border-chart-3/30">
             <Info size={12} className="text-chart-3-text mt-0.5 shrink-0" strokeWidth={2.5} />
@@ -439,16 +440,19 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
 
         <div className="flex flex-col gap-1.5">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo *</label>
-          <div className="grid grid-cols-2 gap-1.5">
-            <SegmentedControl
+          {/* `layout="block"`, como el selector de forma de pago. Sin él, el
+              canónico dibuja su RIEL compacto —una sola píldora con las
+              opciones adentro— y meterlo en una grilla con `flex-wrap` lo
+              deformaba: seis motivos apretados dentro de una cápsula, que es
+              lo que se veía y no se parecía a ningún otro selector del widget. */}
+          <SegmentedControl
+              layout="block" columns={2}
               size="sm"
               label="Motivo"
               value={reason}
               onChange={setReason}
               options={REASONS.map(r => ({ value: r, label: r }))}
-              className="flex-wrap"
-            />
-          </div>
+          />
         </div>
 
         <div className="flex flex-col gap-1">
@@ -518,7 +522,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="rounded-2xl px-3 py-2 flex items-center gap-2 bg-surface-card-hover border border-divider">
           <CreditCard size={13} className="text-content-3 shrink-0" strokeWidth={2.5} />
           <div>
@@ -529,12 +533,14 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
 
         <div className="flex flex-col gap-1.5">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Cambiar a *</label>
-          <div className="grid grid-cols-2 gap-1.5">
-            <SegmentedControl
-                layout="block" columns={2}
-                options={available.map(m => ({ value: m, label: PAYMENT_LABELS[m] || m }))}
-                value={newPayment} onChange={setNewPayment} label="Cambiar a" />
-          </div>
+          {/* Sin envoltorio de grilla: el canónico ya dispone las opciones, y
+              meterlo dentro de otro `grid-cols-2` lo forzaba a dos por fila —
+              cinco formas de pago terminaban en tres renglones dejando media
+              tarjeta vacía. Tres columnas las acomoda en dos. */}
+          <SegmentedControl
+              layout="block" columns={3}
+              options={available.map(m => ({ value: m, label: PAYMENT_LABELS[m] || m }))}
+              value={newPayment} onChange={setNewPayment} label="Cambiar a" />
         </div>
 
         <div className="flex flex-col gap-1">
@@ -618,7 +624,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={currentVendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Vendedor actual */}
         <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-divider">
           <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Vendedor actual</p>
@@ -756,7 +762,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Cliente actual */}
         <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-divider">
           <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
@@ -1045,7 +1051,9 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
           const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
           return (
             <div key={inv.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-divider bg-surface-card hover:border-divider transition-all">
+              {...clickable(() => { setFocused(inv); setView('detail'); })}
+              data-surface="card"
+              className="flex items-center gap-2 px-3 py-2 cursor-pointer transition-all">
               <div className="flex-1 min-w-0">
                 <p className={`text-body-sm font-black truncate leading-tight ${ok ? 'text-content' : 'text-content-3'}`}>
                   {inv.cliente || 'Sin nombre'}
@@ -1073,14 +1081,15 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                <Button size="xs" icon={Eye} title="Ver detalle" iconOnly onClick={() => { setFocused(inv); setView('detail'); }} />
+                <Button size="xs" icon={Eye} title="Ver detalle" iconOnly
+                    onClick={(e) => { e.stopPropagation(); setFocused(inv); setView('detail'); }} />
                 <Button
                     icon={AlertCircle}
                     iconOnly
                     size="xs"
                     variant="destructive"
                     disabled={anulada}
-                    onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
+                    onClick={(e) => { e.stopPropagation(); setFocused(inv); setPrevView('list'); setView('type_select'); }}
                     title={anulada ? 'Factura anulada — ya no admite cambios' : 'Solicitar modificación'}
                 />
               </div>

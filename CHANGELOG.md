@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.440.1 — Facturación: la fila abre, el botón se ve, los selectores se acomodan
+
+Cuatro fallas del widget de **Modificar Facturación**, encontradas usándolo:
+
+- **La fila de una factura no abría al tocarla.** Solo abrían los dos íconos de
+  la derecha; el resto del renglón no hacía nada. Ahora abre toda la fila —con
+  su contrato de teclado— y de paso la fila toma el vidrio que le faltaba.
+- **En Cambio de Vendedor no se veía el botón de enviar.** Estaba, pero la
+  lista de vendedores crecía y lo empujaba fuera de la vista en vez de
+  desplazarse. Le pasaba a los cuatro formularios; se arregló en los cuatro.
+- **Las cinco formas de pago ocupaban tres renglones**, dejando media tarjeta
+  vacía. Estaban metidas dentro de una grilla que peleaba con la del propio
+  control.
+- **El motivo de anulación no se parecía a ningún otro selector**: usaba el
+  riel compacto —una sola cápsula con las seis opciones adentro— en vez del
+  bloque que usan los demás.
+
 ## v2.440.0 — Solid recupera su geometría en el carril, y siete avisos al canónico
 
 **El carril de pestañas ahora tiene geometría por tema.** `--tab-track-radius` se

@@ -1695,6 +1695,131 @@ era el atributo, era la frase.
 
 ---
 
+---
+
+## 19. Lo que la implementación enseñó (2026-08-05, v2.405→v2.419)
+
+Las fases C–H se ejecutaron y el usuario revisó el resultado en pantalla, tema por
+tema. Salieron **nueve correcciones**, y ocho de ellas comparten dos causas. Esta
+sección existe porque esas dos causas valen más que las nueve correcciones.
+
+### 19.1 ⚠️ La causa que apareció TRES veces: el tema que falta es el oscuro
+
+| qué | valor heredado del tema claro |
+|---|---|
+| el lente (§1.7) | `--lente-top: .62` → en oscuro lavaba la superficie |
+| `--sidebar-rim` | `0.42` de blanco → contorno blanco en panel, flotante y menú |
+| **once tokens de sombra** | `inset … rgba(255,255,255,.4–.95)` en toda la escala `--shadow-glass-*` |
+
+Los tres son **un valor calibrado sobre una superficie clara, guardado en `:root`,
+redefinido en Solid, y nunca en `[data-theme="dark"]`.**
+
+**Y lo que los disfraza es justamente que Solid sí los redefine.** Leyendo el archivo
+parecen tokens con tratamiento por tema. La pregunta que yo me hacía —«¿este token
+cambia por tema?»— devolvía *sí*. La pregunta correcta es **«¿cambia en los cuatro?»**.
+
+> **Esto es detectable automáticamente y es el único de los modos de falla de esta
+> sesión que lo es.** Gate propuesto `tema-incompleto`: un token cuyo valor contenga un
+> color fuerte, definido en `:root` y en algún bloque Solid, y ausente de
+> `[data-theme="dark"]`.
+
+### 19.2 La causa que apareció CINCO veces: la dirección del realce la manda el fondo
+
+`--anidada` (§1.5), el tinte del sidebar, el lente, el canto y el realce del hover: en
+los cinco la corrección fue la misma frase. **Un realce claro sobre una superficie
+clara no existe, y uno oscuro sobre una oscura tampoco.**
+
+Pero hay un matiz que costó dos vueltas y conviene dejar escrito, porque la regla
+ingenua («en claro oscurecer, en oscuro aclarar») **es falsa**:
+
+| superficie | dirección | por qué |
+|---|---|---|
+| la anidada (§1.5) | oscurece en claro | **se hunde** un paso |
+| el panel del sidebar | **aclara** en claro | **flota** sobre la página |
+| el realce del hover | **aclara siempre** | apoyar el dedo sobre vidrio deja pasar **más** luz |
+
+**La dirección la decide el ROL de la superficie, no el tema.** Lo que el tema decide es
+la *base* sobre la que se aplica.
+
+### 19.3 El canto: tres correcciones y una regla
+
+1. **El destello no llegaba casi a ningún lado.** Colgaba de `[data-interactive]` —29
+   sitios—; después se marcaron 53 a mano y seguían faltando el avatar, el de salir, el
+   buscador y todo el menú de ajustes. **Tres rondas de «te faltaron éstos» son la señal
+   de que el criterio está mal, no la lista.** El registro de lo que es interactivo ya
+   existe en el DOM: `button`, `a[href]`, `[role="button"]`. Hoy son **108 controles**
+   dentro de superficies de vidrio, sin lista que mantener.
+2. **`:hover` sube por el árbol.** Con el canto en todas partes, apuntar una fila barría
+   la fila, la tabla, el cuerpo de vista y el sidebar. La guarda es
+   `:not(:has(:is([data-surface],[data-interactive],button,a[href],[role="button"]):hover))`.
+   **Son dos problemas distintos con dos soluciones distintas:** `inherits: false` en
+   `--rim-ang` impide que el ángulo **baje**; el `:not(:has(…))` impide que el hover
+   **suba**.
+3. **El contraste vive DENTRO del anillo.** El destello se veía sólo por su bloom —un
+   `drop-shadow`—, así que bastaba un `overflow: hidden` para borrarlo: el botón de
+   salir y el buscador lo tienen, y eran justo los dos que no mostraban nada. Ahora el
+   anillo lleva `--rim-sombra`, un flanco oscuro pegado al destello.
+
+> **Un efecto que depende de que nada lo recorte no es un material, es un truco.**
+
+**§10.2 queda resuelta acá, y no en una tabla.** El arco blanco competía contra lo que
+hubiera detrás del panel translúcido: medido en Liquid claro, su contraste local iba de
+**1.60:1 a 1.03:1** según la zona del fondo. El flanco se lo lleva puesto, así que ya no
+depende del peor fondo — que era exactamente lo que §10.2 pedía verificar.
+
+Valores finales del canto: arco del **10%** del perímetro (era 6%: en un ítem ancho un
+6% es un punto que pasa demasiado rápido), anillo de **1.5px** en los dos Liquid,
+`--rim-bloom: transparent` en todos.
+
+### 19.4 Dos reglas de implementación que costaron una regresión cada una
+
+**Una utilidad transversal nunca fija `position` sobre una superficie que existe PARA
+estar posicionada.** Para anclar el destello se le puso `position: relative` a los
+cuatro flotantes, y un flotante es `fixed` con su `top`/`left` calculados en JS: el menú
+de Ajustes abría en **y = 1420 con la ventana en 960**. Sin error de consola, sin fallo
+de build, sin hallazgo de gate — el elemento existía, tenía tamaño y el DOM lo reportaba
+visible. Sólo estaba en otro lado.
+
+**Un migrador por regex tiene que contemplar las alfas entre corchetes.**
+`border-white/[0.07]` quedó como `border-[rgb(var(--sidebar-ink))]/[0.07]`, clase
+inválida que Tailwind descarta en silencio: **30 clases en 4 archivos**, y compilaba
+igual. Un borde que desaparece no rompe el build.
+
+### 19.5 ⚠️ Método: tres instrumentos mintieron
+
+Vale escribirlo porque los tres parecían razonables:
+
+1. **Colores computados sobre una superficie translúcida.** `getComputedStyle` devuelve
+   `rgba(...,0.15)`; al parsearlo se pierde la alfa y se lee como un sólido oscuro.
+   Dictaminó «texto ilegible» sobre un panel perfectamente legible. **Para superficies
+   translúcidas se miden píxeles compuestos.**
+2. **Muestrear el anillo 1 px bajo el borde.** El `::after` va por **dentro** del
+   `border` propio del elemento, así que se estaba midiendo el borde. Devolvió números
+   **idénticos byte a byte** antes y después de un cambio real de CSS — y ese
+   «idéntico» fue la única señal de que el instrumento estaba roto.
+3. **Aislar el anillo por diferencia con el no-hover.** El hover cambia **todo** el
+   elemento, así que los píxeles «que cambiaron» incluyen fondo y texto: terminó
+   midiendo texto contra fondo y reportando 6:1 donde no había nada que ver.
+
+> **Un diff de píxeles sobre algo que se mueve *y* cambia de fondo miente en las dos
+> direcciones.** En los tres casos lo que cerró la cuestión fue **mirar la captura**. Y
+> en dos de los tres el instrumento reportó *éxito* donde no lo había, que es el error
+> más caro: el que no se investiga.
+
+### 19.6 Y una corrección mía contra una medición vencida
+
+En v2.416.1 invertí el destello a un arco **oscuro** en tema claro, razonando que un
+arco blanco sobre superficie clara no se ve. Era cierto **cuando el panel era casi
+blanco** — pero tres versiones antes yo mismo lo había cambiado a lavanda
+`rgb(183,187,206)` justamente para que no se viera sucio, y sobre eso el blanco
+contrasta de sobra.
+
+**Apliqué una regla correcta contra una medición vencida. La física no cambió; cambió
+la superficie.** Cuando un valor se decide midiendo, la medición hay que rehacerla el
+día que se toca la superficie sobre la que se midió — y el que la tocó fui yo.
+
+---
+
 ## Referencias
 
 - Mockup de Liquid Glass, capa por capa · `claude.ai/code/artifact/33d118ae-ab63-422c-bb5a-f397b3dab434`

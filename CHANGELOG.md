@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.419.1 — El plan aprende de su propia implementación (§19)
+
+Las fases C–H se ejecutaron y el usuario revisó el resultado tema por tema: salieron
+**nueve correcciones**, y ocho comparten dos causas. §19 las escribe, porque las causas
+valen más que las correcciones.
+
+**§19.1 · La causa que apareció tres veces: el tema que falta es el oscuro.** El lente,
+`--sidebar-rim` en 0.42 y **once tokens de sombra** eran lo mismo — un valor calibrado
+sobre superficie clara, guardado en `:root`, redefinido en Solid, **y nunca en `dark`**.
+Y lo que los disfraza es que Solid *sí* los redefine: la pregunta «¿este token cambia
+por tema?» devolvía *sí*. La correcta es **«¿cambia en los cuatro?»**. Queda propuesto
+el gate `tema-incompleto`, el único de los modos de falla de esta sesión que es
+detectable automáticamente.
+
+**§19.2 · La causa que apareció cinco veces: la dirección del realce la manda el ROL de
+la superficie, no el tema.** La anidada oscurece en claro porque **se hunde**; el panel
+del sidebar aclara porque **flota**; el realce del hover aclara siempre porque apoyar el
+dedo sobre vidrio deja pasar **más** luz. La regla ingenua «en claro oscurecer» es falsa.
+
+**§19.3 · El canto**: de 29 sitios a **108 controles** sacados del registro que ya existe
+en el DOM; la guarda `:not(:has(…))` para que el hover no suba por el árbol; y el
+contraste **dentro** del anillo, porque un efecto que depende de que nada lo recorte no
+es un material, es un truco. **§10.2 queda resuelta ahí**: el destello ya no depende del
+peor fondo.
+
+**§19.5 · Tres instrumentos mintieron**, y en dos de los tres reportaron **éxito** donde
+no lo había — que es el error caro, el que no se investiga.
+
+**§19.6 · Y una corrección mía contra una medición vencida**: invertí el destello a
+oscuro razonando sobre un panel casi blanco que yo mismo había cambiado a lavanda tres
+versiones antes. La física no cambió; cambió la superficie.
+
 ## v2.419.0 — El destello no depende del fondo: flanco propio
 
 **«A veces se pierde» era literal, y medible.** El sidebar es translúcido, así que el

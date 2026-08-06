@@ -113,12 +113,17 @@ export default function LiquidModal({
                             ? 'absolute left-0 top-1/2 -translate-y-1/2 z-base'
                             : 'mt-3 -mb-1 relative z-base'} />
                 )}
-                {/* Glass layer — sits behind all content; color por tema y
-                    apagada en solid/solid-dark (ver .modal-glass-layer en index.css) */}
-                <div
-                    className="modal-glass-layer absolute inset-0 backdrop-blur-[15px] backdrop-saturate-[300%] -z-base pointer-events-none"
-                    style={{ willChange: 'transform', transform: 'translateZ(0)' }}
-                />
+                {/* §21 · La capa extra de escarcha se RETIRÓ (2026-08-06). El
+                    contenedor ya es `data-surface="modal"`, así que esta capa pintaba
+                    `rgba(255,255,255,0.5)` y un segundo `backdrop-filter` ENCIMA del
+                    material del tema: el panel nunca llegaba a la opacidad que dice
+                    su token. Al cablear §5 y bajar `--surface-modal` a 0.51 el
+                    número quedó inerte —el modal seguía viéndose cerca de 0.76— y
+                    eso no coincidía con el mockup sobre el que se confirmó.
+                    Es el mismo caso que las tarjetas del tablero: vidrio a mano que
+                    precede a la superficie canónica y que nadie retiró al llegar
+                    ésta. Su propio comentario ya contaba que en oscuro ese blanco
+                    al 50% lavaba la tarjeta a lavanda. */}
                 {children}
             </div>
         </ModalShell>

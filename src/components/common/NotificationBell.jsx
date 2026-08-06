@@ -342,7 +342,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
             <button
                 onClick={() => setIsOpen(o => !o)}
                 aria-label="Notificaciones"
-                className={`relative flex items-center justify-center w-11 h-11 rounded-2xl backdrop-blur-2xl border
+                // §1.5 · sin vidrio propio: la campana vive dentro del encabezado,
+                // que ya es una superficie de vidrio, y una anidada queda a 1.02:1
+                // de su contenedor. El material lo pone el borde y el relleno.
+                className={`relative flex items-center justify-center w-11 h-11 rounded-2xl border
                     hover:translate-y-[var(--lift-hover)] hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-[var(--dur-base)]
                     ${isDark
                         ? `shadow-[var(--shadow-glass-3)]

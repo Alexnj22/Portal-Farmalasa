@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.432.0 — El modal nunca llegaba a su opacidad, y los portaíconos sin vidrio
+
+Cuarta tanda de §20. `vidrio-a-mano` **116 → 103**, `material-a-mano` **15 → 12**.
+
+**⚠️ Corrección de v2.428.0: el panel del modal no estaba en 0.51.**
+`LiquidModal` —del que cuelga `UnifiedModal`, o sea prácticamente todo modal del
+portal— pintaba una capa extra llamada `.modal-glass-layer` con
+`rgba(255,255,255,0.5)` **y un segundo `backdrop-filter` de 15px**, encima del
+material que ya pone `data-surface="modal"`. Con `--surface-modal` en 0.51 el
+panel se veía cerca de **0.76**: el token quedó inerte y el resultado no
+coincidía con el mockup sobre el que se confirmó el valor, donde el panel era
+0.51 limpio.
+
+La capa se eliminó, en el componente y en `index.css`. Su propia nota ya contaba
+media historia —en Liquid oscuro ese blanco al 50% lavaba la tarjeta a lavanda y
+hubo que bajarlo a 0.06—; lo que faltaba ver es que **el problema no era el valor
+sino la capa**. Mismo caso que las tarjetas del tablero en v2.431.0: vidrio a
+mano anterior a la superficie canónica, que nadie retiró cuando ésta llegó.
+
+**Portaíconos (§1.5).** Doce badges de ícono dejaron el `backdrop-filter`: los
+dos `squircleClass` —la misma constante duplicada en `PracticanteModal` y
+`NuevoConteoModal`—, la campana de notificaciones, el logo del splash, los marcos
+de avatar de `ScheduleCalendar` e `InlineDayEditor`, el ícono del encabezado de
+`FormRegisterPayment` y los cinco portaíconos de 96px de los estados vacíos.
+El argumento es del propio plan: §1.5 midió que una superficie de vidrio dentro
+de otra queda a **1.02:1** de su contenedor —invisible— así que el
+`backdrop-filter` sólo agrega una capa que el compositor arma para nada.
+
+**Los velos de los pickers.** `RangeDatePicker` y `PeriodPicker` abrían con
+`bg-scrim backdrop-blur-[2px]`; ahora usan `[data-velo]`, el mismo material que
+el velo del modal. `--scrim` queda para lo que sí es suyo: el fondo del sidebar
+móvil y los overlays de hover sobre fotos.
+
+*Fuera de la tanda, con motivo:* las **coberturas opacas** (`BranchesView`,
+`TabShifts`, `FormBranchEmployees`) son paneles que tapan una tarjeta entera y
+hoy ocluyen **gracias al blur**, así que quitárselo los volvería ilegibles.
+Necesitan un fondo que ocluya de verdad, y ése es un rol de material que el
+inventario de §13.1 nunca definió — no está entre las diez superficies canónicas.
+
 ## v2.431.0 — Chips, carriles y el vidrio que el tablero pintaba dos veces
 
 Segunda y tercera tanda de §20, otra vez por criterio.

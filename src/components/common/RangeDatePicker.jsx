@@ -440,7 +440,11 @@ const RangeDatePicker = ({
 
     const popup = isOpen && createPortal(
         <>
-            <div className="fixed inset-0 z-tooltip bg-scrim backdrop-blur-[2px]" onClick={handleClose} />
+            {/* §5 · el velo sale de `[data-velo]`, igual que el del modal: en Liquid
+                no oscurece —el panel flotante ya se separa solo— y en Solid sí. Era
+                `bg-scrim backdrop-blur-[2px]`, o sea el scrim genérico que también
+                usan el sidebar móvil y los overlays de foto. */}
+            <div data-velo className="fixed inset-0 z-tooltip" onClick={handleClose} />
             {/* D3.12 (2026-07-27): en táctil, hoja inferior a ancho completo en vez
                 de panel flotante. El panel medía 557px de alto en una ventana útil de
                 664px — entraba raspando, y con el teclado abierto no entraba. Mismo

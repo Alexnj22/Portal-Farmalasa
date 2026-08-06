@@ -2078,19 +2078,16 @@ thead.sticky,
   backdrop-filter: none !important;
 }
 
-/* .modal-glass-layer (LiquidModal.jsx) — capa extra de escarcha detrás del
-   contenido, pensada para intensificar el look glass. Antes era un
-   bg-white/50 fijo: invisible mientras la tarjeta también era hardcodeada
-   clara, pero al migrar la tarjeta a --surface-modal (T3) quedó expuesto un
-   bug real — en tema dark (liquid oscuro) ese blanco al 50% lavaba la
-   tarjeta oscura a un lavanda claro. Se reduce a un realce sutil en dark;
-   en solid/solid-dark se apaga entero (cero backdrop-filter, T2). */
-.modal-glass-layer { background: rgba(255,255,255,0.5); }
-[data-theme="dark"] .modal-glass-layer { background: rgba(255,255,255,0.06); }
-[data-theme="solid"] .modal-glass-layer,
-[data-theme="solid-dark"] .modal-glass-layer {
-  display: none;
-}
+/* `.modal-glass-layer` se ELIMINÓ el 2026-08-06 (§21). Era una capa extra de
+   escarcha —`rgba(255,255,255,0.5)` más un segundo `backdrop-filter` de 15px—
+   que `LiquidModal` pintaba encima del material del tema. Como el contenedor ya
+   es `data-surface="modal"`, el panel nunca llegaba a la opacidad de su token:
+   con `--surface-modal` en 0.51 el modal se veía cerca de 0.76.
+   Su propia nota ya contaba media historia —en oscuro ese blanco al 50% lavaba
+   la tarjeta a lavanda y hubo que bajarlo a 0.06—; lo que faltaba ver es que el
+   problema no era el valor sino la capa. Es el mismo caso que las tarjetas del
+   tablero: vidrio a mano anterior a la superficie canónica, que nadie retiró
+   cuando ésta llegó. */
 
 
 /* ═══════════════════════════════════════════════════════════════

@@ -316,7 +316,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             >
                 <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-border-card bg-surface-card shrink-0 z-header">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-surface-card backdrop-blur-sm overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-surface-card overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
                             {employee?.photo_url
                                 ? <img src={employee.photo_url} className="w-full h-full object-cover" alt="" />
                                 : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}

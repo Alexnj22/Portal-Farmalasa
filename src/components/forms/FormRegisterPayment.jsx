@@ -116,7 +116,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
             <div className="relative overflow-hidden rounded-modal p-5 border border-success/30 bg-gradient-to-br from-success/10 to-success/20 backdrop-blur-xl shadow-[var(--shadow-glow-success)]">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-success/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
                 <div className="relative z-base flex items-center gap-4">
-                    <div className="w-14 h-14 bg-surface-card backdrop-blur-md rounded-2xl flex items-center justify-center text-success shadow-sm border border-success/30 shrink-0">
+                    <div className="w-14 h-14 bg-surface-card rounded-2xl flex items-center justify-center text-success shadow-sm border border-success/30 shrink-0">
                         <Receipt size={26} strokeWidth={2} />
                     </div>
                     <div>

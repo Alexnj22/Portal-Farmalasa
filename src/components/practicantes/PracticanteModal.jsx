@@ -187,7 +187,11 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
     if (!isOpen) return null;
 
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card backdrop-blur-md";
+    // §1.5 · un portaícono DENTRO de una superficie de vidrio no lleva vidrio
+    // propio: medido, la anidada queda a 1.02:1 de su contenedor —invisible— y
+    // el `backdrop-filter` sólo agrega una capa que el compositor arma aparte.
+    // (Esta misma constante está duplicada en NuevoConteoModal.)
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card";
 
     return (
         <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}>

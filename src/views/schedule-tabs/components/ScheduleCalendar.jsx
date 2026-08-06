@@ -322,7 +322,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
         <tr className="group/row relative transition-[z-index] duration-[var(--dur-fast)] hover:z-sidebar">
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-glass-sm)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-[var(--dur-fast)] group-hover/row:scale-[1.01] overflow-hidden">
-                    <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-shine)] overflow-hidden flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card border border-border-card shadow-[var(--shadow-shine)] overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-content-3" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">

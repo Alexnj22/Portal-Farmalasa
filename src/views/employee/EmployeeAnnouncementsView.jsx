@@ -754,7 +754,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
                             <div className="relative flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-success" />
-                                <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
+                                <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
                                     <CheckCircle2 size={40} strokeWidth={1.5} />
                                 </div>
                                 <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Todo al día</h3>

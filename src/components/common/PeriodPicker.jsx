@@ -318,7 +318,8 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
     const popup = isOpen && createPortal(
         <>
-            <div className="fixed inset-0 z-tooltip bg-scrim backdrop-blur-[2px]" onClick={close} />
+            {/* §5 · el velo sale de `[data-velo]` — ver la nota gemela en RangeDatePicker */}
+            <div data-velo className="fixed inset-0 z-tooltip" onClick={close} />
             <div ref={popRef}
                 className="fixed z-toast"
                 style={{ ...popStyle, width: '460px', maxWidth: 'calc(100vw - 32px)' }}>

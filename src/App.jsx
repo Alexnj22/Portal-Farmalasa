@@ -499,7 +499,7 @@ function MainApp() {
                                 <circle cx="50" cy="50" r="44" stroke="url(#rg2)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="80 200" />
                             </svg>
                             {/* Logo pill */}
-                            <div className="w-16 h-16 rounded-2xl bg-surface-card-hover backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[var(--shadow-elevation-md)]">
+                            <div className="w-16 h-16 rounded-2xl bg-surface-card-hover border border-border-card flex items-center justify-center shadow-[var(--shadow-elevation-md)]">
                                 <img src="/Logo192.png" alt="Farmalasa" className="w-10 h-10 object-contain" />
                             </div>
                         </div>

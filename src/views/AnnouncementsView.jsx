@@ -724,7 +724,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <div className="relative group flex flex-col items-center text-center">
                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-[var(--dur-lento)] ${announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}></div>
                     
-                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
+                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
                       {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                     </div>
                     

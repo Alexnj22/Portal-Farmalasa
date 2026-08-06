@@ -974,7 +974,7 @@ export default function EncuestaAdminView() {
                             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)]">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-brand" />
-                                    <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-[var(--dur-lento)]">
+                                    <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-[var(--dur-lento)]">
                                         <BarChart2 size={40} strokeWidth={2} />
                                     </div>
                                     <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Sin encuestas aún</h3>

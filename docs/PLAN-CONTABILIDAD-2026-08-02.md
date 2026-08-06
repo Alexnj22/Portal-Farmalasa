@@ -1308,3 +1308,58 @@ nunca**.
    contadora mire, porque si no lo es, señala algo.
 3. **Esto no es asesoría fiscal.** Es aritmética sobre los datos del portal. Lo
    confirma la contadora.
+
+## Parte 11.bis — El IVA no es lo único que se paga, y la serie no es comparable
+
+Alex, 2026-08-05: *«tengo entendido que siempre paga impuestos»*. El cálculo de
+julio da saldo a favor, así que o el cálculo está mal o se está pagando otra
+cosa. **Es lo segundo, y probablemente sea el pago a cuenta de Renta.**
+
+El pago a cuenta se calcula sobre los **ingresos brutos**, no sobre la utilidad
+ni sobre el IVA, así que se paga **todos los meses pase lo que pase**. Con las
+ventas del portal (que están completas y verificadas por el sello), al 1.75%:
+
+| Mes | Ingresos gravados | Pago a cuenta (1.75%) |
+|---|---|---|
+| Marzo 2026 | $220,480.20 | $3,858.40 |
+| Abril | $193,500.25 | $3,386.25 |
+| Mayo | $208,136.56 | $3,642.39 |
+| Junio | $199,138.93 | $3,484.93 |
+| Julio | $214,046.46 | $3,745.81 |
+
+Entre **$3,400 y $3,900 al mes**. Si ese es el número que se reconoce como «lo
+que siempre se paga», la contradicción se disuelve: son dos impuestos distintos.
+**La tasa hay que confirmarla con la contadora** — acá se usó 1.75% como
+referencia, no como dato verificado del régimen de la empresa.
+
+### Y una advertencia sobre la serie de IVA: antes de junio NO es comparable
+
+Tentador sería mostrar la evolución del IVA mes a mes. No se puede todavía:
+
+| Mes | Compras cargadas | Con percepción | Con sello |
+|---|---|---|---|
+| Febrero | 373 | 6 | 0 |
+| Marzo | 392 | 6 | 0 |
+| Abril | 347 | 6 | 0 |
+| Mayo | 326 | 9 | 0 |
+| **Junio** | 389 | **226** | **332** |
+| **Julio** | 467 | **249** | **416** |
+
+El **conteo de compras es parejo todo el año**, así que no es que falten
+compras. Pero la **percepción pasa de 6-9 documentos por mes a 226-249**, y el
+sello aparece de la nada en junio (eso sí se explica: la captura de correos
+arrancó el 13 de mayo y el sello entró a compras con `20260803010413`).
+
+Un salto de 25× en un campo, con el resto estable, tiene dos explicaciones
+posibles y **no se puede decidir desde acá**:
+
+1. Los proveedores **empezaron** a aplicar percepción en junio (cambio real), o
+2. el campo **empezó a capturarse** en junio (cambio de captura).
+
+**Es una pregunta para la contadora, y no es menor**: la percepción es plata
+pagada por adelantado que reduce lo que se paga. Si venía existiendo antes de
+junio y no se estaba registrando, se estuvo pagando de más.
+
+**Consecuencia de método:** cualquier comparación de IVA mes contra mes que cruce
+junio está comparando dos cosas distintas. Hasta resolver esto, el cálculo de la
+Parte 11 vale para **junio en adelante**.

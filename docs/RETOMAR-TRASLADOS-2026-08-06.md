@@ -233,19 +233,26 @@ Consecuencias concretas:
 
 ## 5 · Orden sugerido
 
-1. ~~Leer `recibir_traslado.php` y su JS~~ — **hecho el 2026-08-06**, está en §2.
-   Del ERP ya no falta nada por leer.
-2. Tipo `INVENTORY_TRANSFER_REQUEST` en el CHECK de `approval_requests`, su
-   validación (producto, cantidad, sala origen ≠ destino, y que la de origen
-   siga por encima de su mínimo) y su rama en el aviso.
-3. El aprobador: la jefatura de la sala de ORIGEN. Es lo nuevo — el resto de
-   la familia usa un rol fijo.
-4. Edge Function `aplicar-traslado-inventario`, partiendo de una copia de
-   `aplicar-movimiento-inventario`: GET de la página para el vale, sesión en
-   origen, insert, y después la recepción.
-5. El botón en la lista de faltantes de Consulta de Inventario.
-6. Una prueba con **una unidad**, ida y vuelta, confirmada en el kardex de las
-   dos salas.
+**Los cinco primeros están HECHOS el 2026-08-06** (v2.450.1 y v2.452.0). Queda
+solo el sexto, que escribe en producción y necesita permiso.
+
+1. ~~Leer `recibir_traslado.php` y su JS.~~ Está en §2; del ERP no falta nada.
+2. ~~Tipo `INVENTORY_TRANSFER_REQUEST`, su validación y su rama en el aviso.~~
+   `20260806200206`. Nueve casos probados con `BEGIN…ROLLBACK`.
+3. ~~El aprobador que sale del dato.~~ Cascada **turno → jefatura → Supervisión**
+   (§4-bis), con el escalón escrito en la solicitud. Y dos cosas que aparecieron
+   solo al probar: el RLS resolvía por la sala de quien PIDE —en un traslado son
+   dos salas distintas por definición— y la cascada avisaba a gente sin permiso,
+   que llegaba a una pantalla vacía. `20260806200918` y `20260806201028`.
+4. ~~Edge Function `aplicar-traslado-inventario`.~~ Desplegada. Dos acciones:
+   `enviar` (crea el traslado en origen y marca APPROVED) y `recibir` (lo recibe
+   en destino). **APPROVED exige solo la primera** — el ERP ya distingue
+   despachado de recibido con `pe`, y una solicitud PENDING para siempre sobre
+   producto que ya salió describiría mal lo que pasa.
+5. ~~El botón en la lista de faltantes~~, más el widget «Traslados entre Salas»
+   con sus dos listas, el módulo de permiso propio y los motivos de rechazo.
+6. **PENDIENTE** — una prueba con **una unidad**, ida y vuelta, confirmada en el
+   kardex de las dos salas. Escribe en producción.
 
 ---
 

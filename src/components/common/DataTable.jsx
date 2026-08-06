@@ -448,12 +448,18 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
         // toque va a un destino de verdad lo declara con
         // `movil={{ usarAccionDeFila: true }}`. Es explícito, y es la única
         // versión que no deja controles muertos.
-        const alTocar = (movil?.usarAccionDeFila && fila.onClick) || abrir;
+        // Y si la hoja no agrega NADA, la ficha no se toca. Con cuatro columnas
+        // reales, las cuatro entran en la ficha y el `hoja` queda vacío: abrir
+        // una hoja que repite lo que ya se está leyendo es un control que
+        // responde y no sirve. Lo reportó el usuario en Productos — «solo abre
+        // prácticamente la misma info de la card».
+        const hayHoja = papeles.hoja.length > 0;
+        const alTocar = (movil?.usarAccionDeFila && fila.onClick) || (hayHoja ? abrir : undefined);
+        const Elem = alTocar ? 'button' : 'div';
         return (
-          <button
+          <Elem
             key={fila.clave}
-            type="button"
-            onClick={alTocar}
+            {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
             data-surface="card"
             className="w-full text-left px-3.5 py-3 rounded-card
               transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
@@ -482,7 +488,7 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
                 })}
               </div>
             )}
-          </button>
+          </Elem>
         );
       })}
 
@@ -492,13 +498,16 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
           cuerpo canónico —título a la izquierda, botones apilados, asa, área
           segura— así que acá no se dibuja ninguna hoja nueva. */}
       <ModalShell open={!!abierta} onClose={() => setAbierta(null)} surface={null}>
+        {/* La hoja va SIN `pie`. Las celdas de acción están cableadas al modo
+            tabla: en doce vistas ese botón es el chevron que expande el `<tr>`
+            hermano, y en modo ficha ese `<tr>` no se pinta. Ponerlas en el pie
+            producía exactamente lo que el usuario reportó en Productos —«abajo
+            tiene una flecha, le doy click, deslizo, y no pasa nada»—. Una acción
+            cuyo destino no existe no se dibuja. Rehousar el contenido de esas
+            filas expandidas es trabajo por vista, y hasta que exista, esas
+            vistas van con `movil={false}`. */}
         {abierta && (
-          <HojaMovil
-            titulo={deCol(abierta, papeles.identidad)}
-            pie={papeles.acciones
-              .map(col => deCol(abierta, col))
-              .filter(Boolean)}
-          >
+          <HojaMovil titulo={deCol(abierta, papeles.identidad)}>
             <div className="flex flex-col">
               {[papeles.ancla, ...papeles.chips, ...papeles.hoja].filter(Boolean).map(col => {
                 const v = deCol(abierta, col);

@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.461.1 — La hoja que repetía la ficha, y la flecha que no llevaba a ningún lado
+
+Reportado por el usuario en Productos: *«solo abre prácticamente la misma info de
+la card, y abajo tiene una flecha, le doy click, deslizo, y nada, no pasa nada»*.
+Las dos mitades eran el mismo error de raíz, y es el mismo de la versión
+anterior: **un control cuyo destino no existe**.
+
+**La hoja repetía la ficha porque no quedaba nada que contar.** El catálogo tiene
+cuatro columnas reales, las cuatro entran en la ficha, y entonces `hoja` queda
+vacío. Ahora, si la hoja no agrega nada, **la ficha no se toca**: se dibuja como
+un bloque de lectura y no como un botón. Abrir algo que repite lo que ya se está
+leyendo es un control que responde y no sirve.
+
+**Y la flecha era la celda de acción puesta en el pie de la hoja.** En doce
+vistas ese botón es el chevron que expande el `<tr>` hermano — que en modo ficha
+no se pinta. Las celdas de acción salen del pie: están cableadas al modo tabla, y
+una acción sin destino no se dibuja.
+
+**El catálogo vuelve a la tabla en el teléfono, con motivo escrito.** Ahí el
+contenido de verdad —precios, presentaciones, existencias por sala— vive en la
+fila expandida, no en las cuatro columnas: la ficha mostraba lo de menos y
+escondía lo de más. Vuelve cuando esa fila expandida tenga casa en la hoja, que
+es trabajo de la vista y no del canónico. `movil={false}` es exactamente para
+esto.
+
+Medido en WebKit iPhone 13:
+
+```
+productos  vuelve a la tabla · el chevron de expandir funciona otra vez
+ventas     50 fichas, las 50 tocables · hoja con Total, Fecha, Sucursal, ID…
+pedidos    25 fichas, las 25 tocables · hoja con Ventas 6m, Laboratorio…
+           en el pie de la hoja: 1 botón, que es Cerrar — ninguna acción muerta
+escritorio Productos 5 col / 25 filas — sin cambios
+```
+
 ## v2.461.0 — El botón que se ve, la sala que ya se sabía, y el vencimiento que avisa
 
 Tres correcciones del usuario sobre la pantalla de consulta.

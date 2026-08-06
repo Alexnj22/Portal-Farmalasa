@@ -1749,6 +1749,15 @@ export default function TabCatalogo({
                         { key: 'activo',    label: 'Estado',      sortable: true, hideBelow: 'sm' },
                         { key: '_expand',   label: '',             className: 'w-10' },
                     ]}
+                    /* Vuelve a la tabla en el teléfono, y con motivo: acá el
+                       contenido de verdad —precios, presentaciones, existencias
+                       por sala— vive en la fila EXPANDIDA, no en las cuatro
+                       columnas. La ficha las mostraba las cuatro y su hoja no
+                       agregaba nada, mientras el chevron de expandir quedaba
+                       muerto porque el `<tr>` hermano no se pinta como ficha.
+                       El catálogo vuelve cuando esa fila expandida tenga casa en
+                       la hoja: es trabajo de esta vista, no del canónico. */
+                    movil={false}
                     sortKey={sortField}
                     sortDir={sortDir}
                     onSort={handleSort}

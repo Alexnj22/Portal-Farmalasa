@@ -168,3 +168,72 @@ aplican por ahora.
 - Los libros de ventas y los cortes Z **no tocan ninguna tabla de compras**
   (verificado sobre los 7 RPC). Lo de compras no los afecta; se encuentran recién
   en la declaración.
+
+---
+
+## 7. La venta que se transmite tarde — a qué mes pertenece (2026-08-06)
+
+Pregunta de Alex: *«si una venta se efectuó en julio pero no se transmitió a
+Hacienda, y la retransmito ahora, ¿dónde entra?»*
+
+**Entra en JULIO.** El período lo fija la **fecha de emisión**, no la de
+transmisión, y el documento conserva su fecha y su código de generación
+originales (guía técnica: el lote de contingencia se manda «utilizando para cada
+DTE el detalle de los códigos de generación previamente notificados»).
+
+### Lo que dice la norma
+
+- **Art. 119-D CT**: el documento adquiere el carácter de DTE **cuando obtiene el
+  sello de recepción**. Antes del sello **no es un documento tributario**. Por eso
+  los libros del portal filtran por sello de 40 caracteres — no es una decisión
+  de diseño, es la definición legal.
+- **Art. 119-F CT (contingencia)**: ante fuerza mayor que impida transmitir, se
+  entrega igual el documento al cliente, se transmite después un **evento de
+  contingencia** listando los no transmitidos, y luego **la totalidad de esos
+  documentos**, ambos dentro del plazo que fije Hacienda. Hecho así, **no aplica
+  la sanción** del Art. 239-A literales g) y h).
+
+### Las dos ramas, y la consecuencia de cada una
+
+| | Qué pasa |
+|---|---|
+| **Llega el sello** | El documento entra al libro de **julio**. Si julio ya se declaró, la declaración quedó corta → **modificatoria de julio** |
+| **No llega el sello** | Nunca fue documento tributario. Hay una venta comercial sin documento fiscal válido. Es problema para la contadora, no de sistema |
+
+### La consecuencia que sí es del portal
+
+**El libro de julio se reconstruye entero cada vez que se exporta.** El día que
+llegue ese sello, julio sale distinto de como salió ayer, **sin que nada avise**.
+Lo mismo vale para `Resumen Fiscal`, que recalcula el mes desde cero.
+
+Es la deriva de H30 con un mecanismo concreto y no hipotético — y es exactamente
+para lo que sirve el **Bloque D**: sin registro de lo declarado, no hay forma de
+saber si ese documento ya estaba adentro o no.
+
+### Medido el 2026-08-06
+
+- **Julio: 0 ventas sin sello.** Las 22,429 tienen el suyo. El caso **no ocurrió**
+  en julio.
+- Junio: 1 sin sello, pero su estado es **NULA** — nunca necesitó uno.
+- **Agosto (mes en curso): 13 ventas FINALIZADAS sin sello**, la más vieja del
+  **1 de agosto — 5 días**. $172.80 en total, **$19.89 de IVA**, repartidas en 5
+  sucursales (2, 4, 27, 28, 29). Montos de $1.00 a $39.85.
+
+**Agosto cierra en días.** Si esas 13 no obtienen su sello antes de la
+declaración, son literalmente el caso de la pregunta.
+
+### El control existe, pero supone que se arregla solo
+
+`check-sales-reconciliation` ya detecta la causa `sin_sello` y la explica bien:
+*«El portal lo tiene, pero todavía sin el sello de Hacienda, así que no entra al
+libro. Se corrige solo cuando el sello llega.»*
+
+**El hueco es el «se corrige solo».** Nada escala cuando el sello NO llega: a los
+5 días se reporta igual que a las 5 horas. Falta un umbral que convierta
+«transitorio» en «alguien tiene que mirar esto».
+
+### Lo que el portal no puede distinguir
+
+Un sello ausente en el portal puede ser (a) que el documento no se transmitió, o
+(b) que se transmitió y el sello todavía no llegó al portal. **Desde la base no
+se distingue** — se confirma en el origen o en el portal de Hacienda.

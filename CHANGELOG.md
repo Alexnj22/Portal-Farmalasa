@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.454.0 — La sala ve y recibe sus traslados, no solo quien los pidió
+
+Pedido del usuario: que se vean todas las de la sala y no solo las propias, y
+que también se pueda recibir — estando de turno.
+
+**Es la sala la que recibe la caja, no la persona.** Hasta acá, del lado de
+destino solo veía el traslado quien lo había pedido: si esa persona salía de
+turno antes de que llegara, nadie más podía ni verlo ni recibirlo, y el producto
+se quedaba en tránsito hasta que volviera. Ahora lo ve toda la sala que lo pidió
+—la jefatura siempre, el resto mientras esté en turno— y cualquiera de ellos
+puede recibirlo.
+
+**El turno se pregunta una vez, no una por fila.** «Si estoy de turno» es una
+propiedad de quien mira, no de la fila que mira, así que la función que lo
+responde no recibe la sala como parámetro: se resuelve una sola vez por
+consulta. Una versión que la recibiera sería una consulta a horarios por cada
+solicitud de la lista — la misma forma que tiró el portal el 8 de julio.
+
+**Y el último caso donde el orden podía morder.** El sistema no devuelve el
+número del traslado que crea, así que se identifica por diferencia. Si dos
+personas de la misma sala despachan a la vez, desempata el destino; y si las dos
+van a la misma sala, ahora se mira **lo que llevan adentro**. Recién si ni eso
+alcanza se dice que quedó sin número, en vez de adivinar.
+
 ## v2.453.1 — El botón de tamaño entra a Personalizar, y el fantasma tenía una segunda mitad
 
 > *`v2.453.0` fue el número que reservó el bump de este mismo trabajo: otra

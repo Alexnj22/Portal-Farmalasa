@@ -51,6 +51,7 @@ const TRASLADO = `${BASE}/traslado_producto.php`;
 const RECIBIR  = `${BASE}/recibir_traslado.php`;
 const SESION   = `${BASE}/cambio_sesion.php`;
 const LISTADO  = `${BASE}/admin_traslados_dt.php`;
+const VER      = `${BASE}/ver_traslado.php`;
 
 // Una Edge Function vive 150 s. El presupuesto se corta ANTES de empezar otra
 // línea para que siempre alcance a contestar.
@@ -201,6 +202,21 @@ async function pendientesDeOrigen(
  * sala no se pueden distinguir. Los `value` vienen con un espacio adelante
  * (`value=' 1'`), así que hay que recortarlos.
  */
+/**
+ * El contenido de un traslado, para desempatar cuando el destino no alcanza.
+ *
+ * `ver_traslado.php` da descripción, presentación, unidad y cantidad por línea.
+ * Es el último recurso: dos traslados de la misma sala a la misma sala, en el
+ * mismo instante, se distinguen por lo que llevan adentro.
+ */
+async function contenidoDeTraslado(cookie: string, id: string): Promise<string> {
+  try {
+    const h = await pedir(cookie, `${VER}?id_traslado=${encodeURIComponent(id)}`,
+      undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+    return norm(h.replace(/<[^>]+>/g, " "));
+  } catch { return ""; }
+}
+
 function direccionesPorSucursal(html: string): Map<string, string> {
   const sel = html.match(/<select[^>]*id="id_sucursal"[\s\S]*?<\/select>/)?.[0] ?? "";
   return new Map(
@@ -301,9 +317,27 @@ Deno.serve(async (req) => {
       if (meta.erp_recibido)
         return json({ ok: false, codigo: "YA_RECIBIDO", error: "Este traslado ya se recibió." }, 409);
 
-      // Recibe la sala de DESTINO: quien pidió, o alguien de esa sala.
-      if (!alcanceTodo && emp?.branch_id !== Number(meta.branch_id) && quien.id !== sol.employee_id)
-        return json({ ok: false, error: "El traslado lo recibe la sala que lo pidió." }, 403);
+      // Recibe la SALA que lo pidió, no la persona: quien pidió puede estar de
+      // descanso cuando llega la caja. Mismo criterio que el RLS —jefatura
+      // siempre, el resto si está en turno— repetido acá porque esta función
+      // usa la llave de servicio y el RLS no la frena.
+      if (!alcanceTodo && quien.id !== sol.employee_id) {
+        const enLaSala = emp?.branch_id === Number(meta.branch_id);
+        const esJefatura = ["JEFE", "SUBJEFE"].includes(String(emp?.system_role ?? ""));
+        let enTurno = false;
+        if (enLaSala && !esJefatura) {
+          const { data: t } = await admin
+            .rpc("empleados_en_turno", { p_branch_id: Number(meta.branch_id) });
+          enTurno = Array.isArray(t) && t.some((x: { employee_id: string }) => x.employee_id === quien.id);
+        }
+        if (!enLaSala || !(esJefatura || enTurno))
+          return json({
+            ok: false,
+            error: enLaSala
+              ? "Para recibir hay que estar en turno en la sala."
+              : "El traslado lo recibe la sala que lo pidió.",
+          }, 403);
+      }
 
       const cookie = await sesionEn(erpDestino);
       const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idTraslado)}`,
@@ -650,6 +684,21 @@ Deno.serve(async (req) => {
           return d && (d === dirDestino || d.includes(dirDestino) || dirDestino.includes(d));
         });
         if (mismos.length > 0) nuevos = mismos;
+      }
+    }
+    // Y si el destino tampoco alcanza —dos traslados de esta sala a la misma
+    // sala, en el mismo instante— se mira lo que llevan adentro. Es el caso que
+    // aparece cuando una sala pide dos productos distintos a la misma sala y
+    // dos personas los despachan a la vez.
+    if (nuevos.length > 1) {
+      const buscado = lineas.map((l) => norm(l.descripcion ?? "")).filter(Boolean);
+      if (buscado.length > 0) {
+        const coinciden: string[] = [];
+        for (const id of nuevos) {
+          const c = await contenidoDeTraslado(cookie, id);
+          if (c && buscado.every((d) => c.includes(d))) coinciden.push(id);
+        }
+        if (coinciden.length > 0) nuevos = coinciden;
       }
     }
     const idTraslado = nuevos.length === 1 ? nuevos[0] : null;

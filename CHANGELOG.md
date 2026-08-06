@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.440.0 — Solid recupera su geometría en el carril, y siete avisos al canónico
+
+**El carril de pestañas ahora tiene geometría por tema.** `--tab-track-radius` se
+declaraba una sola vez (`2.5rem`, en `:root`), así que los dos Solid heredaban la
+píldora de Liquid: un carril **completamente redondo** al lado de tarjetas de
+`0.75rem`. Decisión del usuario: *Solid tiene su identidad y Liquid la suya* — y
+la geometría es parte de la identidad, no se hereda entre materiales.
+
+Y no alcanzaba con el token, porque **el pill activo tenía `rounded-full`
+clavado** en `ViewTabBar`, que es exactamente lo que `DESIGN.md` prohíbe
+(*«nunca clavar un radio»*): cuadrar el carril habría dejado un pill redondo
+dentro de una caja recta. Nace `--tab-pill-radius`.
+
+Los dos números salen de la regla concéntrica de §20.1 —*radio interno = radio
+externo − separación*—: el carril lleva `p-1` (4px), así que en Solid
+`0.75rem − 4px = 0.5rem`, que es exactamente `--btn-radius`. En Liquid los dos
+son píldora y la regla se cumple sola. Verificado contra `dist/`: `2.5rem`/`9999px`
+en Liquid, `0.75rem`/`0.5rem` en los dos Solid.
+
+**Siete avisos escritos a mano pasan al `Notice` canónico** — no cuatro, que era
+lo anotado: el barrido por patrón encontró tres más en `FormDispositivos`,
+`CotizacionesView` y `AnnouncementsView`. Todos repetían las clases exactas de
+una variante del componente (`bg-danger/10 border-danger/30 text-danger-text`)
+más su propio radio, su propio padding y su propia tipografía, así que **cada uno
+se veía distinto del canónico y de los otros seis**. Ahora heredan `rounded-btn`,
+el `role="status"` que el componente ya razonaba —*un aviso inline informa, no
+interrumpe*— y el `--warning-text` que arregló los 22 avisos de contraste.
+
+*Nota de método:* la lista de siete salió de **grepear el patrón**, no de la
+lista de cuatro que venía arrastrando desde la tanda de §20. Otra vez lo mismo:
+una lista a mano se desincroniza del registro.
+
 ## v2.439.0 — Los tres widgets de solicitudes: baldosa y modal
 
 **Modificar Facturación**, **Ajuste de Min/Max** y **Ajuste de Inventario**

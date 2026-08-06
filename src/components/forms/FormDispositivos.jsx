@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Notice from '../common/Notice';
 import Button from '../common/Button';
 import { SkeletonText } from '../common/StateViews';
 import { Laptop, AlertCircle, Loader2, Unplug, PowerOff, Activity } from 'lucide-react';
@@ -60,10 +61,7 @@ const FormDispositivos = ({ formData }) => {
 
             {/* BANNER DE ERROR DINÁMICO */}
             <div inert={!(errorMsg) ? true : undefined} className={`transition-all duration-[var(--dur-slow)] overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-2xl text-label font-bold flex items-center gap-2 shadow-sm text-danger">
-                    <AlertCircle size={16} strokeWidth={2.5} />
-                    <span>{errorMsg}</span>
-                </div>
+                <Notice variant="danger" icon={AlertCircle}>{errorMsg}</Notice>
             </div>
 
             {/* 🎛️ ENCABEZADO MINIMALISTA */}

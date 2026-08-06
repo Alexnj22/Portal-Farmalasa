@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import {
@@ -814,9 +815,7 @@ export default function CotizacionesView() {
                 )}
 
                 {saveError && (
-                    <div className="flex items-center gap-3 bg-danger/10 border border-danger/30 text-danger-text text-body-sm font-bold px-4 py-3 rounded-2xl">
-                        <AlertCircle size={16} strokeWidth={2.5} />{saveError}
-                    </div>
+                    <Notice variant="danger" icon={AlertCircle}>{saveError}</Notice>
                 )}
 
                 <div className="flex items-center justify-end gap-3 pb-4">

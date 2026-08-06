@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Notice from '../common/Notice';
 import Badge from '../common/Badge';
 import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -185,12 +186,9 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     aparte. Lo mismo en FormSetPassword, RolesView y
                     EmployeeRequestsView: son cuatro `Notice` a mano. */}
                 {isConflict && (
-                    <div className="flex items-center gap-3 text-danger-text bg-danger/10 px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2">
-                        <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
-                        <span className="text-label font-black uppercase tracking-widest leading-tight">
-                            Ya existe un pago registrado para {currentPaidThrough} o posterior.
-                        </span>
-                    </div>
+                    <Notice variant="danger" icon={AlertCircle} className="animate-in fade-in slide-in-from-top-2">
+                        Ya existe un pago registrado para {currentPaidThrough} o posterior.
+                    </Notice>
                 )}
 
                 {/* NOTAS / OBSERVACIONES */}

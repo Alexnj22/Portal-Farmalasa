@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, memo, useMemo } from 'react';
+import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import {
@@ -1057,10 +1058,7 @@ const EmployeeRequestsView = () => {
 
                         {/* §18.2 · el aviso es tinta, sin vidrio */}
                         {error && (
-                            <div className="mb-5 bg-warning/10 border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[var(--shadow-shine)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
-                                <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
-                                <span className="leading-tight">{error}</span>
-                            </div>
+                            <Notice variant="warning" icon={AlertCircle} className="mb-5 animate-in fade-in slide-in-from-top-2">{error}</Notice>
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-5 relative z-base">

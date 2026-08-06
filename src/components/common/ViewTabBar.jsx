@@ -265,7 +265,11 @@ export default function ViewTabBar({
             return (
               <button key={tab.key}
                 onClick={() => { onTabChange?.(tab.key); setIsSearchMode(false); }}
-                className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-full text-micro md:text-caption font-black
+                /* §11 · el radio sale del tema (`--tab-pill-radius`): píldora en
+                   Liquid, 0.5rem en Solid. Estaba clavado en `rounded-full`, que
+                   es lo que DESIGN.md prohíbe — y dejaba un pill redondo dentro
+                   de un carril que en Solid es recto. */
+                className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-[var(--tab-pill-radius)] text-micro md:text-caption font-black
                   uppercase tracking-widest transition-all duration-[var(--dur-slow)] transform-gpu whitespace-nowrap
                   border shrink-0 flex items-center gap-1.5
                   ${isActive ? activeTabCls : inactiveTabCls}`}>

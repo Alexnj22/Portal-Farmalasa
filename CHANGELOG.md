@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.411.0 — La notificación deja de poder perderse: nace con la solicitud
+
+El aviso de «tenés una solicitud para revisar» lo mandaba el navegador, en una
+llamada aparte justo después del insert:
+
+```js
+await insertApprovalRequestSilent({...})   // 1. crea
+await notifyEmployees([aprobador], {...})  // 2. avisa  ← podía no correr
+```
+
+Dos operaciones independientes sin transacción en medio. Si se cerraba la
+pestaña, se cortaba la red, o la solicitud se creaba por cualquier otra vía —un
+script, un import, una Edge Function futura—, la solicitud quedaba registrada y
+nadie se enteraba. Se comprobó hoy: una solicitud creada por SQL dejó al
+aprobador con **cero notificaciones** y **ocho suscripciones push sanas**. El
+canal estaba bien; simplemente no se envió nada.
+
+Ahora la notificación es parte de crear la solicitud: trigger
+`notificar_solicitud_creada` (AFTER INSERT), misma transacción. Solicitud
+creada ⟹ aprobador avisado, siempre y sin importar quién la creó. Se quitaron
+las seis llamadas del navegador —cuatro en el widget de Facturación, dos en
+`createRequest`— para que no dupliquen. Migración `20260806020410`.
+
+**Y el aviso ahora dice algo.** Antes eran frases genéricas; ahora llevan el
+motivo y el dato que hace falta para decidir sin abrir la app:
+
+```
+⚠️ Anulación de Factura
+Alexander Melgar solicita anular 0000080360_COF ($8.55) · Salud 1
+  — Cobro incorrecto
+
+💳 Cambio de Forma de Pago
+Alexander Melgar solicita cambiar el pago de 0000080239_COF:
+  efectivo → tarjeta ($4.90) — El cliente pagó con tarjeta, se marcó efectivo.
+```
+
+El motivo sale de `reason` (el catálogo del widget) y, si no hay, de lo que la
+persona escribió. Se corta a 140 caracteres. Los tipos de RRHH conservan su
+frase de siempre, con el motivo agregado al final.
+
+Dos detalles que el trigger respeta y que no son obvios: una solicitud sin
+aprobador no notifica a nadie (el kiosco crea `SHIFT_EXCEPTION` así, para que
+Talento Humano la revise después), y el nivel 1 de un cambio de turno apunta a
+`/my-requests` —lo aprueba el compañero, que lo ve en su propia pantalla— y no
+a `/requests`.
+
+La notificación además guarda `request_id` y `request_type` en su metadata, que
+es lo que van a necesitar los botones de aprobar/rechazar.
+
+
+_(pendiente de redactar)_
+
 ## v2.410.1 — El menú de Ajustes no abría: le pisé la posición
 
 Regresión de v2.409.0. Para anclar el destello de llegada le puse

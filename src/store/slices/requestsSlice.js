@@ -561,14 +561,10 @@ export const createRequestsSlice = (set, get) => ({
                     dimension: 'HR',
                     new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type} (cambio de par)`,
                 });
-                // El compañero debe enterarse YA de que su aprobación está pendiente
-                await notifyEmployees([String(payload.targetEmployeeId)], {
-                    type: 'REQUEST_PENDING',
-                    title: 'Cambio de turno propuesto',
-                    body: `${enrichedPeer.employee?.name || 'Un compañero'} te propone un cambio de turno${payload.date ? ` para el ${payload.date}` : ''}. Requiere tu aprobación.`,
-                    link: '/my-requests',
-                    push: true,
-                });
+                // El aviso al compañero lo crea el trigger
+                // `notificar_solicitud_creada`, en la misma transacción que la
+                // solicitud — incluido el caso de nivel 1, que apunta a
+                // /my-requests y no a /requests.
                 return enrichedPeer;
             }
 
@@ -610,17 +606,10 @@ export const createRequestsSlice = (set, get) => ({
                 new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type}`,
             });
 
-            // Notificar al aprobador designado — antes nadie se enteraba
-            if (approverId) {
-                await notifyEmployees([String(approverId)], {
-                    type: 'REQUEST_PENDING',
-                    title: 'Nueva solicitud pendiente',
-                    body: `Solicitud de ${REQUEST_TYPES[type]?.label || type} de ${enriched.employee?.name || 'un empleado'} espera tu decisión.`,
-                    link: '/requests',
-                    push: true,
-                });
-            }
-
+            // El aviso al aprobador lo crea el trigger
+            // `notificar_solicitud_creada` junto con la fila. Antes salía de
+            // acá, en una llamada aparte que podía no ejecutarse: si eso
+            // pasaba, la solicitud quedaba registrada y nadie se enteraba.
             return enriched;
         } catch (err) {
             console.error('createRequest error:', err);

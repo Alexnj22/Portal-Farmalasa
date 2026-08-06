@@ -14,7 +14,6 @@ import SearchInput from '../../components/common/SearchInput';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { normSearch } from '../../utils/searchUtils';
-import { notifyEmployees } from '../../utils/notify';
 import { formatMoney } from '../../utils/formatNumber';
 import { insertApprovalRequestSilent } from '../../data/requests';
 import {
@@ -370,15 +369,10 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
       await appendAuditLog('ANNULMENT_REQUEST_CREATED', String(inv.id), {
         correlativo: inv.correlativo, reason, total: inv.total, notified: target?.name,
       });
-      if (target?.id) {
-        await notifyEmployees([target.id], {
-          type: 'REQUEST_PENDING',
-          title: '⚠️ Solicitud de Anulación',
-          body: `${user?.name || 'Un empleado'} solicita anular ${inv.correlativo} (${fmtCurrency(inv.total)}) — ${reason}`,
-          link: '/requests',
-          push: true,
-        });
-      }
+      // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
+      // `notificar_solicitud_creada` en la misma transacción que la solicitud.
+      // Mandarlo también desde el navegador duplicaría la notificación, y era
+      // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('annul', target?.name);
     } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }
@@ -493,15 +487,10 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
       await appendAuditLog('PAYMENT_CHANGE_REQUEST_CREATED', String(inv.id), {
         correlativo: inv.correlativo, current_pago: inv.tipo_pago, new_pago: newPayment,
       });
-      if (target?.id) {
-        await notifyEmployees([target.id], {
-          type: 'REQUEST_PENDING',
-          title: '💳 Cambio de Forma de Pago',
-          body: `${user?.name || 'Un empleado'} solicita cambiar pago de ${inv.correlativo}: ${inv.tipo_pago} → ${newPayment}`,
-          link: '/requests',
-          push: true,
-        });
-      }
+      // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
+      // `notificar_solicitud_creada` en la misma transacción que la solicitud.
+      // Mandarlo también desde el navegador duplicaría la notificación, y era
+      // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('pay_change', target?.name);
     } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }
@@ -594,15 +583,10 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       await appendAuditLog('VENDOR_CHANGE_REQUEST_CREATED', String(inv.id), {
         correlativo: inv.correlativo, from: inv.cod_vendedor, to: selectedVendor.code,
       });
-      if (target?.id) {
-        await notifyEmployees([target.id], {
-          type: 'REQUEST_PENDING',
-          title: '👤 Cambio de Vendedor',
-          body: `${user?.name || 'Un empleado'} solicita reasignar ${inv.correlativo} a ${selectedVendor.name}`,
-          link: '/requests',
-          push: true,
-        });
-      }
+      // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
+      // `notificar_solicitud_creada` en la misma transacción que la solicitud.
+      // Mandarlo también desde el navegador duplicaría la notificación, y era
+      // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('vendor_change', target?.name);
     } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }
@@ -733,15 +717,10 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       await appendAuditLog('CLIENT_CHANGE_REQUEST_CREATED', String(inv.id), {
         correlativo: inv.correlativo, from: inv.cliente, to: newClient.name,
       });
-      if (target?.id) {
-        await notifyEmployees([target.id], {
-          type: 'REQUEST_PENDING',
-          title: '🧾 Cambio de Cliente',
-          body: `${user?.name || 'Un empleado'} solicita cambiar el cliente de ${inv.correlativo}: ${inv.cliente || 'Sin nombre'} → ${newClient.name}`,
-          link: '/requests',
-          push: true,
-        });
-      }
+      // El aviso al aprobador ya NO se manda desde acá: lo crea el trigger
+      // `notificar_solicitud_creada` en la misma transacción que la solicitud.
+      // Mandarlo también desde el navegador duplicaría la notificación, y era
+      // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('client_change', target?.name);
     } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }

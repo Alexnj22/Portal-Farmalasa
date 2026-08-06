@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.408.0 — La anulación completa: ERP y Hacienda, en un solo paso
+
+`ANNULMENT_REQUEST` ya se aplica. Aprobar una solicitud de anulación anula la
+factura en el ERP **y** presenta la invalidación ante Hacienda, en la misma
+operación. Era el tipo que quedaba fuera en v2.404.0, justamente porque hacer
+solo la primera mitad deja la factura muerta en el portal y viva ante el MH.
+
+**Cuatro pasos, todos contra el ERP.** El navegador nunca habla directo con
+Hacienda: va por `proxydte.php`. La cadena es `anular_dte.php` (pantalla) →
+`_helper_dte_class.php` (arma y firma el DTE de anulación) → `generar_dte.php`
+(lo lee) → `proxydte.php` (lo envía) → `generar_dte.php` otra vez, para
+registrar la respuesta.
+
+**El orden no es decorativo.** `anular_dte.php` no es solo una pantalla: al
+abrirla, el ERP se autentica contra Hacienda y **cachea el token en la sesión
+PHP**. Saltándose ese GET, `get_dte` responde `{"detalles":null,"typeinfo":
+"Error","msg":"Token no pudo ser cargado"}`. Lo comprobé salteándolo. Por eso
+el token se lee de esa misma pantalla: la llamada que lo entrega es la que deja
+la sesión lista.
+
+**El último paso no es opcional.** Si se envía al MH y no se registra la
+respuesta con `save_response_mh`, Hacienda tiene la anulación y el ERP no la
+anota. Se ejecuta siempre, incluso cuando Hacienda rechaza — sus observaciones
+también tienen que quedar allá.
+
+**El éxito es el sello, no el HTTP 200.** El proxy contesta 200 igual cuando
+Hacienda rechaza; ahí `selloRecibido` viene nulo y las razones están en
+`observaciones`. Esa es la condición que decide si la solicitud queda APPROVED.
+
+**El endpoint destructivo solo se llama si hace falta.** Si la factura ya está
+NULA en el ERP, no se vuelve a llamar `anular_factura.php`: lo que falta es el
+paso ante Hacienda, y esa es la única mitad que se ejecuta.
+
+El responsable de la anulación es **quien aprueba** — nombre y DUI salen de su
+ficha, nunca del cliente: van a un documento tributario. El DUI se formatea
+como `00000000-0`, que es lo que valida el ERP. Si el aprobador no tiene DUI
+en su ficha, la solicitud no se aplica y lo dice.
+
+**Verificado de punta a punta** contra la factura 344862 (COF 0000080239, ya
+anulada en el ERP y pendiente ante el MH). Hacienda respondió `PROCESADO`,
+código 001, «Invalidación Recibida y Procesada», sello
+`2026A37A17400B92491F89DEB9216B308AAFTR3L`, sin observaciones; el ERP registró
+la respuesta.
+
+Además, la solicitud aprobada ahora **muestra en pantalla lo que se aplicó** —
+el cambio, quién lo hizo y, en una anulación, el sello de Hacienda. Sin eso,
+aprobar y que el cambio ocurra fuera del portal se veía igual que aprobar y que
+no ocurriera nada, que es como estaba antes de v2.404.0.
+
+
+_(pendiente de redactar)_
+
+
+_(pendiente de redactar)_
+
 ## v2.407.1 — Tres bugs del sidebar: Ajustes, el flotante y los brillos
 
 Los tres los reportó el usuario con capturas, y los tres los introdujo la migración
@@ -56,10 +111,6 @@ contemplaba las alfas **entre corchetes**, así que `border-white/[0.07]` quedó
 `border-[rgb(var(--sidebar-ink))]/[0.07]` — una clase inválida que Tailwind descarta en
 silencio. **30 clases en 4 archivos**, reparadas. Compilaba igual: un borde que
 desaparece no rompe el build.
-
-## v2.407.0 — La anulación completa: ERP y Hacienda, en un solo paso
-
-_(pendiente de redactar)_
 
 ## v2.406.1 — La utilidad del puntero se quedó sin consumidor
 

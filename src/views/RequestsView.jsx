@@ -377,6 +377,26 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                         </div>
                     )}
 
+                    {/* Constancia de lo aplicado. Sin esto, aprobar y que el
+                        cambio ocurra fuera del portal se ve igual que aprobar
+                        y que no ocurra nada — que es como estaba antes. */}
+                    {meta.erp_aplicado && (
+                        <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30 space-y-1">
+                            <p className="text-micro font-black uppercase tracking-widest text-success">Aplicado</p>
+                            <p className="text-label font-bold text-success-text">
+                                {meta.erp_aplicado.campo === 'anulacion'
+                                    ? 'Factura anulada'
+                                    : `${meta.erp_aplicado.de || '—'} → ${meta.erp_aplicado.a || '—'}`}
+                                {meta.erp_aplicado.by_name && ` · por ${meta.erp_aplicado.by_name}`}
+                            </p>
+                            {meta.erp_aplicado.hacienda?.sello && (
+                                <p className="text-micro text-content-3 font-mono break-all">
+                                    Sello de Hacienda: {meta.erp_aplicado.hacienda.sello}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Note */}
                     {req.note && (
                         <div>

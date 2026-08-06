@@ -33,14 +33,20 @@ import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.t
 // propio id (`erp_invoice_id`, ej. 345608). Mandar el del portal apuntaría a
 // OTRA factura existente, no daría error. La traducción es obligatoria.
 
-const BASE      = "https://clientesdte3.oss.com.sv/farma_salud";
-const LOGIN_URL = `${BASE}/login.php`;
+const BASE       = "https://clientesdte3.oss.com.sv/farma_salud";
+const LOGIN_URL  = `${BASE}/login.php`;
 const REIMPRIMIR = `${BASE}/reimprimir_factura.php`;
+const ANULAR     = `${BASE}/anular_factura.php`;
+const ANULAR_DTE = `${BASE}/anular_dte.php`;
+const HELPER_DTE = `${BASE}/_helper_dte_class.php`;
+const GENERAR_DTE = `${BASE}/generar_dte.php`;
+const PROXY_DTE  = `${BASE}/proxydte.php`;
 
 const TIPOS_SOPORTADOS = new Set([
   "PAYMENT_CHANGE_REQUEST",
   "VENDOR_CHANGE_REQUEST",
   "CLIENT_CHANGE_REQUEST",
+  "ANNULMENT_REQUEST",
 ]);
 
 // El `credito` del ERP es un índice, no el nombre. Leído del <select> de
@@ -87,19 +93,34 @@ async function conReintento<T>(fn: () => Promise<T>, veces = 3, pausaMs = 1500):
   throw ultimo;
 }
 
-async function pedir(cookie: string, url: string, datos?: URLSearchParams): Promise<string> {
+interface OpcionesPedido {
+  /** Cuerpo JSON en vez de form-urlencoded (solo lo usa `proxydte.php`). */
+  cuerpoJson?: unknown;
+  /** Cabeceras extra — el proxy del MH espera el token en `Authorization`. */
+  extra?: Record<string, string>;
+  timeoutMs?: number;
+}
+
+async function pedir(
+  cookie: string, url: string, datos?: URLSearchParams, opts: OpcionesPedido = {},
+): Promise<string> {
+  const { cuerpoJson, extra, timeoutMs = 45_000 } = opts;
+  const hayCuerpo = datos !== undefined || cuerpoJson !== undefined;
   return await conReintento(async () => {
     const res = await fetch(url, {
-      method: datos ? "POST" : "GET",
+      method: hayCuerpo ? "POST" : "GET",
       headers: {
         Cookie: cookie,
         "User-Agent": "Mozilla/5.0",
         "X-Requested-With": "XMLHttpRequest",
         Referer: `${BASE}/admin_factura_rangos.php`,
-        ...(datos ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+        ...(cuerpoJson !== undefined ? { "Content-Type": "application/json" }
+            : datos !== undefined ? { "Content-Type": "application/x-www-form-urlencoded" }
+            : {}),
+        ...(extra ?? {}),
       },
-      body: datos?.toString(),
-      signal: AbortSignal.timeout(45_000),
+      body: cuerpoJson !== undefined ? JSON.stringify(cuerpoJson) : datos?.toString(),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     const texto = await res.text();
     if (/name\s*=\s*["']password/i.test(texto.slice(0, 4000)))
@@ -140,6 +161,102 @@ function leerRespuesta(cuerpo: string): { ok: boolean; msg: string } {
   } catch {
     return { ok: false, msg: `Respuesta ilegible del ERP: ${cuerpo.slice(0, 200)}` };
   }
+}
+
+// ── Anulación ante Hacienda ────────────────────────────────────────────────
+//
+// Cuatro pasos, todos contra el propio ERP: el navegador NUNCA habla directo
+// con el MH, va por `proxydte.php`. Mapeado leyendo `getAuth.js` y verificado
+// de punta a punta contra la factura 344862 el 2026-08-05.
+//
+// EL ORDEN NO ES DECORATIVO. `anular_dte.php` no es solo la pantalla: al
+// abrirla el ERP se autentica contra Hacienda y **cachea el token en la sesión
+// PHP**. Sin ese GET previo, `get_dte` responde
+// {"detalles":null,"typeinfo":"Error","msg":"Token no pudo ser cargado"} — lo
+// comprobé saltándomelo. Por eso el token se lee de esa pantalla en vez de
+// pedirlo aparte: la llamada que lo entrega es la misma que deja la sesión lista.
+//
+// Y el paso 4 no es opcional: si se envía al MH y no se registra la respuesta,
+// Hacienda tiene la anulación y el ERP no la anota. Esa es exactamente la
+// divergencia que el módulo de Facturación existe para detectar.
+
+/** El DUI viaja con el formato que valida el ERP (`isDUI`): 00000000-0. */
+function formatearDui(bruto: string): string | null {
+  const d = String(bruto ?? "").replace(/\D/g, "");
+  if (d.length !== 9) return null;
+  return `${d.slice(0, 8)}-${d.slice(8)}`;
+}
+
+interface ResultadoMH {
+  sello: string;
+  descripcion: string;
+  codigo: string;
+  fh: string;
+  observaciones: string[];
+}
+
+async function anularEnHacienda(
+  cookie: string, erpId: string, tipodoc: string,
+  nombreResp: string, duiResp: string,
+): Promise<ResultadoMH> {
+  // 1 · La pantalla: entrega el token y deja la sesión autenticada ante el MH.
+  const modal = await pedir(cookie, `${ANULAR_DTE}?id_factura=${erpId}&tipodoc=${tipodoc}&anula=1`);
+  const token    = modal.match(/id=\s*"tok"[^>]*>([^<]+)<\/textarea>/)?.[1]?.trim();
+  const ambiente = modal.match(/id="ambiente"\s+value="([^"]+)"/)?.[1] ?? "01";
+  if (!token) throw new Error("El ERP no entregó el token de Hacienda.");
+
+  // 2 · Armar el DTE de anulación (queda firmado del lado del ERP).
+  const creado = leerRespuesta(await pedir(cookie, HELPER_DTE, new URLSearchParams({
+    process: "creaJsonDTe", id_factura: erpId, tipodoc,
+    anula: "1", nombreResp, duiResp,
+  })));
+  if (!creado.ok) throw new Error(`No se pudo generar la anulación: ${creado.msg}`);
+
+  // 3 · Leer el documento firmado.
+  const doc = JSON.parse(await pedir(cookie, GENERAR_DTE, new URLSearchParams({
+    process: "get_dte", id_factura: erpId, tipodoc, anula: "1",
+  })))?.detalles;
+  if (!doc?.encodeDte) throw new Error("El ERP no devolvió el documento de anulación firmado.");
+
+  // 4 · Al MH, por el proxy del ERP.
+  const bruto = await pedir(cookie, PROXY_DTE, undefined, {
+    cuerpoJson: { ambiente, idEnvio: doc.id_envio, version: doc.version, documento: doc.encodeDte },
+    extra: { Authorization: token },
+  });
+  let mh: Record<string, unknown>;
+  try { mh = JSON.parse(bruto); }
+  catch { throw new Error(`Hacienda devolvió algo ilegible: ${bruto.slice(0, 200)}`); }
+
+  const sello = String(mh.selloRecibido ?? "");
+  const observaciones = Array.isArray(mh.observaciones) ? mh.observaciones.map(String) : [];
+
+  // 5 · Registrar la respuesta en el ERP — pase lo que pase. Si Hacienda
+  // rechazó, sus observaciones también tienen que quedar anotadas allá.
+  await pedir(cookie, GENERAR_DTE, new URLSearchParams({
+    process: "save_response_mh", id_factura: erpId, tipodoc, anula: "1",
+    clasificaMsg:    String(mh.clasificaMsg ?? ""),
+    codigoMsg:       String(mh.codigoMsg ?? ""),
+    descripcionMsg:  String(mh.descripcionMsg ?? ""),
+    selloRecibido:   sello,
+    observaciones:   JSON.stringify(observaciones),
+    fhProcesamiento: String(mh.fhProcesamiento ?? ""),
+  }));
+
+  // El sello es el criterio de éxito, no el HTTP 200: el proxy contesta 200
+  // igual cuando Hacienda rechaza, y ahí el sello viene nulo.
+  if (!sello || sello === "null")
+    throw new Error(
+      `Hacienda rechazó la anulación: ${mh.descripcionMsg ?? "sin descripción"}` +
+      (observaciones.length ? ` — ${observaciones.join("; ")}` : ""),
+    );
+
+  return {
+    sello,
+    descripcion: String(mh.descripcionMsg ?? ""),
+    codigo: String(mh.codigoMsg ?? ""),
+    fh: String(mh.fhProcesamiento ?? ""),
+    observaciones,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -184,19 +301,15 @@ Deno.serve(async (req) => {
     if (solErr) throw solErr;
     if (!sol) return json({ ok: false, error: "La solicitud no existe." }, 404);
 
-    if (!TIPOS_SOPORTADOS.has(sol.type)) {
-      // ANNULMENT_REQUEST cae acá a propósito: anular en el ERP sin anular
-      // después en Hacienda deja la factura muerta en el portal y viva ante el
-      // MH — exactamente la divergencia que este módulo existe para detectar.
-      // Va aparte, con su paso de Hacienda, no colgado de este.
+    // Los cuatro tipos del widget de facturación. Cualquier otro (permisos,
+    // vacaciones, incapacidades) sigue el flujo genérico de aprobación y no
+    // tiene nada que hacer contra el ERP.
+    if (!TIPOS_SOPORTADOS.has(sol.type))
       return json({
         ok: false,
         codigo: "TIPO_NO_AUTOMATIZADO",
-        error: sol.type === "ANNULMENT_REQUEST"
-          ? "La anulación todavía se aplica a mano: arrastra la anulación ante Hacienda."
-          : `El tipo ${sol.type} no se aplica desde acá.`,
+        error: `El tipo ${sol.type} no se aplica desde acá.`,
       }, 422);
-    }
     if (sol.status !== "PENDING")
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);
 
@@ -205,20 +318,80 @@ Deno.serve(async (req) => {
     // ── id del portal → id del ERP ───────────────────────────────────────
     const { data: factura, error: facErr } = await admin
       .from("sales_invoices")
-      .select("id, erp_invoice_id, correlativo, branch_id, estado")
+      .select("id, erp_invoice_id, correlativo, branch_id, estado, tipo_documento")
       .eq("id", meta.invoice_id)
       .maybeSingle();
     if (facErr) throw facErr;
     if (!factura) return json({ ok: false, error: "La factura de la solicitud ya no existe." }, 404);
     if (!factura.erp_invoice_id)
       return json({ ok: false, error: "La factura no tiene número interno: no se puede ubicar." }, 422);
-    if (factura.estado === "NULA")
+    const esAnulacion = sol.type === "ANNULMENT_REQUEST";
+
+    // Para los tres cambios de datos, una factura anulada es un callejón sin
+    // salida. Para la anulación NO es un error: puede estar anulada en el ERP
+    // y pendiente ante Hacienda, que es justo el caso que hay que terminar.
+    if (factura.estado === "NULA" && !esAnulacion)
       return json({ ok: false, error: "La factura ya está anulada." }, 409);
 
     const erpId = String(factura.erp_invoice_id);
-
-    // ── ERP: leer, aplicar, releer ───────────────────────────────────────
     const cookie = await login();
+
+    // ── Anulación: ERP y después Hacienda ────────────────────────────────
+    if (esAnulacion) {
+      // Responsable de la anulación: quien aprueba. No se recibe del cliente
+      // — es un dato que va a un documento tributario.
+      const { data: resp } = await admin
+        .from("employees").select("name, dui").eq("id", aprobador.id).maybeSingle();
+      const dui = formatearDui(resp?.dui ?? "");
+      if (!dui)
+        return json({
+          ok: false,
+          error: "Tu ficha no tiene un DUI válido, y Hacienda lo exige para anular.",
+        }, 422);
+
+      // El endpoint destructivo solo se llama si hace falta. Si la factura ya
+      // está anulada en el ERP, lo que falta es el paso ante Hacienda.
+      let anuladaAhora = false;
+      if (factura.estado !== "NULA") {
+        const r = leerRespuesta(await pedir(cookie, ANULAR, new URLSearchParams({
+          process: "deleted", id_factura: erpId,
+        })));
+        if (!r.ok) return json({ ok: false, error: `El ERP no anuló la factura: ${r.msg}` }, 502);
+        anuladaAhora = true;
+      }
+
+      const mh = await anularEnHacienda(
+        cookie, erpId, String(factura.tipo_documento ?? ""), resp?.name ?? aprobador.name, dui,
+      );
+
+      const aplicadoAnu = {
+        at: new Date().toISOString(),
+        by: aprobador.id, by_name: aprobador.name,
+        erp_invoice_id: erpId, correlativo: factura.correlativo,
+        campo: "anulacion",
+        anulada_en_erp_ahora: anuladaAhora,
+        hacienda: { sello: mh.sello, descripcion: mh.descripcion, codigo: mh.codigo, fh: mh.fh },
+        responsable: { nombre: resp?.name ?? aprobador.name, dui },
+      };
+
+      const { error: updAnuErr } = await admin
+        .from("approval_requests")
+        .update({
+          status: "APPROVED",
+          approver_id: aprobador.id,
+          approver_note: typeof approver_note === "string" && approver_note.trim()
+            ? approver_note.trim() : null,
+          metadata: { ...meta, erp_aplicado: aplicadoAnu },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sol.id)
+        .eq("status", "PENDING");
+      if (updAnuErr) throw updAnuErr;
+
+      return json({ ok: true, aplicado: aplicadoAnu });
+    }
+
+    // ── Cambios de datos: leer, aplicar, releer ──────────────────────────
     const antes  = await leerFicha(cookie, erpId);
 
     let campo = "", de = "", a = "", cuerpo = "";

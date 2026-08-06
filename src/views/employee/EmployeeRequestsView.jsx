@@ -1055,8 +1055,9 @@ const EmployeeRequestsView = () => {
                             </div>
                         </div>
 
+                        {/* §18.2 · el aviso es tinta, sin vidrio */}
                         {error && (
-                            <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[var(--shadow-shine)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                            <div className="mb-5 bg-warning/10 border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[var(--shadow-shine)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                 <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span className="leading-tight">{error}</span>
                             </div>

@@ -329,8 +329,14 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
     <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
-      {/* backdrop-filter on inner absolute div — Chrome bug: overflow-hidden + backdrop-filter on same element breaks blur */}
-      <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
+      {/* §20 · La capa de vidrio a mano se RETIRÓ (2026-08-06). El contenedor ya
+          es `data-surface="card"`, así que pintaba `--surface-card` y un blur por
+          SEGUNDA vez: las tarjetas del tablero salían con el doble de relleno que
+          cualquier otra del portal (0.16 + 0.16 ≈ 0.30 en Liquid claro).
+          El comentario que la justificaba citaba un bug de Chrome —«overflow-hidden
+          + backdrop-filter en el mismo elemento rompe el blur»— que hoy no se
+          sostiene: 21 tarjetas canónicas del portal combinan las dos cosas,
+          `DataTable` incluida, y su vidrio funciona. */}
       {/* Glass shine */}
       <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
       {/* Header */}
@@ -1464,10 +1470,8 @@ const DashboardView = ({ openModal }) => {
       const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
       return wrapWidget(wid,
         <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] overflow-hidden">
-          {/* Mismas 2 capas que WidgetCard (blur + glass shine) — antes esta
-              mini-card se pintaba a mano sin la capa de brillo, por eso se
-              veía más opaca/gris que el resto de widgets del dashboard. */}
-          <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
+          {/* El brillo, igual que en `WidgetCard`. La capa de vidrio que iba acá se
+              retiró: `data-surface="card"` ya la pone (ver la nota en WidgetCard). */}
           <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           <div className="relative h-full p-3.5 flex flex-col gap-1.5">
             <div className="flex items-start justify-between gap-1">
@@ -1746,10 +1750,8 @@ const DashboardView = ({ openModal }) => {
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
         <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] flex flex-col overflow-hidden">
-          <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
-          {/* Mismas 2 capas que WidgetCard — este widget era hand-rolled sin
-              el glass shine ni data-surface="card" (mismo bug que
-              sales_branch_*, encontrado en la misma auditoría). */}
+          {/* El brillo, igual que en `WidgetCard`. La capa de vidrio que iba acá se
+              retiró: `data-surface="card"` ya la pone (ver la nota en WidgetCard). */}
           <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           {/* Header */}
           <div className="relative px-4 py-3 border-b border-border-card shrink-0">

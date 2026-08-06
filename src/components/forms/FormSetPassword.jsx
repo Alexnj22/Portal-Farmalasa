@@ -89,8 +89,9 @@ const FormSetPassword = ({ formData, onClose }) => {
             />
 
             {/* Error */}
+            {/* §18.2 · tinta, sin vidrio — ver la nota gemela en FormRegisterPayment */}
             {error && (
-                <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3 text-danger-text bg-danger/10 px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2">
                     <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
                     <span className="text-body-sm font-bold leading-relaxed">{error}</span>
                 </div>

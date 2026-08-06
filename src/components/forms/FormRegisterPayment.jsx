@@ -178,9 +178,14 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     </div>
                 </div>
 
-                {/* ALERTA DE CONFLICTO */}
+                {/* ALERTA DE CONFLICTO · §18.2 · un aviso es TINTA: color semántico
+                    sobre la superficie, sin vidrio. Nota: esta caja es un `Notice`
+                    escrito a mano —mismas clases que su variante `danger`— y
+                    convertirla al canónico es un cambio de tipografía, así que va
+                    aparte. Lo mismo en FormSetPassword, RolesView y
+                    EmployeeRequestsView: son cuatro `Notice` a mano. */}
                 {isConflict && (
-                    <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3 text-danger-text bg-danger/10 px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2">
                         <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
                         <span className="text-label font-black uppercase tracking-widest leading-tight">
                             Ya existe un pago registrado para {currentPaidThrough} o posterior.

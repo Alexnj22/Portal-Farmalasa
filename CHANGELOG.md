@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.431.0 — Chips, carriles y el vidrio que el tablero pintaba dos veces
+
+Segunda y tercera tanda de §20, otra vez por criterio.
+`vidrio-a-mano` **130 → 116**, `material-a-mano` **18 → 15**.
+
+**Chips (§18.2 — son tinta).** Cuatro píldoras de estado dejaron el
+`backdrop-filter`: el indicador de editable y las píldoras de déficit WFM y de
+salud legal en `TabStaff`, y el chip de progreso de `TabExpediente`. Una pastilla
+de 24px no refracta nada; sólo agrega una capa que el compositor arma aparte.
+
+**Carriles (§20.2).** Tres grupos de controles en caja redondeada pasaron a
+`data-surface="tab-track"`: los controles de acción de `FormTurnos` y —en
+`FormWfmAnalytics`— la barra superior del heatmap y su leyenda, que eran dos
+píldoras gemelas con el material escrito por separado en cada una. El lift pasa
+de `--lift-card` a `--lift-track`, que es el que corresponde a la superficie.
+
+**El hallazgo de la tanda: el tablero pintaba su vidrio DOS veces.** Las tres
+tarjetas de `DashboardView` ya declaran `data-surface="card"` —que pone
+`--surface-card` y `--backdrop-card`— y además llevaban una capa absoluta
+interna con `bg-surface-card backdrop-blur-[18px]` encima. O sea que los widgets
+del tablero salían con el doble de relleno que cualquier otra tarjeta del portal
+(0.16 + 0.16 ≈ 0.30 en Liquid claro) y con dos desenfoques apilados.
+
+El comentario que justificaba la capa citaba un bug de Chrome —*«overflow-hidden
++ backdrop-filter en el mismo elemento rompe el blur»*— que hoy no se sostiene:
+**21 tarjetas canónicas del portal combinan las dos cosas**, `DataTable`
+incluida, y su vidrio funciona. La capa se retiró; el brillo (`--card-sheen`) se
+queda, que ése sí es suyo.
+
+**Cuatro `Notice` escritos a mano.** En `FormRegisterPayment`, `FormSetPassword`,
+`RolesView` y `EmployeeRequestsView` hay cajas de aviso con exactamente las
+clases de la variante del componente canónico (`bg-danger/10
+border-danger/30 text-danger-text`) más un `backdrop-blur` que el canónico no
+tiene. Se les quitó el vidrio —son tinta— y queda anotado en el código que
+convertirlas al `Notice` real es un cambio de tipografía y va en su propia pasada.
+
+*Fuera de esta tanda, con su motivo:* el botón de IA de `BranchesView`,
+`TabStaff` y `TabHistory` —el mismo código en tres vistas— **sí usa el vidrio
+para algo**: su disco interior esmerila el degradado que gira detrás. Es un
+control decorativo triplicado; corresponde volverlo componente, no borrarle una
+capa que hace trabajo.
+
 ## v2.430.0 — Fuera el widget de búsqueda SRS
 
 Se retira **Búsqueda SRS + Inventario**. Era redundante: **Consulta de

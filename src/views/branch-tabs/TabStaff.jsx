@@ -89,7 +89,10 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-[var(--dur-lento)] group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
-            <div className="absolute top-3 right-3 z-base flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-border-card shadow-sm pointer-events-none">
+            {/* §18.2 · un chip es TINTA, no material: se apoya sobre una superficie
+                y toma su color de la paleta. Sin `backdrop-filter` — una pastilla de
+                24px no refracta nada, sólo agrega una capa que el compositor arma. */}
+            <div className="absolute top-3 right-3 z-base flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card border border-border-card shadow-sm pointer-events-none">
                 <Pencil size={10} strokeWidth={2.5} className="text-content-3" />
             </div>
 
@@ -479,8 +482,9 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
 
                     {/* 🚨 PÍLDORA WFM / DÉFICIT — solo farmacias */}
+                    {/* §18.2 · la píldora es TINTA: color semántico sobre la superficie, sin vidrio */}
                     {isFarmacia && isStaffDeficit && (
-                        <div className="relative group/wfm flex items-center gap-2.5 bg-warning/10 backdrop-blur-md border border-warning/30 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
+                        <div className="relative group/wfm flex items-center gap-2.5 bg-warning/10 border border-warning/30 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
                             <Calculator size={14} className="text-warning-text shrink-0" />
                             <div className="flex flex-col gap-1 w-28">
                                 <div className="flex justify-between items-center w-full">
@@ -532,7 +536,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     )}
 
                     {/* 🚨 PÍLDORA DE SALUD LEGAL — solo farmacias */}
-                    {isFarmacia && <div className="relative group/health flex items-center gap-2.5 bg-surface-card backdrop-blur-md border border-border-card px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
+                    {isFarmacia && <div className="relative group/health flex items-center gap-2.5 bg-surface-card border border-border-card px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
                         <ShieldAlert size={14} className={complianceScore === 100 ? 'text-success-text' : 'text-content-3'} />
                         <div className="flex flex-col gap-1 w-24">
                             <div className="flex justify-between items-center w-full">

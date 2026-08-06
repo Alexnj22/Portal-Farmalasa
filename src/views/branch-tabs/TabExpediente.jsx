@@ -331,7 +331,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                     <div className="hidden sm:block w-px h-8 bg-content-3/60 shrink-0"></div>
 
-                    <div className="hidden sm:flex items-center gap-3 bg-surface-card backdrop-blur-xl border border-border-card px-4 py-2 rounded-full shadow-[var(--shadow-elevation-xs)] cursor-default shrink-0">
+                    {/* §18.2 · chip de progreso: tinta sobre la superficie, sin vidrio */}
+                    <div className="hidden sm:flex items-center gap-3 bg-surface-card border border-border-card px-4 py-2 rounded-full shadow-[var(--shadow-elevation-xs)] cursor-default shrink-0">
                         <FolderOpen size={14} className={progress === 100 ? 'text-success' : 'text-brand-text'} />
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center w-20">

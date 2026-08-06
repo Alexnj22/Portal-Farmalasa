@@ -1252,3 +1252,59 @@ confirmado**. Y la cautela de la Parte 7 sigue en pie: «no encontré una compra
 con ese monto» no es «no existe». Antes de reclamar nada, los 47 de MONTREAL se
 revisan documento por documento — son un solo proveedor y el 38% del total, así
 que es una tarde de trabajo, no un proyecto.
+
+---
+
+# Parte 11 — ¿Se puede calcular el impuesto a pagar? (2026-08-05)
+
+**Sí, salvo una línea** — y esa línea es la que convierte al Bloque D en
+prerrequisito, no en mejora.
+
+Borrador armado con **julio 2026**, todo medido contra la base:
+
+| Concepto | Docs | Monto |
+|---|---|---|
+| Débito fiscal — ventas a consumidor (COF) | 22,378 | $27,572.78 |
+| Débito fiscal — ventas a contribuyente (CCF) | 51 | $259.82 |
+| **Débito fiscal del mes** | **22,429** | **$27,832.60** |
+| Crédito fiscal — compras registradas | 466 | −$26,210.24 |
+| Crédito fiscal — documentos sin compra registrada | 233 | −$3,438.75 |
+| Notas de débito de compras (suman crédito) | 3 | −$68.12 |
+| Notas de crédito de compras (restan crédito) | 75 | +$1,745.73 |
+| **Crédito fiscal del mes** | | **$27,971.38** |
+| **Diferencia (débito − crédito)** | | **−$138.78** |
+| Percepción pagada a proveedores (Art. 163) | | −$1,660.68 |
+| Retención que le hicieron a la empresa (Art. 162) | | −$42.92 |
+| **Resultado del mes** | | **−$1,842.38 a favor** |
+
+**El lado de ventas está completo y verificado**: las 22,429 facturas de julio
+tienen sello de 40 caracteres. Ninguna queda fuera del filtro del libro. Los 75
+DTE invalidados en Hacienda ($214.47) quedan afuera, como corresponde.
+
+## Lo único que falta, y no es un detalle
+
+**El remanente de crédito fiscal del mes anterior.** La declaración de IVA es
+encadenada: lo que sobra de un mes se arrastra al siguiente. El portal **no lo
+tiene y no lo puede deducir**, porque no hay registro de lo que se declaró — que
+es exactamente el hueco del Bloque D.
+
+Sin ese dato, el portal puede calcular **el movimiento del mes** pero no **el
+saldo a pagar**. Con Bloque D en pie, la cadena se cierra sola: el remanente del
+mes cerrado es el punto de partida del siguiente.
+
+Es la mejor justificación que tiene el Bloque D en todo este documento: no es
+"sería bueno tener registro", es que **sin él este cálculo no se puede terminar
+nunca**.
+
+## Tres cautelas que van con el número
+
+1. **Art. 65-A.** No todo crédito fiscal es deducible: el gasto tiene que ser
+   indispensable para el giro. Los 233 documentos sin compra registrada
+   necesitan ese criterio antes de sumarse. El monto de arriba es el techo.
+2. **Julio compró más de lo que vendió** ($234,534 de compras gravadas contra
+   $214,046 de ventas gravadas). En un mes normal una farmacia vende con margen
+   y el débito supera al crédito. Puede ser un mes de reabastecimiento fuerte y
+   ser perfectamente normal — pero es la primera cosa que conviene que la
+   contadora mire, porque si no lo es, señala algo.
+3. **Esto no es asesoría fiscal.** Es aritmética sobre los datos del portal. Lo
+   confirma la contadora.

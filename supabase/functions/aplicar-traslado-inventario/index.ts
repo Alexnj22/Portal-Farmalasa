@@ -159,30 +159,54 @@ async function sesionEn(erpSucursal: number): Promise<string> {
 }
 
 /**
- * El id del traslado recién creado.
+ * Los traslados de esta ubicación despachados y todavía sin recibir.
  *
- * El `insert` contesta `{typeinfo, msg}` y NADA más — el JS de la página se
- * limita a recargar el listado, así que no hay id en la respuesta. Se recupera
- * del listado, que es el mismo lugar donde lo buscaría una persona: los
- * despachados de esta ubicación que todavía nadie recibió, el más nuevo primero.
+ * ⚠️ **El listado ignora el orden que se le pide.** Se le manda
+ * `order[0][dir]=desc` y contesta ascendente igual — medido el 2026-08-06. Por
+ * eso esta función devuelve el CONJUNTO de ids y no «el primero»: pedirle el
+ * más nuevo y quedarse con `data[0]` devuelve el más VIEJO, que en la primera
+ * prueba real fue el traslado de otra persona, de otro día y a otra sucursal.
+ * El sistema lo habría aceptado sin protestar.
  *
- * Si no aparece no se rompe nada: el traslado ya existe, y lo único que se
- * pierde es poder recibirlo desde el portal sin buscarlo a mano.
+ * Y los filtros con un valor que no entiende no fallan: devuelven las 27,000
+ * filas con cara de éxito. `recordsFiltered === recordsTotal` es la señal de
+ * que el filtro no se aplicó.
  */
-async function idDelTraslado(cookie: string, ubicacionOrigen: number): Promise<string | null> {
+async function pendientesDeOrigen(
+  cookie: string, ubicacionOrigen: number,
+): Promise<Map<string, string>> {
   try {
     const cuerpo = await pedir(cookie, LISTADO, new URLSearchParams({
-      draw: "0", start: "0", length: "5",
-      "order[0][column]": "0", "order[0][dir]": "desc",
+      draw: "0", start: "0", length: "200",
       origen: String(ubicacionOrigen), pro: "env", estado: "pe",
     }), { extra: { Referer: `${BASE}/admin_traslados.php` } });
     const j = JSON.parse(cuerpo);
-    // Los filtros con un valor que el sistema no entiende NO fallan: devuelven
-    // las 27,000 filas con cara de éxito. `recordsFiltered` igual a
-    // `recordsTotal` es la señal de que el filtro no se aplicó.
-    if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return null;
-    return String(j.data[0]?.[0] ?? "") || null;
-  } catch { return null; }
+    if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return new Map();
+    // id → destino. El destino es la quinta columna y viene como la dirección
+    // completa de la sucursal, que es lo que después permite desempatar.
+    return new Map(
+      (j.data as unknown[][])
+        .map((f) => [String(f?.[0] ?? ""), String(f?.[4] ?? "")] as [string, string])
+        .filter(([id]) => id),
+    );
+  } catch { return new Map(); }
+}
+
+/**
+ * La dirección de cada sucursal, según el propio sistema.
+ *
+ * El `<select id="id_sucursal">` de la pantalla de traslado es el único lugar
+ * que liga el id de sucursal con la dirección larga que después muestra el
+ * listado — y sin esa liga, dos traslados despachados a la vez desde la misma
+ * sala no se pueden distinguir. Los `value` vienen con un espacio adelante
+ * (`value=' 1'`), así que hay que recortarlos.
+ */
+function direccionesPorSucursal(html: string): Map<string, string> {
+  const sel = html.match(/<select[^>]*id="id_sucursal"[\s\S]*?<\/select>/)?.[0] ?? "";
+  return new Map(
+    [...sel.matchAll(/<option value=['"]\s*(\d+)\s*['"][^>]*>([^<]*)</g)]
+      .map((m) => [m[1], norm(m[2])] as [string, string]),
+  );
 }
 
 Deno.serve(async (req) => {
@@ -546,6 +570,11 @@ Deno.serve(async (req) => {
       }, 504);
 
     // ── El envío ─────────────────────────────────────────────────────────
+    // La foto de ANTES: el id del traslado nuevo es el que no estaba. Es la
+    // única forma sin ambigüedad de saber cuál es el propio, porque el `insert`
+    // no lo devuelve y el listado no respeta el orden que se le pide.
+    const antes = await pendientesDeOrigen(cookie, ubicOrigen);
+
     const resp = leerRespuesta(await pedir(cookie, TRASLADO, new URLSearchParams({
       process: "insert",
       datos: partes.join("#") + "#",
@@ -563,11 +592,35 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}` }, 502);
 
     // ── Recién ahora la solicitud es APPROVED ────────────────────────────
-    const idTraslado = await idDelTraslado(cookie, ubicOrigen);
+    // El propio es el que aparece y antes no estaba. Si en el medio otra
+    // persona despachó desde la misma sala aparecen dos, y ahí desempata el
+    // DESTINO: el listado lo trae como la dirección larga y la página del
+    // traslado tiene la liga sucursal → dirección.
+    //
+    // Si ni así queda uno solo —dos despachos simultáneos de la misma sala a la
+    // misma sala—, se deja en null con los candidatos anotados. El traslado
+    // entró igual; lo único que se pierde es poder recibirlo sin buscarlo a
+    // mano, que es infinitamente mejor que recibir el de otro.
+    const despues = await pendientesDeOrigen(cookie, ubicOrigen);
+    let nuevos = [...despues.keys()].filter((id) => !antes.has(id));
+    if (nuevos.length > 1) {
+      const dirDestino = direccionesPorSucursal(html).get(String(erpDestino));
+      if (dirDestino) {
+        const mismos = nuevos.filter((id) => {
+          const d = norm(despues.get(id) ?? "");
+          return d && (d === dirDestino || d.includes(dirDestino) || dirDestino.includes(d));
+        });
+        if (mismos.length > 0) nuevos = mismos;
+      }
+    }
+    const idTraslado = nuevos.length === 1 ? nuevos[0] : null;
     const aplicado = {
       at: new Date().toISOString(),
       by: quien.id, by_name: quien.name,
       id_traslado: idTraslado,
+      // Si quedó en null, el traslado ENTRÓ igual: lo único que falta es el
+      // número para poder recibirlo desde el portal. Se dice, no se calla.
+      id_traslado_ambiguo: idTraslado === null ? nuevos : undefined,
       numero_vale: vale,
       erp_sucursal_origen: erpOrigen,
       erp_ubicacion_origen: ubicOrigen,

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.452.1 — El traslado, probado contra el sistema — y dos bugs que solo aparecieron ahí
+
+Paso 6 y último de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Una unidad de
+acetaminofén de Salud 1 a Salud 2 y de vuelta, **neto cero**: 1891 → 1890 →
+1891 en Salud 1 y 1468 → 1469 → 1468 en Salud 2, con los dos traslados en
+FINALIZADA y ninguno colgado en tránsito.
+
+**El bug que la prueba evitó por un pelo.** El sistema no devuelve el número del
+traslado que acaba de crear, así que el portal lo buscaba en el listado pidiendo
+el más nuevo primero. **El listado ignora el orden que se le pide**: contesta
+ascendente igual, así que devolvía el más VIEJO. En la primera corrida guardó el
+traslado de otra persona, de otro día y a otra sucursal — y recibirlo habría
+metido en Salud 2 producto que nunca salió de ahí. Ahora se identifica por
+diferencia: se fotografían los pendientes antes y después, y el propio es el que
+no estaba. Si dos salieran a la vez desde la misma sala, desempata el destino; y
+si ni así, se dice que quedó sin número en vez de adivinar.
+
+**El doble conteo, que llevaba quién sabe cuánto.** El portal decía que Salud 1
+tenía 3,701 unidades de acetaminofén y el sistema decía 1,891. La causa: hay
+productos con **dos presentaciones distintas llamadas igual** —CAJA y CAJA, las
+dos de factor 100— y la existencia en unidades se resolvía uniendo por el
+nombre, así que cada caja se contaba dos veces. Son **1,159 productos**, 1,023
+con existencia mal contada hoy. Corregido en la lista de faltantes y en la
+validación de la solicitud; hoy el portal dice 1,891 y 1,468, los mismos números
+del sistema. El movimiento nunca estuvo en riesgo: la aplicación relee la
+existencia real antes de escribir.
+
+**Y una sola solicitud pendiente por producto y par de salas.** Dos personas de
+la misma sala podían pedirle lo mismo a la misma sala sin enterarse —cada una ve
+solo sus propias solicitudes— y la de origen habría despachado dos veces. Es un
+índice único y no un chequeo previo: un índice no pierde una carrera entre dos
+pedidos simultáneos.
+
 ## v2.452.0 — Traslados entre salas: la vista completa, de la lista de faltantes al kardex
 
 Pasos 4 y 5 de `docs/RETOMAR-TRASLADOS-2026-08-06.md`. Con esto el circuito está

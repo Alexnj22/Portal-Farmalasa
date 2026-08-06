@@ -107,6 +107,71 @@ export async function fetchPresentaciones(productIds) {
     return { porProducto, error: null };
 }
 
+/**
+ * Los lotes de un producto en una sucursal, con su fecha y su existencia.
+ *
+ * Verificado el 2026-08-06 contra el sistema de origen en tres productos
+ * regulados: los pares (lote, vencimiento) son IDÉNTICOS. La única diferencia
+ * es la forma — acá van separados por presentación y allá sumados en unidades
+ * base; PREDIN son 1 UNIDAD + 1 CAJA + 1 BLISTER acá y 111 allá. Por eso el
+ * buscador puede ofrecer los lotes al instante sin salir a preguntar.
+ *
+ * La identidad de un lote es **número + fecha**, no el número: GLIMEPIRIDA
+ * tiene dos «L31800» con vencimientos distintos y son existencias separadas.
+ */
+export async function fetchLotesDeProducto({ erpProductId, erpSucursalId }) {
+    const { data, error } = await supabase
+        .from('inventory')
+        .select('lote, fecha_vencimiento, presentacion, cantidad')
+        .eq('erp_product_id', Number(erpProductId))
+        .eq('erp_sucursal_id', Number(erpSucursalId))
+        .eq('is_vencidos', false)
+        .gt('cantidad', 0)
+        .order('fecha_vencimiento', { ascending: true })
+        .range(0, 200);
+
+    if (error) return { lotes: [], error };
+
+    // Un producto sin control de lote guarda todo bajo 'GENERICO'. Eso no es un
+    // lote: es la ausencia de uno, y ofrecerlo para elegir sería mentir.
+    const reales = (data ?? []).filter(r => r.lote && r.lote !== 'GENERICO');
+    const porClave = new Map();
+    for (const r of reales) {
+        const clave = `${r.lote}|${r.fecha_vencimiento ?? ''}`;
+        const previo = porClave.get(clave);
+        if (previo) previo.presentaciones.push({ presentacion: r.presentacion, cantidad: r.cantidad });
+        else porClave.set(clave, {
+            lote: r.lote,
+            vence: r.fecha_vencimiento,
+            presentaciones: [{ presentacion: r.presentacion, cantidad: r.cantidad }],
+        });
+    }
+    return { lotes: [...porClave.values()], error: null };
+}
+
+/**
+ * Si cada producto es perecedero — o sea, si una carga suya necesita fecha.
+ *
+ * No todos lo son: 4,230 de 5,205. Para el resto el sistema de origen ni
+ * dibuja el campo, así que pedir la fecha sería inventar un requisito.
+ */
+export async function fetchPerecederos(productIds) {
+    const ids = [...new Set((productIds ?? []).map(Number).filter(Boolean))];
+    if (!ids.length) return { perecederos: new Set(), error: null };
+
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += 1000) tandas.push(ids.slice(i, i + 1000));
+    const res = await Promise.all(tandas.map(t =>
+        supabase.from('products').select('id, perecedero').in('id', t)));
+
+    const fallo = res.find(r => r.error);
+    if (fallo) return { perecederos: new Set(), error: fallo.error };
+    return {
+        perecederos: new Set(res.flatMap(r => r.data ?? []).filter(p => p.perecedero).map(p => p.id)),
+        error: null,
+    };
+}
+
 /** Crea la solicitud. El aviso al aprobador lo dispara el trigger, no esto. */
 export function insertMovimientoInventario(payload) {
     return insertApprovalRequestSilent(payload);

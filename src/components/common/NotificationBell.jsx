@@ -580,17 +580,25 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             Además es lo que funciona en iPhone: iOS ignora
                                                             los botones de acción de una notificación web. */}
                                                         {puedeDecidir(n) && (
-                                                            <div className="flex items-center gap-1.5 pl-[68px] pr-10 pb-3 -mt-1">
+                                                            <div className="flex items-stretch gap-2 px-5 pb-3 -mt-1">
                                                                 {/* `soft` y no relleno sólido: es el caso que
                                                                     nombra DESIGN.md §15.2 — dos acciones de
                                                                     categoría juntas donde ninguna manda. Y
                                                                     ninguna es destructiva acá: abren el
-                                                                    diálogo, no deciden. */}
+                                                                    diálogo, no deciden.
+
+                                                                    Van al ANCHO de la tarjeta, mitad y mitad.
+                                                                    Antes se sangraban 68px para alinearse con
+                                                                    el texto y el par no entraba: en el panel
+                                                                    angosto «Rechazar» se salía del cuadro. Dos
+                                                                    acciones del mismo peso repartidas por igual
+                                                                    no dependen del largo de su etiqueta. */}
                                                                 <Button
                                                                     size="xs"
                                                                     tone="success"
                                                                     soft
                                                                     icon={Check}
+                                                                    className="flex-1 min-w-0"
                                                                     onClick={(e) => { e.stopPropagation(); irADecidir(n, 'aprobar'); }}
                                                                 >
                                                                     Aprobar
@@ -600,14 +608,22 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     tone="danger"
                                                                     soft
                                                                     icon={X}
+                                                                    className="flex-1 min-w-0"
                                                                     onClick={(e) => { e.stopPropagation(); irADecidir(n, 'rechazar'); }}
                                                                 >
                                                                     Rechazar
                                                                 </Button>
                                                             </div>
                                                         )}
-                                                        {/* Borrar individual — visible al hover en desktop, siempre tenue en touch */}
-                                                        <Button variant="ghost" icon={X} title="Borrar" iconOnly className={cx.iconBtn} onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }} />
+                                                        {/* Borrar individual — visible al hover en desktop, siempre tenue en touch.
+                                                            Va ANCLADO arriba a la derecha: el texto ya le
+                                                            reservaba el hueco con su `pr-10`, pero al botón le
+                                                            faltaba el posicionamiento, así que caía al flujo y
+                                                            aparecía suelto abajo a la izquierda de la tarjeta,
+                                                            debajo de Aprobar/Rechazar. */}
+                                                        <Button variant="ghost" icon={X} title="Borrar" iconOnly
+                                                            className={`absolute top-2 right-2 z-base ${cx.iconBtn}`}
+                                                            onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }} />
                                                     </motion.div>
                                                 );
                                             })}

@@ -63,8 +63,11 @@ interface Linea {
   presentacion_tipo: string;   // "UNIDAD", "CAJA", "BLISTER X 10"…
   factor: number;              // cuántas unidades trae
   cantidad: number;
+  // El lote viaja por su SIGNIFICADO, igual que la presentación: número y
+  // fecha. Nunca por el id del sistema de origen, que el portal no tiene — y
+  // nunca por el número solo: GLIMEPIRIDA tiene DOS lotes «L31800» con
+  // vencimientos distintos y son existencias separadas.
   numero_lote?: string;
-  id_lote?: number;
   vence?: string;
   descripcion?: string;
 }
@@ -79,6 +82,29 @@ interface Consulta {
   unidad: string;
   stock: number | null;
   perecedero: boolean;
+  // Solo los productos regulados llevan control de lotes. Para el resto el
+  // sistema deshabilita el selector y lo deja vacío: no es que el lote sea
+  // opcional, es que no existe. Medido en 52 productos — y NO se puede deducir
+  // del portal: `es_antibiotico` acertó 49 y la señal de "tiene lote real" 50.
+  // Glimepirida, prednisona y ciprofibrato son regulados sin ser antibióticos.
+  regulado: boolean;
+  lotes: { id: string; numero: string; vence: string; stock: number }[];
+}
+
+/** Los lotes que el sistema ofrece, con su número y su fecha. */
+function leerLotes(html: string) {
+  return [...html.matchAll(
+    /<option([^>]*)>([^<]*)</g,
+  )].map((m) => {
+    const attrs = m[1];
+    const etiqueta = m[2].trim();
+    return {
+      id: attrs.match(/value='(\d+)'/)?.[1] ?? "",
+      numero: etiqueta.split(" - ")[0].trim(),
+      vence: attrs.match(/data-vencimiento='([^']*)'/)?.[1] ?? "",
+      stock: Number(attrs.match(/data-stock='([^']*)'/)?.[1] ?? 0),
+    };
+  }).filter((l) => l.id);
 }
 
 /**
@@ -125,7 +151,8 @@ function leerConsulta(cuerpo: string): Consulta {
   let j: Record<string, unknown>;
   try { j = JSON.parse(cuerpo); } catch {
     return { ok: false, msg: `Respuesta ilegible del ERP: ${cuerpo.slice(0, 160)}`,
-             presentaciones: [], costo: "", precio: "", unidad: "", stock: null, perecedero: false };
+             presentaciones: [], costo: "", precio: "", unidad: "", stock: null,
+             perecedero: false, regulado: false, lotes: [] };
   }
   // fin del parseo defensivo
   // `ingreso_inventario.php` contesta con typeinfo; el descargo también. Si no
@@ -143,6 +170,8 @@ function leerConsulta(cuerpo: string): Consulta {
     unidad: String(j.unidadp ?? "1"),
     stock:  j.stock === undefined ? null : Number(j.stock),
     perecedero: String(j.perecedero ?? "0") === "1",
+    regulado: /data-regulado='1'/.test(String(j.lotes_select ?? "")),
+    lotes: leerLotes(String(j.lotes_select ?? "")),
   };
 }
 
@@ -298,6 +327,14 @@ Deno.serve(async (req) => {
           error: `${l.descripcion ?? l.erp_product_id} necesita fecha de vencimiento.`,
         }, 422);
 
+      // Un regulado cargado sin lote entra al inventario sin poder rastrearse,
+      // que es exactamente lo contrario de por qué se lo regula.
+      if (esCarga && c.regulado && !String(l.numero_lote ?? "").trim())
+        return json({
+          ok: false, codigo: "FALTA_LOTE",
+          error: `${l.descripcion ?? l.erp_product_id} lleva control de lote y necesita su número.`,
+        }, 422);
+
       // ── El costo, el precio y el FACTOR son de la presentación elegida ────
       // `consultar_stock` los devuelve de la presentación POR DEFECTO, no de la
       // que se eligió. Medido en el producto 2215 el 2026-08-06: contesta
@@ -350,8 +387,58 @@ Deno.serve(async (req) => {
           }, 409);
       }
 
+      // ── El lote ───────────────────────────────────────────────────────────
+      // En un DESCARTE hay que apuntar a un lote que existe, y su identidad es
+      // número + fecha: GLIMEPIRIDA tiene dos «L31800» con vencimientos
+      // distintos, ids 27182 y 24626, y son existencias separadas. Se resuelve
+      // acá contra lo que el sistema ofrece AHORA.
+      //
+      // Si el producto no es regulado no hay lotes que elegir —el selector
+      // viene vacío y deshabilitado— y va 0. No es un error: es que ese
+      // producto no lleva control de lote, y lo que el portal haya mostrado
+      // era informativo.
+      let idLote = "0";
+      if (!esCarga && c.regulado) {
+        if (!l.numero_lote)
+          return json({
+            ok: false, codigo: "FALTA_LOTE",
+            error: `${l.descripcion ?? l.erp_product_id} lleva control de lote y la solicitud no dice cuál.`,
+          }, 422);
+        const buscadoNum = norm(l.numero_lote);
+        const buscadoVen = String(l.vence ?? "").slice(0, 10);
+        const lote = c.lotes.find((x) =>
+          norm(x.numero) === buscadoNum && (!buscadoVen || x.vence.slice(0, 10) === buscadoVen));
+        if (!lote)
+          return json({
+            ok: false, codigo: "LOTE_NO_EXISTE",
+            error: `El lote ${l.numero_lote}${buscadoVen ? ` (vence ${buscadoVen})` : ""} de `
+                 + `${l.descripcion ?? l.erp_product_id} ya no existe. Quedan: `
+                 + `${c.lotes.map((x) => `${x.numero} ${x.vence}`).join(", ") || "ninguno"}.`,
+          }, 409);
+        // El tope de un descarte con lote es el stock DE ESE LOTE, no el del
+        // producto: sacar 5 de un lote que tiene 1 es imposible aunque el
+        // producto tenga 200 repartidas en otros.
+        const enUnidades = Number(l.cantidad) * Number(unidad);
+        if (enUnidades > lote.stock)
+          return json({
+            ok: false, codigo: "SIN_EXISTENCIA_EN_LOTE",
+            error: `El lote ${lote.numero} de ${l.descripcion ?? l.erp_product_id} tiene `
+                 + `${lote.stock} unidades, y se pidieron ${enUnidades}.`,
+          }, 409);
+        idLote = lote.id;
+      }
+
       const vence = esCarga ? (c.perecedero ? String(l.vence) : "NULL") : "";
-      const cola  = esCarga ? String(l.numero_lote ?? "") : String(l.id_lote ?? 0);
+      // En una CARGA el lote viaja como texto. Mandar el mismo número con la
+      // misma fecha SUMA al lote existente en vez de crear otro — verificado
+      // el 2026-08-06: tres cargas de 1 unidad con lote «PRUEBA» y la misma
+      // fecha quedaron como una sola línea de 3.
+      //
+      // Y si el producto NO es regulado va vacío a propósito: mandarle un
+      // número le inventa un lote que no debería existir. Pasó en esa prueba.
+      const cola = esCarga
+        ? (c.regulado ? String(l.numero_lote ?? "") : "")
+        : idLote;
       partes.push([
         l.erp_product_id, costo, precio, l.cantidad, unidad, vence, elegida.id, cola,
       ].join("|"));
@@ -364,6 +451,9 @@ Deno.serve(async (req) => {
         id_presentacion_erp: elegida.id,       // el que se usó, para poder auditarlo
         cantidad: l.cantidad, unidad,
         costo, precio, stock_previo: c.stock,
+        regulado: c.regulado,
+        lote: l.numero_lote ?? null, vence: l.vence ?? null,
+        id_lote_erp: idLote !== "0" ? idLote : null,
       });
     }
 

@@ -253,7 +253,7 @@ const WIDGET_DEFS = [
   { id: 'inv_search',   label: 'Consulta de Inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
   { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
-  { id: 'inv_movement', label: 'Carga y Descarte',        permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
+  { id: 'inv_movement', label: 'Ajuste de Inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Quién está vendiendo',    permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
 ];
@@ -2095,7 +2095,7 @@ const DashboardView = ({ openModal }) => {
         Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === erpMov) ?? 0,
       ) || null;
       return wrapWidget('inv_movement',
-        <WidgetCard title="Carga y Descarte" icon={PackageMinus} category="productos"
+        <WidgetCard title="Ajuste de Inventario" icon={PackageMinus} category="productos"
           action={isMovAllScope && (
             <LiquidSelect
               value={movimientoErp}

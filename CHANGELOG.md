@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.437.0 — Ajuste de Inventario: varios productos, lote y fecha
+
+El widget pasa a llamarse **Ajuste de Inventario** y ahora una solicitud lleva
+**varios productos**. Se agregan con un buscador; para el descarte por
+vencimiento la lista sigue saliendo sola, porque el portal ya sabe qué venció
+en cada sala.
+
+Cada producto pide lo que de verdad necesita, y eso se midió contra el sistema
+—no se supuso—:
+
+- **Con control de lote**: en una descarga se **elige** un lote de los que hay;
+  en una carga se elige uno o se agrega nuevo con su fecha. La identidad de un
+  lote es **número + fecha**, no el número: hay productos con dos lotes del
+  mismo número y vencimientos distintos, y son existencias separadas.
+- **Perecedero sin control de lote**: la carga pide fecha, y el lote va vacío a
+  propósito — ponerle un número le inventa un lote que no debería existir.
+- **Ninguno de los dos**: ni lote ni fecha.
+
+Quién lleva control de lote **no se puede deducir del portal**: la marca de
+«Bajo Receta» acertó 49 de 52 productos probados. Glimepirida, prednisona y
+ciprofibrato lo llevan sin ser antibióticos. Así que la pantalla ofrece el
+selector cuando el producto tiene lotes, y quien decide de verdad es el sistema
+al aplicar — que además comprueba que el lote elegido siga existiendo y que
+alcance **en ese lote**, no en el producto entero.
+
+**En la campana**, los botones de Aprobar y Rechazar se salían del cuadro: se
+sangraban 68 px para alinearse con el texto y el par no entraba en el panel
+angosto. Ahora van al ancho de la tarjeta, mitad y mitad. Y el botón de borrar
+aparecía suelto al pie, debajo de ellos, porque le faltaba el anclaje aunque el
+texto ya le reservaba el hueco arriba a la derecha.
+
 ## v2.436.0 — `carril-pildora`: cuatro falsos positivos y una excepción medida
 
 Se auditaron los 15 hallazgos uno por uno antes de tocar layout, y **ocho no

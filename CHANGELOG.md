@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.412.0 — Once sombras con realce blanco que el oscuro heredaba
+
+**El «blanco en modo oscuro» no era un borde: era la escala de sombras entera.**
+
+`--shadow-glass-1..5`, `--shadow-glass-sm/md/lg`, `--shadow-shine`, `--shadow-shine-lg`
+y `--elevation-3` llevan todos un `inset … rgba(255,255,255, .4–.95)`. Estaban definidos
+**sólo en el tema claro y en los dos Solid**, así que **Liquid oscuro los heredaba los
+once**.
+
+Medido en el menú de Ajustes, cruzando su borde izquierdo píxel a píxel: la luminancia
+saltaba a **102 a 1 px del borde** y decaía hasta 43 a 8 px. O sea que lo que se veía no
+era un contorno de 1 px sino un **realce interior de 14 px de desenfoque al 80 %** —
+`--shadow-glass-4`. Con la escala definida para oscuro, el interior queda plano en 14.3
+y sólo queda el borde real.
+
+**Es la tercera vez que aparece el mismo patrón en esta sesión**, y por eso vale
+nombrarlo: el lente (§1.7), `--sidebar-rim` en 0.42, y ahora once sombras. Los tres son
+**un valor calibrado sobre una superficie clara, guardado en `:root`, redefinido en
+Solid, y nunca en oscuro**. Redefinirlo en Solid es justamente lo que lo disfraza:
+parece un token con tratamiento por tema, y en realidad tiene tres de los cuatro.
+
+La geometría se conserva; lo que se va es el realce, porque **sobre una superficie
+oscura un realce claro no da volumen, da borde**. Y la sombra proyectada se profundiza,
+que es lo que separa en oscuro.
+
 ## v2.411.0 — La notificación deja de poder perderse: nace con la solicitud
 
 El aviso de «tenés una solicitud para revisar» lo mandaba el navegador, en una

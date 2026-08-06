@@ -808,6 +808,32 @@ thead.sticky {
 
 /* ─── Dark LiquidGlass ─── */
 [data-theme="dark"] {
+
+  /* ══ §1.7.bis · LA ESCALA DE SOMBRAS, SIN REALCE BLANCO ═══════════════════
+     Once tokens de sombra llevaban un `inset ... rgba(255,255,255,.4–.95)` y
+     estaban definidos SÓLO en el tema claro y en los dos Solid: Liquid oscuro
+     los heredaba todos. Medido en el menú de Ajustes, el `--shadow-glass-4`
+     pintaba una banda de luminancia 102 a 1px del borde, decayendo hasta 43 a
+     8px — o sea el «halo blanco» que se veía, que no era un borde de 1px sino
+     un realce interior de 14px de desenfoque al 80%.
+     Es el mismo hallazgo que el lente (§1.7) y que `--sidebar-rim` (0.42), por
+     TERCERA vez: un valor calibrado sobre una superficie clara, guardado en
+     `:root`, redefinido en Solid, y nunca en oscuro. La geometría se conserva;
+     lo que se va es el realce, porque sobre una superficie oscura no da
+     volumen: da borde. Y la sombra proyectada se profundiza, que es lo que
+     separa en oscuro. */
+  --shadow-shine:      0 0 0 rgba(0,0,0,0);
+  --shadow-shine-lg:   0 0 0 rgba(0,0,0,0);
+  --shadow-glass-sm:   0 2px 10px rgba(0,0,0,.35);
+  --shadow-glass-1:    0 2px 10px rgba(0,0,0,.35);
+  --shadow-glass-2:    0 4px 16px rgba(0,0,0,.40);
+  --shadow-glass-3:    0 8px 30px rgba(0,0,0,.45);
+  --shadow-glass-4:    0 16px 44px rgba(0,0,0,.50);
+  --shadow-glass-5:    0 24px 60px rgba(0,0,0,.55);
+  --shadow-glass-md:   0 8px 24px rgba(0,0,0,.42);
+  --shadow-glass-lg:   0 8px 30px rgba(0,0,0,.45);
+  --elevation-3:       0 48px 120px rgba(0,0,0,.55);
+
   color-scheme: dark;
 
   /* 2026-07-25: paleta re-anclada al navy real del kiosco (#060B18,

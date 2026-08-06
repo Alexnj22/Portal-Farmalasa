@@ -324,7 +324,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
             layout
             className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden ${
                 isOpen
-                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card backdrop-blur-sm'
+                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card'
                     : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
             }`}
         >

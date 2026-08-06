@@ -540,8 +540,20 @@
    y compilaba a `-webkit-backdrop-filter: none` a secas — o sea que en Firefox,
    que sólo entiende la estándar, el `backdrop-blur` del thead NUNCA se apagó.
    Escrita sola, el prefijo lo agrega el compilador. */
+/* `data-cobertura` es el TERCER rol que comparte esta obligación, y el que
+   faltaba nombrar (2026-08-06). Un panel que se despliega ENCIMA de una tarjeta
+   —el de IA en `BranchesView`, la confirmación de `TabShifts`, el deslizante de
+   `FormBranchEmployees`— tiene que tapar lo que reemplaza, igual que un
+   encabezado pegajoso tapa lo que pasa por debajo. Los tres estaban resueltos
+   con `bg-surface-card` + un `backdrop-blur` grande, o sea ocluyendo POR
+   ACCIDENTE: el desenfoque hacía ilegible lo de atrás, pero el relleno seguía
+   siendo el 16% de una tarjeta.
+   El inventario de §13.1 no lo tenía: no es ninguna de las diez superficies
+   canónicas, porque no es una superficie donde se apoya contenido — es una
+   tapa. Por eso va como atributo y no como `data-surface`. */
 thead.sticky,
-[data-pegajoso] {
+[data-pegajoso],
+[data-cobertura] {
   background: var(--thead-bg);
   backdrop-filter: none;
 }

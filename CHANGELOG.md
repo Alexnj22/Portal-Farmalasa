@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.434.0 — La cobertura: el rol de material que faltaba nombrar
+
+Sexta tanda de §20. `vidrio-a-mano` **60 → 24**, `material-a-mano` **11 → 5**.
+
+**`data-cobertura`, el tercer rol que comparte la obligación de tapar.** Un panel
+que se despliega **encima** de una tarjeta —el de IA en `BranchesView`, la
+confirmación de `TabShifts`, el deslizante de `FormBranchEmployees`— tiene que
+ocultar lo que reemplaza, igual que un encabezado pegajoso oculta lo que pasa por
+debajo. Los tres estaban resueltos con `bg-surface-card` más un `backdrop-blur`
+grande, o sea **ocluyendo por accidente**: el desenfoque hacía ilegible lo de
+atrás, pero el relleno seguía siendo el 16% de una tarjeta.
+
+El inventario de §13.1 no lo tenía y por eso estos tres no se podían clasificar:
+no es ninguna de las diez superficies canónicas, porque **no es una superficie
+donde se apoya contenido — es una tapa**. Comparte regla con `thead.sticky` y
+`[data-pegajoso]`, que es lo correcto: el material de los tres es el mismo, lo
+que cambia es por qué lo necesitan.
+
+**Flotantes a su superficie.** El editor de día de `ScheduleCalendar`, el menú de
+`TabHistory`, el desplegable de `AnnouncementsView` y el globo de `TabMinMax`
+pasan a `data-surface="dropdown"` — que desde v2.428.0 tiene material propio con
+su halo y su glow, en vez de la sombra prestada del modal.
+
+**Y 34 contenedores más** dejaron el vidrio a mano: las tarjetas de
+`FacturacionView`, `PayrollView`, `EmployeeDetailView`, `App`, `StateViews`,
+`ErrorBoundary`, `FormAuditDetail`, los estados de `PermissionsView`, las
+tarjetas de producto de `TabLaboratorios` y `TabPoliticaVencimiento`, el carril
+de `FormLeadership` y el resto.
+
+**Y el gate volvió a atrapar un lift sumado**, esta vez en `FormAuditDetail`: al
+convertir a `data-surface="card"` quedó el `hover:translate-y-[var(--lift-card)]`
+de antes, que se habría **sumado** al que la superficie ya aplica. Van dos en dos
+tandas — es el error típico de esta conversión, y el gate lo agarra siempre.
+
 ## v2.433.0 — Las cajas con tinte semántico son tinta, y catorce contenedores a superficie
 
 Quinta tanda de §20, la más grande hasta ahora.

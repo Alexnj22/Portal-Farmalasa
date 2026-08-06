@@ -950,7 +950,7 @@ export default function RecepcionModal({
                             left: extraDropCoords.left,
                             width: extraDropCoords.width,
                             zIndex: 99999,
-                        }} className="rounded-xl border border-brand/30 bg-surface-card backdrop-blur-xl shadow-2xl overflow-hidden">
+                        }} className="rounded-xl border border-brand/30 bg-surface-card shadow-2xl overflow-hidden">
                             {extraResults.map(prod => (
                                 <Button
                                     variant="primary"

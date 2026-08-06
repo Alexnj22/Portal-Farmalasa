@@ -350,7 +350,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     };
 
     const headerControls = (
-        <div className="flex items-center gap-2 md:gap-3 bg-surface-card backdrop-blur-2xl border border-border-card p-2 md:p-2.5 rounded-header shadow-sm w-max max-w-full overflow-x-auto hide-scrollbar">
+        <div data-surface="card" className="flex items-center gap-2 md:gap-3 p-2 md:p-2.5 w-max max-w-full overflow-x-auto hide-scrollbar">
             
             {/* Cinco pestañas escritas a mano, con una píldora deslizante
                 propia: un `<div absolute>` cuyo `translateX` se calculaba con
@@ -456,13 +456,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         
                         {/* --- TARJETA DE PERFIL (IZQUIERDA) --- */}
                         <div className="lg:col-span-4 space-y-5">
-                            <div className="relative w-full overflow-hidden rounded-header border border-border-card bg-surface-card shadow-[var(--shadow-elevation-sm)] backdrop-blur-2xl">
+                            <div data-surface="card" className="relative w-full overflow-hidden">
                                 
                                 <div className="absolute top-0 h-32 w-full bg-gradient-to-b from-brand/15 to-transparent"></div>
                                 
                                 <div className="px-6 pb-8 pt-10 flex flex-col items-center relative z-base">
                                     
-                                    <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl backdrop-blur-md mb-5 group relative">
+                                    <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl mb-5 group relative">
                                         <div className="h-full w-full rounded-full overflow-hidden bg-surface-card-hover relative shadow-inner">
                                             <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-lento)]" />
                                         </div>

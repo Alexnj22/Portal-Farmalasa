@@ -64,7 +64,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
     return (
         <div
-            className={`group relative backdrop-blur-md rounded-modal p-5 transition-all duration-[var(--dur-lento)] animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:translate-y-[var(--lift-card)] hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
+            className={`group relative rounded-modal p-5 transition-all duration-[var(--dur-lento)] animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:translate-y-[var(--lift-card)] hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
             style={{ animationDelay: `${delay}ms`, willChange: 'transform, opacity' }}
         >
             <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-lento)] pointer-events-none"></div>

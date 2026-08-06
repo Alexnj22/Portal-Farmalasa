@@ -264,7 +264,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
               >
                 {multiLot ? (
                   <div
-                    className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm"
+                    className="rounded-xl overflow-hidden cursor-pointer group"
                     style={{ background: 'var(--surface-card)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-1)' }}
                     {...clickable(() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo }))}
                   >
@@ -294,7 +294,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                   </div>
                 ) : (
                   <button
-                    className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl backdrop-blur-sm hover:bg-surface-card transition-colors group text-left"
+                    className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl hover:bg-surface-card transition-colors group text-left"
                     style={{ background: 'var(--surface-card-hover)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-1)' }}
                     onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                   >
@@ -516,7 +516,7 @@ export default function WidgetInventorySearch() {
                     <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-divider'}`} />
                   </div>
                   <div
-                    className="rounded-xl overflow-hidden backdrop-blur-sm shadow-sm"
+                    className="rounded-xl overflow-hidden shadow-sm"
                     style={{
                       background: branch.isVencidos ? 'color-mix(in srgb, var(--danger) 8%, transparent)' : 'var(--surface-card-hover)',
                       border: branch.isVencidos ? '1px solid var(--danger)' : '1px solid var(--border-card)',

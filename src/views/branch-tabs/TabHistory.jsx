@@ -351,7 +351,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     <span className="hidden sm:inline">Exportar</span>
                                 </Button>
                                 <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-[var(--dur-slow)] ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
-                                    <div className="w-[160px] bg-surface-card backdrop-blur-xl border border-border-card shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
+                                    <div data-surface="dropdown" className="w-[160px] p-1.5 flex flex-col gap-1">
                                         <Button icon={Printer} onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }}>Reporte PDF</Button>
                                         <Button tone="success" icon={FileOutput} onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }}>Datos CSV</Button>
                                     </div>

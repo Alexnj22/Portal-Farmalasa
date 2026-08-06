@@ -416,7 +416,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)]' :
                               conf ? conf.bg + ' border border-dashed ' + conf.border :
                               hasShift ? 'bg-surface-card border border-divider shadow-[var(--shadow-elevation-xs)]' :
-                              'border border-dashed border-divider bg-surface-card-hover/30 backdrop-blur-sm'
+                              'border border-dashed border-divider bg-surface-card-hover/30'
                             }
                             ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-danger/40 shadow-[var(--shadow-shine)]' : ''}
                         `}>

@@ -408,7 +408,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                 >
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
-                        <div className="absolute inset-0 z-content flex flex-col items-center justify-center rounded-header bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-[var(--dur-fast)] pointer-events-none">
+                        <div className="absolute inset-0 z-content flex flex-col items-center justify-center rounded-header bg-success/12 animate-in fade-in duration-[var(--dur-fast)] pointer-events-none">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[var(--shadow-glow-success)] animate-in zoom-in-50 duration-[var(--dur-base)] ease-[var(--ease-spring)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>

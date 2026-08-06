@@ -992,7 +992,7 @@ export default function EncuestaAdminView() {
                             return (
                                 <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group relative transform-gpu ${
                                     isExpanded
-                                        ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl z-base'
+                                        ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card z-base'
                                         : isEditing
                                             ? 'bg-surface-card backdrop-blur-xl border-warning/40 shadow-[var(--shadow-elevation-sm)]'
                                             : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)] bg-surface-card backdrop-blur-2xl'

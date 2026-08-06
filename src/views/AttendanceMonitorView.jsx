@@ -652,7 +652,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             const groups = groupRowsByBranch(rows);
 
             return (
-              <div key={col.id} className={`rounded-modal border backdrop-blur-xl p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
+              <div key={col.id} className={`rounded-modal border p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${col.dot}`} />

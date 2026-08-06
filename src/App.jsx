@@ -470,7 +470,7 @@ function MainApp() {
 
                 {/* Card */}
                 <div className="relative z-base animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-out">
-                    <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-header px-14 py-12 shadow-[var(--card-shadow)] flex flex-col items-center gap-7 min-w-[280px]">
+                    <div data-surface="card" className="relative px-14 py-12 flex flex-col items-center gap-7 min-w-[280px]">
 
                         {/* Shimmer line top */}
                         <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[var(--shimmer-sweep-strong)] to-transparent" />

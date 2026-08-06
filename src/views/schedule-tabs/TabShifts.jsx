@@ -102,7 +102,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                     }`}>
 
             {confirmAction && (
-                <div className="absolute inset-0 z-sidebar-desktop bg-surface-card backdrop-blur-xl flex flex-col items-center justify-center gap-3 animate-in zoom-in-95 duration-[var(--dur-slow)] p-5 rounded-header">
+                <div data-cobertura className="absolute inset-0 z-sidebar-desktop flex flex-col items-center justify-center gap-3 animate-in zoom-in-95 duration-[var(--dur-slow)] p-5 rounded-header">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-tab-active border ${confirmAction === 'archive' ? 'text-danger border-danger/30' : 'text-success border-success/30'}`}>
                         {confirmAction === 'archive' ? <AlertTriangle size={20} strokeWidth={2.5} /> : <RotateCcw size={20} strokeWidth={2.5} />}
                     </div>

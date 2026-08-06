@@ -183,7 +183,7 @@ function UltimaVentaCell({ row }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
-const GLASS_CARD = 'bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glow-brand)] hover:bg-surface-card';
+const GLASS_CARD = 'bg-surface-card border-divider shadow-[var(--shadow-glow-brand)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glow-brand)] hover:bg-surface-card';
 
 const FILTER_CARD_CSS = `
 @keyframes cardIn {

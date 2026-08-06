@@ -517,7 +517,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             {conductorBtnLabel}</Button>
 
           {/* Badge mapa */}
-          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card backdrop-blur-sm rounded-lg px-2 py-1 text-micro font-semibold text-content-2 shadow-sm border border-border-card">
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card rounded-lg px-2 py-1 text-micro font-semibold text-content-2 shadow-sm border border-border-card">
             {mapsMode
               ? <><span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />Google Maps</>
               : <><span className="w-1.5 h-1.5 rounded-full bg-warning inline-block" />OpenStreetMap</>

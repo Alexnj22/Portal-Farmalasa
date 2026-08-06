@@ -286,7 +286,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                 const branchName = branch?.name || 'Otras áreas';
                 return (
                     <div key={branch?.id || '__none__'}
-                        className="backdrop-blur-[30px] rounded-header bg-surface-card border border-border-card shadow-[var(--shadow-glass-3)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-lento)]"
+                        className="overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-lento)]"
                         style={{ animationDelay: `${gi * 80}ms` }}>
 
                         {/* Branch header */}

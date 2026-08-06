@@ -307,7 +307,7 @@ const SalesBranchSkeleton = () => (
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
   <div data-surface="card" {...clickable(onClick)}
-    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)]' : ''}`}>
+    className={`group animate-kpi-enter relative rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)]' : ''}`}>
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
@@ -1250,7 +1250,7 @@ const DashboardView = ({ openModal }) => {
                 {/* gap ampliado + before:-inset-1 en mobile: mejora el touch target
                     de 24px a ~32px sin que las zonas de toque de números
                     vecinos se solapen (gap-1.5=6px era insuficiente, v2.47.4) */}
-                <div className={`bg-surface-card backdrop-blur-sm border border-divider rounded-2xl px-3 py-2.5 shadow-xl flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
+                <div className={`bg-surface-card border border-divider rounded-2xl px-3 py-2.5 shadow-xl flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
                   {/* Ancho y alto: dos uno-de-N de números. Con
                       `SegmentedControl` cada grupo se anuncia como "3 de 4" en
                       vez de ocho botones sueltos sin relación, y el toque de

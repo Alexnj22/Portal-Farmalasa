@@ -70,7 +70,7 @@ const MinMaxStatusCard = memo(({ req }) => {
         ? { border: 'border-danger/40 bg-surface-card', variante: 'danger', label: 'Rechazada' }
         : { border: 'border-brand/30 bg-surface-card', variante: 'warning', label: 'Pendiente' };
     return (
-        <div className={`p-5 rounded-modal border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[var(--shadow-elevation-sm)]`}>
+        <div className={`p-5 rounded-modal border-2 ${cfg.border} flex flex-col gap-3 shadow-[var(--shadow-elevation-sm)]`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-chart-1/10 border border-chart-1/30 flex items-center justify-center flex-shrink-0">
@@ -190,7 +190,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
     const [uploadingDoc, setUploadingDoc] = useState(false);
 
     const cardBg =
-        req.status === 'PENDING'   ? 'border-brand/30 bg-surface-card backdrop-blur-2xl' :
+        req.status === 'PENDING'   ? 'border-brand/30 bg-surface-card' :
         req.status === 'APPROVED'  ? 'border-success/40 bg-success/10 backdrop-blur-2xl' :
         req.status === 'REJECTED'  ? 'border-danger/40 bg-surface-card backdrop-blur-xl' :
         'border-border-card bg-surface-card backdrop-blur-md';

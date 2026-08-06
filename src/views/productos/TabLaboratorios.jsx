@@ -237,7 +237,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
             layout
             className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden ${
                 isOpen
-                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card backdrop-blur-sm'
+                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card'
                     : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card backdrop-blur-sm'
             }`}
         >
@@ -358,7 +358,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                         ? 'shadow-lg shadow-warning/10 ring-1 ring-warning/30'
                         : 'shadow-lg shadow-chart-9/10 ring-1 ring-chart-9/30'
                     : 'shadow-sm hover:shadow-md cursor-pointer'
-            } bg-surface-card backdrop-blur-md border border-border-card`}
+            } bg-surface-card border border-border-card`}
             onClick={editing ? undefined : () => setEditing(true)}
         >
             {/* Top accent bar */}

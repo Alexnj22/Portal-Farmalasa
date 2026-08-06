@@ -2806,7 +2806,7 @@ export default function FacturacionView() {
                 activa, así que sigue habiendo una sola `FilterBar` montada por
                 vista aunque las cuatro pestañas estén en el DOM (las inactivas
                 van con `hidden` para no perder su estado). */}
-            <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-3xl lg:rounded-header border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
+            <div data-surface="card" className=" shadow-[var(--shadow-glass-sm)] overflow-hidden">
                 {visitadas.has('anuladas') && (
                     <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
                         <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}

@@ -1260,7 +1260,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         zIndex: 10001,
                         pointerEvents: 'none',
                     }}
-                    className="bg-surface-card backdrop-blur-md border border-warning/30 rounded-xl shadow-xl px-3 py-2 min-w-[148px]"
+                    data-surface="dropdown"
+                    className="px-3 py-2 min-w-[148px]"
                 >
                     <div className="text-micro font-bold text-warning uppercase tracking-wide mb-1.5">Sucursales pendientes</div>
                     {bodegaTooltip.pending.map(b => (

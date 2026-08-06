@@ -392,7 +392,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         const baseCls = urgLevel === 'high'
                             ? 'bg-gradient-to-b from-danger/10 to-[var(--card-tint-base-soft)] border-danger/30'
                             : urgLevel === 'mid'
-                                ? 'bg-gradient-to-b from-warning/10 to-[var(--card-tint-base-soft)] border-warning/30 backdrop-blur-sm'
+                                ? 'bg-gradient-to-b from-warning/10 to-[var(--card-tint-base-soft)] border-warning/30'
                                 : urgLevel === 'low'
                                     ? 'bg-gradient-to-b from-success/10 to-[var(--card-tint-base-soft)] border-success/30 backdrop-blur-sm'
                                     : 'bg-gradient-to-b from-[var(--card-tint-base)] to-[var(--card-tint-base-soft)] border-divider backdrop-blur-sm';

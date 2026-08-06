@@ -55,7 +55,7 @@ export default class ErrorBoundary extends React.Component {
                         className="relative z-base overflow-hidden group flex items-center gap-2
                             px-7 py-3.5 rounded-3xl
                             bg-gradient-to-b from-brand/72 to-brand-hover/78
-                            backdrop-blur-xl border border-border-card hover:border-border-card
+                            border border-border-card hover:border-border-card
                             text-white font-black text-label uppercase tracking-widest
                             shadow-[var(--shadow-glass-2)]
                             hover:shadow-[var(--shadow-glass-4)]

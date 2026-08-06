@@ -85,7 +85,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     }
 
     return (
-        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
+        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl border border-border-card cursor-pointer transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-[var(--dur-lento)] group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 

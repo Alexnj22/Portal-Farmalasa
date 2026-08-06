@@ -124,7 +124,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
     return (
         <div className={`rounded-3xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu ${
             isComing
-                ? 'bg-surface-card backdrop-blur-xl border-border-card opacity-40 select-none'
+                ? 'bg-surface-card border-border-card opacity-40 select-none'
                 : hasAnyPerm
                     ? `bg-surface-card backdrop-blur-2xl border-border-card
                        shadow-[var(--shadow-glass-2)]
@@ -161,7 +161,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 {/* Toggles */}
                 <div className={`rounded-xl p-2.5 space-y-1.5 border transition-all duration-[var(--dur-slow)] ${
                     hasAnyPerm
-                        ? 'bg-surface-card backdrop-blur-sm border-border-card shadow-[var(--shadow-shine)]'
+                        ? 'bg-surface-card border-border-card shadow-[var(--shadow-shine)]'
                         : 'bg-surface-card border-border-card'
                 }`}>
                     {PERMISSION_TYPES.map(pt => {
@@ -750,7 +750,7 @@ const PermissionsView = () => {
                                     className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-hover)] active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? `${cs.fondo} ${cs.borde} shadow-[var(--shadow-elevation-md)]`
-                                            : 'bg-surface-card backdrop-blur-md border-border-card hover:bg-surface-card hover:shadow-[var(--shadow-elevation-sm)]'
+                                            : 'bg-surface-card border-border-card hover:bg-surface-card hover:shadow-[var(--shadow-elevation-sm)]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">

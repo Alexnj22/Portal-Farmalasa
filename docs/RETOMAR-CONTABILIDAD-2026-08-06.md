@@ -237,3 +237,42 @@ libro. Se corrige solo cuando el sello llega.»*
 Un sello ausente en el portal puede ser (a) que el documento no se transmitió, o
 (b) que se transmitió y el sello todavía no llegó al portal. **Desde la base no
 se distingue** — se confirma en el origen o en el portal de Hacienda.
+
+### 7.bis · ¿Y si el documento es de un mes ya declarado? (mayo)
+
+Misma regla de período —entra en **mayo**— pero mayo **ya se declaró**, y eso
+agrega tres cosas que julio no tenía.
+
+**1. La modificatoria hacia arriba no tiene plazo; hacia abajo sí.**
+
+- **Art. 101 CT**: las declaraciones «pueden ser modificadas **en cualquier
+  tiempo y circunstancia** para **aumentar el impuesto** o disminuir el
+  excedente a favor» — *sin perjuicio de las sanciones que correspondan*. Sumar
+  ventas a mayo va en esa dirección, así que **siempre se puede**.
+- **Art. 104 CT**: si la modificatoria **disminuye el impuesto o aumenta el saldo
+  a favor**, hay **2 años**, exige **verificación por auditores de Hacienda**, y
+  **no surte efecto alguno** mientras Hacienda no se pronuncie. La asimetría es
+  el punto: corregir a favor del fisco es trámite; corregir a favor propio es
+  proceso.
+
+**2. El costo real no es mayo — es la cadena.** El IVA se arrastra: si cambia el
+resultado de mayo, cambia su remanente, que es el punto de partida de junio, que
+es el de julio. Una modificatoria de mayo puede arrastrar **modificatorias de
+junio y julio**. Por eso un mes viejo sale caro aunque el monto sea chico.
+
+**3. Que Hacienda lo acepte no lo dice la ley.** El Art. 119-D deja el plazo de
+transmisión a «las reglas, forma, plazos y condiciones» que **establezca la
+Administración Tributaria**. No está en el Código. **Hay que confirmarlo con la
+contadora o en el portal de Hacienda** antes de asumir que un documento de mayo
+todavía se puede sellar. Si la plataforma lo rechaza, no hay DTE — y entonces es
+una venta sin documento fiscal válido, que es otro problema.
+
+Sobre sanciones: el **Art. 119-F** dice que cumplir el proceso de contingencia
+—evento + lote dentro del plazo— **exime** de la sanción del Art. 239-A literales
+g) y h). No cumplirlo, no. Qué literal aplica a cada caso lo define la contadora,
+no este documento.
+
+**Medido el 2026-08-06: mayo está limpio.** 22,696 ventas finalizadas, **todas
+con sello**; 70 invalidadas ante Hacienda, también selladas. **Cero sin sello.**
+El caso es hipotético para mayo — lo único realmente pendiente son las 13 de
+agosto.

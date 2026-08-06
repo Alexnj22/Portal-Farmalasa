@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.449.0 — El `scale` en reposo y los grupos con nombre: blancos táctiles 91 → 7
+
+Cerrado el hallazgo que la versión anterior dejó abierto, y con él la fase 3.2.
+**Blancos táctiles por debajo de 44pt: 91 → 7**, y los 7 restantes no son deuda.
+
+**El «42×42» que ningún arreglo de tamaño movía era un `scale` en reposo.** Los
+botones de redimensionar del tablero viven en un envoltorio con
+`opacity-0 scale-[0.95] group-hover/drag:opacity-100 group-hover/drag:scale-100`.
+O sea que en un teléfono estaban **invisibles Y encogidos**: 44px de layout
+pintados al 95% dan **41.8**. Por eso `min-w`/`min-h` no los movía — el layout ya
+era correcto, lo que encogía era la pintura.
+
+**Y destapó un hueco en el arreglo anterior.** La regla de
+`@media (hover: none)` sólo miraba `group-hover:opacity-100` y se perdía el
+variante con **grupo nombrado** (`group-hover/drag:`), que es justo donde estaban
+los 29. Ahora cubre las dos formas y además el `scale`, porque este patrón casi
+siempre viene en par: lo que se revela al apuntar también se agranda al apuntar.
+
+**Los dos enlaces de la lista de personal** —WhatsApp y llamar— pasan a
+`.blanco-tactil`. Estaban en 16×16, y desde el arreglo de hover al menos ya se
+ven en un teléfono; ahora también se pueden tocar.
+
+**Los 7 que quedan son una restricción medida, no deuda:** son las columnas del
+gráfico de tráfico por día. Siete segmentos **adyacentes** repartiéndose 390px
+dan 40px cada uno, no pueden dar 44 sin desbordar, y ampliarles el área con un
+pseudo-elemento los haría solaparse entre sí. La auditoría los excluye por
+`aria-label`, con el motivo escrito — que es la diferencia entre un número que
+baja y un número que se entiende.
+
 ## v2.448.0 — El piso del dedo sobrevive a `className`, y el hover que no existe en táctil
 
 Las dos formas que la fase 1 dejó localizadas, hechas canónicas.

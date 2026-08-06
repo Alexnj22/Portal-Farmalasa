@@ -111,6 +111,12 @@ const MEDIR = () => {
             // no hay nada que tocar mal — el mismo error de medir la referencia
             // en vez del cuerpo, por tercera vez en este proyecto.
             if (el.getAttribute('aria-hidden') === 'true') return;
+            // Las columnas de un gráfico tampoco son un blanco suelto: son
+            // segmentos ADYACENTES que se reparten el ancho. Siete días en
+            // 390px dan 40px cada uno y no pueden dar 44 sin desbordar, y
+            // ampliarles el área con un pseudo las haría solaparse entre sí.
+            // Se anotan como restricción medida, no como deuda.
+            if (/^Día: /.test((el.getAttribute('aria-label') || '').trim())) return;
             if (el.tabIndex < 0 && !el.hasAttribute('href')) return;
             const a = areaEfectiva(el);
             if (a.w < 44 || a.h < 44) {

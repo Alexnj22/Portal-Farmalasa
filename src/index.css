@@ -1641,7 +1641,17 @@ thead.sticky,
    cómo escape el compilador. `!important` porque compite contra la utilidad
    `opacity-0`, que tiene la misma especificidad. */
 @media (hover: none) {
-  [class*="group-hover:opacity-100"] { opacity: 1 !important; }
+  /* Cubre las DOS formas del variante: `group-hover:` y el grupo con NOMBRE
+     `group-hover/loquesea:`. La primera versión sólo miraba la sin nombre y se
+     perdía justo el caso que más dolía — los 29 botones de redimensionar del
+     tablero cuelgan de `group-hover/drag:`.
+     Y no alcanza con la opacidad: el mismo patrón suele venir con
+     `scale-[0.95] group-hover:scale-100`, o sea que el control además se pinta
+     un 5% más chico. En el tablero eso bajaba un botón de 44px a **41.8**, y
+     ése fue el «42×42» que la auditoría reportaba y que ningún arreglo de
+     tamaño movía: el layout ya daba 44, lo que encogía era la pintura. */
+  [class*="group-hover"][class*=":opacity-100"] { opacity: 1 !important; }
+  [class*="group-hover"][class*=":scale-100"]   { scale: 1 !important; }
 }
 
 @media (pointer: coarse) {

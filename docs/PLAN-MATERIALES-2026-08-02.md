@@ -937,12 +937,12 @@ no arranca sin su bloqueo resuelto, porque si arranca hay que rehacerla.
 |---|---|---|---|
 | **A** | ~~Cerrar el alcance del vidrio~~ ✅ hecho (§1.5) · quedan las 2 mediciones de §10 | — | Quedan escritas acá con su motivo |
 | **B** | ~~Definir barra de pestañas y sidebar~~ ✅ **hecho** (§11 y §12) | — | Sus secciones, con valores y mediciones |
-| **C** | El reloj: decidir si crece, y migrar los 89 easings | A | `npm run gate:design` con la categoría nueva en 0 |
-| **D** | Tokens de §1-§5 en `index.css`, **en los cuatro temas** | A, B | Captura de los 4 temas por elemento |
+| **C** | ~~El reloj~~ ✅ **hecho 2026-08-05** — 468 usos tokenizados, 0 literales | A | `reloj-a-mano` en 0 y bloqueante |
+| **D** | ~~Tokens de §1-§5 en los cuatro temas~~ ✅ **hecho 2026-08-05** | A, B | Medido en la app real, 4 temas |
 | **E** | `data-interactive` en las tarjetas clicables | D | El gel se ve; el gate lo exige |
 | **F** | Utilidad de seguimiento del puntero (§6) | D | Banco de 60fps repetido |
-| **G** | Remover el barrido (`.sweep`) | D | 0 en `index.css`, JSX y `DESIGN.md` |
-| **H** | `DESIGN.md` §2 y §5 + el cambio de contrato de §1.4 | D | El texto y el código dicen lo mismo |
+| **G** | ~~Remover el barrido (`.sweep`)~~ ✅ **hecho 2026-08-05** | D | 0 en `index.css`, JSX y `DESIGN.md` |
+| **H** | ~~`DESIGN.md` §25.4 y el barrido~~ ✅ **hecho 2026-08-05** | D | El texto y el código dicen lo mismo |
 
 ### 8.1 Detalle por fase
 
@@ -968,11 +968,24 @@ Hoy `design-gate.mjs` tiene 41 categorías y **ninguna mira el movimiento**:
 `dur-`, `duration` y `ease-spring` no aparecen en el archivo. Las tres que hay
 que agregar:
 
-| categoría | falla ante |
-|---|---|
-| `material-a-mano` | un valor de las capas de §1-§5 escrito literal en JSX o CSS en vez de salir de su token |
-| `reloj-a-mano` | `duration-N` / `cubic-bezier(...)` literal fuera de `index.css` |
-| `puntero-lista` | un handler de `pointermove` que recorra una lista o llame `getBoundingClientRect()` por evento (§6) |
+| categoría | falla ante | estado |
+|---|---|---|
+| `vidrio-a-mano` | `backdrop-blur` fuera de una superficie canónica | ✅ **activa** — ratchet en 150 |
+| `reloj-a-mano` | `duration-N` / `cubic-bezier(...)` literal en JSX | ✅ **activa, en 0 y bloqueante** |
+| `puntero-lista` | un handler de puntero que recorra una lista o mida el rect por evento | ✅ **activa, en 0 y bloqueante** |
+| `material-a-mano` | un valor de las capas de §1-§5 escrito literal | ⏳ falta |
+
+**`reloj-a-mano` mira las transiciones, no las animaciones — a propósito.**
+`animationDuration` queda fuera: los 24 que había son **bucles ambientales** (shimmer
+a 4s, blobs escalonados a 2/3/5s) y el período de un bucle no es una duración de
+interacción. Meterlos en la escala haría que los tres blobs derivaran al unísono, que
+es exactamente lo que el escalonado evita — sería usar el reloj para romper el diseño.
+
+**Y `puntero-lista` daba cuatro falsos positivos en su primera versión.** Miraba
+cualquier mención de `pointermove`: tres de los cuatro eran `removeEventListener` de
+limpieza y el otro una prop apuntando a un handler definido veinte líneas más arriba.
+**Un detector que mira la referencia en vez del cuerpo no mide lo que cree medir** —
+acusa a quien desmonta el listener igual que a quien lo escribe mal.
 
 Ninguna va al baseline: una categoría ausente del JSON arranca bloqueante sola.
 Por eso la fase C —bajar la deuda existente— va **antes** de que el gate exista.

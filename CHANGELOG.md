@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.397.1 — Seguridad: las dos policies de INSERT abiertas, el enrutador de aprobadores y el padrón del kiosco
+
+Tres pendientes que venían de la auditoría del 2026-07-30 y de la nota de
+autorización del 2026-08-04. El tercero apareció recién hoy, al ejecutar por
+primera vez el barrido que esa nota dejaba sugerido.
+
+**Las dos policies de INSERT con `WITH CHECK (true)`** (`20260806000957`).
+`audit_logs.admin_insert` y `attendance.attendance_insert` aceptaban cualquier
+fila de cualquier usuario autenticado: se podía fabricar una marcación a nombre
+de otro y firmar la bitácora con el `user_id` ajeno. Ahora `audit_logs` exige
+`user_id = auth.uid()` y `attendance` exige que la marcación sea propia o que
+quien la escribe tenga `time_audit.can_edit` dentro de su alcance —el mismo
+permiso que ya gobernaba el UPDATE y el DELETE de esa tabla—. Del lado del
+cliente, `appendAuditLog` firmaba con `sb_user` de localStorage, que escribe el
+navegador; ahora la identidad sale de la sesión. Medido antes de aplicar:
+`attendance` está en 0 filas y el kiosco entra como `anon`, así que no había
+nada que romper.
+
+**El enrutador de aprobadores** (`src/data/requests.js`). Sus tres fallbacks
+consultaban `employees.is_admin`, una columna que no existe en la base: el
+query fallaba, el llamador lo leía como «no hay nadie» y la solicitud podía
+quedarse sin aprobador. Pasan a `system_role IN ('ADMIN','SUPERADMIN')`, que es
+el criterio que ya usaba el resto del código y que hoy resuelve a dos personas
+activas.
+
+**El padrón del kiosco** (`20260806001444`). El barrido de «identidad por
+parámetro» dio limpio en las cinco funciones que reciben un id de empleado, pero
+al ampliarlo a la sucursal como parámetro apareció
+`get_kiosk_coverage_employees`: ejecutable por `anon`, sin `device_token`, y
+devolvía nombre, código, foto y **`kiosk_pin`** de cada empleado de la sucursal
+que se pidiera. Se quedó afuera del rediseño de credenciales del kiosco del
+2026-07-29 —su hermana `get_kiosk_boot_payload` sí exige el token y ya no
+devuelve el PIN—. Ahora exige el par `device_id`/`device_token`, la sucursal
+sale del dispositivo en vez del parámetro, y el PIN no viaja: el real se
+verifica con bcrypt contra `kiosk_credentials` dentro de `verify_kiosk_pin`.
+
+_(pendiente de redactar)_
+
 ## v2.397.0 — El reloj crece un escalón
 
 **Fase C, primera mitad.** La escala tenía tres escalones (150/200/300 ms) y el

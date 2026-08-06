@@ -45,18 +45,27 @@ export function fetchActiveEmployeesInRoleAndBranch(roleId, branchId, excludeId)
         .eq('role_id', roleId).eq('branch_id', branchId).eq('status', 'ACTIVO').neq('id', excludeId);
 }
 
+// Quién es "admin" para el enrutador de aprobadores. Estas tres consultaban
+// `employees.is_admin`, una columna que NO EXISTE en la base: un `.eq()` contra
+// una columna inexistente devuelve error, el llamador lo trata como "no hay
+// nadie" y la solicitud se queda SIN APROBADOR. Y son justamente los fallbacks
+// del enrutador, o sea el último recurso cuando no hay jefe ni supervisor.
+// El criterio correcto es `system_role`, que es el que ya usa el resto del
+// código (`WidgetAnnulmentRequest.jsx`): ADMIN y SUPERADMIN.
+const ADMIN_SYSTEM_ROLES = ['ADMIN', 'SUPERADMIN'];
+
 export function fetchBranchAdmins(branchId, excludeId) {
     return supabase.from('employees').select('id')
-        .eq('branch_id', branchId).eq('is_admin', true).eq('status', 'ACTIVO').neq('id', excludeId);
+        .eq('branch_id', branchId).in('system_role', ADMIN_SYSTEM_ROLES).eq('status', 'ACTIVO').neq('id', excludeId);
 }
 
 export function fetchGlobalAdmins(excludeId) {
     return supabase.from('employees').select('id')
-        .eq('is_admin', true).eq('status', 'ACTIVO').neq('id', excludeId).limit(1);
+        .in('system_role', ADMIN_SYSTEM_ROLES).eq('status', 'ACTIVO').neq('id', excludeId).limit(1);
 }
 
 export function fetchAnyActiveAdmin() {
-    return supabase.from('employees').select('id').eq('is_admin', true).eq('status', 'ACTIVO').limit(1);
+    return supabase.from('employees').select('id').in('system_role', ADMIN_SYSTEM_ROLES).eq('status', 'ACTIVO').limit(1);
 }
 
 export function fetchApprovalRolePermissions() {

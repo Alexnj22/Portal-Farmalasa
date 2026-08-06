@@ -1,5 +1,5 @@
 import { safeJsonParse, CACHE_KEYS } from '../utils';
-import { insertAuditLog, fetchAuditLogs as fetchAuditLogsData } from '../../data/audit';
+import { insertAuditLog, fetchAuditLogs as fetchAuditLogsData, getSessionUserId } from '../../data/audit';
 
 // ==========================================================
 // 🔐 Auditoría PRO (sin IP)
@@ -151,8 +151,13 @@ export const createAuditSlice = (set) => ({
     const source = ALLOWED_SOURCES.has(sourceCandidate) ? sourceCandidate : AUDIT_SOURCES.ADMIN_PANEL;
     const severity = ALLOWED_SEVERITY.has(severityCandidate) ? severityCandidate : AUDIT_SEVERITY.INFO;
 
+    // Quién firma: la sesión manda. `sb_user` queda de respaldo para el caso
+    // en que la sesión todavía no esté hidratada, pero la policy de INSERT
+    // (20260806000957) sólo acepta el auth.uid() de la sesión.
+    const sessionUserId = await getSessionUserId();
+
     const logData = {
-      user_id: storedUser?.id || null,
+      user_id: sessionUserId || storedUser?.id || null,
       user_name: overrideName || storedUser?.name || 'Sistema/Anónimo',
       action: normalizedAction,
       target_id: tId != null && String(tId).trim() !== '' ? String(tId) : null,

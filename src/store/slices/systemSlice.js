@@ -1356,9 +1356,17 @@ export const createSystemSlice = (set, get) => ({
 
                 // Merge cross-branch coverage employees so the kiosk recognises them
                 try {
+                    // La sucursal sale del dispositivo, no de `config.branchId`:
+                    // la firma vieja aceptaba cualquier branch_id sin credencial
+                    // y devolvía el padrón con sus PIN (migración
+                    // 20260806001444). Mismo par device_id/token que el boot.
                     const { data: coverageEmps, error: covErr } = await supabase.rpc(
                         'get_kiosk_coverage_employees',
-                        { p_branch_id: Number(config.branchId), p_week_start: weekStartDate }
+                        {
+                            p_device_id: config.deviceId,
+                            p_device_token: config.deviceToken,
+                            p_week_start: weekStartDate
+                        }
                     );
                     if (!covErr && Array.isArray(coverageEmps) && coverageEmps.length > 0) {
                         const existingIds = new Set(mappedEmployees.map(e => e.id));

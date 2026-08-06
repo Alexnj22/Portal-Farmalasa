@@ -1235,11 +1235,42 @@ const DashboardView = ({ openModal }) => {
 
         {content}
 
-        {/* Resize button — hover to reveal, click opens W×H popover */}
+        {/* Resize button — hover to reveal, click opens W×H popover.
+            En el teléfono sigue la MISMA regla que la píldora de arrastrar de
+            arriba: sólo existe con "Personalizar" abierto (2026-08-06,
+            decisión del usuario). Los dos son la edición del tablero, y en un
+            teléfono editar y navegar se pisan — ese es el motivo por el que el
+            arrastre ya vivía detrás del modo, y no había ninguno para que el
+            tamaño no.
+
+            Su estado anterior en móvil no era una decisión, era un residuo:
+            `opacity-0` SIN `pointer-events-none`, o sea invisible y tocable —
+            un botón fantasma en la esquina de cada widget— hasta que la regla
+            de hover táctil de v2.448.0 lo volvió visible siempre y lo dejó
+            apoyado sobre la última columna del gráfico de tráfico.
+            Redimensionar en el teléfono NO se pierde: el panel W×H está hecho
+            para el dedo (SegmentedControl con los 44px canónicos) y con 2
+            columnas hay algo real que elegir.
+
+            `pointer-events-none` no es decorativo: es lo que impide que vuelva
+            el fantasma. Y al no quedar `group-hover` en el atributo `class` de
+            esta rama, la regla de index.css tampoco lo revela.
+
+            Y va con `inert` (A17): `pointer-events-none` sólo tapa el mouse —
+            el teclado y el lector de pantalla siguen entrando al botón dentro
+            de lo invisible (WCAG 2.4.3). O sea que el "fantasma" tenía una
+            segunda mitad que el `opacity-0` de siempre tampoco cubría. */}
         {!dndActive && (
           <div
             data-resize-panel
-            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'}`}
+            inert={isMobile && !showConfig && !isResizeOpen ? true : undefined}
+            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] ${
+              isResizeOpen
+                ? 'opacity-100 scale-100'
+                : isMobile
+                  ? (showConfig ? 'opacity-100 scale-100' : 'opacity-0 pointer-events-none')
+                  : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'
+            }`}
           >
             <Button
                 icon={Maximize2}

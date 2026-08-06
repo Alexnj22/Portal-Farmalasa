@@ -273,13 +273,16 @@ siete tooltips del tablero (la regla de hover de v2.448.0 se pasaba de largo).
    (antes/después de los tooltips), la píldora de Mis Solicitudes, y escritorio
    a 1024 y 1440 para las dos vistas tocadas.
 
-**Abierto, y es una decisión de producto, no un bug:** desde v2.448.0 los
-botones de redimensionar del tablero se ven **siempre** en un teléfono — son
-controles, así que la regla nueva los sigue revelando a propósito — y uno de
-ellos se apoya sobre la última columna del gráfico de tráfico (se ve en
-`test-results/auditoria-movil/tooltips-despues.png`). ¿Se redimensiona un
-tablero con el pulgar? Si la respuesta es no, esos botones deberían esconderse
-en táctil en vez de revelarse.
+**Resuelto (v2.453.0, decisión del usuario del 2026-08-06).** El botón de
+tamaño de cada widget sigue en el teléfono la misma regla que la píldora de
+arrastrar: sólo existe con «Personalizar» abierto. No era una política nueva
+—la píldora ya la tenía escrita, y por un motivo concreto: un scroll con una
+pausa breve reordenaba widgets por accidente— sino la mitad que faltaba
+aplicar. Redimensionar no se pierde: el panel W×H está hecho para el dedo.
+De paso el gate levantó que `pointer-events-none` sólo tapa el mouse: la región
+colapsada va ahora con `inert`, porque el teclado seguía entrando al botón
+dentro de lo invisible. Medido: 0 visibles / 0 tocables / 22 `inert` sin el
+modo, 22 / 22 / 0 con él, escritorio sin cambios.
 
 ### Fase 5 — Matriz de verificación final + limpieza
 

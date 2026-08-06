@@ -21,9 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.453.0 — El botón de tamaño entra a Personalizar, y el fantasma tenía una segunda mitad
+## v2.453.1 — El botón de tamaño entra a Personalizar, y el fantasma tenía una segunda mitad
 
-_(pendiente de redactar)_
+> *`v2.453.0` fue el número que reservó el bump de este mismo trabajo: otra
+> sesión lo commiteó junto con lo suyo antes de que el código llegara, así que
+> el contenido viaja acá. Es exactamente el escenario que describe la regla de
+> «hay OTRAS sesiones trabajando en este árbol».*
+
+Cierra el punto que v2.451.0 dejó anotado como decisión de producto, y que el
+usuario resolvió el 2026-08-06: **en el teléfono el botón de tamaño de cada
+widget sólo existe con «Personalizar» abierto**, igual que la píldora de
+arrastrar.
+
+**No es una política nueva: es la que ya estaba tomada para su hermano.** Cada
+widget del tablero tiene dos afordancias de edición, y sólo una tenía una
+decisión escrita. La píldora de arrastrar dice, explícita,
+`isMobile ? (showConfig ? … : "opacity-0 pointer-events-none") : ''`, y el
+comentario da el motivo: antes se armaba un long-press en cualquier
+`pointerdown` del widget, así que **un scroll con una pausa breve reordenaba
+widgets por accidente**. O sea que en un teléfono la edición del tablero se metió
+detrás de un modo porque el dedo confunde navegar con editar. El botón de tamaño
+nunca recibió esa decisión, y sus dos estados fueron efectos secundarios:
+
+| | Qué pasaba en el teléfono |
+|---|---|
+| hasta v2.447.0 | `opacity-0` **sin** `pointer-events-none` → invisible **y tocable**: un botón fantasma en la esquina de cada widget |
+| v2.448.0 → v2.452.x | forzado visible por la regla de hover táctil, apoyado sobre la última columna del gráfico de tráfico |
+
+**No se pierde redimensionar.** El panel W×H está hecho para el dedo
+—`SegmentedControl` con los 44px canónicos, y dos rondas de trabajo específicas
+de móvil en v2.47.4— y con 2 columnas hay algo real que elegir. Sólo cambia
+*dónde* se lo pide.
+
+**Y el fantasma tenía una segunda mitad que nadie había cubierto.** El gate de
+diseño levantó la categoría `inert` sobre el cambio: `pointer-events-none` tapa
+el **mouse**, pero el teclado y el lector de pantalla siguen entrando al botón
+dentro de lo invisible (WCAG 2.4.3). O sea que el `opacity-0` de siempre dejaba
+un control tabulable en la esquina de los 22 widgets. Ahora la región va con
+`inert` cuando está colapsada — el idioma que el proyecto ya usa en `ViewTabBar`,
+`SearchInput` y el submenú del sidebar.
+
+Medido en WebKit iPhone 13 sobre los 22 widgets del tablero:
+
+```
+teléfono, sin Personalizar :  0 visibles ·  0 tocables · 22 inert
+teléfono, con Personalizar : 22 visibles · 22 tocables ·  0 inert
+escritorio 1440            :  se revela al pasar el mouse, sin cambios
+```
 
 ## v2.452.2 — El candado que faltaba: dos personas confirmando el mismo traslado
 

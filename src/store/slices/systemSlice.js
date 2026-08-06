@@ -207,8 +207,24 @@ export const createSystemSlice = (set, get) => ({
                         const myBranchId = storedUser?.branchId ?? null;
                         const myRoleId = storedUser?.roleId ?? (Number.isInteger(storedUser?.role) ? storedUser.role : null);
 
+                        // El permiso YA está en memoria: `AuthContext` guarda el mapa
+                        // completo de módulos en `sb_role_perms` al resolver el perfil.
+                        // Consultarlo por red era un viaje extra que además SERIALIZABA
+                        // detrás suyo el tramo más pesado del arranque —las 5 consultas
+                        // de empleados— porque este `await` va antes del Promise.all
+                        // (§7.6 de AUDITORIA-COMPLETA-2026-07-30). La consulta queda de
+                        // respaldo para cuando el caché no esté.
                         let canSeeAllStaff = true;
-                        if (myRoleId) {
+                        let permResueltoDelCache = false;
+                        try {
+                            const cachedPerms = safeJsonParse(localStorage.getItem('sb_role_perms'));
+                            if (cachedPerms && typeof cachedPerms === 'object' && 'staff_list' in cachedPerms) {
+                                canSeeAllStaff = !!cachedPerms.staff_list?.can_view;
+                                permResueltoDelCache = true;
+                            }
+                        } catch { /* caché corrupto: cae al query de abajo */ }
+
+                        if (!permResueltoDelCache && myRoleId) {
                             try {
                                 const { data: perm, error: permError } = await supabase
                                     .from('role_permissions')

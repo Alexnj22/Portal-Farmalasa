@@ -657,22 +657,34 @@ const DashboardView = ({ openModal }) => {
             setMobileSizes(prev => ({ ...prev, ...data.mobile_sizes }));
           }
         }
-        setPrefsReady(true); // flip → triggers save effect below to persist current state
+        setPrefsReady(true); // flip → habilita el effect de guardado (que toma la foto, no escribe)
       });
   }, [user?.id]);
 
-  // Debounced save: fires 1.5 s after any prefs change (including the initial prefsReady flip)
+  // Debounced save: fires 1.5 s after any prefs change.
+  //
+  // La primera corrida tras `prefsReady` NO guarda: sólo toma la foto de lo que
+  // quedó armado al cargar. Antes sí guardaba —el comentario del flip decía
+  // "triggers save effect below"— así que **cada apertura del tablero escribía
+  // una fila idéntica**, con un `updated_at` puesto por el cliente que la hacía
+  // "cambiar" siempre (§7.5 de AUDITORIA-COMPLETA-2026-07-30). Ese estado
+  // inicial se recalcula igual en cada carga a partir de lo guardado más
+  // WIDGET_DEFS, así que no persistirlo no pierde nada.
+  const prefsBaselineRef = useRef(null);
   useEffect(() => {
     if (!prefsReady || !user?.id) return;
+    const payload = { user_id: user.id, layout: widgetLayout, sizes: widgetSizes,
+      widgets: widgetConfig, mobile_layout: mobileLayout, mobile_sizes: mobileSizes };
+    const foto = JSON.stringify(payload);
+    if (prefsBaselineRef.current === null) { prefsBaselineRef.current = foto; return; }
+    if (prefsBaselineRef.current === foto) return;   // nada cambió de verdad
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      upsertUserDashboardPrefs(
-        { user_id: user.id, layout: widgetLayout, sizes: widgetSizes, widgets: widgetConfig,
-          mobile_layout: mobileLayout, mobile_sizes: mobileSizes,
-          updated_at: new Date().toISOString() }
-      ).then(({ error }) => {
-        if (error) console.error('[dash prefs save]', error);
-      });
+      upsertUserDashboardPrefs({ ...payload, updated_at: new Date().toISOString() })
+        .then(({ error }) => {
+          if (error) { console.error('[dash prefs save]', error); return; }
+          prefsBaselineRef.current = foto;
+        });
     }, 1500);
     return () => clearTimeout(saveTimerRef.current);
   }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, mobileLayout, mobileSizes, user?.id]);

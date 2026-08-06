@@ -24,13 +24,24 @@ export function useThemeSync() {
   const [cargadoPara, setCargadoPara] = useState(null);
   const ready = !!user?.id && cargadoPara === user.id;
   const saveTimerRef = useRef(null);
+  // Qué tema sabemos que ya está guardado en la base, para no reescribirlo.
+  // Sin esto, cargar el tema disparaba el effect de guardado por el simple
+  // hecho de haberlo aplicado, y **cada arranque del portal escribía una fila
+  // idéntica** (§7.5 de AUDITORIA-COMPLETA-2026-07-30). Es el mismo antipatrón
+  // que el proyecto ya prohíbe en los syncs: un upsert incondicional que no
+  // aporta información y sí paga su WAL.
+  const persistidoRef = useRef(undefined);
 
   useEffect(() => {
     if (!user?.id) return;
     let cancelado = false;
+    persistidoRef.current = undefined;
     fetchUserTheme(user.id).then(({ data, error }) => {
       if (cancelado) return;
       if (error) console.error('[theme sync] load', error);
+      // `null` cuando el usuario todavía no tiene fila: ahí el primer guardado
+      // sí corresponde, porque crea el registro.
+      persistidoRef.current = data?.theme ?? null;
       if (data?.theme) setTheme(data.theme);
       setCargadoPara(user.id);
     });
@@ -39,10 +50,13 @@ export function useThemeSync() {
 
   useEffect(() => {
     if (!ready || !user?.id) return;
+    if (persistidoRef.current === theme) return;   // nada que guardar
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      upsertUserTheme(user.id, theme).then(({ error }) => {
-        if (error) console.error('[theme sync] save', error);
+      const enVuelo = theme;
+      upsertUserTheme(user.id, enVuelo).then(({ error }) => {
+        if (error) { console.error('[theme sync] save', error); return; }
+        persistidoRef.current = enVuelo;
       });
     }, 800);
     return () => clearTimeout(saveTimerRef.current);

@@ -240,8 +240,18 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
   // no se volvía a disparar y los resultados quedaban vacíos hasta la próxima tecla.
   const [catalogReady, setCatalogReady] = useState(false);
 
-  // Preload full product catalog on mount (paginated — products > 1000)
+  // El catálogo se baja al PRIMER tecleo, no al montar el widget.
+  //
+  // Bajarlo en el montaje costaba ~104 kB en cada carga del tablero —también en
+  // el teléfono— aunque nadie tocara el buscador, y era la mitad del peso de
+  // datos del tablero (§7.4 de AUDITORIA-COMPLETA-2026-07-30). El buscador no
+  // hace nada hasta los 2 caracteres, así que ese es el momento de pedirlo.
+  // Se mantiene `smartFilter` en memoria a propósito: mover la búsqueda al
+  // servidor cambiaría el ranking y es una decisión aparte.
+  const catalogoPedidoRef = useRef(false);
   useEffect(() => {
+    if (search.trim().length < 2 || catalogoPedidoRef.current) return;
+    catalogoPedidoRef.current = true;
     async function loadCatalog() {
       setLoading(true);
       const CHUNK = 1000;
@@ -259,7 +269,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
       setLoading(false);
     }
     loadCatalog();
-  }, []);
+  }, [search]);
 
   useEffect(() => {
     if (!catalogReady) return;

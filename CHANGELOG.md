@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.397.2 — Fase B de rendimiento: dos escrituras por carga, un viaje de red que serializaba el arranque y el catálogo del tablero
+
+Cuatro de los seis puntos de la Fase B de `AUDITORIA-COMPLETA-2026-07-30`. Los
+dos que faltan (separar vendors del entry, que la ruta no suspenda) piden
+medición antes y después y quedan anotados ahí, no a medias acá.
+
+**B4 · Dos escrituras por carga que no guardaban nada** (§7.5). `useThemeSync`
+leía el tema, lo aplicaba, y eso mismo disparaba el effect de guardado: cada
+arranque reescribía una fila idéntica. Ahora recuerda qué valor está en la base
+y sólo escribe cuando cambia de verdad. `DashboardView` hacía lo mismo con el
+layout —el flip de `prefsReady` estaba comentado como *"triggers save effect"*—
+más un `updated_at` puesto por el cliente que hacía que la fila "cambiara"
+siempre. Ahora la primera corrida sólo toma la foto; se guarda cuando algo
+difiere. Es el antipatrón que el proyecto ya prohíbe en los syncs, del lado del
+navegador.
+
+**B5 · Un viaje de red que además serializaba el arranque** (§7.6). `fetchBoot`
+consultaba `role_permissions` por el `can_view` de `staff_list` y **esperaba esa
+respuesta** antes de lanzar las cinco consultas de empleados, que son el tramo
+más pesado. El mapa completo ya estaba en `sb_role_perms`, que `AuthContext`
+escribe al resolver el perfil. Se lee de ahí; la consulta queda de respaldo por
+si el caché falta.
+
+**B3 · El catálogo del tablero** (§7.4). `WidgetMinMaxRequest` bajaba los ~104 kB
+del catálogo de productos en su montaje, en cinco tandas, aunque nadie tocara el
+buscador — y también en el teléfono. Como el buscador no hace nada hasta los dos
+caracteres, ahora se pide en el primer tecleo. `smartFilter` sigue en memoria a
+propósito: mover la búsqueda al servidor cambia el ranking y es otra decisión.
+
+**B1 · CSP en `Report-Only`** (§6). El portal no tenía `Content-Security-Policy`.
+Entra en modo reporte —no bloquea nada— con los orígenes que la app usa de
+verdad: Supabase, unpkg (Leaflet), Google Maps, tiles de OpenStreetMap y
+jsdelivr. Se endurece a `Content-Security-Policy` cuando el reporte esté limpio.
+
+_(pendiente de redactar)_
+
 ## v2.397.1 — Seguridad: las dos policies de INSERT abiertas, el enrutador de aprobadores y el padrón del kiosco
 
 Tres pendientes que venían de la auditoría del 2026-07-30 y de la nota de

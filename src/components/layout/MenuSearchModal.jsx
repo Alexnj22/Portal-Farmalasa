@@ -86,13 +86,26 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Buscar en el portal… (ej. venta de productos, fichas de empleados)"
-                        className="flex-1 bg-transparent outline-none text-body-lg font-semibold text-content placeholder:text-content-3 placeholder:font-medium"
+                        /* `text-body-xl` (16px) y no `body-lg` (14): por debajo de
+                           16 iOS hace ZOOM al enfocar y descuadra la vista entera.
+                           La regla ya estaba escrita —DESIGN.md §32, y la tabla de
+                           tipografía dice literal «input (mínimo en móvil)»— pero
+                           nada la verificaba, así que este campo llevaba 14px. Lo
+                           encontró la matriz de la fase 5: el barrido de vistas no
+                           lo veía porque nunca abría un modal. */
+                        className="flex-1 bg-transparent outline-none text-body-xl font-semibold text-content placeholder:text-content-3 placeholder:font-medium"
                     />
                     <Button variant="ghost" icon={X} iconOnly onClick={onClose} />
                 </div>
 
                 {/* Results */}
-                <div ref={listRef} className="relative z-base max-h-[50vh] overflow-y-auto py-2">
+                {/* `overscroll-contain`: sin él, al llegar al final de la lista el
+                    gesto sigue de largo y arrastra la PÁGINA de atrás — el modal
+                    se queda quieto y el fondo se mueve. Es el único punto que
+                    quedaba vivo de la fase 3.4 del plan móvil, y el barrido de
+                    vistas no podía verlo porque sólo dispara con un diálogo
+                    abierto: lo encontró la matriz, en los cinco perfiles. */}
+                <div ref={listRef} className="relative z-base max-h-[50vh] overflow-y-auto overscroll-contain py-2">
                     {results.length === 0 ? (
                         <div className="px-5 py-10 text-center">
                             <div className="text-body font-semibold text-content-3">Sin resultados para “{query}”</div>

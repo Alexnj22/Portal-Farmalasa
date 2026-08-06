@@ -1,5 +1,6 @@
 import { test, devices } from '@playwright/test';
 import fs from 'node:fs';
+import { MEDIR } from './medicion-movil.js';
 
 // Auditoría móvil (PLAN-MOBILE-2026-07 fases 3-5). MIDE, no opina.
 //
@@ -40,181 +41,9 @@ const entrar = async (page) => {
 };
 
 // Todo lo que se mide, en una sola pasada por el DOM pintado.
-const MEDIR = () => {
-    const vw = document.documentElement.clientWidth;
-    // Se recorre la CADENA, no el elemento solo: la opacidad de un ancestro
-    // apaga a toda su descendencia, pero `getComputedStyle` del hijo sigue
-    // diciendo `opacity: 1`. Mirando sólo el elemento, los cuatro textos de un
-    // tooltip apagado se contaban como visibles y desbordados — el tooltip
-    // desaparecía del informe y sus párrafos se quedaban. Cuarta vez que este
-    // proyecto mide la referencia en vez del cuerpo.
-    const visible = (el) => {
-        const r = el.getBoundingClientRect();
-        if (r.width === 0 || r.height === 0) return false;
-        for (let p = el; p; p = p.parentElement) {
-            const cs = getComputedStyle(p);
-            if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
-        }
-        return true;
-    };
-    const sel = (el) => {
-        const id = el.id ? `#${el.id}` : '';
-        const cls = (el.className?.toString?.() || '').trim().split(/\s+/).slice(0, 3).join('.');
-        return `${el.tagName.toLowerCase()}${id}${cls ? '.' + cls : ''}`;
-    };
-
-    // 1 · ¿La PÁGINA scrollea de lado? Es el síntoma que originó el plan.
-    const desbordePagina = Math.max(
-        document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        document.body.scrollWidth - document.body.clientWidth,
-    );
-
-    // 2 · Qué elementos se salen del viewport (los culpables del desborde)
-    //
-    // Salirse del viewport y HACER SCROLLEAR LA PÁGINA son cosas distintas, y
-    // la primera versión de este bloque las mezclaba: reportaba 28 elementos en
-    // ocho vistas donde el scroll horizontal de la página medía 0 en todas.
-    // Un elemento se sale sin arrastrar a la página cuando algo lo RECORTA, y
-    // ahí hay dos casos que no se parecen en nada:
-    //
-    //   · recortado a propósito — el buscador deslizante del encabezado espera
-    //     fuera de cuadro hasta que se lo abre. Está bien.
-    //   · recortado sin querer — contenido que existe, no se ve y no se alcanza.
-    //
-    // Sin nombrar al ancestro que recorta no se puede distinguir uno del otro,
-    // así que se anota. Y el recorrido arranca en el propio elemento: un carril
-    // con `overflow-x:auto` ES la solución, no el problema — contarlo era
-    // acusar otra vez a quien hizo bien el trabajo.
-    const desbordan = [];
-    document.querySelectorAll('*').forEach(el => {
-        if (!visible(el)) return;
-        const r = el.getBoundingClientRect();
-        if (r.right > vw + 1 && r.width <= vw * 3) {
-            let enCarril = false, recorte = null;
-            for (let p = el; p; p = p.parentElement) {
-                const s = getComputedStyle(p);
-                if (p !== el && !recorte && (s.overflowX === 'hidden' || s.overflowX === 'clip')) recorte = sel(p);
-                if (s.overflowX === 'auto' || s.overflowX === 'scroll') { enCarril = true; break; }
-            }
-            if (!enCarril) desbordan.push({ sel: sel(el), sobra: Math.round(r.right - vw),
-                                            recorte: recorte || '(nada lo recorta)' });
-        }
-    });
-
-    // 3 · Blancos táctiles < 44pt (fase 3.2)
-    //
-    // ⚠️ Se mide el ÁREA DE IMPACTO, no la caja. Un control puede verse de 20px
-    // y tocarse como uno de 44 si extiende su área con un pseudo-elemento
-    // (`.blanco-tactil`), que es el patrón del portal para los controles cuyo
-    // tamaño ES el diseño — la flecha del carril, el aspa del select compacto.
-    // La primera versión de esta auditoría leía sólo `getBoundingClientRect()`
-    // y daba por chicos a controles que ya estaban resueltos: acusaba al que
-    // hizo bien el trabajo. Mismo error que el detector de `pointermove` que
-    // miraba la referencia en vez del cuerpo.
-    const areaEfectiva = (el) => {
-        const r = el.getBoundingClientRect();
-        let w = r.width, h = r.height;
-        for (const p of ['::before', '::after']) {
-            const cs = getComputedStyle(el, p);
-            if (cs.content === 'none' || cs.position === 'static') continue;
-            const pw = parseFloat(cs.width), ph = parseFloat(cs.height);
-            if (Number.isFinite(pw)) w = Math.max(w, pw);
-            if (Number.isFinite(ph)) h = Math.max(h, ph);
-        }
-        return { w, h, caja: `${Math.round(r.width)}x${Math.round(r.height)}` };
-    };
-    const chicos = [];
-    document.querySelectorAll('button, a[href], [role="button"], input[type="checkbox"], input[type="radio"], select')
-        .forEach(el => {
-            if (!visible(el)) return;
-            // Un elemento DECORATIVO no es un blanco táctil. El chevron de las
-            // filas de asistencia es `aria-hidden` + `tabIndex={-1}` a
-            // propósito: el control real es la fila entera, y el chevron sólo
-            // dibuja el estado. Contarlo daba 49 «hallazgos» en una vista donde
-            // no hay nada que tocar mal — el mismo error de medir la referencia
-            // en vez del cuerpo, por tercera vez en este proyecto.
-            if (el.getAttribute('aria-hidden') === 'true') return;
-            // Las columnas de un gráfico tampoco son un blanco suelto: son
-            // segmentos ADYACENTES que se reparten el ancho. Siete días en
-            // 390px dan 40px cada uno y no pueden dar 44 sin desbordar, y
-            // ampliarles el área con un pseudo las haría solaparse entre sí.
-            // Se anotan como restricción medida, no como deuda.
-            if (/^Día: /.test((el.getAttribute('aria-label') || '').trim())) return;
-            if (el.tabIndex < 0 && !el.hasAttribute('href')) return;
-            const a = areaEfectiva(el);
-            if (a.w < 44 || a.h < 44) {
-                chicos.push({ sel: sel(el),
-                              tam: `${Math.round(a.w)}x${Math.round(a.h)} (caja ${a.caja})`,
-                              texto: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24) });
-            }
-        });
-
-    // 4 · Inputs con fuente < 16px → iOS hace ZOOM al enfocarlos (fase 3.3)
-    const zoomIOS = [];
-    document.querySelectorAll('input, textarea, select').forEach(el => {
-        if (!visible(el)) return;
-        const fs = parseFloat(getComputedStyle(el).fontSize);
-        if (fs < 16) zoomIOS.push({ sel: sel(el), fontSize: fs });
-    });
-
-    // 5 · Tablas que desbordan sin carril propio (fase 4.1)
-    const tablas = [];
-    document.querySelectorAll('table').forEach(el => {
-        if (!visible(el)) return;
-        const r = el.getBoundingClientRect();
-        let enCarril = false;
-        for (let p = el.parentElement; p; p = p.parentElement) {
-            const s = getComputedStyle(p);
-            if (s.overflowX === 'auto' || s.overflowX === 'scroll') { enCarril = true; break; }
-        }
-        if (r.width > vw + 1 && !enCarril) tablas.push({ sel: sel(el), ancho: Math.round(r.width) });
-    });
-
-    // 6 · overscroll-behavior en el scroll principal (fase 3.4)
-    const main = document.querySelector('#main-scroll');
-    const overscroll = main ? getComputedStyle(main).overscrollBehavior : '(sin #main-scroll)';
-
-    // 7 · El acuse de recibo del toque (fase 3.4)
-    //
-    // En un teléfono, `hover:` no existe: si un control no declara un estado
-    // `active:`, lo único que confirma el toque es el destello que pinta el
-    // navegador — gris ajeno al material del portal, y que el plan pedía
-    // apagar. Apagarlo SIN acuse propio deja el control mudo, así que lo que
-    // hay que medir es cuántos dependen todavía de él.
-    //
-    // Se lee el atributo `class` literal y no una regla CSS: Tailwind escapa
-    // los dos puntos al generar la clase, pero el atributo conserva el texto
-    // (misma propiedad que usa la regla de `group-hover` de index.css).
-    const sinAcuse = [];
-    document.querySelectorAll('button, a[href], [role="button"]').forEach(el => {
-        if (!visible(el)) return;
-        if (el.getAttribute('aria-hidden') === 'true') return;
-        const clases = el.className?.toString?.() || '';
-        if (/active:/.test(clases)) return;
-        sinAcuse.push({ sel: sel(el),
-                        destello: getComputedStyle(el).webkitTapHighlightColor || '(no expuesto)',
-                        texto: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24) });
-    });
-
-    // 8 · Scroll-chaining dentro de hojas y modales (fase 3.4)
-    // Un contenedor scrolleable dentro de un diálogo que llega a su tope
-    // arrastra a la página de atrás. Es lo único que quedó vigente del punto
-    // 3.4 sobre `overscroll-behavior`: en `#main-scroll` el token es `auto` a
-    // propósito desde que el móvil scrollea el DOCUMENTO (v2.447.0).
-    const encadenan = [];
-    document.querySelectorAll('[role="dialog"] *, [data-hoja] *').forEach(el => {
-        const cs = getComputedStyle(el);
-        if (cs.overflowY !== 'auto' && cs.overflowY !== 'scroll') return;
-        if (el.scrollHeight <= el.clientHeight) return;
-        if (cs.overscrollBehaviorY === 'auto') encadenan.push({ sel: sel(el) });
-    });
-
-    return { vw, desbordePagina, desbordan: desbordan.slice(0, 12), chicos: chicos.slice(0, 12),
-             zoomIOS: zoomIOS.slice(0, 8), tablas, overscroll,
-             sinAcuse: sinAcuse.slice(0, 8), encadenan,
-             totales: { desbordan: desbordan.length, chicos: chicos.length, zoomIOS: zoomIOS.length,
-                        sinAcuse: sinAcuse.length, encadenan: encadenan.length } };
-};
+// El instrumento vive en `medicion-movil.js`: lo comparte con la matriz de la
+// fase 5 (`matriz.spec.js`). Dos medidores separados que se van desincronizando
+// es el modo de fallar que este proyecto ya conoce.
 
 // ── Las áreas seguras, medidas de verdad ──────────────────────────────────
 // Un emulador no tiene notch: `env(safe-area-inset-*)` resuelve a 0 en
@@ -341,5 +170,157 @@ test.describe('Auditoría móvil · WebKit iPhone 13', () => {
 
         fs.writeFileSync(`${SALIDA}/areas-seguras.json`,
             JSON.stringify({ insets: INSETS, antes, despues, desbordeAntes, desbordeDespues }, null, 1));
+    });
+
+    // ── Fase 4.3 · la búsqueda con el teclado arriba ──────────────────────
+    //
+    // El punto del plan decía «verificar que el modo búsqueda DESLIZANTE de
+    // `ViewTabBar` funciona con el teclado móvil abierto». Al medirlo resultó
+    // que en el teléfono **ese modo no se ofrece**: `ViewTabBar` calcula
+    // `mostrarLupa = showSearch && !hayBarraFlotante`, o sea que cuando la
+    // vista dibuja la barra flotante táctil le **cede** la búsqueda y esconde
+    // su propia lupa. En un iPhone 13 la lupa del encabezado no existe; la que
+    // se toca está en la barra de abajo, que es donde está el pulgar.
+    //
+    // Entonces se verifican las dos, cada una donde vive: la de la barra en el
+    // teléfono, y la deslizante a ancho de escritorio.
+    //
+    // ⚠️ El teclado NO se puede emular de verdad. En iOS no achica el viewport
+    // de LAYOUT: encoge el VISUAL y desplaza, y Playwright no expone el visual
+    // por separado. Achicar el de layout —lo que hace este test— modela el
+    // comportamiento de Android (`resizes-content`), no el de iOS. Sirve para
+    // la pregunta concreta —¿el campo queda dentro de lo que se ve, o lo tapa
+    // algo fijo?— y no para más. Queda escrito para que nadie lea este test
+    // como una prueba de iOS.
+    const ALTO_TECLADO = 336;
+
+    const VISTAS_CON_BUSCADOR = [
+        { id: 'monitor',    url: '/monitor' },
+        { id: 'personal',   url: '/staff' },
+        { id: 'asistencia', url: '/audit' },
+    ];
+
+    // Qué se mide del campo activo, sea cual sea la pieza que lo dibuja.
+    const MEDIR_CAMPO = () => {
+        const vw = document.documentElement.clientWidth;
+        const caja = (el) => { const r = el.getBoundingClientRect();
+            return { x: Math.round(r.left), y: Math.round(r.top),
+                     w: Math.round(r.width), h: Math.round(r.height) }; };
+        // El campo ACTIVO, no «el primer input del documento»: las dos piezas
+        // dejan su campo montado y colapsado, así que buscar por selector
+        // devolvía uno de 0×0 y la medición salía toda en cero.
+        const campo = document.activeElement?.tagName === 'INPUT' ? document.activeElement : null;
+        if (!campo) return { campo: null };
+        const r = campo.getBoundingClientRect();
+        // ¿Algo FIJO se le superpone? Es lo que tapa un campo cuando el teclado
+        // sube y un elemento pegado al borde inferior se queda donde estaba.
+        //
+        // Solaparse NO es tapar: un velo `fixed inset-0` decorativo cubre la
+        // pantalla entera por definición y con `pointer-events: none` no
+        // estorba a nadie. La primera versión los contaba igual y reportaba dos
+        // «tapan el campo» en las tres vistas — el mismo error de siempre, medir
+        // la geometría en vez del efecto. El juez es `elementFromPoint` sobre el
+        // centro del campo: si lo que hay ahí es el campo, nada lo tapa.
+        const tapan = [];
+        document.querySelectorAll('*').forEach(el => {
+            if (el === campo || el.contains(campo)) return;
+            const cs = getComputedStyle(el);
+            if (cs.position !== 'fixed' && cs.position !== 'sticky') return;
+            if (cs.visibility === 'hidden' || cs.opacity === '0') return;
+            if (cs.pointerEvents === 'none') return;
+            const q = el.getBoundingClientRect();
+            if (!q.width || !q.height) return;
+            if (q.right > r.left && q.left < r.right && q.bottom > r.top && q.top < r.bottom) {
+                tapan.push(`${el.tagName.toLowerCase()}.${(el.className?.toString?.()||'').split(/\s+/).slice(0,2).join('.')}`);
+            }
+        });
+        const enElCentro = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        const alcanzable = !!enElCentro && (enElCentro === campo || campo.contains(enElCentro) || enElCentro.contains(campo));
+        const aspa = document.querySelector('button[aria-label="Cerrar el buscador"], button[aria-label="Borrar la búsqueda"]');
+        return {
+            vw, vh: window.innerHeight,
+            campo: { ...caja(campo), fuente: parseFloat(getComputedStyle(campo).fontSize),
+                     valor: campo.value,
+                     dentro: r.left >= -1 && r.right <= vw + 1 && r.top >= -1 && r.bottom <= window.innerHeight + 1 },
+            aspa: aspa && aspa.getBoundingClientRect().width ? caja(aspa) : null,
+            tapan: [...new Set(tapan)].slice(0, 4),
+            alcanzable,
+            enElCentro: enElCentro ? `${enElCentro.tagName.toLowerCase()}.${(enElCentro.className?.toString?.()||'').split(/\s+/).slice(0,2).join('.')}` : null,
+        };
+    };
+
+    test('la búsqueda del teléfono, abierta y con el teclado', async ({ page }) => {
+        test.setTimeout(240_000);
+        fs.mkdirSync(SALIDA, { recursive: true });
+        await entrar(page);
+
+        const informe = [];
+        for (const v of VISTAS_CON_BUSCADOR) {
+            await page.goto(v.url);
+            await page.waitForTimeout(3500);
+
+            // ¿Ofrece el encabezado su lupa deslizante en el teléfono?
+            const lupaEncabezado = await page.evaluate(() => {
+                const b = [...document.querySelectorAll('button[aria-label="Buscar"]')]
+                    .find(el => el.getBoundingClientRect().top < 200);
+                return !!b;
+            });
+
+            const lupa = page.locator('button[aria-label="Buscar"]').first();
+            if (!(await lupa.count())) { informe.push({ vista: v.id, sinBuscador: true }); continue; }
+            await lupa.click();
+            await page.waitForTimeout(800);
+            await page.keyboard.type('lop');
+            await page.waitForTimeout(700);
+
+            const m = await page.evaluate(MEDIR_CAMPO);
+
+            // El teclado, aproximado (ver la nota de arriba)
+            await page.setViewportSize({ width: 390, height: 844 - ALTO_TECLADO });
+            await page.waitForTimeout(700);
+            const conTeclado = await page.evaluate(MEDIR_CAMPO);
+            await page.screenshot({ path: `${SALIDA}/buscador-${v.id}.png` });
+            await page.setViewportSize({ width: 390, height: 844 });
+            await page.waitForTimeout(400);
+
+            informe.push({ vista: v.id, lupaEncabezado, ...m, conTeclado });
+
+            console.log(`\n══ búsqueda · ${v.id} ══`);
+            console.log(`   lupa deslizante en el encabezado: ${lupaEncabezado ? 'sí' : 'NO — la cede a la barra flotante'}`);
+            if (!m.campo) { console.log('   ningún campo tomó el foco ← REVISAR'); continue; }
+            console.log(`   campo ${m.campo.w}×${m.campo.h} en (${m.campo.x},${m.campo.y}) · fuente ${m.campo.fuente}px`
+                      + ` ${m.campo.fuente >= 16 ? '(sin zoom de iOS)' : '← iOS HACE ZOOM'}`);
+            console.log(`   escribió «${m.campo.valor}» · dentro del viewport: ${m.campo.dentro ? 'sí' : 'NO'}`);
+            if (m.aspa) console.log(`   aspa ${m.aspa.w}×${m.aspa.h} ${m.aspa.w >= 44 && m.aspa.h >= 44 ? 'ok' : '← bajo 44pt'}`);
+            console.log(`   con el teclado (alto útil ${conTeclado.vh}px): el campo ${conTeclado.campo?.dentro ? 'queda a la vista' : 'QUEDA FUERA'}`
+                      + (conTeclado.campo ? ` (y=${conTeclado.campo.y})` : ' — perdió el foco'));
+            console.log(`   el dedo cae sobre: ${m.enElCentro} ${m.alcanzable ? '→ el campo, alcanzable' : '← ALGO LO TAPA'}`);
+            console.log(`   fijos que capturan el puntero y se le superponen: ${m.tapan.length ? m.tapan.join(', ') : 'ninguno'}`);
+        }
+
+        fs.writeFileSync(`${SALIDA}/buscador.json`, JSON.stringify(informe, null, 1));
+    });
+
+    test('el deslizante del encabezado, donde SÍ se usa (ancho de escritorio)', async ({ page }) => {
+        test.setTimeout(120_000);
+        await entrar(page);
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.goto('/monitor');
+        await page.waitForTimeout(4000);
+
+        const lupa = page.locator('button[aria-label="Buscar"]').first();
+        const hay = await lupa.count();
+        console.log(`\n══ deslizante · escritorio 1440 ══`);
+        console.log(`   lupa del encabezado: ${hay ? 'sí' : 'NO'}`);
+        if (!hay) return;
+        await lupa.click();
+        await page.waitForTimeout(700);
+        await page.keyboard.type('lop');
+        await page.waitForTimeout(600);
+        const m = await page.evaluate(MEDIR_CAMPO);
+        console.log(`   campo ${m.campo?.w}×${m.campo?.h} en (${m.campo?.x},${m.campo?.y}) · escribió «${m.campo?.valor}»`);
+        console.log(`   dentro del viewport: ${m.campo?.dentro ? 'sí' : 'NO'} · aspa ${m.aspa ? `${m.aspa.w}×${m.aspa.h}` : 'ausente'}`);
+        await page.screenshot({ path: `${SALIDA}/deslizante-escritorio.png` });
+        await page.setViewportSize({ width: 390, height: 844 });
     });
 });

@@ -33,28 +33,28 @@ const inputCls = [
 
 const keyframeStyles = `
     @keyframes lgn-logo{0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(110,70,220,0.16),inset 0 2px 0 rgba(255,255,255,1);}50%{transform:scale(1.04);box-shadow:0 20px 56px rgba(110,70,220,0.28),inset 0 2px 0 rgba(255,255,255,1);}}
-    @keyframes lgn-p1{0%,100%{transform:translate(0,0) scale(1);opacity:.60;}35%{transform:translate(10px,-18px) scale(1.16);opacity:1;}68%{transform:translate(-6px,-8px) scale(.88);opacity:.75;}}
-    @keyframes lgn-p2{0%,100%{transform:translate(0,0) scale(1);opacity:.50;}42%{transform:translate(-12px,16px) scale(1.20);opacity:.90;}74%{transform:translate(8px,-10px) scale(.82);opacity:.70;}}
     @keyframes scan-ln{0%{top:10%}50%{top:88%}100%{top:10%}}
     @keyframes scannerReveal{from{opacity:0;transform:scaleY(0.72) translateY(-12px);filter:blur(6px);transform-origin:top center;}to{opacity:1;transform:scaleY(1) translateY(0);filter:blur(0);transform-origin:top center;}}
 `;
 
 /* ─── Static sub-components (fuera del render: no se remontan) ──────────── */
 
-const AmbientBG = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="animate-ambient-drift absolute rounded-full"
-            style={{ width:'80vw', height:'80vw', top:'-22%', left:'-18%', background:'radial-gradient(circle, rgba(110,70,230,0.36) 0%, rgba(130,80,240,0.14) 45%, transparent 70%)', filter:'blur(44px)' }} />
-        <div className="animate-ambient-drift-reverse absolute rounded-full"
-            style={{ width:'70vw', height:'70vw', bottom:'-20%', right:'-16%', background:'radial-gradient(circle, rgba(60,100,240,0.28) 0%, rgba(80,140,255,0.10) 45%, transparent 70%)', filter:'blur(52px)', animationDuration:'22s' }} />
-        <div className="animate-ambient-drift absolute rounded-full"
-            style={{ width:'50vw', height:'50vw', top:'40%', right:'-8%', background:'radial-gradient(circle, rgba(160,90,255,0.18) 0%, transparent 65%)', filter:'blur(40px)', animationDuration:'18s', animationDelay:'-7s' }} />
-        {[{s:16,t:'11%',l:'7%',d:'6.5s',dl:'0s'},{s:10,t:'19%',l:'79%',d:'9s',dl:'1.2s'},{s:20,t:'66%',l:'11%',d:'7.5s',dl:'2.5s'},{s:12,t:'73%',l:'83%',d:'10s',dl:'0.7s'},{s:8,t:'37%',l:'4%',d:'5.5s',dl:'3.2s'},{s:22,t:'81%',l:'61%',d:'8.5s',dl:'4.0s'}].map((p,i)=>(
-            <div key={i} className="absolute rounded-full"
-                style={{ width:p.s, height:p.s, top:p.t, left:p.l, background:'rgba(255,255,255,0.48)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.88)', boxShadow:'inset 0 1px 2px rgba(255,255,255,1)', animation:`lgn-p${i%2+1} ${p.d} ease-in-out ${p.dl} infinite` }} />
-        ))}
-    </div>
-);
+/* `AmbientBG` se retiró el 2026-08-06, a pedido del usuario.
+   Eran NUEVE capas animadas para siempre sobre la primera pantalla del portal,
+   propias del login y encima de las que ya pone `GlobalBackground`: tres globos
+   de 80vw/70vw/50vw con `filter: blur(44–52px)` y seis burbujas blancas con
+   `backdrop-filter: blur(8px)`.
+
+   Las seis chicas son las caras. Un `backdrop-filter` que se MUEVE obliga al
+   compositor a re-muestrear y volver a desenfocar el fondo de abajo en cada
+   cuadro, y estaban en animación infinita: seis regiones de blur recalculándose
+   sin parar en la pantalla que todos ven antes de poder hacer nada.
+
+   Las bolas moradas y verdes del fondo NO son estas: esas vienen de
+   `GlobalBackground` (`App.jsx`), son parte del material Liquid Glass y se
+   quedan. Lo que se fue es la capa que el login sumaba encima. El degradado
+   radial del contenedor sigue pintando el fondo entero, así que no queda hueco
+   — se va el movimiento, no el color. */
 
 const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h-[54px]' }) => (
     <button type={type} onClick={onClick} disabled={disabled}
@@ -435,6 +435,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             onClick={toggleCamera}
                             title={cameraActive ? 'Cerrar cámara' : 'Escanear con cámara'}
                             className={[
+                                // `.blanco-tactil` y no un `min-w`: en compacto
+                                // este botón mide 40 porque tiene que caber al
+                                // lado del lector sin descuadrar la fila — el
+                                // tamaño ES el diseño. Lo que crece es el ÁREA,
+                                // con el pseudo-elemento canónico, y sólo en
+                                // punteros gruesos. Necesita `relative`.
+                                'relative blanco-tactil',
                                 'shrink-0 flex items-center justify-center rounded-2xl border backdrop-blur-md',
                                 'transition-all duration-[var(--dur-slow)] active:scale-[0.93]',
                                 compact ? 'w-10 h-10' : 'w-11 h-11',
@@ -500,7 +507,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <div className="relative flex items-center justify-center w-full min-h-[100dvh] overflow-hidden"
                 style={{ background:'radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%)' }}>
                 <style>{keyframeStyles}</style>
-                <AmbientBG />
                 <div className={`relative z-base w-full max-w-[420px] mx-5 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
                     <div className="rounded-header p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[var(--shadow-glass-5)] flex flex-col gap-6">
                         <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-header" />
@@ -580,8 +586,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Ventas',color:'#0052CC'},
                     {href:'https://farmalasa.com',Icon:Pill,label:'FarmaLasa',color:'#6929C4'},
                 ].map(({href,Icon,label,color})=>(
+                    /* `min-h-[var(--tap-min)]`: con `py-2.5` y `text-caption`
+                       estos dos enlaces medían 39px de alto — cinco por debajo
+                       del mínimo del dedo, en la única pantalla que todos tocan
+                       sí o sí. En escritorio `--tap-min` vale 0 y no cambia
+                       nada. Lo encontró la matriz de la fase 5: el barrido de
+                       vistas nunca medía el login porque entraba con sesión y
+                       `/login` redirigía a la app. */
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.03] hover:translate-y-[var(--lift-card)]">
+                        className="group flex items-center gap-2 px-4 py-2.5 min-h-[var(--tap-min)] bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.03] hover:translate-y-[var(--lift-card)]">
                         <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-[var(--dur-base)] group-hover:scale-110" />
                         <span className="text-caption font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
                     </a>
@@ -682,7 +695,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         <div className={`relative w-full min-h-[100dvh] overflow-hidden transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] ${leaving?'opacity-0 scale-[1.03]':'opacity-100 scale-100'}`}
             style={{ background:'radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%)' }}>
             <style>{keyframeStyles}</style>
-            <AmbientBG />
             <div className="relative z-base w-full min-h-[100dvh]">
                 {isMob ? renderMobileLayout() : renderDesktopLayout()}
             </div>

@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.457.0 — La matriz de cinco perfiles, y las burbujas del login
+
+Fases **4.3** y **5** de `PLAN-MOBILE-2026-07.md`. La matriz corre con
+`npx playwright test --project=chromium -g "cinco perfiles"`.
+
+**La fase 4.3 apuntaba al control equivocado, y eso es el hallazgo.** El punto
+pedía «verificar que el modo búsqueda deslizante de `ViewTabBar` funciona con el
+teclado móvil abierto». Al medirlo, en el teléfono **ese modo no se ofrece**:
+`ViewTabBar` calcula `mostrarLupa = showSearch && !hayBarraFlotante`, o sea que
+cuando la vista dibuja la barra flotante táctil le **cede** la búsqueda y esconde
+su propia lupa. La que se toca en un iPhone está abajo, donde está el pulgar.
+Verificadas las dos, cada una donde vive: campo enfocado, 16px, dentro del
+viewport, y el dedo cae sobre el campo — medido con `elementFromPoint` y no con
+geometría, porque solaparse no es tapar: dos velos `fixed inset-0` decorativos
+se «superponían» al campo y con `pointer-events: none` no estorban a nadie.
+
+*Lo que no se puede probar, dicho:* el teclado de iOS **no se emula**. No achica
+el viewport de layout —encoge el visual y desplaza— y Playwright no expone el
+visual por separado. Achicar el de layout modela Android, no iOS. Está escrito
+en el test para que nadie lo lea como más de lo que mide.
+
+**La matriz: cinco perfiles × siete escenarios, 35 celdas.** Con el **mismo**
+instrumento que el barrido (`tests/e2e/medicion-movil.js`, extraído a un módulo
+compartido) — si cada suite midiera a su manera, los números no se podrían
+comparar. **Cero desborde de página y cero elementos recortados en las 35.**
+
+Y encontró cinco cosas que una sola pantalla no podía ver:
+
+| Hallazgo | Por qué se escapaba |
+|---|---|
+| El input del ⌘K a **14px** → iOS hace zoom al enfocar | el barrido nunca abre un modal |
+| La lista del ⌘K sin `overscroll-contain` → arrastra la página de atrás | ídem — era el último punto vivo de la fase 3.4 |
+| Login: 3 blancos <44pt | el barrido entra con sesión, así que `/login` **redirigía a la app** y se medía el tablero otra vez |
+| El logo del cajón del menú a 40×40 | el barrido nunca abre el cajón |
+| Filtros y paginación a 32–36px en iPad Mini | 768px cae del lado móvil del corte, y el barrido sólo miraba 390 |
+
+Los cuatro primeros quedan en cero. Los filtros se arreglaron en el **canónico**
+—`FilterBar` (tres sitios) y `TablePagination`— con `min-h-[var(--tap-min)]`:
+`min-height` y `height` son propiedades distintas, así que el piso manda sin
+pelear con el `h-8`, y en escritorio `--tap-min` vale 0 y no cambia nada.
+
+**Y el instrumento contaba como problema lo que no lo era.** 44pt es el mínimo
+del **dedo**: en escritorio `--tap-min` vale 0 a propósito, así que un botón de
+31px está bien. La matriz mostraba «23 problemas» en la columna que no los
+tiene. Ahora lee `(pointer: coarse)` y sólo cuenta donde aplica.
+
+**Las burbujas del login, fuera** (pedido del usuario). Eran **nueve capas
+animadas para siempre** sobre la primera pantalla del portal, propias del login
+y encima de las que ya pone `GlobalBackground`: tres globos de 80vw/70vw/50vw
+con `filter: blur(44–52px)` y seis burbujas blancas con
+`backdrop-filter: blur(8px)`. Las seis chicas son las caras — un
+`backdrop-filter` que se **mueve** obliga al compositor a re-muestrear y volver
+a desenfocar el fondo de abajo en cada cuadro. El degradado radial del
+contenedor ya pintaba el fondo entero, así que no queda hueco: se va el
+movimiento, no el color. **Las bolas moradas y verdes del fondo se quedan** —
+esas son `GlobalBackground`, parte del material Liquid Glass.
+
+*Queda abierto, con su motivo:* en iPad Mini, `TabBarAction size="sm"` (36px) y
+el disparador de `PeriodPicker` (34px). Ahí hay una **premisa escrita en el
+código que la medición desmiente**: el comentario de `TabBarAction` dice que no
+baja del mínimo táctil «porque en táctil esta píldora no se dibuja». A 768px con
+puntero grueso **sí se dibuja** — el corte de `useLayoutCompacto` no coincide con
+«hay dedo». Subirlos a 44 estira la píldora de §17 de 52px a 60 en tablets, así
+que es una decisión de diseño y no un `min-h` más.
+
 ## v2.456.1 — El margen del borde: el sync anota la hora al terminar, no al leer
 
 Sale de una pregunta del usuario —«al confirmar se descuenta, y cuando el JSON

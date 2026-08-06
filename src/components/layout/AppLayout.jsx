@@ -887,7 +887,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
 
                             <div className="flex items-center gap-3 relative z-base">
-                                <Link to="/" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`}>
+                                {/* `.blanco-tactil`: con el menú desplegado el logo
+                                    se pinta a 40×40 —el tamaño ES el diseño, y
+                                    estirarlo descuadra la fila del encabezado— así
+                                    que lo que crece es el ÁREA, con el
+                                    pseudo-elemento canónico. Sólo en punteros
+                                    gruesos. Lo encontró la matriz de la fase 5 con
+                                    el cajón abierto: el barrido de vistas nunca lo
+                                    abría. */}
+                                <Link to="/" aria-label="Ir al inicio" className={`blanco-tactil relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`}>
                                     <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition duration-[var(--dur-lento)] bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
                                         transition duration-[var(--dur-slow)] group-hover/logo:scale-105

@@ -167,7 +167,12 @@ Section.displayName = 'FilterBar.Section';
  */
 const Chip = memo(({ active, onToggle, tone = 'danger', children, ...rest }) => (
     <button type="button" onClick={onToggle} aria-pressed={active}
-        className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-btn shrink-0
+        /* `min-h-[var(--tap-min)]`: `h-8` son 32px fijos, doce por debajo del
+           mínimo del dedo. `min-height` y `height` son propiedades distintas,
+           así que el piso simplemente manda y en escritorio —donde `--tap-min`
+           vale 0— no cambia nada. Es el mismo mecanismo que ya protege a
+           `Button` y al encabezado ordenable de `DataTable`. */
+        className={`inline-flex items-center gap-1.5 h-8 min-h-[var(--tap-min)] px-3 rounded-btn shrink-0
             text-caption font-black uppercase tracking-widest border whitespace-nowrap
             transition-[background-color,border-color,color] duration-[var(--dur-base)]
             ${active
@@ -334,7 +339,7 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
                     aria-label={aplicadas > 0
                         ? `Más filtros: ${secciones.length} guardados, ${aplicadas} aplicado${aplicadas === 1 ? '' : 's'}`
                         : `Más filtros (${secciones.length})`}
-                    className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-btn shrink-0 border
+                    className={`inline-flex items-center gap-1.5 h-9 min-h-[var(--tap-min)] px-2.5 rounded-btn shrink-0 border
                         transition-[background-color,border-color,color] duration-[var(--dur-base)]
                         ${aplicadas > 0 || abierto
                             ? 'bg-brand/10 border-brand/30 text-brand-text'
@@ -783,7 +788,7 @@ const FilterBar = memo(({
                                 {onClear && activeCount > 1 && (
                                     <button type="button"
                                         onClick={() => { onClear(); setAbierto(false); }}
-                                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-btn
+                                        className="inline-flex items-center gap-1.5 h-8 min-h-[var(--tap-min)] px-3 rounded-btn
                                             bg-danger/12 ring-1 ring-inset ring-danger/30 text-danger-text
                                             text-micro font-black uppercase tracking-widest">
                                         Limpiar {activeCount}

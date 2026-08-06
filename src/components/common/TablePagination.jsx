@@ -166,7 +166,7 @@ export default function TablePagination({
                     <button type="button"
                         onClick={() => { setBorrador(String(page)); setEditando(true); }}
                         title="Ir a una página"
-                        className="h-8 px-2.5 mx-0.5 rounded-btn text-body-sm text-content-2 tabular-nums
+                        className="h-8 min-h-[var(--tap-min)] px-2.5 mx-0.5 rounded-btn text-body-sm text-content-2 tabular-nums
                             whitespace-nowrap hover:bg-surface-card-hover hover:text-content
                             transition-colors duration-[var(--dur-fast)]">
                         pág. <b className="text-content font-black">{page}</b>

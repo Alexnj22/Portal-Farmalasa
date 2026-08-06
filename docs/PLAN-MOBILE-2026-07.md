@@ -265,13 +265,22 @@ siete tooltips del tablero (la regla de hover de v2.448.0 se pasaba de largo).
    de acciones del encabezado se pase del ancho de su fila, y el uno-de-N de Mis
    Solicitudes desliza. Falta barrer las píldoras de las vistas que la auditoría
    no recorre.
-3. Headers de vista (`ViewTabBar`): el buscador deslizante **cerrado** está bien
-   (queda apagado y fuera de cuadro, verificado). Falta **abierto y con el
-   teclado móvil arriba**, que es lo que pide el punto.
-4. Verificación visual por vista — las capturas de cada corrida quedan en
-   `test-results/auditoria-movil/<vista>.png`. Hechas: el gráfico del tablero
-   (antes/después de los tooltips), la píldora de Mis Solicitudes, y escritorio
-   a 1024 y 1440 para las dos vistas tocadas.
+3. Headers de vista (`ViewTabBar`) ✅ — **y el punto apuntaba al control
+   equivocado.** En el teléfono el modo búsqueda deslizante **no se ofrece**:
+   `ViewTabBar` calcula `mostrarLupa = showSearch && !hayBarraFlotante`, o sea
+   que cuando la vista dibuja la barra flotante táctil le **cede** la búsqueda y
+   esconde su propia lupa. La que se toca en un iPhone está abajo, que es donde
+   está el pulgar. Verificadas las dos, cada una donde vive (test «la búsqueda
+   del teléfono» y «el deslizante del encabezado»): campo enfocado, 16px (sin
+   zoom de iOS), dentro del viewport, el dedo cae sobre el campo
+   (`elementFromPoint`, no geometría) y nada fijo lo tapa. Con el alto útil
+   reducido a 508px el campo sigue a la vista.
+   ⚠️ **El teclado de iOS no se puede emular**: no achica el viewport de layout
+   —encoge el visual y desplaza— y Playwright no expone el visual por separado.
+   Achicar el de layout modela Android, no iOS. Está escrito en el test.
+4. Verificación visual por vista ✅ — capturas en
+   `test-results/auditoria-movil/<vista>.png` y una por celda de la matriz en
+   `test-results/matriz-movil/<perfil>--<escenario>.png`.
 
 **Resuelto (v2.453.0, decisión del usuario del 2026-08-06).** El botón de
 tamaño de cada widget sigue en el teléfono la misma regla que la píldora de
@@ -284,14 +293,67 @@ colapsada va ahora con `inert`, porque el teclado seguía entrando al botón
 dentro de lo invisible. Medido: 0 visibles / 0 tocables / 22 `inert` sin el
 modo, 22 / 22 / 0 con él, escritorio sin cambios.
 
-### Fase 5 — Matriz de verificación final + limpieza
+### Fase 5 — Matriz de verificación final ✅ CORRIDA (2026-08-06)
 
-- Matriz: {WebKit iPhone 13 vertical, WebKit iPhone 13 horizontal, WebKit iPad Mini
-  vertical (744px→layout móvil), Chromium Android-like 412×915, Chromium desktop
-  1440} × {login, /overview, /ventas, /home, /pedidos, menú drawer, un modal}.
-- Probar en el teléfono real del usuario (el reporte original) antes de cerrar.
-- Actualizar memoria (`project_*`) con el modelo de scroll nuevo para que ninguna
-  vista futura reintroduzca `lg:`-only scroll.
+`tests/e2e/matriz.spec.js` — cinco perfiles × siete escenarios, con el **mismo**
+instrumento que el barrido (`tests/e2e/medicion-movil.js`). Ese «mismo» es el
+punto: si cada suite midiera a su manera, los números no se podrían comparar.
+Lanza los navegadores a mano porque un `project` de Playwright fija UN
+dispositivo por archivo, y acá el archivo **es** la comparación entre
+dispositivos.
+
+Cada celda: `desbordePágina / elementos que se salen / táctil<44 / zoom iOS`.
+
+| escenario | iPhone 13 ↕ | iPhone 13 ↔ | iPad Mini | Android 412 | Escritorio 1440 |
+|---|---|---|---|---|---|
+| login | 0/0/0/0 | 0/0/0/0 | 0/0/0/0 | 0/0/0/0 | 0/0/0/0 |
+| tablero | 0/0/**7**/0 | 0/0/0/0 | 0/0/0/0 | 0/0/**7**/0 | 0/0/23/0 |
+| ventas | 0/0/0/0 | 0/0/**1**/0 | 0/0/**3**/0 | 0/0/0/0 | 0/0/23/0 |
+| solicitudes | 0/0/0/0 | 0/0/0/0 | 0/0/0/0 | 0/0/0/0 | 0/0/10/0 |
+| pedidos | 0/0/0/0 | 0/0/0/0 | 0/0/0/0 | 0/0/0/0 | 0/0/12/0 |
+| menú | 0/0/**7**/0 | 0/0/0/0 | 0/0/0/0 | 0/0/**7**/0 | 0/0/23/0 |
+| modal | 0/0/**7**/0 | 0/0/0/0 | 0/0/0/0 | 0/0/**7**/0 | 0/0/23/0 |
+
+**Cero desborde de página y cero elementos que se salen en las 35 celdas.**
+Los números de la columna de escritorio **no son deuda**: 44pt es el mínimo del
+DEDO y ahí `--tap-min` vale 0 a propósito. La matriz lo distingue leyendo
+`(pointer: coarse)` — antes los contaba y mostraba «23 problemas» en la columna
+que no los tiene.
+
+**Lo que la matriz encontró, y el barrido de una sola pantalla no podía ver**
+(todo arreglado en la misma corrida):
+
+| Hallazgo | Por qué se escapaba |
+|---|---|
+| El input del ⌘K a **14px** → iOS hace zoom al enfocar | el barrido nunca abre un modal |
+| La lista del ⌘K sin `overscroll-contain` → arrastra la página de atrás | ídem — era el último punto vivo de la fase 3.4 |
+| Login: 3 blancos <44pt (los dos enlaces del pie y el botón de cámara) | el barrido entra con sesión, así que `/login` redirigía a la app |
+| El logo del cajón del menú a 40×40 | el barrido nunca abre el cajón |
+| Filtros y paginación a 32–36px en iPad Mini | 768px cae del lado móvil del corte, y el barrido sólo miraba 390 |
+
+Los cuatro primeros, en cero. Los filtros se arreglaron en el **canónico**
+(`FilterBar` ×3 y `TablePagination`), así que la corrección viaja a toda la app.
+
+**Lo que queda, con su motivo — no es deuda ciega:**
+
+1. **Las 7 columnas del gráfico de tráfico** (40×68 en iPhone, 43×68 en Android).
+   Siete segmentos **adyacentes** repartiéndose el ancho: no pueden dar 44 sin
+   desbordar, y ampliarles el área con un pseudo-elemento los haría solaparse.
+   Restricción medida, ya documentada en v2.449.0.
+2. **El encabezado ordenable «ID» de `DataTable`: 30×44.** El alto ya está; lo
+   corto es el ANCHO, que es el de la etiqueta de esa columna. Misma familia que
+   las columnas del gráfico: encabezados adyacentes.
+3. **iPad Mini · Ventas: `TabBarAction size="sm"` (36px) y el disparador de
+   `PeriodPicker` (34px).** Acá hay una **premisa escrita en el código que la
+   medición desmiente**: el comentario de `TabBarAction` dice *«no baja del
+   mínimo táctil porque en táctil esta píldora NO se dibuja: ahí `FilterBar` es
+   la barra flotante»*. A 768px con puntero grueso **sí se dibuja** — el corte de
+   `useLayoutCompacto` no coincide con «hay dedo». Subirlos a 44 estira la
+   píldora de §17 de 52px a 60 en tablets, así que es una decisión de diseño y no
+   un `min-h` más. **Es el próximo trabajo, y empieza por ahí.**
+
+**Sin hacer:** probar en el teléfono real del usuario (el reporte original) antes
+de dar el plan por cerrado del todo.
 
 ## 5. Reglas del proyecto que aplican (no saltarse)
 
@@ -322,9 +384,18 @@ modo, 22 / 22 / 0 con él, escritorio sin cambios.
 
 ## 7. Criterios de aceptación (cierre del plan)
 
-1. Teléfono vertical: menú hamburguesa visible, abre el drawer, y toda vista con
-   contenido largo scrollea con el dedo (WebKit + dispositivo real).
-2. Cero "ALGO SALIÓ MAL" en 5 logins consecutivos a /overview en WebKit iPhone.
-3. Sin scroll horizontal de página en ninguna vista a 390px.
-4. Touch targets ≥44pt en shell + vistas de Fase 4; inputs sin zoom forzado iOS.
-5. Desktop pixel-igual (diff de screenshots antes/después por fase).
+Estado al 2026-08-06 (v2.454.0):
+
+1. ✅ Teléfono vertical: menú hamburguesa visible, abre el drawer, y toda vista
+   con contenido largo scrollea con el dedo — **falta el dispositivo real**.
+2. ✅ Cero "ALGO SALIÓ MAL": era un artefacto de StrictMode en dev, no un bug de
+   producción (fase 2).
+3. ✅ Sin scroll horizontal de página — **0 en las 35 celdas de la matriz**, no
+   sólo a 390px. Y sin elementos recortados: los 27 que había, en cero.
+4. ⚠️ Touch targets: **cumplido en el teléfono** (lo único que queda ahí son las
+   7 columnas del gráfico, restricción medida). Abierto en **iPad Mini**, y no
+   por descuido: subir `TabBarAction sm` a 44 estira la píldora de §17 — ver
+   fase 5, punto 3. Inputs sin zoom de iOS: **0 en las 35 celdas**.
+5. ✅ Desktop sin cambios, verificado por medición y no por impresión:
+   `#main-scroll` `pl=0/pr=8`, márgenes del menú en 8px, el envoltorio de
+   Productos en 772px con `min-width: auto` idéntico a 1024 y 1440.

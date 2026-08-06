@@ -487,9 +487,17 @@ thead.sticky {
      alfas distintas en tres niveles, que es cambiar el diseño para poder
      cambiar el color. Medido en §12.2: el panel claro contra la página da
      ΔE 16.8, y el oscuro 14.4 — los dos muy por encima del umbral. */
-  --sidebar-tint:     30 41 80;
+  /* En claro el panel ACLARA, no oscurece. Oscurecer un fondo colorido lo
+     desatura: con `30 41 80` al 15% el panel resolvía a rgb(110,117,149) —un
+     azul-gris medio que el usuario describió como «sucio como gris»—. Medido,
+     aclarando con lavanda al 55% da rgb(183,187,206): ΔE 8.5 contra la página
+     (se separa de sobra) con más croma que el gris que había.
+     Es la contracara de §1.5: allá la anidada OSCURECE en claro porque tiene
+     que hundirse un paso; acá el panel FLOTA sobre la página, y lo que flota
+     se aclara. La dirección la decide el rol de la superficie, no el tema. */
+  --sidebar-tint:     236 234 250;
   --sidebar-ink:      15 23 42;
-  --sidebar-fill:     0.15;
+  --sidebar-fill:     0.55;
   /* §12.5/§12.7 · El flotante tiene TINTE PROPIO, no el del panel a otra alfa.
      Compartirlo se rompió en cuanto el sidebar dejó de ser siempre-oscuro
      (§12.1): con `30 41 80` al 15% el panel queda claro y el MISMO tinte al

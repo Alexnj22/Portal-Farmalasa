@@ -1260,12 +1260,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     onClick={() => setFlyout(null)}
                                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition duration-[var(--dur-fast)] text-left group/fi active:scale-[0.97] ${focusRing}
                                                         ${m.isActive
-                                                            ? 'bg-[#1A3560] text-[rgb(var(--sidebar-ink))] border border-[#2D5499]/50'
-                                                            : 'text-[rgb(var(--sidebar-ink))] hover:bg-[#1A3560]'}`}
+                                                            // El navy fijo `#1A3560` sólo servía sobre un
+                                                            // panel oscuro: en el flotante claro quedaba un
+                                                            // bloque azul marino que no se integraba con nada.
+                                                            // La marca de "seleccionado" es el ACENTO, que ya
+                                                            // existe en los cuatro temas.
+                                                            ? 'bg-brand/15 text-[rgb(var(--sidebar-ink))] border border-brand/35'
+                                                            : 'text-[rgb(var(--sidebar-ink))] hover:bg-[rgb(var(--sidebar-ink)/0.08)]'}`}
                                                 >
                                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition duration-[var(--dur-fast)]
                                                         ${m.isActive
-                                                            ? 'bg-[#4D94FF]/25 shadow-[var(--shadow-glow-chart-1)]'
+                                                            ? 'bg-brand/25 shadow-[var(--shadow-glow-chart-1)]'
                                                             : 'bg-[rgb(var(--sidebar-ink)/0.08)] group-hover/fi:bg-[rgb(var(--sidebar-ink)/0.14)]'}`}>
                                                         <MIcon
                                                             size={14}

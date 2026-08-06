@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.408.1 — El panel que aclara, el segmento legible y el navy fijo
+
+Cuatro correcciones más del sidebar, todas reportadas con capturas.
+
+**1 · El panel en claro se veía «sucio como gris».** Medido: con `30 41 80` al 15% el
+panel resolvía a **rgb(110,117,149)**, un azul-gris medio. **Oscurecer un fondo colorido
+lo desatura.** Ahora aclara —lavanda al 55%, rgb(183,187,206)—: ΔE **8.5** contra la
+página, o sea que se separa de sobra, y con más croma que el gris que había.
+
+Es la contracara de §1.5, y vale como regla: **la dirección del escalón la decide el
+ROL de la superficie, no el tema.** La anidada oscurece porque tiene que hundirse un
+paso; el panel del sidebar **flota** sobre la página, y lo que flota se aclara.
+
+**2 · El segmento activo de Estilo/Modo era ilegible en oscuro.** Usaba
+`bg-surface-card text-slate-900`: una superficie oscura con texto casi negro encima.
+Funcionaba sólo mientras el host era siempre-oscuro. **El único elemento ilegible era
+justo el que dice cuál está puesto.** Ahora sale de la misma tinta que el resto.
+
+**3 · La fila seleccionada del flotante era un navy fijo (`#1A3560`).** Sobre el panel
+oscuro se leía como un realce; en el flotante claro quedaba un bloque azul marino que
+no se integraba con nada. La marca de «seleccionado» pasa a ser **el acento**, que ya
+existe en los cuatro temas.
+
+**El patrón que comparten los tres:** un valor elegido cuando la superficie tenía un
+solo color —navy fijo, `text-slate-900`, oscurecer siempre— sigue compilando y sigue
+pintando algo cuando la superficie empieza a cambiar de color. No falla: **se ve mal**,
+que es un modo de falla que ningún gate de los que existen hoy detecta.
+
 ## v2.408.0 — La anulación completa: ERP y Hacienda, en un solo paso
 
 `ANNULMENT_REQUEST` ya se aplica. Aprobar una solicitud de anulación anula la

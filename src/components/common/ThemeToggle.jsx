@@ -28,7 +28,12 @@ const inactiveTabCls = 'bg-transparent text-content-3 hover:bg-surface-tab-activ
 // oscuro (SidebarSettingsMenu) en vez de un data-surface="dropdown"
 // reactivo al tema — mismas clases bespoke bg-[rgb(var(--sidebar-ink))]/N que el resto del
 // sidebar, no tokens (que resolverían claros y quedarían ilegibles).
-const activeTabClsDark = 'bg-surface-card text-slate-900 shadow-md scale-[1.02]';
+// El activo sale de la MISMA tinta que el resto del sidebar. Antes era
+// `bg-surface-card text-slate-900`, que funcionaba sólo mientras el host era
+// siempre-oscuro: al seguir el tema (§12.1), en oscuro quedaba una superficie
+// oscura con texto casi negro encima — el segmento activo era el ÚNICO
+// ilegible, justo el que dice cuál está puesto.
+const activeTabClsDark = 'bg-[rgb(var(--sidebar-ink)/0.16)] text-[rgb(var(--sidebar-ink))] shadow-md scale-[1.02]';
 const inactiveTabClsDark = 'bg-transparent text-[rgb(var(--sidebar-ink)/0.5)] hover:bg-[rgb(var(--sidebar-ink)/0.08)] hover:text-[rgb(var(--sidebar-ink)/0.85)]';
 
 function SegmentedRow({ label, options, activeKey, onPick, dark }) {

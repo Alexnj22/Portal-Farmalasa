@@ -44,7 +44,22 @@ import { login, formatearDui, enviarDteAlMH } from "../_shared/erp-dte.ts";
 // documentos a la vez por la misma sesión es pedirle al ERP que se pise a sí
 // mismo, y el volumen no lo justifica: son decenas, no miles.
 
-const MAX_POR_CORRIDA = 40;   // techo de seguridad, no un límite esperado
+// Una Edge Function vive 150 s. Cada documento son cuatro viajes al ERP
+// (~0.3 s cada uno, medido) más la llamada a Hacienda, que es la lenta y la
+// que no controlamos. El presupuesto se corta MUY por debajo del límite para
+// que siempre alcance a escribir el registro y disparar el re-sync: una
+// corrida que muere a mitad no deja rastro, y esa es la peor forma de fallar.
+const PRESUPUESTO_MS = 110_000;
+
+// Techo duro por si el reloj miente. No es el límite esperado: el que manda es
+// el presupuesto de tiempo.
+const MAX_POR_CORRIDA = 60;
+
+// Respiro entre documentos. Hacienda es un servicio del Estado y no publica
+// sus límites de tasa; mandarle 300 documentos tan rápido como el bucle pueda
+// es pedir que nos empiece a rechazar por volumen. 400 ms no cambia nada
+// cuando son diez y evita el ráfaga cuando son cientos.
+const PAUSA_ENTRE_ENVIOS_MS = 400;
 
 interface Pendiente {
   id: number;
@@ -119,8 +134,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Cuántas hay DE VERDAD, más allá de las que entran en esta corrida. Sin
+    // esto, un tope de 60 sobre un atraso de 300 reporta "60 revisadas" y se
+    // lee como "ya está todo": el mismo defecto que el `.limit(500)` del
+    // widget, que mostraba 500 de 4,000 como si fueran todas.
+    const contar = async (bolsaCount: "anuladas" | "sin_sello") => {
+      let q = admin.from("sales_invoices").select("id", { count: "exact", head: true });
+      q = bolsaCount === "anuladas"
+        ? q.eq("estado", "NULA")
+        : q.is("recibido_mh", null).not("estado", "in", '("NULA","DTE INVALIDADO EN MH")');
+      if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
+      const { count } = await q;
+      return count ?? 0;
+    };
+    const totalPendiente = alcance === "una"
+      ? pendientes.length
+      : (bolsa === "sin_sello" ? 0 : await contar("anuladas"))
+        + (bolsa === "anuladas" ? 0 : await contar("sin_sello"));
+
     if (!pendientes.length)
-      return json({ ok: true, revisadas: 0, resueltas: 0, fallidas: 0, detalle: [] });
+      return json({ ok: true, revisadas: 0, resueltas: 0, fallidas: 0,
+                    total_pendiente: totalPendiente, restantes: totalPendiente, detalle: [] });
 
     // Responsable de las invalidaciones: el mismo siempre, definido por la
     // empresa. No es quien aprieta el botón — es quien responde legalmente.
@@ -133,12 +167,30 @@ Deno.serve(async (req) => {
     const aResincronizar = new Set<string>();   // `branch_id|fecha`
     let resueltas = 0, fallidas = 0, conObservaciones = 0;
 
+    const arranque = Date.now();
+    let cortadaPorTiempo = false;
+    let procesadas = 0;
+
     for (const f of pendientes) {
+      // Se corta ANTES de empezar otro documento, no en el medio: un envío a
+      // Hacienda no se puede dejar por la mitad.
+      if (Date.now() - arranque > PRESUPUESTO_MS) { cortadaPorTiempo = true; break; }
+
       const base = {
         invoice_id: f.id, erp_invoice_id: f.erp_invoice_id,
         correlativo: f.correlativo, branch_id: f.branch_id, bolsa: f.bolsa,
       };
       try {
+        // La lista se armó hace un rato y el re-sync horario pudo haber
+        // resuelto ésta en el medio. Volver a mirar cuesta una lectura y evita
+        // mandarle a Hacienda un documento que ya entró.
+        const { data: ahora } = await admin.from("sales_invoices")
+          .select("estado, recibido_mh").eq("id", f.id).maybeSingle();
+        const yaResuelta = f.bolsa === "anuladas"
+          ? ahora?.estado !== "NULA"
+          : !!ahora?.recibido_mh;
+        if (yaResuelta) { detalle.push({ ...base, ok: true, omitida: "ya estaba resuelta" }); continue; }
+
         if (f.bolsa === "anuladas" && (!respCfg?.nombre || !respDui))
           throw new Error("No está configurado el responsable de anulaciones ante Hacienda.");
 
@@ -158,6 +210,8 @@ Deno.serve(async (req) => {
         });
         if (mh.observaciones.length) conObservaciones++;
         aResincronizar.add(`${f.branch_id}|${f.fecha}`);
+        procesadas++;
+        await new Promise(r => setTimeout(r, PAUSA_ENTRE_ENVIOS_MS));
       } catch (e) {
         fallidas++;
         detalle.push({ ...base, ok: false, error: e instanceof Error ? e.message : String(e) });
@@ -203,19 +257,30 @@ Deno.serve(async (req) => {
       // decir lo contrario ensuciaría la bitácora. Y un fallo es WARNING, no
       // INFO — si no, se pierde entre las corridas que salieron bien.
       source:    esCron ? "SYSTEM" : "ADMIN_PANEL",
-      severity:  (fallidas > 0 || conObservaciones > 0) ? "WARNING" : "INFO",
+      severity:  (fallidas > 0 || conObservaciones > 0 || cortadaPorTiempo) ? "WARNING" : "INFO",
       branch_id: alcance === "sucursal" ? Number(branch_id) : null,
       details: {
         alcance, por: actorNombre,
-        revisadas: pendientes.length, resueltas, fallidas,
-        con_observaciones: conObservaciones, detalle,
+        revisadas: procesadas, resueltas, fallidas,
+        con_observaciones: conObservaciones,
+        total_pendiente: totalPendiente,
+        restantes: Math.max(0, totalPendiente - resueltas),
+        cortada_por_tiempo: cortadaPorTiempo,
+        detalle,
       },
     });
     if (auditErr) console.error("audit_logs:", auditErr.message);
 
     return json({
-      ok: true, revisadas: pendientes.length, resueltas, fallidas,
-      con_observaciones: conObservaciones, detalle,
+      ok: true,
+      revisadas: procesadas, resueltas, fallidas,
+      con_observaciones: conObservaciones,
+      // Lo que había y lo que queda. Un tope que no se anuncia se lee como
+      // "ya está todo".
+      total_pendiente: totalPendiente,
+      restantes: Math.max(0, totalPendiente - resueltas),
+      cortada_por_tiempo: cortadaPorTiempo,
+      detalle,
     });
 
   } catch (e) {

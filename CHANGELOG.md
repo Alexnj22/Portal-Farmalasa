@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.418.1 — El barrido dice cuántas quedan, y no se muere a mitad de camino
+
+Pregunta del usuario: *«¿qué pasa si hay 300 facturas pendientes de validar en
+el MH? ¿es seguro enviar tantas tan rápido y de un solo?»*. No lo era, y por
+tres motivos distintos.
+
+**Se moría a mitad de camino.** El tope era 40 por bolsa —hasta 80 por
+corrida— y una Edge Function vive 150 s. Medido: cada paso contra el ERP tarda
+~0.3 s, así que un documento son 2-6 s contando la llamada al MH, que es la
+lenta. Ochenta documentos son entre 3 y 8 minutos: la corrida se moría, y como
+el registro en `audit_logs` y el re-sync van **al final**, no quedaba rastro de
+nada y la noche siguiente reintentaba lo ya enviado.
+
+Ahora manda un **presupuesto de tiempo** de 110 s, muy por debajo del límite, y
+se corta **antes** de empezar otro documento — un envío a Hacienda no se puede
+dejar por la mitad. Siempre alcanza a escribir el registro y disparar el
+re-sync.
+
+**Truncaba en silencio.** Con 300 pendientes reportaba «revisadas: 40» y se leía
+como «ya está todo» — el mismo defecto que el `.limit(500)` del widget, que
+mostraba 500 de 4,000 como si fueran todas. Ahora cuenta la bolsa completa y
+devuelve `total_pendiente`, `restantes` y `cortada_por_tiempo`; el aviso de la
+pantalla dice «quedan N para la próxima tanda» y una corrida con cola queda como
+WARNING, no como INFO.
+
+**Le disparaba a Hacienda sin respiro.** Es un servicio del Estado y no publica
+sus límites de tasa; mandarle 300 documentos tan rápido como el bucle pueda es
+pedir que empiece a rechazar por volumen. Va una pausa de 400 ms entre envíos:
+no cambia nada cuando son diez y evita la ráfaga cuando son cientos.
+
+**Y una guarda de rebote.** Antes de enviar cada documento se vuelve a leer su
+estado: la lista se armó hace un rato y `dte-resync-mes-hora` pudo haberlo
+resuelto en el medio. Cuesta una lectura y evita mandarle a Hacienda algo que ya
+entró — que es justo lo que podía pasar cuando una corrida moría antes del
+re-sync.
+
+Con esto, un atraso de 300 se drena en tandas de ~30 por noche en vez de morir
+en el intento. Si hace falta vaciarlo rápido, el botón de la vista se puede
+apretar varias veces o agregarse una corrida extra en la ventana tranquila.
+
+
+_(pendiente de redactar)_
+
 ## v2.418.0 — El hover aclara y el filo es blanco en los dos Liquid
 
 **1 · El hover del sidebar se veía gris sucio en claro.** Salía de `--sidebar-ink`, que

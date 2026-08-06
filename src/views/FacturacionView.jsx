@@ -447,10 +447,15 @@ function BotonRegularizar({ filterBranch, branches, bolsa, canEdit, onDone, pend
         const partes = [`${r.resueltas} de ${r.revisadas}`];
         if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
         if (r.fallidas)         partes.push(`${r.fallidas} sin resolver`);
+        // Si quedó cola hay que decirlo. Callarla es lo que hace que un tope se
+        // lea como "ya está todo".
+        if (r.restantes > 0)    partes.push(`quedan ${r.restantes} para la próxima tanda`);
         useToastStore.getState().showToast(
-            r.revisadas === 0 ? 'No había nada pendiente' : 'Trámite enviado a Hacienda',
+            r.revisadas === 0 ? 'No había nada pendiente'
+              : r.restantes > 0 ? 'Tanda enviada a Hacienda'
+              : 'Trámite enviado a Hacienda',
             partes.join(' · '),
-            r.fallidas ? 'warning' : 'success',
+            (r.fallidas || r.restantes > 0) ? 'warning' : 'success',
         );
         onDone?.();
     };

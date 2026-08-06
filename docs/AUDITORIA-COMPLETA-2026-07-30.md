@@ -1,5 +1,10 @@
 # Auditoría completa — 2026-07-30
 
+> **Estado al 2026-08-06:** Fase A **cerrada entera** (v2.397.1). De Fase B:
+> B1/B3/B4/B5 hechos (v2.397.2), faltan B2 y B6 —los dos piden medición antes y
+> después—. De Fase C: **C1 cerrado** (28 `error-ignorado` → 0, v2.398.2), faltan
+> C2, C3 y C4. Detalle en `docs/RETOMAR-CONTABILIDAD-2026-08-06.md`.
+
 **Documento único.** Reemplaza y absorbe a `AUDITORIA-ARRANQUE-2026-07-30.md`
 (retirado en el mismo commit): aquella auditó **un camino** —el arranque a
 `/overview`— con **caché caliente** y sin capítulo de seguridad ni de fallos.

@@ -1,5 +1,10 @@
 # Proveedores y Libros de IVA — auditoría completa y plan
 
+> **Al retomar, leer primero `docs/RETOMAR-CONTABILIDAD-2026-08-06.md`.** Varias
+> conclusiones de este documento cambiaron el 2026-08-05 al saber que el libro que
+> se declara **se rearma a mano**: los CCF sin registrar no son plata perdida y no
+> hay riesgo de multa por las notas de crédito. Ver Parte 10 y Parte 11.
+
 Fecha: 2026-08-02 · Sucede a `AUDITORIA-PROVEEDORES-Y-LIBROS-IVA-2026-08-02.md`,
 que quedó **incompleta y con dos conclusiones equivocadas**. Este documento es el
 que manda.

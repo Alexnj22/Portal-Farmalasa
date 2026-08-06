@@ -110,6 +110,7 @@ const ListRow = memo(forwardRef(({
 
     return (
         <Tag
+            data-interactive={interactiva ? "" : undefined}
             ref={ref}
             {...(Tag === 'button' ? { type: 'button', onClick, disabled } : {})}
             {...(Tag === 'a' ? { href } : {})}

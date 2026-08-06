@@ -621,6 +621,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!isExpanded ? label : undefined}
                 title={(!isExpanded && !isMobile) ? label : undefined}
+                data-interactive=""
                 className={`w-full flex items-center gap-2.5 rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
                     min-h-[var(--tap-min)] ${isExpanded
                         ? (indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5')
@@ -730,6 +731,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     aria-controls={isExpanded ? `nav-group-${key}` : undefined}
                     aria-label={!isExpanded ? label : undefined}
                     title={(!isExpanded && !isMobile) ? label : undefined}
+                    data-interactive=""
                     className={`relative w-full flex items-center min-h-[var(--tap-min)] rounded-2xl transition duration-[var(--dur-base)] group text-left overflow-hidden
                         ${isExpanded ? 'gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3' : 'justify-center gap-0 px-0 py-2.5 xl:py-3'}
                         ${hasActiveChild
@@ -1258,6 +1260,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     key={m.key}
                                                     to={m.path}
                                                     onClick={() => setFlyout(null)}
+                                                    data-interactive=""
                                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition duration-[var(--dur-fast)] text-left group/fi active:scale-[0.97] ${focusRing}
                                                         ${m.isActive
                                                             // El navy fijo `#1A3560` sólo servía sobre un

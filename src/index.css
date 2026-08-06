@@ -2262,8 +2262,14 @@ thead.sticky {
   to   { --rim-ang: 570deg; opacity: 0 }
 }
 
+/* Toda pieza de vidrio lleva canto: las diez superficies canónicas más
+   cualquier `[data-interactive]`. Antes colgaba SÓLO de `data-interactive`,
+   que son 29 sitios — por eso el destello no aparecía ni en el sidebar, ni
+   en los menús, ni en los ítems del flotante. En vidrio cada elemento es
+   una pieza, así que cada pieza tiene canto. */
 [data-interactive] { position: relative; }
 
+[data-surface]:not([data-surface="sheet"])::after,
 [data-interactive]::after {
   content: '';
   position: absolute;
@@ -2288,7 +2294,15 @@ thead.sticky {
 }
 
 @media (hover: hover) {
-  [data-interactive]:hover::after {
+  /* Corre sólo la pieza MÁS INTERNA bajo el cursor. `:hover` alcanza también
+     a los ancestros, así que sin esta guarda pasar el mouse por una fila
+     barría la fila, la tabla, el cuerpo de vista y el sidebar a la vez — que
+     es literalmente el reclamo que originó §1.6 («¿por qué se activa en todos
+     los elementos vidrio y no en la que está el mouse?»).
+     `inherits: false` en `--rim-ang` resuelve la mitad —que el ángulo baje por
+     el árbol—; ésta resuelve la otra: que el hover SUBA. */
+  [data-surface]:not([data-surface="sheet"]):hover:not(:has(:is([data-surface],[data-interactive]):hover))::after,
+  [data-interactive]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after {
     opacity: 1;
     animation: filo-corre 1.9s cubic-bezier(.35, 0, .2, 1) forwards;
   }
@@ -2302,7 +2316,9 @@ thead.sticky {
   transform: translateY(1px);
 }
 /* Solid no tiene canto vivo: su borde es fijo, así que no corre nada. */
+[data-theme="solid"] [data-surface]::after,
 [data-theme="solid"] [data-interactive]::after,
+[data-theme="solid-dark"] [data-surface]::after,
 [data-theme="solid-dark"] [data-interactive]::after {
   filter: none;
   animation: none;
@@ -2343,6 +2359,17 @@ thead.sticky {
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: filo-llega 1.6s cubic-bezier(.35, 0, .2, 1) forwards;
+}
+/* …y además corren al APUNTARLAS: la llegada pasa una vez, el hover cada vez.
+   Sin esto el flotante destellaba al abrirse y nunca más, aunque uno saliera y
+   volviera a entrar. */
+@media (hover: hover) {
+  [data-surface="sidebar-popover"]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after,
+  [data-surface="dropdown"]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after,
+  [data-surface="modal"]:hover:not(:has(:is([data-surface],[data-interactive]):hover))::after {
+    opacity: 1;
+    animation: filo-corre 1.9s cubic-bezier(.35, 0, .2, 1) forwards;
+  }
 }
 [data-theme="solid"]      [data-surface="sidebar-popover"]::after,
 [data-theme="solid"]      [data-surface="dropdown"]::after,

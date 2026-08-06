@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.414.0 — Cada elemento es una pieza de vidrio
+
+**El destello no aparecía casi en ningún lado, y el motivo era el alcance.** La fase E
+lo colgó de `[data-interactive]`, que son **29 sitios** —los que pasan por
+`clickable()`—, así que ni el sidebar, ni sus ítems, ni los menús, ni los del flotante
+lo tenían. Ahora el canto va en **toda superficie canónica** más cualquier
+`[data-interactive]`, y se marcaron como piezas los ítems de navegación, los del
+flotante y las filas de `ListRow`: **53 piezas sólo en el sidebar**, contra 0 antes.
+
+**Y hubo que resolver el problema que eso reabre.** `:hover` alcanza también a los
+ancestros, así que con el canto en todas partes, pasar el mouse por una fila barría la
+fila, la tabla, el cuerpo de vista y el sidebar a la vez — que es literalmente el
+reclamo que originó §1.6. La guarda es
+`:not(:has(:is([data-surface],[data-interactive]):hover))`: **corre sólo la pieza más
+interna bajo el cursor**.
+
+Son dos problemas distintos con dos soluciones distintas, y conviene no confundirlos:
+`inherits: false` en `--rim-ang` impide que el ángulo **baje** por el árbol; el
+`:not(:has(…))` impide que el hover **suba**.
+
+**Los flotantes ahora corren dos veces.** Al abrirse (`filo-llega`, que se desvanece) y
+además al apuntarlos (`filo-corre`). Antes destellaban al abrirse y nunca más, aunque
+uno saliera y volviera a entrar: **la llegada pasa una vez, el hover pasa cada vez.**
+
+Verificado en la app: apuntando un ítem del sidebar cambian **109 píxeles en él y 0 en
+el de al lado**. Los 109 son el arco angosto —7 %→13 % del perímetro— que §1.6 define;
+no es un halo, es un filo que corre.
+
 ## v2.413.0 — Decidir desde la campana, y el aviso que lleva a LA solicitud
 
 Las notificaciones de solicitud pendiente ahora traen **Aprobar** y **Rechazar**

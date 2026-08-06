@@ -710,6 +710,57 @@ en cero. La firma estructural que busca son las tres cosas juntas —
 árbol y se posiciona contra un disparador". Un modal centrado no mide un
 disparador, así que no entra solo.
 
+## 5.bis Material — lo que cambió en agosto 2026
+
+> Detalle completo y mediciones: `docs/PLAN-MATERIALES-2026-08-02.md`. Acá va lo
+> que hay que saber para **no romperlo** al escribir una vista.
+
+### Cada elemento es una pieza de vidrio
+
+El canto vivo —un destello que recorre el borde al apuntar— va en **toda superficie
+canónica** y en **todo control dentro de una** (`button`, `a[href]`, `[role="button"]`).
+No hay lista que mantener: sale del DOM. Si escribís un control dentro de una
+`data-surface`, ya lo tiene.
+
+- `[data-interactive]` marca las **superficies** clicables que no son controles (una
+  tarjeta entera). Sale de `clickable()`, no se pone a mano.
+- Corre **sólo la pieza más interna** bajo el cursor. Si agregás una superficie nueva,
+  no hace falta hacer nada: la guarda `:not(:has(…))` ya la contempla.
+
+### Cuatro reglas que se rompen solas si no se conocen
+
+| regla | por qué |
+|---|---|
+| **Un token de color se define en los CUATRO temas** | `:root` + Solid y nada en `dark` = Liquid oscuro hereda un valor calibrado en claro. Pasó tres veces. Lo vigila el gate `tema-incompleto`. |
+| **La dirección del realce la manda el ROL de la superficie** | la anidada **oscurece** porque se hunde; el panel del sidebar **aclara** porque flota; el hover **aclara siempre**. «En claro oscurecer» es falso. |
+| **Una superficie dentro de otra se aplana** | pierde el `backdrop-filter`, toma `--anidada` y `--card-radius-anidada`. Un vidrio sobre vidrio queda a 1.02:1 de su contenedor: invisible. |
+| **Una superficie `sticky` tiene que ocluir** | `--thead-bg`, nunca una opacidad de acento. Lo que pasa por debajo se lee a través. |
+
+### Lo que NO es material
+
+`Notice`, `Badge` y los chips **son tinta**: se apoyan sobre una superficie y toman su
+color de la paleta semántica. No llevan canto, ni lente, ni `backdrop-filter`. **No
+declarar `data-surface` es lo correcto para ellos.**
+
+### El reloj
+
+Cuatro escalones: `--dur-fast` (150) · `--dur-base` (200) · `--dur-slow` (300) ·
+`--dur-lento` (500), con su valor por tema. **Cero literales `duration-N` en JSX**, y el
+gate `reloj-a-mano` lo mantiene así. Para elegir escalón: **el más cercano, y los
+empates bajan**.
+
+`animationDuration` queda **fuera** del reloj: el período de un bucle ambiental
+—shimmer, blobs escalonados— no es una duración de interacción.
+
+### Antes de escribir vidrio a mano
+
+No lo escribas. Usá una `data-surface`. Si de verdad hace falta —una pantalla que vive
+fuera del shell, como el login o el kiosco— va a `EXCEPTIONS` **con el motivo escrito**.
+Los gates `vidrio-a-mano` y `material-a-mano` lo marcan, y la receta para convertir un
+sitio existente está en `PLAN-MATERIALES` §20.
+
+---
+
 ## 6. Color System
 
 > ### ⛔ La paleta es CERRADA (regla del usuario, 2026-07-28)

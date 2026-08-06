@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.425.1 — La documentación al día: DESIGN.md, la skill y CLAUDE.md
+
+El plan estaba al día, pero **los tres lugares que otra sesión lee primero, no**.
+
+**Lo más grave era la skill `design-gate`.** Afirmaba —en el cuerpo *y en su
+descripción, que es lo que se lee al cargarla*— que «el baseline está VACÍO y las 24
+categorías son bloqueantes en cero absoluto». Hoy hay **47 categorías** y el baseline
+tolera **168 hallazgos** en tres. Una sesión que la leyera concluiría que el baseline
+está sucio y lo vaciaría, apagando el único registro de cuánta deuda queda. Corregida,
+con la tabla real y la advertencia explícita de **no vaciarlo**.
+
+Se le agregaron además las tres lecciones de los gates nuevos, que valen para cualquier
+categoría futura: **enmascarar comentarios** (12 de 150 hallazgos eran prosa, y el
+número se movía al editar cualquier otra parte del archivo), **mirar el cuerpo y no la
+referencia** (tres de cuatro hallazgos eran `removeEventListener` de limpieza), y **no
+extraer un tag JSX con `[^>]*`**.
+
+**`DESIGN.md` §5.bis**: lo mínimo para no romper el material al escribir una vista —
+cada elemento es una pieza de vidrio, las cuatro reglas que se rompen solas, qué **no**
+es material, el reloj de cuatro escalones, y qué hacer antes de escribir vidrio a mano.
+
+**`CLAUDE.md`**: 24 → 47 categorías, y por qué el baseline no está vacío.
+
 ## v2.425.0 — MIN·MAX: el aviso que nunca llegó, y los botones en la campana
 
 Auditoría del widget de Ajuste Min/Max, a pedido del usuario. El formulario, el

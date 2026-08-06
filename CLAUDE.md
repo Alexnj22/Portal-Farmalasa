@@ -401,4 +401,9 @@ emergencia real, no para silenciar un hallazgo.
 
   **Nunca regenerar el baseline para tapar un hallazgo nuevo** — si una
   categoría subió, es código nuevo que hay que arreglar. El ratchet, el estado
-  de las 24 categorías y cuándo sí se regenera: skill **`design-gate`**.
+  de las 47 categorías y cuándo sí se regenera: skill **`design-gate`**.
+
+  **El baseline ya no está vacío, y es correcto**: `vidrio-a-mano` (135),
+  `material-a-mano` (18) y `carril-pildora` (15) son deuda medida con su plan
+  de bajada en `docs/PLAN-MATERIALES-2026-08-02.md` §20. Las otras 44 son
+  bloqueantes en cero.

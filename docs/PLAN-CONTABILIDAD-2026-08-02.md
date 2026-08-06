@@ -1151,6 +1151,51 @@ el vacío.
 
 # Parte 10 — Los DTE fuera del libro, investigados (2026-08-05)
 
+> ## ⚠️ Leer esto antes que la medición de abajo
+>
+> **Alex, 2026-08-05:** *«el sistema de origen no registra todas. El contador
+> rearma el libro de IVA, anexando eso, las retenciones y las notas de crédito
+> a mano.»*
+>
+> Eso **responde la pregunta A1** de `PREGUNTAS-CONTADOR-2026-08-03.md` y cambia
+> el significado de todo lo que sigue:
+>
+> - Los **$5,825** de CCF sin registrar **no son plata perdida**: es muy
+>   probable que ya estén en el libro que se declaró, metidos a mano.
+> - Las **128 notas de crédito** que el libro del portal no resta **sí se
+>   restan** al declarar. O sea que **no hay crédito fiscal declarado de más**,
+>   y con eso se cae el único riesgo de multa que este documento identificaba.
+> - El libro que produce el portal **no es el que se presenta**. Es un insumo.
+>   El libro real se arma afuera, a mano, cada mes.
+>
+> **Lo que la medición de abajo sigue valiendo:** ya no como «plata que se
+> pierde», sino como **la lista de lo que hay que anexar a mano** — que es
+> exactamente el trabajo manual que se hace hoy sin ninguna lista.
+>
+> **Y lo que esto vuelve más grave, no menos:**
+>
+> 1. **El Bloque D deja de ser opcional.** Si el libro declarado se arma a mano
+>    y por fuera, entonces **no existe en ningún sistema**: no se puede
+>    reproducir, ni probar qué se declaró, ni compararlo con nada. La deriva que
+>    H30 midió (el libro de junio ya cambió después de junio) ocurre sobre un
+>    documento del que ni siquiera hay copia.
+> 2. **Nadie está verificando el armado manual.** El portal tiene los 400 CCF
+>    sellados por Hacienda. Si la contadora los junta de su propio correo o de
+>    lo que le mandan las sucursales, los dos conjuntos pueden no coincidir —
+>    **y hoy no hay forma de saberlo**. La pregunta correcta ya no es «¿cuánto
+>    se está perdiendo?» sino **«¿lo que ella anexó coincide con lo que el
+>    portal tiene?»**.
+> 3. **El trabajo manual es el que el portal puede hacer.** Anexar los DTE
+>    recibidos, restar las notas de crédito y sumar las retenciones es
+>    precisamente lo que el Bloque C construyó. No hace falta pedirle a nadie
+>    que cambie de método: alcanza con darle el libro ya armado y que ella lo
+>    contraste.
+>
+> **Siguiente paso concreto, y es barato:** tomar **un mes ya declarado** y
+> comparar, línea por línea, el libro de la contadora contra el que arma el
+> portal. Si coinciden, el portal puede reemplazar el armado manual con
+> confianza. Si no coinciden, la diferencia es justo lo que nadie está viendo.
+
 El pendiente decía **436 documentos / $8,184.31** y estaba marcado «sin
 investigar». Al abrirlo aparece que **ese total suma documentos de signo
 opuesto**, así que no es una cifra que se pueda leer como «crédito fiscal que se

@@ -5,6 +5,39 @@ base al 2026-08-03 y se pueden reproducir con las consultas del final.
 
 ---
 
+> ## ✅ A1 quedó respondida el 2026-08-05 — y con ella cambia el encuadre
+>
+> **Alex:** *«el sistema de origen no registra todas. El contador rearma el
+> libro de IVA, anexando eso, las retenciones y las notas de crédito a mano.»*
+>
+> Respuesta a la pregunta 1 de A1: **el ajuste se viene aplicando a mano al
+> declarar.** Entonces el libro que se presenta **sí** resta las notas de
+> crédito, y el crédito fiscal declarado **no está inflado**. Se cae el único
+> riesgo de multa que este documento levantaba.
+>
+> La pregunta 2 de A1 sigue viva, pero mejor formulada: ya no es «¿quiere que el
+> libro las reste?» sino **«¿quiere que el portal le entregue el libro ya
+> armado —con los DTE anexados, las notas restadas y las retenciones sumadas—
+> en vez de armarlo a mano cada mes?»**.
+>
+> **Y aparece una pregunta nueva, que es la más importante de todas:**
+>
+> > **A0. ¿De dónde saca los documentos que anexa a mano?**
+> >
+> > El portal tiene **400 CCF de junio-julio** que llegaron por correo, sellados
+> > por Hacienda, y que no están registrados en el sistema de origen. Si usted
+> > los junta de su propio correo o de lo que le mandan las sucursales, los dos
+> > conjuntos pueden no ser el mismo — y hoy nadie lo está comparando.
+> >
+> > **Propuesta concreta:** tomar **un mes ya declarado** y cruzar su libro
+> > contra el que arma el portal, línea por línea. Si cuadran, el portal puede
+> > reemplazar el armado manual. Si no cuadran, la diferencia es exactamente lo
+> > que hoy no ve nadie.
+>
+> Ver `PLAN-CONTABILIDAD-2026-08-02.md` Parte 10 para el detalle de los 400.
+
+---
+
 ## A. Cosas que cambian lo que se declara
 
 ### A1. Notas de crédito de compras — el libro NO las resta (Art. 62)

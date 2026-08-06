@@ -5,7 +5,7 @@ import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Inbox, Check, X, ChevronRight, ChevronDown,
     User, Calendar, Loader2, ClipboardList,
@@ -462,6 +462,7 @@ const RequestsView = () => {
 
     const location = useLocation();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const requests       = useStaff(s => s.requests);
     const employees      = useStaff(s => s.employees);
@@ -514,6 +515,35 @@ const RequestsView = () => {
             navigate(location.pathname, { replace: true });
         }
     }, [location.state?.prefillEmployeeId, location.pathname, navigate]);
+
+    /* Deep-link desde la notificación: `?solicitud=<id>` abre esa solicitud, y
+       `&accion=aprobar|rechazar` abre además su diálogo de decisión.
+       Es lo que convierte el aviso en «acá está» en vez de «andá a buscarla»,
+       y es el camino que usa iPhone, donde iOS no dibuja los botones de acción
+       de una notificación web.
+
+       Se espera a que `requests` tenga la solicitud: la campana es global y la
+       lista puede llegar después. Los parámetros se limpian recién cuando se
+       encontró, para que un render temprano no los descarte. */
+    useEffect(() => {
+        const id = searchParams.get('solicitud');
+        if (!id) return;
+        const req = (requests || []).find(r => String(r.id) === String(id));
+        if (!req) return;
+
+        const accion = searchParams.get('accion');
+        if (accion === 'aprobar' || accion === 'rechazar') {
+            setActionModal({ req, mode: accion === 'aprobar' ? 'approve' : 'reject' }); // eslint-disable-line react-hooks/set-state-in-effect -- abre el diálogo por deep-link
+            setActionNote('');
+        }
+        // Sin esto la solicitud podría quedar escondida tras el filtro activo.
+        if (req.status !== statusFilter) setStatusFilter(req.status);
+
+        const limpio = new URLSearchParams(searchParams);
+        limpio.delete('solicitud');
+        limpio.delete('accion');
+        setSearchParams(limpio, { replace: true });
+    }, [searchParams, setSearchParams, requests, statusFilter]);
 
     const handleCreateRequest = async () => {
         if (!createEmployeeId || !createNote.trim()) return;

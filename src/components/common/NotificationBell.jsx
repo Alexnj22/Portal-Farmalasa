@@ -112,6 +112,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const deleteTimersRef = useRef(new Map());
 
     const canSeeAnnouncements = hasPermission('emp_announcements', 'can_view');
+    const canApprove          = hasPermission('requests', 'can_approve');
 
     const pendingIds = useMemo(() => {
         const s = new Set();
@@ -239,6 +240,21 @@ const NotificationBell = ({ variant = 'desktop' }) => {
             setIsOpen(false);
             navigate(n.link);
         }
+    };
+
+    /* Una notificación de solicitud pendiente puede decidirse desde acá, pero
+       solo si quien mira puede aprobar: sin el permiso, los botones llevarían a
+       un diálogo que el servidor va a rechazar. `request_id` lo escribe el
+       trigger `notificar_solicitud_creada`; las notificaciones viejas no lo
+       tienen y siguen comportándose como antes. */
+    const puedeDecidir = (n) =>
+        canApprove && n.type === 'REQUEST_PENDING' && !!n.metadata?.request_id;
+
+    const irADecidir = (n, accion) => {
+        if (!n.read_at) markNotificationRead(n.id);
+        setIsOpen(false);
+        const base = (n.link || '/requests').split('?')[0];
+        navigate(`${base}?solicitud=${n.metadata.request_id}&accion=${accion}`);
     };
 
     const handleClearAll = () => {
@@ -526,6 +542,42 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             </div>
                                                             {unread && <span className="w-2 h-2 rounded-full bg-brand flex-shrink-0 mt-2 shadow-[var(--shadow-glow-brand-sm)]" />}
                                                         </button>
+
+                                                        {/* Decidir sin salir de la campana.
+                                                            No repiten el flujo de decisión: llevan AL diálogo
+                                                            de esa solicitud. Duplicarlo acá significaría dos
+                                                            copias de la misma regla —el rechazo exige motivo,
+                                                            la aprobación de facturación avisa que va al ERP—
+                                                            y tarde o temprano una se queda vieja.
+                                                            Además es lo que funciona en iPhone: iOS ignora
+                                                            los botones de acción de una notificación web. */}
+                                                        {puedeDecidir(n) && (
+                                                            <div className="flex items-center gap-1.5 pl-[68px] pr-10 pb-3 -mt-1">
+                                                                {/* `soft` y no relleno sólido: es el caso que
+                                                                    nombra DESIGN.md §15.2 — dos acciones de
+                                                                    categoría juntas donde ninguna manda. Y
+                                                                    ninguna es destructiva acá: abren el
+                                                                    diálogo, no deciden. */}
+                                                                <Button
+                                                                    size="xs"
+                                                                    tone="success"
+                                                                    soft
+                                                                    icon={Check}
+                                                                    onClick={(e) => { e.stopPropagation(); irADecidir(n, 'aprobar'); }}
+                                                                >
+                                                                    Aprobar
+                                                                </Button>
+                                                                <Button
+                                                                    size="xs"
+                                                                    tone="danger"
+                                                                    soft
+                                                                    icon={X}
+                                                                    onClick={(e) => { e.stopPropagation(); irADecidir(n, 'rechazar'); }}
+                                                                >
+                                                                    Rechazar
+                                                                </Button>
+                                                            </div>
+                                                        )}
                                                         {/* Borrar individual — visible al hover en desktop, siempre tenue en touch */}
                                                         <Button variant="ghost" icon={X} title="Borrar" iconOnly className={cx.iconBtn} onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }} />
                                                     </motion.div>

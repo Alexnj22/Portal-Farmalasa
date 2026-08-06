@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.413.0 — Decidir desde la campana, y el aviso que lleva a LA solicitud
+
+Las notificaciones de solicitud pendiente ahora traen **Aprobar** y **Rechazar**
+en la campana, y el aviso lleva a *esa* solicitud en vez de a la lista completa.
+
+**Los botones no repiten el flujo de decisión: llevan a él.** Duplicarlo en el
+desplegable significaría dos copias de la misma regla —el rechazo exige motivo,
+la aprobación de una solicitud de facturación avisa que va al ERP— y tarde o
+temprano una se queda vieja. El botón abre el diálogo de siempre, ya apuntado a
+la solicitud correcta.
+
+Son `soft` y no rellenos sólidos: es el caso que nombra DESIGN.md §15.2 —dos
+acciones de categoría juntas donde ninguna manda—, y además ninguna es
+destructiva acá, porque abren el diálogo en vez de decidir.
+
+Solo aparecen si quien mira tiene `can_approve` en `requests`: sin el permiso
+llevarían a un diálogo que el servidor va a rechazar. Y solo si la notificación
+trae `request_id`, así que las viejas siguen comportándose como antes.
+
+**El enlace ahora es `/requests?solicitud=<id>`** (migración `20260806021306`),
+y con `&accion=aprobar|rechazar` abre además el diálogo. `RequestsView` espera a
+que la lista tenga la solicitud antes de consumir los parámetros —la campana es
+global y `requests` puede llegar después—, y ajusta el filtro de estado para que
+no quede escondida detrás del que estuviera activo.
+
+**Por qué esto importa en iPhone.** iOS soporta web push pero ignora el arreglo
+`actions`, así que los botones dentro de la notificación del sistema no se
+dibujan allá. Los de la campana sí funcionan en iOS, Android y escritorio por
+igual, y el enlace directo hace que tocar el aviso caiga en la decisión: dos
+toques, con todo el contexto a la vista. Para algo que anula ante Hacienda eso
+no es peor que un botón en la pantalla bloqueada.
+
+
+_(pendiente de redactar)_
+
 ## v2.412.0 — Once sombras con realce blanco que el oscuro heredaba
 
 **El «blanco en modo oscuro» no era un borde: era la escala de sombras entera.**

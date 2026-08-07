@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.483.2 — Una hipótesis que encajaba con todo y era falsa
+
+Reportado: *«¿por qué en móvil no me salen todos los widget de operación? sólo me
+sale Consulta de inventario y modificar facturación»*.
+
+La explicación aparecía sola al leer el código. `buildWidgetList` recorre las
+claves de `activeLayout`, o sea que **lo que se pinta sale del acomodo guardado,
+no del catálogo de la pestaña**. Ese acomodo se escribe en localStorage la
+primera vez que alguien mueve o redimensiona un widget, así que quedaría
+congelado; y los tres widgets de Operación que faltan —Ajuste de Min/Max, Ajuste
+de Inventario, Traslados entre Salas— se agregaron **después** de los dos que sí
+se ven. Encajaba con todo: con el síntoma, con cuáles faltan y con que ya
+existiera un parche puntual para el mismo problema (los `sales_branch_*`, sólo
+en General y sólo en escritorio).
+
+Se escribió el arreglo. Antes de darlo por bueno se sembró el estado que
+supuestamente lo causaba —un acomodo móvil de Operación con sólo esos dos
+widgets— y se corrió contra el build **sin** arreglar, esperando verlo fallar.
+Pintó **cuatro** widgets, no dos. La hipótesis era falsa y el arreglo se revirtió
+sin llegar a commitearse.
+
+Lo que sí esconde un widget, medido por dos vías que coinciden: **el permiso del
+rol**. En la cuenta de prueba `inv_movement` está encendido en «Personalizar» y
+aun así no se pinta, y la consulta a `role_permissions` lo confirma — ese rol no
+tiene `dash_inv_movement`. Ese camino es idéntico en escritorio y en teléfono.
+
+Queda `tests/e2e/tablero-operacion-movil.spec.js`, que siembra el acomodo viejo
+y verifica que no esconde nada, e imprime las dos explicaciones que compiten
+juntas —qué está encendido y qué se pintó— porque separarlas es todo el trabajo:
+**lo que está encendido y no aparece, lo esconde el permiso.**
+
+De paso, dos cosas anotadas mientras se buscaba: el tablero de widgets vive en
+`/overview` —`/dashboard` es Gestión de Personal—, y `dash_inv_movement` hoy no
+lo tienen ni Administrador ni Gerente General, sólo Jefe/a de Sala y
+Supervisor/a de Ventas.
+
 ## v2.483.1 — El barrido se niega a medir sin sesión
 
 Una corrida entera del barrido salió **«37 vistas · con algo que corregir: 0»**,

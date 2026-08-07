@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.475.0 — Ajuste de Inventario: el banco de productos, los motivos y la foto del daño
+
+Cinco cosas reportadas sobre el mismo modal, todas del mismo tipo: el formulario
+pedía datos que ya tenía y no pedía los que hacían falta.
+
+**«¿Cómo agrego más?»** Lo agregado se dibujaba en una tira de 42% de alto metida
+ENTRE el buscador y los resultados: a la vez tapaba media lista y no se leía como
+una lista propia. Ahora son dos pestañas —**Agregar** y **En la solicitud · N**—
+y cada una tiene toda la altura. El contador en la pestaña es lo que dice que el
+banco existe sin tener que ir a mirarlo, y adentro cada línea se edita y se
+quita como antes.
+
+**El vencimiento se pedía dos veces.** Elegir un lote de la lista trae su fecha
+adentro —la etiqueta la muestra: «LSVF10697 · 01/11/27»— y aun así había un campo
+de fecha aparte, que además arrancaba con esa misma fecha ya escrita. Era pedir
+el mismo dato dos veces y dejar la puerta abierta a que los dos no coincidan.
+El campo queda sólo para **lote nuevo** (ahí la fecha es dato nuevo) y para el
+perecedero sin control de lote, que no tiene de dónde sacarla. En el resto se
+muestra como texto: «Vence 01/11/27».
+
+**«Lote: Todos» no existe.** Era la opción de limpiar de `LiquidSelect`, que se
+rotula «Todos» — pensada para un filtro, no para un campo de dato. La línea mueve
+UN lote. `clearable={false}` en ese selector y en el de plazo.
+
+**Los motivos.** «Descargar por descarte» y «Descargar por consumo interno» son
+cajones: lo que hay que poder contar después es por qué. Escrito a mano cada
+quien lo dice distinto («cruce», «x cruce», «mal conteo») y no se agrupa. Ahora
+hay lista — descarte: cruce, descuadre, llegó en mal estado, devolución al
+proveedor, retiro sanitario; consumo interno: enfermería, curaciones, insumo de
+la sala, muestra, uso del personal — y **«Otro»**, que está a propósito: sin él
+la gente elige cualquiera con tal de seguir y ensucia la lista entera. Al elegir
+«Otro» el detalle escrito pasa a ser obligatorio; con un motivo de la lista es
+opcional, porque el motivo ya explica y exigir además un párrafo es lo que hace
+que la gente escriba «x».
+
+Vencimiento, daño y carga no llevan motivo: ahí el motivo ES la operación.
+
+**La foto del daño.** Quien aprueba una descarga por daño está en otra sala: sin
+ver el producto, «producto roto» es una afirmación que no puede comprobar. Hasta
+tres fotos, obligatoria al menos una, y con `capture="environment"` para que en
+el teléfono abra la cámara de atrás directo. Sólo ahí — un descuadre no se
+fotografía, y pedirla en las otras sería un trámite vacío.
+
+Van a un bucket nuevo **privado** (`inventario-evidencia`, 10 MB, sólo
+JPEG/PNG/WEBP) con lectura para autenticados y escritura sólo para quien puede
+crear la solicitud — nada de `WITH CHECK (true)`, que es el agujero que la
+auditoría del 2026-07-30 encontró en otras dos tablas. Sin DELETE: la evidencia
+de una solicitud es append-only. La subida va **antes** de crear la solicitud: si
+falla, no se crea, porque una descarga por daño sin foto es justo la que nadie
+puede aprobar.
+
+Y el texto del campo libre dice lo que se espera: «Explica la razón», no «Por qué
+se mueve».
+
+Probado de punta a punta contra producción con la cuenta de QA: dos productos al
+banco, envío bloqueado sin la foto, foto subida, solicitud creada con sus dos
+líneas, cinco unidades, el subtipo y la URL de la evidencia. Después se borraron
+la solicitud, su aviso, la foto y el permiso temporal — cero rastro.
+
 ## v2.474.0 — El vidrio de los modales, el color de más y el calendario acotado
 
 Reportado: «los widget no quiero que tengan color especial, y les falta el

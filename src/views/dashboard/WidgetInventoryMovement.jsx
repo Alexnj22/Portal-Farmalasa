@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-    AlertTriangle, ArrowLeft, CalendarX2, CheckCircle2, ChevronRight, Loader2,
+    AlertTriangle, ArrowLeft, CalendarX2, Camera, CheckCircle2, ChevronRight, Loader2,
     PackageMinus, PackagePlus, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import SegmentedControl from '../../components/common/SegmentedControl';
+import { supabase } from '../../supabaseClient';
 import LanzadorSolicitud, { PieModal } from './LanzadorSolicitud';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -79,6 +81,42 @@ const PLAZOS = [
     { value: '60', label: 'Vencen en 60 días' },
     { value: '90', label: 'Vencen en 90 días' },
 ];
+
+// ── El motivo, para las operaciones donde «descargar» no dice nada ──────────
+// «Descargar por descarte» y «Descargar por consumo interno» son cajones: lo
+// que hay que poder contar después es POR QUÉ. Escrito a mano en el campo libre
+// cada quien lo dice distinto ("cruce", "x cruce", "mal conteo") y no se puede
+// agrupar; con una lista, sí — y el campo libre queda para el detalle, que es
+// lo que de verdad hace falta leer una por una.
+//
+// «Otro» está a propósito: sin él la gente elige cualquiera con tal de seguir,
+// y eso ensucia la lista entera. Al elegirlo, el detalle pasa a ser obligatorio.
+//
+// Vencimiento, daño y carga no llevan motivo: el motivo ES la operación.
+const MOTIVOS = {
+    'DESCARTE': [
+        { value: 'CRUCE',       label: 'Cruce de producto' },
+        { value: 'DESCUADRE',   label: 'Descuadre de inventario' },
+        { value: 'MAL_ESTADO',  label: 'Llegó en mal estado' },
+        { value: 'DEVOLUCION',  label: 'Devolución al proveedor' },
+        { value: 'RETIRO',      label: 'Retiro sanitario' },
+        { value: 'OTRO',        label: 'Otro' },
+    ],
+    'CONSUMO INTERNO': [
+        { value: 'ENFERMERIA',  label: 'Enfermería — inyecciones' },
+        { value: 'CURACIONES',  label: 'Curaciones' },
+        { value: 'INSUMO',      label: 'Insumo de la sala' },
+        { value: 'MUESTRA',     label: 'Muestra o demostración' },
+        { value: 'PERSONAL',    label: 'Uso del personal' },
+        { value: 'OTRO',        label: 'Otro' },
+    ],
+};
+
+// La foto sólo se pide donde se puede ver algo: un producto roto se muestra.
+// Un descuadre no se fotografía, y pedirla ahí sería un trámite vacío.
+const OPS_CON_FOTO = ['PRODUCTO DAÑADO'];
+const BUCKET_EVIDENCIA = 'inventario-evidencia';
+const MAX_FOTOS = 3;
 
 const SUPERVISOR_ROLE_ID = 13; // Supervisor/a de Ventas
 
@@ -181,16 +219,25 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     const [perecederos, setPerecederos] = useState(new Set());
 
     const [causa, setCausa]       = useState('');
+    const [motivo, setMotivo]     = useState('');
+    const [fotos, setFotos]       = useState([]);   // File[] sin subir todavía
+    const [subiendo, setSubiendo] = useState(false);
     const [enviando, setEnviando] = useState(false);
     const [error, setError]       = useState('');
     const [listo, setListo]       = useState(false);
+    // «Agregar» o «En la solicitud». El banco necesitaba ser un lugar, no una
+    // franja apretada entre el buscador y los resultados.
+    const [pestana, setPestana]   = useState('agregar');
 
     const op = OPERACIONES.find(o => o.key === opKey) ?? null;
     const esCarga = op?.movimiento === 'CARGA';
     const porVencimiento = opKey === 'VENCIMIENTO';
+    const motivos = MOTIVOS[opKey] ?? null;
+    const pideFoto = OPS_CON_FOTO.includes(opKey);
 
     const volver = useCallback(() => {
         setOpKey(null); setLineas([]); setCausa(''); setBusqueda(''); setError('');
+        setMotivo(''); setFotos([]); setPestana('agregar');
     }, []);
 
     useEffect(() => { volver(); }, [erpSucursalId, volver]);
@@ -289,14 +336,48 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     }), [lineas, lotesPorProducto, perecederos, esCarga]);
 
     const incompletas = faltantes.filter(f => f.problemas.length > 0);
+    // El motivo es obligatorio donde existe; la foto, donde se pide. Y el texto
+    // libre pasa a ser obligatorio sólo cuando el motivo es «Otro» —ahí la lista
+    // no dijo nada— o cuando no hay lista: en el resto, el motivo ya explica y
+    // exigir además un párrafo es lo que hace que la gente escriba "x".
+    const detalleObligatorio = !motivos || motivo === 'OTRO';
     const puedeEnviar = totales.lineas > 0 && incompletas.length === 0
-        && causa.trim().length > 0 && Boolean(erpSucursalId && erpUbicacionId);
+        && (!motivos || Boolean(motivo))
+        && (!detalleObligatorio || causa.trim().length > 0)
+        && (!pideFoto || fotos.length > 0)
+        && Boolean(erpSucursalId && erpUbicacionId);
 
     const enviar = async () => {
         setError('');
         if (!puedeEnviar) return;
         setEnviando(true);
         try {
+            // ── La evidencia va PRIMERO ──────────────────────────────────
+            // Si la subida falla, la solicitud no se crea: una descarga por
+            // daño sin la foto es exactamente la que no se puede aprobar, y
+            // dejarla entrar "para no perder lo escrito" la convierte en una
+            // fila que alguien va a tener que rechazar a mano.
+            //
+            // Se guarda la URL en formato público como identificador —regla 10
+            // de CLAUDE.md— aunque el bucket sea privado: la firma expira, así
+            // que lo que se persiste no puede ser una URL firmada.
+            let evidencia = [];
+            if (fotos.length) {
+                setSubiendo(true);
+                const carpeta = `${branchId ?? 'sin-sala'}/${user?.id ?? 'anon'}`;
+                for (const [i, f] of fotos.entries()) {
+                    const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+                    const path = `${carpeta}/${Date.now()}-${i}.${ext}`;
+                    const { error: errUp } = await supabase.storage
+                        .from(BUCKET_EVIDENCIA).upload(path, f, { contentType: f.type });
+                    if (errUp) throw new Error(`No se pudo subir la foto: ${errUp.message}`);
+                    const { data } = supabase.storage.from(BUCKET_EVIDENCIA).getPublicUrl(path);
+                    evidencia.push(data?.publicUrl ?? null);
+                }
+                evidencia = evidencia.filter(Boolean);
+                setSubiendo(false);
+            }
+
             const target = findTargetEmployee(employees);
             const items = lineas.map(l => ({
                 erp_product_id:    l.erp_product_id,
@@ -320,6 +401,12 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                     movimiento: op.movimiento,
                     subtipo: esCarga ? undefined : opKey,
                     reason: causa.trim(),
+                    // El motivo va como código Y como rótulo: el código para
+                    // poder agrupar, el rótulo para que quien lea la solicitud
+                    // dentro de un año no tenga que buscar qué era 'CRUCE'.
+                    motivo: motivo || undefined,
+                    motivo_label: motivos?.find(m => m.value === motivo)?.label,
+                    evidencia_urls: evidencia.length ? evidencia : undefined,
                     branch_id: branchId,
                     branch_name: branchName,
                     // Los ids con los que se ubica el movimiento fuera del
@@ -337,7 +424,8 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             await appendAuditLog(
                 esCarga ? 'INVENTARIO_CARGA_SOLICITADA' : 'INVENTARIO_DESCARTE_SOLICITADO',
                 String(branchId ?? ''),
-                { subtipo: opKey, lineas: totales.lineas, unidades: totales.unidades, causa: causa.trim() },
+                { subtipo: opKey, motivo: motivo || null, lineas: totales.lineas,
+                  unidades: totales.unidades, causa: causa.trim(), fotos: evidencia.length },
             );
 
             // El aviso lo crea el trigger junto con la fila. Mandarlo desde acá
@@ -348,6 +436,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             setError(String(e?.message ?? '').includes('row-level security')
                 ? 'No tienes permiso para crear solicitudes de inventario.'
                 : (e?.message || 'No se pudo enviar la solicitud.'));
+            setSubiendo(false);
             setEnviando(false);
         }
     };
@@ -380,10 +469,33 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                 lineas={totales.lineas} unidades={totales.unidades}
             />
 
-            {/* Cómo se agregan productos */}
+            {/* ── Dos lugares, no una franja ────────────────────────────────
+                Reportado: «¿cómo agrego más? si agrego uno, que se vaya a un
+                banco de productos a enviar en la solicitud».
+
+                Y era literal: lo agregado se dibujaba en una tira de 42% de
+                alto metida ENTRE el buscador y los resultados, así que a la
+                vez tapaba media lista de resultados y no se leía como una
+                lista propia. Con dos pestañas, «Agregar» tiene toda la altura
+                para buscar y «En la solicitud» toda para revisar, editar y
+                quitar. El contador en la pestaña es el que dice que el banco
+                existe sin tener que ir a mirarlo. */}
             <div className="shrink-0">
+                <SegmentedControl
+                    value={pestana}
+                    onChange={setPestana}
+                    options={[
+                        { value: 'agregar', label: 'Agregar' },
+                        { value: 'banco',   label: `En la solicitud${totales.lineas ? ` · ${totales.lineas}` : ''}` },
+                    ]}
+                />
+            </div>
+
+            {/* Cómo se agregan productos */}
+            {pestana === 'agregar' && (
+              <div className="shrink-0">
                 {porVencimiento
-                    ? <LiquidSelect nano value={plazo} onChange={setPlazo} options={PLAZOS} />
+                    ? <LiquidSelect nano clearable={false} value={plazo} onChange={setPlazo} options={PLAZOS} />
                     : (
                         <SearchInput
                             accentColor="var(--warning)"
@@ -391,11 +503,23 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                             placeholder="Buscar producto para agregar…"
                         />
                     )}
-            </div>
+              </div>
+            )}
 
-            {/* Lo que ya va en la solicitud */}
-            {lineas.length > 0 && (
-                <div className="shrink-0 max-h-[42%] overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {/* El banco: lo que ya va en la solicitud */}
+            {pestana === 'banco' && (
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {lineas.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3 px-4 text-center py-8">
+                        <op.icon size={26} strokeWidth={1.5} />
+                        <p className="text-body-sm font-semibold">Todavía no agregas ningún producto</p>
+                        <Button variant="secondary" size="sm" onClick={() => setPestana('agregar')}>
+                            Ir a agregar
+                        </Button>
+                    </div>
+                )}
+                {lineas.length > 0 && (
+                <div className="space-y-1.5">
                     {lineas.map(l => {
                         const pres = presPorProducto.get(l.erp_product_id) ?? [];
                         const lotes = lotesPorProducto.get(l.erp_product_id) ?? [];
@@ -432,8 +556,13 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                                     )}
 
                                     {llevaLote && (
+                                        // `clearable={false}`: sin esto `LiquidSelect`
+                                        // agrega su opción de limpiar, que se rotula
+                                        // «Todos» — y un lote «Todos» no existe. La
+                                        // línea mueve UN lote; el «Todos» de un filtro
+                                        // no tiene sentido en un campo de dato.
                                         <LiquidSelect
-                                            nano
+                                            nano clearable={false}
                                             value={l.loteNuevo ? LOTE_NUEVO : `${l.lote}|${l.vence ?? ''}`}
                                             onChange={v => {
                                                 if (v === LOTE_NUEVO) { editar(l.id, { loteNuevo: true, lote: '', vence: '' }); return; }
@@ -459,12 +588,34 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                                         />
                                     )}
 
-                                    {esCarga && (llevaLote || perecederos.has(l.erp_product_id)) && (
+                                    {/* ── El vencimiento sólo cuando NO se sabe ya ──
+                                        Elegir un lote de la lista trae su fecha
+                                        adentro —la etiqueta la muestra: «LSVF10697 ·
+                                        01/11/27»— y aun así se pedía otra vez en un
+                                        campo aparte, que además arrancaba con esa
+                                        misma fecha ya escrita. Era pedir dos veces el
+                                        mismo dato y dejar abierta la puerta a que los
+                                        dos no coincidan.
+                                        Queda para lote nuevo (ahí la fecha es dato
+                                        nuevo) y para el perecedero sin control de
+                                        lote, que no tiene de dónde sacarla. */}
+                                    {esCarga && (l.loteNuevo || (!llevaLote && perecederos.has(l.erp_product_id))) && (
                                         <PortalInput
                                             type="date" value={l.vence ?? ''}
                                             onChange={e => editar(l.id, { vence: e.target.value })}
                                             className="w-36"
                                         />
+                                    )}
+
+                                    {/* El vencimiento que YA vino con el lote: se
+                                        muestra, no se edita. */}
+                                    {/* `text-content-2` y no `-3`: sobre el vidrio
+                                        del modal el token más flojo se pierde
+                                        contra lo que pasa por detrás. */}
+                                    {!l.loteNuevo && l.vence && (
+                                        <span className="text-micro font-semibold text-content-2 px-1">
+                                            Vence {fmtFecha(l.vence)}
+                                        </span>
                                     )}
                                 </div>
 
@@ -479,9 +630,12 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                         );
                     })}
                 </div>
+                )}
+              </div>
             )}
 
             {/* De dónde se agrega */}
+            {pestana === 'agregar' && (
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {cargando && <div className="flex justify-center py-6"><SkeletonText lines={3} className="w-full max-w-md" /></div>}
 
@@ -530,23 +684,90 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                     );
                 })}
             </div>
+            )}
 
             {/* La causa y el envío */}
             {totales.lineas > 0 && (
                 <div className="shrink-0 flex flex-col gap-2 pt-2 border-t border-divider">
                     {incompletas.length > 0 && (
-                        <span className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1">
+                        <button type="button" onClick={() => setPestana('banco')}
+                            className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1 text-left">
                             <AlertTriangle size={12} strokeWidth={2.5} />
                             {incompletas.length} {incompletas.length === 1 ? 'línea sin completar' : 'líneas sin completar'}
-                        </span>
+                            {pestana !== 'banco' && ' — toca para verlas'}
+                        </button>
+                    )}
+
+                    {/* ── El motivo ─────────────────────────────────────────
+                        «Descargar por descarte» y «Descargar por consumo
+                        interno» no dicen nada por sí solos: lo que hay que
+                        poder contar después es por qué. Ver `MOTIVOS`. */}
+                    {motivos && (
+                        <LiquidSelect
+                            nano clearable={false}
+                            value={motivo} onChange={v => setMotivo(v ?? '')}
+                            options={motivos}
+                            placeholder={opKey === 'CONSUMO INTERNO' ? '¿Para qué se usó?…' : '¿Por qué se descarta?…'}
+                        />
                     )}
 
                     <PortalTextarea
                         value={causa}
                         onChange={e => setCausa(e.target.value)}
                         rows={2}
-                        placeholder="Por qué se mueve — queda escrito en el movimiento"
+                        placeholder={detalleObligatorio
+                            ? 'Explica la razón — queda escrita en el movimiento'
+                            : 'Detalle (opcional) — queda escrito en el movimiento'}
                     />
+
+                    {/* ── La foto del daño ──────────────────────────────────
+                        Quien aprueba una descarga por daño está en otra sala:
+                        sin ver el producto, «producto roto» es una afirmación
+                        que no puede comprobar. Sólo acá — un descuadre no se
+                        fotografía, y pedirla ahí sería un trámite vacío. */}
+                    {pideFoto && (
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {fotos.map((f, i) => (
+                                    <div key={`${f.name}-${i}`} className="relative w-14 h-14 rounded-xl overflow-hidden border border-border-card bg-surface-card-hover">
+                                        <img src={URL.createObjectURL(f)} alt=""
+                                            className="w-full h-full object-cover"
+                                            onLoad={ev => URL.revokeObjectURL(ev.currentTarget.src)} />
+                                        <button type="button" aria-label="Quitar foto"
+                                            onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
+                                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-surface-card border border-border-card flex items-center justify-center">
+                                            <X size={9} strokeWidth={3} className="text-content-2" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {fotos.length < MAX_FOTOS && (
+                                    <label className="w-14 h-14 rounded-xl border border-dashed border-border-card bg-surface-card-hover flex flex-col items-center justify-center gap-0.5 cursor-pointer hover:border-brand/40 transition-colors">
+                                        {/* `capture="environment"`: en el teléfono abre la
+                                            cámara de atrás directo, que es donde está el
+                                            producto. En escritorio el atributo se ignora y
+                                            queda el selector de archivos de siempre. */}
+                                        <input type="file" accept="image/jpeg,image/png,image/webp"
+                                            capture="environment" className="sr-only"
+                                            onChange={(ev) => {
+                                                const f = ev.target.files?.[0];
+                                                ev.target.value = '';   // permite volver a elegir la misma
+                                                if (!f) return;
+                                                if (f.size > 10 * 1024 * 1024) { setError('La foto no puede pasar de 10 MB'); return; }
+                                                setError('');
+                                                setFotos(prev => [...prev, f].slice(0, MAX_FOTOS));
+                                            }} />
+                                        <Camera size={15} strokeWidth={2} className="text-content-3" />
+                                        <span className="text-micro font-bold text-content-3">Foto</span>
+                                    </label>
+                                )}
+                            </div>
+                            {fotos.length === 0 && (
+                                <p className="text-micro text-content-2 font-medium px-1">
+                                    Agrega al menos una foto del daño — es lo que mira quien aprueba.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
                 </div>
@@ -560,7 +781,11 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                     <Button variant="secondary" onClick={volver}>Volver</Button>
                     <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
                         {enviando && <Loader2 size={14} className="animate-spin" />}
-                        {enviando ? 'Enviando...' : (esCarga ? 'Enviar solicitud de carga' : 'Enviar solicitud de descarga')}
+                        {/* La subida de la foto es el tramo largo y va primero:
+                            decirlo evita que se lea como que se colgó. */}
+                        {subiendo ? 'Subiendo la foto...'
+                            : enviando ? 'Enviando...'
+                            : (esCarga ? 'Enviar solicitud de carga' : 'Enviar solicitud de descarga')}
                     </Button>
                 </PieModal>
             )}

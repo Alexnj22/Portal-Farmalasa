@@ -1120,6 +1120,70 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     <Info size={12} className="shrink-0 opacity-60" />
                                     Sin presentaciones registradas.
                                 </div>
+                            ) : comoPanel ? (
+                                /* ── La escalera ────────────────────────────────────────
+                                   La misma información que la tabla de al lado, en el orden
+                                   en que se lee con el pulgar. Una tabla de 3 columnas fijas
+                                   más siete de precio son ~900px: en un teléfono entra
+                                   «VÍNETA» y «DESC. 1» queda partido en el borde, que es
+                                   justo el problema que el expediente venía a resolver.
+                                   Acá cada presentación es una tarjeta y los siete niveles
+                                   son una lista: nivel a la izquierda, precio y margen
+                                   alineados en columna a la derecha. El color va en el
+                                   MARGEN y no en el precio — el precio es un dato, el margen
+                                   es un juicio. */
+                                <div className="flex flex-col gap-3">
+                                    {precios.map(pp => {
+                                        const cambios = changesMap[pp.id_presentacion] || {};
+                                        return (
+                                            <div key={pp.id_presentacion} data-surface="card"
+                                                className="rounded-card overflow-hidden">
+                                                <div className={`flex items-baseline justify-between gap-3 px-3.5 py-2.5 border-b ${xk.divider}`}>
+                                                    <span className="text-body font-black tracking-[-0.01em] text-content">
+                                                        {pp.presentaciones?.tipo || '—'}
+                                                        {pp.descripcion && (
+                                                            <span className="text-caption font-bold ml-1.5 text-content-3">{pp.descripcion}</span>
+                                                        )}
+                                                    </span>
+                                                    <Badge variant={pp.activo !== false ? 'success' : 'neutral'} size="sm" uppercase={false}>
+                                                        {pp.activo !== false ? 'Activa' : 'Inactiva'}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-baseline justify-between gap-3 px-3.5 py-2.5 bg-surface-card-hover">
+                                                    <span className="text-micro font-black uppercase tracking-widest text-content-3">
+                                                        Costo{pp.factor != null && pp.factor !== '' ? ` · factor ${pp.factor}` : ''}
+                                                    </span>
+                                                    <span className="text-body-xl font-black tabular-nums tracking-[-0.02em] text-content">
+                                                        {fmtP(pp.costo)}
+                                                    </span>
+                                                </div>
+                                                {allowedPriceFields.map(f => {
+                                                    const m = f.key === 'precio_7' ? null : calcMargin(pp[f.key], pp.costo);
+                                                    const ch = cambios[f.key];
+                                                    return (
+                                                        <div key={f.key}
+                                                            className={`flex items-baseline gap-3 px-3.5 py-2 border-t ${xk.divider} ${ch ? xk.pricingCellChanged : ''}`}>
+                                                            <span className="flex-1 min-w-0 text-caption font-black uppercase tracking-wider text-content-2">
+                                                                {f.label}
+                                                            </span>
+                                                            {ch && (
+                                                                <span className={`text-micro line-through tabular-nums ${xk.pricingOldValue}`}>
+                                                                    {fmtP(ch.anterior)}
+                                                                </span>
+                                                            )}
+                                                            <span className="w-[72px] text-right text-body-lg font-black tabular-nums tracking-[-0.01em] text-content">
+                                                                {fmtP(pp[f.key])}
+                                                            </span>
+                                                            <span className="w-[46px] text-right">
+                                                                {m !== null && <MarginPct pct={m} />}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             ) : (
                                 <div className={`overflow-x-auto rounded-xl border ${xk.pricingWrapper}`}>
                                     <table className="min-w-full text-sm">

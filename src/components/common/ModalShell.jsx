@@ -5,6 +5,8 @@ import useMediaQuery from "../../hooks/useMediaQuery";
 import { usePanelLateral } from "../../hooks/useLayoutCompacto";
 import { marcarDialogoAbierto } from "./dialogosAbiertos";
 import { createPortal } from "react-dom";
+import { ArrowLeft } from "lucide-react";
+import Button from "./Button";
 
 // Lo que un diálogo debe poder enfocar. `[tabindex="-1"]` queda fuera a
 // propósito: es enfocable por código, no por Tab.
@@ -129,6 +131,10 @@ export default function ModalShell({
   surface = "modal",
   panelClassName = "",
   ariaLabel = "Ventana modal",
+  // Sólo para `align="pantalla"`: el rótulo de la barra superior. Una pantalla
+  // completa necesita decir dónde estás y cómo salir sin llegar al final del
+  // scroll — una hoja no, porque su borde superior ya deja ver de dónde viene.
+  titulo,
 }) {
   // ── En táctil, TODO modal es una hoja (2026-07-30) ────────────────────
   // Centrado y con zoom es la gramática del escritorio. En un teléfono deja los
@@ -525,10 +531,18 @@ export default function ModalShell({
             // `background: rgba(0,0,0,0)` y el texto encima de la tabla.
             // Lleva el fondo de PÁGINA y no el de tarjeta, porque lo que se
             // está dibujando es una pantalla y adentro van tarjetas.
-            : align === "pantalla" ? 'h-full w-full bg-surface-page' : 'w-full'} ${autoHoja && align !== "side" && align !== "pantalla"
+            : align === "pantalla" ? 'h-full w-full' : 'w-full'} ${autoHoja && align !== "side" && align !== "pantalla"
             ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,var(--sa-bottom))]'
             : (align === "side" || align === "pantalla") ? '' : maxWidthClass} ${panelAnim} ease-[var(--ease-spring)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
+        // `--bg-page` y NO la clase `bg-surface-page`: ese token vale
+        // **transparent** en Liquid (index.css:192), donde el fondo de la app lo
+        // pinta un gradiente radial más arriba en el árbol. Con la clase, el
+        // expediente salía transparente en los dos temas Liquid y se veía el
+        // menú y el catálogo POR DEBAJO del contenido — en Solid no, porque ahí
+        // `--bg-page` sí es un color plano. Es justo el tipo de diferencia que
+        // sólo aparece mirando los cuatro temas, no compilando.
+        style={align === "pantalla" ? { background: 'var(--bg-page)' } : undefined}
       >
         {/* ── La sombra de la hoja, como CAPA propia ───────────────────
             Estaba como `box-shadow` del envoltorio, y eso la dejaba clavada
@@ -553,7 +567,31 @@ export default function ModalShell({
               ? 'rounded-l-modal shadow-[var(--shadow-hoja-lateral)]'
               : 'rounded-t-modal shadow-[var(--shadow-hoja)]'}`} />
         )}
-        {children}
+        {align === "pantalla" ? (
+          /* ── La barra, y el scroll que le pertenece ────────────────────
+             A pantalla completa el contenido puede ser largo —el expediente de
+             un producto son siete secciones— y la única salida no puede estar
+             al final del recorrido. La barra queda fija arriba con el nombre de
+             lo que se está mirando; el que scrollea es el cuerpo, no la
+             pantalla.
+             `min-h-0` en el cuerpo: sin él un hijo de un flex en columna no
+             baja de su tamaño de contenido y el scroll nunca aparece — la
+             pantalla crece y la barra se va con ella. */
+          <div className="flex flex-col h-full">
+            <div className="flex-none flex items-center gap-2.5 px-3 py-2.5
+                border-b border-border-card bg-surface-card"
+                style={{ paddingTop: 'max(0.625rem, var(--sa-top))' }}>
+              <Button variant="ghost" size="md" iconOnly icon={ArrowLeft}
+                onClick={onClose} aria-label="Volver" />
+              <span className="flex-1 min-w-0 truncate text-body-lg font-black
+                tracking-[-0.01em] text-content">{titulo || ariaLabel}</span>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain
+              pb-[max(1rem,var(--sa-bottom))]">
+              {children}
+            </div>
+          </div>
+        ) : children}
       </div>
     </div>
     </EstadoDialogoCtx.Provider>,

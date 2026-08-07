@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.468.0 — La escalera, la barra, y el tema Liquid que dejaba ver la vista de atrás
+
+Las tres cosas que v2.467.0 dejó escritas como pendientes, hechas — y la pasada
+por los cuatro temas encontró una cuarta que ninguna de las otras verificaciones
+podía ver.
+
+**1 · La escalera de precios.** La tabla de 3 columnas fijas más siete de precio
+pide unos 900 px: en un teléfono entraba «VÍNETA» y «DESC. 1» quedaba partido en
+el borde, o sea el mismo problema que el expediente venía a resolver, heredado
+adentro. Ahora, en el panel, cada presentación es una tarjeta y los siete niveles
+una lista: nivel a la izquierda, precio y margen alineados en columna a la
+derecha. **El color va en el margen y no en el precio** — el precio es un dato,
+el margen es un juicio. La tabla de escritorio no se toca.
+
+**2 · La barra superior.** `align="pantalla"` ahora dibuja una barra fija con ←
+y el nombre de lo que se está mirando, y el que scrollea es el cuerpo. Un
+expediente de siete secciones no puede tener su única salida al final del
+recorrido.
+
+**3 · Y los cuatro temas, que era el pedido.** Acá estaba el hallazgo:
+`bg-surface-page` **vale `transparent` en Liquid** (index.css:192), donde el
+fondo de la app lo pinta un gradiente radial más arriba en el árbol. Con esa
+clase el expediente salía transparente en los dos temas Liquid y **se veía el
+menú, el título de Productos y el botón de SRS por debajo del contenido**. En
+Solid no pasaba, porque ahí `--bg-page` sí es un color plano — así que
+compilando, pasando los gates y mirando un solo tema, el bug era invisible.
+
+El fondo ahora sale de `--bg-page`, que es el token que de verdad pinta la
+página. Medido en los cuatro, con el expediente abierto:
+
+```
+liquid      tapa la vista de atrás: sí · radial-gradient(at 38% 28%, …)
+dark        tapa la vista de atrás: sí · radial-gradient(at 38% 28%, …)
+solid       tapa la vista de atrás: sí · rgb(244, 246, 251)
+solid-dark  tapa la vista de atrás: sí · rgb(15, 23, 42)
+```
+
+En los cuatro: barra presente, botón de volver presente, escalera dibujada, y
+**cero elementos fuera de un carril** — los ~325 px que sobran son las tablas de
+historial dentro del suyo, que es el patrón correcto. Capturas por tema en
+`test-results/t6-<tema>.png`.
+
+*La comprobación se hace con el expediente ABIERTO y cambiando el tema en vivo:*
+recargar para cambiarlo lo cerraría, y entonces se estaría midiendo la lista, no
+el panel. Fue el tercer intento — los dos anteriores escribían `localStorage`
+antes de entrar y la sesión los pisaba, así que las cuatro corridas medían Solid
+y parecían coincidir.
+
 ## v2.467.2 — Las fichas dudosas van a Por revisar, y la corrida diaria queda agendada
 
 Cuando la limpieza de clientes repetidos encuentra dos fichas que parecen la

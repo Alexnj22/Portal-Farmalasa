@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.483.0 — El plan de vacaciones sale de la tabla, y la ficha puede llevar sus acciones
+
+Era la última lista de registros que quedaba en tabla en el teléfono. La otra
+—el calendario semanal de Horarios— se queda en carril y está bien: siete días
+por N empleados no entran en 390px de ninguna forma, y deslizar un calendario es
+lo que se espera de un calendario.
+
+**Pero convertirla tal cual le quitaba la función.** La tabla trae tres botones
+por fila —editar, confirmar, cancelar— y el canónico no dibuja la columna de
+acciones en la ficha. Esa decisión es correcta en su origen: en doce vistas ese
+botón despliega un `<tr>` hermano que en modo ficha no existe, y una acción cuyo
+destino no existe es un control que responde y no sirve. Pero acá los tres
+abren un modal o disparan una mutación de verdad.
+
+Desde afuera no se puede distinguir un caso del otro, así que lo declara quien
+sabe: **`movil={{ acciones: true }}`**. Con esa ranura la tarjeta deja de SER el
+botón y pasa a CONTENER uno —un `<button>` dentro de otro no es HTML válido y el
+toque queda ambiguo—, y las acciones van en su propio renglón, separadas por una
+línea.
+
+**Y dos vidrios canónicos apilados se ven grises.** La sección «Detalle de
+asignaciones» es una tarjeta, y adentro `DataTable` pinta una tarjeta por
+asignación: en Liquid claro 0.16 + 0.16 ≈ 0.30, o sea que la ficha salía gris
+sobre el blanco de la sección y parecía deshabilitada. En el teléfono la sección
+suelta su vidrio y deja que lo pongan las fichas. Es el mismo defecto que §20
+encontró en el tablero, sólo que allá una de las dos capas estaba puesta a mano
+y acá las dos son canónicas.
+
+Con esto, las 37 vistas del portal en un iPhone 13: **cero desborde de página,
+cero elementos recortados, cero blancos táctiles por debajo de 44pt, cero inputs
+que disparen el zoom de iOS, y ninguna vista reventada.**
+
 ## v2.482.2 — Proveedores dejó de reventar, y la baldosa deja de cortar su número
 
 Todo esto salió de **mirar** las vistas, no de medirlas: las 37 estaban en cero

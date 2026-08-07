@@ -593,6 +593,39 @@ function Ficha({ celdas, onClick }) {
     .map(col => ({ col, v: deCol(col) }))
     .filter(({ v }) => v != null && v !== '' && v !== '—');
   const Elem = alTocar ? 'button' : 'div';
+  // ── Las acciones, sólo si la vista dice que llevan a algún lado ──────────
+  // El default sigue siendo NO dibujarlas: en doce vistas ese botón despliega un
+  // `<tr>` hermano que en modo ficha no se pinta, y una acción cuyo destino no
+  // existe es un control que responde y no sirve. Pero en otras el botón abre un
+  // modal o dispara una mutación de verdad, y ahí esconderlo deja la vista sin
+  // función en el teléfono. Desde afuera no se puede distinguir un caso del
+  // otro, así que lo declara quien sabe: `movil={{ acciones: true }}`.
+  //
+  // Con acciones, la tarjeta deja de SER el botón y pasa a CONTENER uno: un
+  // `<button>` adentro de otro `<button>` no es HTML válido y el toque queda
+  // ambiguo.
+  const acciones = movil?.acciones
+    ? papeles.acciones.map(col => deCol(col)).filter(v => v != null && v !== '')
+    : [];
+
+  if (acciones.length > 0) {
+    return (
+      <div data-surface="card" className="w-full px-3.5 py-3 rounded-card">
+        <Elem
+          {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
+          className="w-full text-left block
+            transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
+            active:scale-[0.985]"
+        >
+          <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} />
+        </Elem>
+        <div className="flex items-center justify-end gap-1.5 mt-2.5 pt-2.5 border-t border-divider">
+          {acciones.map((v, i) => <React.Fragment key={i}>{v}</React.Fragment>)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Elem
       {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
@@ -601,6 +634,17 @@ function Ficha({ celdas, onClick }) {
         transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
         active:scale-[0.985]"
     >
+      <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} />
+    </Elem>
+  );
+}
+
+// El cuerpo de la ficha —identidad, ancla y la línea de contexto— vive aparte
+// porque lo comparten las dos formas: la tarjeta que ES un botón y la que
+// CONTIENE uno (ver la nota de `acciones`).
+function Cuerpo({ deCol, papeles, chipsVisibles }) {
+  return (
+    <>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0 truncate font-bold text-body-lg text-content">
           {deCol(papeles.identidad)}
@@ -637,7 +681,7 @@ function Ficha({ celdas, onClick }) {
           ))}
         </div>
       )}
-    </Elem>
+    </>
   );
 }
 

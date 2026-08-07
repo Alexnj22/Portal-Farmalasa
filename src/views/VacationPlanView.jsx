@@ -3,6 +3,8 @@ import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import useMediaQuery from '../hooks/useMediaQuery';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
     ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Pencil,
@@ -47,6 +49,21 @@ const HEADER_STATUS_META = {
 // escrita a mano, una fila por estado— además de `bar`, que sí se usa aparte
 // para la barra del Gantt. Ahora el chip sale del canónico y la tabla solo
 // aporta el NOMBRE de la variante. (2026-07-28, D3.5)
+// El orden importa: `DataTable` mapea celda→columna POR POSICIÓN, y de acá sale
+// además qué muestra la ficha en el teléfono. Con esta lista la inferencia da
+// identidad = Empleado, ancla = Estado, contexto = Sucursal · Período, y manda a
+// la hoja los tres que no entran (Días, Saldo, Comentario).
+const COLS_ASIGNACIONES = [
+    { key: 'empleado',   label: 'Empleado',   align: 'left' },
+    { key: 'sucursal',   label: 'Sucursal',   align: 'left' },
+    { key: 'periodo',    label: 'Período',    align: 'left' },
+    { key: 'dias',       label: 'Días',       align: 'left' },
+    { key: 'saldo',      label: 'Saldo',      align: 'left' },
+    { key: 'comentario', label: 'Comentario', align: 'left' },
+    { key: 'estado',     label: 'Estado',     align: 'left' },
+    { key: 'acciones',   label: '',           align: 'right' },
+];
+
 const StatusBadge = ({ status }) => {
     const m = STATUS_META[status] || STATUS_META.PLANNED;
     return <Badge variant={m.variante} size="sm">{m.label}</Badge>;
@@ -326,6 +343,11 @@ const VacationPlanView = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const panelRef = useRef(null);
+    // El MISMO corte que usa `DataTable` para decidir el modo ficha. Se repite
+    // el literal a propósito y no se exporta: si algún día cambia, el gate
+    // visual lo delata antes de que nadie lo note, y una constante compartida
+    // ataría la vista al detalle interno del canónico.
+    const enFichas = useMediaQuery('(max-width: 1023.98px)');
 
     // Panel edit state — when set, left panel is in edit mode
     const [editingPlan, setEditingPlan] = useState(null); // { id, employee_id, start_date, end_date, notes, employee_obj }
@@ -888,8 +910,16 @@ const VacationPlanView = () => {
                             <GanttChart plans={filtered} year={year} />
                         </div>
 
-                        {/* Tabla */}
-                        <div data-surface="card" className="p-6 transition-all duration-[var(--dur-lento)]">
+                        {/* Tabla — en el teléfono, SIN vidrio propio.
+                            `DataTable` en modo ficha ya pinta una tarjeta
+                            canónica por asignación, y dos capas del mismo
+                            material se suman: en Liquid claro 0.16 + 0.16 ≈
+                            0.30, o sea que la ficha se ve gris sobre el blanco
+                            de la sección y parece deshabilitada. Es el mismo
+                            defecto que §20 encontró en el tablero, sólo que acá
+                            las dos capas son canónicas. */}
+                        <div data-surface={enFichas ? undefined : 'card'}
+                            className={`transition-all duration-[var(--dur-lento)] ${enFichas ? 'px-1' : 'p-6'}`}>
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>
@@ -933,24 +963,20 @@ const VacationPlanView = () => {
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </Notice>
                                 )}
-                                <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[600px] text-body-sm">
-                                        <thead>
-                                            <tr className="border-b border-divider">
-                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Saldo', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">{h}</th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-divider">
+                                {/* `DataTable` y no una tabla a mano: en el teléfono cada
+                                    asignación se vuelve ficha sola. `acciones: true` porque
+                                    acá los tres botones abren un modal o disparan una
+                                    mutación de verdad —no despliegan una fila hermana—, y
+                                    esconderlos dejaba la vista sin función en el teléfono. */}
+                                <DataTable columns={COLS_ASIGNACIONES} minWidth="600px"
+                                    movil={{ acciones: true }}>
                                             {filtered.map(p => {
                                                 const isEditing = editingPlan?.id === p.id;
                                                 const usedDays  = usedDaysByEmpId.get(String(p.employee_id)) || 0;
                                                 const remaining = 15 - usedDays;
                                                 return (
-                                                    <React.Fragment key={p.id}>
-                                                        <tr className={`group/row hover:bg-surface-card transition-colors ${isEditing ? 'bg-warning/10' : ''}`}>
-                                                            <td className="py-3 pr-4">
+                                                        <DataRow key={p.id} className={`group/row ${isEditing ? 'bg-warning/10' : ''}`}>
+                                                            <DataCell>
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
                                                                     <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                                         {p.employee?.photo
@@ -971,24 +997,24 @@ const VacationPlanView = () => {
                                                                         </Badge>
                                                                     )}
                                                                 </div>
-                                                            </td>
-                                                            <td className="py-3 pr-4 text-content-3 font-medium">{p.branch?.name || '—'}</td>
-                                                            <td className="py-3 pr-4 text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
-                                                            <td className="py-3 pr-4 font-black text-content-2">{p.days}</td>
-                                                            <td className="py-3 pr-4">
+                                                            </DataCell>
+                                                            <DataCell className="text-content-3 font-medium">{p.branch?.name || '—'}</DataCell>
+                                                            <DataCell className="text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</DataCell>
+                                                            <DataCell className="font-black text-content-2">{p.days}</DataCell>
+                                                            <DataCell>
                                                                 <Badge variant={remaining >= 0 ? 'info' : 'danger'} size="sm">
                                                                     {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
                                                                 </Badge>
-                                                            </td>
-                                                            <td className="py-3 pr-4 max-w-[160px]">
+                                                            </DataCell>
+                                                            <DataCell className="max-w-[160px]">
                                                                 {p.notes
                                                                     ? <p className="text-label text-content-3 font-medium leading-snug line-clamp-2">{p.notes}</p>
                                                                     : <span className="text-caption text-content-3">—</span>
                                                                 }
-                                                            </td>
-                                                            <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
-                                                            <td className="py-3">
-                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-base)]">
+                                                            </DataCell>
+                                                            <DataCell><StatusBadge status={p.status} /></DataCell>
+                                                            <DataCell align="right">
+                                                                <div className="flex items-center justify-end gap-1 lg:opacity-0 lg:group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-base)]">
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <Button
                                                                             icon={Pencil}
@@ -1008,15 +1034,11 @@ const VacationPlanView = () => {
                                                                         <Button variant="destructive" size="xs" icon={Trash2} disabled={!canEdit} title="Cancelar" iconOnly onClick={() => handleCancelPlan(p.id)} />
                                                                     )}
                                                                 </div>
-                                                            </td>
-                                                        </tr>
-
-                                                    </React.Fragment>
+                                                            </DataCell>
+                                                        </DataRow>
                                                 );
                                             })}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                </DataTable>
                                 </>
                             )}
                         </div>

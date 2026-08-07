@@ -467,7 +467,7 @@ function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) 
                   <div
                     className="rounded-xl overflow-hidden cursor-pointer group"
                     style={{ background: 'var(--surface-card)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-1)' }}
-                    {...clickable(() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo }))}
+                    {...clickable(() => onDrill({ erpProductId: prod.lots?.[0]?.erp_product_id ?? null, descripcion: prod.descripcion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo }))}
                   >
                     <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-surface-card transition-colors">
                       {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}
@@ -499,7 +499,7 @@ function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) 
                     <button
                       type="button"
                       className="flex-1 min-w-0 flex items-center gap-2 text-left"
-                      onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
+                      onClick={() => onDrill({ erpProductId: prod.lots?.[0]?.erp_product_id ?? null, descripcion: prod.descripcion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                     >
                       <span className="flex-1 min-w-0 block">
                         <span className="block text-label font-bold text-content truncate leading-tight">{prod.descripcion}</span>
@@ -726,11 +726,29 @@ function PanelInventario({ query = '', onQueryChange }) {
 
   /* ── DRILL-DOWN VIEW ────────────────────────────────────────────────────── */
   if (drillProduct) {
+    // ── El detalle se filtra por ID DE PRODUCTO (2026-08-07) ────────────────
+    // Reportado: «¿por qué no me salen todas las sucursales que tienen en
+    // inventario el producto?». Salían 3 de 7.
+    //
+    // El filtro comparaba `presentacion`, y ese campo NO identifica nada: es la
+    // presentación de la PRIMERA fila que `groupInventory` vio para ese producto
+    // en esa sala. Como el mismo producto llega partido en CAJA, BLISTER y
+    // UNIDAD, la «representante» sale distinta en cada sucursal — verificado
+    // sobre la amoxicilina 500: BLISTER en Bodega, CAJA en Salud 1, UNIDAD en
+    // Salud 3. Así que toda sala cuya representante no coincidiera con la del
+    // producto abierto desaparecía del detalle. Y peor: entre filas que vencen
+    // el mismo día el orden no está definido, así que CUÁLES desaparecían podía
+    // cambiar entre dos búsquedas iguales.
+    //
+    // Es una secuela de cuando la clave del grupo incluía la presentación (ver
+    // `groupInventory`): al sacarla de la clave, este filtro se quedó atrás.
+    const mismoProducto = (p) => (
+      drillProduct.erpProductId != null
+        ? p.lots?.[0]?.erp_product_id === drillProduct.erpProductId
+        : p.descripcion === drillProduct.descripcion
+    );
     const drillBranches = (results || []).concat(alternatives).reduce((acc, branch) => {
-      const matching = branch.products.filter(p =>
-        p.descripcion === drillProduct.descripcion &&
-        (p.presentacion || '') === (drillProduct.presentacion || '')
-      );
+      const matching = branch.products.filter(mismoProducto);
       if (!matching.length) return acc;
       const existing = acc.find(b => b.name === branch.name);
       if (existing) existing.products = matching;
@@ -739,10 +757,7 @@ function PanelInventario({ query = '', onQueryChange }) {
     }, []);
 
     // Add bodega vencidos if this product has any
-    const drillVencidos = vencidosProds.filter(p =>
-      p.descripcion === drillProduct.descripcion &&
-      (p.presentacion || '') === (drillProduct.presentacion || '')
-    );
+    const drillVencidos = vencidosProds.filter(mismoProducto);
     if (drillVencidos.length > 0) {
       drillBranches.push({ name: 'Bodega · Vencidos', products: drillVencidos, isVencidos: true });
     }
@@ -775,9 +790,9 @@ function PanelInventario({ query = '', onQueryChange }) {
             {drillProduct.principioActivo && (
               <p className="text-micro text-chart-3-text font-semibold truncate">{drillProduct.principioActivo}</p>
             )}
-            {drillProduct.presentacion && (
-              <p className="text-caption text-content-3 font-medium">{drillProduct.presentacion}</p>
-            )}
+            {/* Sin presentación acá: el producto agrupa varias y la que
+                traía era la de una fila cualquiera. Cada una se lista con su
+                lote, que es donde el dato sí es cierto. */}
             <p className="text-micro text-content-3 font-bold mt-0.5">{grandTotal} uds · {drillBranches.length} sucursal{drillBranches.length !== 1 ? 'es' : ''}</p>
           </div>
         </div>

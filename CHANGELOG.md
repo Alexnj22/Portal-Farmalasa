@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.498.2 — el detalle de inventario mostraba 3 de 7 sucursales
+
+Reportado con captura: «¿por qué no me salen todas las sucursales que tienen en
+inventario el producto?». Con la amoxicilina 500 salían **3 de 7** — y el total
+del encabezado decía 2,557 unidades cuando son **9,545**.
+
+**El filtro comparaba `presentacion`, y ese campo no identifica nada.** Es la
+presentación de la **primera fila** que `groupInventory` vio para ese producto en
+esa sala. Como el mismo producto llega partido en CAJA, BLISTER y UNIDAD, la
+«representante» sale distinta en cada sucursal — verificado contra la base:
+
+| Sala | Presentación «representante» |
+|---|---|
+| Bodega | BLISTER |
+| La Popular | CAJA |
+| Salud 1 | CAJA |
+| Salud 2 | BLISTER |
+| Salud 3 | UNIDAD |
+| Salud 4 | CAJA |
+| Salud 5 | BLISTER |
+
+Toda sala cuya representante no coincidiera con la del producto abierto
+desaparecía del detalle. **Y era inestable**: entre filas que vencen el mismo día
+el orden no está definido, así que *cuáles* desaparecían podía cambiar entre dos
+búsquedas idénticas.
+
+Es una secuela de cuando la clave del grupo incluía la presentación. El comentario
+de `groupInventory` cuenta ese cambio —«antes incluía la presentación, así que un
+acetaminofén salía tres veces»— y al sacarla de la clave, **este filtro se quedó
+atrás**. La lista principal nunca lo tuvo, y por eso ahí sí salían las siete: el
+defecto vivía sólo en el detalle.
+
+Ahora filtra por `erp_product_id`, que es lo que identifica al producto, con
+caída a la descripción si no viniera. Con la amoxicilina 500 el detalle pasa a
+mostrar las siete salas y 9,545 unidades: Bodega 4,494 · Salud 4 1,362 · Salud 1
+1,034 · Salud 2 959 · La Popular 836 · Salud 3 687 · Salud 5 173.
+
+De paso, el encabezado deja de nombrar una presentación: la que mostraba era la
+de una fila cualquiera. Cada una se lista con su lote, que es donde el dato sí es
+cierto.
+
 ## v2.498.1 — Traslados va al canon: filter pill, DataTable y filtro por tipo
 
 Reportado sobre la primera versión: «no es canónico, dónde está el filter pill,

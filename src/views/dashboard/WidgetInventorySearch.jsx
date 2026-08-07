@@ -17,6 +17,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 import SearchInput from '../../components/common/SearchInput';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import PedirTrasladoModal from './PedirTrasladoModal';
@@ -105,6 +106,66 @@ function factorDe(detalle) {
 }
 const unidadesDe = (row) => (Number(row?.cantidad) || 0) * factorDe(row?.detalle);
 const sumaUnidades = (lots) => (lots || []).reduce((s, r) => s + unidadesDe(r), 0);
+
+// ── Qué lote merece su propio renglón (2026-08-07) ─────────────────────────
+// Pedido del usuario: «si no hay producto que esté a vencer (6 meses) lo puede
+// compactar y poner el total de cajas, en el lote poner varios y en hover
+// verlos, al igual la fecha. Ya si vence en 6 meses que sí lo separe».
+//
+// El criterio de fondo: un lote se separa cuando la fecha CAMBIA una decisión.
+// A más de seis meses no la cambia —da igual de cuál salga— y ocho renglones
+// para nueve cajas sólo esconden el número que se venía a buscar. Adentro de
+// los seis meses sí: ahí se elige de dónde sale, o se decide no pedirlo.
+const DIAS_PRONTO_A_VENCER = 180;
+
+const fmtVenceCorto = (d) => d
+  ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })
+  : 'sin fecha';
+
+/**
+ * Parte los lotes en los que hay que mirar de a uno y los que se pueden sumar.
+ *
+ * Los tranquilos se agrupan POR PRESENTACIÓN y no todos juntos: «26» sin decir
+ * si son cajas o unidades es el mismo error que se acaba de corregir. Cada
+ * grupo lleva de qué lotes salió, para el hover.
+ */
+function repartirLotes(lots) {
+  const prontos = [];
+  const tranquilos = [];
+  for (const r of lots || []) {
+    const dias = daysUntil(r.fecha_vencimiento);
+    // Sin fecha va con los tranquilos: no hay nada que vigilar. Y un `dias`
+    // nulo NO puede caer en la rama de «pronto», que lo pintaría de rojo por
+    // un dato que no existe.
+    if (dias != null && dias <= DIAS_PRONTO_A_VENCER) prontos.push(r);
+    else tranquilos.push(r);
+  }
+
+  const porPres = new Map();
+  for (const r of tranquilos) {
+    const k = r.presentacion || '—';
+    if (!porPres.has(k)) porPres.set(k, { presentacion: r.presentacion, cantidad: 0, lotes: [] });
+    const g = porPres.get(k);
+    g.cantidad += Number(r.cantidad) || 0;
+    g.lotes.push(r);
+  }
+
+  const agrupados = [...porPres.values()].map(g => ({
+    ...g,
+    // Con un solo lote no hay nada que compactar: se muestra tal cual, porque
+    // «varios» sobre uno solo es esconder un dato que cabía.
+    unico: g.lotes.length === 1 ? g.lotes[0] : null,
+    // Lo que se lee al pasar el mouse, en `LiquidTooltip` — un `title` nativo
+    // sobre algo que no es un control no lo anuncia ningún lector de pantalla.
+    detalleHover: g.lotes
+      .map(r => `${r.lote || 'sin lote'} · ${fmtVenceCorto(r.fecha_vencimiento)} — ${r.cantidad}`)
+      .join('\n'),
+  }));
+
+  // Lo que vence primero, primero: es el orden en el que hay que decidir.
+  prontos.sort((a, b) => String(a.fecha_vencimiento ?? '').localeCompare(String(b.fecha_vencimiento ?? '')));
+  return { prontos, agrupados };
+}
 
 // ── `Map` y no un objeto: la clave es un NÚMERO disfrazado (2026-08-07) ─────
 // `key` es `String(erp_product_id)`, o sea "2221", "3005"… y `Object.values()`
@@ -291,6 +352,69 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
  *
  * No se ofrece sobre la propia sala: pedirse a uno mismo no es un traslado.
  */
+/**
+ * Los lotes de un producto en una sala, ya compactados.
+ *
+ * Una sola definición para la lista y para el detalle: escrita dos veces, la
+ * próxima corrección volvería a llegar a una sola de las dos — que es
+ * exactamente lo que pasó con la presentación, arreglada en la lista y olvidada
+ * en el detalle hasta que el usuario la reportó.
+ */
+function LotesDeProducto({ lots, danger = false }) {
+  const { prontos, agrupados } = useMemo(() => repartirLotes(lots), [lots]);
+  const tono = danger ? 'text-danger-text' : 'text-content-2';
+  return (
+    <>
+      {prontos.map((row, li) => (
+        <div key={`p${li}`} className="flex items-center gap-2 px-3 py-1.5">
+          <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
+          <ExpiryBadge date={row.fecha_vencimiento} />
+          {row.presentacion && (
+            <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
+              {row.presentacion}
+            </span>
+          )}
+          <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${tono}`}>{row.cantidad}</span>
+        </div>
+      ))}
+
+      {agrupados.map((g, gi) => (
+        <div key={`g${gi}`} className="flex items-center gap-2 px-3 py-1.5">
+          {g.unico ? (
+            <>
+              <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{g.unico.lote || '—'}</span>
+              <ExpiryBadge date={g.unico.fecha_vencimiento} />
+            </>
+          ) : (
+            <>
+              {/* El desglose va en `LiquidTooltip` y no en un `title`: es prosa
+                  sobre un elemento que no es un control, y ahí el `title` nativo
+                  no lo anuncia ningún lector de pantalla (DESIGN.md §15.10).
+                  Cuelga del texto «N lotes», que es lo que se mira. */}
+              <span className="flex-1 min-w-0">
+                <LiquidTooltip content={g.detalleHover} side="top">
+                  <span className="text-micro font-mono text-content-3 underline decoration-dotted underline-offset-2">
+                    {g.lotes.length} lotes
+                  </span>
+                </LiquidTooltip>
+              </span>
+              {/* Sin `ExpiryBadge`: son fechas distintas y ninguna representa al
+                  grupo. Decir «varias» es la verdad; poner una sería elegir. */}
+              <span className="text-micro font-semibold text-content-3 shrink-0">varias fechas</span>
+            </>
+          )}
+          {g.presentacion && (
+            <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
+              {g.presentacion}
+            </span>
+          )}
+          <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${tono}`}>{g.cantidad}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
 function PedirEnFila({ prod, branchName, onPedir }) {
   if (!onPedir || onPedir.miSala === branchName) return null;
   const id  = prod?.lots?.[0]?.erp_product_id;
@@ -377,23 +501,7 @@ function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) 
                       <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
                     </div>
                     <div className="divide-y divide-divider" style={{ background: 'var(--surface-card)' }}>
-                      {prod.lots.map((row, li) => (
-                        <div key={li} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
-                          <ExpiryBadge date={row.fecha_vencimiento} />
-                          {/* La presentación va ANTES de la cantidad y en un
-                              tono que se lea: es lo que le da sentido al
-                              número —24 no quiere decir nada sin saber si son
-                              cajas o unidades—. Antes vivía como una línea
-                              gris bajo el nombre del producto. */}
-                          {row.presentacion && (
-                            <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
-                              {row.presentacion}
-                            </span>
-                          )}
-                          <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">{row.cantidad}</span>
-                        </div>
-                      ))}
+                      <LotesDeProducto lots={prod.lots} />
                     </div>
                   </div>
                 ) : (
@@ -699,48 +807,13 @@ function PanelInventario({ query = '', onQueryChange }) {
                       border: branch.isVencidos ? '1px solid var(--danger)' : '1px solid var(--border-card)',
                     }}
                   >
-                    {/* ── La presentación, también acá (2026-08-07) ──────────
-                        Reportado: «¿por qué si tienen mismo lote y fecha de
-                        vence, los separa en vez de poner un solo total?».
-
-                        No son la misma existencia repetida: son la CAJA, el
-                        BLISTER y la UNIDAD del mismo lote — así los guarda la
-                        farmacia y así los devuelve el inventario. Verificado
-                        sobre la amoxicilina de la captura, lote L5M5137 en La
-                        Popular: 24 CAJA (1x30), 1 BLISTER (1x10) y 3 UNIDAD.
-
-                        Sin la presentación escrita, tres renglones idénticos
-                        con «24 uds», «1 uds» y «3 uds» sólo pueden leerse como
-                        un error. La lista principal ya lo mostraba —«24 no
-                        quiere decir nada sin saber si son cajas o unidades»—;
-                        el detalle se había quedado sin esa lección. */}
-                    {prod.lots.length === 1 ? (
-                      <div className="flex items-center gap-2 px-3 py-2">
-                        <span className="text-micro font-mono text-content-3 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
-                        <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
-                        {prod.lots[0].presentacion && (
-                          <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
-                            {prod.lots[0].presentacion}
-                          </span>
-                        )}
-                        <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{prod.lots[0].cantidad}</span>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-divider">
-                        {prod.lots.map((row, li) => (
-                          <div key={li} className="flex items-center gap-2 px-3 py-1.5">
-                            <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
-                            <ExpiryBadge date={row.fecha_vencimiento} />
-                            {row.presentacion && (
-                              <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
-                                {row.presentacion}
-                              </span>
-                            )}
-                            <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{row.cantidad}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {/* La MISMA definición que la lista, y no una copia: la
+                        presentación se arregló acá el 2026-08-07 después de
+                        haberse arreglado allá, porque estaban escritas dos
+                        veces. `LotesDeProducto` cierra esa puerta. */}
+                    <div className="divide-y divide-divider">
+                      <LotesDeProducto lots={prod.lots} danger={branch.isVencidos} />
+                    </div>
                   </div>
                 </div>
               );

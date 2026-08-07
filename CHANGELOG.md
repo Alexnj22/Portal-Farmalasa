@@ -21,6 +21,102 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.493.0 — la consulta de inventario se compacta, y solo separa lo que vence pronto
+
+Pedido del usuario: «si no hay producto que esté a vencer (6 meses) lo puede
+compactar y poner el total de cajas, en el lote poner varios y en hover verlos,
+al igual la fecha. Ya si vence en 6 meses que sí lo separe».
+
+El criterio de fondo: **un lote merece su propio renglón cuando la fecha cambia
+una decisión.** A más de seis meses no la cambia —da igual de cuál salga— y ocho
+renglones para nueve cajas sólo esconden el número que se venía a buscar. Dentro
+de los seis meses sí: ahí se elige de dónde sale, o se decide no pedirlo.
+
+Antes / después, La Popular con la amoxicilina de la captura:
+
+```
+ANTES                                  DESPUÉS
+L5M5138  01 ago 27  UNIDAD    9        3 lotes  varias fechas  CAJA     26
+L5M5138  01 ago 27  CAJA      1        3 lotes  varias fechas  BLISTER   4
+L5M5137  01 ago 27  CAJA     24        3 lotes  varias fechas  UNIDAD   16
+L5M5138  01 ago 27  BLISTER   2
+L5M5137  01 ago 27  UNIDAD    3        (el desglose, al pasar el mouse)
+LSVF10697 01 nov 27 CAJA      1
+LSVF10697 01 nov 27 BLISTER   2
+LSVF10697 01 nov 27 UNIDAD    4
+```
+
+Tres decisiones que no son cosméticas:
+
+- **Los tranquilos se agrupan por PRESENTACIÓN, no todos juntos.** Un «26» sin
+  decir si son cajas o unidades sería volver al error que se acaba de corregir
+  en v2.490.4.
+- **Con un solo lote no se compacta.** «Varios» sobre uno solo esconde un dato
+  que cabía perfectamente.
+- **El grupo no lleva insignia de vencimiento.** Son fechas distintas y ninguna
+  representa al conjunto: decir «varias fechas» es la verdad, poner una sería
+  elegir por el usuario.
+
+El desglose va en `LiquidTooltip` y no en un `title` nativo: sobre un elemento
+que no es un control, el `title` no lo anuncia ningún lector de pantalla
+(DESIGN.md §15.10) — lo levantó `gate:design` y tenía razón.
+
+Y las filas de lote pasan a **una sola definición** (`LotesDeProducto`) para la
+lista y el detalle. Estaban escritas dos veces, que es exactamente por lo que la
+presentación se arregló en una y quedó rota en la otra hasta el reporte de ayer.
+
+## v2.492.0 — Facturas de Sala pasa a vista principal, canónica
+
+Nació esta mañana como tercera pestaña de Compras (v2.487.0) y el usuario la
+corrigió el mismo día: **«que sea principal y no una pestaña»**, y **«no es una
+vista canónica ni cumple con design»**. Las dos cosas eran ciertas.
+
+**Vista propia en `/facturas-sala`**, dentro del grupo Compras del menú. Tiene
+su propia pregunta —qué tomó cada sala y si terminó cargada como compra—, su
+propio período y su propio ciclo; Compras contesta otra: qué compró Bodega y a
+qué costo. Una pestaña detrás de otra vista es una pantalla que nadie abre.
+
+**Lo que le faltaba del canon**, recorriendo `docs/CHECKLIST-VISTA-NUEVA.md`:
+
+- `GlassViewLayout` con su encabezado, y `ViewTabBar` con el buscador — antes no
+  tenía buscador propio: heredaba el de Compras.
+- Los dos `LiquidSelect` sueltos en una fila pasaron a **`FilterBar`**, que es
+  donde §17 pone los filtros de una vista — y en el teléfono publica solas sus
+  ranuras en la `BarraFlotante`, al alcance del pulgar.
+- **`CarrilCards` + `StatCard`**: sin cargar · atrasadas · cargadas · liberadas.
+  Las cuatro tarjetas **son** el filtro de estado, así que no hay además una
+  sección «estado» en la píldora — dos controles para el mismo dato se leen como
+  dos filtros. Van en la MISMA fila que la píldora con `flex-1` (§17.0): en
+  renglones separados `useMedidaFila` igual encuentra el carril como hermano y
+  le descuenta 314px a la píldora por un carril que no tiene al lado.
+- El aviso escrito a mano con `data-surface="card"` es ahora **`Notice`**, y el
+  error suelto en un `<p>` rojo también.
+- Filtro de **sala**, que es lo que esta pantalla venía a contestar. Las opciones
+  salen de lo cargado: el panel ya trae el nombre de cada sala, así que pedir el
+  catálogo de sucursales sería una consulta de más.
+- En el teléfono la tabla cae sola a **fichas** con `identidad`/`ancla`
+  declarados y `acciones: true` — «Liberar» muta de verdad, que es el único caso
+  en que el canon las dibuja. Verificado en iPhone 13 (WebKit): **0 blancos
+  táctiles por debajo de 44pt**, sin desborde horizontal, y la hoja de la ficha
+  abre con monto, fecha, sala, detalle, quién la tomó y estado.
+
+**Tres defectos que sólo aparecieron al mirarla**, no al compilar: el aviso decía
+«1 factura … $384.68» sumando **todo** lo pendiente cuando esa factura vale
+$184.68 (un total que nadie puede reconciliar es peor que no mostrarlo); los
+nombres y los badges se partían al medio en columnas angostas («ANA / GOMEZ»,
+«SIN / CARGAR»); y un `block` que agregué apagó en silencio el `line-clamp-2` de
+la columna Detalle —las dos utilidades definen `display`— y la celda pasó a cinco
+líneas.
+
+**El permiso siguió a la pantalla** (`20260807200107`): módulo propio
+`facturas_sala` con su capacidad «Ver montos», y los dos RPC aceptan ahora
+`facturas_sala` además de `compras` y `facturas_compra`. Si el RPC hubiera
+seguido exigiendo sólo `compras`, quien reciba el módulo nuevo vería el ítem en
+el menú y un error al abrirlo.
+
+Nota: `routeImporters.js` y `moduleMap.js` entraron en v2.491.0 — el índice de
+git es compartido y ese commit se llevó esas dos líneas mías. El resto va acá.
+
 ## v2.491.0 — Traslados entre Salas tiene vista propia, con el historial que no estaba en ninguna parte
 
 Reportado: «con el widget de traslados entre salas, se creó el módulo verdad?

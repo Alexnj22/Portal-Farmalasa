@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.469.1 — Las fichas vacías, y los dos historiales que pedían deslizar
+
+**Un objeto de configuración es un conjunto de overrides, no un reemplazo del
+default.** `inferirPapeles` trataba a `movil` como excluyente: si la vista
+pasaba un objeto, la inferencia no corría. Entonces
+`movil={{ usarAccionDeFila: true }}` —que es lo único que Productos y Clientes
+querían decir, «el toque va a otro lado»— dejaba `identidad` y `ancla` en
+`undefined` y **la ficha salía vacía**. Reportado por el usuario en Productos
+(«solo hay unas cards vacías»), y afectaba igual a Clientes. Ahora la inferencia
+corre siempre y `movil` sólo pisa lo que declara: quien declara una cosa no está
+renunciando a las otras.
+
+**Y los dos historiales del expediente eran las tablas que faltaban.** Precios
+son nueve columnas —fecha, presentación y los siete niveles, ~900 px— y compras
+cuatro. Eran los únicos que seguían obligando a deslizar de lado dentro de una
+pantalla que ya scrollea. En el panel cada fila pasa a ser un bloque: la compra
+lleva proveedor y fecha a la izquierda con el costo unitario a la derecha, y el
+cambio de precios repite la misma escalera que la sección de presentaciones. En
+escritorio las dos tablas siguen intactas.
+
+Medido en WebKit iPhone 13:
+
+```
+productos   25 fichas · «2PACK PEDIALYTE COCO 60 MEQ X 500 ML · ACTIVO · 7-ABBOTT…»
+clientes    25 fichas · «… · $481.10 · PARCIAL · Consumidor»   (Facturado, de vuelta)
+expediente  tablas restantes: 0 · lo que más sobra: +0 px
+```
+
 ## v2.469.0 — La corrida diaria de fichas deja de depender de una laptop
 
 La limpieza diaria de fichas de clientes corría en una Mac: si estaba apagada a

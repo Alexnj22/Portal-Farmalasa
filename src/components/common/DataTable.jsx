@@ -150,21 +150,28 @@ function inferirPapeles(columns, movil) {
   const utiles = columns.filter(c => (c.label || '').trim() !== '');
   const acciones = columns.filter(c => (c.label || '').trim() === '');
 
-  if (movil && typeof movil === 'object') {
-    const buscar = k => columns.find(c => c.key === k);
-    const ancla = buscar(movil.ancla);
-    const identidad = buscar(movil.identidad);
-    const chips = (movil.chips || []).map(buscar).filter(Boolean);
+  // La inferencia corre SIEMPRE y `movil` sólo pisa lo que declara. La primera
+  // versión trataba al objeto como excluyente: una vista que pasara
+  // `movil={{ usarAccionDeFila: true }}` —sin `ancla` ni `identidad`, porque lo
+  // único que quería era redirigir el toque— se quedaba con las dos en
+  // `undefined` y la ficha salía **vacía**. Lo reportó el usuario en Productos
+  // («solo hay unas cards vacías») y afectaba igual a Clientes.
+  //
+  // Un objeto de configuración es un conjunto de overrides, no un reemplazo del
+  // default: quien declara una cosa no está renunciando a las otras.
+  const buscar = k => (k ? columns.find(c => c.key === k) : undefined);
+  const derechas = utiles.filter(c => c.align === 'right');
+  const ancla = buscar(movil?.ancla)
+    || (derechas.length ? derechas[derechas.length - 1] : utiles[utiles.length - 1]);
+  const identidad = buscar(movil?.identidad) || utiles.find(c => c !== ancla);
+
+  if (movil?.chips) {
+    const chips = movil.chips.map(buscar).filter(Boolean);
     const usadas = new Set([ancla, identidad, ...chips].filter(Boolean).map(c => c.key));
     return { identidad, ancla, chips,
              hoja: utiles.filter(c => !usadas.has(c.key)), acciones };
   }
 
-  // Inferencia. El ancla: la última alineada a la derecha; si no hay ninguna,
-  // la última con etiqueta. La identidad: la primera que no sea el ancla.
-  const derechas = utiles.filter(c => c.align === 'right');
-  const ancla = derechas.length ? derechas[derechas.length - 1] : utiles[utiles.length - 1];
-  const identidad = utiles.find(c => c !== ancla);
   const resto = utiles.filter(c => c !== ancla && c !== identidad);
 
   // ── El contexto: dos columnas, y como LÍNEA, no como píldoras ──────────

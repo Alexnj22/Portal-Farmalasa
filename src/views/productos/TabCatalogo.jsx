@@ -689,7 +689,7 @@ const CLASIF_STYLE = {
     Regular:   { variante: 'chart-1', Icon: Package   },
 };
 
-function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
+function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = false }) {
     const [showAll, setShowAll] = useState(false);
 
     if (!canSeeCosts)
@@ -710,6 +710,25 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
     const lastDate  = allDates.length ? new Date(Math.max(...allDates)) : null;
 
     const visible   = showAll ? rows : rows.slice(0, 8);
+    // En el teléfono la tabla de 4 columnas obliga a deslizar de lado dentro de
+    // un expediente que ya scrollea: cada compra pasa a ser un bloque de dos
+    // líneas, con el costo unitario —el dato por el que se abre este historial—
+    // a la derecha y siempre visible.
+    const filaCompraMovil = (row, i) => (
+        <div key={i} className="flex items-baseline justify-between gap-3 py-2 border-b border-divider last:border-b-0">
+            <div className="min-w-0">
+                <p className="text-body-sm font-bold text-content truncate">
+                    {row.purchase_receipts?.proveedor || 'Sin proveedor'}
+                </p>
+                <p className="text-caption text-content-3 tabular-nums">
+                    {fmtDate(row.purchase_receipts?.fecha)} · {row.cantidad ?? '—'} u.
+                </p>
+            </div>
+            <span className="shrink-0 text-body font-black tabular-nums text-content">
+                {fmtCost(row.precio_unitario)}
+            </span>
+        </div>
+    );
     const fmtDate   = d => d ? new Date(d).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
     const fmtCost   = v => v != null && parseFloat(v) > 0 ? `$${parseFloat(v).toFixed(4)}` : '—';
 
@@ -734,7 +753,10 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
             </div>
 
             {/* Cost history table */}
-            <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
+            {comoPanel ? (
+                <div className="flex flex-col">{visible.map(filaCompraMovil)}</div>
+            ) : (
+                <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
                 <table className="min-w-full text-sm">
                     <thead>
                         <tr className="bg-surface-card-hover/80 border-b border-divider">
@@ -764,6 +786,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
                     </tbody>
                 </table>
             </div>
+            )}
 
             {rows.length > 8 && (
                 <Button variant="ghost" onClick={() => setShowAll(v => !v)}>{showAll ? 'Ver menos' : `Ver ${rows.length - 8} compra${rows.length - 8 !== 1 ? 's' : ''} anterior${rows.length - 8 !== 1 ? 'es' : ''}`}</Button>
@@ -777,7 +800,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
 // corrida del sync aunque el precio no cambie (write-churn preexistente,
 // fuera de alcance del changelog) — se colapsan acá los snapshots
 // consecutivos idénticos por presentación, solo se muestran cambios reales.
-function PriceHistorySection({ history, allowedPriceFields }) {
+function PriceHistorySection({ history, allowedPriceFields, comoPanel = false }) {
     const [showAll, setShowAll] = useState(false);
 
     const deduped = useMemo(() => {
@@ -796,10 +819,34 @@ function PriceHistorySection({ history, allowedPriceFields }) {
 
     const fmtDate = d => d ? new Date(d).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
     const visible = showAll ? deduped : deduped.slice(0, 8);
+    // Fecha y presentación son el encabezado del bloque; los siete niveles, la
+    // misma escalera que la sección de precios. Como tabla son nueve columnas y
+    // ~900px: el único historial del expediente que obligaba a deslizar.
+    const filaPrecioMovil = (row, i) => (
+        <div key={i} data-surface="card" className="rounded-card overflow-hidden mb-2 last:mb-0">
+            <div className="flex items-baseline justify-between gap-3 px-3 py-2 border-b border-divider">
+                <span className="text-body-sm font-bold text-content truncate">
+                    {row.presentaciones?.tipo || '—'}
+                </span>
+                <span className="text-caption text-content-3 tabular-nums shrink-0">
+                    {fmtDate(row.valid_from)}
+                </span>
+            </div>
+            {allowedPriceFields.map(f => (
+                <div key={f.key} className="flex items-baseline gap-3 px-3 py-1.5 border-b border-divider last:border-b-0">
+                    <span className="flex-1 text-caption font-black uppercase tracking-wider text-content-2">{f.label}</span>
+                    <span className="text-body-sm font-black tabular-nums text-content">{fmtP(row[f.key])}</span>
+                </div>
+            ))}
+        </div>
+    );
 
     return (
         <div className="space-y-3">
-            <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
+            {comoPanel ? (
+                <div className="flex flex-col">{visible.map(filaPrecioMovil)}</div>
+            ) : (
+                <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
                 <table className="min-w-full text-sm">
                     <thead>
                         <tr className="bg-surface-card-hover/80 border-b border-divider">
@@ -823,6 +870,7 @@ function PriceHistorySection({ history, allowedPriceFields }) {
                     </tbody>
                 </table>
             </div>
+            )}
             {deduped.length > 8 && (
                 <Button variant="ghost" onClick={() => setShowAll(v => !v)}>{showAll ? 'Ver menos' : `Ver ${deduped.length - 8} cambio${deduped.length - 8 !== 1 ? 's' : ''} anterior${deduped.length - 8 !== 1 ? 'es' : ''}`}</Button>
             )}
@@ -1347,7 +1395,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                             <Package size={9} /> Historial de compras
                         </p>
-                        <PurchaseHistorySection purchases={data?.purchases || []} canSeeCosts={canSeeCosts} />
+                        <PurchaseHistorySection purchases={data?.purchases || []} canSeeCosts={canSeeCosts} comoPanel={comoPanel} />
                     </div>
 
                     {/* ── Historial de precios ── */}
@@ -1355,7 +1403,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                             <History size={9} /> Historial de precios
                         </p>
-                        <PriceHistorySection history={data?.precioHistory || []} allowedPriceFields={allowedPriceFields} />
+                        <PriceHistorySection history={data?.precioHistory || []} allowedPriceFields={allowedPriceFields} comoPanel={comoPanel} />
                     </div>
 
                     {/* ── Cerrar (todo autoguarda: foto, devolutivo, categoría y principios) ── */}

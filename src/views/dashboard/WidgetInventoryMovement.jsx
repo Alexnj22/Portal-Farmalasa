@@ -8,7 +8,7 @@ import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { supabase } from '../../supabaseClient';
-import LanzadorSolicitud, { PieModal } from './LanzadorSolicitud';
+import LanzadorSolicitud, { PieModal, EncabezadoModal } from './LanzadorSolicitud';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
@@ -174,7 +174,7 @@ function SelectorOperacion({ onSelect }) {
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 shrink-0">
                 Tipo de movimiento
             </p>
-            <div className="flex flex-col gap-2 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex flex-col gap-2 flex-1 overflow-y-auto -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {OPERACIONES.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
                     <button
                         key={key}
@@ -197,26 +197,33 @@ function SelectorOperacion({ onSelect }) {
 }
 
 /* ─── Encabezado del armado ───────────────────────────────────────────────── */
+// Va DENTRO del encabezado del modal (ranura `EncabezadoModal`), no debajo.
+// Reportado el 2026-08-07: «no me gusta el doble encabezado que crea, hazlo uno
+// solo». La puerta decía «Ajuste de Inventario / Cargar o descargar producto de
+// tu sala» y esto repetía el gesto justo abajo, con su propio borde: dos
+// títulos para una pantalla. Ahora reemplaza a aquél mientras hay una operación
+// elegida, y al volver atrás reaparece el de la puerta.
+//
+// Sin `border-b` ni `pb-2` propios: el borde lo pone `LiquidModal.Header`. Y sin
+// `flex-col`, porque acá los hijos son los de la fila del encabezado.
 function CabeceraMovimiento({ op, branchName, onBack, lineas, unidades }) {
     const Icon = op.icon;
     return (
-        <div className="flex flex-col gap-1 shrink-0 pb-2 border-b border-divider">
-            <div className="flex items-center gap-2">
-                <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} aria-label="Volver" />
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${op.iconBg}`}>
-                    <Icon size={13} strokeWidth={2} className={op.color} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-body-sm font-black text-content truncate leading-tight">{op.label}</p>
-                    <p className="text-micro text-content-3 leading-tight">{branchName}</p>
-                </div>
-                {lineas > 0 && (
-                    <p className="text-body-sm font-black text-content shrink-0">
-                        {lineas} · {unidades}u
-                    </p>
-                )}
+        <>
+            <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} aria-label="Volver" />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${op.iconBg}`}>
+                <Icon size={16} strokeWidth={2} className={op.color} />
             </div>
-        </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-body font-black text-content truncate leading-tight">{op.label}</p>
+                <p className="text-label text-content-3 mt-0.5 truncate">{branchName}</p>
+            </div>
+            {lineas > 0 && (
+                <p className="text-body-sm font-black text-content shrink-0">
+                    {lineas} · {unidades}u
+                </p>
+            )}
+        </>
     );
 }
 
@@ -339,36 +346,41 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
         return () => { cancelado = true; };
     }, [candidatos]);
 
-    // ── Agregar de la lista de vencidos: de un toque ──────────────────────
-    // Acá la fila YA es una línea: un lote concreto, con su fecha y con las
-    // unidades que vencieron. No hay nada que preguntar —la cantidad propuesta
-    // es la que se va a descargar— y la lista se recorre tildando decenas de
-    // filas. Es el único caso donde el número que viene de `inventory` es la
-    // respuesta y no el tope.
-    const agregarDeVencidos = useCallback(async (fila) => {
-        const pres = presPorProducto.get(fila.erp_product_id) ?? [];
-        const unidad = pres.find(p => p.factor === 1) ?? pres[0];
-        setLineas(prev => [...prev, {
-            id: `l${++contador}`,
-            erp_product_id: fila.erp_product_id,
-            descripcion: fila.descripcion,
-            tipo:   unidad?.tipo ?? 'UNIDAD',
-            factor: unidad?.factor ?? 1,
-            cantidad: String(fila.cantidad ?? 1),
-            existencia: fila.cantidad ?? null,
-            lote:  fila.lote && fila.lote !== 'GENERICO' ? fila.lote : '',
-            vence: fila.fecha_vencimiento ?? '',
-            loteNuevo: false,
-        }]);
-        if (!lotesPorProducto.has(fila.erp_product_id)) {
-            const { lotes } = await fetchLotesDeProducto({
-                erpProductId: fila.erp_product_id, erpSucursalId,
-            });
-            setLotesPorProducto(prev => new Map(prev).set(fila.erp_product_id, lotes));
-        }
-    }, [presPorProducto, lotesPorProducto, erpSucursalId]);
+    // ── El buscador de la lista de vencidos ───────────────────────────────
+    // Reportado el 2026-08-07: «aquí no me deja buscar productos». Y era cierto:
+    // por vencimiento sólo había un plazo, y el plazo más ancho devuelve el tope
+    // de la lista — decenas de filas que hay que recorrer con el dedo para
+    // encontrar una.
+    //
+    // Filtra en memoria y NO vuelve a la base: acá la lista completa ya está
+    // cargada, así que pedirla otra vez por texto sería un viaje para ordenar lo
+    // que ya está en la mano. Es la diferencia con el buscador de las otras
+    // operaciones, donde el universo es el catálogo entero.
+    const visibles = useMemo(() => {
+        if (!porVencimiento) return candidatos;
+        const q = busqueda.trim().toLowerCase();
+        if (!q) return candidatos;
+        // El rango de tildes combinantes va con escape Unicode y no con los
+        // glifos: en un archivo fuente son invisibles y se pierden al editar.
+        const limpia = (s) => String(s ?? '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const t = limpia(q);
+        return candidatos.filter(f => limpia(f.descripcion).includes(t) || limpia(f.lote).includes(t));
+    }, [candidatos, busqueda, porVencimiento]);
 
-    const abrirBorrador = useCallback(async (fila) => {
+    // ── Abrir una fila en el compositor ───────────────────────────────────
+    // Por vencimiento la fila YA es una línea: un lote concreto, con su fecha y
+    // con las unidades que vencieron. Por eso entra con todo prellenado —
+    // cantidad, lote y vencimiento— y el compositor sólo pide confirmar.
+    //
+    // Antes se agregaba de un toque, sin pasar por acá: la cantidad propuesta se
+    // daba por buena porque «no hay nada que preguntar». Corregido el 2026-08-07
+    // a pedido del usuario («aquí no me deja poner la cantidad»): que el número
+    // venga del inventario no significa que sea el que se quiere descargar —
+    // puede que de las 3 unidades vencidas se descarten 2 y una se devuelva al
+    // proveedor. El paso extra es teclear Enter, porque el foco cae en la
+    // cantidad y ya trae el total escrito.
+    const abrirBorrador = useCallback(async (fila, { prellenar = false } = {}) => {
         const pres = presPorProducto.get(fila.erp_product_id) ?? [];
         const unidad = pres.find(p => p.factor === 1) ?? pres[0];
         setUltimo('');
@@ -377,9 +389,11 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             descripcion: fila.descripcion,
             tipo:   unidad?.tipo ?? 'UNIDAD',
             factor: unidad?.factor ?? 1,
-            cantidad: '',
+            cantidad: prellenar ? String(fila.cantidad ?? 1) : '',
             existencia: fila.cantidad ?? null,
-            lote: '', vence: '', loteNuevo: false,
+            lote:  prellenar && fila.lote && fila.lote !== 'GENERICO' ? fila.lote : '',
+            vence: prellenar ? (fila.fecha_vencimiento ?? '') : '',
+            loteNuevo: false,
         });
 
         const token = ++pedidoLotes.current;
@@ -405,12 +419,15 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     // «Cargar producto» y lo único que sigue es teclear el nombre.
     //
     // Corre también al cerrar el compositor, que es el «y luego el siguiente».
-    // La lista de vencidos queda fuera: ahí no hay buscador, hay un plazo.
+    //
+    // Antes la lista de vencidos quedaba fuera —«ahí no hay buscador, hay un
+    // plazo»—, pero desde el 2026-08-07 sí lo hay: filtra la lista ya cargada.
+    // Así que ahora también recibe el foco.
     useEffect(() => {
-        if (!op || porVencimiento || borrador || pestana !== 'agregar') return undefined;
+        if (!op || borrador || pestana !== 'agregar') return undefined;
         const t = setTimeout(() => buscadorRef.current?.focus(), 80);
         return () => clearTimeout(t);
-    }, [op, porVencimiento, borrador, pestana]);
+    }, [op, borrador, pestana]);
 
     const quitar = useCallback(id => setLineas(prev => prev.filter(l => l.id !== id)), []);
     const editar = useCallback((id, patch) =>
@@ -589,10 +606,12 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
 
     return (
         <div className="flex flex-col gap-3 flex-1 min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
-            <CabeceraMovimiento
-                op={op} branchName={branchName} onBack={volver}
-                lineas={totales.lineas} unidades={totales.unidades}
-            />
+            <EncabezadoModal>
+                <CabeceraMovimiento
+                    op={op} branchName={branchName} onBack={volver}
+                    lineas={totales.lineas} unidades={totales.unidades}
+                />
+            </EncabezadoModal>
 
             {/* ── Dos lugares, no una franja ────────────────────────────────
                 Reportado: «¿cómo agrego más? si agrego uno, que se vaya a un
@@ -621,17 +640,29 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                 lista debajo que mirar, y dejarlo invita a escribir encima y
                 perder lo que se estaba armando. */}
             {pestana === 'agregar' && !borrador && (
-              <div className="shrink-0">
-                {porVencimiento
-                    ? <LiquidSelect nano clearable={false} value={plazo} onChange={setPlazo} options={PLAZOS} />
-                    : (
-                        <SearchInput
-                            ref={buscadorRef}
-                            accentColor="var(--warning)"
-                            value={busqueda} onChange={setBusqueda}
-                            placeholder="Buscar producto para agregar…"
-                        />
-                    )}
+              <div className="shrink-0 flex items-center gap-2">
+                {/* Por vencimiento van LOS DOS: el plazo elige de qué universo
+                    se habla y el buscador encuentra dentro de él. Con el plazo
+                    más ancho la lista llega al tope y encontrar una fila era
+                    recorrerla entera con el dedo. */}
+                {porVencimiento && (
+                    <div className="shrink-0">
+                        <LiquidSelect nano clearable={false} value={plazo} onChange={setPlazo} options={PLAZOS} />
+                    </div>
+                )}
+                <div className="flex-1 min-w-0">
+                    <SearchInput
+                        ref={buscadorRef}
+                        accentColor="var(--warning)"
+                        value={busqueda} onChange={setBusqueda}
+                        placeholder={porVencimiento
+                            ? 'Buscar en la lista…'
+                            : 'Buscar producto para agregar…'}
+                        ariaLabel={porVencimiento
+                            ? 'Buscar dentro de lo que vence'
+                            : 'Buscar producto para agregar'}
+                    />
+                </div>
               </div>
             )}
 
@@ -651,7 +682,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                 el estado: antes entraba a medio llenar con la existencia de la
                 sala como cantidad, y se terminaba en la otra pestaña. */}
             {pestana === 'agregar' && borrador && (
-              <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <div data-surface="card" className="p-3 flex flex-col gap-3">
                     <div className="flex items-start gap-2">
                         <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly
@@ -818,7 +849,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
 
             {/* El banco: lo que ya va en la solicitud */}
             {pestana === 'banco' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {lineas.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3 px-4 text-center py-8">
                         <op.icon size={26} strokeWidth={1.5} />
@@ -998,7 +1029,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
 
             {/* De dónde se agrega */}
             {pestana === 'agregar' && !borrador && (
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {cargando && <div className="flex justify-center py-6"><SkeletonText lines={3} className="w-full max-w-md" /></div>}
 
                 {!cargando && hayMas && (
@@ -1007,7 +1038,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                     </p>
                 )}
 
-                {!cargando && candidatos.length === 0 && (
+                {!cargando && visibles.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3 px-4 text-center py-6">
                         <op.icon size={26} strokeWidth={1.5} />
                         <p className="text-body-sm font-semibold">
@@ -1020,7 +1051,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                     </div>
                 )}
 
-                {!cargando && candidatos.map(f => {
+                {!cargando && visibles.map(f => {
                     const dias = diasHasta(f.fecha_vencimiento);
                     // Por vencimiento la fila ES un lote, así que repetirla sería
                     // descargar dos veces el mismo. En el buscador la fila es un
@@ -1038,7 +1069,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                             key={`${f.erp_product_id}|${f.lote ?? ''}|${f.fecha_vencimiento ?? ''}`}
                             onClick={() => {
                                 if (bloqueada) return;
-                                if (porVencimiento) agregarDeVencidos(f); else abrirBorrador(f);
+                                abrirBorrador(f, { prellenar: porVencimiento });
                             }}
                             leading={<Plus size={14} className={bloqueada ? 'text-content-3' : 'text-brand-text'} strokeWidth={2.5} />}
                             className={`border-divider bg-surface-card ${bloqueada ? 'opacity-50' : 'hover:border-brand/40'}`}

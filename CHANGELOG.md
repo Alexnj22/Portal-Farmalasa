@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.7 — un solo encabezado, buscador en vencidos y sombras que no se cortan
+
+Tres reportes con captura sobre el Ajuste de Inventario.
+
+**1 · El doble encabezado.** El modal decía «Ajuste de Inventario / Cargar o
+descargar producto de tu sala» y justo debajo, con su propio borde, «Descargar
+por vencimiento / La Popular». Dos títulos para una sola pantalla.
+
+`LanzadorSolicitud` gana una tercera ranura, `EncabezadoModal`, hermana de las
+dos que ya tenía. Lo que se portalea ahí **reemplaza** al título de la puerta en
+vez de sumarse; el botón de cerrar se queda, porque ése es de la puerta. Con una
+operación elegida el encabezado ES la operación —con su vuelta atrás y su
+contador—, y al volver reaparece el de siempre.
+
+La registración de las ranuras pasa de `useEffect` a `useLayoutEffect`: ahora la
+cuenta de inquilinos decide **qué se dibuja**, así que con un efecto normal el
+navegador alcanzaba a pintar un fotograma con los dos encabezados antes de que
+la cuenta subiera. Para el pie no cambia nada; acá es la diferencia entre un
+parpadeo y ninguno.
+
+**2 · En «Descargar por vencimiento» no se podía buscar ni fijar la cantidad.**
+
+- **Buscador**: sólo había un plazo, y el plazo más ancho devuelve el tope de la
+  lista — decenas de filas que recorrer con el dedo. Ahora van los dos: el plazo
+  elige el universo y el buscador encuentra dentro de él, filtrando **en memoria**
+  (la lista ya está cargada; pedirla de nuevo por texto sería un viaje para
+  ordenar lo que ya está en la mano). El foco al entrar ahora también cae acá.
+- **Cantidad**: la fila se agregaba de un toque con la cantidad vencida completa,
+  por una decisión escrita —«no hay nada que preguntar»—. **Se revierte a pedido
+  del usuario**: que el número venga del inventario no lo hace el que se quiere
+  descargar; de 3 unidades vencidas pueden descartarse 2 y devolverse una al
+  proveedor. Ahora la fila entra al mismo compositor que el resto, ya prellenada
+  con cantidad, lote y vencimiento, así que el costo es teclear Enter.
+
+**3 · Las sombras cortadas.** No había ningún `hidden`: es la regla de CSS de que
+**si un eje del `overflow` deja de ser `visible`, el otro pasa de `visible` a
+`auto`**. O sea que `overflow-y-auto` recorta también en horizontal, y ahí se
+comía la sombra de las tarjetas contra los bordes del scroller. Los cuatro
+scrollers del widget van ahora con `-mx-1 px-1 py-0.5`: se abren un poco y se
+rellenan igual, así la tarjeta no se mueve y la sombra queda adentro del recorte.
+
 ## v2.489.6 — El mismo defecto de orden, barrido en el resto del portal
 
 Pedido después de arreglarlo en la Consulta de Inventario: buscar el mismo

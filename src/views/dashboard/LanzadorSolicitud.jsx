@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect, useContext, createContext } from 'react';
+import React, { useState, useCallback, useMemo, useLayoutEffect, useContext, createContext } from 'react';
 import { createPortal } from 'react-dom';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
@@ -54,9 +54,30 @@ const RanurasCtx = createContext(null);
 function Ranura({ nombre, children }) {
     const ctx = useContext(RanurasCtx);
     const registrar = ctx?.registrar;
-    useEffect(() => registrar?.(nombre), [registrar, nombre]);
+    // `useLayoutEffect` y no `useEffect`: la cuenta de inquilinos DECIDE QUÉ SE
+    // DIBUJA —el encabezado propio reemplaza al de la puerta— así que con un
+    // efecto normal el navegador alcanza a pintar un fotograma con los dos
+    // encabezados antes de que la cuenta suba. Acá el ajuste entra antes de
+    // pintar. Para el pie no cambia nada; para el encabezado es la diferencia
+    // entre un parpadeo y ninguno.
+    useLayoutEffect(() => registrar?.(nombre), [registrar, nombre]);
     const nodo = ctx?.nodos?.[nombre];
     return nodo ? createPortal(children, nodo) : null;
+}
+
+/**
+ * El encabezado del modal, cuando el contenido tiene el suyo.
+ *
+ * REEMPLAZA al título de la puerta en vez de sumarse. Reportado el 2026-08-07:
+ * «no me gusta el doble encabezado que crea, hazlo uno solo». Y era literal —
+ * el Ajuste de Inventario mostraba «Ajuste de Inventario / Cargar o descargar
+ * producto de tu sala» y justo debajo, con su propio borde, «Descargar por
+ * vencimiento / La Popular». Dos títulos para una sola pantalla.
+ *
+ * La puerta conserva el botón de cerrar: eso no es del contenido.
+ */
+export function EncabezadoModal({ children }) {
+    return <Ranura nombre="encabezado">{children}</Ranura>;
 }
 
 /** Controles que van en el ENCABEZADO del modal (buscador, filtro de fecha). */
@@ -109,7 +130,7 @@ export default function LanzadorSolicitud({
     const acento = hay ? TONOS[tono] ?? TONOS.brand : APAGADO;
 
     const [nodos, setNodos] = useState({});
-    const [inquilinos, setInquilinos] = useState({ herramientas: 0, pie: 0 });
+    const [inquilinos, setInquilinos] = useState({ herramientas: 0, pie: 0, encabezado: 0 });
 
     // Callbacks estables: un `ref` inline cambia de identidad en cada render y
     // React lo llama con `null` y con el nodo cada vez — con un `setState`
@@ -119,6 +140,9 @@ export default function LanzadorSolicitud({
     }, []);
     const refPie = useCallback((el) => {
         setNodos(n => (n.pie === el ? n : { ...n, pie: el }));
+    }, []);
+    const refEncabezado = useCallback((el) => {
+        setNodos(n => (n.encabezado === el ? n : { ...n, encabezado: el }));
     }, []);
 
     const registrar = useCallback((nombre) => {
@@ -180,15 +204,27 @@ export default function LanzadorSolicitud({
                     <RanurasCtx.Provider value={ranuras}>
                         <LiquidModal.Header>
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
-                                    <Icon size={16} strokeWidth={2} className="text-content-2" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-body font-black text-content leading-tight truncate">{label}</p>
-                                    {descripcion && (
-                                        <p className="text-label text-content-3 mt-0.5 truncate">{descripcion}</p>
-                                    )}
-                                </div>
+                                {/* `contents`: lo que se portalea acá SON los
+                                    hijos directos de esta fila, así que hereda su
+                                    reparto en vez de quedar encajonado. Mismo
+                                    motivo que en el pie. */}
+                                <div ref={refEncabezado} className="contents" />
+                                {/* El título de la puerta cede el lugar cuando el
+                                    contenido trae el suyo. El botón de cerrar NO:
+                                    ése es de la puerta y se queda siempre. */}
+                                {inquilinos.encabezado === 0 && (
+                                  <>
+                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
+                                        <Icon size={16} strokeWidth={2} className="text-content-2" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-body font-black text-content leading-tight truncate">{label}</p>
+                                        {descripcion && (
+                                            <p className="text-label text-content-3 mt-0.5 truncate">{descripcion}</p>
+                                        )}
+                                    </div>
+                                  </>
+                                )}
                                 <Button variant="ghost" size="xs" icon={X} iconOnly
                                     onClick={cerrar} aria-label="Cerrar" />
                             </div>

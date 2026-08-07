@@ -278,6 +278,36 @@ function bandaArea(texto, n, ncols) {
     ];
 }
 
+// Agrupa los renglones YA ordenados en bloques de laboratorio contiguos. Lo
+// usan las dos hojas: cada bloque termina siendo su propia tabla.
+function porLaboratorio(items) {
+    const grupos = [];
+    let actual;
+    sortItems(items).forEach((item) => {
+        const lab = item.laboratorio_nombre || null;
+        if (!grupos.length || lab !== actual) { actual = lab; grupos.push({ lab, items: [] }); }
+        grupos[grupos.length - 1].items.push(item);
+    });
+    return grupos;
+}
+
+// Cada laboratorio es UNA TABLA, no un renglón de banda dentro de una tabla
+// grande. Es la única forma de que pdfmake repita su nombre al saltar de página:
+// `headerRows` se repite por TABLA, así que con una sola tabla la banda salía
+// una vez y la página siguiente empezaba con productos sin decir de quién eran.
+// Se repiten las dos filas —el laboratorio y los rótulos de columna— porque en
+// una hoja que se llena a mano y se reparte por páginas sueltas, saber cuál
+// casilla es «Físico» importa tanto como saber de qué laboratorio se habla.
+//
+// Cuesta: 318 laboratorios × 2 filas de cabecera contra las 318 bandas de antes,
+// o sea +318 renglones sobre los 2,240 de la hoja compacta.
+function tablaDeLaboratorio({ widths, bandaLab, headerRow, filas, layout }) {
+    return {
+        table: { headerRows: 2, dontBreakRows: true, widths, body: [bandaLab, headerRow, ...filas] },
+        layout,
+    };
+}
+
 // El corte de laboratorio. La hoja SIEMPRE vino ordenada por laboratorio —es el
 // orden en que se recorre el anaquel— pero no lo decía en ninguna parte: en 93
 // páginas no había forma de saber dónde termina uno y empieza el siguiente.
@@ -366,50 +396,46 @@ function buildHojaTableCompacta(conteo, items, ciego, area = null) {
     const anchos = mitad.map((w) => anchoDeColumna(w, ANCHO_UTIL_APAISADO));
 
     const headerRow = [...rotulos, ...rotulos].map((label) => ({
-        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7, color: '#000',
+        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7, color: '#000', noWrap: true,
         alignment: ['Vence', 'Sistema', 'Físico'].includes(label) ? 'center' : 'left',
-        margin: PAD_COMPACTO,
+        margin: [4, 2.5, 4, 2],
     }));
 
-    // Primero se agrupa por laboratorio y después se empareja dentro de cada
-    // grupo — al revés, un par podría quedar a caballo de dos bandas.
-    const grupos = [];
-    let labActual;
-    sortItems(items).forEach((item) => {
-        const lab = item.laboratorio_nombre || null;
-        if (lab !== labActual || !grupos.length) { labActual = lab; grupos.push({ lab, items: [] }); }
-        grupos[grupos.length - 1].items.push(item);
-    });
+    const layout = {
+        ...LAYOUT_TABLA,
+        // La vertical del medio, más gruesa: separa el producto de la izquierda
+        // del de la derecha. Sin ella las ocho columnas se leen como una tabla
+        // de ocho y no como dos de cuatro.
+        vLineWidth: (i2, node) => (i2 === 0 || i2 === node.table.widths.length ? 0.8 : i2 === nMitad ? 1.6 : 0.5),
+    };
 
-    const body = [];
-    let iDato = 0;
-    grupos.forEach(({ lab, items: propios }) => {
-        body.push(bandaLaboratorio(lab, widths.length));
+    const tablas = porLaboratorio(items).map(({ lab, items: propios }) => {
+        const filas = [];
         for (let k = 0; k < propios.length; k += 2) {
-            const bg = iDato % 2 === 1 ? '#f7f7f7' : '#ffffff';
-            iDato += 1;
+            const bg = (k / 2) % 2 === 1 ? '#f7f7f7' : '#ffffff';
             const izq = celdasProductoCompacto(propios[k], { simple, ciego, bg, anchos });
             const der = propios[k + 1]
                 ? celdasProductoCompacto(propios[k + 1], { simple, ciego, bg, anchos })
                 : Array(nMitad).fill({ text: '', fillColor: bg, margin: PAD_COMPACTO });
-            body.push([...izq, ...der]);
+            filas.push([...izq, ...der]);
         }
+        return tablaDeLaboratorio({
+            widths, headerRow, filas, layout,
+            bandaLab: bandaLaboratorio(lab, widths.length),
+        });
     });
 
-    const cabeceras = area
-        ? [bandaArea(area, items.length, widths.length), headerRow]
-        : [headerRow];
+    return area ? [bloqueArea(area, items.length), ...tablas] : tablas;
+}
 
+// El área, como bloque suelto encima de sus tablas. Dejó de ser una fila de
+// cabecera porque las tablas ahora son una por laboratorio: repetirla en cada
+// una la habría impreso 318 veces.
+function bloqueArea(texto, n) {
     return {
-        table: { headerRows: cabeceras.length, dontBreakRows: true, widths, body: [...cabeceras, ...body] },
-        layout: {
-            ...LAYOUT_TABLA,
-            // La línea vertical del medio, más gruesa: es la que separa el
-            // producto de la izquierda del de la derecha, y sin ella las ocho
-            // columnas se leen como una sola tabla de ocho.
-            vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : i === nMitad ? 1.6 : 0.5),
-            paddingTop: () => 0, paddingBottom: () => 0,
-        },
+        text: `  ${texto} — ${n} línea(s)  `,
+        fontSize: 9, bold: true, color: '#ffffff', background: '#4b5563',
+        margin: [0, 0, 0, 5],
     };
 }
 
@@ -423,6 +449,7 @@ const LAYOUT_TABLA = {
 function buildHojaTable(conteo, items, ciego, area = null) {
     const simple = esSimple(conteo);
     const { widths, labels } = HOJA_COLS[simple ? 'simple' : 'lote'][ciego ? 'ciego' : 'normal'];
+    const anchos = widths.map((w) => anchoDeColumna(w, ANCHO_UTIL_VERTICAL));
 
     const headerRow = labels.map((label) => ({
         text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7, color: '#000', noWrap: true,
@@ -432,10 +459,9 @@ function buildHojaTable(conteo, items, ciego, area = null) {
 
     // Mismo criterio que la compacta: UN renglón, UNA línea. Acá la columna de
     // producto es ancha (34% de la vertical ≈ 190pt), así que a cuerpo 8 entran
-    // ~44 caracteres y el recorte casi nunca llega a aplicarse — pero las filas
-    // dejan de medir el doble cuando llega un nombre largo o un «Bajo Receta».
-    const anchos = widths.map((w) => anchoDeColumna(w, ANCHO_UTIL_VERTICAL));
-    const body = cuerpoConCortes(items, widths.length, (item, bg) => {
+    // ~44 caracteres y el recorte casi nunca llega a aplicarse — pero la fila
+    // deja de medir el doble cuando llega un nombre largo o un «Bajo Receta».
+    const fila = (item, bg) => {
         const comun = { fillColor: bg, color: '#333' };
         let c = 1;   // 0 es la de producto, que arma `productCellLinea`
         const cel = (texto, fontSize, resto = {}) =>
@@ -453,16 +479,15 @@ function buildHojaTable(conteo, items, ciego, area = null) {
             { text: '', fillColor: bg, margin: PAD_COMPACTO },   // Físico: se llena a mano
             { text: '', fillColor: bg, margin: PAD_COMPACTO },   // Nota: idem
         ];
-    });
-
-    const cabeceras = area
-        ? [bandaArea(area, items.length, widths.length), headerRow]
-        : [headerRow];
-
-    return {
-        table: { headerRows: cabeceras.length, dontBreakRows: true, widths, body: [...cabeceras, ...body] },
-        layout: LAYOUT_TABLA,
     };
+
+    const tablas = porLaboratorio(items).map(({ lab, items: propios }) => tablaDeLaboratorio({
+        widths, headerRow, layout: LAYOUT_TABLA,
+        bandaLab: bandaLaboratorio(lab, widths.length),
+        filas: propios.map((item, k) => fila(item, k % 2 === 1 ? '#f7f7f7' : '#ffffff')),
+    }));
+
+    return area ? [bloqueArea(area, items.length), ...tablas] : tablas;
 }
 
 function footerFirmas(labelIzq, labelDer) {
@@ -476,20 +501,20 @@ function footerFirmas(labelIzq, labelDer) {
     });
 }
 
-// La promesa se resuelve cuando el archivo YA se descargó, no cuando se pidió.
-// `download()` no devuelve promesa: acepta un callback y sin él la función salía
-// enseguida, así que quien la esperaba apagaba su spinner justo antes de la
-// parte lenta —armar el documento y cargar las fuentes—. Con 3,700 renglones
-// eso son varios segundos con el botón diciendo que ya terminó.
+// La promesa se resuelve cuando el archivo YA se descargó, no cuando se pidió:
+// armar el documento y cargar las fuentes son varios segundos con 3,700
+// renglones, y sin esperarlos el spinner se apagaba justo antes de la parte
+// lenta.
+//
+// En pdfmake 0.3 `download(filename)` **devuelve una promesa** y NO acepta
+// callback (`OutputDocumentBrowser.download` es `async` y su única firma es el
+// nombre del archivo). La primera versión de esto le pasaba un `resolve` como
+// segundo argumento: pdfmake lo ignoraba, la promesa envolvente no se resolvía
+// nunca y el botón se quedaba cargando para siempre — al revés del bug que
+// venía a arreglar.
 async function downloadPdf(docDefinition, filename) {
     const pdfMake = await getPdfMake();
-    await new Promise((resolve, reject) => {
-        try {
-            pdfMake.createPdf(docDefinition).download(filename, resolve);
-        } catch (err) {
-            reject(err);
-        }
-    });
+    await pdfMake.createPdf(docDefinition).download(filename);
 }
 
 // items: filas de get_conteo_items_jsonb. ciego=true oculta la columna Sistema.
@@ -503,12 +528,14 @@ export async function printHojaConteo(conteo, items, { ciego = false, compacta =
     // El salto va EN la tabla y no en un nodo de texto vacío en medio: un nodo
     // sin contenido es justo lo que un preprocesador puede descartar, y con él
     // se iría el salto.
+    // Los constructores devuelven un ARRAY —una tabla por laboratorio—, así que
+    // el salto de página va sobre el PRIMER nodo del área de vencidos y no
+    // sobre "la tabla", que ya no existe como nodo único.
+    const bloque = (its, area) => construir(conteo, its, ciego, area);
+    const conSalto = (nodos) => nodos.map((n, i) => (i === 0 ? { ...n, pageBreak: 'before' } : n));
     const content = partido
-        ? [
-            construir(conteo, normales, ciego, 'ÁREA NORMAL'),
-            { ...construir(conteo, vencidos, ciego, 'ÁREA DE VENCIDOS'), pageBreak: 'before' },
-        ]
-        : [construir(conteo, items, ciego)];
+        ? [...bloque(normales, 'ÁREA NORMAL'), ...conSalto(bloque(vencidos, 'ÁREA DE VENCIDOS'))]
+        : bloque(items, null);
 
     const docDefinition = {
         pageSize: 'LETTER',

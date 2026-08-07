@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.512.1 — Conteo: el laboratorio se repite al saltar de página y el botón deja de cargar
+
+**El botón «Imprimir» se quedaba cargando para siempre, y fue culpa del arreglo
+anterior.** v2.510.0 lo hizo esperar a que el archivo bajara pasándole un
+callback a `download()`. En pdfmake 0.3 esa función es `async` y su única firma
+es el nombre del archivo: el callback se ignoraba, la promesa que lo envolvía no
+se resolvía nunca y el spinner no se apagaba jamás. Ahora se espera la promesa
+que `download()` ya devuelve.
+
+**El laboratorio se repite al saltar de página.** Antes la banda salía una vez y
+la página siguiente empezaba con productos sin decir de quién eran. La causa es
+que `headerRows` de pdfmake se repite **por tabla**, y todo iba en una sola: ahora
+cada laboratorio es su propia tabla, con su nombre y los rótulos de columna como
+filas de cabecera. Los dos se repiten en cada página que el laboratorio ocupe —
+saber cuál casilla es «Físico» importa tanto como saber de qué laboratorio se
+habla cuando la hoja se reparte por páginas sueltas.
+
+Cuesta **+318 renglones** (318 laboratorios × 2 filas de cabecera, contra las 318
+bandas de antes): la hoja compacta pasa de 2,240 a 2,558 renglones impresos.
+
+**Sobre juntar dos laboratorios en un mismo renglón de la compacta** — medido, no
+conviene: los pares se arman dentro de cada laboratorio y eso cuesta **89
+renglones** sobre 1,922 (hay 179 laboratorios con cantidad impar, 76 con un solo
+producto). Son unas dos páginas a cambio de un renglón cuya mitad izquierda es de
+un laboratorio y la derecha de otro, justo debajo de una banda que nombra uno
+solo.
+
 ## v2.512.0 — aviso a la sala cuando llega una factura que ya es suya
 
 Pedido del usuario: «las de Movistar son directas para cada sucursal, ¿podemos

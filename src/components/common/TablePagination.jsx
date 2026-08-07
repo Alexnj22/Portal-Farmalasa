@@ -26,7 +26,7 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
  *       siete botones sin nombre.
  *   7 · En móvil se partía en tres filas y empujaba la tabla fuera de pantalla.
  *
- * Ahora: una sola píldora, orden de lectura (rango → navegación → tamaño), 3
+ * Ahora: una sola píldora, orden de lectura (tamaño → navegación → rango), 3
  * paradas de tabulación, `<nav>` con `aria-live`, y el hover sale de
  * `--lift-hover` — o sea que en Solid no se levanta.
  *
@@ -121,18 +121,40 @@ export default function TablePagination({
     // PLAN-MATERIALES §15.2. Antes era un `inline-flex` que quedaba pegado a una
     // esquina: ni centrado ni ocupando el ancho, o sea leyéndose como un
     // elemento que se quedó donde cayó. Ahora es una grilla `1fr auto 1fr`
-    // —cuántas páginas · pasar página · cuánto hay— y NO un `space-between` de
-    // dos bloques: con la grilla el paginador queda en el centro REAL del ancho
-    // y no se corre según lo largo que sea el texto de los costados.
+    // —cuántas filas mostrar · pasar página · cuánto hay— y NO un
+    // `space-between` de dos bloques: con la grilla el paginador queda en el
+    // centro REAL del ancho y no se corre según lo largo que sea el texto de
+    // los costados.
     return (
         <nav ref={rootRef} aria-label="Paginación"
             className="grid grid-cols-[1fr_auto_1fr] items-center w-full h-[52px] px-3 rounded-card
                 border border-border-card bg-surface-card shadow-[var(--shadow-glass-1)]">
 
-            {/* zona 1 · cuántas páginas hay */}
-            <span className="justify-self-start text-body-sm text-content-2 whitespace-nowrap tabular-nums">
-                <b className="text-content font-black">{totalPages.toLocaleString()}</b>
-                <span className="text-content-3"> {totalPages === 1 ? 'página' : 'páginas'}</span>
+            {/* zona 1 · cuántas filas por página
+                Acá vivía "40 páginas", que decía lo mismo que el "/40" del
+                centro — dos veces el mismo número, y el de la izquierda encima
+                sin la mitad que importa (en cuál estoy). En su lugar va el
+                único control que faltaba, que además gana lo que le faltaba a
+                la derecha: espacio libre para abrir su lista sin chocar contra
+                el borde de la ventana. */}
+            <span className="justify-self-start flex items-center gap-1.5">
+                {onPageSizeChange && (
+                <>
+                    <span className="text-micro font-black uppercase tracking-widest text-content-3">Ver</span>
+                    <LiquidSelect
+                        value={String(pageSize)}
+                        onChange={v => navegar(() => { onPageSizeChange(Number(v)); onPageChange(1); })}
+                        options={PAGE_SIZE_OPTIONS.map(n => ({ value: String(n), label: String(n) }))}
+                        ariaLabel="Filas por página"
+                        // `nano` y no `compact bare`: la primera versión
+                        // mostraba lupa y × de limpiar. No se busca entre
+                        // tres opciones, y "limpiar" el tamaño de página no
+                        // significa nada — dejaría la tabla sin saber
+                        // cuántas filas mostrar.
+                        nano clearable={false}
+                    />
+                </>
+                )}
             </span>
 
             {/* zona 2 · pasar página — al centro real del ancho */}
@@ -192,27 +214,6 @@ export default function TablePagination({
                     )}
                     <span className="text-content-3"> {unit}</span>
                 </span>
-                {/* el tamaño de página: un selector, no un segmentado azul — así
-                    deja de competir con la página activa por significar "activo" */}
-                {onPageSizeChange && (
-                <>
-                    <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
-                    <span className="flex items-center gap-1.5">
-                        <span className="text-micro font-black uppercase tracking-widest text-content-3">Ver</span>
-                        <LiquidSelect
-                            value={String(pageSize)}
-                            onChange={v => navegar(() => { onPageSizeChange(Number(v)); onPageChange(1); })}
-                            options={PAGE_SIZE_OPTIONS.map(n => ({ value: String(n), label: String(n) }))}
-                            // `nano` y no `compact bare`: la primera versión
-                            // mostraba lupa y × de limpiar. No se busca entre
-                            // tres opciones, y "limpiar" el tamaño de página no
-                            // significa nada — dejaría la tabla sin saber
-                            // cuántas filas mostrar.
-                            nano clearable={false}
-                        />
-                    </span>
-                </>
-                )}
             </span>
         </nav>
     );

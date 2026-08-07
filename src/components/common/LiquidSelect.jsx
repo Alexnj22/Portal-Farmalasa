@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, useId } from 'react';
 import { ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
@@ -76,6 +76,7 @@ const LiquidSelect = ({
     // 🚨 ESTADO AMPLIADO PARA POSICIONAMIENTO INTELIGENTE
     const [coords, setCoords] = useState({
         top: 0,
+        bottom: 0,
         left: 0,
         width: 0,
         maxHeight: 300,
@@ -122,10 +123,15 @@ const LiquidSelect = ({
         [options, value]);
 
     // 🚨 CEREBRO DE POSICIONAMIENTO Y COLISIÓN DE BORDES
-    const updateCoords = () => {
+    // `useCallback` porque desde que calcula el ancho mínimo lee dos props
+    // (`nano`/`compact`): sin memoizar cambiaría de identidad en cada render y
+    // el rAF de seguimiento —que la tiene como dependencia— se desmontaría y
+    // remontaría en cada cuadro.
+    const updateCoords = useCallback(() => {
         if (selectRef.current) {
             const rect = selectRef.current.getBoundingClientRect();
             const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
 
             // Constantes de diseño
             const DROPDOWN_IDEAL_HEIGHT = 300;
@@ -137,6 +143,14 @@ const LiquidSelect = ({
 
             // Use viewport coords (fixed positioning via portal — no scroll offset needed)
             let finalTop = rect.bottom + 8;
+            // Abierto hacia arriba se ancla por ABAJO, no por `top`. Con `top`
+            // el menú se colgaba de `rect.top - maxHeight`, o sea de la altura
+            // MÁXIMA y no de la real: un menú de 3 opciones (141px medidos en
+            // el "Ver" de la paginación) quedaba flotando 160px por encima del
+            // disparador, desconectado de él. Con `bottom` el borde inferior
+            // queda pegado al control y el contenido crece hacia arriba, que es
+            // lo que hace un menú que se voltea.
+            let finalBottom = viewportHeight - rect.top + 8;
             let finalMaxHeight = DROPDOWN_IDEAL_HEIGHT;
             let finalOrigin = 'origin-top';
             let flipped = false;
@@ -145,15 +159,27 @@ const LiquidSelect = ({
                 flipped = true;
                 finalOrigin = 'origin-bottom';
                 finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceAbove - MARGIN);
-                finalTop = rect.top - finalMaxHeight - 8;
             } else {
                 finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceBelow - MARGIN);
             }
 
+            // El menú es más ancho que el disparador cuando éste es angosto
+            // (nano: 41px de trigger contra 120px de mínimo). Anclándolo solo
+            // por `left` ese sobrante se iba FUERA de la ventana si el control
+            // vivía cerca del borde derecho — medido en la paginación: menú de
+            // 120px arrancando en x=1319.9 sobre una ventana de 1440. Se corre
+            // hacia adentro, igual que se voltea cuando no hay lugar abajo.
+            const finalWidth = Math.max(rect.width, nano ? 120 : compact ? 170 : 200);
+            const finalLeft = Math.max(
+                MARGIN,
+                Math.min(rect.left, viewportWidth - MARGIN - finalWidth)
+            );
+
             const next = {
                 top: finalTop,
-                left: rect.left,
-                width: rect.width,
+                bottom: finalBottom,
+                left: finalLeft,
+                width: finalWidth,
                 maxHeight: Math.max(finalMaxHeight, 150),
                 transformOrigin: finalOrigin,
                 isFlipped: flipped
@@ -162,14 +188,15 @@ const LiquidSelect = ({
             // Evita re-renders innecesarios cuando el tracking continuo (ver
             // abajo) recalcula cada frame pero la posición no cambió.
             const prev = lastCoordsRef.current;
-            if (!prev || prev.top !== next.top || prev.left !== next.left ||
+            if (!prev || prev.top !== next.top || prev.bottom !== next.bottom ||
+                prev.left !== next.left || prev.isFlipped !== next.isFlipped ||
                 prev.width !== next.width || prev.maxHeight !== next.maxHeight ||
                 prev.transformOrigin !== next.transformOrigin) {
                 lastCoordsRef.current = next;
                 setCoords(next);
             }
         }
-    };
+    }, [nano, compact]);
 
     const isLargeList = !serverSearch && options.length > searchThreshold;
 
@@ -198,6 +225,45 @@ const LiquidSelect = ({
     const CORTE_HOJA = 12;
     const esTactil = useCoarsePointer();
     const usaHoja = esTactil && !nano && (serverSearch || options.length > CORTE_HOJA);
+
+    // ── Sin buscador (2026-08-07) ──────────────────────────────────────────
+    // Al abrirse, el disparador esconde el valor y le superpone un campo con
+    // placeholder "Buscar...". En un `nano` de 41px eso se ve como **"Bu"**
+    // —medido en el "Ver" de la paginación— y encima tapa el único dato que
+    // importaba: cuál de las tres opciones está elegida.
+    //
+    // El corte es `nano` **y** lista corta, no una de las dos: un nano de 60
+    // opciones (los minutos de TimePicker12) sí necesita que se pueda escribir,
+    // y quitarle el buscador dejaría 60 ítems recorribles solo con flechas.
+    // Ocho es donde la lista entra completa de un vistazo.
+    const sinBuscador = nano && !serverSearch && !creatable &&
+        options.filter(o => !o.isSeparator).length <= 8;
+
+    // Estas dos listas van ANTES de los manejadores porque
+    // `handleTriggerKeyDown` las usa: si se declaran después, el React Compiler
+    // ve un `useMemo` capturado por una función previa, no puede preservar la
+    // memoización y deja de optimizar el componente entero (lo marca el lint
+    // como "Compilation Skipped").
+    const filteredOptions = useMemo(() => {
+        if (serverSearch) {
+            // Parent controls data — show everything except separator and empty-value (handled by clearable button)
+            return options.filter(opt => !opt.isSeparator && opt.value !== '');
+        }
+        // Large lists: require typing before showing anything
+        if (isLargeList && !searchTerm) return [];
+        if (!searchTerm) return options.slice(0, maxOptions);
+        const q = normalize(searchTerm);
+        return options.filter(opt =>
+            !opt.isSeparator &&
+            (normalize(opt.label).includes(q) ||
+            (opt.sublabel && normalize(opt.sublabel).includes(q)))
+        ).slice(0, maxOptions);
+    }, [options, searchTerm, isLargeList, maxOptions, serverSearch]);
+
+    // Navigable (non-separator, non-disabled) options — used for keyboard nav
+    const selectableOptions = useMemo(() =>
+        filteredOptions.filter(o => !o.isSeparator && !o.disabled),
+    [filteredOptions]);
 
     // Con el menú abierto, el contenido de ATRÁS deja de reaccionar al puntero
     // (ver `src/utils/capaFlotante.js`). La hoja táctil no lo necesita: va
@@ -270,7 +336,7 @@ const LiquidSelect = ({
         };
         rafId = requestAnimationFrame(tick);
         return () => cancelAnimationFrame(rafId);
-    }, [isOpen]);
+    }, [isOpen, updateCoords]);
 
     // El disparador es un <div role="combobox">, no un <button> — un <button>
     // no puede contener el input de búsqueda que se le superpone al abrirse.
@@ -288,6 +354,31 @@ const LiquidSelect = ({
         // Enter burbujea hasta acá y vuelve a abrir el menú que se acaba de
         // cerrar al elegir. Mismo patrón que en DataRow.
         if (e.target !== e.currentTarget) return;
+        // Sin buscador el foco se queda ACÁ, así que las flechas y Enter que
+        // normalmente maneja el input hay que atenderlos en el disparador — si
+        // no, el menú se abre y el teclado no puede recorrerlo.
+        if (isOpen && sinBuscador) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const paso = e.key === 'ArrowDown' ? 1 : -1;
+                setHighlightedIndex(i => {
+                    const next = i + paso;
+                    if (next >= selectableOptions.length) return 0;
+                    if (next < 0) return selectableOptions.length - 1;
+                    return next;
+                });
+                return;
+            }
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (highlightedIndex >= 0 && selectableOptions[highlightedIndex]) {
+                    handleSelect(selectableOptions[highlightedIndex].value);
+                } else {
+                    setIsOpen(false);
+                }
+                return;
+            }
+        }
         if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
             e.preventDefault();
             handleOpen();
@@ -304,8 +395,9 @@ const LiquidSelect = ({
         setSearchTerm('');
         // Con la hoja táctil el buscador vive DENTRO de ella: enfocar el input
         // superpuesto al trigger levantaría el teclado detrás de la hoja y le
-        // robaría el foco al campo real.
-        if (usaHoja) return;
+        // robaría el foco al campo real. Sin buscador no hay input que enfocar
+        // y el foco se queda en el disparador (ver handleTriggerKeyDown).
+        if (usaHoja || sinBuscador) return;
         setTimeout(() => inputRef.current?.focus(), 50);
     };
 
@@ -338,27 +430,6 @@ const LiquidSelect = ({
     };
 
 
-    const filteredOptions = useMemo(() => {
-        if (serverSearch) {
-            // Parent controls data — show everything except separator and empty-value (handled by clearable button)
-            return options.filter(opt => !opt.isSeparator && opt.value !== '');
-        }
-        // Large lists: require typing before showing anything
-        if (isLargeList && !searchTerm) return [];
-        if (!searchTerm) return options.slice(0, maxOptions);
-        const q = normalize(searchTerm);
-        return options.filter(opt =>
-            !opt.isSeparator &&
-            (normalize(opt.label).includes(q) ||
-            (opt.sublabel && normalize(opt.sublabel).includes(q)))
-        ).slice(0, maxOptions);
-    }, [options, searchTerm, isLargeList, maxOptions, serverSearch]);
-
-    // Navigable (non-separator, non-disabled) options — used for keyboard nav
-    const selectableOptions = useMemo(() =>
-        filteredOptions.filter(o => !o.isSeparator && !o.disabled),
-    [filteredOptions]);
-
     // Reset highlight when options change or dropdown closes
     useEffect(() => { setHighlightedIndex(-1); itemRefs.current = []; }, [filteredOptions, isOpen]); // eslint-disable-line react-hooks/set-state-in-effect
 
@@ -377,9 +448,11 @@ const LiquidSelect = ({
             id={listboxId}
             role="listbox"
             style={{
-                top: coords.top,
+                // Uno de los dos, nunca los dos: con `top` y `bottom` a la vez
+                // el `fixed` estiraría la caja entre ambos.
+                ...(coords.isFlipped ? { bottom: coords.bottom } : { top: coords.top }),
                 left: coords.left,
-                width: Math.max(coords.width, nano ? 120 : compact ? 170 : 200) + 'px',
+                width: coords.width + 'px',
                 maxHeight: coords.maxHeight + 'px',
             }}
             initial={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
@@ -564,8 +637,8 @@ const LiquidSelect = ({
             >
                 {/* Always-rendered display content — keeps container width stable */}
                 <div className={`w-full ${nano ? 'text-center justify-center' : 'text-left'} ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2
-                    ${isOpen ? 'invisible pointer-events-none select-none' : ''}
-                    ${!selectedOption && !isOpen ? 'text-content-3' : ''}`}>
+                    ${isOpen && !sinBuscador ? 'invisible pointer-events-none select-none' : ''}
+                    ${!selectedOption && (!isOpen || sinBuscador) ? 'text-content-3' : ''}`}>
                     {selectedOption ? (
                         <>
                             {selectedOption.avatar !== undefined && (
@@ -591,7 +664,7 @@ const LiquidSelect = ({
                 {/* Search input — overlaid absolutely when open.
                     Con la hoja táctil NO va: el buscador es el de la hoja, y este
                     quedaría invisible detrás capturando el foco. */}
-                {isOpen && !usaHoja && (
+                {isOpen && !usaHoja && !sinBuscador && (
                     <input
                         ref={inputRef}
                         type="text"

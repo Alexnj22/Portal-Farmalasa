@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.490.1 — Paginación: el «Ver 25/50/100» pasa a la izquierda y el menú se abre pegado al control
+
+La zona izquierda del paginador decía «40 páginas». El centro ya dice
+«pág. 1/40», o sea el mismo número dos veces, y el de la izquierda encima sin
+la mitad que importa: en cuál estoy. Ese lugar ahora lo ocupa el «Ver
+25/50/100», que estaba apretado contra el borde derecho.
+
+**Y ahí es donde se veía el problema real.** Con el selector pegado a la
+derecha, su menú abría **fuera de la ventana y despegado del control**. Medido
+en `/auditview` a 1440px: disparador en x=1319.9, menú de 120px arrancando en
+la misma x —o sea terminando en 1439.9 de 1440— y a 165px por encima de su
+propio control, flotando en el medio de la tabla. Dos defectos de
+`LiquidSelect`, los dos de todos los desplegables del portal, no solo de éste:
+
+1. **Al voltearse hacia arriba se colgaba de la altura MÁXIMA, no de la real.**
+   `top = rect.top - maxHeight - 8` con `maxHeight` = 300 y un menú de tres
+   opciones que mide 141px: los 159 de diferencia eran el hueco. Ahora se ancla
+   por `bottom`, así el borde de abajo queda pegado al control y el contenido
+   crece hacia arriba.
+2. **El ancho sobrante se iba fuera de la pantalla.** Un `nano` mide 41px y su
+   menú 120: anclado solo por `left`, los 79 de diferencia salían por el borde
+   derecho. Ahora se corre hacia adentro con el mismo margen de 15px que ya
+   usaba para voltearse. En un iPhone 13 esto corrige de paso el selector de
+   sucursal del tablero, que se salía 21px.
+
+Además, al abrirse el disparador escondía el valor y le superponía un campo con
+placeholder «Buscar...», que en 41px se lee **«Bu»**. En un `nano` de hasta 8
+opciones ya no aparece: se sigue viendo cuál está elegida, y las flechas y Enter
+los atiende el disparador (que conserva el foco). Un `nano` largo —los minutos
+de `TimePicker12`, 60 opciones— mantiene su buscador.
+
+Verificado en vivo: menú a 8.0px exactos del control y dentro del viewport;
+elegir 50 deja 50 filas y «pág. 1/20»; con teclado, ↓ abre y Enter elige.
+Barrido de 9 desplegables en `/auditview`, `/productos` y `/clientes` — todos
+alineados y dentro de la ventana. En iPhone 13 (WebKit, de pie y acostado) la
+paginación sigue siendo la fila compacta, sin selector de tamaño (nadie cambia
+cuántas filas ve desde un teléfono), flechas de 44×44, sin desborde horizontal
+y pasando de página en los dos sentidos.
+
 ## v2.490.0 — gate:movil — que no se pueda escribir a mano lo que ya es canónico
 
 Fase 1 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`. Cuatro reglas, ratchet con

@@ -236,8 +236,148 @@ def espejar(url, cab, clientes, escribir):
     return total
 
 
+def parecidos(a, b):
+    """¿Los dos nombres son la misma persona escrita distinto?
+
+    No es un juicio de identidad — eso lo afirma el `erp_id`. Es un freno: si
+    los nombres no se parecen en nada, el vínculo del ERP puede venir de una
+    factura emitida al cliente equivocado, y fusionar mezclaría dos historiales
+    sin vuelta atrás.
+
+    Criterio: cada token de ≥4 letras del nombre más corto tiene que estar en
+    el otro, exacto o a un carácter de distancia (VAQUEZ/VASQUEZ,
+    ALVARNEGA/ALVARENGA). Se compara sobre el nombre normalizado, así que el
+    mojibake `PEÃ±A` no cuenta como token distinto de `PEÑA` — se rompe en
+    piezas cortas que el filtro de ≥4 descarta, y el resto (JOSE RAFAEL PINEDA)
+    decide.
+    """
+    ta = [t for t in bloque.norm(a).split() if len(t) >= 4]
+    tb = [t for t in bloque.norm(b).split() if len(t) >= 4]
+    if not ta or not tb:
+        return False
+    corto, largo = (ta, tb) if len(ta) <= len(tb) else (tb, ta)
+    def cerca(t):
+        return any(t == o or _a_un_caracter(t, o) for o in largo)
+    coinciden = sum(1 for t in corto if cerca(t))
+    return coinciden >= max(2, len(corto) - 1) or coinciden == len(corto)
+
+
+def _a_un_caracter(x, y):
+    """Distancia de edición ≤1, sin traer una librería para esto."""
+    if abs(len(x) - len(y)) > 1:
+        return False
+    if len(x) == len(y):
+        return sum(1 for i, j in zip(x, y) if i != j) == 1
+    corto, largo = (x, y) if len(x) < len(y) else (y, x)
+    for i in range(len(largo)):
+        if largo[:i] + largo[i + 1:] == corto:
+            return True
+    return False
+
+
+def deduplicar(url, cab, clientes, escribir):
+    """Une cada ficha huérfana con la real y borra la huérfana.
+
+    Una huérfana NO es un cliente nuevo: es una segunda ficha del mismo cliente,
+    que `upsert_customers` creó desde el nombre tal como se escribió en una
+    factura. La buena tiene los datos y ninguna factura; la rota tiene el
+    historial y ningún dato:
+
+        3197766  JOSE RAFAEL PEÑA PINEDA    erp 11967  COMALAPA   0 facturas
+        1990     JOSE RAFAEL PEÃ±A PINEDA   —          —          7 facturas
+
+    Se detecta sin adivinar: la factura de la huérfana apunta, EN EL ERP, a un
+    `id_cliente`; si el portal ya tiene una ficha con ese `erp_id`, son la misma
+    persona y lo afirma el ERP, no un parecido de nombres.
+
+    Si NO hay ficha con ese erp_id, la huérfana no es duplicado — es un cliente
+    que el portal todavía no tenía, y se resuelve espejando, no borrando.
+    """
+    huerfanas = [c for c in clientes if not c.get('erp_id')]
+    if not huerfanas:
+        print('\n── deduplicación: no hay huérfanas ──')
+        return
+    print(f'\n── deduplicación: {len(huerfanas)} huérfanas ──')
+
+    # 1 · el erp_id que el ERP asocia a cada una, leyendo una factura suya
+    huerfanas, resueltos = emparejar(url, cab, huerfanas, verbose=False)
+    conerp = [c for c in huerfanas if c.get('erp_id')]
+    print(f'  {resueltos} con erp_id resuelto por factura, '
+          f'{len(huerfanas) - resueltos} sin factura que leer')
+
+    # 2 · ¿ese erp_id ya pertenece a otra ficha del portal?
+    ocupados = {}
+    ids = sorted({c['erp_id'] for c in conerp})
+    for i in range(0, len(ids), 100):
+        lote = ','.join(f'"{x}"' for x in ids[i:i + 100])
+        for f in rest(url, cab, f'customers?erp_id=in.({lote})&select=id,name,erp_id'):
+            ocupados[f['erp_id']] = f
+
+    candidatas = [c for c in conerp if c['erp_id'] in ocupados
+                  and ocupados[c['erp_id']]['id'] != c['id']]
+    nuevas = [c for c in conerp if c['erp_id'] not in ocupados]
+
+    # Fusionar BORRA una ficha y mueve su historial. El vínculo lo afirma el
+    # ERP, que es fuerte, pero no infalible: si en el ERP se facturó al cliente
+    # equivocado, fusionar mezcla el historial de dos personas y eso no se
+    # deshace. Así que los nombres muy distintos se apartan para que los mire
+    # alguien.
+    #
+    # Casos reales del 2026-08-06 que motivan el corte:
+    #   "ABEL ENOC VAQUEZ"  → "ABEL ENOC VASQUEZ"    typo, evidente
+    #   "IRENE PASTORA"     → "IRENE PINEDA"         ¿la misma persona?
+    #   "NORMA … DE HERNANDEZ" → "NORMA … MEJIA"     ¿cambió de apellido?
+    # Los dos últimos son plausibles —la ficha del ERP pudo renombrarse
+    # DESPUÉS de emitida la factura— pero plausible no alcanza para borrar.
+    claras, dudosas = [], []
+    for c in candidatas:
+        (claras if parecidos(c['name'], ocupados[c['erp_id']]['name'])
+         else dudosas).append(c)
+
+    print(f'  {len(candidatas)} son duplicados (el erp_id ya tiene ficha)')
+    print(f'    · {len(claras)} con nombres claramente equivalentes → se fusionan')
+    print(f'    · {len(dudosas)} con nombres muy distintos → NO se tocan, van a revisión')
+    print(f'  {len(nuevas)} no tienen ficha con ese erp_id → se emparejan, no se borran')
+
+    if dudosas:
+        print('\n  a revisar a mano (no se fusionan):')
+        for c in dudosas:
+            d = ocupados[c['erp_id']]
+            print(f'    ? "{c["name"][:36]}" (id {c["id"]}, {c.get("_facturas","?")} fact.) '
+                  f'→ "{d["name"][:36]}" (erp {c["erp_id"]})')
+
+    duplicadas = claras
+    if not escribir:
+        print('\n  se fusionarían:')
+        for c in duplicadas[:8]:
+            d = ocupados[c['erp_id']]
+            print(f'    · "{c["name"][:34]}" (id {c["id"]}) → '
+                  f'"{d["name"][:34]}" (id {d["id"]}, erp {c["erp_id"]})')
+        if len(duplicadas) > 8:
+            print(f'    … y {len(duplicadas) - 8} más')
+        return
+
+    movidas = fusionadas = 0
+    fallos = []
+    for c in duplicadas:
+        try:
+            r = pedir_json(f'{url}/rest/v1/rpc/fusionar_cliente_duplicado',
+                           {'p_huerfana': c['id'], 'p_erp_id': c['erp_id']}, cab)
+            fusionadas += 1
+            movidas += r.get('facturas_movidas', 0)
+        except Exception as e:
+            fallos.append((c['name'], str(e)[:110]))
+    print(f'  fusionadas: {fusionadas} · facturas movidas: {movidas}')
+    for n, m in fallos[:10]:
+        print(f'    ✗ {n[:38]}: {m}')
+    if fallos:
+        print(f'  {len(fallos)} fallaron')
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument('--deduplicar', action='store_true',
+                    help='une las fichas huérfanas con la real y borra la huérfana')
     ap.add_argument('--diario', action='store_true',
                     help='la corrida de una vez al día: refresca el índice del '
                          'ERP, empareja las fichas nuevas por factura, corrige '
@@ -252,16 +392,27 @@ def main():
     ap.add_argument('--limite', type=int, default=0, help='0 = todas')
     a = ap.parse_args()
 
-    if not (a.diario or a.backlog):
+    if not (a.diario or a.backlog or a.deduplicar):
         raise SystemExit(
             'El bucle reactivo (pasos 1-7) todavía no está conectado: falta que\n'
             '`regularizar-dte` escriba en `dte_mh_intentos`.\n'
-            'Por ahora: --diario (recomendado) o --backlog.')
+            'Por ahora: --deduplicar, --diario o --backlog.')
 
     url, key, usuario, clave = credenciales()
     jwt = token(url, key, usuario, clave)
     cab = {'apikey': key, 'Authorization': f'Bearer {jwt}',
            'Content-Type': 'application/json'}
+
+    # La deduplicación va SOLA y primero: mientras haya huérfanas duplicadas,
+    # el diario intenta emparejarlas todas las noches y la base las rechaza
+    # (`erp_id already exists`) — 73 de 76 en la corrida del 2026-08-06. Un cron
+    # que arranca fallando así tapa el fallo real cuando aparezca.
+    if a.deduplicar:
+        if not a.escribir:
+            print('MODO SIMULACIÓN — no se borra ni se mueve nada\n')
+        refrescar_catalogo()
+        deduplicar(url, cab, candidatos_backlog(url, cab), a.escribir)
+        return 0
 
     if not a.escribir:
         print('MODO SIMULACIÓN — no se escribe en el ERP ni en el portal\n')

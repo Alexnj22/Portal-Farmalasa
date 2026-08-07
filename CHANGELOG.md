@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.464.0 — Un cliente, una ficha: se unen las que el sync había partido en dos
+
+Había clientes contados dos veces. Uno con sus datos —dirección, teléfono,
+distrito— y **ninguna factura**; el otro con **todo su historial de compras** y
+ningún dato. Para el portal eran dos personas distintas.
+
+Pasaba porque al registrar una venta, si el nombre del cliente no coincidía
+exactamente con el que ya estaba guardado, se creaba una ficha nueva. Y ese
+nombre venía de cómo se escribió en la factura: un espacio de más, una letra
+cambiada, un acento mal guardado. `JOSE RAFAEL PEÃ±A PINEDA` y `JOSE RAFAEL
+PEÑA PINEDA` eran dos clientes.
+
+**Se unieron 68 fichas y volvieron a su lugar 1,127 facturas.** Cada uno de
+esos clientes quedó con su historial completo y sus datos en el mismo lugar.
+
+La unión no se decidió por parecido de nombres: la factura dice a qué cliente
+pertenece, y ese es el vínculo. Aun así, cuando los dos nombres no se parecen
+lo suficiente la ficha **no se toca** y queda anotada para que la revise una
+persona — así quedaron 4, entre ellas una cuya contraparte se llama «NO
+APARECE». Unir a dos clientes que no lo son mezclaría dos historiales, y eso
+no tiene vuelta atrás.
+
+Quedan 21 fichas sueltas y 30 sin distrito, de las 89 y 98 que había.
+
+## v2.463.2 — La ubicación de destino salía del navegador y llegaba NaN
+
+**Primera prueba del traslado hecha ENTERA por la pantalla**, y encontró un bug
+que la misma prueba por API no había encontrado.
+
+La ubicación de la sala que recibe venía dentro de la solicitud, o sea del
+navegador. La pantalla de pedido no la manda —no tiene por qué saberla— así que
+llegaba vacía, viajaba como «NaN» y el sistema contestaba *«No se proporcionaron
+los datos correctos para actualizar el stock»*. El envío funcionaba y la
+recepción fallaba, dejando el producto en tránsito.
+
+No había aparecido antes porque las pruebas anteriores armaban la solicitud con
+un script que se la pasaba a mano. **Un dato que el script de prueba completa y
+la pantalla no es un dato que la prueba no está probando.**
+
+Ahora la ubicación de destino sale del mapa de salas, igual que la de origen y
+por el mismo motivo: es una propiedad de la sala, no algo que el cliente elija.
+Y si el mapa no la tuviera, lo dice en vez de mandar un cero.
+
+**El circuito completo, verificado de punta a punta por la pantalla**: Salud 2
+pide una unidad, Salud 1 la ve como «1 te piden» y confirma, el sistema la
+despacha, Salud 2 la recibe; y después la vuelta. Los dos traslados quedaron
+FINALIZADOS y el inventario terminó igual que empezó — 1891 y 1468.
+
 ## v2.463.1 — El espejo empareja por id cuando lo sabe
 
 Copiar los datos de un cliente al portal buscaba la ficha **solo por nombre**.

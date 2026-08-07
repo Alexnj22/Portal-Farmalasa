@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.4 — la solicitud de ajuste muestra una línea por producto, y se despliega al editar
+
+Pedido del usuario con captura: «que solo aparezcan cards producto, blister,
+cantidad, y 2 botones, el de editar y borrar. Al editar despliega y se cambian
+los datos. Así se ve más compacto».
+
+En «En la solicitud», cada línea tenía sus campos siempre desplegados —cantidad,
+presentación, lote y vencimiento, cada uno en su control— y **un solo producto
+ocupaba media pantalla del modal**. Con tres, la solicitud dejaba de entrar de un
+vistazo y había que recorrerla para saber qué se estaba por enviar.
+
+Ahora la línea nace cerrada: nombre del producto y, debajo, `3 × BLISTER (10)`
+con su lote y vencimiento. Los dos botones son editar y borrar; el de editar
+despliega los mismos campos de siempre y pasa a «listo» para volver a cerrarla.
+Una sola línea abierta a la vez — dos ya devolverían la pantalla al estado que se
+quería dejar atrás.
+
+Dos detalles que no son cosméticos:
+
+- **El lote y el vencimiento van en el resumen cerrado.** Son lo único que
+  distingue dos líneas del mismo producto; sin ellos, dos filas idénticas no se
+  pueden diferenciar y borrar la equivocada es cuestión de suerte.
+- **Una línea incompleta se abre sola y no se deja cerrar.** Cerrada mostraría el
+  aviso de lo que le falta y ningún campo donde arreglarlo. En la práctica no
+  debería pasar —el botón de agregar ya exige la línea completa, con la misma
+  vara (`problemasDeLinea`)— pero si algo cambia después de agregarla, el camino
+  de salida tiene que existir.
+
 ## v2.489.3 — Plan del canon móvil: qué variante le toca a cada elemento, y quién lo verifica
 
 `docs/PLAN-CANON-MOVIL-2026-08-07.md`. El plan de julio arregla lo que hay; éste

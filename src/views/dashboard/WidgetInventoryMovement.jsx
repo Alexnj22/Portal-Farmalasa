@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-    AlertTriangle, ArrowLeft, CalendarX2, Camera, CheckCircle2, ChevronRight, Loader2,
-    PackageMinus, PackagePlus, Plus, Stethoscope, Trash2, X,
+    AlertTriangle, ArrowLeft, CalendarX2, Camera, Check, CheckCircle2, ChevronRight, Loader2,
+    PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
@@ -248,6 +248,10 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     // «Agregar» o «En la solicitud». El banco necesitaba ser un lugar, no una
     // franja apretada entre el buscador y los resultados.
     const [pestana, setPestana]   = useState('agregar');
+    // Qué línea de la solicitud está abierta para editar. Una sola a la vez: el
+    // punto de colapsarlas es que la solicitud entre de un vistazo, y dos
+    // abiertas ya devuelven la pantalla al estado que se quería dejar atrás.
+    const [editandoId, setEditandoId] = useState(null);
 
     // ── El compositor: buscar, completar, agregar. Y el siguiente ─────────
     // Reportado: «al agregar un producto a la solicitud, ¿por qué pone cantidad?
@@ -831,6 +835,22 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                         const lotes = lotesPorProducto.get(l.erp_product_id) ?? [];
                         const llevaLote = lotes.length > 0;
                         const pide = faltantes.find(f => f.id === l.id)?.problemas ?? [];
+                        // ── La línea nace CERRADA (2026-08-07) ──────────────
+                        // Pedido del usuario: «que solo aparezcan cards
+                        // producto, blister, cantidad, y 2 botones». Con los
+                        // campos siempre desplegados, una sola línea ocupaba
+                        // media pantalla del modal —cantidad, presentación,
+                        // lote, vencimiento, cada uno en su control— y una
+                        // solicitud de tres productos no entraba de un vistazo.
+                        //
+                        // Cerrada muestra lo que hace falta para reconocerla;
+                        // abierta, los mismos campos de siempre.
+                        //
+                        // Una línea INCOMPLETA se abre sola: cerrada mostraría
+                        // el aviso de lo que le falta y ningún campo donde
+                        // arreglarlo, que es un callejón sin salida.
+                        const abierta = editandoId === l.id || pide.length > 0;
+                        const presLabel = l.factor > 1 ? `${l.tipo} (${l.factor})` : l.tipo;
                         return (
                             // `data-surface="card"` y no las tres clases del
                             // color: la clase copia el tono y deja afuera la
@@ -838,13 +858,44 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                             // eso deja la tarjeta pegada al fondo.
                             <div key={l.id} data-surface="card" className="px-3 py-2.5">
                                 <div className="flex items-start gap-2">
-                                    <p className="flex-1 min-w-0 text-body-sm font-black text-content truncate">
-                                        {l.descripcion}
-                                    </p>
-                                    <Button variant="ghost" size="xs" icon={X} iconOnly
-                                        aria-label="Quitar producto" onClick={() => quitar(l.id)} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-body-sm font-black text-content truncate">
+                                            {l.descripcion}
+                                        </p>
+                                        {/* El renglón que reemplaza a los campos
+                                            mientras está cerrada. Lleva el lote y
+                                            el vencimiento porque son lo que
+                                            distingue dos líneas del MISMO
+                                            producto — sin eso, dos filas iguales
+                                            no se pueden diferenciar. */}
+                                        {!abierta && (
+                                            <p className="text-micro font-semibold text-content-2 mt-0.5 truncate">
+                                                {l.cantidad || 0} × {presLabel}
+                                                {l.lote && ` · Lote ${l.lote}`}
+                                                {l.vence && ` · Vence ${fmtFecha(l.vence)}`}
+                                            </p>
+                                        )}
+                                    </div>
+                                    {/* Editar y borrar, y nada más. El de editar
+                                        pasa a «listo» con la línea abierta: es el
+                                        mismo control, y mandar el foco a otro
+                                        botón para cerrar sería un salto de más.
+                                        Deshabilitado mientras falte un dato —
+                                        cerrarla ahí sólo escondería el problema. */}
+                                    <Button variant="ghost" size="xs" iconOnly
+                                        icon={abierta ? Check : Pencil}
+                                        aria-label={abierta ? 'Listo' : 'Editar la línea'}
+                                        disabled={abierta && pide.length > 0}
+                                        onClick={() => setEditandoId(abierta ? null : l.id)} />
+                                    <Button variant="ghost" size="xs" icon={Trash2} iconOnly
+                                        aria-label="Quitar producto"
+                                        onClick={() => {
+                                            if (editandoId === l.id) setEditandoId(null);
+                                            quitar(l.id);
+                                        }} />
                                 </div>
 
+                                {abierta && (
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
                                     <PortalInput
                                         type="number" min="0" value={l.cantidad}
@@ -928,6 +979,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                                         </span>
                                     )}
                                 </div>
+                                )}
 
                                 {pide.length > 0 && (
                                     <p className="flex items-center gap-1 text-micro text-danger-text font-semibold mt-1.5">

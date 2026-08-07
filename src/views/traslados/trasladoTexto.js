@@ -31,6 +31,23 @@ export function resumenItems(meta) {
     return `${items.length} productos · ${meta?.total_unidades ?? 0} unidades`;
 }
 
+/**
+ * Los lotes que el pedido pide, si los trae.
+ *
+ * Desde el 2026-08-07 quien pide puede elegir de qué lote quiere que salga —y
+ * descartar el que vence demasiado pronto— y esa elección MANDA (decisión del
+ * usuario). Que quien despacha los vea es la mitad que la hace mandar: un lote
+ * elegido que no llega a la pantalla de enfrente es un lote que no se respeta.
+ *
+ * Los pedidos anteriores no traen `lotes` y devuelven una lista vacía: se ven
+ * como siempre, sin un hueco ni un «—» que sugiera que falta algo.
+ */
+export function lotesPedidos(meta) {
+    return (Array.isArray(meta?.items) ? meta.items : [])
+        .flatMap(i => (Array.isArray(i.lotes) ? i.lotes : []))
+        .filter(l => l && (l.lote || l.vence));
+}
+
 /** El texto sobre el que busca la vista: producto, salas, quién y por qué. */
 export function textoBuscable(fila, nombrePor) {
     const m = fila?.metadata ?? {};

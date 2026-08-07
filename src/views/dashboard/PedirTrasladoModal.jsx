@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
+import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario';
 
 // Pedirle un producto a otra sala, desde la lista de faltantes.
 //
@@ -160,9 +161,45 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
     }, [esAntibiotico, sala, donde, unidadesPedidas]);
 
     const unidades = unidadesPedidas;
+
+    // ── De qué lotes saldría, y poder cambiarlo (2026-08-07) ────────────────
+    // Pedido del usuario: «abajo de eso ponga cuántos enviarían según cada
+    // lote/vence, si hay algo de esos (uno que esté muy corto y el cliente no lo
+    // quiera) que permita editar y seleccionar otro lote/vence».
+    //
+    // El reparto es por vencimiento, el que vence primero primero — que es como
+    // hay que sacarlo salvo que alguien decida lo contrario, y para eso está el
+    // botón de descartar.
+    //
+    // Los lotes vienen de la pantalla que abrió el modal: los mismos que el
+    // usuario acaba de ver. Cuando el modal se abre desde la lista de faltantes
+    // no hay lotes, y entonces esta sección no aparece — no se inventa un
+    // reparto sobre datos que no se tienen.
+    const [descartados, setDescartados] = useState(() => new Set());
+
+    // Cambiar de sala invalida lo descartado: son lotes de la sala anterior.
+    useEffect(() => { setDescartados(new Set()); }, [salaId]);
+
+    const lotesDeSala = useMemo(
+        () => lotesEnUnidades(producto?.lotesPorSala?.[String(salaId)] ?? producto?.lotesPorSala?.[salaId] ?? []),
+        [producto?.lotesPorSala, salaId],
+    );
+    const lotesVivos = useMemo(
+        () => lotesDeSala.filter(l => !descartados.has(l.clave)),
+        [lotesDeSala, descartados],
+    );
+    const { reparto, faltan } = useMemo(
+        () => repartirPedido(lotesVivos, unidades),
+        [lotesVivos, unidades],
+    );
+    const hayLotes = lotesDeSala.length > 0;
+
     const puedeEnviar = Boolean(
         sala && pres && miErp && Number(cantidad) > 0 && causa.trim().length > 0
-        && unidades > 0 && unidades <= Number(sala.unidades ?? 0),
+        && unidades > 0 && unidades <= Number(sala.unidades ?? 0)
+        // Con lotes a la vista, el pedido no sale si lo que queda no lo cubre:
+        // mandarlo igual sería pedir algo que ya se sabe que no se puede dar.
+        && (!hayLotes || faltan === 0),
     );
 
     const enviar = async () => {
@@ -190,6 +227,13 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                         presentacion_tipo: pres.tipo,
                         factor:            pres.factor,
                         cantidad:          Number(cantidad),
+                        // Los lotes MANDAN, no son una vista previa: decisión
+                        // del usuario 2026-08-07. Quien despacha los ve en el
+                        // pedido y saca de ésos. Sin esto, descartar un lote
+                        // que vence pronto no cambiaría nada de lo que llega.
+                        lotes: hayLotes
+                            ? reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma }))
+                            : null,
                     }],
                 },
             });
@@ -334,6 +378,57 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                                   && (Number(sala.unidades) - unidades) < Number(sala.minimo)
                                   && ` y quedaría en ${Math.max(Number(sala.unidades) - unidades, 0)}, bajo su mínimo de ${sala.minimo}`}
                             </p>
+                        )}
+
+                        {/* ── De qué lotes saldría ──────────────────────────
+                            Sólo con cantidad puesta: antes de eso no hay nada
+                            que repartir y la lista sería ruido. */}
+                        {hayLotes && unidades > 0 && (
+                            <div className="flex flex-col gap-1.5">
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest px-1">
+                                    Saldría de
+                                </p>
+                                {lotesDeSala.map(l => {
+                                    const fuera = descartados.has(l.clave);
+                                    const enviado = reparto.find(r => r.clave === l.clave);
+                                    const dias = diasHasta(l.vence);
+                                    const corto = dias != null && dias <= 180;
+                                    return (
+                                        <div key={l.clave}
+                                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-card ${fuera ? 'opacity-45' : ''}`}
+                                            style={{ background: 'var(--surface-card-hover)' }}>
+                                            <span className="text-micro font-mono text-content-3 truncate min-w-0 flex-1">
+                                                {l.lote || 'sin lote'}
+                                            </span>
+                                            <span className={`text-micro font-semibold shrink-0 ${corto ? 'text-warning-text' : 'text-content-3'}`}>
+                                                {l.vence ? fmtVence(l.vence) : 'sin fecha'}
+                                            </span>
+                                            {/* El número que se lleva de ESE lote, no lo que
+                                                el lote tiene: es lo que hay que poder revisar. */}
+                                            <span className="text-caption font-black text-content shrink-0 tabular-nums w-16 text-right">
+                                                {fuera ? '—' : `${enviado?.toma ?? 0} uds`}
+                                            </span>
+                                            <Button
+                                                size="xs"
+                                                variant="ghost"
+                                                onClick={() => setDescartados(prev => {
+                                                    const s = new Set(prev);
+                                                    if (s.has(l.clave)) s.delete(l.clave); else s.add(l.clave);
+                                                    return s;
+                                                })}
+                                            >
+                                                {fuera ? 'Incluir' : 'No este'}
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                                {faltan > 0 && (
+                                    <p className="text-micro font-semibold text-danger-text px-1 leading-snug">
+                                        Con los lotes que dejaste faltan {faltan} {faltan === 1 ? 'unidad' : 'unidades'}.
+                                        Baja la cantidad o vuelve a incluir alguno.
+                                    </p>
+                                )}
+                            </div>
                         )}
 
                         <PortalTextarea

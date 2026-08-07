@@ -18,6 +18,7 @@ import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
+import { unidadesDe, sumaUnidades } from '../../utils/unidadesInventario';
 import SearchInput from '../../components/common/SearchInput';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import PedirTrasladoModal from './PedirTrasladoModal';
@@ -79,33 +80,6 @@ function daysUntil(d) {
   if (!d) return null;
   return Math.ceil((new Date(d + 'T12:00:00') - new Date()) / 86400000);
 }
-
-// ── Cuántas unidades hay DE VERDAD en una fila de inventario (2026-08-07) ───
-// `cantidad` no está en unidades: está en la presentación de esa fila. El mismo
-// lote aparece varias veces —CAJA, BLISTER, UNIDAD— y cada una cuenta lo suyo.
-// Verificado sobre la amoxicilina 500 del reporte: lote `L5M5137` en La Popular
-// son 24 CAJA (1x30), 1 BLISTER (1x10) y 3 UNIDAD (1x1).
-//
-// Sumarlas sin convertir —que es lo que hacía este widget— no sólo daba un
-// número chico: **cambiaba el orden de las salas**. Mostraba La Popular (46)
-// por encima de Salud 1 (39) cuando Salud 1 tiene 1,034 unidades contra 836. La
-// pantalla que existe para decir «en qué sala hay» apuntaba a la equivocada.
-//
-// El factor sale de `detalle`, que viaja en la misma fila que la presentación.
-// Medido sobre las 24,181 filas del inventario: 24,031 en formato `1xN` limpio,
-// 48 con un `1` pelado y 102 con variantes de espaciado (`1 X 1`, `X 25`,
-// `1X 16`) que este parse cubre porque normaliza los espacios antes de leer.
-//
-// Sin número después de la x el factor es 1 —una presentación suelta— y NUNCA
-// 0: un 0 borraría la existencia en silencio, que es peor que contarla de menos.
-const FACTOR_RE = /x\s*(\d+)\s*$/i;
-function factorDe(detalle) {
-  const m = FACTOR_RE.exec(String(detalle ?? '').replace(/\s+/g, ' ').trim());
-  const n = m ? parseInt(m[1], 10) : 1;
-  return Number.isFinite(n) && n > 0 ? n : 1;
-}
-const unidadesDe = (row) => (Number(row?.cantidad) || 0) * factorDe(row?.detalle);
-const sumaUnidades = (lots) => (lots || []).reduce((s, r) => s + unidadesDe(r), 0);
 
 // ── Qué lote merece su propio renglón (2026-08-07) ─────────────────────────
 // Pedido del usuario: «si no hay producto que esté a vencer (6 meses) lo puede
@@ -604,10 +578,36 @@ function PanelInventario({ query = '', onQueryChange }) {
   // Solo para quien TIENE sala: un traslado necesita un destino, y quien no
   // está asignado a ninguna no puede recibirlo. Ofrecerle el botón lo lleva a un
   // formulario que no puede completar, que es peor que no ofrecerlo.
-  const accionPedir = useMemo(
-    () => (miErp ? { miSala: ERP_BRANCH_MAP[miErp], abrir: setPedido } : null),
-    [miErp],
-  );
+  const accionPedir = useMemo(() => {
+    if (!miErp) return null;
+    return {
+      miSala: ERP_BRANCH_MAP[miErp],
+      // Los lotes de ese producto en cada sala viajan CON el pedido, tomados de
+      // lo que ya está en pantalla. El modal podría volver a pedirlos, pero
+      // entonces mostraría un dato que no tiene por qué coincidir con el que el
+      // usuario está mirando — y elegir lote sobre una lista distinta de la que
+      // se vio es peor que no poder elegirlo.
+      abrir: (p) => {
+        const porSala = {};
+        const vistos = new Set();
+        for (const b of [...(results ?? []), ...(alternatives ?? [])]) {
+          for (const prod of b.products ?? []) {
+            for (const l of prod.lots ?? []) {
+              if (l.erp_product_id !== p.erp_product_id) continue;
+              // `results` y `alternatives` pueden traer la misma sala; sin esto
+              // sus lotes se contarían dos veces y el reparto prometería el
+              // doble de lo que hay.
+              const k = `${l.erp_sucursal_id}|${l.lote ?? ''}|${l.fecha_vencimiento ?? ''}|${l.presentacion ?? ''}`;
+              if (vistos.has(k)) continue;
+              vistos.add(k);
+              (porSala[l.erp_sucursal_id] ||= []).push(l);
+            }
+          }
+        }
+        setPedido({ ...p, lotesPorSala: porSala });
+      },
+    };
+  }, [miErp, results, alternatives]);
 
   const cargarFaltantes = useCallback(() => {
     if (!miErp) return;

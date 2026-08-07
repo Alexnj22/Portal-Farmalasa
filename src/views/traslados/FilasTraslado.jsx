@@ -8,7 +8,7 @@ import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
     fetchDisponibilidadTraslado,
 } from '../../data/traslados';
-import { fmtCuando, fmtFechaLarga, resumenItems } from './trasladoTexto';
+import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos } from './trasladoTexto';
 
 // Las filas de un traslado, en un solo lugar.
 //
@@ -96,6 +96,20 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
                     <p className="text-label font-black text-content leading-tight">
                         {resumenItems(meta)}
                     </p>
+                    {/* Los lotes que pidieron, cuando el pedido los trae. Van
+                        ACÁ —bajo lo que se pide y antes de quién lo pide—
+                        porque son parte de qué se pide, no del contexto. */}
+                    {lotesPedidos(meta).length > 0 && (
+                        <div className="mt-1 flex flex-col gap-0.5">
+                            {lotesPedidos(meta).map((l, i) => (
+                                <p key={i} className="text-micro text-content-2 font-semibold">
+                                    <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
+                                    {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
+                                    {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+                                </p>
+                            ))}
+                        </div>
+                    )}
                     <p className="text-micro text-content-3 mt-0.5 truncate">
                         {nombrePor(fila.employee_id)} · {meta.branch_name ?? 'otra sala'} · {fmtCuando(fila.created_at)}
                     </p>

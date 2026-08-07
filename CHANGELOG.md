@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.495.0 — el pedido reparte por lote, y el lote elegido manda
+
+Pedido del usuario: «que pregunte presentación y cantidad, y abajo de eso ponga
+cuántos enviarían según cada lote/vence; si hay algo de esos (uno que esté muy
+corto y el cliente no lo quiera) que permita editar y seleccionar otro».
+
+El botón ya estaba al lado del total y el modal ya preguntaba presentación y
+cantidad — eso no hacía falta cambiarlo. Lo que faltaba es el reparto:
+
+```
+Sala      La Popular · 836 uds
+Present.  BLISTER (10)     Cant.  8
+
+SALDRÍA DE
+  L5M5137    ago 27    80 uds   [No este]
+  LSVF10697  nov 27     0 uds   [No este]
+```
+
+Al descartar un lote el reparto se rehace sobre los que quedan. **El que vence
+primero sale primero**, que es como hay que sacarlo salvo que alguien decida lo
+contrario — y para eso está el botón.
+
+**Y el lote elegido MANDA**, no es una vista previa (decisión del usuario). Viaja
+en la solicitud y la sala que despacha lo ve bajo lo que se le pide, en el widget
+y en la vista de Traslados. Un lote elegido que la otra pantalla no muestra es un
+lote que no se respeta, y entonces descartar el que vence pronto no cambiaría
+nada de lo que llega.
+
+Cuatro decisiones que no son cosméticas:
+
+- **El reparto se muestra en unidades, no en «3.3 blísteres».** Un lote no tiene
+  por qué dar un múltiplo exacto de la presentación pedida, y una fracción de
+  blíster no significa nada. Arriba ya está la cantidad en su presentación.
+- **Si con los lotes que quedan no alcanza, el pedido no sale.** Dice cuántas
+  unidades faltan. Repartir de menos sin avisar sería la peor versión de este
+  cálculo.
+- **Los lotes salen de la pantalla que abrió el modal, no de una consulta nueva.**
+  Elegir sobre una lista distinta de la que se acaba de ver es peor que no poder
+  elegir. Se deduplican al armarlos: `results` y `alternatives` pueden traer la
+  misma sala, y sin eso el reparto prometería el doble de lo que hay.
+- **Cambiar de sala borra lo descartado**, porque eran lotes de la otra.
+
+Abierto desde la lista de faltantes no hay lotes en pantalla, y ahí la sección
+no aparece: no se inventa un reparto sobre datos que no se tienen.
+
+De paso, `factorDe`/`unidadesDe`/`sumaUnidades` se mudan a
+`src/utils/unidadesInventario.js`. Los necesitan dos pantallas, y escribirlos dos
+veces es exactamente lo que hizo que la presentación del lote se arreglara en la
+lista y quedara rota en el detalle.
+
 ## v2.494.0 — Facturas de Sala pasa a vista principal, canónica
 
 Nació esta mañana como tercera pestaña de Compras (v2.487.0) y el usuario la

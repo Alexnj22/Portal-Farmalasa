@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.508.1 — el widget nuevo ya no se encima: el escritor del acomodo tenía el mismo defecto
+
+Reportado otra vez, con captura: al habilitarle un widget a un rol, la baldosa
+nueva cae **encima** de otra. v2.489.1 ya había corregido esto — y ahí está la
+lección.
+
+**Aquel arreglo tocó la mezcla de PINTADO (`alDia`). El defecto también estaba en
+las de ESCRITURA, y son las que mandan.** Dos sitios más completaban el acomodo
+con `autoPlaceOrder`, que **compacta** el tablero entero: el hueco que devuelven
+es de un acomodo que no es el guardado. Y como el resultado **se persiste**, el
+arreglo de `alDia` no podía salvarlo: con la posición mala ya escrita, el id deja
+de estar «faltante» y esa rama no se vuelve a mirar nunca.
+
+- **La mezcla al leer el acomodo de la base** — la que corre justo cuando un rol
+  estrena permiso. Además pasaba `{}` como medidas, así que colocaba usando los
+  mínimos del registro e ignorando todo lo que el usuario hubiera redimensionado.
+- **El alta de las baldosas de sucursal** (`sales_branch_*`) — usaba
+  `widgetSizesRef`, que guarda las medidas de la pestaña **activa**, para colocar
+  en «general». O sea, las medidas de otra pestaña.
+
+Los dos pasan a `colocarEnHuecos`, que sella la huella real —posición y tamaño de
+cada baldosa como están guardados— y recién sobre eso busca.
+
+## Facturas de mi Sala
+
+- **Un mes, y no se pregunta.** Se va el selector de período: «último mes (30
+  días) nada más». Una factura de agua de la semana pasada se toma esta semana;
+  el desplegable convertía en pregunta algo con una sola respuesta buena, y
+  ocupaba el lugar del buscador. Lo que caiga fuera del mes se resuelve desde
+  «Facturas de Sala» en Compras, que sí tiene su período.
+- **«Sin dueño» → «Sin asignar».**
+- **Los botones, al canónico.** Llevaban el ícono y el spinner como **hijos**, y
+  ahí entran al mismo `<span>` que el texto: el botón envolvía y el ícono quedaba
+  en un renglón aparte, encima del rótulo. `Button` los recibe por `icon` y
+  `loading`. El de tomar pasa de `CheckCircle2` a `Check`, que a 13px se lee.
+- De paso, dos escrituras de estado sincrónicas dentro de efectos: la guarda de
+  `!branchId` se muda a la capa de datos —como ya estaba en `contarFacturasSala`—
+  y desaparece el `setFilas(null)` al recargar, que además parpadeaba. El
+  esqueleto sale del estado inicial, así que se ve en la primera carga y en las
+  siguientes la lista anterior se queda hasta que llega la nueva.
+
 ## v2.508.0 — Conteo: resumen canónico, una fila por producto de una sola presentación
 
 **Un producto con una sola presentación ocupaba dos filas.** La banda del

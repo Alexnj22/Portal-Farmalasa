@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    ReceiptText, Loader2, Download, CheckCircle2, Undo2, Lock, PackageCheck,
+    ReceiptText, Download, Check, Undo2, Lock, PackageCheck,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
 import Checkbox from '../../components/common/Checkbox';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -43,11 +42,15 @@ import { formatMoney } from '../../utils/formatNumber';
 // `documento_numero` viene cortado a 20 caracteres y cada sala lo teclea
 // distinto ('DTE-11662', '13130', 'C09DCEC3-2D29-479B-A'…).
 
-const PERIODOS = [
-    { value: '15', label: 'Últimos 15 días' },
-    { value: '45', label: 'Últimos 45 días' },
-    { value: '90', label: 'Últimos 90 días' },
-];
+// ── Un mes, y no se pregunta (2026-08-07) ──────────────────────────────────
+// Pedido del usuario: «último mes (30 días) nada más, así que no debe haber un
+// selector». Y es lo correcto: una factura de agua de la semana pasada se toma
+// esta semana. Un desplegable de período convertía en pregunta algo que tiene
+// una sola respuesta buena, y encima ocupaba el lugar del buscador.
+//
+// Lo que caiga fuera del mes ya no es trabajo de sala: eso se resuelve desde
+// «Facturas de Sala» en Compras, que sí tiene su propio período.
+const DIAS_VISIBLES = 30;
 
 const fmtFecha = (iso) => {
     if (!iso) return '';
@@ -141,23 +144,22 @@ function FilaFactura({ fila, branchId, onCambio }) {
                     </span>
                 ) : mia ? (
                     <>
-                        <Button size="sm" variant="ghost" disabled={ocupado} onClick={descargar}>
-                            {ocupado ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                        <Button size="sm" variant="ghost" icon={Download}
+                            loading={ocupado} onClick={descargar}>
                             Descargar
                         </Button>
                         {/* Soltar solo mientras nadie la haya registrado como
                             compra. Pasado eso lo decide contabilidad — y el RPC
                             lo impone, esto solo evita ofrecer lo que va a fallar. */}
                         {!fila.registrada && (
-                            <Button size="sm" variant="ghost" disabled={ocupado} onClick={soltar}>
-                                <Undo2 size={13} />
+                            <Button size="sm" variant="ghost" icon={Undo2}
+                                loading={ocupado} onClick={soltar}>
                                 Soltar
                             </Button>
                         )}
                     </>
                 ) : (
-                    <Button size="sm" disabled={ocupado} onClick={tomar}>
-                        {ocupado ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                    <Button size="sm" icon={Check} loading={ocupado} onClick={tomar}>
                         {ocupado ? 'Tomando...' : 'Es de mi sala'}
                     </Button>
                 )}
@@ -172,21 +174,24 @@ function FilaFactura({ fila, branchId, onCambio }) {
 function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
     const [filas,    setFilas]    = useState(null);
     const [error,    setError]    = useState('');
-    const [dias,     setDias]     = useState('45');
     const [busca,    setBusca]    = useState('');
     const [verOtras, setVerOtras] = useState(false);
 
+    // Sin `setFilas(null)` al recargar: era una escritura sincrónica dentro del
+    // efecto (render en cascada, lo marca `react-hooks/set-state-in-effect`) y
+    // encima parpadeaba. El esqueleto sale del estado inicial `null`, así que se
+    // ve en la PRIMERA carga; en las siguientes la lista anterior se queda hasta
+    // que llega la nueva, que es lo que conviene.
     const cargar = useCallback(async () => {
-        if (!branchId) { setFilas([]); return; }
         const { filas: f, error: e } = await fetchFacturasSala(branchId, {
-            dias: Number(dias), incluirTomadas: verOtras,
+            dias: DIAS_VISIBLES, incluirTomadas: verOtras,
         });
         setError(e?.message ?? '');
         setFilas(f);
         onCambio?.();
-    }, [branchId, dias, verOtras, onCambio]);
+    }, [branchId, verOtras, onCambio]);
 
-    useEffect(() => { setFilas(null); cargar(); }, [cargar]);
+    useEffect(() => { cargar(); }, [cargar]);
 
     // El buscador barre monto, proveedor, etiqueta y el renglón: teclear "184"
     // deja las de $184.68 y teclear "tigo" deja las recargas. Es el filtro por
@@ -211,12 +216,6 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
             <HerramientasModal>
                 <div className="flex items-center gap-2 flex-wrap">
                     {selectorSucursal}
-                    <LiquidSelect
-                        value={dias}
-                        onChange={v => setDias(v ?? '45')}
-                        options={PERIODOS}
-                        clearable={false}
-                    />
                     <div className="flex-1 min-w-[120px]">
                         <SearchInput
                             value={busca}
@@ -258,7 +257,7 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
             {!cargando && abiertas.length > 0 && (
                 <div className="flex flex-col gap-2">
                     <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-                        Sin dueño
+                        Sin asignar
                     </p>
                     {abiertas.map(f => (
                         <FilaFactura key={f.document_id} fila={f} branchId={branchId} onCambio={cargar} />
@@ -291,8 +290,10 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
 export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
     const [pendientes, setPendientes] = useState(null);
 
+    // Sin la guarda de `!branchId`: `contarFacturasSala` ya devuelve 0 en ese
+    // caso, así que acá sólo duplicaba la regla — y de paso escribía estado de
+    // forma sincrónica dentro del efecto que la llama.
     const contar = useCallback(() => {
-        if (!branchId) { setPendientes(0); return; }
         contarFacturasSala(branchId).then(r => setPendientes(r.total));
     }, [branchId]);
 

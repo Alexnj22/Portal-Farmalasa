@@ -19,6 +19,11 @@ import { supabase } from '../supabaseClient';
  * «¿por qué no me aparece la mía?» sin que nadie tenga que llamar por teléfono.
  */
 export async function fetchFacturasSala(branchId, { dias = 45, incluirTomadas = false } = {}) {
+    // La guarda vive acá y no en el widget, igual que en `contarFacturasSala`:
+    // allá era una escritura de estado SINCRÓNICA dentro del efecto que llama
+    // —render en cascada, y el lint lo marca—. Devolviendo desde una función
+    // async, quien la espera escribe después del tick.
+    if (!branchId) return { filas: [], error: null };
     const { data, error } = await supabase.rpc('get_facturas_sala', {
         p_branch_id: Number(branchId),
         p_dias: dias,

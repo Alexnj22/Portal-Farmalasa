@@ -845,8 +845,23 @@ const DashboardView = ({ openModal }) => {
                   const expected = (TAB_WIDGETS[t.id] || []).filter(id => id !== 'kpi');
                   const missing  = expected.filter(id => !(id in tabLayout));
                   if (missing.length) {
-                    const placed = autoPlaceOrder([...Object.keys(tabLayout), ...missing], {});
-                    missing.forEach(id => { tabLayout[id] = placed[id]; });
+                    // ── EL ESCRITOR que hacía reincidir el encimado ───────────
+                    // v2.489.1 corrigió `alDia`, que es la mezcla de PINTADO.
+                    // Ésta es la de ESCRITURA y tenía el mismo defecto:
+                    // `autoPlaceOrder` COMPACTA el tablero entero, así que el
+                    // hueco que devolvía era de un acomodo que no es el guardado.
+                    //
+                    // Y al persistirse, el arreglo de `alDia` no podía salvarlo:
+                    // con la posición ya escrita el id deja de estar «faltante»
+                    // y esa rama no se vuelve a mirar. Por eso el usuario lo vio
+                    // otra vez al habilitarle un widget a un rol.
+                    //
+                    // El `{}` de medidas era la otra mitad: colocaba usando los
+                    // mínimos del registro e ignorando todo lo que el usuario
+                    // hubiera redimensionado, así que compactaba todavía peor.
+                    Object.assign(tabLayout, colocarEnHuecos(
+                      tabLayout, missing, data.sizes?.[t.id] ?? EMPTY_OBJ, GRID_COLS,
+                    ));
                   }
                   next[t.id] = tabLayout;
                   try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
@@ -1139,14 +1154,19 @@ const DashboardView = ({ openModal }) => {
       const tabLayout = prev['general'] || {};
       const missing = ids.filter(id => !(id in tabLayout));
       if (!missing.length) return prev;
-      const existingOrder = Object.keys(tabLayout);
-      const newLayout = autoPlaceOrder([...existingOrder, ...missing], widgetSizesRef.current);
-      const nextTabLayout = { ...tabLayout };
-      missing.forEach(id => { nextTabLayout[id] = newLayout[id] || { col: 1, row: 999 }; });
+      // Mismo caso que el escritor de arriba: `autoPlaceOrder` compacta y acá
+      // el resultado se persiste. Y las medidas tienen que ser las de
+      // «general», que es el tablero donde se está colocando —
+      // `widgetSizesRef` guarda las de la pestaña ACTIVA, así que colocaba las
+      // baldosas de sucursal con las medidas de otra pestaña.
+      const nextTabLayout = {
+        ...tabLayout,
+        ...colocarEnHuecos(tabLayout, missing, widgetSizes.general ?? EMPTY_OBJ, GRID_COLS),
+      };
       try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
       return { ...prev, general: nextTabLayout };
     });
-  }, [salesBranches, user]);
+  }, [salesBranches, user, widgetSizes]);
 
   useEffect(() => { if (!attendanceLoaded) loadAttendance(14); }, [attendanceLoaded, loadAttendance]);
 

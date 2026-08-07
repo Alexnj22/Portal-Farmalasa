@@ -143,6 +143,25 @@ const ERP_UBICACION_POR_SUCURSAL = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 1, 7: 8 };
 // Metas, que es su dueño; acá solo se consume.
 const META_SALA_IDS = SALAS_VENTA;
 
+// ── Qué sucursales entran en el selector de cada baldosa (2026-08-07) ───────
+// Reportado: «en los selectores de sucursal, no debe aparecer administración
+// [...] ya que no vende, no tiene inventario».
+//
+// Y era literal: `branches` trae las 8 filas del maestro, incluida
+// Administración, que no está mapeada al sistema de origen. Elegirla abría la
+// baldosa contra una sucursal sin nada — lista vacía, sin decir por qué.
+//
+// El criterio no es el mismo para las dos familias de baldosa, y por eso son
+// dos listas:
+//   · Facturación mira facturas → `SALAS_VENTA`. Verificado contra
+//     `sales_invoices` de julio 2026: emiten esas 6 y nadie más (Bodega, 0).
+//   · Inventario y Min/Max miran existencias → las 7 del mapa ERP, Bodega
+//     incluida, que sí tiene inventario. Eso ya lo daba `MM_ERP_ORDER`, que
+//     nace de ese mapa y por eso nunca tuvo el problema.
+const SALAS_QUE_FACTURAN = SALAS_VENTA;
+const salaQueFacturaPorDefecto = (branchId) =>
+    String(SALAS_QUE_FACTURAN.includes(Number(branchId)) ? Number(branchId) : SALAS_QUE_FACTURAN[0]);
+
 // ⚠️ `general` NO se escribe a mano — se deriva de `WIDGET_DEFS` (más abajo).
 //
 // Era una lista paralela y se desincronizó dos veces sin que nada avisara: un
@@ -891,7 +910,12 @@ const DashboardView = ({ openModal }) => {
   const [salesLoading,   setSalesLoading]   = useState(false);
   const [salesView,      setSalesView]      = useState('DAYS');
   const [shiftBranch,    setShiftBranch]    = useState('');
-  const [annulmentBranch, setAnnulmentBranch] = useState(() => String(user?.branchId ?? user?.branch_id ?? ''));
+  // Arranca en la sala propia, y si esa sala no factura —Administración,
+  // Bodega— en la primera que sí. Antes arrancaba en la propia a secas, así que
+  // a las 7 personas de Administración la baldosa les abría contra una sucursal
+  // que no está ni en la lista: el desplegable en blanco y cero facturas.
+  const [annulmentBranch, setAnnulmentBranch] = useState(
+      () => salaQueFacturaPorDefecto(user?.branchId ?? user?.branch_id));
   const [minmaxErp, setMinmaxErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
   const [movimientoErp, setMovimientoErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
   // Arranca en la sala propia; si el usuario no está en una sala de venta
@@ -2082,14 +2106,20 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'annulment_req') {
       if (!showWidget('annulment_req', 'dash_annulment_req')) return null;
       const isAnnAllScope = getScope('dash_annulment_req') === 'ALL';
+      // Solo las que facturan, y en el orden en que las nombra el negocio (el
+      // de `SALAS_QUE_FACTURAN`, no el del maestro).
+      const annulmentOpts = SALAS_QUE_FACTURAN
+        .map(id => branches.find(b => Number(b.id) === id))
+        .filter(Boolean)
+        .map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('annulment_req',
         <WidgetAnnulmentRequest
           selectedBranchId={isAnnAllScope ? annulmentBranch : null}
-          selectorSucursal={isAnnAllScope && branches.filter(b => b.id).length > 0 && (
+          selectorSucursal={isAnnAllScope && annulmentOpts.length > 0 && (
             <LiquidSelect
               value={annulmentBranch}
-              onChange={val => setAnnulmentBranch(val ?? String(user?.branchId ?? user?.branch_id ?? ''))}
-              options={branches.filter(b => b.id).map(b => ({ value: String(b.id), label: b.name }))}
+              onChange={val => setAnnulmentBranch(val ?? salaQueFacturaPorDefecto(user?.branchId ?? user?.branch_id))}
+              options={annulmentOpts}
               placeholder="Sucursal..."
               clearable={false}
             />

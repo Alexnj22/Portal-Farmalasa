@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.481.0 — El foco cae en el campo, y la línea se arma antes de entrar
+## v2.482.0 — El foco cae en el campo, y la línea se arma antes de entrar
 
 Cuatro cosas reportadas probando el tablero, y las tres primeras son la misma.
 

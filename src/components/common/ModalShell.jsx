@@ -16,6 +16,17 @@ const ENFOCABLES = [
   '[tabindex]:not([tabindex="-1"])', '[contenteditable="true"]',
 ].join(',');
 
+// Los campos donde se ESCRIBE. Es un subconjunto de `ENFOCABLES`, no otra
+// lista: lo que decide es si el teclado sirve de algo apenas se abre.
+// Fuera quedan los que son botones disfrazados de input (checkbox, radio,
+// submit, file) y los de solo lectura, que aceptan el foco y no la escritura.
+const CAMPOS_DE_TEXTO = [
+  'input:not([type="checkbox"]):not([type="radio"]):not([type="button"])'
+    + ':not([type="submit"]):not([type="reset"]):not([type="file"])'
+    + ':not([readonly]):not([disabled])',
+  'textarea:not([readonly]):not([disabled])',
+].join(',');
+
 const visible = (el) => {
   const cs = getComputedStyle(el);
   if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
@@ -294,7 +305,22 @@ export default function ModalShell({
       const panel = panelRef.current;
       if (!panel || panel.contains(document.activeElement)) return; // un autoFocus ya lo movió
       const f = [...panel.querySelectorAll(ENFOCABLES)].filter(visible);
-      (f[0] || panel).focus();
+      // ── Al abrir, el foco va al CAMPO, no al primer enfocable (2026-08-07) ──
+      // Pedido así: «que el focus al entrar a alguna sección o modal sean los
+      // input, así siempre está listo para escribir». Y el primer enfocable casi
+      // nunca es el campo: el encabezado canónico dibuja su botón de cerrar
+      // ANTES del cuerpo, así que en la consulta de inventario el foco caía en
+      // la «✕» y el buscador —que es todo el motivo de abrir ese modal— había
+      // que ir a tocarlo.
+      //
+      // Solo con puntero fino. En un teléfono el campo enfocado levanta el
+      // teclado, que se come la mitad de la hoja: en un modal que primero se LEE
+      // —una lista de facturas, un formulario largo— eso tapa justo lo que se
+      // vino a mirar. Donde escribir ES el propósito del modal, el consumidor lo
+      // pide explícito con `autoFocus` y esta rama ni se consulta (el `contains`
+      // de arriba corta antes).
+      const campo = sinHover ? null : [...panel.querySelectorAll(CAMPOS_DE_TEXTO)].filter(visible)[0];
+      (campo || f[0] || panel).focus();
     }, 60);
 
     return () => {
@@ -346,7 +372,7 @@ export default function ModalShell({
         }
       }, tiemposGota().salida + MARGEN_DESMONTAJE + 40);
     };
-  }, [open]);
+  }, [open, sinHover]);
 
   // ── La gota, para TODO diálogo ────────────────────────────────────────
   // No es un gesto de las hojas: es de cualquier cosa que se abra por un toque.

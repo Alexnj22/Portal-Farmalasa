@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     AlertTriangle, ArrowLeft, CalendarX2, Camera, CheckCircle2, ChevronRight, Loader2,
     PackageMinus, PackagePlus, Plus, Stethoscope, Trash2, X,
@@ -147,6 +147,26 @@ function diasHasta(fecha) {
 const LOTE_NUEVO = '__nuevo__';
 let contador = 0;
 
+/**
+ * Lo que le falta a una línea para poder enviarse.
+ *
+ * Una sola definición para los dos lugares que la necesitan: el compositor
+ * —que decide si «Agregar» se habilita— y el banco, que marca lo incompleto.
+ * Escrita dos veces, la diferencia se paga al revés de como se descubre: se
+ * agrega una línea que el compositor da por buena y el envío la rechaza desde
+ * otra pestaña, sin decir cuál.
+ */
+function problemasDeLinea(l, { llevaLote, esCarga, esPerecedero }) {
+    const problemas = [];
+    if (!(Number(l.cantidad) > 0)) problemas.push('cantidad');
+    if (!esCarga && l.existencia != null && Number(l.cantidad) > Number(l.existencia))
+        problemas.push('sin existencia');
+    if (llevaLote && !String(l.lote).trim()) problemas.push('lote');
+    if (esCarga && llevaLote && !String(l.vence).trim()) problemas.push('vence');
+    if (esCarga && !llevaLote && esPerecedero && !String(l.vence).trim()) problemas.push('vence');
+    return problemas;
+}
+
 /* ─── Paso 1 · qué se va a hacer ──────────────────────────────────────────── */
 function SelectorOperacion({ onSelect }) {
     return (
@@ -229,6 +249,30 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     // franja apretada entre el buscador y los resultados.
     const [pestana, setPestana]   = useState('agregar');
 
+    // ── El compositor: buscar, completar, agregar. Y el siguiente ─────────
+    // Reportado: «al agregar un producto a la solicitud, ¿por qué pone cantidad?
+    // me puso 7 solo». Ese 7 era la EXISTENCIA de la sala, prellenada como si
+    // fuera lo que se quiere mover. En una carga no tiene ninguna relación con
+    // lo que entra, y en una descarga es el tope, no la respuesta: aceptarla sin
+    // mirar descarga la sala entera. Sale, y el campo arranca vacío.
+    //
+    // Y el flujo pedido es el que ya se estaba usando a la fuerza: «busco el
+    // producto, agrego cantidad y lote, y lo agrego, luego el siguiente». Antes
+    // tocar un resultado empujaba una línea a medio llenar a la otra pestaña,
+    // así que agregar tres productos eran tres viajes de ida y vuelta entre
+    // «Agregar» y «En la solicitud» — y el banco pasó a ser el lugar donde se
+    // llenan los datos en vez de donde se revisa lo ya armado.
+    //
+    // `borrador` es la línea mientras se arma; `lotesBorrador` sus lotes
+    // (`null` = todavía se están pidiendo, que es distinto de «no tiene»).
+    const [borrador,      setBorrador]      = useState(null);
+    const [lotesBorrador, setLotesBorrador] = useState(null);
+    const [ultimo,        setUltimo]        = useState('');
+    const buscadorRef = useRef(null);
+    // Cada apertura lleva su número: si se abre otro producto mientras los lotes
+    // del anterior siguen viajando, la respuesta vieja no puede pisar al nuevo.
+    const pedidoLotes = useRef(0);
+
     const op = OPERACIONES.find(o => o.key === opKey) ?? null;
     const esCarga = op?.movimiento === 'CARGA';
     const porVencimiento = opKey === 'VENCIMIENTO';
@@ -238,6 +282,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     const volver = useCallback(() => {
         setOpKey(null); setLineas([]); setCausa(''); setBusqueda(''); setError('');
         setMotivo(''); setFotos([]); setPestana('agregar');
+        setBorrador(null); setLotesBorrador(null); setUltimo('');
     }, []);
 
     useEffect(() => { volver(); }, [erpSucursalId, volver]);
@@ -290,7 +335,13 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
         return () => { cancelado = true; };
     }, [candidatos]);
 
-    const agregar = useCallback(async (fila) => {
+    // ── Agregar de la lista de vencidos: de un toque ──────────────────────
+    // Acá la fila YA es una línea: un lote concreto, con su fecha y con las
+    // unidades que vencieron. No hay nada que preguntar —la cantidad propuesta
+    // es la que se va a descargar— y la lista se recorre tildando decenas de
+    // filas. Es el único caso donde el número que viene de `inventory` es la
+    // respuesta y no el tope.
+    const agregarDeVencidos = useCallback(async (fila) => {
         const pres = presPorProducto.get(fila.erp_product_id) ?? [];
         const unidad = pres.find(p => p.factor === 1) ?? pres[0];
         setLineas(prev => [...prev, {
@@ -313,6 +364,52 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
         }
     }, [presPorProducto, lotesPorProducto, erpSucursalId]);
 
+    const abrirBorrador = useCallback(async (fila) => {
+        const pres = presPorProducto.get(fila.erp_product_id) ?? [];
+        const unidad = pres.find(p => p.factor === 1) ?? pres[0];
+        setUltimo('');
+        setBorrador({
+            erp_product_id: fila.erp_product_id,
+            descripcion: fila.descripcion,
+            tipo:   unidad?.tipo ?? 'UNIDAD',
+            factor: unidad?.factor ?? 1,
+            cantidad: '',
+            existencia: fila.cantidad ?? null,
+            lote: '', vence: '', loteNuevo: false,
+        });
+
+        const token = ++pedidoLotes.current;
+        const cacheados = lotesPorProducto.get(fila.erp_product_id);
+        if (cacheados) { setLotesBorrador(cacheados); return; }
+        setLotesBorrador(null);
+        const { lotes } = await fetchLotesDeProducto({
+            erpProductId: fila.erp_product_id, erpSucursalId,
+        });
+        setLotesPorProducto(prev => new Map(prev).set(fila.erp_product_id, lotes));
+        if (pedidoLotes.current === token) setLotesBorrador(lotes);
+    }, [presPorProducto, lotesPorProducto, erpSucursalId]);
+
+    const cerrarBorrador = useCallback(() => {
+        pedidoLotes.current++;
+        setBorrador(null); setLotesBorrador(null);
+    }, []);
+
+    // ── El foco cae en el buscador al llegar al paso de armar ─────────────
+    // «Que el focus al entrar a alguna sección o modal sean los input, así
+    // siempre está listo para escribir». Acá vale en las dos densidades de
+    // puntero —a diferencia de la regla general de `ModalShell`, que es solo de
+    // escritorio— porque este paso NO tiene otra cosa que hacer que escribir: se
+    // llegó eligiendo «Cargar producto» y lo único que sigue es teclear el
+    // nombre. El teclado arriba es la respuesta, no un estorbo.
+    //
+    // Corre también al cerrar el compositor, que es el «y luego el siguiente».
+    // La lista de vencidos queda fuera: ahí no hay buscador, hay un plazo.
+    useEffect(() => {
+        if (!op || porVencimiento || borrador || pestana !== 'agregar') return undefined;
+        const t = setTimeout(() => buscadorRef.current?.focus(), 80);
+        return () => clearTimeout(t);
+    }, [op, porVencimiento, borrador, pestana]);
+
     const quitar = useCallback(id => setLineas(prev => prev.filter(l => l.id !== id)), []);
     const editar = useCallback((id, patch) =>
         setLineas(prev => prev.map(l => (l.id === id ? { ...l, ...patch } : l))), []);
@@ -322,18 +419,44 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
         unidades: lineas.reduce((s, l) => s + (Number(l.cantidad) || 0), 0),
     }), [lineas]);
 
-    const faltantes = useMemo(() => lineas.map(l => {
-        const llevaLote = (lotesPorProducto.get(l.erp_product_id) ?? []).length > 0;
-        const problemas = [];
-        if (!(Number(l.cantidad) > 0)) problemas.push('cantidad');
-        if (!esCarga && l.existencia != null && Number(l.cantidad) > Number(l.existencia))
-            problemas.push('sin existencia');
-        if (llevaLote && !String(l.lote).trim()) problemas.push('lote');
-        if (esCarga && llevaLote && !String(l.vence).trim()) problemas.push('vence');
-        if (esCarga && !llevaLote && perecederos.has(l.erp_product_id) && !String(l.vence).trim())
-            problemas.push('vence');
-        return { id: l.id, problemas };
-    }), [lineas, lotesPorProducto, perecederos, esCarga]);
+    const faltantes = useMemo(() => lineas.map(l => ({
+        id: l.id,
+        problemas: problemasDeLinea(l, {
+            llevaLote: (lotesPorProducto.get(l.erp_product_id) ?? []).length > 0,
+            esCarga,
+            esPerecedero: perecederos.has(l.erp_product_id),
+        }),
+    })), [lineas, lotesPorProducto, perecederos, esCarga]);
+
+    // ── Lo que le falta al borrador, con la misma vara que al banco ───────
+    // Mientras los lotes viajan no se puede juzgar: sin saber si el producto
+    // lleva control de lote, «falta lote» sería una afirmación inventada. Por
+    // eso el botón espera, en vez de decir que está bien o que está mal.
+    const loteRepetido = Boolean(borrador) && lineas.some(l =>
+        l.erp_product_id === borrador.erp_product_id
+        && String(l.lote).trim() === String(borrador.lote).trim());
+    const faltaBorrador = useMemo(() => {
+        if (!borrador || lotesBorrador === null) return ['cargando'];
+        return problemasDeLinea(borrador, {
+            llevaLote: lotesBorrador.length > 0,
+            esCarga,
+            esPerecedero: perecederos.has(borrador.erp_product_id),
+        });
+    }, [borrador, lotesBorrador, esCarga, perecederos]);
+
+    const editarBorrador = useCallback(patch => setBorrador(b => (b ? { ...b, ...patch } : b)), []);
+
+    const confirmarBorrador = useCallback(() => {
+        if (!borrador || faltaBorrador.length || loteRepetido) return;
+        setLineas(prev => [...prev, { id: `l${++contador}`, ...borrador }]);
+        setUltimo(borrador.descripcion);
+        pedidoLotes.current++;
+        setBorrador(null); setLotesBorrador(null);
+        // Se limpia la búsqueda y el foco vuelve al buscador: «luego el
+        // siguiente si hay» se teclea sin tocar nada más.
+        setBusqueda('');
+        setTimeout(() => buscadorRef.current?.focus(), 0);
+    }, [borrador, faltaBorrador, loteRepetido]);
 
     const incompletas = faltantes.filter(f => f.problemas.length > 0);
     // El motivo es obligatorio donde existe; la foto, donde se pide. Y el texto
@@ -491,18 +614,203 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                 />
             </div>
 
-            {/* Cómo se agregan productos */}
-            {pestana === 'agregar' && (
+            {/* Cómo se agregan productos. Con un producto en el compositor el
+                buscador se retira: mientras se completa una línea no hay una
+                lista debajo que mirar, y dejarlo invita a escribir encima y
+                perder lo que se estaba armando. */}
+            {pestana === 'agregar' && !borrador && (
               <div className="shrink-0">
                 {porVencimiento
                     ? <LiquidSelect nano clearable={false} value={plazo} onChange={setPlazo} options={PLAZOS} />
                     : (
                         <SearchInput
+                            ref={buscadorRef}
                             accentColor="var(--warning)"
                             value={busqueda} onChange={setBusqueda}
                             placeholder="Buscar producto para agregar…"
                         />
                     )}
+              </div>
+            )}
+
+            {/* Lo último que entró. El contador de la pestaña sube, pero un
+                número que cambia no dice CUÁL entró — y en una tanda de diez
+                productos parecidos eso es justo lo que hay que poder confirmar
+                sin cambiar de pestaña. Se va solo al buscar el siguiente. */}
+            {pestana === 'agregar' && !borrador && ultimo && !busqueda && (
+                <p className="shrink-0 flex items-center gap-1.5 text-micro font-semibold text-success-text px-1">
+                    <CheckCircle2 size={12} strokeWidth={2.5} className="shrink-0" />
+                    <span className="truncate">{ultimo} — agregado</span>
+                </p>
+            )}
+
+            {/* ── El compositor ────────────────────────────────────────────
+                La línea se completa ACÁ y entra armada. Ver la nota larga en
+                el estado: antes entraba a medio llenar con la existencia de la
+                sala como cantidad, y se terminaba en la otra pestaña. */}
+            {pestana === 'agregar' && borrador && (
+              <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div data-surface="card" className="p-3 flex flex-col gap-3">
+                    <div className="flex items-start gap-2">
+                        <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly
+                            onClick={cerrarBorrador} aria-label="Volver a la búsqueda" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-body-sm font-black text-content leading-tight">
+                                {borrador.descripcion}
+                            </p>
+                            {borrador.existencia != null && (
+                                <p className="text-micro text-content-2 font-semibold mt-0.5">
+                                    {borrador.existencia} en la sala
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-end gap-2">
+                        {/* `autoFocus`: el campo que sigue después de elegir el
+                            producto es éste. Y `onKeyDown` con Enter, porque
+                            teclear la cantidad y estirar la mano al ratón para
+                            confirmarla es lo que hace lenta una tanda de diez. */}
+                        <PortalInput
+                            autoFocus
+                            label="Cantidad" name="borrador-cantidad"
+                            type="number" min="1" inputMode="numeric"
+                            value={borrador.cantidad}
+                            onChange={e => editarBorrador({ cantidad: e.target.value })}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); confirmarBorrador(); } }}
+                            placeholder="0"
+                            className="w-24"
+                        />
+
+                        {(presPorProducto.get(borrador.erp_product_id) ?? []).length > 1 && (
+                            <div className="flex-1 min-w-[8rem]">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
+                                    Presentación
+                                </p>
+                                <LiquidSelect
+                                    nano clearable={false} ariaLabel="Presentación"
+                                    value={`${borrador.tipo}|${borrador.factor}`}
+                                    onChange={v => {
+                                        const [tipo, factor] = String(v).split('|');
+                                        editarBorrador({ tipo, factor: Number(factor) });
+                                    }}
+                                    options={(presPorProducto.get(borrador.erp_product_id) ?? []).map(p => ({
+                                        value: `${p.tipo}|${p.factor}`,
+                                        label: p.factor > 1 ? `${p.tipo} (${p.factor})` : p.tipo,
+                                    }))}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Los lotes todavía viajando. Se dice, en vez de dibujar un
+                        formulario sin el campo que quizá haga falta. */}
+                    {lotesBorrador === null && (
+                        <p className="flex items-center gap-1.5 text-micro text-content-3 font-semibold px-1">
+                            <Loader2 size={11} className="animate-spin" /> Buscando los lotes…
+                        </p>
+                    )}
+
+                    {lotesBorrador !== null && lotesBorrador.length > 0 && (
+                        <div>
+                            <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
+                                Lote
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {/* `clearable={false}`: sin esto `LiquidSelect`
+                                    agrega su opción de limpiar, rotulada
+                                    «Todos» — y un lote «Todos» no existe. */}
+                                <LiquidSelect
+                                    nano clearable={false} ariaLabel="Lote"
+                                    value={borrador.loteNuevo ? LOTE_NUEVO
+                                        : (borrador.lote ? `${borrador.lote}|${borrador.vence ?? ''}` : '')}
+                                    onChange={v => {
+                                        if (v === LOTE_NUEVO) { editarBorrador({ loteNuevo: true, lote: '', vence: '' }); return; }
+                                        const [lote, vence] = String(v).split('|');
+                                        editarBorrador({ loteNuevo: false, lote, vence });
+                                    }}
+                                    options={[
+                                        ...lotesBorrador.map(x => ({
+                                            value: `${x.lote}|${x.vence ?? ''}`,
+                                            label: `${x.lote}${x.vence ? ` · ${fmtFecha(x.vence)}` : ''}`,
+                                        })),
+                                        ...(esCarga ? [{ value: LOTE_NUEVO, label: '+ Lote nuevo' }] : []),
+                                    ]}
+                                    placeholder="Elegir lote…"
+                                />
+
+                                {esCarga && borrador.loteNuevo && (
+                                    <PortalInput
+                                        value={borrador.lote}
+                                        onChange={e => editarBorrador({ lote: e.target.value })}
+                                        aria-label="Número del lote nuevo"
+                                        placeholder="N.º de lote" className="w-32"
+                                    />
+                                )}
+
+                                {/* El vencimiento solo cuando NO se sabe ya: el
+                                    lote elegido lo trae adentro y su etiqueta lo
+                                    muestra. Pedirlo otra vez es pedir dos veces
+                                    el mismo dato y dejar que los dos difieran. */}
+                                {esCarga && borrador.loteNuevo && (
+                                    <PortalInput
+                                        type="date" value={borrador.vence ?? ''}
+                                        onChange={e => editarBorrador({ vence: e.target.value })}
+                                        aria-label="Vencimiento del lote nuevo"
+                                        className="w-36"
+                                    />
+                                )}
+
+                                {!borrador.loteNuevo && borrador.vence && (
+                                    <span className="text-micro font-semibold text-content-2 px-1">
+                                        Vence {fmtFecha(borrador.vence)}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Perecedero sin control de lote: la fecha no tiene de dónde
+                        salir, así que se pide. El número de lote NO — ponerle uno
+                        le inventa un lote que no debería existir. */}
+                    {esCarga && lotesBorrador?.length === 0 && perecederos.has(borrador.erp_product_id) && (
+                        <PortalInput
+                            label="Vence" name="borrador-vence"
+                            type="date" value={borrador.vence ?? ''}
+                            onChange={e => editarBorrador({ vence: e.target.value })}
+                            className="w-40"
+                        />
+                    )}
+
+                    {loteRepetido && (
+                        <p className="flex items-center gap-1 text-micro text-warning-text font-semibold px-1">
+                            <AlertTriangle size={11} strokeWidth={2.5} />
+                            Ese producto ya está en la solicitud con ese lote — cámbiale la cantidad ahí.
+                        </p>
+                    )}
+
+                    {!loteRepetido && faltaBorrador.length > 0 && faltaBorrador[0] !== 'cargando' && (
+                        <p className="flex items-center gap-1 text-micro text-content-3 font-semibold px-1">
+                            <AlertTriangle size={11} strokeWidth={2.5} />
+                            Falta {faltaBorrador.join(', ')}
+                            {faltaBorrador.includes('sin existencia') && borrador.existencia != null
+                                && ` · hay ${borrador.existencia}`}
+                        </p>
+                    )}
+
+                    <div className="flex items-center gap-2 pt-1">
+                        <Button variant="secondary" size="sm" className="flex-1" onClick={cerrarBorrador}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            size="sm" className="flex-1"
+                            disabled={faltaBorrador.length > 0 || loteRepetido}
+                            onClick={confirmarBorrador}
+                        >
+                            Agregar a la solicitud
+                        </Button>
+                    </div>
+                </div>
               </div>
             )}
 
@@ -639,7 +947,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             )}
 
             {/* De dónde se agrega */}
-            {pestana === 'agregar' && (
+            {pestana === 'agregar' && !borrador && (
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {cargando && <div className="flex justify-center py-6"><SkeletonText lines={3} className="w-full max-w-md" /></div>}
 
@@ -664,15 +972,26 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
 
                 {!cargando && candidatos.map(f => {
                     const dias = diasHasta(f.fecha_vencimiento);
-                    const yaEsta = lineas.some(l =>
-                        l.erp_product_id === f.erp_product_id &&
-                        (!f.lote || f.lote === 'GENERICO' || l.lote === f.lote));
+                    // Por vencimiento la fila ES un lote, así que repetirla sería
+                    // descargar dos veces el mismo. En el buscador la fila es un
+                    // producto y el lote lo elige el compositor: ahí «ya está» es
+                    // un aviso —dos lotes distintos del mismo producto son dos
+                    // líneas legítimas— y el freno contra el duplicado exacto lo
+                    // pone el compositor, que sí sabe qué lote se eligió.
+                    const yaEsta = porVencimiento
+                        ? lineas.some(l => l.erp_product_id === f.erp_product_id &&
+                            (!f.lote || f.lote === 'GENERICO' || l.lote === f.lote))
+                        : lineas.some(l => l.erp_product_id === f.erp_product_id);
+                    const bloqueada = porVencimiento && yaEsta;
                     return (
                         <ListRow
                             key={`${f.erp_product_id}|${f.lote ?? ''}|${f.fecha_vencimiento ?? ''}`}
-                            onClick={() => !yaEsta && agregar(f)}
-                            leading={<Plus size={14} className={yaEsta ? 'text-content-3' : 'text-brand-text'} strokeWidth={2.5} />}
-                            className={`border-divider bg-surface-card ${yaEsta ? 'opacity-50' : 'hover:border-brand/40'}`}
+                            onClick={() => {
+                                if (bloqueada) return;
+                                if (porVencimiento) agregarDeVencidos(f); else abrirBorrador(f);
+                            }}
+                            leading={<Plus size={14} className={bloqueada ? 'text-content-3' : 'text-brand-text'} strokeWidth={2.5} />}
+                            className={`border-divider bg-surface-card ${bloqueada ? 'opacity-50' : 'hover:border-brand/40'}`}
                             title={f.descripcion}
                             trailing={<span className="text-caption font-black text-content-3">{f.cantidad}</span>}
                         >

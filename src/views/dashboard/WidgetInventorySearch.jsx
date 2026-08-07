@@ -934,7 +934,15 @@ export default function WidgetInventorySearch() {
               junto al título. El encabezado a mano que estaba acá lo pone ahora
               `LanzadorSolicitud`, con su botón de cerrar. */}
           <HerramientasModal>
+            {/* `autoFocus` explícito y no la regla general de `ModalShell`:
+                ésta se abre para ESCRIBIR. La regla general enfoca el primer
+                campo solo con puntero fino —en un teléfono el teclado se come
+                media hoja y en un modal que primero se lee eso estorba—, y acá
+                el teclado arriba es exactamente lo que hace falta, también en
+                el teléfono. Pedido así: «que el focus lo tenga el input para
+                escribir de un solo». */}
             <SearchInput
+              autoFocus
               accentColor="var(--warning)"
               value={q}
               onChange={setQ}

@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.465.1 — El encabezado que mentía con alcance de todas las sucursales
+
+Visto durante la prueba de punta a punta y corregido ahora: quien ve todas las
+sucursales leía **«En camino a tu sala»** sobre un traslado que iba a otra. Ahora
+ese encabezado solo dice «a tu sala» cuando de verdad lo son todos, y cada
+renglón escribe el recorrido —*Salud 1 → Salud 2*— que antes había que adivinar.
+
+**Y con esto quedan probadas contra producción las dos ramas que faltaban.**
+
+El **rechazo**, que nunca se había ejecutado: desde la pantalla, con motivo de la
+lista y nota. A quien pidió le llegó *«Salud 1 no puede enviar ACETAMINOFEN…:
+producto ya encargado. Se golpeo la caja al moverla — Sí hay en Bodega (7400),
+La Popular (2458), Salud 4 (1369)»*, en 0 ms. La sugerencia se ve **antes** de
+rechazar, así que quien decide sabe qué le va a llegar al otro.
+
+La **cascada por turno**, que hasta hoy nunca había ruteado nada porque ninguna
+sala tiene horarios cargados: con un horario de prueba, la solicitud fue a la
+persona en turno y no a la jefatura. El horario de prueba se borró al terminar.
+
+Y el widget **en teléfono**: hoja inferior, sin desborde horizontal, botones
+legibles y el aviso en la campana.
+
+## v2.465.0 — El expediente del producto a pantalla completa: el envase
+
+**Esto es el envase, no el diseño aprobado.** El catálogo deja de volver a la
+tabla en el teléfono: la ficha abre el expediente a pantalla completa. Lo que
+todavía muestra adentro es el panel de escritorio tal cual, no la escalera de
+precios ni la barra superior del prototipo. Está escrito acá para que nadie lo
+lea como terminado.
+
+**`ModalShell` gana la posición `pantalla`.** Una hoja inferior sirve para
+decidir algo y cerrarse; un expediente de siete secciones no se decide, se
+recorre. Pedirle a una hoja el 90 % del alto es dibujar una pantalla completa con
+las esquinas redondeadas y un asa que miente sobre lo que hay debajo. Es la única
+posición que `ModalShell` **no reinterpreta**: no se convierte en hoja por ser
+táctil ni en panel lateral por estar acostado, porque quien la pide la pide para
+las dos orientaciones.
+
+**Y a pantalla completa el envoltorio SÍ pinta.** En las demás posiciones es
+transparente a propósito —la superficie la pone el hijo, que es una tarjeta
+flotando sobre la vista—, pero una pantalla entera no flota sobre nada: medido,
+salía con `background: rgba(0,0,0,0)` y se veía la tabla de atrás a través del
+expediente. Lleva el fondo de **página** y no el de tarjeta, porque lo que se
+dibuja es una pantalla y adentro van tarjetas.
+
+**Un componente, dos envases.** `ExpandedProductRow` acepta `comoPanel` y
+devuelve el mismo cuerpo sin el `<tr><td colSpan>`. No son dos componentes a
+propósito: el día que alguien agregue una sección la agregaría en uno solo, que
+es exactamente cómo este proyecto acumuló las cuatro copias de la fila expandida
+que v2.62.4 tuvo que reunificar.
+
+**Lo que falta, y lo vi en la captura:**
+
+1. **La tabla de precios se sigue cortando.** Los siete niveles siguen dibujados
+   como tabla ancha dentro del modal: «VÍNETA» entra y «DESC. 1» queda partido en
+   el borde. Es el mismo problema que el expediente venía a resolver, heredado.
+   El prototipo lo resuelve con la escalera —nivel, precio y margen en columna—;
+   portarla es el trabajo que sigue.
+2. **No hay barra superior.** El panel arranca en su primera sección y la única
+   salida es el botón «Cerrar» del final. La barra fija con ← y el nombre está en
+   el prototipo, no en el código.
+3. **No verifiqué los cuatro temas.** La sonda no logró cambiar el tema con la
+   cuenta de QA —`data-theme` se quedó en `solid` en las cuatro corridas—, así
+   que lo único medido es Solid. Liquid, Liquid dark y Solid dark **están sin
+   comprobar**, y el pedido era justamente ése.
+
 ## v2.464.0 — Un cliente, una ficha: se unen las que el sync había partido en dos
 
 Había clientes contados dos veces. Uno con sus datos —dirección, teléfono,

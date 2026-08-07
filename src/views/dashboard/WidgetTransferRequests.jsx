@@ -223,8 +223,12 @@ function FilaPorRecibir({ fila, onHecho }) {
                 <Truck size={13} className="text-warning-text shrink-0 mt-0.5" strokeWidth={2.5} />
                 <div className="flex-1 min-w-0">
                     <p className="text-label font-black text-content leading-tight">{resumenItems(meta)}</p>
+                    {/* La sala a la que va, SIEMPRE. Quien tiene alcance de
+                        todas las sucursales ve traslados que no son suyos, y sin
+                        el destino escrito no hay cómo distinguirlos. */}
                     <p className="text-micro text-content-3 mt-0.5 truncate">
-                        Enviado por {meta.erp_traslado?.by_name ?? 'la otra sala'} · {fmtCuando(fila.updated_at)}
+                        {meta.origen_branch_name ?? 'La otra sala'} → {meta.branch_name ?? 'destino'}
+                        {' · '}{fmtCuando(fila.updated_at)}
                     </p>
                 </div>
             </div>
@@ -239,7 +243,8 @@ function FilaPorRecibir({ fila, onHecho }) {
 
 /* ─── El contenido del modal ──────────────────────────────────────────────── */
 function PanelTraslados({ onCambio }) {
-    const { hasPermission } = useAuth();
+    const { hasPermission, user } = useAuth();
+    const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const employees = useStaffStore(s => s.employees);
     const [porConfirmar, setPorConfirmar] = useState(null);
     const [porRecibir,   setPorRecibir]   = useState(null);
@@ -317,8 +322,15 @@ function PanelTraslados({ onCambio }) {
 
             {!cargando && porRecibir.length > 0 && (
                 <div className="flex flex-col gap-2">
+                    {/* «a tu sala» solo si TODOS son de la sala propia. Con
+                        alcance de todas las sucursales entran los de otras, y
+                        ahí ese encabezado dice algo falso — visto en la prueba
+                        del 2026-08-06, donde Salud 1 leía «en camino a tu sala»
+                        sobre un traslado que iba a Salud 2. */}
                     <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-                        En camino a tu sala
+                        {porRecibir.every(f => String(f.metadata?.branch_id ?? '') === String(miBranch ?? ''))
+                            ? 'En camino a tu sala'
+                            : 'En camino'}
                     </p>
                     {porRecibir.map(f => (
                         <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} />

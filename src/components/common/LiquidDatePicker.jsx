@@ -35,8 +35,52 @@ const LiquidDatePicker = ({
     // Se pasa una lista; `true` usa el juego por defecto. En un campo de
     // nacimiento o de vencimiento no tiene sentido, por eso no es automático.
     shortcuts = null,
+    // ── `min`/`max`: la ventana que el filtro admite (2026-08-07) ────────────
+    // Cadenas ISO `YYYY-MM-DD`, inclusive las dos. Fuera de ellas los días se
+    // apagan y no responden, los meses y años quedan deshabilitados, y las
+    // flechas de navegación se cortan en el borde. Es opt-in: sin ellas el
+    // selector se comporta exactamente como antes, que es lo que necesitan sus
+    // otros usos (nacimiento, vencimiento, programación a futuro).
+    //
+    // Existe porque un filtro sobre las ventas del mes no tiene por qué dejar
+    // elegir marzo de 2019: la lista no llega ahí, así que el control ofrece un
+    // resultado que nunca va a existir.
+    min = null,
+    max = null,
+    // `hideYear`: no dibuja el campo del año. El valor emitido SIGUE llevándolo
+    // —lo pone el calendario— y por eso sólo tiene sentido junto a `min`/`max`:
+    // es la ventana la que hace que el año se sobreentienda. Cuando la ventana
+    // cruza de un año a otro (la primera semana de enero, mirando diciembre),
+    // el campo REAPARECE solo: ahí el año dejó de sobreentenderse y esconderlo
+    // sería mentir sobre qué se está filtrando.
+    hideYear = false,
 }) => {
     const esTactil = useCoarsePointer();
+    const aMedianoche = (iso) => {
+        if (!iso) return null;
+        const d = new Date(`${iso}T12:00:00`);
+        if (Number.isNaN(d.getTime())) return null;
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+    };
+    const minT = aMedianoche(min);
+    const maxT = aMedianoche(max);
+    const fueraDeRango = (t) => (minT != null && t < minT) || (maxT != null && t > maxT);
+    // Un mes/año entero fuera de la ventana: para apagar la celda y las flechas.
+    const mesFuera = (y, m) => {
+        const ini = new Date(y, m, 1).setHours(0, 0, 0, 0);
+        const fin = new Date(y, m + 1, 0).setHours(0, 0, 0, 0);
+        return (maxT != null && ini > maxT) || (minT != null && fin < minT);
+    };
+    const anioFuera = (y) => {
+        const ini = new Date(y, 0, 1).setHours(0, 0, 0, 0);
+        const fin = new Date(y, 11, 31).setHours(0, 0, 0, 0);
+        return (maxT != null && ini > maxT) || (minT != null && fin < minT);
+    };
+    // La ventana cruza de año → el año vuelve a ser información, no ruido.
+    const ventanaCruzaDeAnio = minT != null && maxT != null
+        && new Date(minT).getFullYear() !== new Date(maxT).getFullYear();
+    const ocultarAnio = hideYear && !ventanaCruzaDeAnio;
     const [isOpen, setIsOpen] = useState(false);
     const [currentMode, setCurrentMode] = useState(mode === 'full' ? 'days' : mode === 'month' ? 'months' : 'years');
     const [viewDate, setViewDate] = useState(new Date()); 
@@ -142,9 +186,30 @@ const LiquidDatePicker = ({
     // vez). Mientras la fecha esté incompleta, simplemente no se emite nada —
     // el valor anterior del padre se conserva hasta que la nueva fecha quede
     // completa y válida.
-    const checkAndEmit = (d, m, y) => {
+    // Con el año escondido, el usuario teclea DD/MM y nada más — así que el año
+    // lo resuelve la VENTANA: se prueban los años que abarca y gana el que deja
+    // esa fecha adentro. Es el mismo razonamiento por el que se puede esconder:
+    // si sólo hay un año posible para ese día, escribirlo no aporta nada.
+    const anioDeLaVentana = (d, m) => {
+        if (minT == null && maxT == null) return null;
+        const desde = new Date(minT ?? maxT).getFullYear();
+        const hasta = new Date(maxT ?? minT).getFullYear();
+        for (let y = hasta; y >= desde; y--) {
+            const t = new Date(y, parseInt(m, 10) - 1, parseInt(d, 10)).setHours(0, 0, 0, 0);
+            if (!fueraDeRango(t)) return String(y);
+        }
+        return null;
+    };
+
+    const checkAndEmit = (d, m, yEntrante) => {
+        const y = (ocultarAnio && (yEntrante ?? '').length !== 4 && d.length === 2 && m.length === 2)
+            ? (anioDeLaVentana(d, m) ?? '')
+            : (yEntrante ?? '');
         if (d.length === 2 && m.length === 2 && y.length === 4) {
             const dn = parseInt(d, 10); const mn = parseInt(m, 10); const yn = parseInt(y, 10);
+            // Fuera de la ventana no se emite: el calendario ya no deja
+            // elegirlos, y tecleando era el único camino que quedaba abierto.
+            if (fueraDeRango(new Date(yn, mn - 1, dn).setHours(0, 0, 0, 0))) return;
             if (dn > 0 && dn <= 31 && mn > 0 && mn <= 12 && yn >= 1900) {
                 const testDate = new Date(yn, mn - 1, dn);
                 if (testDate.getFullYear() === yn && testDate.getMonth() === mn - 1 && testDate.getDate() === dn) {
@@ -227,16 +292,20 @@ const LiquidDatePicker = ({
         setCurrentMode('months'); mRef.current?.focus(); 
     };
 
-    const handlePrev = () => {
-        if (currentMode === 'days') setViewDate(new Date(currentYear, currentMonth - 1, 1));
-        else if (currentMode === 'months') setViewDate(new Date(currentYear - 1, currentMonth, 1));
-        else setViewDate(new Date(currentYear - 10, currentMonth, 1));
+    // El destino de cada flecha, para poder preguntarle si queda fuera de la
+    // ventana ANTES de ir. Sin esto la flecha llevaba a un mes con los 31 días
+    // apagados, que se lee como que el calendario se rompió.
+    const destino = (dir) => currentMode === 'days'  ? new Date(currentYear, currentMonth + dir, 1)
+                           : currentMode === 'months'? new Date(currentYear + dir, currentMonth, 1)
+                           :                           new Date(currentYear + dir * 10, currentMonth, 1);
+    const bloqueada = (dir) => {
+        const d = destino(dir);
+        return currentMode === 'days'   ? mesFuera(d.getFullYear(), d.getMonth())
+             : currentMode === 'months' ? anioFuera(d.getFullYear())
+             : anioFuera(d.getFullYear() + (dir > 0 ? 0 : 9));
     };
-    const handleNext = () => {
-        if (currentMode === 'days') setViewDate(new Date(currentYear, currentMonth + 1, 1));
-        else if (currentMode === 'months') setViewDate(new Date(currentYear + 1, currentMonth, 1));
-        else setViewDate(new Date(currentYear + 10, currentMonth, 1));
-    };
+    const handlePrev = () => { if (!bloqueada(-1)) setViewDate(destino(-1)); };
+    const handleNext = () => { if (!bloqueada(+1)) setViewDate(destino(+1)); };
 
     // 🧠 MOTORES DE SOMBREADO Y ASUETOS
     let anchorObj = null;  
@@ -353,7 +422,7 @@ const LiquidDatePicker = ({
                 )}
 
                 <div className="flex justify-between items-center mb-5 px-1">
-                    <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={handlePrev} />
+                    <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={handlePrev} disabled={bloqueada(-1)} aria-label="Anterior" />
                     {/* D3.11: el salto a mes/año YA existía —el título ciclaba
                         days→months→years al hacer clic— pero se veía como texto
                         plano, así que nadie lo encontraba: para una fecha de
@@ -375,7 +444,7 @@ const LiquidDatePicker = ({
                             </span>
                         )}
                     </div>
-                    <Button variant="secondary" icon={ChevronRight} iconOnly onClick={handleNext} />
+                    <Button variant="secondary" icon={ChevronRight} iconOnly onClick={handleNext} disabled={bloqueada(+1)} aria-label="Siguiente" />
                 </div>
 
                 {currentMode === 'days' && (
@@ -417,9 +486,17 @@ const LiquidDatePicker = ({
                                     if (isEndBoundary) wrapperStyle.background = 'linear-gradient(90deg, var(--state-selected-overlay) 50%, transparent 50%)';
                                 }
 
-                                // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Seleccionado > Rango > Asueto)
+                                // Fuera de la ventana: apagado y sin responder.
+                                // Va ANTES de todo lo demás porque un día que no
+                                // se puede elegir no tiene por qué anunciar que
+                                // es hoy, ni que es asueto, ni resaltar al pasar.
+                                const apagado = fueraDeRango(cellTime);
+
+                                // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Fuera de rango > Seleccionado > Rango > Asueto)
                                 let btnClass = (esTactil ? "w-11 h-11" : "w-8 h-8") + " mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-base ";
-                                if (isSolidDot) {
+                                if (apagado) {
+                                    btnClass += "text-content-3 opacity-40 cursor-not-allowed";
+                                } else if (isSolidDot) {
                                     btnClass += "bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110";
                                 } else if (inBetween) {
                                     btnClass += "text-brand-text hover:bg-surface-card-hover hover:shadow-sm";
@@ -433,26 +510,27 @@ const LiquidDatePicker = ({
                                 }
 
                                 return (
-                                    <div 
-                                        key={day} 
-                                        className={`w-full ${esTactil ? "h-12" : "h-9"} flex items-center justify-center relative cursor-pointer`}
-                                        style={wrapperStyle} 
-                                        onMouseEnter={() => setHoverDate(cellDate)}
-                                        title={holiday ? holiday.name : undefined} // Tooltip nativo para asuetos
+                                    <div
+                                        key={day}
+                                        className={`w-full ${esTactil ? "h-12" : "h-9"} flex items-center justify-center relative ${apagado ? '' : 'cursor-pointer'}`}
+                                        style={apagado ? undefined : wrapperStyle}
+                                        onMouseEnter={() => !apagado && setHoverDate(cellDate)}
+                                        title={holiday && !apagado ? holiday.name : undefined} // Tooltip nativo para asuetos
                                     >
-                                        <button type="button" onClick={() => handleDaySelect(day)} className={btnClass}>
+                                        <button type="button" disabled={apagado}
+                                            onClick={() => handleDaySelect(day)} className={btnClass}>
                                             {day}
                                         </button>
                                         {/* Puntito decorativo inferior para asuetos */}
-                                        {holiday && !isSolidDot && !inBetween && (
+                                        {holiday && !apagado && !isSolidDot && !inBetween && (
                                             <div className="absolute bottom-0 w-1 h-1 rounded-full bg-danger"></div>
                                         )}
                                         {/* Puntito para hoy */}
-                                        {isToday && !isSolidDot && !holiday && (
+                                        {isToday && !apagado && !isSolidDot && !holiday && (
                                             <div className="absolute bottom-0 w-1 h-1 rounded-full bg-brand"></div>
                                         )}
                                         {/* Puntito para días ya seleccionados (PERMISO) */}
-                                        {selectedDates.includes(`${String(currentYear)}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`) && !isSolidDot && (
+                                        {!apagado && selectedDates.includes(`${String(currentYear)}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`) && !isSolidDot && (
                                             <div className="absolute bottom-0 w-1 h-1 rounded-full bg-success"></div>
                                         )}
                                     </div>
@@ -466,7 +544,8 @@ const LiquidDatePicker = ({
                     <div className="grid grid-cols-3 gap-3 animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]">
                         {MONTHS_SHORT.map((month, index) => {
                             const isSelected = mVal === String(index + 1).padStart(2, '0') && yVal === String(currentYear);
-                            return <button key={month} type="button" onClick={() => handleMonthSelect(index)} className={`py-3 rounded-2xl text-body-sm font-bold transition-all transform-gpu uppercase tracking-wide ${isSelected ? 'bg-brand text-white shadow-lg scale-105' : 'text-content-2 hover:bg-surface-card-hover hover:text-brand-text'}`}>{month}</button>;
+                            const apagado = mesFuera(currentYear, index);
+                            return <button key={month} type="button" disabled={apagado} onClick={() => handleMonthSelect(index)} className={`py-3 rounded-2xl text-body-sm font-bold transition-all transform-gpu uppercase tracking-wide ${apagado ? 'text-content-3 opacity-40 cursor-not-allowed' : isSelected ? 'bg-brand text-white shadow-lg scale-105' : 'text-content-2 hover:bg-surface-card-hover hover:text-brand-text'}`}>{month}</button>;
                         })}
                     </div>
                 )}
@@ -476,7 +555,8 @@ const LiquidDatePicker = ({
                         {years.map((year) => {
                             const isSelected = yVal === String(year);
                             const isOutRange = year < startYear || year > startYear + 9;
-                            return <button key={year} type="button" onClick={() => handleYearSelect(year)} className={`py-3 rounded-2xl text-body-sm font-bold transition-all transform-gpu ${isSelected ? 'bg-brand text-white shadow-lg scale-105' : isOutRange ? 'text-content-3 opacity-50' : 'text-content-2 hover:bg-surface-card-hover hover:text-brand-text'}`}>{year}</button>;
+                            const apagado = anioFuera(year);
+                            return <button key={year} type="button" disabled={apagado} onClick={() => handleYearSelect(year)} className={`py-3 rounded-2xl text-body-sm font-bold transition-all transform-gpu ${apagado ? 'text-content-3 opacity-40 cursor-not-allowed' : isSelected ? 'bg-brand text-white shadow-lg scale-105' : isOutRange ? 'text-content-3 opacity-50' : 'text-content-2 hover:bg-surface-card-hover hover:text-brand-text'}`}>{year}</button>;
                         })}
                     </div>
                 )}
@@ -504,7 +584,9 @@ const LiquidDatePicker = ({
     const trioTactil = (
         <span className={`flex items-center flex-1 font-bold ${compact ? 'text-body-sm' : 'text-body-xl'}
             ${hasValue ? 'text-content' : 'text-content-3'}`}>
-            {hasValue ? `${dVal || 'DD'}/${mVal || 'MM'}/${yVal || 'AAAA'}` : 'DD/MM/AAAA'}
+            {ocultarAnio
+                ? (hasValue ? `${dVal || 'DD'}/${mVal || 'MM'}` : 'DD/MM')
+                : (hasValue ? `${dVal || 'DD'}/${mVal || 'MM'}/${yVal || 'AAAA'}` : 'DD/MM/AAAA')}
         </span>
     );
 
@@ -512,9 +594,11 @@ const LiquidDatePicker = ({
         <div className="flex items-center flex-1">
             <input ref={dRef} type="text" inputMode="numeric" placeholder="DD" aria-label="Día" maxLength={2} value={dVal} onChange={handleD} onKeyDown={(e) => handleKeyDown(e, dVal, null, mRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('days'); }} className={`bg-transparent border-none outline-none focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60 focus:rounded-md focus:text-brand-text font-bold text-center placeholder:text-content-3 ${compact ? "w-[20px] text-body-sm" : "w-[26px] text-body-xl"} ${dVal ? 'text-content' : ''}`} />
             <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
-            <input ref={mRef} type="text" inputMode="numeric" placeholder="MM" aria-label="Mes" maxLength={2} value={mVal} onChange={handleM} onKeyDown={(e) => handleKeyDown(e, mVal, dRef, yRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('months'); }} className={`bg-transparent border-none outline-none focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60 focus:rounded-md focus:text-brand-text font-bold text-center placeholder:text-content-3 ${compact ? "w-[22px] text-body-sm" : "w-[28px] text-body-xl"} ${mVal ? 'text-content' : ''}`} />
-            <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
-            <input ref={yRef} type="text" inputMode="numeric" placeholder="AAAA" aria-label="Año" maxLength={4} value={yVal} onChange={handleY} onKeyDown={(e) => handleKeyDown(e, yVal, mRef, null)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('years'); }} className={`bg-transparent border-none outline-none focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60 focus:rounded-md focus:text-brand-text font-bold text-center placeholder:text-content-3 ${compact ? "w-[35px] text-body-sm" : "w-[44px] text-body-xl"} ${yVal ? 'text-content' : ''}`} />
+            <input ref={mRef} type="text" inputMode="numeric" placeholder="MM" aria-label="Mes" maxLength={2} value={mVal} onChange={handleM} onKeyDown={(e) => handleKeyDown(e, mVal, dRef, ocultarAnio ? null : yRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('months'); }} className={`bg-transparent border-none outline-none focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60 focus:rounded-md focus:text-brand-text font-bold text-center placeholder:text-content-3 ${compact ? "w-[22px] text-body-sm" : "w-[28px] text-body-xl"} ${mVal ? 'text-content' : ''}`} />
+            {!ocultarAnio && <>
+                <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
+                <input ref={yRef} type="text" inputMode="numeric" placeholder="AAAA" aria-label="Año" maxLength={4} value={yVal} onChange={handleY} onKeyDown={(e) => handleKeyDown(e, yVal, mRef, null)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('years'); }} className={`bg-transparent border-none outline-none focus:outline-solid focus:outline-1 focus:outline-offset-[-1px] focus:outline-brand/60 focus:rounded-md focus:text-brand-text font-bold text-center placeholder:text-content-3 ${compact ? "w-[35px] text-body-sm" : "w-[44px] text-body-xl"} ${yVal ? 'text-content' : ''}`} />
+            </>}
         </div>
     );
 

@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.474.0 — El vidrio de los modales, el color de más y el calendario acotado
+
+Reportado: «los widget no quiero que tengan color especial, y les falta el
+elemento glass».
+
+**Dos vidrios apilados.** `ModalShell` declara `data-surface="modal"` por defecto
+y `LiquidModal` lo declaraba otra vez en su hoja. Dos capas del mismo material no
+suman: multiplican lo que dejan pasar. Con el token en `0.51`, dos apiladas dan
+1 − 0.49² ≈ **0.76**, así que el modal se veía casi opaco y el desenfoque del
+fondo apenas se leía. Medido: 2 superficies → 1, y el panel ahora reporta
+exactamente `rgba(240,248,255,0.51)` con `blur(10px) saturate(1.6)`, que es su
+token.
+
+La prop `surface={null}` existe justo para esto y `DataTable`, `PromptModal`,
+`CuerpoDialogo` y `BarraFlotante` ya la pasaban. El único que se lo había
+olvidado era el canónico por el que pasan casi todos los formularios del portal.
+En los dos temas Solid no se notaba —ahí `--surface-modal` es opaco por diseño—,
+que es por qué sobrevivió tanto.
+
+**El color, sólo en el número.** Una baldosa con pendientes se teñía entera:
+fondo, borde, chip del ícono y texto, los cuatro del mismo tono; y el encabezado
+del modal llevaba el tono siempre. El motivo ya estaba escrito en el propio
+código —«si todo grita, nada avisa»— y no se estaba cumpliendo. Queda en el texto
+del contador, que es la única parte que de verdad dice que hay algo. Y de paso
+deja de pelear con el vidrio: un `bg-*/10` sobre el material lo enturbia.
+
+**El calendario ya no ofrece lo que no existe.** El filtro de Facturación mira
+las ventas del mes corriente y su selector dejaba elegir cualquier día de
+cualquier año: devolvía vacío y parecía roto. `LiquidDatePicker` acepta ahora
+`min`/`max` (días, meses, años y flechas se apagan fuera de la ventana) y
+`hideYear`. Son opt-in: sus otros ~30 usos no cambian.
+
+La ventana es el menor entre el primero del mes y hace 7 días, hasta hoy — así
+del 1 al 7, que es justo cuando se busca «la factura de anteayer», nunca queda
+por debajo de una semana. **Y en enero:** el 3 de enero el piso cae en el 27 de
+diciembre, la ventana cruza de año y el campo del año **reaparece solo**. Es la
+única semana en que aparece, y aparece porque ahí sí distingue — «01/03» podría
+ser de dos años. El resto del tiempo sobra, que es lo que se pidió sacar.
+
+Fuera también el rótulo «Ventas del mes»: el encabezado canónico ya dice de qué
+es la ventana.
+
+**Las fotos: era la ráfaga, no el peso.** Medido al abrir el modal: aparece a los
+**33 ms**, las filas a los **702 ms**, las fotos a los **4.191 ms** — tres
+segundos y medio con la lista en pantalla y los círculos vacíos.
+
+El peso no era: contra las mismas fotos, cuatro pasadas cada una, `/object/sign/`
+(el PNG guardado) da 181 kB en 565–3005 ms y `/render/image/sign/` da 21 kB en
+111–210 ms. El WebP ya estaba bien.
+
+Lo que pasa es que un mes tiene ~25 vendedores distintos y las 25 salen de golpe:
+las tres primeras vuelven en ~350 ms y las otras 22 se encolan en el
+transformador y vuelven juntas a los ~2.900 ms — y el transcodificado se rehace
+en cada sesión, porque el token firmado cambia y la CDN nunca reusa el de ayer.
+Ahora se precalientan las **ocho de arriba**, las que se ven, y **de a tres**:
+sin el tope de concurrencia sería la misma ráfaga un instante antes. El resto
+sigue por `loading="lazy"`, que para eso está.
+
+**4.191 ms → 726–1.448 ms** en tres corridas, con el hueco entre las filas y las
+fotos bajando de 3.489 ms a 431–1.055 ms.
+
 ## v2.473.2 — Los ítems de la compra, como lista
 
 Reportado por el usuario: *«la vista principal sí, pero la del modal no, sigue en

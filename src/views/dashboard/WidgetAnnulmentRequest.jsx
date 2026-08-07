@@ -78,6 +78,34 @@ function isSameDay(dateStr) {
     today.getMonth() === d.getMonth() &&
     today.getDate() === d.getDate();
 }
+
+/* ── La ventana que el filtro de fecha admite ───────────────────────────────
+   La lista trae las ventas del MES CORRIENTE, así que dejar elegir cualquier
+   día de cualquier año ofrecía un resultado que no puede existir: el filtro
+   devolvía vacío y parecía roto.
+
+   Del 1 al 7 el mes recién arranca, y "no encuentro la factura de anteayer"
+   es exactamente cuando se usa esto. Por eso el piso es el MENOR entre el
+   primero del mes y hace 7 días: la ventana nunca baja de una semana.
+
+   **Enero.** El 3 de enero el piso cae en el 27 de diciembre — la ventana
+   cruza de año, y ahí `LiquidDatePicker` vuelve a mostrar el campo del año
+   solo (`hideYear` se anula cuando `min` y `max` no comparten año). Es la
+   única semana del año en que aparece, y aparece porque en esa semana el año
+   sí distingue: "01/03" podría ser de dos años distintos. El resto del tiempo
+   sobra, que es justamente lo que se pidió sacar.
+
+   OJO: la ventana es del CONTROL, no de la consulta. La lista sigue siendo la
+   del mes; elegir el 27 de diciembre desde acá no la va a traer. Se admite
+   porque el mismo día 3 el usuario está mirando cierres del mes anterior y un
+   calendario que apaga esos días se lee como que el portal los perdió. */
+function ventanaDelFiltro() {
+  const hoy = svToday();
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const primeroDelMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const haceSiete = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 7);
+  return { min: iso(primeroDelMes <= haceSiete ? primeroDelMes : haceSiete), max: iso(hoy) };
+}
 /* Una factura anulada ya no es un documento vivo: no se vuelve a anular, y
    tampoco se le cambia el cliente, el pago ni el vendedor. La regla la impone
    la BD (`factura_esta_anulada` + trigger `validar_solicitud_facturacion`); acá
@@ -873,6 +901,8 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
   const [dateFilter,  setDateFilter]  = useState('');
+  // Se calcula una vez por montaje: el modal no vive de un día para el otro.
+  const ventanaFiltro = useMemo(ventanaDelFiltro, []);
   const [focused,     setFocused]     = useState(null);
   const [reloadKey,   setReloadKey]   = useState(0);
   const [successInfo, setSuccessInfo] = useState({ type: 'annul', supervisor: '' });
@@ -899,6 +929,58 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
       .map(e => ({ code: String(e.code), norm: normSearch(e.name || '') })),
     [employees],
   );
+
+  /* ── Las fotos: el problema es la RÁFAGA, no el peso ─────────────────────
+     Reportado: «las fotos tardan en cargar». Medido el 2026-08-07 al abrir
+     este modal: el modal aparece a los 33 ms, las filas a los 702 ms, y las
+     fotos **a los 4.191 ms** — tres segundos y medio con la lista ya en
+     pantalla y los círculos vacíos.
+
+     Lo primero que descarté fue el peso. Las URLs ya son las correctas
+     (`/render/image/sign/`, WebP), y contra las mismas fotos reales, cuatro
+     pasadas cada una: `/object/sign/` (el PNG guardado) 181 kB en 565–3005 ms
+     contra `/render/image/sign/` 21 kB en 111–210 ms. El WebP ya estaba bien.
+
+     Lo que pasa es la forma en que salen. Un mes de ventas tiene ~25
+     vendedores distintos, y cuando las filas se pintan el navegador dispara
+     las 25 de golpe: las tres primeras vuelven en ~350 ms y las otras 22 se
+     encolan en el transformador de imágenes y vuelven todas juntas a los
+     ~2.900 ms. O sea que no es una foto lenta — son 25 pidiéndose a la vez, y
+     el transcodificado se hace en cada sesión porque el token firmado cambia
+     y la CDN nunca puede reusar el de ayer.
+
+     Entonces se precalientan las de ARRIBA, que son las que se ven, y de a
+     TRES. Sin el tope de concurrencia esto sería la misma ráfaga un instante
+     antes; con él, los avatares visibles llegan con las filas y el resto va
+     llenándose mientras se scrollea, que es lo que `loading="lazy"` hace bien.
+
+     El orden sale de `invoices` y no de `employees`: el que importa es el
+     vendedor de la primera fila, no el primer empleado del padrón. */
+  useEffect(() => {
+    if (!invoices.length || !employees?.length) return undefined;
+    const porCodigo = new Map(employees.filter(e => e.code).map(e => [String(e.code), e]));
+    const urls = [];
+    const vistas = new Set();
+    for (const inv of invoices) {
+      const e = porCodigo.get(String(inv.cod_vendedor));
+      const u = webpSignedUrl(e?.photo || e?.photo_url);
+      if (!u || vistas.has(u)) continue;
+      vistas.add(u); urls.push(u);
+      if (urls.length >= 8) break;   // las que caben en pantalla; el resto, lazy
+    }
+
+    let vivo = true;
+    let siguiente = 0;
+    const traer = () => {
+      if (!vivo || siguiente >= urls.length) return;
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = img.onerror = traer;   // libera el turno, no se apila
+      img.src = urls[siguiente++];
+    };
+    for (let i = 0; i < 3; i++) traer();
+    return () => { vivo = false; };
+  }, [invoices, employees]);
 
   const buildTokens = useCallback((q) => (
     q.split(/\s+/).filter(Boolean).slice(0, 5)
@@ -1017,9 +1099,6 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
           y había que descubrirlo. */}
       <HerramientasModal>
         <div className="flex items-center gap-2">
-          <p className="text-caption font-black text-content-2 uppercase tracking-widest shrink-0">
-            Ventas del mes
-          </p>
           <div className="flex-1 min-w-0">
             <SearchInput
               accentColor="var(--success)"
@@ -1028,9 +1107,16 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
               placeholder="Cliente, vendedor, factura..."
             />
           </div>
-          {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
+          {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo).
+              Acotado a `ventanaFiltro`: la lista sólo trae el mes corriente, así
+              que un calendario abierto a 1900–2100 ofrecía un resultado que no
+              puede existir. Y con la ventana adentro de un año el campo del año
+              desaparece — reaparece solo la primera semana de enero, que es la
+              única en que la ventana cruza (ver `ventanaFiltro`). */}
           <div className="h-8 shrink-0 rounded-lg border border-divider bg-surface-card flex items-center">
-            <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
+            <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')}
+              icon={CalendarDays} compact hideYear
+              min={ventanaFiltro.min} max={ventanaFiltro.max} />
           </div>
         </div>
       </HerramientasModal>

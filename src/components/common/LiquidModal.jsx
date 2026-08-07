@@ -73,6 +73,21 @@ export default function LiquidModal({
             maxWidthClass={maxWidth}
             zClass={zClass}
             ariaLabel={ariaLabel}
+            // ── `surface={null}`: DOS vidrios apilados (2026-08-07) ───────────
+            // `ModalShell` declara `data-surface="modal"` por defecto y la hoja
+            // de acá abajo lo declara otra vez. Dos capas del mismo material no
+            // suman: MULTIPLICAN lo que dejan pasar. Con el token en 0.51, dos
+            // apiladas dan 1 − 0.49² ≈ 0.76, así que el modal se veía casi
+            // opaco y el desenfoque del fondo apenas se leía — reportado como
+            // «les falta el elemento glass».
+            //
+            // Es exactamente para lo que existe la prop, y `DataTable`,
+            // `PromptModal`, `CuerpoDialogo` y `BarraFlotante` ya la pasaban:
+            // el único que se lo había olvidado era este canónico, o sea el que
+            // usan casi todos los formularios del portal. En los dos temas
+            // Solid no se notaba (ahí `--surface-modal` es opaco por diseño),
+            // que es por qué sobrevivió tanto.
+            surface={null}
         >
             <div
                 ref={hojaRef}

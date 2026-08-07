@@ -89,16 +89,24 @@ export default function LanzadorSolicitud({
         ? etiquetaPendientes
         : (etiquetaPendientesPlural ?? etiquetaPendientes);
 
-    // El acento solo se enciende cuando hay algo. Una baldosa siempre en color
-    // deja de señalar: si todo grita, nada avisa.
+    // ── El color queda SÓLO en el número (2026-08-07) ────────────────────────
+    // Antes, con pendientes, la baldosa entera se teñía: fondo, borde, chip del
+    // ícono y texto, los cuatro del mismo tono. Y el encabezado del modal
+    // llevaba el tono siempre, hubiera o no algo que hacer. Reportado: «los
+    // widget no quiero que tengan color especial».
+    //
+    // Tiene razón y el motivo es el mismo que ya estaba escrito acá abajo: el
+    // color señala mientras sea escaso. Repartido en cuatro superficies deja de
+    // ser un aviso y pasa a ser la piel del componente — y encima peleaba con el
+    // vidrio, porque un `bg-*/10` sobre el material lo enturbia.
+    //
+    // Queda en el texto del contador, que es la única parte que de verdad dice
+    // «hay algo». El chip del ícono y el modal usan la superficie neutra.
     //
     // El mapa es ESTÁTICO a propósito. `text-${tono}-text` se lee bien y no
     // existe: Tailwind arma las clases leyendo el fuente, así que una armada
     // por interpolación nunca llega a la hoja de estilos y el color no aparece.
     const acento = hay ? TONOS[tono] ?? TONOS.brand : APAGADO;
-    // El encabezado usa el tono del widget SIEMPRE, encendido o no: ahí no está
-    // señalando urgencia, está diciendo de qué módulo es la ventana.
-    const acentoModal = TONOS[tono] ?? TONOS.brand;
 
     const [nodos, setNodos] = useState({});
     const [inquilinos, setInquilinos] = useState({ herramientas: 0, pie: 0 });
@@ -125,12 +133,12 @@ export default function LanzadorSolicitud({
             <button
                 type="button"
                 onClick={() => setAbierto(true)}
-                className={`group w-full h-full flex flex-col items-start justify-between gap-2 p-4 text-left
-                    rounded-2xl border transition-all hover:translate-y-[var(--lift-hover)]
-                    ${acento.borde} ${hay ? acento.fondo : 'bg-surface-card'}`}
+                className="group w-full h-full flex flex-col items-start justify-between gap-2 p-4 text-left
+                    rounded-2xl border border-border-card bg-surface-card transition-all
+                    hover:translate-y-[var(--lift-hover)]"
             >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${acento.fondo}`}>
-                    <Icon size={16} strokeWidth={2} className={acento.texto} />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
+                    <Icon size={16} strokeWidth={2} className="text-content-2" />
                 </div>
 
                 <div className="w-full min-w-0">
@@ -152,8 +160,8 @@ export default function LanzadorSolicitud({
                     <RanurasCtx.Provider value={ranuras}>
                         <LiquidModal.Header>
                             <div className="flex items-center gap-2.5">
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${acentoModal.fondo}`}>
-                                    <Icon size={16} strokeWidth={2} className={acentoModal.texto} />
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
+                                    <Icon size={16} strokeWidth={2} className="text-content-2" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-body font-black text-content leading-tight truncate">{label}</p>

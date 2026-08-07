@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.498.1 — Traslados va al canon: filter pill, DataTable y filtro por tipo
+
+Reportado sobre la primera versión: «no es canónico, dónde está el filter pill,
+dónde están las cards, dónde está el filtro para ver por tipo». Las tres eran la
+misma falla: se dibujó una lista suelta en vez de usar los canónicos, y el
+checklist de vista nueva —`docs/CHECKLIST-VISTA-NUEVA.md`, escrito el mismo
+día— lo pregunta en su primera línea: *¿hay una lista de registros? →
+`DataTable`*. El historial lo es, y no lo usé.
+
+**El historial pasa a `DataTable`** con seis columnas —Producto, Recorrido,
+Pidió, Motivo, Estado, Fecha—, que trae la tabla en escritorio, las fichas en el
+teléfono y el estado vacío, los tres de una. Las otras dos pestañas siguen
+siendo tarjetas y no es una excepción de conveniencia: «Por confirmar» lleva un
+formulario de rechazo adentro (motivo, sugerencia, texto libre), y eso no entra
+en una celda.
+
+**La píldora §17 con sus dos filtros**: sucursal —sólo con alcance de todas— y
+**tipo** (Todos · Recibidos · Rechazados), que es la misma pregunta con tres
+respuestas y por eso es un `FilterBar.Opciones`, no tres interruptores. El tipo
+sólo aparece en Historial: en las otras dos pestañas no hay dos desenlaces que
+separar y sería un control que no recorta nada.
+
+**Y una lección de tabla que costó dos intentos.** El motivo del rechazo —el
+dato que uno viene a leer en un historial— salía cortado en dos renglones
+mientras el nombre del producto, que se repite en todas las filas, se llevaba
+media tabla. Primero le puse anchos en porcentaje: la suma empujó ESTADO y FECHA
+fuera del marco. Después `truncate` con `max-w` en el contenido: **en una tabla
+de layout automático el `max-width` de un hijo no acota la celda** — la celda
+crece hasta el texto entero y la tabla se sale igual. Lo que funciona es
+`line-clamp`: deja que el texto AJUSTE dentro del ancho que la tabla reparte y
+corta por altura, que es lo único acotable sin pelearse con el algoritmo.
+
+Verificado en el navegador: las seis columnas entran, el motivo largo se lee
+completo en dos renglones, y en iPhone 13 la tabla cae a fichas sin desborde
+(390 = 390). `gate:movil` y `gate:design` en verde.
+
 ## v2.498.0 — El barrido entra a las pestañas internas, y el checklist de vista nueva
 
 Fases 2, 3 y 4 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`.

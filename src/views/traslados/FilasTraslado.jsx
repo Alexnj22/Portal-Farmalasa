@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftRight, Ban, Loader2, PackageCheck, Truck } from 'lucide-react';
-import Badge from '../../components/common/Badge';
+import { ArrowLeftRight, Loader2, PackageCheck, Truck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -231,46 +230,9 @@ export function FilaPorRecibir({ fila, onHecho }) {
     );
 }
 
-/* ─── Lo que ya se cerró ──────────────────────────────────────────────────── */
-// Sin botones: es lo que pasó, no lo que hay que hacer. Lo que sí lleva es el
-// POR QUÉ cuando se rechazó — el motivo era el único dato del circuito que se
-// escribía y no se podía volver a leer en ninguna pantalla.
-export function FilaHistorial({ fila, nombrePor }) {
-    const meta = fila.metadata ?? {};
-    const rechazado = fila.status === 'REJECTED';
-    return (
-        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-1.5">
-            <div className="flex items-start gap-2">
-                {rechazado
-                    ? <Ban size={13} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                    : <PackageCheck size={13} className="text-success-text shrink-0 mt-0.5" strokeWidth={2.5} />}
-                <div className="flex-1 min-w-0">
-                    <p className="text-label font-black text-content leading-tight">{resumenItems(meta)}</p>
-                    <p className="text-micro text-content-3 mt-0.5 flex gap-1">
-                        <Recorrido meta={meta} />
-                        <span className="shrink-0">· pidió {nombrePor(fila.employee_id)}</span>
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant={rechazado ? 'danger' : 'success'} size="sm">
-                        {rechazado ? 'Rechazado' : 'Recibido'}
-                    </Badge>
-                    <span className="text-micro font-semibold text-content-3 tabular-nums">
-                        {fmtFechaLarga(fila.updated_at ?? fila.created_at)}
-                    </span>
-                </div>
-            </div>
-
-            {/* El motivo del rechazo y lo que se sugirió en su lugar. */}
-            {rechazado && (meta.rejection_reason || meta.sugerencia) && (
-                <p className="text-micro text-content-2 leading-snug pl-5">
-                    {meta.rejection_reason}
-                    {meta.sugerencia && <span className="text-content-3"> — {meta.sugerencia}</span>}
-                </p>
-            )}
-            {fila.note && (
-                <p className="text-micro text-content-3 leading-snug pl-5 truncate">{fila.note}</p>
-            )}
-        </div>
-    );
-}
+// La fila de historial vivía acá y se retiró el 2026-08-07: el historial es una
+// lista de REGISTROS y va en `DataTable` (§32), que da la tabla en escritorio,
+// las fichas en el teléfono y el vacío, los tres de una. Reportado sobre la
+// primera versión de la vista: «no es canónico, dónde están las cards».
+// Lo que queda acá son las dos filas de ACCIÓN, que sí son tarjetas porque
+// llevan un formulario adentro.

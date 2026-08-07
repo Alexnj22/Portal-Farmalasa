@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeftRight, CheckCircle2, History, PackageCheck } from 'lucide-react';
+import { ArrowLeftRight, Ban, CheckCircle2, History, PackageCheck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
+import Badge from '../components/common/Badge';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore } from '../store/staffStore';
 import { smartFilter } from '../utils/searchUtils';
-import { FilaPorConfirmar, FilaPorRecibir, FilaHistorial } from './traslados/FilasTraslado';
-import { textoBuscable } from './traslados/trasladoTexto';
+import { FilaPorConfirmar, FilaPorRecibir } from './traslados/FilasTraslado';
+import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
 import {
     fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchTrasladosHistorial,
 } from '../data/traslados';
@@ -50,6 +52,46 @@ const TABS = [
     { key: 'historial', label: 'Historial'     },
 ];
 
+// El historial es una LISTA DE REGISTROS, así que va en `DataTable` — no en
+// tarjetas escritas a mano. Reportado sobre la primera versión: «no es
+// canónico, dónde está el filter pill, dónde están las cards, dónde está el
+// filtro para ver por tipo». Las tres cosas eran la misma: se dibujó una lista
+// suelta en vez de usar los canónicos, y `DataTable` da la tabla en escritorio,
+// las fichas en el teléfono y el estado vacío, los tres de una.
+//
+// Las otras dos pestañas NO son registros: son acciones —confirmar con su
+// flujo de rechazo, recibir— y siguen siendo las tarjetas que comparte el
+// widget. Meterlas en una tabla obligaría a un formulario dentro de una celda.
+// Sin anchos en porcentaje: se probaron y la suma empujaba ESTADO y FECHA fuera
+// del marco. La tabla reparte por contenido, así que lo que hace falta es TOPAR
+// al que se lo lleva todo —el nombre del producto, que además se repite en todas
+// las filas— para que el MOTIVO, que es el dato que uno viene a leer en un
+// historial, tenga dónde entrar. Los dos se cortan con `title` para el resto.
+//
+// Y se recorta con `line-clamp`, NO con `truncate` ni con `max-w`: en una tabla
+// de layout automático el `max-width` de un hijo no acota la celda —la celda
+// crece hasta el texto entero y la tabla se sale del marco, que fue lo que dejó
+// ESTADO y FECHA fuera de la vista en dos intentos seguidos—. `line-clamp` deja
+// que el texto AJUSTE dentro del ancho que la tabla reparte y corta por altura,
+// que es lo único que se puede acotar sin pelearse con el algoritmo.
+const COLS_HISTORIAL = [
+    { key: 'producto',  label: 'Producto' },
+    { key: 'recorrido', label: 'Recorrido',  hideBelow: 'md' },
+    { key: 'pidio',     label: 'Pidió',      hideBelow: 'lg' },
+    { key: 'motivo',    label: 'Motivo',     hideBelow: 'lg' },
+    { key: 'estado',    label: 'Estado',     align: 'center' },
+    { key: 'fecha',     label: 'Fecha',      align: 'right' },
+];
+
+// Qué se ve del historial: todo, lo que llegó, o lo que se rechazó. Es la misma
+// pregunta con tres respuestas, así que es un `FilterBar.Opciones` y no tres
+// interruptores (§17).
+const TIPOS = [
+    { value: '',         label: 'Todos' },
+    { value: 'APPROVED', label: 'Recibidos' },
+    { value: 'REJECTED', label: 'Rechazados' },
+];
+
 export default function TrasladosView() {
     const { user, getScope } = useAuth();
     const employees = useStaffStore(s => s.employees);
@@ -60,9 +102,11 @@ export default function TrasladosView() {
 
     const [activeTab, setActiveTab] = useState('confirmar');
     const [busqueda,  setBusqueda]  = useState('');
-    // Con alcance de una sola sala el filtro no se ofrece: el RLS ya recortó y
-    // un desplegable de siete que sólo funciona con una es un control que miente.
+    // Con alcance de una sola sala el filtro de sucursal no se ofrece: el RLS ya
+    // recortó y un desplegable de siete que sólo funciona con una es un control
+    // que miente. El de tipo se ofrece siempre — es del historial, no del alcance.
     const [sala, setSala] = useState('');
+    const [tipo, setTipo] = useState('');
 
     const [porConfirmar, setPorConfirmar] = useState(null);
     const [porRecibir,   setPorRecibir]   = useState(null);
@@ -111,8 +155,10 @@ export default function TrasladosView() {
     const vistas = useMemo(() => ({
         confirmar: filtrar(porConfirmar),
         recibir:   filtrar(porRecibir),
-        historial: filtrar(historial),
-    }), [filtrar, porConfirmar, porRecibir, historial]);
+        // El tipo sólo recorta el historial: es la única pestaña donde conviven
+        // los dos desenlaces.
+        historial: filtrar(historial).filter(f => !tipo || f.status === tipo),
+    }), [filtrar, porConfirmar, porRecibir, historial, tipo]);
 
     const cargando = porConfirmar === null || porRecibir === null || historial === null;
 
@@ -146,43 +192,145 @@ export default function TrasladosView() {
 
     const lista = vistas[activeTab] ?? [];
 
+    const enHistorial = activeTab === 'historial';
+    const filtrosPuestos = (alcanceTodas && sala ? 1 : 0) + (enHistorial && tipo ? 1 : 0);
+    const limpiarTodo = () => { setSala(''); setTipo(''); };
+
     return (
         <GlassViewLayout icon={ArrowLeftRight} title="Traslados entre Salas" filtersContent={filtersContent}>
-            {alcanceTodas && (
-                <FilterBar activeCount={sala ? 1 : 0} onClear={() => setSala('')}>
-                    <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
-                        <FilterBar.Sucursal value={sala || null} onChange={v => setSala(v || '')} options={salaOpts} />
-                    </FilterBar.Section>
+            {/* La píldora §17: TODO el filtro de la vista en un solo lugar. El
+                tipo sólo se ofrece en Historial —en las otras dos pestañas no
+                hay dos desenlaces que separar— y ofrecerlo igual sería un
+                control que no recorta nada. */}
+            {(alcanceTodas || enHistorial) && (
+                <FilterBar activeCount={filtrosPuestos} onClear={limpiarTodo}>
+                    {alcanceTodas && (
+                        <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
+                            <FilterBar.Sucursal value={sala || null} onChange={v => setSala(v || '')} options={salaOpts} />
+                        </FilterBar.Section>
+                    )}
+                    {enHistorial && (
+                        <FilterBar.Section active={!!tipo} onClear={() => setTipo('')} label="tipo">
+                            <FilterBar.Opciones
+                                label="Tipo" icon={History}
+                                value={tipo} onChange={setTipo} options={TIPOS}
+                            />
+                        </FilterBar.Section>
+                    )}
                 </FilterBar>
             )}
 
-            <div className="p-4 md:p-5 flex flex-col gap-2">
-                {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+            {/* ── El historial: una lista de REGISTROS, o sea `DataTable` ──── */}
+            {enHistorial ? (
+                <div className="p-4 md:p-5">
+                    <DataTable
+                        columns={COLS_HISTORIAL}
+                        loading={cargando}
+                        minWidth="820px"
+                        empty={{
+                            icon: History,
+                            message: busqueda.trim() || tipo
+                                ? 'Sin traslados que coincidan'
+                                : 'Todavía no se cerró ningún traslado',
+                        }}
+                        // La ficha del teléfono: el producto manda, el recorrido
+                        // lo ubica y el estado es lo que se viene a mirar.
+                        movil={{ ancla: 'producto', identidad: 'recorrido', chips: ['estado', 'fecha'] }}
+                    >
+                        {lista.map((f, i) => {
+                            const m = f.metadata ?? {};
+                            const rechazado = f.status === 'REJECTED';
+                            return (
+                                <DataRow key={f.id} index={i}>
+                                    <DataCell>
+                                        <span className="flex items-center gap-2 min-w-0">
+                                            {rechazado
+                                                ? <Ban size={13} className="text-danger-text shrink-0" strokeWidth={2.5} />
+                                                : <PackageCheck size={13} className="text-success-text shrink-0" strokeWidth={2.5} />}
+                                            {/* Dos renglones y no uno: el nombre del
+                                                producto es el campo por el que se
+                                                escanea la lista, y cortado en «1 UNIDAD
+                                                · ACETAMINOFEN…» no distingue una fila de
+                                                la de al lado. */}
+                                            <span className="text-body-sm font-semibold text-content line-clamp-2"
+                                                title={resumenItems(m)}>
+                                                {resumenItems(m)}
+                                            </span>
+                                        </span>
+                                    </DataCell>
+                                    {/* `whitespace-nowrap`: el recorrido es UNA
+                                        cosa —de dónde sale y a dónde va— y
+                                        partido en dos renglones se lee como dos
+                                        datos sueltos. */}
+                                    <DataCell hideBelow="md">
+                                        <span className="text-label text-content-2 whitespace-nowrap">
+                                            {m.origen_branch_name ?? '—'} → {m.branch_name ?? '—'}
+                                        </span>
+                                    </DataCell>
+                                    {/* Un nombre de cuatro palabras estiraba la
+                                        fila al cuádruple de alto y descolocaba
+                                        toda la tabla. Se corta; el nombre entero
+                                        queda en el `title`. */}
+                                    <DataCell hideBelow="lg">
+                                        <span className="block line-clamp-1 text-label text-content-3"
+                                            title={nombrePor(f.employee_id)}>
+                                            {nombrePor(f.employee_id)}
+                                        </span>
+                                    </DataCell>
+                                    <DataCell hideBelow="lg">
+                                        {/* El motivo del rechazo con lo que se sugirió: era el
+                                            único dato del circuito que se escribía y no se
+                                            podía volver a leer en ninguna pantalla. */}
+                                        <span className="block line-clamp-2 text-label text-content-3"
+                                            title={[rechazado ? m.rejection_reason : f.note, rechazado ? m.sugerencia : null]
+                                                .filter(Boolean).join(' — ')}>
+                                            {rechazado ? (m.rejection_reason ?? '—') : (f.note || '—')}
+                                            {rechazado && m.sugerencia ? ` — ${m.sugerencia}` : ''}
+                                        </span>
+                                    </DataCell>
+                                    <DataCell align="center">
+                                        <Badge variant={rechazado ? 'danger' : 'success'} size="sm">
+                                            {rechazado ? 'Rechazado' : 'Recibido'}
+                                        </Badge>
+                                    </DataCell>
+                                    <DataCell align="right">
+                                        <span className="text-label text-content-3 tabular-nums whitespace-nowrap">
+                                            {fmtFechaLarga(f.updated_at ?? f.created_at)}
+                                        </span>
+                                    </DataCell>
+                                </DataRow>
+                            );
+                        })}
+                    </DataTable>
+                </div>
+            ) : (
+                /* Las dos pestañas de acción: tarjetas, y las MISMAS que el
+                   widget. No son registros — llevan un formulario adentro. */
+                <div className="p-4 md:p-5 flex flex-col gap-2">
+                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
-                {cargando && <SkeletonText lines={4} />}
+                    {cargando && <SkeletonText lines={4} />}
 
-                {!cargando && lista.length === 0 && (
-                    <EmptyState
-                        icon={activeTab === 'historial' ? History
-                            : activeTab === 'recibir' ? PackageCheck : CheckCircle2}
-                        title={busqueda.trim()
-                            ? `Sin coincidencias para "${busqueda}"`
-                            : activeTab === 'confirmar' ? 'Nada por confirmar'
-                            : activeTab === 'recibir'   ? 'Nada en camino'
-                            : 'Todavía no se cerró ningún traslado'}
-                        subtitle={busqueda.trim() ? undefined
-                            : activeTab === 'confirmar' ? 'Cuando otra sala pida producto de la tuya, aparece acá.'
-                            : activeTab === 'recibir'   ? 'Lo que pediste y ya salió se lista acá hasta que lo recibas.'
-                            : 'Acá queda lo recibido y lo rechazado, con su motivo.'}
-                    />
-                )}
+                    {!cargando && lista.length === 0 && (
+                        <EmptyState
+                            icon={activeTab === 'recibir' ? PackageCheck : CheckCircle2}
+                            title={busqueda.trim()
+                                ? `Sin coincidencias para "${busqueda}"`
+                                : activeTab === 'confirmar' ? 'Nada por confirmar' : 'Nada en camino'}
+                            subtitle={busqueda.trim() ? undefined
+                                : activeTab === 'confirmar'
+                                    ? 'Cuando otra sala pida producto de la tuya, aparece acá.'
+                                    : 'Lo que pediste y ya salió se lista acá hasta que lo recibas.'}
+                        />
+                    )}
 
-                {!cargando && lista.map(f => (
-                    activeTab === 'confirmar' ? <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={cargar} />
-                  : activeTab === 'recibir'   ? <FilaPorRecibir   key={f.id} fila={f} onHecho={cargar} />
-                  :                             <FilaHistorial    key={f.id} fila={f} nombrePor={nombrePor} />
-                ))}
-            </div>
+                    {!cargando && lista.map(f => (
+                        activeTab === 'confirmar'
+                            ? <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={cargar} />
+                            : <FilaPorRecibir   key={f.id} fila={f} onHecho={cargar} />
+                    ))}
+                </div>
+            )}
         </GlassViewLayout>
     );
 }

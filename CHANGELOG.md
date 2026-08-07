@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.508.3 — El colchón que le faltaba a la espera del esqueleto
+
+```
+Antes: ventas, compras, productos, clientes, minmax → todas con «tabla en el teléfono»
+Ahora: las 8 pantallas medidas en cero
+```
+
+«No hay esqueleto» es cierto **dos veces**: antes de que aparezca y después de
+que se va. La versión de v2.505.1 preguntaba en el mismo instante de navegar
+—cuando la vista ni había montado— y seguía de largo, así que midió media
+docena de vistas como «cayó a la tabla». Un arreglo que **reintroduce el defecto
+que corrige**, por mirar un solo lado de la condición.
+
+Ahora hay un colchón de 1,5s antes de mirar: le da tiempo a montar y pintar su
+esqueleto, y recién ahí tiene sentido esperar a que se vaya.
+
 ## v2.508.2 — Reglas usa el mismo envase de expediente que Productos
 
 La pantalla negra del teléfono siguió después de v2.507.1: «ocurrió un problema

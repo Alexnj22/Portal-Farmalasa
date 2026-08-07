@@ -102,7 +102,18 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         //
         // Y de paso es más RÁPIDO: una vista que carga en 800ms deja de costar
         // 6.5 segundos, que con ~67 pantallas era la mitad del barrido.
+        // ⚠️ «No hay esqueleto» es cierto DOS VECES: antes de que aparezca y
+        // después de que se va. La primera versión preguntaba en el mismo
+        // instante de navegar —cuando la vista ni había montado— y seguía de
+        // largo: midió `ventas`, `compras`, `productos`, `clientes` y `minmax`
+        // como «cayó a la tabla», que es exactamente el falso positivo que este
+        // helper venía a arreglar. Un arreglo que reintroduce el defecto que
+        // corrige, por mirar sólo un lado de la condición.
+        //
+        // El colchón inicial le da tiempo a montar y pintar su esqueleto; recién
+        // ahí tiene sentido esperar a que se vaya.
         const esperarDatos = async (tope = 20_000) => {
+            await page.waitForTimeout(1500);  // que monte y pinte su esqueleto
             await page.waitForFunction(
                 () => !document.querySelector('.skeleton'), null, { timeout: tope },
             ).catch(() => {});

@@ -50,6 +50,7 @@ import {
 import { clickable } from '../utils/clickable';
 import { formatMoney } from '../utils/formatNumber';
 import useCapaFlotante from '../utils/capaFlotante';
+import { catalogoDePestana, pestanasVisibles } from '../constants/dashboardTabs';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -186,11 +187,14 @@ const salaQueFacturaPorDefecto = (branchId) =>
 //
 // Las otras tres pestañas SÍ son listas a mano, porque son una curaduría: qué
 // mirar cuando uno entra a Comercial. Ahí la lista corta es el punto.
+// El reparto vive en `src/constants/dashboardTabs.js`, porque **Permisos** lo
+// necesita igual para agrupar los widgets por pestaña. Acá sólo se le pasa el
+// catálogo completo, que es lo único que esta pantalla sabe y aquél no.
 const TAB_WIDGETS = {
-  get general() { return WIDGET_DEFS.map(w => w.id); },
-  comercial: ['kpi','meta_sala','cotizaciones','facturacion','top_productos','sales','vendedores'],
-  rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
-  operacion: ['inv_search','annulment_req','minmax_req','inv_movement','traslados','facturas_sala'],
+  get general()   { return catalogoDePestana('general', WIDGET_DEFS.map(w => w.id)); },
+  get comercial() { return catalogoDePestana('comercial'); },
+  get rrhh()      { return catalogoDePestana('rrhh'); },
+  get operacion() { return catalogoDePestana('operacion'); },
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -1238,6 +1242,33 @@ const DashboardView = ({ openModal }) => {
   const canSee     = p  => !p || hasPermission(p,'can_view');
   const canManage  = p  => !p || hasPermission(p,'can_edit');
   const showWidget = (id,perm) => isWidgetOn(id) && canSee(perm);
+
+  // ── Las pestañas que este cargo ve ────────────────────────────────────────
+  // «Si un rol no tiene widgets activados de una categoría, la pestaña no debe
+  // salir» (reportado el 2026-08-07). La regla —incluida la de General, que
+  // muestra todo y por eso necesita una propia— vive en `dashboardTabs.js`.
+  const TABS_VISIBLES = useMemo(() => {
+    const permisoDe = Object.fromEntries(WIDGET_DEFS.map(w => [w.id, w.permission]));
+    const ids = pestanasVisibles(
+      WIDGET_DEFS.map(w => w.id),
+      id => showWidget(id, permisoDe[id]),
+    );
+    // Nunca se devuelve vacío: un cargo sin ningún widget igual entra a Inicio
+    // —el permiso `overview` es el que decide eso— y quedarse sin barra de
+    // pestañas se ve como una pantalla rota, no como una pantalla vacía.
+    return TABS.filter(t => ids.includes(t.id)) || [];
+  }, [widgetConfig, hasPermission]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Si la pestaña recordada dejó de estar disponible —le quitaron el permiso,
+  // o apagó su último widget— se cae a la primera visible en vez de mostrar una
+  // pestaña que ya no existe.
+  useEffect(() => {
+    if (!TABS_VISIBLES.length) return;
+    if (TABS_VISIBLES.some(t => t.id === activeTab)) return;
+    setActiveTab(TABS_VISIBLES[0].id);
+    setConfigTab(TABS_VISIBLES[0].id);
+  }, [TABS_VISIBLES, activeTab]);
+
   const toggleWidget = id => {
     const next = widgetConfig.map(w=>w.id===id?{...w,enabled:!w.enabled}:w);
     setWidgetConfig(next);
@@ -2472,7 +2503,7 @@ const DashboardView = ({ openModal }) => {
   const filtersContent = (
     <div className="flex items-center gap-2">
       <ViewTabBar
-        tabs={TABS.map(t => ({ key: t.id, label: t.label, icon: t.icon }))}
+        tabs={TABS_VISIBLES.map(t => ({ key: t.id, label: t.label, icon: t.icon }))}
         activeTab={activeTab}
         onTabChange={switchTab}
         showSearch={false}
@@ -2518,7 +2549,7 @@ const DashboardView = ({ openModal }) => {
               <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl p-1">
                 <SegmentedControl
                     size="sm" tone="neutro"
-                    options={TABS.map(t => ({ value: t.id, label: t.label, icon: t.icon }))}
+                    options={TABS_VISIBLES.map(t => ({ value: t.id, label: t.label, icon: t.icon }))}
                     value={configTab} onChange={setConfigTab} label="Sección de configuración"
                     className="w-full" />
               </div>

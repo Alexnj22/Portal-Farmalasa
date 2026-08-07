@@ -361,6 +361,27 @@ const PermissionsView = () => {
         // Apagar "Ver" de un módulo arrastra sus sub-permisos (ver SUBS_DE).
         const arrastra = permType === 'can_view' && !value ? (SUBS_DE[moduleKey] || []) : [];
 
+        // ── Los widgets del tablero arrastran a «Inicio» ────────────────────
+        // Un widget encendido sin `overview` no se ve en ninguna parte: el
+        // permiso de la vista es el que deja entrar. Y al revés, un «Inicio»
+        // encendido sin un solo widget es una pantalla vacía con barra de
+        // pestañas. Así que el vínculo va en los dos sentidos —decisión del
+        // usuario, 2026-08-07— y se calcula sobre el estado que va a quedar,
+        // no sobre el actual: el que se está apagando todavía figura encendido.
+        const esWidget = moduleKey.startsWith('dash_');
+        const kInicio = `${roleId}:overview`;
+        let inicioPasaA = null;
+        if (esWidget && permType === 'can_view') {
+            if (value) {
+                if (!permissions[kInicio]?.can_view) inicioPasaA = true;
+            } else {
+                const quedaAlguno = MODULES.some(m =>
+                    m.key.startsWith('dash_') && m.key !== moduleKey
+                    && permissions[`${roleId}:${m.key}`]?.can_view);
+                if (!quedaAlguno && permissions[kInicio]?.can_view) inicioPasaA = false;
+            }
+        }
+
         setPermissions(prev => {
             const next = { ...prev };
             const cur = { ...prev[k] };
@@ -369,6 +390,11 @@ const PermissionsView = () => {
             next[k] = cur;
             for (const sk of arrastra) {
                 next[`${roleId}:${sk}`] = { ...(prev[`${roleId}:${sk}`] || {}), can_view: false, can_edit: false, can_approve: false };
+            }
+            if (inicioPasaA !== null) {
+                const ini = { ...(prev[kInicio] || {}), can_view: inicioPasaA };
+                if (!inicioPasaA) { ini.can_edit = false; ini.can_approve = false; }
+                next[kInicio] = ini;
             }
             return next;
         });
@@ -398,6 +424,19 @@ const PermissionsView = () => {
             })));
         }
 
+        if (!error && inicioPasaA !== null) {
+            const iniPrevio = permissions[kInicio] || {};
+            await upsertRolePermission({
+                role_id: roleId,
+                module_key: 'overview',
+                can_view: inicioPasaA,
+                can_edit: inicioPasaA ? (iniPrevio.can_edit ?? false) : false,
+                can_approve: inicioPasaA ? (iniPrevio.can_approve ?? false) : false,
+                scope: iniPrevio.scope || 'ALL',
+                updated_at: new Date().toISOString(),
+            });
+        }
+
         setSaving(prev => ({ ...prev, [k]: false }));
         if (!error) {
             setSavedFlash(prev => ({ ...prev, [k]: true }));
@@ -410,6 +449,10 @@ const PermissionsView = () => {
             cargo: orgRoles.find(r => r.id === roleId)?.name,
             modulo: moduleKey, permiso: permType, valor: value,
             arrastro: arrastra.length || undefined,
+            // Queda en la bitácora porque es un cambio de acceso que el
+            // administrador no pidió explícitamente: si «Inicio» aparece o
+            // desaparece de un cargo, tiene que poder rastrearse por qué.
+            inicio: inicioPasaA === null ? undefined : (inicioPasaA ? 'encendido' : 'apagado'),
             error: error ? (error.message || 'error al guardar') : undefined,
         });
     }, [selectedRoleId, permissions, orgRoles]);

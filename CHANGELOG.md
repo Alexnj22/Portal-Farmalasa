@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.0 — Los permisos del tablero se agrupan por pestaña, y la pestaña vacía no sale
+
+Tres pedidos sobre lo mismo: que repartir permisos del tablero se parezca al
+tablero.
+
+**1 · Activar un widget enciende «Inicio», y apagar el último lo apaga.** Un
+widget encendido sin el permiso `overview` no se ve en ninguna parte —el de la
+vista es el que deja entrar—, y un «Inicio» encendido sin un solo widget es una
+pantalla vacía con barra de pestañas. El vínculo va en los dos sentidos, y se
+calcula sobre el estado que va a quedar y no sobre el actual: el widget que se
+está apagando todavía figura encendido. Queda en la bitácora, porque es un
+cambio de acceso que quien administra no pidió explícitamente.
+
+**2 · El grupo «Dashboard» se parte en cuatro.** Eran veinticuatro interruptores
+seguidos bajo un solo rótulo, y el tablero los muestra repartidos en pestañas:
+quien repartía permisos no tenía forma de saber qué pestaña estaba armando.
+Ahora son **Inicio · General**, **Inicio · Comercial**, **Inicio · RRHH** e
+**Inicio · Operación**, y cada widget cae en uno solo — dos interruptores del
+mismo permiso no se pueden leer.
+
+El reparto **no se copia**: sale de `src/constants/dashboardTabs.js`, el mismo
+que usa el tablero, y la partición se hace por transformación en vez de
+reescribir las entradas a mano, para que las descripciones —largas y afinadas
+una por una— sigan viviendo en un solo lugar.
+
+**3 · Una pestaña sin widgets no sale.** Las temáticas es directo: sin un widget
+visible de su lista, no aparecen. **General necesitaba su propia regla**, porque
+muestra todo y entonces nunca estaría vacía: se oculta cuando **sería un
+duplicado**, o sea cuando todo lo que el cargo ve cae en una sola pestaña
+temática. Con widgets de dos categorías —o con alguno que no tenga pestaña
+propia, como Alertas de sucursales— General vuelve a ser el único lugar donde se
+ven juntos, y sale. Verificado sobre ocho repartos:
+
+```
+Gerente (todo)                  → general, comercial, rrhh, operacion
+Jefe de sala (sólo Operación)   → operacion
+Dependiente (sólo Traslados)    → operacion
+RRHH (sólo su categoría)        → rrhh
+Operación + Alertas             → general, operacion
+Operación + Comercial           → general, comercial, operacion
+Sólo Alertas                    → general
+Sin ningún widget               → (ninguna)
+```
+
+Y si la pestaña recordada deja de estar disponible —le quitaron el permiso o
+apagó su último widget— el tablero cae a la primera visible en vez de quedarse
+mostrando una que ya no existe.
+
+Nota de diseño: General se dejó como **resumen completo** y no como «sólo lo que
+no tiene pestaña propia». Con el catálogo de hoy, esa otra lectura dejaba General
+con **un** widget, y la pantalla de inicio perdía su motivo. Decisión del
+usuario, con el reparto real a la vista.
+
 ## v2.488.0 — El foco también en el teléfono, y dos modales que dejan de encadenar viajes
 
 **El foco, ahora en las dos densidades de puntero.** Salió con puntero fino
@@ -103,59 +156,6 @@ la única diferencia estructural es el interceptor de respuestas de la propia
 prueba. Se dice en vez de omitirlo. La paridad queda sostenida por la igualdad de
 filas en la base y por el render en vivo del camino nuevo, verificado con la
 respuesta 200 y los resultados pintados.
-
-## v2.486.0 — Los permisos del tablero se agrupan por pestaña, y la pestaña vacía no sale
-
-Tres pedidos sobre lo mismo: que repartir permisos del tablero se parezca al
-tablero.
-
-**1 · Activar un widget enciende «Inicio», y apagar el último lo apaga.** Un
-widget encendido sin el permiso `overview` no se ve en ninguna parte —el de la
-vista es el que deja entrar—, y un «Inicio» encendido sin un solo widget es una
-pantalla vacía con barra de pestañas. El vínculo va en los dos sentidos, y se
-calcula sobre el estado que va a quedar y no sobre el actual: el widget que se
-está apagando todavía figura encendido. Queda en la bitácora, porque es un
-cambio de acceso que quien administra no pidió explícitamente.
-
-**2 · El grupo «Dashboard» se parte en cuatro.** Eran veinticuatro interruptores
-seguidos bajo un solo rótulo, y el tablero los muestra repartidos en pestañas:
-quien repartía permisos no tenía forma de saber qué pestaña estaba armando.
-Ahora son **Inicio · General**, **Inicio · Comercial**, **Inicio · RRHH** e
-**Inicio · Operación**, y cada widget cae en uno solo — dos interruptores del
-mismo permiso no se pueden leer.
-
-El reparto **no se copia**: sale de `src/constants/dashboardTabs.js`, el mismo
-que usa el tablero, y la partición se hace por transformación en vez de
-reescribir las entradas a mano, para que las descripciones —largas y afinadas
-una por una— sigan viviendo en un solo lugar.
-
-**3 · Una pestaña sin widgets no sale.** Las temáticas es directo: sin un widget
-visible de su lista, no aparecen. **General necesitaba su propia regla**, porque
-muestra todo y entonces nunca estaría vacía: se oculta cuando **sería un
-duplicado**, o sea cuando todo lo que el cargo ve cae en una sola pestaña
-temática. Con widgets de dos categorías —o con alguno que no tenga pestaña
-propia, como Alertas de sucursales— General vuelve a ser el único lugar donde se
-ven juntos, y sale. Verificado sobre ocho repartos:
-
-```
-Gerente (todo)                  → general, comercial, rrhh, operacion
-Jefe de sala (sólo Operación)   → operacion
-Dependiente (sólo Traslados)    → operacion
-RRHH (sólo su categoría)        → rrhh
-Operación + Alertas             → general, operacion
-Operación + Comercial           → general, comercial, operacion
-Sólo Alertas                    → general
-Sin ningún widget               → (ninguna)
-```
-
-Y si la pestaña recordada deja de estar disponible —le quitaron el permiso o
-apagó su último widget— el tablero cae a la primera visible en vez de quedarse
-mostrando una que ya no existe.
-
-Nota de diseño: General se dejó como **resumen completo** y no como «sólo lo que
-no tiene pestaña propia». Con el catálogo de hoy, esa otra lectura dejaba General
-con **un** widget, y la pantalla de inicio perdía su motivo. Decisión del
-usuario, con el reparto real a la vista.
 
 ## v2.487.0 — las recargas de Movistar se asignan solas, y Compras ve quién tomó qué
 

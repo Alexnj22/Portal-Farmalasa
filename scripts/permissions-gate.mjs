@@ -170,22 +170,22 @@ if (dashTxt) {
   // Los ids del registro de widgets.
   const defsBloque = dashTxt.match(/const WIDGET_DEFS\s*=\s*\[([\s\S]*?)\n\];/)?.[1] ?? '';
   const idsDefinidos = [...defsBloque.matchAll(/\bid:\s*'([a-z0-9_]+)'/g)].map(m => m[1]);
-  // Los ids que TAB_WIDGETS reparte por pestaña. `general` puede estar derivado
-  // (un getter sobre WIDGET_DEFS) — en ese caso cubre todo y no hay nada que
-  // buscar; si vuelve a ser una lista literal, sus ids se leen igual que los de
-  // las otras pestañas.
-  const tabsBloque = dashTxt.match(/const TAB_WIDGETS\s*=\s*\{([\s\S]*?)\n\};/)?.[1] ?? '';
-  const generalDerivada = /get\s+general\s*\(\)/.test(tabsBloque);
+  // El reparto por pestaña se mudó a `src/constants/dashboardTabs.js` el
+  // 2026-08-07, porque **Permisos** lo necesita igual para agrupar los widgets
+  // por pestaña. Leerlo del lugar viejo no daba error: `TAB_WIDGETS` sigue
+  // existiendo en la vista, pero hoy son cuatro getters, y el regex de strings
+  // se llevaba los nombres de las pestañas (`'general'`, `'comercial'`…) como
+  // si fueran ids de widget. El gate acusaba cuatro widgets inexistentes.
+  const REPARTO = 'src/constants/dashboardTabs.js';
+  const repartoTxt = fuentes.get(REPARTO) ?? (() => {
+    try { return readFileSync(join(RAIZ, REPARTO), 'utf8'); } catch { return ''; }
+  })();
+  const tabsBloque = repartoTxt.match(/PESTANAS_TEMATICAS\s*=\s*\{([\s\S]*?)\n\};/)?.[1] ?? '';
+  // General no se declara: `catalogoDePestana` la deriva del catálogo completo,
+  // así que cubre todo y ningún widget puede quedar fuera de toda pestaña. Si
+  // algún día vuelve a ser una lista literal, esto se entera solo.
+  const generalDerivada = !/^\s*general\s*:/m.test(tabsBloque);
   const idsEnPestanas = new Set([...tabsBloque.matchAll(/'([a-z0-9_]+)'/g)].map(m => m[1]));
-
-  // Una pestaña puede apuntar a una constante en vez de traer la lista adentro
-  // (`general: ALL_WIDGET_IDS`). Sin seguir esa indirección, sus ids se leen
-  // como ausentes y el gate acusa widgets que sí están — probado: reportaba
-  // `branches`. Se resuelve leyendo el array de esa constante.
-  for (const [, ident] of tabsBloque.matchAll(/^\s*\w+:\s*([A-Z][A-Z0-9_]+)\s*,/gm)) {
-    const arr = dashTxt.match(new RegExp(`const ${ident}\\s*=\\s*\\[([\\s\\S]*?)\\];`))?.[1] ?? '';
-    for (const [, id] of arr.matchAll(/'([a-z0-9_]+)'/g)) idsEnPestanas.add(id);
-  }
 
   const huerfanos = generalDerivada ? [] : idsDefinidos.filter(id => !idsEnPestanas.has(id));
   if (huerfanos.length) {
@@ -200,7 +200,7 @@ if (dashTxt) {
   if (inventados.length) {
     problemas.push({
       titulo: 'Pestañas del tablero que reparten un widget inexistente',
-      detalle: 'Ids en TAB_WIDGETS que WIDGET_DEFS no define — quedan reservando un hueco que nunca se llena.',
+      detalle: 'Ids en PESTANAS_TEMATICAS (constants/dashboardTabs.js) que WIDGET_DEFS no define — quedan reservando un hueco que nunca se llena.',
       items: inventados,
     });
   }

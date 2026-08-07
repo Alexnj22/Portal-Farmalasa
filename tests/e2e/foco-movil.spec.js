@@ -45,6 +45,13 @@ test.describe('Foco · WebKit iPhone 13', () => {
             errores.length = 0;
             await page.goto('/' + ruta).catch(() => {});
             await page.waitForTimeout(6500);
+            // `CLIC=texto` toca algo antes de medir: hay pantallas cuyo contenido
+            // sólo existe después de entrar a un elemento de su lista.
+            if (process.env.CLIC) {
+                await page.getByText(process.env.CLIC, { exact: false }).first()
+                    .click({ timeout: 5000 }).catch(() => console.log(`   (no se pudo tocar «${process.env.CLIC}»)`));
+                await page.waitForTimeout(2500);
+            }
             const m = await page.evaluate(MEDIR).catch(() => null);
             console.log(`\n── /${ruta} ` + '─'.repeat(40));
             const reventó = await page.locator('text=ALGO SALIÓ MAL').count().catch(() => 0);

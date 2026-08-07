@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.509.0 — Conteo: aviso al generar el PDF y hoja compacta de dos productos por renglón
+
+_(pendiente de redactar)_
+
+## v2.508.4 — fuera la casilla de ver las facturas de otras salas
+
+Pedido del usuario. Se va «Mostrar también las que ya tomó otra sala» del widget
+«Facturas de mi Sala».
+
+Con ella se va también la rama que pintaba esas filas —la insignia de la otra
+sala y el «La tomó Fulano» con su candado—: sin la casilla, el RPC ya no las
+devuelve y ese código no podía ejecutarse. Un `estado === 'tomada'` que nunca
+llega no es una salvaguarda, es una rama muerta que la próxima lectura del
+archivo tiene que descifrar.
+
+Lo que la casilla contestaba —«¿por qué no me aparece la mía?», que puede ser
+que no llegó o que otra sala se adelantó— sigue teniendo respuesta, y más
+completa: **Compras → «Facturas de Sala»** muestra quién tomó qué, cuándo, y si
+terminó cargada. El parámetro `p_incluir_tomadas` del RPC queda intacto, así que
+volver a ofrecerlo sería una línea.
+
 ## v2.508.3 — El colchón que le faltaba a la espera del esqueleto
 
 ```

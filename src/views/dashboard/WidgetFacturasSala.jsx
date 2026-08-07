@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    ReceiptText, Download, Check, Undo2, Lock, PackageCheck,
+    ReceiptText, Download, Check, Undo2, PackageCheck,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
-import Checkbox from '../../components/common/Checkbox';
 import { SkeletonText } from '../../components/common/StateViews';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import {
@@ -66,9 +65,11 @@ function FilaFactura({ fila, branchId, onCambio }) {
     const [ocupado, setOcupado] = useState(false);
     const [error,   setError]   = useState('');
 
-    const mia      = fila.estado === 'mia';
-    const deLinea  = fila.estado === 'mia_linea';
-    const ajena    = fila.estado === 'tomada';
+    // Sin `estado === 'tomada'`: quitada la casilla de «ver las de otras salas»
+    // (2026-08-07), el RPC ya no las devuelve y esa rama no podía pintarse.
+    // Quién tomó qué se ve completo en Compras → «Facturas de Sala».
+    const mia     = fila.estado === 'mia';
+    const deLinea = fila.estado === 'mia_linea';
 
     const tomar = async () => {
         setError(''); setOcupado(true);
@@ -97,7 +98,7 @@ function FilaFactura({ fila, branchId, onCambio }) {
     };
 
     return (
-        <div data-surface="card" className={`px-3 py-2.5 flex flex-col gap-2 ${ajena ? 'opacity-60' : ''}`}>
+        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
             <div className="flex items-start gap-2">
                 <ReceiptText size={13} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2.5} />
                 <div className="flex-1 min-w-0">
@@ -129,20 +130,10 @@ function FilaFactura({ fila, branchId, onCambio }) {
                     </Badge>
                 )}
                 {deLinea && <Badge variant="info" size="sm">De tu línea</Badge>}
-                {ajena && (
-                    <Badge variant="neutral" size="sm">
-                        {fila.tomada_sala ?? 'Otra sala'}
-                    </Badge>
-                )}
 
                 <div className="flex-1" />
 
-                {ajena ? (
-                    <span className="text-micro text-content-3 inline-flex items-center gap-1">
-                        <Lock size={11} strokeWidth={2.5} />
-                        La tomó {fila.tomada_por ?? 'otra sala'}
-                    </span>
-                ) : mia ? (
+                {mia ? (
                     <>
                         <Button size="sm" variant="ghost" icon={Download}
                             loading={ocupado} onClick={descargar}>
@@ -175,7 +166,6 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
     const [filas,    setFilas]    = useState(null);
     const [error,    setError]    = useState('');
     const [busca,    setBusca]    = useState('');
-    const [verOtras, setVerOtras] = useState(false);
 
     // Sin `setFilas(null)` al recargar: era una escritura sincrónica dentro del
     // efecto (render en cascada, lo marca `react-hooks/set-state-in-effect`) y
@@ -184,12 +174,12 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
     // que llega la nueva, que es lo que conviene.
     const cargar = useCallback(async () => {
         const { filas: f, error: e } = await fetchFacturasSala(branchId, {
-            dias: DIAS_VISIBLES, incluirTomadas: verOtras,
+            dias: DIAS_VISIBLES,
         });
         setError(e?.message ?? '');
         setFilas(f);
         onCambio?.();
-    }, [branchId, verOtras, onCambio]);
+    }, [branchId, onCambio]);
 
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -265,23 +255,6 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
                 </div>
             )}
 
-            {/* «No me aparece la mía» tiene dos causas y se ven igual: no llegó,
-                o ya la tomó otra sala. Esto separa las dos sin que nadie llame
-                por teléfono. Va al final: es una respuesta, no un filtro de uso
-                diario. */}
-            {!cargando && (
-                <div className="px-1 pt-1">
-                    {/* `Checkbox` YA es un `<label>` y trae su propia ranura de
-                        texto: envolverlo en otro `<label>` anida dos, y ahí el
-                        clic deja de tener un destino definido. */}
-                    <Checkbox
-                        size="sm"
-                        checked={verOtras}
-                        onChange={setVerOtras}
-                        label="Mostrar también las que ya tomó otra sala"
-                    />
-                </div>
-            )}
         </div>
     );
 }

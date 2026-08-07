@@ -35,6 +35,11 @@ test.describe('Foco · WebKit iPhone 13', () => {
         await page.locator('#password').fill(E2E_PASSWORD);
         await page.locator('button[type="submit"]').first().click();
         await page.waitForTimeout(6000);
+        // Sin sesión se mide la pantalla de login, que está bien hecha: sale
+        // todo en cero y se lee como «perfecto». Ver la nota del barrido.
+        if (/\/login/.test(page.url())) {
+            throw new Error('No se pudo iniciar sesión: se estaría midiendo la pantalla de login.');
+        }
 
         for (const ruta of RUTAS) {
             errores.length = 0;

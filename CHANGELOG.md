@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.483.1 — El barrido se niega a medir sin sesión
+
+Una corrida entera del barrido salió **«37 vistas · con algo que corregir: 0»**,
+con todas las columnas en cero. Parecía el final feliz del trabajo de hoy. No lo
+era: el ingreso había fallado —el límite de intentos de Supabase, después de
+muchas corridas seguidas— y el barrido midió **la pantalla de login 37 veces**.
+
+Y el login está bien hecho: no desborda, no recorta nada, no tiene blancos por
+debajo de 44pt. O sea que la ausencia de sesión se lee exactamente igual que la
+ausencia de defectos. Lo delató una columna que no era la que se estaba mirando:
+`fichas` también estaba en cero, y Ventas venía dando 50.
+
+Es el mismo agujero que el de las vistas reventadas, un nivel más arriba, y los
+dos se tapan igual: el instrumento tiene que distinguir «no encontré nada» de
+«no había nada que buscar». El barrido y el spec de foco ahora **cortan con un
+error** si después del ingreso siguen en `/login`, y el barrido lo vuelve a
+verificar en cada ruta, porque una sesión que se cae a la mitad deja en cero
+sólo de ahí en adelante.
+
+Estado real, medido con sesión: las 37 vistas en un iPhone 13 con cero desborde
+de página, cero elementos recortados, cero blancos táctiles chicos, cero inputs
+con zoom de iOS y ninguna vista reventada. La única que conserva una `<table>`
+es el calendario semanal de Horarios, en su carril, que es lo correcto.
+
 ## v2.483.0 — El plan de vacaciones sale de la tabla, y la ficha puede llevar sus acciones
 
 Era la última lista de registros que quedaba en tabla en el teléfono. La otra

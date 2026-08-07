@@ -39,6 +39,18 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         await page.locator('button[type="submit"]').first().click();
         await page.waitForTimeout(6000);
 
+        // ⚠️ SIN SESIÓN, EL BARRIDO MIDE EL LOGIN 37 VECES — y el login está
+        // bien hecho, así que sale todo en cero y el informe dice «0 vistas con
+        // algo que corregir». Pasó de verdad: una corrida entera se leyó como
+        // «las 37 perfectas» cuando lo único que había pasado es que el ingreso
+        // falló. Es el mismo agujero que el de las vistas reventadas: la
+        // ausencia de datos y la ausencia de defectos se ven idénticas.
+        //
+        // Se corta acá y con ruido, no se reporta.
+        if (/\/login/.test(page.url())) {
+            throw new Error('No se pudo iniciar sesión: el barrido habría medido la pantalla de login 37 veces.');
+        }
+
         // Una vista que REVIENTA mide exactamente igual que una vista vacía:
         // cero fichas, cero tablas, cero desborde. Proveedores estuvo así y el
         // barrido la listaba con un punto al lado, como si estuviera bien.
@@ -54,6 +66,11 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             await page.waitForTimeout(6500);
             const m = await page.evaluate(MEDIR).catch(() => null);
             if (!m) { informe.push({ ruta, error: true }); continue; }
+            // Y por ruta: una sesión que se cae a mitad del barrido devuelve al
+            // login sólo a partir de ahí, y esas rutas también saldrían en cero.
+            if (/\/login/.test(page.url())) {
+                throw new Error(`La sesión se perdió en /${ruta}: de acá en adelante se estaría midiendo el login.`);
+            }
             const extra = await page.evaluate(() => {
                 const vw = document.documentElement.clientWidth;
                 const tablas = [...document.querySelectorAll('table')];

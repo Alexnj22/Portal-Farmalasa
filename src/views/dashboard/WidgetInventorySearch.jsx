@@ -32,7 +32,16 @@ const ERP_BRANCH_MAP = {
   6: 'Bodega',
   7: 'Salud 5',
 };
-const BRANCH_ORDER = [5, 1, 2, 3, 4, 7, 6];
+// Bodega SIEMPRE primero (pedido del usuario, 2026-08-07). Venía última, con el
+// orden de despacho que usa el resto del tablero — y acá ese orden no aplica:
+// esta pantalla no reparte, contesta «dónde hay». Lo primero que se mira antes
+// de pedirle a otra sala es si Bodega lo tiene, porque de ahí sale sin dejar a
+// ninguna sala corta. Estando al final había que recorrer las seis para llegar.
+//
+// Es el único orden de salas del widget, así que alcanza con cambiarlo acá: el
+// detalle y las alternativas se arman recorriendo lo que devuelve
+// `groupInventory`, que sale ordenado por esta lista.
+const BRANCH_ORDER = [6, 5, 1, 2, 3, 4, 7];
 // branch del portal → sucursal del sistema de origen. Son numeraciones
 // distintas; el mismo mapa que usa el tablero.
 const MI_ERP_POR_BRANCH = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };

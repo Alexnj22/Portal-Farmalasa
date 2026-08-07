@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.495.4 — en la consulta de inventario, Bodega va primero
+
+Pedido del usuario: «que quien primero salga sea Bodega, y que eso sea así
+siempre».
+
+Venía última, arrastrando el orden de despacho que usa el resto del tablero. Acá
+ese orden no aplica: esta pantalla no reparte, contesta **dónde hay**. Y lo
+primero que se mira antes de pedirle a otra sala es si Bodega lo tiene, porque de
+ahí sale sin dejar a ninguna sala corta. Estando al final había que recorrer las
+seis para llegar.
+
+`BRANCH_ORDER` es el único orden de salas del widget, así que el cambio alcanza
+para las tres pantallas: la lista, el detalle por sucursal y las alternativas se
+arman recorriendo lo que devuelve `groupInventory`, que sale ordenado por esa
+lista. El «siempre» del pedido no necesitó nada más — y queda anotado al lado de
+la constante para que la próxima vez no se vuelva a repartir en varios lados.
+
 ## v2.495.3 — Reglas de despacho: se ve cuál está activo, y menos colores
 
 Reportado al desplegar una regla: «muchos colores» y «no sé qué está activo, no

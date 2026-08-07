@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.463.1 — El espejo empareja por id cuando lo sabe
+
+Copiar los datos de un cliente al portal buscaba la ficha **solo por nombre**.
+Eso alcanza cuando el nombre es el mismo de los dos lados, que es el caso
+normal. No alcanza para las fichas que se crearon con el nombre tal como se
+escribió en una factura —con espacios de más, acentos rotos o typos—: esas no
+coinciden con nada y quedaban afuera aunque ya supiéramos exactamente a qué
+cliente corresponden.
+
+Ahora, cuando el id viene, manda el id. Probado antes de dejarlo, con los tres
+casos: por id encuentra la ficha aunque el nombre no coincida; por nombre sigue
+funcionando igual que siempre; y un id que no existe se reporta en vez de
+romper la corrida.
+
+Y una corrección en la corrida diaria: cuando la base rechaza una ficha, ahora
+se aísla esa fila y las demás siguen. Antes una sola fila conflictiva cortaba
+todo el lote — el mismo problema que ya se había resuelto en agosto y que
+volvió a aparecer por no reusar la pieza que lo arreglaba.
+
 ## v2.463.0 — El vencimiento importa donde importa: solo en los de receta
 
 Decisión del usuario: por ahora el vencimiento solo pesa en los productos **Bajo

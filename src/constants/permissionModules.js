@@ -33,8 +33,9 @@ import {
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck,
     BookOpen, Contact, Wrench, Users, Calculator, ReceiptText
 } from 'lucide-react';
+import { tematicaDe } from './dashboardTabs';
 
-export const MODULE_GROUPS = [
+const GRUPOS_CRUDOS = [
     {
         group: 'Autogestión',
         color: 'text-success-text',
@@ -150,6 +151,10 @@ export const MODULE_GROUPS = [
             { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false, sub: [
                 { key: 'compras_tab_facturas',  label: 'Facturas',   tipo: 'tab' },
                 { key: 'compras_tab_productos', label: 'Productos',  tipo: 'tab' },
+                // La otra mitad del widget del tablero. `can_edit` del módulo es
+                // lo que habilita liberar una factura tomada por una sala —la
+                // sala sola no puede si ya quedó cargada como compra.
+                { key: 'compras_tab_salas',     label: 'Facturas de Sala', tipo: 'tab' },
                 { key: 'compras_ver_montos',    label: 'Ver montos', tipo: 'cap' },
             ]},
             { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icon: Truck, hasApprove: false },
@@ -318,6 +323,42 @@ export const MODULE_GROUPS = [
         ],
     },
 ];
+
+// ── El grupo «Dashboard» se parte por PESTAÑA ────────────────────────────────
+// Eran veinticuatro interruptores seguidos bajo un solo rótulo, y el tablero los
+// muestra repartidos en cuatro pestañas: quien reparte permisos no tenía forma
+// de saber qué pestaña estaba armando. Reportado el 2026-08-07: «como se tiene
+// por pestañas, que estén separados».
+//
+// El reparto NO se copia acá: sale de `dashboardTabs.js`, el mismo que usa el
+// tablero. Y se hace por transformación en vez de reescribir las entradas a mano
+// para que las descripciones —que son largas y se afinaron una por una— sigan
+// viviendo en un solo lugar.
+//
+// Cada widget cae en UN grupo: dos interruptores del mismo permiso no se pueden
+// leer. Por eso acá se usa `tematicaDe`, que devuelve la pestaña propia o `null`
+// — y no `catalogoDePestana`, que para General devuelve todo porque allá General
+// SÍ es el resumen completo.
+const ROTULO_PESTANA = {
+    general:   'Inicio · General',
+    comercial: 'Inicio · Comercial',
+    rrhh:      'Inicio · RRHH',
+    operacion: 'Inicio · Operación',
+};
+
+export const MODULE_GROUPS = GRUPOS_CRUDOS.flatMap(g => {
+    if (g.group !== 'Dashboard') return [g];
+    const enPestana = { general: [], comercial: [], rrhh: [], operacion: [] };
+    // `overview` no es un widget: es el permiso de entrar a la vista. Encabeza
+    // General, que es donde primero se mira.
+    g.modules.forEach(m => {
+        if (!m.key.startsWith('dash_')) { enPestana.general.push(m); return; }
+        enPestana[tematicaDe(m.key.slice('dash_'.length)) || 'general'].push(m);
+    });
+    return Object.entries(enPestana)
+        .filter(([, mods]) => mods.length)
+        .map(([tab, mods]) => ({ group: ROTULO_PESTANA[tab], color: g.color, modules: mods }));
+});
 
 // Plano: key → { label, desc, icon, group }. Incluye los sub-permisos, que
 // también son claves de role_permissions (y por lo tanto bloqueables).

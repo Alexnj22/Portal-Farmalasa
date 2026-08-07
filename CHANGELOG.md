@@ -21,6 +21,92 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.486.0 — Los permisos del tablero se agrupan por pestaña, y la pestaña vacía no sale
+
+Tres pedidos sobre lo mismo: que repartir permisos del tablero se parezca al
+tablero.
+
+**1 · Activar un widget enciende «Inicio», y apagar el último lo apaga.** Un
+widget encendido sin el permiso `overview` no se ve en ninguna parte —el de la
+vista es el que deja entrar—, y un «Inicio» encendido sin un solo widget es una
+pantalla vacía con barra de pestañas. El vínculo va en los dos sentidos, y se
+calcula sobre el estado que va a quedar y no sobre el actual: el widget que se
+está apagando todavía figura encendido. Queda en la bitácora, porque es un
+cambio de acceso que quien administra no pidió explícitamente.
+
+**2 · El grupo «Dashboard» se parte en cuatro.** Eran veinticuatro interruptores
+seguidos bajo un solo rótulo, y el tablero los muestra repartidos en pestañas:
+quien repartía permisos no tenía forma de saber qué pestaña estaba armando.
+Ahora son **Inicio · General**, **Inicio · Comercial**, **Inicio · RRHH** e
+**Inicio · Operación**, y cada widget cae en uno solo — dos interruptores del
+mismo permiso no se pueden leer.
+
+El reparto **no se copia**: sale de `src/constants/dashboardTabs.js`, el mismo
+que usa el tablero, y la partición se hace por transformación en vez de
+reescribir las entradas a mano, para que las descripciones —largas y afinadas
+una por una— sigan viviendo en un solo lugar.
+
+**3 · Una pestaña sin widgets no sale.** Las temáticas es directo: sin un widget
+visible de su lista, no aparecen. **General necesitaba su propia regla**, porque
+muestra todo y entonces nunca estaría vacía: se oculta cuando **sería un
+duplicado**, o sea cuando todo lo que el cargo ve cae en una sola pestaña
+temática. Con widgets de dos categorías —o con alguno que no tenga pestaña
+propia, como Alertas de sucursales— General vuelve a ser el único lugar donde se
+ven juntos, y sale. Verificado sobre ocho repartos:
+
+```
+Gerente (todo)                  → general, comercial, rrhh, operacion
+Jefe de sala (sólo Operación)   → operacion
+Dependiente (sólo Traslados)    → operacion
+RRHH (sólo su categoría)        → rrhh
+Operación + Alertas             → general, operacion
+Operación + Comercial           → general, comercial, operacion
+Sólo Alertas                    → general
+Sin ningún widget               → (ninguna)
+```
+
+Y si la pestaña recordada deja de estar disponible —le quitaron el permiso o
+apagó su último widget— el tablero cae a la primera visible en vez de quedarse
+mostrando una que ya no existe.
+
+Nota de diseño: General se dejó como **resumen completo** y no como «sólo lo que
+no tiene pestaña propia». Con el catálogo de hoy, esa otra lectura dejaba General
+con **un** widget, y la pantalla de inicio perdía su motivo. Decisión del
+usuario, con el reparto real a la vista.
+
+## v2.487.0 — las recargas de Movistar se asignan solas, y Compras ve quién tomó qué
+
+Dos piezas que le faltaban a «Facturas de mi Sala» (v2.484.0).
+
+**El mapa línea→sala salió del dato, no de una lista escrita a mano.** Las
+recargas de Movistar ya estaban registradas como compra **con su sucursal**, y
+el documento trae la línea adentro. Cruzando los dos por monto exacto y fecha,
+cada línea cayó en una sola sala y ninguna apareció en dos:
+
+| Línea | Sala | Coincidencias | Monto |
+|---|---|---|---|
+| `78370041` | Salud 1 | 3 | siempre $200.00 |
+| `77097722` | Salud 2 | 2 | siempre $99.99 |
+| `61622865` | Salud 3 | 3 | siempre $50.00 |
+
+⚠ **Este cruce se puede creer acá justamente porque cada línea recarga un monto
+distinto y constante** — que es la propiedad que NO tienen el agua ni las
+recargas de Tigo/Claro, donde $184.68 se repite en 9 de 21 documentos. Aplicar
+el mismo método allá daría emparejamientos falsos con idéntica apariencia de
+éxito, y por eso ahí el reclamo sigue siendo manual. El mapa queda guardado como
+dato y no se recalcula: si mañana dos salas recargan lo mismo, ya está escrito.
+
+**La pestaña «Facturas de Sala», en Compras.** Decisión del usuario: «agregalo
+en compras, no en contabilidad» — quien revisa que una compra haya quedado
+cargada trabaja ahí, no en el módulo de los documentos del correo. Muestra quién
+tomó qué, cuándo, y sobre todo **cuántos días lleva tomada y sin cargar**, que es
+la señal que nadie más da: el documento existe, la sala dijo que era suya, y ahí
+se detuvo. Desde ahí se libera una factura y vuelve al montón.
+
+El permiso siguió a la pantalla: el RPC pasó a aceptar `compras` además de
+`facturas_compra`. Un permiso que gatea una pestaña pero no cubre lo que esa
+pestaña llama es peor que no tenerlo, porque parece que funciona.
+
 ## v2.484.2 — Administración ya no abre el widget contra una sala que no está en la lista
 
 Facturas de mi Sala arrancaba siempre en la sala del empleado. Pero solo siete

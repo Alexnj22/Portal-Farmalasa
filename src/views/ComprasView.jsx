@@ -19,6 +19,7 @@ import { formatMoney, formatQty } from '../utils/formatNumber';
 import { useAuth } from '../context/AuthContext';
 import ExpedienteMovil from '../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../components/common/usarExpediente';
+import TabFacturasSala from './purchases/TabFacturasSala';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,9 @@ const PAGE_SIZE = 50;
 const TABS = [
     { key: 'facturas',  label: 'Facturas'  },
     { key: 'productos', label: 'Productos' },
+    // La otra mitad del widget «Facturas de mi Sala» del tablero: allá cada sala
+    // toma la que le toca, acá se ve quién tomó qué y si terminó cargada.
+    { key: 'salas',     label: 'Facturas de Sala' },
 ];
 
 const FACTURA_COLS = [
@@ -503,6 +507,9 @@ export default function ComprasView() {
             )}
             {activeTab === 'productos' && (
                 <TabProductos searchTerm={search} />
+            )}
+            {activeTab === 'salas' && (
+                <TabFacturasSala searchTerm={search} />
             )}
         </GlassViewLayout>
     );

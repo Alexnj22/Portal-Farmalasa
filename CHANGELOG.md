@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.469.0 — La corrida diaria de fichas deja de depender de una laptop
+
+La limpieza diaria de fichas de clientes corría en una Mac: si estaba apagada a
+las 21:30, ese día no pasaba nada. Ahora corre en el servidor, todos los días,
+sin depender de que alguien tenga la computadora encendida. Se dispara a las
+21:30, una hora antes del envío de facturas a Hacienda, para que ese envío
+encuentre las fichas ya corregidas.
+
+Hace cuatro cosas, en orden: une las fichas repetidas, aparta en **Por revisar**
+las que no está claro si son la misma persona, completa el distrito que falte, y
+copia los datos al portal.
+
+**Lo delicado era mover la parte que elige el distrito.** Esa lógica llevaba
+25,946 decisiones tomadas sobre fichas reales, y varias de sus reglas no se
+dedujeron pensando: se descubrieron corrigiendo errores. Reescribirla desde cero
+habría tirado todo eso.
+
+Así que no se reescribió: se tradujo y después se **enfrentó a la original sobre
+las mismas 25,946 fichas**. Resultado: 25,946 decisiones iguales, ninguna
+distinta. La única diferencia que apareció en el camino fue que la versión nueva
+limpiaba un espacio de más que la vieja dejaba — y se le quitó la mejora, porque
+una traducción tiene que decidir igual que el original, no mejor.
+
+Queda una comparación que se puede volver a correr cada vez que esa lógica se
+toque.
+
 ## v2.468.0 — La escalera, la barra, y el tema Liquid que dejaba ver la vista de atrás
 
 Las tres cosas que v2.467.0 dejó escritas como pendientes, hechas — y la pasada

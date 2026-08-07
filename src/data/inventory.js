@@ -100,7 +100,11 @@ export async function searchInventory({ term, productIds = [] }) {
     return await fetchAllRows(() => {
         let q = supabase
             .from('inventory')
-            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad, is_vencidos')
+            // `detalle` trae el factor de la presentación (`1x30`, `1x10`,
+            // `1x1`) y sin él NO se puede sumar: `cantidad` está en la
+            // presentación de la fila, no en unidades. Ver `unidadesDe` en
+            // WidgetInventorySearch.
+            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad, is_vencidos')
             .gt('cantidad', 0)
             .order('descripcion')
             .order('fecha_vencimiento', { ascending: true, nullsFirst: false });
@@ -118,7 +122,7 @@ export async function fetchInventoryByProductIds(productIds) {
     return await fetchAllRows(() =>
         supabase
             .from('inventory')
-            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad')
+            .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad')
             .gt('cantidad', 0)
             .in('erp_product_id', productIds)
             .order('descripcion')

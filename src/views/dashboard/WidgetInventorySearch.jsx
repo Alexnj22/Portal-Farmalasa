@@ -79,6 +79,33 @@ function daysUntil(d) {
   return Math.ceil((new Date(d + 'T12:00:00') - new Date()) / 86400000);
 }
 
+// ── Cuántas unidades hay DE VERDAD en una fila de inventario (2026-08-07) ───
+// `cantidad` no está en unidades: está en la presentación de esa fila. El mismo
+// lote aparece varias veces —CAJA, BLISTER, UNIDAD— y cada una cuenta lo suyo.
+// Verificado sobre la amoxicilina 500 del reporte: lote `L5M5137` en La Popular
+// son 24 CAJA (1x30), 1 BLISTER (1x10) y 3 UNIDAD (1x1).
+//
+// Sumarlas sin convertir —que es lo que hacía este widget— no sólo daba un
+// número chico: **cambiaba el orden de las salas**. Mostraba La Popular (46)
+// por encima de Salud 1 (39) cuando Salud 1 tiene 1,034 unidades contra 836. La
+// pantalla que existe para decir «en qué sala hay» apuntaba a la equivocada.
+//
+// El factor sale de `detalle`, que viaja en la misma fila que la presentación.
+// Medido sobre las 24,181 filas del inventario: 24,031 en formato `1xN` limpio,
+// 48 con un `1` pelado y 102 con variantes de espaciado (`1 X 1`, `X 25`,
+// `1X 16`) que este parse cubre porque normaliza los espacios antes de leer.
+//
+// Sin número después de la x el factor es 1 —una presentación suelta— y NUNCA
+// 0: un 0 borraría la existencia en silencio, que es peor que contarla de menos.
+const FACTOR_RE = /x\s*(\d+)\s*$/i;
+function factorDe(detalle) {
+  const m = FACTOR_RE.exec(String(detalle ?? '').replace(/\s+/g, ' ').trim());
+  const n = m ? parseInt(m[1], 10) : 1;
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+const unidadesDe = (row) => (Number(row?.cantidad) || 0) * factorDe(row?.detalle);
+const sumaUnidades = (lots) => (lots || []).reduce((s, r) => s + unidadesDe(r), 0);
+
 // ── `Map` y no un objeto: la clave es un NÚMERO disfrazado (2026-08-07) ─────
 // `key` es `String(erp_product_id)`, o sea "2221", "3005"… y `Object.values()`
 // sobre claves que parecen enteros las devuelve **ordenadas numéricamente**, no
@@ -298,7 +325,7 @@ function PedirEnFila({ prod, branchName, onPedir }) {
 function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) {
   return branches.map((branch, bi) => {
     const theme       = NEUTRAL_THEME;
-    const branchTotal = branch.products.reduce((s, p) => s + p.lots.reduce((ss, r) => ss + r.cantidad, 0), 0);
+    const branchTotal = branch.products.reduce((s, p) => s + sumaUnidades(p.lots), 0);
 
     return (
       <div
@@ -320,7 +347,7 @@ function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) 
 
         <div className="space-y-2">
           {branch.products.map((prod, pi) => {
-            const lotTotal = prod.lots.reduce((s, r) => s + r.cantidad, 0);
+            const lotTotal = sumaUnidades(prod.lots);
             const multiLot = prod.lots.length > 1;
 
             return (
@@ -397,7 +424,7 @@ function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) 
                       </span>
                       <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
                       <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">
-                        {prod.lots[0].cantidad} uds
+                        {unidadesDe(prod.lots[0])} uds
                       </span>
                     </button>
                     <PedirEnFila prod={prod} branchName={branch.name} onPedir={onPedir} />
@@ -604,7 +631,7 @@ function PanelInventario({ query = '', onQueryChange }) {
     }
 
     const grandTotal = drillBranches.reduce(
-      (s, b) => s + b.products[0].lots.reduce((ss, r) => ss + r.cantidad, 0), 0
+      (s, b) => s + sumaUnidades(b.products[0].lots), 0
     );
 
     return (
@@ -645,7 +672,7 @@ function PanelInventario({ query = '', onQueryChange }) {
             drillBranches.map((branch, bi) => {
               const theme = branch.isVencidos ? VENCIDOS_THEME : NEUTRAL_THEME;
               const prod  = branch.products[0];
-              const total = prod.lots.reduce((s, r) => s + r.cantidad, 0);
+              const total = sumaUnidades(prod.lots);
               return (
                 <div
                   key={branch.name}
@@ -821,7 +848,7 @@ function PanelInventario({ query = '', onQueryChange }) {
                 <span className="text-caption font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
                 <span className="w-px h-3 bg-danger/20 mx-1" />
                 <span className="text-body-sm font-black tabular-nums text-danger-text">
-                  {vencidosProds.reduce((s, p) => s + p.lots.reduce((ss, r) => ss + r.cantidad, 0), 0)}
+                  {vencidosProds.reduce((s, p) => s + sumaUnidades(p.lots), 0)}
                 </span>
                 <span className="text-micro font-semibold text-danger-text ml-0.5">uds</span>
               </div>
@@ -829,7 +856,7 @@ function PanelInventario({ query = '', onQueryChange }) {
             </div>
             <div className="space-y-2">
               {vencidosProds.map((prod, pi) => {
-                const lotTotal = prod.lots.reduce((s, r) => s + r.cantidad, 0);
+                const lotTotal = sumaUnidades(prod.lots);
                 return (
                   <div
                     key={prod.descripcion}
@@ -845,7 +872,15 @@ function PanelInventario({ query = '', onQueryChange }) {
                             <div key={li} className="flex items-center gap-1.5">
                               <span className="text-micro font-mono text-content-3 truncate">{r.lote || '—'}</span>
                               <ExpiryBadge date={r.fecha_vencimiento} />
-                              <span className="text-micro font-black text-danger-text tabular-nums ml-auto">{r.cantidad}</span>
+                              {/* Igual que en la lista y en el detalle: el
+                                  número no se entiende sin saber de qué
+                                  presentación es. */}
+                              {r.presentacion && (
+                                <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0 ml-auto">
+                                  {r.presentacion}
+                                </span>
+                              )}
+                              <span className={`text-micro font-black text-danger-text tabular-nums ${r.presentacion ? '' : 'ml-auto'}`}>{r.cantidad}</span>
                             </div>
                           ))}
                         </div>

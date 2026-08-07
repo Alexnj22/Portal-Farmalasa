@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.490.4 — el inventario se suma en unidades reales, no mezclando cajas con blísteres
+
+Cierra lo que quedó abierto en v2.490.3. `inventory.cantidad` **no está en
+unidades**: está en la presentación de esa fila. El mismo lote aparece varias
+veces —CAJA, BLISTER, UNIDAD— y el widget las sumaba como si fueran lo mismo,
+rotulando el resultado «uds».
+
+No era sólo un número corto. **Cambiaba el orden de las salas**, que es lo único
+que esta pantalla existe para decir:
+
+| Sala | Mostraba | Unidades reales |
+|---|---|---|
+| Bodega | 155 | 4,494 |
+| Salud 4 | 68 | 1,362 |
+| **Salud 1** | **39** | **1,034** |
+| Salud 2 | 44 | 959 |
+| **La Popular** | **46** | **836** |
+| Salud 3 | 32 | 697 |
+| Salud 5 | 21 | 173 |
+
+La Popular salía por encima de Salud 1 teniendo 200 unidades menos. Quien
+buscaba dónde pedir, pedía a la sala equivocada.
+
+El factor sale de `detalle`, que viaja en la misma fila que la presentación y
+que **ni el RPC ni los dos `select` lo estaban trayendo** — de ahí que la cuenta
+no se pudiera hacer aunque se quisiera. Se agrega en los tres.
+
+Medido sobre las 24,181 filas del inventario antes de escribir el parse: 24,031
+vienen en formato `1xN` limpio, 48 con un `1` pelado y 102 con variantes de
+espaciado (`1 X 1`, `X 25`, `1X 16`) que se cubren normalizando los espacios
+antes de leer. **Sin número después de la `x` el factor es 1, nunca 0**: un 0
+borraría la existencia en silencio, que es peor que contarla de menos.
+
+Los seis totales del widget pasan a unidades (encabezado del detalle, cada sala
+en las dos vistas, cada producto, y los dos de vencidos). Los renglones de lote
+siguen mostrando la cantidad **en su presentación**, que es como está guardada en
+la sala y lo que hace falta para ir a buscarla — ahora con la presentación escrita
+al lado también en el bloque de vencidos, que era el último que no la tenía.
+
 ## v2.490.3 — el detalle de inventario dice de qué presentación es cada lote
 
 Reportado con captura: «¿por qué si tienen mismo lote y fecha de vence, los

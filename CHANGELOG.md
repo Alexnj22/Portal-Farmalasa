@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.484.2 — Administración ya no abre el widget contra una sala que no está en la lista
+
+Facturas de mi Sala arrancaba siempre en la sala del empleado. Pero solo siete
+salas cargan compras, y Administración no es una: quien trabaja ahí —incluido
+quien pidió el widget— lo abría contra `branch_id 32`, que no está en el
+desplegable. Selector en blanco y la lista vacía sin decir por qué.
+
+Es **el mismo defecto que ya se había corregido en la baldosa de Facturación**
+(de ahí salió `salaQueFacturaPorDefecto`), repetido en un widget nuevo porque la
+lección vivía en un comentario y no en algo que se pudiera reutilizar. Ahora el
+arranque cae en La Popular cuando la sala propia no carga compras, y las
+opciones salen de `MM_BRANCH_TO_ERP` en el orden del negocio en vez de filtrar
+por tipo de sucursal —que volvía a colar Administración—.
+
 ## v2.484.1 — el cron que cierra el circuito de las facturas de sala
 
 `verificar-facturas-reclamadas-2h`, cada dos horas a los :40. Cruza cada factura

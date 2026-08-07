@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.484.1 — el cron que cierra el circuito de las facturas de sala
+
+`verificar-facturas-reclamadas-2h`, cada dos horas a los :40. Cruza cada factura
+tomada contra las compras que ya trae el sync y marca «ya cargada» cuando la
+encuentra — o la deja sin verificar, que es lo que corresponde cuando hay más de
+un candidato posible.
+
+Cada dos horas y no cada 10 minutos porque es una conciliación de fondo, no un
+acuse de recibo; y no diaria porque la sala ve el resultado en su propia lista y
+esperar hasta mañana para eso llega tarde. El :40 la desfasa del sync de compras.
+
 ## v2.484.0 — cada sala toma la factura que le toca, y nadie más puede tomarla
 
 Widget nuevo del tablero, quinto de la familia de baldosas que abren un modal.

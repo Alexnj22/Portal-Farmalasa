@@ -79,8 +79,19 @@ function daysUntil(d) {
   return Math.ceil((new Date(d + 'T12:00:00') - new Date()) / 86400000);
 }
 
+// ── `Map` y no un objeto: la clave es un NÚMERO disfrazado (2026-08-07) ─────
+// `key` es `String(erp_product_id)`, o sea "2221", "3005"… y `Object.values()`
+// sobre claves que parecen enteros las devuelve **ordenadas numéricamente**, no
+// por orden de inserción. Está en la especificación del lenguaje y no avisa.
+//
+// Consecuencia medida: la lista salía ordenada por id de producto — ni
+// alfabética, ni la que mandaba el servidor. Se notó al pedir que los que
+// coinciden por NOMBRE fueran antes que los que sólo coinciden por principio
+// activo: la base ya los devolvía así y la pantalla los volvía a mezclar.
+// Un `Map` conserva el orden de inserción para cualquier tipo de clave, así que
+// lo que decide el orden vuelve a ser el `ORDER BY` de `buscar_inventario_global`.
 function groupInventory(rows, paMap, photoMap) {
-  const map = {};
+  const porSucursal = new Map();
   for (const row of rows || []) {
     if (row.is_vencidos) continue; // vencidos handled separately
     const bName = ERP_BRANCH_MAP[row.erp_sucursal_id];
@@ -89,36 +100,40 @@ function groupInventory(rows, paMap, photoMap) {
     // acetaminofén salía tres veces —UNIDAD, BLISTER y CAJA— como si fueran
     // tres productos. La presentación pasa a ser un dato de cada lote.
     const key = String(row.erp_product_id ?? row.descripcion);
-    if (!map[bName])      map[bName]      = {};
-    if (!map[bName][key]) map[bName][key] = {
+    if (!porSucursal.has(bName)) porSucursal.set(bName, new Map());
+    const productos = porSucursal.get(bName);
+    if (!productos.has(key)) productos.set(key, {
       descripcion:     row.descripcion,
       presentacion:    row.presentacion,
       principioActivo: paMap?.get(row.erp_product_id) ?? null,
       fotoUrl:         photoMap[row.descripcion.toUpperCase().trim()] ?? null,
       lots:            [],
-    };
-    map[bName][key].lots.push(row);
+    });
+    productos.get(key).lots.push(row);
   }
   return BRANCH_ORDER
-    .map(id => ({ name: ERP_BRANCH_MAP[id], products: Object.values(map[ERP_BRANCH_MAP[id]] || {}) }))
+    .map(id => ({
+      name: ERP_BRANCH_MAP[id],
+      products: [...(porSucursal.get(ERP_BRANCH_MAP[id])?.values() ?? [])],
+    }))
     .filter(b => b.products.length > 0);
 }
 
 function groupVencidos(rows, paMap, photoMap) {
-  const map = {};
+  const map = new Map();
   for (const row of rows || []) {
     if (!row.is_vencidos) continue;
     const key = String(row.erp_product_id ?? row.descripcion);
-    if (!map[key]) map[key] = {
+    if (!map.has(key)) map.set(key, {
       descripcion:     row.descripcion,
       presentacion:    row.presentacion,
       principioActivo: paMap?.get(row.erp_product_id) ?? null,
       fotoUrl:         photoMap[row.descripcion.toUpperCase().trim()] ?? null,
       lots:            [],
-    };
-    map[key].lots.push(row);
+    });
+    map.get(key).lots.push(row);
   }
-  return Object.values(map);
+  return [...map.values()];
 }
 
 /* ─── Sub-components ───────────────────────────────────────────────────────── */

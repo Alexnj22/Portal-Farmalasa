@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.2 — El buscador de inventario ordena por nombre antes que por principio activo
+
+Reportado con una captura buscando «acetaminofen» en La Popular: arriba de todo
+salían AVAMIGRAN y CILFRIN D —que no se llaman así, coinciden porque llevan
+acetaminofén en su composición— y los ACETAMINOFEN de verdad quedaban tercero,
+cuarto y quinto.
+
+No son la misma clase de coincidencia. Quien escribe el nombre de un producto
+está buscando **ese** producto; el que coincide por composición es un hallazgo
+útil —«esto también lo lleva»— y va después. Ahora son dos bloques, cada uno
+alfabético, y el bloque se decide con el mismo patrón con el que ya se buscaba,
+así que no cambia qué filas salen: sólo en qué orden.
+
+**Y arreglarlo destapó que la pantalla nunca respetó ningún orden.** Con el
+`ORDER BY` ya corregido en la base, la lista seguía saliendo igual de mezclada.
+El agrupador guardaba los productos en un objeto con `String(erp_product_id)` de
+clave —"2221", "3005"— y **`Object.values()` sobre claves que parecen enteros las
+devuelve ordenadas numéricamente, no por orden de inserción**. Está en la
+especificación del lenguaje y no avisa: la lista salía ordenada por id de
+producto, ni alfabética ni la del servidor, y así llevaba desde siempre.
+
+Con un `Map` el orden de inserción se conserva para cualquier clave, y quien
+decide vuelve a ser el `ORDER BY` de `buscar_inventario_global`. Alcanza también
+a la sección de vencidos y a la de alternativas, que tenían el mismo agrupador.
+
+Verificado en el navegador, «acetaminofen» en La Popular: los seis que se llaman
+ACETAMINOFEN —incluido CETRAM PEDIÁTRICO, que lo lleva en el nombre— y después
+ANA DENT, AVAMIGRAN, los dos CETRAM y los dos CILFRIN D.
+
 ## v2.489.1 — el widget nuevo cae en el hueco real, y el panel de tamaño deja de deformarse
 
 Dos defectos del tablero reportados con capturas, los dos de razonamiento y

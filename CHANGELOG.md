@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.507.1 — Sin blur dentro de blur en la hoja del teléfono
+
+Reportado: en el teléfono, abrir una regla de despacho **pone la pantalla negra**
+y hay que volver atrás para recuperarla. En la computadora se ve bien.
+
+Que se recupere al salir descarta que sea un crash: el árbol de React sigue
+vivo, lo que falla es la **composición**. El rediseño de v2.505.0 metió dos
+`data-surface="card"` **dentro** de la hoja del teléfono —el resultado en el pie
+y el chip de la presentación única—, y ese canónico trae `backdrop-filter`. La
+hoja ya tiene el suyo, así que quedaban dos capas de desenfoque anidadas; en
+Safari de iPhone eso rompe el compositor y pinta negro.
+
+Ahora dentro de la hoja no va ninguna superficie propia: el pie de `HojaMovil`
+ya aporta su fondo y su línea, y el chip se queda con un borde. En escritorio no
+cambia nada — ahí el panel vive en un `<tr>` con degradado, no en una superficie
+con desenfoque, y el canónico sigue siendo el correcto.
+
+**No reproduce en el emulador**, y eso también tiene explicación: WebKit de
+Playwright sobre macOS no es Safari de iOS, y sobre todo la cuenta de QA usa el
+tema **Solid**, donde `--backdrop-card` vale `none` y no hay ningún blur que
+anidar. O sea que la prueba automatizada no podía ver este bug ni en el tema
+correcto ni en el motor correcto — quedó pendiente de confirmar en el teléfono
+de quien lo reportó.
+
+Regla que deja: **una hoja ya es una superficie; lo que va adentro no lleva la
+suya.** Vale para las otras dos vistas que montan detalle en el expediente
+(`ComprasView`, `TabCatalogo`), aunque hoy ninguna anida `data-surface`.
+
 ## v2.507.0 — Conteo: borrar desde la lista, laboratorios en la hoja y el badge Vivo solo cuando lo es
 
 Cuatro cosas reportadas mirando la pantalla y el PDF ya generados.

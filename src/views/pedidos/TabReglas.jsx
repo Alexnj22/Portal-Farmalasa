@@ -107,9 +107,17 @@ function ResultadoDespacho({ multiplo, tipo, etiqueta, compacto = false }) {
     const { porEtiqueta, cantidad } = calcularDespacho(multiplo, etiqueta);
     const unidad = porEtiqueta ? etiqueta : (tipo ? `pack(s) de ${tipo}` : 'pack(s)');
 
+    // ── `compacto` NO lleva superficie propia (2026-08-07) ────────────────────
+    // Va en el `pie` de `HojaMovil`, que YA es una superficie con su material.
+    // `data-surface="card"` incluye `backdrop-filter`, así que anidarlo deja un
+    // blur dentro de otro blur — en Safari de iPhone eso rompe la composición y
+    // la hoja se pinta NEGRA (reportado 2026-08-07; no reproduce en el emulador
+    // ni en el tema Solid, donde el blur vale `none`). Y aunque compusiera bien,
+    // una tarjeta dentro de una tarjeta no es el patrón.
     return (
-        <div aria-live="polite" data-surface="card"
-            className="flex items-center gap-4 flex-wrap px-4 py-3">
+        <div aria-live="polite"
+            {...(compacto ? {} : { 'data-surface': 'card' })}
+            className={`flex items-center gap-4 flex-wrap ${compacto ? 'px-1 py-0.5' : 'px-4 py-3'}`}>
             <div className="flex flex-col">
                 <span className="text-micro font-bold uppercase tracking-widest text-content-3">Necesidad</span>
                 <span className="text-body-lg font-bold tabular-nums leading-tight text-content">
@@ -287,16 +295,21 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     /* Con una sola presentación en catálogo no hay nada que elegir:
                        una tarjeta de 200px pedía una decisión que no existe. Se
                        muestra como dato, y la regla se aplica sola. */
-                    /* `data-surface="card"` y no `bg-surface-card` + `border` a mano:
-                       escrito con clases es la «tarjeta a mano» que el gate de diseño
-                       rechaza (DESIGN.md §5), porque el canónico es el que sabe qué
-                       superficie corresponde en cada uno de los cuatro temas. */
-                    <button type="button" disabled={saving} data-surface="card"
+                    /* En escritorio la superficie sale del canónico `data-surface="card"`
+                       —escribirla con clases es la «tarjeta a mano» que el gate rechaza
+                       (DESIGN.md §5)—. Dentro de la hoja del teléfono NO va ninguna: la
+                       hoja YA es una superficie, y el `backdrop-filter` que trae el
+                       canónico, anidado dentro del de la hoja, rompe la composición en
+                       Safari de iPhone. Ver la nota de `ResultadoDespacho`. */
+                    <button type="button" disabled={saving}
+                        {...(enExpediente ? {} : { 'data-surface': 'card' })}
                         aria-pressed={vals.dispatch_id_presentacion === unicaPres.id_presentacion}
                         onClick={() => selectPres(
                             vals.dispatch_id_presentacion === unicaPres.id_presentacion ? null : unicaPres.id_presentacion,
                         )}
-                        className="inline-flex items-center gap-2.5 px-3 py-2 text-left"
+                        className={`inline-flex items-center gap-2.5 px-3 py-2 text-left ${
+                            enExpediente ? 'rounded-card border border-divider' : ''
+                        }`}
                     >
                         {(() => { const { Icon } = presStyle(unicaPres.presentaciones?.tipo); return <Icon size={16} className="text-content-3 shrink-0" />; })()}
                         <span className="text-body-sm font-bold text-content">

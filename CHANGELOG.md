@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.490.0 — gate:movil — que no se pueda escribir a mano lo que ya es canónico
+
+Fase 1 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`. Cuatro reglas, ratchet con
+baseline, y en el pre-commit cuando el commit toca `src/views` o
+`src/components`.
+
+**Lo que este gate NO hace, y es lo que lo mantiene honesto:** nunca va a decir
+«esta vista se ve bien». Leer el fuente no alcanza para saber si algo desborda o
+si un blanco mide menos de 44pt — eso lo mide el barrido de Playwright, que abre
+la vista. Su trabajo es el que ninguna otra capa puede hacer: **detectar que
+alguien volvió a escribir a mano un elemento que ya tiene variante canónica**.
+Una tabla propia dentro de un carril mide perfecto y aun así es deuda.
+
+| Categoría | Hoy | Qué detecta |
+|---|---|---|
+| `tabla-a-mano` | 26 | `<table>` fuera de `DataTable` — no hereda el modo ficha, ni el alto por densidad, ni el contrato de teclado de la fila |
+| `modal-sin-cuerpo-canonico` | **0** | `ModalShell` crudo: entra bien y adentro es una pantalla de escritorio encogida |
+| `buscador-a-mano` | **0** | la píldora+input duplicada en vez de `ViewTabBar` |
+| `movil-false-sin-motivo` | **0** | la excepción del canon usada sin decir por qué |
+
+Tres nacen en **cero y bloqueantes**: proteger lo que ya se cumple es cuando más
+barato sale.
+
+### Tres rondas de falsos positivos antes de que midiera algo
+
+Vale escribirlo porque es el modo en que un gate se termina desactivando:
+
+1. `modal-sin-hoja` acusó a **11 archivos que hacen lo correcto** — trataba
+   `LiquidModal` como si fuera `ModalShell` crudo. `LiquidModal` **es** cuerpo
+   canónico: compone `ModalShell` + `AsaHoja`, y su propio encabezado explica por
+   qué no se reescribió sobre `HojaMovil` (es de composición, con `Header`/`Body`/
+   `Footer` de JSX arbitrario).
+2. Quedaban 2, y los dos eran menciones **dentro de un comentario** — uno decía
+   literalmente «no ModalShell — rendered inside parent's ModalShell». El
+   detector acusaba a un archivo por explicar que NO lo usa. Ahora busca el tag.
+3. `buscador-a-mano` acusaba a un `<CatalogSelect placeholder="Buscar y agregar
+   producto…">`. Ahora exige un `<input>` literal.
+
+Y se verificó que **puede fallar**: un archivo de prueba con las cuatro
+violaciones a propósito las levanta las cuatro, y se borró después. Un
+instrumento que no se vio en rojo no prueba nada — tercera vez en el día.
+
+**Lee del ÍNDICE con `--hook`, no del disco.** El árbol es compartido y un gate
+que mira el disco ve archivos a medio guardar: `gate:design` dio rojo dos veces
+hoy (`formato-cifra`, `copy-vacio`) y verde en la corrida siguiente sin que nadie
+tocara nada. Un ratchet que se mueve solo deja de ser un ratchet.
+
 ## v2.489.7 — un solo encabezado, buscador en vencidos y sombras que no se cortan
 
 Tres reportes con captura sobre el Ajuste de Inventario.

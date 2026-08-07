@@ -95,6 +95,17 @@ if git diff --cached --name-only | grep -qE '^src/'; then
   node scripts/permissions-gate.mjs --hook || exit 1
 fi
 
+# mobile-gate: solo si el commit toca vistas o componentes. Detecta que alguien
+# volvió a escribir a mano un elemento que ya tiene variante móvil canónica —una
+# `<table>` propia, un `ModalShell` sin cuerpo, un buscador duplicado—, que es lo
+# único de las tres capas del canon móvil que se puede ver SIN ejecutar la app.
+# Lo demás (desborde, blancos de 44pt, caída a tabla) lo mide el barrido de
+# Playwright, que no puede vivir en un hook. Canon: DESIGN.md §32.
+# Local, sin red. `--hook` lo acota al ÍNDICE, no al disco.
+if git diff --cached --name-only | grep -qE '^src/(views|components)/'; then
+  node scripts/mobile-gate.mjs --hook || exit 1
+fi
+
 # bundle-gate NO va acá a propósito: necesita `npm run build` (~6 s) y un dist/
 # fresco, y un hook que obliga a buildear en cada commit se termina saltando con
 # --no-verify. Va antes de cerrar un trabajo, junto a gate:design.

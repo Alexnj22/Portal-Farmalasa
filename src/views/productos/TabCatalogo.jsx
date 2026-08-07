@@ -19,6 +19,8 @@ import CarrilCards from '../../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
+import ModalShell from '../../components/common/ModalShell';
+import useMediaQuery from '../../hooks/useMediaQuery';
 import { normSearch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
@@ -830,7 +832,13 @@ function PriceHistorySection({ history, allowedPriceFields }) {
 
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
-function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
+// `comoPanel` devuelve el MISMO cuerpo sin el envoltorio `<tr><td colSpan>`.
+// Es lo que permite que el expediente tenga dos envases sin dos versiones: la
+// fila expandida de escritorio y el modal a pantalla completa del teléfono. Si
+// fueran dos componentes, el día que alguien agregue una sección la agregaría en
+// uno solo — que es exactamente cómo este proyecto acumuló las cuatro copias de
+// la fila expandida que v2.62.4 tuvo que reunificar.
+function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, comoPanel = false }) {
     const { maxPriceLevel, hasPermission } = useAuth();
     const canSeeCosts = hasPermission('productos_ver_costos');
 
@@ -958,13 +966,15 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     };
 
     if (loadingRow) {
+        const cargando = (
+            <div className={`flex items-center gap-2 text-label ${xk.loadingText}`}>
+                <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando detalle…
+            </div>
+        );
+        if (comoPanel) return <div className="px-5 py-6">{cargando}</div>;
         return (
             <tr className={xk.loadingRow}>
-                <td colSpan={5} className="px-5 py-4">
-                    <div className={`flex items-center gap-2 text-label ${xk.loadingText}`}>
-                        <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando detalle…
-                    </div>
-                </td>
+                <td colSpan={5} className="px-5 py-4">{cargando}</td>
             </tr>
         );
     }
@@ -1004,10 +1014,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         return acc;
     }, new Set());
 
-    return (
-        <>
-        <tr className={xk.container}>
-            <td colSpan={5} className="px-0 py-0">
+    const cuerpo = (
                 <div className="px-5 py-5 space-y-5">
 
                     {/* ── Alert banner ── */}
@@ -1293,10 +1300,25 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                     </div>
 
                 </div>
-            </td>
-        </tr>
+    );
+
+    // El menú de contexto de la foto y el visor cuelgan del documento, así que
+    // viajan igual en los dos envases.
+    const flotantes = (
+        <>
         {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
         <PhotoLightbox src={lightboxSrc} alt="Foto del producto" onClose={() => setLightboxSrc(null)} />
+        </>
+    );
+
+    if (comoPanel) return <>{cuerpo}{flotantes}</>;
+
+    return (
+        <>
+        <tr className={xk.container}>
+            <td colSpan={5} className="px-0 py-0">{cuerpo}</td>
+        </tr>
+        {flotantes}
         </>
     );
 }
@@ -1349,6 +1371,15 @@ export default function TabCatalogo({
     const [page, setPage]             = useState(1);
     const [pageSize, setPageSize]     = useState(25);
     const [expandedId, setExpandedId] = useState(null);
+    // El corte es el MISMO que usa `DataTable` para decidir ficha o tabla: si
+    // fueran dos números distintos habría un ancho en el que la fila se pinta
+    // como ficha y el detalle sigue intentando expandirse dentro de una tabla
+    // que ya no existe.
+    const enTelefono = useMediaQuery('(max-width: 1023.98px)');
+    // La fila abierta, resuelta desde la lista que ya está cargada: el modal no
+    // necesita su propio estado ni su propia consulta — el expediente ya cuelga
+    // de `expandedId`, que es el mismo que expande la fila en escritorio.
+    const productoAbierto = products.find(x => x.id === expandedId) || null;
     const [expandedCache, setExpandedCache] = useState({});
     const [loadingExpandedId, setLoadingExpandedId] = useState(null);
 
@@ -1749,15 +1780,13 @@ export default function TabCatalogo({
                         { key: 'activo',    label: 'Estado',      sortable: true, hideBelow: 'sm' },
                         { key: '_expand',   label: '',             className: 'w-10' },
                     ]}
-                    /* Vuelve a la tabla en el teléfono, y con motivo: acá el
-                       contenido de verdad —precios, presentaciones, existencias
-                       por sala— vive en la fila EXPANDIDA, no en las cuatro
-                       columnas. La ficha las mostraba las cuatro y su hoja no
-                       agregaba nada, mientras el chevron de expandir quedaba
-                       muerto porque el `<tr>` hermano no se pinta como ficha.
-                       El catálogo vuelve cuando esa fila expandida tenga casa en
-                       la hoja: es trabajo de esta vista, no del canónico. */
-                    movil={false}
+                    /* El toque de la fila SÍ va a un destino: en escritorio
+                       expande la fila, y en el teléfono abre el expediente a
+                       pantalla completa (el `ModalShell` de más abajo). Por eso
+                       `usarAccionDeFila` y no la hoja genérica: acá el contenido
+                       que importa —precios, presentaciones, historiales— no está
+                       en las cuatro columnas, está en el panel. */
+                    movil={{ usarAccionDeFila: true }}
                     sortKey={sortField}
                     sortDir={sortDir}
                     onSort={handleSort}
@@ -1825,7 +1854,7 @@ export default function TabCatalogo({
                                         }
                                     </DataCell>
                                 </DataRow>
-                                {isExpanded && (
+                                {isExpanded && !enTelefono && (
                                     <ExpandedProductRow
                                         product={p}
                                         data={expandedCache[p.id]}
@@ -1844,6 +1873,36 @@ export default function TabCatalogo({
                     })}
                 </DataTable>
             )}
+
+            {/* ── El expediente, a pantalla completa en el teléfono ──────────
+                Mismo componente que la fila expandida de escritorio, con
+                `comoPanel`: si fueran dos, la sección que alguien agregue mañana
+                aparecería en uno solo. `align="pantalla"` es la posición que
+                `ModalShell` no reinterpreta — un expediente de siete secciones
+                no es una decisión que se toma y se cierra, es algo que se
+                recorre. */}
+            <ModalShell
+                open={enTelefono && !!expandedId}
+                onClose={() => setExpandedId(null)}
+                align="pantalla"
+                titulo={productoAbierto?.nombre || 'Producto'}
+            >
+                {productoAbierto && (
+                    <ExpandedProductRow
+                        comoPanel
+                        product={productoAbierto}
+                        data={expandedCache[productoAbierto.id]}
+                        loadingRow={loadingExpandedId === productoAbierto.id && !expandedCache[productoAbierto.id]}
+                        branches={branches}
+                        onPhotoUpdated={handlePhotoUpdated}
+                        onPrinciplesUpdated={handlePrinciplesUpdated}
+                        onCategoryUpdated={handleCategoryUpdated}
+                        onClose={() => setExpandedId(null)}
+                        categories={catOptions.map(o => o.value)}
+                        onCategoryCreated={onCategoryCreated}
+                    />
+                )}
+            </ModalShell>
 
             {/* ── Pagination ── */}
             {!loading && total > 0 && (

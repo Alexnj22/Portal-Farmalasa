@@ -164,7 +164,10 @@ export default function ModalShell({
   // `pointer-events: none`, así que los toques lo atravesaban y **la lista de
   // atrás scrolleaba** mientras la hoja estaba abierta. Invisible no es ausente:
   // el contenedor sigue capturando, solo que sin pintar nada.
-  const conVelo = scrim ?? !(autoHoja || alignPedido === "bottom");
+  // `pantalla` no lleva velo: el panel tapa el viewport entero, así que sería un
+  // desenfoque a pantalla completa que nadie llega a ver y que el compositor
+  // igual tiene que calcular.
+  const conVelo = scrim ?? !(autoHoja || alignPedido === "bottom" || alignPedido === "pantalla");
   // ── Acostado, la hoja entra de COSTADO ────────────────────────────────
   // Medido en un iPhone 13 acostado (844 × 390): la hoja inferior ocupaba el
   // 63% del alto para mostrar dos controles en una columna de 150px, con 694px
@@ -175,8 +178,20 @@ export default function ModalShell({
   // centradas (`hojaEnTactil={false}`) siguen donde estaban, porque su posición
   // dice de qué tipo de cosa se trata y eso no cambia al girar el teléfono.
   const lateralPosible = usePanelLateral();
-  const esLateral = lateralPosible && (autoHoja || alignPedido === "bottom");
-  const align = esLateral ? "side" : autoHoja ? "bottom" : alignPedido;
+  // ── `pantalla`: el envase de un EXPEDIENTE, no de una decisión ─────────
+  // Una hoja inferior sirve para decidir algo y cerrarse. Un expediente —el
+  // producto tiene siete secciones y dos listas anidadas— no se decide, se
+  // recorre: pedirle a una hoja que ocupe el 90% del alto es dibujar una
+  // pantalla completa con las esquinas redondeadas y un asa que miente sobre
+  // lo que hay debajo.
+  //
+  // Va ANTES del cálculo lateral y de `autoHoja` a propósito: quien pide
+  // `pantalla` lo pide para las dos orientaciones y para las dos densidades de
+  // puntero. Es la única posición que no se reinterpreta.
+  const esPantalla = alignPedido === "pantalla";
+  const esLateral = !esPantalla && lateralPosible && (autoHoja || alignPedido === "bottom");
+  const align = esPantalla ? "pantalla"
+    : esLateral ? "side" : autoHoja ? "bottom" : alignPedido;
 
   // `mounted` sobrevive a `open=false` el tiempo de la animación de salida.
   const [mounted, setMounted] = useState(open);
@@ -397,6 +412,7 @@ export default function ModalShell({
     : `animate-out zoom-out-95 duration-[var(--dur-fast)] ${HOLD_EXIT}`;
 
   const alignCls =
+    align === "pantalla" ? "items-stretch justify-center" :
     align === "top"    ? "items-start justify-center pt-[10vh] px-4" :
     align === "bottom" ? "items-end justify-center" :
     // De costado: pegado al borde DERECHO y de alto completo. Derecho y no
@@ -501,9 +517,17 @@ export default function ModalShell({
             // sobre el CONTENIDO, adentro de la hoja, para que el material siga
             // llegando al filo.
             ? 'h-full w-[47%] max-w-[420px] min-w-[280px]'
-            : 'w-full'} ${autoHoja && align !== "side"
+            // A pantalla completa el envoltorio SÍ pinta. En las demás
+            // posiciones es transparente a propósito —la superficie la pone el
+            // hijo, que es una tarjeta flotando sobre la vista—, pero una
+            // pantalla entera no flota sobre nada: si no pinta, se ve la vista
+            // de atrás a través del expediente. Medido en los cuatro temas:
+            // `background: rgba(0,0,0,0)` y el texto encima de la tabla.
+            // Lleva el fondo de PÁGINA y no el de tarjeta, porque lo que se
+            // está dibujando es una pantalla y adentro van tarjetas.
+            : align === "pantalla" ? 'h-full w-full bg-surface-page' : 'w-full'} ${autoHoja && align !== "side" && align !== "pantalla"
             ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,var(--sa-bottom))]'
-            : align === "side" ? '' : maxWidthClass} ${panelAnim} ease-[var(--ease-spring)] outline-none ${panelClassName}`}
+            : (align === "side" || align === "pantalla") ? '' : maxWidthClass} ${panelAnim} ease-[var(--ease-spring)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── La sombra de la hoja, como CAPA propia ───────────────────

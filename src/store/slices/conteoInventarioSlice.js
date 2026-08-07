@@ -8,7 +8,16 @@ import { formatMoney } from '../../utils/formatNumber';
 // Las RPCs del módulo levantan códigos, no frases. Sin esta traducción el
 // usuario veía el identificador crudo de Postgres en el toast.
 const ERRORES = {
+    // Los que EMPIEZAN por un código más corto van ANTES que él: el traductor
+    // busca por substring, así que con `SIN_PERMISO` primero un
+    // `SIN_PERMISO_RECUENTO` salía como el genérico "no tenés permiso" y se
+    // perdía el motivo (que el recuento lo firma un supervisor).
+    SIN_PERMISO_RECUENTO: 'El recuento lo hace un supervisor: hace falta permiso de aprobación en este módulo.',
     SIN_PERMISO: 'No tenés permiso para esta acción.',
+    // Dos códigos y no uno: el motivo del rechazo es distinto y es lo único
+    // que le dice a quien lo intenta si vale la pena pedir el permiso.
+    ELIMINAR_REQUIERE_PERMISO_FINALIZADO: 'Este conteo ya está finalizado: es evidencia firmada. Borrarlo necesita el permiso de eliminar conteos.',
+    ELIMINAR_REQUIERE_PERMISO_INICIADO: 'Este conteo ya tiene renglones contados. Borrarlo necesita el permiso de eliminar conteos.',
     FUERA_DE_ALCANCE: 'Ese conteo pertenece a otra sucursal.',
     ALCANCE_INVALIDO: 'El alcance del conteo no es válido.',
     SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no tiene inventario asociado: no se le puede tomar un conteo.',
@@ -38,7 +47,6 @@ const ERRORES = {
     CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',
     AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado.',
     CONTEO_NO_ESTA_EN_REVISION: 'El recuento solo se hace entre finalizar y aprobar el conteo.',
-    SIN_PERMISO_RECUENTO: 'El recuento lo hace un supervisor: hace falta permiso de aprobación en este módulo.',
     RECUENTO_MISMO_CONTADOR: 'No podés recontar una línea que vos mismo contaste: el recuento lo hace otra persona.',
     CANTIDAD_INVALIDA: 'La cantidad del recuento debe ser un número entero de 0 o más.',
 };
@@ -115,7 +123,15 @@ export const createConteoInventarioSlice = (set, get) => ({
             // registrado con la misma importancia que abrir una pantalla.
             severity: 'CRITICAL',
             branch_id: data?.branch_id,
-            old_value: `${data?.total_items ?? 0} renglón(es) · estado ${data?.status || '—'} · ${data?.total_diferencias ?? 0} diferencia(s)`,
+            old_value: [
+                `${data?.total_items ?? 0} renglón(es)`,
+                `${data?.total_contados ?? 0} contado(s)`,
+                `estado ${data?.status || '—'}`,
+                `${data?.total_diferencias ?? 0} diferencia(s)`,
+                // Borrar un conteo vacío y borrar uno firmado se ven iguales en
+                // la bitácora si no se dice cuál de los dos permisos lo permitió.
+                ...(data?.uso_permiso_especial ? ['con permiso de eliminar conteos'] : []),
+            ].join(' · '),
         });
 
         await get().fetchConteosInventario();

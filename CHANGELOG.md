@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.500.0 — Eliminar un conteo: permiso aparte para los ya empezados
+
+v2.499.0 dejó que cualquiera con «Gestionar» borrara un conteo en cualquier
+estado. Es demasiado, y el usuario lo cortó en el acto: un conteo finalizado es
+evidencia firmada de una auditoría —con el nombre de quién contó cada renglón y
+a qué hora— y uno a medio contar son horas de trabajo de alguien más.
+
+Ahora son **dos niveles**:
+
+- **«Gestionar»** borra el conteo **sin empezar**: abierto y sin un solo renglón
+  contado. Es el que se armó mal —sucursal, alcance o detalle equivocados— y
+  nadie pierde nada al tirarlo. Es también el caso frecuente, porque no se puede
+  tener dos conteos abiertos en la misma sucursal: sin poder borrar el que
+  sobra, no se puede empezar el bueno.
+- **Nueva capacidad «Eliminar un conteo ya empezado o finalizado»**
+  (`conteo_inventario_eliminar`, dentro de Conteo de Inventario en Permisos)
+  para todo lo demás.
+
+«Empezado» se mide por **renglones capturados**, no por el estado: un conteo
+nace en «En Progreso» —nunca en «Borrador»—, así que mirar el estado habría
+dejado el borrado sin alcance real. Un renglón marcado «no ubicado» cuenta como
+capturado: su físico 0 es un dato, no la ausencia de uno.
+
+El botón se **esconde** cuando no corresponde, en vez de aparecer apagado, y el
+servidor aplica la misma regla por si acaso, con dos mensajes distintos según el
+motivo — que es lo único que le dice a quien lo intenta si vale la pena pedir el
+permiso. La bitácora anota cuál de los dos permisos lo autorizó.
+
+**Además**, un arreglo de paso en el traductor de errores del módulo:
+`SIN_PERMISO_RECUENTO` estaba declarado después de `SIN_PERMISO`, y como la
+búsqueda es por substring salía siempre el genérico «no tenés permiso para esta
+acción» en vez de explicar que el recuento lo firma un supervisor.
+
+## v2.499.1 — el último resto del campo representante, en la tarjeta de vencidos
+
+Barrido a pedido del usuario tras v2.498.2: buscar el mismo error —**tomar un
+campo de la primera fila de un grupo y después usarlo para identificar, filtrar o
+rotular ese grupo**— en el resto del portal.
+
+Se revisaron cuatro formas de la misma trampa: comparaciones por `presentacion`,
+comparaciones por `descripcion` en vez de por id, grupos sembrados con la primera
+fila, y usos de `[0]` como representante. Resultado:
+
+| Sitio | Veredicto |
+|---|---|
+| Consulta de Inventario · detalle | corregido en v2.498.2 |
+| Consulta de Inventario · **tarjeta de vencidos** | **fallaba — corregido acá** |
+| Consulta de Inventario · tarjeta de la lista | correcta: sólo se pinta con UN lote |
+| `pedidoPrint` · bloque de especiales | latente, no dispara (ver abajo) |
+| Pedidos · reglas de despacho | sanas: comparan `id_presentacion`, un id real |
+| Plan de Vacaciones · agrupado | sano: la clave es `employee_id` y el empleado es ese |
+| Nómina · agrupado por sucursal | sano: la sucursal se busca por la misma clave |
+
+**Lo corregido.** La tarjeta de un producto vencido mostraba `prod.presentacion`
+bajo el nombre aunque tuviera varios lotes — y como cada renglón de abajo ya
+muestra la suya, se contradecían en la misma tarjeta. Ahora sólo aparece cuando
+hay un lote, igual que en la lista principal. Acá el campo no filtraba nada: sólo
+mentía en pantalla.
+
+**Lo latente, y por qué no se toca.** `buildEspecialesBlock` agrupa por
+`product_name` y hereda del primer elemento `presentacion_tipo` y `dispF` — un
+**factor numérico** que multiplica lo que se imprime («(N und.)»). Dos productos
+distintos con el mismo nombre se fundirían en una fila con el factor equivocado,
+en un documento de despacho. Comprobado contra la base: **0 nombres repetidos
+entre los productos activos**, así que hoy no puede dispararse. Queda anotado
+como riesgo, no como defecto — cambiar la clave del bloque de impresión sin
+necesidad es tocar un camino delicado a cambio de nada.
+
 ## v2.499.0 — Conteo de inventario: tipo de conteo, unificación por factor, área de vencidos aparte y borrado
 
 Cuatro cosas pedidas sobre la hoja de conteo de Bodega, que salió con 4,000

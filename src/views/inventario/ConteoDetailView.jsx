@@ -1145,6 +1145,9 @@ export default function ConteoDetailView() {
     // hoja incluye la existencia del sistema, o sea que el ciego se podía
     // romper por la impresora aunque `conteo_ver_sistema` estuviera apagado.
     const canDownload = hasPermission('conteo_inventario_descargar');
+    // Borrar un conteo YA EMPEZADO o finalizado. Sin esta capacidad,
+    // «Gestionar» solo se lleva el conteo que todavía no cuenta nada.
+    const canEliminar = hasPermission('conteo_inventario_eliminar');
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
     const fetchConteoProductsPage = useStaffStore((s) => s.fetchConteoProductsPage);
@@ -1311,6 +1314,15 @@ export default function ConteoDetailView() {
     const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove;
     const puedeRecontar = conteo?.status === 'FINALIZADO' && canApprove;
     const hasResults = conteo && ['FINALIZADO', 'CERRADO'].includes(conteo.status);
+
+    // Borrar tiene dos niveles y la RPC los aplica igual: acá solo se decide si
+    // el botón se ofrece. «Gestionar» alcanza para el conteo que se armó mal
+    // —abierto y sin un solo renglón contado—; a partir del primer renglón, y
+    // para cualquiera ya finalizado, hace falta la capacidad. Se ESCONDE en vez
+    // de mostrarse deshabilitado: un botón apagado sin explicación se lee como
+    // un error de la pantalla.
+    const conteoEmpezado = (resumen?.contados ?? 0) > 0;
+    const puedeEliminar = canEdit && (canEliminar || (editable && !conteoEmpezado));
 
     // Recalcula los totales agregados del producto a partir de sus líneas ya
     // en memoria — evita un refetch de la página de productos por cada guardado.
@@ -1606,7 +1618,7 @@ export default function ConteoDetailView() {
                                 {/* Eliminar va acá y no en la lista: es destructivo y sin
                                     vuelta atrás, así que la única puerta es la pantalla
                                     donde se ve QUÉ conteo se está borrando. */}
-                                {canEdit && (
+                                {puedeEliminar && (
                                     <Button variant="ghost" tone="danger" icon={Trash2}
                                         disabled={busy} onClick={() => setConfirmEliminarOpen(true)}>
                                         Eliminar
@@ -1879,7 +1891,12 @@ export default function ConteoDetailView() {
                 title="¿Eliminar este conteo?"
                 // `resumen.total_items` son los RENGLONES; `total` es la
                 // paginación por producto y diría un número mucho más chico.
-                message={`Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'} con sus ${formatQty(resumen?.total_items ?? 0)} renglón(es) y el historial de cada uno. No se puede deshacer.`}
+                // Y el mensaje cambia según haya trabajo adentro: tirar un
+                // conteo recién armado y tirar uno con 800 renglones contados
+                // no son la misma decisión, aunque el botón sea el mismo.
+                message={conteoEmpezado || hasResults
+                    ? `Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'}: ${formatQty(resumen?.total_items ?? 0)} renglón(es), de los cuales ${formatQty(resumen?.contados ?? 0)} ya están contados, y el historial de quién contó cada uno. No se puede deshacer.`
+                    : `Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'} con sus ${formatQty(resumen?.total_items ?? 0)} renglón(es). Todavía no se ha contado ninguno. No se puede deshacer.`}
                 confirmText="Eliminar conteo"
                 isProcessing={busy}
             />

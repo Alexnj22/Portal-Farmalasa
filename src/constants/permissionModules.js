@@ -184,6 +184,12 @@ const GRUPOS_CRUDOS = [
                 // `conteo_ver_sistema` estuviera apagado.
                 { key: 'conteo_inventario_descargar',  label: 'Imprimir la hoja de conteo', tipo: 'cap' },
                 { key: 'conteo_inventario_ver_montos', label: 'Ver el valorizado',          tipo: 'cap' },
+                // Gestionar ya borra el conteo que se armó mal —abierto y sin un
+                // solo renglón contado—, porque ahí no se pierde trabajo de
+                // nadie. Esta capacidad es para lo otro: un conteo a medio
+                // contar son horas de alguien, y uno finalizado es evidencia
+                // firmada con el nombre de quién contó cada renglón.
+                { key: 'conteo_inventario_eliminar',   label: 'Eliminar un conteo ya empezado o finalizado', tipo: 'cap' },
             ]},
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, sub: [

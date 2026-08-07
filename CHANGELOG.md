@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.505.0 — El panel de reglas de despacho, en dos columnas y con su resultado a la vista
+
+Rediseño aprobado sobre mockup. Ningún dato guardado cambia y la cuenta del
+despacho es la misma: cambia dónde vive cada control y cuánto pesa.
+
+El panel mezclaba dos cosas y las pintaba iguales. **Presentación** y **Por
+lote** deciden qué sale de la bodega; **Mostrar en PDF**, **Caja especial** y
+**Notas** son excepciones que casi nunca se tocan —la propia ayuda dice «solo
+para cajas físicas grandes»—. Los cinco rótulos tenían el mismo tamaño, peso y
+color, así que nada decía qué importa. De ahí salía el resto: una columna de
+500px con dos tercios de pantalla vacíos al lado, y **680px de alto**, que al
+abrir una fila empujaba la lista fuera de la pantalla.
+
+- **Dos columnas**, «La regla» y «Ajustes», con un encabezado cada una en vez de
+  cinco rótulos idénticos. Medido después del cambio: **403px**, así que la fila
+  de arriba y la de abajo quedan a la vista.
+- **El resultado deja de ser una nota al pie.** Decía «Ejemplo: necesidad de 7
+  und. → despacha 7 pack(s) de LATA» en gris, abajo, y es la única línea que
+  verifica que la regla hace lo que se quiere. Ahora ancla la columna de la
+  regla, con los números en cifras tabulares.
+- **Con una sola presentación en catálogo no hay nada que elegir**: se muestra
+  como dato en vez de una tarjeta de 200px que pide una decisión inexistente.
+  Con dos o más vuelve el selector de siempre.
+- **La ayuda del PDF** pasa de dos renglones de párrafo a una línea: competía
+  con los controles que explica.
+- **«Quitar regla» y el acuse de guardado** van juntos en el pie. El acuse vivía
+  en el encabezado, a 600px del control que lo dispara.
+
+**En el teléfono** el resultado se ancla al fondo de la hoja, fuera del scroll:
+el riel de múltiplos y esa línea no caben juntos en 390px, así que se tocaba ×5
+sin ver qué cambiaba. Para eso `ExpedienteMovil` expone el `pie` que `HojaMovil`
+ya tenía y el envase no pasaba. De paso, el panel deja de repetir el nombre del
+producto —la hoja ya lo pone arriba— y el laboratorio pasa a ser su subtítulo.
+
+Verificado contra el bundle en Chromium 1600px y en WebKit iPhone 13: el
+radiogroup «Múltiplo por lote» reporta `×2=true` y los otros seis `false` en
+ambos, y en el teléfono el resultado sigue visible después de desplazar la hoja
+hasta el fondo. `gate:design` en verde.
+
+Nota de método: el chip de la presentación única se dio dos veces por invisible
+leyendo una captura a escala reducida, y las dos veces estaba bien —un zoom al
+recorte lo mostró nítido—. Lo que sí era real es que estaba escrito como tarjeta
+a mano; quedó en `data-surface="card"`, que es lo que el gate pide.
+
 ## v2.504.0 — El código de v2.499.1, que se documentó pero nunca llegó
 
 v2.499.1 quedó **escrito y no aplicado**: su entrada del changelog entró a la

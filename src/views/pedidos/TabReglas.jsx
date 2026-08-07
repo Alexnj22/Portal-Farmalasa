@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { normSearch } from '../../utils/searchUtils';
 import {
     Loader2, Check, X, Ban, AlertTriangle, Package,
-    Sparkles, FlaskConical, Box, Layers, Sigma,
+    Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -75,8 +75,84 @@ const presStyle = (tipo) => {
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
+// Cuánto se despacha ante una necesidad de N unidades. Es la MISMA cuenta que
+// hace el pedido; acá sólo se muestra.
+const NECESIDAD_EJEMPLO = 7;
+function calcularDespacho(multiplo, etiqueta) {
+    const m = multiplo > 0 ? multiplo : 1;
+    // Con etiqueta y múltiplo, el PDF cuenta CAJAS (una por lote), no packs.
+    const porEtiqueta = !!etiqueta && m > 1;
+    return {
+        porEtiqueta,
+        cantidad: porEtiqueta
+            ? Math.ceil(NECESIDAD_EJEMPLO / m)
+            : Math.ceil(NECESIDAD_EJEMPLO / m) * m,
+    };
+}
+
+// El tipo de la presentación elegida, desde el caché que llenó el panel al
+// abrirse. Lo necesita el pie del expediente, que se monta FUERA de `EditPanel`.
+function tipoDePresentacion(presCache, productId, idPres) {
+    if (!idPres) return '';
+    const fila = (presCache.current[productId] ?? []).find(p => p.id_presentacion === idPres);
+    return fila?.presentaciones?.tipo ?? '';
+}
+
+// ── El resultado de la regla ──────────────────────────────────────────────────
+// Era una nota al pie en gris, y es lo único que verifica que la regla hace lo
+// que se quiere: pasa a anclar la columna. En el teléfono se monta en el `pie`
+// del expediente, porque el riel de múltiplos y esta línea no caben juntos en
+// una pantalla y se tocaba ×5 sin ver qué cambiaba.
+function ResultadoDespacho({ multiplo, tipo, etiqueta, compacto = false }) {
+    const { porEtiqueta, cantidad } = calcularDespacho(multiplo, etiqueta);
+    const unidad = porEtiqueta ? etiqueta : (tipo ? `pack(s) de ${tipo}` : 'pack(s)');
+
+    return (
+        <div aria-live="polite" data-surface="card"
+            className="flex items-center gap-4 flex-wrap px-4 py-3">
+            <div className="flex flex-col">
+                <span className="text-micro font-bold uppercase tracking-widest text-content-3">Necesidad</span>
+                <span className="text-body-lg font-bold tabular-nums leading-tight text-content">
+                    {NECESIDAD_EJEMPLO}<span className="text-caption font-semibold text-content-2 ml-1">und.</span>
+                </span>
+            </div>
+            <ArrowRight size={14} className="text-content-3 shrink-0" aria-hidden="true" />
+            <div className="flex flex-col">
+                <span className="text-micro font-bold uppercase tracking-widest text-content-3">Se despacha</span>
+                <span className="text-body-lg font-bold tabular-nums leading-tight text-brand-text">
+                    {cantidad}<span className="text-caption font-semibold text-content-2 ml-1">{unidad}</span>
+                </span>
+            </div>
+            {/* En el pie del teléfono la nota sobra: costaba un renglón entero de
+                un espacio que ya es escaso, y el número de al lado la dice. */}
+            {!compacto && (
+                <p className="text-micro text-content-3 leading-snug ml-auto text-right max-w-[24ch]">
+                    {multiplo > 1
+                        ? `Redondea hacia arriba al múltiplo de ${multiplo}.`
+                        : 'Sin múltiplo: sale la cantidad exacta.'}
+                </p>
+            )}
+        </div>
+    );
+}
+
+// Encabezado de columna. Dos, en vez de los cinco rótulos idénticos que tenía el
+// panel: lo que decide el despacho pesa distinto de lo que es excepción.
+function TituloColumna({ children, nota }) {
+    return (
+        <div className="flex items-baseline gap-2 pb-2 mb-3.5 border-b border-divider">
+            <h4 className="text-caption font-extrabold uppercase tracking-wider text-content">{children}</h4>
+            {nota && <span className="text-micro text-content-3">{nota}</span>}
+        </div>
+    );
+}
+
 // ── Panel edición — basado en presentaciones reales del producto ──────────────
-function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel, presCache }) {
+// `enExpediente`: el mismo panel montado en la hoja del teléfono. Ahí la hoja ya
+// pone el nombre del producto arriba y se cierra arrastrando, así que el
+// encabezado propio del panel sería el título repetido dos veces; y el resultado
+// va anclado al fondo, fuera del scroll, en vez de inline.
+function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel, presCache, enExpediente = false }) {
     const [presentations, setPresentations] = useState(() => presCache.current[product.id] ?? []);
     const [loadingPres,   setLoadingPres]   = useState(!presCache.current[product.id]);
 
@@ -119,6 +195,8 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
     const multiplo      = Number(vals.dispatch_multiplo) || 1;
     const selectedPres  = dedupedPres.find(p => p.id_presentacion === vals.dispatch_id_presentacion);
     const selectedTipo  = selectedPres?.presentaciones?.tipo ?? '';
+    // Con una sola presentación no hay elección que ofrecer — ver más abajo.
+    const unicaPres     = dedupedPres.length === 1 ? dedupedPres[0] : null;
 
     const selectPres = (idPres) => {
         if (saving) return;
@@ -154,42 +232,50 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
         onApply(vals);
     };
 
+    // El acuse de guardado baja al pie, junto a la acción destructiva: estaba a
+    // 600px de distancia del control que lo dispara.
+    const acuse = saving ? (
+        <span className="flex items-center gap-1 text-label text-content-3">
+            <Loader2 size={11} className="animate-spin" /> Guardando…
+        </span>
+    ) : justSaved ? (
+        <span className="flex items-center gap-1 text-label text-success-text font-semibold">
+            <Check size={11} /> Guardado
+        </span>
+    ) : saveError ? (
+        <span className="text-label text-danger-text flex items-center gap-1 max-w-[260px]">
+            <AlertTriangle size={10} className="shrink-0" /> {saveError}
+        </span>
+    ) : null;
+
     return (
         <div className="space-y-4">
 
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <p className="font-semibold text-content text-body-lg leading-tight">{product.nombre}</p>
-                    {product.laboratorio_nombre && (
-                        <p className="text-label text-content-3 mt-0.5">{product.laboratorio_nombre}</p>
-                    )}
+            {/* Header — en la hoja del teléfono lo pone `HojaMovil` */}
+            {!enExpediente && (
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <p className="font-semibold text-content text-body-lg leading-tight">{product.nombre}</p>
+                        {product.laboratorio_nombre && (
+                            <p className="text-label text-content-3 mt-0.5">{product.laboratorio_nombre}</p>
+                        )}
+                    </div>
+                    <Button variant="ghost" icon={X} iconOnly onClick={onCancel} className="flex-shrink-0" />
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    {saving && (
-                        <span className="flex items-center gap-1 text-label text-content-3">
-                            <Loader2 size={11} className="animate-spin" /> Guardando…
-                        </span>
-                    )}
-                    {!saving && justSaved && (
-                        <span className="flex items-center gap-1 text-label text-success-text font-semibold">
-                            <Check size={11} /> Guardado
-                        </span>
-                    )}
-                    {!saving && !justSaved && saveError && (
-                        <span className="text-label text-danger-text flex items-center gap-1 max-w-[260px]">
-                            <AlertTriangle size={10} className="shrink-0" /> {saveError}
-                        </span>
-                    )}
-                    <Button variant="ghost" icon={X} iconOnly onClick={onCancel} />
-                </div>
-            </div>
+            )}
+
+            {/* Dos columnas: lo que decide el despacho, y lo que casi nunca se toca.
+                Antes eran cinco secciones apiladas en una columna angosta — el panel
+                medía 680px y al abrir una fila se perdía el lugar en la lista. */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] gap-x-8 gap-y-5">
+
+            <div>
+            <TituloColumna nota="se guarda sola al tocarla">La regla</TituloColumna>
 
             {/* Presentaciones del producto */}
             <div>
-                <p className="text-micro text-content-2 uppercase tracking-widest mb-2 font-bold">
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-2 font-bold">
                     Presentación de despacho
-                    <span className="normal-case tracking-normal font-medium text-content-3"> · se aplica automáticamente</span>
                 </p>
                 {loadingPres ? (
                     <div className="flex items-center gap-2 text-label text-content-3 w-full"><SkeletonText lines={2} /></div>
@@ -197,6 +283,32 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text">
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.
                     </div>
+                ) : unicaPres ? (
+                    /* Con una sola presentación en catálogo no hay nada que elegir:
+                       una tarjeta de 200px pedía una decisión que no existe. Se
+                       muestra como dato, y la regla se aplica sola. */
+                    /* `data-surface="card"` y no `bg-surface-card` + `border` a mano:
+                       escrito con clases es la «tarjeta a mano» que el gate de diseño
+                       rechaza (DESIGN.md §5), porque el canónico es el que sabe qué
+                       superficie corresponde en cada uno de los cuatro temas. */
+                    <button type="button" disabled={saving} data-surface="card"
+                        aria-pressed={vals.dispatch_id_presentacion === unicaPres.id_presentacion}
+                        onClick={() => selectPres(
+                            vals.dispatch_id_presentacion === unicaPres.id_presentacion ? null : unicaPres.id_presentacion,
+                        )}
+                        className="inline-flex items-center gap-2.5 px-3 py-2 text-left"
+                    >
+                        {(() => { const { Icon } = presStyle(unicaPres.presentaciones?.tipo); return <Icon size={16} className="text-content-3 shrink-0" />; })()}
+                        <span className="text-body-sm font-bold text-content">
+                            {unicaPres.presentaciones?.tipo ?? 'DESCONOCIDO'}
+                        </span>
+                        <span className="text-micro text-content-3">
+                            única del catálogo · {unicaPres.factor > 1 ? `×${unicaPres.factor} unidades` : 'unidad base'}
+                        </span>
+                        {vals.dispatch_id_presentacion === unicaPres.id_presentacion && (
+                            <Check size={14} className="text-success shrink-0" />
+                        )}
+                    </button>
                 ) : (
                     <div role="radiogroup" aria-label="Presentación de despacho"
                         className={`flex flex-wrap gap-2 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
@@ -234,141 +346,138 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                 )}
             </div>
 
-            {/* Opciones adicionales — solo si hay presentación seleccionada */}
+            {/* Por lote — es "una de N elegida", no siete botones de acción.
+                Estaban escritos como `Button tone="chart-1"`, o sea los siete
+                rellenos de azul a la vez: el múltiplo activo no se distinguía
+                de los demás (reportado 2026-08-07). `SegmentedControl` es el
+                canónico de esa forma y pinta solo el elegido. */}
             <AnimatePresence>
                 {vals.dispatch_id_presentacion && (
                     <motion.div
                         key="multiplo-block"
                         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.18, ease: EASE }}
-                        className="space-y-3"
+                        className="space-y-2 mt-4"
                     >
-                        {/* Etiqueta en PDF — pills preset, junto a la presentación */}
-                        <div>
-                            <p className="text-micro text-content-2 uppercase tracking-widest mb-1 font-bold">
-                                Mostrar en PDF como
-                                <span className="normal-case tracking-normal font-medium text-content-3"> · opcional</span>
-                            </p>
-                            <p className="text-caption text-content-3 mb-2 leading-snug">
-                                Activa solo para productos en <strong className="text-content-3">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
-                            </p>
-                            <div className={`flex flex-wrap items-center gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <SegmentedControl
-                                    size="sm"
-                                    tone="brand"
-                                    label="Unidad de despacho"
-                                    value={vals.dispatch_label}
-                                    onChange={selectLabel}
-                                    options={['CAJA', 'ESTUCHE', 'BOLSA'].map(l => ({ value: l, label: l, icon: Box }))}
-                                />
-                                {vals.dispatch_label && (
-                                    <Button variant="ghost" size="sm" icon={X} onClick={() => selectLabel(vals.dispatch_label)}>quitar</Button>
-                                )}
-                            </div>
+                        <p className="text-micro text-content-3 uppercase tracking-widest font-bold">Por lote</p>
+                        <div className={`flex flex-wrap items-center gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                            <SegmentedControl
+                                size="sm"
+                                tone="brand"
+                                label="Múltiplo por lote"
+                                value={String(multiplo)}
+                                onChange={v => selectMultiplo(Number(v))}
+                                options={MULTIPLO_PILLS.map(n => ({ value: String(n), label: `×${n}` }))}
+                            />
+                            <PortalInput
+                                aria-label="Otro múltiplo de despacho"
+                                type="number"
+                                value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
+                                onChange={e => {
+                                    const n = parseInt(e.target.value);
+                                    if (n > 0) selectMultiplo(n);
+                                }}
+                                placeholder="Otro…"
+                                min={1}
+                                compact
+                                className="w-24"
+                            />
                         </div>
 
-                        {/* Por lote — es "una de N elegida", no siete botones de acción.
-                            Estaban escritos como `Button tone="chart-1"`, o sea los siete
-                            rellenos de azul a la vez: el múltiplo activo no se distinguía
-                            de los demás (reportado 2026-08-07). `SegmentedControl` es el
-                            canónico de esa forma y pinta solo el elegido. */}
-                        <div className="space-y-2">
-                            <p className="text-micro text-content-3 uppercase tracking-widest font-bold">Por lote</p>
-                            <div className={`flex flex-wrap items-center gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                                <SegmentedControl
-                                    size="sm"
-                                    tone="brand"
-                                    label="Múltiplo por lote"
-                                    value={String(multiplo)}
-                                    onChange={v => selectMultiplo(Number(v))}
-                                    options={MULTIPLO_PILLS.map(n => ({ value: String(n), label: `×${n}` }))}
-                                />
-                                <PortalInput
-                                    aria-label="Otro múltiplo de despacho"
-                                    type="number"
-                                    value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
-                                    onChange={e => {
-                                        const n = parseInt(e.target.value);
-                                        if (n > 0) selectMultiplo(n);
-                                    }}
-                                    placeholder="Otro…"
-                                    min={1}
-                                    compact
-                                    className="w-24"
-                                />
-                            </div>
-
-                            {/* Ejemplo de redondeo — corregido según etiqueta.
-                                Neutro y no azul: es texto explicativo, no una selección. */}
-                            <div className="px-3 py-2 rounded-xl bg-surface-card-hover border border-border-card text-label text-content-2">
-                                <span className="font-medium">Ejemplo:</span> necesidad de 7 und.
-                                {' → '}despacha{' '}
-                                {vals.dispatch_label && multiplo > 1 ? (
-                                    <strong className="text-content">{Math.ceil(7 / multiplo)} {vals.dispatch_label}</strong>
-                                ) : (
-                                    <><strong className="text-content">{Math.ceil(7 / multiplo) * multiplo} pack(s)</strong>{' '}de{' '}<strong className="text-content">{selectedTipo}</strong>{multiplo > 1 ? ` (múltiplo de ${multiplo})` : ''}</>
-                                )}
-                            </div>
-                        </div>
+                        {!enExpediente && (
+                            <ResultadoDespacho multiplo={multiplo} tipo={selectedTipo} etiqueta={vals.dispatch_label} />
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
+            </div>
 
-            {/* Caja especial — aplica siempre que haya presentación */}
-            {vals.dispatch_id_presentacion && (
-                <div>
-                    <p className="text-micro text-content-2 uppercase tracking-widest mb-2 font-bold">
-                        Caja especial
-                        <span className="normal-case tracking-normal font-medium text-content-3"> · producto va fuera de cajas normales</span>
-                    </p>
-                    {/* Encendido/apagado → `Switch`, no un botón relleno de rosa. Como
-                        botón no se sabía si el rótulo describía el estado actual o lo que
-                        iba a pasar al apretarlo, y su color competía con la presentación
-                        elegida, que es la que sí debe destacar. */}
-                    <div className="flex items-center gap-3">
-                        <Switch
-                            checked={!!vals.caja_especial}
-                            disabled={saving}
-                            label="Caja especial"
-                            onChange={(on) => {
-                                const next = { ...vals, caja_especial: on };
-                                setVals(next); onApply(next);
-                            }}
-                        />
-                        <span className="text-body-sm text-content-2">
-                            {vals.caja_especial
-                                ? 'Activa — cada unidad recibe su etiqueta E1, E2… independiente.'
-                                : 'Desactivada — el producto viaja en las cajas normales.'}
-                        </span>
-                    </div>
+            {/* ── Columna 2: lo que casi nunca hace falta ──────────────────── */}
+            <div>
+            <TituloColumna nota="casi nunca hacen falta">Ajustes</TituloColumna>
+
+            {/* Etiqueta en PDF */}
+            <div className={vals.dispatch_id_presentacion ? '' : 'opacity-45 pointer-events-none'}>
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-1 font-bold">
+                    Mostrar en PDF como
+                </p>
+                {/* La ayuda pasa de dos renglones de párrafo a una línea con lo que
+                    decide el caso: competía con los controles que explica. */}
+                <p className="text-micro text-content-3 mb-2 leading-snug">
+                    Solo para <strong className="text-content-2 font-semibold">cajas físicas grandes</strong> (Electrolit, sueros). En el archivo se listan aparte, una caja por fila con su lote.
+                </p>
+                <div className={`flex flex-wrap items-center gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <SegmentedControl
+                        size="sm"
+                        tone="brand"
+                        label="Unidad de despacho"
+                        value={vals.dispatch_label}
+                        onChange={selectLabel}
+                        options={['CAJA', 'ESTUCHE', 'BOLSA'].map(l => ({ value: l, label: l, icon: Box }))}
+                    />
+                    {vals.dispatch_label && (
+                        <Button variant="ghost" size="sm" icon={X} onClick={() => selectLabel(vals.dispatch_label)}>quitar</Button>
+                    )}
                 </div>
-            )}
+            </div>
 
-            {/* Quitar la regla es reversible (se vuelve a asignar en dos clics), así que
-                va en tinte y no en rojo sólido — el sólido se reserva para lo definitivo
-                (DESIGN.md §15.2 / nota de SOFT_CLASSES en Button). */}
-            {vals.dispatch_id_presentacion && (
-                <Button tone="danger" soft size="sm" icon={Ban} disabled={saving} onClick={clearRule}>Quitar regla de despacho</Button>
-            )}
+            {/* Caja especial — encendido/apagado, así que `Switch` y no un botón
+                relleno de rosa: como botón no se sabía si el rótulo describía el
+                estado actual o lo que iba a pasar al apretarlo. */}
+            <div className={`mt-4 ${vals.dispatch_id_presentacion ? '' : 'opacity-45 pointer-events-none'}`}>
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-2 font-bold">Caja especial</p>
+                <div className="flex items-center gap-3">
+                    <Switch
+                        checked={!!vals.caja_especial}
+                        disabled={saving || !vals.dispatch_id_presentacion}
+                        label="Caja especial"
+                        onChange={(on) => {
+                            const next = { ...vals, caja_especial: on };
+                            setVals(next); onApply(next);
+                        }}
+                    />
+                    <span className="text-caption text-content-2 leading-snug">
+                        {vals.caja_especial
+                            ? 'Cada unidad lleva su etiqueta E1, E2… independiente.'
+                            : 'Viaja en las cajas normales.'}
+                    </span>
+                </div>
+            </div>
 
             {/* Notas */}
-            <div>
+            <div className="mt-4">
                 <p className="text-micro text-content-3 uppercase tracking-widest mb-1.5 font-bold">
                     Notas internas
-                    <span className="normal-case tracking-normal font-medium text-content-3"> · se guardan al salir del campo</span>
+                    <span className="normal-case tracking-normal font-medium text-content-3"> · se guardan al salir</span>
                 </p>
                 <PortalInput
                     aria-label="Notas de la regla"
                     type="text"
                     value={vals.notes}
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
-                    placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación para agregar notas' : 'Observación opcional…'}
+                    placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación primero' : 'Observación opcional…'}
                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
                     onBlur={commitNotes}
                     readOnly={!vals.dispatch_id_presentacion}
-                    inputClassName="text-body-xl"
+                    compact
                 />
             </div>
+            </div>
+            </div>
+
+            {/* Pie: la acción destructiva y el acuse de guardado, juntos. El acuse
+                estaba en el encabezado, a 600px del control que lo dispara. */}
+            {(vals.dispatch_id_presentacion || acuse) && (
+                <div className="flex items-center justify-between gap-4 flex-wrap pt-3 border-t border-divider">
+                    {vals.dispatch_id_presentacion ? (
+                        /* Quitar la regla es reversible (se vuelve a asignar en dos
+                           clics), así que va en tinte y no en rojo sólido — el sólido
+                           se reserva para lo definitivo (DESIGN.md §15.2). */
+                        <Button tone="danger" soft size="sm" icon={Ban} disabled={saving} onClick={clearRule}>Quitar regla de despacho</Button>
+                    ) : <span />}
+                    {acuse}
+                </div>
+            )}
         </div>
     );
 }
@@ -745,9 +854,21 @@ export default function TabReglas({ searchTerm = '' }) {
                 })}
             </DataTable>
 
-            {/* El panel de la regla, a pantalla completa en el teléfono. */}
+            {/* El panel de la regla, a pantalla completa en el teléfono. El resultado
+                va al PIE de la hoja, fuera del scroll: en 390px el riel de múltiplos
+                y la línea que dice cuánto se despacha no caben juntos, así que se
+                tocaba ×5 sin ver qué cambiaba. */}
             <ExpedienteMovil abierto={abierto} onClose={cancelEdit}
-                titulo={abierto?.nombre || 'Regla de despacho'}>
+                titulo={abierto?.nombre || 'Regla de despacho'}
+                subtitulo={abierto?.laboratorio_nombre || undefined}
+                pie={editVals.dispatch_id_presentacion ? (
+                    <ResultadoDespacho
+                        compacto
+                        multiplo={Number(editVals.dispatch_multiplo) || 1}
+                        tipo={tipoDePresentacion(presCache, abierto?.id, editVals.dispatch_id_presentacion)}
+                        etiqueta={editVals.dispatch_label}
+                    />
+                ) : null}>
                 {(prod) => (
                     <div className="px-4 py-4">
                         <EditPanel
@@ -757,6 +878,7 @@ export default function TabReglas({ searchTerm = '' }) {
                             onApply={(v) => applyVals(prod.id, v)}
                             onCancel={cancelEdit}
                             presCache={presCache}
+                            enExpediente
                         />
                     </div>
                 )}

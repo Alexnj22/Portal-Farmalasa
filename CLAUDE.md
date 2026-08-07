@@ -292,6 +292,51 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    firmada (se genera en fetchBoot/login), `photo_url` = cruda; todo select directo de
    photo_url debe pasar por `signPhotosDeep()`. Públicos permitidos: solo product-photos/photos.
 
+## Fichas de clientes y envío a Hacienda: un circuito automático (2026-08-07)
+
+Detalle completo en `docs/RETOMAR-FICHAS-Y-DTE-2026-08-07.md`. Lo que hay que
+saber antes de tocar cualquiera de sus piezas:
+
+**Dos crons encadenados, y el orden importa.** 21:30 SV
+`sincronizar-fichas-clientes` corrige las fichas; 22:30 SV `regularizar-dte`
+manda a Hacienda. Al revés, el envío recibe rechazos por datos que ya estaban
+arreglados.
+
+**`_shared/distrito.ts` es una TRADUCCIÓN verificada, no código nuevo.** El
+original es `elegir_distrito` de `scripts/migracion-clientes/bloque.py`, con
+25,946 decisiones reales encima, y tres de sus seis reglas se descubrieron
+corrigiendo errores medidos. Se enfrentaron las dos implementaciones sobre esos
+25,946 casos: **iguales, 0 distintas**. **Cualquier cambio en cualquiera de las
+dos exige volver a correr `comparar_matcher.mjs`** — si no, se pierde justo lo
+que la hace confiable. Y ojo: la traducción reproduce los defectos del original
+a propósito (`norm()` deja espacios dobles donde había una coma, y eso cambia
+qué regla gana). Mejorarlo es otra decisión y va en `bloque.py` primero.
+
+**El cliente se liga por el número del ERP, nunca por el nombre.** El nombre
+sale de cómo se escribió la factura. Medido sobre 68 duplicados reales:
+normalizar acentos evita 0, alfanumérico evita 3 — el 96% son nombres
+genuinamente distintos (`VAQUEZ`/`VASQUEZ`). Cuando `sync-dte-sales` no
+reconoce un nombre, le pregunta al ERP a qué cliente pertenece la factura
+(`reimprimir_factura.php` → `id_cliente`), con tope de 25 lecturas por corrida
+y degradación al comportamiento viejo si el ERP no responde.
+
+**Fusionar clientes BORRA una ficha y mueve su historial.** `fusionar_cliente_
+duplicado` resuelve el destino desde el `erp_id` para que el llamador no pueda
+elegirlo, y quien la llama agrega su propio freno: si los nombres no se parecen,
+no fusiona — publica en «Por revisar» con motivo `fusion_dudosa`. Unir a dos
+personas que no lo son mezcla sus historiales y no se deshace.
+
+**`identificacion.fecEmi` no es un dato del cliente** y NO se corrige: aparece
+siempre que se transmite hoy una factura emitida antes, y cambiarla sería
+alterar un dato fiscal. Solo las observaciones `receptor.*` son accionables.
+
+**Las cinco funciones del circuito van con `--no-verify-jwt`**
+(`regularizar-dte`, `sincronizar-fichas-clientes`, `push-cliente-erp`,
+`sync-dte-sales`, `aplicar-solicitud-facturacion`). Un redeploy sin el flag las
+resetea y el cron empieza a fallar con 401 **antes de ejecutar una línea** — ya
+pasó tres veces. Y el CLI se traga el `.env` del repo: `mv .env .env.bak`
+primero (ver memoria `reference_edge_function_deploy_workaround`).
+
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)
 
 Confirmado el 2026-07-29 (F4.3 de

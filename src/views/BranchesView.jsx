@@ -360,8 +360,17 @@ const BranchCard = memo(({
                 </div>
             </div>
 
-            {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA */}
-            <div className="absolute top-5 right-5 flex items-center gap-1.5 z-tabs">
+            {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA
+                En el teléfono NO flotan: van en su propia fila arriba de la
+                ficha. Flotando tapaban el nombre de la sucursal —«La Popula▮»—
+                porque el hueco que el encabezado les reservaba (`pr-[140px]`)
+                se midió con botones de ratón, y en táctil cada uno sube a 44px
+                por el piso del dedo: el grupo pasa de 140 a ~190. Agrandar el
+                hueco dejaba el nombre en 100px y partido en dos renglones; es
+                mejor darles su renglón, total en un teléfono se ven siempre
+                (no hay `hover` que los revele). */}
+            <div className="flex items-center justify-end gap-1.5 z-tabs px-6 pt-5
+                md:absolute md:top-5 md:right-5 md:p-0">
                 <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 focus-within:opacity-100 group-hover:translate-x-0 transition-all duration-[var(--dur-slow)] bg-surface-card p-1 rounded-full shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-elevation-md)] border border-border-card hover:scale-105">
                     
                     {isFarmacia && (
@@ -415,7 +424,7 @@ const BranchCard = memo(({
                                         `<button>` no se podía abrir en otra pestaña. El `onClick`
                                         se queda solo para dejar la sucursal activa en el store. */}
                                     <Link to={`/branches/${branch.id}`} onClick={() => onActivarSucursal?.(branch)}
-                                        className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full pr-[140px]">
+                                        className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full md:pr-[140px]">
                         <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-[var(--dur-slow)] group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>

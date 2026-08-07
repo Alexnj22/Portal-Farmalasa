@@ -23,6 +23,13 @@ test.describe('Foco · WebKit iPhone 13', () => {
     test('foco en las rutas pedidas', async ({ page }) => {
         test.setTimeout(60_000 + RUTAS.length * 30_000);
         fs.mkdirSync(SALIDA, { recursive: true });
+        // La consola, porque una vista que revienta se ve igual que una vista
+        // vacía: las dos miden cero fichas y cero tablas. Proveedores llevaba
+        // rota sin que el barrido lo dijera.
+        const errores = [];
+        page.on('pageerror', e => errores.push(`[pageerror] ${e.message}`));
+        page.on('console', m => { if (m.type() === 'error') errores.push(`[console] ${m.text().slice(0, 300)}`); });
+
         await page.goto('/login');
         await page.locator('#username').fill(E2E_USER);
         await page.locator('#password').fill(E2E_PASSWORD);
@@ -30,10 +37,14 @@ test.describe('Foco · WebKit iPhone 13', () => {
         await page.waitForTimeout(6000);
 
         for (const ruta of RUTAS) {
+            errores.length = 0;
             await page.goto('/' + ruta).catch(() => {});
             await page.waitForTimeout(6500);
             const m = await page.evaluate(MEDIR).catch(() => null);
             console.log(`\n── /${ruta} ` + '─'.repeat(40));
+            const reventó = await page.locator('text=ALGO SALIÓ MAL').count().catch(() => 0);
+            if (reventó) console.log('   ⚠️  LA VISTA REVENTÓ');
+            [...new Set(errores)].slice(0, 6).forEach(e => console.log('   ' + e));
             if (!m) { console.log('   (no cargó)'); continue; }
             console.log('   ' + JSON.stringify(m.totales));
             (m.grupos?.chicos || []).forEach(g =>

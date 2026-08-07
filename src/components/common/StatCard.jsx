@@ -134,8 +134,15 @@ export default function StatCard({
             // MISMO material, no otro material.
             data-surface="card"
             data-tono={active ? tono : undefined}
+            // `max-sm:basis-[calc(50%-0.25rem)]` — en el teléfono la baldosa es
+            // más angosta que su propio número. Con 148px de base le quedan 85
+            // para el valor, y `$242,586.29` mide 90 aun con la letra ya
+            // encogida: se leía «$242,5…» en Metas, «0 CCF urgen…» en
+            // Facturación, «0.0h Horas reg…» en Auditoría. Dos por pantalla
+            // exactas (191px) le dan 111 y entra entero. El carril sigue
+            // deslizando para las que siguen.
             className={`
-                basis-[148px] grow shrink-0 min-w-0 max-w-[200px] h-full
+                basis-[148px] max-sm:basis-[calc(50%-0.25rem)] grow shrink-0 min-w-0 max-w-[200px] h-full
                 flex items-center gap-3 pl-3 pr-4 py-3 rounded-card border
                 transition-[box-shadow,border-color,background-color,transform] duration-[var(--dur-base)]
                 ${isClickable ? 'cursor-pointer' : 'cursor-default select-none'}

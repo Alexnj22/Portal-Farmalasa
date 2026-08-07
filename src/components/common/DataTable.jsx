@@ -153,7 +153,14 @@ function inferirPapeles(columns, movil) {
   // última columna terminaba de ANCLA — o sea que la ficha mostraba tres
   // botones donde va el número que motiva la pantalla, con `<button>` anidados
   // adentro del `<button>` de la ficha. Se veía en las dos vistas más usadas.
-  const esAccion = c => (c.label || '').trim() === '' || /^(acciones|actions)$/i.test(c.key || '');
+  // El rótulo puede NO ser texto: Proveedores pone un Checkbox de
+  // «seleccionar toda la página» en el encabezado de su primera columna, y
+  // `(c.label || '').trim()` reventaba la vista entera con «trim is not a
+  // function» — pantalla de «Algo salió mal», no un defecto visual. Una columna
+  // cuyo rótulo es un CONTROL no es una columna de datos: es de utilidad, igual
+  // que la de acciones, y no tiene nada que aportarle a la ficha.
+  const rotulo = c => (typeof c.label === 'string' ? c.label.trim() : '');
+  const esAccion = c => rotulo(c) === '' || /^(acciones|actions)$/i.test(c.key || '');
   const utiles = columns.filter(c => !esAccion(c));
   const acciones = columns.filter(esAccion);
 

@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.482.2 — Proveedores dejó de reventar, y la baldosa deja de cortar su número
+
+Todo esto salió de **mirar** las vistas, no de medirlas: las 37 estaban en cero
+—cero desborde, cero recortes, cero blancos chicos, cero zoom de iOS— y estos
+cinco defectos estaban ahí igual.
+
+**Proveedores mostraba «Algo salió mal».** `inferirPapeles` hacía
+`(c.label || '').trim()`, y esa vista pone un Checkbox de «seleccionar toda la
+página» como rótulo de su primera columna: `trim is not a function`, y la vista
+entera al piso. Ahora una columna cuyo rótulo no es texto se trata como de
+utilidad —igual que la de acciones—, que es lo que es: no tiene nada que
+aportarle a la ficha.
+
+Y el barrido **no lo decía**, porque una vista reventada mide exactamente igual
+que una vacía: cero fichas, cero tablas, cero desborde. La listaba con un punto
+al lado, como si estuviera bien. Ahora el barrido escucha `pageerror` y busca la
+pantalla de error; una vista rota se reporta como rota.
+
+**Sucursales: los botones tapaban el nombre.** La ficha reserva `pr-[140px]`
+para el grupo flotante de acciones, y ese número se midió con botones de ratón:
+en táctil cada uno sube a 44px por el piso del dedo y el grupo pasa a ~190. Se
+leía «La Popula▮». Agrandar el hueco dejaba el nombre en 100px y partido en dos
+renglones, así que en el teléfono los botones dejan de flotar y toman su propio
+renglón — total ahí se ven siempre, no hay `hover` que los revele.
+
+**La baldosa de resumen era más angosta que su propio número.** Con 148px de
+base le quedan 85 para el valor, y `$242,586.29` mide 90 aun con la letra ya
+encogida: se leía «$242,5…» en Metas, «0 CCF urgen…» en Facturación, «0.0h Horas
+reg…» en Auditoría. Dos por pantalla exactas (191px) le dan 111 y entra entero —
+y de yapa la baldosa cruza el umbral de `compacta`, así que vuelve a mostrar su
+línea de detalle («6 salas con meta»).
+
+**«6 EMPLEADOES»** en Auditoría de Tiempos: el plural sumaba `es` en vez de `s`.
+
+Y la excepción del medidor para las columnas de un gráfico ahora descuenta el
+HUECO entre columnas: sin eso el gráfico del tablero daba 322/7 = 46 y la regla
+lo dejaba pasar, cuando sus columnas miden 40 justamente porque seis
+separaciones de 6px se comen 36 del ancho.
+
 ## v2.482.1 — El tablero en el teléfono: una baldosa a media pantalla, lo demás entero
 
 El tablero es la pantalla de inicio y era la peor de las 37 en el teléfono, pero

@@ -1391,7 +1391,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                         <div className="min-w-0">
                           <p className="text-body-sm font-black text-content-2 leading-none">{bName}</p>
                           <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
-                            {branchEmployees.length} empleado{branchEmployees.length !== 1 ? 'es' : ''}
+                            {branchEmployees.length} empleado{branchEmployees.length !== 1 ? 's' : ''}
                           </p>
                         </div>
                         <div className="flex-1 h-px bg-gradient-to-r from-divider to-transparent" />

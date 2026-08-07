@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.499.0 — Conteo de inventario: tipo de conteo, unificación por factor, área de vencidos aparte y borrado
+
+Cuatro cosas pedidas sobre la hoja de conteo de Bodega, que salió con 4,000
+renglones y varios problemas a la vista.
+
+**Tipo de conteo: «Según la hoja» o «En vivo».** Hasta ahora el conteo era
+siempre en vivo y no se decía en ninguna parte: al teclear una cantidad, el
+servidor releía la existencia de ESE momento y calificaba la diferencia contra
+ella. O sea que una venta hecha entre imprimir la hoja y teclearla salía como
+faltante de anaquel. Ahora son dos tipos, se eligen al crear el conteo y el
+nuevo predeterminado es **Según la hoja**: se compara contra la existencia que
+salió impresa, y la hoja lo dice en su encabezado. «En vivo» sigue existiendo
+para contar con la sucursal abierta y vendiendo. Los tres conteos que ya
+existían quedaron marcados «En vivo», que es lo que eran.
+
+Respetan el tipo las cinco funciones que participan: la captura, el recuento de
+supervisor y las tres lecturas — antes las tres lecturas mostraban la existencia
+en vivo del renglón sin contar aunque la hoja impresa dijera otra cosa.
+
+**Dos presentaciones del mismo factor son un solo renglón.** El catálogo tiene
+el mismo producto bajo dos nombres de presentación con el mismo empaque —«LATA»
+y «LATA X 400 G», ambas 1x1—, y la hoja los sacaba como dos renglones: uno con
+las 13 latas y otro en cero. Ahora se unifican por **factor**, que es lo que
+declara cuántas unidades trae el empaque; las de distinto factor siguen
+separadas, porque son cosas distintas que contar. Gana el nombre de la
+presentación con más existencia. Medido en Bodega: **3,999 → 3,669 renglones**,
+con las unidades intactas (23,853, exactamente las de inventario). De paso
+también junta los que solo diferían en un espacio al final («CAJA» y «CAJA »).
+
+Aplica a los dos modos, sencillo y por lote. Un renglón cuyo factor no se conoce
+NUNCA se fusiona con otro: se queda solo, como estaba.
+
+**El área de vencidos, en su propia tabla al final.** Una sucursal con área de
+vencidos son dos recorridos, no uno con renglones intercalados. En la hoja de
+conteo el área de vencidos arranca en página nueva y va con su propio título; en
+el reporte de resultados va como segunda tabla, sin salto, porque se lee y no se
+recorre. Con cero vencidos la hoja queda igual que antes, sin títulos que no
+separan nada.
+
+**Eliminar un conteo.** Quien tiene «Gestionar» en el módulo puede borrarlo —el
+mismo permiso que ya hacía falta para crear uno—, desde la pantalla del conteo y
+dentro de su alcance de sucursal. Se lleva sus renglones y el historial de cada
+uno, así que la confirmación dice cuántos son y la bitácora lo registra como
+crítico.
+
+**Además**, en toda la pantalla del conteo y en los papeles que genera: el
+alcance ya no se imprime crudo («CICLICO», «BAJO_RECETA») sino con su nombre, y
+salieron las menciones al sistema de origen que quedaban en avisos, botones y
+mensajes.
+
 ## v2.498.2 — el detalle de inventario mostraba 3 de 7 sucursales
 
 Reportado con captura: «¿por qué no me salen todas las sucursales que tienen en

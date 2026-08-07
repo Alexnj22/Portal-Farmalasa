@@ -9,7 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2,
     Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff,
-    FileSpreadsheet, Download, PackagePlus,
+    FileSpreadsheet, Download, PackagePlus, Trash2,
 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -20,6 +20,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidModal from '../../components/common/LiquidModal';
 import ModalShell from '../../components/common/ModalShell';
 import PromptModal from '../../components/common/PromptModal';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -53,6 +54,16 @@ const ESTADO_CFG = {
     EN_PROGRESO: { label: 'En Progreso', variante: 'warning' },
     FINALIZADO:  { label: 'Finalizado',  variante: 'chart-1' },
     CERRADO:     { label: 'Cerrado',     variante: 'success' },
+};
+
+// La cabecera imprimía el valor crudo de la columna ("CICLICO", "BAJO_RECETA").
+// Mismos rótulos que la lista y que la hoja impresa.
+const SCOPE_LABEL = {
+    TOTAL: 'Todo el inventario',
+    LABORATORIO: 'Por laboratorio',
+    BAJO_RECETA: 'Bajo Receta',
+    MANUAL: 'Selección manual',
+    CICLICO: 'Cíclico del mes',
 };
 
 // `soloConSistema`: el filtro no se ofrece si el conteo es ciego para este rol.
@@ -1028,7 +1039,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
-                <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
+                <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (por ejemplo, un lote nuevo que todavía no figura). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>
                     <PortalInput
@@ -1146,6 +1157,7 @@ export default function ConteoDetailView() {
     const fetchTodosLosItemsConteo = useStaffStore((s) => s.fetchTodosLosItemsConteo);
     const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
     const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
+    const eliminarConteoInventario = useStaffStore((s) => s.eliminarConteoInventario);
     const recontarConteoItem = useStaffStore((s) => s.recontarConteoItem);
     const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
     const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
@@ -1189,6 +1201,7 @@ export default function ConteoDetailView() {
     const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState(0);
     const [promptAprobarOpen, setPromptAprobarOpen] = useState(false);
     const [promptAjusteOpen, setPromptAjusteOpen] = useState(false);
+    const [confirmEliminarOpen, setConfirmEliminarOpen] = useState(false);
     // Qué líneas se desbloquearon con el lápiz. Es por LÍNEA y no un modo de la
     // vista: se corrige una cantidad puntual, no se "entra a editar todo".
     const [desbloqueadas, setDesbloqueadas] = useState({});
@@ -1426,11 +1439,26 @@ export default function ConteoDetailView() {
         }
     };
 
+    const confirmEliminar = async () => {
+        setBusy(true);
+        try {
+            const res = await eliminarConteoInventario(id);
+            showToast('Conteo eliminado', `Se borraron ${res?.total_items ?? 0} renglón(es)`, 'success');
+            // Navegar ANTES de soltar el `busy`: la vista ya no tiene conteo que
+            // recargar, y quedarse acá pintaría el estado de "no se encontró".
+            navigate('/conteo-inventario');
+        } catch (err) {
+            showToast('Error', mensajeAmigable(err), 'error');
+            setBusy(false);
+            setConfirmEliminarOpen(false);
+        }
+    };
+
     const confirmMarcarAjuste = async (nota) => {
         setBusy(true);
         try {
             await marcarAjusteErp(id, nota);
-            showToast('Ajuste registrado', 'Queda constancia de que se aplicó en el ERP', 'success');
+            showToast('Ajuste registrado', 'Queda constancia de que el ajuste ya se aplicó', 'success');
             await load();
         } catch (err) {
             showToast('Error', mensajeAmigable(err), 'error');
@@ -1450,7 +1478,7 @@ export default function ConteoDetailView() {
         { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el anaquel, con firma de quien contó.' },
         ...(hasResults ? [
             { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valuación de cada renglón.' },
-            { kind: 'ajuste', icon: FileSpreadsheet, label: 'Ajuste para el ERP', detalle: 'Partido en faltantes (salida) y sobrantes (entrada), listo para teclear.' },
+            { kind: 'ajuste', icon: FileSpreadsheet, label: 'Ajuste para aplicar', detalle: 'Partido en faltantes (salida) y sobrantes (entrada), listo para teclear.' },
             { kind: 'ajuste-csv', icon: Download, label: 'Ajuste en CSV', detalle: 'Lo mismo en planilla, para filtrar o cargar en lote.' },
         ] : []),
     ];
@@ -1537,11 +1565,22 @@ export default function ConteoDetailView() {
                             <div className="flex items-start gap-2 min-w-0">
                                 <Button variant="ghost" icon={ChevronLeft} onClick={() => navigate('/conteo-inventario')}>Volver</Button>
                                 <div className="min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1">
                                         <h2 className="text-body-xl font-black text-content">{conteo.branches?.name}</h2>
                                         <Badge variant={es.variante} size="sm" uppercase={false}>{es.label}</Badge>
+                                        {/* Contra qué se compara lo que se teclea. Es lo que
+                                            decide si una venta hecha mientras se cuenta sale
+                                            como diferencia, así que no puede vivir solo en el
+                                            modal de creación. */}
+                                        <Badge
+                                            variant={conteo.fuente_sistema === 'VIVO' ? 'warning' : 'neutral'}
+                                            size="sm" uppercase={false}
+                                            icon={conteo.fuente_sistema === 'VIVO' ? Radio : Printer}
+                                        >
+                                            {conteo.fuente_sistema === 'VIVO' ? 'En vivo' : 'Según la hoja'}
+                                        </Badge>
                                     </div>
-                                    <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
+                                    <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {SCOPE_LABEL[conteo.scope_type] || conteo.scope_type}</p>
                                 </div>
                             </div>
                             {/* Un botón por documento eran hasta CUATRO ("Imprimir Hoja",
@@ -1564,6 +1603,15 @@ export default function ConteoDetailView() {
                                 {canApproveNow && (
                                     <Button tone="success" icon={ShieldCheck} disabled={busy} loading={busy} onClick={handleAprobar}>Aprobar</Button>
                                 )}
+                                {/* Eliminar va acá y no en la lista: es destructivo y sin
+                                    vuelta atrás, así que la única puerta es la pantalla
+                                    donde se ve QUÉ conteo se está borrando. */}
+                                {canEdit && (
+                                    <Button variant="ghost" tone="danger" icon={Trash2}
+                                        disabled={busy} onClick={() => setConfirmEliminarOpen(true)}>
+                                        Eliminar
+                                    </Button>
+                                )}
                             </div>
                         </div>
 
@@ -1574,7 +1622,7 @@ export default function ConteoDetailView() {
                             <div className="mt-4">
                                 {conteo.ajuste_erp_aplicado ? (
                                     <Notice variant="success" icon={ClipboardCheck}>
-                                        Ajuste aplicado en el ERP el {fmtDateTime(conteo.ajuste_erp_at)}.
+                                        Ajuste aplicado el {fmtDateTime(conteo.ajuste_erp_at)}.
                                         {conteo.ajuste_erp_nota ? ` — "${conteo.ajuste_erp_nota}"` : ''}
                                     </Notice>
                                 ) : conteo.total_diferencias > 0 ? (
@@ -1587,11 +1635,11 @@ export default function ConteoDetailView() {
                                             </Button>
                                         )}
                                     >
-                                        Ajuste pendiente de aplicar en el ERP: {conteo.total_diferencias} línea(s).
+                                        Ajuste pendiente de aplicar: {conteo.total_diferencias} línea(s).
                                         Descargá la hoja o el CSV, aplicalo, y registralo acá.
                                     </Notice>
                                 ) : (
-                                    <Notice variant="success">Sin diferencias: no hay ajuste que aplicar en el ERP.</Notice>
+                                    <Notice variant="success">Sin diferencias: no hay ajuste que aplicar.</Notice>
                                 )}
                             </div>
                         )}
@@ -1821,6 +1869,21 @@ export default function ConteoDetailView() {
                 onConfirm={confirmFinalizar}
             />
 
+            {/* El mensaje dice el tamaño de lo que se va: "se eliminará el
+                conteo" no distingue entre uno vacío y uno con 4,000 renglones ya
+                contados y firmados. */}
+            <ConfirmModal
+                isOpen={confirmEliminarOpen}
+                onClose={() => setConfirmEliminarOpen(false)}
+                onConfirm={confirmEliminar}
+                title="¿Eliminar este conteo?"
+                // `resumen.total_items` son los RENGLONES; `total` es la
+                // paginación por producto y diría un número mucho más chico.
+                message={`Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'} con sus ${formatQty(resumen?.total_items ?? 0)} renglón(es) y el historial de cada uno. No se puede deshacer.`}
+                confirmText="Eliminar conteo"
+                isProcessing={busy}
+            />
+
             <PromptModal
                 isOpen={promptAprobarOpen}
                 onClose={() => setPromptAprobarOpen(false)}
@@ -1838,8 +1901,8 @@ export default function ConteoDetailView() {
                 onClose={() => setPromptAjusteOpen(false)}
                 onConfirm={confirmMarcarAjuste}
                 title="Registrar ajuste aplicado"
-                message="Esto no modifica existencias — el portal no escribe stock. Solo deja constancia de que el ajuste ya se tecleó en el ERP, para que este conteo no quede como pendiente."
-                placeholder="Referencia del ajuste en el ERP (opcional)"
+                message="Esto no modifica existencias — el portal no escribe stock. Solo deja constancia de que el ajuste ya se aplicó, para que este conteo no quede como pendiente."
+                placeholder="Referencia del ajuste (opcional)"
                 confirmText="Registrar"
                 cancelText="Cancelar"
                 isProcessing={busy}
@@ -2039,7 +2102,7 @@ function AddManualItemForm({ branchId, onAdd, onCancel, simple = false }) {
                     <Campo label={lote === '__OTRO__' ? 'Vencimiento' : 'Vencimiento (del lote)'}>
                         <CajaFecha
                             inerte={lote !== '__OTRO__'}
-                            titulo={lote !== '__OTRO__' ? 'El vencimiento lo trae el lote del ERP' : undefined}
+                            titulo={lote !== '__OTRO__' ? 'El vencimiento lo trae el lote' : undefined}
                         >
                             <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
                         </CajaFecha>

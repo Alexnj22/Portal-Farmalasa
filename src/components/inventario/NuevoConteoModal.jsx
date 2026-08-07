@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
-import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2, Layers, Hash } from 'lucide-react';
+import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2, Layers, Hash, Printer, Radio } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import { useStaffStore } from '../../store/staffStore';
@@ -33,6 +33,15 @@ const SCOPE_OPTIONS = [
 const MODO_OPTIONS = [
     { value: 'LOTE', label: 'Por lote y vencimiento', icon: Layers },
     { value: 'SIMPLE', label: 'Solo cantidades', icon: Hash },
+];
+
+// Y un tercer eje: contra QUÉ existencia se compara lo que se cuenta. Hasta
+// ahora había uno solo —el de la existencia del momento— y no se decía en
+// ninguna parte, así que una venta hecha entre imprimir la hoja y teclearla
+// aparecía como diferencia de anaquel.
+const FUENTE_OPTIONS = [
+    { value: 'HOJA', label: 'Según la hoja', icon: Printer },
+    { value: 'VIVO', label: 'En vivo', icon: Radio },
 ];
 
 const TAMANO_DEFAULT = 200;
@@ -79,6 +88,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const [branchId, setBranchId] = useState('');
     const [scopeType, setScopeType] = useState('TOTAL');
     const [modo, setModo] = useState('LOTE');
+    const [fuenteSistema, setFuenteSistema] = useState('HOJA');
     const [laboratorioId, setLaboratorioId] = useState('');
     const [laboratorios, setLaboratorios] = useState([]);
     const [manualResults, setManualResults] = useState([]);
@@ -94,6 +104,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
         setBranchId(isBranchScoped ? String(user?.branchId || '') : '');
         setScopeType('CICLICO');
         setModo('LOTE');
+        setFuenteSistema('HOJA');
         setLaboratorioId('');
         setManualResults([]);
         setManualSelected([]);
@@ -162,6 +173,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         : null,
                 erpProductIds: scopeType === 'MANUAL' ? manualSelected.map((p) => p.id) : null,
                 modo,
+                fuenteSistema,
             });
             showToast('Conteo iniciado', 'Se generó el snapshot de inventario', 'success');
             onCreated?.(conteoId);
@@ -340,8 +352,39 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         </div>
                         <p className="text-caption text-content-3 leading-snug mt-2">
                             {modo === 'SIMPLE'
-                                ? 'Un mismo producto sigue separado por presentación (caja y unidad se cuentan aparte, como están en el anaquel). Se avisa igual de faltantes y sobrantes.'
+                                ? 'Un mismo producto sigue separado por presentación cuando cambia el tamaño del empaque (la caja de 10 y la unidad se cuentan aparte, como están en el anaquel). Dos nombres distintos para el mismo empaque van en un solo renglón.'
                                 : 'Es la forma más detallada y la que permite ver qué está vencido o por vencer mientras se cuenta. En una sucursal completa son bastantes más renglones que contar.'}
+                        </p>
+                    </div>
+
+                    {/* Tercera isla, y no un campo de la anterior: el detalle del
+                        renglón dice CÓMO se anota y esto contra QUÉ se compara.
+                        Son decisiones distintas y cualquier combinación es
+                        válida. */}
+                    <div className={islandClass}>
+                        <label className={fieldLabel}>Tipo de conteo</label>
+                        <SegmentedControl
+                            layout="block" columns={2} tone="chart-9"
+                            options={FUENTE_OPTIONS}
+                            value={fuenteSistema} onChange={setFuenteSistema} label="Tipo de conteo" />
+
+                        <div className="mt-3">
+                            {fuenteSistema === 'HOJA' ? (
+                                <Notice variant="info" icon={Printer}>
+                                    La existencia queda <strong>como salió impresa</strong>. Lo que se cuenta en el papel
+                                    y lo que califica la diferencia son el mismo número.
+                                </Notice>
+                            ) : (
+                                <Notice variant="warning" icon={Radio}>
+                                    La existencia <strong>se sigue actualizando</strong>: cada renglón se compara contra
+                                    la que haya en el momento de teclearlo.
+                                </Notice>
+                            )}
+                        </div>
+                        <p className="text-caption text-content-3 leading-snug mt-2">
+                            {fuenteSistema === 'HOJA'
+                                ? 'Lo que se venda mientras se cuenta no aparece como faltante. Es lo que hay que elegir cuando se cuenta con hoja impresa: la hoja se imprime una vez y se llena después.'
+                                : 'Sirve para contar con la sucursal abierta y vendiendo, tecleando en el momento. Contra una hoja impresa hace ruido: cada venta hecha entre imprimirla y teclearla sale como diferencia.'}
                         </p>
                     </div>
                 </div>

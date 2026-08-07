@@ -65,6 +65,25 @@ function sortItems(items) {
 // modo por lote también hay renglones sin etiqueta.
 const esSimple = (conteo) => conteo?.modo === 'SIMPLE';
 
+// El papel no puede decir 'CICLICO' ni 'BAJO_RECETA': son las claves internas.
+// Mismo texto que la lista de conteos, para que la hoja y la pantalla nombren
+// lo mismo.
+const SCOPE_LABEL = {
+    TOTAL: 'Todo el inventario',
+    LABORATORIO: 'Por laboratorio',
+    BAJO_RECETA: 'Bajo Receta',
+    MANUAL: 'Selección manual',
+    CICLICO: 'Cíclico del mes',
+};
+
+// Quien tiene la hoja en la mano necesita saber contra qué se va a comparar lo
+// que escriba: si es contra este papel, o contra la existencia del momento en
+// que se teclee. Son dos resultados distintos y hasta ahora no se decía.
+const FUENTE_LABEL = {
+    HOJA: 'Se compara contra esta hoja',
+    VIVO: 'Se compara contra la existencia del momento',
+};
+
 function headerBlock(conteo, subtitle) {
     return {
         margin: [0, 0, 0, 10],
@@ -80,12 +99,15 @@ function headerBlock(conteo, subtitle) {
                 width: 'auto',
                 stack: [
                     { text: conteo.branches?.name || 'Sucursal', fontSize: 10, bold: true, alignment: 'right', color: '#111' },
-                    { text: `Alcance: ${conteo.scope_type}`, fontSize: 8, alignment: 'right', color: '#666' },
+                    { text: `Alcance: ${SCOPE_LABEL[conteo.scope_type] || conteo.scope_type}`, fontSize: 8, alignment: 'right', color: '#666' },
                     // Una hoja sin columna de lote tiene que decir que el conteo
                     // no los lleva; si no, se lee como una hoja a la que le
                     // faltan columnas y alguien las agrega a mano al margen.
                     ...(esSimple(conteo)
                         ? [{ text: 'Detalle: solo cantidades', fontSize: 8, alignment: 'right', color: '#666' }]
+                        : []),
+                    ...(FUENTE_LABEL[conteo.fuente_sistema]
+                        ? [{ text: FUENTE_LABEL[conteo.fuente_sistema], fontSize: 8, alignment: 'right', color: '#666' }]
                         : []),
                     { text: fmtFechaLarga(new Date(conteo.created_at)), fontSize: 8, alignment: 'right', color: '#666' },
                 ],
@@ -142,21 +164,41 @@ const HOJA_COLS = {
     },
 };
 
-// El ERP separa el stock vencido en su propia área: dos filas del mismo
-// producto/lote/fecha que en papel se veían idénticas y nadie sabía cuál era
-// cuál. La etiqueta va pegada al lote, que es la columna que se lee al buscar.
-function loteCell(item) {
-    const marca = item.is_vencidos ? ' · ÁREA VENCIDOS' : '';
+// El área de vencidos es un sitio FÍSICO aparte: quien cuenta camina hasta otro
+// estante. En la hoja y en el reporte va como tabla propia al final (ver
+// `partirPorArea`), así que ahí la marca por renglón sobra — la pone el título
+// de la tabla. Donde sí sigue haciendo falta es en el ajuste, que va ordenado
+// por código y mezcla las dos áreas: sin ella, dos renglones del mismo producto
+// y lote se digitarían como el mismo.
+function loteCell(item, marcarArea = true) {
+    const marca = marcarArea && item.is_vencidos ? ' · ÁREA VENCIDOS' : '';
     return `${item.lote || '—'}${marca}`;
 }
 
-// El equivalente en un conteo sencillo. La marca de área vencidos sigue haciendo
-// falta por la misma razón: son dos renglones del mismo producto y presentación
-// que en papel se verían idénticos.
-function presentacionCell(item) {
-    const marca = item.is_vencidos ? ' · ÁREA VENCIDOS' : '';
+// El equivalente en un conteo sencillo.
+function presentacionCell(item, marcarArea = true) {
+    const marca = marcarArea && item.is_vencidos ? ' · ÁREA VENCIDOS' : '';
     const detalle = item.detalle ? ` (${item.detalle})` : '';
     return `${item.presentacion || '—'}${detalle}${marca}`;
+}
+
+// Una sucursal con área de vencidos son dos recorridos, no uno con renglones
+// intercalados: se cuenta un estante entero y después el otro. Devuelve las dos
+// listas y si hace falta partir — con cero vencidos la hoja queda exactamente
+// como antes, sin títulos de sección que no separan nada.
+function partirPorArea(items) {
+    const normales = items.filter((i) => !i.is_vencidos);
+    const vencidos = items.filter((i) => i.is_vencidos);
+    return { normales, vencidos, partido: vencidos.length > 0 && normales.length > 0 };
+}
+
+function tituloSeccion(texto, n, { pageBreak = false } = {}) {
+    return {
+        text: `${texto} — ${n} línea(s)`,
+        fontSize: 9.5, bold: true, color: '#111',
+        margin: [0, pageBreak ? 0 : 6, 0, 4],
+        ...(pageBreak ? { pageBreak: 'before' } : {}),
+    };
 }
 
 function buildHojaTable(conteo, items, ciego) {
@@ -174,11 +216,11 @@ function buildHojaTable(conteo, items, ciego) {
         return [
             { ...productCell(item), fillColor: bg },
             // La celda que identifica el renglón: presentación en sencillo, lote
-            // (con su marca de área) en el modo por lote.
+            // en el modo por lote. Sin marca de área: la tabla ya es de un área.
             ...(simple
-                ? [{ text: presentacionCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] }]
+                ? [{ text: presentacionCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] }]
                 : [
-                    { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+                    { text: loteCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
                     { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
                 ]),
             // Sistema: la columna solo se emite si el dato vino. `num()` es la
@@ -218,6 +260,18 @@ async function downloadPdf(docDefinition, filename) {
 
 // items: filas de get_conteo_items_jsonb. ciego=true oculta la columna Sistema.
 export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
+    const { normales, vencidos, partido } = partirPorArea(items);
+    // El área de vencidos arranca en hoja nueva: es otro estante y se cuenta
+    // después, no intercalado. Quien recorre el primero puede cerrar la hoja.
+    const content = partido
+        ? [
+            tituloSeccion(conteo.branches?.name || 'Sucursal', normales.length),
+            buildHojaTable(conteo, normales, ciego),
+            tituloSeccion('ÁREA DE VENCIDOS', vencidos.length, { pageBreak: true }),
+            buildHojaTable(conteo, vencidos, ciego),
+        ]
+        : [buildHojaTable(conteo, items, ciego)];
+
     const docDefinition = {
         pageSize: 'LETTER',
         pageMargins: PAGE_MARGINS,
@@ -225,7 +279,7 @@ export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
         defaultStyle: { fontSize: 9 },
         content: [
             headerBlock(conteo, `Hoja de conteo${ciego ? ' (ciego)' : ''} — ${items.length} línea(s)`),
-            buildHojaTable(conteo, items, ciego),
+            ...content,
         ],
         footer: footerFirmas('Contado por', 'Sucursal'),
     };
@@ -255,7 +309,7 @@ function buildResultadosTable(items, simple = false) {
             : '—';
         return [
             { ...productCell(item), fillColor: bg },
-            { text: simple ? presentacionCell(item) : loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: simple ? presentacionCell(item, false) : loteCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: num(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: fisicoTxt, fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: dif != null ? (dif > 0 ? `+${dif}` : String(dif)) : '—', fontSize: 8.5, bold: true, color: difColor, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
@@ -438,7 +492,7 @@ function ajusteHeaderBlock(conteo, faltantes, sobrantes) {
                 width: 'auto',
                 stack: [
                     { text: conteo.branches?.name || 'Sucursal', fontSize: 10, bold: true, alignment: 'right', color: '#111' },
-                    { text: `Conteo del ${fmtFechaLarga(new Date(conteo.created_at))} · Alcance: ${conteo.scope_type}`, fontSize: 8, alignment: 'right', color: '#666' },
+                    { text: `Conteo del ${fmtFechaLarga(new Date(conteo.created_at))} · Alcance: ${SCOPE_LABEL[conteo.scope_type] || conteo.scope_type}`, fontSize: 8, alignment: 'right', color: '#666' },
                     { text: `${faltantes.length} faltante(s) · ${sobrantes.length} sobrante(s)`, fontSize: 8, alignment: 'right', color: '#666' },
                     { text: `Ref. conteo: ${String(conteo.id).slice(0, 8).toUpperCase()}`, fontSize: 7.5, alignment: 'right', color: '#999' },
                 ],
@@ -521,6 +575,19 @@ export function exportAjustesConteo(conteo, items) {
 // items: filas de get_conteo_items_jsonb. soloDiferencias filtra antes de imprimir.
 export async function printResultadosConteo(conteo, items, { soloDiferencias = false } = {}) {
     const filtered = soloDiferencias ? items.filter((i) => i.diferencia != null && i.diferencia !== 0) : items;
+    const simple = esSimple(conteo);
+    const { normales, vencidos, partido } = partirPorArea(filtered);
+    // Acá NO va salto de página: el reporte se lee, no se recorre. Partirlo en
+    // dos hojas solo gastaría papel para separar lo que ya separa el título.
+    const tablas = partido
+        ? [
+            tituloSeccion(conteo.branches?.name || 'Sucursal', normales.length),
+            buildResultadosTable(normales, simple),
+            tituloSeccion('ÁREA DE VENCIDOS', vencidos.length),
+            buildResultadosTable(vencidos, simple),
+        ]
+        : [buildResultadosTable(filtered, simple)];
+
     const docDefinition = {
         pageSize: 'LETTER',
         pageMargins: PAGE_MARGINS,
@@ -528,7 +595,7 @@ export async function printResultadosConteo(conteo, items, { soloDiferencias = f
         defaultStyle: { fontSize: 9 },
         content: [
             headerBlock(conteo, `Reporte de resultados${soloDiferencias ? ' (solo diferencias)' : ''}`),
-            buildResultadosTable(filtered, esSimple(conteo)),
+            ...tablas,
             buildTotalesBlock(conteo, items),
             avisoParcialBlock(conteo),
         ].filter(Boolean),

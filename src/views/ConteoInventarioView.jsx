@@ -35,7 +35,14 @@ const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECET
 // de siempre: "Por lote" en todas las filas sería ruido: es lo normal. La lista
 // tiene que dejar distinguirlos porque un conteo sencillo y uno por lote de la
 // misma sucursal se ven idénticos hasta que se abren.
-const alcanceLabel = (c) => `${SCOPE_LABEL[c.scope_type] || c.scope_type}${c.modo === 'SIMPLE' ? ' · Sencillo' : ''}`;
+//
+// Mismo criterio para el tipo: "Según la hoja" es el normal y no se rotula; el
+// que se anuncia es «En vivo», porque cambia qué cuenta como diferencia.
+const alcanceLabel = (c) => [
+    SCOPE_LABEL[c.scope_type] || c.scope_type,
+    ...(c.modo === 'SIMPLE' ? ['Sencillo'] : []),
+    ...(c.fuente_sistema === 'VIVO' ? ['En vivo'] : []),
+].join(' · ');
 
 const COLS = [
     { key: 'fecha', label: 'Fecha', align: 'left' },

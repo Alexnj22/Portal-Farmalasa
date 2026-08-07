@@ -11,10 +11,11 @@ const ERRORES = {
     SIN_PERMISO: 'No tenés permiso para esta acción.',
     FUERA_DE_ALCANCE: 'Ese conteo pertenece a otra sucursal.',
     ALCANCE_INVALIDO: 'El alcance del conteo no es válido.',
-    SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no está mapeada al ERP: no se puede tomar el inventario.',
+    SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no tiene inventario asociado: no se le puede tomar un conteo.',
     CONTEO_ABIERTO_EN_SUCURSAL: 'Ya hay un conteo abierto en esta sucursal. Finalizalo antes de empezar otro.',
     MUESTRA_CICLICA_VACIA: 'No hay productos con existencia para sortear la muestra de esta sucursal.',
     MODO_INVALIDO: 'El detalle del conteo no es válido.',
+    FUENTE_SISTEMA_INVALIDA: 'El tipo de conteo no es válido.',
     CONTEO_CERRADO_NO_EDITABLE: 'El conteo ya está cerrado y no admite cambios.',
     // Los tres CONTEO_NO_ENCONTRADO_* van ANTES del genérico: el traductor
     // busca por substring, así que con el corto primero un "ya finalizado"
@@ -35,7 +36,7 @@ const ERRORES = {
     PRODUCTO_YA_EN_CONTEO: 'Ese producto ya está en el conteo con esa presentación.',
     CONTEO_SIMPLE_SIN_LOTE: 'Este conteo no lleva lotes: no hay etiqueta que corregir.',
     CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',
-    AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado en el ERP.',
+    AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado.',
     CONTEO_NO_ESTA_EN_REVISION: 'El recuento solo se hace entre finalizar y aprobar el conteo.',
     SIN_PERMISO_RECUENTO: 'El recuento lo hace un supervisor: hace falta permiso de aprobación en este módulo.',
     RECUENTO_MISMO_CONTADOR: 'No podés recontar una línea que vos mismo contaste: el recuento lo hace otra persona.',
@@ -69,17 +70,20 @@ export const createConteoInventarioSlice = (set, get) => ({
         }
     },
 
-    // `modo` es el detalle del renglón, un eje aparte del alcance: 'LOTE' cuenta
-    // lote por lote (lo de siempre) y 'SIMPLE' un renglón por producto y
-    // presentación, sin lote ni vencimiento. Va con default explícito para que
-    // quien llame sin pensarlo obtenga el comportamiento histórico.
-    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, erpProductIds, modo = 'LOTE' }) => {
+    // Tres ejes independientes, y por eso tres parámetros y no un tipo con siete
+    // valores: `scopeType` es QUÉ se cuenta, `modo` con cuánto detalle
+    // ('LOTE' lote por lote, 'SIMPLE' un renglón por producto y presentación), y
+    // `fuenteSistema` contra qué se compara ('HOJA' contra el snapshot impreso,
+    // 'VIVO' contra la existencia del momento). Cada default es explícito para
+    // que un llamador que no los piense obtenga algo definido.
+    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, erpProductIds, modo = 'LOTE', fuenteSistema = 'HOJA' }) => {
         const { data, error } = await supabase.rpc('crear_conteo_inventario', {
             p_branch_id: branchId,
             p_scope_type: scopeType,
             p_scope_filter: scopeFilter || null,
             p_erp_product_ids: erpProductIds || null,
             p_modo: modo,
+            p_fuente_sistema: fuenteSistema,
         });
         if (error) throw traducirError(error);
 
@@ -87,7 +91,31 @@ export const createConteoInventarioSlice = (set, get) => ({
             timeline_title: 'Conteo de inventario iniciado',
             dimension: 'OPERATIVE',
             branch_id: branchId,
-            new_value: `Alcance: ${scopeType} · ${modo === 'SIMPLE' ? 'Sencillo (solo cantidades)' : 'Por lote y vencimiento'}`,
+            new_value: `Alcance: ${scopeType} · ${modo === 'SIMPLE' ? 'Sencillo (solo cantidades)' : 'Por lote y vencimiento'} · ${fuenteSistema === 'VIVO' ? 'En vivo' : 'Según la hoja'}`,
+        });
+
+        await get().fetchConteosInventario();
+        return data;
+    },
+
+    // Borrar un conteo se lleva sus renglones y el historial de cada uno: no hay
+    // de dónde recuperarlo. Lo que queda es esta entrada de bitácora, y por eso
+    // guarda el recuento de lo que se fue — sin él, "se borró un conteo" no dice
+    // si eran cuatro renglones o cuatro mil.
+    eliminarConteoInventario: async (conteoId) => {
+        const { data, error } = await supabase.rpc('eliminar_conteo_inventario', { p_conteo_id: conteoId });
+        if (error) throw traducirError(error);
+
+        await get().appendAuditLog('CONTEO_ELIMINADO', conteoId, {
+            timeline_title: 'Conteo de inventario eliminado',
+            dimension: 'OPERATIVE',
+            // Explícita: `inferSeverity` sube a CRITICAL por la palabra
+            // "ELIMINAR", y esta acción se llama "ELIMINADO" — la R de más la
+            // dejaba en INFO, o sea el borrado de una auditoría firmada
+            // registrado con la misma importancia que abrir una pantalla.
+            severity: 'CRITICAL',
+            branch_id: data?.branch_id,
+            old_value: `${data?.total_items ?? 0} renglón(es) · estado ${data?.status || '—'} · ${data?.total_diferencias ?? 0} diferencia(s)`,
         });
 
         await get().fetchConteosInventario();
@@ -329,7 +357,7 @@ export const createConteoInventarioSlice = (set, get) => ({
 
         const detalle = await get().fetchConteoDetalle(conteoId);
         await get().appendAuditLog('CONTEO_AJUSTE_ERP_APLICADO', conteoId, {
-            timeline_title: 'Ajuste del conteo aplicado en el ERP',
+            timeline_title: 'Ajuste del conteo aplicado',
             dimension: 'OPERATIVE',
             branch_id: detalle?.branch_id,
             new_value: nota || 'Sin nota',

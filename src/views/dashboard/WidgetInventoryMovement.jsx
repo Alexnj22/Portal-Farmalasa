@@ -16,8 +16,8 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import {
-    fetchLotesPorVencer, buscarConExistencia, fetchPresentaciones, fetchLotesDeProducto,
-    fetchPerecederos, insertMovimientoInventario, contarVencidos, TOPE_LISTA,
+    buscarConExistencia, fetchPresentaciones, fetchLotesDeProducto,
+    fetchPerecederos, insertMovimientoInventario, contarVencidos,
 } from '../../data/inventoryMovements';
 
 // Widget «Ajuste de Inventario».
@@ -42,11 +42,37 @@ import {
 // acertó 49 de 52 productos probados. Se ofrece el selector cuando el producto
 // tiene lotes, y quien decide de verdad es el sistema de origen al aplicar.
 
+// ── ⏳ POR AHORA EL VENCIMIENTO NO DECIDE NADA ACÁ (2026-08-07) ────────────
+// «Descargar por vencimiento» nació armando sola la lista de lo que vencía en la
+// sala, con un plazo (ya vencidos / 30 / 60 / 90 días) para acotarla. Se quitó a
+// pedido del usuario: «que no importe cuándo vence, por ahora; así que no quiero
+// listado de producto, solo selector de producto».
+//
+// Hoy la operación es idéntica a las otras cuatro —se busca el producto, se
+// arma la línea— y lo único que la distingue es el concepto con el que sale el
+// movimiento. La fecha sigue viajando en la línea; lo que ya no hace es ELEGIR
+// qué se ofrece.
+//
+// ⏳ CUÁNDO VOLVER A ESTO: cuando el portal tenga facturación. El motivo es el
+// mismo que ya está escrito en `PedirTrasladoModal` para el aviso de
+// vencimiento: la fecha sola no aconseja nada. «Vence en tres meses» no dice si
+// es un problema sin saber cuánto rota — una caja que vence en tres meses y sale
+// en dos semanas está bien; una que vence en seis y no se mueve, no. Esa cuenta
+// necesita la venta, y `product_stock_params.velocity` ya la calcula para el
+// MIN/MAX. Con eso, la lista propuesta vuelve a tener sentido: no «lo que vence»
+// sino «lo que vence y no te va a dar tiempo de vender».
+//
+// Lo que se borró y habría que rehacer: el efecto que llamaba a
+// `fetchLotesPorVencer` (sigue existiendo en `data/inventoryMovements.js`, con
+// su `TOPE_LISTA`), el selector de plazo, y el prellenado del compositor con la
+// cantidad/lote/fecha de la fila vencida. La baldosa del tablero SÍ sigue
+// contando las líneas vencidas (`contarVencidos`): ese número no depende de
+// nada de esto y sigue siendo cierto.
 const OPERACIONES = [
     {
         key: 'VENCIMIENTO', movimiento: 'DESCARTE', icon: CalendarX2,
         label: 'Descargar por vencimiento',
-        desc: 'La lista sale sola con lo vencido de la sala',
+        desc: 'Producto vencido que se retira de la sala',
         color: 'text-danger-text', bg: 'bg-danger/10 border-danger/30', iconBg: 'bg-danger/10',
     },
     {
@@ -73,13 +99,6 @@ const OPERACIONES = [
         desc: 'Ingresar existencia que no entró por compra',
         color: 'text-success-text', bg: 'bg-success/10 border-success/30', iconBg: 'bg-success/10',
     },
-];
-
-const PLAZOS = [
-    { value: '0',  label: 'Ya vencidos' },
-    { value: '30', label: 'Vencen en 30 días' },
-    { value: '60', label: 'Vencen en 60 días' },
-    { value: '90', label: 'Vencen en 90 días' },
 ];
 
 // ── El motivo, para las operaciones donde «descargar» no dice nada ──────────
@@ -233,11 +252,9 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
     const [opKey, setOpKey] = useState(null);      // null = paso 1
-    const [plazo, setPlazo] = useState('0');
     const [busqueda, setBusqueda] = useState('');
 
     const [candidatos, setCandidatos] = useState([]);
-    const [hayMas,     setHayMas]     = useState(false);
     const [cargando,   setCargando]   = useState(false);
 
     const [lineas, setLineas] = useState([]);
@@ -286,7 +303,6 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
 
     const op = OPERACIONES.find(o => o.key === opKey) ?? null;
     const esCarga = op?.movimiento === 'CARGA';
-    const porVencimiento = opKey === 'VENCIMIENTO';
     const motivos = MOTIVOS[opKey] ?? null;
     const pideFoto = OPS_CON_FOTO.includes(opKey);
 
@@ -298,21 +314,12 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
 
     useEffect(() => { volver(); }, [erpSucursalId, volver]);
 
-    // ── La lista propuesta: lo que venció en esta sala ────────────────────
+    // ── El buscador, para TODAS las operaciones ───────────────────────────
+    // Hasta el 2026-08-07 «Descargar por vencimiento» no tenía buscador: armaba
+    // sola la lista de lo que vencía en la sala, con un plazo para acotarla.
+    // Se quitó a pedido del usuario — ver la nota de `OPERACIONES`.
     useEffect(() => {
-        if (!erpSucursalId || !porVencimiento) { setCandidatos([]); setHayMas(false); return; }
-        let cancelado = false;
-        setCargando(true);
-        fetchLotesPorVencer({ erpSucursalId, dias: Number(plazo) }).then(r => {
-            if (cancelado) return;
-            setCandidatos(r.filas); setHayMas(r.hayMas); setCargando(false);
-        });
-        return () => { cancelado = true; };
-    }, [erpSucursalId, plazo, porVencimiento]);
-
-    // ── El buscador, para todo lo demás ───────────────────────────────────
-    useEffect(() => {
-        if (!op || porVencimiento) return;
+        if (!op) return;
         const q = busqueda.trim();
         if (q.length < 2) { setCandidatos([]); return; }
         let cancelado = false;
@@ -332,7 +339,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             });
         }, 300);
         return () => { cancelado = true; clearTimeout(t); };
-    }, [busqueda, erpSucursalId, porVencimiento, op]);
+    }, [busqueda, erpSucursalId, op]);
 
     useEffect(() => {
         const ids = candidatos.map(f => f.erp_product_id);
@@ -346,28 +353,6 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
         return () => { cancelado = true; };
     }, [candidatos]);
 
-    // ── El buscador de la lista de vencidos ───────────────────────────────
-    // Reportado el 2026-08-07: «aquí no me deja buscar productos». Y era cierto:
-    // por vencimiento sólo había un plazo, y el plazo más ancho devuelve el tope
-    // de la lista — decenas de filas que hay que recorrer con el dedo para
-    // encontrar una.
-    //
-    // Filtra en memoria y NO vuelve a la base: acá la lista completa ya está
-    // cargada, así que pedirla otra vez por texto sería un viaje para ordenar lo
-    // que ya está en la mano. Es la diferencia con el buscador de las otras
-    // operaciones, donde el universo es el catálogo entero.
-    const visibles = useMemo(() => {
-        if (!porVencimiento) return candidatos;
-        const q = busqueda.trim().toLowerCase();
-        if (!q) return candidatos;
-        // El rango de tildes combinantes va con escape Unicode y no con los
-        // glifos: en un archivo fuente son invisibles y se pierden al editar.
-        const limpia = (s) => String(s ?? '').toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const t = limpia(q);
-        return candidatos.filter(f => limpia(f.descripcion).includes(t) || limpia(f.lote).includes(t));
-    }, [candidatos, busqueda, porVencimiento]);
-
     // ── Abrir una fila en el compositor ───────────────────────────────────
     // Por vencimiento la fila YA es una línea: un lote concreto, con su fecha y
     // con las unidades que vencieron. Por eso entra con todo prellenado —
@@ -380,7 +365,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
     // puede que de las 3 unidades vencidas se descarten 2 y una se devuelva al
     // proveedor. El paso extra es teclear Enter, porque el foco cae en la
     // cantidad y ya trae el total escrito.
-    const abrirBorrador = useCallback(async (fila, { prellenar = false } = {}) => {
+    const abrirBorrador = useCallback(async (fila) => {
         const pres = presPorProducto.get(fila.erp_product_id) ?? [];
         const unidad = pres.find(p => p.factor === 1) ?? pres[0];
         setUltimo('');
@@ -389,10 +374,10 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             descripcion: fila.descripcion,
             tipo:   unidad?.tipo ?? 'UNIDAD',
             factor: unidad?.factor ?? 1,
-            cantidad: prellenar ? String(fila.cantidad ?? 1) : '',
+            cantidad: '',
             existencia: fila.cantidad ?? null,
-            lote:  prellenar && fila.lote && fila.lote !== 'GENERICO' ? fila.lote : '',
-            vence: prellenar ? (fila.fecha_vencimiento ?? '') : '',
+            lote: '',
+            vence: '',
             loteNuevo: false,
         });
 
@@ -640,29 +625,14 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                 lista debajo que mirar, y dejarlo invita a escribir encima y
                 perder lo que se estaba armando. */}
             {pestana === 'agregar' && !borrador && (
-              <div className="shrink-0 flex items-center gap-2">
-                {/* Por vencimiento van LOS DOS: el plazo elige de qué universo
-                    se habla y el buscador encuentra dentro de él. Con el plazo
-                    más ancho la lista llega al tope y encontrar una fila era
-                    recorrerla entera con el dedo. */}
-                {porVencimiento && (
-                    <div className="shrink-0">
-                        <LiquidSelect nano clearable={false} value={plazo} onChange={setPlazo} options={PLAZOS} />
-                    </div>
-                )}
-                <div className="flex-1 min-w-0">
-                    <SearchInput
-                        ref={buscadorRef}
-                        accentColor="var(--warning)"
-                        value={busqueda} onChange={setBusqueda}
-                        placeholder={porVencimiento
-                            ? 'Buscar en la lista…'
-                            : 'Buscar producto para agregar…'}
-                        ariaLabel={porVencimiento
-                            ? 'Buscar dentro de lo que vence'
-                            : 'Buscar producto para agregar'}
-                    />
-                </div>
+              <div className="shrink-0">
+                <SearchInput
+                    ref={buscadorRef}
+                    accentColor="var(--warning)"
+                    value={busqueda} onChange={setBusqueda}
+                    placeholder="Buscar producto para agregar…"
+                    ariaLabel="Buscar producto para agregar"
+                />
               </div>
             )}
 
@@ -1032,44 +1002,32 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {cargando && <div className="flex justify-center py-6"><SkeletonText lines={3} className="w-full max-w-md" /></div>}
 
-                {!cargando && hayMas && (
-                    <p className="text-micro text-warning-text font-semibold px-1">
-                        Se muestran los {TOPE_LISTA} más próximos a vencer. Hay más: envía esta tanda y vuelve.
-                    </p>
-                )}
-
-                {!cargando && visibles.length === 0 && (
+                {!cargando && candidatos.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3 px-4 text-center py-6">
                         <op.icon size={26} strokeWidth={1.5} />
                         <p className="text-body-sm font-semibold">
-                            {porVencimiento
-                                ? 'No hay nada por vencer en este plazo'
-                                : busqueda.trim().length < 2
-                                    ? 'Busca el producto que quieres mover'
-                                    : `Sin coincidencias para "${busqueda}"`}
+                            {busqueda.trim().length < 2
+                                ? 'Busca el producto que quieres mover'
+                                : `Sin coincidencias para "${busqueda}"`}
                         </p>
                     </div>
                 )}
 
-                {!cargando && visibles.map(f => {
+                {!cargando && candidatos.map(f => {
                     const dias = diasHasta(f.fecha_vencimiento);
-                    // Por vencimiento la fila ES un lote, así que repetirla sería
-                    // descargar dos veces el mismo. En el buscador la fila es un
-                    // producto y el lote lo elige el compositor: ahí «ya está» es
-                    // un aviso —dos lotes distintos del mismo producto son dos
-                    // líneas legítimas— y el freno contra el duplicado exacto lo
-                    // pone el compositor, que sí sabe qué lote se eligió.
-                    const yaEsta = porVencimiento
-                        ? lineas.some(l => l.erp_product_id === f.erp_product_id &&
-                            (!f.lote || f.lote === 'GENERICO' || l.lote === f.lote))
-                        : lineas.some(l => l.erp_product_id === f.erp_product_id);
-                    const bloqueada = porVencimiento && yaEsta;
+                    // La fila es un PRODUCTO y el lote lo elige el compositor, así
+                    // que «ya está» es un aviso y no un freno: dos lotes distintos
+                    // del mismo producto son dos líneas legítimas. El freno contra
+                    // el duplicado exacto lo pone el compositor, que sí sabe qué
+                    // lote se eligió.
+                    const yaEsta = lineas.some(l => l.erp_product_id === f.erp_product_id);
+                    const bloqueada = false;
                     return (
                         <ListRow
                             key={`${f.erp_product_id}|${f.lote ?? ''}|${f.fecha_vencimiento ?? ''}`}
                             onClick={() => {
                                 if (bloqueada) return;
-                                abrirBorrador(f, { prellenar: porVencimiento });
+                                abrirBorrador(f);
                             }}
                             leading={<Plus size={14} className={bloqueada ? 'text-content-3' : 'text-brand-text'} strokeWidth={2.5} />}
                             className={`border-divider bg-surface-card ${bloqueada ? 'opacity-50' : 'hover:border-brand/40'}`}
@@ -1090,16 +1048,35 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             </div>
             )}
 
-            {/* La causa y el envío */}
-            {totales.lineas > 0 && (
+            {/* El aviso de lo incompleto vive FUERA del bloque de abajo: es lo
+                único de acá que sirve mientras se agrega, porque lleva a la
+                pestaña donde se arregla. */}
+            {totales.lineas > 0 && incompletas.length > 0 && pestana !== 'banco' && (
+                <button type="button" onClick={() => setPestana('banco')}
+                    className="shrink-0 flex items-center gap-1 text-micro text-danger-text font-semibold px-1 text-left">
+                    <AlertTriangle size={12} strokeWidth={2.5} />
+                    {incompletas.length} {incompletas.length === 1 ? 'línea sin completar' : 'líneas sin completar'}
+                    {' — toca para verlas'}
+                </button>
+            )}
+
+            {/* ── La causa, la foto y el envío: SÓLO en «En la solicitud» ──────
+                Reportado el 2026-08-07: «no tiene sentido que esté el cuadro de
+                comentario y el de enviar solicitud si no estoy en la solicitud».
+                Y es cierto — mientras se busca el siguiente producto, el motivo
+                de la solicitud entera y el botón de mandarla no son parte de lo
+                que se está haciendo: ocupan media pantalla y compiten con la
+                lista de resultados, que es lo que se vino a mirar.
+
+                La vuelta atrás no se pierde con el pie: la flecha del encabezado
+                hace lo mismo y está siempre. */}
+            {pestana === 'banco' && totales.lineas > 0 && (
                 <div className="shrink-0 flex flex-col gap-2 pt-2 border-t border-divider">
                     {incompletas.length > 0 && (
-                        <button type="button" onClick={() => setPestana('banco')}
-                            className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1 text-left">
+                        <p className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1">
                             <AlertTriangle size={12} strokeWidth={2.5} />
                             {incompletas.length} {incompletas.length === 1 ? 'línea sin completar' : 'líneas sin completar'}
-                            {pestana !== 'banco' && ' — toca para verlas'}
-                        </button>
+                        </p>
                     )}
 
                     {/* ── El motivo ─────────────────────────────────────────
@@ -1130,22 +1107,49 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                         que no puede comprobar. Sólo acá — un descuadre no se
                         fotografía, y pedirla ahí sería un trámite vacío. */}
                     {pideFoto && (
-                        <div className="flex flex-col gap-1.5">
+                        // ── Se ve como lo que es: la evidencia (2026-08-07) ──
+                        // Antes era un cuadradito de 56px con el rótulo «Foto» y
+                        // una advertencia gris debajo. Con eso, lo único
+                        // obligatorio de la pantalla parecía un accesorio — y
+                        // encima las miniaturas quedaban tan chicas que no se
+                        // distinguía qué se había fotografiado.
+                        //
+                        // Ahora dice cuántas van, la zona de agregar es del
+                        // tamaño de una foto (80px) y las miniaturas se pueden
+                        // reconocer. El aviso de que falta se pinta en `warning`,
+                        // que es lo que es: falta algo para poder enviar.
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-baseline gap-2 px-1">
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest">
+                                    Foto del daño
+                                </p>
+                                <span className="text-micro text-content-3 font-semibold">
+                                    {fotos.length} de {MAX_FOTOS}
+                                </span>
+                            </div>
+
                             <div className="flex items-center gap-2 flex-wrap">
                                 {fotos.map((f, i) => (
-                                    <div key={`${f.name}-${i}`} className="relative w-14 h-14 rounded-xl overflow-hidden border border-border-card bg-surface-card-hover">
-                                        <img src={URL.createObjectURL(f)} alt=""
+                                    <div key={`${f.name}-${i}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border-card bg-surface-card-hover group/foto">
+                                        <img src={URL.createObjectURL(f)} alt={`Daño ${i + 1}`}
                                             className="w-full h-full object-cover"
                                             onLoad={ev => URL.revokeObjectURL(ev.currentTarget.src)} />
-                                        <button type="button" aria-label="Quitar foto"
+                                        {/* 24px y no 16: es un objetivo táctil sobre
+                                            una foto, y errarle borra la evidencia que
+                                            se acaba de tomar. */}
+                                        <button type="button" aria-label={`Quitar la foto ${i + 1}`}
                                             onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
-                                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-surface-card-hover border border-divider flex items-center justify-center">
-                                            <X size={9} strokeWidth={3} className="text-content-2" />
+                                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-surface-card border border-divider shadow-sm flex items-center justify-center hover:bg-danger/10 transition-colors">
+                                            <X size={12} strokeWidth={3} className="text-content-2" />
                                         </button>
                                     </div>
                                 ))}
                                 {fotos.length < MAX_FOTOS && (
-                                    <label className="w-14 h-14 rounded-xl border border-dashed border-border-card bg-surface-card-hover flex flex-col items-center justify-center gap-0.5 cursor-pointer hover:border-brand/40 transition-colors">
+                                    <label className={`w-20 h-20 rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors ${
+                                        fotos.length === 0
+                                            ? 'border-warning/50 bg-warning/[0.06] hover:border-warning'
+                                            : 'border-border-card bg-surface-card-hover hover:border-brand/40'
+                                    }`}>
                                         {/* `capture="environment"`: en el teléfono abre la
                                             cámara de atrás directo, que es donde está el
                                             producto. En escritorio el atributo se ignora y
@@ -1160,14 +1164,19 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                                                 setError('');
                                                 setFotos(prev => [...prev, f].slice(0, MAX_FOTOS));
                                             }} />
-                                        <Camera size={15} strokeWidth={2} className="text-content-3" />
-                                        <span className="text-micro font-bold text-content-3">Foto</span>
+                                        <Camera size={20} strokeWidth={2}
+                                            className={fotos.length === 0 ? 'text-warning-text' : 'text-content-3'} />
+                                        <span className={`text-micro font-bold ${fotos.length === 0 ? 'text-warning-text' : 'text-content-3'}`}>
+                                            {fotos.length === 0 ? 'Agregar' : 'Otra'}
+                                        </span>
                                     </label>
                                 )}
                             </div>
+
                             {fotos.length === 0 && (
-                                <p className="text-micro text-content-2 font-medium px-1">
-                                    Agrega al menos una foto del daño — es lo que mira quien aprueba.
+                                <p className="text-micro text-warning-text font-semibold px-1 leading-snug">
+                                    Falta la foto: es lo único que quien aprueba puede mirar para
+                                    saber que el producto está dañado.
                                 </p>
                             )}
                         </div>
@@ -1180,7 +1189,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             {/* El envío va al PIE canónico del modal. Adentro del cuerpo quedaba
                 al final de una lista que puede tener decenas de líneas: había que
                 scrollear hasta abajo para enviar lo que ya estaba armado. */}
-            {totales.lineas > 0 && (
+            {pestana === 'banco' && totales.lineas > 0 && (
                 <PieModal>
                     <Button variant="secondary" onClick={volver}>Volver</Button>
                     <Button disabled={!puedeEnviar || enviando} onClick={enviar}>

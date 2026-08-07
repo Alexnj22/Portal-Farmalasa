@@ -21,6 +21,108 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.497.0 — el ajuste por vencimiento usa el buscador, y la foto del daño se ve
+
+Tres reportes sobre el widget de Ajuste de Inventario.
+
+**1 · «Descargar por vencimiento» pierde su listado.** Armaba sola la lista de lo
+que vencía en la sala, con un plazo para acotarla, y el buscador sólo filtraba
+dentro de ella — así que buscar «amoxici» contestaba «No hay nada por vencer en
+este plazo». Pedido del usuario: «que no importe cuándo vence, por ahora; así que
+no quiero listado de producto, solo selector de producto».
+
+Ahora es idéntica a las otras cuatro: se busca el producto y se arma la línea. Lo
+único que la distingue es el concepto con el que sale el movimiento. La fecha
+sigue viajando en la línea; lo que ya no hace es **elegir qué se ofrece**.
+
+> ⏳ **Documentado en el código, sobre `OPERACIONES`:** esto vuelve cuando el
+> portal tenga facturación, y por el mismo motivo que ya estaba escrito para el
+> aviso de vencimiento de los traslados — la fecha sola no aconseja nada. «Vence
+> en tres meses» no dice si es un problema sin saber cuánto rota: una caja que
+> vence en tres meses y sale en dos semanas está bien; una que vence en seis y no
+> se mueve, no. `product_stock_params.velocity` ya calcula esa velocidad para el
+> MIN/MAX. La nota deja escrito qué se borró y qué habría que rehacer
+> (`fetchLotesPorVencer` sigue existiendo en la capa de datos).
+>
+> La baldosa del tablero **sigue contando las líneas vencidas**: ese número no
+> depende de nada de esto y sigue siendo cierto.
+
+**2 · El motivo, el detalle y el envío se mudan a «En la solicitud».** Estaban
+siempre a la vista: mientras se buscaba el siguiente producto, el motivo de la
+solicitud entera y el botón de mandarla ocupaban media pantalla y competían con
+la lista de resultados, que es lo que se vino a mirar. El aviso de «líneas sin
+completar» se queda en las dos pestañas —es lo único de ahí que sirve mientras se
+agrega, porque lleva a donde se arregla—. La vuelta atrás no se pierde con el
+pie: la flecha del encabezado hace lo mismo y está siempre.
+
+**3 · La foto del daño se ve como lo que es: la evidencia.** Era un cuadradito de
+56px rotulado «Foto» con una advertencia gris debajo, así que lo único
+obligatorio de la pantalla parecía un accesorio — y las miniaturas quedaban tan
+chicas que no se distinguía qué se había fotografiado. Ahora hay un rótulo con el
+contador (`0 de 3`), la zona de agregar mide 80px y mientras no haya ninguna se
+pinta en `warning`, que es lo que corresponde: falta algo para poder enviar. El
+botón de quitar pasa de 16 a 24px — es un objetivo táctil sobre una foto, y
+errarle borra la evidencia que se acaba de tomar.
+
+## v2.496.0 — El barrido entra a las pestañas internas, y el checklist de vista nueva
+
+Fases 2, 3 y 4 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`.
+
+**El barrido medía una pestaña por vista.** Era el hueco de cobertura más grande
+—37 archivos de vista declaran pestañas propias— y no había por dónde agarrarlas:
+la pestaña activa no va en la URL, la maneja cada vista por prop. `ViewTabBar`
+ahora estampa `data-pestanas` con la lista de claves, y el barrido las recorre
+con `PESTANAS=1`.
+
+**Y a la primera corrida encontró algo que nunca se había visto:** la pestaña
+**Sin venta** de Productos cae a tabla en el teléfono. Tres pantallas medidas,
+un hallazgo — que es la mejor defensa de por qué faltaba esta fase.
+
+También: `TEMA=dark|solid|solid-dark|liquid` para medir en los otros tres temas,
+y `RUTAS=a,b` para acotar el barrido y poder probar **el propio instrumento** en
+treinta segundos en vez de una hora.
+
+### Cuatro cortes, y ninguno era lo que parecía
+
+El recorrido de pestañas tardó cuatro intentos, y los cuatro fallos se veían
+igual desde afuera:
+
+1. «No se pudo iniciar sesión» — era el **preview caído**, no el límite de
+   Supabase.
+2. Con el preview arriba, el mismo error — era **el cerrojo propio**: miraba la
+   URL a los 6 segundos fijos y la app estaba en «VERIFICANDO SESIÓN…».
+   Confundía *todavía no* con *no*. Ahora espera la condición.
+3. Las 15 pestañas salieron «no se abrió»: el disparador de `LiquidSelect` es un
+   `<div role="combobox">`, **no un `<button>`** — está escrito en su propio
+   código y dice por qué.
+4. Con el selector corregido, seguía sin abrir: `GlassViewLayout` renderiza
+   `filtersContent` **dos veces** y `.first()` agarraba el oculto. `:visible`.
+
+Los dos primeros los descubrí mirando la captura del fallo; los dos últimos, sólo
+después de **quitarle la mordaza a los `catch`**. Un `catch` mudo hacía que «no
+se pudo abrir la pestaña» y «la pestaña no cargó» salieran idénticos en el
+informe, y se depuró a ciegas dos rondas. Ahora los dos imprimen su motivo.
+
+### Dos cosas que salieron de perder corridas enteras
+
+- **El informe se escribe después de cada pantalla.** Dos corridas se cortaron
+  por timeout con todo medido y el archivo sin escribir: 25 minutos perdidos
+  porque el resultado vivía en memoria hasta la última línea.
+- **Las pestañas van detrás de una bandera.** Cada pantalla tarda ~50s y las
+  pestañas casi duplican la cuenta: el barrido pasa de 4½ minutos a ~55. Un
+  barrido de una hora no se corre mientras se trabaja, y uno que no se corre no
+  mide nada.
+
+### Fases 3 y 4
+
+`docs/CHECKLIST-VISTA-NUEVA.md`: preguntas verificables, cada una apuntando a su
+fila de la tabla del canon, y una sección final con lo que el checklist **no**
+cubre. `gate:movil` ya corre en pre-commit; el barrido queda documentado ahí
+mismo como paso de cierre, con el motivo de por qué no puede vivir en un hook.
+
+De paso: `TabMinMax` tenía `surface={null}` **dos veces** en el mismo elemento.
+Inofensivo —los dos valían lo mismo— pero el build lo avisaba en cada corrida.
+
 ## v2.495.5 — el recuento de Facturas de Sala vuelve a su sitio canónico
 
 Lo levantó el usuario sobre una captura: *«¿es canónico? ¿por qué sale 0

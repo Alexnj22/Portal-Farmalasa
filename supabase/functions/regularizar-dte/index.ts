@@ -61,6 +61,12 @@ const MAX_POR_CORRIDA = 60;
 // cuando son diez y evita el ráfaga cuando son cientos.
 const PAUSA_ENTRE_ENVIOS_MS = 400;
 
+// El sello de recepción son 40 caracteres. Se compara por la FORMA del dato y
+// no por "no es null": `recibido_mh` es text y llegó a tener 'undefined' y ''
+// guardados, que `IS NOT NULL` daba por buenos (CLAUDE.md, "el tipo de la
+// columna manda"). Mismo criterio que `SELLO_MH_LIKE` en src/data/facturacion.js.
+const SELLO_MH_LIKE = "_".repeat(40);
+
 interface Pendiente {
   id: number;
   erp_invoice_id: string;
@@ -159,7 +165,18 @@ Deno.serve(async (req) => {
     } else {
       // Las dos bolsas, salvo que se pida una.
       if (bolsa !== "sin_sello") {
+        // SOLO las que Hacienda recibió alguna vez. No se puede invalidar ante
+        // el MH un documento que el MH nunca tuvo, y el ERP lo dice sin
+        // rodeos: "Esta factura no ha sido validada por MH no se puede validar
+        // la anulacion".
+        //
+        // Medido el 2026-08-07: las 8 anuladas de la cola están las 8 sin
+        // sello, y el barrido las reintentaba TODAS LAS NOCHES desde que
+        // existe — 4 intentos registrados por cada una. Son CCF de arranque
+        // (correlativos 1, 2, 4, 5) y errores anulados antes de transmitir.
+        // Nunca van a entrar, así que dejan de intentarse y se cuentan aparte.
         let q = admin.from("sales_invoices").select(cols).eq("estado", "NULA")
+          .like("recibido_mh", SELLO_MH_LIKE)
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
         const { data } = await q;
@@ -183,12 +200,33 @@ Deno.serve(async (req) => {
     const contar = async (bolsaCount: "anuladas" | "sin_sello") => {
       let q = admin.from("sales_invoices").select("id", { count: "exact", head: true });
       q = bolsaCount === "anuladas"
-        ? q.eq("estado", "NULA")
+        // Mismo filtro que la selección: contar las que no se pueden invalidar
+        // haría que `restantes` no llegue nunca a cero y el barrido pareciera
+        // atrasado para siempre.
+        ? q.eq("estado", "NULA").like("recibido_mh", SELLO_MH_LIKE)
         : q.is("recibido_mh", null).not("estado", "in", '("NULA","DTE INVALIDADO EN MH")');
       if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
       const { count } = await q;
       return count ?? 0;
     };
+
+    // Las anuladas que nunca llegaron a Hacienda. No entran al barrido, pero se
+    // informan: un documento que se deja de intentar en silencio es
+    // indistinguible de uno que se resolvió.
+    const contarSinTramite = async () => {
+      let q = admin.from("sales_invoices")
+        .select("id", { count: "exact", head: true })
+        .eq("estado", "NULA")
+        // `.not("recibido_mh","like",…)` NO alcanza: con la columna en NULL la
+        // comparación da NULL, no true, y las filas no se cuentan. Las 8 reales
+        // están todas en NULL, así que el contador daba 0 y las dejaba
+        // invisibles — el mismo hueco que el `accionable` sin coalesce.
+        .or(`recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`);
+      if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
+      const { count } = await q;
+      return count ?? 0;
+    };
+    const anuladasSinTramite = alcance === "una" ? 0 : await contarSinTramite();
     const totalPendiente = alcance === "una"
       ? pendientes.length
       : (bolsa === "sin_sello" ? 0 : await contar("anuladas"))
@@ -196,7 +234,8 @@ Deno.serve(async (req) => {
 
     if (!pendientes.length)
       return json({ ok: true, revisadas: 0, resueltas: 0, fallidas: 0,
-                    total_pendiente: totalPendiente, restantes: totalPendiente, detalle: [] });
+                    total_pendiente: totalPendiente, restantes: totalPendiente,
+                    anuladas_sin_tramite: anuladasSinTramite, detalle: [] });
 
     // Responsable de las invalidaciones: el mismo siempre, definido por la
     // empresa. No es quien aprieta el botón — es quien responde legalmente.
@@ -325,6 +364,9 @@ Deno.serve(async (req) => {
         con_observaciones: conObservaciones,
         total_pendiente: totalPendiente,
         restantes: Math.max(0, totalPendiente - resueltas),
+        // Anuladas que Hacienda nunca recibió: no hay nada que invalidar y no
+        // se intentan. Se anotan para que no desaparezcan del radar.
+        anuladas_sin_tramite: anuladasSinTramite,
         cortada_por_tiempo: cortadaPorTiempo,
         detalle,
       },
@@ -339,6 +381,7 @@ Deno.serve(async (req) => {
       // "ya está todo".
       total_pendiente: totalPendiente,
       restantes: Math.max(0, totalPendiente - resueltas),
+      anuladas_sin_tramite: anuladasSinTramite,
       cortada_por_tiempo: cortadaPorTiempo,
       detalle,
     });

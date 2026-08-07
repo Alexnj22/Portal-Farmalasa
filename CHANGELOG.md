@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.469.2 — El barrido deja de reintentar lo que Hacienda nunca recibio
+
+Ocho facturas anuladas se reintentaban **todas las noches** y fallaban siempre,
+desde que existe el barrido — cuatro intentos registrados por cada una. El
+motivo: son documentos que Hacienda **nunca recibió**, así que no hay nada que
+invalidar ante Hacienda. Anular algo que el Ministerio nunca tuvo no es una
+operación que exista.
+
+Son los primeros comprobantes de crédito fiscal de cada sucursal (números 1, 2,
+4, 5) y algunos errores anulados antes de transmitirse. Ninguno tiene sello de
+recepción.
+
+Ahora el barrido solo intenta invalidar lo que efectivamente llegó a Hacienda.
+Las otras dejan de intentarse, pero **no desaparecen**: se cuentan y se informan
+aparte, porque un documento que se abandona en silencio se parece demasiado a
+uno resuelto.
+
 ## v2.469.1 — Las fichas vacías, y los dos historiales que pedían deslizar
 
 **Un objeto de configuración es un conjunto de overrides, no un reemplazo del

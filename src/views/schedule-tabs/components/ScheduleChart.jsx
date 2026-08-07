@@ -13,10 +13,15 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div data-surface="card" className="border border-border-card rounded-2xl px-4 py-1.5 shadow-[var(--shadow-glass-1)] flex flex-col h-full min-h-[80px] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-slow)] group/chart relative overflow-visible z-base">
+        // `min-h-[150px]` en el teléfono: los 80px alcanzaban cuando el
+        // segmentado medía 24 de alto, pero en táctil sube a 44 por el piso del
+        // dedo y se come casi toda la tarjeta — las barras quedaban en 22px,
+        // con los rótulos de los días encimados. La altura mínima tiene que
+        // contemplar el control que crece, no sólo el gráfico.
+        <div data-surface="card" className="border border-border-card rounded-2xl px-4 py-1.5 shadow-[var(--shadow-glass-1)] flex flex-col h-full min-h-[150px] md:min-h-[80px] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-slow)] group/chart relative overflow-visible z-base">
 
             {/* Header: title + legend + toggle — compact single row */}
-            <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0">
+            <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0 flex-wrap">
                 <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
                     <span className="flex items-center gap-1.5 text-[10.5px] font-black text-content-2 tracking-tight whitespace-nowrap">
                         <TrendingUp size={10} strokeWidth={2.5} className="text-chart-9-text shrink-0" />
@@ -33,7 +38,10 @@ const ScheduleChart = ({
 
                 {/* Días / Horas toggle + expand (inline, no overlap) */}
                 <div className="flex items-center gap-1 shrink-0">
-                    <div className="flex items-center bg-surface-card p-0.5 rounded-full border border-border-card shadow-[var(--shadow-shine)] h-6">
+                    {/* `min-h-6` y no `h-6`: el riel decorativo tenía alto FIJO de
+                        24px y adentro va un segmentado que en táctil mide 44, así
+                        que se desbordaba y tapaba el título de la tarjeta. */}
+                    <div className="flex items-center bg-surface-card p-0.5 rounded-full border border-border-card shadow-[var(--shadow-shine)] min-h-6">
                         {typeof chartView === 'number' && (
                             <Button variant="secondary" icon={ChevronLeft} onClick={() => setChartView('DAYS')}>Días</Button>
                         )}

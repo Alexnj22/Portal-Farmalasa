@@ -147,8 +147,15 @@ const PAD = {
 // borraba justamente esa columna en el teléfono, o sea que la vista abría sin
 // poder contestar su propia pregunta.
 function inferirPapeles(columns, movil) {
-  const utiles = columns.filter(c => (c.label || '').trim() !== '');
-  const acciones = columns.filter(c => (c.label || '').trim() === '');
+  // La columna de acciones se reconoce por el RÓTULO VACÍO **o por la clave**.
+  // Sólo por el rótulo no alcanzaba: cuatro tablas del portal dejan el rótulo en
+  // blanco, pero Personal y Mín·Máx escriben «Acciones», y como además es la
+  // última columna terminaba de ANCLA — o sea que la ficha mostraba tres
+  // botones donde va el número que motiva la pantalla, con `<button>` anidados
+  // adentro del `<button>` de la ficha. Se veía en las dos vistas más usadas.
+  const esAccion = c => (c.label || '').trim() === '' || /^(acciones|actions)$/i.test(c.key || '');
+  const utiles = columns.filter(c => !esAccion(c));
+  const acciones = columns.filter(esAccion);
 
   // La inferencia corre SIEMPRE y `movil` sólo pisa lo que declara. La primera
   // versión trataba al objeto como excluyente: una vista que pasara
@@ -215,15 +222,15 @@ export function DataTable({
   const isEmpty = !loading && childCount === 0;
   const enTelefono = useMediaQuery('(max-width: 1023.98px)');
   const enFichas = enTelefono && movil !== false && !isEmpty && !loading;
-  const analisis = enFichas ? analizarFilas(children, columns) : null;
+  const limpias = enFichas ? limpiarFilas(children) : null;
 
-  // Si el mapeo posicional no se cumple, se vuelve a la tabla: deslizar es peor
-  // que leer un dato bajo el rótulo equivocado, pero mucho menos malo.
-  if (enFichas && !analisis.desalineada && analisis.filas.length) {
+  if (enFichas && limpias.hijos.length) {
     return (
       <TableCtx.Provider value={tk}>
         <FichasMovil columns={columns} movil={movil} toolbar={toolbar} footer={footer}
-          filas={analisis.filas} descartadas={analisis.descartadas} />
+          descartadas={limpias.descartadas}>
+          {limpias.hijos}
+        </FichasMovil>
       </TableCtx.Provider>
     );
   }
@@ -417,107 +424,73 @@ function aplanar(children) {
   return out;
 }
 
-function analizarFilas(children, columns) {
-  const filas = [];
+// Las filas NO se leen desde afuera: se dejan pasar, y cada `DataRow` decide.
+//
+// La versión anterior recorría los hijos buscando elementos cuyo `type` fuera
+// `DataRow`, y por eso Personal —la vista más grande del portal— se quedó en
+// tabla: envuelve cada fila en `memo(EmployeeRow)`, y desde afuera un componente
+// es una caja cerrada. No hay forma de contarle las celdas sin ejecutarlo, y
+// ejecutarlo no se puede: `EmployeeRow` usa hooks.
+//
+// Mirar desde afuera obligaba además a que UNA fila desalineada tumbara la vista
+// entera a tabla. Decidiendo adentro, la fila que no cuadra se degrada sola.
+//
+// Lo único que hay que sacar del camino son los ELEMENTOS DEL ANFITRIÓN: doce
+// vistas cuelgan un `<tr colSpan>` de detalle expandido al lado de su fila, y
+// fuera de una tabla ese `<tr>` no tiene dónde pintarse (el navegador le fabrica
+// una tabla anónima y aparece una franja suelta). Un componente sí pasa: si
+// adentro rinde un `DataRow`, se vuelve ficha.
+//
+// Los fragmentos se CONSERVAN, no se aplanan. Diez vistas envuelven cada fila en
+// `<React.Fragment key={id}>`; aplanarlos sacaría a los `DataRow` de su ámbito
+// de claves y dos filas distintas podrían terminar con la misma. Se clona el
+// fragmento con su clave y se limpia adentro.
+function limpiarFilas(children) {
   let descartadas = 0;
-  let desalineada = false;
-
-  // Se atraviesan los FRAGMENTOS, y no es un detalle: diez vistas envuelven cada
-  // fila en `<React.Fragment key={id}>` para poder colgarle al lado su `<tr>` de
-  // detalle expandido. La primera versión miraba sólo el tipo del hijo directo,
-  // así que en esas vistas descartaba TODAS las filas y caía a la tabla sin
-  // decir por qué — Ventas, que es la pantalla que originó este trabajo, era una
-  // de ellas. El fragmento no es una fila: es el envoltorio de una.
-  const tomar = (hijo, clave) => {
-    if (!React.isValidElement(hijo)) { descartadas++; return; }
+  const limpiar = (hijos) => React.Children.toArray(hijos).map(hijo => {
+    if (!React.isValidElement(hijo)) { descartadas++; return null; }
     if (hijo.type === React.Fragment) {
-      React.Children.toArray(hijo.props.children)
-        .forEach(nieto => tomar(nieto, hijo.key ?? clave));
-      return;
+      const dentro = limpiar(hijo.props.children).filter(Boolean);
+      return dentro.length ? React.cloneElement(hijo, {}, dentro) : null;
     }
-    if (hijo.type !== DataRow) { descartadas++; return; }
-    const celdas = aplanar(hijo.props.children);
-    if (celdas.length !== columns.length) { desalineada = true; return; }
-    filas.push({ clave: hijo.key ?? clave, onClick: hijo.props.onClick, celdas });
-  };
-
-  React.Children.toArray(children).forEach((hijo, i) => tomar(hijo, i));
-  return { filas, descartadas, desalineada };
+    if (typeof hijo.type === 'string') { descartadas++; return null; }
+    return hijo;
+  });
+  return { hijos: limpiar(children).filter(Boolean), descartadas };
 }
 
-function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
+// El contexto es el que convierte a `DataRow` en ficha. Va aparte de `TableCtx`
+// —que lleva los tokens y lo consumen también `DataCell` y el encabezado—
+// porque su presencia ES la señal: si hay `FichaCtx`, la fila no se pinta como
+// `<tr>`.
+const FichaCtx = React.createContext(null);
+
+function FichasMovil({ columns, movil, toolbar, footer, descartadas, children }) {
   const [abierta, setAbierta] = React.useState(null);
   const papeles = React.useMemo(() => inferirPapeles(columns, movil), [columns, movil]);
+  const ctx = React.useMemo(
+    () => ({ columns, papeles, movil, abrir: setAbierta }),
+    [columns, papeles, movil],
+  );
 
+  // El aviso VIVE ACÁ y antes no llegaba a imprimirse nunca en el caso que
+  // importa: estaba dentro del componente que sólo se monta cuando las fichas
+  // sí salieron, o sea que explicaba la caída a tabla justamente cuando no la
+  // había habido. Hoy el contenedor siempre se monta en el teléfono.
   React.useEffect(() => {
     if (descartadas && import.meta.env?.DEV) {
-      console.warn(`[DataTable] ${descartadas} fila(s) fuera de \`DataRow\` no se pintan como ficha.`);
+      console.warn(`[DataTable] ${descartadas} fila(s) que no son \`DataRow\` no se pintan como ficha.`);
     }
   }, [descartadas]);
 
   const deCol = (fila, col) => (col ? fila.celdas[columns.indexOf(col)]?.props?.children : null);
 
   return (
+    <FichaCtx.Provider value={ctx}>
     <div className="flex flex-col gap-2">
       {toolbar && <div className="px-1 pb-1">{toolbar}</div>}
 
-      {filas.map((fila) => {
-        const abrir = () => setAbierta(fila);
-        // ── El toque abre LA HOJA, salvo que la vista diga lo contrario ─────
-        // La primera versión dejaba ganar al `onClick` de la fila «porque el
-        // modal de la vista es más rico». En la mitad de las vistas ese
-        // `onClick` no lleva a ningún lado: expande un `<tr>` hermano que en
-        // modo ficha no se pinta. El usuario lo reportó exacto — «en ventas, al
-        // clickear no se abre nada» —, y productos igual.
-        //
-        // Desde afuera no hay forma de saber si un manejador navega o expande,
-        // así que el default es lo que SIEMPRE existe: la hoja. Una vista cuyo
-        // toque va a un destino de verdad lo declara con
-        // `movil={{ usarAccionDeFila: true }}`. Es explícito, y es la única
-        // versión que no deja controles muertos.
-        // Y si la hoja no agrega NADA, la ficha no se toca. Con cuatro columnas
-        // reales, las cuatro entran en la ficha y el `hoja` queda vacío: abrir
-        // una hoja que repite lo que ya se está leyendo es un control que
-        // responde y no sirve. Lo reportó el usuario en Productos — «solo abre
-        // prácticamente la misma info de la card».
-        const hayHoja = papeles.hoja.length > 0;
-        const alTocar = (movil?.usarAccionDeFila && fila.onClick) || (hayHoja ? abrir : undefined);
-        const Elem = alTocar ? 'button' : 'div';
-        return (
-          <Elem
-            key={fila.clave}
-            {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
-            data-surface="card"
-            className="w-full text-left px-3.5 py-3 rounded-card
-              transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
-              active:scale-[0.985]"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate font-bold text-body-lg text-content">
-                {deCol(fila, papeles.identidad)}
-              </span>
-              <span className="shrink-0 font-black text-body-xl tabular-nums text-content">
-                {deCol(fila, papeles.ancla)}
-              </span>
-            </div>
-            {papeles.chips.length > 0 && (
-              <div className="flex items-center gap-2 mt-1 text-caption text-content-3
-                [&_*]:text-caption min-w-0 truncate">
-                {papeles.chips.map((col, i) => {
-                  const v = deCol(fila, col);
-                  if (v == null || v === '' || v === '—') return null;
-                  return (
-                    <span key={col.key} className="contents">
-                      {i > 0 && <span aria-hidden="true" className="opacity-40">·</span>}
-                      {v}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </Elem>
-        );
-      })}
+      {children}
 
       {footer && <div className="px-1 pt-1">{footer}</div>}
 
@@ -543,10 +516,13 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
                   <div key={col.key}
                     className="flex items-baseline justify-between gap-4 py-2
                       border-b border-divider last:border-b-0">
-                    <span className="text-micro font-black uppercase tracking-widest text-content-3">
+                    <span className="shrink-0 text-micro font-black uppercase tracking-widest text-content-3">
                       {col.label}
                     </span>
-                    <span className="text-body font-bold text-right tabular-nums text-content">
+                    {/* `min-w-0` + quiebre: en la hoja hay alto de sobra, así que
+                        un valor largo —un número de documento de 30 caracteres—
+                        se parte en dos renglones en vez de salirse. */}
+                    <span className="min-w-0 text-body font-bold text-right tabular-nums text-content break-words">
                       {v}
                     </span>
                   </div>
@@ -557,6 +533,104 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
         )}
       </ModalShell>
     </div>
+    </FichaCtx.Provider>
+  );
+}
+
+// ── La ficha ──────────────────────────────────────────────────────────────────
+// Es lo que `DataRow` pinta en el teléfono. Se mapea celda→columna POR POSICIÓN,
+// que es el contrato que la tabla ya tenía escrito en su `<thead>`.
+//
+// Cuando el mapeo NO cuadra —una vista que rinde celdas condicionales sin
+// condicionar también la columna— no se adivina: se apilan las celdas en el
+// orden en que vinieron, sin rótulo. Antes eso tumbaba la tabla entera al modo
+// tabla con carril; degradar sólo la fila que no cuadra es mejor por los dos
+// lados, porque ni miente un rótulo ni obliga a deslizar las otras cuarenta.
+function Ficha({ celdas, onClick }) {
+  const { columns, papeles, movil, abrir } = React.useContext(FichaCtx);
+  const alineada = celdas.length === columns.length;
+
+  React.useEffect(() => {
+    if (!alineada && import.meta.env?.DEV) {
+      console.warn(`[DataTable] fila con ${celdas.length} celda(s) y ${columns.length} columna(s): se apila sin rótulos.`);
+    }
+  }, [alineada, celdas.length, columns.length]);
+
+  if (!alineada) {
+    return (
+      <div data-surface="card" className="w-full px-3.5 py-3 rounded-card flex flex-col gap-1">
+        {celdas.map((c, i) => <div key={i} className="min-w-0">{c?.props?.children}</div>)}
+      </div>
+    );
+  }
+
+  const deCol = (col) => (col ? celdas[columns.indexOf(col)]?.props?.children : null);
+
+  // ── El toque abre LA HOJA, salvo que la vista diga lo contrario ─────
+  // La primera versión dejaba ganar al `onClick` de la fila «porque el modal de
+  // la vista es más rico». En la mitad de las vistas ese `onClick` no lleva a
+  // ningún lado: expande un `<tr>` hermano que en modo ficha no se pinta. El
+  // usuario lo reportó exacto — «en ventas, al clickear no se abre nada» —, y
+  // productos igual.
+  //
+  // Desde afuera no hay forma de saber si un manejador navega o expande, así que
+  // el default es lo que SIEMPRE existe: la hoja. Una vista cuyo toque va a un
+  // destino de verdad lo declara con `movil={{ usarAccionDeFila: true }}`.
+  // Y si la hoja no agrega NADA, la ficha no se toca: con cuatro columnas
+  // reales, las cuatro entran en la ficha y el `hoja` queda vacío. Abrir una
+  // hoja que repite lo que ya se está leyendo es un control que responde y no
+  // sirve — «solo abre prácticamente la misma info de la card».
+  const hayHoja = papeles.hoja.length > 0;
+  const alTocar = (movil?.usarAccionDeFila && onClick) || (hayHoja ? () => abrir({ celdas }) : undefined);
+  const chipsVisibles = papeles.chips
+    .map(col => ({ col, v: deCol(col) }))
+    .filter(({ v }) => v != null && v !== '' && v !== '—');
+  const Elem = alTocar ? 'button' : 'div';
+  return (
+    <Elem
+      {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
+      data-surface="card"
+      className="w-full text-left px-3.5 py-3 rounded-card
+        transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
+        active:scale-[0.985]"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0 truncate font-bold text-body-lg text-content">
+          {deCol(papeles.identidad)}
+        </span>
+        <span className="shrink-0 font-black text-body-xl tabular-nums text-content">
+          {deCol(papeles.ancla)}
+        </span>
+      </div>
+      {chipsVisibles.length > 0 && (
+        // Cada chip va en su PROPIA caja encogible. El envoltorio era
+        // `display: contents`, que no genera caja: sus hijos quedaban de items
+        // flex directos con `min-width: auto`, o sea que un valor largo no
+        // encogía y se salía. Medido en el libro de compras: 49 números de
+        // documento cortados a la mitad por el `truncate` del contenedor, uno
+        // por fila. Un `truncate` en el padre no alcanza si el hijo no puede
+        // encoger — es la propiedad que hace falta escribir, no el recorte.
+        //
+        // El separador se calcula sobre los chips que SÍ se pintan, no sobre el
+        // índice del arreglo: con el primero vacío salía una línea que empezaba
+        // con «·».
+        // `flex-wrap`: una celda no es un valor, y a veces es una insignia
+        // ancha —«Crédito Fiscal (CCF)» en Facturas de compra— que no entra en
+        // la línea. Cortarla por la mitad esconde información que existe;
+        // dejarla pasar al renglón de abajo no cuesta nada. El recorte por chip
+        // sigue vivo para el caso contrario: un texto largo se acorta con
+        // puntos suspensivos en vez de empujar a los demás.
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-caption text-content-3
+          [&_*]:text-caption min-w-0 overflow-hidden">
+          {chipsVisibles.map(({ col, v }, i) => (
+            <React.Fragment key={col.key}>
+              {i > 0 && <span aria-hidden="true" className="opacity-40 shrink-0">·</span>}
+              <span className="min-w-0 truncate">{v}</span>
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+    </Elem>
   );
 }
 
@@ -576,6 +650,7 @@ function FichasMovil({ columns, movil, toolbar, footer, filas, descartadas }) {
 // 200 — y la alternativa es que la función no exista para el teclado.
 export function DataRow({ children, index = 0, onClick, className = '', style, ...props }) {
   const tk = useTable() || {};
+  const ficha = React.useContext(FichaCtx);
   const clickable = !!onClick;
 
   // Enter y Espacio SOLO cuando el foco está en la fila misma. Sin esta guarda,
@@ -588,6 +663,11 @@ export function DataRow({ children, index = 0, onClick, className = '', style, .
         onClick(e);
       }
     : undefined;
+
+  // En el teléfono la fila ES la ficha. Se decide acá adentro y no desde
+  // `DataTable` porque desde afuera un `memo(EmployeeRow)` es una caja cerrada
+  // — ver `limpiarFilas`.
+  if (ficha) return <Ficha celdas={aplanar(children)} onClick={onClick} />;
 
   return (
     <tr

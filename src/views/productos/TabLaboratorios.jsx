@@ -156,7 +156,10 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                 <button
                                     onClick={() => toggleSec(sec.key)}
                                     aria-expanded={isOpen}
-                                    className="w-full flex items-center gap-2.5 mb-3 group"
+                                    // El encabezado de sección ES el control que
+                                    // pliega la lista, y medía 23px de alto. En
+                                    // escritorio `--tap-min` vale 0 y no cambia.
+                                    className="w-full flex items-center gap-2.5 mb-3 group min-h-[var(--tap-min)]"
                                 >
                                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${sec.dot}`} />
                                     <span className="text-sm font-bold text-content-2 group-hover:text-content transition-colors">

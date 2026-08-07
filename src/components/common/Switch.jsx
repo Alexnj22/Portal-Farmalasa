@@ -91,7 +91,12 @@ const Switch = memo(({
             aria-label={label}
             disabled={disabled}
             onClick={() => !disabled && onChange(!checked)}
-            className={`${track} disabled:cursor-not-allowed active:scale-[0.97]`}
+            // `.blanco-tactil` (index.css): el interruptor `sm` mide 32×16 y ese
+            // tamaño ES el diseño —una perilla más grande deja de leerse como
+            // interruptor—, así que lo que crece hasta 44 en táctil es el área de
+            // impacto, no la pintura. El riel ya es `relative`, que es lo que el
+            // pseudo necesita.
+            className={`${track} blanco-tactil disabled:cursor-not-allowed active:scale-[0.97]`}
             {...rest}
         >
             {knob}

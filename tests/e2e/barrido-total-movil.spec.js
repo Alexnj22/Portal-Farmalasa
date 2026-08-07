@@ -57,8 +57,11 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                          vacia: document.body.innerText.trim().length < 120 };
             });
             informe.push({ ruta, ...m.totales, desbordePagina: m.desbordePagina,
-                           ...extra, muestraDesborde: m.desbordan.slice(0, 3) });
-            await page.screenshot({ path: `${SALIDA}/${ruta}.png` });
+                           ...extra, grupos: m.grupos, muestraDesborde: m.desbordan.slice(0, 3) });
+            // La foto entera, no el viewport: el desborde y la fila que lo causa
+            // casi nunca están arriba de todo, y una foto cortada a 844px hace
+            // que el hallazgo medido no se pueda ver.
+            await page.screenshot({ path: `${SALIDA}/${ruta}.png`, fullPage: true });
         }
         fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 1));
 

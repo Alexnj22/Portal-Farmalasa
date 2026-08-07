@@ -1932,7 +1932,11 @@ export default function TabCatalogo({
                                             }
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
+                                                    {/* `min-w-0 truncate`: es un item flex, y un
+                                                        item flex no encoge por debajo de su
+                                                        contenido salvo que se le diga. Sin eso, un
+                                                        nombre largo se salía de la ficha. */}
+                                                    <span className={`min-w-0 truncate text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
                                                     {mInfo && <Badge variant={mInfo.variante} size="sm" className="shrink-0" uppercase={false}
                                                         icon={worstM < 0 ? ShieldAlert : TrendingDown}>{mInfo.label}</Badge>}
                                                     {specLoss && [...specLoss].map(k => (

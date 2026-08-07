@@ -306,7 +306,12 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
     : '';
 
   return (
-    <DataRow index={staggerIndex} className={`${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
+    // La fila abre el expediente. Antes la única puerta era el chevron de la
+    // celda de acciones, y en el teléfono esa celda no se pinta: la ficha de un
+    // empleado quedaba sin ningún destino. Es además la acción que el resto del
+    // portal ya pone en la fila.
+    <DataRow index={staggerIndex} onClick={() => onOpenEmployee(emp)}
+      className={`${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
       <DataCell className="w-[360px]">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
@@ -964,6 +969,7 @@ const StaffManagementView = ({
             action: hasActiveFilters ? { label: 'Limpiar Filtros', onClick: clearFilters } : undefined,
           }}
           minWidth="800px"
+          movil={{ usarAccionDeFila: true }}
         >
           {isPracticantesView
             ? paginatedPracticantes.map((p, i) => (

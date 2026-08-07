@@ -21,6 +21,144 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.481.0 — El foco cae en el campo, y la línea se arma antes de entrar
+
+Cuatro cosas reportadas probando el tablero, y las tres primeras son la misma.
+
+**El foco entraba en la «✕».** `ModalShell` enfocaba el primer elemento
+enfocable del panel, y el encabezado canónico dibuja su botón de cerrar ANTES
+del cuerpo — así que al abrir la Consulta de Inventario el foco caía en el botón
+de cerrar y el buscador, que es todo el motivo de abrir ese modal, había que ir a
+tocarlo. Ahora busca primero un campo de escritura y solo si no hay usa el primer
+enfocable. Verificado en vivo: Consulta de Inventario y Modificar Facturación
+abren con el cursor en su buscador; el paso 1 del Ajuste —cinco tarjetas, ningún
+campo— sigue cayendo en «Cerrar», que es lo correcto.
+
+Con puntero fino nada más. En un teléfono el campo enfocado levanta el teclado y
+se come media hoja: en un modal que primero se LEE eso tapa justo lo que se vino
+a mirar. Donde escribir ES el propósito —la Consulta de Inventario, el paso de
+buscar del Ajuste— el widget lo pide explícito y vale también en el teléfono.
+
+**Administración en un selector de sucursales.** «No debe aparecer, ya que no
+vende, no tiene inventario». Y era literal: el selector de Modificar Facturación
+salía de `branches`, las 8 filas del maestro, y Administración no está mapeada al
+sistema de origen — elegirla abría la baldosa contra una sucursal sin nada, lista
+vacía y sin decir por qué. Ahora sale de `SALAS_VENTA`: verificado contra
+`sales_invoices` de julio, emiten esas 6 y nadie más (Bodega, 0). Y si la sala de
+quien mira no factura, arranca en la primera que sí — antes arrancaba en la suya,
+o sea fuera de su propia lista. Inventario y Min/Max ya salían del mapa ERP, que
+incluye Bodega porque sí tiene existencias: por eso nunca tuvieron el problema.
+
+**«¿Por qué pone cantidad? Me puso 7 solo.»** Ese 7 era la EXISTENCIA de la sala,
+prellenada como si fuera lo que se quiere mover. En una carga no tiene ninguna
+relación con lo que entra; en una descarga es el tope, no la respuesta —
+aceptarla sin mirar descarga la sala entera.
+
+Y el flujo pedido —«busco el producto, agrego cantidad y lote, y lo agrego, luego
+el siguiente»— es el que ya se estaba haciendo a la fuerza: tocar un resultado
+empujaba una línea a medio llenar a la otra pestaña, así que agregar tres
+productos eran tres viajes de ida y vuelta, y el banco terminó siendo el lugar
+donde se llenan los datos en vez de donde se revisa lo ya armado. Ahora tocar un
+resultado abre un compositor con la cantidad **vacía y enfocada**, la
+presentación, el lote y —solo cuando no se sabe ya— el vencimiento; Enter
+confirma; al agregar se limpia la búsqueda, el foco vuelve al buscador y una
+línea dice cuál entró. El contador de la pestaña sube, pero un número que cambia
+no dice CUÁL, y en una tanda de diez productos parecidos eso es lo que hay que
+poder confirmar sin cambiar de pestaña.
+
+La lista de vencidos queda de un toque, y no por descuido: ahí la fila YA es una
+línea —un lote concreto, con su fecha y con las unidades que vencieron—, es el
+único caso donde el número que viene de `inventory` es la respuesta y no el tope,
+y la lista se recorre tildando decenas de filas.
+
+Dos cosas más que salieron al armarlo. La validación estaba escrita una sola vez
+y ahora la usan los dos lugares (`problemasDeLinea`): con dos copias, la
+diferencia se paga al revés de como se descubre — se agrega una línea que el
+compositor da por buena y el envío la rechaza desde otra pestaña sin decir cuál.
+Y en el buscador un producto ya agregado dejó de estar bloqueado: dos lotes
+distintos del mismo producto son dos líneas legítimas, y el freno contra el
+duplicado exacto lo pone ahora el compositor, que sí sabe qué lote se eligió.
+
+Verificado en el navegador: cantidad vacía al abrir, «Agregar» deshabilitado
+hasta tener cantidad y lote, 999 unidades contra 7 en la sala dan «Falta sin
+existencia, lote · hay 7», y tras agregar el foco vuelve al buscador con la
+pestaña en «En la solicitud · 1».
+
+
+## v2.480.0 — Personal y Tablero salen de la tabla, y la ficha deja de cortar
+
+El barrido de las 37 vistas dejaba once con trabajo. Este commit cierra nueve, y
+casi todas resultaron ser **una sola causa cada una**, no una lista.
+
+**Personal y Tablero seguían en tabla porque el canónico miraba desde afuera.**
+`DataTable` recorría sus hijos buscando elementos cuyo tipo fuera `DataRow`, y
+esa vista —la más usada del portal— envuelve cada fila en `memo(EmployeeRow)`.
+Desde afuera un componente es una caja cerrada: no se le pueden contar las
+celdas sin ejecutarlo, y ejecutarlo no se puede porque usa hooks. La decisión se
+mudó adentro: hoy el contexto dice «estamos en ficha» y **cada `DataRow` se
+dibuja a sí mismo**. Cualquier envoltorio se vuelve transparente.
+
+De paso se arreglaron dos cosas que el diseño anterior arrastraba:
+
+- Una fila desalineada tumbaba a **toda** la tabla al modo tabla. Ahora se
+  degrada sola: apila sus celdas sin rótulo, que no miente ni obliga a deslizar
+  las otras cuarenta.
+- El aviso de desarrollo que explicaba la caída vivía dentro del componente que
+  **sólo se monta cuando la caída no ocurrió**. Nunca se imprimió en el caso que
+  importa.
+
+**Una columna llamada «Acciones» era el ancla de la ficha.** El canónico
+reconocía la columna de acciones por el rótulo vacío, y dos tablas —Personal y
+Mín·Máx— le escriben rótulo. Como además es la última, terminaba de ancla: la
+ficha mostraba tres botones donde va el número que motiva la pantalla, con
+`<button>` anidados dentro del `<button>` de la ficha. Ahora también se reconoce
+por la clave.
+
+**La línea de contexto no dejaba encoger a sus hijos.** El envoltorio era
+`display: contents`, que no genera caja: los valores quedaban de items flex con
+`min-width: auto`, o sea que uno largo no encogía y se salía. Eran los **49**
+números de documento del Libro de compras, uno por fila, cortados a la mitad.
+Un `truncate` en el padre no alcanza si el hijo no puede encoger. Y si lo que no
+entra es una insignia ancha, la línea ahora envuelve en vez de cortarla.
+
+**Los 72 blancos táctiles de Mín·Máx eran 50 + 22.** Las 50 son las cajas de MIN
+y MAX, que miden 36×23 porque tienen que caber una al lado de la otra: se les
+separó el área de impacto del tamaño pintado con `.blanco-tactil`, que es el
+patrón del portal para los controles cuyo tamaño ES el diseño. Las otras 22 eran
+los botones de acción, que estaban en la ficha por el bug del ancla.
+
+**El resto, uno por vista:**
+
+| Vista | Causa |
+|---|---|
+| Plan de vacaciones | `flex-col` + `items-start`: el hijo medía su CONTENIDO, 915px en una pantalla de 390. Le faltaba `w-full` |
+| Comunicados | el segmentado de destinatarios no envolvía; 4 opciones no entran en 390px |
+| Comunicados | el interruptor mide 32×16 — `.blanco-tactil` |
+| Metas | `truncate` en la línea entera se comía «· La Popular»; el recorte va sobre el nombre |
+| Laboratorios | el encabezado de sección es el control que pliega, y medía 23px de alto |
+| Horarios | el riel del segmentado tenía alto fijo de 24px y adentro va un control que en táctil mide 44: se desbordaba sobre el título, y las barras del gráfico quedaban en 22px |
+| Productos | el nombre es un item flex y no encogía |
+| Carril de tarjetas | la flecha derecha se salía 4px: en el teléfono no existe el aire que la justificaba |
+
+**Y el instrumento tenía una excepción que no excluía nada.** Las columnas de un
+gráfico no pueden medir 44pt —siete en 390px dan 40— y el medidor las excluía
+*si tenían un `aria-label` que empezara con «Día: »*. Ese rótulo no lo escribe
+ningún archivo del proyecto: la excepción nunca corrió y las 14 columnas de los
+dos gráficos entraban como deuda en cada corrida. Se reemplazó por la condición
+real, que se mide: si `(ancho − huecos) / columnas < 44`, no es deuda, es
+aritmética. Van a un renglón aparte del informe.
+
+Medido en WebKit iPhone 13, las 37 vistas, antes → después:
+
+```
+minmax                  125 blancos → 0
+libro-compras-completo   49 cortados → 0
+vacation-plan            13 cortados → 0    (+ ya no explota el layout)
+staff · dashboard         tabla → 25 fichas
+schedules                 7 blancos → 0 (imposibles, anotados aparte)
+metas · announcements · productos · laboratorios → 0
+```
+
 ## v2.477.1 — La baldosa es una tarjeta canónica, y el gel le gana al lift
 
 Reportado: «el modo oscuro se ve perfecto, pero el modo claro no» y «no tiene el

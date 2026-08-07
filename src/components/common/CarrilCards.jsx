@@ -230,10 +230,13 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
 
             {/* Las flechas van por encima del borde, fuera del flujo. `-left-3`
                 las saca media unidad sobre el aire que ya hay entre el carril y
-                el borde de la vista, así que no tapan la primera tarjeta. */}
+                el borde de la vista, así que no tapan la primera tarjeta.
+                En el teléfono ese aire no existe —la vista va a `px-2`— y la
+                flecha derecha se salía 4px, que el recorte del layout comía. Se
+                acerca a 6px: pierde un poco de aire y no pierde el control. */}
             {desliza && !alInicio && (
                 <button type="button" onClick={() => correr(-1)} aria-label="Ver las métricas anteriores"
-                    className="blanco-tactil absolute -left-3 top-1/2 -translate-y-1/2 z-content
+                    className="blanco-tactil absolute -left-1.5 md:-left-3 top-1/2 -translate-y-1/2 z-content
                         w-7 h-7 rounded-full grid place-items-center
                         bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)]
                         text-content-2 hover:bg-brand hover:border-brand hover:text-white
@@ -243,7 +246,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
             )}
             {desliza && !alFinal && (
                 <button type="button" onClick={() => correr(1)} aria-label="Ver las métricas siguientes"
-                    className="blanco-tactil absolute -right-3 top-1/2 -translate-y-1/2 z-content
+                    className="blanco-tactil absolute -right-1.5 md:-right-3 top-1/2 -translate-y-1/2 z-content
                         w-7 h-7 rounded-full grid place-items-center
                         bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)]
                         text-content-2 hover:bg-brand hover:border-brand hover:text-white

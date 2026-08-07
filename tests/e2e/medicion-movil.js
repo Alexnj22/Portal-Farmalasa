@@ -28,6 +28,15 @@ export const MEDIR = () => {
         const cls = (el.className?.toString?.() || '').trim().split(/\s+/).slice(0, 3).join('.');
         return `${el.tagName.toLowerCase()}${id}${cls ? '.' + cls : ''}`;
     };
+    // La CADENA de ancestros, porque un `span.font-mono.text-micro` repetido 49
+    // veces no dice de qué componente salió, y sin eso el hallazgo no se puede
+    // arreglar: hay que ir a buscarlo a mano por el árbol. Cuatro niveles
+    // alcanzan para reconocer la fila o la tarjeta que lo contiene.
+    const cadena = (el) => {
+        const out = [];
+        for (let p = el.parentElement, i = 0; p && i < 4; p = p.parentElement, i++) out.push(sel(p));
+        return out.join(' ‹ ');
+    };
 
     // 1 · ¿La PÁGINA scrollea de lado? Es el síntoma que originó el plan.
     const desbordePagina = Math.max(
@@ -74,7 +83,9 @@ export const MEDIR = () => {
                 if (s.overflowX === 'auto' || s.overflowX === 'scroll') { enCarril = true; break; }
             }
             if (!enCarril) desbordan.push({ sel: sel(el), sobra: Math.round(r.right - vw),
-                                            recorte: recorte || '(nada lo recorta)' });
+                                            recorte: recorte || '(nada lo recorta)',
+                                            cadena: cadena(el),
+                                            texto: (el.textContent || '').trim().slice(0, 40) });
         }
     });
 
@@ -100,7 +111,35 @@ export const MEDIR = () => {
         }
         return { w, h, caja: `${Math.round(r.width)}x${Math.round(r.height)}` };
     };
+    // Un control que NO PUEDE medir 44 no es deuda: es aritmética. Siete
+    // columnas de un gráfico repartiéndose 390px dan 42 cada una, y ampliarlas
+    // las haría solaparse entre sí. Se separan de los hallazgos en vez de
+    // sumarse.
+    //
+    // La condición se MIDE y antes se declaraba: la versión anterior excluía a
+    // los que tuvieran un `aria-label` que empezara con «Día: », y ese rótulo no
+    // lo escribe ningún archivo del proyecto — la excepción nunca excluyó nada y
+    // las 14 columnas de los dos gráficos entraban como deuda en cada corrida.
+    // Una excepción escrita contra un texto que hay que acordarse de poner es
+    // una excepción que no existe.
+    const noCabe = (el) => {
+        const p = el.parentElement;
+        if (!p) return false;
+        const cs = getComputedStyle(p);
+        if (!cs.display.includes('flex') || cs.flexDirection.startsWith('column')) return false;
+        if (getComputedStyle(el).flexGrow === '0') return false;
+        const hermanos = [...p.children].filter(h => h.getBoundingClientRect().width > 0);
+        if (hermanos.length < 5) return false;
+        // El HUECO entre columnas también se descuenta: sin eso, el gráfico del
+        // tablero daba 322/7 = 46 y la regla lo dejaba pasar, cuando sus
+        // columnas miden 40 justamente porque seis separaciones de 6px se
+        // comen 36 del ancho. El reparto real es (ancho − huecos) / columnas.
+        const hueco = parseFloat(getComputedStyle(p).columnGap) || 0;
+        const util = p.getBoundingClientRect().width - hueco * (hermanos.length - 1);
+        return util / hermanos.length < 44;
+    };
     const chicos = [];
+    const imposibles = [];
     document.querySelectorAll('button, a[href], [role="button"], input[type="checkbox"], input[type="radio"], select')
         .forEach(el => {
             if (!visible(el)) return;
@@ -111,17 +150,13 @@ export const MEDIR = () => {
             // no hay nada que tocar mal — el mismo error de medir la referencia
             // en vez del cuerpo, por tercera vez en este proyecto.
             if (el.getAttribute('aria-hidden') === 'true') return;
-            // Las columnas de un gráfico tampoco son un blanco suelto: son
-            // segmentos ADYACENTES que se reparten el ancho. Siete días en
-            // 390px dan 40px cada uno y no pueden dar 44 sin desbordar, y
-            // ampliarles el área con un pseudo las haría solaparse entre sí.
-            // Se anotan como restricción medida, no como deuda.
-            if (/^Día: /.test((el.getAttribute('aria-label') || '').trim())) return;
             if (el.tabIndex < 0 && !el.hasAttribute('href')) return;
             const a = areaEfectiva(el);
             if (a.w < 44 || a.h < 44) {
+                if (noCabe(el)) { imposibles.push({ sel: sel(el), tam: `${Math.round(a.w)}x${Math.round(a.h)}` }); return; }
                 chicos.push({ sel: sel(el),
                               tam: `${Math.round(a.w)}x${Math.round(a.h)} (caja ${a.caja})`,
+                              cadena: cadena(el),
                               texto: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24) });
             }
         });
@@ -192,9 +227,27 @@ export const MEDIR = () => {
     // que la matriz muestre 23 «problemas» en la columna que no los tiene.
     const tactil = window.matchMedia('(pointer: coarse)').matches;
 
+    // La AGRUPACIÓN, que es lo que decide el trabajo. Un total de 125 hallazgos
+    // no dice qué arreglar; «125 = tres botones de acción × 40 filas» dice que
+    // es UN arreglo. Se agrupa por forma (el selector más su cadena de
+    // ancestros) sobre las listas COMPLETAS, antes de recortarlas para el
+    // informe — recortar primero y agrupar después contaría 12 de 125.
+    const agrupar = (lista) => {
+        const m = new Map();
+        lista.forEach(h => {
+            const clave = `${h.sel}  ‹ ${h.cadena || ''}`;
+            const g = m.get(clave) || { clave, n: 0, muestra: h };
+            g.n++; m.set(clave, g);
+        });
+        return [...m.values()].sort((a, b) => b.n - a.n);
+    };
+
     return { vw, tactil, desbordePagina, desbordan: desbordan.slice(0, 12), chicos: chicos.slice(0, 12),
+             grupos: { chicos: agrupar(chicos), desbordan: agrupar(desbordan) },
              zoomIOS: zoomIOS.slice(0, 8), tablas, overscroll,
              sinAcuse: sinAcuse.slice(0, 8), encadenan,
+             imposibles: imposibles.slice(0, 8),
              totales: { desbordan: desbordan.length, chicos: chicos.length, zoomIOS: zoomIOS.length,
+                        imposibles: imposibles.length,
                         sinAcuse: sinAcuse.length, encadenan: encadenan.length } };
 };

@@ -333,7 +333,13 @@ export default function LibroComprasCompletoView() {
                     </Notice>
                 )}
 
-                <DataTable columns={COLS} loading={loading} empty={vacio}>
+                {/* La inferencia daba `Fecha` como identidad —es la primera
+                    columna con rótulo— y la ficha abría con «05/07/2025» de
+                    título. De una compra, lo que la identifica es el PROVEEDOR;
+                    la fecha y el estado son contexto. El número de documento va
+                    a la hoja, donde entra completo y con su rótulo. */}
+                <DataTable columns={COLS} loading={loading} empty={vacio}
+                    movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'] }}>
                     {paginadas.map((r, i) => (
                         <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}>
                             <DataCell>{fmtFecha(r.fecha)}</DataCell>

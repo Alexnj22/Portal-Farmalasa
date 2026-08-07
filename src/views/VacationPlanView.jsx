@@ -826,7 +826,16 @@ const VacationPlanView = () => {
                     </div>
 
                     {/* ── Panel derecho: Header + Gantt + Tabla + Solicitudes ── */}
-                    <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
+                    {/* `w-full` y no sólo `flex-1 min-w-0`: en el teléfono el
+                        contenedor es `flex-col` + `items-start`, y ahí un hijo
+                        se dimensiona por su CONTENIDO, no por el ancho
+                        disponible — `flex-1` reparte el eje principal, que en
+                        columna es el alto. Las tablas de adentro piden 600px de
+                        mínimo, así que esta columna medía 915px en una pantalla
+                        de 390 y el recorte del layout se comía la mitad de cada
+                        fila (13 elementos, medidos). El panel de la izquierda no
+                        lo sufría porque ya declaraba `w-full`. */}
+                    <div className="w-full flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
 
                         {/* Plan header status card */}
                         <div data-surface="card" className="p-5">

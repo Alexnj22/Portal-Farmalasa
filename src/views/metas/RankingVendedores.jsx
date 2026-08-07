@@ -100,13 +100,20 @@ export default function RankingVendedores({ data, compacto = false }) {
                             </span>
 
                             <div className="min-w-0">
-                                <p className={`text-body-sm font-black truncate ${bajo ? 'text-danger-text' : 'text-content'}`}>
-                                    {v.nombre}
+                                {/* El recorte va sobre el NOMBRE, no sobre la
+                                    línea entera: con `truncate` en el `<p>`, un
+                                    nombre largo se comía los dos sufijos y la
+                                    sucursal desaparecía sin dejar rastro (medido
+                                    en el teléfono: «· La Popular» quedaba 29px
+                                    afuera). El nombre se puede acortar; saber de
+                                    qué sala es el vendedor, no. */}
+                                <p className={`flex items-baseline text-body-sm font-black ${bajo ? 'text-danger-text' : 'text-content'}`}>
+                                    <span className="min-w-0 truncate">{v.nombre}</span>
                                     {i === 0 && (
-                                        <span className="text-micro font-black uppercase tracking-widest text-chart-1-text"> · el más alto</span>
+                                        <span className="shrink-0 text-micro font-black uppercase tracking-widest text-chart-1-text">&nbsp;· el más alto</span>
                                     )}
                                     {data?.todas && v.sala && (
-                                        <span className="text-micro font-semibold text-content-3"> · {v.sala}</span>
+                                        <span className="shrink-0 text-micro font-semibold text-content-3">&nbsp;· {v.sala}</span>
                                     )}
                                 </p>
                                 <p className="text-micro font-semibold text-content-3 tabular-nums mt-0.5">

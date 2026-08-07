@@ -90,8 +90,15 @@ const SegmentedControl = memo(({
         <div role="radiogroup" aria-label={label}
             className={`${enBloque
                     ? `grid gap-2 ${columns === 3 ? 'grid-cols-3' : 'grid-cols-2'}`
-                    : `inline-flex items-center rounded-btn border border-border-card
-                       bg-surface-card-hover shadow-sm shrink-0 ${s.riel}`}
+                    // `max-w-full` + `flex-wrap`: con cuatro opciones de rótulo
+                    // largo el riel medía más que la pantalla y las últimas se
+                    // salían —medido en Comunicados, «Todos·Sucursal·Cargo·
+                    // Personal» sobraba 42px—. Envolver en dos renglones es
+                    // mejor que un carril: son cuatro opciones cortas, y una
+                    // opción que hay que descubrir deslizando es una opción que
+                    // no se ve.
+                    : `inline-flex flex-wrap items-center justify-center max-w-full rounded-btn
+                       border border-border-card bg-surface-card-hover shadow-sm shrink-0 ${s.riel}`}
                 ${className} ${disabled ? 'opacity-45 pointer-events-none' : ''}`}>
             {options.map(op => {
                 const activa = op.value === value;

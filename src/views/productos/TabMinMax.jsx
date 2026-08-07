@@ -692,6 +692,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 )}
                 <DataTable
                     columns={COLS}
+                    // Ninguna columna de esta tabla se alinea a la derecha, así
+                    // que la inferencia tomaba la última como ancla. El número
+                    // que motiva la pantalla es MIN·MAX, y además es el control
+                    // que se toca para editarlo.
+                    movil={{ ancla: 'effective_min' }}
                     sortKey={sortBy}
                     sortDir={sortDir}
                     onSort={handleSort}
@@ -994,9 +999,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { openBodegaEdit(row, 'min', isBodega); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? ((row.draft_min > 0 || row.draft_max > 0) ? String(row.draft_min ?? 0) : '') : ((dead || noHistory) ? '' : ((row.effective_min > 0 || row.effective_max > 0) ? String(row.effective_min ?? 0) : '')) }); } : undefined;
                                             const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { openBodegaEdit(row, 'max', isBodega); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? ((row.draft_max > 0 || row.draft_min > 0) ? String(row.draft_max ?? 0) : '') : ((dead || noHistory) ? '' : ((row.effective_max > 0 || row.effective_min > 0) ? String(row.effective_max ?? 0) : '')) }); } : undefined;
 
+                                            // `.blanco-tactil` y no un tamaño mayor: la caja mide 36×23
+                                            // porque las dos tienen que caber una al lado de la otra en la
+                                            // celda MIN·MAX, y estirarlas a 44 rompe la fila. El área de
+                                            // impacto se separa del tamaño pintado (index.css). Eran 50 de
+                                            // los 72 blancos que quedaban en la vista — dos por fila.
+                                            // Pide `relative`: el pseudo es `absolute`.
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div {...clickable(clickFn)}
-                                                    className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-[var(--dur-fast)] ${colorCls} ${borderCls} ${clickFn ? 'cursor-pointer hover:brightness-95' : ''}`}>
+                                                    className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-[var(--dur-fast)] ${colorCls} ${borderCls} ${clickFn ? 'relative blanco-tactil cursor-pointer hover:brightness-95' : ''}`}>
                                                     {val}
                                                 </div>
                                             );

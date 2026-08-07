@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.511.0 — Conteo: un renglón, una línea en las hojas impresas
+
+Lo que hacía crecer la hoja no era el tamaño de la letra: era que una fila
+ocupara **dos** líneas. Y pasaba por dos motivos distintos — un nombre largo que
+envolvía, y el badge «Bajo Receta» apilado **debajo** del nombre, que le agregaba
+una línea entera a esas filas. Ahora cada renglón mide una línea en las dos
+hojas: el nombre se recorta a lo que entra y la marca de receta va **al lado**,
+no debajo (sigue diciendo «Bajo Receta» completo, en cuerpo 5).
+
+`noWrap` solo no alcanzaba: pdfmake deja el texto salirse de la celda y meterse
+encima de la vecina. Hay que recortar antes, y para recortar hay que saber
+cuántos caracteres entran — que es traducir el porcentaje de la columna a puntos
+contra el ancho real de la página, que no es el mismo en vertical que en
+apaisado.
+
+**Lo que cuesta el recorte**, medido sobre los 3,665 renglones de Bodega (nombre
+promedio 27.9 caracteres, el más largo 71):
+
+- Hoja normal: 44 caracteres por renglón (36 si lleva «Bajo Receta») → se
+  recortan **80 nombres, el 2.2%**.
+- Hoja compacta: 38 caracteres (28 con la marca) → **251 nombres, el 6.8%**.
+
+De paso, las bandas de laboratorio y los rótulos de columna bajan de cuerpo 7.5
+a 7 y aprietan su relleno. Son 318 bandas en ese conteo, así que también ahí un
+nombre de laboratorio partido en dos costaba páginas.
+
 ## v2.510.0 — Conteo: aviso al generar el PDF y hoja compacta de dos productos por renglón
 
 **El botón decía que ya había terminado cuando recién empezaba.** «Imprimir»

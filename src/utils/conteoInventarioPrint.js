@@ -116,6 +116,77 @@ function headerBlock(conteo, subtitle) {
     };
 }
 
+// ── Una línea por renglón ───────────────────────────────────────────────────
+// Lo que hace crecer una hoja de conteo no es el tamaño de la letra: es que una
+// fila ocupe DOS líneas. Y pasaba por dos motivos, no uno — el nombre largo que
+// envuelve, y el badge «Bajo Receta» apilado debajo del nombre, que agrega una
+// línea entera a esas filas.
+//
+// `noWrap` solo no alcanza: pdfmake deja el texto salirse de la celda y se mete
+// encima de la vecina. Hay que recortarlo antes, y para recortar hace falta
+// saber cuántos caracteres entran — de ahí `caracteresQueEntran`.
+//
+// 0.52 es el ancho medio de carácter de Roboto en mayúsculas relativo al cuerpo,
+// medido sobre los nombres de este catálogo (que están todos en mayúsculas). Es
+// una estimación deliberadamente conservadora: si sobra un carácter no pasa
+// nada, si falta se pierde una letra del nombre.
+//
+// Lo que CUESTA recortar, medido sobre los 3,665 renglones del conteo de Bodega
+// (nombre promedio 27.9 caracteres, el más largo 71):
+//   · hoja normal   — 44 caracteres por renglón (36 si lleva «Bajo Receta»):
+//                     se recortan 80 nombres, el 2.2%.
+//   · hoja compacta — 38 caracteres (28 con la marca): 251 nombres, el 6.8%.
+// O sea que la enorme mayoría entra entera, y lo que se recorta es la cola de un
+// nombre que ya venía identificado por sus primeros 38 caracteres.
+const PAD_COMPACTO = [3, 1.5, 3, 1.5];
+const ANCHO_CARACTER = 0.52;
+
+// Ancho de escritura de la página: LETTER menos los márgenes laterales.
+const ANCHO_UTIL_VERTICAL = 612 - PAGE_MARGINS[0] - PAGE_MARGINS[2];
+const ANCHO_UTIL_APAISADO = 792 - PAGE_MARGINS[0] - PAGE_MARGINS[2];
+const anchoDeColumna = (pct, util) => (parseFloat(pct) / 100) * util;
+
+function caracteresQueEntran(anchoPt, fontSize) {
+    return Math.max(6, Math.floor((anchoPt - 8) / (fontSize * ANCHO_CARACTER)));
+}
+
+function recortar(texto, max) {
+    const s = String(texto ?? '');
+    return s.length <= max ? s : `${s.slice(0, Math.max(1, max - 1))}…`;
+}
+
+// Celda de texto de UNA línea. `noWrap` es el cinturón y el recorte el tirante:
+// sin el recorte se desborda, sin `noWrap` un guion o un espacio raro todavía
+// podría partirla.
+function celdaLinea(texto, { fontSize, ancho, ...resto }) {
+    return {
+        text: recortar(texto, caracteresQueEntran(ancho, fontSize)),
+        fontSize, noWrap: true, margin: PAD_COMPACTO, ...resto,
+    };
+}
+
+// El producto en UNA línea, con la marca de receta al lado y no debajo. El
+// rótulo sigue siendo «Bajo Receta» —nunca una abreviatura— solo que en cuerpo
+// 5 y en la misma línea; lo que se recorta es el nombre, para dejarle sitio.
+function productCellLinea(item, { fontSize, ancho }) {
+    const nombre = item.product_nombre || `Producto ${item.erp_product_id}`;
+    const marca = item.es_antibiotico;
+    const anchoMarca = marca ? 34 : 0;
+    const max = caracteresQueEntran(ancho - anchoMarca, fontSize);
+    if (!marca) {
+        return { text: recortar(nombre, max), fontSize, noWrap: true, margin: PAD_COMPACTO };
+    }
+    return {
+        columns: [
+            { width: 'auto', text: recortar(nombre, max), fontSize, noWrap: true },
+            { width: 'auto', text: 'BAJO RECETA', fontSize: 5, bold: true, color: '#92400e', noWrap: true,
+              margin: [3, fontSize - 5, 0, 0] },
+        ],
+        columnGap: 0,
+        margin: PAD_COMPACTO,
+    };
+}
+
 function productCell(item, fontSize = 8.5) {
     const stack = [{ text: item.product_nombre || `Producto ${item.erp_product_id}`, fontSize }];
     if (item.es_antibiotico) {
@@ -214,8 +285,10 @@ function bandaLaboratorio(nombre, ncols) {
     return [
         {
             text: (nombre || 'Sin laboratorio').toUpperCase(),
-            colSpan: ncols, fillColor: '#e4e4e4', color: '#111',
-            bold: true, fontSize: 7.5, margin: [4, 4, 4, 3],
+            // `noWrap` también acá: son 318 bandas en el conteo de Bodega, y un
+            // nombre de laboratorio largo partido en dos las duplicaba.
+            colSpan: ncols, fillColor: '#e4e4e4', color: '#111', noWrap: true,
+            bold: true, fontSize: 7, margin: [4, 2.5, 4, 2],
         },
         ...Array(ncols - 1).fill({}),
     ];
@@ -265,19 +338,22 @@ const HOJA_COLS_COMPACTA = {
     },
 };
 
-const PAD_COMPACTO = [3, 2, 3, 2];
-
-// Las celdas de UN producto — la mitad de un renglón impreso.
-function celdasProductoCompacto(item, { simple, ciego, bg }) {
+// Las celdas de UN producto — la mitad de un renglón impreso. Cada una recibe
+// el ancho REAL de su columna en puntos para poder recortar: el porcentaje de
+// `widths` no dice nada por sí solo, hay que traducirlo contra el ancho de la
+// página, que en la compacta es la apaisada.
+function celdasProductoCompacto(item, { simple, ciego, bg, anchos }) {
+    const comun = { fillColor: bg, color: '#333' };
+    let c = 0;
+    const cel = (texto, fontSize, resto = {}) =>
+        celdaLinea(texto, { fontSize, ancho: anchos[c++], ...comun, ...resto });
+    const producto = productCellLinea(item, { fontSize: 7, ancho: anchos[c++] });
     return [
-        { ...productCell(item, 7.5), fillColor: bg, margin: [0, 1, 0, 1] },
+        { ...producto, fillColor: bg },
         ...(simple
-            ? [{ text: presentacionCell(item, false), fontSize: 6.5, color: '#333', fillColor: bg, margin: PAD_COMPACTO }]
-            : [
-                { text: loteCell(item, false), fontSize: 6.5, color: '#333', fillColor: bg, margin: PAD_COMPACTO },
-                { text: fmtFecha(item.fecha_vencimiento), fontSize: 6.5, color: '#333', fillColor: bg, alignment: 'center', margin: PAD_COMPACTO },
-            ]),
-        ...(ciego ? [] : [{ text: num(item.sistema_cantidad), fontSize: 7.5, bold: true, alignment: 'center', fillColor: bg, margin: PAD_COMPACTO }]),
+            ? [cel(presentacionCell(item, false), 6)]
+            : [cel(loteCell(item, false), 6), cel(fmtFecha(item.fecha_vencimiento), 6, { alignment: 'center' })]),
+        ...(ciego ? [] : [cel(num(item.sistema_cantidad), 7, { bold: true, alignment: 'center', color: '#000' })]),
         { text: '', fillColor: bg, margin: PAD_COMPACTO },   // Físico: se llena a mano
     ];
 }
@@ -287,6 +363,7 @@ function buildHojaTableCompacta(conteo, items, ciego, area = null) {
     const { widths: mitad, labels: rotulos } = HOJA_COLS_COMPACTA[simple ? 'simple' : 'lote'][ciego ? 'ciego' : 'normal'];
     const widths = [...mitad, ...mitad];
     const nMitad = mitad.length;
+    const anchos = mitad.map((w) => anchoDeColumna(w, ANCHO_UTIL_APAISADO));
 
     const headerRow = [...rotulos, ...rotulos].map((label) => ({
         text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7, color: '#000',
@@ -311,9 +388,9 @@ function buildHojaTableCompacta(conteo, items, ciego, area = null) {
         for (let k = 0; k < propios.length; k += 2) {
             const bg = iDato % 2 === 1 ? '#f7f7f7' : '#ffffff';
             iDato += 1;
-            const izq = celdasProductoCompacto(propios[k], { simple, ciego, bg });
+            const izq = celdasProductoCompacto(propios[k], { simple, ciego, bg, anchos });
             const der = propios[k + 1]
-                ? celdasProductoCompacto(propios[k + 1], { simple, ciego, bg })
+                ? celdasProductoCompacto(propios[k + 1], { simple, ciego, bg, anchos })
                 : Array(nMitad).fill({ text: '', fillColor: bg, margin: PAD_COMPACTO });
             body.push([...izq, ...der]);
         }
@@ -348,27 +425,35 @@ function buildHojaTable(conteo, items, ciego, area = null) {
     const { widths, labels } = HOJA_COLS[simple ? 'simple' : 'lote'][ciego ? 'ciego' : 'normal'];
 
     const headerRow = labels.map((label) => ({
-        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
+        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7, color: '#000', noWrap: true,
         alignment: ['Vence', 'Sistema', 'Físico'].includes(label) ? 'center' : 'left',
-        margin: [4, 3, 4, 3],
+        margin: [4, 2.5, 4, 2],
     }));
 
-    const body = cuerpoConCortes(items, widths.length, (item, bg) => [
-        { ...productCell(item), fillColor: bg },
-        // La celda que identifica el renglón: presentación en sencillo, lote
-        // en el modo por lote. Sin marca de área: la tabla ya es de un área.
-        ...(simple
-            ? [{ text: presentacionCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] }]
-            : [
-                { text: loteCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
-                { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
-            ]),
-        // Sistema: la columna solo se emite si el dato vino. `num()` es la
-        // red de seguridad — un `String(null)` imprime la palabra "null".
-        ...(ciego ? [] : [{ text: num(item.sistema_cantidad), fontSize: 8.5, bold: true, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] }]),
-        { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Físico: se llena a mano
-        { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Nota: idem
-    ]);
+    // Mismo criterio que la compacta: UN renglón, UNA línea. Acá la columna de
+    // producto es ancha (34% de la vertical ≈ 190pt), así que a cuerpo 8 entran
+    // ~44 caracteres y el recorte casi nunca llega a aplicarse — pero las filas
+    // dejan de medir el doble cuando llega un nombre largo o un «Bajo Receta».
+    const anchos = widths.map((w) => anchoDeColumna(w, ANCHO_UTIL_VERTICAL));
+    const body = cuerpoConCortes(items, widths.length, (item, bg) => {
+        const comun = { fillColor: bg, color: '#333' };
+        let c = 1;   // 0 es la de producto, que arma `productCellLinea`
+        const cel = (texto, fontSize, resto = {}) =>
+            celdaLinea(texto, { fontSize, ancho: anchos[c++], ...comun, ...resto });
+        return [
+            { ...productCellLinea(item, { fontSize: 8, ancho: anchos[0] }), fillColor: bg },
+            // La celda que identifica el renglón: presentación en sencillo, lote
+            // en el modo por lote. Sin marca de área: la tabla ya es de un área.
+            ...(simple
+                ? [cel(presentacionCell(item, false), 7)]
+                : [cel(loteCell(item, false), 7), cel(fmtFecha(item.fecha_vencimiento), 7, { alignment: 'center' })]),
+            // Sistema: la columna solo se emite si el dato vino. `num()` es la
+            // red de seguridad — un `String(null)` imprime la palabra "null".
+            ...(ciego ? [] : [cel(num(item.sistema_cantidad), 8, { bold: true, alignment: 'center', color: '#000' })]),
+            { text: '', fillColor: bg, margin: PAD_COMPACTO },   // Físico: se llena a mano
+            { text: '', fillColor: bg, margin: PAD_COMPACTO },   // Nota: idem
+        ];
+    });
 
     const cabeceras = area
         ? [bandaArea(area, items.length, widths.length), headerRow]

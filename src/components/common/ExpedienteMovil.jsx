@@ -55,8 +55,18 @@ import HojaMovil from './HojaMovil';
  * cuando hay algo que mostrar — con doce secciones y tres historiales, armarlo
  * en cada render de la lista es trabajo que nadie ve.
  */
-export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, variante = 'auto', children }) {
+/**
+ * `pie` — contenido anclado al fondo de la hoja, fuera del scroll. Es la ranura
+ * que `HojaMovil` ya tenía y que este envase no exponía. La necesita el detalle
+ * cuyo RESULTADO no cabe en la misma pantalla que sus controles: en Reglas de
+ * despacho, el riel de múltiplos y la línea que dice cuánto se despacha están a
+ * 300px de distancia en un teléfono, así que se toca ×5 sin ver qué cambió.
+ * También acepta una función `(fila) => nodo`, por el mismo motivo que
+ * `children`: si depende de la fila, no hay nada que construir sin ella.
+ */
+export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, variante = 'auto', pie, children }) {
     const cuerpo = abierto ? children(abierto) : null;
+    const pieResuelto = abierto && typeof pie === 'function' ? pie(abierto) : pie;
 
     // ── El envase lo decide el CONTENIDO, no la vista ─────────────────────
     // `pantalla` ocupa la pantalla entera siempre. Eso está bien para un
@@ -75,6 +85,7 @@ export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, v
             <ModalShell open={!!abierto} onClose={onClose} align="pantalla"
                 titulo={titulo} ariaLabel={titulo || 'Detalle'}>
                 {cuerpo}
+                {pieResuelto}
             </ModalShell>
         );
     }
@@ -83,7 +94,7 @@ export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, v
         <ModalShell open={!!abierto} onClose={onClose} surface={null}
             ariaLabel={titulo || 'Detalle'}>
             {abierto && (
-                <HojaMovil titulo={titulo} subtitulo={subtitulo}>
+                <HojaMovil titulo={titulo} subtitulo={subtitulo} pie={pieResuelto}>
                     {cuerpo}
                 </HojaMovil>
             )}

@@ -21,6 +21,85 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.513.1 — La pantalla negra del teléfono era un deploy incompleto
+
+Se revierte el cambio de envase de v2.508.2: Reglas vuelve a la hoja `auto`, con
+el `pie` de `ExpedienteMovil`. No era eso.
+
+**La causa está en el despliegue, no en el código.** Medido contra
+`portal.farmasalud.lat`: el `index.html` publicado carga
+`assets/index-BQEkeEdM.js`, ese archivo **existe** (919 KB,
+`application/javascript`) y `assets/index-DOuyHwTp.css` también — pero los
+**231 chunks lazy que ese bundle importa por nombre no están**. Se probaron 12 al
+azar, entre ellos `PedidosView-prxR_zbU.js` y `DataTable-Cr-BuOZN.js`: los doce
+devuelven **`200 text/html`**, o sea el `index.html` que sirve el rewrite
+`/(.*)` de `vercel.json` cuando el archivo no existe.
+
+Un `import()` que recibe HTML falla con *«'text/html' is not a valid JavaScript
+MIME type for module script»*, la vista lazy no monta y salta el
+`ErrorBoundary`, cuyo botón dice **«Recargar»** — que es literalmente lo que se
+reportó: «ocurrió un problema… lo cierro, le doy click, **se recarga**». Ese
+mismo mensaje ya está registrado en `audit_logs` desde producción el
+2026-08-04.
+
+Encaja con todo lo que no encajaba:
+
+- **Intermitente** («le doy atrás y le doy click, la abre»): el chunk está o no
+  está en la caché del navegador, según por dónde se pasó antes.
+- **Solo en el teléfono**: en la computadora los chunks ya estaban cacheados de
+  la sesión de trabajo; el teléfono llegaba frío.
+- **«El de productos sí funciona»**: ese chunk sí estaba en caché.
+- **Ni un `ERROR_RENDER` de hoy en `audit_logs`**, pese a varias reproducciones:
+  cuando lo que falla es el propio módulo, el registro tampoco llega.
+
+Se corrige redesplegando: este push publica un build completo.
+
+Nota de método, porque costó tres intentos: se persiguió dos veces una causa
+**dentro** del código (desenfoques anidados, envase de la hoja) sin haber
+comprobado nunca **qué estaba servido en producción**, que es donde el usuario
+veía el bug. El emulador jamás lo iba a reproducir porque el bundle local
+siempre estuvo completo. La pregunta que faltó hacer primero: *¿el archivo que
+el navegador pide existe?*
+
+## v2.513.0 — El barrido abre lo que la vista despliega, y deja de morir en la pantalla 23
+
+**Los modales, que era el último hueco del alcance.** 19 archivos de vista
+declaran diálogos y el barrido nunca abrió ninguno — justo donde el canon móvil
+tiene más piezas propias (`HojaMovil`, `AsaHoja`, `ExpedienteMovil`). Con
+`MODALES=1` abre dos por vista: la hoja de detalle de la primera ficha y el panel
+de la acción principal. Dos y no más: son las que existen en casi todas las
+vistas; recorrer cada botón sería otro barrido, no una extensión de éste.
+
+Se mide con el diálogo **abierto**, y ahí `encadenan` empieza a significar algo:
+mide el scroll que se escapa a la página de atrás, un defecto que sólo puede
+existir dentro de una hoja.
+
+`BarraFlotante` estampa `data-barra-flotante`, por el mismo motivo que
+`ViewTabBar` estampa `data-pestanas`: va por portal al `body` y sus clases son de
+posición, no de identidad. Sin un asidero estable no hay forma de abrirla desde
+afuera.
+
+**Y el barrido dejó de morir en la pantalla 23.** Tres corridas seguidas se
+cortaron en el mismo punto con «Target page, context or browser has been
+closed» — siempre después de `proveedores`. No era la ruta siguiente: medida
+sola anda perfecto. Era la **memoria acumulada** de capturar páginas enteras de
+14.000px una tras otra. Ahora la captura de página completa tiene tope de
+6.000px de alto; arriba de eso se guarda el viewport, y para mirar una entera
+está el spec de foco.
+
+Tres corridas perdidas antes de sospechar del instrumento en vez de la vista: el
+patrón —siempre 23 pantallas, siempre la misma última— era la pista y tardé en
+leerla.
+
+**Un hallazgo real de camino:** `facturacion#observaciones` tiene **13 elementos
+recortados**. Es la primera pestaña interna con deuda de verdad que encuentra el
+barrido, y no se habría visto nunca sin esta fase.
+
+También: el envoltorio del aviso de módulo bloqueado se lleva un renglón entero
+del encabezado en el teléfono aunque su contenido sea `null` —`basis-full` dentro
+de un `flex-wrap`—. `empty:hidden`. Y `ConteoDetailView` tenía `surface={null}`
+dos veces en el mismo elemento, como `TabMinMax`.
+
 ## v2.512.1 — Conteo: el laboratorio se repite al saltar de página y el botón deja de cargar
 
 **El botón «Imprimir» se quedaba cargando para siempre, y fue culpa del arreglo
@@ -88,46 +167,6 @@ Verificado sin efectos, corriendo el `SELECT` del barrido por separado: engancha
 los 9 documentos de Movistar y los reparte bien —Salud 1 la línea 78370041,
 Salud 2 la 77097722, Salud 3 la 61622865—. **El cron todavía no corrió**: la
 primera pasada es mañana a las 08:30.
-
-## v2.511.1 — Reglas vuelve a la hoja; la pantalla negra era un deploy incompleto
-
-Se revierte el cambio de envase de v2.508.2: Reglas vuelve a la hoja `auto`, con
-el `pie` de `ExpedienteMovil`. No era eso.
-
-**La causa está en el despliegue, no en el código.** Medido contra
-`portal.farmasalud.lat`: el `index.html` publicado carga
-`assets/index-BQEkeEdM.js`, ese archivo **existe** (919 KB,
-`application/javascript`) y `assets/index-DOuyHwTp.css` también — pero los
-**231 chunks lazy que ese bundle importa por nombre no están**. Se probaron 12 al
-azar, entre ellos `PedidosView-prxR_zbU.js` y `DataTable-Cr-BuOZN.js`: los doce
-devuelven **`200 text/html`**, o sea el `index.html` que sirve el rewrite
-`/(.*)` de `vercel.json` cuando el archivo no existe.
-
-Un `import()` que recibe HTML falla con *«'text/html' is not a valid JavaScript
-MIME type for module script»*, la vista lazy no monta y salta el
-`ErrorBoundary`, cuyo botón dice **«Recargar»** — que es literalmente lo que se
-reportó: «ocurrió un problema… lo cierro, le doy click, **se recarga**». Ese
-mismo mensaje ya está registrado en `audit_logs` desde producción el
-2026-08-04.
-
-Encaja con todo lo que no encajaba:
-
-- **Intermitente** («le doy atrás y le doy click, la abre»): el chunk está o no
-  está en la caché del navegador, según por dónde se pasó antes.
-- **Solo en el teléfono**: en la computadora los chunks ya estaban cacheados de
-  la sesión de trabajo; el teléfono llegaba frío.
-- **«El de productos sí funciona»**: ese chunk sí estaba en caché.
-- **Ni un `ERROR_RENDER` de hoy en `audit_logs`**, pese a varias reproducciones:
-  cuando lo que falla es el propio módulo, el registro tampoco llega.
-
-Se corrige redesplegando: este push publica un build completo.
-
-Nota de método, porque costó tres intentos: se persiguió dos veces una causa
-**dentro** del código (desenfoques anidados, envase de la hoja) sin haber
-comprobado nunca **qué estaba servido en producción**, que es donde el usuario
-veía el bug. El emulador jamás lo iba a reproducir porque el bundle local
-siempre estuvo completo. La pregunta que faltó hacer primero: *¿el archivo que
-el navegador pide existe?*
 
 ## v2.511.0 — Conteo: un renglón, una línea en las hojas impresas
 

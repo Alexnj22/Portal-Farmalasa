@@ -210,7 +210,13 @@ const GlassViewLayout = ({
                             {filtersContent}
                         </div>
                     )}
-                    <div className="basis-full min-w-0"><ModuleLockNotice /></div>
+                    {/* `empty:hidden` — `ModuleLockNotice` devuelve `null` cuando
+                        el módulo no está bloqueado, que es casi siempre, pero
+                        este envoltorio se renderiza igual: con `basis-full`
+                        dentro de un `flex-wrap`, un hijo vacío se lleva un
+                        renglón entero más su `gap-y-2`. Aire que nadie pidió,
+                        arriba de todas las vistas del teléfono. */}
+                    <div className="basis-full min-w-0 empty:hidden"><ModuleLockNotice /></div>
                 </div>
 
                 {/* Sub-content: between header and body (e.g. chart + filter pill) */}

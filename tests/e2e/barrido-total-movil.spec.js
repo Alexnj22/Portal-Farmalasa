@@ -37,6 +37,12 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
 // en el bucle: casi duplican la cuenta de pantallas y el barrido pasa de 4½
 // minutos a ~55.
 const PESTANAS = Boolean(process.env.PESTANAS);
+// `MODALES=1` abre además lo que la vista despliega: la hoja de detalle de la
+// primera ficha y el panel de la acción principal. Era el último hueco del
+// alcance —19 archivos de vista declaran diálogos y el barrido nunca abrió
+// ninguno—, y es donde el canon móvil tiene más piezas propias (`HojaMovil`,
+// `AsaHoja`, `ExpedienteMovil`): justo lo que menos se había mirado.
+const MODALES = Boolean(process.env.MODALES);
 const TEMA = process.env.TEMA || '';
 const ATRIBUTO_TEMA = { liquid: null, dark: 'dark', solid: 'solid', 'solid-dark': 'solid-dark' };
 
@@ -160,10 +166,17 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // La pestaña se mide igual —los números salen del DOM, no de la
             // foto—; lo que se pierde es poder mirarla entera, y para eso está
             // el spec de foco.
+            // Y con TOPE de alto. Tres corridas seguidas murieron en la pantalla
+            // 23 con «Target page, context or browser has been closed»: no era
+            // la ruta siguiente —medida sola, anda— sino la memoria acumulada de
+            // capturar páginas enteras de 14.000px una tras otra. Arriba del
+            // tope se guarda el viewport, que para revisar a ojo se cubre con el
+            // spec de foco.
             const esPestana = etiqueta.includes('#');
+            const alto = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
             await page.screenshot({
                 path: `${SALIDA}/${etiqueta.replace(/[#/]/g, '_')}.png`,
-                fullPage: !esPestana,
+                fullPage: !esPestana && alto <= 6000,
             });
 
             // El informe se escribe DESPUÉS DE CADA PANTALLA, no al final. Dos
@@ -225,6 +238,42 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                     console.log(`   ⚠️  ${ruta}#${lista[i]}: no se pudo abrir — ${String(e.message).split('\n')[0].slice(0, 140)}`);
                     informe.push({ ruta: `${ruta}#${lista[i]}`, error: true, noSeAbrio: true });
                     await page.keyboard.press('Escape').catch(() => {});
+                }
+            }
+
+            // ── Lo que la vista DESPLIEGA ────────────────────────────────────
+            // Dos aperturas, y no más: la hoja de detalle de la primera ficha y
+            // el panel de la acción principal de la barra flotante. Son las dos
+            // que existen en casi todas las vistas y las que el usuario abre
+            // primero; recorrer cada botón de cada vista sería otro barrido, no
+            // una extensión de éste.
+            //
+            // Se mide con el diálogo ABIERTO: `MEDIR` recorre el DOM entero, así
+            // que lo de adentro entra igual, y `encadenan` sólo tiene sentido
+            // acá —mide el scroll que se escapa a la página de atrás, que es un
+            // defecto que sólo existe dentro de una hoja—.
+            if (MODALES) {
+                const aperturas = [
+                    ['ficha', 'button[data-surface="card"]'],
+                    ['accion', '[data-barra-flotante] button'],
+                ];
+                for (const [nombre, selector] of aperturas) {
+                    try {
+                        const disparador = page.locator(`${selector}:visible`).first();
+                        if (!(await disparador.count())) continue;
+                        await disparador.click({ timeout: 4000 });
+                        await page.waitForTimeout(1200);
+                        // Sin diálogo abierto no hay nada nuevo que medir, y
+                        // medir la misma vista otra vez ensucia el informe con
+                        // una fila que dice lo mismo con otro nombre.
+                        const abierto = await page.locator('[role="dialog"], [data-hoja]').count();
+                        if (abierto) await medirPantalla(`${ruta}»${nombre}`);
+                        await page.keyboard.press('Escape').catch(() => {});
+                        await page.waitForTimeout(600);
+                    } catch (e) {
+                        console.log(`   ⚠️  ${ruta}»${nombre}: no abrió — ${String(e.message).split('\n')[0].slice(0, 110)}`);
+                        await page.keyboard.press('Escape').catch(() => {});
+                    }
                 }
             }
         }

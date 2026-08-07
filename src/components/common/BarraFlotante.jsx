@@ -370,6 +370,13 @@ const BarraPortal = ({
                 // `body` por portal, así que no es descendiente suya. El valor por
                 // defecto es `flex` para que fuera de `AppLayout` —o antes del
                 // primer efecto— la barra se dibuje igual.
+                // `data-barra-flotante`: el asidero con el que el barrido móvil
+                // abre lo que esta barra despliega. Igual que `data-pestanas` en
+                // `ViewTabBar`, existe porque desde afuera no hay forma estable
+                // de encontrarla —va por portal al `body` y sus clases son de
+                // posición, no de identidad—, y sin él el barrido nunca podría
+                // medir un diálogo por dentro.
+                data-barra-flotante=""
                 className="fixed inset-x-0 bottom-0 z-tabs
                     pt-2
                     pl-[max(12px,var(--sa-left))]

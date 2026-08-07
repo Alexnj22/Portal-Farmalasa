@@ -313,13 +313,12 @@ export default function ModalShell({
       // la «✕» y el buscador —que es todo el motivo de abrir ese modal— había
       // que ir a tocarlo.
       //
-      // Solo con puntero fino. En un teléfono el campo enfocado levanta el
-      // teclado, que se come la mitad de la hoja: en un modal que primero se LEE
-      // —una lista de facturas, un formulario largo— eso tapa justo lo que se
-      // vino a mirar. Donde escribir ES el propósito del modal, el consumidor lo
-      // pide explícito con `autoFocus` y esta rama ni se consulta (el `contains`
-      // de arriba corta antes).
-      const campo = sinHover ? null : [...panel.querySelectorAll(CAMPOS_DE_TEXTO)].filter(visible)[0];
+      // En TÁCTIL también (2026-08-07). Salió con puntero fino solamente, por
+      // el teclado que se come media hoja en un modal que primero se lee. El
+      // usuario lo pidió al revés y con las mismas palabras que la primera vez:
+      // «que el foco en móvil también sea el input, en todos». Manda eso — la
+      // hoja sube con el teclado y el campo queda listo, que es el punto.
+      const campo = [...panel.querySelectorAll(CAMPOS_DE_TEXTO)].filter(visible)[0];
       (campo || f[0] || panel).focus();
     }, 60);
 
@@ -372,7 +371,7 @@ export default function ModalShell({
         }
       }, tiemposGota().salida + MARGEN_DESMONTAJE + 40);
     };
-  }, [open, sinHover]);
+  }, [open]);
 
   // ── La gota, para TODO diálogo ────────────────────────────────────────
   // No es un gesto de las hojas: es de cualquier cosa que se abra por un toque.

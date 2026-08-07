@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -8,10 +8,9 @@ import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
 import LanzadorSolicitud, { HerramientasModal, PieModal } from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
-import { smartFilter } from '../../utils/searchUtils';
 import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
-    fetchActiveProductsCount, fetchActiveProductsChunk, contarMinMaxPendientes,
+    buscarProductosMinMax, contarMinMaxPendientes,
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '../../data/stockParams';
@@ -231,54 +230,46 @@ function FormularioMinMax({ selectedErp = null }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [picked, setPicked]   = useState(null);
-  const allProdsRef = useRef([]);
-  // Estado (no ref) — B-9: si el catálogo terminaba de cargar DESPUÉS de que el
-  // usuario ya había tipeado, el efecto de abajo (dependiente solo de [search])
-  // no se volvía a disparar y los resultados quedaban vacíos hasta la próxima tecla.
-  const [catalogReady, setCatalogReady] = useState(false);
 
-  // El catálogo se baja al PRIMER tecleo, no al montar el widget.
+  // ── La búsqueda se resuelve en el servidor (2026-08-07) ────────────────
+  // Esto bajaba el catálogo entero al navegador —los 5.205 productos activos,
+  // en `count` + 5 tandas de 1.000 en paralelo— y lo filtraba con `smartFilter`
+  // en memoria. Medido: 6 peticiones y 4.462 ms de mediana hasta ver el primer
+  // resultado, con tandas de entre 1,0 y 4,2 s cada una. Era, por lejos, el
+  // modal más lento del tablero.
   //
-  // Bajarlo en el montaje costaba ~104 kB en cada carga del tablero —también en
-  // el teléfono— aunque nadie tocara el buscador, y era la mitad del peso de
-  // datos del tablero (§7.4 de AUDITORIA-COMPLETA-2026-07-30). El buscador no
-  // hace nada hasta los 2 caracteres, así que ese es el momento de pedirlo.
-  // Se mantiene `smartFilter` en memoria a propósito: mover la búsqueda al
-  // servidor cambiaría el ranking y es una decisión aparte.
-  const catalogoPedidoRef = useRef(false);
+  // El comentario anterior decía que moverlo al servidor «cambiaría el ranking
+  // y es una decisión aparte». No hace falta que lo cambie: `tokenMatch` es
+  // «cada token está en nombre + principio activo + laboratorio concatenados»,
+  // que se escribe igual en SQL, y así está escrito en `buscar_productos_minmax`.
+  // Lo único que sí cambia es el algoritmo del APROXIMADO —el que solo entra
+  // cuando la búsqueda exacta no da nada—, y queda anotado en la migración.
+  //
+  // ── El debounce es nuevo, y son 150 ms MEDIDOS, no un número redondo ───
+  // Filtrar en memoria era gratis por tecla; un viaje al servidor no, así que
+  // sin debounce cada letra sería una petición. Pero el debounce se paga entero
+  // después de la última tecla, y con 250 ms el A/B lo delató: contra una base
+  // ya caliente, el camino nuevo salía **más lento** que bajarse el catálogo
+  // (mín 504 ms contra 394). A 150 ms empata en reloj y se queda con lo demás:
+  // una petición en vez de seis, unos kB en vez de ~1,4 MB, y un primer uso que
+  // baja de 4,4 s a menos de un segundo.
+  //
+  // Es más corto que sus hermanos (300 ms en Ajuste de Inventario, 380 en la
+  // Consulta) a propósito: acá la respuesta son 20 filas de texto, no la
+  // existencia de siete salas.
   useEffect(() => {
-    if (search.trim().length < 2 || catalogoPedidoRef.current) return;
-    catalogoPedidoRef.current = true;
-    async function loadCatalog() {
-      setLoading(true);
-      const CHUNK = 1000;
-      const { count } = await fetchActiveProductsCount();
-      const numChunks = Math.max(1, Math.ceil((count || 0) / CHUNK));
-      const chunks = await Promise.all(
-        Array.from({ length: numChunks }, (_, i) =>
-          fetchActiveProductsChunk(i * CHUNK, (i + 1) * CHUNK - 1)
-        )
-      );
-      allProdsRef.current = chunks
-        .flatMap(r => r.data || [])
-        .map(p => ({ ...p, laboratorio_nombre: p.laboratorios?.nombre ?? null }));
-      setCatalogReady(true);
-      setLoading(false);
-    }
-    loadCatalog();
-  }, [search]);
-
-  useEffect(() => {
-    if (!catalogReady) return;
     const q = search.trim();
-    if (q.length < 2) { setResults([]); return; } // eslint-disable-line react-hooks/set-state-in-effect -- limpia resultados cuando la búsqueda es muy corta
-    const { results: matched } = smartFilter(q, allProdsRef.current, p => [
-      p.nombre,
-      p.principio_activo ?? '',
-      p.laboratorio_nombre ?? '',
-    ]);
-    setResults(matched.slice(0, 20));
-  }, [search, catalogReady]);
+    if (q.length < 2) { setResults([]); setLoading(false); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- limpia resultados cuando la búsqueda es muy corta
+    let cancelado = false;
+    setLoading(true);
+    const t = setTimeout(async () => {
+      const { filas } = await buscarProductosMinMax(q, 20);
+      if (cancelado) return;
+      setResults(filas);
+      setLoading(false);
+    }, 150);
+    return () => { cancelado = true; clearTimeout(t); };
+  }, [search]);
 
   if (view === 'success') {
     return (

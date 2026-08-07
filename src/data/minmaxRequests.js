@@ -37,6 +37,29 @@ export function fetchAllMinMaxChangeRequests() {
         .order('requested_at', { ascending: false }));
 }
 
+/**
+ * El buscador de producto del widget Ajuste de Min/Max.
+ *
+ * Reemplaza a `fetchActiveProductsCount` + N × `fetchActiveProductsChunk`, que
+ * bajaban los **5.205 productos activos** al navegador —nombre, laboratorio,
+ * foto y principio activo— para después filtrarlos con `smartFilter` en
+ * memoria. Medido el 2026-08-07: 6 peticiones y 4.462 ms de mediana hasta ver
+ * el primer resultado, con tandas de entre 1,0 y 4,2 s cada una.
+ *
+ * El criterio es EL MISMO que hacía `smartFilter` —los tokens contra el pajar
+ * de nombre + principio activo + laboratorio, y caída a aproximado si no hay
+ * nada— pero resuelto en `buscar_productos_minmax`. Lo que cambia es el
+ * algoritmo del aproximado: Levenshtein palabra a palabra allá, trigramas acá.
+ * Está anotado en la migración.
+ */
+export async function buscarProductosMinMax(termino, limite = 20) {
+    const { data, error } = await supabase.rpc('buscar_productos_minmax', {
+        p_search: termino, p_limit: limite,
+    });
+    if (error) { console.error('buscarProductosMinMax:', error.message); return { filas: [], error }; }
+    return { filas: data ?? [], error: null };
+}
+
 export function fetchActiveProductsCount() {
     return supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', true);
 }

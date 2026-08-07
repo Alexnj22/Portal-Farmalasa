@@ -396,11 +396,9 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
 
     // ── El foco cae en el buscador al llegar al paso de armar ─────────────
     // «Que el focus al entrar a alguna sección o modal sean los input, así
-    // siempre está listo para escribir». Acá vale en las dos densidades de
-    // puntero —a diferencia de la regla general de `ModalShell`, que es solo de
-    // escritorio— porque este paso NO tiene otra cosa que hacer que escribir: se
-    // llegó eligiendo «Cargar producto» y lo único que sigue es teclear el
-    // nombre. El teclado arriba es la respuesta, no un estorbo.
+    // siempre está listo para escribir». `ModalShell` cubre la APERTURA del
+    // modal; esto cubre los pasos de adentro, que él no ve: se llegó eligiendo
+    // «Cargar producto» y lo único que sigue es teclear el nombre.
     //
     // Corre también al cerrar el compositor, que es el «y luego el siguiente».
     // La lista de vencidos queda fuera: ahí no hay buscador, hay un plazo.

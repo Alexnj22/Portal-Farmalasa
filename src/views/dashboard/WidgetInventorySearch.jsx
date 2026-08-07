@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   fetchProductPhotoMap,
   fetchProductsByPrincipioActivo,
-  searchInventory,
+  buscarInventarioGlobal,
   fetchInventoryByProductIds,
   fetchFaltantesConStockEnOtraSala,
 } from '../../data/inventory';
@@ -478,23 +478,24 @@ function PanelInventario({ query = '', onQueryChange }) {
     setVencidosProds([]);
 
     try {
-      // 1. Parallel: photos + products matching by principio_activo
-      // Ambos paginados (src/data/inventory.js) — evita el cap silencioso de
-      // 1000 filas de PostgREST en tablas que pueden crecer sin tope.
-      const paData = await fetchProductsByPrincipioActivo(q);
+      // ── UN viaje, no cuatro (2026-08-07) ────────────────────────────────
+      // Esto eran cuatro peticiones ENCADENADAS —productos por principio
+      // activo, RPC de ids por descripción, inventory por esos ids, y las
+      // fotos— cada una esperando a la anterior. Medido: 2.667 ms de mediana
+      // con ningún tramo pasando de 400 ms, o sea que la espera era la cadena
+      // y no la base.
+      //
+      // `buscarInventarioGlobal` las hace juntas del lado del servidor y trae
+      // el principio activo y la foto DENTRO de cada fila, así que acá ya no
+      // queda nada que cruzar: los dos mapas se arman leyendo lo que llegó.
+      const { filas: data } = await buscarInventarioGlobal(q);
 
-      const paIds = paData.map(p => p.id);
-      const paMap = new Map(paData.map(p => [p.id, p.principio_activo]));
-
-      // 2. Query inventory by name OR principio_activo product IDs (include vencidos)
-      const data = await searchInventory({ term: q, productIds: paIds });
-
-      // Las fotos se piden DESPUÉS y solo de lo que se va a mostrar. Antes
-      // salían en paralelo pero trayendo el catálogo entero, y eso —no el peso
-      // de las imágenes— era lo que hacía esperar.
-      const photoMap = await fetchProductPhotoMap(
-        [...new Set((data || []).map(r => r.descripcion).filter(Boolean))],
-      );
+      const paMap = new Map();
+      const photoMap = {};
+      for (const r of data) {
+        if (r.principio_activo) paMap.set(r.erp_product_id, r.principio_activo);
+        if (r.foto_url) photoMap[r.descripcion.toUpperCase().trim()] = r.foto_url;
+      }
 
       const grouped  = groupInventory(data, paMap, photoMap);
       const vencidos = groupVencidos(data, paMap, photoMap);
@@ -524,7 +525,15 @@ function PanelInventario({ query = '', onQueryChange }) {
 
             if (altIds.length > 0) {
               const altInv = await fetchInventoryByProductIds(altIds);
-              setAlternatives(groupInventory(altInv, altPaMap, photoMap));
+              // Las fotos se piden ACÁ y no se heredan del `photoMap` de
+              // arriba: en esta rama la búsqueda no encontró nada, así que ese
+              // mapa está vacío por definición. Antes venía de una consulta
+              // aparte que sí cubría a las alternativas; al fusionarla dentro
+              // de la búsqueda, esta rama se quedaba sin fotos.
+              const altFotos = await fetchProductPhotoMap(
+                [...new Set(altInv.map(r => r.descripcion).filter(Boolean))],
+              );
+              setAlternatives(groupInventory(altInv, altPaMap, altFotos));
             }
           }
         } catch {
@@ -934,13 +943,11 @@ export default function WidgetInventorySearch() {
               junto al título. El encabezado a mano que estaba acá lo pone ahora
               `LanzadorSolicitud`, con su botón de cerrar. */}
           <HerramientasModal>
-            {/* `autoFocus` explícito y no la regla general de `ModalShell`:
-                ésta se abre para ESCRIBIR. La regla general enfoca el primer
-                campo solo con puntero fino —en un teléfono el teclado se come
-                media hoja y en un modal que primero se lee eso estorba—, y acá
-                el teclado arriba es exactamente lo que hace falta, también en
-                el teléfono. Pedido así: «que el focus lo tenga el input para
-                escribir de un solo». */}
+            {/* `autoFocus` explícito aunque `ModalShell` ya enfoque el primer
+                campo: acá el buscador vive en una RANURA por portal, así que
+                monta un tick después que el panel y la regla general —que mide
+                a los 60ms— podría no verlo todavía. Pedido así: «que el focus
+                lo tenga el input para escribir de un solo». */}
             <SearchInput
               autoFocus
               accentColor="var(--warning)"

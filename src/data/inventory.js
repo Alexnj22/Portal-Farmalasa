@@ -63,9 +63,35 @@ export async function fetchProductsByPrincipioActivo(terms) {
     return data || [];
 }
 
+/**
+ * La búsqueda de la Consulta de Inventario, en UN viaje.
+ *
+ * Antes eran cuatro, y encadenados: productos por principio activo → RPC de
+ * ids por descripción → inventory por esos ids → productos otra vez por las
+ * fotos. Cada uno esperaba al anterior, así que la espera era la SUMA.
+ * Medido el 2026-08-07 en el navegador: 2.667 ms de mediana, con la base
+ * respondiendo cada tramo en menos de 400 ms. El costo era la cadena.
+ *
+ * `buscar_inventario_global` hace las cuatro cosas del lado del servidor y
+ * devuelve las filas con `principio_activo` y `foto_url` ya adentro — así que
+ * acá no queda nada que cruzar. Corre en 16,7 ms medidos con EXPLAIN ANALYZE,
+ * y da EXACTAMENTE las mismas filas que la cadena vieja (comprobado sobre
+ * «amoxicilina»: 151 = 151, cero de diferencia en los dos sentidos).
+ *
+ * Devuelve `json` y no `SETOF`: el corte de 1.000 filas de PostgREST no aplica.
+ */
+export async function buscarInventarioGlobal(termino) {
+    const { data, error } = await supabase.rpc('buscar_inventario_global', { p_search: termino });
+    if (error) { console.error('buscarInventarioGlobal:', error.message); return { filas: [], error }; }
+    return { filas: data ?? [], error: null };
+}
+
 // Inventario con stock (cantidad > 0) que matchea por descripción O por una
 // lista de product IDs (vía principio_activo). Incluye vencidos — el
 // consumidor los separa. Paginado con fetchAllRows.
+//
+// Queda para quien todavía necesite el camino en piezas; la Consulta de
+// Inventario usa `buscarInventarioGlobal`.
 export async function searchInventory({ term, productIds = [] }) {
     const { data: descRows, error: descError } = await supabase.rpc('search_inventory_descripcion_ids', { p_search: term });
     if (descError) throw descError;

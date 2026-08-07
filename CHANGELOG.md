@@ -21,6 +21,89 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.488.0 — El foco también en el teléfono, y dos modales que dejan de encadenar viajes
+
+**El foco, ahora en las dos densidades de puntero.** Salió con puntero fino
+solamente, por el teclado que se come media hoja en un modal que primero se lee.
+El usuario lo pidió al revés y con las mismas palabras que la primera vez: «que
+el foco en móvil también sea el input, en todos». Manda eso, y es una línea: se
+va el `sinHover` de `ModalShell`.
+
+### La auditoría de los modales
+
+**La primera corrida A/B no valió, y lo dijo su propio control.** El plan era
+medir seis modales, 7 muestras por lado, y comparar medianas. `ajuste-buscar`
+—un caso donde no se cambió una sola línea— marcó **−70%**. Los casos puramente
+locales salieron apretados (33–77 ms); los que cruzan la red trajeron colas de 13
+y 20 segundos. El ruido no es del navegador: es cada viaje al Supabase remoto, y
+con 7 muestras un solo pico mueve la mediana.
+
+La corrida buena son **15 muestras por lado, intercaladas** —base, nuevo, base,
+nuevo, en la misma sesión, con el tablero recargado entero antes de cada una— y
+**dos controles sin cambio de código**. Los dos empataron al mínimo (+2% y +3%),
+así que la corrida vale. Y de paso dicen qué estadístico creer: al mínimo el
+ruido es del 3%, a la mediana del 11%, al p90 del 49%. **El mínimo es el número
+comparable.**
+
+```
+                              mín          mediana        p90        peticiones   kB
+Consulta · buscar        1679 → 595    1723 → 610    1923 → 658        4 → 1     8 → 3
+Min/Max · buscar          390 → 408     442 → 441     823 → 487        6 → 1   104 → 1
+CONTROL Ajuste · buscar   468 → 478     546 → 522    2436 → 1063       3 → 3     2 → 2
+CONTROL Facturación       212 → 219     241 → 234     538 → 275        1 → 1     5 → 5
+```
+
+**La Consulta de Inventario encadenaba cuatro viajes.** Productos por principio
+activo → RPC de ids por descripción → inventory por esos ids → productos otra vez
+por las fotos, cada uno esperando al anterior. Ningún tramo pasaba de 400 ms: la
+espera era la cadena. Ahora es una sola llamada que devuelve las filas con el
+principio activo y la foto adentro, así que en el navegador no queda nada que
+cruzar.
+
+**Y el texto ya no se busca en `inventory`.** `search_inventory_descripcion_ids`
+recorría las 24.226 filas calculando `norm_search(descripcion)` en cada una —364
+ms de barrido secuencial medidos con EXPLAIN ANALYZE, sin índice posible porque
+es una expresión—. No hacía falta: se contaron las 24.226 filas y en las
+**24.226** `norm_search(inventory.descripcion) = products.nombre_norm`, con cero
+huérfanas. Así que el texto se busca en `products` —5.205 filas, con índice GIN
+de trigramas— y las existencias salen por `erp_product_id`. La consulta fusionada
+corre en **16,7 ms**, y devuelve exactamente las mismas filas: 151 = 151 para
+«amoxicilina» y 145 = 145 para «ibuprofeno», cero de diferencia en los dos
+sentidos.
+
+**Min/Max se bajaba el catálogo entero.** `count` más cinco tandas de 1.000 —los
+5.205 productos activos con nombre, laboratorio, foto y principio activo— para
+filtrarlos con `smartFilter` en memoria. El comentario que había ahí decía que
+moverlo al servidor «cambiaría el ranking y es una decisión aparte». No hacía
+falta que cambiara: `tokenMatch` es «cada token está en nombre + principio activo
++ laboratorio concatenados», que se escribe igual en SQL. Lo único que cambia es
+el algoritmo del aproximado —el que solo entra cuando la exacta no da nada—:
+Levenshtein palabra a palabra antes, `word_similarity` de trigramas ahora, con el
+umbral calibrado sobre un error real («amoxilina» da 0,692 en los siete
+AMOXICILINA y 0,600 en «AÑILINA AMARILLA»).
+
+**Y ahí apareció una regresión que el propio A/B delató.** Con 250 ms de debounce
+—necesario, porque filtrar en memoria era gratis por tecla y un viaje no— el
+camino nuevo salía **28% más lento** contra una base ya caliente: 504 ms de
+mínimo contra 394. El debounce se paga entero después de la última tecla. A 150
+ms empata (408 contra 390, dentro del ruido del control) y se queda con todo lo
+demás: una petición en vez de seis, **1 kB en vez de 104**, el p90 de 823 a 487,
+y un primer uso del día que baja de 4,4 s a menos de un segundo.
+
+**Lo que se midió y se dejó como está.** La lista de Facturación es una sola
+consulta que corre en 5,5 ms en la base; sus 212 ms son red y serialización de
+150 filas, no hay nada que fusionar. El buscador del Ajuste de Inventario dispara
+tres peticiones, pero dos —presentaciones y perecederos— salen DESPUÉS de pintar
+la lista y no se sienten; fusionarlas ahorraría un viaje que nadie espera.
+
+**Lo que no se pudo verificar.** La comparación lado a lado del DOM —el mismo
+término en los dos builds, cotejando salas, productos, principios activos y
+unidades— no se sostiene: en tres corridas falló de un lado distinto cada vez, y
+la única diferencia estructural es el interceptor de respuestas de la propia
+prueba. Se dice en vez de omitirlo. La paridad queda sostenida por la igualdad de
+filas en la base y por el render en vivo del camino nuevo, verificado con la
+respuesta 200 y los resultados pintados.
+
 ## v2.486.0 — Los permisos del tablero se agrupan por pestaña, y la pestaña vacía no sale
 
 Tres pedidos sobre lo mismo: que repartir permisos del tablero se parezca al

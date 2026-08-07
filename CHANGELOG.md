@@ -21,9 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.506.0 — Conteo: borrar desde la lista, laboratorios en la hoja y el badge Vivo solo cuando lo es
+## v2.507.0 — Conteo: borrar desde la lista, laboratorios en la hoja y el badge Vivo solo cuando lo es
 
-_(pendiente de redactar)_
+Cuatro cosas reportadas mirando la pantalla y el PDF ya generados.
+
+**Borrar desde la lista de conteos.** La papelera vive ahora también en la fila,
+con la misma regla de dos niveles: aparece en los conteos abiertos para quien
+tenga «Gestionar», y en los finalizados solo para quien tenga la capacidad de
+eliminar. La lista no sabe si un conteo abierto ya tiene renglones contados
+—`total_contados` se escribe al finalizar— así que ese caso lo resuelve el
+servidor y lo explica. Entre 768 y 1024px la tabla se pinta como tarjetas: la
+papelera va en la tira de acciones y el toque de la tarjeta abre el conteo.
+
+**El badge «Vivo» solo cuando el conteo es en vivo.** Era de cuando todos lo
+eran. En un conteo «según la hoja» estaba prometiendo que la existencia se sigue
+moviendo, justo debajo de una cabecera que decía lo contrario y encima de una
+hoja impresa que decía lo contrario.
+
+**La hoja impresa dice el laboratorio.** Siempre vino ordenada por laboratorio
+—es el orden en que se recorre el anaquel— pero no lo decía en ninguna parte: en
+93 páginas no había forma de saber dónde termina uno y empieza el siguiente. Va
+una banda de ancho completo en cada corte, en la hoja y en el reporte de
+resultados. El rayado alterno sigue contando solo renglones de datos, para que
+no se invierta en cada banda y se lea como un error.
+
+**El área se identifica en cada página.** El título de sección salía una sola
+vez, así que si el área de vencidos ocupaba cinco páginas, cuatro no decían de
+qué estante hablaban. Ahora es la primera fila de la tabla y pdfmake la repite
+en cada página, junto con los rótulos de columna. Se llaman «ÁREA NORMAL» y
+«ÁREA DE VENCIDOS», y solo aparecen cuando hay las dos.
+
+**Y el pie ya no pregunta la sucursal**, que el encabezado contesta desde la
+primera línea. Esa firma pasa a ser «Revisado por», que es la que faltaba.
 
 ## v2.505.1 — El barrido espera a que se vayan los esqueletos
 

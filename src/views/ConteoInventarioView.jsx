@@ -3,7 +3,7 @@ import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2 } from 'lucide-react';
+import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2, Trash2 } from 'lucide-react';
 import LiquidSelect from '../components/common/LiquidSelect';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
@@ -17,6 +17,10 @@ import CarrilCards from '../components/common/CarrilCards';
 import ListRow from '../components/common/ListRow';
 import { SkeletonText } from '../components/common/StateViews';
 import SegmentedControl from '../components/common/SegmentedControl';
+import Button from '../components/common/Button';
+import ConfirmModal from '../components/common/ConfirmModal';
+import { useToastStore } from '../store/toastStore';
+import { mensajeAmigable } from '../utils/errorMessages';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 
 // 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
@@ -64,9 +68,13 @@ const fmtDate = (iso) => {
 export default function ConteoInventarioView() {
     const navigate = useNavigate();
     const { user, hasPermission, getScope } = useAuth();
+    const { showToast } = useToastStore();
     const canEdit = hasPermission('conteo_inventario', 'can_edit');
     // El conteo se audita con unidades; la valuación en dinero va aparte.
     const canVerMontos = hasPermission('conteo_inventario_ver_montos');
+    // Borrar uno ya empezado o finalizado. Sin esto, «Gestionar» solo se lleva
+    // el conteo que todavía no cuenta nada.
+    const canEliminar = hasPermission('conteo_inventario_eliminar');
     // Encabezado y celda con la MISMA condición (trampa de las columnas corridas).
     const cols = useMemo(
         () => (canVerMontos ? COLS : COLS.filter(c => c.key !== 'valor')),
@@ -74,6 +82,7 @@ export default function ConteoInventarioView() {
     const conteos = useStaffStore((s) => s.conteosInventario);
     const loading = useStaffStore((s) => s.conteosInventarioLoading);
     const fetchConteosInventario = useStaffStore((s) => s.fetchConteosInventario);
+    const eliminarConteoInventario = useStaffStore((s) => s.eliminarConteoInventario);
     const branches = useStaffStore((s) => s.branches);
 
     // El scope del permiso ya lo aplica RLS: con BRANCH, la consulta solo trae
@@ -88,8 +97,35 @@ export default function ConteoInventarioView() {
     // Qué necesita atención. Es un filtro y no solo un rótulo: la pregunta real de
     // esta pantalla no es "cuántos conteos hay" sino "cuál me está esperando".
     const [foco, setFoco] = useState('TODOS');
+    // El conteo que se está por borrar. Se guarda la FILA entera, no el id: la
+    // confirmación tiene que poder nombrar de qué sucursal y de qué día es lo
+    // que se va, y para cuando el modal se abre esa fila ya está en memoria.
+    const [aBorrar, setABorrar] = useState(null);
+    const [borrando, setBorrando] = useState(false);
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
+
+    // La lista sabe el ESTADO de cada conteo pero no si el abierto ya tiene
+    // renglones contados: `total_contados` lo escribe recalcular_totales_conteo
+    // y solo corre al finalizar, así que en un conteo abierto viene NULL. Por
+    // eso el botón se ofrece por estado y el resto lo decide el servidor, que
+    // rechaza con el motivo escrito. Se prefiere así antes que pedir el dato de
+    // los N conteos para decidir un botón.
+    const puedeBorrar = (c) => canEdit && (canEliminar || ['BORRADOR', 'EN_PROGRESO'].includes(c.status));
+
+    const confirmarBorrado = async () => {
+        if (!aBorrar) return;
+        setBorrando(true);
+        try {
+            const res = await eliminarConteoInventario(aBorrar.id);
+            showToast('Conteo eliminado', `Se borraron ${formatQty(res?.total_items ?? 0)} renglón(es)`, 'success');
+            setABorrar(null);
+        } catch (err) {
+            showToast('No se pudo eliminar', mensajeAmigable(err), 'error');
+        } finally {
+            setBorrando(false);
+        }
+    };
 
     const branchOpts = useMemo(() => {
         const conIdsUsados = new Set((conteos || []).map((c) => String(c.branch_id)));
@@ -293,7 +329,13 @@ export default function ConteoInventarioView() {
             </div>
 
             <div className="hidden md:block">
-            <DataTable columns={cols} loading={loading} empty={{
+            <DataTable columns={cols} loading={loading}
+                // Entre 768 y 1024px esta tabla se pinta como fichas. Sin
+                // `acciones` la papelera no se dibujaría justo ahí, y sin
+                // `usarAccionDeFila` el toque abriría una hoja de detalle en vez
+                // de ir al conteo, que es a donde lleva la fila.
+                movil={{ acciones: true, usarAccionDeFila: true }}
+                empty={{
                 icon: ClipboardCheck,
                 message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá',
                 subtext: foco === 'TODOS'
@@ -345,7 +387,22 @@ export default function ConteoInventarioView() {
                                 </div>
                             </DataCell>
                             <DataCell align="right">
-                                <ChevronRight size={16} className="text-content-3" />
+                                {/* `stopPropagation`: la fila entera navega al conteo, y
+                                    sin esto el click en la papelera abriría el detalle
+                                    además de la confirmación. */}
+                                <span className="inline-flex items-center gap-1 justify-end">
+                                    {puedeBorrar(c) && (
+                                        <Button variant="ghost" tone="danger" size="sm" icon={Trash2} iconOnly
+                                            aria-label={`Eliminar el conteo de ${c.branches?.name || 'la sucursal'}`}
+                                            onClick={(e) => { e.stopPropagation(); setABorrar(c); }} />
+                                    )}
+                                    {/* Solo en la tabla de verdad: por debajo de 1024px
+                                        `DataTable` pinta fichas, y ahí esta celda va a la
+                                        tira de acciones — donde un chevron decorativo al
+                                        lado de la papelera se lee como un segundo botón.
+                                        `lg` es exactamente el corte que usa el canónico. */}
+                                    <ChevronRight size={16} className="hidden lg:inline text-content-3" />
+                                </span>
                             </DataCell>
                         </DataRow>
                     );
@@ -358,6 +415,21 @@ export default function ConteoInventarioView() {
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
                 onCreated={(id) => navigate(`/conteo-inventario/${id}`)}
+            />
+
+            {/* Desde la lista no se ve cuánto se contó —esa cifra vive adentro—,
+                así que el mensaje se apoya en lo que la fila SÍ dice: de qué
+                sucursal es, de qué día y en qué estado está. */}
+            <ConfirmModal
+                isOpen={!!aBorrar}
+                onClose={() => setABorrar(null)}
+                onConfirm={confirmarBorrado}
+                title="¿Eliminar este conteo?"
+                message={aBorrar
+                    ? `Se borra el conteo de ${aBorrar.branches?.name || 'la sucursal'} del ${fmtDate(aBorrar.created_at)} (${(ESTADO_CFG[aBorrar.status] || ESTADO_CFG.BORRADOR).label}) con todos sus renglones y el historial de quién contó cada uno. No se puede deshacer.`
+                    : ''}
+                confirmText="Eliminar conteo"
+                isProcessing={borrando}
             />
         </GlassViewLayout>
     );

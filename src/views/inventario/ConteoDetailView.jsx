@@ -237,6 +237,10 @@ function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
 function ItemRow({
     item, index, editable, recuento, desbloqueada,
     onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false,
+    // Lo decide la cabecera del conteo, no el renglón. Va con default `false`
+    // porque el badge que gobierna promete algo concreto —«este número se
+    // sigue moviendo»— y prometerlo de más es peor que no decirlo.
+    enVivo = false,
 }) {
     const { showToast } = useToastStore();
     const verSistema = !!item.ver_sistema;
@@ -271,11 +275,15 @@ function ItemRow({
     }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por_nombre,
         item.contado_por_photo_url, item.ediciones_count, item.estado_item, item.nota, recuento]);
 
-    // Estimado inmediato con el "sistema" ya visible (en vivo si aún no se ha
-    // contado) — el valor definitivo llega en la respuesta de guardar_conteo_item,
-    // que releyó inventory en el instante exacto del guardado.
+    // Estimado inmediato con el "sistema" ya visible — el valor definitivo llega
+    // en la respuesta de guardar_conteo_item, que en un conteo en vivo releyó la
+    // existencia en el instante exacto del guardado y en uno «según la hoja»
+    // devuelve la impresa, que es la que ya está en pantalla.
     const dif = fisico !== '' && sistema != null ? Number(fisico) - sistema : null;
-    const isLive = item.fisico_cantidad == null && !item.es_agregado_manual;
+    // El badge «Vivo» promete que ese número se sigue moviendo hasta que se
+    // cuente. En un conteo «según la hoja» NO se mueve: es el impreso, y
+    // anunciarlo como vivo contradice al encabezado y al papel.
+    const isLive = enVivo && item.fisico_cantidad == null && !item.es_agregado_manual;
 
     // Una línea ya confirmada NO es un campo. Una celda que sigue pareciendo un
     // input invita a teclear encima de lo ya contado; el lápiz es el único
@@ -1811,6 +1819,7 @@ export default function ConteoDetailView() {
                                             onEditLote={abrirEditLote}
                                             currentUser={user}
                                             simple={simple}
+                                            enVivo={conteo?.fuente_sistema === 'VIVO'}
                                         />
                                     ))}
                                 </React.Fragment>

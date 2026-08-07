@@ -267,11 +267,11 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data;
     },
 
-    // El "sistema" se congela EN EL SERVIDOR (guardar_conteo_item relee
-    // inventory en vivo en ese instante) — el cliente nunca envía/decide ese
-    // valor, para que un conteo "en caliente" (sucursal abierta, ventas
-    // corriendo) compare contra el stock real vigente al momento de contar,
-    // no contra un snapshot viejo.
+    // El "sistema" lo fija EL SERVIDOR y el cliente nunca lo envía ni lo
+    // decide. Cuál es depende de `fuente_sistema` del conteo: con 'VIVO' se
+    // relee la existencia en ese instante (para contar con la sucursal abierta
+    // y vendiendo); con 'HOJA' es la que salió impresa, para que el papel y la
+    // diferencia hablen del mismo número.
     //
     // No lleva appendAuditLog a propósito: cada renglón guardado ya escribe en
     // conteo_inventario_item_history, que es su bitácora dedicada e

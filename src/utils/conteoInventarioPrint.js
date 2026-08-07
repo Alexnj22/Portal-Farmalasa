@@ -192,16 +192,62 @@ function partirPorArea(items) {
     return { normales, vencidos, partido: vencidos.length > 0 && normales.length > 0 };
 }
 
-function tituloSeccion(texto, n, { pageBreak = false } = {}) {
-    return {
-        text: `${texto} — ${n} línea(s)`,
-        fontSize: 9.5, bold: true, color: '#111',
-        margin: [0, pageBreak ? 0 : 6, 0, 4],
-        ...(pageBreak ? { pageBreak: 'before' } : {}),
-    };
+// La banda del área, como PRIMERA fila de la tabla. Va acá y no como un título
+// suelto encima para que pdfmake la repita en cada página (`headerRows: 2`): el
+// área de vencidos arranca en hoja nueva, pero si ocupa cinco, las otras cuatro
+// no decían de qué estante hablaban.
+function bandaArea(texto, n, ncols) {
+    return [
+        {
+            text: `${texto} — ${n} línea(s)`,
+            colSpan: ncols, fillColor: '#4b5563', color: '#fff',
+            bold: true, fontSize: 8.5, margin: [4, 4, 4, 4],
+        },
+        ...Array(ncols - 1).fill({}),
+    ];
 }
 
-function buildHojaTable(conteo, items, ciego) {
+// El corte de laboratorio. La hoja SIEMPRE vino ordenada por laboratorio —es el
+// orden en que se recorre el anaquel— pero no lo decía en ninguna parte: en 93
+// páginas no había forma de saber dónde termina uno y empieza el siguiente.
+function bandaLaboratorio(nombre, ncols) {
+    return [
+        {
+            text: (nombre || 'Sin laboratorio').toUpperCase(),
+            colSpan: ncols, fillColor: '#e4e4e4', color: '#111',
+            bold: true, fontSize: 7.5, margin: [4, 4, 4, 3],
+        },
+        ...Array(ncols - 1).fill({}),
+    ];
+}
+
+// Recorre los renglones ya ordenados y mete una banda cada vez que cambia el
+// laboratorio. El rayado alterno cuenta SOLO renglones de datos: si contara las
+// bandas, el zebrado se invertiría en cada corte y se leería como un error.
+function cuerpoConCortes(items, ncols, filaDeItem) {
+    const body = [];
+    let labActual;
+    let iDato = 0;
+    sortItems(items).forEach((item) => {
+        const lab = item.laboratorio_nombre || null;
+        if (lab !== labActual) {
+            labActual = lab;
+            body.push(bandaLaboratorio(lab, ncols));
+        }
+        body.push(filaDeItem(item, iDato % 2 === 1 ? '#f7f7f7' : '#ffffff'));
+        iDato += 1;
+    });
+    return body;
+}
+
+const LAYOUT_TABLA = {
+    hLineWidth: (i, node) => (i === 0 ? 0 : i === 1 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
+    vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
+    hLineColor: () => '#ccc', vLineColor: () => '#ccc',
+    paddingLeft: () => 4, paddingRight: () => 4, paddingTop: () => 0, paddingBottom: () => 0,
+};
+
+function buildHojaTable(conteo, items, ciego, area = null) {
     const simple = esSimple(conteo);
     const { widths, labels } = HOJA_COLS[simple ? 'simple' : 'lote'][ciego ? 'ciego' : 'normal'];
 
@@ -211,34 +257,30 @@ function buildHojaTable(conteo, items, ciego) {
         margin: [4, 3, 4, 3],
     }));
 
-    const body = sortItems(items).map((item, idx) => {
-        const bg = idx % 2 === 1 ? '#f7f7f7' : '#ffffff';
-        return [
-            { ...productCell(item), fillColor: bg },
-            // La celda que identifica el renglón: presentación en sencillo, lote
-            // en el modo por lote. Sin marca de área: la tabla ya es de un área.
-            ...(simple
-                ? [{ text: presentacionCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] }]
-                : [
-                    { text: loteCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
-                    { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
-                ]),
-            // Sistema: la columna solo se emite si el dato vino. `num()` es la
-            // red de seguridad — un `String(null)` imprime la palabra "null".
-            ...(ciego ? [] : [{ text: num(item.sistema_cantidad), fontSize: 8.5, bold: true, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] }]),
-            { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Físico: se llena a mano
-            { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Nota: idem
-        ];
-    });
+    const body = cuerpoConCortes(items, widths.length, (item, bg) => [
+        { ...productCell(item), fillColor: bg },
+        // La celda que identifica el renglón: presentación en sencillo, lote
+        // en el modo por lote. Sin marca de área: la tabla ya es de un área.
+        ...(simple
+            ? [{ text: presentacionCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] }]
+            : [
+                { text: loteCell(item, false), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+                { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
+            ]),
+        // Sistema: la columna solo se emite si el dato vino. `num()` es la
+        // red de seguridad — un `String(null)` imprime la palabra "null".
+        ...(ciego ? [] : [{ text: num(item.sistema_cantidad), fontSize: 8.5, bold: true, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] }]),
+        { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Físico: se llena a mano
+        { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Nota: idem
+    ]);
+
+    const cabeceras = area
+        ? [bandaArea(area, items.length, widths.length), headerRow]
+        : [headerRow];
 
     return {
-        table: { headerRows: 1, dontBreakRows: true, widths, body: [headerRow, ...body] },
-        layout: {
-            hLineWidth: (i, node) => (i === 0 ? 0 : i === 1 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
-            vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
-            hLineColor: () => '#ccc', vLineColor: () => '#ccc',
-            paddingLeft: () => 4, paddingRight: () => 4, paddingTop: () => 0, paddingBottom: () => 0,
-        },
+        table: { headerRows: cabeceras.length, dontBreakRows: true, widths, body: [...cabeceras, ...body] },
+        layout: LAYOUT_TABLA,
     };
 }
 
@@ -263,12 +305,15 @@ export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
     const { normales, vencidos, partido } = partirPorArea(items);
     // El área de vencidos arranca en hoja nueva: es otro estante y se cuenta
     // después, no intercalado. Quien recorre el primero puede cerrar la hoja.
+    // Las bandas de área solo aparecen si hay DOS: con una sola no separan nada
+    // y repetirían en cada página algo que el encabezado ya dijo.
+    // El salto va EN la tabla y no en un nodo de texto vacío en medio: un nodo
+    // sin contenido es justo lo que un preprocesador puede descartar, y con él
+    // se iría el salto.
     const content = partido
         ? [
-            tituloSeccion(conteo.branches?.name || 'Sucursal', normales.length),
-            buildHojaTable(conteo, normales, ciego),
-            tituloSeccion('ÁREA DE VENCIDOS', vencidos.length, { pageBreak: true }),
-            buildHojaTable(conteo, vencidos, ciego),
+            buildHojaTable(conteo, normales, ciego, 'ÁREA NORMAL'),
+            { ...buildHojaTable(conteo, vencidos, ciego, 'ÁREA DE VENCIDOS'), pageBreak: 'before' },
         ]
         : [buildHojaTable(conteo, items, ciego)];
 
@@ -281,7 +326,10 @@ export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
             headerBlock(conteo, `Hoja de conteo${ciego ? ' (ciego)' : ''} — ${items.length} línea(s)`),
             ...content,
         ],
-        footer: footerFirmas('Contado por', 'Sucursal'),
+        // «Sucursal: ____» estaba preguntando lo que el encabezado ya contesta,
+        // en las 93 páginas. La segunda línea es la firma que sí falta: quien
+        // revisa lo contado.
+        footer: footerFirmas('Contado por', 'Revisado por'),
     };
     await downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Hoja.pdf`);
 }
@@ -293,14 +341,13 @@ const RES_LABELS = ['Producto', 'Lote', 'Sistema', 'Físico', 'Dif.', 'Valor', '
 // renglón, así que solo cambia el rótulo de la segunda.
 const RES_LABELS_SIMPLE = ['Producto', 'Presentación', 'Sistema', 'Físico', 'Dif.', 'Valor', 'Nota'];
 
-function buildResultadosTable(items, simple = false) {
+function buildResultadosTable(items, simple = false, area = null) {
     const headerRow = (simple ? RES_LABELS_SIMPLE : RES_LABELS).map((label, i) => ({
         text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
         alignment: (i >= 2 && i <= 5) ? 'center' : 'left', margin: [4, 3, 4, 3],
     }));
 
-    const body = sortItems(items).map((item, idx) => {
-        const bg = idx % 2 === 1 ? '#f7f7f7' : '#ffffff';
+    const body = cuerpoConCortes(items, RES_COL_WIDTHS.length, (item, bg) => {
         const dif = item.diferencia;
         const valor = dif != null && item.costo_unitario != null ? dif * item.costo_unitario : null;
         const difColor = dif == null ? '#999' : dif === 0 ? '#059669' : dif < 0 ? '#dc2626' : '#2563eb';
@@ -318,14 +365,13 @@ function buildResultadosTable(items, simple = false) {
         ];
     });
 
+    const cabeceras = area
+        ? [bandaArea(area, items.length, RES_COL_WIDTHS.length), headerRow]
+        : [headerRow];
+
     return {
-        table: { headerRows: 1, dontBreakRows: true, widths: RES_COL_WIDTHS, body: [headerRow, ...body] },
-        layout: {
-            hLineWidth: (i, node) => (i === 0 ? 0 : i === 1 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
-            vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
-            hLineColor: () => '#ccc', vLineColor: () => '#ccc',
-            paddingLeft: () => 4, paddingRight: () => 4, paddingTop: () => 0, paddingBottom: () => 0,
-        },
+        table: { headerRows: cabeceras.length, dontBreakRows: true, widths: RES_COL_WIDTHS, body: [...cabeceras, ...body] },
+        layout: LAYOUT_TABLA,
     };
 }
 
@@ -578,13 +624,11 @@ export async function printResultadosConteo(conteo, items, { soloDiferencias = f
     const simple = esSimple(conteo);
     const { normales, vencidos, partido } = partirPorArea(filtered);
     // Acá NO va salto de página: el reporte se lee, no se recorre. Partirlo en
-    // dos hojas solo gastaría papel para separar lo que ya separa el título.
+    // dos hojas solo gastaría papel para separar lo que ya separa la banda.
     const tablas = partido
         ? [
-            tituloSeccion(conteo.branches?.name || 'Sucursal', normales.length),
-            buildResultadosTable(normales, simple),
-            tituloSeccion('ÁREA DE VENCIDOS', vencidos.length),
-            buildResultadosTable(vencidos, simple),
+            buildResultadosTable(normales, simple, 'ÁREA NORMAL'),
+            { ...buildResultadosTable(vencidos, simple, 'ÁREA DE VENCIDOS'), margin: [0, 10, 0, 0] },
         ]
         : [buildResultadosTable(filtered, simple)];
 

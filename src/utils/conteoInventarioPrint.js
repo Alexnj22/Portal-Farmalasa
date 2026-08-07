@@ -116,8 +116,8 @@ function headerBlock(conteo, subtitle) {
     };
 }
 
-function productCell(item) {
-    const stack = [{ text: item.product_nombre || `Producto ${item.erp_product_id}`, fontSize: 8.5 }];
+function productCell(item, fontSize = 8.5) {
+    const stack = [{ text: item.product_nombre || `Producto ${item.erp_product_id}`, fontSize }];
     if (item.es_antibiotico) {
         stack.push({
             columns: [{
@@ -240,6 +240,102 @@ function cuerpoConCortes(items, ncols, filaDeItem) {
     return body;
 }
 
+// ── Hoja compacta ───────────────────────────────────────────────────────────
+// 3,665 renglones en una columna vertical son 103 páginas: demasiado papel para
+// recorrer un anaquel. La hoja compacta pone DOS productos por renglón impreso y
+// gira la página, y con eso la mitad de las hojas.
+//
+// Lo que se sacrifica es la columna «Nota»: es la única que no hace falta para
+// contar —el hueco del físico sí— y es la que libera el ancho para el segundo
+// producto. Por eso son dos documentos y no uno: quien anota observaciones
+// renglón por renglón sigue teniendo la hoja normal.
+//
+// Los pares se arman DENTRO de cada laboratorio, nunca cruzándolo: un renglón
+// con un producto de un laboratorio a la izquierda y otro distinto a la derecha
+// dejaría la banda mintiendo sobre la mitad de la fila. Un laboratorio con
+// cantidad impar deja media fila en blanco, que cuesta menos que eso.
+const HOJA_COLS_COMPACTA = {
+    lote: {
+        normal: { widths: ['17%', '12%', '7%', '7%', '7%'], labels: ['Producto', 'Lote', 'Vence', 'Sistema', 'Físico'] },
+        ciego:  { widths: ['20%', '14%', '8%', '8%'],        labels: ['Producto', 'Lote', 'Vence', 'Físico'] },
+    },
+    simple: {
+        normal: { widths: ['20%', '11%', '8%', '11%'], labels: ['Producto', 'Presentación', 'Sistema', 'Físico'] },
+        ciego:  { widths: ['24%', '14%', '12%'],       labels: ['Producto', 'Presentación', 'Físico'] },
+    },
+};
+
+const PAD_COMPACTO = [3, 2, 3, 2];
+
+// Las celdas de UN producto — la mitad de un renglón impreso.
+function celdasProductoCompacto(item, { simple, ciego, bg }) {
+    return [
+        { ...productCell(item, 7.5), fillColor: bg, margin: [0, 1, 0, 1] },
+        ...(simple
+            ? [{ text: presentacionCell(item, false), fontSize: 6.5, color: '#333', fillColor: bg, margin: PAD_COMPACTO }]
+            : [
+                { text: loteCell(item, false), fontSize: 6.5, color: '#333', fillColor: bg, margin: PAD_COMPACTO },
+                { text: fmtFecha(item.fecha_vencimiento), fontSize: 6.5, color: '#333', fillColor: bg, alignment: 'center', margin: PAD_COMPACTO },
+            ]),
+        ...(ciego ? [] : [{ text: num(item.sistema_cantidad), fontSize: 7.5, bold: true, alignment: 'center', fillColor: bg, margin: PAD_COMPACTO }]),
+        { text: '', fillColor: bg, margin: PAD_COMPACTO },   // Físico: se llena a mano
+    ];
+}
+
+function buildHojaTableCompacta(conteo, items, ciego, area = null) {
+    const simple = esSimple(conteo);
+    const { widths: mitad, labels: rotulos } = HOJA_COLS_COMPACTA[simple ? 'simple' : 'lote'][ciego ? 'ciego' : 'normal'];
+    const widths = [...mitad, ...mitad];
+    const nMitad = mitad.length;
+
+    const headerRow = [...rotulos, ...rotulos].map((label) => ({
+        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7, color: '#000',
+        alignment: ['Vence', 'Sistema', 'Físico'].includes(label) ? 'center' : 'left',
+        margin: PAD_COMPACTO,
+    }));
+
+    // Primero se agrupa por laboratorio y después se empareja dentro de cada
+    // grupo — al revés, un par podría quedar a caballo de dos bandas.
+    const grupos = [];
+    let labActual;
+    sortItems(items).forEach((item) => {
+        const lab = item.laboratorio_nombre || null;
+        if (lab !== labActual || !grupos.length) { labActual = lab; grupos.push({ lab, items: [] }); }
+        grupos[grupos.length - 1].items.push(item);
+    });
+
+    const body = [];
+    let iDato = 0;
+    grupos.forEach(({ lab, items: propios }) => {
+        body.push(bandaLaboratorio(lab, widths.length));
+        for (let k = 0; k < propios.length; k += 2) {
+            const bg = iDato % 2 === 1 ? '#f7f7f7' : '#ffffff';
+            iDato += 1;
+            const izq = celdasProductoCompacto(propios[k], { simple, ciego, bg });
+            const der = propios[k + 1]
+                ? celdasProductoCompacto(propios[k + 1], { simple, ciego, bg })
+                : Array(nMitad).fill({ text: '', fillColor: bg, margin: PAD_COMPACTO });
+            body.push([...izq, ...der]);
+        }
+    });
+
+    const cabeceras = area
+        ? [bandaArea(area, items.length, widths.length), headerRow]
+        : [headerRow];
+
+    return {
+        table: { headerRows: cabeceras.length, dontBreakRows: true, widths, body: [...cabeceras, ...body] },
+        layout: {
+            ...LAYOUT_TABLA,
+            // La línea vertical del medio, más gruesa: es la que separa el
+            // producto de la izquierda del de la derecha, y sin ella las ocho
+            // columnas se leen como una sola tabla de ocho.
+            vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : i === nMitad ? 1.6 : 0.5),
+            paddingTop: () => 0, paddingBottom: () => 0,
+        },
+    };
+}
+
 const LAYOUT_TABLA = {
     hLineWidth: (i, node) => (i === 0 ? 0 : i === 1 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
     vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
@@ -295,13 +391,25 @@ function footerFirmas(labelIzq, labelDer) {
     });
 }
 
+// La promesa se resuelve cuando el archivo YA se descargó, no cuando se pidió.
+// `download()` no devuelve promesa: acepta un callback y sin él la función salía
+// enseguida, así que quien la esperaba apagaba su spinner justo antes de la
+// parte lenta —armar el documento y cargar las fuentes—. Con 3,700 renglones
+// eso son varios segundos con el botón diciendo que ya terminó.
 async function downloadPdf(docDefinition, filename) {
     const pdfMake = await getPdfMake();
-    pdfMake.createPdf(docDefinition).download(filename);
+    await new Promise((resolve, reject) => {
+        try {
+            pdfMake.createPdf(docDefinition).download(filename, resolve);
+        } catch (err) {
+            reject(err);
+        }
+    });
 }
 
 // items: filas de get_conteo_items_jsonb. ciego=true oculta la columna Sistema.
-export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
+export async function printHojaConteo(conteo, items, { ciego = false, compacta = false } = {}) {
+    const construir = compacta ? buildHojaTableCompacta : buildHojaTable;
     const { normales, vencidos, partido } = partirPorArea(items);
     // El área de vencidos arranca en hoja nueva: es otro estante y se cuenta
     // después, no intercalado. Quien recorre el primero puede cerrar la hoja.
@@ -312,18 +420,21 @@ export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
     // se iría el salto.
     const content = partido
         ? [
-            buildHojaTable(conteo, normales, ciego, 'ÁREA NORMAL'),
-            { ...buildHojaTable(conteo, vencidos, ciego, 'ÁREA DE VENCIDOS'), pageBreak: 'before' },
+            construir(conteo, normales, ciego, 'ÁREA NORMAL'),
+            { ...construir(conteo, vencidos, ciego, 'ÁREA DE VENCIDOS'), pageBreak: 'before' },
         ]
-        : [buildHojaTable(conteo, items, ciego)];
+        : [construir(conteo, items, ciego)];
 
     const docDefinition = {
         pageSize: 'LETTER',
+        // La compacta va apaisada: el ancho es lo que hace entrar dos productos
+        // por renglón, y es de donde sale la mitad de las páginas.
+        ...(compacta ? { pageOrientation: 'landscape' } : {}),
         pageMargins: PAGE_MARGINS,
         info: { title: `Hoja de Conteo — ${conteo.branches?.name || ''}` },
         defaultStyle: { fontSize: 9 },
         content: [
-            headerBlock(conteo, `Hoja de conteo${ciego ? ' (ciego)' : ''} — ${items.length} línea(s)`),
+            headerBlock(conteo, `Hoja de conteo${ciego ? ' (ciego)' : ''}${compacta ? ' compacta' : ''} — ${items.length} línea(s)`),
             ...content,
         ],
         // «Sucursal: ____» estaba preguntando lo que el encabezado ya contesta,
@@ -331,7 +442,7 @@ export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
         // revisa lo contado.
         footer: footerFirmas('Contado por', 'Revisado por'),
     };
-    await downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Hoja.pdf`);
+    await downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Hoja${compacta ? '_Compacta' : ''}.pdf`);
 }
 
 // ── Reporte de resultados ────────────────────────────────────────────────────

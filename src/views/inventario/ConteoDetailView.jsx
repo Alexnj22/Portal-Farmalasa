@@ -1488,16 +1488,28 @@ export default function ConteoDetailView() {
     const handlePrint = async (kind) => {
         setPrintChooserOpen(false);
         setPrinting(true);
+        // Un conteo de Bodega son ~3,700 renglones y armar el PDF tarda varios
+        // segundos: sin aviso, el click se siente como que no pasó nada y se
+        // vuelve a apretar. El toast se muestra ANTES de empezar, no después.
+        showToast('Preparando el documento', 'Puede tardar unos segundos con un conteo grande…', 'info');
         try {
             const allItems = await fetchTodosLosItemsConteo(id);
+            // Los `await` no son decorativos: sin ellos `finally` apagaba el
+            // spinner en cuanto LLEGABAN los datos, o sea justo antes de la parte
+            // lenta —armar el PDF y cargar las fuentes—. El botón se veía listo
+            // durante los segundos en que de verdad estaba trabajando.
+            //
             // La hoja sale ciega porque el dato NO VIENE: get_conteo_items_jsonb
             // aplica el mismo predicado que la tabla. El flag se deriva de lo que
             // llegó, no de un switch — antes la vista pasaba { ciego: false } fijo
             // y el papel revelaba justo lo que la pantalla tapaba.
-            if (kind === 'hoja') printHojaConteo(conteo, allItems, { ciego: !allItems[0]?.ver_sistema });
-            else if (kind === 'ajuste') printAjustesConteo(conteo, allItems);
+            const ciego = !allItems[0]?.ver_sistema;
+            if (kind === 'hoja') await printHojaConteo(conteo, allItems, { ciego });
+            else if (kind === 'hoja-compacta') await printHojaConteo(conteo, allItems, { ciego, compacta: true });
+            else if (kind === 'ajuste') await printAjustesConteo(conteo, allItems);
             else if (kind === 'ajuste-csv') exportAjustesConteo(conteo, allItems);
-            else printResultadosConteo(conteo, allItems, { soloDiferencias: false });
+            else await printResultadosConteo(conteo, allItems, { soloDiferencias: false });
+            showToast('Documento listo', 'Se descargó el archivo', 'success');
         } catch (err) {
             showToast('Error al generar el documento', mensajeAmigable(err), 'error');
         } finally {
@@ -1541,7 +1553,8 @@ export default function ConteoDetailView() {
     // solo (la hoja), así que "Imprimir" imprime y no abre un selector de una
     // opción; con el conteo cerrado hay cuatro y ahí sí hay algo que elegir.
     const documentos = !canDownload ? [] : [
-        { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el anaquel, con firma de quien contó.' },
+        { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el anaquel, con columna de notas y firma de quien contó.' },
+        { kind: 'hoja-compacta', icon: Printer, label: 'Hoja compacta', detalle: 'La mitad de páginas: dos productos por renglón, apaisada y sin columna de notas.' },
         ...(hasResults ? [
             { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valuación de cada renglón.' },
             { kind: 'ajuste', icon: FileSpreadsheet, label: 'Ajuste para aplicar', detalle: 'Partido en faltantes (salida) y sobrantes (entrada), listo para teclear.' },
@@ -1905,7 +1918,6 @@ export default function ConteoDetailView() {
                     maxWidthClass="max-w-none"
                     surface={null}
                     ariaLabel={simple ? 'Agregar producto al conteo' : 'Agregar producto o lote al conteo'}
-                    surface={null}
                 >
                     {/* `HojaMovil` en vez del envoltorio a mano: traía su propio
                         `max-h`, su propio `rounded-t-modal`, su propia área segura

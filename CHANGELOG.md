@@ -21,9 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.509.0 — Conteo: aviso al generar el PDF y hoja compacta de dos productos por renglón
+## v2.510.0 — Conteo: aviso al generar el PDF y hoja compacta de dos productos por renglón
 
-_(pendiente de redactar)_
+**El botón decía que ya había terminado cuando recién empezaba.** «Imprimir»
+tenía su estado de carga, pero las funciones que arman el PDF se llamaban sin
+`await`: el spinner se apagaba en cuanto llegaban los datos, o sea justo antes
+de la parte lenta —construir el documento y cargar las fuentes—. Y `download()`
+de pdfmake no devuelve promesa, así que esperarla tampoco alcanzaba: ahora se
+resuelve con su callback, cuando el archivo ya bajó. Además avisa al empezar
+(«Puede tardar unos segundos con un conteo grande…») y al terminar.
+
+**Hoja compacta.** La hoja de Bodega salía en 103 páginas. La nueva pone **dos
+productos por renglón impreso** y gira la página: medido sobre ese mismo conteo,
+**3,983 → 2,240 renglones impresos, un 44% menos**. El ancho para el segundo
+producto sale de la columna «Nota», que es la única que no hace falta para
+contar —el hueco del físico sí—; por eso son dos documentos y no uno, y quien
+anota observaciones renglón por renglón sigue teniendo la hoja normal.
+
+Los pares se arman **dentro de cada laboratorio**, nunca cruzándolo: un renglón
+con un producto de un laboratorio a la izquierda y otro distinto a la derecha
+dejaría la banda mintiendo sobre media fila. Un laboratorio con cantidad impar
+deja media fila en blanco, que cuesta menos que eso. La línea vertical del medio
+va más gruesa para que las ocho columnas no se lean como una sola tabla.
+
+Con la hoja compacta ya son dos documentos disponibles mientras se cuenta, así
+que «Imprimir» abre el selector en vez de bajar directo.
 
 ## v2.508.4 — fuera la casilla de ver las facturas de otras salas
 

@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.491.0 — Traslados entre Salas tiene vista propia, con el historial que no estaba en ninguna parte
+
+Reportado: «con el widget de traslados entre salas, se creó el módulo verdad?
+pero no tengo una vista en donde ver eso». Sí, y estaba a medias: el módulo
+`traslados` existía en el registro de permisos —con `can_approve` y con
+alcance—, se consultaba en **un solo lugar** (para decidir si el widget muestra
+«Te piden de tu sala») y su `can_view` no gateaba nada, porque no había nada que
+gatear: ni ruta, ni entrada de menú.
+
+**Y el widget sólo muestra lo que está EN VUELO.** Contado en producción: de los
+6 traslados de toda la historia, el widget mostraba **cero**. Los 4 recibidos
+porque el filtro de «por recibir» exige despachado-y-no-recibido, y los 2
+rechazados porque nadie los consultaba nunca. Con ellos se iba el único registro
+de por qué una sala dijo que no.
+
+La vista `/traslados` tiene tres pestañas, que son los tres momentos: **Por
+confirmar** (lo que otra sala me pide), **Por recibir** (lo que salió y no
+entró) y **Historial** (lo cerrado, con su motivo si fue rechazo). Buscador
+sobre producto, salas, quién pidió y motivo; y filtro de sucursal sólo con
+alcance de todas — con alcance de una, el RLS ya recortó y un desplegable de
+siete que sólo funciona con una es un control que miente.
+
+**Las filas no se copiaron.** Vivían dentro del widget y ahora hacían falta en
+los dos sitios. Se mudaron a `views/traslados/FilasTraslado.jsx` y las importan
+los dos: el envase cambia (modal angosto contra vista ancha), lo que la fila
+dice y lo que hace, no. Dos copias terminan siendo dos comportamientos — una
+preguntando la disponibilidad antes de despachar y la otra no.
+
+**Va bajo Solicitudes y no bajo Inventario** porque un traslado ES una
+solicitud: vive en `approval_requests` y su ciclo es pedir → confirmar o
+rechazar → recibir. Su permiso nace ahí, y nace aparte de `requests` a
+propósito: confirmar un envío de tu sala no tiene por qué arrastrar aprobar las
+vacaciones de tu gente.
+
+**Lo que el RLS decide y la pantalla no puede cambiar.** La policy de
+`approval_requests` exige `traslados.can_approve` para VER las filas de este
+tipo —no `can_view`— y después aplica el alcance. Hoy no deja a nadie afuera:
+los 10 roles que tienen el módulo lo tienen con `can_approve`. Pero si algún día
+se reparte `can_view` a secas, esa persona abriría la vista vacía; el arreglo
+sería de la policy, no de la vista. Queda escrito arriba del archivo.
+
+Verificado en el navegador: el historial lista los 6 —los 2 rechazos con su
+motivo y su sugerencia («Producto ya encargado — Sí hay en Bodega (7400), La
+Popular (2458), Salud 4 (1369)»)— y en iPhone 13 la barra de pestañas cae al
+selector, el vacío se lee y no hay desborde horizontal (390 = 390).
+`gate:movil`, `gate:design` y `gate:permisos` en verde.
+
+**Falta una línea, y es de otra sesión.** La ruta (`App.jsx`) y la entrada de
+menú (`AppLayout.jsx`) no entran en este commit: los dos archivos tienen encima
+el trabajo a medio terminar de otra sesión —su vista `FacturasSalaView` todavía
+sin trackear— y commitearlos publicaría una ruta que apunta a un archivo que no
+existe. El cambio está escrito en el disco y se commitea en cuanto ellos
+aterricen; hasta entonces la vista existe pero no se llega por el menú.
+
 ## v2.490.4 — el inventario se suma en unidades reales, no mezclando cajas con blísteres
 
 Cierra lo que quedó abierto en v2.490.3. `inventory.cantidad` **no está en

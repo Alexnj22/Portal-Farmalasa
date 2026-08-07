@@ -11,7 +11,7 @@ import {
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, Wrench,
-    BookOpen, Contact, Calculator
+    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText
 } from 'lucide-react';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -27,6 +27,7 @@ export const MODULE_MAP = {
     schedules:         { path: '/schedules',       label: 'Horarios y Turnos',        icon: Calendar      },
     requests:          { path: '/requests',        label: 'Gestión de Solicitudes',   icon: ClipboardList },
     vacation_plan:     { path: '/vacation-plan',   label: 'Plan de Vacaciones',       icon: Palmtree      },
+    traslados:         { path: '/traslados',       label: 'Traslados entre Salas',    icon: ArrowLeftRight },
     payroll:           { path: '/payroll',          label: 'Nómina',                   icon: DollarSign    },
     branches:          { path: '/branches',        label: 'Sucursales',               icon: Building2     },
     roles:             { path: '/roles',           label: 'Cargos / Organigrama',     icon: ShieldCheck   },
@@ -53,6 +54,7 @@ export const MODULE_MAP = {
     minmax:            { path: '/minmax',           label: 'Min / Max',                icon: BarChart2     },
     ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas Perdidas',          icon: PackageMinus  },
     compras:           { path: '/compras',           label: 'Compras',                  icon: ShoppingCart  },
+    facturas_sala:     { path: '/facturas-sala',     label: 'Facturas de Sala',         icon: ReceiptText   },
     facturas_compra:   { path: '/facturas-compra',    label: 'Facturas de Compra',       icon: Mail          },
     libros_iva:        { path: '/libros-iva',         label: 'Libros IVA',               icon: BookOpen      },
     libro_compras_completo: { path: '/libro-compras-completo', label: 'Compras Completo',  icon: BookOpen      },

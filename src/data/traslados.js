@@ -138,6 +138,49 @@ export async function fetchDisponibilidadTraslado(requestId) {
 }
 
 /**
+ * Los traslados que ya se cerraron: recibidos y rechazados.
+ *
+ * Es lo que no estaba en ninguna parte. El widget del tablero muestra sólo lo
+ * que está EN VUELO —lo que falta confirmar y lo que falta recibir—, así que en
+ * cuanto un traslado termina desaparece de la única pantalla que lo mostraba.
+ * Medido el 2026-08-07: los 6 traslados de la historia estaban invisibles, los
+ * 4 recibidos porque el filtro de «por recibir» los descarta y los 2 rechazados
+ * porque nadie los consultaba nunca.
+ *
+ * «Cerrado» es rechazado, o aprobado y ya recibido. Un APPROVED sin recibir
+ * sigue en vuelo y vive en la otra pestaña: si apareciera en las dos, el mismo
+ * traslado se contaría dos veces.
+ *
+ * `branchId` recorta a una sala mirándola por los DOS lados —lo que pidió y lo
+ * que le pidieron—: un traslado le pertenece igual siendo origen que destino.
+ * Sin sala, se devuelve lo que el RLS deje ver, que para alcance ALL es todo.
+ */
+export async function fetchTrasladosHistorial({ branchId = null, limite = 200 } = {}) {
+    let q = supabase
+        .from('approval_requests')
+        .select('id, employee_id, note, approver_note, status, metadata, created_at, updated_at')
+        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
+        .in('status', ['APPROVED', 'REJECTED'])
+        .order('updated_at', { ascending: false })
+        .range(0, limite);
+
+    if (branchId) {
+        // Los dos ids viven dentro del mismo jsonb, así que el filtro va por
+        // `metadata->>` y no por columna. Son texto ahí adentro: comparar
+        // contra un número no matchea nada.
+        const id = String(branchId);
+        q = q.or(`metadata->>branch_id.eq.${id},metadata->>origen_branch_id.eq.${id}`);
+    }
+
+    const { data, error } = await q;
+    // El APPROVED sin recibir se descarta acá y no en la consulta: PostgREST no
+    // distingue «la clave no existe» de «la clave es null» dentro de un jsonb,
+    // que es justo la diferencia entre despachado y recibido.
+    const filas = (data ?? []).filter(r => r.status === 'REJECTED' || r.metadata?.erp_recibido);
+    return { filas, error };
+}
+
+/**
  * En qué salas hay un producto, para poder pedirlo desde la búsqueda.
  *
  * La lista de faltantes ya trae sus salas adentro; la búsqueda no. Y el caso

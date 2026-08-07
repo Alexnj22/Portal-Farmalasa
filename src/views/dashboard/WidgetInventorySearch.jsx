@@ -672,11 +672,31 @@ function PanelInventario({ query = '', onQueryChange }) {
                       border: branch.isVencidos ? '1px solid var(--danger)' : '1px solid var(--border-card)',
                     }}
                   >
+                    {/* ── La presentación, también acá (2026-08-07) ──────────
+                        Reportado: «¿por qué si tienen mismo lote y fecha de
+                        vence, los separa en vez de poner un solo total?».
+
+                        No son la misma existencia repetida: son la CAJA, el
+                        BLISTER y la UNIDAD del mismo lote — así los guarda la
+                        farmacia y así los devuelve el inventario. Verificado
+                        sobre la amoxicilina de la captura, lote L5M5137 en La
+                        Popular: 24 CAJA (1x30), 1 BLISTER (1x10) y 3 UNIDAD.
+
+                        Sin la presentación escrita, tres renglones idénticos
+                        con «24 uds», «1 uds» y «3 uds» sólo pueden leerse como
+                        un error. La lista principal ya lo mostraba —«24 no
+                        quiere decir nada sin saber si son cajas o unidades»—;
+                        el detalle se había quedado sin esa lección. */}
                     {prod.lots.length === 1 ? (
                       <div className="flex items-center gap-2 px-3 py-2">
                         <span className="text-micro font-mono text-content-3 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
-                        <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{prod.lots[0].cantidad} uds</span>
+                        {prod.lots[0].presentacion && (
+                          <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
+                            {prod.lots[0].presentacion}
+                          </span>
+                        )}
+                        <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{prod.lots[0].cantidad}</span>
                       </div>
                     ) : (
                       <div className="divide-y divide-divider">
@@ -684,7 +704,12 @@ function PanelInventario({ query = '', onQueryChange }) {
                           <div key={li} className="flex items-center gap-2 px-3 py-1.5">
                             <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                             <ExpiryBadge date={row.fecha_vencimiento} />
-                            <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{row.cantidad} uds</span>
+                            {row.presentacion && (
+                              <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
+                                {row.presentacion}
+                              </span>
+                            )}
+                            <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{row.cantidad}</span>
                           </div>
                         ))}
                       </div>

@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.490.3 — el detalle de inventario dice de qué presentación es cada lote
+
+Reportado con captura: «¿por qué si tienen mismo lote y fecha de vence, los
+separa en vez de poner un solo total?».
+
+**No están repetidos.** Son la CAJA, el BLISTER y la UNIDAD del mismo lote — así
+los guarda la farmacia y así los devuelve el inventario. Verificado sobre la
+amoxicilina de la captura, lote `L5M5137` en La Popular: 24 CAJA (1x30), 1
+BLISTER (1x10) y 3 UNIDAD (1x1).
+
+Lo que fallaba es que la vista de detalle no escribía cuál era cuál, así que tres
+renglones con «24 uds», «1 uds» y «3 uds» sólo podían leerse como un error. La
+lista principal **ya lo mostraba**, con el motivo escrito al lado —«24 no quiere
+decir nada sin saber si son cajas o unidades»—; la vista de detalle se había
+quedado sin esa lección, en sus dos ramas (lote único y varios lotes). Ahora la
+presentación va antes del número, igual que allá, y el número deja de llevar
+«uds» pegado — porque no todos lo son.
+
+> **Queda abierto, y es más grave que esto:** los totales del widget (el del
+> encabezado y el de cada sala) **suman cajas + blísteres + unidades** y rotulan
+> el resultado «uds». Medido sobre este mismo producto: La Popular muestra 46 y
+> tiene 836 unidades; Bodega muestra 155 y tiene 4,494. Y el orden cambia — el
+> widget pone a La Popular (46) por encima de Salud 1 (39), pero Salud 1 tiene
+> 1,034 unidades contra 836. O sea que la pantalla que existe para decir «en qué
+> sala hay» apunta a la sala equivocada. Pendiente de decidir cómo se expresa el
+> total antes de tocarlo.
+
+## v2.490.2 — Checklist de vista nueva, y el barrido aprende pestañas y tema
+
+_(pendiente de redactar)_
+
 ## v2.490.1 — Paginación: el «Ver 25/50/100» pasa a la izquierda y el menú se abre pegado al control
 
 La zona izquierda del paginador decía «40 páginas». El centro ya dice

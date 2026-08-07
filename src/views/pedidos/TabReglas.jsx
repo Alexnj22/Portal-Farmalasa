@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import Switch from '../../components/common/Switch';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -56,16 +57,20 @@ function ruleTypeLabel(rule) {
     return { text: 'Solo cajas', bg: 'bg-surface-card-hover', txt: 'text-content-2' };
 }
 
-// Icono + colores según tipo de presentación
+// Icono + colores según tipo de presentación.
+// El color identifica el TIPO y solo se pinta cuando la opción está elegida —
+// el mismo color que después lleva el badge de la fila. Sin elegir, el ícono va
+// en `content-3` como cualquier otro: si el color también viviera en el estado
+// inactivo dejaría de señalar cuál está activo, que es justo lo que se reportó.
 const presStyle = (tipo) => {
     const t = (tipo || '').toUpperCase();
     if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
-        return { Icon: Box,     bg: 'bg-chart-8-solid', text: 'text-white', iconInactive: 'text-content-3' };
+        return { Icon: Box,     bg: 'bg-chart-8-solid', text: 'text-white' };
     if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
-        return { Icon: Layers,  bg: 'bg-chart-3-solid', text: 'text-white', iconInactive: 'text-chart-3-text' };
+        return { Icon: Layers,  bg: 'bg-chart-3-solid', text: 'text-white' };
     if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
-        return { Icon: Sigma,   bg: 'bg-chart-6-solid', text: 'text-white', iconInactive: 'text-chart-6-text' };
-    return { Icon: Package, bg: 'bg-chart-1-solid',   text: 'text-white', iconInactive: 'text-chart-1-text' };
+        return { Icon: Sigma,   bg: 'bg-chart-6-solid', text: 'text-white' };
+    return { Icon: Package, bg: 'bg-chart-1-solid',   text: 'text-white' };
 };
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -193,7 +198,8 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.
                     </div>
                 ) : (
-                    <div className={`flex flex-wrap gap-2 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <div role="radiogroup" aria-label="Presentación de despacho"
+                        className={`flex flex-wrap gap-2 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                         {dedupedPres.map(pres => {
                             const tipo     = pres.presentaciones?.tipo ?? 'DESCONOCIDO';
                             const isActive = vals.dispatch_id_presentacion === pres.id_presentacion;
@@ -201,21 +207,26 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             const { Icon } = style;
                             return (
                                 <button key={pres.id_presentacion} type="button"
-                                    aria-pressed={isActive}
+                                    role="radio"
+                                    aria-checked={isActive}
                                     onClick={() => selectPres(pres.id_presentacion)}
                                     className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-[var(--dur-fast)] select-none text-left ${
                                         isActive
                                             ? `${style.bg} border-transparent ${style.text} shadow-lg`
-                                            : 'bg-surface-card border-divider text-content-2 hover:border-divider hover:bg-surface-card-hover'
+                                            : 'bg-surface-card border-divider text-content-2 hover:border-brand/40 hover:bg-surface-card-hover'
                                     }`}
                                 >
-                                    <Icon size={15} className={isActive ? 'text-white' : style.iconInactive} />
+                                    <Icon size={15} className={isActive ? 'text-white' : 'text-content-3'} />
                                     <div>
                                         <p className="text-body-sm font-semibold leading-tight">{tipo}</p>
                                         <p className={`text-micro leading-tight ${isActive ? 'text-white/70' : 'text-content-3'}`}>
                                             {pres.factor > 1 ? `×${pres.factor} unidades` : 'unidad base'}
                                         </p>
                                     </div>
+                                    {/* El relleno de color ya distingue la elegida, pero el check lo
+                                        dice sin depender del color — y es lo que se lee de un vistazo
+                                        cuando hay tres tarjetas de tonos distintos al lado. */}
+                                    {isActive && <Check size={14} className="text-white shrink-0" />}
                                 </button>
                             );
                         })}
@@ -241,34 +252,37 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             <p className="text-caption text-content-3 mb-2 leading-snug">
                                 Activa solo para productos en <strong className="text-content-3">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
                             </p>
-                            <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                            <div className={`flex flex-wrap items-center gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 <SegmentedControl
                                     size="sm"
-                                    tone="neutro"
+                                    tone="brand"
                                     label="Unidad de despacho"
                                     value={vals.dispatch_label}
                                     onChange={selectLabel}
                                     options={['CAJA', 'ESTUCHE', 'BOLSA'].map(l => ({ value: l, label: l, icon: Box }))}
                                 />
                                 {vals.dispatch_label && (
-                                    <Button variant="secondary" icon={X} onClick={() => selectLabel(vals.dispatch_label)}>quitar</Button>
+                                    <Button variant="ghost" size="sm" icon={X} onClick={() => selectLabel(vals.dispatch_label)}>quitar</Button>
                                 )}
                             </div>
                         </div>
 
-                        {/* Por lote */}
+                        {/* Por lote — es "una de N elegida", no siete botones de acción.
+                            Estaban escritos como `Button tone="chart-1"`, o sea los siete
+                            rellenos de azul a la vez: el múltiplo activo no se distinguía
+                            de los demás (reportado 2026-08-07). `SegmentedControl` es el
+                            canónico de esa forma y pinta solo el elegido. */}
                         <div className="space-y-2">
                             <p className="text-micro text-content-3 uppercase tracking-widest font-bold">Por lote</p>
-                            <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                                {MULTIPLO_PILLS.map(n => (
-                                    <Button
-                                        size="sm"
-                                        tone="chart-1"
-                                        key={n}
-                                        type="button"
-                                        onClick={() => selectMultiplo(n)}
-                                    >×{n}</Button>
-                                ))}
+                            <div className={`flex flex-wrap items-center gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                                <SegmentedControl
+                                    size="sm"
+                                    tone="brand"
+                                    label="Múltiplo por lote"
+                                    value={String(multiplo)}
+                                    onChange={v => selectMultiplo(Number(v))}
+                                    options={MULTIPLO_PILLS.map(n => ({ value: String(n), label: `×${n}` }))}
+                                />
                                 <PortalInput
                                     aria-label="Otro múltiplo de despacho"
                                     type="number"
@@ -280,19 +294,19 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     placeholder="Otro…"
                                     min={1}
                                     compact
-                                    inputClassName="text-body-xl"
-                                    className="w-20"
+                                    className="w-24"
                                 />
                             </div>
 
-                            {/* Ejemplo de redondeo — corregido según etiqueta */}
-                            <div className="px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-label text-chart-1-text">
+                            {/* Ejemplo de redondeo — corregido según etiqueta.
+                                Neutro y no azul: es texto explicativo, no una selección. */}
+                            <div className="px-3 py-2 rounded-xl bg-surface-card-hover border border-border-card text-label text-content-2">
                                 <span className="font-medium">Ejemplo:</span> necesidad de 7 und.
                                 {' → '}despacha{' '}
                                 {vals.dispatch_label && multiplo > 1 ? (
-                                    <strong>{Math.ceil(7 / multiplo)} {vals.dispatch_label}</strong>
+                                    <strong className="text-content">{Math.ceil(7 / multiplo)} {vals.dispatch_label}</strong>
                                 ) : (
-                                    <><strong>{Math.ceil(7 / multiplo) * multiplo} pack(s)</strong>{' '}de{' '}<strong>{selectedTipo}</strong>{multiplo > 1 ? ` (múltiplo de ${multiplo})` : ''}</>
+                                    <><strong className="text-content">{Math.ceil(7 / multiplo) * multiplo} pack(s)</strong>{' '}de{' '}<strong className="text-content">{selectedTipo}</strong>{multiplo > 1 ? ` (múltiplo de ${multiplo})` : ''}</>
                                 )}
                             </div>
                         </div>
@@ -307,28 +321,34 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         Caja especial
                         <span className="normal-case tracking-normal font-medium text-content-3"> · producto va fuera de cajas normales</span>
                     </p>
-                    <Button
-                        tone="chart-6"
-                        icon={Package}
-                        type="button"
-                        onClick={() => {
-                            const next = { ...vals, caja_especial: !vals.caja_especial };
-                            setVals(next); onApply(next);
-                        }}
-                    >
-                        {vals.caja_especial ? 'Caja especial activa — E1, E2…' : 'Activar caja especial'}
-                    </Button>
-                    {vals.caja_especial && (
-                        <p className="text-caption text-chart-6-text mt-1.5 px-0.5">
-                            Cada unidad en el pedido recibe una etiqueta E1, E2… independiente.
-                        </p>
-                    )}
+                    {/* Encendido/apagado → `Switch`, no un botón relleno de rosa. Como
+                        botón no se sabía si el rótulo describía el estado actual o lo que
+                        iba a pasar al apretarlo, y su color competía con la presentación
+                        elegida, que es la que sí debe destacar. */}
+                    <div className="flex items-center gap-3">
+                        <Switch
+                            checked={!!vals.caja_especial}
+                            disabled={saving}
+                            label="Caja especial"
+                            onChange={(on) => {
+                                const next = { ...vals, caja_especial: on };
+                                setVals(next); onApply(next);
+                            }}
+                        />
+                        <span className="text-body-sm text-content-2">
+                            {vals.caja_especial
+                                ? 'Activa — cada unidad recibe su etiqueta E1, E2… independiente.'
+                                : 'Desactivada — el producto viaja en las cajas normales.'}
+                        </span>
+                    </div>
                 </div>
             )}
 
-            {/* Botón quitar regla — rojo por defecto */}
+            {/* Quitar la regla es reversible (se vuelve a asignar en dos clics), así que
+                va en tinte y no en rojo sólido — el sólido se reserva para lo definitivo
+                (DESIGN.md §15.2 / nota de SOFT_CLASSES en Button). */}
             {vals.dispatch_id_presentacion && (
-                <Button variant="destructive" icon={Ban} disabled={saving} onClick={clearRule}>Quitar regla de despacho</Button>
+                <Button tone="danger" soft size="sm" icon={Ban} disabled={saving} onClick={clearRule}>Quitar regla de despacho</Button>
             )}
 
             {/* Notas */}

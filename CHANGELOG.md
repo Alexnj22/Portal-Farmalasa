@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.495.2 — El permiso de Traslados dice que abre una vista, no sólo que confirma envíos
+
+Preguntado: «¿no está en permisos? agregalo y activalo a Edwin». Está, y está
+activo — pero la pregunta tenía una causa real.
+
+Verificado en la pantalla de Permisos con el cargo **Supervisor/a de Ventas**
+elegido, que es el de Edwin: «Traslados entre Salas» aparece en el grupo
+**OPERACIONES**, junto a Solicitudes, con VER, GESTIONAR y APROBAR encendidos y
+alcance **TODOS**. El cargo además está marcado **SU** («acceso total · permisos
+ignorados»), así que por dos caminos distintos ya lo tenía.
+
+Lo que sí estaba mal es lo que el permiso DICE. Su descripción era «Confirmar el
+envío de producto que otra sala pide y no tiene» — cierto cuando el módulo era
+únicamente la baldosa del tablero, y ya no: desde v2.491.0 abre la vista
+`/traslados` con el historial. Buscar «vista» o «historial» en esa pantalla no
+daba nada, y el permiso que sí lo concede no se anunciaba como tal. Ahora dice
+las dos cosas.
+
+Nota de método: la primera comprobación dio «0 tarjetas en la grilla» y era
+falsa — la prueba no había seleccionado ningún cargo, y sin cargo la grilla ni
+se dibuja. La segunda, con el cargo elegido, ubicó la tarjeta por su posición en
+pantalla (x=1314) para no confundirla con la entrada del menú lateral (x=75),
+que dice exactamente el mismo texto.
+
+## v2.495.1 — Reglas de despacho: se ve cuál está activo, y menos colores
+
+Reportado al desplegar una regla: «muchos colores» y «no sé qué está activo, no
+se distingue».
+
+Lo segundo era literal. Las siete opciones de **Por lote** (×1 … ×50) estaban
+escritas como siete botones `tone="chart-1"`, o sea **rellenos de azul los
+siete a la vez**: el múltiplo elegido no se distinguía de los otros seis. No es
+una fila de acciones, es "una de N está seleccionada" — que es exactamente
+`SegmentedControl`, el canónico que existe desde D3.3 justo para esta forma.
+Ahora se pinta solo el elegido, y el control lo anuncia como `radiogroup`.
+
+Lo primero venía de que el color estaba repartido sin criterio. La regla que
+faltaba: **el color aparece cuando algo está activo**, y si no, no. De ahí:
+
+- El ícono de una presentación **sin elegir** va en `content-3`, no en su
+  propio color — antes BLISTER se pintaba morado estuviera elegido o no, así
+  que el color dejaba de señalar cuál estaba activo. Elegida sigue llevando el
+  color de su tipo, el mismo del badge de la fila, y ahora además un check.
+- **Caja especial** era un botón relleno de rosa cuyo rótulo no dejaba claro si
+  describía el estado actual o lo que iba a pasar al apretarlo. Es
+  encendido/apagado: pasa a `Switch`, con el estado escrito al lado.
+- **Quitar regla de despacho** baja de rojo sólido a tinte. Se vuelve a asignar
+  en dos clics; el sólido se reserva para lo definitivo (DESIGN.md §15.2).
+- El recuadro del **Ejemplo** deja de ser azul: es texto explicativo, no una
+  selección.
+
+De paso, el campo «Otro…» del múltiplo se cortaba a «Otro..» — tenía
+`text-body-xl` pisando al `compact` dentro de una caja de `w-20`.
+
 ## v2.495.0 — el pedido reparte por lote, y el lote elegido manda
 
 Pedido del usuario: «que pregunte presentación y cantidad, y abajo de eso ponga

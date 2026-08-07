@@ -81,7 +81,12 @@ const GRUPOS_CRUDOS = [
             // confirmar un traslado de la propia sala y NADA más. Metido dentro de
             // Solicitudes, dárselo a una jefatura de sala le entregaría de arrastre
             // las vacaciones y los anticipos de su gente.
-            { key: 'traslados',    label: 'Traslados entre Salas',  desc: 'Confirmar el envío de producto que otra sala pide y no tiene',  icon: Truck,         hasApprove: true,  hasScope: true },
+            // La descripción decía sólo «Confirmar el envío…», que era cierto
+            // cuando el módulo era únicamente la baldosa del tablero. Desde que
+            // tiene vista propia (`/traslados`, 2026-08-07) también abre el
+            // historial, y buscarlo en esta pantalla por «vista» o «historial»
+            // no daba nada — reportado así: «¿no está en permisos?».
+            { key: 'traslados',    label: 'Traslados entre Salas',  desc: 'Abrir la vista de traslados —lo que está en camino y el historial con sus motivos— y confirmar el envío de producto que otra sala pide',  icon: Truck,         hasApprove: true,  hasScope: true },
             { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false, hasScope: true },
             { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true,  hasScope: true, sub: [
                 // La boleta y la planilla impresas se llevan el salario de cada

@@ -962,7 +962,15 @@ function PanelInventario({ query = '', onQueryChange }) {
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-label font-bold text-content-2 truncate leading-tight">{prod.descripcion}</p>
-                      {prod.presentacion && <p className="text-micro text-content-3">{prod.presentacion}</p>}
+                      {/* Sólo con UN lote. `prod.presentacion` es la de la
+                          primera fila que se vio, así que con varios lotes
+                          nombra una cualquiera —y abajo cada renglón muestra la
+                          suya, que la contradice—. Es el mismo campo que hacía
+                          desaparecer sucursales del detalle (v2.498.2); acá no
+                          filtraba nada, sólo mentía en pantalla. */}
+                      {prod.lots.length === 1 && prod.presentacion && (
+                        <p className="text-micro text-content-3">{prod.presentacion}</p>
+                      )}
                       {prod.lots.length > 1 && (
                         <div className="mt-1 space-y-0.5">
                           {prod.lots.map((r, li) => (

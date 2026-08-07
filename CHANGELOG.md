@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.504.0 — El código de v2.499.1, que se documentó pero nunca llegó
+
+v2.499.1 quedó **escrito y no aplicado**: su entrada del changelog entró a la
+historia dentro del commit de otra sesión —que se llevó `CHANGELOG.md` entero— y
+el cambio de código se quedó en el árbol de trabajo. Durante unos commits el repo
+documentó un arreglo que no existía.
+
+Acá va el código. La tarjeta de un producto vencido en la Consulta de Inventario
+sólo muestra la presentación cuando tiene **un** lote: con varios,
+`prod.presentacion` es la de la primera fila que se vio y contradice a los
+renglones de abajo, que ya muestran la suya. Es el mismo campo que hacía
+desaparecer sucursales del detalle (v2.498.2); acá no filtraba nada, sólo mentía
+en pantalla.
+
+El resto de v2.499.1 —el barrido y sus veredictos— sigue siendo válido tal como
+está escrito ahí: no hubo más hallazgos, y el riesgo latente de
+`buildEspecialesBlock` sigue sin dispararse (0 nombres repetidos entre productos
+activos).
+
 ## v2.503.0 — El toque se siente: acuse en los canónicos
 
 En un teléfono **no existe `hover:`**. Un control que sólo cambia al pasar el

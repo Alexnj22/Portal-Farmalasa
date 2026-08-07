@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { webpSignedUrl } from '../../utils/storageFiles';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
@@ -118,7 +119,14 @@ function VendorAvatar({ employee, size = 6 }) {
   if (!employee)
     return <div className={`${base} bg-surface-card-hover`}><User size={size <= 6 ? 11 : 14} className="text-content-3" /></div>;
   if (employee.photo || employee.photo_url)
-    return <div className={base}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
+    // WEBP y no PNG. Medido el 2026-08-06 al abrir este widget: seis fotos,
+    // **0,98 MB**, 167 kB de promedio, y la más lenta tardó 2,1 s — para
+    // dibujarlas en un círculo de 20 píxeles. `webpSignedUrl` ya existía, con
+    // su medición escrita (168 kB → 20 kB), y no lo usaba nadie.
+    //
+    // `loading="lazy"` además: la lista trae un mes de ventas y las de abajo no
+    // hacen falta hasta que alguien baje.
+    return <div className={base}><img src={webpSignedUrl(employee.photo || employee.photo_url)} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
   return (
     <div className={`${base} bg-surface-card-hover`}>
       <span className="text-content-2 font-black text-caption leading-none">{employee.name?.charAt(0)}</span>

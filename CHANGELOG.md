@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.467.1 — Las fotos del widget de facturación pesaban 14 veces lo necesario
+
+Reportado por el usuario —«carga lento las fotos»— y medido en el navegador:
+abrir Modificar Facturación bajaba **0,98 MB en seis fotos**, 167 kB cada una,
+la más lenta en **2,1 segundos**… para dibujarlas en un círculo de **20
+píxeles**.
+
+La herramienta para arreglarlo **ya existía y no la usaba nadie**:
+`webpSignedUrl` cambia el endpoint de la URL firmada por el de imagen y tiene su
+medición escrita al lado desde que se creó (168 kB → 20 kB). Alguien la
+construyó y nunca la conectó.
+
+Ahora, medido de nuevo sobre la misma pantalla: **0,07 MB**, 19 kB por foto, la
+más lenta en **553 ms**. Catorce veces menos peso y cuatro veces más rápido. Y
+con carga diferida, que en una lista de un mes de ventas evita traer las de
+abajo hasta que alguien baje.
+
+**Y de paso, otra vez el mismo agujero del build**: la primera versión del
+arreglo usaba `webpSignedUrl` sin importarlo y **compiló igual** — habría
+reventado recién al abrir el widget. Es el tercer caso hoy de un símbolo usado y
+no importado que el build deja pasar.
+
 ## v2.467.0 — El expediente del producto a pantalla completa: el envase
 
 **Esto es el envase, no el diseño aprobado.** El catálogo deja de volver a la

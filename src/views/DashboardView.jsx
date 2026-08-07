@@ -126,6 +126,74 @@ const getWidgetSize = (id) => {
   return WIDGET_SIZES[id] || { minCols: 1, minRows: 1, label: id };
 };
 
+// Coloca widgets nuevos en el primer hueco REAL del acomodo guardado.
+//
+// Antes esto lo resolvía `autoPlaceOrder` sobre "los que ya están + los que
+// faltan", quedándose sólo con la posición de los nuevos. El problema es que
+// `autoPlaceOrder` COMPACTA: reacomoda todo contra la esquina superior
+// izquierda. O sea que el hueco que encontraba para el widget nuevo era un
+// hueco del tablero **compactado**, no del que el usuario tiene guardado.
+//
+// En un tablero recién armado los dos coinciden y no se nota. En cuanto alguien
+// mueve una baldosa hacia abajo o deja un espacio, dejan de coincidir: el lugar
+// que el recálculo veía libre está ocupado en el acomodo de verdad, y las dos
+// baldosas quedan encimadas. Reportado con una captura el 2026-08-07.
+//
+// Acá se sella la huella real —cada widget con su tamaño real y su posición
+// guardada— y recién sobre eso se busca. `sizes` son los tamaños que el usuario
+// eligió; el mínimo del registro es sólo el arranque.
+function colocarEnHuecos(base, faltan, sizes, gridCols) {
+  const ocupado = new Set();
+  const medida = (id) => {
+    const def = getWidgetSize(id);
+    return {
+      cols: Math.min(Math.max(sizes[id]?.cols ?? def.minCols, 1), gridCols),
+      rows: Math.max(sizes[id]?.rows ?? def.minRows, 1),
+    };
+  };
+  const marcar = (col, row, cols, rows) => {
+    for (let c = col; c < col + cols; c++)
+      for (let r = row; r < row + rows; r++) ocupado.add(`${c},${r}`);
+  };
+  const entra = (col, row, cols, rows) => {
+    if (col + cols - 1 > gridCols) return false;
+    for (let c = col; c < col + cols; c++)
+      for (let r = row; r < row + rows; r++)
+        if (ocupado.has(`${c},${r}`)) return false;
+    return true;
+  };
+
+  let ultimaFila = 0;
+  for (const [id, pos] of Object.entries(base)) {
+    const { cols, rows } = medida(id);
+    marcar(pos.col, pos.row, cols, rows);
+    ultimaFila = Math.max(ultimaFila, pos.row + rows - 1);
+  }
+
+  const salida = {};
+  for (const id of faltan) {
+    const { cols, rows } = medida(id);
+    // El techo del barrido sale del propio tablero: la fila más baja ocupada
+    // más el alto del nuevo. Con eso siempre queda al menos una franja vacía
+    // debajo de todo, así que el bucle no puede terminar sin colocarlo. Un tope
+    // fijo (el `r <= 100` de `autoPlaceOrder`) se queda corto justo en el
+    // tablero largo, que es donde de verdad hay que buscar.
+    const techo = ultimaFila + rows + 1;
+    let puesto = false;
+    for (let r = 1; r <= techo && !puesto; r++) {
+      for (let c = 1; c <= gridCols && !puesto; c++) {
+        if (entra(c, r, cols, rows)) {
+          marcar(c, r, cols, rows);
+          salida[id] = { col: c, row: r };
+          ultimaFila = Math.max(ultimaFila, r + rows - 1);
+          puesto = true;
+        }
+      }
+    }
+  }
+  return salida;
+}
+
 const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'branches', 'calendar', 'announcements', 'birthdays', 'cotizaciones', 'facturacion', 'top_productos'];
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
@@ -669,16 +737,14 @@ const DashboardView = ({ openModal }) => {
       const pa = base[a], pb = base[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
     };
-    // Depura y completa SIN mover lo que ya estaba: recalcula un acomodo con
-    // todos, pero sólo se queda con la posición de los que faltaban.
+    // Depura y completa SIN mover lo que ya estaba: los que faltan van al primer
+    // hueco REAL del acomodo guardado (ver `colocarEnHuecos`, que es donde vive
+    // el porqué de no recalcular el tablero entero para averiguarlo).
     const alDia = (guardado, sizes, cols) => {
       const base = Object.fromEntries(Object.entries(guardado).filter(([id]) => vigente(id)));
       const faltan = catalogo.filter(id => !(id in base));
       if (!faltan.length) return base;
-      const recalculado = autoPlaceOrder(
-        [...Object.keys(base).sort(porPosicion(base)), ...faltan], sizes, cols);
-      faltan.forEach(id => { base[id] = recalculado[id] || { col: 1, row: 999 }; });
-      return base;
+      return { ...base, ...colocarEnHuecos(base, faltan, sizes, cols) };
     };
 
     if (!isMobile) return alDia(tabLayout, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
@@ -1471,8 +1537,20 @@ const DashboardView = ({ openModal }) => {
                 title="Cambiar tamaño"
             />
 
+            {/* `w-max` NO es cosmético: sin ancho declarado, una caja
+                `absolute` con `right-0` y sin `left` se dimensiona por
+                shrink-to-fit, y el ancho disponible que usa para eso es el de su
+                BLOQUE CONTENEDOR — que acá es el envoltorio del botón, de unos
+                28px. O sea que el panel se encogía a su min-content, y como
+                `SegmentedControl` lleva `flex-wrap`, los números se partían en
+                dos renglones y el grupo de Alto se desbordaba. Reportado con
+                captura el 2026-08-07 sobre un widget de 4 columnas de ancho.
+
+                Los demás popovers del portal ya declaran el suyo (`w-max`,
+                `w-[210px]`, `min-w-[170px]`…). Éste era el único sin ancho, y
+                por eso era el único que se deformaba. */}
             {isResizeOpen && (
-              <div className="absolute bottom-full right-0 mb-2 animate-in fade-in zoom-in-95 origin-bottom-right duration-[var(--dur-fast)]">
+              <div className="absolute bottom-full right-0 mb-2 w-max animate-in fade-in zoom-in-95 origin-bottom-right duration-[var(--dur-fast)]">
                 {/* gap ampliado + before:-inset-1 en mobile: mejora el touch target
                     de 24px a ~32px sin que las zonas de toque de números
                     vecinos se solapen (gap-1.5=6px era insuficiente, v2.47.4) */}

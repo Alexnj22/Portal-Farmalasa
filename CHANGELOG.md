@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.1 — el widget nuevo cae en el hueco real, y el panel de tamaño deja de deformarse
+
+Dos defectos del tablero reportados con capturas, los dos de razonamiento y
+ninguno propio del widget nuevo: estaban ahí desde antes y «Facturas de mi Sala»
+sólo los hizo visibles.
+
+**1 · Un widget nuevo se encimaba sobre otro en vez de ir al primer hueco.**
+`alDia` completaba el acomodo así:
+
+```js
+const recalculado = autoPlaceOrder([...losQueYaEstán, ...losQueFaltan]);
+faltan.forEach(id => { base[id] = recalculado[id]; });
+```
+
+El comentario decía «recalcula un acomodo con todos, pero sólo se queda con la
+posición de los que faltaban», y ahí está el error: **`autoPlaceOrder` compacta**
+—empuja todo contra la esquina superior izquierda—, así que el hueco que
+encontraba era un hueco del tablero *compactado*, no del que el usuario tiene
+guardado. Mientras el acomodo esté recién armado los dos coinciden y no se nota;
+en cuanto alguien mueve una baldosa hacia abajo, dejan de coincidir.
+
+Reproducido con el caso de la captura —Operación, cuatro baldosas, Traslados
+bajada a la fila 3— el algoritmo viejo colocaba la nueva en (1,3), **encima de
+Traslados**. El nuevo la coloca en (3,2), que es el hueco de verdad. Ahora la
+huella se sella con la posición y el tamaño **reales** de cada baldosa y recién
+sobre eso se busca (`colocarEnHuecos`).
+
+De paso desaparece el `r <= 100` como tope de búsqueda: el barrido llega hasta
+una franja por debajo de lo más bajo ocupado, así que no puede quedarse sin
+lugar en un tablero largo.
+
+**2 · El panel de tamaño (W×H) se partía y se salía de la pantalla.** La caja es
+`absolute … right-0` y **no declaraba ancho**. Sin ancho, una caja así se
+dimensiona por shrink-to-fit contra su bloque contenedor — que acá es el
+envoltorio del botón, de unos 28px. Se encogía a su min-content, y como
+`SegmentedControl` lleva `flex-wrap` (puesto a propósito para Comunicados), los
+números se partían en dos renglones y el grupo de Alto se desbordaba.
+
+Lo delató el propio repo: **todos los demás popovers ya declaran su ancho**
+(`w-max`, `w-[210px]`, `min-w-[170px]`, `w-max max-w-[220px]`). Éste era el único
+sin uno, y por eso el único que se deformaba. Va con `w-max`.
+
 ## v2.489.0 — Los permisos del tablero se agrupan por pestaña, y la pestaña vacía no sale
 
 Tres pedidos sobre lo mismo: que repartir permisos del tablero se parezca al

@@ -21,7 +21,9 @@
     "version:bump": "node scripts/version-bump.mjs",
     "worktree": "bash scripts/worktree.sh",
     "verificar:libros": "node scripts/verificar-libros.mjs",
-    "gate:permisos": "node scripts/permissions-gate.mjs"
+    "gate:permisos": "node scripts/permissions-gate.mjs",
+    "fichas:diaria": "bash scripts/migracion-clientes/corrida-diaria.sh",
+    "fichas:instalar-cron": "mkdir -p ~/Library/Application\\ Support/farmalasa && cp scripts/migracion-clientes/corrida-diaria.sh ~/Library/Application\\ Support/farmalasa/ && chmod +x ~/Library/Application\\ Support/farmalasa/corrida-diaria.sh && cp scripts/migracion-clientes/com.farmalasa.fichas-clientes.plist ~/Library/LaunchAgents/ && launchctl unload ~/Library/LaunchAgents/com.farmalasa.fichas-clientes.plist 2>/dev/null; launchctl load ~/Library/LaunchAgents/com.farmalasa.fichas-clientes.plist && echo \"armado para las 21:30 SV · verificar: launchctl list | grep farmalasa\""
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

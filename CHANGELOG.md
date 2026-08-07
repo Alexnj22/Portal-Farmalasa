@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.467.2 — Las fichas dudosas van a Por revisar, y la corrida diaria queda agendada
+
+Cuando la limpieza de clientes repetidos encuentra dos fichas que parecen la
+misma persona pero **los nombres no se parecen**, ya no las une ni las deja
+pasar en silencio: las manda a la pestaña **Por revisar** de Clientes, con la
+explicación de por qué quedaron ahí.
+
+Las cuatro primeras:
+
+- IRENE PASTORA → IRENE PINEDA
+- JEYBI CALDERON → HEYVI CALDERON
+- ARQUIMIDES FORNOS → ARQUIMIDES FERNANDEZ
+- MARIA URBINA VDA. DE MORALES → «NO APARECE»
+
+Unir a dos clientes que no lo son mezcla sus historiales de compra y no tiene
+vuelta atrás, así que esas se deciden a mano.
+
+**Y la corrida diaria quedó armada para las 21:30**, una hora antes del barrido
+de facturas de las 22:30 — así el barrido encuentra las fichas ya corregidas.
+Hace todo en orden: fichas nuevas, limpieza de repetidos, y copiar los datos al
+portal.
+
+Falta un permiso del sistema para que arranque sola: macOS bloquea que una
+tarea programada lea la carpeta Documentos sin autorización explícita. Mientras
+tanto se corre con `npm run fichas:diaria`.
+
 ## v2.467.1 — Las fotos del widget de facturación pesaban 14 veces lo necesario
 
 Reportado por el usuario —«carga lento las fotos»— y medido en el navegador:

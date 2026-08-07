@@ -343,8 +343,36 @@ def deduplicar(url, cab, clientes, escribir):
         print('\n  a revisar a mano (no se fusionan):')
         for c in dudosas:
             d = ocupados[c['erp_id']]
-            print(f'    ? "{c["name"][:36]}" (id {c["id"]}, {c.get("_facturas","?")} fact.) '
+            print(f'    ? "{c["name"][:36]}" (id {c["id"]}) '
                   f'→ "{d["name"][:36]}" (erp {c["erp_id"]})')
+        # A la bandeja «Por revisar» del portal, no solo a la consola: un
+        # hallazgo que vive en la salida de un script se pierde al cerrar la
+        # terminal. El motivo cae solo en la familia "repetido" — la vista
+        # deriva 'congelado' de `fiscal_congelado` y todo lo demás es repetido.
+        if escribir:
+            filas = []
+            for c in dudosas:
+                d = ocupados[c['erp_id']]
+                filas.append({
+                    'erp_id': c['erp_id'],
+                    'name': c['name'],
+                    'motivo': 'fusion_dudosa',
+                    # Sin nombrar el sistema de origen: esto se ve en pantalla.
+                    'detalle': (f'El número interno {c["erp_id"]} corresponde a '
+                                f'«{d["name"]}», pero esta ficha se llama '
+                                f'«{c["name"]}». Podrían ser dos personas '
+                                f'distintas: no se unieron.'),
+                    'datos': {'ficha_suelta_id': c['id'],
+                              'ficha_suelta_nombre': c['name'],
+                              'ficha_destino_id': d['id'],
+                              'ficha_destino_nombre': d['name']},
+                })
+            try:
+                n = pedir_json(f'{url}/rest/v1/rpc/upsert_clientes_por_revisar',
+                               {'p_filas': filas}, cab)
+                print(f'  → {len(filas)} publicadas en «Por revisar» ({n} nuevas o cambiadas)')
+            except Exception as e:
+                print(f'  ⚠️  no se pudieron publicar en «Por revisar»: {str(e)[:120]}')
 
     duplicadas = claras
     if not escribir:
@@ -425,7 +453,14 @@ def main():
     if a.diario and a.nuevas:
         fichas_nuevas_del_erp(a.nuevas, a.escribir)
 
-    # ── Paso 2: las huérfanas del portal. Consistencia, no riesgo ──
+    # ── Paso 2: limpiar las fichas sueltas que se colaron ──
+    # Va ANTES de emparejar y espejar: una ficha suelta que en realidad es un
+    # duplicado no se puede emparejar (su número ya tiene dueño) y la base la
+    # rechaza. Fusionarla primero evita ese error y deja menos trabajo abajo.
+    if a.diario:
+        deduplicar(url, cab, candidatos_backlog(url, cab), a.escribir)
+
+    # ── Paso 3: las huérfanas que quedan. Consistencia, no riesgo ──
     clientes = candidatos_backlog(url, cab)
     if a.limite:
         clientes = clientes[:a.limite]

@@ -40,3 +40,4 @@ scripts/migracion-clientes/erp.env
 scripts/migracion-clientes/rep_cli.html
 dist-*
 scripts/migracion-clientes/entrada_observaciones.json
+scripts/migracion-clientes/logs/

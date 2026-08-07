@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.477.1 — La baldosa es una tarjeta canónica, y el gel le gana al lift
+
+Reportado: «el modo oscuro se ve perfecto, pero el modo claro no» y «no tiene el
+brillo del borde al entrar a la card, ni los efectos de click». Un solo error
+detrás de las dos cosas.
+
+**`bg-surface-card` es el color, no la tarjeta.** Las baldosas del tablero
+estaban escritas `rounded-2xl border border-border-card bg-surface-card` sobre un
+`<button>` pelado. Todos los tokens correctos — y aun así mal, porque esas tres
+clases copian el relleno del canónico y dejan afuera el `backdrop-filter`, la
+sombra de tarjeta, los cuatro `inset` del lente del filo, el `::after` que
+destella al apuntarla y el gel al presionar.
+
+En oscuro no se notaba: el color solo ya separa de un fondo oscuro. En claro la
+tarjeta desaparecía contra la página, porque lo que la despegaba era la escarcha
+y el lente, no el relleno. Medido en la baldosa: `backdrop-filter` pasó de `none`
+a `blur(44px) saturate(2)` y la sombra de 1 capa a 6.
+
+Con `data-surface="card"` + `data-interactive` la baldosa recibe el material
+entero, el destello (`opacity 0 → 1`, animación `filo-corre`) y el radio del tema
+(28px en Liquid, 12px en Solid). Se van las clases de geometría: `index.css` va
+sin `@layer` y le gana a Tailwind igual. También la tarjeta de línea del banco de
+Ajuste de Inventario, que tenía lo mismo.
+
+**Y un fallo del canónico que apareció al medirlo.** `[data-interactive]:active
+{ transform: scale(.994) }` vive ~140 líneas más arriba que
+`[data-surface="card"]:hover { transform: translateY(...) }`, y las dos son
+(0,2,0): misma especificidad, gana la última. En escritorio presionar implica
+estar apuntando, así que **una tarjeta clicable no cedía nunca** — medido: al
+presionar, `transform` seguía en `translateY(-3px)` sin rastro del `scale`.
+
+No era de esta baldosa: alcanza a todo lo que sea superficie y clicable a la vez,
+que es lo que produce `clickable()` sobre una tarjeta — las filas de facturas,
+las tarjetas de empleado, cualquier cosa que se abra al tocarla. La regla nueva
+**compone** en vez de reemplazar, así que una tarjeta presionada sigue levantada
+y además cede. Verificado en los tres temas: Liquid claro y oscuro dan
+`scale(0.994) translateY(-3px)`; Solid da `translateY(1px)`, que es su
+vocabulario — ahí no hay gel porque no hay material que ceder.
+
+**Sin gate, y dicho por qué.** Se probaron dos señales para detectarlo solo:
+`bg-surface-card` + borde + radio da 133 coincidencias en el repo, y el
+`hover:translate-y-[var(--lift-*)]` a mano da 78 — casi todas legítimas
+(envoltorios de campo con alto fijo, chips). Un detector con esa tasa de falsos
+positivos se silencia a la semana. Queda en `DESIGN.md` §5.0.1, que es donde se
+sostiene.
+
 ## v2.477.0 — Barrido de las 37 vistas, y los 125 blancos de Mín·Máx
 
 El barrido de la fase 4 miraba **ocho** vistas, las que el personal usa en

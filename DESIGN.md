@@ -592,6 +592,41 @@ de al lado se movía 2, y encima `translate` no está en la transición del
 canónico, así que ese sobrante saltaba sin animar. Corregidas las 11; lo vigila
 la categoría **`lift-clavado`** de `npm run gate:design`, bloqueante en cero.
 
+### 5.0.1 `bg-surface-card` es el COLOR, no la tarjeta (2026-08-07)
+
+Reportado así: *«el modo oscuro se ve perfecto, pero el modo claro no»*, y sobre
+la misma pieza: *«no tiene el brillo del borde al entrar a la card, ni los
+efectos de click»*. Las dos cosas eran el mismo error.
+
+Las baldosas del tablero estaban escritas
+`rounded-2xl border border-border-card bg-surface-card` sobre un `<button>`
+pelado. **Todos los tokens correctos, y aun así mal**: esas tres clases copian
+el color del canónico y dejan afuera todo lo demás —
+
+| lo que trae `[data-surface="card"]` | lo que da la clase suelta |
+|---|---|
+| `backdrop-filter: var(--backdrop-card)` | — |
+| `--card-shadow` + los 4 `inset` del lente | — |
+| el `::after` que destella al apuntarla | — |
+| el gel al presionar (con `data-interactive`) | — |
+| `--card-radius` del tema | el radio que uno escribió |
+
+En **oscuro no se nota**: el color solo ya separa de un fondo oscuro. En claro
+la tarjeta desaparece contra la página, porque lo que la despegaba era la
+escarcha y el lente, no el relleno. Medido en la baldosa antes y después:
+`backdrop-filter` pasó de `none` a `blur(44px) saturate(2)` y la sombra de 1
+capa a 6.
+
+**La regla:** una superficie va por su `data-surface`, nunca por sus clases de
+color. `bg-surface-card` está bien para lo que NO es una tarjeta —el relleno de
+un envoltorio de input, un chip— y para eso existe.
+
+**Esto no lo puede vigilar un gate.** Se probaron dos señales: `bg-surface-card`
++ borde + radio da **133** coincidencias en el repo y `hover:translate-y-[var(--lift-*)]`
+a mano da **78**, casi todas legítimas (envoltorios de campo con alto fijo). Un
+detector con esa tasa de falsos positivos se silencia a la semana. Queda escrito
+acá y en la memoria, que es donde sí se sostiene.
+
 ### 5.1 `data-tono` — la tarjeta marcada por su estado (2026-07-28)
 
 **El canónico era INDECORABLE, y eso explicaba las últimas tarjetas escritas a

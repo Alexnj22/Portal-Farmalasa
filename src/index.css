@@ -2808,6 +2808,33 @@ thead.sticky,
   }
 }
 
+/* ── El gel le gana al lift (2026-08-07) ──────────────────────────────────
+   `[data-interactive]:active { transform: scale(.994) }` vive en §1.6, ~140
+   líneas MÁS ARRIBA que `[data-surface="card"]:hover`, y las dos son (0,2,0):
+   misma especificidad, gana la última. En escritorio presionar implica estar
+   apuntando, así que el hover pisaba al active y **una tarjeta clicable no
+   cedía nunca**. Medido en la baldosa del tablero: al presionar, `transform`
+   seguía en `translateY(-3px)`, sin rastro del `scale(.994)`.
+
+   No es un problema de esta baldosa: alcanza a todo lo que sea superficie y
+   clicable a la vez, que es lo que produce `clickable()` sobre una tarjeta —
+   las filas de facturas, las tarjetas de empleado, cualquier cosa que se abra
+   al tocarla.
+
+   Se COMPONE en vez de reemplazar: una tarjeta presionada sigue levantada y
+   además cede, que es lo que el material dice. El lift sale de la misma
+   variable que usa el hover, así que las superficies que no la definen caen en
+   0 y sólo ceden. */
+[data-surface][data-interactive]:active {
+  transform: translateY(var(--card-lift-activo, 0px)) scale(.994);
+}
+/* En Solid no hay gel —no hay material que ceder—: se hunde, que es su
+   vocabulario, y por eso tampoco arrastra el lift. */
+[data-theme="solid"]      [data-surface][data-interactive]:active,
+[data-theme="solid-dark"] [data-surface][data-interactive]:active {
+  transform: translateY(1px);
+}
+
 
 [data-surface="page-header"] {
   background: var(--surface-header);

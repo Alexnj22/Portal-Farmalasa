@@ -526,7 +526,11 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                         const llevaLote = lotes.length > 0;
                         const pide = faltantes.find(f => f.id === l.id)?.problemas ?? [];
                         return (
-                            <div key={l.id} className="rounded-2xl border border-border-card bg-surface-card px-3 py-2.5">
+                            // `data-surface="card"` y no las tres clases del
+                            // color: la clase copia el tono y deja afuera la
+                            // escarcha, la sombra y el lente del filo. En claro
+                            // eso deja la tarjeta pegada al fondo.
+                            <div key={l.id} data-surface="card" className="px-3 py-2.5">
                                 <div className="flex items-start gap-2">
                                     <p className="flex-1 min-w-0 text-body-sm font-black text-content truncate">
                                         {l.descripcion}
@@ -735,7 +739,7 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                                             onLoad={ev => URL.revokeObjectURL(ev.currentTarget.src)} />
                                         <button type="button" aria-label="Quitar foto"
                                             onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
-                                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-surface-card border border-border-card flex items-center justify-center">
+                                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-surface-card-hover border border-divider flex items-center justify-center">
                                             <X size={9} strokeWidth={3} className="text-content-2" />
                                         </button>
                                     </div>

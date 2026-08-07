@@ -130,12 +130,32 @@ export default function LanzadorSolicitud({
 
     return (
         <>
+            {/* ── La baldosa ES una tarjeta canónica (2026-08-07) ─────────────
+                Estaba escrita a mano: `rounded-2xl border border-border-card
+                bg-surface-card` sobre un `<button>` pelado. Eso copia el COLOR
+                del canónico y nada más — se queda sin `backdrop-filter`, sin
+                `--card-shadow`, sin el lente del filo (los cuatro `inset`), sin
+                el destello del canto al apuntarla y sin el gel al presionarla.
+
+                En oscuro no se notaba porque el color solo ya separa de un fondo
+                oscuro. En claro la tarjeta desaparecía contra la página: sin la
+                escarcha ni el lente no queda nada que la despegue. Reportado
+                así — «el modo oscuro se ve perfecto, pero el modo claro no».
+
+                `data-surface="card"` trae el material entero y el destello;
+                `data-interactive` trae el gel (`scale(.994)`, o el hundimiento
+                en los temas Solid). Las clases de geometría se van: el radio, el
+                borde y la sombra los fija `index.css`, que va sin `@layer` y le
+                gana a cualquier utilidad de Tailwind. El lift también sale de
+                ahí (`--lift-card`), con su histéresis de salida — el
+                `hover:translate-y` a mano no la tenía y parpadeaba al entrar por
+                el borde de abajo. */}
             <button
                 type="button"
+                data-surface="card"
+                data-interactive=""
                 onClick={() => setAbierto(true)}
-                className="group w-full h-full flex flex-col items-start justify-between gap-2 p-4 text-left
-                    rounded-2xl border border-border-card bg-surface-card transition-all
-                    hover:translate-y-[var(--lift-hover)]"
+                className="group w-full h-full flex flex-col items-start justify-between gap-2 p-4 text-left"
             >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
                     <Icon size={16} strokeWidth={2} className="text-content-2" />

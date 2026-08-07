@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.482.1 — El tablero en el teléfono: una baldosa a media pantalla, lo demás entero
+
+El tablero es la pantalla de inicio y era la peor de las 37 en el teléfono, pero
+no lo decía ningún número: no desbordaba, no tenía blancos chicos, no tenía
+inputs con zoom. Se ve mirándola.
+
+**Dos columnas para una tableta y para un iPhone eran la misma cosa.** El código
+sólo distinguía «escritorio» de «no escritorio» (`< 1024px`), así que un widget
+medía 440px en una tableta —bien— y 180 en un teléfono, donde el título se
+cortaba: «Solicitudes Pe…», «Ausencias Act…», «Alertas - Sucu…». Ahora hay un
+tercer corte a 640px, y ahí **sólo se queda a media pantalla lo que ES una
+baldosa**: un número con su rótulo (1×1). Lo que trae lista, gráfico o
+calendario ocupa el ancho. La regla se lee del mismo registro `WIDGET_SIZES` que
+ya declara la forma de cada widget, así que un widget nuevo la hereda.
+
+**«Consulta de Inventario» abría un hueco de 380px.** Está declarada 2×3 en el
+registro, que es el tamaño del widget viejo —el que traía el buscador adentro—.
+Hoy es un `LanzadorSolicitud`: una baldosa que abre un modal, igual que sus tres
+hermanas. Pasó a 1×1.
+
+**Los huecos en la rejilla eran de widgets apagados.** El acomodo les reserva la
+celda y `renderWidget` devuelve `null`, así que quedaban tres columnas vacías
+seguidas. La salida obvia —filtrar el acomodo por los que se ven— obliga a
+copiar la lógica de visibilidad en un segundo lugar, y esa es exactamente la
+clase de lista que se desincroniza en cuanto alguien agrega otro `return null`.
+En el teléfono ya no se fija la celda, sólo cuánto ocupa cada widget: la rejilla
+empaqueta en el orden del DOM, que ya sale del acomodo guardado.
+
+**El eje de horas de las baldosas de sucursal.** Dieciséis rótulos en 180px, uno
+por celda de 11px con `overflow-hidden`: se leía «7:8:9:1(11121|2|3|4…». Ahora
+son cinco —y siempre la hora actual, que va en verde—, y se las deja sobresalir
+de su celda, que quedó vacía a los lados: `7a 9a 11a 3p 7p`.
+
+Y el chevron de «Ver todas ›» se iba solo a un segundo renglón en seis widgets:
+el corte de línea caía en el espacio entre el texto y la flecha.
+
 ## v2.482.0 — El foco cae en el campo, y la línea se arma antes de entrar
 
 Cuatro cosas reportadas probando el tablero, y las tres primeras son la misma.

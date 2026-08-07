@@ -58,7 +58,7 @@ const MOBILE_COLS = 2;  // mobile columns
 
 // Auto-place widgets using CSS Grid auto-placement algorithm.
 // Returns { [id]: { col, row } } (1-indexed).
-function autoPlaceOrder(order, sizes, gridCols = GRID_COLS) {
+function autoPlaceOrder(order, sizes, gridCols = GRID_COLS, anchoDe = null) {
   const occ = new Set();
   const result = {};
   const fits = (col, row, cols, rows) => {
@@ -76,7 +76,7 @@ function autoPlaceOrder(order, sizes, gridCols = GRID_COLS) {
   };
   for (const id of order) {
     const def = WIDGET_SIZES[id] || { minCols: 1, minRows: 1 };
-    const cols = Math.min(Math.max(sizes[id]?.cols ?? def.minCols, 1), gridCols);
+    const cols = anchoDe ? anchoDe(id) : Math.min(Math.max(sizes[id]?.cols ?? def.minCols, 1), gridCols);
     const rows = Math.max(sizes[id]?.rows ?? def.minRows, 1);
     let placed = false;
     outer: for (let r = 1; r <= 100; r++) {
@@ -105,7 +105,12 @@ const WIDGET_SIZES = {
   cotizaciones:  { minCols: 1, minRows: 2, label: 'Cotizaciones' },
   facturacion:   { minCols: 2, minRows: 2, label: 'Facturación'  },
   top_productos: { minCols: 2, minRows: 3, label: 'Top Productos'},
-  inv_search:    { minCols: 2, minRows: 3, label: 'Inventario'   },
+  // 1×1 como sus tres hermanas: `WidgetInventorySearch` ya no trae el buscador
+  // adentro —es un `LanzadorSolicitud`, o sea una baldosa que abre un modal—,
+  // pero el registro conservaba el 2×3 del widget viejo. Resultado en el
+  // teléfono: una tarjeta de 380px con el ícono arriba, el rótulo abajo y el
+  // resto vacío.
+  inv_search:    { minCols: 1, minRows: 1, label: 'Inventario'   },
   annulment_req: { minCols: 1, minRows: 1, label: 'Anulaciones'  },
   minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste Inventario' },
@@ -385,7 +390,10 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
           </div>
           <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
         </div>
-        {action && <div className="shrink-0">{action}</div>}
+        {/* `whitespace-nowrap`: el corte de línea cae en el espacio que hay
+            entre «Ver todas» y su flecha, así que en el teléfono el chevron se
+            iba solo a un segundo renglón, debajo del texto. Son seis widgets. */}
+        {action && <div className="shrink-0 whitespace-nowrap">{action}</div>}
       </div>
       <div className={`relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
     </div>
@@ -555,12 +563,28 @@ const DashboardView = ({ openModal }) => {
 
   // ── Mobile detection ────────────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
+  // El TELÉFONO es otra cosa que «no es escritorio». Con `isMobile` a secas, una
+  // tableta de 900px y un iPhone de 390 compartían la rejilla de 2 columnas: en
+  // la tableta cada widget mide 440px y está bien, en el teléfono mide 180 y el
+  // título se corta —«Solicitudes Pe…», «Ausencias Act…», «Alertas - Sucu…»—.
+  const [esTelefono, setEsTelefono] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
   const isMobileRef = useRef(isMobile);
   useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
+    const check = () => { setIsMobile(window.innerWidth < 1024); setEsTelefono(window.innerWidth < 640); };
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // En el teléfono sólo se queda a media pantalla lo que ES una baldosa: un
+  // número con su rótulo (1×1). Todo lo que tenga lista, gráfico o calendario
+  // adentro ocupa el ancho completo. No es una lista a mano —se lee del mismo
+  // registro `WIDGET_SIZES` que ya declara la forma de cada widget—, así que un
+  // widget nuevo hereda la regla sin que nadie se acuerde.
+  const anchoEnTelefono = useCallback((id) => {
+    const def = getWidgetSize(id);
+    const esBaldosa = def.minCols === 1 && def.minRows === 1;
+    return esBaldosa ? 1 : MOBILE_COLS;
   }, []);
   const activeCols = isMobile ? MOBILE_COLS : GRID_COLS;
   const activeColsRef = useRef(activeCols);
@@ -593,18 +617,26 @@ const DashboardView = ({ openModal }) => {
     const tabLayout = widgetLayout[activeTab] || {};
     if (!isMobile) return tabLayout;
     const mbl = mobileLayout[activeTab] || {};
-    if (Object.keys(mbl).length) return mbl;
-    const order = Object.keys(tabLayout).sort((a,b) => {
-      const pa = tabLayout[a], pb = tabLayout[b];
+    // En el teléfono el acomodo guardado se RECALCULA, no se usa tal cual: un
+    // widget que ahora ocupa las dos columnas y está guardado en la columna 2
+    // se saldría de la rejilla y CSS le fabricaría una tercera columna. Del
+    // acomodo guardado sobrevive lo único que sigue siendo cierto, el orden.
+    const base = Object.keys(mbl).length ? mbl : tabLayout;
+    const order = Object.keys(base).sort((a,b) => {
+      const pa = base[a], pb = base[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
     });
+    if (esTelefono) return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS, anchoEnTelefono);
+    if (Object.keys(mbl).length) return mbl;
     return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS);
-  }, [isMobile, widgetLayout, mobileLayout, activeTab, mobileSizes]);
+  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, mobileLayout, activeTab, mobileSizes]);
 
   const activeSizes = isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ);
 
   // Active cols clamped for effective size
-  const getEffectiveCols = (id) => Math.min(activeSizes[id]?.cols ?? getWidgetSize(id).minCols, activeCols);
+  const getEffectiveCols = (id) => (esTelefono
+    ? anchoEnTelefono(id)
+    : Math.min(activeSizes[id]?.cols ?? getWidgetSize(id).minCols, activeCols));
   const getEffectiveRows = (id) => activeSizes[id]?.rows ?? getWidgetSize(id).minRows;
 
   // ── Bounce animation tracking ──────────────────────────────────────────────
@@ -1241,8 +1273,19 @@ const DashboardView = ({ openModal }) => {
         data-widget-id={id}
         className={`relative group/drag animate-stagger-child ${isBouncing ? 'animate-widget-settle' : ''}`}
         style={{
-          gridColumnStart: pos.col,
-          gridRowStart:    pos.row,
+          // En el teléfono NO se fija la celda: sólo cuánto ocupa, y la rejilla
+          // acomoda en el orden del DOM.
+          //
+          // Con la celda fija, un widget apagado por permiso —o por
+          // «Personalizar»— dejaba su hueco: el acomodo le reserva la celda y
+          // `renderWidget` devuelve `null`. Se veían tres columnas vacías
+          // seguidas en el tablero de prueba, con `inv_movement` y `vendedores`
+          // ocultos. Y la salida obvia —filtrar el acomodo por los que se ven—
+          // obliga a copiar la lógica de visibilidad en un segundo lugar, que
+          // es justo la clase de lista que se desincroniza en cuanto alguien
+          // agrega otro `return null`. La rejilla ya sabe empaquetar; el orden
+          // del DOM ya sale del acomodo guardado.
+          ...(esTelefono ? {} : { gridColumnStart: pos.col, gridRowStart: pos.row }),
           gridColumnEnd:   `span ${eCols}`,
           gridRowEnd:      `span ${eRows}`,
           opacity:    isActive ? 0.2 : 1,
@@ -1569,13 +1612,30 @@ const DashboardView = ({ openModal }) => {
                     );
                   })}
                 </div>
-                <div className="flex gap-[1px] w-full mt-0.5">
-                  {allH.map((h)=>(
-                    <div key={h} className="flex-1 text-center overflow-hidden">
-                      <span className={`text-micro font-bold leading-none ${h===nowH?'text-success-text':'text-content-3'}`}>{fHr(h)}</span>
+                {/* Una etiqueta cada N horas, no las dieciséis. En la baldosa de
+                    media pantalla cada celda mide 11px y `overflow-hidden`
+                    cortaba cada rótulo por la mitad: el eje se leía
+                    «7:8:9:1(11121|2|3|4…». Se muestran unas cinco —y siempre la
+                    hora actual, que va en verde— y se las deja sobresalir de su
+                    celda, que ahora está vacía a los lados. La hora actual gana
+                    el desempate para que no se pisen dos rótulos vecinos. */}
+                {(() => {
+                  const pasoHora = Math.max(1, Math.ceil(allH.length / 5));
+                  const hayAhora = allH.includes(nowH);
+                  return (
+                    <div className="flex gap-[1px] w-full mt-0.5">
+                      {allH.map((h, i)=>{
+                        const mostrar = h === nowH
+                          || (i % pasoHora === 0 && !(hayAhora && Math.abs(h - nowH) <= 1));
+                        return (
+                          <div key={h} className="flex-1 text-center overflow-visible whitespace-nowrap">
+                            {mostrar && <span className={`text-micro font-bold leading-none ${h===nowH?'text-success-text':'text-content-3'}`}>{fHr(h)}</span>}
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </div>
             )}
           </div>

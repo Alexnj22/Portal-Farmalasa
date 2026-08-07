@@ -10,6 +10,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import { fetchFacturasSalaPanel, soltarFactura, resumenRenglones } from '../../data/facturasSala';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
@@ -131,6 +132,8 @@ export default function FacturasSalaView() {
     const [sala,   setSala]   = useState('');
     const [estado, setEstado] = useState('');
     const [search, setSearch] = useState('');
+    const [pagina,   setPagina]   = useState(1);
+    const [porPagina, setPorPagina] = useState(PAGE_SIZE_OPTIONS[0]);
 
     const cargar = useCallback(async () => {
         const { filas: f, error: e } = await fetchFacturasSalaPanel(Number(dias));
@@ -195,6 +198,16 @@ export default function FacturasSalaView() {
         });
     }, [filas, estado, sala, search]);
 
+    // Volver a la página 1 al mover un filtro: si no, filtrar desde la página 3
+    // deja la tabla vacía con la paginación diciendo que hay resultados.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- el filtro cambió, la página vieja ya no existe
+    useEffect(() => { setPagina(1); }, [dias, sala, estado, search]);
+
+    const totalPaginas = Math.ceil((visibles?.length ?? 0) / porPagina);
+    const enPantalla = useMemo(
+        () => (visibles ?? []).slice((pagina - 1) * porPagina, pagina * porPagina),
+        [visibles, pagina, porPagina]);
+
     const cargando = visibles === null;
     const alSoltar = (e) => { if (e) setError(e); else cargar(); };
 
@@ -232,28 +245,28 @@ export default function FacturasSalaView() {
                 <CarrilCards className="flex-1" ariaLabel="Resumen de facturas tomadas">
                     <StatCard
                         icon={Clock} label="Sin cargar" value={conteos.sin_cargar}
-                        sub="tomadas hace menos de 3 días"
+                        sub={`menos de ${DIAS_ALERTA} días`}
                         active={estado === 'sin_cargar'} tono="brand"
                         onClick={() => alternar('sin_cargar')} loading={cargando}
                     />
                     <StatCard
                         icon={ReceiptText} label="Atrasadas" value={conteos.atrasadas}
                         sub={canVerMontos && conteos.monto_atrasado
-                            ? `${formatMoney(conteos.monto_atrasado)} sin cargar`
-                            : `${DIAS_ALERTA} días o más sin cargar`}
+                            ? formatMoney(conteos.monto_atrasado)
+                            : `${DIAS_ALERTA} días o más`}
                         valueCls={conteos.atrasadas ? 'text-warning-text' : 'text-content'}
                         active={estado === 'atrasadas'} tono="warning"
                         onClick={() => alternar('atrasadas')} loading={cargando}
                     />
                     <StatCard
                         icon={CheckCircle2} label="Cargadas" value={conteos.cargadas}
-                        sub="ya quedaron registradas como compra"
+                        sub="ya registradas"
                         active={estado === 'cargadas'} tono="success"
                         onClick={() => alternar('cargadas')} loading={cargando}
                     />
                     <StatCard
                         icon={CircleSlash} label="Liberadas" value={conteos.liberadas}
-                        sub="volvieron al montón"
+                        sub="al montón otra vez"
                         // `tono` sólo acepta brand/success/warning/danger — no
                         // hay anillo neutro, y liberar no es un error.
                         active={estado === 'liberadas'} tono="brand"
@@ -301,14 +314,8 @@ export default function FacturasSalaView() {
                 {error && <Notice variant="danger">{error}</Notice>}
 
                 <DataTable columns={cols} loading={cargando} movil={movil}
-                    toolbar={
-                        <span className="text-label text-content-3 font-medium">
-                            {cargando ? 'Cargando…'
-                                : `${visibles.length} factura${visibles.length !== 1 ? 's' : ''}`}
-                        </span>
-                    }
                     empty={{ icon: ReceiptText, message: 'Sin facturas tomadas en este período' }}>
-                    {(visibles ?? []).map((f, i) => (
+                    {enPantalla.map((f, i) => (
                         <DataRow key={f.claim_id} index={i}>
                             <DataCell align="left">
                                 <span className="tabular-nums text-content-2 text-label">{fmtFecha(f.fecha_emision)}</span>
@@ -383,6 +390,21 @@ export default function FacturasSalaView() {
                         </DataRow>
                     ))}
                 </DataTable>
+
+                {/* El recuento vive ACÁ y no en el `toolbar` de la tabla: esa
+                    ranura es para los controles de una sub-tabla (Facturación) o
+                    su encabezado (Gastos de Metas), y un «0 facturas» sobre un
+                    estado vacío que ya dice «Sin facturas tomadas en este
+                    período» —con cuatro tarjetas arriba diciendo 0— era el mismo
+                    cero escrito seis veces. `TablePagination` no se dibuja
+                    cuando no hay páginas, así que el recuento aparece sólo
+                    cuando hay algo que contar. */}
+                <TablePagination
+                    page={pagina} totalPages={totalPaginas} onPageChange={setPagina}
+                    pageSize={porPagina} onPageSizeChange={setPorPagina}
+                    total={filas?.length ?? 0} filteredTotal={visibles?.length ?? 0}
+                    unit="facturas"
+                />
             </div>
         </GlassViewLayout>
     );

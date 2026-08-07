@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.495.5 — el recuento de Facturas de Sala vuelve a su sitio canónico
+
+Lo levantó el usuario sobre una captura: *«¿es canónico? ¿por qué sale 0
+facturas ahí arriba?»*. No lo era, por dos motivos distintos.
+
+**La ranura estaba mal elegida.** El recuento vivía en el `toolbar` de
+`DataTable`, y en este portal esa ranura es para **los controles de una
+sub-tabla** —los dos filtros de la tabla de pagos confirmados en Facturación— o
+para **su encabezado** —el concepto y su badge en Gastos de Metas—. El recuento
+canónico lo da `TablePagination` con `total`/`filteredTotal`, y el comentario de
+`FacturacionView` lo dice textual: *«El recuento lo da ahora `TablePagination`
+con `filteredTotal`»*.
+
+**Y decía el mismo cero seis veces.** Con la pantalla vacía se leía: cuatro
+tarjetas en `0`, un «0 facturas» y un «Sin facturas tomadas en este período».
+`TablePagination` no se dibuja cuando no hay páginas, así que ahora el recuento
+aparece **sólo cuando hay algo que contar**: `Ver 25 · pág. 1/1 · 1–4 de 4
+facturas`. De paso la vista gana su paginación, que no tenía.
+
+**Los subtítulos de las tarjetas también estaban mal medidos.** `StatCard` pinta
+el `sub` con `truncate`, así que «tomadas hace menos de 3 días» y «ya quedaron
+registradas como compra» salían cortados a mitad de palabra. Acortados a
+«menos de 3 días» y «ya registradas» — y por debajo de 176px de tarjeta es el
+propio `CarrilCards` el que decide esconder esa línea (medido: 161px acá), que es
+justamente por lo que la decisión no se toma en la vista.
+
+Verificado en pantalla, con filas y vacía, en escritorio y en iPhone 13 (WebKit):
+0 blancos táctiles bajo 44pt, sin desborde horizontal, y la hoja de la ficha
+sigue abriendo completa.
+
 ## v2.495.4 — en la consulta de inventario, Bodega va primero
 
 Pedido del usuario: «que quien primero salga sea Bodega, y que eso sea así

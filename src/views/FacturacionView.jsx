@@ -612,6 +612,16 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
         return active.filter(r => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length;
     }, [rows, resolvedIds, visitedIds]);
 
+    // ⚠️ El orden de las secciones sale del ID, y hoy acierta de CASUALIDAD.
+    // `g` se indexa por `branch_id`, o sea claves que parecen enteros, y
+    // `Object.entries()` sobre ésas las devuelve ordenadas NUMÉRICAMENTE — no
+    // por inserción (está en la especificación del lenguaje y no avisa; fue el
+    // defecto de la Consulta de Inventario del tablero, 2026-08-07). Acá los
+    // ids ascendentes —2, 4, 25, 27, 28, 29, 30— dan justo La Popular, Salud
+    // 1…5 y Bodega, que es el orden del negocio. Una sala nueva con un id que
+    // caiga en el medio lo rompe sin que nada falle.
+    // La fecha de adentro NO tiene el problema: '2026-08-07' no es un entero,
+    // así que ahí sí manda el orden de inserción.
     const grouped = useMemo(() => {
         const g = {};
         for (const r of filtered) {
@@ -1044,6 +1054,16 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
 
     // Group by branch_id → fecha (CCF rows always first within each fecha)
+    // ⚠️ El orden de las secciones sale del ID, y hoy acierta de CASUALIDAD.
+    // `g` se indexa por `branch_id`, o sea claves que parecen enteros, y
+    // `Object.entries()` sobre ésas las devuelve ordenadas NUMÉRICAMENTE — no
+    // por inserción (está en la especificación del lenguaje y no avisa; fue el
+    // defecto de la Consulta de Inventario del tablero, 2026-08-07). Acá los
+    // ids ascendentes —2, 4, 25, 27, 28, 29, 30— dan justo La Popular, Salud
+    // 1…5 y Bodega, que es el orden del negocio. Una sala nueva con un id que
+    // caiga en el medio lo rompe sin que nada falle.
+    // La fecha de adentro NO tiene el problema: '2026-08-07' no es un entero,
+    // así que ahí sí manda el orden de inserción.
     const grouped = useMemo(() => {
         const g = {};
         for (const r of filtered) {
@@ -1440,6 +1460,8 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
     const MH_CAMPOS = new Set(['recibido_mh', 'codigo_generacion']);
     const isMhOnly = (n) => (n.campos_nulos || []).every(c => MH_CAMPOS.has(c));
 
+    // Mismo caso que `grouped` de arriba: el orden de las secciones lo decide
+    // el id numérico, y hoy coincide con el del negocio de casualidad.
     const activeNulls = nulls.filter(n => !nullResolvedIds.has(n.id) && !isMhOnly(n));
     const nullsByBranch = {};
     for (const n of activeNulls) {
@@ -2337,6 +2359,16 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
 
     // Mismo agrupado que Pendiente MH: sucursal → fecha → documentos. El RPC ya
     // devuelve ordenado por fecha desc, así que el orden de inserción alcanza.
+    // ⚠️ El orden de las secciones sale del ID, y hoy acierta de CASUALIDAD.
+    // `g` se indexa por `branch_id`, o sea claves que parecen enteros, y
+    // `Object.entries()` sobre ésas las devuelve ordenadas NUMÉRICAMENTE — no
+    // por inserción (está en la especificación del lenguaje y no avisa; fue el
+    // defecto de la Consulta de Inventario del tablero, 2026-08-07). Acá los
+    // ids ascendentes —2, 4, 25, 27, 28, 29, 30— dan justo La Popular, Salud
+    // 1…5 y Bodega, que es el orden del negocio. Una sala nueva con un id que
+    // caiga en el medio lo rompe sin que nada falle.
+    // La fecha de adentro NO tiene el problema: '2026-08-07' no es un entero,
+    // así que ahí sí manda el orden de inserción.
     const grouped = useMemo(() => {
         const g = {};
         for (const r of filtered) {

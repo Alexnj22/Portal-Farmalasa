@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.6 — El mismo defecto de orden, barrido en el resto del portal
+
+Pedido después de arreglarlo en la Consulta de Inventario: buscar el mismo
+defecto —un objeto con clave numérica leído con `Object.values/keys/entries`,
+que los devuelve **ordenados numéricamente y no por inserción**— en el resto.
+
+**Se barrió con un detector, no con una lista a mano**, y hubo que escribirlo
+tres veces porque las dos primeras versiones tenían huecos que se veían al
+usarlas:
+
+1. Identificador escrito con `X[clave]` y leído con `Object.*(X)` → 21
+   candidatos. Se le escapan los `reduce`.
+2. Más el acumulador del `reduce`, `Object.fromEntries` y `??=`, y descartando
+   lo que se ordena después o sólo se cuenta → 5 «el orden se ve». **Y tenía
+   falsos negativos**: descartó `gapsByBranch` por un `.some()` de la línea
+   siguiente.
+3. Siguiendo el ALIAS —`const grouped = useMemo(() => { const g = {}; g[id] = …
+   })`, donde el nombre que se escribe no es el que se lee—. Ahí aparecieron
+   las cinco agrupaciones por sucursal de Facturación, invisibles para las dos
+   anteriores.
+
+**En los widgets del tablero no hay ninguno más.** Cero `Object.*` sobre objetos
+con clave numérica en `src/views/dashboard/`, aparte del que ya se corrigió.
+
+**Uno real, y se veía.** En Min/Max → Red, las píldoras de «Oportunidades de
+traslado» salían en orden de id —S.1 S.2 S.3 S.4 LaP. Bod. S.5— mientras las
+columnas de la tabla **de abajo en la misma pantalla** salen en `ERP_ORDER`:
+LaP. S.1 S.2 S.3 S.4 S.5 Bod. Dos órdenes distintos para las mismas siete salas.
+Ahora las píldoras se recorren por `ERP_ORDER`, que es donde ya vivía la
+decisión. Verificado en el navegador: `IBUWIN PLUS 600 MG GELCAPS X 100` pasa a
+leerse `LaP. +34 · S.1 +43 · S.2 +94 · S.4 +29 → S.3 −164 · Bod. −703`; antes La
+Popular quedaba cuarta entre los que ceden, porque su id es 5.
+
+**Cinco latentes, que hoy aciertan de casualidad.** Las secciones por sucursal de
+Facturación (anuladas, pendientes MH, la tercera lista, saltos de correlativo y
+campos indefinidos) se ordenan por id, y los ids ascendentes —2, 4, 25, 27, 28,
+29, 30— dan justo La Popular, Salud 1…5 y Bodega, que es el orden del negocio.
+No hay nada que arreglar hoy; sí algo que dejar dicho, porque una sala nueva con
+un id que caiga en el medio lo rompe sin que nada falle. Queda anotado en las dos
+agrupaciones del archivo.
+
+**El resto, verificado y sano:** las otras quince lecturas o se ordenan
+explícitamente (`SidebarSyncStatus`, `TabHistory`, `VentasView`, `TabMetricas`,
+`TabPoliticaVencimiento`) o sólo cuentan, buscan o suman, donde el orden no se
+ve. Y dos que parecían candidatas no lo son: las claves de `permissionModules` y
+las del layout del tablero son texto (`general`, `sales_branch_2`), no enteros.
+
 ## v2.489.5 — El canon móvil deja de mentir: DESIGN.md §32 al día
 
 Fase 0 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`, y bloqueaba a las demás: no

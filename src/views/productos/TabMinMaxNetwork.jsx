@@ -130,15 +130,29 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
     useEffect(() => { setPage(1); }, [filterAbc, filterAlert, showAll, searchTerm, sortKey, sortDir]);
 
+    // ── Se recorre por `ERP_ORDER`, no por `Object.entries` (2026-08-07) ────
+    // `bs` está indexado por el id de sucursal —"1", "2", …— y `Object.entries`
+    // sobre claves que parecen enteros las devuelve **ordenadas numéricamente**,
+    // no por orden de inserción ni por ninguno que alguien haya elegido. Está en
+    // la especificación del lenguaje y no avisa.
+    //
+    // El resultado se veía: las píldoras de esta tarjeta salían S.1 S.2 S.3 S.4
+    // LaP. Bod. S.5, mientras las columnas de la tabla de abajo —que sí usan
+    // `ERP_ORDER`— salen LaP. S.1 S.2 S.3 S.4 S.5 Bod. Dos órdenes distintos
+    // para las mismas siete salas, en la misma pantalla.
+    //
+    // Recorrer `ERP_ORDER` deja el orden en un solo lugar. Es el mismo defecto
+    // que se corrigió en la Consulta de Inventario del tablero.
     const transferOps = useMemo(() => {
         const ops = [];
         for (const row of data) {
             const bs = row.branches || {};
-            const needers = Object.entries(bs)
+            const enOrden = ERP_ORDER.map(id => [String(id), bs[String(id)]]).filter(([, b]) => b);
+            const needers = enOrden
                 .filter(([, b]) => b.alr === 'out_of_stock' || b.alr === 'below_min')
                 .map(([id, b]) => ({ id: Number(id), pedir: b.max > 0 ? Math.max(0, b.max - b.stk) : 0 }))
                 .filter(n => n.pedir > 0);
-            const suppliers = Object.entries(bs)
+            const suppliers = enOrden
                 .filter(([id, b]) => b.alr === 'overstocked' && Number(id) !== 6)
                 .map(([id, b]) => ({ id: Number(id), excess: b.stk - b.max }))
                 .filter(s => s.excess > 0);

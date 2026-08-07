@@ -285,7 +285,6 @@ Deno.serve(async (req) => {
     const lineas: Linea[] = Array.isArray(meta.items) ? meta.items : [];
     const erpOrigen  = Number(meta.origen_erp_sucursal_id);
     const erpDestino = Number(meta.erp_sucursal_id);
-    const ubicDestino = Number(meta.erp_ubicacion_id);
     const origenBranch = Number(meta.origen_branch_id);
     const destinatarios: string[] = Array.isArray(meta.destinatarios) ? meta.destinatarios : [];
 
@@ -299,15 +298,37 @@ Deno.serve(async (req) => {
     const { data: mapaOrigen } = await admin
       .from("erp_sucursal_map").select("inv_ubicaciones, nombre")
       .eq("erp_sucursal_id", erpOrigen).maybeSingle();
-    const ubics = Array.isArray(mapaOrigen?.inv_ubicaciones)
-      ? mapaOrigen!.inv_ubicaciones as { id: number; isVencidos: boolean }[]
-      : [];
-    const ubicOrigen = Number(ubics.find((u) => !u.isVencidos)?.id ?? 0);
+    const deTrabajo = (m: { inv_ubicaciones?: unknown } | null) => Number(
+      (Array.isArray(m?.inv_ubicaciones) ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[] : [])
+        .find((u) => !u.isVencidos)?.id ?? 0,
+    );
+    const ubicOrigen = deTrabajo(mapaOrigen);
+
+    // ── Y la del DESTINO, también del mapa ────────────────────────────────
+    // Venía en la solicitud, o sea del navegador. La pantalla de pedido no la
+    // manda —no tiene por qué saberla— así que llegaba `undefined`, viajaba como
+    // «NaN» y el sistema contestaba «No se proporcionaron los datos correctos
+    // para actualizar el stock». Lo destapó la primera prueba de punta a punta
+    // POR LA PANTALLA: el mismo camino por API pasaba, porque el script de
+    // prueba se la pasaba a mano.
+    //
+    // Es el mismo argumento que para el origen: la ubicación es una propiedad de
+    // la sala, no un dato que el cliente elija.
+    const { data: mapaDestino } = await admin
+      .from("erp_sucursal_map").select("inv_ubicaciones, nombre")
+      .eq("erp_sucursal_id", erpDestino).maybeSingle();
+    const ubicDestino = deTrabajo(mapaDestino);
 
     // ══════════════════════════════════════════════════════════════════════
     // PASO 2 · RECIBIR (en destino)
     // ══════════════════════════════════════════════════════════════════════
     if (paso === "recibir") {
+      if (!ubicDestino)
+        return json({
+          ok: false,
+          error: `No se conoce la ubicación de la sala que recibe (${erpDestino}).`,
+        }, 422);
+
       const idTraslado = String(meta.erp_traslado?.id_traslado ?? "");
       if (!idTraslado)
         return json({

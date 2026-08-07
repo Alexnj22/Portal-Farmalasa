@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.508.0 — Conteo: resumen canónico, una fila por producto de una sola presentación
+
+**Un producto con una sola presentación ocupaba dos filas.** La banda del
+producto decía «1 presentación · 13» y justo debajo el renglón decía «LATA 1X1 ·
+13»: la misma información dos veces, y con 2,953 productos para 3,665 renglones
+eso era casi duplicar la tabla. Ahora, cuando el producto tiene un solo renglón,
+la fila es una: lleva el nombre y el laboratorio a la izquierda y el campo donde
+se teclea a la derecha. Se decide con `item_count`, que llega con la página de
+productos, para que la banda no aparezca y desaparezca al terminar de cargar.
+
+**El resumen pasa a ser canónico.** Eran seis cajas en una rejilla escrita a
+mano, con su propio mapa de tonos —caja, número y rótulo en clases sueltas—, o
+sea justo la forma que `StatCard` vino a reemplazar y que la *lista* de conteos
+ya usaba. Dos pantallas del mismo módulo dibujaban la misma anatomía de dos
+maneras. Ahora es `CarrilCards` + `StatCard`, que además decide sola cuándo pasar
+a carril deslizable según el ancho real, en vez de apretar seis columnas en
+cualquier pantalla ancha.
+
+Y con eso el resumen sube a la fila de los filtros, que es donde §17.0 lo pide:
+en renglones separados `FilterBar` le descuenta 314px a la píldora en silencio,
+por un carril que no tiene al lado.
+
+**El badge «Vivo»** ya no aparece en un conteo «según la hoja» (v2.507.0 lo
+arregló en la fila; acá quedó verificado en pantalla junto al resto).
+
 ## v2.507.1 — Sin blur dentro de blur en la hoja del teléfono
 
 Reportado: en el teléfono, abrir una regla de despacho **pone la pantalla negra**

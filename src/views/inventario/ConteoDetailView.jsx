@@ -9,7 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2,
     Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff,
-    FileSpreadsheet, Download, PackagePlus, Trash2,
+    FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle,
 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -21,6 +21,8 @@ import LiquidModal from '../../components/common/LiquidModal';
 import ModalShell from '../../components/common/ModalShell';
 import PromptModal from '../../components/common/PromptModal';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import CarrilCards from '../../components/common/CarrilCards';
+import StatCard from '../../components/common/StatCard';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -241,6 +243,12 @@ function ItemRow({
     // porque el badge que gobierna promete algo concreto —«este número se
     // sigue moviendo»— y prometerlo de más es peor que no decirlo.
     enVivo = false,
+    // El producto, SOLO cuando este renglón es el único que tiene. Entonces no
+    // hay banda de grupo encima y esta fila carga también la identidad: un
+    // producto con una sola presentación ocupaba dos filas que decían lo mismo
+    // —«1 presentación · 13» arriba y «LATA 1X1 · 13» abajo—, y con 2,953
+    // productos para 3,665 renglones eso era casi duplicar la tabla.
+    producto = null,
 }) {
     const { showToast } = useToastStore();
     const verSistema = !!item.ver_sistema;
@@ -428,8 +436,25 @@ function ItemRow({
     };
 
     return (
-        <DataRow index={index} className={bloqueada ? 'bg-success/5' : 'bg-surface-card-hover/30'}>
-            <DataCell><span className="text-content-3 text-label">↳</span></DataCell>
+        <DataRow index={index} className={bloqueada ? 'bg-success/5' : (producto ? '' : 'bg-surface-card-hover/30')}>
+            {/* Con banda de grupo encima, esta celda solo marca la sangría. Sin
+                ella —un producto de un renglón— la fila ES el producto y lleva su
+                identidad, la misma que dibujaba `ProductGroupRow`. */}
+            <DataCell className={producto ? 'min-w-[180px] max-w-[340px]' : undefined}>
+                {producto ? (
+                    <div className="flex flex-col gap-0.5 py-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <p className={`font-bold text-body-sm truncate ${bloqueada ? 'text-success' : 'text-content'}`}>
+                                {producto.product_nombre || `Producto ${producto.erp_product_id}`}
+                            </p>
+                            {producto.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
+                        </div>
+                        <span className="text-micro text-content-3 truncate">{producto.laboratorio_nombre || 'Sin laboratorio'}</span>
+                    </div>
+                ) : (
+                    <span className="text-content-3 text-label">↳</span>
+                )}
+            </DataCell>
             <DataCell>
                 {/* Toda la identidad del renglón en una celda: lote arriba,
                     presentación y vencimiento abajo. Eran tres columnas y las tres
@@ -816,33 +841,39 @@ function ProductCardMovil({ product, lines, desbloqueadas, ...rest }) {
 }
 
 // ── Tarjetas del encabezado ──────────────────────────────────────────────────
-// Una sola tarjeta, un solo dato, y el rótulo dice de qué conteo habla. Las que
-// tienen dinero solo salen si el sistema es visible: son la suma de todas las
+// Un dato por tarjeta, y el rótulo dice de qué conteo habla. Las que tienen
+// dinero solo salen si el sistema es visible: son la suma de todas las
 // diferencias, o sea el resumen exacto de lo que un conteo ciego está tapando
 // renglón por renglón.
-function Tarjeta({ valor, rotulo, sub, tono = 'neutral' }) {
-    const t = {
-        neutral: { caja: 'bg-surface-card-hover', num: 'text-content-2', txt: 'text-content-2' },
-        warning: { caja: 'bg-warning/10',        num: 'text-warning-text', txt: 'text-warning' },
-        danger:  { caja: 'bg-danger/10',         num: 'text-danger',       txt: 'text-danger' },
-        success: { caja: 'bg-success/10',        num: 'text-success',      txt: 'text-success' },
-        chart1:  { caja: 'bg-chart-1/10',        num: 'text-chart-1-text', txt: 'text-chart-1-text' },
-    }[tono];
-    return (
-        <div className={`${t.caja} rounded-xl px-3 py-2 text-center`}>
-            <p className={`text-body-lg font-black tabular-nums ${t.num}`}>{valor}</p>
-            <p className={`text-micro uppercase tracking-widest font-bold ${t.txt}`}>{rotulo}</p>
-            {sub && <p className="text-micro text-content-3 tabular-nums mt-0.5">{sub}</p>}
-        </div>
-    );
-}
+//
+// Canónico desde v2.508.0. Antes eran una rejilla `grid-cols-2/3/6` de cajas
+// escritas a mano con su propio mapa de tonos —caja, número y rótulo en clases
+// sueltas—, o sea exactamente la forma que `StatCard` vino a reemplazar y que
+// la LISTA de conteos ya usaba tres clicks antes. Dos pantallas del mismo
+// módulo dibujando la misma anatomía de dos maneras distintas.
+//
+// `CarrilCards` además decide solo cuándo pasar a carril deslizable y cuándo
+// compactar la línea de detalle según el ancho REAL; la rejilla a mano las
+// apretaba a seis columnas en cualquier pantalla ancha.
+const TONO_STAT = {
+    neutral: {},
+    warning: { iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
+    danger:  { iconBg: 'bg-danger/10',  iconCls: 'text-danger',       valueCls: 'text-danger' },
+    success: { iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success' },
+};
 
-function ResumenCards({ resumen, abierto }) {
-    const { hasPermission } = useAuth();
-    // `conteo_inventario_ver_montos` (canon 2026-08-03): el conteo se hace y se
-    // audita con unidades. La valuación en dinero es la lectura contable y va
-    // aparte — quien cuenta no necesita saber cuánto vale el faltante.
-    const canVerMontos = hasPermission('conteo_inventario_ver_montos');
+// Devuelve un ARRAY de tarjetas, no el carril ya armado, y por dos motivos que
+// apuntan al mismo lado. Uno: `CarrilCards` mide con
+// `Children.toArray`, que aplana arrays pero cuenta un fragmento como UNA
+// tarjeta — devolver un fragmento le rompería la medición del carril. Dos: el
+// contenedor con el `lg:flex-row` de §17.0 vive en la vista, y `design-gate`
+// deja escrito que su detector no cruza el límite de un subcomponente. Con el
+// carril en la vista, lo que el gate lee es el layout de verdad y no hace falta
+// una excepción para algo que sí está bien.
+//
+// `canVerMontos` entra por parámetro en vez de leerse con `useAuth`: esto ya no
+// es un componente y no puede usar hooks. La vista ya lo tiene resuelto.
+function tarjetasResumen(resumen, abierto, canVerMontos) {
     const {
         total_items: items = 0, total_productos: productos = 0, contados = 0, pendientes = 0,
         sin_ubicar: sinUbicar = 0, recontados = 0, contadores = 0, agregados = 0,
@@ -850,58 +881,69 @@ function ResumenCards({ resumen, abierto }) {
     } = resumen;
     const pct = items > 0 ? (contados / items) * 100 : 0;
 
-    return (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 mt-4">
-            <Tarjeta
-                tono={pendientes === 0 ? 'success' : 'neutral'}
-                valor={formatPct(pct, { decimales: 0 })}
-                rotulo="Avance"
-                sub={`${formatQty(contados)} de ${formatQty(items)} renglones`}
+    // `.filter(Boolean)` y no un fragmento condicional: las dos últimas
+    // dependen de permisos, y `Children.toArray` de `CarrilCards` descarta los
+    // `false` pero contaría un fragmento como una tarjeta.
+    return [
+        <StatCard
+            key="avance"
+            icon={CheckCircle2}
+            label="Avance"
+            value={formatPct(pct, { decimales: 0 })}
+            sub={`${formatQty(contados)} de ${formatQty(items)} renglones`}
+            {...TONO_STAT[pendientes === 0 ? 'success' : 'neutral']}
+        />,
+        <StatCard
+            key="sin-contar"
+            icon={Clock}
+            label="Sin contar"
+            value={formatQty(pendientes)}
+            // Cuántas personas contaron: si un conteo de 2,500 renglones lo
+            // hizo una sola, eso ya es un hallazgo de control interno.
+            sub={contadores > 0 ? `${formatQty(contadores)} contador(es)` : 'nada pendiente'}
+            {...TONO_STAT[pendientes > 0 ? 'warning' : 'success']}
+        />,
+        <StatCard
+            key="productos"
+            icon={Package}
+            label="Productos"
+            value={formatQty(productos)}
+            sub={agregados > 0 ? `${formatQty(agregados)} agregado(s) a mano` : 'en este conteo'}
+        />,
+        <StatCard
+            key="no-ubicados"
+            icon={PackageX}
+            label="No ubicados"
+            value={formatQty(sinUbicar)}
+            sub="buscados y no están"
+            {...TONO_STAT[sinUbicar > 0 ? 'danger' : 'neutral']}
+        />,
+        ver && (
+            <StatCard
+                key="diferencias"
+                icon={AlertTriangle}
+                label="Diferencias"
+                value={formatQty(conDif)}
+                sub={recontados > 0 ? `${formatQty(recontados)} recontada(s)` : 'contra la existencia'}
+                {...TONO_STAT[conDif > 0 ? 'warning' : 'neutral']}
             />
-            <Tarjeta
-                tono={pendientes > 0 ? 'warning' : 'success'}
-                valor={formatQty(pendientes)}
-                rotulo="Sin contar"
-                // Cuántas personas contaron: si un conteo de 2,500 renglones lo
-                // hizo una sola, eso ya es un hallazgo de control interno.
-                sub={contadores > 0 ? `${formatQty(contadores)} contador(es)` : null}
+        ),
+        // Faltante y sobrante en UNA tarjeta: son las dos mitades del mismo
+        // ajuste y se aplican como dos movimientos del mismo conteo. Mientras
+        // está abierto van rotulados como PARCIAL — valuar un conteo a medias
+        // como si fuera el resultado es el error que este módulo ya cometió una
+        // vez (hallazgo #3).
+        ver && canVerMontos && (
+            <StatCard
+                key="faltante"
+                icon={FileSpreadsheet}
+                label={abierto ? 'Faltante parcial' : 'Faltante'}
+                value={formatMoney(falt)}
+                sub={`sobrante ${formatMoney(sobra)}`}
+                {...TONO_STAT[falt > 0 ? 'danger' : 'neutral']}
             />
-            <Tarjeta
-                valor={formatQty(productos)}
-                rotulo="Productos"
-                sub={agregados > 0 ? `${formatQty(agregados)} agregado(s) a mano` : null}
-            />
-            <Tarjeta
-                tono={sinUbicar > 0 ? 'danger' : 'neutral'}
-                valor={formatQty(sinUbicar)}
-                rotulo="No ubicados"
-                sub="buscados y no están"
-            />
-            {ver && (
-                <>
-                    <Tarjeta
-                        tono="warning"
-                        valor={formatQty(conDif)}
-                        rotulo="Diferencias"
-                        sub={recontados > 0 ? `${formatQty(recontados)} recontada(s)` : null}
-                    />
-                    {/* Faltante y sobrante en una tarjeta: son las dos mitades del
-                        mismo ajuste y en el ERP son dos transacciones del mismo
-                        conteo. Mientras está abierto van rotulados como PARCIAL —
-                        valuar un conteo a medias como si fuera el resultado es el
-                        error que este módulo ya cometió una vez (hallazgo #3). */}
-                    {canVerMontos && (
-                        <Tarjeta
-                            tono="danger"
-                            valor={formatMoney(falt)}
-                            rotulo={abierto ? 'Faltante parcial' : 'Faltante'}
-                            sub={`sobrante ${formatMoney(sobra)}`}
-                        />
-                    )}
-                </>
-            )}
-        </div>
-    );
+        ),
+    ].filter(Boolean);
 }
 
 // ── Selector de documento ────────────────────────────────────────────────────
@@ -1156,6 +1198,10 @@ export default function ConteoDetailView() {
     // Borrar un conteo YA EMPEZADO o finalizado. Sin esta capacidad,
     // «Gestionar» solo se lleva el conteo que todavía no cuenta nada.
     const canEliminar = hasPermission('conteo_inventario_eliminar');
+    // `conteo_inventario_ver_montos` (canon 2026-08-03): el conteo se hace y se
+    // audita con unidades. La valuación en dinero es la lectura contable y va
+    // aparte — quien cuenta no necesita saber cuánto vale el faltante.
+    const canVerMontos = hasPermission('conteo_inventario_ver_montos');
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
     const fetchConteoProductsPage = useStaffStore((s) => s.fetchConteoProductsPage);
@@ -1674,16 +1720,6 @@ export default function ConteoDetailView() {
                             </div>
                         )}
 
-                        {/* Las tarjetas existían SOLO con el conteo ya finalizado, y
-                            salían de `conteos_inventario.total_*`, que las escribe
-                            recalcular_totales_conteo al cerrar. O sea que durante los
-                            días en que alguien está contando —los únicos en que sirve
-                            saber cuánto falta— la vista no decía nada: había que
-                            paginar 59 páginas para saber si iba por la mitad. Ahora
-                            salen de get_conteo_resumen, que agrega TODO el conteo en
-                            vivo y usa la misma fórmula del dinero, así que al
-                            finalizar el número no cambia de golpe. */}
-                        {resumen && <ResumenCards resumen={resumen} abierto={!hasResults} />}
                     </div>
                 )}
 
@@ -1695,8 +1731,27 @@ export default function ConteoDetailView() {
                     El orden es el del estándar: entidad (laboratorio) antes que estado
                     (los chips). No hay ranura de sucursal porque un conteo ES de una
                     sucursal: cambiarla sería abrir otro conteo. */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-3">
+                {/* §17.0: el carril de tarjetas y la píldora de filtros van en UNA
+                    fila, no en dos renglones. No es estética: `useMedidaFila` mira
+                    al abuelo de la píldora y busca el carril con `[role="group"]`;
+                    en renglones separados lo encuentra igual —es hermano dentro del
+                    `space-y-*`— y le descuenta 314px por un carril que no tiene al
+                    lado. Las tarjetas venían de adentro de la tarjeta de cabecera,
+                    o sea justamente en otro renglón.
+
+                    Existen desde antes de finalizar el conteo a propósito: salen de
+                    get_conteo_resumen, que agrega TODO el conteo en vivo con la
+                    misma fórmula del dinero, así que al finalizar el número no
+                    cambia de golpe. Con `conteos_inventario.total_*` —que escribe
+                    recalcular_totales_conteo al cerrar— valían 0 justo durante los
+                    días en que sirve saber cuánto falta. */}
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    {resumen && (
+                        <CarrilCards className="flex-1" ariaLabel="Resumen del conteo">
+                            {tarjetasResumen(resumen, !hasResults, canVerMontos)}
+                        </CarrilCards>
+                    )}
+                    <div className="flex flex-wrap items-center justify-end gap-3 min-w-0">
                     {puedeRecontar && (
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             {/* Entrar al recuento deja la vista en "Con diferencia": es lo
@@ -1722,9 +1777,9 @@ export default function ConteoDetailView() {
                             {simple ? 'Agregar Producto' : 'Agregar Producto/Lote'}
                         </Button>
                     )}
-                    </div>
 
                     {barraFiltros}
+                    </div>
                 </div>
 
                 {!verSistema && (
@@ -1798,9 +1853,14 @@ export default function ConteoDetailView() {
                         {products.map((product, i) => {
                             const key = product.erp_product_id;
                             const lines = itemsByProduct[key];
+                            // `item_count` viene con la página de productos, así que
+                            // se sabe ANTES de que lleguen los renglones: decidirlo
+                            // con `lines.length` haría aparecer y desaparecer la
+                            // banda de grupo cuando termina de cargar.
+                            const soloUno = product.item_count === 1;
                             return (
                                 <React.Fragment key={key}>
-                                    <ProductGroupRow product={product} index={i} verSistema={verSistema} simple={simple} />
+                                    {!soloUno && <ProductGroupRow product={product} index={i} verSistema={verSistema} simple={simple} />}
                                     {!lines && (
                                         <tr><td colSpan={columnas(verSistema, simple).length} className="py-4 px-6"><SkeletonText lines={2} /></td></tr>
                                     )}
@@ -1808,7 +1868,8 @@ export default function ConteoDetailView() {
                                         <ItemRow
                                             key={item.id}
                                             item={item}
-                                            index={j}
+                                            index={soloUno ? i : j}
+                                            producto={soloUno ? product : null}
                                             editable={editable}
                                             recuento={recuento}
                                             desbloqueada={!!desbloqueadas[item.id]}

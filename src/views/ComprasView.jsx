@@ -347,6 +347,7 @@ function TabFacturas({
                 abierto={abierto}
                 onClose={() => setExpandedId(null)}
                 titulo={abierto?.proveedor || 'Factura de compra'}
+                subtitulo={abierto?.fecha}
             >
                 {(row) => <ItemsExpand receiptId={row.id} comoPanel />}
             </ExpedienteMovil>

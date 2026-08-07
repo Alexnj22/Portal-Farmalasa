@@ -1993,6 +1993,9 @@ export default function TabCatalogo({
                 abierto={productoAbierto}
                 onClose={() => setExpandedId(null)}
                 titulo={productoAbierto?.nombre}
+                /* Pantalla completa y no hoja: siete secciones y tres
+                   historiales no son un detalle corto, son una pantalla. */
+                variante="pantalla"
             >
                 {(prod) => (
                     <ExpandedProductRow

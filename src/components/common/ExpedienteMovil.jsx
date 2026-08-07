@@ -1,5 +1,6 @@
 import React from 'react';
 import ModalShell from './ModalShell';
+import HojaMovil from './HojaMovil';
 
 
 /**
@@ -54,16 +55,38 @@ import ModalShell from './ModalShell';
  * cuando hay algo que mostrar — con doce secciones y tres historiales, armarlo
  * en cada render de la lista es trabajo que nadie ve.
  */
-export default function ExpedienteMovil({ abierto, onClose, titulo, children }) {
+export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, variante = 'auto', children }) {
+    const cuerpo = abierto ? children(abierto) : null;
+
+    // ── El envase lo decide el CONTENIDO, no la vista ─────────────────────
+    // `pantalla` ocupa la pantalla entera siempre. Eso está bien para un
+    // expediente que ES una pantalla —el producto lleva siete secciones y tres
+    // historiales— y está mal para un detalle corto: una compra de tres ítems
+    // abría a pantalla completa y quedaba media vacía. Lo preguntó el usuario
+    // así: *«¿por qué no se adapta según contenido?»*.
+    //
+    // `auto` es la hoja canónica, que ya hace exactamente eso: crece con lo que
+    // tiene y a partir de `88dvh` scrollea por dentro. Es el default porque es
+    // el caso más común —un detalle es corto— y porque equivocarse hacia la
+    // hoja sólo cuesta un scroll, mientras que equivocarse hacia la pantalla
+    // completa deja media pantalla vacía y esconde la vista de atrás.
+    if (variante === 'pantalla') {
+        return (
+            <ModalShell open={!!abierto} onClose={onClose} align="pantalla"
+                titulo={titulo} ariaLabel={titulo || 'Detalle'}>
+                {cuerpo}
+            </ModalShell>
+        );
+    }
+
     return (
-        <ModalShell
-            open={!!abierto}
-            onClose={onClose}
-            align="pantalla"
-            titulo={titulo}
-            ariaLabel={titulo || 'Detalle'}
-        >
-            {abierto ? children(abierto) : null}
+        <ModalShell open={!!abierto} onClose={onClose} surface={null}
+            ariaLabel={titulo || 'Detalle'}>
+            {abierto && (
+                <HojaMovil titulo={titulo} subtitulo={subtitulo}>
+                    {cuerpo}
+                </HojaMovil>
+            )}
         </ModalShell>
     );
 }

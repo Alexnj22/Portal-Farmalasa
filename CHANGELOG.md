@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.476.0 — El envase lo decide el contenido: hoja que crece, o pantalla
+
+Preguntado por el usuario: *«¿por qué el modal en compras se ve completo y no se
+adapta según contenido?»*. Porque elegí **un solo envase para todo**, y no
+debería.
+
+`align="pantalla"` ocupa la pantalla entera siempre. Eso está bien para un
+expediente que **es** una pantalla —el producto lleva siete secciones y tres
+historiales— y está mal para un detalle corto: una compra de tres ítems abría a
+pantalla completa y quedaba media vacía.
+
+Y la pieza que hacía falta ya existía: la hoja canónica crece con lo que tiene y
+recién a partir de `max-h-[88dvh]` scrollea por dentro. O sea que «adaptarse al
+contenido» no había que construirlo, había que **elegirlo**.
+
+`ExpedienteMovil` gana `variante`:
+
+- **`auto`** (default) — la hoja. Crece con el contenido, con su asa, y scrollea
+  a partir del 88 % del alto.
+- **`pantalla`** — la pantalla completa, con barra fija y ←.
+
+El default es la hoja porque el caso común es un detalle corto, y porque los dos
+errores no cuestan lo mismo: quedarse corto con la hoja cuesta un scroll, y
+pasarse con la pantalla completa deja media pantalla vacía y esconde la vista de
+atrás sin necesidad.
+
+Medido en WebKit iPhone 13, el mismo par de vistas:
+
+```
+compras    panel 189px de 664 (28%) · nace en y=475 · con asa
+productos  panel 664px de 664 (100%) · nace en y=0 · con barra
+```
+
+**La regla, para las seis vistas que faltan:** si el detalle son secciones e
+historiales, `pantalla`; si es una lista de líneas, la hoja. Y adentro del panel,
+**cero tablas** en los dos casos.
+
 ## v2.475.0 — Ajuste de Inventario: el banco de productos, los motivos y la foto del daño
 
 Cinco cosas reportadas sobre el mismo modal, todas del mismo tipo: el formulario

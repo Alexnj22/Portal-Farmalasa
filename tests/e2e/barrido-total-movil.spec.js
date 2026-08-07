@@ -92,6 +92,23 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         const errores = [];
         page.on('pageerror', e => errores.push(e.message.slice(0, 200)));
 
+        // Esperar a que se vayan los ESQUELETOS, no un número de segundos.
+        //
+        // `DataTable` con `loading` pinta su esqueleto **como tabla** —el modo
+        // ficha exige `!loading`—, así que medir durante la carga reporta «cayó
+        // a la tabla» de una vista que no cayó. Con 6.5s fijos pasaba igual:
+        // `productos#sinventa` salió con `tablas: 1` en el primer barrido con
+        // pestañas y la captura mostraba la pantalla entera en esqueleto.
+        //
+        // Y de paso es más RÁPIDO: una vista que carga en 800ms deja de costar
+        // 6.5 segundos, que con ~67 pantallas era la mitad del barrido.
+        const esperarDatos = async (tope = 20_000) => {
+            await page.waitForFunction(
+                () => !document.querySelector('.skeleton'), null, { timeout: tope },
+            ).catch(() => {});
+            await page.waitForTimeout(900);   // asentar el layout tras el último dato
+        };
+
         const informe = [];
 
         // Medir la pantalla que está abierta AHORA. `etiqueta` es la ruta, o
@@ -148,9 +165,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         for (const ruta of RUTAS) {
             errores.length = 0;
             await page.goto('/' + ruta).catch(() => {});
-            // Esperar a que se vaya el esqueleto: medir durante la carga da
-            // «cayó a la tabla» donde no es cierto (lección de v2.460.1).
-            await page.waitForTimeout(6500);
+            await esperarDatos();
             await medirPantalla(ruta);
 
             // ── Las pestañas internas ────────────────────────────────────────
@@ -189,7 +204,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                     await page.locator('[data-pestanas] [role="combobox"]:visible').first().click({ timeout: 4000 });
                     await page.waitForTimeout(500);
                     await page.locator('[role="option"]').nth(i).click({ timeout: 4000 });
-                    await page.waitForTimeout(3500);
+                    await esperarDatos();
                     await medirPantalla(`${ruta}#${lista[i]}`);
                 } catch (e) {
                     // Con el catch mudo, «no se pudo abrir la pestaña» y «la

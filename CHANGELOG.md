@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.506.0 — Conteo: borrar desde la lista, laboratorios en la hoja y el badge Vivo solo cuando lo es
+
+_(pendiente de redactar)_
+
+## v2.505.1 — El barrido espera a que se vayan los esqueletos
+
+**Corrección a v2.498.0.** Ahí escribí que el recorrido de pestañas «encontró que
+la pestaña Sin venta de Productos cae a tabla en el teléfono». **No era cierto:
+era el instrumento midiendo durante la carga.**
+
+`DataTable` con `loading` pinta su esqueleto **como tabla** —el modo ficha exige
+`!loading`—, así que medir antes de que lleguen los datos reporta «cayó a la
+tabla» de una vista que no cayó. La captura lo mostraba entero: la pantalla en
+esqueleto. Con la espera corregida, esa pestaña da **0 tablas y 75 fichas**.
+
+Lo peor es que el propio spec ya llevaba escrita la lección —«esperar a que se
+vaya el esqueleto: medir durante la carga da *cayó a la tabla* donde no es
+cierto»— y aun así la esperaba con **6,5 segundos fijos**, que alcanzaban para
+una ruta recién cargada y no para una pestaña que pide sus datos al abrirse. Una
+regla escrita al lado de un número mágico no es una regla: el número es el que
+manda.
+
+Ahora se espera a la **condición** —que no quede ningún `.skeleton` en la
+página—, con tope de 20 segundos. Y de paso el barrido se acelera: una vista que
+carga en 800ms deja de costar 6,5 segundos, que con ~67 pantallas era la mitad
+del tiempo total.
+
+Es el tercer instrumento del día que confundía «todavía no» con «no»: el cerrojo
+de sesión miraba la URL a los 6 segundos mientras la app decía «VERIFICANDO
+SESIÓN…», y antes el medidor daba por chico a un control que ya resolvía su área
+de impacto con un pseudo-elemento.
+
 ## v2.505.0 — El panel de reglas de despacho, en dos columnas y con su resultado a la vista
 
 Rediseño aprobado sobre mockup. Ningún dato guardado cambia y la cuenta del

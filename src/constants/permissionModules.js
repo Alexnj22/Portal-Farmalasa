@@ -31,7 +31,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck,
-    BookOpen, Contact, Wrench, Users, Calculator
+    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
@@ -288,6 +288,10 @@ export const MODULE_GROUPS = [
             { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Min/Max',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación del supervisor', icon: BarChart2, hasApprove: false, hasScope: true },
             { key: 'dash_inv_movement',   label: 'Widget: Ajuste de Inventario',  desc: 'Solicitar que se cargue o se descargue producto —vencimiento, descarte, producto dañado o consumo interno—; el inventario se mueve al aprobarla', icon: PackageMinus, hasApprove: false, hasScope: true },
             { key: 'dash_traslados',      label: 'Widget: Traslados entre Salas', desc: 'Ver lo que otra sala pide del inventario propio y lo que uno pidió y viene en camino', icon: Truck, hasApprove: false, hasScope: true },
+            // `can_view` lista y descarga; `can_edit` es lo que habilita TOMAR
+            // una factura. El alcance importa de verdad acá: con scope BRANCH la
+            // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
+            { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi Sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
             { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icon: Target, hasApprove: false, hasScope: true },
             { key: 'dash_vendedores',     label: 'Widget: Quién está vendiendo',  desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icon: Users, hasApprove: false, hasScope: true },
         ],

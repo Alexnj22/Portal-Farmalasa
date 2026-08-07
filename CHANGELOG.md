@@ -21,6 +21,78 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.484.0 — cada sala toma la factura que le toca, y nadie más puede tomarla
+
+Widget nuevo del tablero, quinto de la familia de baldosas que abren un modal.
+Las salas necesitan la factura del proveedor para cargar la compra —agua y
+recargas de Tigo, Claro y Movistar— y hasta hoy no había forma de saber cuál le
+toca a cada una ni si otra ya la había cargado.
+
+**El planteo original era buscar por fecha ±3 días, proveedor y monto ±$X.**
+Medido contra los datos reales, ese filtro tiene dos agujeros:
+
+1. Cero resultados no distingue «no llegó» de «el monto que recordás está mal»,
+   y la sala concluye lo primero.
+2. **No prueba de quién es la factura.** `$184.68` aparece en 9 de los 21
+   documentos de recargas del bimestre —siempre "200 × RECARGA CLARO $1.00"—
+   así que dos salas que compraron lo mismo el mismo día producen dos filas
+   idénticas. Al cruzar documento contra compra por fecha ±5 días y monto
+   exacto, tres documentos de $184.68 emparejaron cada uno con tres salas, y en
+   los datos **no hay forma de decidir si son tres facturas o una cargada tres
+   veces**.
+
+Entonces es una **lista**, no un buscador: ~3 documentos por sala al mes entran
+en pantalla enteros, y el buscador de arriba acota sin ser la única puerta.
+
+**Lo que de verdad se arregla es que ahora existe la llave.** El número de
+documento no sirve: en las compras viene cortado a 20 caracteres y cada sala lo
+teclea distinto — para las mismas facturas de COFARSAL conviven siete formatos
+(`DTE-03-M001P001-0000`, `03-M001P001-00000000`, `000000012590`, `DTE-11662`,
+`13130`, `13130.`, `C09DCEC3-2D29-479B-A`). Tomar la factura escribe el vínculo
+documento↔sala que antes no se podía reconstruir, y recién con eso «¿ya la tomó
+otra?» tiene respuesta.
+
+Piezas:
+
+- **El candado es un índice único parcial**, no un `SELECT` previo: dos salas
+  que confirman en el mismo segundo, una entra y la otra recibe el aviso.
+  Verificado con una transacción que se deshace: rechaza la segunda, y tras
+  soltar la primera deja pasar a otra sala.
+- **Reglas de captura, no lista de proveedores.** Las recargas de Tigo y Claro
+  no las emite Tigo ni Claro: viajan como renglón dentro de facturas de
+  COFARSAL, que además es el proveedor de medicamento más grande. La regla es
+  emisor + patrón del renglón. De las 202 facturas de COFARSAL del bimestre, 21
+  traen recargas y **ninguna las mezcla con medicamento**.
+- **Movistar se asigna solo**: sus documentos traen la línea adentro
+  (`Núm. Teléfono: 78370041`) y el extractor acierta en 7 de 7. Falta cargar el
+  mapa línea→sala; mientras una línea no esté mapeada su documento cae al modo
+  reclamo y lo ven todas — nunca desaparece.
+- **Soltar no borra**: cierra la fila con quién y por qué. La sala puede soltar
+  la suya mientras nadie la haya registrado como compra; después, contabilidad.
+- **El archivo se abre solo para el documento ya tomado.** El bucket exige el
+  módulo de contabilidad, y abrírselo a las salas les daría también las facturas
+  de los laboratorios ($157,215 de COFARSAL en el bimestre).
+- **El circuito cierra contra las compras**, no contra el reclamo:
+  `verificar_facturas_reclamadas` liga cada reclamo con su compra **solo cuando
+  el candidato es único**. Con montos que se repiten, una coincidencia ambigua
+  se deja sin verificar en vez de inventarla.
+
+Los recibos de línea fija de Claro y CTE (18 documentos, $452.92 en 60 días)
+quedan fuera a propósito: son el servicio del local, los paga administración.
+
+## v2.483.4 — El último caso del acomodo congelado: las baldosas de sucursal
+
+Cierra el hueco que quedaba de v2.483.3. Las baldosas de venta por sucursal
+(`sales_branch_*`) son ids **dinámicos** —uno por sucursal— y no están en el
+catálogo de ninguna pestaña: su alta la hace un efecto propio que escribe **sólo
+el acomodo de escritorio**. O sea que un usuario con acomodo móvil propio no
+vería nunca la baldosa de una sucursal nueva: exactamente la misma forma del
+defecto que se acababa de arreglar, en el único rincón que no lo cubría.
+
+Ahora el catálogo efectivo de la pestaña incluye los `sales_branch_*` que
+existan en el acomodo de escritorio, así que el teléfono los hereda igual que
+cualquier otro widget.
+
 ## v2.483.3 — El acomodo del teléfono también se completa con los widgets que faltan
 
 **La hipótesis que v2.483.2 dio por falsa era cierta.** Lo falso era la prueba.

@@ -16,7 +16,8 @@ import {
   Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
-  FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight
+  FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
+  ReceiptText
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +29,7 @@ import SearchInput from '../components/common/SearchInput';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import WidgetInventoryMovement from './dashboard/WidgetInventoryMovement';
+import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 // Estaba USADO y sin importar: el componente existe, su rama de render está
@@ -114,6 +116,7 @@ const WIDGET_SIZES = {
   annulment_req: { minCols: 1, minRows: 1, label: 'Anulaciones'  },
   minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste Inventario' },
+  facturas_sala: { minCols: 1, minRows: 1, label: 'Facturas Sala' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
 };
 
@@ -182,7 +185,7 @@ const TAB_WIDGETS = {
   get general() { return WIDGET_DEFS.map(w => w.id); },
   comercial: ['kpi','meta_sala','cotizaciones','facturacion','top_productos','sales','vendedores'],
   rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
-  operacion: ['inv_search','annulment_req','minmax_req','inv_movement','traslados'],
+  operacion: ['inv_search','annulment_req','minmax_req','inv_movement','traslados','facturas_sala'],
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -296,6 +299,7 @@ const WIDGET_DEFS = [
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Ajuste de Inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'traslados',    label: 'Traslados entre Salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
+  { id: 'facturas_sala',label: 'Facturas de mi Sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Quién está vendiendo',    permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
 ];
@@ -639,11 +643,18 @@ const DashboardView = ({ openModal }) => {
   //     hacía al leer el acomodo de escritorio (`initTabLayouts`, por `srs_inv`
   //     justamente) y **no** en el camino móvil, que es donde sobrevivió.
   //
-  // Los `sales_branch_*` se conservan aunque no estén en el catálogo: son ids
-  // dinámicos, uno por sucursal, y su alta la maneja aquel efecto.
+  // Los `sales_branch_*` entran al catálogo tomándolos del acomodo de
+  // escritorio, que es donde su efecto los da de alta.
   const activeLayout = useMemo(() => {
     const tabLayout = widgetLayout[activeTab] || {};
-    const catalogo = (TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi');
+    // Los `sales_branch_*` son ids dinámicos —uno por sucursal— y su alta la
+    // maneja el efecto de `salesBranches`, que sólo escribe el acomodo de
+    // ESCRITORIO. Así que para el teléfono cuentan como parte del catálogo: sin
+    // esto, un usuario con acomodo móvil propio no vería nunca la baldosa de una
+    // sucursal nueva. Es la misma forma del defecto que se acaba de arreglar, y
+    // era el único caso que quedaba abierto.
+    const dinamicos = Object.keys(tabLayout).filter(id => id.startsWith('sales_branch_'));
+    const catalogo = [...(TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi'), ...dinamicos];
     const vigente = (id) => catalogo.includes(id) || id.startsWith('sales_branch_');
     const porPosicion = (base) => (a, b) => {
       const pa = base[a], pb = base[b];
@@ -1000,6 +1011,11 @@ const DashboardView = ({ openModal }) => {
       () => salaQueFacturaPorDefecto(user?.branchId ?? user?.branch_id));
   const [minmaxErp, setMinmaxErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
   const [movimientoErp, setMovimientoErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
+  // Facturas de mi Sala trabaja con `branch_id` del portal (no con el número de
+  // sucursal del sistema de compras): la baldosa se lo pasa tal cual al RPC, y
+  // con alcance BRANCH la base lo compara contra la sala del propio empleado.
+  const [facturasBranch, setFacturasBranch] = useState(
+      () => String(user?.branchId ?? user?.branch_id ?? ''));
   // Arranca en la sala propia; si el usuario no está en una sala de venta
   // (gerencia, bodega), en la primera de la lista.
   const [metaBranch, setMetaBranch] = useState(() => {
@@ -2283,6 +2299,37 @@ const DashboardView = ({ openModal }) => {
               value={movimientoErp}
               onChange={val => setMovimientoErp(val ?? String(ownErpMov ?? 5))}
               options={MM_ERP_ORDER.map(id => ({ value: String(id), label: MM_ERP_NAMES[id] }))}
+              placeholder="Sucursal..."
+              clearable={false}
+            />
+          )}
+        />
+      , staggerIdx);
+    }
+
+    /* ── FACTURAS DE MI SALA ── */
+    // Baldosa 1×1 que abre la lista en un modal, como sus hermanas. El selector
+    // de sucursal va adentro (en la ranura de herramientas del modal), no en la
+    // baldosa: la baldosa es la puerta y solo lleva el número de lo que espera.
+    if (wid === 'facturas_sala') {
+      if (!showWidget('facturas_sala', 'dash_facturas_sala')) return null;
+      const isFactAllScope = getScope('dash_facturas_sala') === 'ALL';
+      const propia = String(user?.branchId ?? user?.branch_id ?? '');
+      // Con alcance BRANCH el desplegable ni se ofrece: la base rechaza
+      // cualquier sala que no sea la propia, así que un selector prometería un
+      // alcance que no existe. Con ALL, elegir sala es todo el sentido.
+      const factBranch = isFactAllScope ? facturasBranch : propia;
+      const factOpts = branches
+        .filter(b => b.type === 'FARMACIA' || b.type === 'BODEGA')
+        .map(b => ({ value: String(b.id), label: b.name }));
+      return wrapWidget('facturas_sala',
+        <WidgetFacturasSala
+          branchId={factBranch ? Number(factBranch) : null}
+          selectorSucursal={isFactAllScope && factOpts.length > 0 && (
+            <LiquidSelect
+              value={facturasBranch}
+              onChange={val => setFacturasBranch(val ?? propia)}
+              options={factOpts}
               placeholder="Sucursal..."
               clearable={false}
             />

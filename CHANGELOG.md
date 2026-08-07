@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.470.0 — El expediente móvil se vuelve canónico
+
+Doce vistas del portal cuelgan su detalle de un `<tr colSpan>` hermano de la
+fila. En el teléfono `DataTable` ya no pinta una tabla —pinta fichas— así que ese
+`<tr>` no existe y el toque no lleva a ningún lado. La salida es la misma en las
+doce, y ahora está escrita una vez: `ExpedienteMovil`.
+
+**Por qué un componente y no cuatro líneas copiadas.** Porque esas cuatro líneas
+llevan tres decisiones que se equivocan solas:
+
+1. **El corte de «teléfono» tiene que ser EL MISMO** que usa `DataTable` para
+   elegir ficha o tabla. Si divergen hay un ancho donde la fila se pinta como
+   ficha y el detalle sigue intentando expandirse dentro de una tabla que ya no
+   está. Vive en `CORTE_TELEFONO`, no como número suelto en cada vista.
+2. **La expansión de escritorio se apaga en el teléfono**, o el panel se monta
+   dos veces.
+3. **El detalle recibe `comoPanel`** en vez de duplicarse. Es la lección que
+   v2.62.4 tuvo que pagar reunificando cuatro copias de la fila expandida: si
+   son dos componentes, la sección que alguien agregue mañana aparece en uno.
+
+Copiadas once veces, las tres se rompen en alguna.
+
+**La receta, completa:**
+
+```jsx
+const { enTelefono, abierto } = useExpedienteMovil(filas, expandedId);
+
+<DataTable movil={{ usarAccionDeFila: true }} …>   // el toque va al onClick real
+  {isExpanded && !enTelefono && <FilaExpandida … />}
+</DataTable>
+
+<ExpedienteMovil abierto={abierto} onClose={cerrar} titulo={abierto?.nombre}>
+  {(fila) => <FilaExpandida comoPanel fila={fila} … />}
+</ExpedienteMovil>
+```
+
+`children` es una **función**: con doce secciones y tres historiales, armar el
+panel en cada render de la lista es trabajo que nadie ve.
+
+El catálogo de productos —la vista donde se resolvió— queda migrado al canónico,
+así que la receta está probada y no sólo escrita.
+
+*Verificación incompleta, y por qué:* los gates y el lint pasan sobre mis
+archivos, pero **no pude correr el build ni la pasada visual**: cinco archivos
+del tablero (`LanzadorSolicitud`, `WidgetAnnulmentRequest`,
+`WidgetInventoryMovement`, `WidgetInventorySearch`, `WidgetMinMaxRequest`) están
+en vuelo de otra sesión con un `surface={null}` duplicado que rompe esbuild. No
+los toqué. La migración del catálogo es un refactor a igual comportamiento sobre
+algo que quedó verificado en v2.469.1, pero **conviene reverificarlo** cuando el
+árbol vuelva a compilar.
+
 ## v2.469.2 — El barrido deja de reintentar lo que Hacienda nunca recibio
 
 Ocho facturas anuladas se reintentaban **todas las noches** y fallaban siempre,

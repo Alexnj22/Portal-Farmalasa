@@ -19,8 +19,8 @@ import CarrilCards from '../../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
-import ModalShell from '../../components/common/ModalShell';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import ExpedienteMovil from '../../components/common/ExpedienteMovil';
+import { useExpedienteMovil } from '../../components/common/expedienteMovil';
 import { normSearch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
@@ -1483,15 +1483,10 @@ export default function TabCatalogo({
     const [page, setPage]             = useState(1);
     const [pageSize, setPageSize]     = useState(25);
     const [expandedId, setExpandedId] = useState(null);
-    // El corte es el MISMO que usa `DataTable` para decidir ficha o tabla: si
-    // fueran dos números distintos habría un ancho en el que la fila se pinta
-    // como ficha y el detalle sigue intentando expandirse dentro de una tabla
-    // que ya no existe.
-    const enTelefono = useMediaQuery('(max-width: 1023.98px)');
-    // La fila abierta, resuelta desde la lista que ya está cargada: el modal no
-    // necesita su propio estado ni su propia consulta — el expediente ya cuelga
-    // de `expandedId`, que es el mismo que expande la fila en escritorio.
-    const productoAbierto = products.find(x => x.id === expandedId) || null;
+    // El corte y la resolución de la fila abierta salen del canónico: son las
+    // mismas doce vistas con detalle expandible, y el corte tiene que coincidir
+    // con el que `DataTable` usa para elegir ficha o tabla.
+    const { enTelefono, abierto: productoAbierto } = useExpedienteMovil(products, expandedId);
     const [expandedCache, setExpandedCache] = useState({});
     const [loadingExpandedId, setLoadingExpandedId] = useState(null);
 
@@ -1986,25 +1981,20 @@ export default function TabCatalogo({
                 </DataTable>
             )}
 
-            {/* ── El expediente, a pantalla completa en el teléfono ──────────
-                Mismo componente que la fila expandida de escritorio, con
-                `comoPanel`: si fueran dos, la sección que alguien agregue mañana
-                aparecería en uno solo. `align="pantalla"` es la posición que
-                `ModalShell` no reinterpreta — un expediente de siete secciones
-                no es una decisión que se toma y se cierra, es algo que se
-                recorre. */}
-            <ModalShell
-                open={enTelefono && !!expandedId}
+            {/* El expediente, con el envase canónico: `ExpedienteMovil` pone
+                el `ModalShell` a pantalla completa, su barra y el corte. Acá
+                queda sólo lo que es de esta vista — qué panel se monta. */}
+            <ExpedienteMovil
+                abierto={productoAbierto}
                 onClose={() => setExpandedId(null)}
-                align="pantalla"
-                titulo={productoAbierto?.nombre || 'Producto'}
+                titulo={productoAbierto?.nombre}
             >
-                {productoAbierto && (
+                {(prod) => (
                     <ExpandedProductRow
                         comoPanel
-                        product={productoAbierto}
-                        data={expandedCache[productoAbierto.id]}
-                        loadingRow={loadingExpandedId === productoAbierto.id && !expandedCache[productoAbierto.id]}
+                        product={prod}
+                        data={expandedCache[prod.id]}
+                        loadingRow={loadingExpandedId === prod.id && !expandedCache[prod.id]}
                         branches={branches}
                         onPhotoUpdated={handlePhotoUpdated}
                         onPrinciplesUpdated={handlePrinciplesUpdated}
@@ -2014,7 +2004,7 @@ export default function TabCatalogo({
                         onCategoryCreated={onCategoryCreated}
                     />
                 )}
-            </ModalShell>
+            </ExpedienteMovil>
 
             {/* ── Pagination ── */}
             {!loading && total > 0 && (

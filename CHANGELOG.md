@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.477.0 — Barrido de las 37 vistas, y los 125 blancos de Mín·Máx
+
+El barrido de la fase 4 miraba **ocho** vistas, las que el personal usa en
+tienda. `tests/e2e/barrido-total-movil.spec.js` mira **las 37**, y agrega dos
+medidas que el instrumento de fases no tenía y que son las que deciden el
+trabajo: si la vista quedó en **tabla** en el teléfono, y cuántas fichas rinde.
+
+**Lo bueno, medido:** cero desborde de página y cero inputs con zoom de iOS en
+las 37. El shell está sano; lo que queda es contenido.
+
+**Lo que hay que corregir, en orden:**
+
+| Vista | Qué |
+|---|---|
+| Mín·Máx | **125** blancos <44pt → **72** con este commit |
+| Libro de compras completo | 49 elementos recortados |
+| vacation-plan | tabla en el teléfono + 13 recortados |
+| staff · schedules · dashboard | tabla en el teléfono |
+| metas · announcements · productos | 2, 2 y 1 recortados |
+| overview | 7 — las columnas del gráfico, restricción medida y documentada |
+
+**Los 125 de Mín·Máx eran UNA sola forma.** Los tres botones de acción de cada
+fila —«Poner 0», «Restaurar», «Más»— median 37px de alto con `py-1.5` y dos
+líneas chicas: siete por debajo del mínimo del dedo, multiplicado por tres por
+fila y unas cuarenta filas. Un `min-h-[var(--tap-min)]` en la constante que
+comparten los baja todos. En escritorio `--tap-min` vale 0 y los botones siguen
+en 36px.
+
+Quedan 72, que son otras formas y hay que agruparlas igual: **el número por sí
+solo no dice qué arreglar; la agrupación sí.** Fue lo que convirtió «125
+problemas» en «un botón».
+
 ## v2.476.0 — El envase lo decide el contenido: hoja que crece, o pantalla
 
 Preguntado por el usuario: *«¿por qué el modal en compras se ve completo y no se

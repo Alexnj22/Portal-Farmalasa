@@ -45,7 +45,12 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
     const hasRestaura = canManage && (row.calc_min != null || hasDraft || row.has_manual);
     const hasDescarta = hasDraft && canManage && !isBodegaRow;
 
-    const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-[var(--dur-fast)]';
+    // `min-h-[var(--tap-min)]`: con `py-1.5` y dos líneas chicas estos botones
+    // medían **37px** de alto, siete por debajo del mínimo del dedo. No es uno:
+    // son los tres de cada fila, y el barrido total de las 37 vistas los contó
+    // **125** en Mín·Máx — de lejos el número más alto del portal, y todos la
+    // misma forma. En escritorio `--tap-min` vale 0 y no cambia nada.
+    const B = 'flex flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 min-h-[var(--tap-min)] rounded-lg transition-colors duration-[var(--dur-fast)]';
     const sp = {
         whileTap: { scale: 0.87, transition: { type: 'spring', stiffness: 1200, damping: 40 } },
     };

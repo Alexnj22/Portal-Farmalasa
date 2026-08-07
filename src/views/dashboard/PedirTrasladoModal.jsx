@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeftRight, Loader2 } from 'lucide-react';
+import { ArrowLeftRight, Loader2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -225,18 +225,28 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
     };
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pedir a otra sala">
-            <div className="p-5 flex flex-col gap-3">
-                <div className="flex items-start gap-2">
-                    <ArrowLeftRight size={15} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <div className="min-w-0">
-                        <p className="text-body-sm font-black text-content leading-tight">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pedir a otra sala"
+            className="max-h-[85dvh]">
+            {/* Las tres ranuras del canónico. Antes era un `<div>` suelto con el
+                título a mano, sin botón de cerrar y con «Pedir» al final del
+                cuerpo que scrollea. */}
+            <LiquidModal.Header>
+                <div className="flex items-start gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
+                        <ArrowLeftRight size={15} className="text-brand-text" strokeWidth={2.5} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-body font-black text-content leading-tight">
                             {producto?.descripcion}
                         </p>
-                        <p className="text-micro text-content-3 mt-0.5">Pedir a otra sala</p>
+                        <p className="text-label text-content-3 mt-0.5">Pedir a otra sala</p>
                     </div>
+                    <Button variant="ghost" size="xs" icon={X} iconOnly
+                        onClick={onClose} aria-label="Cerrar" />
                 </div>
+            </LiquidModal.Header>
 
+            <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
                 {listo ? (
                     <p className="text-label font-semibold text-success-text py-6 text-center leading-snug">
                         Solicitud enviada.<br />
@@ -334,14 +344,19 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                         />
 
                         {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
-
-                        <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
-                            {enviando && <Loader2 size={14} className="animate-spin" />}
-                            {enviando ? 'Enviando...' : 'Pedir'}
-                        </Button>
                     </>
                 )}
-            </div>
+            </LiquidModal.Body>
+
+            {!listo && (
+                <LiquidModal.Footer>
+                    <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
+                        {enviando && <Loader2 size={14} className="animate-spin" />}
+                        {enviando ? 'Enviando...' : 'Pedir'}
+                    </Button>
+                </LiquidModal.Footer>
+            )}
         </LiquidModal>
     );
 }

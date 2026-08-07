@@ -18,7 +18,7 @@ import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SearchInput from '../../components/common/SearchInput';
-import LanzadorSolicitud from './LanzadorSolicitud';
+import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import PedirTrasladoModal from './PedirTrasladoModal';
 
 const ERP_BRANCH_MAP = {
@@ -926,27 +926,21 @@ export default function WidgetInventorySearch() {
       vacio="Buscar producto"
       tono="warning"
       maxWidth="max-w-3xl"
+      descripcion="En qué sala hay un producto, y cómo pedirlo"
     >
       {() => (
-        <div className="p-5 max-h-[85dvh] flex flex-col gap-3">
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
-              <Package size={16} strokeWidth={2} className="text-warning-text" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-body-sm font-black text-content leading-tight">Consulta de Inventario</p>
-              <p className="text-micro text-content-3 mt-0.5">
-                En qué sala hay un producto, y cómo pedirlo
-              </p>
-            </div>
-          </div>
-
-          <SearchInput
-            accentColor="var(--warning)"
-            value={q}
-            onChange={setQ}
-            placeholder="Buscar por nombre o principio activo..."
-          />
+        <>
+          {/* El buscador va en el encabezado del modal —la ranura canónica—
+              junto al título. El encabezado a mano que estaba acá lo pone ahora
+              `LanzadorSolicitud`, con su botón de cerrar. */}
+          <HerramientasModal>
+            <SearchInput
+              accentColor="var(--warning)"
+              value={q}
+              onChange={setQ}
+              placeholder="Buscar por nombre o principio activo..."
+            />
+          </HerramientasModal>
 
           {/* `min-h-0` y NO `overflow-hidden`.
               Medido el 2026-08-06: con `overflow-hidden` esta caja quedaba en
@@ -959,7 +953,7 @@ export default function WidgetInventorySearch() {
           <div className="flex-1 min-h-0 flex flex-col">
             <PanelInventario query={q} onQueryChange={setQ} />
           </div>
-        </div>
+        </>
       )}
     </LanzadorSolicitud>
   );

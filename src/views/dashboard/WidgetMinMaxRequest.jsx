@@ -6,7 +6,7 @@ import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from
 import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
-import LanzadorSolicitud from './LanzadorSolicitud';
+import LanzadorSolicitud, { HerramientasModal, PieModal } from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 import {
@@ -207,10 +207,16 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         </div>
 
         {err && <p className="text-label text-danger-text font-semibold px-1">{err}</p>}
+      </div>
 
+      {/* El envío va al PIE del modal, no al final del cuerpo: adentro del
+          scroller había que llegar hasta abajo para encontrarlo, y con el
+          teclado abierto en el teléfono quedaba fuera de la vista. */}
+      <PieModal>
+        <Button variant="secondary" onClick={onBack}>Volver</Button>
         <Button disabled={submitting} onClick={submit}>{submitting && <Loader2 size={14} className="animate-spin" />}
           {submitting ? 'Enviando…' : 'Enviar a aprobación'}</Button>
-      </div>
+      </PieModal>
     </div>
   );
 }
@@ -298,9 +304,15 @@ function FormularioMinMax({ selectedErp = null }) {
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
-      <div className="flex items-center justify-end gap-1.5 shrink-0">
-        <SearchInput expandable accentColor="var(--warning)" value={search} onChange={setSearch} placeholder="Buscar producto para ajustar Min/Max…" />
-      </div>
+      {/* El buscador va ABIERTO y en el encabezado del modal, como el de
+          Facturación. Plegado detrás de una lupa —que es lo que hacía
+          `expandable`— se leía como un botón sin nombre en una pantalla cuyo
+          único trabajo es buscar: había que descubrir el control antes de poder
+          empezar. Reportado el 2026-08-07 sobre esta misma vista. */}
+      <HerramientasModal>
+        <SearchInput accentColor="var(--warning)" value={search} onChange={setSearch}
+          placeholder="Buscar producto para ajustar Min/Max…" />
+      </HerramientasModal>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
@@ -359,31 +371,20 @@ export default function WidgetMinMaxRequest(props) {
       etiquetaPendientesPlural="propuestas pendientes"
       vacio="Sin propuestas"
       tono="brand"
+      descripcion="Proponer un mínimo o un máximo distinto para un producto"
     >
-      {/* Sin `min-h`: sin nada buscado el modal se abría como una caja de 24rem
-          casi vacía. Y con encabezado, porque abría directo en un selector de
-          sucursal y un texto suelto, sin decir qué se había abierto. Las dos
-          cosas se vieron en el navegador el 2026-08-06, no leyendo el código. */}
+      {/* El encabezado ya no se dibuja acá: lo pone `LanzadorSolicitud` con las
+          ranuras del canónico (`LiquidModal.Header`), y de paso trae el botón
+          de cerrar que este modal no tenía. */}
       {() => (
-        <div className="p-5 max-h-[80dvh] flex flex-col gap-3">
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-              <TrendingUp size={16} strokeWidth={2} className="text-brand-text" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-body-sm font-black text-content leading-tight">Ajuste de Min/Max</p>
-              <p className="text-micro text-content-3 mt-0.5">
-                Proponer un mínimo o un máximo distinto para un producto
-              </p>
-            </div>
-          </div>
+        <>
           {/* El selector de sucursal vivía en la cabecera de la tarjeta del
               tablero. Al volverse baldosa esa cabecera desapareció y con ella
               el selector: quien tiene alcance sobre todas las salas se quedaba
               sin poder cambiar de sala. Se muda acá adentro. */}
           {props.selectorSucursal}
           <FormularioMinMax {...props} />
-        </div>
+        </>
       )}
     </LanzadorSolicitud>
   );

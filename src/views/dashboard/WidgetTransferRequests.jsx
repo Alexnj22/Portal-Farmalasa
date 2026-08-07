@@ -361,14 +361,11 @@ export default function WidgetTransferRequests() {
             vacio="Nada pendiente"
             tono="brand"
             maxWidth="max-w-lg"
+            descripcion="Pedir producto a otra sala, y confirmar lo que te piden"
         >
-            {/* Sin `min-h`: el modal se abría como una caja de 20rem casi vacía
-                cuando no había nada que hacer. Que crezca con lo que tiene. */}
-            {() => (
-                <div className="p-5 max-h-[80dvh] flex flex-col overflow-y-auto">
-                    <PanelTraslados onCambio={contar} />
-                </div>
-            )}
+            {/* Sin `min-h` ni scroller propio: el cuerpo canónico
+                (`LiquidModal.Body`) ya scrollea, y el alto lo topa el modal. */}
+            {() => <PanelTraslados onCambio={contar} />}
         </LanzadorSolicitud>
     );
 }

@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.472.0 — Los cinco modales del tablero adoptan el canónico: encabezado, cuerpo y pie
+
+Reportado: «siento que a los modales les falta el header y el footer. ¿está
+usando el canónico de modal?». Sí y no — y el «no» es el interesante.
+
+**El canónico estaba importado, pero sus ranuras no las usaba nadie.** Los cinco
+widgets de solicitudes pasaban por `LiquidModal`, así que tenían su material, su
+animación, la trampa de foco y el bloqueo de scroll. Lo que le pasaban adentro
+era un `<div>` suelto: cada uno se dibujaba su propio encabezado a mano —cuatro
+versiones distintas del mismo renglón, y dos widgets sin ninguno—, ninguno tenía
+botón de cerrar, y el botón de enviar vivía al final del cuerpo que scrollea.
+`LiquidModal.Header`, `.Body` y `.Footer` existían y no los llamaba ni uno.
+
+Es la forma en que un componente canónico deja de serlo sin que nada lo note:
+importarlo no es adoptarlo, y ningún gate mira si se usan sus ranuras.
+
+**Ahora la anatomía la pone la puerta común** (`LanzadorSolicitud`), una sola vez
+para los cinco: encabezado con ícono, título, qué se hace ahí adentro y la X;
+cuerpo propio; y pie **sólo cuando hay botones**. El pie y las herramientas del
+encabezado llegan por portal —`PieModal` y `HerramientasModal`— porque el botón
+de enviar y el buscador nacen tres componentes más abajo, con su estado a mano:
+izarlos hasta la puerta era reescribir cinco formularios para mover dos
+controles.
+
+**El buscador de Min/Max ya no está plegado detrás de una lupa.** Era
+`expandable`, o sea un botón sin nombre en una pantalla cuyo único trabajo es
+buscar: había que descubrir el control antes de poder empezar. Va abierto y en el
+encabezado, igual que el de Facturación — que además dejó de repetir su propio
+título ahí adentro.
+
+Verificado en el navegador, los cinco: encabezado con su X, y el pie entero a la
+vista con `["Volver","Enviar a aprobación"]` en Min/Max,
+`["Volver","Enviar solicitud de descarga"]` en Ajuste de Inventario,
+`["Solicitar Modificación"]` en Facturación y `["Cancelar","Pedir"]` en el modal
+de pedir a otra sala. Y en ninguno quedó el botón de enviar adentro del cuerpo
+que scrollea, que era el punto.
+
+**De paso, el build de `main` estaba roto.** `ExpedienteMovil.jsx` y
+`expedienteMovil.js` sólo difieren en la primera letra y macOS no distingue
+mayúsculas: sin extensión explícita, Vite prueba `.js` antes que `.jsx`, resolvía
+al módulo de hooks y fallaba con *«"default" is not exported»*. No era esa vista:
+era el build entero. Las dos importaciones llevan la extensión escrita.
+
 ## v2.471.0 — Lista negra del barrido, dos clientes unidos y el parseo del ERP en un solo lugar
 
 Tres cosas que quedaban sueltas.

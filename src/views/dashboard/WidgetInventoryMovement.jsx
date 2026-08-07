@@ -6,7 +6,7 @@ import {
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import LanzadorSolicitud from './LanzadorSolicitud';
+import LanzadorSolicitud, { PieModal } from './LanzadorSolicitud';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
@@ -549,12 +549,20 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
                     />
 
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                </div>
+            )}
 
+            {/* El envío va al PIE canónico del modal. Adentro del cuerpo quedaba
+                al final de una lista que puede tener decenas de líneas: había que
+                scrollear hasta abajo para enviar lo que ya estaba armado. */}
+            {totales.lineas > 0 && (
+                <PieModal>
+                    <Button variant="secondary" onClick={volver}>Volver</Button>
                     <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
                         {enviando && <Loader2 size={14} className="animate-spin" />}
                         {enviando ? 'Enviando...' : (esCarga ? 'Enviar solicitud de carga' : 'Enviar solicitud de descarga')}
                     </Button>
-                </div>
+                </PieModal>
             )}
         </div>
     );
@@ -582,26 +590,11 @@ export default function WidgetInventoryMovement(props) {
             etiquetaPendientesPlural="líneas vencidas"
             vacio="Nada vencido"
             tono="danger"
+            descripcion="Cargar o descargar producto de tu sala"
         >
-            {/* Encabezado y sin `min-h`, por lo mismo que sus dos hermanos: el
-                modal abría sin decir qué era y con un alto forzado que sobraba
-                cuando el contenido era corto. */}
-            {(cerrar) => (
-                <div className="p-5 max-h-[80dvh] flex flex-col gap-3">
-                    <div className="flex items-center gap-2.5 shrink-0">
-                        <div className="w-9 h-9 rounded-xl bg-danger/10 flex items-center justify-center shrink-0">
-                            <PackageMinus size={16} strokeWidth={2} className="text-danger-text" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-body-sm font-black text-content leading-tight">Ajuste de Inventario</p>
-                            <p className="text-micro text-content-3 mt-0.5">
-                                Cargar o descargar producto de tu sala
-                            </p>
-                        </div>
-                    </div>
-                    <FormularioAjuste {...props} onHecho={cerrar} />
-                </div>
-            )}
+            {/* El encabezado lo pone `LanzadorSolicitud` con las ranuras del
+                canónico (`LiquidModal.Header`), igual que en sus hermanos. */}
+            {(cerrar) => <FormularioAjuste {...props} onHecho={cerrar} />}
         </LanzadorSolicitud>
     );
 }

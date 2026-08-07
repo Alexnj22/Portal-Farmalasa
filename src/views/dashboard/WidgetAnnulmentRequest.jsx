@@ -13,7 +13,7 @@ import {
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import SearchInput from '../../components/common/SearchInput';
 import { useStaffStore } from '../../store/staffStore';
-import LanzadorSolicitud from './LanzadorSolicitud';
+import LanzadorSolicitud, { HerramientasModal, PieModal } from './LanzadorSolicitud';
 import { useAuth } from '../../context/AuthContext';
 import { normSearch } from '../../utils/searchUtils';
 import { clickable } from '../../utils/clickable';
@@ -164,13 +164,19 @@ function InvoiceHeader({ inv, onBack, vendor }) {
   );
 }
 
-/* Sticky submit button at bottom of forms */
+/* La acción principal de cada paso — va al PIE canónico del modal.
+   Estaba al final del cuerpo que scrollea: en las facturas con muchas líneas
+   había que llegar hasta abajo para encontrar el botón de enviar, y con el
+   teclado abierto en el teléfono quedaba directamente fuera de la vista.
+   `ml-auto` porque el pie reparte con `justify-between` y acá hay un solo
+   botón: sin eso queda pegado a la izquierda. */
 function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
   return (
-    <div className="shrink-0 pt-2">
-      <Button disabled={disabled || isLoading} onClick={onClick}>{isLoading && <Loader2 size={14} className="animate-spin" />}
+    <PieModal>
+      <Button className="ml-auto" disabled={disabled || isLoading} onClick={onClick}>
+        {isLoading && <Loader2 size={14} className="animate-spin" />}
         {isLoading ? 'Enviando...' : label}</Button>
-    </div>
+    </PieModal>
   );
 }
 
@@ -1004,28 +1010,30 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   /* ── Lista ── */
   return (
     <div className="flex flex-col gap-2.5 flex-1 min-h-0">
-      {/* Los filtros van EN el encabezado, en un solo renglón con el título.
-          Antes ocupaban una franja propia debajo —título arriba, buscador y
-          fecha abajo— y eran dos alturas para dos controles. Y el buscador ya
-          no es expandible: plegado se leía como un botón sin nombre y había
-          que descubrirlo. */}
-      <div className="flex items-center gap-2 shrink-0">
-        <p className="text-caption font-black text-content-2 uppercase tracking-widest shrink-0">
-          Ventas del mes
-        </p>
-        <div className="flex-1 min-w-0">
-          <SearchInput
-            accentColor="var(--success)"
-            value={search}
-            onChange={setSearch}
-            placeholder="Cliente, vendedor, factura..."
-          />
+      {/* Los filtros van EN el encabezado del modal —la ranura canónica— y en
+          un solo renglón. Antes ocupaban una franja propia debajo del título
+          hecho a mano: dos alturas para dos controles, y el título repetido.
+          El buscador no es expandible: plegado se leía como un botón sin nombre
+          y había que descubrirlo. */}
+      <HerramientasModal>
+        <div className="flex items-center gap-2">
+          <p className="text-caption font-black text-content-2 uppercase tracking-widest shrink-0">
+            Ventas del mes
+          </p>
+          <div className="flex-1 min-w-0">
+            <SearchInput
+              accentColor="var(--success)"
+              value={search}
+              onChange={setSearch}
+              placeholder="Cliente, vendedor, factura..."
+            />
+          </div>
+          {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
+          <div className="h-8 shrink-0 rounded-lg border border-divider bg-surface-card flex items-center">
+            <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
+          </div>
         </div>
-        {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
-        <div className="h-8 shrink-0 rounded-lg border border-divider bg-surface-card flex items-center">
-          <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
-        </div>
-      </div>
+      </HerramientasModal>
 
       <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
@@ -1124,9 +1132,10 @@ export default function WidgetAnnulmentRequest(props) {
       etiquetaPendientesPlural="solicitudes pendientes"
       vacio="Sin pendientes"
       tono="warning"
+      descripcion="Anular una factura, o cambiar su cliente, vendedor o forma de pago"
     >
       {() => (
-        <div className="p-5 max-h-[80dvh] min-h-[24rem] flex flex-col gap-3">
+        <div className="flex flex-col gap-3 flex-1 min-h-0">
           {/* El selector de sucursal vivía en la cabecera de la tarjeta del
               tablero. Al volverse baldosa esa cabecera desapareció y con ella
               el selector: quien tiene alcance sobre todas las salas se quedaba

@@ -19,8 +19,13 @@ import CarrilCards from '../../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
-import ExpedienteMovil from '../../components/common/ExpedienteMovil';
-import { useExpedienteMovil } from '../../components/common/expedienteMovil';
+// La extensión va EXPLÍCITA. `ExpedienteMovil.jsx` y `expedienteMovil.js` son
+// dos archivos que solo difieren en la primera letra, y macOS no distingue
+// mayúsculas: sin extensión, Vite prueba `.js` antes que `.jsx`, encuentra el
+// módulo de hooks y falla con «"default" is not exported». Rompía el build
+// entero, no solo esta vista.
+import ExpedienteMovil from '../../components/common/ExpedienteMovil.jsx';
+import { useExpedienteMovil } from '../../components/common/expedienteMovil.js';
 import { normSearch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';

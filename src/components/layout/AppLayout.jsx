@@ -49,7 +49,11 @@ import { useHayDialogo } from '../common/dialogosAbiertos';
 // nuevo pasa de 6 ítems.
 const MENU_GROUPS = [
     { key: 'overview',      label: 'Inicio',        icon: Home,          modules: ['overview']                          },
-    { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests']            },
+    // `traslados` va acá y no en Inventario: un traslado ES una solicitud
+    // —vive en `approval_requests`, con su ciclo pedir → confirmar → recibir— y
+    // su permiso nace en este grupo, aparte de `requests` para que confirmar un
+    // envío no arrastre aprobar vacaciones.
+    { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests', 'traslados'] },
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
     { key: 'clima',         label: 'Clima Organizacional', icon: BarChart2, modules: ['encuesta', 'encuesta_admin']       },
@@ -73,7 +77,11 @@ const MENU_GROUPS = [
     { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a Sucursales', icon: ClipboardList, modules: ['pedidos'] },
     { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['minmax', 'ventas_perdidas', 'conteo_inventario'] },
-    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'proveedores'] },
+    // «Facturas de Sala» entra acá y no en Datos Contables: quien revisa que la
+    // factura tomada haya quedado cargada como compra trabaja en este grupo, no
+    // en el de los documentos que llegan por correo. Decisión del usuario
+    // 2026-08-07 («agregalo en compras, no en contabilidad»).
+    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'facturas_sala', 'proveedores'] },
     // Datos Contables (2026-07-31, pedido del usuario). Facturas de Compra sale
     // de "Compras": el documento de compra se sincroniza para CONTABILIDAD —el
     // DTE, su JSON/PDF y el proveedor fiscal—, no para decidir qué reponer, que

@@ -36,6 +36,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     minmax:             ['min max', 'stock', 'reposicion', 'existencias', 'punto de reorden'],
     ventas_perdidas:    ['quiebres de stock', 'sin stock', 'faltantes', 'stockouts'],
     compras:            ['compras del erp', 'facturas de bodega', 'costos de compra'],
+    facturas_sala:      ['facturas de mi sala', 'quien tomo la factura', 'agua', 'recargas', 'tigo', 'claro', 'movistar', 'sin cargar', 'tomadas'],
     facturas_compra:    ['facturas de proveedores', 'correo de facturas', 'dte de compras', 'gastos'],
     libros_iva:         ['libro de ventas', 'libro de compras', 'libro de iva', 'consumidor final', 'contribuyentes', 'declaracion de iva', 'hacienda', 'contabilidad', 'anulados', 'percepcion', 'retencion', 'sujeto excluido', 'credito fiscal', 'debito fiscal'],
     proveedores:        ['suppliers', 'contactos de proveedor', 'maestro de proveedores'],

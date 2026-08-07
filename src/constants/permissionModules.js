@@ -151,11 +151,16 @@ const GRUPOS_CRUDOS = [
             { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false, sub: [
                 { key: 'compras_tab_facturas',  label: 'Facturas',   tipo: 'tab' },
                 { key: 'compras_tab_productos', label: 'Productos',  tipo: 'tab' },
-                // La otra mitad del widget del tablero. `can_edit` del módulo es
-                // lo que habilita liberar una factura tomada por una sala —la
-                // sala sola no puede si ya quedó cargada como compra.
-                { key: 'compras_tab_salas',     label: 'Facturas de Sala', tipo: 'tab' },
                 { key: 'compras_ver_montos',    label: 'Ver montos', tipo: 'cap' },
+            ]},
+            // La otra mitad del widget «Facturas de mi Sala» del tablero. Nació
+            // como pestaña de Compras (v2.487.0) y pasó a vista propia el mismo
+            // día: tiene su propia pregunta —qué se tomó y no se cargó—, su
+            // propio período y su propio ciclo. `can_edit` es lo que habilita
+            // liberar una factura tomada por una sala: la sala sola no puede si
+            // ya quedó cargada como compra.
+            { key: 'facturas_sala', label: 'Facturas de Sala', desc: 'Qué factura tomó cada sala, quién la tomó y si terminó cargada como compra; liberar una tomada por error', icon: ReceiptText, hasApprove: false, sub: [
+                { key: 'facturas_sala_ver_montos', label: 'Ver montos', tipo: 'cap' },
             ]},
             { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icon: Truck, hasApprove: false },
             { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, sub: [

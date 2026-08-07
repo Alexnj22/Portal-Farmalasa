@@ -50,8 +50,10 @@ const ProductosView = lazy(IMPORTADORES.ProductosView);
 const LaboratoriosView = lazy(IMPORTADORES.LaboratoriosView);
 const PedidosView = lazy(IMPORTADORES.PedidosView);
 const MinMaxView = lazy(IMPORTADORES.MinMaxView);
+const TrasladosView = lazy(IMPORTADORES.TrasladosView);
 const VentasPperdidasView = lazy(IMPORTADORES.VentasPperdidasView);
 const ComprasView = lazy(IMPORTADORES.ComprasView);
+const FacturasSalaView = lazy(IMPORTADORES.FacturasSalaView);
 const FacturasCompraView = lazy(IMPORTADORES.FacturasCompraView);
 const LibrosIvaView = lazy(IMPORTADORES.LibrosIvaView);
 const LibroComprasCompletoView = lazy(IMPORTADORES.LibroComprasCompletoView);
@@ -638,8 +640,10 @@ function MainApp() {
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
                                     <Route path="pedidos" element={<PermissionGuard moduleKey="pedidos"><PedidosView /></PermissionGuard>} />
                                     <Route path="minmax" element={<PermissionGuard moduleKey="minmax"><MinMaxView /></PermissionGuard>} />
+                                    <Route path="traslados" element={<PermissionGuard moduleKey="traslados"><TrasladosView /></PermissionGuard>} />
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
+                                    <Route path="facturas-sala" element={<PermissionGuard moduleKey="facturas_sala"><FacturasSalaView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libro-compras-completo" element={<PermissionGuard moduleKey="libro_compras_completo"><LibroComprasCompletoView /></PermissionGuard>} />

@@ -21,51 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.493.0 — la consulta de inventario se compacta, y solo separa lo que vence pronto
-
-Pedido del usuario: «si no hay producto que esté a vencer (6 meses) lo puede
-compactar y poner el total de cajas, en el lote poner varios y en hover verlos,
-al igual la fecha. Ya si vence en 6 meses que sí lo separe».
-
-El criterio de fondo: **un lote merece su propio renglón cuando la fecha cambia
-una decisión.** A más de seis meses no la cambia —da igual de cuál salga— y ocho
-renglones para nueve cajas sólo esconden el número que se venía a buscar. Dentro
-de los seis meses sí: ahí se elige de dónde sale, o se decide no pedirlo.
-
-Antes / después, La Popular con la amoxicilina de la captura:
-
-```
-ANTES                                  DESPUÉS
-L5M5138  01 ago 27  UNIDAD    9        3 lotes  varias fechas  CAJA     26
-L5M5138  01 ago 27  CAJA      1        3 lotes  varias fechas  BLISTER   4
-L5M5137  01 ago 27  CAJA     24        3 lotes  varias fechas  UNIDAD   16
-L5M5138  01 ago 27  BLISTER   2
-L5M5137  01 ago 27  UNIDAD    3        (el desglose, al pasar el mouse)
-LSVF10697 01 nov 27 CAJA      1
-LSVF10697 01 nov 27 BLISTER   2
-LSVF10697 01 nov 27 UNIDAD    4
-```
-
-Tres decisiones que no son cosméticas:
-
-- **Los tranquilos se agrupan por PRESENTACIÓN, no todos juntos.** Un «26» sin
-  decir si son cajas o unidades sería volver al error que se acaba de corregir
-  en v2.490.4.
-- **Con un solo lote no se compacta.** «Varios» sobre uno solo esconde un dato
-  que cabía perfectamente.
-- **El grupo no lleva insignia de vencimiento.** Son fechas distintas y ninguna
-  representa al conjunto: decir «varias fechas» es la verdad, poner una sería
-  elegir por el usuario.
-
-El desglose va en `LiquidTooltip` y no en un `title` nativo: sobre un elemento
-que no es un control, el `title` no lo anuncia ningún lector de pantalla
-(DESIGN.md §15.10) — lo levantó `gate:design` y tenía razón.
-
-Y las filas de lote pasan a **una sola definición** (`LotesDeProducto`) para la
-lista y el detalle. Estaban escritas dos veces, que es exactamente por lo que la
-presentación se arregló en una y quedó rota en la otra hasta el reporte de ayer.
-
-## v2.492.0 — Facturas de Sala pasa a vista principal, canónica
+## v2.494.0 — Facturas de Sala pasa a vista principal, canónica
 
 Nació esta mañana como tercera pestaña de Compras (v2.487.0) y el usuario la
 corrigió el mismo día: **«que sea principal y no una pestaña»**, y **«no es una
@@ -114,8 +70,55 @@ líneas.
 seguido exigiendo sólo `compras`, quien reciba el módulo nuevo vería el ítem en
 el menú y un error al abrirlo.
 
-Nota: `routeImporters.js` y `moduleMap.js` entraron en v2.491.0 — el índice de
-git es compartido y ese commit se llevó esas dos líneas mías. El resto va acá.
+Nota de árbol compartido: `routeImporters.js` y `moduleMap.js` se fueron en
+v2.491.0 y esta misma entrada llegó a escribirse bajo un **v2.492.0 que nunca
+existió** —otra sesión se llevó el `version.js` y el `CHANGELOG.md` en su commit
+antes de que éste cerrara—. El índice de git es estado compartido: el número de
+versión se lo lleva quien commitea primero.
+
+## v2.493.0 — la consulta de inventario se compacta, y solo separa lo que vence pronto
+
+Pedido del usuario: «si no hay producto que esté a vencer (6 meses) lo puede
+compactar y poner el total de cajas, en el lote poner varios y en hover verlos,
+al igual la fecha. Ya si vence en 6 meses que sí lo separe».
+
+El criterio de fondo: **un lote merece su propio renglón cuando la fecha cambia
+una decisión.** A más de seis meses no la cambia —da igual de cuál salga— y ocho
+renglones para nueve cajas sólo esconden el número que se venía a buscar. Dentro
+de los seis meses sí: ahí se elige de dónde sale, o se decide no pedirlo.
+
+Antes / después, La Popular con la amoxicilina de la captura:
+
+```
+ANTES                                  DESPUÉS
+L5M5138  01 ago 27  UNIDAD    9        3 lotes  varias fechas  CAJA     26
+L5M5138  01 ago 27  CAJA      1        3 lotes  varias fechas  BLISTER   4
+L5M5137  01 ago 27  CAJA     24        3 lotes  varias fechas  UNIDAD   16
+L5M5138  01 ago 27  BLISTER   2
+L5M5137  01 ago 27  UNIDAD    3        (el desglose, al pasar el mouse)
+LSVF10697 01 nov 27 CAJA      1
+LSVF10697 01 nov 27 BLISTER   2
+LSVF10697 01 nov 27 UNIDAD    4
+```
+
+Tres decisiones que no son cosméticas:
+
+- **Los tranquilos se agrupan por PRESENTACIÓN, no todos juntos.** Un «26» sin
+  decir si son cajas o unidades sería volver al error que se acaba de corregir
+  en v2.490.4.
+- **Con un solo lote no se compacta.** «Varios» sobre uno solo esconde un dato
+  que cabía perfectamente.
+- **El grupo no lleva insignia de vencimiento.** Son fechas distintas y ninguna
+  representa al conjunto: decir «varias fechas» es la verdad, poner una sería
+  elegir por el usuario.
+
+El desglose va en `LiquidTooltip` y no en un `title` nativo: sobre un elemento
+que no es un control, el `title` no lo anuncia ningún lector de pantalla
+(DESIGN.md §15.10) — lo levantó `gate:design` y tenía razón.
+
+Y las filas de lote pasan a **una sola definición** (`LotesDeProducto`) para la
+lista y el detalle. Estaban escritas dos veces, que es exactamente por lo que la
+presentación se arregló en una y quedó rota en la otra hasta el reporte de ayer.
 
 ## v2.491.0 — Traslados entre Salas tiene vista propia, con el historial que no estaba en ninguna parte
 

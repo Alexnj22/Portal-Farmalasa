@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.483.3 — El acomodo del teléfono también se completa con los widgets que faltan
+
+**La hipótesis que v2.483.2 dio por falsa era cierta.** Lo falso era la prueba.
+Vale la pena dejar las dos cosas escritas, porque el error de método costó más
+que el defecto.
+
+El usuario mandó la captura: en Operación, en el teléfono, sólo «Consulta de
+Inventario» y «Modificar Facturación» — y **en la computadora salen todos**. Eso
+descarta permiso y «Personalizar», que no distinguen dispositivo. Su acomodo,
+leído de `user_dashboard_prefs`:
+
+```
+escritorio: annulment_req, inv_movement, inv_search, minmax_req, srs_inv, traslados
+móvil:      annulment_req, inv_search, srs_inv
+```
+
+`srs_inv` es un widget retirado, así que de las tres claves móviles sólo dos
+existen hoy: exactamente las dos de la captura.
+
+**La asimetría estaba en la carga de preferencias.** Al traer la fila del
+servidor, `data.layout` —el de escritorio— se **completa** con los widgets del
+catálogo de la pestaña que falten (líneas 758-764, un `missing` explícito). Y
+`data.mobile_layout` se copia tal cual:
+`setMobileLayout(prev => ({ ...prev, ...data.mobile_layout }))`. Nada lo
+completa. Por eso el escritorio se cura solo y el teléfono no.
+
+El arreglo va en `activeLayout`, que es el único punto por donde pasan las
+cuatro fuentes —localStorage y servidor, escritorio y móvil—, y hace dos cosas:
+**completa** con lo que falte del catálogo y **depura** lo que ya no existe. Lo
+segundo también hacía falta: el saneamiento de ids retirados existía sólo al
+leer el acomodo de escritorio (`initTabLayouts`, escrito justamente por
+`srs_inv`) y no en el camino móvil, que es donde sobrevivió. Las posiciones de
+lo que ya estaba no se tocan — a nadie se le reordena el tablero.
+
+### Y por qué v2.483.2 se equivocó
+
+La prueba sembraba el acomodo viejo **en localStorage**, y la fila de
+`user_dashboard_prefs` se carga después y lo pisa. Se cambió a interceptar la
+respuesta del servidor con `page.route` y **siguió pasando**. El motivo: el
+portal es PWA, y con el service worker activo la petición sale de ÉL, no de la
+página — `page.route` no la ve. La prueba pasó dos veces con **cero**
+intercepciones, midiendo el estado real en vez del sembrado.
+
+La prueba ahora **cuenta las intercepciones y falla si son cero**, que es la
+única forma de que «pasó» signifique algo. Con `serviceWorkers: 'block'`
+reproduce el caso exacto: contra el build sin arreglar pinta
+`annulment_req, inv_search` —los dos de la captura— y con el arreglo pinta
+cuatro.
+
+Es la misma lección de v2.483.1 por tercera vez en el día: **una prueba que no
+puede fallar no está probando nada**, y hay que darle una prueba de vida propia.
+
 ## v2.483.2 — Una hipótesis que encajaba con todo y era falsa
 
 Reportado: *«¿por qué en móvil no me salen todos los widget de operación? sólo me

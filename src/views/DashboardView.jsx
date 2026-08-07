@@ -613,23 +613,73 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => { mobileSizesRef.current  = mobileSizes[activeTab]  || {}; }, [mobileSizes,  activeTab]);
 
   // Active layout: per-tab. Mobile falls back to auto-placed from desktop order.
+  //
+  // ⚠️ QUÉ SE PINTA SALE DEL CATÁLOGO DE LA PESTAÑA, NO DEL ACOMODO GUARDADO.
+  // `buildWidgetList` recorre las claves de este objeto, así que un widget que
+  // no esté acá **no existe**. Y el acomodo se guarda —en localStorage y en
+  // `user_dashboard_prefs`— la primera vez que alguien mueve o redimensiona
+  // algo: desde ese momento el conjunto queda congelado y todo widget agregado
+  // después no aparece nunca.
+  //
+  // Reportado el 2026-08-07 en Operación: «sólo me sale Consulta de inventario
+  // y Modificar facturación». Su acomodo guardado, leído de la base:
+  //     escritorio: annulment_req, inv_movement, inv_search, minmax_req,
+  //                 srs_inv, traslados
+  //     móvil:      annulment_req, inv_search, srs_inv
+  // y `srs_inv` es un widget RETIRADO. De las tres claves móviles sólo dos
+  // existen hoy — exactamente las dos que veía. En escritorio salían las seis,
+  // que es por lo que el defecto parecía «del móvil»: no lo era, era que ese
+  // acomodo se guardó antes y por separado.
+  //
+  // Dos reglas, y las dos hacen falta:
+  //  1. **El catálogo completa.** Lo que falta se agrega al final. Ya había un
+  //     parche para esto, pero puntual: sólo para los `sales_branch_*`, sólo en
+  //     General y sólo en escritorio (ver el efecto de `salesBranches`).
+  //  2. **El catálogo depura.** Un id que ya no existe se descarta. Eso ya se
+  //     hacía al leer el acomodo de escritorio (`initTabLayouts`, por `srs_inv`
+  //     justamente) y **no** en el camino móvil, que es donde sobrevivió.
+  //
+  // Los `sales_branch_*` se conservan aunque no estén en el catálogo: son ids
+  // dinámicos, uno por sucursal, y su alta la maneja aquel efecto.
   const activeLayout = useMemo(() => {
     const tabLayout = widgetLayout[activeTab] || {};
-    if (!isMobile) return tabLayout;
-    const mbl = mobileLayout[activeTab] || {};
-    // En el teléfono el acomodo guardado se RECALCULA, no se usa tal cual: un
-    // widget que ahora ocupa las dos columnas y está guardado en la columna 2
-    // se saldría de la rejilla y CSS le fabricaría una tercera columna. Del
-    // acomodo guardado sobrevive lo único que sigue siendo cierto, el orden.
-    const base = Object.keys(mbl).length ? mbl : tabLayout;
-    const order = Object.keys(base).sort((a,b) => {
+    const catalogo = (TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi');
+    const vigente = (id) => catalogo.includes(id) || id.startsWith('sales_branch_');
+    const porPosicion = (base) => (a, b) => {
       const pa = base[a], pb = base[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
-    });
+    };
+    // Depura y completa SIN mover lo que ya estaba: recalcula un acomodo con
+    // todos, pero sólo se queda con la posición de los que faltaban.
+    const alDia = (guardado, sizes, cols) => {
+      const base = Object.fromEntries(Object.entries(guardado).filter(([id]) => vigente(id)));
+      const faltan = catalogo.filter(id => !(id in base));
+      if (!faltan.length) return base;
+      const recalculado = autoPlaceOrder(
+        [...Object.keys(base).sort(porPosicion(base)), ...faltan], sizes, cols);
+      faltan.forEach(id => { base[id] = recalculado[id] || { col: 1, row: 999 }; });
+      return base;
+    };
+
+    if (!isMobile) return alDia(tabLayout, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
+
+    // Sin acomodo móvil propio se hereda el ORDEN del de escritorio, que es el
+    // que el usuario acomodó. Por eso se mira el guardado CRUDO: `alDia` sobre
+    // uno vacío devuelve el catálogo entero y haría creer que hay acomodo móvil
+    // donde no lo hay.
+    const hayMovil = Object.keys(mobileLayout[activeTab] || {}).length > 0;
+    // En el teléfono el acomodo se RECALCULA, no se usa tal cual: un widget que
+    // ahora ocupa las dos columnas y está guardado en la columna 2 se saldría de
+    // la rejilla y CSS le fabricaría una tercera columna. Del acomodo guardado
+    // sobrevive lo único que sigue siendo cierto, el orden.
+    const base = hayMovil
+      ? alDia(mobileLayout[activeTab], mobileSizes[activeTab] || EMPTY_OBJ, MOBILE_COLS)
+      : alDia(tabLayout, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
+    const order = Object.keys(base).sort(porPosicion(base));
     if (esTelefono) return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS, anchoEnTelefono);
-    if (Object.keys(mbl).length) return mbl;
+    if (hayMovil) return base;
     return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS);
-  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, mobileLayout, activeTab, mobileSizes]);
+  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, widgetSizes, mobileLayout, activeTab, mobileSizes]);
 
   const activeSizes = isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ);
 

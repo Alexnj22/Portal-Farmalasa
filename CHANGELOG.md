@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.3 — Plan del canon móvil: qué variante le toca a cada elemento, y quién lo verifica
+
+`docs/PLAN-CANON-MOVIL-2026-08-07.md`. El plan de julio arregla lo que hay; éste
+existe para que no vuelva a pasar en lo que venga.
+
+Sale de tres cosas medidas esta semana, y las tres son de gobierno:
+
+**`DESIGN.md §32` —el estándar móvil— miente hoy.** Afirma que «`DataTable` no se
+convierte en lista de fichas; no existe una variante móvil», que es justo lo que
+se construyó en v2.480.0. Y dice que no se usa `env(safe-area-*)` cuando
+`index.css` define `--sa-top/-right/-bottom/-left` a partir de esos insets. Un
+canon desactualizado **enseña la deuda** al que lo lee para hacer algo nuevo.
+
+**Los canónicos móviles existen y nadie los enumera.** Son al menos nueve
+—`ExpedienteMovil`, `HojaMovil`, `AsaHoja`, `BarraFlotante`, `SelectorTactil`,
+`CarrilCards`, el modo ficha de `DataTable`, `.blanco-tactil`, el colapso de
+`ViewTabBar` a `LiquidSelect`— y ninguna lista decía cuál corresponde a qué. El
+plan trae esa tabla, verificada contra el código.
+
+**La adopción a medias no se nota.** `DataTable` traía su modo ficha y Personal
+seguía en tabla: el canónico estaba importado y no adoptado.
+
+Lo que el plan define, y que es la parte que importa: **tres capas y qué puede
+ver cada una.** El gate estático nunca podrá decir «esta vista se ve bien» —su
+trabajo es que no se pueda escribir a mano lo que ya es canónico—, y el barrido
+dinámico es el único que ve desborde, recortes y blancos chicos, pero sólo de lo
+que abre. Hoy abre 37 rutas × una pestaña × un tema. Los huecos están contados:
+37 archivos de vista declaran pestañas propias y 19 declaran modales.
+
+Hereda dos reglas del día: **un instrumento que no puede fallar no prueba nada**
+(se verifica en rojo antes de darlo por bueno) y **cero hallazgos y cero datos se
+ven igual** (todo informe lleva prueba de vida).
+
 ## v2.489.2 — El buscador de inventario ordena por nombre antes que por principio activo
 
 Reportado con una captura buscando «acetaminofen» en La Popular: arriba de todo

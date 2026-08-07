@@ -21,31 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.495.2 — El permiso de Traslados dice que abre una vista, no sólo que confirma envíos
-
-Preguntado: «¿no está en permisos? agregalo y activalo a Edwin». Está, y está
-activo — pero la pregunta tenía una causa real.
-
-Verificado en la pantalla de Permisos con el cargo **Supervisor/a de Ventas**
-elegido, que es el de Edwin: «Traslados entre Salas» aparece en el grupo
-**OPERACIONES**, junto a Solicitudes, con VER, GESTIONAR y APROBAR encendidos y
-alcance **TODOS**. El cargo además está marcado **SU** («acceso total · permisos
-ignorados»), así que por dos caminos distintos ya lo tenía.
-
-Lo que sí estaba mal es lo que el permiso DICE. Su descripción era «Confirmar el
-envío de producto que otra sala pide y no tiene» — cierto cuando el módulo era
-únicamente la baldosa del tablero, y ya no: desde v2.491.0 abre la vista
-`/traslados` con el historial. Buscar «vista» o «historial» en esa pantalla no
-daba nada, y el permiso que sí lo concede no se anunciaba como tal. Ahora dice
-las dos cosas.
-
-Nota de método: la primera comprobación dio «0 tarjetas en la grilla» y era
-falsa — la prueba no había seleccionado ningún cargo, y sin cargo la grilla ni
-se dibuja. La segunda, con el cargo elegido, ubicó la tarjeta por su posición en
-pantalla (x=1314) para no confundirla con la entrada del menú lateral (x=75),
-que dice exactamente el mismo texto.
-
-## v2.495.1 — Reglas de despacho: se ve cuál está activo, y menos colores
+## v2.495.3 — Reglas de despacho: se ve cuál está activo, y menos colores
 
 Reportado al desplegar una regla: «muchos colores» y «no sé qué está activo, no
 se distingue».
@@ -74,6 +50,40 @@ faltaba: **el color aparece cuando algo está activo**, y si no, no. De ahí:
 
 De paso, el campo «Otro…» del múltiplo se cortaba a «Otro..» — tenía
 `text-body-xl` pisando al `compact` dentro de una caja de `w-20`.
+
+Verificado en el navegador contra el bundle: con la regla BOTE ×2 abierta, el
+radiogroup «Múltiplo por lote» reporta `×2=true` y los otros seis `false`.
+
+> **Dónde está el código.** Salió como 2.495.3 y no 2.495.1 porque otra sesión
+> se llevó el 2.495.2 mientras este commit se preparaba, y en ese commit
+> (`dcacede8`) viajó también `TabReglas.jsx` con estos cambios adentro. O sea
+> que el código ya está publicado desde 2.495.2 aunque se documente acá; esta
+> versión es la entrada del changelog, no el cambio. El hook de pre-commit fue
+> lo que frenó el pisotón del bump.
+
+## v2.495.2 — El permiso de Traslados dice que abre una vista, no sólo que confirma envíos
+
+Preguntado: «¿no está en permisos? agregalo y activalo a Edwin». Está, y está
+activo — pero la pregunta tenía una causa real.
+
+Verificado en la pantalla de Permisos con el cargo **Supervisor/a de Ventas**
+elegido, que es el de Edwin: «Traslados entre Salas» aparece en el grupo
+**OPERACIONES**, junto a Solicitudes, con VER, GESTIONAR y APROBAR encendidos y
+alcance **TODOS**. El cargo además está marcado **SU** («acceso total · permisos
+ignorados»), así que por dos caminos distintos ya lo tenía.
+
+Lo que sí estaba mal es lo que el permiso DICE. Su descripción era «Confirmar el
+envío de producto que otra sala pide y no tiene» — cierto cuando el módulo era
+únicamente la baldosa del tablero, y ya no: desde v2.491.0 abre la vista
+`/traslados` con el historial. Buscar «vista» o «historial» en esa pantalla no
+daba nada, y el permiso que sí lo concede no se anunciaba como tal. Ahora dice
+las dos cosas.
+
+Nota de método: la primera comprobación dio «0 tarjetas en la grilla» y era
+falsa — la prueba no había seleccionado ningún cargo, y sin cargo la grilla ni
+se dibuja. La segunda, con el cargo elegido, ubicó la tarjeta por su posición en
+pantalla (x=1314) para no confundirla con la entrada del menú lateral (x=75),
+que dice exactamente el mismo texto.
 
 ## v2.495.0 — el pedido reparte por lote, y el lote elegido manda
 

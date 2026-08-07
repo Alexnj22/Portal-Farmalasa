@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.508.2 — Reglas usa el mismo envase de expediente que Productos
+
+La pantalla negra del teléfono siguió después de v2.507.1: «ocurrió un problema
+varias veces; si le doy atrás y le doy click, la abre; lo cierro, le doy click,
+se recarga; vuelvo a dar click, negro». Y el dato que resolvió el caso lo puso
+quien lo reportó: **«el de productos sí funciona»**.
+
+Productos y Reglas usaban el mismo canónico con **envases distintos**. Productos
+pide `variante="pantalla"`, que monta `ModalShell` a pantalla completa. Reglas
+usaba la hoja `auto`, o sea `HojaMovil`, que pinta su propia superficie con
+`backdrop-filter` y encima **no lleva velo** — de eso ya avisaba `ModalShell` en
+su propio comentario: sería «un desenfoque a pantalla completa que nadie llega a
+ver y que el compositor» tiene que sostener igual. Ahora Reglas pide el mismo
+envase que Productos, y la capa que fallaba sale del camino.
+
+El cambio además encaja con lo que el panel es: la hoja medía **584px de 664**,
+así que de «detalle corto» —el criterio con el que se elige `auto`— no tenía
+nada.
+
+Lo que se revierte de v2.505.0: `ExpedienteMovil` deja de exponer el `pie` que
+se le había agregado. Era para anclar el resultado al fondo de la hoja, y sin
+hoja no hay dónde anclarlo; el resultado va inline, que en pantalla completa se
+ve junto al riel de múltiplos sin necesidad de fijarlo. Una prop sin usuarios es
+una prop que alguien va a usar mal.
+
+Nota de método: **tres intentos y el emulador nunca vio el bug** —ni con la hoja
+ni sin ella, ni en los cuatro temas, ni en seis ciclos seguidos de abrir y
+cerrar—. WebKit de Playwright sobre macOS no es Safari de iPhone, y la cuenta de
+QA usa el tema Solid, donde el desenfoque vale `none`. Lo que sí se pudo hacer
+fue lo que pidió quien reportó: comparar contra la vista que funciona y copiar
+su envase.
+
 ## v2.508.1 — el widget nuevo ya no se encima: el escritor del acomodo tenía el mismo defecto
 
 Reportado otra vez, con captura: al habilitarle un widget a un rol, la baldosa

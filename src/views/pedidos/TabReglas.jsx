@@ -90,14 +90,6 @@ function calcularDespacho(multiplo, etiqueta) {
     };
 }
 
-// El tipo de la presentación elegida, desde el caché que llenó el panel al
-// abrirse. Lo necesita el pie del expediente, que se monta FUERA de `EditPanel`.
-function tipoDePresentacion(presCache, productId, idPres) {
-    if (!idPres) return '';
-    const fila = (presCache.current[productId] ?? []).find(p => p.id_presentacion === idPres);
-    return fila?.presentaciones?.tipo ?? '';
-}
-
 // ── El resultado de la regla ──────────────────────────────────────────────────
 // Era una nota al pie en gris, y es lo único que verifica que la regla hace lo
 // que se quiere: pasa a anclar la columna. En el teléfono se monta en el `pie`
@@ -108,12 +100,11 @@ function ResultadoDespacho({ multiplo, tipo, etiqueta, compacto = false }) {
     const unidad = porEtiqueta ? etiqueta : (tipo ? `pack(s) de ${tipo}` : 'pack(s)');
 
     // ── `compacto` NO lleva superficie propia (2026-08-07) ────────────────────
-    // Va en el `pie` de `HojaMovil`, que YA es una superficie con su material.
-    // `data-surface="card"` incluye `backdrop-filter`, así que anidarlo deja un
-    // blur dentro de otro blur — en Safari de iPhone eso rompe la composición y
-    // la hoja se pinta NEGRA (reportado 2026-08-07; no reproduce en el emulador
-    // ni en el tema Solid, donde el blur vale `none`). Y aunque compusiera bien,
-    // una tarjeta dentro de una tarjeta no es el patrón.
+    // Es el modo del teléfono, donde esto vive DENTRO del panel del expediente,
+    // que ya es una superficie con su material. `data-surface="card"` incluye
+    // `backdrop-filter`, así que anidarlo deja un desenfoque dentro de otro — y
+    // eso es lo que se venía persiguiendo con la pantalla negra del teléfono.
+    // Aunque compusiera bien, una tarjeta dentro de una tarjeta no es el patrón.
     return (
         <div aria-live="polite"
             {...(compacto ? {} : { 'data-surface': 'card' })}
@@ -259,7 +250,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
     return (
         <div className="space-y-4">
 
-            {/* Header — en la hoja del teléfono lo pone `HojaMovil` */}
+            {/* El nombre del producto lo pone la barra del expediente; el laboratorio
+                no viaja hasta ahí, así que se queda acá. */}
+            {enExpediente && product.laboratorio_nombre && (
+                <p className="text-label text-content-3 -mt-1">{product.laboratorio_nombre}</p>
+            )}
+
+            {/* Header — en el expediente lo pone la barra superior */}
             {!enExpediente && (
                 <div className="flex items-start justify-between gap-3">
                     <div>
@@ -397,9 +394,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             />
                         </div>
 
-                        {!enExpediente && (
-                            <ResultadoDespacho multiplo={multiplo} tipo={selectedTipo} etiqueta={vals.dispatch_label} />
-                        )}
+                        {/* En el teléfono va inline igual que acá, no anclado al fondo:
+                            el envase es pantalla completa, así que el riel y el
+                            resultado entran juntos sin tener que fijarlo. */}
+                        <ResultadoDespacho
+                            multiplo={multiplo} tipo={selectedTipo} etiqueta={vals.dispatch_label}
+                            compacto={enExpediente}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -867,21 +868,19 @@ export default function TabReglas({ searchTerm = '' }) {
                 })}
             </DataTable>
 
-            {/* El panel de la regla, a pantalla completa en el teléfono. El resultado
-                va al PIE de la hoja, fuera del scroll: en 390px el riel de múltiplos
-                y la línea que dice cuánto se despacha no caben juntos, así que se
-                tocaba ×5 sin ver qué cambiaba. */}
+            {/* `variante="pantalla"` — el MISMO envase que usa Productos, y no la hoja
+                `auto`. La hoja se ponía negra en el teléfono al abrir la regla
+                (reportado 2026-08-07, dos veces): pinta su propia superficie con
+                `backdrop-filter`, y el detalle vive dentro. `pantalla` no lleva velo
+                ni material propio —lo dice `ModalShell`: sería «un desenfoque a
+                pantalla completa que nadie llega a ver y que el compositor» tiene que
+                sostener— así que saca del camino la capa que fallaba.
+                Además encaja mejor con lo que es: la hoja ya medía 584px de 664, o
+                sea que de «detalle corto» no tenía nada. */}
             <ExpedienteMovil abierto={abierto} onClose={cancelEdit}
                 titulo={abierto?.nombre || 'Regla de despacho'}
                 subtitulo={abierto?.laboratorio_nombre || undefined}
-                pie={editVals.dispatch_id_presentacion ? (
-                    <ResultadoDespacho
-                        compacto
-                        multiplo={Number(editVals.dispatch_multiplo) || 1}
-                        tipo={tipoDePresentacion(presCache, abierto?.id, editVals.dispatch_id_presentacion)}
-                        etiqueta={editVals.dispatch_label}
-                    />
-                ) : null}>
+                variante="pantalla">
                 {(prod) => (
                     <div className="px-4 py-4">
                         <EditPanel

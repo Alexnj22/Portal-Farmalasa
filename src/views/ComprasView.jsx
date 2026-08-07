@@ -243,7 +243,10 @@ function TabFacturas({
                 {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
             </div>
 
-            <DataTable columns={cols} loading={loading} movil={{ usarAccionDeFila: true }}
+            <DataTable columns={cols} loading={loading} /* La inferencia toma la primera columna como identidad, y acá esa
+                   es la fecha: la ficha decía «05/08/2026 · $2.00 · JOSE…». A una
+                   lista de compras se entra buscando a QUIÉN se le compró. */
+                movil={{ usarAccionDeFila: true, identidad: 'proveedor', ancla: 'total' }}
                 empty={{ icon: ShoppingCart, message: 'Sin facturas en el período' }}>
                 {rows.map((row, i) => (
                     <React.Fragment key={row.id}>

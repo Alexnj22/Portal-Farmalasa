@@ -397,6 +397,26 @@ export function DataTable({
 //     de una tabla ese `<tr>` no se puede pintar. Se saltea y se avisa en
 //     desarrollo, porque el contenido de esa fila expandida todavía no tiene
 //     casa en el teléfono: es trabajo por vista, no del canónico.
+// Las celdas también vienen envueltas. Una vista que rinde un grupo de columnas
+// bajo una condición las agrupa en un fragmento —`{canVerMontos && (<>…</>)}`—
+// y entonces el `DataRow` entrega 6 hijos donde hay 8 columnas: el mapeo no
+// cuadra y la tabla se queda. Le pasaba a Compras, y el usuario lo reportó como
+// «se ve como tabla, no como card».
+//
+// Es el mismo aplanado que ya se hacía entre FILAS, una capa más adentro. Vale
+// la pena tenerlo escrito dos veces: un fragmento no es un nodo del contenido,
+// es una forma de agrupar sin envolver, y por eso desaparece en cuanto alguien
+// cuenta hijos.
+function aplanar(children) {
+  const out = [];
+  React.Children.toArray(children).forEach(hijo => {
+    if (React.isValidElement(hijo) && hijo.type === React.Fragment) {
+      out.push(...aplanar(hijo.props.children));
+    } else out.push(hijo);
+  });
+  return out;
+}
+
 function analizarFilas(children, columns) {
   const filas = [];
   let descartadas = 0;
@@ -416,7 +436,7 @@ function analizarFilas(children, columns) {
       return;
     }
     if (hijo.type !== DataRow) { descartadas++; return; }
-    const celdas = React.Children.toArray(hijo.props.children);
+    const celdas = aplanar(hijo.props.children);
     if (celdas.length !== columns.length) { desalineada = true; return; }
     filas.push({ clave: hijo.key ?? clave, onClick: hijo.props.onClick, celdas });
   };

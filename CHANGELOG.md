@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.473.1 — Compras se veía como tabla: el fragmento que escondía tres celdas
+
+Reportado por el usuario: *«compras se ve como tabla no como card, al igual al
+tocar»*. Era el **mismo error que v2.460.1, una capa más adentro**.
+
+Compras agrupa sus tres columnas de dinero bajo un permiso —
+`{canVerMontos && (<><DataCell/><DataCell/><DataCell/></>)}`— y ese fragmento
+cuenta como **un** hijo. El `DataRow` entregaba 6 contra 8 columnas, la guarda
+del mapeo posicional hacía lo suyo y se quedaba con la tabla. La guarda funcionó
+exactamente como se diseñó; lo que faltaba era aplanar.
+
+`analizarFilas` ya atravesaba fragmentos **entre filas** (v2.460.1, donde diez
+vistas envuelven cada fila junto a su `<tr>` de detalle). Ahora también **dentro
+de una fila**. Vale la pena tenerlo escrito dos veces: un fragmento no es un nodo
+del contenido, es una forma de agrupar sin envolver — y por eso desaparece justo
+cuando alguien cuenta hijos.
+
+**Y la identidad de Compras estaba mal**, igual que la de Ventas: la inferencia
+toma la primera columna y ahí esa es la fecha, así que la ficha decía
+«05/08/2026 · $2.00 · JOSE…». A una lista de compras se entra buscando **a quién
+se le compró**. Con `identidad: 'proveedor'` dice
+**«JOSE SALVADOR GUEVARA "AGUA FRIA" · $2.00 · 05/08/2026»**.
+
+Medido en WebKit iPhone 13: **50 fichas y sin tabla** (antes 0 y con tabla), el
+expediente abre con su barra, y **+0 px fuera de carril** — la tabla de ítems
+vive en el suyo, que es el patrón del proyecto.
+
 ## v2.473.0 — Compras y Reglas al expediente, y dos módulos que colisionaban por la caja de una letra
 
 Primeras dos vistas migradas al canónico de v2.470.0, y el relevamiento de las

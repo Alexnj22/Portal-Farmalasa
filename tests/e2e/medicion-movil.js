@@ -205,6 +205,7 @@ export const MEDIR = () => {
         if (/active:/.test(clases)) return;
         sinAcuse.push({ sel: sel(el),
                         destello: getComputedStyle(el).webkitTapHighlightColor || '(no expuesto)',
+                        cadena: cadena(el),
                         texto: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24) });
     });
 
@@ -243,7 +244,7 @@ export const MEDIR = () => {
     };
 
     return { vw, tactil, desbordePagina, desbordan: desbordan.slice(0, 12), chicos: chicos.slice(0, 12),
-             grupos: { chicos: agrupar(chicos), desbordan: agrupar(desbordan) },
+             grupos: { chicos: agrupar(chicos), desbordan: agrupar(desbordan), sinAcuse: agrupar(sinAcuse) },
              zoomIOS: zoomIOS.slice(0, 8), tablas, overscroll,
              sinAcuse: sinAcuse.slice(0, 8), encadenan,
              imposibles: imposibles.slice(0, 8),

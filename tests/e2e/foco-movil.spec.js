@@ -67,6 +67,9 @@ test.describe('Foco · WebKit iPhone 13', () => {
             console.log('   ' + JSON.stringify(m.totales));
             (m.grupos?.chicos || []).forEach(g =>
                 console.log(`   [${g.n}] chico  ${g.muestra.sel}  ${g.muestra.tam}  «${g.muestra.texto}»`));
+            (m.grupos?.sinAcuse || []).slice(0, 6).forEach(g =>
+                console.log(`   [${g.n}] sin acuse  ${g.muestra.sel}  «${g.muestra.texto}»`
+                    + `\n        ‹ ${g.muestra.cadena}`));
             (m.grupos?.desbordan || []).forEach(g =>
                 console.log(`   [${g.n}] sale ${g.muestra.sobra}px  ${g.muestra.sel}  «${(g.muestra.texto || '').slice(0, 40)}»`
                     + `\n        recorta: ${g.muestra.recorte}`));

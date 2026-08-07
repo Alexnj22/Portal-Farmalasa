@@ -145,7 +145,7 @@ export default function StatCard({
                 basis-[148px] max-sm:basis-[calc(50%-0.25rem)] grow shrink-0 min-w-0 max-w-[200px] h-full
                 flex items-center gap-3 pl-3 pr-4 py-3 rounded-card border
                 transition-[box-shadow,border-color,background-color,transform] duration-[var(--dur-base)]
-                ${isClickable ? 'cursor-pointer' : 'cursor-default select-none'}
+                ${isClickable ? 'cursor-pointer active:scale-[0.97]' : 'cursor-default select-none'}
                 ${isClickable && loading ? 'disabled:opacity-60 disabled:cursor-wait' : ''}
                 ${active ? '-translate-y-px' : ''}
                 ${hoverCls}

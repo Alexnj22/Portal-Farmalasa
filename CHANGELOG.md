@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.503.0 — El toque se siente: acuse en los canónicos
+
+En un teléfono **no existe `hover:`**. Un control que sólo cambia al pasar el
+mouse no cambia nunca, así que lo único que confirmaba el toque era el destello
+gris del navegador — ajeno al material del portal, y que `index.css` apaga en
+cuanto un control declara `active:`. Sin acuse propio, apagarlo deja el control
+mudo del todo.
+
+Eran ~200 controles y **no eran 200 arreglos**: como los 125 blancos de Mín·Máx,
+se agrupan en unos pocos canónicos. Medido en tres vistas, antes → después:
+
+```
+permissions   74 → 1
+branches      51 → 1
+monitor       16 → 3
+```
+
+**Uno solo explicaba 62 de los 74 de Permisos:** las opciones del
+`SegmentedControl`, que es donde se elige el alcance de cada módulo. El resto:
+`BarraFlotante` —la barra que el pulgar usa en todas las vistas—, `StatCard`
+cuando es clickeable, las flechas de `CarrilCards`, `TablePagination` y el logo
+del encabezado. Sucursales tenía además los suyos: copiar teléfono, WhatsApp, las
+tarjetas de personal y kioscos, y el enlace del nombre.
+
+**Dónde va el `active:` importa, y no es donde queda más lindo.** El primer
+intento lo puso con `group-active/bf:` en el círculo de adentro de la barra
+flotante: se ve igual, pero tanto el medidor como la regla de `index.css` miran
+el atributo `class` **del propio elemento interactivo**. El botón se quedaba sin
+las dos cosas — ni acuse propio ni el prestado.
+
+Y el gate de diseño atajó lo otro: puse `active:scale-95` y `scale-90` en tres
+sitios, y el mínimo del proyecto es `active:scale-[0.97]`. Un encogido más
+fuerte se lee como un botón que se hunde, no como uno que responde.
+
+Para poder agruparlos, `medicion-movil.js` ahora agrupa también `sinAcuse` por
+forma —ya lo hacía con los recortes y los blancos chicos—. El número solo no dice
+qué arreglar; la agrupación sí, y fue lo que convirtió «74 problemas» en «un
+componente».
+
 ## v2.500.0 — Eliminar un conteo: permiso aparte para los ya empezados
 
 v2.499.0 dejó que cualquiera con «Gestionar» borrara un conteo en cualquier

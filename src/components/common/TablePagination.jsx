@@ -42,6 +42,7 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
 const NAV = `w-[max(36px,var(--tap-min))] h-[max(36px,var(--tap-min))] rounded-btn flex items-center justify-center shrink-0
     text-content-3 transition-[background-color,color,transform] duration-[var(--dur-fast)]
     hover:bg-surface-card-hover hover:text-brand-text hover:translate-y-[var(--lift-hover)]
+    active:translate-y-0 active:scale-[0.97]
     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent
     disabled:hover:text-content-3 disabled:hover:translate-y-0`;
 

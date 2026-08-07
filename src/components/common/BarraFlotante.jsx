@@ -645,7 +645,17 @@ const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, badge, punto,
         // rótulo más largo —medido: 49px incluso a 430px, donde sobra sitio— y
         // los íconos quedaban apretados. El `width` sí fija la columna; `shrink`
         // es lo que le permite ceder cuando de verdad no entra.
-        className="w-[60px] shrink min-w-11 flex flex-col items-center gap-1 group/bf"
+        // `active:` — el acuse del toque. Es la barra que el pulgar usa en TODAS
+        // las vistas, así que era el control mudo más repetido del portal
+        // después del segmentado.
+        //
+        // Va en el BOTÓN y no en el círculo de adentro, aunque visualmente
+        // quedaría más fino: `index.css` apaga el destello gris del navegador
+        // con `[class*="active:"]`, que mira el atributo del propio elemento. Un
+        // `group-active/bf:` en el hijo se ve igual pero deja al botón sin
+        // ninguna de las dos cosas — ni acuse propio ni el prestado.
+        className="w-[60px] shrink min-w-11 flex flex-col items-center gap-1 group/bf
+            transition-transform duration-[var(--dur-fast)] active:scale-[0.97]"
     >
         <span className={`relative grid place-items-center rounded-full
             transition-[background-color,border-color] duration-[var(--dur-fast)]

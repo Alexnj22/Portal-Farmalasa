@@ -111,10 +111,18 @@ const SegmentedControl = memo(({
                         aria-checked={activa}
                         disabled={disabled || op.disabled}
                         onClick={() => !disabled && !op.disabled && onChange?.(op.value)}
+                        // `active:` — el acuse del toque. En un teléfono no hay
+                        // `hover:`: sin esto, lo único que confirmaba el toque
+                        // era el destello gris del navegador, que además
+                        // `index.css` apaga en cuanto un control declara
+                        // `active:`. Este componente solo eran **62 de los 74**
+                        // controles mudos de Permisos: el alcance de cada
+                        // módulo se elige acá.
                         className={`inline-flex items-center justify-center gap-1.5
                             ${stacked ? 'rounded-card' : 'rounded-btn'}
                             font-black uppercase tracking-widest
-                            transition-[background-color,color,border-color] duration-[var(--dur-base)]
+                            transition-[background-color,color,border-color,transform] duration-[var(--dur-base)]
+                            active:scale-[0.97]
                             disabled:opacity-40 disabled:cursor-not-allowed
                             ${enBloque
                                 ? `w-full px-3 text-caption border ${stacked ? 'flex-col gap-1.5 py-3' : 'h-11'}`

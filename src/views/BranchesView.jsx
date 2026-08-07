@@ -216,7 +216,7 @@ const TarjetaTelefono = memo(({ icono: Icono, etiqueta, numero, onAccion, onWhat
     <div className={`group/tel flex items-center rounded-2xl relative ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
         <button onClick={onAccion}
             aria-label={`${etiqueta}: ${numero || 'sin número'}`}
-            className="flex items-center gap-2 p-2.5 text-left flex-1 min-w-0 rounded-2xl">
+            className="flex items-center gap-2 p-2.5 text-left flex-1 min-w-0 rounded-2xl transition-transform duration-[var(--dur-fast)] active:scale-[0.98]">
             <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-[var(--dur-slow)] group-hover/tel:scale-110 group-hover/tel:text-brand-text">
                 <Icono size={14} strokeWidth={2.5} />
             </div>
@@ -229,7 +229,7 @@ const TarjetaTelefono = memo(({ icono: Icono, etiqueta, numero, onAccion, onWhat
             <button onClick={onWhatsApp} type="button"
                 aria-label={`Abrir WhatsApp con ${numero}`}
                 title="Abrir WhatsApp"
-                className="mr-1.5 w-6 h-6 min-w-[var(--tap-min)] min-h-[var(--tap-min)] bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm shrink-0 opacity-0 group-hover/tel:opacity-100 focus-visible:opacity-100 transition-all hover:bg-success-solid hover:text-white">
+                className="mr-1.5 w-6 h-6 min-w-[var(--tap-min)] min-h-[var(--tap-min)] bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm shrink-0 opacity-0 group-hover/tel:opacity-100 focus-visible:opacity-100 transition-all active:scale-[0.97] hover:bg-success-solid hover:text-white">
                 <MessageCircle size={13} strokeWidth={2.5} />
             </button>
         )}
@@ -424,7 +424,7 @@ const BranchCard = memo(({
                                         `<button>` no se podía abrir en otra pestaña. El `onClick`
                                         se queda solo para dejar la sucursal activa en el store. */}
                                     <Link to={`/branches/${branch.id}`} onClick={() => onActivarSucursal?.(branch)}
-                                        className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full md:pr-[140px]">
+                                        className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full md:pr-[140px] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]">
                         <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-[var(--dur-slow)] group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>
@@ -521,7 +521,7 @@ const BranchCard = memo(({
                 <button
                     type="button"
                     onClick={() => openModal && openModal("viewBranchEmployees", branch)}
-                    className={`flex flex-col gap-1.5 items-start group/personal hover:bg-surface-card p-2 -ml-2 -my-2 rounded-xl transition-all cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
+                    className={`flex flex-col gap-1.5 items-start group/personal hover:bg-surface-card p-2 -ml-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
                     title="Ver Listado de Personal"
                 >
                     <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/personal:text-content-2">
@@ -539,7 +539,7 @@ const BranchCard = memo(({
                 {!['ADMINISTRATIVA','EXTERNA'].includes(branch.type) && (
                     <>
                         <div className="w-px h-8 bg-divider mx-2"></div>
-                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
+                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer" title="Gestionar Kioscos">
                             <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/kiosk:text-content-2">
                                 <span className="text-caption font-bold uppercase tracking-widest">Kioscos</span>
                                 <Monitor size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/kiosk:scale-110 group-hover/kiosk:text-chart-3-text" strokeWidth={2.5} />

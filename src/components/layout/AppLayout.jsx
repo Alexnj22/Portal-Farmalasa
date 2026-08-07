@@ -903,7 +903,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     gruesos. Lo encontró la matriz de la fase 5 con
                                     el cajón abierto: el barrido de vistas nunca lo
                                     abría. */}
-                                <Link to="/" aria-label="Ir al inicio" className={`blanco-tactil relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`}>
+                                <Link to="/" aria-label="Ir al inicio" className={`blanco-tactil relative group/logo flex-shrink-0 cursor-pointer rounded-2xl transition-transform duration-[var(--dur-fast)] active:scale-[0.97] ${focusRing}`}>
                                     <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition duration-[var(--dur-lento)] bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
                                         transition duration-[var(--dur-slow)] group-hover/logo:scale-105

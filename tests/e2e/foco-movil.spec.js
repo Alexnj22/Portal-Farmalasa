@@ -34,7 +34,13 @@ test.describe('Foco · WebKit iPhone 13', () => {
         await page.locator('#username').fill(E2E_USER);
         await page.locator('#password').fill(E2E_PASSWORD);
         await page.locator('button[type="submit"]').first().click();
-        await page.waitForTimeout(6000);
+        // A la condición, no al reloj — ver la nota del barrido: la primera
+        // carga tras levantar el preview tarda más de 6s en «VERIFICANDO
+        // SESIÓN…» y el cerrojo daba falso positivo.
+        await page.waitForFunction(
+            () => !location.pathname.startsWith('/login'), null, { timeout: 60_000 },
+        ).catch(() => {});
+        await page.waitForTimeout(3000);
         // Sin sesión se mide la pantalla de login, que está bien hecha: sale
         // todo en cero y se lee como «perfecto». Ver la nota del barrido.
         if (/\/login/.test(page.url())) {

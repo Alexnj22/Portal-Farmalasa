@@ -115,7 +115,16 @@ todas verificables leyendo el fuente:
 hoy y **ninguna categoría puede subir**. Y —lección del 2026-08-07— se verifica
 que **puede fallar**: se le mete una violación a propósito y se ve en rojo.
 
-### Fase 2 — Cerrar los huecos del barrido dinámico
+### Fase 2 — Cerrar los huecos del barrido dinámico  ⚠️ **ESCRITA, SIN VERIFICAR EN VIVO**
+
+> **Estado al 2026-08-07.** El código está: `ViewTabBar` estampa `data-pestanas`
+> (verificado en el bundle), el barrido lo lee y recorre las pestañas, y acepta
+> `TEMA=dark|solid|solid-dark|liquid`. **No se pudo correr**: el ingreso quedó
+> bloqueado por el límite de intentos de Supabase después de muchas corridas en
+> el día, y el cerrojo de sesión hizo lo suyo —cortó en 8 segundos en vez de
+> medir la pantalla de login 37 veces—. Queda pendiente **la primera corrida
+> verde**, que es lo único que convierte esto en verificado. Hasta entonces no se
+> puede afirmar que el recorrido de pestañas funcione.
 Hoy cubre 37 rutas × 1 pestaña × 1 tema × 1 tamaño. Agregar, en este orden:
 
 1. **Pestañas internas.** 37 archivos de vista declaran barra propia; sólo se

@@ -109,3 +109,11 @@ fi
 # bundle-gate NO va acá a propósito: necesita `npm run build` (~6 s) y un dist/
 # fresco, y un hook que obliga a buildear en cada commit se termina saltando con
 # --no-verify. Va antes de cerrar un trabajo, junto a gate:design.
+#
+# El BARRIDO MÓVIL tampoco: son ~16 minutos (37 rutas más sus pestañas internas)
+# y necesita la app levantada con sesión. Es la capa que ve lo que ningún gate
+# estático puede —desborde, blancos de 44pt, una vista que revienta— y va al
+# cerrar una vista nueva, con el checklist de docs/CHECKLIST-VISTA-NUEVA.md:
+#   E2E_BASE_URL=http://localhost:4174 npx playwright test \
+#     --project=webkit-movil -g "todas las vistas"
+# Para una sola vista, en veinte segundos: `-g foco` con RUTAS=mi-ruta.

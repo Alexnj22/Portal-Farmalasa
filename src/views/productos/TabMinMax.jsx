@@ -1320,7 +1320,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 maxWidthClass="max-w-md"
                 zClass="z-tooltip"
                 surface={null}
-                surface={null}
                 ariaLabel="Historial de MIN/MAX">
                 {/* `CuerpoDialogo` en vez del envoltorio a mano: traía su propio
                     `max-h`, su propio `rounded-modal` y su fila de título con la ✕.

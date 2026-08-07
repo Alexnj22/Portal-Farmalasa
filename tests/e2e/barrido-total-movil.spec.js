@@ -15,7 +15,11 @@ const E2E_USER = process.env.E2E_USER;
 const E2E_PASSWORD = process.env.E2E_PASSWORD;
 const SALIDA = 'test-results/barrido-total';
 
-const RUTAS = [
+// `RUTAS=productos,pedidos` acota el barrido. No es para uso normal —el barrido
+// es «todas»— sino para poder probar el propio instrumento en treinta segundos
+// en vez de una hora: las dos primeras versiones del recorrido de pestañas se
+// descubrieron rotas después de 20 minutos de corrida.
+const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
     'overview', 'ventas', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
     'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
@@ -25,19 +29,50 @@ const RUTAS = [
     'profile', 'dashboard',
 ];
 
+// `TEMA=dark|solid|solid-dark|liquid` — todo lo medido hasta el 2026-08-07 fue
+// en el tema por defecto, y el portal tiene cuatro. Se estampa en localStorage
+// antes de que monte React (`ThemeContext` lo lee de ahí) y además en el
+// atributo, que es lo que pinta el CSS.
+// `PESTANAS=1` recorre además las pestañas internas de cada vista. Ver la nota
+// en el bucle: casi duplican la cuenta de pantallas y el barrido pasa de 4½
+// minutos a ~55.
+const PESTANAS = Boolean(process.env.PESTANAS);
+const TEMA = process.env.TEMA || '';
+const ATRIBUTO_TEMA = { liquid: null, dark: 'dark', solid: 'solid', 'solid-dark': 'solid-dark' };
+
 test.use({ ...devices['iPhone 13'] });
 
 test.describe('Barrido total · WebKit iPhone 13', () => {
     test.skip(!E2E_USER || !E2E_PASSWORD, 'Requiere E2E_USER/E2E_PASSWORD');
 
     test('todas las vistas', async ({ page }) => {
-        test.setTimeout(900_000);
+        // 45 minutos. Con las pestañas internas el barrido pasó de 4½ a ~16, y
+        // el techo de 15 lo cortaba a mitad de camino — el informe quedaba sin
+        // escribir y la corrida entera se perdía. Es el precio de cubrir las
+        // pestañas: son casi tantas pantallas como rutas.
+        test.setTimeout(2_700_000);
         fs.mkdirSync(SALIDA, { recursive: true });
+        if (TEMA) {
+            await page.addInitScript(({ tema, attr }) => {
+                try { localStorage.setItem('portal-theme', tema); } catch { /* sin localStorage */ }
+                if (attr) document.documentElement.setAttribute('data-theme', attr);
+                else document.documentElement.removeAttribute('data-theme');
+            }, { tema: TEMA, attr: ATRIBUTO_TEMA[TEMA] ?? null });
+        }
         await page.goto('/login');
         await page.locator('#username').fill(E2E_USER);
         await page.locator('#password').fill(E2E_PASSWORD);
         await page.locator('button[type="submit"]').first().click();
-        await page.waitForTimeout(6000);
+        // Esperar a la CONDICIÓN, no al reloj. Con 6 segundos fijos el cerrojo
+        // de abajo daba falso positivo: la primera carga tras levantar el
+        // preview se queda en «VERIFICANDO SESIÓN…» más de eso, y el barrido
+        // moría diciendo «no se pudo iniciar sesión» cuando estaba entrando.
+        // Un instrumento que confunde «todavía no» con «no» es tan inútil como
+        // uno que confunde «no encontré nada» con «no había nada».
+        await page.waitForFunction(
+            () => !location.pathname.startsWith('/login'), null, { timeout: 60_000 },
+        ).catch(() => {});
+        await page.waitForTimeout(3000);
 
         // ⚠️ SIN SESIÓN, EL BARRIDO MIDE EL LOGIN 37 VECES — y el login está
         // bien hecho, así que sale todo en cero y el informe dice «0 vistas con
@@ -58,18 +93,24 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         page.on('pageerror', e => errores.push(e.message.slice(0, 200)));
 
         const informe = [];
-        for (const ruta of RUTAS) {
-            errores.length = 0;
-            await page.goto('/' + ruta).catch(() => {});
-            // Esperar a que se vaya el esqueleto: medir durante la carga da
-            // «cayó a la tabla» donde no es cierto (lección de v2.460.1).
-            await page.waitForTimeout(6500);
-            const m = await page.evaluate(MEDIR).catch(() => null);
-            if (!m) { informe.push({ ruta, error: true }); continue; }
-            // Y por ruta: una sesión que se cae a mitad del barrido devuelve al
-            // login sólo a partir de ahí, y esas rutas también saldrían en cero.
+
+        // Medir la pantalla que está abierta AHORA. `etiqueta` es la ruta, o
+        // `ruta#pestaña` cuando se está recorriendo una pestaña interna: el
+        // informe tiene que poder decir cuál de las dos falló, no promediarlas.
+        const medirPantalla = async (etiqueta) => {
+            // El motivo se IMPRIME. Con `.catch(() => null)` a secas, una
+            // medición que falla sale en el informe como «(no cargó)» —igual que
+            // una ruta que de verdad no cargó— y no hay forma de saber cuál de
+            // las dos fue. Costó una corrida entera de pestañas.
+            const m = await page.evaluate(MEDIR).catch(e => {
+                console.log(`   ⚠️  ${etiqueta}: MEDIR falló — ${String(e.message).slice(0, 140)}`);
+                return null;
+            });
+            if (!m) { informe.push({ ruta: etiqueta, error: true }); return; }
+            // Una sesión que se cae a mitad del barrido devuelve al login sólo a
+            // partir de ahí, y esas rutas también saldrían en cero.
             if (/\/login/.test(page.url())) {
-                throw new Error(`La sesión se perdió en /${ruta}: de acá en adelante se estaría midiendo el login.`);
+                throw new Error(`La sesión se perdió en ${etiqueta}: de acá en adelante se estaría midiendo el login.`);
             }
             const extra = await page.evaluate(() => {
                 const vw = document.documentElement.clientWidth;
@@ -82,12 +123,84 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                          vacia: document.body.innerText.trim().length < 120 };
             });
             if (extra.reventó) extra.error = [...new Set(errores)].slice(0, 3);
-            informe.push({ ruta, ...m.totales, desbordePagina: m.desbordePagina,
+            informe.push({ ruta: etiqueta, ...m.totales, desbordePagina: m.desbordePagina,
                            ...extra, grupos: m.grupos, muestraDesborde: m.desbordan.slice(0, 3) });
-            // La foto entera, no el viewport: el desborde y la fila que lo causa
-            // casi nunca están arriba de todo, y una foto cortada a 844px hace
-            // que el hallazgo medido no se pueda ver.
-            await page.screenshot({ path: `${SALIDA}/${ruta}.png`, fullPage: true });
+            // La foto entera para la vista; el viewport para sus pestañas. Una
+            // captura `fullPage` de una lista de 200 fichas tarda varios
+            // segundos, y con las pestañas internas eso pasó a ser la mitad del
+            // costo del barrido: 8 rutas en 10 minutos, contra 37 en 4½ antes.
+            // La pestaña se mide igual —los números salen del DOM, no de la
+            // foto—; lo que se pierde es poder mirarla entera, y para eso está
+            // el spec de foco.
+            const esPestana = etiqueta.includes('#');
+            await page.screenshot({
+                path: `${SALIDA}/${etiqueta.replace(/[#/]/g, '_')}.png`,
+                fullPage: !esPestana,
+            });
+
+            // El informe se escribe DESPUÉS DE CADA PANTALLA, no al final. Dos
+            // corridas se cortaron por timeout con todo medido y el archivo sin
+            // escribir: 25 minutos de medición perdidos porque el resultado
+            // vivía en memoria hasta la última línea.
+            fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 1));
+        };
+
+        for (const ruta of RUTAS) {
+            errores.length = 0;
+            await page.goto('/' + ruta).catch(() => {});
+            // Esperar a que se vaya el esqueleto: medir durante la carga da
+            // «cayó a la tabla» donde no es cierto (lección de v2.460.1).
+            await page.waitForTimeout(6500);
+            await medirPantalla(ruta);
+
+            // ── Las pestañas internas ────────────────────────────────────────
+            // Era el hueco de cobertura más grande: 37 archivos de vista
+            // declaran pestañas propias y el barrido medía sólo la que abre por
+            // defecto. La pestaña activa NO va en la URL —la maneja cada vista
+            // por prop—, así que el único asidero es `data-pestanas`, que
+            // `ViewTabBar` estampa con la lista de claves.
+            //
+            // Todo el bloque es defensivo: una pestaña que no se deja abrir se
+            // anota y se sigue. Perder una pestaña es un hueco; perder el
+            // barrido entero por una pestaña es peor.
+            // Detrás de `PESTANAS=1` porque **cuestan**: medido el 2026-08-07,
+            // cada pantalla tarda ~50s y las pestañas casi duplican la cuenta —
+            // el barrido pasa de 4½ minutos a ~55. Un barrido que tarda una hora
+            // no se corre mientras se trabaja, y uno que no se corre no mide
+            // nada. Sin la bandera queda el de siempre, para iterar; con ella,
+            // el completo, para cerrar una vista o para CI.
+            const claves = PESTANAS
+                ? await page.getAttribute('[data-pestanas]', 'data-pestanas').catch(() => null)
+                : null;
+            const lista = claves ? claves.split(',').filter(Boolean) : [];
+            for (let i = 1; i < lista.length; i++) {
+                try {
+                    // El disparador de `LiquidSelect` es un `<div
+                    // role="combobox">`, NO un `<button>` — está escrito en su
+                    // propio código y dice por qué. Buscar `button` no
+                    // encontraba nada y las 15 pestañas de la primera corrida
+                    // salieron «no se abrió»: descubiertas y sin medir, que en
+                    // el informe se ve casi igual que medidas.
+                    // `:visible` — `GlassViewLayout` renderiza `filtersContent`
+                    // DOS VECES (una para el carril de escritorio, otra para el
+                    // cuerpo), así que hay dos `data-pestanas` en el DOM y uno
+                    // está oculto. Sin el filtro, `.first()` agarraba el oculto
+                    // y el clic moría por timeout sin decir por qué.
+                    await page.locator('[data-pestanas] [role="combobox"]:visible').first().click({ timeout: 4000 });
+                    await page.waitForTimeout(500);
+                    await page.locator('[role="option"]').nth(i).click({ timeout: 4000 });
+                    await page.waitForTimeout(3500);
+                    await medirPantalla(`${ruta}#${lista[i]}`);
+                } catch (e) {
+                    // Con el catch mudo, «no se pudo abrir la pestaña» y «la
+                    // pestaña no cargó» salían idénticos en el informe, y las
+                    // dos primeras versiones del recorrido se depuraron a
+                    // ciegas. El motivo se imprime.
+                    console.log(`   ⚠️  ${ruta}#${lista[i]}: no se pudo abrir — ${String(e.message).split('\n')[0].slice(0, 140)}`);
+                    informe.push({ ruta: `${ruta}#${lista[i]}`, error: true, noSeAbrio: true });
+                    await page.keyboard.press('Escape').catch(() => {});
+                }
+            }
         }
         fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 1));
 

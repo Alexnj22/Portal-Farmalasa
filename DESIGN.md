@@ -4856,6 +4856,9 @@ existía como toggle manual).
 | Control cuyo tamaño **es** el diseño | — | **`.blanco-tactil`**: separa el área de impacto del tamaño pintado |
 | Tabla que **no** es una lista de registros | `DataTable` | `movil={false}` → carril. Es la excepción y se justifica |
 
+> Al construir una vista nueva, el checklist que recorre esta tabla paso a paso
+> —y los gates que hay que correr— está en `docs/CHECKLIST-VISTA-NUEVA.md`.
+
 **Cómo elegir la variante de `ExpedienteMovil`:** si el detalle son secciones e
 historiales, `pantalla`; si es una lista de líneas, la hoja (`auto`, el default).
 Los dos errores no cuestan lo mismo — quedarse corto con la hoja cuesta un

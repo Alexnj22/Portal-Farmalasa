@@ -284,8 +284,15 @@ export default function ViewTabBar({
             con 4-5 tabs (o labels largos como "Reglas de despacho" en Pedidos)
             la fila competía por ancho o se truncaba. Reusa LiquidSelect (regla
             del proyecto: nunca un <select> nativo ni un dropdown nuevo). */}
+        {/* `data-pestanas`: el asidero con el que el barrido móvil descubre y
+            recorre las pestañas de una vista. No hay otro — la pestaña activa no
+            va en la URL, la maneja cada vista por prop— y sin él el barrido sólo
+            puede medir la que abre por defecto, que es el hueco de cobertura más
+            grande que tenía (37 archivos de vista declaran pestañas propias).
+            Lleva la lista de claves para no depender de abrir el desplegable. */}
         {tabs.length > 0 && (
           <div ref={selectorRef}
+            data-pestanas={tabs.map(t => t.key).join(',')}
             className={`${cabeLaFila ? 'flex lg:hidden' : 'flex'} w-[150px] sm:w-[190px]`}>
             <LiquidSelect
               value={activeTab}

@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.473.0 — Compras y Reglas al expediente, y dos módulos que colisionaban por la caja de una letra
+
+Primeras dos vistas migradas al canónico de v2.470.0, y el relevamiento de las
+que faltan.
+
+**`ExpedienteMovil.jsx` y `expedienteMovil.js` eran el mismo archivo.** En macOS
+el sistema de archivos es **insensible a mayúsculas**, así que dos módulos que
+sólo se distinguen por la caja de una letra se resuelven al mismo, y el bundler
+trajo el equivocado. Falló como *«"default" is not exported by
+expedienteMovil.js»* — un mensaje que no dice nada de la causa, y que en Linux
+(Vercel) no habría aparecido, o sea que era un bug que sólo rompe en la mitad de
+los equipos. El hook se llama ahora `usarExpediente.js`.
+
+**Compras y Pedidos · Reglas** eran las dos vistas cuyo detalle ya vivía en un
+componente propio (`ItemsExpand` y `EditPanel`), así que la migración fue sólo
+la receta: el hook, `movil={{ usarAccionDeFila: true }}`, la expansión de
+escritorio apagada en el teléfono, y el `ExpedienteMovil` afuera.
+
+**El relevamiento de las que faltan** — no son once, son ocho, y sólo dos eran
+mecánicas:
+
+| Vista | Cómo está el detalle |
+|---|---|
+| Compras ✅ | componente propio (`ItemsExpand`) |
+| Pedidos · Reglas ✅ | componente propio (`EditPanel`) |
+| Conteo · detalle | componentes de fila, detalle inline |
+| Facturación | **inline** (4 `colSpan`) |
+| Ventas | **inline** (5 `colSpan`) |
+| Mín·Máx | **inline** |
+| Productos · Inventario | **inline** |
+| Pedidos · ItemSections | **inline** |
+
+Las seis restantes tienen el detalle escrito directo dentro del `<tr>`. Cada una
+necesita primero lo mismo que se le hizo a `ExpandedProductRow`: extraerlo a un
+componente con `comoPanel`. No es aplicar la receta, es prepararlas para ella.
+
+*Verificado:* Productos abre su expediente a pantalla completa con barra, sin
+tablas y sin desborde. *Sin verificar:* Compras y Reglas compilan, pasan lint y
+gate, pero la sonda no llegó a sus fichas —Compras no mostró ninguna en la
+corrida y en Pedidos no alcanzó la pestaña de Reglas—, así que **su
+comportamiento en el teléfono está sin comprobar**.
+
 ## v2.472.0 — Los cinco modales del tablero adoptan el canónico: encabezado, cuerpo y pie
 
 Reportado: «siento que a los modales les falta el header y el footer. ¿está

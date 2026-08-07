@@ -25,7 +25,7 @@ import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 // módulo de hooks y falla con «"default" is not exported». Rompía el build
 // entero, no solo esta vista.
 import ExpedienteMovil from '../../components/common/ExpedienteMovil.jsx';
-import { useExpedienteMovil } from '../../components/common/expedienteMovil.js';
+import { useExpedienteMovil } from '../../components/common/usarExpediente';
 import { normSearch } from '../../utils/searchUtils';
 import { formatMoney } from '../../utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';

@@ -21,6 +21,8 @@ import {
 } from '../../data/dispatchRules';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import ExpedienteMovil from '../../components/common/ExpedienteMovil';
+import { useExpedienteMovil } from '../../components/common/usarExpediente';
 
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
@@ -569,6 +571,10 @@ export default function TabReglas({ searchTerm = '' }) {
         });
     }, [products, sortKey, sortDir, rulesMap]);
 
+    // El panel de edición vive en un `<tr colSpan>` hermano, que en el teléfono
+    // no se pinta. Va al expediente, con la misma regla que el resto.
+    const { enTelefono, abierto } = useExpedienteMovil(sortedProducts, editingId);
+
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
@@ -618,6 +624,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
             {/* ── Tabla ─────────────────────────────────────────────────────── */}
             <DataTable columns={COLS} sortKey={sortKey} sortDir={sortDir} onSort={handleSort}
+                movil={{ usarAccionDeFila: true }}
                 loading={loadingProducts || loadingRules} skeletonRows={8}
                 empty={{
                     icon: Package,
@@ -682,7 +689,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                             {/* Panel edición con animación entrada/salida */}
                             <AnimatePresence>
-                                {isEditing && (
+                                {isEditing && !enTelefono && (
                                     <motion.tr key={`ep-${prod.id}`}
                                         className={`${EXPAND_BG} border-b ${EXPAND_BORDER}`}
                                         initial={{ opacity: 0 }}
@@ -717,6 +724,23 @@ export default function TabReglas({ searchTerm = '' }) {
                     );
                 })}
             </DataTable>
+
+            {/* El panel de la regla, a pantalla completa en el teléfono. */}
+            <ExpedienteMovil abierto={abierto} onClose={cancelEdit}
+                titulo={abierto?.nombre || 'Regla de despacho'}>
+                {(prod) => (
+                    <div className="px-4 py-4">
+                        <EditPanel
+                            product={prod} rule={rulesMap[prod.id] ?? null}
+                            vals={editVals} setVals={setEditVals}
+                            saving={saving} justSaved={justSaved} saveError={saveError}
+                            onApply={(v) => applyVals(prod.id, v)}
+                            onCancel={cancelEdit}
+                            presCache={presCache}
+                        />
+                    </div>
+                )}
+            </ExpedienteMovil>
 
             <TablePagination
                 page={page} pageSize={pageSize}

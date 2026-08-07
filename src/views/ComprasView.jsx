@@ -17,6 +17,8 @@ import {
 } from '../data/compras';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 import { useAuth } from '../context/AuthContext';
+import ExpedienteMovil from '../components/common/ExpedienteMovil';
+import { useExpedienteMovil } from '../components/common/usarExpediente';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -158,6 +160,9 @@ function TabFacturas({
     const [page,      setPage]      = useState(1);
     const [total,     setTotal]     = useState(0);
     const [expandedId, setExpandedId] = useState(null);
+    // El detalle de la factura vive en un `<tr colSpan>` hermano, que en el
+    // teléfono no se pinta: `DataTable` ahí dibuja fichas. Va al expediente.
+    const { enTelefono, abierto } = useExpedienteMovil(rows, expandedId);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -238,7 +243,8 @@ function TabFacturas({
                 {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
             </div>
 
-            <DataTable columns={cols} loading={loading} empty={{ icon: ShoppingCart, message: 'Sin facturas en el período' }}>
+            <DataTable columns={cols} loading={loading} movil={{ usarAccionDeFila: true }}
+                empty={{ icon: ShoppingCart, message: 'Sin facturas en el período' }}>
                 {rows.map((row, i) => (
                     <React.Fragment key={row.id}>
                         <DataRow index={i} aria-expanded={expandedId === row.id} onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
@@ -286,7 +292,7 @@ function TabFacturas({
                                 </span>
                             </DataCell>
                         </DataRow>
-                        {expandedId === row.id && (
+                        {expandedId === row.id && !enTelefono && (
                             <tr>
                                 <td colSpan={cols.length} className="p-0">
                                     <ItemsExpand receiptId={row.id} />
@@ -296,6 +302,15 @@ function TabFacturas({
                     </React.Fragment>
                 ))}
             </DataTable>
+
+            {/* El detalle de la factura, a pantalla completa en el teléfono. */}
+            <ExpedienteMovil
+                abierto={abierto}
+                onClose={() => setExpandedId(null)}
+                titulo={abierto?.proveedor || 'Factura de compra'}
+            >
+                {(row) => <ItemsExpand receiptId={row.id} />}
+            </ExpedienteMovil>
 
             {totalPages > 1 && (
                 <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={PAGE_SIZE} />

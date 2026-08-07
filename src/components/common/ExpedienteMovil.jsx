@@ -5,6 +5,12 @@ import ModalShell from './ModalShell';
 /**
  * `ExpedienteMovil` — el detalle de una fila, a pantalla completa en el teléfono.
  *
+ * El hook vive en `usarExpediente.js` y NO en `expedienteMovil.js`: en macOS el
+ * sistema de archivos es insensible a mayúsculas, así que dos módulos que sólo
+ * se distinguen por la caja de una letra se resuelven al mismo archivo y el
+ * bundler trae el equivocado. Falló como *«"default" is not exported by
+ * expedienteMovil.js»*, que no dice nada de la causa.
+ *
  * Doce vistas del portal cuelgan su detalle de un `<tr colSpan>` hermano de la
  * fila. En escritorio eso está bien: la fila se expande y el detalle aparece
  * debajo, dentro de la tabla. En el teléfono `DataTable` ya no pinta una tabla

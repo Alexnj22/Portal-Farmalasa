@@ -21,6 +21,87 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.512.0 — aviso a la sala cuando llega una factura que ya es suya
+
+Pedido del usuario: «las de Movistar son directas para cada sucursal, ¿podemos
+hacer que llegue una notificación avisando a los de turno que llegó ya el
+documento para realizar la compra?».
+
+Las reglas por línea traen el número adentro, así que el portal ya sabe de quién
+es la factura sin que nadie la reclame — pero **nadie se enteraba**: quedaba
+esperando a que alguien abriera el widget. Ahora sale un aviso a la sala dueña,
+con push.
+
+**Es un cron y no un trigger, y eso no es un atajo.** El patrón de la casa es «la
+notificación nace con el hecho», y acá no aplica: el hecho lo produce
+`sync-purchase-emails-daily`, que corre **a las 3:00 de la mañana**. Un aviso
+disparado ahí saldría con la sala cerrada; la campana lo guardaría, pero el push
+—que es lo que hace que alguien VAYA a cargarla— llegaría a un teléfono apagado.
+Sale a las **08:30 SV**, cuando hay a quién avisarle.
+
+Cuatro decisiones:
+
+- **A quien esté en turno** (`empleados_en_turno`, que lee el horario publicado),
+  **y a la sala entera si no hay nadie**. Un aviso que no le llega a nadie es
+  peor que no mandarlo — pasa en feriados, antes de abrir, o con el roster sin
+  publicar.
+- **Agrupado por sala**: dos facturas el mismo día son un aviso, no dos pings.
+- **Una sola vez por documento** (`purchase_claim_avisos`). Sin la marca, el cron
+  avisaría lo mismo cada mañana hasta que alguien la tomara.
+- **La marca se escribe aunque no le llegue a nadie**, y guarda a cuántos les
+  llegó. Si no se escribiera, una sala sin personal activo reintentaría el mismo
+  aviso para siempre; y un `destinatarios = 0` es justo lo que permite notar ese
+  caso en vez de suponerlo.
+
+Sólo cubre las asignadas por línea (decisión del usuario). Las que hay que tomar
+—agua y recargas de Tigo/Claro— no dicen de quién son, así que avisarlas
+significaría avisarle a las siete salas de algo que es de una.
+
+Verificado sin efectos, corriendo el `SELECT` del barrido por separado: engancha
+los 9 documentos de Movistar y los reparte bien —Salud 1 la línea 78370041,
+Salud 2 la 77097722, Salud 3 la 61622865—. **El cron todavía no corrió**: la
+primera pasada es mañana a las 08:30.
+
+## v2.511.1 — Reglas vuelve a la hoja; la pantalla negra era un deploy incompleto
+
+Se revierte el cambio de envase de v2.508.2: Reglas vuelve a la hoja `auto`, con
+el `pie` de `ExpedienteMovil`. No era eso.
+
+**La causa está en el despliegue, no en el código.** Medido contra
+`portal.farmasalud.lat`: el `index.html` publicado carga
+`assets/index-BQEkeEdM.js`, ese archivo **existe** (919 KB,
+`application/javascript`) y `assets/index-DOuyHwTp.css` también — pero los
+**231 chunks lazy que ese bundle importa por nombre no están**. Se probaron 12 al
+azar, entre ellos `PedidosView-prxR_zbU.js` y `DataTable-Cr-BuOZN.js`: los doce
+devuelven **`200 text/html`**, o sea el `index.html` que sirve el rewrite
+`/(.*)` de `vercel.json` cuando el archivo no existe.
+
+Un `import()` que recibe HTML falla con *«'text/html' is not a valid JavaScript
+MIME type for module script»*, la vista lazy no monta y salta el
+`ErrorBoundary`, cuyo botón dice **«Recargar»** — que es literalmente lo que se
+reportó: «ocurrió un problema… lo cierro, le doy click, **se recarga**». Ese
+mismo mensaje ya está registrado en `audit_logs` desde producción el
+2026-08-04.
+
+Encaja con todo lo que no encajaba:
+
+- **Intermitente** («le doy atrás y le doy click, la abre»): el chunk está o no
+  está en la caché del navegador, según por dónde se pasó antes.
+- **Solo en el teléfono**: en la computadora los chunks ya estaban cacheados de
+  la sesión de trabajo; el teléfono llegaba frío.
+- **«El de productos sí funciona»**: ese chunk sí estaba en caché.
+- **Ni un `ERROR_RENDER` de hoy en `audit_logs`**, pese a varias reproducciones:
+  cuando lo que falla es el propio módulo, el registro tampoco llega.
+
+Se corrige redesplegando: este push publica un build completo.
+
+Nota de método, porque costó tres intentos: se persiguió dos veces una causa
+**dentro** del código (desenfoques anidados, envase de la hoja) sin haber
+comprobado nunca **qué estaba servido en producción**, que es donde el usuario
+veía el bug. El emulador jamás lo iba a reproducir porque el bundle local
+siempre estuvo completo. La pregunta que faltó hacer primero: *¿el archivo que
+el navegador pide existe?*
+
 ## v2.511.0 — Conteo: un renglón, una línea en las hojas impresas
 
 Lo que hacía crecer la hoja no era el tamaño de la letra: era que una fila

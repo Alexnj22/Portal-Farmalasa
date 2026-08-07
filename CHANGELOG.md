@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.473.2 — Los ítems de la compra, como lista
+
+Reportado por el usuario: *«la vista principal sí, pero la del modal no, sigue en
+modo tabla por lo que hay scroll horizontal»*. Tenía razón, y la versión anterior
+lo dio por bueno con un argumento equivocado: que la tabla estuviera **dentro de
+un carril** es el patrón correcto para una tabla suelta en una vista, pero no
+para el interior de un expediente que ya ocupa la pantalla entera. Ahí deslizar
+de lado es exactamente lo que el expediente venía a sacar. Productos había
+quedado en cero tablas; Compras no tenía por qué ser distinta.
+
+Los ítems son ocho columnas —#, id, descripción, cantidad, unitario, total, lote
+y vencimiento, unos 700 px— y pasan a ser un bloque por ítem: la descripción
+arriba con el total de línea a la derecha, y debajo cantidad, precio unitario,
+lote y vencimiento. En escritorio la tabla no se toca.
+
+Medido en WebKit iPhone 13: el expediente de una compra queda en **0 tablas y
++0 px de desborde**, contando también lo que hay dentro de carriles. Se lee
+«BOLSA DE AGUA X 500 ML · $1.77 · 48 u. × $0.04 · vence 2026-12-01».
+
 ## v2.473.1 — Compras se veía como tabla: el fragmento que escondía tres celdas
 
 Reportado por el usuario: *«compras se ve como tabla no como card, al igual al

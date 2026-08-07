@@ -70,7 +70,7 @@ function defaultRange() {
 
 // ── ItemsExpand ───────────────────────────────────────────────────────────────
 
-function ItemsExpand({ receiptId }) {
+function ItemsExpand({ receiptId, comoPanel = false }) {
     const { hasPermission } = useAuth();
     const canVerMontos = hasPermission('compras_ver_montos');
     const [items,   setItems]   = useState(null);
@@ -90,6 +90,42 @@ function ItemsExpand({ receiptId }) {
     );
     if (!items?.length) return (
         <div className="px-6 py-4 text-label text-content-3">Sin ítems registrados.</div>
+    );
+
+    // ── En el teléfono, una lista y no una tabla ───────────────────────────
+    // Ocho columnas (#, id, descripción, cantidad, unitario, total, lote y
+    // vencimiento) piden ~700px. Dentro de un expediente que ya ocupa la
+    // pantalla entera, deslizar de lado para leer un ítem es exactamente lo que
+    // el expediente venía a sacar — el usuario lo dijo así: «sigue en modo
+    // tabla, no es adaptado a móvil». Cada ítem pasa a ser un bloque con la
+    // descripción arriba y el total de línea a la derecha, que es el par por el
+    // que se abre el detalle de una compra.
+    if (comoPanel) return (
+        <div className="flex flex-col px-3 py-2">
+            {items.map((it) => {
+                const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
+                return (
+                    <div key={it.linea_num} className="py-2.5 border-b border-divider last:border-b-0">
+                        <div className="flex items-baseline justify-between gap-3">
+                            <span className="min-w-0 text-body-sm font-bold text-content">
+                                {it.descripcion || `Producto ${it.erp_product_id}`}
+                            </span>
+                            {canVerMontos && (
+                                <span className="shrink-0 text-body font-black tabular-nums text-content">
+                                    {fmt$(it.total_linea)}
+                                </span>
+                            )}
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap text-caption text-content-3">
+                            <span className="tabular-nums">{formatQty(it.cantidad)} u.</span>
+                            {canVerMontos && <span className="tabular-nums">× {fmt$(it.precio_unitario)}</span>}
+                            {lote && <span>lote {lote}</span>}
+                            {it.fecha_vencimiento && <span className="tabular-nums">vence {it.fecha_vencimiento}</span>}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
     );
 
     return (
@@ -312,7 +348,7 @@ function TabFacturas({
                 onClose={() => setExpandedId(null)}
                 titulo={abierto?.proveedor || 'Factura de compra'}
             >
-                {(row) => <ItemsExpand receiptId={row.id} />}
+                {(row) => <ItemsExpand receiptId={row.id} comoPanel />}
             </ExpedienteMovil>
 
             {totalPages > 1 && (

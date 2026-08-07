@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.489.5 — El canon móvil deja de mentir: DESIGN.md §32 al día
+
+Fase 0 de `docs/PLAN-CANON-MOVIL-2026-08-07.md`, y bloqueaba a las demás: no
+tiene sentido montar gates que hagan cumplir un estándar que afirma cosas falsas.
+
+**Dos afirmaciones que el código desmentía:**
+
+- *«`DataTable` no se convierte en lista de fichas; no existe una variante móvil
+  de lista de tarjetas»*. Existe desde v2.480.0. Ahora la sección explica cómo se
+  **infieren** los papeles desde `columns` —identidad, ancla, contexto, hoja,
+  acciones— y para qué sirve cada override de `movil={{ … }}`, incluida la
+  excepción `movil={false}` y cuándo se justifica.
+- *«No se encontró uso de `env(safe-area-inset-*)`»*. `index.css` deriva
+  `--sa-top/-right/-bottom/-left` de esos insets, y antes estaban escritos a mano
+  en 14 sitios. Lo que sigue abierto es sólo la verificación **en dispositivo
+  real**: `env(safe-area-inset-*)` vale **0 en todo emulador**, así que la
+  emulación no puede distinguir «bien resuelto» de «no resuelto».
+
+**Y lo que faltaba del todo: la tabla del canon.** Los nueve canónicos móviles ya
+existían y ninguna lista decía cuál corresponde a qué necesidad — se descubrían
+leyendo el componente, así que cada vista nueva volvía a decidirlo. Doce filas,
+de «lista de registros» a «control cuyo tamaño ES el diseño», verificadas contra
+el código.
+
+**Los «gaps residuales» de blancos táctiles ya no son residuales.** El párrafo de
+julio los daba por intratables —«agrandar la caja invisible arriesga solaparse
+con el vecino»— y hoy el barrido mide **cero** en las 37 vistas. Lo que los cerró
+no fue agrandar nada: fue separar el área de impacto del tamaño pintado con
+`.blanco-tactil`. Queda anotado, junto con la otra mitad de la lección: lo que de
+verdad no cabe **se mide** —`(ancho − huecos) / columnas < 44`— y no se declara
+con una lista de excepciones que nadie mantiene.
+
 ## v2.489.4 — la solicitud de ajuste muestra una línea por producto, y se despliega al editar
 
 Pedido del usuario con captura: «que solo aparezcan cards producto, blister,

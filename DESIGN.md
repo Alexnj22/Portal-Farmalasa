@@ -4833,6 +4833,36 @@ nativa). El sidebar en nivel "ultra" colapsa automáticamente a rail (72-80px,
 `isMobile`, reutilizando el ancho colapsado `w-[4.5rem] xl:w-[5rem]` que ya
 existía como toggle manual).
 
+### La tabla del canon — qué usa cada necesidad en el teléfono
+
+> Agregada el 2026-08-07. Los canónicos móviles ya existían —son nueve— y
+> **ninguna lista decía cuál corresponde a qué**: se descubrían leyendo el
+> componente, así que cada vista nueva volvía a decidirlo. Verificada contra el
+> código, no de memoria. El plan que la originó:
+> `docs/PLAN-CANON-MOVIL-2026-08-07.md`.
+
+| Necesidad de la vista | Escritorio | En el teléfono (<1024px) |
+|---|---|---|
+| Lista de registros | `DataTable` + `DataRow`/`DataCell` | **el mismo**: cae solo a fichas (arriba) |
+| Detalle de una fila | fila expandida o modal | **`ExpedienteMovil`** — `variante="auto"` (hoja que crece) o `"pantalla"` |
+| Cuerpo de un modal | `LiquidModal` / `ModalShell` | **`HojaMovil`** (entra desde abajo) + **`AsaHoja`** de tirador |
+| Controles de la vista | header + botones | **`BarraFlotante`**, al alcance del pulgar. Sólo táctil |
+| Filtros | `FilterBar` | **el mismo**: publica sus ranuras en `BarraFlotante` |
+| Pestañas de la vista | `ViewTabBar` | **el mismo**: bajo `lg:` colapsa a `LiquidSelect` |
+| Elegir de una lista larga | `LiquidSelect` | **`SelectorTactil`** |
+| Métricas de cabecera | fila de `StatCard` | **`CarrilCards`** — desliza; dos por pantalla |
+| Elegir 1 de N | `SegmentedControl` | **el mismo**: envuelve y sube a 44pt |
+| Interruptor | `Switch` | **el mismo** + área de impacto de 44 |
+| Control cuyo tamaño **es** el diseño | — | **`.blanco-tactil`**: separa el área de impacto del tamaño pintado |
+| Tabla que **no** es una lista de registros | `DataTable` | `movil={false}` → carril. Es la excepción y se justifica |
+
+**Cómo elegir la variante de `ExpedienteMovil`:** si el detalle son secciones e
+historiales, `pantalla`; si es una lista de líneas, la hoja (`auto`, el default).
+Los dos errores no cuestan lo mismo — quedarse corto con la hoja cuesta un
+scroll; pasarse con la pantalla completa deja media pantalla vacía y esconde la
+vista de atrás sin necesidad. Y adentro del panel, **cero tablas** en los dos
+casos.
+
 ### Touch targets — 44×44px minimum (WCAG 2.5.8)
 
 Applies to every `button`, `a[href]`, checkbox/radio, and any `[role="button"]`. This is now enforced in the two components nearly every view depends on:
@@ -4842,6 +4872,26 @@ Applies to every `button`, `a[href]`, checkbox/radio, and any `[role="button"]`.
 **Update 2026-07-15 (Bloque 5.3, `PLAN-EJECUCION-2026-07.md`):** re-audited with Playwright (25 routes × 2 viewports, real viewport-intersection check). Fixed 36 real hit-box bugs across 24 files — mainly the 22 views duplicating `ViewTabBar`'s search-open/close button with the pre-Fase-4-fix size (`w-10 h-10 md:w-11 md:h-11`) instead of the already-fixed `w-11 h-11`, plus 7 Dashboard "Ver" links and a handful of standalone CTAs a few px short of 44 (`p-X -m-X` padding pattern where the element was a bare text/icon control, direct height bump where it was already a real pill/button).
 
 **Known residual gaps, not fixed, deliberate trade-off** (same reasoning as the `PushPromptBanner` precedent below — re-verified 2026-07-15, still applies): filter/tab pills with visible text (TODOS/ARCHIVO/ACTIVOS/ANULADAS/etc., ~130 instances) are the established Filter Pill/Tab Bar Standard used everywhere in the app on purpose — resizing them to 44px tall would be a systemic redesign of that shared visual pattern, not a bug fix. Dense icon-button groups inside cards (e.g. RolesView's Editar/Eliminar/Ver Empleados, BranchesView's Copiar/Diagnóstico/Ver Perfil/Ajustes) were left alone because growing their invisible hit-box risks overlapping a neighbor's click zone (real mis-click risk, not mechanical to fix safely). Small fixed-size hover-reveal badge icons (Dashboard's "Cambiar tamaño", `ScheduleChart`'s "Expandir Análisis") have their box sized 1:1 with their visible circle, so enlarging the hit-box necessarily enlarges the visible badge — a visual character change, same class of decision as `PushPromptBanner`'s "Activar" button (deliberately compact, raising it to 44px would meaningfully change that banner's low-profile character). `LiquidSelect`'s internal clear (X) / chevron buttons were also left alone — they're secondary controls nested inside an already-44px trigger used in ~30+ places; changing their hit-box has high blast radius for uncertain benefit. Sidebar indented nav items (~36px) were already a known gap before this audit (§25).
+
+**Actualización 2026-08-07 — varios de esos «gaps residuales» ya no existen, y la
+salida fue siempre la misma.** Barrido de las **37** vistas en WebKit iPhone 13:
+**cero** blancos táctiles por debajo de 44pt. Lo que los cerró no fue agrandar
+los controles, sino separar el **área de impacto** del **tamaño pintado** con
+`.blanco-tactil` — que es justo lo que el párrafo de arriba daba por imposible
+(«agrandar la caja invisible arriesga solaparse con el vecino»). Casos cerrados:
+las 50 cajas de MIN·MAX (36×23 cada una, dos por fila), el interruptor `sm`
+(32×16), el aspa y el chevron internos de `LiquidSelect`. El encabezado de
+sección de Laboratorios sí creció, porque ahí el tamaño no era el diseño: era un
+descuido (`min-h-[var(--tap-min)]`, que en escritorio vale 0).
+
+**Y lo que de verdad no cabe se MIDE, no se declara.** Siete columnas de un
+gráfico en 390px dan 40px cada una y no pueden dar 44 sin solaparse. El medidor
+las separa de la deuda con aritmética —`(ancho − huecos) / columnas < 44`— y no
+con una lista de excepciones. La versión anterior de esa regla las excluía por un
+`aria-label` que empezara con «Día: », un rótulo que **ningún archivo del
+proyecto escribe**: la excepción nunca corrió y las 14 columnas entraban como
+deuda en cada corrida. Una excepción escrita contra un texto que hay que
+acordarse de poner es una excepción que no existe.
 
 ### Inputs — 16px minimum font-size (iOS Safari zoom)
 
@@ -4853,13 +4903,60 @@ Applies to every `button`, `a[href]`, checkbox/radio, and any `[role="button"]`.
 
 Multiple views (`BranchesView`, `ConteoDetailView`, and others) hand-roll their own local copy of the floating search-pill + input instead of using the shared `ViewTabBar` component (see [[feedback_global_search_pattern]] — this is already a documented house rule being violated in practice). Every duplicate carries its own copy of whatever bugs `ViewTabBar` has (or had) independently. This audit patched the *symptom* (font-size, button size) in each duplicate found, but the *cause* (component duplication instead of reuse) is a larger refactor out of scope for a design-pass fix — flagged for a future consolidation pass. **2026-07-15 update:** the button-size symptom recurred — 22 files still had the pre-fix size (see Touch targets update above) — and was patched again. The *cause* is still open; the next view built with a hand-rolled search pill will carry the same bug forward until the consolidation refactor happens.
 
-### Table → cards pattern
+### Tabla → fichas — **existe desde v2.480.0**
 
-`DataTable` (§14) does not currently reflow into a card list on narrow viewports — it stays tabular with horizontal scroll/column hiding (`hideBelow` prop) as the primary narrow-viewport strategy. No separate card-list mobile variant exists. This was not flagged as broken in the audit (no horizontal page overflow was found on any of the 27 top-level routes checked, at either 390px or 768px — `hideBelow` columns keep tables usable), but it is worth noting as a design choice rather than an oversight: a true table→cards reflow was not built.
+> Esta sección decía lo contrario hasta el 2026-08-07: *«`DataTable` no se
+> convierte en lista de fichas en viewports angostos; no existe una variante
+> móvil de lista de tarjetas»*. Se construyó, y el documento no se enteró. Un
+> canon desactualizado **enseña la deuda**: quien lo leyera para hacer una vista
+> nueva escribiría su propia lista a mano.
 
-### Safe areas / gestures
+`DataTable` cae solo a **fichas** por debajo de `lg:` (1024px). No hay que
+escribir nada: la vista sigue declarando `columns` + `DataRow`/`DataCell` y la
+misma tabla se dibuja como lista de tarjetas en el teléfono.
 
-No `env(safe-area-inset-*)` usage was found in the codebase. Given the app targets a native Capacitor shell (§21) as well as mobile web, notch/home-indicator safe-area handling is a gap for the native build specifically — not verified as broken (no physical-device test was performed in this audit, only Chromium viewport emulation), but also not confirmed handled. Flagged for verification on an actual device.
+**Los papeles se INFIEREN de `columns`, no se piden por prop** — una prop opt-in
+es una prop olvidada:
+
+| Papel | Cómo se elige | Dónde aparece en la ficha |
+|---|---|---|
+| **identidad** | primera columna útil que no sea el ancla | título, arriba a la izquierda |
+| **ancla** | última columna `align: 'right'` (la convención de los números) | el número, arriba a la derecha |
+| **contexto** | las dos siguientes, priorizando las que no tengan `hideBelow` | línea tenue debajo, separada por `·` |
+| **resto** | todo lo demás | la hoja que abre al tocar |
+| **acciones** | rótulo vacío **o** clave `acciones`/`actions` | no se dibuja, salvo `movil={{ acciones: true }}` |
+
+`movil={{ … }}` es un objeto de **overrides**, no un reemplazo: quien declara
+`ancla` no renuncia a que se infiera la identidad.
+
+- `movil={{ ancla, identidad, chips }}` — fija papeles a mano.
+- `movil={{ usarAccionDeFila: true }}` — el toque usa el `onClick` de la fila en
+  vez de abrir la hoja. Sólo si ese manejador **navega**; en la mitad de las
+  vistas expande un `<tr>` hermano que en modo ficha no existe.
+- `movil={{ acciones: true }}` — dibuja la columna de acciones dentro de la
+  ficha. Sólo si esos botones abren un modal o disparan una mutación de verdad.
+- `movil={false}` — vuelve a la tabla con carril. **Es la excepción** y se
+  justifica en el código: la fila no es un registro (un calendario, una matriz).
+
+**Lo que la ficha NO hace:** una fila que no sea `DataRow` —un `<tr colSpan>` de
+detalle expandido— no se pinta; y si el número de celdas no coincide con el de
+columnas, esa fila se apila sin rótulos en vez de adivinar.
+
+### Áreas seguras (notch / barra de gestos)
+
+> También desactualizado hasta el 2026-08-07: decía *«no se encontró uso de
+> `env(safe-area-inset-*)` en el código»*. Hoy sí se usa, y de forma canónica.
+
+`index.css` deriva cuatro tokens de los insets del sistema —`--sa-top`,
+`--sa-right`, `--sa-bottom`, `--sa-left`— y **eso es lo que se consume**. Antes
+estaban escritos a mano en 14 sitios, cada uno con su propia combinación de
+`max()`, así que el mismo borde medía distinto según quién lo escribiera.
+
+Lo que **sigue abierto** es la verificación en un **dispositivo real**: todo lo
+medido hasta hoy es emulación (WebKit iPhone 13 en Playwright), y
+`env(safe-area-inset-*)` vale **0 en todo emulador** — o sea que el emulador no
+puede distinguir «está bien resuelto» de «no está resuelto». Esa comprobación
+necesita un teléfono con notch y el shell nativo de Capacitor (§21).
 
 ### Viewport meta
 

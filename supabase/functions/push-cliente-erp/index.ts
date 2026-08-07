@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
+import { BASE, login, pedir, parsearFicha, type Ficha } from "../_shared/erp-clientes.ts";
 
 // Empuja al ERP, EN EL MOMENTO, la edición que se acaba de guardar en el portal.
 //
@@ -37,107 +38,10 @@ import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 // flag la resetea a verify_jwt=true y el cron empieza a fallar con 401 ANTES de
 // ejecutar una línea — ya pasó dos veces en este proyecto con otras funciones.
 
-const BASE      = "https://clientesdte3.oss.com.sv/farma_salud";
-const LOGIN_URL = `${BASE}/login.php`;
-
-function getCreds(): { username: string; password: string } {
-  // Credenciales propias si existen; si no, las del sync de compras, que entran
-  // al mismo ERP. Se prefiere una llave separada para poder rotarla sin tocar
-  // los otros syncs.
-  const raw = Deno.env.get("ERP_CLIENTES_CREDS") ?? Deno.env.get("ERP_PURCHASES_CREDS");
-  if (!raw) throw new Error("Falta el secreto ERP_CLIENTES_CREDS (o ERP_PURCHASES_CREDS).");
-  return JSON.parse(raw);
-}
-
-async function login(): Promise<string> {
-  const { username, password } = getCreds();
-  const form = new URLSearchParams({ username, password, m: "1" });
-  const res = await fetch(LOGIN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: form.toString(),
-    redirect: "manual",                     // la cookie viaja en el 302
-    signal: AbortSignal.timeout(20_000),
-  });
-  const cookie = res.headers.get("set-cookie")?.split(";")[0];
-  if (!cookie) throw new Error("El ERP no devolvió cookie de sesión.");
-  return cookie;
-}
-
-// El ERP se cae solo a veces: en 365 escrituras contestó una vez "Proceso no
-// encontrado" en texto plano y el mismo payload entró al reintentarlo.
-async function conReintento<T>(fn: () => Promise<T>, veces = 3, pausaMs = 1500): Promise<T> {
-  let ultimo: unknown;
-  for (let i = 0; i < veces; i++) {
-    try { return await fn(); } catch (e) {
-      ultimo = e;
-      if (i < veces - 1) await new Promise(r => setTimeout(r, pausaMs * (i + 1)));
-    }
-  }
-  throw ultimo;
-}
-
-async function pedir(cookie: string, url: string, datos?: URLSearchParams): Promise<string> {
-  return await conReintento(async () => {
-    const res = await fetch(url, {
-      method: datos ? "POST" : "GET",
-      headers: {
-        Cookie: cookie,
-        "User-Agent": "Mozilla/5.0",
-        "X-Requested-With": "XMLHttpRequest",
-        Referer: `${BASE}/admin_cliente.php`,
-        ...(datos ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
-      },
-      body: datos ? datos.toString() : undefined,
-      signal: AbortSignal.timeout(45_000),
-    });
-    return await res.text();
-  });
-}
-
-// ── Parseo de la ficha ──────────────────────────────────────────────────────
-// Mismo criterio que `parsear_ficha` en bloque.py: los VALORES no se recortan
-// (ver punto 2 arriba); las ETIQUETAS de los <option> sí, porque son para
-// comparar y no viajan.
-type Ficha = { campos: Record<string, string>; opciones: Record<string, [string, string][]> };
-
-const desescapar = (s: string) => s
-  .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-  .replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&nbsp;/g, " ");
-
-function parsearFicha(html: string): Ficha {
-  const campos: Record<string, string> = {};
-  const opciones: Record<string, [string, string][]> = {};
-
-  for (const m of html.matchAll(/<input([^>]*)>/g)) {
-    const a = m[1];
-    if (/type\s*=\s*["'](submit|button)/i.test(a)) continue;
-    const n = a.match(/name\s*=\s*["']([^"']+)/);
-    if (!n) continue;
-    const v = a.match(/value\s*=\s*["']([^"']*)/);
-    campos[n[1]] = v ? desescapar(v[1]) : "";
-  }
-  for (const m of html.matchAll(/<textarea([^>]*)>([\s\S]*?)<\/textarea>/g)) {
-    const n = m[1].match(/name\s*=\s*["']([^"']+)/);
-    if (n) campos[n[1]] = desescapar(m[2]);
-  }
-  for (const m of html.matchAll(/<select([^>]*)>([\s\S]*?)<\/select>/g)) {
-    const n = m[1].match(/name\s*=\s*["']([^"']+)/);
-    if (!n) continue;
-    const lista: [string, string][] = [];
-    let seleccionado = "";
-    for (const o of m[2].matchAll(/<option([^>]*)>\s*([^<]*)/g)) {
-      const v = o[1].match(/value\s*=\s*["']([^"']*)/);
-      const value = v ? v[1] : "";
-      const texto = desescapar(o[2]).trim();
-      if (/selected/i.test(o[1])) seleccionado = value;
-      if (value !== "" && value !== "-1") lista.push([value, texto]);
-    }
-    opciones[n[1]] = lista;
-    campos[n[1]] = seleccionado;
-  }
-  return { campos, opciones };
-}
+// El trato con la ficha del ERP —login, pedir, parsearFicha— vive en
+// `_shared/erp-clientes.ts`. Estaba duplicado acá y en
+// `sincronizar-fichas-clientes`; unificado el 2026-08-07. Lo que queda en este
+// archivo es lo suyo propio: el mapeo portal→ERP y el empuje de la cola.
 
 // ── Portal → ERP ────────────────────────────────────────────────────────────
 const A_TEXTO: Record<string, string> = {

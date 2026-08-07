@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.471.0 — Lista negra del barrido, dos clientes unidos y el parseo del ERP en un solo lugar
+
+Tres cosas que quedaban sueltas.
+
+**Las ocho facturas que se reintentaban para siempre.** Ya no se intentan, y
+ahora hay una lista explícita de facturas que el barrido no debe tocar, cada una
+con el motivo anotado. Antes dependía de una regla general; ahora es una
+decisión registrada, y si mañana cambia la situación se quita de la lista. Si
+alguien aprieta el botón de una de ellas, el portal explica por qué está
+excluida en vez de dar el mismo error de siempre.
+
+**Dos clientes que estaban partidos en dos fichas se unieron.** IRENE PASTORA
+con IRENE PINEDA (12 facturas) y JEYBI CALDERON con HEYVI CALDERON (1). Lo que
+decidió no fue el parecido de los nombres sino las fechas: las compras de una
+ficha terminan y las de la otra empiezan días después, en la misma sucursal, sin
+solaparse nunca — el patrón de un nombre corregido.
+
+Los otros dos casos **quedan sin unir** y siguen en Por revisar: uno porque los
+apellidos son demasiado distintos, y otro porque su contraparte no tiene ninguna
+compra y se llama «NO APARECE».
+
+**Y el código que leía las fichas de clientes estaba escrito dos veces**, en dos
+lugares que ya habían empezado a divergir. Ahora vive en uno solo.
+
 ## v2.470.0 — El expediente móvil se vuelve canónico
 
 Doce vistas del portal cuelgan su detalle de un `<tr colSpan>` hermano de la

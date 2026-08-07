@@ -157,10 +157,22 @@ Deno.serve(async (req) => {
     const cols = "id, erp_invoice_id, correlativo, tipo_documento, branch_id, estado, fecha";
     const pendientes: Pendiente[] = [];
 
+    // Lista negra: decisiones explícitas de "no lo intentes". Se aplica ANTES
+    // de cualquier otro filtro y también al alcance 'una', que es un botón —
+    // si alguien aprieta el de una factura excluida, tiene que enterarse de
+    // por qué, no ver otro fallo igual al de todas las noches.
+    const { data: exc } = await admin.from("dte_excluidas_del_barrido")
+      .select("invoice_id, motivo");
+    const excluidas = new Map<number, string>(
+      (exc ?? []).map((e: { invoice_id: number; motivo: string }) => [e.invoice_id, e.motivo]));
+
     if (alcance === "una") {
       if (!invoice_id) return json({ ok: false, error: "Falta invoice_id." }, 400);
       const { data } = await admin.from("sales_invoices").select(cols).eq("id", invoice_id).maybeSingle();
       if (!data) return json({ ok: false, error: "Esa factura ya no está en el portal." }, 404);
+      if (excluidas.has(Number(invoice_id)))
+        return json({ ok: false, excluida: true,
+                      error: `Esta factura está excluida del barrido: ${excluidas.get(Number(invoice_id))}` }, 409);
       pendientes.push({ ...data, bolsa: data.estado === "NULA" ? "anuladas" : "sin_sello" } as Pendiente);
     } else {
       // Las dos bolsas, salvo que se pida una.
@@ -180,7 +192,8 @@ Deno.serve(async (req) => {
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
         const { data } = await q;
-        for (const f of data ?? []) pendientes.push({ ...f, bolsa: "anuladas" } as Pendiente);
+        for (const f of data ?? [])
+          if (!excluidas.has(f.id)) pendientes.push({ ...f, bolsa: "anuladas" } as Pendiente);
       }
       if (bolsa !== "anuladas") {
         let q = admin.from("sales_invoices").select(cols)
@@ -189,7 +202,8 @@ Deno.serve(async (req) => {
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
         const { data } = await q;
-        for (const f of data ?? []) pendientes.push({ ...f, bolsa: "sin_sello" } as Pendiente);
+        for (const f of data ?? [])
+          if (!excluidas.has(f.id)) pendientes.push({ ...f, bolsa: "sin_sello" } as Pendiente);
       }
     }
 
@@ -235,7 +249,8 @@ Deno.serve(async (req) => {
     if (!pendientes.length)
       return json({ ok: true, revisadas: 0, resueltas: 0, fallidas: 0,
                     total_pendiente: totalPendiente, restantes: totalPendiente,
-                    anuladas_sin_tramite: anuladasSinTramite, detalle: [] });
+                    anuladas_sin_tramite: anuladasSinTramite,
+                    excluidas: excluidas.size, detalle: [] });
 
     // Responsable de las invalidaciones: el mismo siempre, definido por la
     // empresa. No es quien aprieta el botón — es quien responde legalmente.
@@ -367,6 +382,7 @@ Deno.serve(async (req) => {
         // Anuladas que Hacienda nunca recibió: no hay nada que invalidar y no
         // se intentan. Se anotan para que no desaparezcan del radar.
         anuladas_sin_tramite: anuladasSinTramite,
+        excluidas: excluidas.size,
         cortada_por_tiempo: cortadaPorTiempo,
         detalle,
       },
@@ -382,6 +398,7 @@ Deno.serve(async (req) => {
       total_pendiente: totalPendiente,
       restantes: Math.max(0, totalPendiente - resueltas),
       anuladas_sin_tramite: anuladasSinTramite,
+      excluidas: excluidas.size,
       cortada_por_tiempo: cortadaPorTiempo,
       detalle,
     });

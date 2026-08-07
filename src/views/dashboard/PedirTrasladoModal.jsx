@@ -8,7 +8,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { fetchPresentaciones } from '../../data/inventoryMovements';
-import { crearSolicitudTraslado, fetchDondeHay } from '../../data/traslados';
+import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
 
 // Pedirle un producto a otra sala, desde la lista de faltantes.
 //
@@ -102,17 +102,38 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
 
     const unidadesPedidas = pres ? Number(cantidad || 0) * Number(pres.factor || 1) : 0;
 
-    // ── El aviso de vencimiento ─────────────────────────────────────────────
-    // Pedido del usuario: «si una sucursal tiene una fecha de vence más corta,
-    // que avise». Es una preocupación de farmacia: recibir lo que está por
-    // vencerse mueve el problema, no lo resuelve.
+    // Si lleva receta. Decide DOS cosas: el rótulo «Bajo Receta» y —por decisión
+    // del usuario el 2026-08-06— si el vencimiento importa acá.
+    const [esAntibiotico, setEsAntibiotico] = useState(false);
+    useEffect(() => {
+        if (!producto?.erp_product_id) return;
+        let cancelado = false;
+        fetchEsAntibiotico(producto.erp_product_id).then(r => {
+            if (!cancelado) setEsAntibiotico(r.esAntibiotico);
+        });
+        return () => { cancelado = true; };
+    }, [producto?.erp_product_id]);
+
+    // ── El aviso de vencimiento: SOLO para antibióticos, por ahora ───────────
+    // «Que el vencimiento solo importe por ahora para los antibióticos»
+    // —decisión del usuario, 2026-08-06—. Tiene sentido: son los que se mueven
+    // con lote y los que no se pueden repartir a último momento.
     //
-    // Avisa por DOS motivos distintos y dice cuál: que lo de esta sala esté
-    // pronto a vencer —eso vale aunque sea la única que lo tiene— o que otra
-    // sala tenga lo mismo con más vida por delante, que es la comparación que
-    // el usuario pidió. Sin la comparación, el aviso no ayuda a decidir.
+    // ⏳ CUANDO EL PORTAL TENGA VENTA Y FACTURACIÓN, extenderlo al resto — pero
+    // no copiando esta regla. Para un producto común la fecha sola no aconseja
+    // nada: «vence en tres meses» no dice si es un problema sin saber cuánto
+    // rota. Una caja que vence en tres meses y sale en dos semanas está bien;
+    // una que vence en seis y no se mueve, no. Esa cuenta necesita la venta.
+    // `product_stock_params.velocity` ya calcula esa velocidad para el MIN/MAX,
+    // y `vence` ya viene por sala en los dos RPC: no hay que tocar la base, solo
+    // cruzarlos acá.
+    //
+    // Avisa por dos motivos distintos y dice cuál: que lo de esta sala esté
+    // pronto a vencer —vale aunque sea la única que lo tiene— o que otra lo
+    // tenga con más vida por delante, que es la comparación que se pidió. Sin
+    // la comparación, el aviso no ayuda a elegir.
     const avisoVence = useMemo(() => {
-        if (!sala?.vence) return null;
+        if (!esAntibiotico || !sala?.vence) return null;
         const dias = diasHasta(sala.vence);
         if (dias != null && dias <= 0)
             return { grave: true, texto: `Lo de ${sala.sala} ya está vencido (${fmtVence(sala.vence)}).` };
@@ -129,14 +150,14 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                      + (mejor ? ` — ${mejor.sala} lo tiene ${mejor.vence ? `hasta ${fmtVence(mejor.vence)}` : 'sin fecha de vencimiento'}.` : '.'),
             };
         }
-        if (mejor && mejor.vence && new Date(mejor.vence) - new Date(sala.vence) > 180 * 86400000) {
+        if (mejor?.vence && new Date(mejor.vence) - new Date(sala.vence) > 180 * 86400000) {
             return {
                 grave: false,
                 texto: `${mejor.sala} lo tiene con más vida: vence ${fmtVence(mejor.vence)} contra ${fmtVence(sala.vence)} acá.`,
             };
         }
         return null;
-    }, [sala, donde, unidadesPedidas]);
+    }, [esAntibiotico, sala, donde, unidadesPedidas]);
 
     const unidades = unidadesPedidas;
     const puedeEnviar = Boolean(
@@ -230,11 +251,12 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                             onChange={v => setSalaId(v)}
                             options={donde.map(d => ({
                                 value: String(d.erp_sucursal_id),
-                                // La fecha va en la etiqueta y no solo en el
-                                // aviso: así se ve al ELEGIR, que es cuando
-                                // sirve, y no después de haber elegido mal.
-                                label: `${d.sala} — ${d.unidades} unidades`
-                                     + (d.vence ? ` · vence ${fmtVence(d.vence)}` : ''),
+                                // La fecha va en la etiqueta —y no solo en el
+                                // aviso— para verla AL elegir y no después de
+                                // haber elegido mal. Solo en los que llevan
+                                // receta, que hoy son los únicos donde importa.
+                                label: `${d.sala} — ${d.unidades} ${d.unidades === 1 ? 'unidad' : 'unidades'}`
+                                     + (esAntibiotico && d.vence ? ` · vence ${fmtVence(d.vence)}` : ''),
                             }))}
                             placeholder="A qué sala..."
                             clearable={false}
@@ -270,10 +292,18 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                             imposibles sin que nada avise.
                             La existencia ya viene con lo que salió y todavía no
                             volvió del conteo descontado. */}
-                        {/* El aviso de vencimiento. Solo aparece si hay algo que
-                            decidir: que la sala elegida venza antes que otra que
-                            también puede darlo, o que lo suyo esté por vencerse.
-                            Un dato que aparece siempre deja de leerse. */}
+                        {/* «Bajo Receta», nunca «Abx» — el canon de la casa. Se
+                            dice al PEDIR y no al recibir: un regulado se mueve
+                            con su lote y quien lo pide tiene que saberlo antes
+                            de que la caja esté en camino. */}
+                        {esAntibiotico && (
+                            <p className="text-micro font-semibold text-content-2 px-1 leading-snug">
+                                Bajo Receta — se traslada con su lote.
+                            </p>
+                        )}
+
+                        {/* El vencimiento, solo cuando importa. Un aviso que
+                            aparece siempre deja de leerse. */}
                         {avisoVence && (
                             <p className={`text-micro font-semibold px-1 leading-snug ${
                                 avisoVence.grave ? 'text-danger-text' : 'text-warning-text'

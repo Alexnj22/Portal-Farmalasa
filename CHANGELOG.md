@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.463.0 — El vencimiento importa donde importa: solo en los de receta
+
+Decisión del usuario: por ahora el vencimiento solo pesa en los productos **Bajo
+Receta**. Son los que se mueven con su lote y los que no se pueden repartir a
+último momento; para el resto, la fecha sola no aconseja nada.
+
+Al pedir uno de receta ahora se ven tres cosas que antes no estaban: el rótulo
+**Bajo Receta**, la fecha en la etiqueta de cada sala —para verla *al* elegir y
+no después—, y el aviso comparativo cuando conviene pedírselo a otra. Probado
+contra un producto real: *«Salud 3 — 1 unidad · vence feb 27»* y debajo *«Bodega
+lo tiene con más vida: vence oct 27 contra feb 27 acá»*.
+
+**Y queda escrito en el código qué falta para extenderlo.** Cuando el portal
+tenga venta y facturación, la regla no se copia: para un producto común «vence
+en tres meses» no dice si hay un problema sin saber cuánto rota — una caja que
+vence en tres meses y sale en dos semanas está bien, una que vence en seis y no
+se mueve, no. Esa cuenta necesita la venta. Lo demás ya está hecho: la fecha por
+sala viaja en los dos RPC y la velocidad ya se calcula para el MIN/MAX.
+
+**Un límite que conviene saber**: el catálogo marca como antibiótico a **79 de
+4,371 productos activos** (1.8%), y la amoxicilina **no** está entre ellos. El
+aviso va a aparecer poco hasta que ese dato se corrija en el origen.
+
 ## v2.462.1 — El barrido anota cada respuesta de Hacienda en el momento
 
 La versión anterior creó el registro de intentos, pero se llenaba a mano desde

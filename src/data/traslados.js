@@ -156,6 +156,16 @@ export async function fetchDondeHay(erpProductId, erpSucursalDestino) {
     return { donde: data ?? [], error };
 }
 
+/** Si el producto lleva receta. Es lo único que hoy se valida al pedirlo. */
+export async function fetchEsAntibiotico(erpProductId) {
+    const { data, error } = await supabase
+        .from('products')
+        .select('es_antibiotico')
+        .eq('id', Number(erpProductId))
+        .maybeSingle();
+    return { esAntibiotico: Boolean(data?.es_antibiotico), error };
+}
+
 /**
  * Rechaza el traslado con su motivo, y con la sugerencia adentro.
  *

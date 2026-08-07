@@ -53,6 +53,30 @@ async function getCachedCookie(cache: Map<string, string>, username: string, pas
   return cookie;
 }
 
+const REIMPRIMIR = "https://clientesdte3.oss.com.sv/farma_salud/reimprimir_factura.php";
+
+/**
+ * A qué cliente pertenece una factura, según el ERP.
+ *
+ * El JSON de ventas manda el nombre del cliente pero no su id, así que el
+ * portal ligaba por nombre — y el nombre es como se escribió en la factura.
+ * Esta pantalla sí lo trae, en el `<option selected>` del combo de clientes.
+ * Mismo parseo que `aplicar-solicitud-facturacion`.
+ *
+ * Devuelve null si no se puede leer, y el llamador degrada a ligar por nombre.
+ * Timeout corto a propósito: esto corre dentro del sync de cada minuto y no
+ * puede colgarlo — más vale un duplicado que un sync que no termina.
+ */
+async function resolverIdCliente(cookie: string, erpInvoiceId: string): Promise<string | null> {
+  const res = await fetch(`${REIMPRIMIR}?id_factura=${encodeURIComponent(erpInvoiceId)}`, {
+    headers: { Cookie: cookie, 'User-Agent': 'Mozilla/5.0' },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) return null;
+  const html = await res.text();
+  return html.match(/id="id_cliente"[\s\S]*?<option value='(\d+)'\s+selected>/)?.[1] ?? null;
+}
+
 function parseTipoDoc(correlativo: string): string {
   if (!correlativo) return 'UNKNOWN';
   const parts = correlativo.split('_');
@@ -137,7 +161,10 @@ async function syncBranch(
   const changelogs: any[] = [];
   const newErpIds     = new Set<string>();
   const productMap    = new Map<number, any>();
-  const customerNames = new Set<string>();
+  // nombre del cliente → una factura suya de este lote. La factura es lo que
+  // permite preguntarle al ERP a QUÉ cliente pertenece, cuando el nombre no
+  // alcanza para reconocerlo. Ver `resolverIdCliente`.
+  const customerNames = new Map<string, string>();
 
   for (const venta of ventas) {
     if (!venta.id_factura) continue;
@@ -204,7 +231,7 @@ async function syncBranch(
 
     // Solo agregar a clientes si la factura es nueva o aún no tiene customer_id
     if (clienteName && (!existing || !existing.customer_id)) {
-      customerNames.add(clienteName);
+      if (!customerNames.has(clienteName)) customerNames.set(clienteName, erpId_s);
     }
 
     // Solo agregar al upsert si hay algo que escribir
@@ -256,10 +283,63 @@ async function syncBranch(
 
   const customerIdMap = new Map<string, number>();
   if (customerNames.size > 0) {
+    const nombres = [...customerNames.keys()];
+
+    // ── Los que el portal NO reconoce por nombre ────────────────────────
+    // Ligar por nombre es lo que partía a un cliente en dos fichas: el nombre
+    // viene de cómo se escribió la factura y cualquier letra distinta abría
+    // ficha nueva (68 clientes partidos, 1,127 facturas del lado equivocado).
+    // Normalizar el texto no lo arregla — medido contra esos 68, el 96% son
+    // nombres genuinamente distintos (VAQUEZ/VASQUEZ, ALVARNEGA/ALVARENGA).
+    //
+    // Así que para los desconocidos se le pregunta al ERP a qué cliente
+    // pertenece SU factura, y se liga por ese número. Son ~22 por día sobre
+    // ~1,000 facturas: el resto no paga ninguna petición extra.
+    const existentes = await selectAllByIn<any>(
+      supabase, 'customers', 'name', 'name', nombres,
+    );
+    const conocidos = new Set((existentes ?? []).map((c: any) => c.name));
+    const filas = nombres.map(n => ({ nombre: n, erp_id: null as string | null }));
+
+    // Tope duro de lecturas al ERP por corrida.
+    //
+    // En el sync de cada minuto los desconocidos son un goteo (~22 al día
+    // repartidos), pero un backfill de un mes puede traer cientos de golpe, y
+    // cada uno es una petición secuencial dentro de una función que vive 150 s
+    // y vuelve a arrancar al minuto siguiente. Sin tope, un backfill colgaría
+    // el sync y las corridas se apilarían.
+    //
+    // Lo que pasa el tope NO se pierde: degrada a ligar por nombre —el
+    // comportamiento de siempre— y la limpieza de duplicados lo levanta después.
+    const MAX_LECTURAS_ERP = 25;
+    let leidas = 0, omitidas = 0;
+
+    for (const fila of filas) {
+      if (conocidos.has(fila.nombre)) continue;
+      const facturaEjemplo = customerNames.get(fila.nombre);
+      if (!facturaEjemplo) continue;
+      if (leidas >= MAX_LECTURAS_ERP) { omitidas++; continue; }
+      leidas++;
+      // Degradación deliberada: si el ERP no contesta, `erp_id` queda null y el
+      // RPC hace exactamente lo de antes (crear por nombre). El peor caso es el
+      // comportamiento actual — nunca una factura sin cliente.
+      try {
+        fila.erp_id = await resolverIdCliente(cookie, facturaEjemplo);
+      } catch (e) {
+        console.error(`resolverIdCliente(${facturaEjemplo}):`,
+                      e instanceof Error ? e.message : String(e));
+      }
+    }
+    // Un tope que no se anuncia se lee como "se resolvieron todos".
+    if (omitidas > 0)
+      console.warn(`clientes desconocidos sin resolver por tope: ${omitidas} ` +
+                   `(se ligan por nombre; los levanta la limpieza de duplicados)`);
+
     // Sin el mapa, ninguna factura del lote queda ligada a su cliente y el
     // sync termina "bien": el hueco sólo se ve meses después.
-    const { data: customerData, error: customerErr } = await supabase.rpc('upsert_customers', { names: [...customerNames] });
-    if (customerErr) throw new Error(`upsert_customers: ${customerErr.message}`);
+    const { data: customerData, error: customerErr } =
+      await supabase.rpc('upsert_customers_v2', { p_rows: filas });
+    if (customerErr) throw new Error(`upsert_customers_v2: ${customerErr.message}`);
     for (const c of (customerData ?? [])) customerIdMap.set(c.customer_name, c.customer_id);
   }
   for (const inv of invoicesToUpsert) {

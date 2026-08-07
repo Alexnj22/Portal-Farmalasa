@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.466.0 — El registro de ventas liga al cliente por su número, no por cómo se escribió el nombre
+
+La versión anterior unió 68 clientes que estaban partidos en dos fichas. Esta
+corta el motivo por el que se partían.
+
+Al registrar una venta, el portal buscaba al cliente **por el nombre que traía
+la factura**. Si no lo encontraba tal cual, abría ficha nueva — y el nombre lo
+escribe una persona, así que una letra distinta bastaba. Así nacían unos 22
+clientes repetidos por día.
+
+Arreglarlo comparando mejor el texto no servía: probado contra los 68 casos
+reales, ignorar acentos no evitaba **ninguno**, y quitar espacios y puntuación
+evitaba **3**. El resto son nombres genuinamente distintos, y cualquier regla
+que los uniera terminaría uniendo también a personas que no lo son.
+
+**Ahora, cuando el nombre no se reconoce, el portal le pregunta al sistema de
+origen a qué cliente pertenece esa factura** y liga por ese número. Si el
+cliente ya existe, no crea nada; si es nuevo, lo crea ya vinculado. El número
+no cambia aunque el nombre esté mal escrito.
+
+Esa consulta extra ocurre solo con los nombres desconocidos —unos 22 al día
+sobre más de mil facturas—, tiene un tope por corrida para que una carga
+grande no atrase el registro, y si el sistema de origen no responde el portal
+hace **exactamente lo de antes**. El peor caso posible es quedar como
+estábamos, nunca una venta sin registrar.
+
 ## v2.465.1 — El encabezado que mentía con alcance de todas las sucursales
 
 Visto durante la prueba de punta a punta y corregido ahora: quien ve todas las

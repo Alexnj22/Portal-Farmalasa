@@ -23,6 +23,27 @@ export const MEDIR = () => {
         }
         return true;
     };
+    // ¿Se puede LLEGAR a tocarlo? Distinto de `visible`, y por un caso concreto:
+    // el sidebar del teléfono no se esconde con ninguna de las tres propiedades
+    // que mira `visible` —se esconde con `transform: translateX(-100%)`—, así que
+    // su botón de colapsar entraba como visible en LAS 37 RUTAS, una vez por
+    // vista. Eran 37 de los 77 `sinAcuse`: la mitad del número que se leía como
+    // deuda no existía. Quinta vez que este proyecto mide la referencia en vez
+    // del cuerpo, y ya estaba anotado en v2.517.0 como «deuda del medidor tanto
+    // como del botón».
+    //
+    // La regla es FUERA DE LADO, y no «fuera del viewport», a propósito: un
+    // control por debajo del pliegue también está fuera y **sí** se alcanza
+    // scrolleando — descartarlo haría subcontar toda la mitad inferior de cada
+    // vista. Lo que no se alcanza es lo que está corrido horizontalmente, porque
+    // `desbordePagina` mide 0 en las 37 rutas: no hay scroll lateral con que ir
+    // a buscarlo.
+    //
+    // NO se aplica a `desbordan`, que mide justamente lo que se sale de cuadro.
+    const alcanzable = (el) => {
+        const r = el.getBoundingClientRect();
+        return r.right > 0 && r.left < vw;
+    };
     const sel = (el) => {
         const id = el.id ? `#${el.id}` : '';
         const cls = (el.className?.toString?.() || '').trim().split(/\s+/).slice(0, 3).join('.');
@@ -142,7 +163,7 @@ export const MEDIR = () => {
     const imposibles = [];
     document.querySelectorAll('button, a[href], [role="button"], input[type="checkbox"], input[type="radio"], select')
         .forEach(el => {
-            if (!visible(el)) return;
+            if (!visible(el) || !alcanzable(el)) return;
             // Un elemento DECORATIVO no es un blanco táctil. El chevron de las
             // filas de asistencia es `aria-hidden` + `tabIndex={-1}` a
             // propósito: el control real es la fila entera, y el chevron sólo
@@ -199,7 +220,7 @@ export const MEDIR = () => {
     // (misma propiedad que usa la regla de `group-hover` de index.css).
     const sinAcuse = [];
     document.querySelectorAll('button, a[href], [role="button"]').forEach(el => {
-        if (!visible(el)) return;
+        if (!visible(el) || !alcanzable(el)) return;
         if (el.getAttribute('aria-hidden') === 'true') return;
         const clases = el.className?.toString?.() || '';
         if (/active:/.test(clases)) return;

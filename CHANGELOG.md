@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.521.3 — El medidor deja de contar lo que está corrido fuera de cuadro
+
+**37 de los 77 controles mudos no existían.** El sidebar del teléfono no se
+esconde con ninguna de las tres propiedades que mira `visible()` —se esconde con
+`transform: translateX(-100%)`—, así que su botón de colapsar entraba como
+visible en **las 37 rutas**, una vez por vista. Era la mitad exacta del número
+que se leía como deuda. Ya estaba anotado en v2.517.0 como «deuda del medidor
+tanto como del botón», y es la quinta vez que este proyecto mide la referencia
+en vez del cuerpo.
+
+**La regla es «fuera de LADO», no «fuera del viewport», y la diferencia es la
+mitad del trabajo.** Un control por debajo del pliegue también está fuera de
+cuadro y **sí** se alcanza scrolleando: descartarlo haría subcontar la mitad
+inferior de cada vista, y el informe saldría más verde por medir menos. Lo que
+no se alcanza es lo corrido horizontalmente, porque `desbordePagina` mide 0 en
+las 37 rutas — no hay scroll lateral con que ir a buscarlo.
+
+**Y el instrumento ahora se prueba a sí mismo** (`instrumento-movil.spec.js`).
+Cuatro controles sintéticos, sin app ni sesión: dos corridos de lado y dos bajo
+el pliegue. Se verificó **en rojo por los dos lados** antes de darlo por bueno —
+con el comportamiento viejo falla en los de lado, y con la regla escrita de más
+(«dentro del viewport») falla en los de abajo. Un instrumento que no puede
+fallar no prueba nada; el 2026-08-07 una prueba pasó dos veces con cero
+intercepciones porque el service worker se comía la petición.
+
+Lleva su prueba de vida: si el medidor no ve NADA, las cuatro comprobaciones
+pasarían por vacío. Cero hallazgos y cero datos se ven igual.
+
+Primera fase de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`. El número contra el que
+trabaja el resto del plan pasa a ser **40**, no 77.
+
 ## v2.521.2 — recharts sale del Inicio: 204 a 103 kB, y el gate:bundle vuelve a verde
 
 `gate:bundle` estaba rojo en `main` con dos vistas por encima de su techo, y las

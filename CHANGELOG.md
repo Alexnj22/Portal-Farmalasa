@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.516.1 — Solicitar desde el detalle del producto
+
+**El botón faltaba justo en la pantalla a la que se llega para pedir.** En
+Consulta de Inventario, abrir un producto muestra las siete salas con sus lotes
+—que es lo que uno mira antes de decidir a quién pedirle— y ahí no había forma
+de pedirlo: había que volver atrás a la lista de resultados. Reportado por el
+usuario. El botón ahora vive en el encabezado de cada sala del detalle, con las
+mismas dos reglas de siempre: no sobre la propia sala, y no sobre el renglón de
+vencidos, que es un aviso de que existe y no una sala de la que salga algo.
+
+Salió a la luz un segundo hueco al arreglarlo: el detalle vuelve por su propio
+`return`, así que el modal de traslado —montado solo en la rama de la búsqueda—
+no llegaba hasta ahí. Sin montarlo también en esa rama, el botón habría puesto
+el producto en el estado sin abrir nada. Y la definición del botón es una sola
+para las dos pantallas, para que la próxima corrección no llegue a una sola.
+
+**«Pedir» pasa a ser «Solicitar»** en todo el circuito —el botón de la fila, el
+de la lista de faltantes, el título del formulario y su botón de enviar—, que es
+como ya lo decía el rótulo de la lista («Sin existencia, puedes solicitar en
+estas sucursales») y como lo nombra el resto del portal.
+
 ## v2.516.0 — Caja negra para el fallo del iPhone, y el esqueleto de tabla en fichas
 
 **La hipótesis del desenfoque estaba muerta desde el principio, y ahora se sabe

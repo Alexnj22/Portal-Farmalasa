@@ -73,7 +73,7 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
         return () => { cancelado = true; };
     }, [producto?.erp_product_id, producto?.donde, miErp]);
 
-    // Queda elegida la sala desde la que se apretó «Pedir» —la fila ya estaba
+    // Queda elegida la sala desde la que se apretó «Solicitar» —la fila ya estaba
     // bajo su encabezado— y, si no viene ninguna, la de más existencia, que es
     // la que puede ceder sin quedarse corta.
     useEffect(() => {
@@ -258,10 +258,10 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
             const msg = String(e?.message ?? '');
             setError(
                 msg.includes('approval_requests_un_traslado_pendiente')
-                    ? `Ya hay un pedido de este producto a ${sala?.sala ?? 'esa sala'} esperando respuesta. `
-                      + 'Si necesitas más, súbele la cantidad a ese pedido o pídeselo a otra sala.'
+                    ? `Ya hay una solicitud de este producto a ${sala?.sala ?? 'esa sala'} esperando respuesta. `
+                      + 'Si necesitas más, súbele la cantidad a esa solicitud o pídeselo a otra sala.'
                 : msg.includes('row-level security')
-                    ? 'No tienes permiso para pedir traslados.'
+                    ? 'No tienes permiso para solicitar traslados.'
                 : (e?.message ?? 'No se pudo enviar la solicitud.'),
             );
             setEnviando(false);
@@ -269,10 +269,10 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
     };
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pedir a otra sala"
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Solicitar a otra sala"
             className="max-h-[85dvh]">
             {/* Las tres ranuras del canónico. Antes era un `<div>` suelto con el
-                título a mano, sin botón de cerrar y con «Pedir» al final del
+                título a mano, sin botón de cerrar y con la acción al final del
                 cuerpo que scrollea. */}
             <LiquidModal.Header>
                 <div className="flex items-start gap-2.5">
@@ -283,7 +283,7 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                         <p className="text-body font-black text-content leading-tight">
                             {producto?.descripcion}
                         </p>
-                        <p className="text-label text-content-3 mt-0.5">Pedir a otra sala</p>
+                        <p className="text-label text-content-3 mt-0.5">Solicitar a otra sala</p>
                     </div>
                     <Button variant="ghost" size="xs" icon={X} iconOnly
                         onClick={onClose} aria-label="Cerrar" />
@@ -448,7 +448,7 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                     <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
                         {enviando && <Loader2 size={14} className="animate-spin" />}
-                        {enviando ? 'Enviando...' : 'Pedir'}
+                        {enviando ? 'Enviando...' : 'Solicitar'}
                     </Button>
                 </LiquidModal.Footer>
             )}

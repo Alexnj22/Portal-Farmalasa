@@ -325,17 +325,6 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
 
 /* ─── Branch sections (shared between results and alternatives) ────────────── */
 /**
- * El botón de pedir, en la fila de una sala que SÍ tiene.
- *
- * Existe porque la búsqueda es el momento en que uno se entera: un cliente
- * pregunta, se busca, y ahí se ve que otra sala lo tiene. Hasta acá no había
- * forma de pedirlo desde ahí —había que cerrar, abrir otro widget y esperar que
- * el producto apareciera en la lista de faltantes—. Lo reportó el usuario
- * probándolo el 2026-08-06.
- *
- * No se ofrece sobre la propia sala: pedirse a uno mismo no es un traslado.
- */
-/**
  * Los lotes de un producto en una sala, ya compactados.
  *
  * Una sola definición para la lista y para el detalle: escrita dos veces, la
@@ -398,6 +387,24 @@ function LotesDeProducto({ lots, danger = false }) {
   );
 }
 
+/**
+ * El botón de solicitar, en la fila de una sala que SÍ tiene.
+ *
+ * Existe porque la búsqueda es el momento en que uno se entera: un cliente
+ * pregunta, se busca, y ahí se ve que otra sala lo tiene. Hasta acá no había
+ * forma de pedirlo desde ahí —había que cerrar, abrir otro widget y esperar que
+ * el producto apareciera en la lista de faltantes—. Lo reportó el usuario
+ * probándolo el 2026-08-06.
+ *
+ * No se ofrece sobre la propia sala: pedirse a uno mismo no es un traslado.
+ *
+ * Lo usan las DOS pantallas del widget —la lista de resultados y el detalle de
+ * un producto—. El 2026-08-07 el usuario lo reportó faltando en el detalle: es
+ * la pantalla a la que se llega justamente para ver dónde hay, así que era la
+ * que más lo necesitaba, y quedaba salir para atrás a la lista para poder
+ * pedirlo. La única definición del botón vive acá para que no se vuelva a
+ * agregar en una sola de las dos.
+ */
 function PedirEnFila({ prod, branchName, onPedir }) {
   if (!onPedir || onPedir.miSala === branchName) return null;
   const id  = prod?.lots?.[0]?.erp_product_id;
@@ -410,7 +417,7 @@ function PedirEnFila({ prod, branchName, onPedir }) {
       size="sm"
       variant="primary"
       className="shrink-0"
-      aria-label={`Pedir ${prod.descripcion} a ${branchName}`}
+      aria-label={`Solicitar ${prod.descripcion} a ${branchName}`}
       onClick={(e) => {
         e.stopPropagation();
         // La sala VIAJA con el pedido. La fila ya está bajo el encabezado de su
@@ -424,7 +431,7 @@ function PedirEnFila({ prod, branchName, onPedir }) {
         });
       }}
     >
-      Pedir
+      Solicitar
     </Button>
   );
 }
@@ -823,6 +830,11 @@ function PanelInventario({ query = '', onQueryChange }) {
                       <span className="text-micro font-semibold text-content-3 ml-0.5">uds</span>
                     </div>
                     <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-divider'}`} />
+                    {/* Sobre lo vencido no hay nada que solicitar: ese renglón
+                        es un aviso de que existe, no una sala de la que salga. */}
+                    {!branch.isVencidos && (
+                      <PedirEnFila prod={prod} branchName={branch.name} onPedir={accionPedir} />
+                    )}
                   </div>
                   <div
                     className="rounded-xl overflow-hidden shadow-sm"
@@ -846,6 +858,19 @@ function PanelInventario({ query = '', onQueryChange }) {
         </div>
 
         <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} zClass="z-toast" />
+
+        {/* El detalle sale por su propio `return`, así que el modal de la
+            pantalla de búsqueda no llega hasta acá: sin montarlo también en
+            esta rama, «Solicitar» pondría el producto en el estado y no se
+            abriría nada. */}
+        {pedido && (
+          <PedirTrasladoModal
+            producto={pedido}
+            onClose={() => setPedido(null)}
+            onListo={cargarFaltantes}
+          />
+        )}
+
         <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
       </div>
     );
@@ -905,10 +930,10 @@ function PanelInventario({ query = '', onQueryChange }) {
                   size="sm"
                   variant="primary"
                   onClick={() => setPedido(f)}
-                  aria-label={`Pedir ${f.descripcion} a otra sala`}
+                  aria-label={`Solicitar ${f.descripcion} a otra sala`}
                   className="shrink-0"
                 >
-                  Pedir
+                  Solicitar
                 </Button>
               </div>
             ))}
@@ -1120,7 +1145,7 @@ export default function WidgetInventorySearch() {
       vacio="Buscar producto"
       tono="warning"
       maxWidth="max-w-3xl"
-      descripcion="En qué sala hay un producto, y cómo pedirlo"
+      descripcion="En qué sala hay un producto, y cómo solicitarlo"
     >
       {() => (
         <>

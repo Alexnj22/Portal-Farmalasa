@@ -2522,7 +2522,20 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                                         return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
                                                                     })}
                                                                 </div>
-                                                                <div className="min-w-0 flex-1">
+                                                                {/* `basis-full` bajo `lg`: la fila ya envolvía, pero este
+                                                                    bloque lleva `flex-1 min-w-0`, o sea que en el resto de
+                                                                    línea que le dejan el chip y las etiquetas se encoge
+                                                                    hasta menos de lo que mide su contenido — y el
+                                                                    correlativo es `font-mono` sin espacios: no envuelve ni
+                                                                    se adapta, así que lo cortaba el `overflow-hidden` de
+                                                                    la tarjeta. Medido: **13 recortados, 43px de sobra
+                                                                    cada uno**, y fue el único hallazgo real que encontró
+                                                                    el recorrido de pestañas.
+                                                                    No se trunca a propósito: un correlativo partido no
+                                                                    identifica ninguna factura (§25.7 — el VALOR nunca se
+                                                                    corta, se le da sitio). En una línea propia entran los
+                                                                    ~118px que necesita de sobra. */}
+                                                                <div className="min-w-0 basis-full lg:basis-auto flex-1">
                                                                     <div className="flex items-center gap-2 flex-wrap">
                                                                         <span className={`font-mono text-body-sm font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo || '—'}</span>
                                                                         {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}

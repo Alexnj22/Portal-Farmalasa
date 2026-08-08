@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.523.1 — El correlativo recortado de Observaciones: 13 a 0
+
+El único hallazgo real que había encontrado el recorrido de pestañas (v2.513.0) y
+que llevaba desde el 2026-08-07 sin corregir. **13 elementos recortados, 43px de
+sobra cada uno**, todos la misma forma: el correlativo de la factura
+(`0000000037_CCF`).
+
+La fila **ya** envolvía. Lo que fallaba es que el bloque del correlativo lleva
+`flex-1 min-w-0`, así que en el resto de línea que le dejan el chip del documento
+y las etiquetas de observación se encoge **por debajo de lo que mide su
+contenido** — y un correlativo es `font-mono` sin espacios: no envuelve, no se
+adapta, y lo cortaba el `overflow-hidden` de la tarjeta. `min-w-0` es justo lo
+que le da permiso para achicarse de más.
+
+`basis-full` bajo `lg` y el bloque se lleva la línea entera, donde los ~118px que
+necesita entran de sobra. Escritorio sin cambios (`lg:basis-auto`).
+
+**No se trunca a propósito**, y §25.7 ya lo decía: el valor no se corta, se le da
+sitio. Un correlativo partido no identifica ninguna factura — es la diferencia
+entre acortar una etiqueta y romper un dato.
+
+Verificado con las **siete** pantallas de Facturación —la vista, sus cuatro
+pestañas y sus dos diálogos— en cero.
+
+F3 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.523.0 — El acuse del toque llega a cero en las 37 vistas
 
 **77 → 40 → 0**, y los dos pasos son distintos: el primero fue arreglar el

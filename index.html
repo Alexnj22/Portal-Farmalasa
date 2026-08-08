@@ -52,12 +52,32 @@
             ? c.replace('initial-scale=1.0', 'initial-scale=1')
             : c.replace('initial-scale=1', 'initial-scale=1.0'));
         };
+        // Re-parsear el meta no alcanzó por sí solo (v2.524.7). Lo que sí
+        // arregla la pantalla es un LAYOUT COMPLETO de nuevo, y eso lo dijo el
+        // propio usuario al medir el defecto: «si recargo o abro otra vista sí
+        // se pone bien, sólo es la primera vez». O sea que el ancho correcto ya
+        // está disponible — lo que falta es que el documento vuelva a
+        // distribuirse con él, y no hay que esperar a que alguien navegue.
+        //
+        // El interruptor de `display` en el elemento raíz es lo que obliga a
+        // WebKit a tirar el layout y rehacerlo entero, que es justo lo que pasa
+        // al recargar. Leer `offsetHeight` en el medio no es decorativo: fuerza
+        // el reflow sincrónico entre las dos escrituras, sin él el motor
+        // colapsa ambas en una y no ocurre nada.
+        var reLayout = function () {
+          var raiz = document.documentElement;
+          var previo = raiz.style.display;
+          raiz.style.display = 'none';
+          void raiz.offsetHeight;          // ← fuerza el reflow, no se puede quitar
+          raiz.style.display = previo || '';
+        };
         // Dos pasadas: iOS reporta las medidas nuevas DESPUÉS de su animación
         // de giro, así que una sola llamada inmediata puede volver a fijar el
         // tamaño viejo — que es el defecto que se está arreglando.
         window.addEventListener('orientationchange', function () {
           reMedir();
-          setTimeout(reMedir, 350);
+          reLayout();
+          setTimeout(function () { reMedir(); reLayout(); }, 350);
         });
       })();
     </script>

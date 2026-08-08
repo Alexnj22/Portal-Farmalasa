@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.8 — Rotar: forzar el layout completo, que es lo que hacía la recarga
+
+**El dato que lo resolvió lo aportó el usuario, no una medición:** *«si recargo o
+abro otra vista sí se pone bien, sólo es la primera vez»*. Eso descarta que el
+ancho correcto no exista —existe, y el navegador lo tiene— y deja una sola causa
+posible: **el documento no vuelve a distribuirse con él**. Re-parsear el meta
+viewport (v2.524.7) no bastaba porque arregla la medida, no el reparto.
+
+Ahora `orientationchange` hace además lo mismo que una recarga: apaga y enciende
+el `display` del elemento raíz, con una lectura de `offsetHeight` en el medio.
+Esa lectura **no es decorativa** — fuerza el reflow sincrónico entre las dos
+escrituras; sin ella el motor colapsa ambas en una sola y no ocurre nada.
+
+**Y no se bloqueó la rotación, que era la otra salida sobre la mesa.** Tres
+motivos, y el primero decide: `screen.orientation.lock()` **no existe en Safari
+de iOS**, y el campo `orientation` del manifest lo ignora incluso en modo
+«agregado a inicio» — sólo funcionaría en un build nativo con Capacitor, o sea
+que no haría nada en el teléfono donde se ve el defecto. Además el portal en
+horizontal ya se ve bien una vez que reparte bien, y quien usa el teléfono en un
+soporte depende de esa orientación. Tapar con una limitación un defecto que tiene
+arreglo habría costado accesibilidad a cambio de nada.
+
+Verificado hasta donde llega la máquina: el listener y el reflow **están en el
+build** (`dist/index.html`) — la lección de v2.524.4, donde una clase que no se
+generó hizo creer que el diagnóstico era malo. La rotación real no se reproduce
+en Playwright, así que el veredicto sigue siendo del teléfono.
+
 ## v2.524.7 — Rotar: obligar a WebKit a re-medir el viewport
 
 **Las capturas del usuario cambiaron el diagnóstico.** v2.524.6 trató el reporte

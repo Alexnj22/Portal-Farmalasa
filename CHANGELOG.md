@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.514.1 — El gate de redacción sólo veía el voseo en mayúscula
+
+Salió escribiendo los avisos de v2.514.0: `gate:design` marcó **`Abrí`** y dejó
+pasar `acomodá`, `encendé`, `publicá` y `elegí` en las frases de al lado. Dos
+huecos, y los dos de la lista y no de la regla:
+
+1. **Faltaban verbos.** `VOSEO` es un diccionario cerrado —a propósito, para no
+   heurizar sobre acentos— y nadie lo amplía salvo cuando algo se le escapa.
+2. **Era sensible a mayúsculas.** `Elegí` estaba en la lista, así que a
+   principio de oración lo cazaba; a media oración, `elegí` era invisible. Ese
+   era el hueco grande.
+
+Con las dos mitades tapadas aparecieron **18 hallazgos que llevaban meses ahí**,
+en 11 archivos: los mensajes de error del conteo, los `hint` de subida de
+archivo (`Soltalo acá o hacé clic`), el banner del candado de módulo, el aviso
+de caja dañada de Recepción, el permiso del resumen fiscal. Todos corregidos a
+tuteo — y la oración entera, no sólo la palabra marcada: `soltalo acá o hacé
+clic` a medio convertir se lee peor que cualquiera de las dos versiones enteras.
+
+Las minúsculas van escritas una por una en vez de poner la bandera `i`, y por un
+motivo concreto: con `i`, **`Pedí`** —que también es «yo pedí», pretérito
+perfectamente correcto— marcaría como voseo cualquier frase en pasado. Es justo
+el falso positivo que vuelve inservible un gate de redacción, así que ese verbo
+queda fuera de la mitad en minúscula.
+
+Vale la pena anotar la forma del error, porque se repite: **un gate que pasa en
+verde no prueba que la regla se cumpla, prueba que su detector no encontró
+nada.** Acá el detector miraba media palabra.
+
 ## v2.514.0 — El acomodo de las pestañas temáticas lo publica el SU, y se adapta a cada cargo
 
 Decisión del usuario: **Comercial, RRHH y Operación dejan de acomodarse por

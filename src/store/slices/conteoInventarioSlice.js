@@ -13,7 +13,7 @@ const ERRORES = {
     // `SIN_PERMISO_RECUENTO` salía como el genérico "no tenés permiso" y se
     // perdía el motivo (que el recuento lo firma un supervisor).
     SIN_PERMISO_RECUENTO: 'El recuento lo hace un supervisor: hace falta permiso de aprobación en este módulo.',
-    SIN_PERMISO: 'No tenés permiso para esta acción.',
+    SIN_PERMISO: 'No tienes permiso para esta acción.',
     // Dos códigos y no uno: el motivo del rechazo es distinto y es lo único
     // que le dice a quien lo intenta si vale la pena pedir el permiso.
     ELIMINAR_REQUIERE_PERMISO_FINALIZADO: 'Este conteo ya está finalizado: es evidencia firmada. Borrarlo necesita el permiso de eliminar conteos.',
@@ -21,7 +21,7 @@ const ERRORES = {
     FUERA_DE_ALCANCE: 'Ese conteo pertenece a otra sucursal.',
     ALCANCE_INVALIDO: 'El alcance del conteo no es válido.',
     SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no tiene inventario asociado: no se le puede tomar un conteo.',
-    CONTEO_ABIERTO_EN_SUCURSAL: 'Ya hay un conteo abierto en esta sucursal. Finalizalo antes de empezar otro.',
+    CONTEO_ABIERTO_EN_SUCURSAL: 'Ya hay un conteo abierto en esta sucursal. Finalízalo antes de empezar otro.',
     MUESTRA_CICLICA_VACIA: 'No hay productos con existencia para sortear la muestra de esta sucursal.',
     MODO_INVALIDO: 'El detalle del conteo no es válido.',
     FUENTE_SISTEMA_INVALIDA: 'El tipo de conteo no es válido.',
@@ -32,7 +32,7 @@ const ERRORES = {
     CONTEO_NO_ENCONTRADO_O_YA_FINALIZADO: 'El conteo ya fue finalizado.',
     CONTEO_NO_ENCONTRADO_O_NO_FINALIZADO: 'El conteo no está finalizado todavía.',
     CONTEO_NO_ENCONTRADO: 'No se encontró el conteo.',
-    APROBADOR_ES_QUIEN_FINALIZO: 'No podés aprobar un conteo que vos mismo finalizaste: debe firmarlo otra persona.',
+    APROBADOR_ES_QUIEN_FINALIZO: 'No puedes aprobar un conteo que finalizaste tú mismo: debe firmarlo otra persona.',
     ITEM_NO_ENCONTRADO: 'No se encontró el renglón.',
     ESTADO_INVALIDO: 'Estado de renglón inválido.',
     PRESENTACION_Y_LOTE_REQUERIDOS: 'Elige presentación y lote antes de agregar.',
@@ -47,7 +47,7 @@ const ERRORES = {
     CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',
     AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado.',
     CONTEO_NO_ESTA_EN_REVISION: 'El recuento solo se hace entre finalizar y aprobar el conteo.',
-    RECUENTO_MISMO_CONTADOR: 'No podés recontar una línea que vos mismo contaste: el recuento lo hace otra persona.',
+    RECUENTO_MISMO_CONTADOR: 'No puedes recontar una línea que contaste tú mismo: el recuento lo hace otra persona.',
     CANTIDAD_INVALIDA: 'La cantidad del recuento debe ser un número entero de 0 o más.',
 };
 

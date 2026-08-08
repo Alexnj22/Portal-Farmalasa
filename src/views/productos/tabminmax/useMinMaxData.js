@@ -988,7 +988,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             ));
         }
         const toastMsg = (freshFloorMin > 0 || freshFloorMax > 0)
-            ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString()} · MAX ${freshFloorMax.toLocaleString()} — ingresá el total de bodega (sum + excedente).`
+            ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString()} · MAX ${freshFloorMax.toLocaleString()} — ingresa el total de bodega (sum + excedente).`
             : 'Sin MIN/MAX en salas. Ingresa el excedente que debe quedar en bodega.';
         useToastStore.getState().showToast('Bodega', toastMsg, 'info');
         setInlineDraftEdit({

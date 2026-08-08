@@ -103,7 +103,7 @@ export default function ResumenFiscalView() {
             setError(mensajeAmigable(err));
             setDatos(null);
         } else if (data?.error === 'FORBIDDEN') {
-            setError('No tenés permiso para ver el resumen fiscal.');
+            setError('No tienes permiso para ver el resumen fiscal.');
             setDatos(null);
         } else {
             setDatos(data);

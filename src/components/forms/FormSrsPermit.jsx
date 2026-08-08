@@ -31,7 +31,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 file={legalData.srsPermitFile}
                 url={legalData.srsPermitUrl}
                 onChange={f => updateLegalField('srsPermitFile', f)}
-                hint="PDF o imagen — soltalo acá o hacé clic"
+                hint="PDF o imagen — suéltalo aquí o haz clic"
             />
         </div>
     );

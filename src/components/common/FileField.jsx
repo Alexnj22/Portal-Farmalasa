@@ -186,8 +186,8 @@ const FileField = memo(({
     // los 10 MB: dos fuentes de verdad para el mismo número, y la que ve el
     // usuario era la equivocada.
     const ayuda = hint || (maxSizeMB
-        ? `Soltalo acá o hacé clic · máx ${maxSizeMB} MB`
-        : 'Soltalo acá o hacé clic');
+        ? `Suéltalo aquí o haz clic · máx ${maxSizeMB} MB`
+        : 'Suéltalo aquí o haz clic');
 
     return (
         <div className={`w-full ${className}`}

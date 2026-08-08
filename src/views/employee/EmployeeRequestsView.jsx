@@ -976,7 +976,7 @@ const EmployeeRequestsView = () => {
                             accept=".pdf,.jpg,.jpeg,.png"
                             file={disabilityFile}
                             onChange={setDisabilityFile}
-                            hint="PDF, JPG o PNG — también podés adjuntarlo después"
+                            hint="PDF, JPG o PNG — también puedes adjuntarlo después"
                         />
                     </div>
 

@@ -820,9 +820,26 @@ const VOSEO = ['Creá','Presioná','Usá','Buscá','Probá','Hacé','Revisá','E
   'Seleccioná','Verificá','Agregá','Escribí','Intentá','Volvé','Guardá','Pedí','Poné',
   'Mirá','Tené','Andá','Marcá','Borrá','Cerrá','Abrí','Mandá','Esperá','Fijate',
   // presente de indicativo en segunda persona (vos), no solo imperativo
-  'Tenés','Querés','Podés','Buscás','Archivés','Sabés','Vas a poder','Necesitás'];
+  'Tenés','Querés','Podés','Buscás','Archivés','Sabés','Vas a poder','Necesitás',
+  // ── 2026-08-07 ──────────────────────────────────────────────────────────
+  // Ampliada al escribir los avisos del canon del tablero: el gate marcó
+  // `Abrí` y dejó pasar `acomodá`, `encendé`, `publicá` y `elegí` en las
+  // frases de al lado. Dos huecos distintos, y los dos son de la lista, no de
+  // la regla: faltaban verbos, y `Elegí` sólo estaba en mayúscula, así que a
+  // media oración no lo veía nadie.
+  'Acomodá','Publicá','Encendé','Apagá','Cambiá','Arrastrá','Soltá','Movés','Acomodás'];
+
+// Las minúsculas van explícitas en vez de poner la bandera `i`: con `i`, `Pedí`
+// —que también es «yo pedí», pretérito perfectamente correcto— marcaría como
+// voseo cualquier frase en pasado. Ese es justo el falso positivo que vuelve
+// inservible un gate de redacción, así que se excluye de la mitad en minúscula
+// y el resto sí entra.
+const VOSEO_MINUSCULA = VOSEO
+  .filter(v => v !== 'Pedí' && v !== 'Vas a poder')
+  .map(v => v[0].toLowerCase() + v.slice(1));
 const LETRA = 'A-Za-zÁÉÍÓÚÑáéíóúñ';
-const VOSEO_RE = new RegExp(`(?<![${LETRA}])(${VOSEO.join('|')})(?![${LETRA}])`, 'g');
+const VOSEO_RE = new RegExp(
+  `(?<![${LETRA}])(${[...VOSEO, ...VOSEO_MINUSCULA].join('|')})(?![${LETRA}])`, 'g');
 
 // ── Categoría `tooltip-no-control` (F3, DESIGN.md §15.10) ───────────────────
 // `title=` sobre un elemento NO interactivo. Al medirlos (50 sitios) resultó que

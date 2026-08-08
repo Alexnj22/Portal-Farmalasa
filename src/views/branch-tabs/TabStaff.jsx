@@ -277,7 +277,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             </div>
 
             <Notice tone="warning">
-                Reescribe el histórico de ventas de esta sucursal desde enero de 2025. Ejecutalo solo si sabés que faltan datos.
+                Reescribe el histórico de ventas de esta sucursal desde enero de 2025. Ejecútalo solo si sabes que faltan datos.
             </Notice>
 
             {isSyncing && (

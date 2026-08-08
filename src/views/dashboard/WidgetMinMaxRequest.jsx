@@ -114,7 +114,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       onSuccess();
     } catch (e) {
       setErr(e.message?.includes('row-level security')
-        ? 'No tenés permiso para crear solicitudes (widget Ajuste de Min/Max).'
+        ? 'No tienes permiso para crear solicitudes (widget Ajuste de Min/Max).'
         : (e.message || 'Error al enviar'));
       setSubmitting(false);
     }

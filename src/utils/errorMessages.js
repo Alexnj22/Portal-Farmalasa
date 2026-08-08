@@ -109,7 +109,7 @@ const REGLAS = [
     [/META_NO_EXISTE/i, 'Esa meta ya no existe. Recarga la pantalla.'],
     [/ESTADO_INVALIDO/i, 'Esa meta cambió de estado mientras la tenías abierta. Recarga la pantalla.'],
     [/AUTORIZANTE_INVALIDO/i,
-        'Quien autoriza tiene que ser un gerente activo, y no podés registrarte a vos mismo.'],
+        'Quien autoriza tiene que ser un gerente activo, y no puedes registrarte a ti mismo.'],
     [/NOTA_REQUERIDA/i, 'Falta escribir el motivo: esta acción siempre lleva su porqué.'],
     [/SUCURSAL_INVALIDA/i, 'Esa sucursal no lleva meta de venta.'],
     [/MONTO_INVALIDO/i, 'El monto tiene que ser mayor que cero.'],

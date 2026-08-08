@@ -1033,7 +1033,7 @@ export default function RecepcionModal({
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-caption text-warning-text font-medium">
-                                            {isDanadaEspecial ? 'Esta caja especial llegó dañada — revisá el estado físico al contar' : 'Esta caja llegó dañada — revisá el estado físico al contar'}
+                                            {isDanadaEspecial ? 'Esta caja especial llegó dañada — revisa el estado físico al contar' : 'Esta caja llegó dañada — revisa el estado físico al contar'}
                                         </span>
                                     </div>
                                 )}
@@ -1041,7 +1041,7 @@ export default function RecepcionModal({
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-caption text-warning-text font-medium">
-                                            Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisá el estado físico
+                                            Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisa el estado físico
                                         </span>
                                     </div>
                                 )}

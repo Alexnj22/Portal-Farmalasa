@@ -1807,7 +1807,7 @@ export default function ConteoDetailView() {
                     <Notice variant="info" icon={ShieldCheck}>
                         Recuento a ciegas sobre los renglones <strong>con diferencia</strong>, en orden de anaquel (por laboratorio).
                         El campo arranca vacío y no ves el primer conteo ni el sistema hasta registrar el tuyo.
-                        No podés recontar una línea que vos mismo contaste.
+                        No puedes recontar una línea que contaste tú mismo.
                     </Notice>
                 )}
 
@@ -1988,7 +1988,7 @@ export default function ConteoDetailView() {
                 onClose={() => setPromptAprobarOpen(false)}
                 onConfirm={confirmAprobar}
                 title="Aprobar Conteo"
-                message="Queda cerrado y con firma auditable. No podés aprobar un conteo que vos mismo finalizaste."
+                message="Queda cerrado y con firma auditable. No puedes aprobar un conteo que finalizaste tú mismo."
                 placeholder="Nota de aprobación (opcional)"
                 confirmText="Aprobar"
                 cancelText="Cancelar"

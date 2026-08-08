@@ -97,7 +97,7 @@ const ModuleLockNotice = memo(({ moduleKey: moduleKeyProp }) => {
                         </>
                     ) : (
                         <>
-                            <strong className="font-black">Lo tenés vos en mantenimiento</strong>
+                            <strong className="font-black">Lo tienes tú en mantenimiento</strong>
                             {lock.reason ? ` — ${lock.reason}` : ''}
                             {lock.expires_at ? <span className="tabular-nums"> · vence {hora(lock.expires_at)}</span> : null}
                             . El resto del equipo está en solo lectura; los syncs automáticos siguen corriendo.

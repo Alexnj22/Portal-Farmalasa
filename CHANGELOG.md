@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.520.2 — desarmar el arrastre que rompió el despliegue, y borrar el duplicado en minúscula
+
+**El despliegue de v2.520.1 falló, y la culpa fue de un arrastre.** El commit se
+armó con `git add <rutas explícitas>` —bien— pero se cerró con `git commit` **sin
+pathspec**, y eso commitea *todo el índice*, no lo que uno acaba de agregar. En
+el índice estaba el traslado que otra sesión tenía preparado a medias:
+`TabInventario.jsx` y `TabSinVenta.jsx` movidos a `src/views/inventario/`, con su
+`ProductosView.jsx` corregido todavía sin preparar. Resultado: `main` importando
+`./productos/TabInventario`, que ya no existía, y Vercel en error.
+
+Y el aviso estaba escrito: el hook de pre-commit lista los archivos que quedan
+fuera del commit *«no los toques, no los revertás, no los commitees de
+arrastre»*, y los nombró a los dos. Leerlo y no actuar es peor que no tenerlo.
+**La regla completa es `git add` con rutas Y `git commit` con rutas** — la mitad
+no alcanza.
+
+Desarmado de la forma que no le quita trabajo a nadie: en la ruta vieja quedan
+dos **puentes de una línea** (`export { default } from '../inventario/…'`) en vez
+de los archivos completos. La primera versión sí los restauraba enteros y **el
+gate de diseño la rechazó**: duplicar el archivo duplicaba también sus dos
+hallazgos de `tabla-a-mano` y la categoría subía de 26 a 28. Tenía razón — un
+duplicado literal es deuda literal. El puente compila igual, no duplica nada, y
+no le toca el árbol a la sesión que está trabajando. `main` vuelve a compilar
+(verificado en un árbol aparte). Se borran cuando aterrice el refactor con sus
+imports corregidos.
+
+**Y se borra `src/components/common/expedienteMovil.js`.** Es un duplicado
+byte-por-byte de `usarExpediente.js` que quedó vivo desde v2.470.0 y que nadie
+importa. No era inofensivo: el sistema de archivos de macOS no distingue
+mayúsculas, así que ese `.js` **eclipsa a `ExpedienteMovil.jsx`** y cualquier
+clon o worktree nuevo en Mac falla con *«"default" is not exported by
+expedienteMovil.js»*. Vercel nunca lo vio porque Linux sí distingue — o sea que
+el repo llevaba días sin poder clonarse limpio en una Mac y ningún build lo
+delataba.
+
 ## v2.520.1 — lo que no está en pantalla deja de pintarse
 
 El reporte de jetsam del teléfono cerró un diagnóstico que costó cuatro

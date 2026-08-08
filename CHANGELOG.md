@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.9 — Revertir los dos intentos de arreglar la rotación
+
+Ninguno de los dos funcionó, y el segundo **empeoró lo que había**: el usuario
+reportó *«una actualización rara en los elementos, se ve feo»* — el interruptor
+de `display` en la raíz repinta el portal entero a la vista. Fuera los dos.
+
+```
+v2.524.7  alternar el `content` del meta viewport   → sin efecto
+v2.524.8  apagar/encender el `display` de la raíz   → sin efecto Y se veía
+```
+
+Queda el aviso en `index.html`, en el sitio exacto donde la próxima sesión iría a
+intentarlo: **qué se probó, que no sirvió, y que bloquear la orientación tampoco
+es salida** (`screen.orientation.lock()` no existe en Safari de iOS y el campo
+`orientation` del manifest lo ignora incluso en standalone). Un intento fallido
+que no se anota se vuelve a hacer.
+
+**Lo que sí queda en pie es el diagnóstico**, que salió del usuario: *«si recargo
+o abro otra vista sí se pone bien, sólo es la primera vez»*. El ancho correcto
+existe; lo que no vuelve a ocurrir es el reparto. Los dos remedios atacaron el
+documento, y lo que de verdad hace «abrir otra vista» es **remontar el árbol de
+React**. Ésa es la vía sin probar, y es F9 del plan.
+
+Se conserva v2.524.6 —coalescer el trabajo de `resize` con `requestAnimationFrame`—
+porque no depende de esta causa: hacer decenas de re-renders del shell y de
+reflows sincrónicos por cada giro estaba de más lo arregle esto o no.
+
+**Y la lección de método, que es la cara:** se mandaron tres versiones seguidas
+contra un defecto que **no se puede reproducir acá**, apoyándose en remedios
+conocidos para el síntoma. Dos no hicieron nada y uno hizo daño. Cuando el único
+instrumento es el teléfono del usuario, cada intento cuesta una ida y vuelta suya
+— conviene gastarlas en la hipótesis con más respaldo, no en la más rápida de
+escribir.
+
 ## v2.524.8 — Rotar: forzar el layout completo, que es lo que hacía la recarga
 
 **El dato que lo resolvió lo aportó el usuario, no una medición:** *«si recargo o

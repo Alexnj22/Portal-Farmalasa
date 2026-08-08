@@ -28,57 +28,32 @@
           if (vp) vp.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
         }
 
-        // ── Rotar: obligar a WebKit a RE-MEDIR el viewport ──────────────────
-        // Reportado con capturas el 2026-08-08: al girar el teléfono, la
-        // pantalla ya es horizontal pero el contenido se queda pintado al ancho
-        // vertical y la otra mitad sale en blanco. Medido sobre las capturas:
-        // el contenido ocupa 390 de los 844 disponibles — exactamente el ancho
-        // de la orientación anterior. No es lentitud: es el **layout viewport**
-        // de iOS, que no se recalcula al rotar.
+        // ⚠️ NO reintentar acá el arreglo de la rotación sin leer esto primero.
         //
-        // WebKit sí lo recalcula si el `content` del meta CAMBIA de texto. Se
-        // alternan dos cadenas **semánticamente idénticas** (`1.0` ↔ `1`), así
-        // que la política de zoom no se toca y no hay parpadeo: lo único que
-        // cambia es que el motor vuelve a parsear y vuelve a medir.
+        // Al girar el teléfono, la pantalla ya es horizontal pero el contenido
+        // se queda pintado al ancho vertical y la otra mitad sale en blanco
+        // (390 de los 844 disponibles, medido sobre las capturas del usuario el
+        // 2026-08-08). Se arregla solo en cuanto se recarga o se abre otra
+        // vista, así que el ancho correcto existe: lo que no vuelve a ocurrir
+        // es el reparto.
         //
-        // Va en `orientationchange` y no en `resize`: `resize` también dispara
-        // al abrir el teclado y al colapsarse la barra de Safari, y ahí
-        // re-parsear el viewport no arregla nada y podría cortar un scroll.
-        var reMedir = function () {
-          var m = document.querySelector('meta[name="viewport"]');
-          if (!m) return;
-          var c = m.getAttribute('content');
-          m.setAttribute('content', c.indexOf('initial-scale=1.0') >= 0
-            ? c.replace('initial-scale=1.0', 'initial-scale=1')
-            : c.replace('initial-scale=1', 'initial-scale=1.0'));
-        };
-        // Re-parsear el meta no alcanzó por sí solo (v2.524.7). Lo que sí
-        // arregla la pantalla es un LAYOUT COMPLETO de nuevo, y eso lo dijo el
-        // propio usuario al medir el defecto: «si recargo o abro otra vista sí
-        // se pone bien, sólo es la primera vez». O sea que el ancho correcto ya
-        // está disponible — lo que falta es que el documento vuelva a
-        // distribuirse con él, y no hay que esperar a que alguien navegue.
+        // Se probaron DOS remedios acá y **ninguno funcionó**:
+        //   · v2.524.7 — alternar el `content` del meta viewport en
+        //     `orientationchange` para forzar el re-parseo. Sin efecto.
+        //   · v2.524.8 — encender y apagar el `display` de la raíz con una
+        //     lectura de `offsetHeight` en medio, para forzar el reflow
+        //     completo. Tampoco lo arregló, y **encima se veía**: el usuario
+        //     reportó «una actualización rara en los elementos, se ve feo».
+        //     Revertido en v2.524.9.
         //
-        // El interruptor de `display` en el elemento raíz es lo que obliga a
-        // WebKit a tirar el layout y rehacerlo entero, que es justo lo que pasa
-        // al recargar. Leer `offsetHeight` en el medio no es decorativo: fuerza
-        // el reflow sincrónico entre las dos escrituras, sin él el motor
-        // colapsa ambas en una y no ocurre nada.
-        var reLayout = function () {
-          var raiz = document.documentElement;
-          var previo = raiz.style.display;
-          raiz.style.display = 'none';
-          void raiz.offsetHeight;          // ← fuerza el reflow, no se puede quitar
-          raiz.style.display = previo || '';
-        };
-        // Dos pasadas: iOS reporta las medidas nuevas DESPUÉS de su animación
-        // de giro, así que una sola llamada inmediata puede volver a fijar el
-        // tamaño viejo — que es el defecto que se está arreglando.
-        window.addEventListener('orientationchange', function () {
-          reMedir();
-          reLayout();
-          setTimeout(function () { reMedir(); reLayout(); }, 350);
-        });
+        // Tampoco sirve bloquear la orientación: `screen.orientation.lock()`
+        // no existe en Safari de iOS y el campo `orientation` del manifest lo
+        // ignora incluso en modo standalone. Sólo aplicaría a un build nativo.
+        //
+        // Lo que queda por probar es forzarlo desde React —remontar el árbol de
+        // la vista con una `key` que cambie con la orientación—, que es lo que
+        // de verdad hace «abrir otra vista». El detalle vive en
+        // `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`, F9.
       })();
     </script>
 

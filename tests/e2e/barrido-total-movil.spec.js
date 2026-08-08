@@ -97,7 +97,14 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // el techo de 15 lo cortaba a mitad de camino — el informe quedaba sin
         // escribir y la corrida entera se perdía. Es el precio de cubrir las
         // pestañas: son casi tantas pantallas como rutas.
-        test.setTimeout(2_700_000);
+        // `TIMEOUT_MS=180000` para correr RUTA POR RUTA. Con el techo de 45
+        // minutos, una ruta que se cuelga se lleva la corrida entera y no dice
+        // cuál fue: pasó el 2026-08-08 —34 minutos sin escribir una línea,
+        // colgado en `cotizaciones` al abrir su diálogo—, y un cuelgue no da
+        // error, así que sólo se ve midiendo el progreso desde afuera.
+        // Bajando el techo, la ruta culpable muere sola y el bucle sigue.
+        // `--timeout` del CLI no sirve acá: `test.setTimeout` le gana.
+        test.setTimeout(Number(process.env.TIMEOUT_MS) || 2_700_000);
         fs.mkdirSync(SALIDA, { recursive: true });
         fs.mkdirSync(SALIDA_INFORMES, { recursive: true });
         if (TEMA) {
@@ -284,8 +291,24 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // no se corre mientras se trabaja, y uno que no se corre no mide
             // nada. Sin la bandera queda el de siempre, para iterar; con ella,
             // el completo, para cerrar una vista o para CI.
+            // ⚠️ `{ timeout }` EXPLÍCITO, y no es cosmética: `actionTimeout` vale
+            // **0 = sin límite** por defecto en Playwright, y esta config no lo
+            // define. En una vista SIN pestañas —`cotizaciones`, `staff`,
+            // `monitor`, `audit`, `payroll`, `vacation-plan`, `resumen-fiscal`,
+            // `conteo-inventario`— el selector no aparece nunca, así que
+            // `getAttribute` esperaba para siempre: la promesa no rechaza, el
+            // `.catch()` no se dispara, y el barrido se queda colgado en silencio
+            // hasta que lo mata el techo del test.
+            //
+            // Medido el 2026-08-08: **8 de 14 rutas** se colgaban justo después
+            // de medir su pantalla base, y se leía como «murió por memoria de
+            // WebKit» —el mismo síntoma que ya tenía una causa conocida—, así que
+            // se le echaba la culpa al techo de recursos y se partía el barrido
+            // en tandas cada vez más chicas. Partirlo no podía arreglar esto.
+            // O sea que el recorrido de pestañas NUNCA cubrió las vistas que no
+            // tienen pestañas, y eso no se veía: un cuelgue no da error.
             const claves = PESTANAS
-                ? await pg.getAttribute('[data-pestanas]', 'data-pestanas').catch(() => null)
+                ? await pg.getAttribute('[data-pestanas]', 'data-pestanas', { timeout: 4000 }).catch(() => null)
                 : null;
             const lista = claves ? claves.split(',').filter(Boolean) : [];
             for (let i = 1; i < lista.length; i++) {

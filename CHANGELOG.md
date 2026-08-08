@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.1 — El barrido se colgaba en toda vista SIN pestañas
+
+`page.getAttribute()` sin `{ timeout }` explícito **espera para siempre**:
+`actionTimeout` vale 0 —sin límite— por defecto en Playwright, y esta config no
+lo define. En una vista que no tiene pestañas el selector no aparece nunca, así
+que la promesa **no rechaza**, el `.catch(() => null)` no se dispara, y el
+barrido se queda colgado en silencio hasta que lo mata el techo del test.
+
+**8 de 14 rutas** se colgaban justo después de medir su pantalla base:
+`cotizaciones`, `conteo-inventario`, `resumen-fiscal`, `staff`, `monitor`,
+`audit`, `payroll`, `vacation-plan`. O sea que el recorrido de pestañas **nunca
+cubrió las vistas que no tienen pestañas** — desde que existe. Con el arreglo,
+esas mismas rutas pasan completas en 41 segundos.
+
+**Y corrige el diagnóstico de v2.523.3, que estaba mal.** Ahí escribí que «dos
+mitades no alcanzan» y que el techo era de recursos de WebKit. No lo era: el
+síntoma —el barrido muere sin escribir— es idéntico al del problema de memoria
+que este proyecto ya conocía y había resuelto partiendo la corrida, así que la
+causa vieja se dio por buena sin volver a medirla. Partir el barrido en tandas
+cada vez más chicas no podía arreglar esto, y de hecho no lo arregló.
+
+Lo que lo separó fue aislar las dos banderas: `cotizaciones` con `MODALES=1`
+pasa en 10,8s y con `PESTANAS=1` se cuelga. Un síntoma conocido no prueba su
+causa conocida.
+
+**Y el barrido ya puede morir rápido.** `TIMEOUT_MS` reemplaza al techo fijo de
+45 minutos, que era parte del problema: una ruta colgada se llevaba la corrida
+entera y no decía cuál fue. Con el techo bajo, la ruta culpable muere sola y
+queda identificada. (`--timeout` del CLI no sirve: `test.setTimeout` le gana.)
+
+Tercer defecto del propio instrumento en esta sesión, después de los 37 controles
+fantasma (v2.521.3) y del informe que se borraba a sí mismo (v2.523.0). Los tres
+tapaban trabajo real: éste escondía **11 blancos táctiles** en el diálogo de
+Personal, que aparecieron en cuanto la ruta pudo terminar.
+
+F2 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.524.0 — Mantener presionada una fila de conteos abre sus opciones
 
 Reportado por el usuario: **desde la lista de conteos no había forma de

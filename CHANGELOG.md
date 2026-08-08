@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.514.3 — El canon lo abre el rol, sin la válvula de SUPERADMIN
+
+Pedido del usuario: «quitá la cuenta superadmin, al final está el rol».
+`auth_is_su()` deja de abrir por `system_role = 'SUPERADMIN'` y decide sólo por
+`roles.is_su` del cargo primario.
+
+La rama venía copiada de `auth_can_edit_any`, donde sí tiene sentido. Acá
+sobraba, y por una razón concreta: esa cuenta tiene `role_id` **NULL**, así que
+`AuthContext` la trata como no-SU y nunca le muestra el botón de publicar. O sea
+que la rama no habilitaba ninguna pantalla — sólo dejaba escribir por fuera de
+la interfaz, y para eso ya está `service_role`, que se salta el RLS entero. Una
+autorización que ninguna pantalla ejerce es superficie sin dueño.
+
+Con esto la función queda como espejo **exacto** del `isSU` del frontend: el
+cargo primario y nada más. Que las dos mitades digan lo mismo es lo que evita
+que la interfaz ofrezca un botón que el servidor rechaza, o al revés.
+
+Alcance verificado antes de tocarla: `auth_is_su()` la usan **sólo** las tres
+policies de escritura de `dashboard_canon` —ninguna otra función, ninguna otra
+tabla—, así que el cambio no llega a nada más. Después: la función ya no
+menciona SUPERADMIN, `anon` sigue sin EXECUTE y las 4 policies quedaron
+intactas.
+
 ## v2.514.2 — El barrido con pestañas y modales va en dos mitades
 
 Seis corridas seguidas del barrido completo murieron alrededor de la pantalla 28

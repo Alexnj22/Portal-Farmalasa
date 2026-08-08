@@ -4896,6 +4896,45 @@ proyecto escribe**: la excepción nunca corrió y las 14 columnas entraban como
 deuda en cada corrida. Una excepción escrita contra un texto que hay que
 acordarse de poner es una excepción que no existe.
 
+**Actualización 2026-08-08 — el riesgo de solaparse se midió, y no existía.** El
+párrafo de los «gaps residuales» dejaba fuera a varios controles con el argumento
+de que *«agrandar su caja invisible arriesga solaparse con el vecino»*. Eso era
+una suposición: el hueco nunca se había medido. Medido en iPad Mini sobre el
+último caso abierto —`TabBarAction size="sm"`— al botón le faltan **4px por lado**
+y el hueco hasta su vecino más cercano es de **12px**. No hay solapamiento
+posible, y el mismo número deja pasar al resto de la familia.
+
+La regla que queda es simétrica a la de las columnas de gráfico: **lo que no cabe
+se mide, y lo que sí cabe también.** Ninguna de las dos se declara.
+
+**Y `useLayoutCompacto` responde «¿hay sitio?», no «¿hay dedo?».** Son dos
+preguntas y el código las tenía mezcladas: el comentario de `TabBarAction` decía
+que `sm` no necesitaba piso táctil *«porque en táctil esta píldora no se
+dibuja»*, y a 768px con puntero grueso **sí se dibuja**. El corte
+(`max-width: 719px`, o `hover: none` con `max-height: 500px`) está bien para lo
+que decide —si entra la barra de filtros de escritorio—; lo que no se sigue de
+ahí es que no haya dedo. Un tamaño de blanco táctil se decide por `(pointer:
+coarse)`, nunca por el ancho.
+
+**Estado al 2026-08-08 — la foto completa, con su instrumento.** Barrido de las
+**37 rutas × 4 temas** (148 pantallas, WebKit iPhone 13) más la matriz de
+**5 perfiles × 7 escenarios**:
+
+```
+desbordes 0 · recortes 0 · zoom de iOS 0 · scroll lateral 0 · sin acuse 0
+ninguna vista reventada · matriz: 0 de 35 celdas con hallazgo
+```
+
+Dos cosas que ese cero **no** dice, y conviene tener presentes:
+
+1. **El tema no cambia el layout.** `liquid`, `dark`, `solid` y `solid-dark` dan
+   números idénticos. Era una pregunta abierta desde siempre —todo lo medido
+   hasta el 2026-08-07 fue en el tema por defecto— y la respuesta es que no hace
+   falta volver a medir por tema.
+2. **Las áreas seguras siguen sin verificarse en un teléfono real**, y no por
+   descuido: `env(safe-area-inset-*)` vale 0 en todo emulador. El guion de esa
+   prueba está en `docs/PRUEBA-EN-TELEFONO-REAL.md`.
+
 ### Inputs — 16px minimum font-size (iOS Safari zoom)
 
 **This was the single highest-impact bug found in the Fase 4 audit.** Any `<input>`/`<textarea>` (excluding `checkbox/radio/range/color/file`) with a computed `font-size < 16px` triggers an automatic page zoom on focus in iOS Safari — jarring, and the user has to manually zoom back out every time. This was found on ~170 inputs across ~60 files (search boxes at 13px was the single most repeated instance, via both `ViewTabBar.jsx`'s shared search input and several views that hand-roll their own duplicate search input instead of using `ViewTabBar`). Fixed project-wide: every text-entry input's font-size floor is now `text-[16px]`. **Rule going forward: never set a text-entry input below `text-[16px]`, full stop** — there is no valid reason to go smaller, since 16px is also comfortably readable at any density this app ships at.

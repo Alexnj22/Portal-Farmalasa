@@ -1997,9 +1997,18 @@ export default function TabCatalogo({
                 abierto={productoAbierto}
                 onClose={() => setExpandedId(null)}
                 titulo={productoAbierto?.nombre}
-                /* Pantalla completa y no hoja: siete secciones y tres
-                   historiales no son un detalle corto, son una pantalla. */
-                variante="pantalla"
+                /* ── La hoja, aunque el contenido sea largo (2026-08-08) ──────
+                   Acá decía `variante="pantalla"` con este motivo: «siete
+                   secciones y tres historiales no son un detalle corto, son una
+                   pantalla». El razonamiento es bueno y aun así se cambia, porque
+                   el usuario pidió lo contrario para TODO el móvil: que se
+                   adapten al contenido y se cierren con el dedo.
+
+                   No hay conflicto real: la hoja canónica crece con lo que tiene
+                   y a partir de `88dvh` scrollea por dentro, así que un
+                   expediente largo la abre casi llena igual. Lo que se gana es el
+                   asa, el gesto para cerrarla y la vista de atrás asomando, que
+                   es lo que dice «esto se cierra y volvés donde estabas». */
             >
                 {(prod) => (
                     <ExpandedProductRow

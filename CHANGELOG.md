@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.521.1 — el expediente del teléfono vuelve a ser hoja: se adapta y se cierra con el dedo
+
+Pedido del usuario: *«¿podemos hacer que todos los modales se puedan adaptar /
+deslizar con el dedo? como la otra variante, y no esta full»*.
+
+Al ir a buscarlos resultó que **ya lo hacen casi todos**: `ModalShell` convierte
+en hoja arrastrable cualquier modal centrado cuando el puntero es grueso
+(`hover: none`), desde el 2026-07-30. De los 27 archivos que lo usan, sólo dos
+pedían pantalla completa — y ahora ninguno.
+
+**Reglas de despacho.** Estaba en `pantalla` desde v2.508.2, puesto para escapar
+de la pantalla negra del iPhone: se creía que la culpa era del `backdrop-filter`
+de la hoja. **No lo era**, y ahora está probado por dos lados: la cuenta usa el
+tema `solid-dark`, donde los cuatro `--backdrop-*` valen `none` —o sea que en
+ese teléfono nunca hubo desenfoque que romper—, y el reporte de jetsam del
+propio aparato cerró el caso en `per-process-limit` con 2,227 MB. El arreglo
+real fue `content-visibility` (v2.520.1), y con él la vista dejó de caerse. Con
+la causa medida, el motivo para la pantalla completa desaparece.
+
+**Catálogo de productos.** Ahí el motivo era otro y era bueno: *«siete secciones
+y tres historiales no son un detalle corto, son una pantalla»*. Se cambia igual,
+porque no hay conflicto real: la hoja canónica crece con lo que tiene y a partir
+de `88dvh` scrollea por dentro, así que un expediente largo la abre casi llena
+de todos modos. Lo que se gana es el asa, el gesto para cerrarla y la vista de
+atrás asomando — que es lo que dice «esto se cierra y volvés donde estabas».
+
+Lo que **no** cambia, porque su posición es lo que comunica de qué se trata: las
+alertas (`hojaEnTactil={false}`) siguen centradas —un aviso con un botón es una
+interrupción, no un panel con el que se trabaja— y el ⌘K (`align="top"`) sigue
+bajo los ojos y no bajo el pulgar. Acostado, la hoja sigue entrando de costado.
+
 ## v2.521.0 — Gestión de Stock e Inventario dejan de ser pestañas, y Productos gana Presentaciones
 
 Pedido del usuario. **Productos tenía tres pestañas y sólo una hablaba del

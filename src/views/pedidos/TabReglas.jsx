@@ -1027,24 +1027,26 @@ export default function TabReglas({ searchTerm = '' }) {
                 })}
             </DataTable>
 
-            {/* `variante="pantalla"` — el MISMO envase que usa Productos, y no la hoja
-                `auto`. La hoja se ponía negra en el teléfono al abrir la regla
-                (reportado 2026-08-07, tres veces): pinta su propia superficie con
-                `backdrop-filter`, y el detalle vive dentro. `pantalla` no lleva velo
-                ni material propio —lo dice `ModalShell`: sería «un desenfoque a
-                pantalla completa que nadie llega a ver y que el compositor» tiene que
-                sostener— así que saca del camino la capa que fallaba.
-                Además encaja mejor con lo que es: la hoja ya medía 584px de 664, o
-                sea que de «detalle corto» no tenía nada.
+            {/* ── Vuelve a la hoja, y el motivo por el que se había ido era falso ──
+                Acá decía `variante="pantalla"` desde v2.508.2, puesto para escapar
+                de la pantalla negra del iPhone: se creía que la culpa era del
+                `backdrop-filter` de la hoja. **No lo era.** El 2026-08-08 el reporte
+                de jetsam del propio teléfono cerró el caso — `WebContent` matado por
+                `per-process-limit` con 2,227 MB— y antes ya se había comprobado que
+                su cuenta usa el tema `solid-dark`, donde los cuatro `--backdrop-*`
+                valen `none`: en ese teléfono nunca hubo desenfoque que romper. El
+                arreglo real es `content-visibility` en la ficha de `DataTable`
+                (v2.520.1), y con él la vista dejó de caerse.
 
-                Esto se escribió una vez en v2.508.2 y VOLVIÓ ATRÁS solo: v2.511.0
-                —un cambio de las hojas impresas del conteo— commiteó de paso una
-                copia vieja de este archivo y de `ExpedienteMovil`, y con ella
-                regresó la hoja y la pantalla negra. Por eso el usuario lo reportó
-                una tercera vez. Antes de tocar este bloque, `git log` del archivo. */}
+                Así que el envase vuelve a ser la hoja canónica, que es lo que el
+                usuario pidió: crece con lo que tiene, se cierra arrastrándola con el
+                dedo y no ocupa la pantalla entera para editar una regla.
+
+                Queda escrito porque la nota vieja decía «antes de tocar este bloque,
+                `git log`» — y tenía razón en el método: esto se movió tres veces. La
+                diferencia es que ahora la causa está medida, no supuesta. */}
             <ExpedienteMovil abierto={abierto} onClose={cancelEdit}
-                titulo={abierto?.nombre || 'Regla de despacho'}
-                variante="pantalla">
+                titulo={abierto?.nombre || 'Regla de despacho'}>
                 {(prod) => (
                     <div className="px-4 py-4">
                         <EditPanel

@@ -7,6 +7,7 @@ import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
 import { SkeletonText } from '../../components/common/StateViews';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
+import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import {
     fetchFacturasSala, reclamarFactura, soltarFactura, resumenRenglones,
 } from '../../data/facturasSala';
@@ -270,6 +271,7 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
 // sola consulta.
 export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
     const [filas, setFilas] = useState(null);
+    const [ahora, setAhora] = useState(null);
     const [error, setError] = useState('');
 
     // Sin `setFilas(null)` al recargar: era una escritura sincrónica dentro del
@@ -281,6 +283,7 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
         const { filas: f, error: e } = await fetchFacturasSala(branchId, { dias: DIAS_VISIBLES });
         setError(e?.message ?? '');
         setFilas(f);
+        setAhora(Date.now());
     }, [branchId]);
 
     // El `setState` ocurre DESPUÉS del `await`, no en el cuerpo del efecto, así
@@ -295,6 +298,42 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
         [filas],
     );
 
+    // ── La franja: cuánto hay esperando y desde cuándo ───────────────────────
+    // «19 facturas esperando» no distingue entre 19 que llegaron hoy y 19 que
+    // llevan dos semanas durmiendo, y son dos situaciones distintas. El monto y
+    // los tres tramos de antigüedad salen de `monto_total` y `fecha_emision`,
+    // que `get_facturas_sala` ya devuelve en cada fila — no hay consulta nueva.
+    // `ahora` se congela cuando LLEGAN los datos y no en cada render: la
+    // antigüedad de una factura se mide contra el momento en que se leyó la
+    // lista, no contra el reloj de un re-render cualquiera. Además `Date.now()`
+    // dentro de un `useMemo` es una llamada impura durante el render y el
+    // compilador de React la rechaza — con razón: el mismo estado daría
+    // resultados distintos según cuándo se vuelva a dibujar.
+    const franja = useMemo(() => {
+        if (filas === null || ahora === null) return null;
+        const esperando = filas.filter(f => f.estado === 'disponible' || f.estado === 'mia_linea');
+        if (!esperando.length) return { tramos: [], monto: 0, viejas: 0 };
+
+        const hoy = ahora;
+        const dias = (f) => (hoy - new Date(f.fecha_emision).getTime()) / 86400000;
+        const recientes = esperando.filter(f => dias(f) < 2).length;
+        const medias    = esperando.filter(f => dias(f) >= 2 && dias(f) <= 7).length;
+        const viejas    = esperando.filter(f => dias(f) > 7).length;
+        const total     = esperando.length;
+
+        return {
+            // El orden de los tramos es el mismo en que los nombra el renglón:
+            // de lo más nuevo a lo más viejo, izquierda a derecha.
+            tramos: [
+                { frac: recientes / total, tinta: 'suave'  },
+                { frac: medias    / total, tinta: 'medio'  },
+                { frac: viejas    / total, tinta: 'fuerte' },
+            ],
+            monto: esperando.reduce((a, f) => a + Number(f.monto_total ?? 0), 0),
+            viejas,
+        };
+    }, [filas, ahora]);
+
     return (
         <LanzadorSolicitud
             icon={ReceiptText}
@@ -306,6 +345,12 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
             tono="brand"
             maxWidth="max-w-2xl"
             descripcion="Toma la factura de tu sala para cargar la compra"
+            instrumento={franja === null
+                ? <FranjaVacia />
+                : <BarraTramos tramos={franja.tramos} />}
+            detalle={franja?.monto
+                ? `${formatMoney(franja.monto)}${franja.viejas ? ` · ${franja.viejas} de +7 d` : ''}`
+                : null}
         >
             {() => (
                 <PanelFacturas

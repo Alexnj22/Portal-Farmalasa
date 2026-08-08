@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftRight, CheckCircle2 } from 'lucide-react';
 import LanzadorSolicitud from './LanzadorSolicitud';
+import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -161,6 +162,14 @@ export default function WidgetTransferRequests() {
             tono="brand"
             maxWidth="max-w-lg"
             descripcion="Pedir producto a otra sala, y confirmar lo que te piden"
+            // Las dos mitades del mismo movimiento. La baldosa ya traía las dos
+            // listas al montarse y pintaba SÓLO la primera: lo que uno está
+            // esperando de otra sala —la mitad que hace levantar el teléfono—
+            // estaba en memoria y no se mostraba. Cero consultas nuevas.
+            instrumento={porConfirmar === null
+                ? <FranjaVacia />
+                : <Flujo entra={pendientes ?? 0} sale={porRecibir?.length ?? 0} />}
+            detalle={porRecibir?.length ? `${porRecibir.length} esperás` : null}
         >
             {/* Sin `min-h` ni scroller propio: el cuerpo canónico
                 (`LiquidModal.Body`) ya scrollea, y el alto lo topa el modal. */}

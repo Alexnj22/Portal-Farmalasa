@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.519.0 — La franja al pie: seis baldosas que dejan de decir lo mismo
+
+Reportado: las baldosas de Operación «se ven planas». No era falta de adorno.
+Las seis compartían la anatomía completa —chip, título y un renglón— así que la
+única diferencia entre ellas era el texto: había que **leer** para
+distinguirlas, y más de la mitad de la superficie no decía nada.
+
+Ahora cada una lleva una figura al pie, a todo el ancho, entre el título y el
+renglón. Lo que las diferencia es **la forma** de esa figura, no el color: el
+instrumento se dibuja con la misma tinta que el texto secundario y lo único con
+color sigue siendo el contador, como estaba decidido. La única excepción es el
+tramo de lo ya vencido, que no es una proporción sino una pérdida consumada.
+
+| Baldosa | Figura | Lo que agrega |
+|---|---|---|
+| Consulta de Inventario | carril, una columna por sala | a quién pedirle: «40 sin existencia acá · 33 en Salud 2» |
+| Modificar Facturación | barra segmentada | de qué son: «3 anular · 2 cliente · 1 pago», y la antigüedad de la más vieja |
+| Ajuste de Min/Max | barra por estado | en qué terminan las propuestas: aplicadas contra rechazadas |
+| Ajuste de Inventario | barra de plazo | lo que **todavía se puede salvar**: vence en 7 y en 30 días |
+| Traslados entre Salas | dos pistas opuestas | la mitad que faltaba: lo que vos estás esperando |
+| Facturas de mi Sala | barra de antigüedad | cuánto dinero espera, y cuántas llevan más de 7 días |
+
+**Cuatro de las seis no agregan una sola consulta.** El dato ya viajaba y se
+descartaba: `get_faltantes_con_stock_en_otra_sala` ya devuelve en qué salas hay
+(`donde jsonb`), `get_facturas_sala` ya trae monto y fecha, y Traslados ya
+cargaba las dos listas y pintaba sólo una. Facturación cambia su `head:true`
+por las mismas filas —son pocas, todas PENDING— y sale igual de barata. La
+única que suma trabajo es Ajuste de Inventario: tres conteos en paralelo en vez
+de uno, un round-trip.
+
+Dos cosas se cayeron al mirar los datos antes de escribirlas. La línea de ocho
+semanas de Min/Max: la tabla tiene **cero filas**, o sea que habría sido una
+recta en cero permanente y una consulta extra para dibujarla. Y el riel vacío
+del estado «sin pendientes»: en el mockup se veía bien, en la baldosa real de
+470px se lee como un separador mal puesto. Una baldosa sin nada pendiente no
+tiene información que dar, así que no dibuja figura — y la que sí tiene se
+distingue justamente por tenerla.
+
+La franja mide 14px y ni uno más: la fila de la retícula es de 120px y el resto
+ya estaba ocupado. Verificado en el navegador contra el tablero real, en claro
+y en oscuro: contenido 118 contra caja 118 en las cuatro baldosas medidas, cero
+desbordes, cero errores de consola. Un desborde acá no da ningún error — la
+baldosa simplemente se comería a la vecina.
+
 ## v2.518.1 — el teléfono pagina de 25: la vista más alta era la que cruzaba el límite
 
 El pulso de v2.518.0 contestó a la primera y contestó por descarte:

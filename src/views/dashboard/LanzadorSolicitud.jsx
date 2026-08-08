@@ -98,6 +98,18 @@ export default function LanzadorSolicitud({
     etiquetaPendientes,     // qué es ese número, en singular y plural
     etiquetaPendientesPlural,
     vacio = 'Sin pendientes',
+    // ── La franja al pie (2026-08-08) ─────────────────────────────────────
+    // La figura y su desglose. Van juntos a propósito: la figura no tiene alto
+    // para etiquetas propias (ver `InstrumentoBaldosa`), así que lo que ella no
+    // puede nombrar lo nombra `detalle`, en el MISMO orden de izquierda a
+    // derecha. Separarlos deja una figura sin leyenda.
+    //
+    // `detalle` se pega al renglón del contador en vez de ocupar una línea
+    // nueva: no hay lugar para una quinta línea en 120px de fila, y de paso el
+    // color queda donde ya estaba —el contador— con el desglose en tinta
+    // apagada detrás.
+    instrumento = null,
+    detalle = null,
     // Qué decir cuando el número NO va a llegar nunca — no porque esté
     // cargando, sino porque para este usuario no existe. «Consulta de
     // Inventario» mostraba un guión mudo a todo el personal de Administración,
@@ -185,7 +197,11 @@ export default function LanzadorSolicitud({
                 data-surface="card"
                 data-interactive=""
                 onClick={() => setAbierto(true)}
-                className="group w-full h-full flex flex-col items-start justify-between gap-2 p-4 text-left"
+                // `pb-3` y no `p-4`: la franja al pie necesita 14px que la fila
+                // de 120px no tenía. Se recortan del padding de abajo, que es
+                // el único de los cuatro que no toca la alineación con las
+                // baldosas vecinas — el lateral y el de arriba se quedan.
+                className="group w-full h-full flex flex-col items-start justify-between gap-2 px-4 pt-4 pb-3 text-left"
             >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
                     <Icon size={16} strokeWidth={2} className="text-content-2" />
@@ -193,10 +209,27 @@ export default function LanzadorSolicitud({
 
                 <div className="w-full min-w-0">
                     <p className="text-body-sm font-black text-content leading-tight">{label}</p>
-                    <p className={`text-caption font-semibold mt-0.5 truncate ${hay ? acento.texto : 'text-content-3'}`}>
+                    {/* `aria-hidden` acá y no en cada figura: la baldosa ES un
+                        botón, así que todo lo de adentro forma su nombre
+                        accesible. Los números de la figura ya los dice el
+                        renglón de abajo en palabras; anunciarlos otra vez como
+                        una ristra de divs sólo alarga el anuncio. */}
+                    {/* `empty:hidden` y no `instrumento && …`: las figuras
+                        deciden ellas mismas no dibujarse cuando no hay nada que
+                        mostrar, y un elemento React que renderiza `null` sigue
+                        siendo truthy. Sin esto quedaba el margen de una franja
+                        que no está — el mismo motivo y el mismo recurso que el
+                        contenedor de herramientas del modal, más abajo. */}
+                    <div className="mt-1.5 empty:hidden" aria-hidden="true">{instrumento}</div>
+                    <p className={`text-caption font-semibold mt-1 truncate ${hay ? acento.texto : 'text-content-3'}`}>
                         {pendientes === null
                             ? (sinDato ?? '—')
                             : hay ? `${pendientes} ${etiqueta}` : vacio}
+                        {/* El desglose viaja SIEMPRE en tinta apagada, tenga o
+                            no pendientes la baldosa: si tomara el tono, el
+                            color dejaría de señalar «hay algo» y pasaría a ser
+                            la piel del renglón entero. */}
+                        {detalle && <span className="text-content-3 font-medium"> · {detalle}</span>}
                     </p>
                 </div>
             </button>

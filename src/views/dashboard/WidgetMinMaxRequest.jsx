@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -7,10 +7,11 @@ import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
 import LanzadorSolicitud, { HerramientasModal, PieModal } from './LanzadorSolicitud';
+import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import { useAuth } from '../../context/AuthContext';
 import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
-    buscarProductosMinMax, contarMinMaxPendientes,
+    buscarProductosMinMax, fetchMinMaxEstados,
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '../../data/stockParams';
@@ -343,26 +344,55 @@ function FormularioMinMax({ selectedErp = null }) {
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
 export default function WidgetMinMaxRequest(props) {
-  const [pendientes, setPendientes] = useState(null);
+  const [estados, setEstados] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
-    contarMinMaxPendientes(props.selectedErp).then(r => {
-      if (!cancelado) setPendientes(r.total);
+    fetchMinMaxEstados(props.selectedErp).then(r => {
+      if (!cancelado) setEstados(r);
     });
     return () => { cancelado = true; };
   }, [props.selectedErp]);
+
+  // ── La franja: en qué terminan las propuestas ────────────────────────────
+  // Iba a ser una línea de propuestas por semana, hasta mirar la tabla: está
+  // vacía, así que la línea habría sido una recta en cero para siempre. Lo que
+  // sí dice algo desde la primera propuesta es si se aplican o se rechazan —
+  // eso decide si vale la pena proponer— y sale de la misma consulta.
+  //
+  // Mientras no haya ninguna, la franja es el riel vacío. Es correcto: no hay
+  // nada que mostrar, y dibujar una figura llena sobre cero sería inventarlo.
+  const franja = useMemo(() => {
+    if (!estados) return null;
+    const total = estados.pendientes + estados.aplicadas + estados.rechazadas;
+    if (!total) return { tramos: [], detalle: null };
+    return {
+      tramos: [
+        { frac: estados.pendientes / total, tinta: 'fuerte' },
+        { frac: estados.aplicadas  / total, tinta: 'medio'  },
+        { frac: estados.rechazadas / total, tinta: 'suave'  },
+      ],
+      detalle: [
+        estados.aplicadas  ? `${estados.aplicadas} aplicadas`   : null,
+        estados.rechazadas ? `${estados.rechazadas} rechazadas` : null,
+      ].filter(Boolean).join(' · ') || null,
+    };
+  }, [estados]);
 
   return (
     <LanzadorSolicitud
       icon={TrendingUp}
       label="Ajuste de Min/Max"
-      pendientes={pendientes}
+      pendientes={estados === null ? null : estados.pendientes}
       etiquetaPendientes="propuesta pendiente"
       etiquetaPendientesPlural="propuestas pendientes"
       vacio="Sin propuestas"
       tono="brand"
       descripcion="Proponer un mínimo o un máximo distinto para un producto"
+      instrumento={franja === null
+        ? <FranjaVacia />
+        : <BarraTramos tramos={franja.tramos} />}
+      detalle={franja?.detalle}
     >
       {/* El encabezado ya no se dibuja acá: lo pone `LanzadorSolicitud` con las
           ranuras del canónico (`LiquidModal.Header`), y de paso trae el botón

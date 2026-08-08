@@ -179,18 +179,50 @@ export async function fetchPerecederos(productIds) {
  *
  * `head: true` — se pide el CONTEO, no las filas: la baldosa no las dibuja.
  */
-export async function contarVencidos({ erpSucursalId }) {
-    if (!erpSucursalId) return { total: 0, error: null };
-    const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const { count, error } = await supabase
-        .from('inventory')
-        .select('erp_product_id', { count: 'exact', head: true })
-        .eq('erp_sucursal_id', Number(erpSucursalId))
-        .eq('is_vencidos', false)
-        .gt('cantidad', 0)
-        .not('fecha_vencimiento', 'is', null)
-        .lt('fecha_vencimiento', hoy);
-    return { total: count ?? 0, error };
+export async function contarPorVencer({ erpSucursalId }) {
+    if (!erpSucursalId) return { vencidas: 0, en7: 0, en30: 0, error: null };
+
+    // El día se corre a UTC-6 antes de recortarlo, como ya hacía el conteo de
+    // vencidas: sin eso, entre las 18:00 y la medianoche local la fecha de
+    // corte es la de mañana y los lotes que vencen hoy se cuentan como vencidos.
+    const dia = (offset = 0) =>
+        new Date(Date.now() - 6 * 60 * 60 * 1000 + offset * 86400000)
+            .toISOString().slice(0, 10);
+    const hoy = dia(0), en7 = dia(7), en30 = dia(30);
+
+    // La fila de `inventory` es un LOTE, no un producto: el mismo producto
+    // aparece tantas veces como fechas de vencimiento distintas tenga. Por eso
+    // la baldosa dice «líneas» y no «productos» — cambiarlo por un conteo de
+    // productos distintos daría un número más chico y menos accionable, porque
+    // lo que se descarga es el lote.
+    const tramo = (desde, hasta) => {
+        let q = supabase
+            .from('inventory')
+            .select('erp_product_id', { count: 'exact', head: true })
+            .eq('erp_sucursal_id', Number(erpSucursalId))
+            .eq('is_vencidos', false)
+            .gt('cantidad', 0)
+            .not('fecha_vencimiento', 'is', null)
+            .lt('fecha_vencimiento', hasta);
+        if (desde) q = q.gte('fecha_vencimiento', desde);
+        return q;
+    };
+
+    // Tres conteos y no una lista que se agrupe acá: `head: true` no trae
+    // filas, y una sala grande pasa las 1000 que PostgREST devuelve en
+    // silencio. Van en paralelo, así que cuestan un round-trip, no tres.
+    const [a, b, c] = await Promise.all([
+        tramo(null, hoy),   // ya vencido
+        tramo(hoy, en7),    // vence dentro de 7 días
+        tramo(en7, en30),   // dentro de 30
+    ]);
+
+    return {
+        vencidas: a.count ?? 0,
+        en7:      b.count ?? 0,
+        en30:     c.count ?? 0,
+        error: a.error ?? b.error ?? c.error ?? null,
+    };
 }
 
 /** Crea la solicitud. El aviso al aprobador lo dispara el trigger, no esto. */

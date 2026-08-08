@@ -78,12 +78,35 @@ export function fetchActiveProductsChunk(rangeFrom, rangeTo) {
  * Es lo que la baldosa del tablero muestra: sin un número, una puerta cerrada
  * no da ningún motivo para abrirla. `head: true` pide el CONTEO, no las filas.
  */
-export async function contarMinMaxPendientes(erpSucursalId = null) {
+// Los tres estados de un vistazo, en el MISMO viaje que antes traía sólo el
+// conteo de pendientes.
+//
+// ── Por qué no hay una línea de tendencia acá (2026-08-08) ────────────────
+// La franja de esta baldosa iba a ser una línea de propuestas por semana. Al
+// mirar la tabla antes de escribirla: **cero filas**, o sea que nadie ha usado
+// la función todavía y la línea habría sido una recta en cero, permanente, más
+// una consulta extra para dibujarla. Lo que sí dice algo desde la primera
+// propuesta es en qué terminan: si se aplican o se rechazan. Eso decide si vale
+// la pena proponer, y sale de esta misma consulta.
+//
+// La ventana de 90 días es para que lo decidido hace medio año no siga pesando
+// en la proporción; las pendientes no se filtran por fecha, porque una
+// solicitud vieja sin responder es justamente lo que hay que ver.
+export async function fetchMinMaxEstados(erpSucursalId = null) {
+    const desde = new Date(Date.now() - 90 * 86400000).toISOString();
     let q = supabase
         .from('minmax_change_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'PENDING');
+        .select('id, status, requested_at')
+        .or(`status.eq.PENDING,requested_at.gte.${desde}`);
     if (erpSucursalId) q = q.eq('erp_sucursal_id', Number(erpSucursalId));
-    const { count, error } = await q;
-    return { total: count ?? 0, error };
+    const { data, error } = await q;
+
+    const filas = data ?? [];
+    const cuenta = (s) => filas.filter(f => f.status === s).length;
+    return {
+        pendientes: cuenta('PENDING'),
+        aplicadas:  cuenta('APPROVED'),
+        rechazadas: cuenta('REJECTED'),
+        error,
+    };
 }

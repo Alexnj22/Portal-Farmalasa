@@ -207,14 +207,23 @@ export async function aplicarMovimientoInventarioEnErp(requestId, approverNote =
  * acá es el que esa persona podría resolver — no un total global que prometa
  * trabajo ajeno.
  */
-export async function contarSolicitudesFacturacionPendientes() {
-    const { count, error } = await supabase
+// Devuelve las filas y no el conteo: es el MISMO viaje —las cuatro clases de
+// solicitud, sólo las PENDING, que son pocas por definición— y con `type` y
+// `created_at` la baldosa arma su franja (de qué son) y la antigüedad de la más
+// vieja. Pedir `head: true` y después otra consulta para el desglose serían dos
+// round-trips para lo que cabe en uno.
+//
+// Sin `fetchAllRows` a propósito: lo pendiente es una cola que alguien vacía. Si
+// alguna vez pasara de 1000 filas, el problema no es la paginación.
+export async function fetchSolicitudesFacturacionPendientes() {
+    const { data, error } = await supabase
         .from('approval_requests')
-        .select('id', { count: 'exact', head: true })
+        .select('id, type, created_at')
         .eq('status', 'PENDING')
         .in('type', ['ANNULMENT_REQUEST', 'PAYMENT_CHANGE_REQUEST',
-                     'VENDOR_CHANGE_REQUEST', 'CLIENT_CHANGE_REQUEST']);
-    return { total: count ?? 0, error };
+                     'VENDOR_CHANGE_REQUEST', 'CLIENT_CHANGE_REQUEST'])
+        .order('created_at', { ascending: true });
+    return { filas: data ?? [], error };
 }
 
 // ── approve/reject/cancel ────────────────────────────────────────────────────

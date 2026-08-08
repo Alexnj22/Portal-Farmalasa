@@ -43,8 +43,14 @@ const BASE = `rounded-full shrink-0 whitespace-nowrap
  * tenga una ranura o cinco"—: 36 del control + 8 de aire arriba y abajo. Un
  * botón de 44 la habría estirado a 60 y desalineado de todas las demás.
  *
- * No baja del mínimo táctil porque en táctil esta píldora NO se dibuja: ahí
- * `FilterBar` es la barra flotante, donde los botones miden 44 y 48.
+ * **Esa frase decía «no baja del mínimo táctil porque en táctil esta píldora NO
+ * se dibuja», y era falsa** (medido el 2026-08-08 en iPad Mini). El corte de
+ * `useLayoutCompacto` —`(max-width: 719px), (hover: none) and (max-height:
+ * 500px)`— decide si hay **sitio** para la barra de escritorio, no si hay
+ * **dedo**: a 768px con puntero grueso la píldora se dibuja y sus botones de 36
+ * se tocan. El corte no está mal; lo que faltaba es que son dos preguntas.
+ * La altura pintada se queda en 36 —es el contrato con §17— y el piso del dedo
+ * lo pone `.blanco-tactil` abajo, que crece el área y no la pintura.
  */
 const SIZE = {
     md: 'h-11 px-4 md:px-[18px]',
@@ -120,7 +126,19 @@ const TabBarAction = memo(({
                 // Mismo piso que `Button` (v2.117.0): si no hay etiqueta ni texto,
                 // el nombre sale del ícono en vez de quedar en nada.
                 || NOMBRE_POR_ICONO[nombreIcono]}
-            className={`${BASE} ${soloIcono ? (SIZE_SOLO[size] || SIZE_SOLO.md) : (SIZE[size] || SIZE.md)} ${className}
+            /* `blanco-tactil` en `sm` — la premisa de arriba era falsa y se midió.
+               El comentario de `SIZE` decía que `sm` no baja del mínimo táctil
+               «porque en táctil esta píldora NO se dibuja». A **768px con puntero
+               grueso —un iPad Mini— sí se dibuja**: el corte de
+               `useLayoutCompacto` decide si hay SITIO para la barra de escritorio,
+               no si hay DEDO, y son dos preguntas distintas.
+               La salida no es subirlo a 44 (estiraría la píldora de §17 de 52px a
+               60 en tablets, que es su contrato) sino separar el área de impacto
+               del tamaño pintado. Medido en iPad Mini antes de aplicarlo, que es
+               lo que §32 daba por imposible: al botón le faltan **4px por lado** y
+               el hueco hasta su vecino más cercano es de **12px**. No se solapan.
+               `relative` va incluido: el pseudo-elemento se ancla ahí. */
+            className={`${BASE} ${size === 'sm' ? 'blanco-tactil relative' : ''} ${soloIcono ? (SIZE_SOLO[size] || SIZE_SOLO.md) : (SIZE[size] || SIZE.md)} ${className}
                 ${isPrimary
                     ? 'bg-brand border-brand text-white hover:bg-brand-hover hover:border-brand-hover'
                     : 'bg-[var(--tabaction-bg)] border-[var(--tabaction-border)] text-content-2 hover:bg-[var(--tabaction-hover)] hover:text-content'}`}

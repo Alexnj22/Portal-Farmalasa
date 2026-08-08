@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.523.2 — El iPad Mini también tiene dedo: la premisa del código era falsa
+
+Era el **último criterio de aceptación en ⚠️** de `PLAN-MOBILE-2026-07.md`, y lo
+que lo trababa no era un `min-h` sino una frase escrita en el código:
+
+> *«No baja del mínimo táctil porque en táctil esta píldora NO se dibuja: ahí
+> `FilterBar` es la barra flotante»*
+
+**Falso, y medido.** A 768px con puntero grueso —un iPad Mini— la píldora **sí**
+se dibuja, y sus botones de 36px se tocan con el dedo. El corte de
+`useLayoutCompacto` no está mal: decide si hay **sitio** para la barra de
+escritorio, que es otra pregunta que si hay **dedo**. Lo que faltaba es notar que
+son dos.
+
+**La salida no fue subirlos a 44.** Eso estiraría la píldora de §17 de 52px a 60
+en tablets, y esos 52 son su contrato —«son 52px tenga una ranura o cinco»—. La
+altura pintada se queda en 36 y el piso del dedo lo pone `.blanco-tactil`, que
+crece el área de impacto y no la pintura.
+
+**Y el riesgo que §32 daba por imposible se midió antes de aplicarlo**, en vez de
+declararlo: al botón le faltan **4px por lado** y el hueco hasta su vecino más
+cercano es de **12px**. No se solapan. Ése era el argumento para no hacerlo
+—«agrandar la caja invisible arriesga solaparse con el vecino»— y era una
+suposición, no una medición.
+
+Va en el **canónico**, así que la corrección viaja a todas las píldoras de filtros
+del portal, no sólo a la de Ventas. El disparador de `PeriodPicker` (34px) se
+arregló igual en v2.523.0.
+
+**La matriz completa, en cero:** cinco perfiles × siete escenarios,
+**0 de 35 celdas con hallazgo**. Las tres de iPad Mini que estaban abiertas
+—`TabBarAction sm` y el disparador del período— y también las siete columnas del
+gráfico que quedaban en el tablero del teléfono. Los `<44` de la columna de
+escritorio no cuentan y nunca contaron: puntero fino, `--tap-min` vale 0 ahí a
+propósito.
+
+F5 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.523.1 — El correlativo recortado de Observaciones: 13 a 0
 
 El único hallazgo real que había encontrado el recorrido de pestañas (v2.513.0) y

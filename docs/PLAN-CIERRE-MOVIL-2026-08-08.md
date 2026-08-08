@@ -1,7 +1,26 @@
 # PLAN — Cerrar al 100 la parte visual/móvil
 
-**Estado:** abierto · **Abierto el** 2026-08-08 · **Cierra:** `PLAN-MOBILE-2026-07.md`
+**Estado:** F1, F4, F5, F7 ✅ · F2 y F3 en su última corrida · F6 esperando un
+teléfono · **Abierto el** 2026-08-08 · **Cierra:** `PLAN-MOBILE-2026-07.md`
 (fase 4 y criterio 4 de aceptación) y `PLAN-CANON-MOVIL-2026-08-07.md` (fases 2 y 4).
+
+> ## Bitácora — 2026-08-08
+>
+> | Fase | Estado | Resultado medido |
+> |---|---|---|
+> | **F1** instrumento | ✅ v2.521.3 | 37 falsos positivos fuera. `sinAcuse` 77 → **40** sin tocar una vista. Verificado en rojo por los dos lados |
+> | **F2** referencia | ✅ temas · ⏳ pestañas+modales | 37 rutas × 4 temas = **148 pantallas, todo en cero**. El tema **no cambia el layout** |
+> | **F3** recortes | ✅ el conocido · ⏳ los nuevos | `facturacion#observaciones` **13 → 0** (v2.523.1) |
+> | **F4** acuse | ✅ v2.523.0 | **40 → 0** en las 37 rutas. Eran **10 formas**, no 40 controles |
+> | **F5** iPad Mini | ✅ v2.523.2 | Matriz **0 de 35 celdas**. La premisa del código era falsa y se midió |
+> | **F6** teléfono real | ⏸️ necesita al usuario | Guion en `docs/PRUEBA-EN-TELEFONO-REAL.md` |
+> | **F7** CI | ✅ v2.522.1 | Gates bloqueantes + barrido nocturno. Verificado en rojo |
+>
+> **Lo que la corrida completa encontró y los planes viejos no podían ver** —
+> pestañas internas y diálogos, que nunca se habían medido:
+> `pedidos#pedidos` con **42 recortados** (seis filas × los siete niveles de
+> `LifecycleTimeline`: un arreglo, no 42), más dos controles chicos en
+> `pedidos»accion` y `minmax#red`. Es exactamente para lo que existía la fase.
 
 Los dos planes anteriores están **más cerrados de lo que dicen sus documentos**:
 se commiteó entre el 6 y el 7 de agosto y no se anotó. Este plan parte de la foto

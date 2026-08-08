@@ -185,7 +185,13 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
         }
     };
 
-    if (!isOpen) return null;
+    // Sin `if (!isOpen) return null`, y no es una limpieza estética: cortar acá
+    // arrancaba el modal del árbol en el mismo tick en que se cerraba, así que
+    // `LiquidModal` —o sea `ModalShell`— nunca llegaba a ver `open=false` y su
+    // animación de salida no existía. Medido: desmontaba a los **23ms**, contra
+    // los ~260 de una hoja que sí hace su recorrido. `ModalShell` ya devuelve
+    // `null` cuando está cerrado y terminó de salir, que es exactamente el
+    // trabajo que esta línea creía estar haciendo.
     // §1.5 · sin vidrio propio: es un portaícono dentro de una superficie que ya
     // es vidrio (misma constante que en PracticanteModal — están duplicadas).
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card";

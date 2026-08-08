@@ -21,6 +21,74 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.11 — La salida de la gota deja de depender de un apretón de estilo
+
+> «Sigue sin hacer la animación de cierre: en vez de cerrarse en gota sólo
+> desaparece.» Y en el segundo mensaje, el dato que lo resolvió: **«funciona si
+> cierro deslizando con el dedo, pero si sólo toco afuera se cierra sin hacer la
+> animación».**
+
+Ese A/B señala el punto exacto. Cerrando con el dedo, el arrastre ya dejó un
+`clip-path` a mitad de camino y la salida **continúa** desde ahí. Tocando afuera
+no hay ninguno —la entrada retira el recorte al terminar, para no recortar
+popovers— así que la salida tiene que **sembrar** el estado inicial primero:
+
+```
+transition: none  →  escribir el recorte abierto  →  forzar el recálculo
+(`fijarEstilo`)   →  volver a poner la transición →  escribir el destino
+```
+
+Todo en la misma tarea, y todo apoyado en que el navegador fije ese estado
+intermedio. **`gotaApertura.js` ya tenía escrito que en el Safari de iOS ese
+apretón «no siempre» alcanza**, y que cuando no alcanza el motor junta los dos
+extremos y salta al final. La frase que estaba en el código para describirlo era,
+palabra por palabra, el síntoma reportado: *«no se ve, sólo desaparece»*.
+
+**Por qué las mediciones decían que estaba bien.** En WebKit de escritorio el
+apretón sí alcanza. Medido acá: `transitionend` con `elapsedTime` de 0.24s, los
+valores intermedios interpolando, y una captura a los 110ms agarrando la hoja a
+mitad del recorrido. El emulador no podía ver este bug — es una diferencia de
+motor, no de código.
+
+**La corrección: la salida se anima con la WAAPI.** Los dos extremos se declaran
+en los keyframes, así que no hay ningún estado intermedio que el motor tenga que
+haber confirmado. `fill: 'forwards'` sostiene el último fotograma hasta que el
+nodo se va, y la animación se cancela al limpiar el efecto — sin eso, una
+animación terminada con `forwards` le sigue ganando al estilo en línea y una hoja
+reabierta rápido nacería con el recorte del cierre puesto.
+
+**Y el desmontaje dejó de adivinar.** Colgaba de
+`setTimeout(salida + 60ms)`, o sea de que la animación empiece cuando el número
+supone. Medido: `transitionrun` a los 19ms pero el primer fotograma pintado a los
+**73** — 54 de esos 60ms de margen gastados sólo en arrancar, y eso en un
+emulador de escritorio. En un teléfono, con el hilo principal interpolando un
+`clip-path` sobre 30px de desenfoque, ese arranque se pasa del margen y el nodo
+se va a mitad del recorrido. Ahora la gota avisa por `onfinish` cuando terminó de
+verdad y el temporizador quedó de **techo** para lo que no anima (reduced-motion,
+escritorio, un tema sin gota). Es la misma lección de v2.238.0 —no emparejar un
+timer de JS con una duración que vive en CSS— aplicada al otro extremo.
+
+**De paso, un modal que nunca tuvo salida.** `NuevoConteoModal` hacía
+`if (!isOpen) return null`, o sea que se arrancaba del árbol en el mismo tick en
+que se cerraba y `ModalShell` jamás veía `open=false`. Medido: desmontaba a los
+**23ms**, contra los ~260 de una hoja que sí hace su recorrido; ahora, 433. Esa
+línea no hacía falta —`ModalShell` ya devuelve `null` cuando está cerrado y
+terminó de salir— y rompía justo lo que parecía proteger. Apareció revisando
+regresiones, no se reportó.
+
+**Verificado** en WebKit/iPhone 13, en los tres caminos: tocando afuera (20
+fotogramas con la animación viva, 240ms declarados, `fill: forwards`, avance de 0
+a 251ms, desmonta a los 282 por `onfinish` y no por el techo de 640);
+arrastrando, que es el que ya andaba y no debía romperse (19 fotogramas, mismo
+recorrido, 7 recortes distintos por el gesto previo); y **reabriendo**, donde la
+hoja vuelve a `clip-path: none` y a su alto completo, o sea que la cancelación
+hace su trabajo. Las otras dos hojas de la vista siguen cerrando sin errores de
+consola.
+
+Canon en `DESIGN.md` §32.7, con el corolario que más va a servir: un cierre que
+el usuario reporta como «no anima» y que en WebKit de escritorio se mide perfecto
+es, muy probablemente, éste.
+
 ## v2.524.10 — El organigrama se arrastra con el dedo
 
 El barrido marcaba **113 elementos fuera de cuadro** en `roles#chart`, hasta

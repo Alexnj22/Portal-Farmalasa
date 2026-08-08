@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { leerUltimoToque } from './ultimoToque';
 
 /**
@@ -345,7 +345,12 @@ function soltarSombra(sombra, ms, curva) {
  * prop obligaba a que `ModalShell` supiera de temas para reenviar un número que
  * la hoja de estilos ya declara.
  */
-export function useGotaApertura({ ref, activo = true, cerrando = false }) {
+export function useGotaApertura({ ref, activo = true, cerrando = false, alTerminarSalida }) {
+    // El aviso de que la salida TERMINÓ de verdad, para que quien monta el nodo
+    // no tenga que adivinarlo con un `setTimeout`. Se guarda en un ref para no
+    // reinstalar los listeners cada vez que el llamador cambia la función.
+    const avisarSalida = useRef(alTerminarSalida);
+    useEffect(() => { avisarSalida.current = alTerminarSalida; }, [alTerminarSalida]);
     // El origen se lee AL ABRIR, dentro del efecto — no al montar.
     // `ModalShell` no se desmonta entre aperturas: vive mientras viva la vista.
     // Congelarlo en el primer render lo dejaba en `null` para siempre, porque en
@@ -506,7 +511,17 @@ export function useGotaApertura({ ref, activo = true, cerrando = false }) {
                 + (desliza.conFundido ? `, opacity ${salidaMs}ms ease-in` : '');
             el.style.transform = desliza.fuera;
             if (desliza.conFundido) el.style.opacity = '0';
-            return;
+            // Por objetivo Y por propiedad: `transitionend` burbujea y `transform`
+            // es la propiedad más transicionada de la app (ver la nota de la
+            // entrada). Sin el filtro, el primer botón de adentro que termine su
+            // hover daría por cerrada la salida.
+            const salioDeslizando = (ev) => {
+                if (ev.target !== el || ev.propertyName !== 'transform') return;
+                el.removeEventListener('transitionend', salioDeslizando);
+                avisarSalida.current?.();
+            };
+            el.addEventListener('transitionend', salioDeslizando);
+            return () => el.removeEventListener('transitionend', salioDeslizando);
         }
 
         // La sombra hace el mismo recorrido, encogiéndose hasta el control.
@@ -516,28 +531,60 @@ export function useGotaApertura({ ref, activo = true, cerrando = false }) {
         if (sombra) { sombra.style.transform = ''; }
         transformarSombra(sombra, vidrio, desde, salidaMs, CURVA_SALIDA, ladosIniciales.current);
 
-        // ── Sembrar el estado inicial SOLO si no hay ninguno ──────────────
-        // Al terminar la entrada el clip se retira (`clipPath = ''`), así que al
-        // cerrar la transición iría de `none` a `inset(...)` — y `none` no es una
-        // forma: no hay nada que interpolar y el navegador salta al valor final.
-        // Por eso se siembra el recorte abierto antes de transicionar.
-        //
-        // **Pero solo si hace falta.** Cuando el cierre viene de un arrastre, el
-        // dedo ya dejó un recorte a mitad de camino, y sembrar el abierto lo
-        // descartaba: filmado, el gesto llevaba la hoja a `inset(139 76 20 254)`
-        // y a los 165ms SALTABA de vuelta a `5 3 1 10` para recomenzar. Si ya hay
-        // una forma, se sigue desde ella — que es lo que hace que soltar el dedo
-        // continúe el gesto en vez de reiniciarlo.
-        if (getComputedStyle(vidrio).clipPath === 'none') {
-            const radioA = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
-            const radioB = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
-            vidrio.style.transition = 'none';
-            vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radioA} ${radioA} ${radioB} ${radioB})`;
-            fijarEstilo(vidrio, 'clipPath');
-        }
-
-        vidrio.style.transition = `clip-path ${salidaMs}ms ${CURVA_SALIDA}`;
+        // ── De dónde arranca la salida ────────────────────────────────────
+        // Cuando el cierre viene de un ARRASTRE, el dedo ya dejó un recorte a
+        // mitad de camino y hay que seguir desde ahí: sembrar el abierto lo
+        // descartaba —filmado, el gesto llevaba la hoja a `inset(139 76 20 254)`
+        // y a los 165ms SALTABA de vuelta a `5 3 1 10` para recomenzar—. Cuando
+        // el cierre viene de un toque afuera no hay recorte: la entrada lo retiró
+        // al terminar, así que el computado dice `none`, y `none` no es una forma.
+        const actual = getComputedStyle(vidrio).clipPath;
+        const radioA = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
+        const radioB = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
+        const abierto = `inset(0px 0px 0px 0px round ${radioA} ${radioA} ${radioB} ${radioB})`;
+        const arranca = actual && actual !== 'none' ? actual : abierto;
         // El MISMO recorte con el que entró, no uno recalculado.
-        vidrio.style.clipPath = recorteInicial.current || insetHacia(vidrio, desde);
+        const termina = recorteInicial.current || insetHacia(vidrio, desde);
+
+        // ── Se anima con la WAAPI y NO con una transición de CSS ──────────
+        // Reportado tres veces: «se cierra sin hacer la animación, sólo
+        // desaparece» — y con un A/B que señalaba el punto exacto: **arrastrando
+        // sí animaba, tocando afuera no**. Esa es justo la diferencia entre
+        // continuar desde un recorte que ya existe y tener que SEMBRAR uno.
+        //
+        // Sembrar era: `transition: none` → escribir el recorte abierto → forzar
+        // el recálculo (`fijarEstilo`) → volver a poner la transición → escribir
+        // el destino. Todo en la misma tarea, y todo apoyado en que el navegador
+        // fije ese estado intermedio. Este archivo YA tiene escrito que en el
+        // Safari de iOS ese apretón «no siempre» alcanza (ver `fijarEstilo`), y
+        // cuando no alcanza el navegador junta los dos extremos y salta al final:
+        // exactamente «no se ve, sólo desaparece». En el WebKit de escritorio el
+        // apretón sí alcanza, así que la prueba en emulador decía que todo
+        // andaba bien — medido: `transitionend` con `elapsedTime` de 0.24s y los
+        // valores intermedios interpolando. El emulador no podía ver el bug.
+        //
+        // La WAAPI no depende de ese apretón: los dos extremos se declaran
+        // explícitamente en los keyframes, así que no hay ningún estado
+        // intermedio que el motor tenga que haber confirmado antes. Es la misma
+        // corrección de fondo que ya se hizo con el desmontaje —dejar de
+        // depender de que dos cosas coincidan— aplicada al arranque.
+        //
+        // `fill: 'forwards'` sostiene el último fotograma hasta que el nodo se
+        // va, que es la lección de `ModalShell` (v2.238.0).
+        vidrio.style.transition = 'none';
+        const anim = vidrio.animate(
+            [{ clipPath: arranca }, { clipPath: termina }],
+            { duration: salidaMs, easing: CURVA_SALIDA, fill: 'forwards' },
+        );
+        // Quien monta el nodo se entera de que la salida terminó DE VERDAD, en
+        // vez de adivinarlo con un `setTimeout` que sale de la misma duración.
+        anim.onfinish = () => avisarSalida.current?.();
+        return () => {
+            // Cancelar es obligatorio: con `forwards`, una animación terminada
+            // le sigue GANANDO a cualquier estilo en línea, así que una hoja que
+            // se reabre rápido nacería con el recorte del cierre puesto.
+            anim.cancel();
+            vidrio.style.transition = '';
+        };
     }, [ref, cerrando, activo]);
 }

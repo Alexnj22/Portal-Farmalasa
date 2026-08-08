@@ -5069,6 +5069,29 @@ Medido en WebKit/iPhone 13 el 2026-08-08: `animationName` = `filo-corre` con
 durante la mantenida y 0 en reposo, y **ninguna animación propia** en el
 elemento (la de escala se retiró).
 
+**La salida de la gota se anima con la WAAPI, no con una transición de CSS**, y
+el desmontaje cuelga de su `onfinish`. Las dos cosas salen del mismo reporte
+—«se cierra sin animación, sólo desaparece»— con un A/B que señaló el punto
+exacto: **arrastrando sí animaba, tocando afuera no**. Esa es la diferencia entre
+continuar desde un recorte que ya existe y tener que *sembrar* uno, y sembrar
+dependía de que el navegador fijara un estado intermedio dentro de la misma
+tarea. `gotaApertura.js` ya tenía escrito que en el Safari de iOS ese apretón «no
+siempre» alcanza, y cuando no alcanza el motor junta los dos extremos y salta al
+final. Con la WAAPI los dos extremos se declaran en los keyframes: no hay estado
+intermedio que confirmar. **El emulador de escritorio no puede ver este bug** —
+ahí el apretón sí alcanza, y la medición daba `transitionend` con su `elapsedTime`
+completo. Corolario: un cierre que el usuario reporta como «no anima» y que en
+WebKit de escritorio se mide perfecto es, muy probablemente, este.
+Y el `setTimeout` que desmontaba pasó a ser un **techo**: 60ms de margen sonaban
+holgados hasta medir que 54 se iban sólo en arrancar la transición.
+
+**Un modal que hace `if (!isOpen) return null` no tiene animación de salida.** Se
+arranca del árbol en el mismo tick en que se cierra, así que `ModalShell` nunca
+llega a ver `open=false`. Medido en `NuevoConteoModal`: desmontaba a los **23ms**
+contra los ~260 de una hoja que sí hace su recorrido. `ModalShell` ya devuelve
+`null` cuando está cerrado y terminó de salir — esa línea no hace falta y además
+rompe justo lo que parece proteger.
+
 **Una hoja que se cierra necesita DOS estados, no uno.** `open={!!item}` con el
 cuerpo bajo `{item && …}` acopla «qué registro» con «está abierta»: al cerrar, el
 cuerpo se desmonta en el acto mientras `ModalShell` sigue montado animando su

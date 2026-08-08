@@ -101,7 +101,18 @@ const visible = (el) => {
 // un `EXIT_MS` fijo, Solid terminaba su recorrido a los 140 y el nodo se quedaba
 // 160ms más en pantalla mostrando la píldora ya encogida — o sea que acortar la
 // animación habría AGREGADO una espera visible.
+// **Y es un TECHO, no una cita.** 60ms alcanzaban cuando el número era lo único
+// que había; hoy la gota avisa por `onfinish` cuando su salida terminó de verdad
+// y el desmontaje cuelga de ese aviso. El temporizador quedó de respaldo para lo
+// que NO anima —reduced-motion, escritorio, un tema sin gota—, y por eso el
+// margen puede ser generoso sin costar nada: si hay animación, nunca se lo
+// espera. Medido lo justo que estaba: `transitionrun` a los 19ms pero el primer
+// fotograma pintado a los 73 —54ms de los 60 gastados sólo en arrancar—, y eso
+// en un emulador de escritorio. En un teléfono, con el hilo principal ocupado
+// interpolando un `clip-path` sobre 30px de desenfoque, ese arranque se pasa del
+// margen y el nodo se va a mitad del recorrido.
 const MARGEN_DESMONTAJE = 60;
+const TECHO_SALIDA = 400;
 
 
 
@@ -214,6 +225,10 @@ export default function ModalShell({
   const [mounted, setMounted] = useState(open);
   const panelRef = useRef(null);
   const disparadorRef = useRef(null);
+  // El valor de `open` legible desde un callback asíncrono (el `onfinish` de la
+  // gota), que si no capturaría el del render en que se instaló.
+  const abiertoRef = useRef(open);
+  useEffect(() => { abiertoRef.current = open; }, [open]);
 
   // Mientras esté abierto, el clúster flotante se apaga: es cromo de la vista y
   // no tiene nada que hacer debajo de una hoja —transparentándose a través del
@@ -226,7 +241,10 @@ export default function ModalShell({
       setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- monta en respuesta a `open`; el estado ES la animación de entrada
       return undefined;
     }
-    const t = setTimeout(() => setMounted(false), tiemposGota().salida + MARGEN_DESMONTAJE);
+    // El techo, no la cita: lo normal es que desmonte el `onfinish` de la gota
+    // (ver `alTerminarSalida` más abajo). Esto sólo cubre el caso en que no hubo
+    // animación ninguna, y por eso puede ser holgado.
+    const t = setTimeout(() => setMounted(false), tiemposGota().salida + TECHO_SALIDA);
     return () => clearTimeout(t);
   }, [open]);
 
@@ -387,6 +405,11 @@ export default function ModalShell({
     // escritorio, donde la gramática es la otra: un panel que aparece.
     activo: sinHover && !animacionPropia && !sinMovimiento,
     cerrando: !open,
+    // El nodo se va cuando la salida TERMINÓ, no cuando un temporizador cree que
+    // debería haber terminado. `abiertoRef` porque el aviso llega de forma
+    // asíncrona: si en el medio la hoja se volvió a abrir, desmontarla sería
+    // cerrar la nueva.
+    alTerminarSalida: () => { if (!abiertoRef.current) setMounted(false); },
   });
 
   if (!open && !mounted) return null;

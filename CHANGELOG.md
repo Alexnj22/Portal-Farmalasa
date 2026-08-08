@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.519.2 — la recarga de los 30 min deja de ser invisible, y la caja negra se copia entera
+
+Segunda caída registrada por el pulso, ya con el arreglo de v2.518.1 puesto:
+
+```
+MURIO   a los 103 s · scroll 2,292 px · trabón máx 3 ms · 1,269 elementos
+        /pedidos?tab=reglas
+```
+
+**1,269 elementos** contra 1,600: el arreglo entró y bajó la vista. **Trabón de
+3 ms** por segunda vez: muerte súbita confirmada, no cuelgue. Y el dato nuevo:
+**scroll 2,292 px** sobre un documento de ~2,907 px, o sea que murió **al llegar
+al final de la lista**, no en cualquier lado.
+
+**Lo que se descartó midiendo, contra mi propia hipótesis.** La sesión anterior
+midió «seis capas del alto del documento» y las señaló como la causa. Se hizo la
+ablación —apagar de a uno el sidebar del teléfono, sus tres halos borrosos, todo
+`filter: blur()`, todo `will-change`, y todas las animaciones— y **las seis no se
+mueven**: 27 capas y 6 gigantes en todas las variantes salvo la de animaciones,
+que quita una (la entrada de ruta, ya conocida). O sea que no son seis buffers
+que alguien enciende: es cómo el motor modela una página que scrollea, y
+contarlas como memoria fue leer de más. Queda escrito para no volver ahí.
+
+**Lo que sí se arregla acá son dos huecos del instrumento**, que es lo que
+todavía se puede mejorar con certeza:
+
+1. **La recarga de los 30 minutos ya no es invisible.** `index.html` recarga la
+   app agregada a inicio si estuvo más de 30 min en segundo plano. Esa recarga no
+   anotaba nada, se ve exactamente igual que el fallo que perseguimos —la
+   pantalla se va y vuelve sola— y encima, al ser un `reload()` limpio, dispara
+   `pagehide` y **borra el pulso**: borraba la prueba de que no hubo muerte
+   súbita. Ahora deja `recarga-programada` con cuántos minutos estuvo dormida.
+   Se anota a mano y no con `anotar()` porque ahí el bundle todavía no existe.
+2. **`recurso-fallido` dice qué falló.** Mostraba sólo la URL, así que una foto
+   que no carga y un archivo de código que no carga se leían igual —y son dos
+   fallos que no se parecen: uno deja un hueco, el otro deja la pantalla vacía.
+   Ahora antepone la etiqueta (`<img>`, `<script>`).
+3. **«Copiar todo».** Transcribir la tarjeta a mano costó una vuelta entera:
+   llegaron 4 líneas de las 40 que hay, y encima de otro aparato. Ahora el
+   registro completo sale en un toque, con la aclaración de que las horas son
+   UTC (la caja negra guarda ISO; en pantalla el teléfono muestra 6 h menos).
+
+**Hallazgo aparte, real y confirmado**: en ese registro aparecieron dos
+`recurso-fallido` con una URL firmada de Storage emitida el 7-ago 19:45 y vencida
+el 8-ago 07:45, usada a las 09:41 — dos horas después de vencer. Es
+[[feedback_firma_nueva_es_url_nueva]] en vivo: la app agregada a inicio no
+recarga, así que arrastra firmas de hasta 12 h y las fotos se rompen solas. No
+tiene relación con la caída (una imagen rota no mata la página) pero hay que
+arreglarlo aparte.
+
 ## v2.519.1 — La franja no cabía en el teléfono: el título envuelve y son 12px afuera
 
 Reportado: «en móvil no se ven bien, se salen de la card». Y era exacto — v2.519.0

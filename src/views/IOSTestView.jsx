@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Smartphone, CheckCircle2, AlertCircle, Layers, Move, Trash2, RefreshCw } from 'lucide-react';
+import { Smartphone, CheckCircle2, AlertCircle, Layers, Move, Trash2, RefreshCw, ClipboardCopy, Check } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -34,6 +34,7 @@ const IOSTestView = () => {
     // mirar el registro lo movería.
     const [registro, setRegistro] = useState(() => leerCajaNegra());
     const [env] = useState(() => entorno());
+    const [copiado, setCopiado] = useState(false);
 
     return (
         <GlassViewLayout icon={Smartphone} title="Vista de Prueba iOS">
@@ -91,11 +92,18 @@ const IOSTestView = () => {
                             {[...registro].reverse().map((e, i) => (
                                 <div key={i} className="flex items-start gap-2 py-1 border-b border-divider last:border-0">
                                     <Badge size="sm" className="shrink-0"
-                                                        variant={/error|fallido|no-cargo|sin-capturar|murio/.test(e.tipo) ? 'danger' : 'neutral'}>
+                                        variant={/error|fallido|no-cargo|sin-capturar|murio/.test(e.tipo) ? 'danger' : 'neutral'}>
                                         {e.tipo}
                                     </Badge>
                                     <div className="min-w-0 flex-1">
+                                        {/* El `tag` distingue una FOTO que no cargó de un
+                                            ARCHIVO DE CÓDIGO que no cargó, y son dos fallos que
+                                            no se parecen en nada: el primero deja un hueco, el
+                                            segundo deja la pantalla vacía. Sin esto los dos se
+                                            leían igual —una URL larga— y hubo que ir a decodificarla
+                                            para saber cuál era. */}
                                         <p className="text-caption text-content-2 break-words leading-snug">
+                                            {e.tag ? `<${String(e.tag).toLowerCase()}> ` : ''}
                                             {e.msg || e.src || e.url || e.estado || e.version || '—'}
                                         </p>
                                         <p className="text-micro text-content-3">
@@ -116,6 +124,25 @@ const IOSTestView = () => {
                         <Button variant="secondary" size="sm" icon={RefreshCw}
                             onClick={() => setRegistro(leerCajaNegra())}>
                             Actualizar
+                        </Button>
+                        {/* Transcribir a mano lo que se ve en la tarjeta ya costó una
+                            vuelta entera: llegaron cuatro líneas de las cuarenta que
+                            hay, y de otro aparato. El registro completo cabe en un
+                            toque. */}
+                        <Button variant="secondary" size="sm" icon={copiado ? Check : ClipboardCopy}
+                            onClick={async () => {
+                                const texto = leerCajaNegra().map(e =>
+                                    `${e.t?.slice(11, 19) ?? '—'}  ${String(e.tipo).padEnd(20)} ${e.ruta ?? ''}\n`
+                                    + `           ${e.tag ? `<${String(e.tag).toLowerCase()}> ` : ''}${e.msg || e.src || e.url || e.estado || e.version || ''}`,
+                                ).join('\n');
+                                try {
+                                    await navigator.clipboard.writeText(
+                                        `caja negra · ${APP_VERSION} · ${env.pantalla}\n(las horas son UTC)\n\n${texto}`);
+                                    setCopiado(true);
+                                    setTimeout(() => setCopiado(false), 2000);
+                                } catch { /* sin permiso de portapapeles */ }
+                            }}>
+                            {copiado ? 'Copiado' : 'Copiar todo'}
                         </Button>
                     </div>
                 </Card>

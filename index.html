@@ -63,6 +63,28 @@
         document.addEventListener('visibilitychange', function () {
           if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
           if (hiddenAt && Date.now() - hiddenAt > MAX_HIDDEN_MS && navigator.onLine !== false) {
+            // ── El punto ciego que este `return` tenía (2026-08-08) ──────────
+            // Esta recarga es la ÚNICA del portal que no deja rastro, y a la
+            // vista es idéntica al fallo que estamos persiguiendo: la pantalla
+            // se va y vuelve sola. Peor: al ser un `reload()` limpio dispara
+            // `pagehide`, que borra el pulso — o sea que además BORRA la prueba
+            // de que no hubo muerte súbita, y el registro siguiente arranca
+            // igual que si nada hubiera pasado.
+            //
+            // Se anota a mano y no con `anotar()` porque acá el bundle todavía
+            // no existe; el formato es el mismo a propósito, para que caiga en
+            // la misma lista de `/ios-test`.
+            try {
+              var reg = JSON.parse(localStorage.getItem('portal_caja_negra') || '[]');
+              if (!Array.isArray(reg)) reg = [];
+              reg.push({
+                t: new Date().toISOString(),
+                tipo: 'recarga-programada',
+                ruta: location.pathname + location.search,
+                msg: 'estuvo ' + Math.round((Date.now() - hiddenAt) / 60000) + ' min en segundo plano — se recarga por la regla de los 30 min',
+              });
+              localStorage.setItem('portal_caja_negra', JSON.stringify(reg.slice(-40)));
+            } catch (e) { /* modo privado o cuota */ }
             location.reload();
             return;
           }

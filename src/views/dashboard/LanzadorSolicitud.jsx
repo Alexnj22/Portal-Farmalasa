@@ -201,7 +201,11 @@ export default function LanzadorSolicitud({
                 // de 120px no tenía. Se recortan del padding de abajo, que es
                 // el único de los cuatro que no toca la alineación con las
                 // baldosas vecinas — el lateral y el de arriba se quedan.
-                className="group w-full h-full flex flex-col items-start justify-between gap-2 px-4 pt-4 pb-3 text-left"
+                // Y el acuse: `data-interactive` le da el lift al APUNTAR desde
+                // `index.css`, que en el teléfono no ocurre nunca. Sin `active:`
+                // la baldosa quedaba muda — cuatro por tablero, y son la puerta
+                // de entrada a lo que la vista ofrece. `0.99` por el tamaño.
+                className="group w-full h-full flex flex-col items-start justify-between gap-2 px-4 pt-4 pb-3 text-left transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
             >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
                     <Icon size={16} strokeWidth={2} className="text-content-2" />

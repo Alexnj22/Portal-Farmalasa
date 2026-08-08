@@ -239,9 +239,12 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             // la fila de Ventas convivían dos fondos distintos.
             data-surface="card"
             data-tono={active ? 'warning' : undefined}
+            // El acuse va con `isFilter`, que es exactamente cuando la tarjeta ES
+            // un control: las que sólo informan (o abren un tooltip de IVA) no se
+            // encogen al tocarlas, porque no pasa nada. Misma regla que `ListRow`.
             className={`basis-[148px] grow shrink-0 min-w-0 max-w-[200px]
-                flex items-center gap-2 px-3 py-2 border select-none transition-[box-shadow,border-color]
-                ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help' : 'cursor-default'}
+                flex items-center gap-2 px-3 py-2 border select-none transition-[box-shadow,border-color,transform]
+                ${isFilter ? 'cursor-pointer hover:shadow-md active:scale-[0.97]' : conIva != null ? 'cursor-help' : 'cursor-default'}
                 ${active ? '-translate-y-px' : ''}`}
         >
             <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>

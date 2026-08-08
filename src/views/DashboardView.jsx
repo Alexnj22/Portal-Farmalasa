@@ -2051,7 +2051,13 @@ const DashboardView = ({ openModal }) => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
                   if (!chartData?.length) return <EmptyState compact icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
-                    <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
+                    <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})}
+                      // El acuse SÓLO cuando la columna navega — misma regla que
+                      // `ListRow` y que la del gráfico de horarios. Las siete no
+                      // pueden dar 44pt (son `imposibles` para el medidor:
+                      // aritmética, no deuda), pero se tocan, y en el teléfono
+                      // `hover:` no existe.
+                      className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible transition-transform duration-[var(--dur-fast)] ${salesView==='DAYS'?'cursor-pointer active:scale-[0.97]':''}`}>
                       <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2.5 py-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-[var(--dur-base)] pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center">
                         <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2 mb-1 border-b border-border-tooltip pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(

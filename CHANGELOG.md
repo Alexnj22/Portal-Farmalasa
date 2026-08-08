@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.523.0 — El acuse del toque llega a cero en las 37 vistas
+
+**77 → 40 → 0**, y los dos pasos son distintos: el primero fue arreglar el
+medidor (v2.521.3, 37 falsos positivos del sidebar), el segundo es este trabajo.
+Medido en WebKit iPhone 13 sobre las 37 rutas, antes y después.
+
+**Los 40 reales eran DIEZ formas, no cuarenta controles.** Ésa es toda la
+diferencia entre un arreglo y cuarenta parches, y es la misma lección de
+v2.517.0 —457 de 634 salían de `ListRow`—: la agrupación por forma es lo que
+decide el trabajo.
+
+```
+14  columnas de los dos gráficos      ScheduleChart + DashboardView
+ 6  tarjetas de sucursal              TabGenerar (elegir sucursal ES la pestaña)
+ 6  tarjetas de estado                AttendanceMonitorView
+ 4  baldosas del tablero              LanzadorSolicitud
+ 4  WhatsApp y Llamar                 StaffManagementView (staff + dashboard)
+ 3  encabezados de sección            TabLaboratorios
+ 1  el rótulo del período             PeriodStepper
+ 1  el segmento que resuelve          FacturacionView
+ 1  el disparador del rango           RangeDatePicker
+ 1  el disparador del período         PeriodPicker
+```
+
+**Y el acuse se declara sólo cuando el control HACE algo**, que es la regla que
+`ListRow` ya aplicaba: las columnas de gráfico lo llevan únicamente en la vista
+donde navegan; la tarjeta de Ventas, sólo cuando filtra; el rótulo del período,
+sólo cuando hay a dónde volver. Encoger algo al tocarlo promete un viaje, y
+prometerlo sin que ocurra es peor que no acusar.
+
+**Las 14 columnas de gráfico son `imposibles` y aun así llevan acuse** — las dos
+cosas no se contradicen. No pueden medir 44pt (siete adyacentes repartiéndose
+390px: aritmética, no deuda), pero son el control más tocado de sus dos vistas.
+El tamaño y el acuse son problemas distintos.
+
+**Un hallazgo del medidor, de camino:** el único que sobrevivía era el rótulo
+«Esta semana» de `PeriodStepper`, y va `disabled` justamente cuando ya estás en
+la semana actual. Un control deshabilitado no acusa nada porque no pasa nada —
+misma familia que `aria-hidden`, que el medidor ya excluía. Ahora lo excluye de
+`sinAcuse` y **no** de `chicos`, porque el tamaño no cambia cuando se habilite.
+Con su caso en el spec del instrumento.
+
+**La corrida de referencia: 37 rutas × 4 temas, y el tema NO cambia el layout.**
+Era la pregunta grande de la fase 2 y estaba sin responder desde siempre — todo
+lo medido hasta ayer fue en el tema por defecto, de cuatro. `liquid`, `dark`,
+`solid` y `solid-dark` dan **exactamente** los mismos números: desbordes 0,
+recortes 0, zoom de iOS 0, scroll lateral 0, ninguna vista reventada. 148
+pantallas.
+
+De paso, el informe del barrido se mudó a `barridos/`: vivía bajo
+`test-results/`, que es el `outputDir` de Playwright y **se limpia entero al
+arrancar cada corrida**. La segunda corrida borraba el informe de la primera y
+sólo sobrevivía la última — invisible mientras se miraba una sola, y fatal justo
+para una referencia que compara ocho.
+
+F2 y F4 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.522.1 — Los gates de diseño entran a CI, y el barrido corre de noche
 
 Hasta hoy `gate:design` y `gate:movil` vivían **sólo en el pre-commit local**, y

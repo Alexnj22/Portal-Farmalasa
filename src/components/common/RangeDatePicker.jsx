@@ -595,7 +595,10 @@ const RangeDatePicker = ({
                     if (e.target !== e.currentTarget) return;
                     if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); handleOpen(); }
                 }}
-                className="cursor-pointer rounded-input focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                // El acuse: es un `div role="button"`, así que no hereda nada de
+                // `Button` — y en el teléfono abrir el calendario no confirmaba
+                // el toque. Mismo caso que el disparador de `PeriodPicker`.
+                className="cursor-pointer rounded-input transition-transform duration-[var(--dur-fast)] active:scale-[0.97] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 {multiRange ? (
                     <div data-surface="input" className={`flex items-center gap-2 ${compact ? 'h-11 px-2.5 rounded-full' : 'h-[40px] px-3'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-success' : 'text-content-3'} strokeWidth={2.5} />

@@ -87,9 +87,12 @@ const PeriodStepper = memo(({
                     // El rótulo es un atajo real ("volver al período actual"),
                     // así que es un target: medido en iPhone 13 daba 104x23.
                     // `--tap-min` lo sube a 44 solo en táctil.
+                    // Y el acuse sólo cuando hay a dónde volver: `disabled` en el
+                    // período actual, o sea que ahí el toque no hace nada y
+                    // encogerlo prometería lo contrario. Misma regla que `ListRow`.
                     className={`flex flex-col items-center justify-center px-2 ${s.min} min-h-[var(--tap-min)] rounded-btn
-                        transition-colors duration-[var(--dur-fast)] disabled:cursor-default
-                        ${isCurrent ? '' : 'hover:bg-surface-card-hover'}`}>
+                        transition-[background-color,transform] duration-[var(--dur-fast)] disabled:cursor-default
+                        ${isCurrent ? '' : 'hover:bg-surface-card-hover active:scale-[0.97]'}`}>
                     {cuerpo}
                 </button>
             ) : (

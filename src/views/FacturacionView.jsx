@@ -157,7 +157,11 @@ const ChipDoc = memo(({
                     aria-pressed={resuelto}
                     aria-label={resuelto ? `Cancelar la resolución de ${nombreResolver}` : `Marcar ${nombreResolver} como resuelta`}
                     onClick={onResolver}
-                    className={`flex items-center justify-center px-2 py-1.5 min-h-[var(--tap-min)] min-w-[var(--tap-min)] transition-all ${
+                    // El acuse, que su hermano de copiar ya tenía y éste no: los
+                    // dos segmentos viven en la misma píldora, así que uno
+                    // confirmaba el toque y el otro —el que RESUELVE, que es el
+                    // que cambia algo— se quedaba mudo.
+                    className={`flex items-center justify-center px-2 py-1.5 min-h-[var(--tap-min)] min-w-[var(--tap-min)] transition-all active:scale-[0.97] ${
                         resuelto ? 'bg-danger/10 text-danger hover:bg-danger/10'
                                  : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                     {resuelto ? <X size={10} /> : <Check size={10} />}

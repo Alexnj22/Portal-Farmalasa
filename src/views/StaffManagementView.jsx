@@ -374,10 +374,15 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               </p>
               {phoneDigits.length >= 8 && (
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-slow)] translate-x-[-10px] group-hover:translate-x-0">
-                  <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="blanco-tactil relative text-success hover:text-success hover:scale-110 hover:translate-y-[var(--lift-hover)] transition-all bg-success/10 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
+                  {/* `active:` y no sólo `hover:`: en el teléfono estos dos son
+                      justo los que se tocan —escribir o llamar a la persona— y
+                      ahí no hay puntero que los revele ni que los ilumine. El
+                      área de impacto ya la da `.blanco-tactil`; esto es el
+                      acuse. */}
+                  <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="blanco-tactil relative text-success hover:text-success hover:scale-110 hover:translate-y-[var(--lift-hover)] active:scale-[0.97] transition-all bg-success/10 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
                     <MessageCircle size={10} strokeWidth={3} />
                   </a>
-                  <a href={`tel:${phoneDigits}`} className="blanco-tactil relative text-brand-text hover:text-brand-hover hover:scale-110 hover:translate-y-[var(--lift-hover)] transition-all bg-brand/10 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
+                  <a href={`tel:${phoneDigits}`} className="blanco-tactil relative text-brand-text hover:text-brand-hover hover:scale-110 hover:translate-y-[var(--lift-hover)] active:scale-[0.97] transition-all bg-brand/10 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
                     <Phone size={10} strokeWidth={3} />
                   </a>
                 </div>

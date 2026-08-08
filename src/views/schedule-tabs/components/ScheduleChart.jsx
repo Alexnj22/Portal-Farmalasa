@@ -85,7 +85,14 @@ const ScheduleChart = ({
                     currentChartData.map((item, i) => (
                         <div key={i}
                             {...clickable(() => { if (chartView === 'DAYS') setChartView(item.day); })}
-                            className={`flex-1 flex flex-col justify-end items-center group/bar h-full relative overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
+                            /* El acuse va SÓLO cuando la columna es un control
+                               —igual que `ListRow`—: en la vista de un día ya no
+                               navega a ningún lado, y encogerla al tocarla
+                               prometería algo que no pasa. Estas siete columnas
+                               no pueden dar 44pt (el medidor las separa como
+                               `imposibles`, aritmética y no deuda), pero se
+                               tocan igual: son el control más usado de la vista. */
+                            className={`flex-1 flex flex-col justify-end items-center group/bar h-full relative overflow-visible transition-transform duration-[var(--dur-fast)] ${chartView === 'DAYS' ? 'cursor-pointer active:scale-[0.97]' : ''}`}>
 
                             {/* Tooltip */}
                             <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2 py-1.5 opacity-0 group-hover/bar:opacity-100 focus-within:opacity-100 transition-all duration-[var(--dur-fast)] pointer-events-none w-max z-modal translate-y-1 group-hover/bar:-translate-y-0">

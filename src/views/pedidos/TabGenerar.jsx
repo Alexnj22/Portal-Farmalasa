@@ -415,7 +415,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 key={id}
                                 aria-pressed={isOn}
                                 onClick={() => toggleSuc(id)}
-                                className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden ${baseCls} ${stateCls}`}
+                                // El acuse del toque: elegir sucursales es LO que se
+                                // hace en esta pestaña, y las seis tarjetas sólo
+                                // respondían al puntero. Va afuera de `stateCls`
+                                // para que también acuse la que ya está elegida —
+                                // des-elegir es la mitad del control.
+                                className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden active:scale-[0.99] ${baseCls} ${stateCls}`}
                             >
                                 {/* Shimmer line — siempre visible, más brillante al seleccionar */}
                                 <span className={`absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-[var(--shimmer-sweep-strong)]' : 'via-[var(--shimmer-sweep)]'} to-transparent pointer-events-none`} />

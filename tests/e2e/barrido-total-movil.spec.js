@@ -24,7 +24,15 @@ const ETIQUETA = process.env.ETIQUETA
     || [process.env.TEMA || 'liquid',
         process.env.PESTANAS ? 'pest' : null,
         process.env.MODALES ? 'mod' : null].filter(Boolean).join('-');
-const INFORME = `${SALIDA}/informe-${ETIQUETA}.json`;
+// ⚠️ Y el informe NO puede vivir bajo `test-results/`: ése es el `outputDir` de
+// Playwright, **que se limpia entero al arrancar cada corrida**. O sea que la
+// segunda corrida borraba el informe de la primera y sólo sobrevivía la última
+// — invisible mientras se miraba una sola, y fatal justo para la corrida de
+// referencia, que compara ocho. Medido el 2026-08-08: el informe de `dark`
+// desapareció al lanzar `liquid`. Las capturas sí se quedan ahí (son pesadas y
+// efímeras); el informe es el dato.
+const SALIDA_INFORMES = 'barridos';
+const INFORME = `${SALIDA_INFORMES}/informe-${ETIQUETA}.json`;
 
 // `RUTAS=productos,pedidos` acota el barrido. No es para uso normal —el barrido
 // es «todas»— sino para poder probar el propio instrumento en treinta segundos
@@ -91,6 +99,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // pestañas: son casi tantas pantallas como rutas.
         test.setTimeout(2_700_000);
         fs.mkdirSync(SALIDA, { recursive: true });
+        fs.mkdirSync(SALIDA_INFORMES, { recursive: true });
         if (TEMA) {
             await page.context().addInitScript(({ tema, attr }) => {
                 try { localStorage.setItem('portal-theme', tema); } catch { /* sin localStorage */ }

@@ -599,6 +599,11 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               onClick={() => setStatusTab(card.id)}
               className={[
                 "text-left p-5 rounded-modal border transition-all duration-[var(--dur-slow)] group relative overflow-hidden",
+                // El acuse del toque: las seis tarjetas son el filtro de estado
+                // de la vista y en el teléfono se tocan, donde `hover:` no
+                // existe. `0.99` porque son tarjetas grandes — y va afuera del
+                // ternario para que también acuse la que ya está activa.
+                "active:scale-[0.99]",
                 card.bg, card.border,
                 isActive
                   ? "shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/45 scale-[1.02] -translate-y-0.5"

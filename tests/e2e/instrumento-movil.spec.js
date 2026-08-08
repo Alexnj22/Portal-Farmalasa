@@ -47,6 +47,11 @@ const PAGINA = `
     <button id="abajo-grande" style="width:120px;height:60px">abajo del pliegue</button>
     <button id="abajo-chico"  style="width:30px;height:30px">y</button>
   </div>
+  <!-- A la vista, alcanzable y sin acuse — pero DESHABILITADO, así que tocarlo
+       no hace nada y pedirle un active: sería prometer lo que no pasa. Chico a
+       propósito: prueba de paso que chicos SÍ lo sigue contando, porque el
+       tamaño no cambia cuando se habilite. -->
+  <button id="apagado" disabled style="width:30px;height:30px">z</button>
   <div style="height:4000px"></div>
 </body></html>`;
 
@@ -72,6 +77,11 @@ test.describe('el instrumento', () => {
         //     viewport» y el medidor pasó a subcontar media vista.
         expect(enSinAcuse('abajo-grande'), '#abajo-grande SÍ debe contarse: se alcanza scrolleando').toBe(true);
         expect(enChicos('abajo-chico'), '#abajo-chico SÍ debe contarse: se alcanza scrolleando').toBe(true);
+
+        // 3 · Deshabilitado: no acusa (no pasa nada al tocarlo) pero SÍ cuenta
+        //     como chico, porque su tamaño no cambia cuando se habilite.
+        expect(enSinAcuse('apagado'), '#apagado no debe pedir acuse: está disabled').toBe(false);
+        expect(enChicos('apagado'), '#apagado SÍ es chico: disabled no lo agranda').toBe(true);
 
         // Prueba de vida: cero hallazgos y cero datos se ven igual. Si el
         // medidor no vio NADA, las cuatro comprobaciones de arriba pasarían por

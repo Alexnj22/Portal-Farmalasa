@@ -222,6 +222,16 @@ export const MEDIR = () => {
     document.querySelectorAll('button, a[href], [role="button"]').forEach(el => {
         if (!visible(el) || !alcanzable(el)) return;
         if (el.getAttribute('aria-hidden') === 'true') return;
+        // Un control DESHABILITADO no acusa nada porque no pasa nada: es la
+        // misma familia que `aria-hidden` de la línea de arriba. El caso que lo
+        // destapó es el rótulo «Esta semana» de `PeriodStepper`, que va
+        // `disabled` justamente cuando ya estás en la semana actual — pedirle un
+        // `active:` sería prometer un viaje que no ocurre, que es la regla que
+        // `ListRow` ya aplica al no acusar las filas de sólo lectura.
+        //
+        // NO se excluye de `chicos`: el tamaño no cambia al habilitarse, así que
+        // un control chico sigue siendo chico cuando le toque su turno.
+        if (el.disabled === true || el.getAttribute('aria-disabled') === 'true') return;
         const clases = el.className?.toString?.() || '';
         if (/active:/.test(clases)) return;
         sinAcuse.push({ sel: sel(el),

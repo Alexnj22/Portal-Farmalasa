@@ -2863,6 +2863,52 @@ thead.sticky,
   transform: translateY(1px);
 }
 
+/* ── La mantenida: el acuse de que el gesto está corriendo (2026-08-08) ────
+   Lo pone `usePulsacionLarga` (`src/hooks/`) marcando `data-manteniendo` en el
+   elemento que se está presionando. **Canónico y no de una vista**: cualquier
+   fila o tarjeta que use ese hook lo hereda sin escribir una clase, igual que
+   `data-surface` trae el material y `data-interactive` el gel.
+
+   Por qué hace falta: entre que el dedo apoya y que la hoja abre pasan 500ms, y
+   el `:active` de siempre es un `scale(.994)` pensado para un toque — se ve
+   igual sostenerlo que rozarlo. Sin este acuse, medio segundo de nada se lee
+   como que la pantalla no respondió, y el dedo se levanta justo antes de que
+   dispare.
+
+   Es una ANIMACIÓN y no una transición, por tres razones concretas:
+
+   · Una animación en curso le gana a cualquier declaración normal sin importar
+     la especificidad, así que no hay que pelearle a
+     `[data-surface][data-interactive]:active` —que también está encendido
+     mientras el dedo apoya— ni al `active:scale` que traiga el componente.
+   · `transition-duration` habría alcanzado a TODAS las propiedades que el
+     componente ya transiciona (fondo, borde, color), estirándolas a 500ms.
+   · `forwards` sostiene el último fotograma hasta que el atributo se va. Es la
+     lección de `ModalShell` (v2.238.0): la salida se sostiene con `fill-mode`,
+     no con un número.
+
+   Y la duración NO se escribe acá: entra por `--pulsacion-retardo`, que el hook
+   inyecta desde su propia constante. Un solo número, el que ya gobierna el
+   `setTimeout` — emparejar a mano un timer de JS con una duración de CSS es
+   exactamente lo que este proyecto ya pagó una vez. */
+@keyframes pulsacion-mantener {
+  from { transform: translateY(var(--card-lift-activo, 0px)) scale(1); }
+  to   { transform: translateY(var(--card-lift-activo, 0px)) scale(var(--pulsacion-escala, .96)); }
+}
+[data-manteniendo="true"] {
+  animation: pulsacion-mantener var(--pulsacion-retardo, 500ms) cubic-bezier(.33, 0, .67, 1) forwards;
+}
+/* En Solid se hunde en vez de ceder — el mismo vocabulario que su `:active`. */
+[data-theme="solid"]      [data-manteniendo="true"],
+[data-theme="solid-dark"] [data-manteniendo="true"] {
+  --pulsacion-escala: .985;
+  animation-name: pulsacion-mantener-solid;
+}
+@keyframes pulsacion-mantener-solid {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(2px) scale(var(--pulsacion-escala, .985)); }
+}
+
 
 [data-surface="page-header"] {
   background: var(--surface-header);
@@ -3374,6 +3420,16 @@ a:focus-visible,
     animation: none !important;
     border-color: rgba(249,115,22,1) !important;
     box-shadow: 0 0 25px rgba(249,115,22,0.6), inset 0 2px 15px rgba(0,0,0,0.5) !important;
+  }
+
+  /* El acuse de la mantenida no se puede apagar a secas: ES el indicador de
+     que el gesto está corriendo, y sin él quedan 500ms de nada que se leen
+     como que la pantalla no respondió — el mismo caso que el pulso del campo
+     de PIN de arriba. Se cambia el medio: la escala sale y queda un atenuado
+     instantáneo, que acusa sin mover nada. */
+  [data-manteniendo="true"] {
+    animation: none !important;
+    opacity: .72;
   }
 
   /* — Reducir a fade 120ms (sin transform ni filter) ————————— */

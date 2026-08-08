@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.2 — La fila de conteos ES una tarjeta, y la mantenida se acusa
+
+Dos reportes del usuario sobre la lista de conteos en el teléfono: **«la card de
+los conteos no parece card, no tiene forma de card, sólo es texto»** y **«agregá
+animación a la card al presionarse — y confirmá que sea canónico para otras que
+lo requieran»**.
+
+**1. La fila no era una tarjeta porque nunca pidió serlo.** `ListRow` nace como
+fila *dentro* de un contenedor —un menú, un flyout, una lista ya encerrada en
+una tarjeta—, así que en reposo no pinta fondo ni borde y toma el radio del
+botón. En esta vista cada conteo está suelto sobre la página, sin contenedor que
+le ponga la superficie: quedaba texto flotando. El canónico ya tenía la
+variante, sólo había que pedirla — `surface="card"`, que es lo que hace que
+`ListRow` marque `data-surface="card"`. Y va por la prop y **no** por
+`bg-surface-card` a mano: esas clases copian el relleno y dejan afuera todo lo
+que hace a una tarjeta. Medido después del cambio: `backdrop-filter:
+blur(24px) saturate(1.6)`, borde de 1px, radio de 28px. Densidad `lg`, que es
+la que respira como tarjeta suelta y la que ya usa la tarjeta de producto del
+detalle.
+
+**2. El acuse de la mantenida — y es canónico, no de esta vista.** Entre que el
+dedo apoya y que la hoja abre pasan 500ms, y el `:active` de siempre es un
+`scale(.994)` pensado para un toque: se ve igual sostener que rozar. Medio
+segundo de nada se lee como que la pantalla no respondió, y el dedo se levanta
+justo antes de que dispare.
+
+Ahora `usePulsacionLarga` marca `data-manteniendo` en el elemento y **`index.css`
+lo dibuja para todos** — el mismo contrato que `data-surface` para el material y
+`data-interactive` para el gel. Cualquier fila o tarjeta que use el hook hereda
+el encogido progresivo sin escribir una clase.
+
+Es una **animación** y no una transición, por tres razones:
+
+- Una animación en curso le gana a cualquier declaración normal sin importar la
+  especificidad, así que no hay que pelearle a
+  `[data-surface][data-interactive]:active` —que también está encendido mientras
+  el dedo apoya— ni al `active:scale` que traiga el componente.
+- `transition-duration` habría alcanzado a **todas** las propiedades que el
+  componente ya transiciona (fondo, borde, color), estirándolas a 500ms.
+- `forwards` sostiene el último fotograma hasta que el atributo se va, que es la
+  lección de `ModalShell` (v2.238.0): la salida se sostiene con `fill-mode`, no
+  con un número.
+
+**La duración no se escribe en el CSS**: entra por `--pulsacion-retardo`, que el
+hook inyecta desde la misma constante que gobierna su `setTimeout`. Una sola
+fuente de verdad, empujada de JS a CSS — emparejar a mano un timer con una
+duración que vive en CSS es exactamente lo que este proyecto ya pagó una vez.
+Con `prefers-reduced-motion` la escala sale y queda un atenuado instantáneo: el
+acuse no se puede apagar del todo porque **es** el indicador de que el gesto
+está corriendo (mismo criterio que el pulso del campo de PIN del kiosco).
+
+En Solid se hunde en vez de ceder, que es el vocabulario de ese tema.
+
+**Verificado midiendo, no mirando** (WebKit/iPhone 13, muestreo por
+`requestAnimationFrame` de `animationName` + `transform`): al apoyar, el
+atributo pasa a `"true"` y `animationName` a `pulsacion-mantener` con
+`animation-duration` de `0.5s` **leída del var**; la escala baja
+progresivamente hasta `0.96` exacto; al disparar vuelve sola porque el atributo
+pasa a `"false"`, y la tarjeta relaja con su propia transición. El `translateY`
+del lift se conserva durante toda la animación en vez de perderse.
+
+Documentado como canon en `DESIGN.md` **§32.7** —«Acciones de fila en el
+teléfono»— con el criterio de cuándo mantener y cuándo deslizar, para que la
+próxima lista no lo vuelva a decidir por gusto.
+
 ## v2.524.1 — El barrido se colgaba en toda vista SIN pestañas
 
 `page.getAttribute()` sin `{ timeout }` explícito **espera para siempre**:

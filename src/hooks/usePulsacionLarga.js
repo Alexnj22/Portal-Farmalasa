@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * usePulsacionLarga — mantener presionada una fila para abrir sus opciones.
@@ -50,6 +50,10 @@ export function usePulsacionLarga({ alMantener, alTocar, activo = true, retardo 
     // Si la mantenida ya disparó, el `click` que viene después es su cola: se
     // consume acá, no navega.
     const yaDisparo = useRef(false);
+    // El acuse visible mientras el dedo sostiene. Es estado de React —y no una
+    // clase puesta a mano sobre el nodo— para que salga por los props junto con
+    // el resto del gesto: quien use el hook no tiene que acordarse de nada.
+    const [manteniendo, setManteniendo] = useState(false);
 
     const cancelar = useCallback(() => {
         if (temporizador.current) {
@@ -57,6 +61,7 @@ export function usePulsacionLarga({ alMantener, alTocar, activo = true, retardo 
             temporizador.current = null;
         }
         origen.current = null;
+        setManteniendo(false);
     }, []);
 
     // Desmontar con el temporizador vivo dispararía la hoja de una fila que ya
@@ -72,6 +77,7 @@ export function usePulsacionLarga({ alMantener, alTocar, activo = true, retardo 
         if (e.button != null && e.button !== 0) return;
         yaDisparo.current = false;
         origen.current = { x: e.clientX, y: e.clientY };
+        setManteniendo(true);
         // No se guarda el evento de React para el timeout: aunque desde la 17 ya
         // no se reciclan, lo que la hoja necesita es dónde se tocó, y eso son dos
         // números.
@@ -79,6 +85,9 @@ export function usePulsacionLarga({ alMantener, alTocar, activo = true, retardo 
         temporizador.current = setTimeout(() => {
             temporizador.current = null;
             yaDisparo.current = true;
+            // La tarjeta vuelve JUSTO cuando la hoja sale de ella. Dejarla
+            // encogida mientras la hoja está abierta la deja "trabada" atrás.
+            setManteniendo(false);
             alMantener(punto);
         }, retardo);
     }, [activo, alMantener, retardo]);
@@ -112,7 +121,23 @@ export function usePulsacionLarga({ alMantener, alTocar, activo = true, retardo 
     // Android y en escritorio salen los dos a la vez.
     const onContextMenu = useCallback((e) => { if (activo) e.preventDefault(); }, [activo]);
 
-    return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onClick, onContextMenu };
+    return {
+        onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onClick, onContextMenu,
+        // El acuse sale por acá y no por una clase que el llamador escriba: es
+        // el mismo contrato de `data-surface` (el material) y `data-interactive`
+        // (el gel) — el atributo lo pone quien sabe, y `index.css` lo dibuja
+        // para todos. Ver «La mantenida» en index.css §1.6.
+        //
+        // El atributo va SIEMPRE, en `"true"`/`"false"`: un atributo que
+        // aparece y desaparece hace que el selector no exista en reposo, y
+        // entonces no hay desde dónde volver.
+        'data-manteniendo': activo ? String(manteniendo) : undefined,
+        // La duración de la animación sale de la constante que ya gobierna el
+        // `setTimeout`. Una sola fuente de verdad, empujada de JS a CSS —al
+        // revés (leer de CSS un número para un timer) es lo que este proyecto
+        // ya pagó en `ModalShell`.
+        style: activo ? { '--pulsacion-retardo': `${retardo}ms` } : undefined,
+    };
 }
 
 export default usePulsacionLarga;

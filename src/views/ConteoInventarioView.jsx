@@ -80,6 +80,21 @@ function FilaConteoMovil({ conteo: c, estado: es, subtitulo, tono, trailing, con
     return (
         <ListRow
             icon={es.icon}
+            // `surface="card"` y no el default: `ListRow` nace como fila DENTRO de
+            // un contenedor —un menú, un flyout—, así que en reposo no pinta fondo
+            // ni borde y toma el radio del botón. Acá cada conteo está suelto sobre
+            // la página, sin contenedor que le ponga la superficie, y el resultado
+            // era texto flotando: «no parece card, sólo es texto».
+            //
+            // El canónico ya tenía la variante. Y va por la prop, no por
+            // `bg-surface-card` a mano: esas clases copian el RELLENO y dejan
+            // afuera lo que hace a una tarjeta —el `backdrop-filter`, las seis
+            // capas de sombra, el lente del filo, el gel al tocarla—. Con `card`,
+            // `ListRow` pone `data-surface="card"` y eso lo trae todo.
+            surface="card"
+            // Una tarjeta suelta respira más que una fila de menú. Es la densidad
+            // que usa la tarjeta de producto del detalle del conteo.
+            density="lg"
             tone={tono}
             title={c.branches?.name || '—'}
             subtitle={subtitulo}

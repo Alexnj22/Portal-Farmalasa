@@ -5000,6 +5000,63 @@ medido hasta hoy es emulación (WebKit iPhone 13 en Playwright), y
 puede distinguir «está bien resuelto» de «no está resuelto». Esa comprobación
 necesita un teléfono con notch y el shell nativo de Capacitor (§21).
 
+### §32.7 · Acciones de fila en el teléfono: mantener presionado (2026-08-08)
+
+Una fila del teléfono suele tener **una** acción —el toque, que navega— y las
+demás quedan en la tabla, que debajo de `md` no se pinta. Cuando eso deja una
+función sin camino (fue el caso de eliminar un conteo desde su lista), el gesto
+canónico es **mantener presionado**, no deslizar.
+
+**El criterio, para no volver a discutirlo por gusto:** ¿el gesto puede
+*consumar* la acción? Si la acción es irreversible lleva confirmación
+obligatoria, y entonces deslizar cuesta los mismos toques que mantener
+(gesto → tocar → confirmar) sin ninguna de sus ventajas. Además deslizar
+(a) sobre una fila que no puede ejecutar la acción sólo puede no hacer nada,
+que se lee como que la pantalla se colgó; (b) obliga a arbitrar el eje contra el
+scroll vertical de la lista; y (c) sostiene una sola acción, mientras que una
+hoja crece a la siguiente. Para algo barato y reversible (archivar, marcar
+leído) deslizar sí cobra su ventaja — ahí es la elección correcta.
+
+**El hook es `usePulsacionLarga` (`src/hooks/`)** y resuelve el toque **y** la
+mantenida juntos a propósito: al soltar, el navegador dispara `click` igual, así
+que separarlos deja la fila navegando *además* de abrir la hoja. Trae también el
+`pointercancel` (la señal buena de que empezó el scroll), la tolerancia de 10px
+y el apagado del menú contextual. Se le suma en la fila
+`select-none [-webkit-touch-callout:none]`, o el callout de iOS levanta la lupa
+sobre la hoja recién abierta.
+
+**El destino es `HojaMovil` dentro de `ModalShell`** (`align="bottom"`,
+`surface={null}`), que nace en gota del punto mantenido sin que haya que pasarle
+nada. Se ofrece sólo si hay más de una opción real: un gesto que abre un menú
+con lo único que el toque ya hace es peor que no tenerlo. Y como un gesto que no
+se ve no existe, la lista lleva una línea al pie que lo anuncia.
+
+**El acuse visual es canónico y no se escribe por vista.** El hook marca
+`data-manteniendo="true"` en el elemento y `index.css` (§1.6, «La mantenida»)
+dibuja el encogido progresivo — mismo contrato que `data-surface` para el
+material y `data-interactive` para el gel. Es una **animación** y no una
+transición: una animación en curso le gana a cualquier declaración normal sin
+pelear especificidad contra el `:active` que también está encendido, no arrastra
+las demás propiedades que el componente transiciona, y `forwards` sostiene el
+último fotograma. La duración entra por `--pulsacion-retardo`, que el hook
+inyecta desde la misma constante que gobierna su `setTimeout` — una sola fuente
+de verdad, empujada de JS a CSS (el camino inverso es lo que ya se pagó en
+`ModalShell`, v2.238.0). Con `prefers-reduced-motion` la escala sale y queda un
+atenuado instantáneo: el acuse no se puede apagar del todo, porque **es** el
+indicador de que el gesto está corriendo.
+
+Medido en WebKit/iPhone 13 el 2026-08-08: `animationName` = `pulsacion-mantener`
+con `animation-duration` de `0.5s` leída del var, la escala baja hasta `0.96`
+exacto, y al disparar vuelve sola porque el atributo pasa a `"false"`.
+
+**Una fila suelta sobre la página va con `surface="card"`.** `ListRow` nace como
+fila *dentro* de un contenedor —menú, flyout—, así que en reposo no pinta fondo
+ni borde y toma el radio del botón. Sin contenedor alrededor el resultado es
+texto flotando («no parece card, sólo es texto»). Va por la prop y nunca por
+`bg-surface-card` a mano: esas clases copian el relleno y dejan afuera el
+`backdrop-filter`, la sombra y el lente del filo (§5, y la nota del tablero del
+2026-08-07).
+
 ### Viewport meta
 
 **Update 2026-07-15 (Bloque 5.7b):** the static `maximum-scale=1.0, user-scalable=no` in `index.html`'s `<meta name="viewport">` blocked pinch-zoom unconditionally — a real WCAG 1.4.4 (Resize Text) violation for anyone using the portal as a normal website. Resolved by making it conditional instead of choosing one side: a small inline script in `index.html` (runs synchronously before React mounts, so there's no flash of different zoom behavior) checks — native Capacitor build (`Capacitor.isNativePlatform()`), installed/standalone PWA (`display-mode: standalone` / `navigator.standalone`), or the `/kiosk` route — and only in those cases keeps `user-scalable=no`. Everywhere else (a regular browser tab, including on mobile) the meta tag is rewritten to drop `maximum-scale`/`user-scalable`, restoring full pinch-zoom. `viewport-fit=cover` is unaffected either way, and is correctly set up for safe-area CSS to work, once/if that's implemented (see above).

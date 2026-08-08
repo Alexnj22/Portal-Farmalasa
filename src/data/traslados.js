@@ -44,31 +44,31 @@ export function crearSolicitudTraslado(payload) {
  * pero no idéntico es la forma de que las dos se separen y una esconda lo que
  * la otra muestra.
  */
+// Devuelve las filas Y el total exacto en UNA sola consulta: `count: 'exact'`
+// sin `head` hace que PostgREST mande el `Content-Range` junto con el cuerpo.
+//
+// Eso es lo que permite que la baldosa muestre el número sin pedirlo aparte —y
+// que el número sea el REAL, no `filas.length`, que mentiría en cuanto se
+// crucen las 201 del `range`. Contar por el largo de una lista topada es
+// exactamente el tipo de tope silencioso que no queremos.
 export async function fetchTrasladosPorConfirmar() {
-    const { data, error } = await supabase
+    const { data, count, error } = await supabase
         .from('approval_requests')
-        .select('id, employee_id, note, metadata, created_at')
+        .select('id, employee_id, note, metadata, created_at', { count: 'exact' })
         .eq('type', 'INVENTORY_TRANSFER_REQUEST')
         .eq('status', 'PENDING')
         .order('created_at', { ascending: true })
         .range(0, 200);
-    return { filas: data ?? [], error };
+    return { filas: data ?? [], total: count ?? 0, error };
 }
 
-/**
- * Cuántos hay esperando. Es lo que la baldosa muestra para dar un motivo de
- * abrirla: sin ese número, la puerta no dice nada de lo que hay del otro lado.
- *
- * `head: true` — se pide el CONTEO, no las filas.
- */
-export async function contarTrasladosPorConfirmar() {
-    const { count, error } = await supabase
-        .from('approval_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('type', 'INVENTORY_TRANSFER_REQUEST')
-        .eq('status', 'PENDING');
-    return { total: count ?? 0, error };
-}
+// `contarTrasladosPorConfirmar` se eliminó el 2026-08-07. Contaba exactamente
+// las mismas filas que devuelve la consulta de arriba —misma tabla, mismos dos
+// filtros— y el widget la llamaba de nuevo al terminar CADA carga de la lista,
+// aunque entre el montaje y la apertura no hubiera cambiado nada. El total sale
+// ahora del `count` de esa misma consulta. Mismo hallazgo que
+// `contar_facturas_sala` (v2.515.2), con la diferencia de que acá el viaje
+// desperdiciado era barato.
 
 /** Lo que esta sala pidió y ya salió: sirve para saber qué falta recibir. */
 export async function fetchTrasladosPorRecibir() {

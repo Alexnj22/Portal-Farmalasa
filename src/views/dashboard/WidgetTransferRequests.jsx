@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { FilaPorConfirmar, FilaPorRecibir } from '../traslados/FilasTraslado';
 import {
-    fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, contarTrasladosPorConfirmar,
+    fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
 } from '../../data/traslados';
 
 // Widget «Traslados entre Salas».
@@ -32,13 +32,12 @@ import {
 // dos copias de la misma fila terminan comportándose distinto.
 
 /* ─── El contenido del modal ──────────────────────────────────────────────── */
-function PanelTraslados({ onCambio }) {
+// Ya no pide nada: recibe las dos listas que la baldosa trajo al montarse, así
+// que abrir el modal muestra el contenido en vez de un esqueleto.
+function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
     const { hasPermission, user } = useAuth();
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
     const employees = useStaffStore(s => s.employees);
-    const [porConfirmar, setPorConfirmar] = useState(null);
-    const [porRecibir,   setPorRecibir]   = useState(null);
-    const [error,        setError]        = useState('');
 
     // Confirmar un traslado es el permiso `traslados`; recibir lo que uno pidió
     // no lo necesita. Son dos cosas distintas y por eso son dos secciones: la
@@ -51,16 +50,6 @@ function PanelTraslados({ onCambio }) {
         const e = (employees ?? []).find(x => x.id === id);
         return e?.name ?? 'Alguien';
     }, [employees]);
-
-    const cargar = useCallback(async () => {
-        const [a, b] = await Promise.all([fetchTrasladosPorConfirmar(), fetchTrasladosPorRecibir()]);
-        if (a.error || b.error) setError((a.error ?? b.error).message ?? 'No se pudo leer.');
-        setPorConfirmar(a.filas);
-        setPorRecibir(b.filas);
-        onCambio?.();
-    }, [onCambio]);
-
-    useEffect(() => { cargar(); }, [cargar]);
 
     const cargando = porConfirmar === null || porRecibir === null;
     const vacio = !cargando
@@ -105,7 +94,7 @@ function PanelTraslados({ onCambio }) {
                         Te piden de tu sala
                     </p>
                     {porConfirmar.map(f => (
-                        <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={cargar} />
+                        <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={onCambio} />
                     ))}
                 </div>
             )}
@@ -123,7 +112,7 @@ function PanelTraslados({ onCambio }) {
                             : 'En camino'}
                     </p>
                     {porRecibir.map(f => (
-                        <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} />
+                        <FilaPorRecibir key={f.id} fila={f} onHecho={onCambio} />
                     ))}
                 </div>
             )}
@@ -132,14 +121,34 @@ function PanelTraslados({ onCambio }) {
 }
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
+//
+// Trae las listas al montarse y de ahí sale el número, igual que en «Facturas de
+// mi Sala» (v2.515.2). Antes eran cuatro viajes por apertura: contar al montar,
+// las dos listas al abrir, y contar OTRA VEZ porque el panel llamaba `onCambio`
+// al final de cada carga — incluida la primera, cuando entre el montaje y la
+// apertura no había cambiado nada.
+//
+// El total NO es `porConfirmar.length`: sale del `count` exacto que devuelve la
+// misma consulta. La lista está topada en 201 filas, así que contar por su largo
+// sería un tope silencioso esperando a que alguien lo cruce.
 export default function WidgetTransferRequests() {
-    const [pendientes, setPendientes] = useState(null);
+    const [porConfirmar, setPorConfirmar] = useState(null);
+    const [porRecibir,   setPorRecibir]   = useState(null);
+    const [pendientes,   setPendientes]   = useState(null);
+    const [error,        setError]        = useState('');
 
-    const contar = useCallback(() => {
-        contarTrasladosPorConfirmar().then(r => setPendientes(r.total));
+    const cargar = useCallback(async () => {
+        const [a, b] = await Promise.all([fetchTrasladosPorConfirmar(), fetchTrasladosPorRecibir()]);
+        if (a.error || b.error) setError((a.error ?? b.error).message ?? 'No se pudo leer.');
+        setPorConfirmar(a.filas);
+        setPorRecibir(b.filas);
+        setPendientes(a.total);
     }, []);
 
-    useEffect(() => { contar(); }, [contar]);
+    // El `setState` ocurre DESPUÉS del `await`, no en el cuerpo del efecto, así
+    // que no encadena renders — la regla no puede distinguirlo. Misma anotación
+    // y mismo motivo que en `TrasladosView`.
+    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     return (
         <LanzadorSolicitud
@@ -155,7 +164,14 @@ export default function WidgetTransferRequests() {
         >
             {/* Sin `min-h` ni scroller propio: el cuerpo canónico
                 (`LiquidModal.Body`) ya scrollea, y el alto lo topa el modal. */}
-            {() => <PanelTraslados onCambio={contar} />}
+            {() => (
+                <PanelTraslados
+                    porConfirmar={porConfirmar}
+                    porRecibir={porRecibir}
+                    error={error}
+                    onCambio={cargar}
+                />
+            )}
         </LanzadorSolicitud>
     );
 }

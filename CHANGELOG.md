@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.517.1 — Traslados: el mismo viaje de más que Facturas de mi Sala
+
+Preguntado tras v2.515.2: «¿no pasa eso mismo en otros widgets?». Se barrió, y
+sí, pero solo en uno.
+
+**El barrido, para que quede el número.** De los cinco contadores de baldosa del
+tablero, cuatro son consultas propias y baratas (`count: 'exact'` con `head:
+true` sobre columnas indexadas) y no reejecutan nada. Y en la base, ninguna otra
+función cuenta reejecutando una que devuelve filas: `contar_facturas_sala` era
+**la única**. Ese defecto no se repetía.
+
+**El viaje redundante sí.** `WidgetTransferRequests` tenía exactamente la misma
+forma: la baldosa contaba al montar, el panel pedía sus dos listas al abrirse, y
+al terminar esa carga llamaba `onCambio` — que volvía a contar. Cuatro viajes
+por apertura, y el cuarto sin un dato nuevo, porque entre el montaje y la
+apertura no había cambiado nada. La diferencia con Facturas es que acá el viaje
+desperdiciado era barato: un `head: true`, no la consulta pesada entera.
+
+Ahora la baldosa trae las dos listas al montarse y el panel las recibe: **abrir
+el modal no pide nada**. De cuatro viajes a dos.
+
+**El total no es `filas.length`.** `fetchTrasladosPorConfirmar` sale con
+`count: 'exact'` y devuelve las filas y el conteo real en la misma respuesta —
+PostgREST manda el `Content-Range` junto con el cuerpo—. La lista está topada en
+201 filas, así que contar por su largo sería un tope silencioso esperando a que
+alguien lo cruce. `contarTrasladosPorConfirmar` se elimina.
+
+**Y el hallazgo de lint que quedaba, contado y separado.** Eran 6 en 6 archivos
+y **no son la misma cosa**:
+
+- **2 eran ruido** (`WidgetFacturasSala`, `WidgetTransferRequests`): el
+  `setState` ocurre después del `await`, no en el cuerpo del efecto, así que no
+  encadena nada — la regla no puede distinguirlo. Anotados con el motivo, igual
+  que ya lo estaba `TrasladosView`.
+- **4 son reales** y quedan abiertos, con nombre: `ResumenFiscalView:114`
+  (`setLoading(true)` antes del `await`), `WidgetInventorySearch:1125` y
+  `TabTablero:73` (ambos `setEstado(null)` sincrónico cuando falta el dato de
+  entrada) y `FilasTraslado:65`, que es el caso de manual: estado derivado de
+  props ajustado dentro de un efecto.
+
 ## v2.517.0 — El acuse del toque, medido en las 37 vistas: 634 a 77
 
 La primera pasada (v2.503.0) midió **tres** vistas y bajó 141 → 5. El barrido

@@ -283,7 +283,10 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
         setFilas(f);
     }, [branchId]);
 
-    useEffect(() => { cargar(); }, [cargar]);
+    // El `setState` ocurre DESPUÉS del `await`, no en el cuerpo del efecto, así
+    // que no encadena renders — la regla no puede distinguirlo. Misma anotación
+    // y mismo motivo que en `TrasladosView`.
+    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     // Mismo criterio que tenía `contar_facturas_sala` en la base: lo que espera
     // que alguien la tome. Lo que ya es mío no está esperando nada.

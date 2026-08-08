@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.515.1 — El acomodo adaptado se rellena, y el panel deja de tener su propia barra
+
+Tres cosas reportadas con captura sobre v2.514.0.
+
+**El previsualizador no previsualizaba — bug mío.** Al elegir otro cargo
+quedaban celdas en blanco en medio del renglón. La causa: `acomodoLibre` es
+verdadero para el SU en cualquier pestaña, así que al mirar como otro cargo se
+seguía usando **su acomodo fijo** y simplemente no se pintaban los widgets que
+el otro no ve — cada ausencia dejaba su hueco. Ahora, con el previsualizador
+puesto, la pestaña se recalcula por el mismo camino que para ese cargo. Un
+previsualizador que no reproduce el mismo cálculo no está previsualizando nada.
+
+**Y los huecos que sí quedan, se rellenan** («nunca cambiar el tamaño a más
+pequeño, pero sí a más grande para intentar hacer rectángulos siempre»).
+`rellenarFilas` trabaja **por banda** —los widgets que arrancan en la misma
+fila— y en dos pasos: primero empareja el alto, estirando a los bajos hasta el
+más alto de la banda si las celdas de abajo están libres; después reparte el
+ancho sobrante desde el final. Tres baldosas en cuatro columnas dejan la última
+doble; dos quedan mitad y mitad; una sola toma el renglón entero. Nadie encoge
+nunca.
+
+Sólo se aplica al acomodo **adaptado** —el que se calcula por cargo—, jamás
+sobre uno que alguien arrastró a mano, y **no en el teléfono**: ahí el ancho lo
+impone `anchoEnTelefono` por encima de las medidas, así que ensanchar dejaría la
+rejilla y el widget diciendo cosas distintas.
+
+La guarda es deliberadamente conservadora: si la banda no se puede emparejar, o
+si un widget de una fila anterior mete cuerpo adentro, se deja como está.
+Prefiero un hueco a una superposición — ensanchar sobre celdas ajenas sería
+volver al encimado por otra puerta, que es justo lo que este rediseño cerró.
+
+Verificado sin navegador, que es donde vive el riesgo real: nueve acomodos
+reales quedan **sin un solo hueco** (incluido el de la captura y el caso de
+`sales` 3×2 con una baldosa al lado, que antes dejaba la celda de abajo vacía),
+y un barrido de **4.000 acomodos aleatorios** con semilla fija a 2 y 4 columnas
+da **cero superposiciones, cero fuera de rejilla y cero widgets encogidos**.
+
+**El panel pierde su barra de pestañas.** Tenía una segunda barra debajo de la
+de la vista, y cambiarla no cambiaba el tablero de atrás: se podía estar en
+Operación editando RRHH sin notarlo. Ahora configura siempre la pestaña abierta
+y lo dice en el título («Personalizar Operación»). Dos controles para la misma
+idea, y el de adentro no movía nada.
+
+**Y el panel respira**: le faltaba el `mb-5`, así que apoyaba contra la primera
+fila de widgets y los dos vidrios se leían como una sola superficie.
+
 ## v2.515.0 — Reglas de despacho: filtros, tabla canónica y el expediente que volvía a la hoja
 
 **El teléfono: la pantalla negra volvió porque el arreglo se fue de vuelta.**

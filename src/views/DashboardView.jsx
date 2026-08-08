@@ -131,6 +131,100 @@ const getWidgetSize = (id) => {
   return WIDGET_SIZES[id] || { minCols: 1, minRows: 1, label: id };
 };
 
+/**
+ * Estira los widgets para que cada renglón quede lleno. Sólo se usa en el
+ * acomodo adaptado —el que se calcula por cargo—, nunca sobre uno que alguien
+ * arrastró a mano.
+ *
+ * Reportado el 2026-08-07 con captura: a un cargo al que le faltan widgets del
+ * medio le quedaban celdas en blanco, y un renglón con agujeros se lee como una
+ * pantalla a medio cargar. «Nunca cambiar el tamaño a más pequeño, pero sí a
+ * más grande para intentar hacer rectángulos siempre.»
+ *
+ * Trabaja por BANDA, no celda por celda. Una banda es el conjunto de widgets
+ * que arrancan en la misma fila, y sólo se toca si es pareja: todos del mismo
+ * alto y sin que nadie de una fila anterior meta cuerpo adentro. Fuera de esa
+ * condición, ensanchar a uno le pisaría el lugar al de abajo — el acomodo ya no
+ * sería el que `autoPlaceOrder` resolvió y volveríamos al encimado por otra
+ * puerta. La banda despareja se deja como está: prefiero un hueco a una
+ * superposición.
+ *
+ * El sobrante se reparte desde el final: tres baldosas en cuatro columnas dejan
+ * a la última doble, y dos baldosas quedan mitad y mitad — que es justo como se
+ * ve hoy el segundo renglón de Operación.
+ */
+function rellenarFilas(layout, medidas, gridCols) {
+  const ids = Object.keys(layout);
+  if (!ids.length) return { layout, medidas };
+
+  const alto  = id => Math.max(medidas[id]?.rows ?? getWidgetSize(id).minRows, 1);
+  const ancho = id => Math.min(Math.max(medidas[id]?.cols ?? getWidgetSize(id).minCols, 1), gridCols);
+
+  const dueño = new Map();
+  ids.forEach(id => {
+    for (let c = layout[id].col; c < layout[id].col + ancho(id); c++)
+      for (let r = layout[id].row; r < layout[id].row + alto(id); r++) dueño.set(`${c},${r}`, id);
+  });
+
+  const porFila = {};
+  ids.forEach(id => { (porFila[layout[id].row] ??= []).push(id); });
+
+  const nuevoLayout   = { ...layout };
+  const nuevasMedidas = { ...medidas };
+
+  Object.keys(porFila).map(Number).sort((a, b) => a - b).forEach(fila => {
+    const banda = porFila[fila].slice().sort((a, b) => layout[a].col - layout[b].col);
+    const h = Math.max(...banda.map(alto));
+
+    // Primero se empareja el ALTO: los bajos crecen hasta el más alto de la
+    // banda, y sólo si las celdas de abajo están libres. Sin esto, una baldosa
+    // al lado de un widget de dos filas deja su celda inferior vacía —el caso
+    // de `sales` (3×2) con una baldosa— y la banda se descartaba por despareja.
+    const altoFinal = {};
+    banda.forEach(id => {
+      let hh = alto(id);
+      while (hh < h) {
+        let libre = true;
+        for (let c = layout[id].col; c < layout[id].col + ancho(id); c++)
+          if (dueño.has(`${c},${fila + hh}`)) { libre = false; break; }
+        if (!libre) break;
+        hh += 1;
+      }
+      altoFinal[id] = hh;
+    });
+    if (banda.some(id => altoFinal[id] !== h)) return;         // no se pudo emparejar
+
+    for (let r = fila; r < fila + h; r++)
+      for (let c = 1; c <= gridCols; c++) {
+        const d = dueño.get(`${c},${r}`);
+        if (d && layout[d].row !== fila) return;               // intruso de arriba
+      }
+
+    // El reparto del ancho sobrante va desde el final, para que tres baldosas
+    // en cuatro columnas dejen a la última doble y dos queden mitad y mitad.
+    const extra = Object.fromEntries(banda.map(id => [id, 0]));
+    let sobra = gridCols - banda.reduce((s, id) => s + ancho(id), 0);
+    let i = banda.length - 1;
+    while (sobra > 0) {
+      extra[banda[i]] += 1;
+      sobra -= 1;
+      i = i === 0 ? banda.length - 1 : i - 1;
+    }
+
+    // Se escribe aunque no sobre ancho: el alto emparejado de arriba también es
+    // un cambio, y saltearlo dejaría el hueco que se acaba de resolver.
+    let col = 1;
+    banda.forEach(id => {
+      const w = ancho(id) + extra[id];
+      nuevoLayout[id]   = { col, row: fila };
+      nuevasMedidas[id] = { cols: w, rows: h };
+      col += w;
+    });
+  });
+
+  return { layout: nuevoLayout, medidas: nuevasMedidas };
+}
+
 // Coloca widgets nuevos en el primer hueco REAL del acomodo guardado.
 //
 // Antes esto lo resolvía `autoPlaceOrder` sobre "los que ya están + los que
@@ -627,7 +721,12 @@ const DashboardView = ({ openModal }) => {
   const [activeTab, setActiveTab] = useState(() => {
     try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch { /* localStorage no disponible o valor corrupto — se usa el default */ } return 'general';
   });
-  const [configTab, setConfigTab] = useState(activeTab);
+  // `configTab` ya no existe: el panel configura SIEMPRE la pestaña abierta.
+  // Tenía su propia barra de pestañas adentro —una segunda, debajo de la de la
+  // vista— y cambiarla no cambiaba el tablero de atrás, así que se podía estar
+  // en Operación editando RRHH sin verlo. Reportado el 2026-08-07: «¿por qué
+  // aparecen todas las pestañas ahí, si estoy en operación?». Dos controles
+  // para la misma idea, y el de adentro no movía nada.
   const [tabDir, setTabDir] = useState('right');
   const prevTabIndexRef = useRef(TABS.findIndex(t => t.id === ((() => { try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch { /* localStorage no disponible o valor corrupto — se usa el default */ } return 'general'; })())));
   const activeTabRef = useRef(activeTab);
@@ -689,7 +788,15 @@ const DashboardView = ({ openModal }) => {
   // General es de cada quien. Las temáticas las acomoda el SU y las demás las
   // reciben publicadas: sin arrastrar, sin redimensionar y sin apagar widgets.
   const puedeAcomodar = (tabId) => tabId === 'general' || isSU;
-  const acomodoLibre  = puedeAcomodar(activeTab);
+  // Con el previsualizador puesto, el SU deja de tener el acomodo libre: la
+  // pestaña se recalcula igual que para el cargo que está mirando.
+  //
+  // Reportado con captura el 2026-08-07 — al elegir un cargo quedaban celdas en
+  // blanco. El defecto era éste: se seguía usando el acomodo FIJO del SU y
+  // simplemente no se pintaban los widgets que el otro no ve, así que cada
+  // ausencia dejaba su hueco. Un previsualizador que no reproduce el mismo
+  // cálculo no está previsualizando nada.
+  const acomodoLibre  = puedeAcomodar(activeTab) && verComoRol == null;
 
   const isWidgetOn = id => widgetConfig.find(w=>w.id===id)?.enabled !== false;
   const canSee     = p  => {
@@ -783,21 +890,35 @@ const DashboardView = ({ openModal }) => {
   //     hacía al leer el acomodo de escritorio (`initTabLayouts`, por `srs_inv`
   //     justamente) y **no** en el camino móvil, que es donde sobrevivió.
   //
+  // ── El acomodo adaptado: la pestaña temática vista por quien no la acomoda ─
+  //
+  // Nada de esto sale de un acomodo guardado por usuario, y ahí está el punto:
+  // se recalcula del canon cada vez, contra los widgets que este cargo ve en
+  // este momento. Por eso «se adapta» solo, y por eso la clase de bug del
+  // encimado —cinco correcciones entre v2.483.2 y v2.508.1, todas por mezclar
+  // una foto vieja con el catálogo nuevo— acá no tiene dónde ocurrir.
+  //
+  // Devuelve layout Y medidas porque `rellenarFilas` cambia las dos: para que
+  // el renglón quede lleno tiene que ensanchar widgets, y ese ancho es el que
+  // después lee `getEffectiveCols`. Si sólo devolviera posiciones, la rejilla
+  // diría una cosa y el widget mediría otra.
+  const acomodoAdaptado = useMemo(() => {
+    if (acomodoLibre) return null;
+    const orden   = ordenDeLaPestana(activeTab, canon?.[activeTab]?.orden, id => showWidget(id, PERMISO_DE[id]));
+    const medidas = canon?.[activeTab]?.medidas || EMPTY_OBJ;
+    // En el teléfono NO se rellena: el ancho de cada baldosa lo decide
+    // `anchoEnTelefono` y `getEffectiveCols` lo impone por encima de las
+    // medidas, así que ensanchar acá dejaría la rejilla y el widget diciendo
+    // cosas distintas. Con 2 columnas y la regla de baldosa tampoco hay mucho
+    // hueco que rellenar.
+    if (esTelefono) return { layout: autoPlaceOrder(orden, medidas, MOBILE_COLS, anchoEnTelefono), medidas };
+    return rellenarFilas(autoPlaceOrder(orden, medidas, activeCols), medidas, activeCols);
+  }, [acomodoLibre, activeTab, canon, esTelefono, anchoEnTelefono, activeCols, verComoRol, permisosPorCargo, hasPermission, widgetConfig]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Los `sales_branch_*` entran al catálogo tomándolos del acomodo de
   // escritorio, que es donde su efecto los da de alta.
   const activeLayout = useMemo(() => {
-    // ── Pestaña temática vista por quien no la acomoda ───────────────────────
-    // Nada de esto sale de un acomodo guardado por usuario, y ahí está el
-    // punto: se recalcula del canon cada vez, contra los widgets que este cargo
-    // ve en este momento. Por eso «se adapta» solo, y por eso la clase de bug
-    // del encimado —cinco correcciones entre v2.483.2 y v2.508.1, todas por
-    // mezclar una foto vieja con el catálogo nuevo— acá no tiene dónde ocurrir.
-    if (!acomodoLibre) {
-      const orden   = ordenDeLaPestana(activeTab, canon?.[activeTab]?.orden, id => showWidget(id, PERMISO_DE[id]));
-      const medidas = canon?.[activeTab]?.medidas || EMPTY_OBJ;
-      if (esTelefono) return autoPlaceOrder(orden, medidas, MOBILE_COLS, anchoEnTelefono);
-      return autoPlaceOrder(orden, medidas, activeCols);
-    }
+    if (!acomodoLibre) return acomodoAdaptado.layout;
 
     const tabLayout = widgetLayout[activeTab] || {};
     // Los `sales_branch_*` son ids dinámicos —uno por sucursal— y su alta la
@@ -841,13 +962,15 @@ const DashboardView = ({ openModal }) => {
     if (esTelefono) return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS, anchoEnTelefono);
     if (hayMovil) return base;
     return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS);
-  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, widgetSizes, mobileLayout, activeTab, mobileSizes, acomodoLibre, canon, verComoRol, permisosPorCargo, hasPermission, widgetConfig]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, widgetSizes, mobileLayout, activeTab, mobileSizes, acomodoLibre, acomodoAdaptado]);
 
-  // Las medidas salen del canon cuando la pestaña no es de quien la mira: si se
-  // leyeran las suyas, el ancho publicado se pisaría con el que esa persona
-  // hubiera dejado guardado antes de que la pestaña dejara de ser personal.
+  // Las medidas salen del acomodo adaptado —no del canon crudo— cuando la
+  // pestaña no es de quien la mira: son las del canon YA ensanchadas por
+  // `rellenarFilas`. Leer las del usuario acá pisaría el ancho publicado con el
+  // que esa persona hubiera dejado guardado antes de que la pestaña dejara de
+  // ser personal.
   const activeSizes = !acomodoLibre
-    ? (canon?.[activeTab]?.medidas || EMPTY_OBJ)
+    ? acomodoAdaptado.medidas
     : (isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ));
 
   // Active cols clamped for effective size
@@ -1440,7 +1563,6 @@ const DashboardView = ({ openModal }) => {
     if (!TABS_VISIBLES.length) return;
     if (TABS_VISIBLES.some(t => t.id === activeTab)) return;
     setActiveTab(TABS_VISIBLES[0].id);
-    setConfigTab(TABS_VISIBLES[0].id);
   }, [TABS_VISIBLES, activeTab]);
 
   const toggleWidget = id => {
@@ -1518,7 +1640,6 @@ const DashboardView = ({ openModal }) => {
     setTabDir(nextIdx > prevTabIndexRef.current ? 'right' : 'left');
     prevTabIndexRef.current = nextIdx;
     setActiveTab(tabId);
-    setConfigTab(tabId);
     try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
   };
 
@@ -1579,7 +1700,7 @@ const DashboardView = ({ openModal }) => {
   // recién cuando el SU abre «Personalizar» en una pestaña temática: no hacen
   // falta para pintar el tablero, y son dos consultas que nadie más usa.
   useEffect(() => {
-    if (!isSU || !showConfig || configTab === 'general' || cargos) return;
+    if (!isSU || !showConfig || activeTab === 'general' || cargos) return;
     Promise.all([fetchRolesForPermissions(), fetchRolePermissions()]).then(([r, p]) => {
       if (r.error) { console.error('[dash canon cargos]', r.error); return; }
       if (p.error) { console.error('[dash canon permisos]', p.error); return; }
@@ -1595,13 +1716,13 @@ const DashboardView = ({ openModal }) => {
       setPermisosPorCargo(porCargo);
       setCargos((r.data || []).map(c => ({ id: c.id, name: c.name })));
     });
-  }, [isSU, showConfig, configTab, cargos]);
+  }, [isSU, showConfig, activeTab, cargos]);
 
   // El previsualizador se apaga al salir del panel o al cambiar de pestaña: es
   // una lente para revisar, no un estado en el que quedarse — y quedarse dentro
   // mirando el tablero de otro cargo sin la señal del panel abierto se lee como
   // que el portal perdió permisos.
-  useEffect(() => { setVerComoRol(null); }, [configTab, showConfig]);
+  useEffect(() => { setVerComoRol(null); }, [activeTab, showConfig]);
 
   // ── wrapWidget: explicit grid position, resize button, drag handle ──────────
   const wrapWidget = (id, content, staggerIdx = 0) => {
@@ -2810,34 +2931,32 @@ const DashboardView = ({ openModal }) => {
     <GlassViewLayout icon={LayoutDashboard} title="Inicio" filtersContent={filtersContent} transparentBody={true}>
       <div className="pb-0 px-2">
 
-        {/* Config panel */}
+        {/* Config panel — configura SIEMPRE la pestaña abierta.
+            El `mb-5` no es cosmético: sin él el panel apoyaba contra la primera
+            fila de widgets y las dos superficies de vidrio se leían como una
+            sola. Es el mismo paso que el `space-y-5` del contenido. */}
         {showConfig && (() => {
-          const esGeneral   = configTab === 'general';
-          const etiquetaTab = TABS.find(t => t.id === configTab)?.label ?? configTab;
-          const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
+          const esGeneral   = activeTab === 'general';
+          const etiquetaTab = TABS.find(t => t.id === activeTab)?.label ?? activeTab;
+          const tabWidgetIds = TAB_WIDGETS[activeTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => w.id !== 'kpi' && tabWidgetIds.includes(w.id));
-          const sinUbicar = esGeneral ? [] : widgetsSinUbicar(configTab, canon?.[configTab]?.orden);
+          const sinUbicar = esGeneral ? [] : widgetsSinUbicar(activeTab, canon?.[activeTab]?.orden);
           const rotuloDe = (id) => WIDGET_DEFS.find(w => w.id === id)?.label ?? id;
           return (
-            <div data-surface="card" className="animate-in fade-in slide-in-from-top-2 duration-[var(--dur-fast)] p-4 space-y-3">
-              {/* Header */}
+            <div data-surface="card" className="animate-in fade-in slide-in-from-top-2 duration-[var(--dur-fast)] p-4 mb-5 space-y-3">
+              {/* Header — el nombre de la pestaña va acá, que es lo que la
+                  barra de adentro decía sin dejar cambiar nada. */}
               <div className="flex items-center justify-between gap-2 px-1">
-                <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Inicio</p>
+                <p className="text-label font-black uppercase tracking-widest text-content-2">
+                  Personalizar {etiquetaTab}
+                </p>
                 {/* Restablecer sólo donde hay algo propio que restablecer: en una
                     pestaña temática que uno no acomoda, no le pertenece nada. */}
                 {(esGeneral || isSU) && (
-                  <Button variant="secondary" icon={RotateCcw} onClick={() => resetTab(configTab)}>
-                    Restablecer {etiquetaTab}
+                  <Button variant="secondary" icon={RotateCcw} onClick={() => resetTab(activeTab)}>
+                    Restablecer
                   </Button>
                 )}
-              </div>
-              {/* Tab selector inside panel */}
-              <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl p-1">
-                <SegmentedControl
-                    size="sm" tone="neutro"
-                    options={TABS_VISIBLES.map(t => ({ value: t.id, label: t.label, icon: t.icon }))}
-                    value={configTab} onChange={setConfigTab} label="Sección de configuración"
-                    className="w-full" />
               </div>
 
               {esGeneral ? (
@@ -2903,10 +3022,10 @@ const DashboardView = ({ openModal }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {publicado === configTab && (
+                      {publicado === activeTab && (
                         <Badge variant="success" tone="soft" size="sm">Publicado</Badge>
                       )}
-                      <Button icon={Upload} loading={publicando} onClick={() => publicarAcomodo(configTab)}>
+                      <Button icon={Upload} loading={publicando} onClick={() => publicarAcomodo(activeTab)}>
                         Publicar acomodo
                       </Button>
                     </div>

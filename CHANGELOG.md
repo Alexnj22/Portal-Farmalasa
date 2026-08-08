@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.518.1 — el teléfono pagina de 25: la vista más alta era la que cruzaba el límite
+
+El pulso de v2.518.0 contestó a la primera y contestó por descarte:
+
+```
+MURIO   a los 130 s · scroll 0 px · trabón máx 2 ms · 1,600 elementos
+        14:13:35 · /pedidos?tab=reglas
+```
+
+**Trabón de 2 ms** es un hilo principal sano — no hubo bucle de render ni
+cuelgue. **130 s** de sesión descarta la app agregada a inicio acumulando días.
+**1,600 elementos** es un DOM chico. O sea: la página estaba perfectamente bien
+y desapareció. Lo que muere es el proceso, y lo mata el sistema.
+
+Eso saca el problema de nuestro código y lo pone en el compositor, que es
+justamente lo que el scroll pone a trabajar. Se midió el inventario de capas con
+las medidas exactas del teléfono del usuario (352×715 @3x) y su tema
+(`solid-dark`), contra el bundle de producción:
+
+| vista | documento | capas del alto del documento |
+|---|---|---|
+| Reglas de despacho (falla) | **5,241 px** | 6 |
+| Productos (no falla) | 3,277 px | 6 |
+
+**La estructura es idéntica.** Reglas no tiene un defecto propio: seis capas del
+alto del documento es lo que hace el portal en todas partes. Lo único distinto
+es el alto, y se multiplica por seis — Reglas resulta ser la página más alta del
+teléfono y por eso es la única que cruza el límite del aparato.
+
+Se comprobó además que **no es la animación de entrada de ruta**: apagar
+`animate-route-enter` quita una de las seis capas y deja las otras cinco intactas
+(la cascada real es `Overlap`, no la animación). Se descarta acá para que no se
+vuelva a proponer.
+
+El alto sale de cuántas fichas se pintan, así que ése es el único mando que hay:
+en el teléfono la vista arranca en **25** —el escalón que `TablePagination` ya
+ofrecía, no una opción nueva— y el documento queda por debajo de Productos. En
+escritorio sigue en 50: ahí no hay proceso que matar y 50 filas se leen de un
+vistazo.
+
+**Lo que esto NO es**: no es un arreglo del compositor. Las seis capas siguen
+ahí y el mismo lever existe en cualquier lista larga del teléfono. Lo que hace
+es bajar la vista que cruzaba el límite por debajo de la que se sabe que aguanta.
+
 ## v2.518.0 — el pulso que sobrevive a la muerte súbita, y la salida de la pantalla de carga
 
 La caja negra de v2.516.2 dio su primer resultado, y fue **un resultado por

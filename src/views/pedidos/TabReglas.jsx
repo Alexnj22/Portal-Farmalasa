@@ -26,7 +26,8 @@ import {
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
-import { useExpedienteMovil } from '../../components/common/usarExpediente';
+import { useExpedienteMovil, CORTE_TELEFONO } from '../../components/common/usarExpediente';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
@@ -552,13 +553,34 @@ function FilaEdicion({ colSpan, children }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function TabReglas({ searchTerm = '' }) {
 
+    // ── Por qué el teléfono pagina distinto (2026-08-08) ──────────────────
+    // Esta vista es la que mata la página en el iPhone del usuario: al
+    // scrollear, la pantalla se apaga y hay que cerrar la ventana. El pulso de
+    // la caja negra descartó que fuera código nuestro —el hilo principal estaba
+    // en 2 ms de retraso, o sea sano, con 1,600 elementos y 130 s de sesión— así
+    // que lo que muere es el PROCESO, y lo mata el sistema.
+    //
+    // Se midió el inventario de capas del compositor con las medidas exactas de
+    // su teléfono (352×715 @3x) y su tema (`solid-dark`). El resultado es que la
+    // estructura es IDÉNTICA a la de Productos, que no falla: seis capas del
+    // alto del documento en las dos. Lo único que cambia es el alto —Reglas
+    // 5,241 px contra 3,277 px—, y se multiplica por seis. O sea que Reglas no
+    // tiene un defecto propio: es la página más ALTA del teléfono, y por eso es
+    // la que cruza el límite del aparato.
+    //
+    // El alto sale de cuántas fichas se pintan, así que ese es el único mando
+    // que hay. 25 es el escalón que ya ofrece `TablePagination` —no una opción
+    // nueva— y deja el documento por debajo de Productos. En escritorio no
+    // aplica: ahí no hay a quién matar y 50 filas se leen de un vistazo.
+    const enTelefono = useMediaQuery(CORTE_TELEFONO);
+
     const [rulesMap,        setRulesMap]        = useState({});
     const [loadingRules,    setLoadingRules]    = useState(true);
     const [products,        setProducts]        = useState([]);
     const [totalCount,      setTotalCount]      = useState(0);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [page,            setPage]            = useState(1);
-    const [pageSize,        setPageSize]        = useState(50);
+    const [pageSize,        setPageSize]        = useState(() => (enTelefono ? 25 : 50));
     const [allCount,        setAllCount]        = useState(0);
     const [statsLoading,    setStatsLoading]    = useState(true);
     const [newProductIds,   setNewProductIds]   = useState(new Set());
@@ -795,7 +817,9 @@ export default function TabReglas({ searchTerm = '' }) {
 
     // El panel de edición vive en un `<tr colSpan>` hermano, que en el teléfono
     // no se pinta. Va al expediente, con la misma regla que el resto.
-    const { enTelefono, abierto } = useExpedienteMovil(sortedProducts, editingId);
+    // `enTelefono` ya se resolvió arriba con la MISMA consulta (el hook cachea
+    // el `matchMedia`), así que acá sólo hace falta la fila abierta.
+    const { abierto } = useExpedienteMovil(sortedProducts, editingId);
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">

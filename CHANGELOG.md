@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.520.1 — lo que no está en pantalla deja de pintarse
+
+El reporte de jetsam del teléfono cerró un diagnóstico que costó cuatro
+sesiones:
+
+```
+largestProcess : com.apple.WebKit.WebContent
+2,227 MB   per-process-limit   com.apple.WebKit.WebContent   [active, frontmost]
+iPhone18,2 · iOS 27 · 2026-08-08 09:43:10 -0600
+```
+
+Es **la pestaña del portal**, en primer plano, matada por pasarse de **su propio
+techo**. No es presión del aparato: eso habría dicho `vm-pageshortage`. La hora
+calza al segundo con el `murio` de la caja negra. Es memoria, y son 2.2 GB.
+
+Cruzado con el pulso —`scroll 2,292 de 2,907 px · trabón máx 3 ms`— el perfil
+queda completo: **hilo principal sano, memoria disparada, y el pico al terminar
+de recorrer la lista.** Eso no es un bucle: es algo que se acumula *a medida que
+se pinta*. Con el motor rasterizando a 3× —1,056×2,145 píxeles reales— cada
+ficha que el dedo deja atrás sigue costando.
+
+`content-visibility: auto` en la ficha de `DataTable` es la respuesta directa:
+el motor se salta el layout y el pintado de lo que está fuera de la ventana, y
+lo recupera al acercarse. Va en el **canónico** y no en Reglas de despacho,
+porque el techo es del teléfono: lo cruza cualquier lista larga, y la que toque
+será «la vista que falla» — igual que Reglas fue la primera por ser la más alta.
+
+`contain-intrinsic-size: auto 96px` es la otra mitad, la que evita el efecto
+secundario clásico (la barra de scroll saltando al aparecer y desaparecer el
+contenido). El `auto` hace que recuerde el alto real de cada ficha, así que sólo
+la primera pasada usa la estimación — medido: el documento se ajusta 245 px en
+30 fichas y después queda quieto.
+
+Soportado en Safari desde la 18 y el aparato corre iOS 27; donde no se entienda,
+la declaración se ignora y todo sigue igual.
+
+**Lo que NO se pudo hacer, dicho de frente**: no hay medición que pruebe que
+esto lo arregla. WebKit de escritorio no reproduce la escala (pico 341 MB contra
+200 MB que ya pesa `about:blank` en ese arnés, o sea ~140 MB netos) y su
+medición tiene ±100 MB de ruido, que se come cualquier efecto. La ablación por
+megas —sidebar, halos, `filter`, `will-change`, `box-shadow`, `backdrop-filter`—
+salió plana en las siete variantes. Este arreglo ataca el **mecanismo
+confirmado** por el reporte del sistema, no una causa medida. Lo verifica el
+pulso: si vuelve a pasar, va a quedar anotado.
+
+Verificado sí: compila, Tailwind emite las dos reglas, y la vista renderiza
+completa al fondo en WebKit a 3× con las medidas del teléfono.
+
 ## v2.520.0 — El teléfono pide más alto: la fila sube a 150 y la franja vuelve
 
 v2.519.1 apagó la franja en el teléfono para que dejara de salirse de la

@@ -684,9 +684,39 @@ function Ficha({ celdas, onClick }) {
     ? papeles.acciones.map(col => deCol(col)).filter(v => v != null && v !== '')
     : [];
 
+  // ── La ficha fuera de pantalla no se pinta (2026-08-08) ──────────────────
+  // El reporte de jetsam del iPhone del usuario cerró el diagnóstico que costó
+  // cuatro sesiones: `com.apple.WebKit.WebContent`, en primer plano, matado por
+  // `per-process-limit` con **2,227 MB**. No es presión del aparato —eso habría
+  // dicho `vm-pageshortage`— es la pestaña sola pasándose de su propio techo. Y
+  // el pulso de la caja negra dice dónde: `scroll 2,292 de 2,907 px`, o sea al
+  // llegar al FINAL de la lista, con el hilo principal sano (3 ms de retraso).
+  //
+  // Hilo sano + memoria disparada + el pico al terminar de recorrerla es el
+  // perfil de algo que se acumula A MEDIDA QUE SE PINTA, no de un bucle. Con el
+  // motor renderizando a 3× —1,056×2,145 píxeles reales— cada ficha que el dedo
+  // deja atrás sigue costando.
+  //
+  // `content-visibility: auto` es exactamente la respuesta a eso: el motor se
+  // salta el layout y el pintado de lo que está fuera de la ventana, y lo
+  // recupera al acercarse. Va acá, en el canónico, y no en Reglas de despacho:
+  // el techo es del teléfono, así que lo cruza cualquier lista larga y la que
+  // toque será "la vista que falla" — igual que Reglas fue la primera por ser
+  // la más alta.
+  //
+  // `contain-intrinsic-size: auto 96px` es la mitad que evita el efecto
+  // secundario clásico: sin un alto estimado la barra de scroll salta al
+  // aparecer y desaparecer el contenido. El `auto` hace que recuerde el alto
+  // real que tuvo la ficha la última vez que sí se pintó, así que sólo la
+  // primera pasada usa los 96px.
+  //
+  // Soportado en Safari desde la 18; el aparato del usuario corre iOS 27. En un
+  // motor que no lo entienda la declaración se ignora y todo sigue como antes.
+  const fueraDePantalla = '[content-visibility:auto] [contain-intrinsic-size:auto_96px]';
+
   if (acciones.length > 0) {
     return (
-      <div data-surface="card" className="w-full px-3.5 py-3 rounded-card">
+      <div data-surface="card" className={`w-full px-3.5 py-3 rounded-card ${fueraDePantalla}`}>
         <Elem
           {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
           className="w-full text-left block
@@ -706,9 +736,9 @@ function Ficha({ celdas, onClick }) {
     <Elem
       {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
       data-surface="card"
-      className="w-full text-left px-3.5 py-3 rounded-card
+      className={`w-full text-left px-3.5 py-3 rounded-card
         transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
-        active:scale-[0.985]"
+        active:scale-[0.985] ${fueraDePantalla}`}
     >
       <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} />
     </Elem>

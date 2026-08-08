@@ -76,7 +76,12 @@ const MENU_GROUPS = [
     { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift, modules: ['bonificaciones'] },
     { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a Sucursales', icon: ClipboardList, modules: ['pedidos'] },
-    { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['minmax', 'ventas_perdidas', 'conteo_inventario'] },
+    // `gestion_stock` e `inventario` van PRIMERO y no al final de la lista
+    // (pedido del usuario, 2026-08-08): las dos eran pestañas de Productos y
+    // son las dos preguntas con las que alguien entra a este grupo —qué se
+    // vende sin parámetros, y qué existencia hay hoy—. Min/Max y el Conteo son
+    // lo que se hace *después* de haberlas mirado.
+    { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['gestion_stock', 'inventario', 'minmax', 'ventas_perdidas', 'conteo_inventario'] },
     // «Facturas de Sala» entra acá y no en Datos Contables: quien revisa que la
     // factura tomada haya quedado cargada como compra trabaja en este grupo, no
     // en el de los documentos que llegan por correo. Decisión del usuario

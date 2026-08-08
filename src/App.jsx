@@ -49,6 +49,8 @@ const VentasView = lazy(IMPORTADORES.VentasView);
 const ProductosView = lazy(IMPORTADORES.ProductosView);
 const LaboratoriosView = lazy(IMPORTADORES.LaboratoriosView);
 const PedidosView = lazy(IMPORTADORES.PedidosView);
+const GestionStockView = lazy(IMPORTADORES.GestionStockView);
+const InventarioView = lazy(IMPORTADORES.InventarioView);
 const MinMaxView = lazy(IMPORTADORES.MinMaxView);
 const TrasladosView = lazy(IMPORTADORES.TrasladosView);
 const VentasPperdidasView = lazy(IMPORTADORES.VentasPperdidasView);
@@ -639,6 +641,8 @@ function MainApp() {
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
                                     <Route path="pedidos" element={<PermissionGuard moduleKey="pedidos"><PedidosView /></PermissionGuard>} />
+                                    <Route path="gestion-stock" element={<PermissionGuard moduleKey="gestion_stock"><GestionStockView /></PermissionGuard>} />
+                                    <Route path="inventario" element={<PermissionGuard moduleKey="inventario"><InventarioView /></PermissionGuard>} />
                                     <Route path="minmax" element={<PermissionGuard moduleKey="minmax"><MinMaxView /></PermissionGuard>} />
                                     <Route path="traslados" element={<PermissionGuard moduleKey="traslados"><TrasladosView /></PermissionGuard>} />
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />

@@ -132,7 +132,14 @@ const EXCEPTIONS = {
   // O sea que acá el `flex-wrap` y la ausencia de `flex-1` son el ARREGLO de un
   // bug medido, no el bug. Contarlas como ratchet decía «bajalas», y bajarlas
   // reintroduce el 1024×768 que T4 cerró.
-  'src/views/productos/TabSinVenta.jsx': ['carril-pildora'],
+  // Vivía en `src/views/productos/`; se mudó a `src/views/inventario/` el
+  // 2026-08-08 al dejar de ser pestaña de Productos. Sólo cambió la ruta — la
+  // medición de arriba sigue siendo la misma y no se re-abrió el hallazgo.
+  //
+  // La ruta vieja NO queda listada: entre v2.520.2 y v2.521.0 existió ahí un
+  // puente de una línea (`export { default } from …`) que no tiene layout, así
+  // que nunca hubo un segundo hallazgo que excepcionar. v2.521.0 lo borra.
+  'src/views/inventario/TabSinVenta.jsx': ['carril-pildora'],
   // Las dos últimas, MEDIDAS EN PANTALLA el 2026-08-06 a 1280 y a 1600 con
   // Playwright (`tests/e2e/materiales.spec.js`), que es lo que §17.0 pide y lo
   // que no se puede deducir del archivo:
@@ -147,7 +154,9 @@ const EXCEPTIONS = {
   // escrito y acá había que ir a buscarlo. En dos filas entran enteras; forzar
   // `lg:flex-row` dejaría el carril en una o dos tarjetas visibles, que es el
   // «una sola cortada parece un error de maquetación» que §17.0 evita.
-  'src/views/productos/TabInventario.jsx': ['carril-pildora'],
+  // Misma mudanza del 2026-08-08 que su hermana: la ruta es otra, la medición
+  // de 1337px contra 772 disponibles es la misma.
+  'src/views/inventario/TabInventario.jsx': ['carril-pildora'],
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],

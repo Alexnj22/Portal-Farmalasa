@@ -33,6 +33,8 @@ export const MODULE_SEARCH_KEYWORDS = {
     productos:          ['catalogo', 'medicamentos', 'articulos', 'presentaciones', 'ficha de producto'],
     laboratorios:       ['fabricantes', 'marcas', 'labs'],
     pedidos:            ['logistica', 'traslados entre sucursales', 'reabastecimiento', 'distribucion interna'],
+    gestion_stock:      ['sin venta', 'sin min max', 'stock retenido', 'stock estancado', 'no rota', 'sin parametros'],
+    inventario:         ['existencias', 'stock por sucursal', 'lotes', 'vencimientos', 'vencidos', 'que hay en bodega'],
     minmax:             ['min max', 'stock', 'reposicion', 'existencias', 'punto de reorden'],
     ventas_perdidas:    ['quiebres de stock', 'sin stock', 'faltantes', 'stockouts'],
     compras:            ['compras del erp', 'facturas de bodega', 'costos de compra'],

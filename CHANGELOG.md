@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.521.0 — Gestión de Stock e Inventario dejan de ser pestañas, y Productos gana Presentaciones
+
+Pedido del usuario. **Productos tenía tres pestañas y sólo una hablaba del
+producto.** «Inventario» dice cuánta existencia hay hoy en cada sala, con sus
+lotes y vencimientos; «Gestión de Stock» dice qué se está vendiendo sin
+parámetros de reposición y qué stock lleva medio año quieto. Ninguna de las dos
+es una propiedad del catálogo: son decisiones de inventario, y su vecindario real
+es Min/Max, Ventas Perdidas y el Conteo.
+
+Las dos pasan a **módulo propio** —`/inventario` y `/gestion-stock`— y entran
+**primeras** en el grupo Inventario del menú, delante de Min/Max: son las dos
+preguntas con las que alguien abre ese grupo, y lo demás es lo que se hace
+después de haberlas mirado. Productos queda con **Catálogo + Presentaciones**.
+
+**El permiso que casi se rompe en silencio.** El valorizado de Inventario no lo
+calcula el frontend: lo hace `inventory_inversion`, una función SECURITY DEFINER
+que **lanza excepción** si al usuario le falta `productos_tab_inventario`. Borrar
+esa clave sin más habría hecho que el total de inversión reventara con
+PERMISSION_DENIED para todos —no que devolviera cero, que se habría notado
+menos—. La migración la repunta al módulo nuevo **antes** de tocar los permisos,
+y sólo entonces borra las claves viejas. Los permisos se siembran desde ellas con
+`can_view` = la conjunción de las dos que hacían falta para ver la pestaña
+(`productos` y la del tab): copiar sólo la del tab regalaba accesos. Verificado
+contra prod: los mismos 6 roles que veían «Inventario» ven el módulo, y los
+mismos 7 ven «Gestión de Stock».
+
+**Presentaciones — el catálogo visto por el envase.** Una fila por presentación:
+cuántos productos la usan, cuántos están activos y con qué factor. Al abrirla,
+los productos que la traen, con su laboratorio y su factor. Es de **solo
+lectura** a propósito: `presentaciones` la escribe el sync de productos, así que
+un nombre editado ahí volvería solo a su valor anterior sin avisar.
+
+Dos cosas que la tabla dice y que no eran obvias:
+
+- **Agrupa por NOMBRE, no por registro.** «CAJA» existe con cuatro id distintos y
+  «UNIDAD» con otros cuatro. Se buscó qué los separa —laboratorio, rango de
+  producto, factor— y no separa nada: son cuatro registros con el mismo nombre.
+  Cuatro filas idénticas se leen como un error de la pantalla, así que la columna
+  «Registros» es la que dice que atrás hay más de uno.
+- **El factor no es del envase.** Vive en cada fila de precio, o sea en el par
+  producto×presentación: «CAJA» aparece con **37 factores distintos, de 1 a 250**.
+  La columna muestra el más frecuente y, cuando hay más de uno, el rango al lado.
+  Un solo número habría sido falso para la mayoría de las filas.
+
+Los dos RPC devuelven `json` y no filas (Patrón C): «CAJA» agrupa 2,222
+productos, o sea que un `SETOF` se habría truncado en 1,000 sin error. Y el
+detalle pinta **100 productos y lo dice**, con un buscador propio para llegar al
+resto: 2,222 fichas dentro de un contenedor con scroll es exactamente la forma
+del cuelgue de memoria que v2.520.1 acaba de atacar en el teléfono.
+
+Verificado en el navegador, no sólo compilando: el menú lista los dos módulos
+primeros del grupo, las tres vistas montan sin errores de consola, el maestro
+pinta 212 presentaciones con CAJA en 2,222/1,982, el detalle abre («33 de 33
+productos») con el badge **Bajo Receta** —nunca «Abx»—, y `?tab=sinventa` cae en
+una pestaña válida en vez de dejar la vista vacía. Barrido también el DOM pintado
+más `title`/`aria-label`/`placeholder` en las cuatro pantallas: ni «ERP» ni jerga
+de sincronización, que es lo que grepear el fuente no alcanza a probar.
+
+De paso se borran los dos puentes de una línea que v2.520.2 dejó en
+`src/views/productos/` para que `main` compilara mientras el traslado estaba a
+medias. Ya no hacen falta: `ProductosView.jsx` importa las rutas nuevas.
+
 ## v2.520.2 — desarmar el arrastre que rompió el despliegue, y borrar el duplicado en minúscula
 
 **El despliegue de v2.520.1 falló, y la culpa fue de un arrastre.** El commit se

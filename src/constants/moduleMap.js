@@ -51,6 +51,11 @@ export const MODULE_MAP = {
     productos:         { path: '/productos',        label: 'Productos',                icon: Package       },
     laboratorios:      { path: '/laboratorios',     label: 'Laboratorios',             icon: FlaskConical  },
     pedidos:           { path: '/pedidos',          label: 'Pedidos a Sucursales',     icon: ClipboardList },
+    // Las dos salieron de ser pestañas de Productos (v2.521.0). El catálogo
+    // describe QUÉ es un producto; estas dos describen CUÁNTO hay y qué hacer
+    // con eso, así que su vecindario es Min/Max y el Conteo, no la ficha.
+    gestion_stock:     { path: '/gestion-stock',   label: 'Gestión de Stock',         icon: Activity      },
+    inventario:        { path: '/inventario',       label: 'Inventario',               icon: Boxes         },
     minmax:            { path: '/minmax',           label: 'Min / Max',                icon: BarChart2     },
     ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas Perdidas',          icon: PackageMinus  },
     compras:           { path: '/compras',           label: 'Compras',                  icon: ShoppingCart  },

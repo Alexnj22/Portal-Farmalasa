@@ -30,7 +30,7 @@ import {
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
-    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck,
+    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes,
     BookOpen, Contact, Wrench, Users, Calculator, ReceiptText
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
@@ -131,10 +131,16 @@ const GRUPOS_CRUDOS = [
         group: 'Inventario',
         color: 'text-chart-9-text',
         modules: [
-            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, sub: [
+            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos con su ficha, precios y ubicaciones, y el maestro de presentaciones en que se venden', icon: Package, hasApprove: false, sub: [
                 { key: 'productos_tab_catalogo',   label: 'Catálogo',   tipo: 'tab' },
-                { key: 'productos_tab_inventario', label: 'Inventario', tipo: 'tab' },
-                { key: 'productos_tab_sinventa',   label: 'Sin Venta',  tipo: 'tab' },
+                // Las pestañas «Inventario» y «Sin Venta» dejaron de vivir acá
+                // el 2026-08-08: son los módulos `inventario` y `gestion_stock`
+                // del grupo Inventario. Sus claves viejas
+                // (`productos_tab_inventario`, `productos_tab_sinventa`) se
+                // borraron de `role_permissions` en la misma migración que
+                // sembró las nuevas — si quedaran, la pantalla de Permisos las
+                // seguiría mostrando como pestañas que ya no existen.
+                { key: 'productos_tab_presentaciones', label: 'Presentaciones', tipo: 'tab' },
                 // Era `productos_tab_catalogo_costos` y NO es una pestaña: gatea
                 // las columnas de costo dentro del Catálogo. Renombrada en el
                 // barrido del canon (2026-08-03). Ojo: dos policies de Postgres
@@ -143,6 +149,17 @@ const GRUPOS_CRUDOS = [
                 // migración que renombró las filas.
                 { key: 'productos_ver_costos',     label: 'Ver costos de compra', tipo: 'cap' },
             ]},
+            // Las dos nacieron como pestañas de Productos y pasaron a módulo
+            // propio el 2026-08-08 (pedido del usuario). Ninguna lleva `sub`:
+            // lo que gateaba cada pestaña era su propia clave, y esa clave ES
+            // ahora el módulo.
+            // Sin `hasScope`: las dos muestran las 7 sucursales y ninguna
+            // consulta `getScope()`. Ofrecer el ámbito BRANCH en la pantalla de
+            // Permisos sería prometer un recorte que el código no hace — es lo
+            // mismo que heredan de haber sido pestañas de `productos`, que
+            // tampoco lo declara.
+            { key: 'gestion_stock', label: 'Gestión de Stock', desc: 'Qué se está vendiendo sin parámetros de reposición y qué existencia lleva medio año sin moverse, con la sugerencia de qué hacer con cada caso', icon: Activity, hasApprove: false },
+            { key: 'inventario', label: 'Inventario', desc: 'Existencia por sucursal en tiempo real con desglose de lotes, vencimientos y productos ya vencidos', icon: Boxes, hasApprove: false },
             { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true, hasScope: true, sub: [
                 { key: 'minmax_tab_sucursal',    label: 'Sucursal',    tipo: 'tab' },
                 { key: 'minmax_tab_red',         label: 'Red',         tipo: 'tab' },

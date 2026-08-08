@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.7 — Rotar: obligar a WebKit a re-medir el viewport
+
+**Las capturas del usuario cambiaron el diagnóstico.** v2.524.6 trató el reporte
+—«hay lag, media pantalla blanca»— como un problema de rendimiento y coalescó el
+trabajo del `resize`. No era eso: en las capturas, el indicador de home confirma
+que la pantalla **ya es horizontal**, y el contenido está pintado a **390 de los
+844** disponibles, con el resto en blanco. 390 es exactamente el ancho de la
+orientación anterior.
+
+O sea que no es lentitud ni un repintado a medio terminar: es el **layout
+viewport** de iOS, que no se recalcula al girar. Nada de lo que se optimice va a
+arreglar un ancho equivocado.
+
+WebKit sí vuelve a medir si el `content` del meta viewport **cambia de texto**.
+En `orientationchange` se alternan dos cadenas **semánticamente idénticas**
+(`initial-scale=1.0` ↔ `initial-scale=1`): la política de zoom no se toca, no hay
+parpadeo, y lo único que pasa es que el motor re-parsea y re-mide. Con dos
+pasadas, porque iOS publica las medidas nuevas **después** de su animación de
+giro y una llamada inmediata volvería a fijar el tamaño viejo.
+
+Va en `orientationchange` y **no** en `resize`: éste también dispara al abrir el
+teclado y al colapsarse la barra de Safari, donde re-parsear el viewport no
+arregla nada y podría cortar un scroll en curso.
+
+**Lo que no se puede afirmar todavía.** Esto no se reproduce en Playwright —ahí
+el viewport se re-mide correctamente al cambiarlo—, así que está verificado sólo
+hasta donde alcanza la máquina: que el listener llega al build (comprobado en
+`dist/index.html`, la lección de v2.524.4) y que el `content` alternado es
+equivalente. **El veredicto es del teléfono.**
+
+Y queda anotado el error de método de v2.524.6: se leyó «lag» y «media pantalla
+blanca» como dos síntomas de una causa de rendimiento, sin pedir la captura
+primero. La captura reencuadró el problema en un minuto.
+
+F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.524.6 — Rotar el teléfono: un recálculo por cuadro, no uno por evento
 
 Reportado el 2026-08-08: *«hay un error al pasar de horizontal a vertical, hay

@@ -27,6 +27,38 @@
           var vp = document.querySelector('meta[name="viewport"]');
           if (vp) vp.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
         }
+
+        // ── Rotar: obligar a WebKit a RE-MEDIR el viewport ──────────────────
+        // Reportado con capturas el 2026-08-08: al girar el teléfono, la
+        // pantalla ya es horizontal pero el contenido se queda pintado al ancho
+        // vertical y la otra mitad sale en blanco. Medido sobre las capturas:
+        // el contenido ocupa 390 de los 844 disponibles — exactamente el ancho
+        // de la orientación anterior. No es lentitud: es el **layout viewport**
+        // de iOS, que no se recalcula al rotar.
+        //
+        // WebKit sí lo recalcula si el `content` del meta CAMBIA de texto. Se
+        // alternan dos cadenas **semánticamente idénticas** (`1.0` ↔ `1`), así
+        // que la política de zoom no se toca y no hay parpadeo: lo único que
+        // cambia es que el motor vuelve a parsear y vuelve a medir.
+        //
+        // Va en `orientationchange` y no en `resize`: `resize` también dispara
+        // al abrir el teclado y al colapsarse la barra de Safari, y ahí
+        // re-parsear el viewport no arregla nada y podría cortar un scroll.
+        var reMedir = function () {
+          var m = document.querySelector('meta[name="viewport"]');
+          if (!m) return;
+          var c = m.getAttribute('content');
+          m.setAttribute('content', c.indexOf('initial-scale=1.0') >= 0
+            ? c.replace('initial-scale=1.0', 'initial-scale=1')
+            : c.replace('initial-scale=1', 'initial-scale=1.0'));
+        };
+        // Dos pasadas: iOS reporta las medidas nuevas DESPUÉS de su animación
+        // de giro, así que una sola llamada inmediata puede volver a fijar el
+        // tamaño viejo — que es el defecto que se está arreglando.
+        window.addEventListener('orientationchange', function () {
+          reMedir();
+          setTimeout(reMedir, 350);
+        });
       })();
     </script>
 

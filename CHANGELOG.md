@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.4 — La franja del notch: el cajón oculto asomaba 31px acostado
+
+Reportado con una captura: acostado se veía una franja clara pegada al notch, en
+todas las vistas y todo el tiempo. **No era un margen ni un fondo: era el cajón
+del menú, que nunca terminaba de esconderse.**
+
+El cajón se posiciona con `left: max(8px, var(--sa-left))` y se escondía con
+`translateX(-(100% + 16px))`. Los 16px alcanzaban **mientras el `left` valiera
+8**; acostado, el inset de un iPhone 13 vale 47:
+
+```
+sin notch   left  8 → translate −296 → borde derecho en −8   ✓ oculto
+acostado    left 47 → translate −296 → borde derecho en +31  ✗ asoma
+```
+
+El translate no compensaba el `left`. Ahora lleva el mismo
+`max(8px, var(--sa-left))`, así que la cuenta cierra con cualquier inset —
+verificado acostado: borde derecho en **−8**, y el fondo llega al borde con el
+contenido respetando el inset, que es lo que se pidió.
+
+**Y va por `style` y no por una utilidad de Tailwind, por un motivo que costó una
+corrida entera:** un valor arbitrario con `max(...)` lleva **coma**, y la coma
+rompe el parseo de la clase. `-translate-x-[calc(100%_+_max(8px,var(--sa-left))_+_8px)]`
+se escribió, compiló sin una queja, pasó los gates… y **la utilidad no se generó**:
+se comprobó buscándola en el CSS del build, donde no existe. El cajón seguía
+asomando exactamente igual. Un valor que no compila no avisa.
+
+**Segundo hallazgo del teléfono real, y otra vez invisible para la máquina:** con
+`--sa-left` en 0 el cajón se esconde de casualidad, así que las 117 pantallas del
+barrido y las 35 celdas de la matriz lo dieron por bueno. Sólo aparece con un
+inset de verdad.
+
+De paso, una trampa de medición anotada: el cajón lleva `transition-transform`
+de 220ms, así que **pisar la variable y medir en el mismo tick devuelve el valor
+viejo** — la primera verificación dijo «sigue asomando» cuando el arreglo ya
+estaba puesto.
+
+F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.524.3 — El hueco al final del teléfono: la safe-area se contaba dos veces
 
 Reportado por el usuario mirando su iPhone: *«se alcanza lo último, pero deja un

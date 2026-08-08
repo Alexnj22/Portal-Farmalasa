@@ -849,9 +849,35 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     className={`fixed lg:relative z-sidebar lg:z-sidebar-desktop lg:h-auto flex flex-col shrink-0
                         my-[max(8px,var(--sa-top))] mb-[max(8px,var(--sa-bottom))]
                         ${isMobile
-                            ? `top-0 bottom-0 w-[85%] max-w-[280px] left-[max(8px,var(--sa-left))] transition-transform duration-[220ms] ease-[var(--ease-spring)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
+                            // ⚠️ El desplazamiento tiene que llevarse TAMBIÉN el `left`.
+                            // Era `-translate-x-[calc(100%_+_16px)]` con
+                            // `left-[max(8px,var(--sa-left))]`: los 16px alcanzaban
+                            // mientras el `left` valiera 8 (borde derecho en −8, oculto),
+                            // pero acostado el inset de un iPhone 13 vale 47 y el cajón
+                            // quedaba con su borde derecho en **+31px** — o sea asomando
+                            // una franja blanca de 31px pegada al notch, durante todo el
+                            // tiempo, en todas las vistas.
+                            // Lo reportó el usuario con una captura el 2026-08-08; ningún
+                            // emulador podía delatarlo porque ahí `--sa-left` vale 0 y el
+                            // cajón se esconde de casualidad. Ahora el translate lleva el
+                            // mismo `max(8px,var(--sa-left))` que el `left`, así que la
+                            // cuenta cierra con cualquier inset.
+                            // El translate va por `style` y NO por utilidad de Tailwind:
+                            // un valor arbitrario con `max(...)` lleva coma, y la coma
+                            // rompe el parseo de la clase — se comprobó en el CSS
+                            // compilado, donde la utilidad **no se generaba** y el cajón
+                            // seguía asomando igual. Un valor que no compila no avisa.
+                            ? `top-0 bottom-0 w-[85%] max-w-[280px] left-[max(8px,var(--sa-left))] transition-transform duration-[220ms] ease-[var(--ease-spring)]`
                             : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(8px,var(--sa-left))] transition-[width] duration-[220ms] ease-[var(--ease-spring)]`}
                         ${blurClasses}`}
+                    style={isMobile
+                        ? { transform: isSidebarOpen
+                            ? 'translateX(0)'
+                            // `100%` del propio cajón + su `left` + 8px de aire, para
+                            // que salga de cuadro con CUALQUIER inset. Con
+                            // `--sa-left: 0` da lo mismo que el `+16px` de antes.
+                            : 'translateX(calc(-100% - max(8px, var(--sa-left)) - 8px))' }
+                        : undefined}
                 >
                     <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-base pointer-events-none">
                         <div className="absolute top-0 left-0 right-0 h-2/3 rounded-t-[2.6rem] bg-slate-500/[0.06] blur-3xl" />

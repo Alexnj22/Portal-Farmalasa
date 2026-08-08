@@ -1,11 +1,14 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { lazy, Suspense, useMemo, useState, useEffect } from 'react';
 import Button from '../../components/common/Button';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
-import ChartContainer from '../../components/common/ChartContainer';
 
 import { fetchBranchExpensesHistory } from '../../data/branches';
 import { formatMoney } from '../../utils/formatNumber';
+
+// El dibujo arrastra `recharts` (95 kB gzip) y estaba en el cierre estático de
+// `BranchDetailView`: se bajaba al abrir cualquier sucursal para una gráfica de
+// una sola pestaña. Leer el encabezado de `GraficaGastos.jsx` antes de tocarlo.
+const GraficaGastos = lazy(() => import('./GraficaGastos'));
 
 // ============================================================================
 // MOTOR DE ESTADOS FINANCIEROS
@@ -109,22 +112,22 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 };
 
 // ============================================================================
-// TOOLTIP PERSONALIZADO PARA RECHARTS
+// ESQUELETO DE LA GRÁFICA
 // ============================================================================
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div data-surface="card" className="p-4">
-                <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
-                <p className="text-body-xl font-black text-content flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm"></span>
-                    {formatMoney(payload[0].value)}
-                </p>
-            </div>
-        );
-    }
-    return null;
-};
+// Sirve DOS esperas: la del historial de gastos (`isLoadingData`) y la del chunk
+// de `recharts` (`Suspense`). Está extraído a un componente justamente por eso —
+// escritas por separado, las dos esperas se verían distintas y el gráfico
+// entraría después de un segundo hueco con otra forma.
+const EsqueletoBarras = () => (
+    <div className="h-full flex items-end justify-between gap-4 px-2 border-b border-divider pb-2">
+        <div className="w-full skeleton rounded-t-lg h-[40%]"></div>
+        <div className="w-full skeleton rounded-t-lg h-[60%]"></div>
+        <div className="w-full skeleton rounded-t-lg h-[30%]"></div>
+        <div className="w-full skeleton rounded-t-lg h-[80%]"></div>
+        <div className="w-full skeleton rounded-t-lg h-[50%]"></div>
+        <div className="w-full skeleton rounded-t-lg h-[90%]"></div>
+    </div>
+);
 
 // ============================================================================
 // COMPONENTE PRINCIPAL DE LA PESTAÑA
@@ -279,14 +282,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
                         </div>
-                        <div className="flex-1 flex items-end justify-between gap-4 px-2 border-b border-divider pb-2">
-                            <div className="w-full skeleton rounded-t-lg h-[40%]"></div>
-                            <div className="w-full skeleton rounded-t-lg h-[60%]"></div>
-                            <div className="w-full skeleton rounded-t-lg h-[30%]"></div>
-                            <div className="w-full skeleton rounded-t-lg h-[80%]"></div>
-                            <div className="w-full skeleton rounded-t-lg h-[50%]"></div>
-                            <div className="w-full skeleton rounded-t-lg h-[90%]"></div>
-                        </div>
+                        <div className="flex-1"><EsqueletoBarras /></div>
                     </div>
 
                     {/* Métricas Rápidas Skeleton */}
@@ -327,42 +323,11 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         <div className="flex-1 min-h-[180px] w-full relative z-base">
-                            <ChartContainer>
-                                <BarChart data={historicalData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.9}/>
-                                            <stop offset="95%" stopColor="var(--brand)" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--divider)" opacity={0.5} />
-                                    <XAxis 
-                                        dataKey="name" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{ fill: 'var(--chart-8)', fontSize: 10, fontWeight: 800 }} 
-                                        dy={10}
-                                    />
-                                    <YAxis 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontWeight: 800 }}
-                                        tickFormatter={(value) => `$${value}`}
-                                    />
-                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--brand) 5%, transparent)', rx: 8 }} />
-                                    <Bar 
-                                        dataKey="total" 
-                                        fill="url(#colorTotal)" 
-                                        radius={[8, 8, 8, 8]} 
-                                        barSize={36}
-                                        className="transition-all duration-[var(--dur-slow)] hover:opacity-90"
-                                    >
-                                        {historicalData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === historicalData.length - 1 ? 'var(--brand)' : 'url(#colorTotal)'} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
+                            {/* El mismo esqueleto que la espera de la consulta: las
+                                dos se leen como una y el gráfico entra una sola vez. */}
+                            <Suspense fallback={<EsqueletoBarras />}>
+                                <GraficaGastos data={historicalData} />
+                            </Suspense>
                         </div>
                     </div>
 

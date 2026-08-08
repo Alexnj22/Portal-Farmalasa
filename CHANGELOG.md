@@ -21,6 +21,112 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.522.0 — recharts sale de las otras cuatro vistas, y el ratchet del bundle deja de aflojarse solo
+
+La deuda que v2.521.2 dejó anotada «con nombre y apellido», cobrada. Las cuatro
+vistas que seguían arrastrando `recharts` en su cierre estático dejan de hacerlo:
+
+| vista | antes | ahora |
+|---|---|---|
+| `MetasView` | 168 kB | **57** |
+| `BranchDetailView` | 169 kB | **65** |
+| `FormWfmAnalytics` | 119 kB | **16** |
+
+Bajan más que los 95 kB de la librería porque con ella se van también sus chunks
+satélite (`BarChart` 8 kB, el de los radios de las puntas 2 kB, y el resto).
+
+**El argumento para no tocarlas era bueno y resultó equivocado.** La entrega
+anterior las dejó afuera razonando que ahí «el gráfico sí es el contenido
+principal de la vista», así que el truco del Inicio —un widget opcional— no
+aplicaba. Al mirarlas de cerca las cuatro comparten la propiedad que hacía
+gratis aquel arreglo: **ninguna monta el gráfico hasta que una consulta
+resuelve**. El «día por día» de Metas espera a `fetchMesEnCurso`, el Histórico a
+`fetchMetasHistorico`, Gastos a `fetchBranchExpensesHistory` y el análisis de la
+operación a las ventas por hora. El chunk viaja en paralelo con esa consulta y
+usa el mismo esqueleto que ya se estaba mostrando, así que la descarga no agrega
+una espera: ocupa una que ya existía.
+
+Donde sí cambió el arreglo fue en **dónde se corta**. En el Inicio se hizo lazy
+el widget entero; acá el `Suspense` va *dentro* de la tarjeta, así que el marco,
+el encabezado y el interruptor pintan enseguida y sólo el área del dibujo espera.
+En `GraficaMes` eso además ahorra la descarga completa: el «Termómetro» no usa
+recharts, así que quien mira una sola sala no baja nada.
+
+**El Histórico obligó a mover una cuenta de lugar.** Sus gráficas no se dibujan
+con menos de dos meses, y esa decisión vivía dentro del archivo que importa
+recharts: para saber que **no** hacía falta la librería había que bajarla. Peor,
+el esqueleto habría aparecido para desaparecer sin dibujo. El agrupado por mes es
+matemática pura, así que se fue a `agruparHistoricoPorMes` en `metasUtils` y
+ahora la pregunta se contesta antes del `import()`. Misma lección que
+`pedidoPrint.js`: la aritmética no tiene por qué vivir detrás de una librería
+pesada.
+
+### El gate tenía dos huecos, y los dos se vieron por accidente
+
+**Doce vistas no tenían techo.** `MetasView` llegó a 168 kB sin que el gate
+dijera nada, y no por un error de medición: el baseline se generó el 30-jul y la
+vista nació el **3-ago**. Una vista posterior a la última regeneración cae en el
+techo genérico de 250 kB, o sea que en la práctica no la vigila nadie. Eran doce,
+no una — `ClientesView`, `GestionStockView`, `LibrosIvaView`, `CorteZView` y
+compañía. Ahora el reporte las **nombra** («VISTAS SIN TECHO PROPIO») en vez de
+callarlas: no falla —una vista nueva es legítima y su primer commit no debería
+trabarse— pero un hueco que nadie imprime es un hueco que nadie cierra. La
+regeneración de esta entrega les fijó el suyo a las doce.
+
+**Y `--update-baseline` aflojaba de arriba.** Regenerar para anotar que tres
+vistas habían bajado ~104 kB cada una se llevaba de paso el techo del `entry` de
+301 a 313 **con la medición idéntica** —272 kB antes y después— más `PedidosView`
+(151→158), `PermissionsView` (47→52) y `VacationPlanView` (52→57), ninguna
+tocada por este trabajo. O sea que el precio de registrar una mejora era regalar
+headroom en otras cuatro rutas, y el archivo se aflojaba solo cada vez que
+alguien lo regeneraba. Ahora **la regeneración sólo aprieta**: un techo existente
+nunca sube, se queda en el más bajo entre el que había y el de hoy. Subirlo sigue
+siendo posible y a veces correcto —`FacturacionView` creció por adoptar el kit
+canónico— pero pasa a ser necesariamente un acto **manual**, que es justo el que
+`_motivos` obliga a explicar. Bajar es automático; aflojar hay que firmarlo.
+
+Efecto colateral que confirma que servía: los dos techos puestos a mano el 8-ago
+(`DashboardView` 118, `FacturacionView` 69) **sobrevivieron intactos** a la
+regeneración, así que sus `_motivos` siguen diciendo la verdad. Y se registraron
+tres bajas de otras sesiones que nunca se habían anotado: `FacturasCompraView`
+232→199, `FormPurchaseDteViewer` 47→18, `ProductosView` 91→87.
+
+### Verificado donde el bug vive
+
+`Suspense` cambia **exactamente** la variable del bucle de recharts que
+`ChartContainer` existe para resolver: cuándo se monta el gráfico respecto de las
+animaciones de entrada. Antes existía desde el primer render del padre; ahora
+aparece cuando llega el chunk, que puede caer en pleno stagger. Y ese bug era
+**intermitente** —3 de 5 corridas—, así que una pasada verde no prueba nada.
+
+`tests/e2e/graficas-lazy-movil.spec.js` recorre los cuatro gráficos: **15 pasadas
+y 0 fallos**, con Metas corrido **tres veces** en WebKit con viewport de iPhone
+13 y otras tres en Chromium de escritorio como control. Cada uno se comprueba por
+lo que **dibuja** —el `<svg>` de recharts con sus barras o su línea— y no por que
+el contenedor exista: un `Suspense` que no resuelve deja el div en su lugar y el
+esqueleto colgado, que es justo el modo de fallar que este cambio podría
+introducir. Se vigila además la consola por «Maximum update depth», que el
+ErrorBoundary puede tragarse.
+
+El único caso sin cubrir se dice en voz alta y está escrito en el propio spec: el
+recorrido hasta la pestaña Gastos **se saltea en el teléfono** porque ahí la
+lista de sucursales ordena distinto y el primer clic cae en una sin esa pestaña —
+falla la navegación, no el gráfico. Ese gráfico queda verificado en escritorio, y
+lo que el spec vino a descartar lo cubren las corridas de Metas y de Horarios,
+que sí corren en móvil.
+
+**Tres hex crudos que nadie había visto.** Mudar el heatmap a su propio archivo
+lo sacó de debajo de la excepción `hex` de manga ancha de `FormWfmAnalytics`
+—escrita para la marca de agua y la leyenda— y el `gate:design` los delató:
+`#E2E8F0` en la rejilla y `#64748B` en los dos ejes. No estaban por una decisión
+y valen lo que los otros cuatro gráficos del portal ya usan para el mismo papel,
+así que pasan a `--divider` y `--text-tertiary`. De paso se arreglan en tema
+oscuro, donde un slate-200 clavado pintaba la rejilla casi blanca sobre la card.
+
+Y el ratchet se probó al revés antes de darlo por bueno: volviendo el import de
+`GraficaMesDias` a estático, `MetasView` marca 163 kB contra su techo de 67 y el
+gate **falla**. Un techo que no se vio fallar es un techo sin probar.
+
 ## v2.521.3 — El medidor deja de contar lo que está corrido fuera de cuadro
 
 **37 de los 77 controles mudos no existían.** El sidebar del teléfono no se

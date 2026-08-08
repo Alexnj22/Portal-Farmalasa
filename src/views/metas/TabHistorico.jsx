@@ -1,16 +1,35 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Target, Plus, History, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilterBar from '../../components/common/FilterBar';
 import ListRow from '../../components/common/ListRow';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import { SkeletonText, EmptyState } from '../../components/common/StateViews';
+import { Skeleton, SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
-import GraficasHistorico from './GraficasHistorico';
 import { fetchMetasHistorico } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymLabelCorto, TRAMO_CFG } from './metasUtils';
+import { agruparHistoricoPorMes, ymLabelCorto, TRAMO_CFG } from './metasUtils';
+
+// Las dos gráficas arrastran `recharts` (95 kB gzip) y esta es la última de las
+// cinco pestañas de Metas, así que viajan en su propio chunk. Leer el encabezado
+// de `GraficasHistorico.jsx` antes de tocarlo.
+const GraficasHistorico = lazy(() => import('./GraficasHistorico'));
+
+// La espera del chunk, con la forma de lo que va a reemplazar: las dos tarjetas
+// con su título, su línea de resumen y el área del dibujo de 210px. Sin esto la
+// tabla saltaría hacia abajo cuando las gráficas aparecen.
+const EsqueletoGraficas = () => (
+    <div className="grid gap-4 xl:grid-cols-2">
+        {[0, 1].map((i) => (
+            <div key={i} data-surface="card" className="p-5">
+                <Skeleton w="40%" h={10} />
+                <Skeleton w="70%" h={11} className="mt-2" />
+                <Skeleton h={210} rounded="0.75rem" className="mt-3" />
+            </div>
+        ))}
+    </div>
+);
 
 const COLS = [
     { key: 'mes',    label: 'Mes' },
@@ -58,6 +77,11 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
         }
         return base;
     }, [rows, salaFilter, soloConMeta, searchTerm, salaNombre]);
+
+    // El agrupado por mes vive fuera del archivo de las gráficas —matemática
+    // pura, sin `recharts` detrás— justamente para poder preguntar acá si hay
+    // material que dibujar antes de decidir bajar la librería.
+    const datosGrafica = useMemo(() => agruparHistoricoPorMes(filtered), [filtered]);
 
     // El buscador del header también recorta esta lista, así que cuenta como
     // filtro para decidir QUÉ vacío mostrar — pero no para el «limpiar» de la
@@ -111,8 +135,17 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
             {/* Las gráficas van ENCIMA de la tabla: contestan «cómo venimos» de
                 un vistazo, y la tabla está para buscar un mes concreto. Leen las
                 mismas filas ya filtradas, así que el recorte de la píldora las
-                alcanza igual que a la tabla. */}
-            {!loading && !error && <GraficasHistorico rows={filtered} />}
+                alcanza igual que a la tabla.
+
+                Con menos de dos meses no hay nada que dibujar, y esa cuenta se
+                hace ACÁ: si la hiciera el componente de las gráficas, habría que
+                bajar los 95 kB de `recharts` para enterarse de que no se iban a
+                usar — y el esqueleto aparecería para desaparecer sin dibujo. */}
+            {!loading && !error && datosGrafica.length >= 2 && (
+                <Suspense fallback={<EsqueletoGraficas />}>
+                    <GraficasHistorico datos={datosGrafica} />
+                </Suspense>
+            )}
 
             {/* Teléfono: una fila por mes-sala (la tabla no reflowa, §32). El
                 vacío también es de acá: `DataTable` trae el suyo, pero vive en

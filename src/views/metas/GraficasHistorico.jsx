@@ -1,11 +1,10 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
     ComposedChart, LineChart, Line, Bar, XAxis, YAxis, CartesianGrid,
     ReferenceLine, Tooltip,
 } from 'recharts';
 import ChartContainer from '../../components/common/ChartContainer';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { ymLabelCorto } from './metasUtils';
 
 // Las dos gráficas del histórico, sobre los últimos 12 meses cerrados.
 //
@@ -24,8 +23,20 @@ import { ymLabelCorto } from './metasUtils';
 // desaconseja: verde contra ámbar quedan a ΔE 6.8 en protanopía, así que quien
 // no distingue rojo y verde vería la misma línea de puntos. Las marcas de
 // referencia dicen lo mismo sin depender del color.
-const MESES = 12;
-
+//
+// ── Por qué este archivo está separado de `TabHistorico` ──────────────────
+// `recharts` pesa **95 kB gzip** y entraba en el cierre estático de `MetasView`
+// —se bajaba al abrir Metas— aunque estas dos gráficas viven en la última de
+// cinco pestañas. Entra por `React.lazy` desde `TabHistorico`, que es donde está
+// el `Suspense` y su esqueleto.
+//
+// Por eso `datos` llega ya agregado (`agruparHistoricoPorMes` en `metasUtils`) y
+// no se calcula acá: quien llama necesita saber si hay al menos dos meses ANTES
+// de decidir bajar la librería, y ese cálculo no puede vivir detrás del
+// `import()` que se quiere evitar.
+//
+// `ChartContainer` no es decorativo: resuelve el bucle infinito de recharts en
+// WebKit móvil. Ver su encabezado antes de tocarlo.
 const COLOR = {
     barra:   'var(--chart-1)',
     liston:  'var(--text-secondary)',
@@ -57,30 +68,11 @@ function ListonMeta({ cx, cy }) {
     );
 }
 
-export default function GraficasHistorico({ rows, umbralMedio = 95, umbralTotal = 100 }) {
-    // Un punto por mes: las filas vienen por sala, así que se suman. Si la
-    // píldora tiene una sala elegida, `rows` ya viene recortado y esto suma una
-    // sola — el mismo código sirve para los dos casos.
-    const datos = useMemo(() => {
-        const porMes = new Map();
-        for (const r of rows || []) {
-            if (r.monto_meta == null) continue;   // sin meta no hay cumplimiento
-            const m = porMes.get(r.year_month) || { ym: r.year_month, meta: 0, venta: 0 };
-            m.meta += Number(r.monto_meta);
-            m.venta += Number(r.venta_total || 0);
-            porMes.set(r.year_month, m);
-        }
-        return [...porMes.values()]
-            .sort((a, b) => a.ym.localeCompare(b.ym))
-            .slice(-MESES)
-            .map((m) => ({
-                ...m,
-                mes: ymLabelCorto(m.ym),
-                pct: m.meta > 0 ? Math.round((m.venta / m.meta) * 1000) / 10 : null,
-            }));
-    }, [rows]);
-
-    if (datos.length < 2) return null;
+export default function GraficasHistorico({ datos, umbralMedio = 95, umbralTotal = 100 }) {
+    // El llamador ya decide con esto puesto —por eso no monta el componente si
+    // no llega a dos meses—, pero `mejor`/`peor` reducen sin valor inicial y
+    // reventarían con la lista vacía, así que el guard se queda.
+    if (!datos || datos.length < 2) return null;
 
     const pcts = datos.map((d) => d.pct).filter((v) => v != null);
     const min = Math.floor(Math.min(...pcts, umbralMedio) - 2);

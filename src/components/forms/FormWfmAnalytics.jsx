@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useMemo, memo } from 'react';
 import SegmentedControl from '../common/SegmentedControl';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
-import ChartContainer from '../common/ChartContainer';
 import { fetchBranchHourlySalesOrdered } from '../../data/schedules';
 import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePointerClick, TrendingUp, Sparkles, Building2 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -10,6 +8,10 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import { timeToMins } from '../../utils/scheduleHelpers';
 import { AiThinkingState } from '../common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
+
+// El dibujo arrastra `recharts` (95 kB gzip): 95 de los 119 kB que pesaba este
+// modal. Leer el encabezado de `GraficaAfluencia.jsx` antes de tocarlo.
+const GraficaAfluencia = lazy(() => import('./GraficaAfluencia'));
 
 const DAYS_MAP = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 0: 'Domingo' };
 const DAYS_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -363,25 +365,17 @@ const FormWfmAnalytics = ({ branches }) => {
                     </div>
                 ) : (
                     <div className="w-full h-[280px] mt-auto relative z-base">
-                        <ChartContainer>
-                            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} transform-gpu>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                <XAxis dataKey="displayLabel" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#64748B' }} dy={12} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#64748B' }} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                                <Bar
-                                    dataKey="avgTransactions"
-                                    radius={[5, 5, 0, 0]}
-                                    onClick={handleBarClick}
-                                    cursor={activeView === 'DAYS' ? 'pointer' : 'default'}
-                                    className="transform-gpu transition-all duration-[var(--dur-slow)] hover:opacity-90"
-                                >
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ChartContainer>
+                        {/* El mismo estado de espera que la consulta de ventas: la
+                            descarga del chunk corre en paralelo con ella, así que
+                            las dos esperas se leen como una. */}
+                        <Suspense fallback={<AiThinkingState title="Analizando la operación" size="sm" className="h-full" />}>
+                            <GraficaAfluencia
+                                data={chartData}
+                                tooltip={<CustomTooltip />}
+                                onBarClick={handleBarClick}
+                                barCursor={activeView === 'DAYS' ? 'pointer' : 'default'}
+                            />
+                        </Suspense>
                     </div>
                 )}
                 

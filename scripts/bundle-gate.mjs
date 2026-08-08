@@ -120,15 +120,34 @@ if (process.argv.includes('--update-baseline')) {
   // exactamente cómo un gate deja de significar algo. Lo que tiene que
   // saltar es un salto de escalón (una librería nueva), no el ruido.
   const holgura = n => Math.max(n + 10, Math.ceil(n * 1.15));
+
+  // La regeneración sólo APRIETA. Un techo existente nunca sube acá: se queda
+  // en el más bajo entre el que había y el que sale de la medición de hoy.
+  //
+  // Sin esto, `--update-baseline` afloja de arriba: el 2026-08-08, regenerar
+  // para registrar que tres vistas habían bajado ~104 kB cada una se llevaba
+  // de paso el `entry` de 301 a 313 —con la medición IDÉNTICA, 272 kB antes y
+  // después— más PedidosView (151→158), PermissionsView (47→52) y
+  // VacationPlanView (52→57), ninguna de ellas tocada por ese trabajo. O sea
+  // que el precio de anotar una mejora era regalar headroom en otras cuatro
+  // rutas, y el archivo se afloja solo cada vez que alguien lo regenera.
+  //
+  // Subir un techo sigue siendo posible y a veces correcto —FacturacionView
+  // creció por adoptar el kit canónico, no por una regresión— pero ahora es
+  // necesariamente un acto MANUAL, que es justo el que `_motivos` obliga a
+  // explicar. Bajar es automático; aflojar hay que firmarlo.
+  const apretar = (nuevo, viejo) => (viejo === undefined ? nuevo : Math.min(nuevo, viejo));
+
   writeFileSync(BASELINE, JSON.stringify({
-    _comment: 'Techos en kB gzip del cierre ESTÁTICO. Generado con `npm run gate:bundle -- --update-baseline` (incluye 15% de holgura). Al BAJAR peso, regenerar y commitear.',
+    _comment: 'Techos en kB gzip del cierre ESTÁTICO. Generado con `npm run gate:bundle -- --update-baseline` (incluye 15% de holgura). Al BAJAR peso, regenerar y commitear. La regeneración sólo APRIETA: nunca sube un techo que ya existía. Los techos editados A MANO llevan su motivo en `_motivos` — no regenerar el archivo completo para tapar un hallazgo suelto: se edita esa entrada y se escribe por qué.',
     // Los motivos SOBREVIVEN a la regeneración. Sin esto, el primer
     // `--update-baseline` de cualquier sesión futura borraría la explicación de
     // por qué un techo se subió a mano y dejaría el número solo — que es
     // justamente el estado que este campo existe para evitar.
     _motivos: baseActual?._motivos ?? {},
-    entry: holgura(entryKb),
-    vistas: Object.fromEntries(Object.entries(vistas).map(([k, v]) => [k, holgura(v)])),
+    entry: apretar(holgura(entryKb), baseActual?.entry),
+    vistas: Object.fromEntries(Object.entries(vistas)
+      .map(([k, v]) => [k, apretar(holgura(v), baseActual?.vistas?.[k])])),
   }, null, 2) + '\n');
   console.log(`✓ baseline de bundle actualizado (entry ${entryKb} kB → tope ${holgura(entryKb)}, ${Object.keys(vistas).length} vistas)`);
   process.exit(0);
@@ -166,6 +185,21 @@ if (crecidas.length) {
     // obliga a discutir contra algo escrito.
     if (base._motivos?.[n]) console.log(`     el techo actual tiene motivo: ${base._motivos[n]}`);
   }
+}
+
+// Una vista creada DESPUÉS de la última regeneración del baseline no tiene
+// techo propio y cae en el genérico de 250 kB — o sea que en la práctica no la
+// vigila nadie. No es hipotético: `MetasView` nació el 2026-08-03, el baseline
+// vigente se generó el 2026-07-30, y así llegó a 168 kB (95 de ellos `recharts`)
+// sin que el gate dijera una palabra; se descubrió leyéndolo a mano el
+// 2026-08-08. No falla —una vista nueva es legítima y su primer commit no
+// debería trabarse— pero se NOMBRA, que es lo que faltaba: un hueco que nadie
+// imprime es un hueco que nadie cierra.
+const sinTecho = Object.keys(vistas).filter(n => base.vistas[n] === undefined).sort();
+if (sinTecho.length) {
+  console.log(`\n⚠ VISTAS SIN TECHO PROPIO (${sinTecho.length}) — corren con el genérico de ${TECHO_VISTA_KB} kB`);
+  console.log('  Son posteriores al baseline. Fijarles el suyo: npm run gate:bundle -- --update-baseline\n');
+  for (const n of sinTecho) console.log(`  ${String(vistas[n]).padStart(4)} kB  ${n}`);
 }
 
 const top = Object.entries(vistas).sort((a, b) => b[1] - a[1]).slice(0, 6);

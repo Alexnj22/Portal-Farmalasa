@@ -42,6 +42,35 @@ export const YM_INICIO_HISTORIA = '2025-05';
 // el módulo Y el widget del Inicio: tenerlo dos veces es tenerlo mal una vez.
 export const SALAS_VENTA = [2, 4, 25, 27, 28, 29];
 
+// El histórico agrupado por mes: un punto por mes, sumando las salas que traiga
+// `rows` (si la píldora tiene una sala elegida, ya viene recortado y esto suma
+// una sola — el mismo código sirve para los dos casos). Sin meta no hay
+// cumplimiento, así que esas filas no cuentan.
+//
+// Vive acá y no dentro de `GraficasHistorico` porque es matemática pura y ese
+// archivo arrastra `recharts` (95 kB gzip) del otro lado de un `import()`. Quien
+// llama necesita saber CUÁNTOS meses quedan para decidir si vale la pena bajar
+// el gráfico: con el cálculo escondido detrás de la librería, esa pregunta no se
+// puede hacer sin bajarla, que es justo lo que se quiere evitar.
+export function agruparHistoricoPorMes(rows, meses = 12) {
+    const porMes = new Map();
+    for (const r of rows || []) {
+        if (r.monto_meta == null) continue;
+        const m = porMes.get(r.year_month) || { ym: r.year_month, meta: 0, venta: 0 };
+        m.meta += Number(r.monto_meta);
+        m.venta += Number(r.venta_total || 0);
+        porMes.set(r.year_month, m);
+    }
+    return [...porMes.values()]
+        .sort((a, b) => a.ym.localeCompare(b.ym))
+        .slice(-meses)
+        .map((m) => ({
+            ...m,
+            mes: ymLabelCorto(m.ym),
+            pct: m.meta > 0 ? Math.round((m.venta / m.meta) * 1000) / 10 : null,
+        }));
+}
+
 // Config del tramo del bono → cómo se pinta. El texto habla del negocio
 // («Bono completo»), nunca de la tubería.
 export const TRAMO_CFG = {

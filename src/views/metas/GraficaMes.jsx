@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine, Tooltip, Cell } from 'recharts';
-import ChartContainer from '../../components/common/ChartContainer';
+import React, { lazy, Suspense, useMemo } from 'react';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import { Skeleton } from '../../components/common/StateViews';
 import BarraAvance from './BarraAvance';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { TRAMO_CFG } from './metasUtils';
+
+// El dibujo vive en `GraficaMesDias.jsx` para que `recharts` (95 kB gzip) no
+// entre en el cierre estático de Metas; leer su encabezado antes de tocarlo.
+const GraficaMesDias = lazy(() => import('./GraficaMesDias'));
 
 // Cómo va el mes en curso.
 //
@@ -25,17 +28,16 @@ const VISTAS = [
     { value: 'termo', label: 'Termómetro' },
 ];
 
-// Los colores van como `var(--token)` directo al SVG, no leídos con
-// `getComputedStyle`. Dos razones: un hex clavado se ve mal en tres de los
-// cuatro temas del portal, y una variable CSS la resuelve el navegador en cada
-// pintada — así el gráfico cambia de tema solo, sin que React tenga que
-// re-renderizar ni recordar volver a leer el token.
-const COLOR = {
-    barra:   'var(--chart-1)',
-    ritmo:   'var(--text-secondary)',
-    rejilla: 'var(--divider)',
-    texto:   'var(--text-tertiary)',
-};
+// La espera del chunk de `recharts`, con la forma de lo que va a reemplazar:
+// barras de alto disparejo sobre la línea del eje. Un `null` acá dejaría un
+// hueco de 190px que se llena de golpe; esto se lee como el gráfico cargando.
+const EsqueletoBarras = () => (
+    <div className="h-full flex items-end gap-1 pl-[52px] pr-2 pb-4">
+        {[52, 68, 45, 80, 60, 92, 38, 74, 55, 86].map((h, i) => (
+            <Skeleton key={i} className="flex-1" w="100%" h={`${h}%`} rounded="0.25rem 0.25rem 0 0" />
+        ))}
+    </div>
+);
 
 export default function GraficaMes({ data, vista, onVista }) {
     // Con una sala elegida no hay interruptor y manda el termómetro. Se resuelve
@@ -92,47 +94,9 @@ export default function GraficaMes({ data, vista, onVista }) {
             {vistaReal === 'dias' ? (
                 <>
                     <div className="h-[190px]">
-                        <ChartContainer minHeight={190}>
-                            <BarChart data={dias} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                                <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
-                                <XAxis
-                                    dataKey="dia" interval={4} tickLine={false} axisLine={false}
-                                    tick={{ fontSize: 10, fill: COLOR.texto, fontWeight: 700 }}
-                                />
-                                <YAxis
-                                    tickLine={false} axisLine={false} width={52}
-                                    tick={{ fontSize: 10, fill: COLOR.texto, fontWeight: 700 }}
-                                    tickFormatter={(v) => (v ? `$${Math.round(v / 1000)}k` : '0')}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: COLOR.rejilla, opacity: 0.35 }}
-                                    contentStyle={{
-                                        background: 'var(--surface-modal)', border: '1px solid var(--border-modal)',
-                                        borderRadius: '0.75rem', fontSize: 12, color: 'var(--text-primary)',
-                                        backdropFilter: 'blur(20px)',
-                                    }}
-                                    formatter={(v) => [formatMoney(v), 'Vendido']}
-                                    labelFormatter={(d) => `Día ${d}`}
-                                />
-                                {/* La raya es lo que hay que vender CADA día para llegar
-                                    justo a fin de mes. Una barra encima es un día que
-                                    empujó; debajo, uno que quedó debiendo. */}
-                                <ReferenceLine
-                                    y={ritmo} stroke={COLOR.ritmo} strokeWidth={2} strokeDasharray="6 5"
-                                    label={{
-                                        value: `ritmo ${formatMoney(ritmo)}`, position: 'insideTopRight',
-                                        fill: COLOR.texto, fontSize: 10, fontWeight: 800,
-                                    }}
-                                />
-                                <Bar dataKey="venta" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                                    {dias.map((d) => (
-                                        // El día de hoy va translúcido: todavía no termina, y
-                                        // pintarlo lleno lo haría parecer un mal día.
-                                        <Cell key={d.dia} fill={COLOR.barra} fillOpacity={d.esHoy ? 0.42 : 1} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ChartContainer>
+                        <Suspense fallback={<EsqueletoBarras />}>
+                            <GraficaMesDias dias={dias} ritmo={ritmo} />
+                        </Suspense>
                     </div>
                     <p className="text-micro font-semibold text-content-3 mt-2">
                         El día de hoy va más claro porque todavía no termina.

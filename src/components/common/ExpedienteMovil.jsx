@@ -56,17 +56,19 @@ import HojaMovil from './HojaMovil';
  * en cada render de la lista es trabajo que nadie ve.
  */
 /**
- * `pie` — contenido anclado al fondo de la hoja, fuera del scroll. Es la ranura
- * que `HojaMovil` ya tenía y que este envase no exponía. La necesita el detalle
- * cuyo RESULTADO no cabe en la misma pantalla que sus controles: en Reglas de
- * despacho, el riel de múltiplos y la línea que dice cuánto se despacha están a
- * 300px de distancia en un teléfono, así que se toca ×5 sin ver qué cambió.
- * También acepta una función `(fila) => nodo`, por el mismo motivo que
- * `children`: si depende de la fila, no hay nada que construir sin ella.
+ * ── NO hay ranura `pie`, y la ausencia es la decisión ─────────────────────
+ * Existió en v2.505.0 para anclar al fondo de la hoja el resultado de la regla
+ * de despacho, y se quitó en v2.508.2 junto con la hoja misma: sin hoja no hay
+ * dónde anclar nada, y una prop sin usuarios es una prop que alguien va a usar
+ * mal. Volvió sola el 2026-08-07 —otra sesión commiteó una copia vieja de este
+ * archivo dentro de v2.511.0, que era un cambio de impresión del conteo— y con
+ * ella volvió la hoja de Reglas y la pantalla negra del iPhone. Queda escrito
+ * acá para que la tercera vez se note antes: si hace falta anclar algo al
+ * fondo, el envase que lo resuelve es `variante="pantalla"`, cuya barra
+ * superior ya queda fija.
  */
-export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, variante = 'auto', pie, children }) {
+export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, variante = 'auto', children }) {
     const cuerpo = abierto ? children(abierto) : null;
-    const pieResuelto = abierto && typeof pie === 'function' ? pie(abierto) : pie;
 
     // ── El envase lo decide el CONTENIDO, no la vista ─────────────────────
     // `pantalla` ocupa la pantalla entera siempre. Eso está bien para un
@@ -85,7 +87,6 @@ export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, v
             <ModalShell open={!!abierto} onClose={onClose} align="pantalla"
                 titulo={titulo} ariaLabel={titulo || 'Detalle'}>
                 {cuerpo}
-                {pieResuelto}
             </ModalShell>
         );
     }
@@ -94,7 +95,7 @@ export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, v
         <ModalShell open={!!abierto} onClose={onClose} surface={null}
             ariaLabel={titulo || 'Detalle'}>
             {abierto && (
-                <HojaMovil titulo={titulo} subtitulo={subtitulo} pie={pieResuelto}>
+                <HojaMovil titulo={titulo} subtitulo={subtitulo}>
                     {cuerpo}
                 </HojaMovil>
             )}

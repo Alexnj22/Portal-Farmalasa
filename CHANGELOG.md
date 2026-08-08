@@ -21,6 +21,73 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.515.0 — Reglas de despacho: filtros, tabla canónica y el expediente que volvía a la hoja
+
+**El teléfono: la pantalla negra volvió porque el arreglo se fue de vuelta.**
+Reportado por tercera vez —«aún falla el modal de un producto, me recarga la
+página, se pone negro, pero en las demás sí funciona»— y esta vez el dato
+decisivo lo puso otra vez quien lo reportó: *«verificá cómo lo hace productos,
+ese sí funciona»*.
+
+Productos monta el expediente con `variante="pantalla"`; Reglas lo hacía con la
+hoja `auto`, que pinta su propia superficie con `backdrop-filter`. Eso ya se
+había corregido en **v2.508.2**… y **v2.511.0 lo revirtió**, sin decirlo: ese
+commit es un cambio de las hojas impresas del conteo, y arrastró de paso una
+copia vieja de `TabReglas.jsx` y de `ExpedienteMovil.jsx` desde el árbol de otra
+sesión. El `git log` del archivo lo muestra entero: v2.508.2 escribe el arreglo,
+v2.511.0 aplica exactamente su diff inverso. Es el riesgo del árbol compartido
+que CLAUDE.md describe, materializado sobre un arreglo ya entregado.
+
+Restaurado, y con el motivo escrito **adentro del bloque** y en
+`ExpedienteMovil` —donde además se documenta por qué NO hay ranura `pie`— para
+que la cuarta vez se note antes de commitear.
+
+Medido en un iPhone 13 (WebKit) con los valores de desenfoque de Liquid, que es
+donde el efecto existe: el expediente montaba **tres** capas de
+`backdrop-filter` —el panel de 390×664 y dos `input` de `blur(24px)` colgando
+adentro—. Ahora monta **una**. Los dos `input` los apaga una regla nueva de
+`index.css`: un CONTROL dentro de un panel (`input`, `tab-track` dentro de
+`modal`/`dropdown`/`sidebar-popover`) no vuelve a difuminar, por la misma física
+que la regla de card-dentro-de-card. Un hueco de formulario no flota sobre la
+vista: está pintado encima del panel, que ya resolvió el fondo. Cero aporte
+visual, dos pasadas de compositor menos.
+
+**Aviso honesto:** el emulador nunca vio el crash —ni antes ni ahora— así que lo
+que está verificado es el mecanismo (cuántas capas y de qué tamaño), no la
+desaparición del síntoma. Eso hay que confirmarlo en el teléfono real.
+
+**Los filtros que faltaban.** Laboratorio y con/sin regla, en la `FilterBar`
+canónica, en la fila del título. Antes el único filtro era tocar las tarjetas de
+resumen, y bajo 720px **no había ninguno**: `FilterBar` colapsa a hoja inferior,
+así que ahora en el teléfono también se filtra.
+
+Y los tres son **independientes**, que es el cambio de fondo: «nuevos» era un
+tercer valor de `ruleFilter`, o sea excluyente con «con regla» y «sin regla» —
+justo la combinación para la que existe esta pantalla. Verificado en vivo:
+4,232 sin filtros → 3,390 sin regla → 19 sumando BAYER → 0 sumando «nuevos»
+(BAYER no tiene altas del mes), y el ✕ «Quitar los 3 filtros» devuelve 4,232.
+
+**El estado, en un renglón.** La columna medía `w-28` y «Con regla» se partía en
+dos («Con» / «regla»). El ancho de una columna de estado se mide con el rótulo
+más largo más el relleno de celda: `w-36`, y `whitespace-nowrap` en el badge
+para que el corte no vuelva con el tipo escalado.
+
+**La tabla y el panel, al canon.** Tres piezas escritas a mano:
+
+- la píldora de «Regla despacho» era un `<span>` con `rounded-full` fijo y su
+  propio par bg/texto — o sea un badge que no seguía al tema (en Solid la forma
+  es tensa) ni pasaba por el contraste que `Badge` resuelve por variante. Ahora
+  `presStyle` devuelve la `variant` del canónico y la fila y el editor dicen el
+  mismo tipo con el mismo color;
+- el aviso «sin presentaciones en catálogo» era el patrón exacto que D3.5
+  canonizó → `Notice`;
+- el tinte de la fila expandida estaba copiado en dos constantes con el mismo
+  texto que los tokens de `DataTable`. Copiadas, sobreviven a que el canónico
+  cambie: pasa a `useExpandStyle()`, que es el hook que existe para eso.
+
+`loadProducts` recibe un objeto en vez de once posicionales, y el mensaje de
+lista vacía deja de atribuirle el vacío a un solo filtro ahora que se combinan.
+
 ## v2.514.3 — El canon lo abre el rol, sin la válvula de SUPERADMIN
 
 Pedido del usuario: «quitá la cuenta superadmin, al final está el rol».

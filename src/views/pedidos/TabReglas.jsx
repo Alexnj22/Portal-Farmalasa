@@ -10,13 +10,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { normSearch } from '../../utils/searchUtils';
 import {
     Loader2, Check, X, Ban, AlertTriangle, Package,
-    Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight,
+    Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight, Building2,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import { DataTable, DataRow, DataCell, useExpandStyle } from '../../components/common/DataTable';
 import TablePagination                   from '../../components/common/TablePagination';
+import FilterBar    from '../../components/common/FilterBar';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import Notice       from '../../components/common/Notice';
 import {
-    fetchProductPresentacionesForDispatch, fetchLaboratoriosOcultarMinmax, fetchAllDispatchRules,
+    fetchProductPresentacionesForDispatch, fetchLaboratorios, fetchAllDispatchRules,
     fetchActiveProductsCount, fetchNewProductsThisMonth, fetchProductsWithLabPage,
     deleteDispatchRule, updateDispatchRule, insertDispatchRule,
 } from '../../data/dispatchRules';
@@ -28,49 +31,63 @@ import { useExpedienteMovil } from '../../components/common/usarExpediente';
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
 
-const EXPAND_BG     = 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider';
-const EXPAND_BORDER = 'border-chart-1/30';
-
 const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '', caja_especial: false };
 
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio',     align: 'left',   sortable: true },
     { key: 'nombre',             label: 'Producto',        align: 'left',   sortable: true },
-    { key: 'estado',             label: 'Estado',          align: 'center', className: 'w-28', sortable: true },
+    // `w-36` y no `w-28`: a 112px «Con regla» no entraba en un renglón y el badge
+    // se partía en dos («Con» / «regla»), que es lo que se reportó. El ancho de
+    // una columna de estado se mide con el rótulo MÁS LARGO más el relleno de
+    // celda (`px-4 md:px-6`, o sea 48px), no con el más corto.
+    { key: 'estado',             label: 'Estado',          align: 'center', className: 'w-36', sortable: true },
     { key: 'despacho',           label: 'Regla despacho',  align: 'center', className: 'w-44', sortable: true },
     { key: 'notas',              label: 'Notas',           align: 'left'   },
 ];
 
-// Badge para la columna "Regla despacho" — fuera del componente, no se recrea en cada render
+// La píldora de la columna "Regla despacho". Devuelve las props del canónico
+// `Badge` —no clases sueltas—: estaba escrita a mano con `rounded-full` fijo y
+// su propio par bg/texto, o sea un badge que no seguía al tema (en Solid la
+// forma es tensa, no redonda) y que se salía del contraste que `Badge` resuelve
+// por variante. Fuera del componente: no se recrea en cada render.
 function ruleTypeLabel(rule) {
     if (!rule) return null;
     if (rule.dispatch_id_presentacion) {
         const label = rule.dispatch_label || null;
         const tipo  = label ?? rule.dispatch_tipo ?? '–';
         const mult  = rule.dispatch_multiplo ?? 1;
-        const style = presStyle(label ? 'CAJA' : tipo);
-        return { text: mult > 1 ? `${tipo} ×${mult}` : tipo, bg: style.bg, txt: style.text };
+        const { variant } = presStyle(label ? 'CAJA' : tipo);
+        // `solid` es el mismo relleno que lleva la tarjeta elegida en el panel:
+        // la fila y el editor hablan del mismo tipo con el mismo color.
+        return { text: mult > 1 ? `${tipo} ×${mult}` : tipo, variant, tone: 'solid' };
     }
-    if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-chart-1/10',   txt: 'text-chart-1-text'   };
-    if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     bg: 'bg-chart-3/10', txt: 'text-chart-3-text' };
-    if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-chart-6/10', txt: 'text-chart-6-text' };
-    return { text: 'Solo cajas', bg: 'bg-surface-card-hover', txt: 'text-content-2' };
+    // Las tres reglas viejas (pre-presentaciones) van en `soft`: describen un
+    // formato heredado, no una elección vigente del editor.
+    if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     variant: 'chart-1', tone: 'soft' };
+    if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     variant: 'chart-3', tone: 'soft' };
+    if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, variant: 'chart-6', tone: 'soft' };
+    return { text: 'Solo cajas', variant: 'neutral', tone: 'soft' };
 }
 
-// Icono + colores según tipo de presentación.
+// Icono + color según tipo de presentación.
 // El color identifica el TIPO y solo se pinta cuando la opción está elegida —
 // el mismo color que después lleva el badge de la fila. Sin elegir, el ícono va
 // en `content-3` como cualquier otro: si el color también viviera en el estado
 // inactivo dejaría de señalar cuál está activo, que es justo lo que se reportó.
+//
+// `variant` es la clave del canónico `Badge` y `bg`/`text` son las clases que
+// pinta la tarjeta elegida del panel, que NO es un badge. Salen de la misma
+// función a propósito: son dos formas de decir el mismo tipo, y separarlas es
+// como se llega a que la fila diga azul y el editor verde.
 const presStyle = (tipo) => {
     const t = (tipo || '').toUpperCase();
     if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
-        return { Icon: Box,     bg: 'bg-chart-8-solid', text: 'text-white' };
+        return { Icon: Box,     variant: 'chart-8', bg: 'bg-chart-8-solid', text: 'text-white' };
     if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
-        return { Icon: Layers,  bg: 'bg-chart-3-solid', text: 'text-white' };
+        return { Icon: Layers,  variant: 'chart-3', bg: 'bg-chart-3-solid', text: 'text-white' };
     if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
-        return { Icon: Sigma,   bg: 'bg-chart-6-solid', text: 'text-white' };
-    return { Icon: Package, bg: 'bg-chart-1-solid',   text: 'text-white' };
+        return { Icon: Sigma,   variant: 'chart-6', bg: 'bg-chart-6-solid', text: 'text-white' };
+    return { Icon: Package, variant: 'chart-1', bg: 'bg-chart-1-solid', text: 'text-white' };
 };
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -90,30 +107,19 @@ function calcularDespacho(multiplo, etiqueta) {
     };
 }
 
-// El tipo de la presentación elegida, desde el caché que llenó el panel al
-// abrirse. Lo necesita el pie del expediente, que se monta FUERA de `EditPanel`.
-function tipoDePresentacion(presCache, productId, idPres) {
-    if (!idPres) return '';
-    const fila = (presCache.current[productId] ?? []).find(p => p.id_presentacion === idPres);
-    return fila?.presentaciones?.tipo ?? '';
-}
-
 // ── El resultado de la regla ──────────────────────────────────────────────────
 // Era una nota al pie en gris, y es lo único que verifica que la regla hace lo
-// que se quiere: pasa a anclar la columna. En el teléfono se monta en el `pie`
-// del expediente, porque el riel de múltiplos y esta línea no caben juntos en
-// una pantalla y se tocaba ×5 sin ver qué cambiaba.
+// que se quiere: pasa a anclar la columna.
 function ResultadoDespacho({ multiplo, tipo, etiqueta, compacto = false }) {
     const { porEtiqueta, cantidad } = calcularDespacho(multiplo, etiqueta);
     const unidad = porEtiqueta ? etiqueta : (tipo ? `pack(s) de ${tipo}` : 'pack(s)');
 
     // ── `compacto` NO lleva superficie propia (2026-08-07) ────────────────────
-    // Va en el `pie` de `HojaMovil`, que YA es una superficie con su material.
-    // `data-surface="card"` incluye `backdrop-filter`, así que anidarlo deja un
-    // blur dentro de otro blur — en Safari de iPhone eso rompe la composición y
-    // la hoja se pinta NEGRA (reportado 2026-08-07; no reproduce en el emulador
-    // ni en el tema Solid, donde el blur vale `none`). Y aunque compusiera bien,
-    // una tarjeta dentro de una tarjeta no es el patrón.
+    // Es el modo del teléfono, donde esto vive DENTRO del panel del expediente,
+    // que ya es una superficie con su material. `data-surface="card"` incluye
+    // `backdrop-filter`, así que anidarlo deja un desenfoque dentro de otro — y
+    // eso es lo que se venía persiguiendo con la pantalla negra del teléfono.
+    // Aunque compusiera bien, una tarjeta dentro de una tarjeta no es el patrón.
     return (
         <div aria-live="polite"
             {...(compacto ? {} : { 'data-surface': 'card' })}
@@ -259,7 +265,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
     return (
         <div className="space-y-4">
 
-            {/* Header — en la hoja del teléfono lo pone `HojaMovil` */}
+            {/* El nombre del producto lo pone la barra del expediente; el laboratorio
+                no viaja hasta ahí, así que se queda acá. */}
+            {enExpediente && product.laboratorio_nombre && (
+                <p className="text-label text-content-3 -mt-1">{product.laboratorio_nombre}</p>
+            )}
+
+            {/* Header — en el expediente lo pone la barra superior */}
             {!enExpediente && (
                 <div className="flex items-start justify-between gap-3">
                     <div>
@@ -288,9 +300,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                 {loadingPres ? (
                     <div className="flex items-center gap-2 text-label text-content-3 w-full"><SkeletonText lines={2} /></div>
                 ) : dedupedPres.length === 0 ? (
-                    <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text">
+                    /* `Notice` y no una caja a mano: era el aviso con ícono escrito
+                       con `rounded-xl` y su propio par bg/texto, o sea el patrón
+                       exacto que D3.5 canonizó (58 avisos, 3 radios distintos). */
+                    <Notice variant="warning">
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.
-                    </div>
+                    </Notice>
                 ) : unicaPres ? (
                     /* Con una sola presentación en catálogo no hay nada que elegir:
                        una tarjeta de 200px pedía una decisión que no existe. Se
@@ -397,9 +412,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             />
                         </div>
 
-                        {!enExpediente && (
-                            <ResultadoDespacho multiplo={multiplo} tipo={selectedTipo} etiqueta={vals.dispatch_label} />
-                        )}
+                        {/* En el teléfono va inline igual que acá, no anclado al fondo:
+                            el envase es pantalla completa, así que el riel y el
+                            resultado entran juntos sin tener que fijarlo. */}
+                        <ResultadoDespacho
+                            multiplo={multiplo} tipo={selectedTipo} etiqueta={vals.dispatch_label}
+                            compacto={enExpediente}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -495,6 +514,41 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
     );
 }
 
+// ── La fila expandida ─────────────────────────────────────────────────────────
+// Va en su propio componente porque `useExpandStyle` lee el contexto de
+// `DataTable`, y desde el cuerpo de la vista —que se ejecuta FUERA del
+// proveedor— devolvería el fallback. Es el hook que el canónico exporta justo
+// para las filas expandidas de `<tr>` crudo.
+//
+// El tinte y el borde estaban copiados acá como dos constantes con el mismo
+// texto que los tokens del canónico. Copiadas, sobreviven a que el canónico
+// cambie: es la forma exacta en que una vista se despega del tema sin que nada
+// falle (§22 y el blindspot de dark mode que la fase T3 cerró en `useTokens`).
+function FilaEdicion({ colSpan, children }) {
+    const tk = useExpandStyle();
+    return (
+        <motion.tr
+            className={`${tk.expandBg} border-b ${tk.expandBorderColor}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+        >
+            <td colSpan={colSpan} className="p-0">
+                <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: EASE }}
+                    style={{ overflow: 'hidden' }}
+                >
+                    <div className="px-5 py-4">{children}</div>
+                </motion.div>
+            </td>
+        </motion.tr>
+    );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function TabReglas({ searchTerm = '' }) {
 
@@ -512,7 +566,13 @@ export default function TabReglas({ searchTerm = '' }) {
     const [sortKey,         setSortKey]         = useState('laboratorio_nombre');
     const [sortDir,         setSortDir]         = useState('asc');
     const [hiddenLabIds,    setHiddenLabIds]    = useState(null); // null = aún cargando
+    const [labOptions,      setLabOptions]      = useState([]);
+    // Tres filtros independientes: '' | 'con' | 'sin', el id del laboratorio, y
+    // los nuevos del mes. «Nuevos SIN regla» es la pregunta de la pantalla, así
+    // que no puede ser una elección excluyente con las otras dos.
     const [filterRule,      setFilterRule]      = useState('');
+    const [filterLab,       setFilterLab]       = useState(null);
+    const [soloNuevos,      setSoloNuevos]      = useState(false);
     const [editingId,       setEditingId]       = useState(null);
     const [editVals,        setEditVals]        = useState(EMPTY_VALS);
     const [saving,          setSaving]          = useState(false);
@@ -532,11 +592,16 @@ export default function TabReglas({ searchTerm = '' }) {
         tableTopRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
     }, [page]);
 
-    // Carga IDs de labs ocultos en MinMax para excluirlos
+    // Labs: los ocultos en MIN·MAX se excluyen de la tabla, y el resto son las
+    // opciones del filtro de laboratorio. Un solo fetch para las dos cosas.
     useEffect(() => {
-        fetchLaboratoriosOcultarMinmax()
+        fetchLaboratorios()
             .then(({ data }) => {
-                setHiddenLabIds((data || []).filter(l => l.ocultar_en_minmax).map(l => l.id));
+                const filas = data || [];
+                setHiddenLabIds(filas.filter(l => l.ocultar_en_minmax).map(l => l.id));
+                setLabOptions(filas
+                    .filter(l => !l.ocultar_en_minmax && l.nombre)
+                    .map(l => ({ value: String(l.id), label: l.nombre })));
             });
     }, []);
 
@@ -573,19 +638,29 @@ export default function TabReglas({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => { loadRules(); }, [loadRules]);
-    useEffect(() => { setPage(1); }, [searchTerm, filterRule, sortKey, sortDir, pageSize]);
+    useEffect(() => { setPage(1); }, [searchTerm, filterRule, filterLab, soloNuevos, sortKey, sortDir, pageSize]);
 
-    // Productos paginados
-    const loadProducts = useCallback(async (pg, pgSize, term, ruleFilter, ruleIds, hiddenLabs, sk, sd, newIds) => {
+    // Productos paginados.
+    // Recibe UN objeto y no once posicionales: con `sortKey`/`sortDir`/`labId`
+    // pegados al final, agregar un filtro más era cambiar el orden de la llamada
+    // en dos sitios y confiar en que coincidan.
+    const loadProducts = useCallback(async (o) => {
         setLoadingProducts(true);
         try {
-            const offset = (pg - 1) * pgSize;
-            const dbSk = (sk === 'estado' || sk === 'despacho') ? 'laboratorio_nombre' : sk;
-            const asc = sd !== 'desc';
+            const dbSk = (o.sortKey === 'estado' || o.sortKey === 'despacho') ? 'laboratorio_nombre' : o.sortKey;
 
             const { data, count, error } = await fetchProductsWithLabPage({
-                offset, pageSize: pgSize, hiddenLabs, sortKey: dbSk, ascending: asc,
-                term: term.length >= 2 ? (normSearch(term) || term) : '', ruleFilter, ruleIds, newIds,
+                offset: (o.page - 1) * o.pageSize,
+                pageSize: o.pageSize,
+                hiddenLabs: o.hiddenLabs,
+                labId: o.labId,
+                sortKey: dbSk,
+                ascending: o.sortDir !== 'desc',
+                term: o.term.length >= 2 ? (normSearch(o.term) || o.term) : '',
+                ruleFilter: o.ruleFilter,
+                ruleIds: o.ruleIds,
+                soloNuevos: o.soloNuevos,
+                newIds: o.newIds,
             });
             if (error) throw error;
             setProducts(data || []);
@@ -603,9 +678,14 @@ export default function TabReglas({ searchTerm = '' }) {
     // hiddenLabIds=null significa que el fetch de labs aún no terminó — esperar para no hacer doble fetch.
     useEffect(() => {
         if (loadingRules || hiddenLabIds === null) return;
-        const ids = Object.keys(rulesMapRef.current).map(Number);
-        loadProducts(page, pageSize, searchTerm, filterRule, ids, hiddenLabIds, sortKey, sortDir, newProductIds);
-    }, [page, pageSize, searchTerm, filterRule, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]);
+        loadProducts({
+            page, pageSize, term: searchTerm,
+            ruleFilter: filterRule, ruleIds: Object.keys(rulesMapRef.current).map(Number),
+            hiddenLabs: hiddenLabIds, labId: filterLab,
+            soloNuevos, newIds: newProductIds,
+            sortKey, sortDir,
+        });
+    }, [page, pageSize, searchTerm, filterRule, filterLab, soloNuevos, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]);
 
     const handleSort = useCallback((key) => {
         setSortDir(prev => sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc');
@@ -721,7 +801,13 @@ export default function TabReglas({ searchTerm = '' }) {
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
             {/* ── Stat cards + filtros ───────────────────────────────────────── */}
-            <div className="flex items-start gap-3 flex-wrap">
+            {/* UNA fila, sin `flex-wrap` (§17.0). No es estética: `useMedidaFila`
+                de `FilterBar` busca el carril por `[role="group"]` y le descuenta
+                314px a la píldora por tenerlo al lado. Si el carril cae a otro
+                renglón, la reserva se aplica igual y la píldora se reparte un
+                ancho que no es el suyo — sin fallar, en silencio. El carril lleva
+                `flex-1` para ceder el sobrante, que es la otra mitad de la regla. */}
+            <div className="flex items-start gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de reglas">
 
                     <StatCard
@@ -747,18 +833,60 @@ export default function TabReglas({ searchTerm = '' }) {
                     />
 
                     <StatCard label="Nuevos" sub={`agregados en ${mesActual}`} value={thisMonthCount}
-                        icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
+                        icon={Sparkles} iconBg={soloNuevos ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
                         valueCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
-                        tono="success" active={filterRule === 'nuevo'}
+                        tono="success" active={soloNuevos}
                         loading={statsLoading}
-                        onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
+                        onClick={() => setSoloNuevos(v => !v)}
                     />
                 </CarrilCards>
 
-                {/* Botón limpiar filtro regla */}
-                {filterRule && (
-                    <Button variant="secondary" icon={X} onClick={() => setFilterRule('')}>Limpiar filtro</Button>
-                )}
+                {/* §17 — la barra canónica, a la derecha. Reemplaza al «Limpiar
+                    filtro» suelto, que era la mitad de una barra de filtros: sabía
+                    borrar el filtro pero no había dónde ponerlo. Y bajo 720px
+                    `FilterBar` colapsa a hoja inferior, así que en el teléfono estos
+                    filtros existen — el botón suelto no filtraba nada.
+
+                    El orden de las ranuras es el de §17, de ámbito más amplio a más
+                    angosto: entidad (laboratorio) y después estado (regla). */}
+                <FilterBar
+                    onClear={() => { setFilterLab(null); setFilterRule(''); setSoloNuevos(false); }}
+                    activeCount={[filterLab !== null, filterRule !== '', soloNuevos].filter(Boolean).length}
+                >
+                    {labOptions.length > 0 && (
+                        <FilterBar.Section active={filterLab !== null} onClear={() => setFilterLab(null)} label="laboratorio">
+                            <div className="w-[175px]">
+                                <LiquidSelect
+                                    value={filterLab !== null ? String(filterLab) : ''}
+                                    onChange={v => setFilterLab(v ? parseInt(v) : null)}
+                                    options={labOptions}
+                                    placeholder="Laboratorio"
+                                    icon={Building2}
+                                    clearable={false} compact bare
+                                />
+                            </div>
+                        </FilterBar.Section>
+                    )}
+
+                    {/* Un `SegmentedControl` y no tres botones: es «una de tres
+                        elegida», y el canónico pinta sólo la activa. Comparte estado
+                        con las tarjetas de arriba, así que tocar cualquiera de las
+                        dos mueve la otra. */}
+                    <FilterBar.Section active={filterRule !== ''} onClear={() => setFilterRule('')} label="regla">
+                        <SegmentedControl
+                            size="sm"
+                            tone="brand"
+                            label="Regla de despacho"
+                            value={filterRule}
+                            onChange={setFilterRule}
+                            options={[
+                                { value: '',    label: 'Todos' },
+                                { value: 'con', label: 'Con regla', icon: Check },
+                                { value: 'sin', label: 'Sin regla', icon: AlertTriangle },
+                            ]}
+                        />
+                    </FilterBar.Section>
+                </FilterBar>
             </div>
 
             {/* Sentinel para scroll-to-top al cambiar página */}
@@ -770,10 +898,11 @@ export default function TabReglas({ searchTerm = '' }) {
                 loading={loadingProducts || loadingRules} skeletonRows={8}
                 empty={{
                     icon: Package,
+                    // Los filtros se combinan, así que el mensaje ya no puede
+                    // atribuirle el vacío a uno solo: con laboratorio + «sin regla»
+                    // + «nuevos» activos, «todos tienen regla» sería falso.
                     message: searchTerm.length >= 2 ? `Sin resultados para "${searchTerm}".`
-                        : filterRule === 'con'   ? 'No hay productos con regla asignada.'
-                        : filterRule === 'sin'   ? 'Todos los productos tienen regla asignada.'
-                        : filterRule === 'nuevo' ? `Sin productos nuevos en ${mesActual}.`
+                        : (filterLab !== null || filterRule || soloNuevos) ? 'Ningún producto cumple con los filtros aplicados.'
                         : 'Sin productos en catálogo.',
                 }}
                 minWidth="720px"
@@ -806,17 +935,22 @@ export default function TabReglas({ searchTerm = '' }) {
                                     </div>
                                 </DataCell>
 
+                                {/* `whitespace-nowrap`: el ancho de columna evita el corte
+                                    en el caso normal, pero un badge es texto y con el
+                                    tipo escalado —o el tema Solid, que aprieta menos— se
+                                    vuelve a partir. La regla que dice «esto es un
+                                    renglón» va en el badge, no sólo en el ancho. */}
                                 <DataCell align="center">
                                     {hasRule ? (
-                                        <Badge variant="success" icon={Check} uppercase={false}>Con regla</Badge>
+                                        <Badge variant="success" icon={Check} uppercase={false} className="whitespace-nowrap">Con regla</Badge>
                                     ) : (
-                                        <Badge uppercase={false}>Sin regla</Badge>
+                                        <Badge uppercase={false} className="whitespace-nowrap">Sin regla</Badge>
                                     )}
                                 </DataCell>
 
                                 <DataCell align="center">
                                     {typeTag
-                                        ? <span className={`inline-block text-caption px-2.5 py-0.5 rounded-full font-semibold ${typeTag.bg} ${typeTag.txt}`}>{typeTag.text}</span>
+                                        ? <Badge variant={typeTag.variant} tone={typeTag.tone} className="whitespace-nowrap">{typeTag.text}</Badge>
                                         : <span className="text-content-3 text-body">—</span>
                                     }
                                 </DataCell>
@@ -832,34 +966,16 @@ export default function TabReglas({ searchTerm = '' }) {
                             {/* Panel edición con animación entrada/salida */}
                             <AnimatePresence>
                                 {isEditing && !enTelefono && (
-                                    <motion.tr key={`ep-${prod.id}`}
-                                        className={`${EXPAND_BG} border-b ${EXPAND_BORDER}`}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.15 }}
-                                    >
-                                        <td colSpan={COLS.length} className="p-0">
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: 0.25, ease: EASE }}
-                                                style={{ overflow: 'hidden' }}
-                                            >
-                                                <div className="px-5 py-4">
-                                                    <EditPanel
-                                                        product={prod} rule={rule}
-                                                        vals={editVals} setVals={setEditVals}
-                                                        saving={saving} justSaved={justSaved} saveError={saveError}
-                                                        onApply={(v) => applyVals(prod.id, v)}
-                                                        onCancel={cancelEdit}
-                                                        presCache={presCache}
-                                                    />
-                                                </div>
-                                            </motion.div>
-                                        </td>
-                                    </motion.tr>
+                                    <FilaEdicion key={`ep-${prod.id}`} colSpan={COLS.length}>
+                                        <EditPanel
+                                            product={prod} rule={rule}
+                                            vals={editVals} setVals={setEditVals}
+                                            saving={saving} justSaved={justSaved} saveError={saveError}
+                                            onApply={(v) => applyVals(prod.id, v)}
+                                            onCancel={cancelEdit}
+                                            presCache={presCache}
+                                        />
+                                    </FilaEdicion>
                                 )}
                             </AnimatePresence>
                         </React.Fragment>
@@ -867,21 +983,24 @@ export default function TabReglas({ searchTerm = '' }) {
                 })}
             </DataTable>
 
-            {/* El panel de la regla, a pantalla completa en el teléfono. El resultado
-                va al PIE de la hoja, fuera del scroll: en 390px el riel de múltiplos
-                y la línea que dice cuánto se despacha no caben juntos, así que se
-                tocaba ×5 sin ver qué cambiaba. */}
+            {/* `variante="pantalla"` — el MISMO envase que usa Productos, y no la hoja
+                `auto`. La hoja se ponía negra en el teléfono al abrir la regla
+                (reportado 2026-08-07, tres veces): pinta su propia superficie con
+                `backdrop-filter`, y el detalle vive dentro. `pantalla` no lleva velo
+                ni material propio —lo dice `ModalShell`: sería «un desenfoque a
+                pantalla completa que nadie llega a ver y que el compositor» tiene que
+                sostener— así que saca del camino la capa que fallaba.
+                Además encaja mejor con lo que es: la hoja ya medía 584px de 664, o
+                sea que de «detalle corto» no tenía nada.
+
+                Esto se escribió una vez en v2.508.2 y VOLVIÓ ATRÁS solo: v2.511.0
+                —un cambio de las hojas impresas del conteo— commiteó de paso una
+                copia vieja de este archivo y de `ExpedienteMovil`, y con ella
+                regresó la hoja y la pantalla negra. Por eso el usuario lo reportó
+                una tercera vez. Antes de tocar este bloque, `git log` del archivo. */}
             <ExpedienteMovil abierto={abierto} onClose={cancelEdit}
                 titulo={abierto?.nombre || 'Regla de despacho'}
-                subtitulo={abierto?.laboratorio_nombre || undefined}
-                pie={editVals.dispatch_id_presentacion ? (
-                    <ResultadoDespacho
-                        compacto
-                        multiplo={Number(editVals.dispatch_multiplo) || 1}
-                        tipo={tipoDePresentacion(presCache, abierto?.id, editVals.dispatch_id_presentacion)}
-                        etiqueta={editVals.dispatch_label}
-                    />
-                ) : null}>
+                variante="pantalla">
                 {(prod) => (
                     <div className="px-4 py-4">
                         <EditPanel

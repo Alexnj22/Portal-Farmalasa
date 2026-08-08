@@ -2776,6 +2776,34 @@ thead.sticky,
   border-radius: var(--card-radius-anidada);
 }
 
+/* ── Un CONTROL dentro de un panel no vuelve a difuminar ───────────────────
+   Misma física que la regla de arriba, aplicada a las dos superficies que no
+   son paneles sino piezas de formulario: `input` es un HUECO (§3, «el campo es
+   un hueco, no una superficie») y `tab-track` es un carril. Ninguno de los dos
+   flota sobre la vista: están pintados encima del panel que los contiene, y
+   ese panel ya difuminó —o es opaco—, así que su `backdrop-filter` muestrea
+   una imagen ya resuelta y no aporta nada.
+
+   Medido el 2026-08-07 en el expediente de Reglas de despacho, iPhone 13 con
+   los valores de Liquid: el panel es una capa `blur(10px)` de 390×664 y adentro
+   colgaban DOS `input` de `blur(24px)` — más radio que su propio contenedor,
+   sobre una superficie que ya no deja ver nada detrás. Cero aporte visual y dos
+   pasadas de compositor más en la pantalla que se venía cayendo en Safari de
+   iPhone (pantalla negra + recarga, reportado tres veces).
+
+   Se limita a `input`/`tab-track` dentro de un PANEL (`modal`, `dropdown`,
+   `sidebar-popover`) a propósito: un `input` suelto sobre el fondo de la página
+   sí tiene la vista detrás, y ahí el vidrio se gana. El resto del material
+   —fondo, borde, radio, la sombra interna del hueco— no se toca. */
+[data-surface="modal"] :is([data-surface="input"], [data-surface="tab-track"]),
+[data-surface="dropdown"] :is([data-surface="input"], [data-surface="tab-track"]),
+[data-surface="sidebar-popover"] :is([data-surface="input"], [data-surface="tab-track"]) {
+  /* Sólo la estándar — mismo motivo que la regla de arriba: escritas las dos,
+     Lightning CSS colapsa el par y en Firefox llega como
+     `-webkit-backdrop-filter: none` a secas, o sea sin apagar nada. */
+  backdrop-filter: none;
+}
+
 [data-surface="card"][data-tono="warning"] { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning), var(--card-shadow); }
 [data-surface="card"][data-tono="danger"]  { border-color: var(--danger);  box-shadow: 0 0 0 1px var(--danger),  var(--card-shadow); }
 [data-surface="card"][data-tono="success"] { border-color: var(--success); box-shadow: 0 0 0 1px var(--success), var(--card-shadow); }

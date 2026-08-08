@@ -112,6 +112,8 @@ for (const v of [...(dinamicos.get(entry) || [])].filter(f => gz.has(f))) {
 }
 
 // ── reporte ────────────────────────────────────────────────────────────────
+const baseActual = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
+
 if (process.argv.includes('--update-baseline')) {
   // Holgura del 15% (mínimo 10 kB). Un ratchet al byte exacto falla con
   // cualquier import trivial y termina regenerándose por reflejo — que es
@@ -120,6 +122,11 @@ if (process.argv.includes('--update-baseline')) {
   const holgura = n => Math.max(n + 10, Math.ceil(n * 1.15));
   writeFileSync(BASELINE, JSON.stringify({
     _comment: 'Techos en kB gzip del cierre ESTÁTICO. Generado con `npm run gate:bundle -- --update-baseline` (incluye 15% de holgura). Al BAJAR peso, regenerar y commitear.',
+    // Los motivos SOBREVIVEN a la regeneración. Sin esto, el primer
+    // `--update-baseline` de cualquier sesión futura borraría la explicación de
+    // por qué un techo se subió a mano y dejaría el número solo — que es
+    // justamente el estado que este campo existe para evitar.
+    _motivos: baseActual?._motivos ?? {},
     entry: holgura(entryKb),
     vistas: Object.fromEntries(Object.entries(vistas).map(([k, v]) => [k, holgura(v)])),
   }, null, 2) + '\n');
@@ -127,7 +134,7 @@ if (process.argv.includes('--update-baseline')) {
   process.exit(0);
 }
 
-const base = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : { entry: TECHO_ENTRY_KB, vistas: {} };
+const base = baseActual ?? { entry: TECHO_ENTRY_KB, vistas: {} };
 let falla = false;
 
 console.log(`\nENTRY (frío / tras cada deploy): ${entryKb} kB gzip  [tope ${base.entry}]`);
@@ -151,7 +158,14 @@ const crecidas = Object.entries(vistas)
 if (crecidas.length) {
   falla = true;
   console.log(`\n✗ VISTAS QUE CRECIERON (${crecidas.length})`);
-  for (const [n, k] of crecidas) console.log(`  ${n}: ${k} kB  [tope ${base.vistas[n] ?? TECHO_VISTA_KB}]`);
+  for (const [n, k] of crecidas) {
+    console.log(`  ${n}: ${k} kB  [tope ${base.vistas[n] ?? TECHO_VISTA_KB}]`);
+    // Si el techo se subió a mano alguna vez, su motivo se imprime ACÁ — donde
+    // alguien lo está leyendo porque acaba de fallar. Un techo sin explicación
+    // se vuelve a subir por reflejo; con el motivo a la vista, subirlo otra vez
+    // obliga a discutir contra algo escrito.
+    if (base._motivos?.[n]) console.log(`     el techo actual tiene motivo: ${base._motivos[n]}`);
+  }
 }
 
 const top = Object.entries(vistas).sort((a, b) => b[1] - a[1]).slice(0, 6);

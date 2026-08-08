@@ -1,5 +1,9 @@
 {
-  "_comment": "Techos en kB gzip del cierre ESTÁTICO. Generado con `npm run gate:bundle -- --update-baseline` (incluye 15% de holgura). Al BAJAR peso, regenerar y commitear.",
+  "_comment": "Techos en kB gzip del cierre ESTÁTICO. Generado con `npm run gate:bundle -- --update-baseline` (incluye 15% de holgura). Al BAJAR peso, regenerar y commitear. Los techos editados A MANO llevan su motivo en `_motivos` — no regenerar el archivo completo para tapar un hallazgo suelto: se edita esa entrada y se escribe por qué.",
+  "_motivos": {
+    "FacturacionView": "Subido a mano el 2026-08-08 (medía 59 contra un techo de 57). No hay librería pesada: los 59 kB son 18.5 de la vista y el resto el kit canónico compartido (FilterBar 7.6, LiquidSelect 6.1, DataTable 3.9). El techo de 57 se generó el 2026-07-30 y AL DÍA SIGUIENTE la vista pasó su barra al canónico (v2.299.0, que le sumó CarrilCards y StatCard) y ganó la pestaña Observaciones (v2.308.0). O sea que creció por adoptar el estándar y por hacer más cosas, no por una regresión. Bajarlo exigiría des-canonicalizarla, que es al revés de lo que el proyecto quiere.",
+    "DashboardView": "BAJADO a mano el 2026-08-08, de 196 a 118: el Inicio dejó de arrastrar `recharts` en su cierre estático (204 → 103 kB) porque el único gráfico de la pantalla pasa por `React.lazy`. El techo se aprieta a propósito en vez de dejarlo en 196 — con el techo viejo, volver a importar recharts de forma estática (+95 kB) daba 198 y pasaba raspando; con 118 salta enseguida, que es para lo que sirve el ratchet."
+  },
   "entry": 301,
   "vistas": {
     "EmployeeAnnouncementsView": 43,
@@ -38,13 +42,13 @@
     "ProveedoresView": 44,
     "ConteoInventarioView": 48,
     "ConteoDetailView": 67,
-    "FacturacionView": 57,
+    "FacturacionView": 69,
     "CotizacionesView": 44,
     "EncuestaView": 49,
     "EncuestaAdminView": 52,
     "NoAccessView": 12,
     "AccessDeniedView": 11,
-    "DashboardView": 196,
+    "DashboardView": 118,
     "NotFoundView": 10,
     "FormAuditDetail": 12,
     "FormNovedad": 45,

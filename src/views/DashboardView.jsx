@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
 import Switch from '../components/common/Switch';
@@ -7,10 +7,16 @@ import Notice from '../components/common/Notice';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import {
-  AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip} from 'recharts';
-import ChartContainer from '../components/common/ChartContainer';
+// ── `recharts` NO viaja en el chunk del Inicio ───────────────────────────────
+// Pesa 95 kB gzip: era el 46% de los 204 kB que se bajaban al entrar acá, para
+// dibujar el ÚNICO gráfico de la pantalla — dentro de un widget que encima es
+// opcional (permiso `dash_trend`, y el usuario puede sacarlo de su tablero).
+// Con el `lazy`, el Inicio baja a ~109 kB y vuelve debajo de su techo del
+// `bundle-gate`. La descarga no se nota: el gráfico no se monta hasta que
+// `attendanceLoaded`, y hasta entonces el widget ya pintaba su esqueleto.
+// El componente vive en `dashboard/GraficaTendencia.jsx`; leer su encabezado
+// antes de tocarlo (hay un bucle de WebKit detrás).
+const GraficaTendencia = lazy(() => import('./dashboard/GraficaTendencia'));
 import {
   Users, UserCheck, ClipboardList, Building2, TrendingUp,
   CalendarDays, Megaphone, ChevronRight, ChevronLeft,
@@ -512,6 +518,27 @@ const MONTH_NAMES_LONG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Juli
 // ─── Skeleton primitives ──────────────────────────────────────────────────────
 const Skel = ({ className = '', style }) => (
   <div className={`skeleton rounded-lg ${className}`} style={style} />
+);
+
+// El esqueleto del widget de tendencia. Está en su propio componente porque lo
+// usan DOS esperas que el usuario ve como una sola: la consulta de asistencia y
+// la descarga del chunk de `recharts`. Escrito dos veces, una de las dos se
+// habría quedado atrás — y entonces el gráfico aparecería después de un segundo
+// hueco con otra forma, que es exactamente lo que un esqueleto existe para
+// evitar (ver la nota de `DataTable` sobre esto mismo).
+const EsqueletoTendencia = () => (
+  <div className="flex flex-col justify-end h-full gap-2">
+    <div className="flex items-end gap-2 flex-1">
+      {[45,72,58,88,62,95,42].map((h,i) => (
+        <div key={i} className="flex-1 flex flex-col justify-end h-full">
+          <Skel className="w-full rounded-t-md" style={{ height:`${h}%` }} />
+        </div>
+      ))}
+    </div>
+    <div className="flex gap-2 shrink-0">
+      {[0,1,2,3,4,5,6].map(i => <Skel key={i} className="flex-1 h-2" />)}
+    </div>
+  </div>
 );
 
 const KpiCardSkeleton = () => (
@@ -1921,29 +1948,13 @@ const DashboardView = ({ openModal }) => {
           }>
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
             {!attendanceLoaded ? (
-              <div className="flex flex-col justify-end h-full gap-2">
-                <div className="flex items-end gap-2 flex-1">
-                  {[45,72,58,88,62,95,42].map((h,i) => (
-                    <div key={i} className="flex-1 flex flex-col justify-end h-full">
-                      <Skel className="w-full rounded-t-md" style={{ height:`${h}%` }} />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  {[0,1,2,3,4,5,6].map(i => <Skel key={i} className="flex-1 h-2" />)}
-                </div>
-              </div>
+              <EsqueletoTendencia />
             ) : (
-            <ChartContainer>
-              <AreaChart data={trendData} margin={{top:5,right:5,left:-20,bottom:0}}>
-                <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--brand)" stopOpacity={0.25}/><stop offset="95%" stopColor="var(--brand)" stopOpacity={0}/></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false}/>
-                <XAxis dataKey="day" tick={{fontSize:11,fill:"var(--text-tertiary)",fontWeight:600}} axisLine={false} tickLine={false}/>
-                <YAxis hide/>
-                <Tooltip contentStyle={{background:"var(--tooltip-bg)",border:'none',borderRadius:'0.75rem',fontSize:12,color:"var(--tooltip-text)"}} labelStyle={{color:'var(--tooltip-text-2)',fontWeight:700}} formatter={(v,_,p)=>[v,`Presentes · ${p.payload?.date||''}`]}/>
-                <Area type="monotone" dataKey="total" stroke="var(--brand)" strokeWidth={2.5} fill="url(#colorTotal)" dot={{fill:"var(--brand)",strokeWidth:0,r:3}} activeDot={{r:5,fill:"var(--brand)"}}/>
-              </AreaChart>
-            </ChartContainer>
+              /* El mismo esqueleto como espera del chunk de `recharts`: las dos
+                 esperas se leen como una y el gráfico entra una sola vez. */
+              <Suspense fallback={<EsqueletoTendencia />}>
+                <GraficaTendencia data={trendData} />
+              </Suspense>
             )}
           </div>
         </WidgetCard>

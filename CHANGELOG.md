@@ -21,6 +21,70 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.521.2 — recharts sale del Inicio: 204 a 103 kB, y el gate:bundle vuelve a verde
+
+`gate:bundle` estaba rojo en `main` con dos vistas por encima de su techo, y las
+dos resultaron cosas distintas.
+
+**El Inicio: 95 kB para un gráfico que casi nadie mira.** De los 204 kB gzip que
+se bajaban al entrar, **95 eran `recharts`** — el 46% de la pantalla de
+aterrizaje del portal. Y hay **un solo** gráfico en todo el Inicio: el área de
+«Tendencia de Asistencia», dentro de un widget que además es opcional (permiso
+`dash_trend`, y el usuario puede sacarlo de su tablero). O sea que todo el mundo
+pagaba casi la mitad del costo de la pantalla por algo que muchos no ven.
+
+Es el caso literal de la regla de CLAUDE.md —librerías pesadas sólo por
+`await import()`—, así que el gráfico se fue a
+`views/dashboard/GraficaTendencia.jsx` y entra por `React.lazy`. **El Inicio baja
+a 103 kB** y sale del top-6 de vistas más pesadas.
+
+La descarga no se nota, y no es una esperanza: el gráfico no se monta hasta que
+`attendanceLoaded`, o sea después de una consulta a la base, y hasta entonces el
+widget ya pintaba un esqueleto. El chunk viaja en paralelo con esa consulta y usa
+**el mismo** esqueleto como espera de `Suspense` — que por eso se extrajo a un
+componente en vez de escribirse dos veces: dos esqueletos distintos harían que el
+gráfico entrara después de un segundo hueco con otra forma.
+
+**Verificado donde el bug vive, no donde es cómodo.** `ChartContainer` existe por
+un bucle infinito de recharts («Maximum update depth exceeded») que sólo aparece
+en WebKit móvil, cuando un ancestro se está animando, y que era **intermitente**:
+el segundo intento de arreglo dejó 0/5 pantallas rotas y el bucle seguía en 3/5
+corridas. `Suspense` cambia justamente la variable de ese bug —cuándo monta el
+gráfico respecto del stagger de las tarjetas— así que se corrió **6 veces en
+WebKit con viewport de iPhone 13**, más una en Chromium de escritorio como
+control. 6/6 y el control en verde: el `<svg>` de recharts presente, el área
+dibujada con sus 8 puntos, cero «Maximum update depth», cero pantallas de error y
+ningún esqueleto colgado. Una corrida sola no habría probado nada.
+
+**Facturación: no era una regresión, era el estándar.** Medía 59 contra un techo
+de 57, y no hay librería pesada adentro: 18.5 kB son de la vista y el resto es el
+kit canónico compartido (`FilterBar` 7.6, `LiquidSelect` 6.1, `DataTable` 3.9).
+El techo de 57 se generó el 30-jul y **al día siguiente** esa vista pasó su barra
+al canónico (v2.299.0, que le sumó `CarrilCards` y `StatCard`) y ganó la pestaña
+Observaciones (v2.308.0). Creció por adoptar el estándar y por hacer más cosas;
+bajarla exigiría des-canonicalizarla, que es al revés de lo que el proyecto
+quiere. Se sube **sólo esa entrada**.
+
+**Y los techos editados a mano ahora dicen por qué.** El baseline es JSON y no
+admite comentarios, así que un número movido a mano quedaba sin explicación y el
+siguiente que lo encontrara lo volvería a mover por reflejo. Se agregó `_motivos`
+—motivo por vista, al lado del número— con dos cosas que lo hacen sostenible:
+`--update-baseline` **los conserva** (si los borrara, la primera regeneración
+futura se llevaría las explicaciones en silencio) y el reporte los **imprime
+cuando esa vista falla**, que es el único momento en que alguien los va a leer.
+Las dos comprobadas bajando un techo a propósito y regenerando sobre una copia.
+
+El techo del Inicio se **aprieta**, no se deja donde estaba: pasa de 196 a 118.
+Con 196, volver a importar recharts de forma estática daba 198 y pasaba raspando;
+con 118 salta enseguida, que es para lo que sirve el ratchet.
+
+Lo que NO se hizo, de frente: las otras cuatro vistas que importan `recharts`
+—`MetasView`, `BranchDetailView`, `FormWfmAnalytics` y `TabExpenses` de
+Sucursales— lo siguen arrastrando en su cierre estático. Están dentro de sus
+techos, así que el gate no las señala, pero son los mismos 95 kB y ahí el gráfico
+sí es el contenido principal de la vista. Queda anotado como deuda con nombre y
+apellido, no arreglado de paso.
+
 ## v2.521.1 — el expediente del teléfono vuelve a ser hoja: se adapta y se cierra con el dedo
 
 Pedido del usuario: *«¿podemos hacer que todos los modales se puedan adaptar /

@@ -665,9 +665,15 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
 // pasillo: una tarjeta por PRODUCTO con sus lotes adentro (el producto repetido
 // por lote se leía como dos productos distintos), campo de 56px y todo objetivo
 // táctil en 44px o más.
-function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false }) {
+function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false, enVivo = false }) {
     const { showToast } = useToastStore();
+    // La existencia del sistema la decide la RPC renglón por renglón, igual que
+    // en la tabla: viene NULL y con el flag apagado cuando el conteo es ciego.
+    const verSistema = !!item.ver_sistema;
     const [fisico, setFisico] = useState(recuento ? '' : (item.fisico_cantidad ?? ''));
+    const [sistema, setSistema] = useState(item.sistema_cantidad);
+    // Se revela solo lo que este supervisor ya recontó en esta sesión.
+    const [revelado, setRevelado] = useState(false);
     const [estadoItem, setEstadoItem] = useState(item.estado_item);
     const [autor, setAutor] = useState({
         nombre: item.contado_por_nombre ?? null,
@@ -680,6 +686,8 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
 
     useEffect(() => {
         setFisico(recuento ? '' : (item.fisico_cantidad ?? ''));
+        setSistema(item.sistema_cantidad);
+        setRevelado(false);
         setEstadoItem(item.estado_item);
         setAutor({
             nombre: item.contado_por_nombre ?? null,
@@ -688,11 +696,20 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             ediciones: item.ediciones_count ?? 0,
         });
         guardado.current = item.fisico_cantidad ?? null;
-    }, [item.id, item.fisico_cantidad, item.estado_item, item.contado_at, item.contado_por_nombre,
+    }, [item.id, item.fisico_cantidad, item.sistema_cantidad, item.estado_item, item.contado_at, item.contado_por_nombre,
         item.contado_por_photo_url, item.ediciones_count, recuento]);
 
     const confirmada = !recuento && estadoItem !== 'PENDIENTE';
     const bloqueada = editable && confirmada && !desbloqueada;
+
+    // Estimado inmediato con el "sistema" ya visible — el definitivo llega en la
+    // respuesta de guardar_conteo_item, que en un conteo en vivo releyó la
+    // existencia en el instante del guardado.
+    const dif = fisico !== '' && sistema != null ? Number(fisico) - sistema : null;
+    const isLive = enVivo && item.fisico_cantidad == null && !item.es_agregado_manual;
+    // El recuento tapa el sistema y el primer conteo hasta que el supervisor
+    // registra el suyo: si ve que decía 12, escribe 12.
+    const tapado = recuento && !revelado;
 
     const commit = async (valor, estado) => {
         if (saving) return;
@@ -708,7 +725,11 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                 ? await onRecount(item.id, { fisicoCantidad: valor, nota: null })
                 : await onSave(item.id, { fisicoCantidad: valor, nota: item.nota ?? null, estadoItem: estado });
             guardado.current = valor;
+            // La RPC devuelve la existencia leída en el instante del guardado —
+            // sin esto la diferencia de la tarjeta se queda con la del snapshot.
+            setSistema(res.sistema_cantidad);
             setEstadoItem(recuento ? (valor === 0 && res.sistema_cantidad > 0 ? 'SIN_UBICAR' : 'CONTADO') : estado);
+            if (recuento) setRevelado(true);
             if (res.evento !== 'SIN_CAMBIO') {
                 setAutor((a) => ({
                     nombre: currentUser?.name ?? a.nombre,
@@ -803,6 +824,50 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     </>
                 )}
             </div>
+            {/* La existencia del sistema y la diferencia — el hueco que tenía la
+                tarjeta: la tabla las declara como dos columnas gobernadas por
+                `verSistema`, y en teléfono no las dibujaba nadie. Con el permiso
+                `conteo_ver_sistema` el número venía en la respuesta y no se veía
+                en ningún lado, así que el aviso de «conteo ciego» tampoco salía
+                para explicar la ausencia. Va DEBAJO del campo y no al lado: en un
+                teléfono angosto el campo es de 56px de alto y comparte fila con
+                el botón de «no ubicado», y meterle un tercer bloque lo estrangula.
+                El primer conteo se muestra con la misma condición que en la tabla
+                —solo destapado—, que es la métrica de calidad del recuento. */}
+            {(verSistema || item.fisico_primer_conteo != null) && (
+                <div className="flex items-center justify-center gap-x-3 gap-y-1 flex-wrap mt-1.5">
+                    {verSistema && (
+                        <span className="flex items-center gap-1.5">
+                            <span className="text-caption text-content-3">Sistema</span>
+                            {/* Sin `title` ni tooltip: acá no hay puntero que lo
+                                dispare, y el aviso del modo recuento —que sale en
+                                esta misma pantalla— ya dice que el sistema y el
+                                primer conteo se tapan hasta registrar el tuyo. */}
+                            {tapado ? (
+                                <span className="text-body-sm font-bold text-content-3 tabular-nums">{TAPADO}</span>
+                            ) : (
+                                <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema ?? '—'}</span>
+                            )}
+                            {isLive && <LiveBadge />}
+                        </span>
+                    )}
+                    {verSistema && (
+                        <span className="flex items-center gap-1.5">
+                            <span className="text-caption text-content-3">Dif.</span>
+                            {tapado ? (
+                                <span className="text-body-sm font-black text-content-3 tabular-nums">{TAPADO}</span>
+                            ) : (
+                                <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                            )}
+                        </span>
+                    )}
+                    {!tapado && item.fisico_primer_conteo != null && (
+                        <span className={`text-micro font-bold tabular-nums ${item.fisico_primer_conteo === Number(fisico) ? 'text-success' : 'text-warning-text'}`}>
+                            1er conteo: {item.fisico_primer_conteo}
+                        </span>
+                    )}
+                </div>
+            )}
             {(autor.nombre || estadoItem === 'SIN_UBICAR' || item.is_vencidos || item.es_agregado_manual) && (
                 <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                     {item.is_vencidos && <Badge variant="danger" size="sm">Área vencidos</Badge>}
@@ -818,7 +883,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
     );
 }
 
-function ProductCardMovil({ product, lines, desbloqueadas, ...rest }) {
+function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }) {
     const completo = product.item_count > 0 && product.contados_count >= product.item_count;
     return (
         <div data-surface="card" className={`p-3 ${completo ? 'bg-success/10' : ''}`}>
@@ -831,6 +896,29 @@ function ProductCardMovil({ product, lines, desbloqueadas, ...rest }) {
                 </span>
             </div>
             {product.es_antibiotico && <Badge variant="danger" size="sm" className="mt-1">Bajo Receta</Badge>}
+            {/* El total del producto, con la misma condición que la banda de grupo
+                de la tabla: solo cuando hay más de un renglón. Con uno solo, la
+                línea de abajo ya dice exactamente estos mismos tres números. */}
+            {product.item_count > 1 && (
+                <div className="flex items-center gap-x-3 gap-y-1 flex-wrap mt-1">
+                    {verSistema && (
+                        <span className="flex items-center gap-1.5">
+                            <span className="text-caption text-content-3">Sistema</span>
+                            <span className="text-body-sm font-black text-content-2 tabular-nums">{product.sistema_total ?? '—'}</span>
+                        </span>
+                    )}
+                    <span className="flex items-center gap-1.5">
+                        <span className="text-caption text-content-3">Físico</span>
+                        <span className="text-body-sm font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span>
+                    </span>
+                    {verSistema && (
+                        <span className="flex items-center gap-1.5">
+                            <span className="text-caption text-content-3">Dif.</span>
+                            <span className={`text-body-sm font-black tabular-nums ${difClass(product.diferencia_total)}`}>{difLabel(product.diferencia_total)}</span>
+                        </span>
+                    )}
+                </div>
+            )}
             {lines
                 ? lines.map((it) => (
                     <LoteMovil key={it.id} item={it} desbloqueada={!!desbloqueadas[it.id]} {...rest} />
@@ -1840,6 +1928,7 @@ export default function ConteoDetailView() {
                             product={product}
                             lines={itemsByProduct[product.erp_product_id]}
                             desbloqueadas={desbloqueadas}
+                            verSistema={verSistema}
                             editable={editable}
                             recuento={recuento}
                             onUnlock={setDesbloqueada}
@@ -1849,6 +1938,7 @@ export default function ConteoDetailView() {
                             onEditLote={abrirEditLote}
                             currentUser={user}
                             simple={simple}
+                            enVivo={conteo?.fuente_sistema === 'VIVO'}
                         />
                     ))}
                 </div>

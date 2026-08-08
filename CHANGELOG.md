@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.523.4 — Conteo en móvil: la existencia del sistema y la diferencia se ven
+
+Reportado por el usuario: **con el permiso «Ver Existencia del Sistema»
+encendido, en el teléfono la cantidad no aparecía en ningún lado.**
+
+El teléfono no dibuja la tabla. `ConteoDetailView` tiene dos árboles —
+`DataTable` bajo `hidden md:block` y tarjetas bajo `md:hidden`— y solo la tabla
+declaraba las columnas *Sistema* y *Dif.*, ambas gobernadas por `verSistema`.
+La tarjeta del teléfono nunca las dibujó: tenía el campo de captura, el lote,
+el vencimiento y la autoría, y nada más. El número **sí venía** en la respuesta
+de la RPC (`item.sistema_cantidad`, con `ver_sistema` en `true`), así que
+tampoco salía el aviso de «conteo ciego» que explicaría la ausencia — el
+usuario veía un hueco sin motivo.
+
+Lo que ahora se pinta en la tarjeta, con las mismas condiciones que en la tabla:
+
+- **Por renglón** — `Sistema N` y `Dif. ±N`, debajo del campo. Va abajo y no al
+  lado porque el campo mide 56px de alto y ya comparte fila con el botón de «no
+  ubicado»; un tercer bloque lo estrangulaba en un teléfono angosto.
+- **Por producto** — `Sistema · Físico · Dif.` en la cabecera de la tarjeta,
+  solo cuando el producto tiene **más de un renglón**. Es la misma condición
+  con la que la tabla decide mostrar su banda de grupo: con un solo renglón, la
+  línea de abajo ya dice exactamente esos tres números.
+- **La máscara del recuento también llegó al teléfono.** El sistema y el primer
+  conteo se tapan con `•••` hasta que el supervisor registra el suyo, y la
+  tarjeta ahora guarda `revelado` para destaparlos recién entonces — antes esa
+  mecánica solo existía en la tabla. Sin `title` ni tooltip: en un teléfono no
+  hay puntero que los dispare, y el aviso del modo recuento ya lo explica en la
+  misma pantalla.
+- **El badge «Vivo» y el «1er conteo»**, que eran del mismo juego de datos.
+- La tarjeta ahora refresca su `sistema` con el que devuelve
+  `guardar_conteo_item` — en un conteo en vivo la RPC relee la existencia en el
+  instante del guardado, y sin esto la diferencia se quedaba con la del
+  snapshot.
+
+Verificado en WebKit con `devices['iPhone 13']` contra el conteo real de La
+Salud: la tarjeta muestra `Sistema 13 · Físico — · Dif. —` en el producto y
+`Sistema 2 · Dif. —` por lote; tecleando 7 sobre un sistema de 2, la diferencia
+pasa a `+5`. El campo se vació antes de soltar el foco y el listener de red
+confirma **cero llamadas** a `guardar_conteo_item`: el conteo en curso quedó
+intacto (0 renglones con cantidad, igual que antes).
+
 ## v2.523.3 — Lo que sólo se ve abriendo pestañas y diálogos
 
 Tres hallazgos que **ninguna medición anterior podía encontrar**, porque el

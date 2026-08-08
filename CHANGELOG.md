@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.518.0 — el pulso que sobrevive a la muerte súbita, y la salida de la pantalla de carga
+
+La caja negra de v2.516.2 dio su primer resultado, y fue **un resultado por
+ausencia**: tras el fallo en Reglas de despacho quedó `arranque` y nada más. Ni
+`error-js`, ni `chunk-no-cargo`, ni `promesa-sin-capturar`, ni
+`recurso-fallido`. Un registro vacío no es un registro que falló — significa
+que ningún código nuestro llegó a correr, o sea que la página murió de golpe en
+vez de tirar un error.
+
+Eso descarta las dos hipótesis que la caja negra fue a separar (la recarga
+voluntaria por un chunk viejo, y un error de JS sin capturar) y deja una que
+`anotar` no puede cubrir por construcción: **anota en momentos que hay que
+prever, y acá el momento es «justo antes de morir»**.
+
+**El pulso** es lo contrario. Escribe siempre —una vez por segundo, sobre la
+misma ranura, así que no crece— dónde estaba la página el último segundo que
+estuvo viva. Al arrancar de nuevo, si quedó un pulso sin despedida, esa era la
+última foto: se levanta y se anota como `murio`. Una salida limpia (recargar,
+navegar, cerrar) borra la ranura, así que un pulso que sobrevive significa
+siempre muerte súbita.
+
+Los tres números que guarda separan solos lo que queda vivo:
+
+| dato | qué contesta |
+|---|---|
+| `trabón` | el retraso del reloj. Si venía creciendo, el hilo principal se bloqueó — un bucle de render, no memoria |
+| `viva` | segundos desde el arranque. La app agregada a inicio la SUSPENDE iOS en vez de recargarla: puede llevar días acumulando, y un número grande acá señala a eso y no a la vista |
+| `y` + `ruta` | dónde estaba el dedo y en qué pantalla |
+
+Se reinicia la cuenta en `visibilitychange` y `pageshow`: con la pestaña de
+fondo el navegador estrangula los timers y iOS suspende el proceso entero, y
+sin eso cada regreso se anotaría como un cuelgue que no pasó.
+
+**La salida de la pantalla de carga.** El preloader vive DENTRO de `#root`, así
+que React lo borra recién cuando su primer render hace commit — si ese commit
+no llega, la pantalla se queda ahí para siempre. En la app agregada a inicio no
+hay barra de direcciones, así que la única salida era cerrar la ventana del
+todo, que es exactamente lo que se reportó: *«queda en la ventana de carga y no
+se sale de ahí hasta que cierro completamente la ventana»*. Cerrarla funciona
+porque el manifiesto arranca en `/` y no en la ruta que falló.
+
+A los 18 segundos aparece **Volver al inicio**. Va en `index.html` y no en el
+bundle a propósito: el caso que tiene que cubrir es justamente aquel en el que
+el bundle no llegó a correr.
+
+**Lo que se descartó midiendo, no razonando.** Se reprodujo el recorrido en
+WebKit real con las medidas del iPhone 13, contra el bundle de producción y con
+la misma cuenta —o sea los mismos permisos y los mismos datos—: cargar
+`/pedidos?tab=reglas`, scrollear 2,400 px con el alto del viewport oscilando
+como lo hace la barra de direcciones de iOS, y recargar encima de esa ruta. Sin
+caída, sin error, con un retraso máximo del hilo principal de 31 ms y 1,574
+elementos en el DOM. No es un fallo de permisos ni de datos. Y el tema de la
+cuenta se confirmó contra la base —`solid-dark`—, que es lo que apaga los cinco
+blobs con `filter: blur()` y deja los `--backdrop-*` en `none`.
+
 ## v2.517.1 — Traslados: el mismo viaje de más que Facturas de mi Sala
 
 Preguntado tras v2.515.2: «¿no pasa eso mismo en otros widgets?». Se barrió, y

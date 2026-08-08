@@ -75,6 +75,15 @@ const IOSTestView = () => {
                         Si la pantalla se recarga sola o se queda negra, vuelve aquí y mira las
                         últimas líneas: sobreviven a la recarga.
                     </p>
+                    {/* La línea `murio` es la que interesa: la escribe el arranque
+                        siguiente con la última foto que alcanzó a tomar la sesión
+                        que se cayó. Sin esta explicación, el número que importa
+                        —el trabón— parece un dato más. */}
+                    <p className="text-caption text-content-3 leading-snug mb-2">
+                        La línea roja <strong className="text-content-2">murio</strong> cuenta la caída anterior.
+                        Si el <strong className="text-content-2">trabón</strong> es grande, la pantalla se quedó pensando;
+                        si es cero, se apagó de golpe.
+                    </p>
                     {registro.length === 0 ? (
                         <p className="text-body-sm text-content-3 italic py-2">Sin eventos registrados.</p>
                     ) : (
@@ -82,7 +91,7 @@ const IOSTestView = () => {
                             {[...registro].reverse().map((e, i) => (
                                 <div key={i} className="flex items-start gap-2 py-1 border-b border-divider last:border-0">
                                     <Badge size="sm" className="shrink-0"
-                                        variant={/error|fallido|no-cargo|sin-capturar/.test(e.tipo) ? 'danger' : 'neutral'}>
+                                                        variant={/error|fallido|no-cargo|sin-capturar|murio/.test(e.tipo) ? 'danger' : 'neutral'}>
                                         {e.tipo}
                                     </Badge>
                                     <div className="min-w-0 flex-1">

@@ -2,7 +2,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { anotar, entorno } from "./utils/cajaNegra";
+import { anotar, entorno, iniciarPulso, recogerPulso } from "./utils/cajaNegra";
 import { APP_VERSION } from "./version";
 
 // Supabase uses the Web Locks API internally to serialize token refreshes.
@@ -23,7 +23,13 @@ window.addEventListener('unhandledrejection', (event) => {
 // atrapar puede pasar durante el arranque. Ver `utils/cajaNegra.js` para por
 // qué existe: hay un fallo que sólo ocurre en el iPhone del usuario, la página
 // se RECARGA (así que la consola se pierde) y el emulador no lo reproduce.
+// El orden importa para poder leerlo: primero se levanta el cuerpo de la sesión
+// anterior —si murió sin despedirse—, y recién después se anota este arranque.
+// Así una muerte súbita se lee como `murio` seguido de `arranque`, que es
+// exactamente el par que el fallo del iPhone no dejaba ver.
+recogerPulso();
 anotar('arranque', { version: APP_VERSION, ...entorno() });
+iniciarPulso();
 
 window.addEventListener('error', (e) => {
   // `error` también salta por un recurso que no cargó (img, script). Ahí no hay

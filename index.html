@@ -518,6 +518,35 @@
 
         <span class="status">Iniciando Portal...</span>
 
+        <!-- ── La salida, para cuando el arranque no termina ──────────────────
+             Este preloader vive DENTRO de `#root`, así que React lo borra recién
+             cuando su primer render hace commit. Si ese commit no llega —el
+             módulo no se ejecuta, o el primer render se cuelga— la pantalla se
+             queda acá para siempre, y en la app agregada a inicio no hay barra
+             de direcciones con la cual salir: la única salida era cerrar la
+             ventana del todo. Se reportó tal cual el 2026-08-08.
+
+             Va en HTML y no en el bundle a propósito: el caso que tiene que
+             cubrir es justamente aquel en el que el bundle no llegó a correr. -->
+        <div id="loader-salida" style="display:none;margin-top:22px;text-align:center">
+          <p style="font-size:12px;line-height:1.5;color:#94a3b8;max-width:260px;margin:0 auto 12px">
+            El portal está tardando más de lo normal en abrir.
+          </p>
+          <a href="/" style="display:inline-block;padding:9px 18px;border-radius:999px;border:1px solid rgba(148,163,184,.45);color:#cbd5e1;font-size:12px;font-weight:700;text-decoration:none;letter-spacing:.02em">
+            Volver al inicio
+          </a>
+        </div>
+        <script>
+          // 18s: un arranque normal en 4G termina muy por debajo, y un arranque
+          // lento de verdad no debe ver este mensaje. No se toca el preloader —
+          // solo se revela la salida, así que si React commitea después, se lo
+          // lleva puesto junto con todo lo demás.
+          setTimeout(function () {
+            var s = document.getElementById('loader-salida');
+            if (s && document.getElementById('app-loader')) s.style.display = 'block';
+          }, 18000);
+        </script>
+
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>

@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.514.0 — El acomodo de las pestañas temáticas lo publica el SU, y se adapta a cada cargo
+
+Decisión del usuario: **Comercial, RRHH y Operación dejan de acomodarse por
+persona.** El SU las compone una vez, las publica, y así las ve todo el mundo.
+**General queda igual que siempre**: cada quien mueve, redimensiona y enciende
+lo que quiera.
+
+**El canon guarda ORDEN, no coordenadas — y ahí está todo.** Si guardara
+`col/row`, al cargo que no tiene el segundo widget le quedaría el hueco donde
+estaba. Guardando la lista ordenada más el tamaño de cada widget, la posición se
+calcula al pintar con `autoPlaceOrder` sobre *lo que ese cargo puede ver*. Por
+eso «se adapta» solo, sin una segunda lista que mantener, y por eso la misma
+fila sirve para las 4 columnas del escritorio y las 2 del teléfono: es la misma
+llamada con otro número.
+
+**Y con eso se cierra una clase de bug entera.** Las coordenadas por usuario
+eran la foto de un catálogo que seguía cambiando, así que cada widget nuevo
+obligaba a mezclar la foto con el catálogo — v2.483.2, v2.483.3, v2.489.1,
+v2.504.0 y v2.508.1 son cinco correcciones de la misma causa en veinticinco
+versiones. En las temáticas ya no hay nada por usuario que mezclar.
+
+Cuatro decisiones:
+
+- **Se publica con un botón, no en vivo.** El tablero del SU es la maqueta; el
+  botón es el momento en que pasa a ser el de los demás. En vivo, un arrastre
+  sin querer le llegaría a las siete salas al instante y no habría dónde probar.
+  Queda en la bitácora (`TABLERO_ACOMODO_PUBLICADO`).
+- **«Ver como»**, antes de publicar. El SU ve todos los widgets, así que su
+  tablero nunca muestra el hueco que le queda a otro. El previsualizador aplica
+  los permisos del cargo elegido; si ese cargo no tiene nada de la categoría, lo
+  dice con todas las letras en vez de dejar una franja en blanco.
+- **General ya no se esconde.** Tenía una regla que la ocultaba cuando duplicaba
+  a una temática, y era correcta mientras las cuatro se comportaban igual. Ahora
+  General es la única superficie que cada quien puede acomodar: esconderla le
+  quitaba esa libertad justo a los cargos más acotados.
+- **El interruptor de «Personalizar» sólo gobierna General.** Si también contara
+  en las temáticas, apagar un widget en General lo borraría de su categoría,
+  donde ya no hay forma de volver a encenderlo.
+
+Nada se borra y volver atrás es una bandera: `user_dashboard_prefs` sigue igual
+—General usa las mismas columnas— y las tres claves temáticas simplemente dejan
+de leerse. Con el canon vacío el tablero cae al orden declarado en
+`PESTANAS_TEMATICAS`, que es un tablero correcto, así que no hubo que sembrar
+nada: se publica cuando se quiera. Y un widget que se agregue después de
+publicar sale al final, con aviso al SU de que quedó sin ubicar.
+
+Base de datos (`20260808020540_dashboard_canon_acomodo_publicado`): tabla
+`dashboard_canon` con RLS —lectura para todos, escritura sólo SU vía
+`auth_is_su()`, las cuatro policies envueltas en `(SELECT …)` por el initplan— y
+un trigger que sella `updated_at`/`updated_by` con el reloj y la identidad del
+servidor. Probado en staging con la migración idéntica: el trigger **pisó** un
+`updated_at` de 1999 y un `updated_by` ajeno mandados a propósito, el CHECK
+rechaza `general`, y `anon` no tiene SELECT.
+
+`auth_is_su()` es espejo exacto del `isSU` de `AuthContext` —rol primario y nada
+más— porque las dos mitades tienen que decir lo mismo: si divergen, la interfaz
+ofrece un botón que el servidor rechaza.
+
 ## v2.513.1 — La pantalla negra del teléfono era un deploy incompleto
 
 Se revierte el cambio de envase de v2.508.2: Reglas vuelve a la hoja `auto`, con

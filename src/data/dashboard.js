@@ -15,6 +15,22 @@ export function upsertUserDashboardPrefs(payload) {
     return supabase.from('user_dashboard_prefs').upsert(payload, { onConflict: 'user_id' });
 }
 
+// ─── Canon del tablero — el acomodo publicado de las pestañas temáticas ──────
+//
+// Tres filas como mucho (`comercial`, `rrhh`, `operacion`; el CHECK de la tabla
+// no admite otra), así que no hay nada que paginar.
+export function fetchDashboardCanon() {
+    return supabase.from('dashboard_canon').select('tab_id, orden, medidas, updated_at');
+}
+
+// El payload NO lleva `updated_at` ni `updated_by`: los sella el trigger
+// `dashboard_canon_sellar` con el reloj y la identidad del servidor. Mandarlos
+// desde acá sería ofrecerle al cliente que firme por otro.
+export function upsertDashboardCanon({ tabId, orden, medidas }) {
+    return supabase.from('dashboard_canon')
+        .upsert({ tab_id: tabId, orden, medidas }, { onConflict: 'tab_id' });
+}
+
 export function fetchUserTheme(userId) {
     return supabase.from('user_dashboard_prefs')
         .select('theme')

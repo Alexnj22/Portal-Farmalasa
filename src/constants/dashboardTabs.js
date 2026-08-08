@@ -40,12 +40,15 @@ export function tematicaDe(id) {
  *
  * Las temáticas es directo: sin un widget visible de su lista, no salen.
  *
- * General necesita su propia regla, porque muestra TODO y entonces nunca estaría
- * vacía. Se oculta cuando **sería un duplicado**: si todo lo que el cargo ve cae
- * en una sola pestaña temática, General y esa pestaña dicen exactamente lo
- * mismo. Con widgets de dos categorías —o con alguno que no tenga pestaña
- * propia, como Alertas de sucursales— General vuelve a ser el único lugar donde
- * se ven juntos, y sale.
+ * **General sale siempre** (mientras el cargo vea al menos un widget). Tuvo una
+ * regla propia que la escondía cuando «sería un duplicado» —si todo lo que el
+ * cargo ve cae en una sola temática, las dos pestañas dicen lo mismo—, y era
+ * correcta mientras las cuatro se comportaban igual. Dejó de serlo el
+ * 2026-08-07, cuando las temáticas pasaron a mostrar el acomodo publicado por el
+ * SU: desde entonces General no es una vista repetida sino **la única superficie
+ * que cada quien puede acomodar**, y esconderla le quita esa libertad justo a
+ * los cargos más acotados, que son los que la tendrían más a mano. Un tablero
+ * repetido se ignora; uno que no se puede tocar, no.
  *
  * @param todosLosIds catálogo completo de widgets de la rejilla (sin `kpi`)
  * @param esVisible   (id) => boolean — permiso del cargo y «Personalizar»
@@ -54,13 +57,51 @@ export function pestanasVisibles(todosLosIds, esVisible) {
     const visibles = todosLosIds.filter(id => id !== 'kpi' && esVisible(id));
     if (!visibles.length) return [];
 
-    const conTematica = new Set(visibles.map(tematicaDe).filter(Boolean));
-    const haySueltos  = visibles.some(id => tematicaDe(id) === null);
-    const generalDuplica = !haySueltos && conTematica.size === 1;
-
     return [
-        ...(generalDuplica ? [] : ['general']),
+        'general',
         ...['comercial', 'rrhh', 'operacion'].filter(tab =>
             visibles.some(id => (PESTANAS_TEMATICAS[tab] || []).includes(id))),
     ];
+}
+
+/**
+ * El orden en que se pinta una pestaña temática para un cargo.
+ *
+ * **Devuelve un ORDEN, no coordenadas** — y ahí está todo el diseño. El canon
+ * que publica el SU guarda la lista ordenada; las columnas y filas las calcula
+ * `autoPlaceOrder` al pintar, sobre los widgets que este cargo puede ver. Por
+ * eso «se adapta»: al cargo que no tiene el segundo widget no le queda el hueco
+ * donde estaba, porque nunca hubo un hueco guardado. Y por eso la misma lista
+ * sirve para 4 columnas y para 2 sin un canon aparte por formato.
+ *
+ * También es lo que cierra la clase de bug del encimado. Las coordenadas por
+ * usuario eran la foto de un catálogo que seguía cambiando, y cada widget nuevo
+ * obligaba a mezclar las dos — cinco correcciones entre v2.483.2 y v2.508.1,
+ * todas la misma causa. Acá no hay nada por usuario que mezclar.
+ *
+ * @param tabId       pestaña temática
+ * @param canonOrden  `orden` publicado, o vacío si el SU todavía no publicó
+ * @param esVisible   (id) => boolean — permiso del cargo
+ */
+export function ordenDeLaPestana(tabId, canonOrden, esVisible) {
+    const catalogo = (PESTANAS_TEMATICAS[tabId] || []).filter(id => id !== 'kpi');
+    // Del canon sobrevive lo que sigue existiendo: un widget retirado se cae
+    // solo, sin necesidad de limpiar la fila publicada.
+    const publicados = (canonOrden || []).filter(id => catalogo.includes(id));
+    // Lo que el canon no conoce va al final, en el orden en que está declarada
+    // la categoría. Es el caso de un widget agregado después de publicar: sale
+    // igual, en un lugar razonable, y al SU se le avisa que quedó sin ubicar.
+    const sinUbicar = catalogo.filter(id => !publicados.includes(id));
+    return [...publicados, ...sinUbicar].filter(esVisible);
+}
+
+/**
+ * Los widgets de la categoría que el canon publicado no menciona. Solo para
+ * avisarle al SU; con el canon vacío no hay nada «sin ubicar», hay un orden por
+ * defecto, que es distinto y no merece una alerta.
+ */
+export function widgetsSinUbicar(tabId, canonOrden) {
+    if (!canonOrden?.length) return [];
+    const catalogo = (PESTANAS_TEMATICAS[tabId] || []).filter(id => id !== 'kpi');
+    return catalogo.filter(id => !canonOrden.includes(id));
 }

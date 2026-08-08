@@ -3,6 +3,7 @@ import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
+import Notice from '../components/common/Notice';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
@@ -17,7 +18,7 @@ import {
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
-  ReceiptText
+  ReceiptText, Upload, Eye, Lock
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -46,11 +47,15 @@ import {
     fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
     fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
     fetchBranchHourlySalesRange, fetchRecentCotizaciones, fetchTodayInvoicesSummary,
+    fetchDashboardCanon, upsertDashboardCanon,
 } from '../data/dashboard';
+import { fetchRolesForPermissions, fetchRolePermissions } from '../data/permissions';
 import { clickable } from '../utils/clickable';
 import { formatMoney } from '../utils/formatNumber';
 import useCapaFlotante from '../utils/capaFlotante';
-import { catalogoDePestana, pestanasVisibles } from '../constants/dashboardTabs';
+import {
+    catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
+} from '../constants/dashboardTabs';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -381,6 +386,11 @@ const WIDGET_DEFS = [
   { id: 'vendedores',   label: 'Quién está vendiendo',    permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
 ];
 
+// El permiso de cada widget, indexado. Lo necesitan la barra de pestañas, el
+// orden del canon y el previsualizador por cargo: tres lugares que antes lo
+// rearmaban por su cuenta a partir de `WIDGET_DEFS`.
+const PERMISO_DE = Object.fromEntries(WIDGET_DEFS.map(w => [w.id, w.permission]));
+
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 // Los nombres completos son SOLO para el nombre accesible de la rejilla: la
 // celda muestra "Ene" pero un lector de pantalla debe oír "Enero de 2026".
@@ -602,7 +612,7 @@ const initTabSizes = (userId) => {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 const DashboardView = ({ openModal }) => {
-  const { user, hasPermission, getScope } = useAuth();
+  const { user, hasPermission, getScope, isSU } = useAuth();
   const userBranchStr = String(user?.branchId ?? user?.branch_id ?? '');
   const navigate = useNavigate();
 
@@ -641,6 +651,59 @@ const DashboardView = ({ openModal }) => {
   const [widgetLayout, setWidgetLayout] = useState(() => initTabLayouts(user?.id));
   // Per-widget size overrides: per-tab { [tabId]: { [widgetId]: { cols, rows } } }
   const [widgetSizes,  setWidgetSizes]  = useState(() => initTabSizes(user?.id));
+
+  // ── El canon: el acomodo publicado de las pestañas temáticas ───────────────
+  //
+  // Comercial, RRHH y Operación las acomoda el SU una vez y las ve así todo el
+  // mundo; General sigue siendo de cada quien. Acá se guarda `{ [tabId]:
+  // { orden, medidas } }`, y **el orden es el dato**: las coordenadas se
+  // calculan al pintar, contra los widgets que este cargo puede ver. Ver
+  // `ordenDeLaPestana`, que es donde vive el porqué.
+  //
+  // `null` mientras se carga, para no pintar un tablero con el orden por
+  // defecto y reacomodarlo un segundo después.
+  const [canon, setCanon] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    fetchDashboardCanon().then(({ data, error }) => {
+      if (!vivo) return;
+      // Un fallo de red deja `{}`, no `null`: sin canon el tablero cae al orden
+      // declarado en `PESTANAS_TEMATICAS`, que es un tablero correcto. Quedarse
+      // en `null` lo dejaría en el esqueleto para siempre.
+      if (error) { console.error('[dash canon]', error); setCanon({}); return; }
+      setCanon(Object.fromEntries((data || []).map(f => [f.tab_id, { orden: f.orden || [], medidas: f.medidas || {} }])));
+    });
+    return () => { vivo = false; };
+  }, []);
+
+  // ── Previsualizar por cargo (solo SU) ──────────────────────────────────────
+  // Publicar un acomodo es publicárselo a los demás, y el SU los ve todos: su
+  // propio tablero nunca muestra el hueco que deja un widget que a otro cargo le
+  // falta. Con esto se mira la pestaña con los permisos de otro ANTES de
+  // publicar. `null` = mi vista.
+  const [verComoRol, setVerComoRol] = useState(null);
+  const [cargos, setCargos] = useState(null);          // [{ id, name }]
+  const [permisosPorCargo, setPermisosPorCargo] = useState(null); // { [roleId]: Set(module_key) }
+
+  // ── Quién puede acomodar QUÉ ───────────────────────────────────────────────
+  // General es de cada quien. Las temáticas las acomoda el SU y las demás las
+  // reciben publicadas: sin arrastrar, sin redimensionar y sin apagar widgets.
+  const puedeAcomodar = (tabId) => tabId === 'general' || isSU;
+  const acomodoLibre  = puedeAcomodar(activeTab);
+
+  const isWidgetOn = id => widgetConfig.find(w=>w.id===id)?.enabled !== false;
+  const canSee     = p  => {
+    if (!p) return true;
+    // Con el previsualizador puesto manda el cargo elegido, no el mío.
+    if (verComoRol != null) return !!permisosPorCargo?.[verComoRol]?.has(p);
+    return hasPermission(p, 'can_view');
+  };
+  const canManage  = p  => !p || hasPermission(p,'can_edit');
+  // El interruptor de «Personalizar» sólo gobierna General, que es la única
+  // pestaña propia. En las temáticas decide el permiso del cargo y nada más:
+  // si el interruptor también contara ahí, apagar un widget en General lo
+  // borraría de su categoría, donde ya no hay forma de volver a encenderlo.
+  const showWidget = (id,perm) => canSee(perm) && (activeTab === 'general' ? isWidgetOn(id) : true);
 
   // ── Mobile detection ────────────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
@@ -723,6 +786,19 @@ const DashboardView = ({ openModal }) => {
   // Los `sales_branch_*` entran al catálogo tomándolos del acomodo de
   // escritorio, que es donde su efecto los da de alta.
   const activeLayout = useMemo(() => {
+    // ── Pestaña temática vista por quien no la acomoda ───────────────────────
+    // Nada de esto sale de un acomodo guardado por usuario, y ahí está el
+    // punto: se recalcula del canon cada vez, contra los widgets que este cargo
+    // ve en este momento. Por eso «se adapta» solo, y por eso la clase de bug
+    // del encimado —cinco correcciones entre v2.483.2 y v2.508.1, todas por
+    // mezclar una foto vieja con el catálogo nuevo— acá no tiene dónde ocurrir.
+    if (!acomodoLibre) {
+      const orden   = ordenDeLaPestana(activeTab, canon?.[activeTab]?.orden, id => showWidget(id, PERMISO_DE[id]));
+      const medidas = canon?.[activeTab]?.medidas || EMPTY_OBJ;
+      if (esTelefono) return autoPlaceOrder(orden, medidas, MOBILE_COLS, anchoEnTelefono);
+      return autoPlaceOrder(orden, medidas, activeCols);
+    }
+
     const tabLayout = widgetLayout[activeTab] || {};
     // Los `sales_branch_*` son ids dinámicos —uno por sucursal— y su alta la
     // maneja el efecto de `salesBranches`, que sólo escribe el acomodo de
@@ -765,9 +841,14 @@ const DashboardView = ({ openModal }) => {
     if (esTelefono) return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS, anchoEnTelefono);
     if (hayMovil) return base;
     return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS);
-  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, widgetSizes, mobileLayout, activeTab, mobileSizes]);
+  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, widgetSizes, mobileLayout, activeTab, mobileSizes, acomodoLibre, canon, verComoRol, permisosPorCargo, hasPermission, widgetConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeSizes = isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ);
+  // Las medidas salen del canon cuando la pestaña no es de quien la mira: si se
+  // leyeran las suyas, el ancho publicado se pisaría con el que esa persona
+  // hubiera dejado guardado antes de que la pestaña dejara de ser personal.
+  const activeSizes = !acomodoLibre
+    ? (canon?.[activeTab]?.medidas || EMPTY_OBJ)
+    : (isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ));
 
   // Active cols clamped for effective size
   const getEffectiveCols = (id) => (esTelefono
@@ -948,12 +1029,17 @@ const DashboardView = ({ openModal }) => {
   const widgetLayoutRef = useRef(widgetLayout[activeTab] || {});
   const widgetSizesRef  = useRef(widgetSizes[activeTab]  || {});
   // Mismo patrón de espejo ref↔state que mobileLayoutRef/mobileSizesRef y
-  // activeLayoutRef/activeSizesRef (más abajo, sin flag) — usado para que
+  // activeLayoutRef/activeSizesRef (más abajo) — usado para que
   // updateWidgetSize (useCallback estable) lea el layout más reciente sin
-  // stale closures. El compiler lo marca solo en este par, inconsistente
-  // con sus pares idénticos.
-  useEffect(() => { widgetLayoutRef.current = widgetLayout[activeTab] || {}; }, [widgetLayout, activeTab]); // eslint-disable-line react-hooks/immutability
-  useEffect(() => { widgetSizesRef.current  = widgetSizes[activeTab]  || {}; }, [widgetSizes,  activeTab]); // eslint-disable-line react-hooks/immutability
+  // stale closures.
+  //
+  // Llevaban un `eslint-disable react-hooks/immutability` con la nota de que
+  // «el compiler lo marca solo en este par, inconsistente con sus pares
+  // idénticos». Ya no lo marca —eslint los reporta como directivas inútiles—,
+  // así que se van: una supresión que no suprime nada es una pista falsa para
+  // el que lea esto después.
+  useEffect(() => { widgetLayoutRef.current = widgetLayout[activeTab] || {}; }, [widgetLayout, activeTab]);
+  useEffect(() => { widgetSizesRef.current  = widgetSizes[activeTab]  || {}; }, [widgetSizes,  activeTab]);
   // Active refs always point to the right layout/sizes for current breakpoint
   const activeLayoutRef = useRef(activeLayout);
   const activeSizesRef  = useRef(activeSizes);
@@ -1323,21 +1409,23 @@ const DashboardView = ({ openModal }) => {
       });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Widget helpers ─────────────────────────────────────────────────────────
-  const isWidgetOn = id => widgetConfig.find(w=>w.id===id)?.enabled !== false;
-  const canSee     = p  => !p || hasPermission(p,'can_view');
-  const canManage  = p  => !p || hasPermission(p,'can_edit');
-  const showWidget = (id,perm) => isWidgetOn(id) && canSee(perm);
+  // Los helpers de visibilidad (`isWidgetOn`, `canSee`, `canManage`,
+  // `showWidget`) viven arriba, junto al canon: `activeLayout` los necesita
+  // para armar el orden de una pestaña temática y se calcula antes que esto.
 
   // ── Las pestañas que este cargo ve ────────────────────────────────────────
   // «Si un rol no tiene widgets activados de una categoría, la pestaña no debe
   // salir» (reportado el 2026-08-07). La regla —incluida la de General, que
   // muestra todo y por eso necesita una propia— vive en `dashboardTabs.js`.
   const TABS_VISIBLES = useMemo(() => {
-    const permisoDe = Object.fromEntries(WIDGET_DEFS.map(w => [w.id, w.permission]));
+    // Decide el PERMISO y nada más — ni el interruptor de «Personalizar», que
+    // desde el canon sólo gobierna General, ni el previsualizador por cargo.
+    // Esto último no es un detalle: si el previsualizador contara acá, mirar la
+    // pestaña con los ojos de un cargo que no la tiene la haría desaparecer, y
+    // el efecto de abajo sacaría al SU de la pestaña que está editando.
     const ids = pestanasVisibles(
       WIDGET_DEFS.map(w => w.id),
-      id => showWidget(id, permisoDe[id]),
+      id => !PERMISO_DE[id] || hasPermission(PERMISO_DE[id], 'can_view'),
     );
     // Nunca se devuelve vacío: un cargo sin ningún widget igual entra a Inicio
     // —el permiso `overview` es el que decide eso— y quedarse sin barra de
@@ -1434,24 +1522,86 @@ const DashboardView = ({ openModal }) => {
     try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
   };
 
-  const resetAll = () => {
-    const newLayouts = {}, newSizes = {}, newMobileLayouts = {}, newMobileSizes = {};
-    TABS.forEach(tab => {
-      const order = (TAB_WIDGETS[tab.id] || []).filter(id => id !== 'kpi');
-      newLayouts[tab.id] = autoPlaceOrder(order, {});
-      newSizes[tab.id] = {};
-      newMobileLayouts[tab.id] = {};
-      newMobileSizes[tab.id] = {};
-      try { localStorage.removeItem(`portal_dash_layout_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
-      try { localStorage.removeItem(`portal_dash_sizes_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
-      try { localStorage.removeItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
-      try { localStorage.removeItem(`portal_dash_mobile_sizes_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+  // Restablece UNA pestaña, la que se está configurando — antes barría las
+  // cuatro. Con el canon, «todo» dejó de ser una sola cosa: en las temáticas lo
+  // personal es apenas el borrador del SU, y a los demás no les pertenece nada
+  // que restablecer. Un botón que dice «todo» y sólo puede tocar una parte
+  // miente sobre lo que hace.
+  const resetTab = (tabId) => {
+    const order = (TAB_WIDGETS[tabId] || []).filter(id => id !== 'kpi');
+    setWidgetLayout(prev => ({ ...prev, [tabId]: autoPlaceOrder(order, {}) }));
+    setWidgetSizes(prev  => ({ ...prev, [tabId]: {} }));
+    setMobileLayout(prev => ({ ...prev, [tabId]: {} }));
+    setMobileSizes(prev  => ({ ...prev, [tabId]: {} }));
+    ['layout', 'sizes', 'mobile_layout', 'mobile_sizes'].forEach(clave => {
+      try { localStorage.removeItem(`portal_dash_${clave}_${user?.id||'guest'}_${tabId}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
     });
-    setWidgetLayout(newLayouts);
-    setWidgetSizes(newSizes);
-    setMobileLayout(newMobileLayouts);
-    setMobileSizes(newMobileSizes);
   };
+
+  // ── Publicar el acomodo de una pestaña temática (solo SU) ──────────────────
+  //
+  // Sale del acomodo de ESCRITORIO, nunca de `activeLayout`: si el SU estuviera
+  // publicando desde el teléfono, `activeLayout` es la rejilla de 2 columnas y
+  // el canon quedaría con el orden de esa vista, no con el que compuso.
+  //
+  // No se publica en vivo mientras se arrastra, y es a propósito: un arrastre
+  // sin querer le llegaría a las siete salas al instante, y el SU no tendría
+  // dónde probar. El botón es el momento en que la maqueta pasa a ser el
+  // tablero de los demás — y por eso también es lo que queda en la bitácora.
+  const [publicando, setPublicando] = useState(false);
+  const [publicado,  setPublicado]  = useState(null);   // tabId recién publicado
+  const publicarAcomodo = async (tabId) => {
+    const base    = widgetLayout[tabId] || {};
+    const medidas = widgetSizes[tabId]  || {};
+    const orden = Object.keys(base)
+      .filter(id => id !== 'kpi' && (TAB_WIDGETS[tabId] || []).includes(id))
+      .sort((a, b) => (base[a].row !== base[b].row ? base[a].row - base[b].row : base[a].col - base[b].col));
+    // Sólo las medidas de lo que se publica: arrastrar una medida de un widget
+    // que no está en la categoría deja basura en la fila y confunde al leerla.
+    const medidasPublicadas = Object.fromEntries(orden.filter(id => medidas[id]).map(id => [id, medidas[id]]));
+
+    setPublicando(true);
+    const { error } = await upsertDashboardCanon({ tabId, orden, medidas: medidasPublicadas });
+    setPublicando(false);
+    if (error) { console.error('[dash canon publicar]', error); return; }
+
+    setCanon(prev => ({ ...(prev || {}), [tabId]: { orden, medidas: medidasPublicadas } }));
+    setPublicado(tabId);
+    setTimeout(() => setPublicado(null), 2600);
+    useStaff.getState().appendAuditLog('TABLERO_ACOMODO_PUBLICADO', tabId, {
+      pestana: TABS.find(t => t.id === tabId)?.label ?? tabId,
+      widgets: orden.length,
+      orden,
+    });
+  };
+
+  // Los cargos y sus permisos, para el previsualizador. Se piden una sola vez y
+  // recién cuando el SU abre «Personalizar» en una pestaña temática: no hacen
+  // falta para pintar el tablero, y son dos consultas que nadie más usa.
+  useEffect(() => {
+    if (!isSU || !showConfig || configTab === 'general' || cargos) return;
+    Promise.all([fetchRolesForPermissions(), fetchRolePermissions()]).then(([r, p]) => {
+      if (r.error) { console.error('[dash canon cargos]', r.error); return; }
+      if (p.error) { console.error('[dash canon permisos]', p.error); return; }
+      const porCargo = {};
+      (p.data || []).forEach(fila => {
+        if (!fila.can_view) return;
+        (porCargo[fila.role_id] ??= new Set()).add(fila.module_key);
+      });
+      // Un cargo SU ve todo, igual que `hasPermission`, que corta con
+      // `if (isSU) return true` antes de mirar `role_permissions`. Sin esto el
+      // previsualizador lo mostraría vacío y sería mentira.
+      (r.data || []).forEach(c => { if (c.is_su) porCargo[c.id] = new Set(Object.values(PERMISO_DE).filter(Boolean)); });
+      setPermisosPorCargo(porCargo);
+      setCargos((r.data || []).map(c => ({ id: c.id, name: c.name })));
+    });
+  }, [isSU, showConfig, configTab, cargos]);
+
+  // El previsualizador se apaga al salir del panel o al cambiar de pestaña: es
+  // una lente para revisar, no un estado en el que quedarse — y quedarse dentro
+  // mirando el tablero de otro cargo sin la señal del panel abierto se lee como
+  // que el portal perdió permisos.
+  useEffect(() => { setVerComoRol(null); }, [configTab, showConfig]);
 
   // ── wrapWidget: explicit grid position, resize button, drag handle ──────────
   const wrapWidget = (id, content, staggerIdx = 0) => {
@@ -1488,18 +1638,24 @@ const DashboardView = ({ openModal }) => {
           transition: isActive ? 'opacity 0.12s' : 'opacity 0.2s',
           '--stagger-delay': `${staggerIdx * 45}ms`,
         }}
-        onPointerDown={isMobile && showConfig ? (e) => handleLongPressStart(e, id) : undefined}
-        onPointerMove={isMobile && showConfig ? handleLongPressMoveCancel : undefined}
-        onPointerUp={isMobile && showConfig ? handleLongPressEnd : undefined}
-        onPointerCancel={isMobile && showConfig ? handleLongPressEnd : undefined}
+        onPointerDown={acomodoLibre && isMobile && showConfig ? (e) => handleLongPressStart(e, id) : undefined}
+        onPointerMove={acomodoLibre && isMobile && showConfig ? handleLongPressMoveCancel : undefined}
+        onPointerUp={acomodoLibre && isMobile && showConfig ? handleLongPressEnd : undefined}
+        onPointerCancel={acomodoLibre && isMobile && showConfig ? handleLongPressEnd : undefined}
       >
         {/* Grip handle — en mobile solo visible/activo con "Personalizar" abierto
             (showConfig): antes se armaba un long-press en CUALQUIER pointerdown
             del widget sin importar el modo, así que un scroll con una pausa breve
             podía disparar el drag y reordenar widgets por accidente. Hover-only
             en desktop, sin cambios. before:-inset-2.5 en mobile amplía la zona de
-            toque a ~44px sin agrandar la píldora visible (v2.47.4). */}
-        <div
+            toque a ~44px sin agrandar la píldora visible (v2.47.4).
+
+            No se renderiza —en vez de esconderse— cuando la pestaña no es de
+            quien la mira: un asidero invisible pero presente es justo el
+            «fantasma» que costó dos correcciones en el botón de tamaño de acá
+            abajo (v2.448.0 y A17). Lo que no existe no lo alcanza ni el teclado
+            ni el lector de pantalla. */}
+        {acomodoLibre && <div
           onPointerDown={e => startDrag(e, id)}
           className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 focus-within:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
         >
@@ -1507,7 +1663,7 @@ const DashboardView = ({ openModal }) => {
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
             <span className="text-micro font-black text-content-2 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
           </div>
-        </div>
+        </div>}
 
         {content}
 
@@ -1536,7 +1692,7 @@ const DashboardView = ({ openModal }) => {
             el teclado y el lector de pantalla siguen entrando al botón dentro
             de lo invisible (WCAG 2.4.3). O sea que el "fantasma" tenía una
             segunda mitad que el `opacity-0` de siempre tampoco cubría. */}
-        {!dndActive && (
+        {acomodoLibre && !dndActive && (
           <div
             data-resize-panel
             inert={isMobile && !showConfig && !isResizeOpen ? true : undefined}
@@ -2570,8 +2726,30 @@ const DashboardView = ({ openModal }) => {
     return null;
   };
 
+  // Mientras no llegó el canon, una pestaña temática NO se pinta con el orden
+  // por defecto: se vería el tablero completo y se reacomodaría solo un segundo
+  // después. El esqueleto dice lo mismo sin mentir sobre el acomodo.
+  const canonCargando = !acomodoLibre && canon === null;
+
   // ── Build widget list from explicit positions ──────────────────────────────
   const buildWidgetList = () => {
+    if (canonCargando) {
+      const cuantos = (TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi').length;
+      return Array.from({ length: cuantos }).map((_, i) => {
+        const id = (TAB_WIDGETS[activeTab] || []).filter(w => w !== 'kpi')[i];
+        const def = getWidgetSize(id);
+        return (
+          <div key={`skel-canon-${i}`} className="animate-stagger-child" style={{
+            gridColumnEnd: `span ${esTelefono ? anchoEnTelefono(id) : Math.min(def.minCols, activeCols)}`,
+            gridRowEnd: `span ${def.minRows}`,
+            '--stagger-delay': `${i * 45}ms`,
+          }}>
+            <Skel className="w-full h-full rounded-card" />
+          </div>
+        );
+      });
+    }
+
     const sorted = Object.keys(activeLayout).sort((a, b) => {
       const pa = activeLayout[a], pb = activeLayout[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
@@ -2634,14 +2812,24 @@ const DashboardView = ({ openModal }) => {
 
         {/* Config panel */}
         {showConfig && (() => {
+          const esGeneral   = configTab === 'general';
+          const etiquetaTab = TABS.find(t => t.id === configTab)?.label ?? configTab;
           const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
-          const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
+          const tabDefs = WIDGET_DEFS.filter(w => w.id !== 'kpi' && tabWidgetIds.includes(w.id));
+          const sinUbicar = esGeneral ? [] : widgetsSinUbicar(configTab, canon?.[configTab]?.orden);
+          const rotuloDe = (id) => WIDGET_DEFS.find(w => w.id === id)?.label ?? id;
           return (
             <div data-surface="card" className="animate-in fade-in slide-in-from-top-2 duration-[var(--dur-fast)] p-4 space-y-3">
               {/* Header */}
-              <div className="flex items-center justify-between px-1">
-                <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
-                <Button variant="secondary" icon={RotateCcw} onClick={resetAll}>Restablecer todo</Button>
+              <div className="flex items-center justify-between gap-2 px-1">
+                <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Inicio</p>
+                {/* Restablecer sólo donde hay algo propio que restablecer: en una
+                    pestaña temática que uno no acomoda, no le pertenece nada. */}
+                {(esGeneral || isSU) && (
+                  <Button variant="secondary" icon={RotateCcw} onClick={() => resetTab(configTab)}>
+                    Restablecer {etiquetaTab}
+                  </Button>
+                )}
               </div>
               {/* Tab selector inside panel */}
               <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl p-1">
@@ -2651,29 +2839,91 @@ const DashboardView = ({ openModal }) => {
                     value={configTab} onChange={setConfigTab} label="Sección de configuración"
                     className="w-full" />
               </div>
-              {/* Widgets for selected tab */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {tabDefs.map(w => {
-                  const hasAccess = !w.permission || hasPermission(w.permission, 'can_view');
-                  const enabled = isWidgetOn(w.id);
-                  const WIcon = w.icon;
-                  return (
-                    <button key={w.id}
-                      aria-pressed={enabled && hasAccess}
-                      disabled={!hasAccess}
-                      onClick={() => hasAccess && toggleWidget(w.id)}
-                      className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-[var(--dur-fast)] ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
-                      <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
-                      <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
-                      {/* Indicador, no control: la fila entera ya es el botón.
-                          Sin onChange el canónico renderiza un <span> — un
-                          <button> anidado sería HTML inválido y una segunda
-                          parada de tabulación para la misma acción. */}
-                      <Switch checked={enabled && hasAccess} size="sm" />
-                    </button>
-                  );
-                })}
-              </div>
+
+              {esGeneral ? (
+                <>
+                  <Notice variant="neutral" compact>
+                    Esta pestaña es tuya: acomoda los widgets, cámbiales el tamaño y elige cuáles quieres ver.
+                  </Notice>
+                  {/* Widgets for selected tab */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {tabDefs.map(w => {
+                      const hasAccess = !w.permission || hasPermission(w.permission, 'can_view');
+                      const enabled = isWidgetOn(w.id);
+                      const WIcon = w.icon;
+                      return (
+                        <button key={w.id}
+                          aria-pressed={enabled && hasAccess}
+                          disabled={!hasAccess}
+                          onClick={() => hasAccess && toggleWidget(w.id)}
+                          className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-[var(--dur-fast)] ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
+                          <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
+                          <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
+                          {/* Indicador, no control: la fila entera ya es el botón.
+                              Sin onChange el canónico renderiza un <span> — un
+                              <button> anidado sería HTML inválido y una segunda
+                              parada de tabulación para la misma acción. */}
+                          <Switch checked={enabled && hasAccess} size="sm" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : isSU ? (
+                <div className="space-y-3">
+                  <Notice variant="info">
+                    Acomoda <b>{etiquetaTab}</b> como quieres que la vean todos y publícala. A cada cargo se le
+                    reacomoda sola, con los widgets que tiene permitidos.
+                  </Notice>
+
+                  {sinUbicar.length > 0 && (
+                    <Notice variant="warning">
+                      {sinUbicar.length === 1
+                        ? <>Quedó un widget fuera del acomodo publicado: <b>{rotuloDe(sinUbicar[0])}</b>.</>
+                        : <>Quedaron {sinUbicar.length} widgets fuera del acomodo publicado: <b>{sinUbicar.map(rotuloDe).join(', ')}</b>.</>}
+                      {' '}Se muestran al final hasta que publiques de nuevo.
+                    </Notice>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    {/* Ver como — la lente para revisar antes de publicar. */}
+                    <div className="flex items-center gap-2 min-w-[240px]">
+                      <Eye size={14} className="text-content-3 shrink-0" />
+                      <span className="text-label font-black uppercase tracking-widest text-content-2 shrink-0">Ver como</span>
+                      <LiquidSelect
+                        compact
+                        value={verComoRol ?? ''}
+                        onChange={v => setVerComoRol(v === '' || v == null ? null : Number(v))}
+                        options={(cargos ?? []).map(c => ({ value: String(c.id), label: c.name }))}
+                        placeholder={cargos ? 'Mi vista' : 'Cargando…'}
+                        clearLabel="Mi vista"
+                        ariaLabel="Ver el tablero como otro cargo"
+                        disabled={!cargos}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {publicado === configTab && (
+                        <Badge variant="success" tone="soft" size="sm">Publicado</Badge>
+                      )}
+                      <Button icon={Upload} loading={publicando} onClick={() => publicarAcomodo(configTab)}>
+                        Publicar acomodo
+                      </Button>
+                    </div>
+                  </div>
+
+                  {verComoRol != null && (
+                    <Notice variant="neutral" compact icon={Eye}>
+                      Estás viendo el tablero con los permisos de otro cargo. Lo que falte es lo que ese cargo no tiene habilitado.
+                    </Notice>
+                  )}
+                </div>
+              ) : (
+                <Notice variant="neutral" icon={Lock}>
+                  El acomodo de <b>{etiquetaTab}</b> es el mismo para toda la empresa, y los widgets que ves
+                  son los de tu cargo. Para armar un tablero a tu gusto, usa <b>General</b>.
+                </Notice>
+              )}
             </div>
           );
         })()}
@@ -2731,7 +2981,24 @@ const DashboardView = ({ openModal }) => {
           </>);
         })()}
 
-        {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
+        {/* Una pestaña sin nada que mostrar tenía una rejilla vacía y nada más:
+            una franja en blanco que se lee como una pantalla a medio cargar. El
+            caso habitual ahora es el previsualizador —el cargo elegido no tiene
+            ni un widget de esta categoría—, y ahí el vacío es precisamente la
+            respuesta que se fue a buscar, así que tiene que decirlo. */}
+        {!canonCargando && Object.keys(activeLayout).length === 0 ? (
+          <EmptyState
+            icon={verComoRol != null ? Eye : LayoutDashboard}
+            title={verComoRol != null ? 'Este cargo no ve nada acá' : 'Todavía no hay nada en esta pestaña'}
+            subtitle={verComoRol != null
+              ? `${cargos?.find(c => c.id === verComoRol)?.name ?? 'El cargo elegido'} no tiene habilitado ningún widget de ${TABS.find(t => t.id === activeTab)?.label ?? 'esta sección'}.`
+              : activeTab === 'general'
+                ? 'Abre «Personalizar» y enciende los widgets que quieras ver.'
+                : 'Cuando tu cargo tenga widgets habilitados en esta categoría, aparecen acá.'}
+            compact
+          />
+        ) : (
+        /* Main widget grid — 4 cols desktop, 2 cols mobile */
         <div
           ref={gridRef}
           className={`grid gap-4 relative ${isMobile ? 'grid-cols-2' : 'grid-cols-4 min-w-[700px]'}`}
@@ -2754,6 +3021,7 @@ const DashboardView = ({ openModal }) => {
             />
           )}
         </div>
+        )}
 
         </div>{/* end tab content */}
       </div>

@@ -33,6 +33,28 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
 // en el tema por defecto, y el portal tiene cuatro. Se estampa en localStorage
 // antes de que monte React (`ThemeContext` lo lee de ahí) y además en el
 // atributo, que es lo que pinta el CSS.
+// ⚠️ CON `PESTANAS=1 MODALES=1` HAY QUE CORRERLO EN DOS MITADES.
+//
+// Seis corridas seguidas murieron con «Target page, context or browser has been
+// closed» alrededor de la pantalla 28. Tres cosas subieron el techo sin
+// levantarlo —acotar la captura de página completa (23→29), pasar por
+// `about:blank` entre rutas (28), reciclar la página cada 8 (28)—, y la ruta
+// donde muere, medida sola, siempre anda bien. Es el proceso de contenido de
+// WebKit acumulando 37 vistas con sus pestañas y sus diálogos.
+//
+// La salida honesta es partirlo, no seguir parcheándolo:
+//
+//   RUTAS=overview,ventas,compras,productos,pedidos,minmax,clientes,proveedores,\
+//   facturacion,facturas-compra,cotizaciones,conteo-inventario,libro-compras-completo,\
+//   libros-iva,resumen-fiscal,corte-z,ventas-perdidas,staff PESTANAS=1 MODALES=1 …
+//
+//   RUTAS=monitor,audit,schedules,payroll,requests,vacation-plan,announcements,\
+//   encuesta,metas,branches,laboratorios,roles,permissions,sync-health,my-requests,\
+//   my-documents,my-announcements,profile,dashboard PESTANAS=1 MODALES=1 …
+//
+// Sin banderas (el barrido de rutas a secas) entra de una sola vez y es el que
+// se corre mientras se trabaja.
+//
 // `PESTANAS=1` recorre además las pestañas internas de cada vista. Ver la nota
 // en el bucle: casi duplican la cuenta de pantallas y el barrido pasa de 4½
 // minutos a ~55.
@@ -59,26 +81,29 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         test.setTimeout(2_700_000);
         fs.mkdirSync(SALIDA, { recursive: true });
         if (TEMA) {
-            await page.addInitScript(({ tema, attr }) => {
+            await page.context().addInitScript(({ tema, attr }) => {
                 try { localStorage.setItem('portal-theme', tema); } catch { /* sin localStorage */ }
                 if (attr) document.documentElement.setAttribute('data-theme', attr);
                 else document.documentElement.removeAttribute('data-theme');
             }, { tema: TEMA, attr: ATRIBUTO_TEMA[TEMA] ?? null });
         }
-        await page.goto('/login');
-        await page.locator('#username').fill(E2E_USER);
-        await page.locator('#password').fill(E2E_PASSWORD);
-        await page.locator('button[type="submit"]').first().click();
+        // `pg` y no `page`: el barrido RECICLA la página cada pocas rutas (ver
+        // `reciclar`), así que la referencia tiene que poder cambiar.
+        let pg = page;
+        await pg.goto('/login');
+        await pg.locator('#username').fill(E2E_USER);
+        await pg.locator('#password').fill(E2E_PASSWORD);
+        await pg.locator('button[type="submit"]').first().click();
         // Esperar a la CONDICIÓN, no al reloj. Con 6 segundos fijos el cerrojo
         // de abajo daba falso positivo: la primera carga tras levantar el
         // preview se queda en «VERIFICANDO SESIÓN…» más de eso, y el barrido
         // moría diciendo «no se pudo iniciar sesión» cuando estaba entrando.
         // Un instrumento que confunde «todavía no» con «no» es tan inútil como
         // uno que confunde «no encontré nada» con «no había nada».
-        await page.waitForFunction(
+        await pg.waitForFunction(
             () => !location.pathname.startsWith('/login'), null, { timeout: 60_000 },
         ).catch(() => {});
-        await page.waitForTimeout(3000);
+        await pg.waitForTimeout(3000);
 
         // ⚠️ SIN SESIÓN, EL BARRIDO MIDE EL LOGIN 37 VECES — y el login está
         // bien hecho, así que sale todo en cero y el informe dice «0 vistas con
@@ -88,7 +113,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // ausencia de datos y la ausencia de defectos se ven idénticas.
         //
         // Se corta acá y con ruido, no se reporta.
-        if (/\/login/.test(page.url())) {
+        if (/\/login/.test(pg.url())) {
             throw new Error('No se pudo iniciar sesión: el barrido habría medido la pantalla de login 37 veces.');
         }
 
@@ -96,7 +121,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // cero fichas, cero tablas, cero desborde. Proveedores estuvo así y el
         // barrido la listaba con un punto al lado, como si estuviera bien.
         const errores = [];
-        page.on('pageerror', e => errores.push(e.message.slice(0, 200)));
+        pg.on('pageerror', e => errores.push(e.message.slice(0, 200)));
 
         // Esperar a que se vayan los ESQUELETOS, no un número de segundos.
         //
@@ -119,12 +144,34 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
         // El colchón inicial le da tiempo a montar y pintar su esqueleto; recién
         // ahí tiene sentido esperar a que se vaya.
         const esperarDatos = async (tope = 20_000) => {
-            await page.waitForTimeout(1500);  // que monte y pinte su esqueleto
-            await page.waitForFunction(
+            await pg.waitForTimeout(1500);  // que monte y pinte su esqueleto
+            await pg.waitForFunction(
                 () => !document.querySelector('.skeleton'), null, { timeout: tope },
             ).catch(() => {});
-            await page.waitForTimeout(900);   // asentar el layout tras el último dato
+            await pg.waitForTimeout(900);   // asentar el layout tras el último dato
         };
+
+        // ── Reciclar la página ───────────────────────────────────────────────
+        // CINCO corridas murieron a mitad de camino con «Target page, context or
+        // browser has been closed», y cada vez parecía culpa de la ruta
+        // siguiente — medida sola, ninguna lo era. Era el proceso de contenido
+        // de WebKit acumulando 37 vistas, varias con 200 fichas.
+        //
+        // Los dos parches previos sólo corrieron el límite: acotar la captura de
+        // página completa lo llevó de 23 a 29 pantallas, y pasar por
+        // `about:blank` entre rutas, a 28. Mover un techo no es levantarlo.
+        //
+        // Cerrar la página y abrir otra del MISMO contexto libera ese proceso y
+        // conserva la sesión, que vive en el contexto (cookies y localStorage).
+        // Lo único que hay que rearmar es el escucha de errores, que sí es por
+        // página.
+        const reciclar = async () => {
+            const nueva = await pg.context().newPage();
+            await pg.close().catch(() => {});
+            pg = nueva;
+            pg.on('pageerror', e => errores.push(e.message.slice(0, 200)));
+        };
+        const CADA = Number(process.env.RECICLAR || 8);
 
         const informe = [];
 
@@ -136,17 +183,17 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // medición que falla sale en el informe como «(no cargó)» —igual que
             // una ruta que de verdad no cargó— y no hay forma de saber cuál de
             // las dos fue. Costó una corrida entera de pestañas.
-            const m = await page.evaluate(MEDIR).catch(e => {
+            const m = await pg.evaluate(MEDIR).catch(e => {
                 console.log(`   ⚠️  ${etiqueta}: MEDIR falló — ${String(e.message).slice(0, 140)}`);
                 return null;
             });
             if (!m) { informe.push({ ruta: etiqueta, error: true }); return; }
             // Una sesión que se cae a mitad del barrido devuelve al login sólo a
             // partir de ahí, y esas rutas también saldrían en cero.
-            if (/\/login/.test(page.url())) {
+            if (/\/login/.test(pg.url())) {
                 throw new Error(`La sesión se perdió en ${etiqueta}: de acá en adelante se estaría midiendo el login.`);
             }
-            const extra = await page.evaluate(() => {
+            const extra = await pg.evaluate(() => {
                 const vw = document.documentElement.clientWidth;
                 const tablas = [...document.querySelectorAll('table')];
                 const fichas = [...document.querySelectorAll('button[data-surface="card"], div[data-surface="card"]')]
@@ -173,8 +220,8 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // tope se guarda el viewport, que para revisar a ojo se cubre con el
             // spec de foco.
             const esPestana = etiqueta.includes('#');
-            const alto = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
-            await page.screenshot({
+            const alto = await pg.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
+            await pg.screenshot({
                 path: `${SALIDA}/${etiqueta.replace(/[#/]/g, '_')}.png`,
                 fullPage: !esPestana && alto <= 6000,
             });
@@ -186,9 +233,18 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 1));
         };
 
-        for (const ruta of RUTAS) {
+        for (const [indice, ruta] of RUTAS.entries()) {
             errores.length = 0;
-            await page.goto('/' + ruta).catch(() => {});
+            if (indice > 0 && indice % CADA === 0) await reciclar();
+            // Pasar por `about:blank` DESCARTA el DOM anterior. Sin esto el
+            // proceso de WebKit acumula las 37 vistas —varias con 200 fichas— y
+            // se muere a mitad de camino: tres corridas se cortaron en la
+            // pantalla 23 y, con el tope de captura puesto, la cuarta llegó a la
+            // 29. Siempre «Target page, context or browser has been closed», y
+            // siempre en la ruta siguiente a la última medida, lo que hacía
+            // parecer que esa ruta era la culpable. Medida sola, ninguna lo era.
+            await pg.goto('about:blank').catch(() => {});
+            await pg.goto('/' + ruta).catch(() => {});
             await esperarDatos();
             await medirPantalla(ruta);
 
@@ -209,7 +265,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // nada. Sin la bandera queda el de siempre, para iterar; con ella,
             // el completo, para cerrar una vista o para CI.
             const claves = PESTANAS
-                ? await page.getAttribute('[data-pestanas]', 'data-pestanas').catch(() => null)
+                ? await pg.getAttribute('[data-pestanas]', 'data-pestanas').catch(() => null)
                 : null;
             const lista = claves ? claves.split(',').filter(Boolean) : [];
             for (let i = 1; i < lista.length; i++) {
@@ -225,9 +281,9 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                     // cuerpo), así que hay dos `data-pestanas` en el DOM y uno
                     // está oculto. Sin el filtro, `.first()` agarraba el oculto
                     // y el clic moría por timeout sin decir por qué.
-                    await page.locator('[data-pestanas] [role="combobox"]:visible').first().click({ timeout: 4000 });
-                    await page.waitForTimeout(500);
-                    await page.locator('[role="option"]').nth(i).click({ timeout: 4000 });
+                    await pg.locator('[data-pestanas] [role="combobox"]:visible').first().click({ timeout: 4000 });
+                    await pg.waitForTimeout(500);
+                    await pg.locator('[role="option"]').nth(i).click({ timeout: 4000 });
                     await esperarDatos();
                     await medirPantalla(`${ruta}#${lista[i]}`);
                 } catch (e) {
@@ -237,7 +293,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                     // ciegas. El motivo se imprime.
                     console.log(`   ⚠️  ${ruta}#${lista[i]}: no se pudo abrir — ${String(e.message).split('\n')[0].slice(0, 140)}`);
                     informe.push({ ruta: `${ruta}#${lista[i]}`, error: true, noSeAbrio: true });
-                    await page.keyboard.press('Escape').catch(() => {});
+                    await pg.keyboard.press('Escape').catch(() => {});
                 }
             }
 
@@ -259,20 +315,20 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 ];
                 for (const [nombre, selector] of aperturas) {
                     try {
-                        const disparador = page.locator(`${selector}:visible`).first();
+                        const disparador = pg.locator(`${selector}:visible`).first();
                         if (!(await disparador.count())) continue;
                         await disparador.click({ timeout: 4000 });
-                        await page.waitForTimeout(1200);
+                        await pg.waitForTimeout(1200);
                         // Sin diálogo abierto no hay nada nuevo que medir, y
                         // medir la misma vista otra vez ensucia el informe con
                         // una fila que dice lo mismo con otro nombre.
-                        const abierto = await page.locator('[role="dialog"], [data-hoja]').count();
+                        const abierto = await pg.locator('[role="dialog"], [data-hoja]').count();
                         if (abierto) await medirPantalla(`${ruta}»${nombre}`);
-                        await page.keyboard.press('Escape').catch(() => {});
-                        await page.waitForTimeout(600);
+                        await pg.keyboard.press('Escape').catch(() => {});
+                        await pg.waitForTimeout(600);
                     } catch (e) {
                         console.log(`   ⚠️  ${ruta}»${nombre}: no abrió — ${String(e.message).split('\n')[0].slice(0, 110)}`);
-                        await page.keyboard.press('Escape').catch(() => {});
+                        await pg.keyboard.press('Escape').catch(() => {});
                     }
                 }
             }

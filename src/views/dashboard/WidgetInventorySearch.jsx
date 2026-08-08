@@ -1112,6 +1112,11 @@ export default function WidgetInventorySearch() {
       pendientes={faltan}
       etiquetaPendientes="sin existencia acá"
       etiquetaPendientesPlural="sin existencia acá"
+      // Sin sala con inventario —Administración, por ejemplo— el conteo nunca
+      // llega, y la baldosa mostraba un guión que se lee como «cargando». Se
+      // dice lo que pasa. La búsqueda sigue sirviendo: se puede consultar en
+      // qué sala hay un producto aunque uno no tenga inventario propio.
+      sinDato={miErp ? null : 'Buscar en las salas'}
       vacio="Buscar producto"
       tono="warning"
       maxWidth="max-w-3xl"

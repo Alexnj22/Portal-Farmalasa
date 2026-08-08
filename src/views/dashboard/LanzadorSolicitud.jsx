@@ -98,6 +98,12 @@ export default function LanzadorSolicitud({
     etiquetaPendientes,     // qué es ese número, en singular y plural
     etiquetaPendientesPlural,
     vacio = 'Sin pendientes',
+    // Qué decir cuando el número NO va a llegar nunca — no porque esté
+    // cargando, sino porque para este usuario no existe. «Consulta de
+    // Inventario» mostraba un guión mudo a todo el personal de Administración,
+    // que no tiene sala con inventario: el guión se lee como «se está cargando»
+    // y no como «acá no aplica», y quien lo mira espera un número que no viene.
+    sinDato = null,
     tono = 'brand',         // brand | warning | danger | success
     maxWidth = 'max-w-2xl',
     children,               // (cerrar) => contenido del modal
@@ -189,7 +195,7 @@ export default function LanzadorSolicitud({
                     <p className="text-body-sm font-black text-content leading-tight">{label}</p>
                     <p className={`text-caption font-semibold mt-0.5 truncate ${hay ? acento.texto : 'text-content-3'}`}>
                         {pendientes === null
-                            ? '—'
+                            ? (sinDato ?? '—')
                             : hay ? `${pendientes} ${etiqueta}` : vacio}
                     </p>
                 </div>

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.514.2 — El barrido con pestañas y modales va en dos mitades
+
+Seis corridas seguidas del barrido completo murieron alrededor de la pantalla 28
+con «Target page, context or browser has been closed». Tres intentos subieron el
+techo sin levantarlo —acotar la captura de página completa (23→29 pantallas),
+pasar por `about:blank` entre rutas (28), reciclar la página cada 8 (28)— y la
+ruta donde muere, medida sola, siempre anda bien.
+
+Es el proceso de contenido de WebKit acumulando 37 vistas con sus pestañas y sus
+diálogos. **La salida honesta es partirlo, no seguir parcheándolo**: quedan los
+dos comandos escritos en el propio spec, con la mitad de rutas cada uno. Sin
+banderas, el barrido de rutas entra de una sola vez y sigue siendo el que se
+corre mientras se trabaja.
+
+Lo que costó reconocerlo: tres de esas seis corridas las gasté sospechando de la
+ruta siguiente a la última medida, que es la que aparece en el error. Medida
+sola, ninguna lo era. **Un límite que se corre cuando bajás el consumo es un
+techo de recursos, no un defecto de contenido** — y eso ya se veía en el segundo
+intento.
+
+Y de paso, la baldosa de Consulta de Inventario deja de mostrar un guión mudo a
+quien no tiene sala con inventario: el guión se lee como «cargando» y quien lo
+mira espera un número que no va a llegar. Ahora dice qué sí puede hacer.
+
 ## v2.514.1 — El gate de redacción sólo veía el voseo en mayúscula
 
 Salió escribiendo los avisos de v2.514.0: `gate:design` marcó **`Abrí`** y dejó

@@ -580,7 +580,27 @@ export default function TabReglas({ searchTerm = '' }) {
     const [totalCount,      setTotalCount]      = useState(0);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [page,            setPage]            = useState(1);
-    const [pageSize,        setPageSize]        = useState(() => (enTelefono ? 25 : 50));
+    // ── `?filas=N` — la bisección corre en el teléfono, no acá ────────────
+    // El fallo sólo existe en el aparato del usuario: cuatro sesiones de
+    // hipótesis desde el escritorio fallaron, y la última (las capas del
+    // compositor) la desmintió su propia ablación. Así que el experimento tiene
+    // que correr donde el bug vive, y para eso hace falta poder cambiar UNA
+    // variable desde la barra de direcciones.
+    //
+    // La variable es cuántas fichas se pintan, porque separa las dos familias
+    // que quedan y las separa con una sola prueba: si con 5 fichas —una lista
+    // que entra casi en la pantalla— igual se muere al llegar al fondo,
+    // entonces NO es acumulativo y hay que mirar lo que vive abajo (paginador,
+    // barra flotante, el rebote del final). Si con 5 aguanta y con 50 muere
+    // rápido, es acumulativo y es memoria.
+    //
+    // Es temporal y se quita cuando el caso cierre. Tope de 200 para que un
+    // número pegado a mano no pida 4,371 fichas de una.
+    const [pageSize,        setPageSize]        = useState(() => {
+        const n = parseInt(new URLSearchParams(window.location.search).get('filas'), 10);
+        if (Number.isFinite(n) && n > 0 && n <= 200) return n;
+        return enTelefono ? 25 : 50;
+    });
     const [allCount,        setAllCount]        = useState(0);
     const [statsLoading,    setStatsLoading]    = useState(true);
     const [newProductIds,   setNewProductIds]   = useState(new Set());

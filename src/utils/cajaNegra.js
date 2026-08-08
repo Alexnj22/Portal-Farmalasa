@@ -117,6 +117,13 @@ export function iniciarPulso() {
                 ruta:  `${location.pathname}${location.search}`,
                 viva:  Math.round((Date.now() - nacio) / 1000),
                 y:     Math.round(window.scrollY),
+                // El alto del documento va JUNTO al scroll porque la pregunta
+                // no es «en qué píxel murió» sino «cuánto le faltaba para el
+                // final». La segunda caída dio `scroll 2,292 px` y hubo que ir
+                // a medir el alto en otra máquina para saber que eso era el
+                // fondo de la lista — con el alto acá, la lectura se explica
+                // sola y no depende de que el catálogo no haya cambiado.
+                alto:  document.documentElement.scrollHeight,
                 traba: trabaMax,
                 nodos: document.getElementsByTagName('*').length,
             }));
@@ -149,9 +156,10 @@ export function recogerPulso() {
     if (!p || typeof p !== 'object') return null;
 
     const n = (v) => Number(v ?? 0).toLocaleString('es-SV');
+    const dondeIba = p.alto ? `scroll ${n(p.y)} de ${n(p.alto)} px` : `scroll ${n(p.y)} px`;
     return anotar('murio', {
         ...p,
-        msg: `a los ${n(p.viva)} s · scroll ${n(p.y)} px · trabón máx ${n(p.traba)} ms · ${n(p.nodos)} elementos`,
+        msg: `a los ${n(p.viva)} s · ${dondeIba} · trabón máx ${n(p.traba)} ms · ${n(p.nodos)} elementos`,
     });
 }
 

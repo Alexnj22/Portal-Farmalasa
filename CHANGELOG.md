@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.519.3 — la bisección corre en el teléfono: `?filas=N` y el alto junto al scroll
+
+Cuatro sesiones de hipótesis desde el escritorio y ninguna acertó — la última,
+las capas del compositor, la desmintió su propia ablación. El patrón es claro:
+**el fallo sólo existe en ese aparato, así que el experimento tiene que correr
+ahí.** Lo que faltaba era poder cambiar una variable desde la barra de
+direcciones.
+
+**`?filas=N`** fija cuántas fichas pinta Reglas de despacho. Separa las dos
+familias que quedan con una sola prueba:
+
+| resultado | qué significa |
+|---|---|
+| con 5 fichas **igual muere** al llegar al fondo | no es acumulativo — mirar lo que vive abajo: paginador, barra flotante, el rebote del final |
+| con 5 aguanta y con 50 muere rápido | es acumulativo — es memoria, y el mando es el largo de la lista |
+
+Temporal, se quita cuando el caso cierre. Tope de 200 para que un número pegado
+a mano no pida las 4,371 de una.
+
+**El alto del documento va junto al scroll en el pulso.** La segunda caída dijo
+`scroll 2,292 px` y hubo que ir a medir el alto en otra máquina para saber que
+eso era el fondo de la lista. Ahora la línea dice `scroll 2,292 de 2,907 px` y se
+explica sola — sin depender de que el catálogo no haya cambiado entre la caída y
+la lectura.
+
 ## v2.519.2 — la recarga de los 30 min deja de ser invisible, y la caja negra se copia entera
 
 Segunda caída registrada por el pulso, ya con el arreglo de v2.518.1 puesto:

@@ -118,8 +118,26 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
     }
 
     return (
-        /* overflow-visible so box-shadow glow never gets clipped */
-        <div className="flex items-start w-full pb-1 pt-0.5" style={{ overflow: 'visible' }}>
+        // ── En el teléfono el timeline va en CARRIL ────────────────────────────
+        // Cada nodo mide 48px fijos y son `shrink-0`: siete pasos dan 336px, más
+        // sus conectores de 8px mínimo son 384 — y en un iPhone 13 la tarjeta
+        // deja ~334 útiles. El último paso («Finalizado») se salía **31px** y lo
+        // cortaba el contenedor de la vista. Medido el 2026-08-08 en la pestaña
+        // de Pedidos: **42 elementos recortados**, que eran seis filas × los
+        // siete niveles anidados de este mismo componente — un arreglo, no 42.
+        //
+        // Comprimir no es opción: por debajo de 48px el rótulo y la hora dejan de
+        // leerse. Se desliza, que es lo que el canon hace con todo lo que no es
+        // una lista de registros (§32).
+        //
+        // El `overflow-x` vive ACÁ y no en el flex de adentro a propósito: poner
+        // `auto` en un eje computa el otro a `auto` también, y eso recortaría el
+        // glow del `box-shadow` del nodo activo — que es justo lo que el
+        // `overflow: visible` de abajo protege. Separados, cada uno hace lo suyo.
+        // El `-mx-3 px-3` deja que el carril llegue al borde de la tarjeta en vez
+        // de cortar contra su padding, así se ve que hay más.
+        <div className="-mx-3 px-3 overflow-x-auto overscroll-x-contain lg:mx-0 lg:px-0 lg:overflow-x-visible [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-start w-full min-w-max lg:min-w-0 pb-1 pt-0.5" style={{ overflow: 'visible' }}>
             {nodes.map((node, idx) => {
                 // Nodes appended after the main sequence (Diferencias, Corregido) are "done"
                 // purely based on whether they have a timestamp, regardless of activeIdx
@@ -259,6 +277,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                     </React.Fragment>
                 );
             })}
+            </div>
         </div>
     );
 }

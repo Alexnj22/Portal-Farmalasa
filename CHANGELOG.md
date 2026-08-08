@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.523.3 — Lo que sólo se ve abriendo pestañas y diálogos
+
+Tres hallazgos que **ninguna medición anterior podía encontrar**, porque el
+barrido nunca abría las pestañas internas ni los diálogos. Es exactamente para lo
+que existía esa fase, y aparecieron en su primera corrida de verdad.
+
+**1 · El timeline del pedido se salía 31px — 42 elementos recortados.** Cada nodo
+de `LifecycleTimeline` mide 48px fijos y es `shrink-0`: siete pasos dan 336px, más
+sus conectores son 384, y la tarjeta deja ~334 útiles en un iPhone 13. El último
+paso («Finalizado») quedaba cortado.
+
+Los 42 eran **seis filas × los siete niveles anidados del mismo componente** —el
+círculo, el rótulo, la hora, sus contenedores—, o sea **un arreglo, no 42**. Sin
+la agrupación por forma que hace el medidor, ese número manda a buscar cuarenta
+cosas distintas.
+
+Se resolvió con un **carril**, que es lo que el canon hace con todo lo que no es
+una lista de registros: comprimir no era opción —por debajo de 48px el rótulo y
+la hora dejan de leerse—. Y el `overflow-x` vive en un envoltorio nuevo, **no** en
+el flex de adentro: poner `auto` en un eje computa el otro a `auto` también, y eso
+habría recortado el glow del nodo activo, que es justo lo que el `overflow:
+visible` de ese flex protege.
+
+**2 · El aspa de «quitar filtro» de `FilterBar`: 18×18.** Su tamaño **es** el
+diseño —vive dentro de la ranura del filtro, agrandarla la volvería un botón—,
+así que va con `.blanco-tactil`: crece el área de impacto, no la pintura. Mismo
+caso que el aspa de `LiquidSelect` y las cajas de MIN·MAX.
+
+**3 · Los filtros de alerta de MIN·MAX Red: 55×25.** Les falta **alto**, no ancho,
+y verticalmente no tienen vecinos —son una fila—, así que el área puede crecer sin
+robarle el toque a nadie. `.blanco-tactil` más el acuse, que tampoco tenían.
+
+**Y un hallazgo sobre el instrumento: dos mitades no alcanzan.** El barrido murió
+después de `proveedores`, en la pantalla 31 — el mismo punto donde ya había muerto
+seis veces antes de partirse en dos. Con `PESTANAS=1` **y** `MODALES=1` cada mitad
+pasa de 18 rutas a ~65 pantallas, así que la partición que alcanzaba para las
+rutas solas se queda corta otra vez. Se corre en tandas más chicas; el techo es de
+recursos de WebKit, no de una vista.
+
+Verificado: las **diez** pantallas de Pedidos y MIN·MAX —las dos vistas, sus seis
+pestañas y sus dos diálogos— en cero.
+
+F3 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.523.2 — El iPad Mini también tiene dedo: la premisa del código era falsa
 
 Era el **último criterio de aceptación en ⚠️** de `PLAN-MOBILE-2026-07.md`, y lo

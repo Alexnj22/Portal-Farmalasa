@@ -227,7 +227,12 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                             if (cnt === 0) return null;
                             return (
                                 <button key={key} onClick={() => { setFilterAlert(key); setPage(1); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-label font-black transition-all ${filterAlert === key ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
+                                    // 55×25: le falta ALTO, no ancho, y verticalmente
+                                    // no tiene vecinos —es una fila—, así que el área
+                                    // puede crecer sin robarle el toque a nadie.
+                                    // `.blanco-tactil` la sube a 44 dejando la píldora
+                                    // como está. Más el acuse, que no tenía.
+                                    className={`blanco-tactil relative flex items-center gap-1 px-2.5 py-1 rounded-xl text-label font-black transition-all active:scale-[0.97] ${filterAlert === key ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
                                     {key !== 'all' && <span className={`w-1.5 h-1.5 rounded-full ${ALERT_DOT[key]}`} />}
                                     {key === 'all' ? 'Todos' : ALERT_LABELS[key]}
                                     {cnt !== null && <span className="tabular-nums">{cnt}</span>}

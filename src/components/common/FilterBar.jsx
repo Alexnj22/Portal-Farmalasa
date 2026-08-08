@@ -143,8 +143,13 @@ const Section = memo(({
                 <button type="button" onClick={onClear}
                     title={label ? `Quitar ${label.toLowerCase()}` : 'Quitar este filtro'}
                     aria-label={label ? `Quitar ${label.toLowerCase()}` : 'Quitar este filtro'}
-                    className="w-[18px] h-[18px] mr-1 shrink-0 rounded-full flex items-center justify-center
-                        text-brand-text/60 hover:text-danger-text hover:bg-danger/15 transition-colors duration-[var(--dur-fast)]">
+                    // `blanco-tactil relative`: el aspa mide 18px porque vive
+                    // DENTRO de la ranura del filtro — su tamaño es el diseño, y
+                    // agrandarla la volvería un botón. Mismo caso que el aspa de
+                    // `LiquidSelect` y las cajas de MIN·MAX: crece el área de
+                    // impacto, no la pintura.
+                    className="blanco-tactil relative w-[18px] h-[18px] mr-1 shrink-0 rounded-full flex items-center justify-center
+                        text-brand-text/60 hover:text-danger-text hover:bg-danger/15 active:scale-[0.9] transition-[color,background-color,transform] duration-[var(--dur-fast)]">
                     <X size={11} strokeWidth={3} />
                 </button>
             )}

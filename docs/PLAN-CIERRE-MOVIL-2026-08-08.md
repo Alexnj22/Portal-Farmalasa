@@ -21,6 +21,51 @@ teléfono · **Abierto el** 2026-08-08 · **Cierra:** `PLAN-MOBILE-2026-07.md`
 > `pedidos#pedidos` con **42 recortados** (seis filas × los siete niveles de
 > `LifecycleTimeline`: un arreglo, no 42), más dos controles chicos en
 > `pedidos»accion` y `minmax#red`. Es exactamente para lo que existía la fase.
+>
+> ## La corrida de referencia — 117 pantallas (2026-08-08)
+>
+> Sólo fue posible después de arreglar el cuelgue de v2.524.1: hasta entonces
+> **8 de 14 rutas** morían en silencio y el recorrido de pestañas nunca había
+> cubierto las vistas sin pestañas.
+>
+> ```
+> 117 pantallas · desbordes 116 · chicos 109 · zoom de iOS 1 · scroll lateral 0
+> ```
+>
+> **F8 — la deuda que destapó, agrupada por forma.** Los números crudos engañan:
+> son **ocho formas**, no 226 controles.
+>
+> | n | Dónde | Qué |
+> |---|---|---|
+> | 113 | `roles#chart` | el organigrama SVG: `path` que sobran hasta **120px**. Necesita carril |
+> | ~70 | `staff»accion` · `dashboard»accion` · `branches»accion` | **43×43 — ver abajo, probable falso positivo** |
+> | 20 | `overview»ficha` | fila de producto 227×**31** de alto |
+> | 13 | `requests#*` (4 pestañas) | fila 358×**24** |
+> | 6 | `metas#confirmacion` | botón 113×**15** |
+> | 3 | `facturas-compra#revision` | sobran 32/32/14px |
+> | 1 | `productos»ficha` | **un input con fuente <16px → iOS hace zoom** |
+>
+> ### El patrón 43×43 — medido, sin explicar
+>
+> Aparece **sólo en pantallas `»accion`**, o sea con un diálogo abierto, y
+> siempre sobre controles del **shell** (el menú, Mi Perfil, la paginación), no
+> del diálogo. Medido en `/staff`:
+>
+> ```
+> SIN diálogo:  44 × 44      transforms: []
+> CON diálogo:  43.12 × 43.12 transforms: []     ← exactamente ×0.98
+> ```
+>
+> **Ningún ancestro tiene `transform`**, y no hay regla `scale(0.98)` ni `zoom:`
+> en `index.css`/`App.css`. La hipótesis viva es el **`font-size` del root**:
+> `w-11` son 2.75rem, y 2.75 × 15.68 = 43.12, o sea un root de 16 × 0.98.
+>
+> Antes de arreglar nada hay que cerrar esto, porque decide si son **70
+> hallazgos o cero**: un control del shell que está detrás del velo de un modal
+> **no se toca**, así que aunque el encogimiento sea real, contarlo como deuda
+> táctil es medir la referencia en vez del cuerpo — el error que este proyecto ya
+> cometió cinco veces. Y si el shell se encoge un 2% con cada modal, eso es un
+> efecto visual que nadie pidió y vale la pena saber de dónde sale.
 
 Los dos planes anteriores están **más cerrados de lo que dicen sus documentos**:
 se commiteó entre el 6 y el 7 de agosto y no se anotó. Este plan parte de la foto

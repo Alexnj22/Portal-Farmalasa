@@ -19,6 +19,9 @@ import { SkeletonText } from '../components/common/StateViews';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
+import ModalShell from '../components/common/ModalShell';
+import HojaMovil from '../components/common/HojaMovil';
+import usePulsacionLarga from '../hooks/usePulsacionLarga';
 import { useToastStore } from '../store/toastStore';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { formatMoney, formatQty } from '../utils/formatNumber';
@@ -65,6 +68,31 @@ const fmtDate = (iso) => {
     return d.toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
+// La fila del teléfono. Es un componente y no un `map` inline porque cada fila
+// necesita su propio `usePulsacionLarga` — un hook no se puede llamar dentro de
+// un bucle, y el estado del gesto (temporizador, punto de origen) es por fila.
+function FilaConteoMovil({ conteo: c, estado: es, subtitulo, tono, trailing, conOpciones, onAbrir, onOpciones }) {
+    const gestos = usePulsacionLarga({
+        activo: conOpciones,
+        alMantener: () => onOpciones(c),
+        alTocar: onAbrir,
+    });
+    return (
+        <ListRow
+            icon={es.icon}
+            tone={tono}
+            title={c.branches?.name || '—'}
+            subtitle={subtitulo}
+            // `select-none` + el callout apagado: sin esto, mantener el dedo sobre
+            // la fila levanta la lupa y el menú «Copiar / Buscar» de iOS ENCIMA de
+            // la hoja que se acaba de abrir.
+            className={conOpciones ? 'select-none [-webkit-touch-callout:none]' : ''}
+            {...gestos}
+            trailing={trailing}
+        />
+    );
+}
+
 export default function ConteoInventarioView() {
     const navigate = useNavigate();
     const { user, hasPermission, getScope } = useAuth();
@@ -102,6 +130,10 @@ export default function ConteoInventarioView() {
     // que se va, y para cuando el modal se abre esa fila ya está en memoria.
     const [aBorrar, setABorrar] = useState(null);
     const [borrando, setBorrando] = useState(false);
+    // El conteo cuya hoja de opciones está abierta, en el teléfono. Misma razón
+    // que `aBorrar` para guardar la fila entera y no el id: la hoja tiene que
+    // poder decir de qué conteo habla.
+    const [opciones, setOpciones] = useState(null);
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
 
@@ -298,15 +330,27 @@ export default function ConteoInventarioView() {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
                     const valorNeto = (c.valor_sobrante || 0) - (c.valor_faltante || 0);
                     return (
-                        <ListRow
+                        <FilaConteoMovil
                             key={c.id}
-                            icon={es.icon}
+                            conteo={c}
+                            estado={es}
                             // El tono de la fila dice el estado sin gastar una línea:
                             // lo que falta ajustar es lo urgente de esta pantalla.
-                            tone={faltaAjuste(c) ? 'peligro' : null}
-                            title={c.branches?.name || '—'}
-                            subtitle={`${fmtDate(c.created_at)} · ${alcanceLabel(c)}`}
-                            onClick={() => navigate(`/conteo-inventario/${c.id}`)}
+                            // `danger` y no `peligro`: las claves de `ListRow` son las
+                            // de la paleta y están en inglés. `peligro` no existía en
+                            // el mapa, así que caía al default y la fila NUNCA se tiñó
+                            // — un tono inválido no avisa, se ignora. Era el único uso
+                            // del repo; salió al mover la fila a su componente.
+                            tono={faltaAjuste(c) ? 'danger' : null}
+                            subtitulo={`${fmtDate(c.created_at)} · ${alcanceLabel(c)}`}
+                            // Mantener presionado solo se ofrece a quien puede hacer
+                            // algo con la fila. Sin `canEdit` la hoja tendría una sola
+                            // opción —«Abrir»— que es lo que el toque ya hace: un
+                            // gesto que abre un menú de una opción es peor que no
+                            // tenerlo.
+                            conOpciones={canEdit}
+                            onAbrir={() => navigate(`/conteo-inventario/${c.id}`)}
+                            onOpciones={setOpciones}
                             trailing={(
                                 <span className="flex flex-col items-end gap-1">
                                     <Badge variant={es.variante} size="sm">{es.label}</Badge>
@@ -326,6 +370,14 @@ export default function ConteoInventarioView() {
                         />
                     );
                 })}
+                {/* La única debilidad real de un gesto mantenido es que no se ve.
+                    Una línea lo dice de una vez y no vuelve a estorbar — y solo
+                    aparece si hay filas y el gesto está de verdad disponible. */}
+                {!loading && filtered.length > 0 && canEdit && (
+                    <p className="text-caption text-content-3 text-center pt-1">
+                        Mantené presionada una fila para ver sus opciones
+                    </p>
+                )}
             </div>
 
             <div className="hidden md:block">
@@ -416,6 +468,56 @@ export default function ConteoInventarioView() {
                 onClose={() => setShowModal(false)}
                 onCreated={(id) => navigate(`/conteo-inventario/${id}`)}
             />
+
+            {/* Las opciones de una fila del teléfono. `HojaMovil` es el cuerpo
+                canónico y nace en gota del punto que se mantuvo presionado — el
+                rectángulo lo toma solo de `leerUltimoToque()`, que escucha el
+                `pointerdown` en captura, o sea el mismo con el que arrancó el
+                gesto (500ms, muy dentro de sus 1200ms de vigencia). */}
+            <ModalShell
+                open={!!opciones}
+                onClose={() => setOpciones(null)}
+                align="bottom"
+                maxWidthClass="max-w-none"
+                surface={null}
+                ariaLabel="Opciones del conteo"
+            >
+                {opciones && (
+                    <HojaMovil
+                        titulo={opciones.branches?.name || 'Conteo'}
+                        subtitulo={`${fmtDate(opciones.created_at)} · ${(ESTADO_CFG[opciones.status] || ESTADO_CFG.BORRADOR).label}`}
+                        icono={ClipboardCheck}
+                    >
+                        <div className="space-y-2">
+                            <ListRow
+                                icon={ChevronRight}
+                                title="Abrir conteo"
+                                subtitle="Ver y capturar los renglones"
+                                onClick={() => { const id = opciones.id; setOpciones(null); navigate(`/conteo-inventario/${id}`); }}
+                            />
+                            {puedeBorrar(opciones) ? (
+                                <ListRow
+                                    icon={Trash2}
+                                    tone="danger"
+                                    title="Eliminar conteo"
+                                    subtitle="Se borran los renglones y el historial"
+                                    // Encadena a la confirmación de siempre, no borra
+                                    // acá: el gesto acerca la acción, no la abarata.
+                                    onClick={() => { const c = opciones; setOpciones(null); setABorrar(c); }}
+                                />
+                            ) : (
+                                // Decir por qué no está es mejor que una hoja con una
+                                // sola opción y ningún motivo. Es justo lo que un
+                                // deslizamiento no puede hacer: fallar en silencio.
+                                <p className="text-caption text-content-3 px-1">
+                                    Este conteo ya está {(ESTADO_CFG[opciones.status] || ESTADO_CFG.BORRADOR).label.toLowerCase()};
+                                    para borrarlo hace falta el permiso de eliminar conteos.
+                                </p>
+                            )}
+                        </div>
+                    </HojaMovil>
+                )}
+            </ModalShell>
 
             {/* Desde la lista no se ve cuánto se contó —esa cifra vive adentro—,
                 así que el mensaje se apoya en lo que la fila SÍ dice: de qué

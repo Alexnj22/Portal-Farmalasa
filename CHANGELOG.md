@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.0 — Mantener presionada una fila de conteos abre sus opciones
+
+Reportado por el usuario: **desde la lista de conteos no había forma de
+eliminar uno; había que entrar.** La papelera vive en la columna de acciones de
+la tabla, y la tabla no se pinta debajo de `md` — ahí la vista dibuja su propia
+lista de `ListRow`, que solo navegaba.
+
+Pidió deslizar o mantener presionado, y que se midiera cuál conviene. **Ganó
+mantener presionado**, y el desempate no es de gusto: sale de tres hechos de
+esta lista en concreto.
+
+| | Deslizar | Mantener presionado |
+|---|---|---|
+| Toques hasta borrar | deslizar + tocar + confirmar | mantener + tocar + confirmar |
+| Huella visual en reposo | 0 | 0 |
+| Fila que no se puede borrar | el gesto no hace nada | la hoja dice por qué |
+| Conflicto con el scroll vertical | hay que arbitrar el eje | ninguno (se cancela al mover) |
+| Más de una acción | no | sí |
+
+1. **El borrado es irreversible y ya lleva confirmación obligatoria** — se
+   lleva los renglones y el historial de quién contó cada uno. O sea que
+   deslizar nunca puede ser «deslizo y listo»: quedan los mismos toques que
+   manteniendo. La única ventaja del deslizamiento —que el gesto *sea* la
+   acción— no se puede cobrar acá sin abaratar un borrado que no se deshace.
+2. **No toda fila se puede borrar** (`puedeBorrar` depende del permiso y del
+   estado). Un deslizamiento sobre una fila que no se puede borrar solo puede no
+   hacer nada, que se lee como que la pantalla se colgó. La hoja dice qué hay y,
+   cuando no está, por qué.
+3. **La lista scrollea en vertical.** Deslizar obliga a arbitrar el eje en cada
+   fila — y es justo donde viven los bugs de estas listas, que además acaban de
+   recibir `content-visibility` por el techo de memoria de la pestaña. Mantener
+   presionado se mide en tiempo: al primer movimiento se cancela y el scroll
+   gana sin competir.
+
+Y una cuarta, del lado de lo que se pidió: «opciones», en plural. Una hoja crece
+a la siguiente acción; el deslizamiento solo sostiene una.
+
+**Lo que se agregó.** `usePulsacionLarga` (`src/hooks/`, canónico nuevo): 500ms
+—el umbral del sistema en iOS y Android—, tolerancia de 10px porque el pulgar
+nunca está quieto, y cancelación por `pointercancel`, que es lo que manda el
+navegador cuando se queda él con el gesto para scrollear. **El toque y la
+mantenida los resuelve el mismo hook**: al soltar después de una mantenida el
+navegador dispara `click` igual, así que sin eso la fila navegaba *además* de
+abrir la hoja — separarlos era garantizar que alguien se olvide de la mitad.
+También apaga el menú contextual del navegador y el callout de iOS, que si no
+levanta la lupa y «Copiar / Buscar» encima de la hoja recién abierta.
+
+La hoja es `HojaMovil` dentro de `ModalShell`, o sea el cuerpo canónico, y nace
+en gota del punto que se mantuvo presionado sin que haya que pasarle nada:
+`leerUltimoToque()` escucha el `pointerdown` en captura, que es el mismo con el
+que arrancó el gesto. Ofrece **Abrir conteo** y **Eliminar conteo**, y esta
+segunda encadena a la confirmación de siempre — el gesto acerca la acción, no la
+abarata. Se ofrece solo con `canEdit`: un gesto que abre un menú de una sola
+opción, la que el toque ya hace, es peor que no tenerlo.
+
+La única debilidad real de un gesto mantenido es que no se ve, así que la lista
+lleva una línea al pie —«Mantené presionada una fila para ver sus opciones»— que
+solo aparece si hay filas y el gesto está disponible de verdad.
+
+**De paso, un tono que nunca se aplicó.** La fila pasaba `tone="peligro"` para
+marcar los conteos cerrados sin ajustar, y las claves de `ListRow` son las de la
+paleta, en inglés: `peligro` no existe en el mapa, así que caía al default y la
+fila nunca se tiñó. Un tono inválido no avisa, se ignora. Era el único uso del
+repo y salió al mover la fila a su propio componente.
+
+Verificado en WebKit con `devices['iPhone 13']`: la mantenida abre la hoja y la
+URL **no cambia** (el `click` de cola se consume), la opción de borrar abre la
+confirmación nombrando el conteo exacto, un toque corto sigue navegando al
+detalle, y el listener de red confirma **cero llamadas** a
+`eliminar_conteo_inventario`.
+
 ## v2.523.4 — Conteo en móvil: la existencia del sistema y la diferencia se ven
 
 Reportado por el usuario: **con el permiso «Ver Existencia del Sistema»

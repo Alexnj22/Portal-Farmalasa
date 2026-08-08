@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.3 — El hueco al final del teléfono: la safe-area se contaba dos veces
+
+Reportado por el usuario mirando su iPhone: *«se alcanza lo último, pero deja un
+gran espacio vacío al final… creo que está tomando en cuenta el tamaño de la
+filter pill porque no termina la vista al terminar la nav de las tabs»*. El
+diagnóstico era correcto.
+
+`--sa-bottom` entraba **tres veces** en la misma cuenta:
+
+```
+barra flotante        129px   ya lleva max(12px, --sa-bottom) adentro
+relleno de la vista   141px   reserva el alto medido de la barra + 12
+#main-scroll          + 50px  1rem + los MISMOS --sa-bottom, otra vez
+                     ───────
+total                 191px   para una barra de 129 → 62px de hueco muerto
+```
+
+`#main-scroll` ahora **resta** lo que la barra ya reserva, con piso en 0:
+`max(0px, calc(1rem + var(--sa-bottom) − var(--alto-barra-flotante,0px)))`.
+Sin barra flotante la variable vale 0 y queda `1rem + --sa-bottom`, o sea lo
+mismo que antes — el caso de escritorio y el de las vistas sin barra no cambian.
+
+**Y ningún emulador podía verlo.** `env(safe-area-inset-*)` vale **0** en todos,
+así que la doble suma valía 16px y pasaba por aire normal: el barrido de 117
+pantallas lo dio por bueno, la matriz de 35 celdas también. En un iPhone con
+barra de gestos son 50. Es exactamente la clase de defecto para la que existe
+`docs/PRUEBA-EN-TELEFONO-REAL.md`, y apareció en la primera pasada.
+
+Verificado pisando `--sa-bottom: 34px` —la misma técnica que usa
+`auditoria-movil.spec.js`— con la barra creciendo a 129px:
+`#main-scroll` pasa de 50px a **0**, la vista mantiene sus 141, y el aire entre
+el último renglón y la barra queda en **12px**.
+
+F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`, primer hallazgo del teléfono real.
+
 ## v2.524.2 — La fila de conteos ES una tarjeta, y la mantenida se acusa
 
 Dos reportes del usuario sobre la lista de conteos en el teléfono: **«la card de

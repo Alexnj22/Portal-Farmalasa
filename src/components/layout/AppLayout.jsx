@@ -1177,7 +1177,23 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         decide el orden en que Tailwind emitió las clases, que no es
                         algo que uno controle. Escritas por lado no hay competencia y
                         el escritorio queda exactamente como estaba. */}
-                    <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[calc(1rem+var(--sa-bottom))] lg:pb-4 lg:pr-2 pl-[max(0.5rem,var(--sa-left))] pr-[max(0.5rem,var(--sa-right))] lg:pl-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+var(--sa-bottom))]' : ''}`}>
+                    {/* ── El relleno de abajo lo pone UN solo sitio ──────────────
+                        `--sa-bottom` se estaba contando DOS VECES cuando la vista
+                        dibuja barra flotante: la barra ya la lleva adentro
+                        (`pb-[calc(--alto-nav-inferior + max(12px, --sa-bottom))]`),
+                        `GlassViewLayout` reserva el alto medido de la barra, y acá
+                        se sumaba otra vez. En un iPhone 13 con barra de gestos eso
+                        daba 191px de relleno para una barra de 129 — 62px de hueco
+                        muerto al final de la lista.
+                        Lo reportó el usuario el 2026-08-08 mirando su teléfono, y
+                        **ningún emulador podía verlo**: ahí `--sa-bottom` vale 0,
+                        así que la doble suma valía 16px y pasaba por aire normal.
+                        Es exactamente la clase de defecto para la que existe la
+                        prueba en dispositivo real (`docs/PRUEBA-EN-TELEFONO-REAL.md`).
+                        La resta con piso en 0 mantiene el caso sin barra flotante
+                        igual que antes: si `--alto-barra-flotante` es 0, queda
+                        `1rem + --sa-bottom`, que es lo que había. */}
+                    <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[max(0px,calc(1rem+var(--sa-bottom)-var(--alto-barra-flotante,0px)))] lg:pb-4 lg:pr-2 pl-[max(0.5rem,var(--sa-left))] pr-[max(0.5rem,var(--sa-right))] lg:pl-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+var(--sa-bottom))]' : ''}`}>
                         {!isMobile && (
                             <div className="absolute top-4 right-5 z-bell-desktop hidden lg:block">
                                 <NotificationBell variant="desktop" />

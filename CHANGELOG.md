@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.515.2 — Facturas de mi Sala: una consulta en vez de tres
+
+Reportado: «el widget es lento». **No era la base.** Medido en producción, la
+consulta tarda **9,7 ms** y devuelve **32 filas**; la tabla tiene 1.557
+documentos, 677 en la ventana y 4 reglas. Ahí no había nada que optimizar.
+
+Lo lento era cuántas veces se pedía lo mismo. Cada apertura del widget hacía
+**tres viajes** a Supabase:
+
+1. al montar el tablero → `contar_facturas_sala`
+2. al abrir el modal → `get_facturas_sala`
+3. al terminar esa carga → `contar_facturas_sala` **otra vez**, porque el panel
+   llamaba `onCambio` al final de su propia carga
+
+Y los tres corrían **la misma consulta pesada**: `contar_facturas_sala` era
+literalmente `SELECT count(*) FROM get_facturas_sala(...)`. Como
+`get_facturas_sala` es plpgsql y devuelve `SETOF`, no se puede inlinear y el
+planificador no puede podar columnas: para devolver un entero materializaba las
+17 columnas de cada fila, `items_text` incluido. El tercer viaje, además, no
+traía **ningún dato que no estuviera ya** en la respuesta del segundo.
+
+Ahora la baldosa trae la lista una sola vez al montarse y el número sale de
+contar esas filas en el navegador. El servidor hace exactamente el mismo trabajo
+que ya hacía para el conteo —la misma consulta, ni una más— y a cambio **abrir
+el modal no pide nada**: se ve la lista, no un esqueleto. El costo es el
+payload, medido: **14 kB para 22 filas**. Tomar o soltar una factura pasa de
+tres viajes a dos.
+
+**Y aparece un defecto que nadie había mirado.** El conteo usaba el DEFAULT de
+**45 días** del RPC y la lista pedía **30**, así que la baldosa prometía *32
+facturas esperando* y el panel mostraba 22. No fallaba nada y por eso nadie lo
+vio. Con una sola consulta hay una sola ventana.
+
+`contar_facturas_sala` se da de baja (`20260808033548`). Verificado antes de
+borrarla: ninguna otra función la menciona, ningún cron la invoca y no queda un
+llamador en el repo. La migración deja escrito que si algún día hace falta un
+conteo en el servidor, se le escribe su propia consulta sin columnas de payload
+— contar reusando una función que devuelve filas anchas es el defecto, no el
+atajo.
+
 ## v2.515.1 — El acomodo adaptado se rellena, y el panel deja de tener su propia barra
 
 Tres cosas reportadas con captura sobre v2.514.0.

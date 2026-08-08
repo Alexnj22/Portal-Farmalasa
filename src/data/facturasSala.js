@@ -19,10 +19,10 @@ import { supabase } from '../supabaseClient';
  * «¿por qué no me aparece la mía?» sin que nadie tenga que llamar por teléfono.
  */
 export async function fetchFacturasSala(branchId, { dias = 45, incluirTomadas = false } = {}) {
-    // La guarda vive acá y no en el widget, igual que en `contarFacturasSala`:
-    // allá era una escritura de estado SINCRÓNICA dentro del efecto que llama
-    // —render en cascada, y el lint lo marca—. Devolviendo desde una función
-    // async, quien la espera escribe después del tick.
+    // La guarda vive acá y no en el widget: allá era una escritura de estado
+    // SINCRÓNICA dentro del efecto que llama —render en cascada, y el lint lo
+    // marca—. Devolviendo desde una función async, quien la espera escribe
+    // después del tick.
     if (!branchId) return { filas: [], error: null };
     const { data, error } = await supabase.rpc('get_facturas_sala', {
         p_branch_id: Number(branchId),
@@ -33,14 +33,13 @@ export async function fetchFacturasSala(branchId, { dias = 45, incluirTomadas = 
     return { filas: data ?? [], error: null };
 }
 
-/** El número de la baldosa: cuántas esperan que esta sala las tome. */
-export async function contarFacturasSala(branchId, dias = 45) {
-    if (!branchId) return { total: 0, error: null };
-    const { data, error } = await supabase.rpc('contar_facturas_sala', {
-        p_branch_id: Number(branchId), p_dias: dias,
-    });
-    return { total: data ?? 0, error };
-}
+// `contarFacturasSala` se eliminó el 2026-08-07. Envolvía a
+// `contar_facturas_sala`, que era `SELECT count(*) FROM get_facturas_sala(...)`
+// —o sea, la consulta pesada entera, materializando las 17 columnas para
+// devolver un entero— y el widget la llamaba DOS veces por apertura: una al
+// montar el tablero y otra al final de cada carga de la lista. El número de la
+// baldosa sale ahora de contar las filas que ya se trajeron. La función de la
+// base se dio de baja en el mismo commit.
 
 /**
  * Tomar una factura.

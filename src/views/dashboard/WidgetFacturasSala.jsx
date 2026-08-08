@@ -8,8 +8,7 @@ import SearchInput from '../../components/common/SearchInput';
 import { SkeletonText } from '../../components/common/StateViews';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import {
-    fetchFacturasSala, contarFacturasSala, reclamarFactura, soltarFactura,
-    resumenRenglones,
+    fetchFacturasSala, reclamarFactura, soltarFactura, resumenRenglones,
 } from '../../data/facturasSala';
 import { downloadPurchaseDtePackage } from '../../data/facturasCompra';
 import { formatMoney } from '../../utils/formatNumber';
@@ -162,26 +161,11 @@ function FilaFactura({ fila, branchId, onCambio }) {
 }
 
 /* ─── El contenido del modal ──────────────────────────────────────────────── */
-function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
-    const [filas,    setFilas]    = useState(null);
-    const [error,    setError]    = useState('');
-    const [busca,    setBusca]    = useState('');
-
-    // Sin `setFilas(null)` al recargar: era una escritura sincrónica dentro del
-    // efecto (render en cascada, lo marca `react-hooks/set-state-in-effect`) y
-    // encima parpadeaba. El esqueleto sale del estado inicial `null`, así que se
-    // ve en la PRIMERA carga; en las siguientes la lista anterior se queda hasta
-    // que llega la nueva, que es lo que conviene.
-    const cargar = useCallback(async () => {
-        const { filas: f, error: e } = await fetchFacturasSala(branchId, {
-            dias: DIAS_VISIBLES,
-        });
-        setError(e?.message ?? '');
-        setFilas(f);
-        onCambio?.();
-    }, [branchId, onCambio]);
-
-    useEffect(() => { cargar(); }, [cargar]);
+//
+// Ya no pide nada: recibe la lista que la baldosa trajo al montarse. Cuando se
+// abre el modal, los datos están — se ve la lista, no un esqueleto.
+function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onCambio }) {
+    const [busca, setBusca] = useState('');
 
     // El buscador barre monto, proveedor, etiqueta y el renglón: teclear "184"
     // deja las de $184.68 y teclear "tigo" deja las recargas. Es el filtro por
@@ -197,7 +181,6 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
         ].some(v => String(v ?? '').toLowerCase().includes(q)));
     }, [filas, busca]);
 
-    const cargando = visibles === null;
     const mias     = (visibles ?? []).filter(f => f.estado === 'mia');
     const abiertas = (visibles ?? []).filter(f => f.estado !== 'mia');
 
@@ -239,7 +222,7 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
                         Tuyas · descargalas para cargar la compra
                     </p>
                     {mias.map(f => (
-                        <FilaFactura key={f.document_id} fila={f} branchId={branchId} onCambio={cargar} />
+                        <FilaFactura key={f.document_id} fila={f} branchId={branchId} onCambio={onCambio} />
                     ))}
                 </div>
             )}
@@ -250,7 +233,7 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
                         Sin asignar
                     </p>
                     {abiertas.map(f => (
-                        <FilaFactura key={f.document_id} fila={f} branchId={branchId} onCambio={cargar} />
+                        <FilaFactura key={f.document_id} fila={f} branchId={branchId} onCambio={onCambio} />
                     ))}
                 </div>
             )}
@@ -260,17 +243,54 @@ function PanelFacturas({ branchId, selectorSucursal, onCambio }) {
 }
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
+//
+// ── Una sola consulta para el número Y la lista (2026-08-07) ───────────────
+// Reportado: «el widget es lento». No era la base —la consulta tarda 10 ms y
+// devuelve 22 filas— sino cuántas veces se pedía lo mismo:
+//
+//   1. al montar el tablero      → `contar_facturas_sala`
+//   2. al abrir el modal         → `get_facturas_sala`
+//   3. al terminar de cargar     → `contar_facturas_sala` OTRA VEZ (el panel
+//                                   llamaba `onCambio` al final de su carga)
+//
+// Y las tres corrían **la misma consulta pesada**: `contar_facturas_sala` es
+// literalmente `SELECT count(*) FROM get_facturas_sala(...)`, así que materializa
+// las 17 columnas —`items_text` incluido— para devolver un entero. El costo no
+// estaba en el SQL sino en los viajes: tres round-trips a Supabase, y el tercero
+// no aportaba un dato que no estuviera ya en la respuesta del segundo.
+//
+// Ahora la baldosa trae la lista al montarse y el número sale de contarla acá.
+// El servidor hace exactamente el mismo trabajo que antes hacía para el conteo
+// —la misma consulta— y a cambio **abrir el modal no pide nada**: los datos ya
+// están. El costo es el payload, medido: 14 kB para 22 filas.
+//
+// De paso se cierra un defecto que nadie había mirado: el conteo usaba el
+// DEFAULT de 45 días del RPC y la lista pedía 30, así que la baldosa prometía
+// 32 facturas y el panel mostraba 22. Ahora hay una sola ventana porque hay una
+// sola consulta.
 export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
-    const [pendientes, setPendientes] = useState(null);
+    const [filas, setFilas] = useState(null);
+    const [error, setError] = useState('');
 
-    // Sin la guarda de `!branchId`: `contarFacturasSala` ya devuelve 0 en ese
-    // caso, así que acá sólo duplicaba la regla — y de paso escribía estado de
-    // forma sincrónica dentro del efecto que la llama.
-    const contar = useCallback(() => {
-        contarFacturasSala(branchId).then(r => setPendientes(r.total));
+    // Sin `setFilas(null)` al recargar: era una escritura sincrónica dentro del
+    // efecto (render en cascada, lo marca `react-hooks/set-state-in-effect`) y
+    // encima parpadeaba. El esqueleto sale del estado inicial `null`, así que se
+    // ve en la PRIMERA carga; en las siguientes la lista anterior se queda hasta
+    // que llega la nueva, que es lo que conviene.
+    const cargar = useCallback(async () => {
+        const { filas: f, error: e } = await fetchFacturasSala(branchId, { dias: DIAS_VISIBLES });
+        setError(e?.message ?? '');
+        setFilas(f);
     }, [branchId]);
 
-    useEffect(() => { contar(); }, [contar]);
+    useEffect(() => { cargar(); }, [cargar]);
+
+    // Mismo criterio que tenía `contar_facturas_sala` en la base: lo que espera
+    // que alguien la tome. Lo que ya es mío no está esperando nada.
+    const pendientes = useMemo(
+        () => (filas === null ? null : filas.filter(f => f.estado === 'disponible' || f.estado === 'mia_linea').length),
+        [filas],
+    );
 
     return (
         <LanzadorSolicitud
@@ -282,13 +302,16 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
             vacio="Nada esperando"
             tono="brand"
             maxWidth="max-w-2xl"
-            descripcion="Tomá la factura de tu sala para cargar la compra"
+            descripcion="Toma la factura de tu sala para cargar la compra"
         >
             {() => (
                 <PanelFacturas
+                    filas={filas}
+                    error={error}
+                    cargando={filas === null}
                     branchId={branchId}
                     selectorSucursal={selectorSucursal}
-                    onCambio={contar}
+                    onCambio={cargar}
                 />
             )}
         </LanzadorSolicitud>

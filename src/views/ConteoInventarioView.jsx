@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -148,7 +148,19 @@ export default function ConteoInventarioView() {
     // El conteo cuya hoja de opciones está abierta, en el teléfono. Misma razón
     // que `aBorrar` para guardar la fila entera y no el id: la hoja tiene que
     // poder decir de qué conteo habla.
+    //
+    // **SON DOS ESTADOS, y esa es toda la corrección.** Con uno solo —`open={!!opciones}`
+    // y el cuerpo bajo `{opciones && …}`— cerrar acoplaba «qué conteo» con «está
+    // abierta»: al poner el conteo en null, el CUERPO se desmontaba en el acto
+    // mientras `ModalShell` seguía montado animando su salida. O sea que la hoja
+    // no se cerraba, desaparecía. Al arrastrarla no se notaba, porque el asa ya
+    // había movido el panel bajo el dedo antes de soltar; tocando afuera no hay
+    // nada previo y el salto queda a la vista. Es literalmente la lección que ya
+    // estaba escrita en `ModalShell` (v2.238.0): son dos props. El conteo se
+    // conserva mientras dura la salida y lo pisa la próxima apertura.
     const [opciones, setOpciones] = useState(null);
+    const [opcionesAbierto, setOpcionesAbierto] = useState(false);
+    const abrirOpciones = useCallback((c) => { setOpciones(c); setOpcionesAbierto(true); }, []);
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
 
@@ -365,7 +377,7 @@ export default function ConteoInventarioView() {
                             // tenerlo.
                             conOpciones={canEdit}
                             onAbrir={() => navigate(`/conteo-inventario/${c.id}`)}
-                            onOpciones={setOpciones}
+                            onOpciones={abrirOpciones}
                             trailing={(
                                 <span className="flex flex-col items-end gap-1">
                                     <Badge variant={es.variante} size="sm">{es.label}</Badge>
@@ -490,8 +502,8 @@ export default function ConteoInventarioView() {
                 `pointerdown` en captura, o sea el mismo con el que arrancó el
                 gesto (500ms, muy dentro de sus 1200ms de vigencia). */}
             <ModalShell
-                open={!!opciones}
-                onClose={() => setOpciones(null)}
+                open={opcionesAbierto}
+                onClose={() => setOpcionesAbierto(false)}
                 align="bottom"
                 maxWidthClass="max-w-none"
                 surface={null}
@@ -508,7 +520,10 @@ export default function ConteoInventarioView() {
                                 icon={ChevronRight}
                                 title="Abrir conteo"
                                 subtitle="Ver y capturar los renglones"
-                                onClick={() => { const id = opciones.id; setOpciones(null); navigate(`/conteo-inventario/${id}`); }}
+                                // Se cierra apagando el ABIERTO, nunca vaciando el
+                                // conteo: el cuerpo tiene que seguir dibujado
+                                // mientras la hoja hace su salida.
+                                onClick={() => { const id = opciones.id; setOpcionesAbierto(false); navigate(`/conteo-inventario/${id}`); }}
                             />
                             {puedeBorrar(opciones) ? (
                                 <ListRow
@@ -518,7 +533,7 @@ export default function ConteoInventarioView() {
                                     subtitle="Se borran los renglones y el historial"
                                     // Encadena a la confirmación de siempre, no borra
                                     // acá: el gesto acerca la acción, no la abarata.
-                                    onClick={() => { const c = opciones; setOpciones(null); setABorrar(c); }}
+                                    onClick={() => { setOpcionesAbierto(false); setABorrar(opciones); }}
                                 />
                             ) : (
                                 // Decir por qué no está es mejor que una hoja con una

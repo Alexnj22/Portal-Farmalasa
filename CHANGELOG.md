@@ -21,6 +21,121 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.6 — Rotar el teléfono: un recálculo por cuadro, no uno por evento
+
+Reportado el 2026-08-08: *«hay un error al pasar de horizontal a vertical, hay
+lag, media pantalla blanca, no es nada fluido»*. Son **dos problemas distintos** y
+esta versión ataca uno; el otro queda diagnosticado y sin tocar, con su motivo.
+
+**Lo arreglado — el lag.** `resize` no dispara una vez: al rotar dispara **decenas
+de veces**, durante toda la animación del sistema. Y colgaban de él dos trabajos
+caros, ninguno coalescido:
+
+- Tres `setState` en `AppLayout`, o sea el componente que envuelve el portal
+  entero — decenas de re-renders del shell completo mientras iOS ya está ocupado
+  recomponiendo la pantalla. Y no son `setState` que React descarte:
+  `isUltraDensity` mira el **alto**, así que al rotar cambia de valor de verdad.
+- `recomputePill`, que **mide** el nav con `getBoundingClientRect` — un reflow
+  sincrónico por evento, más el `ResizeObserver` disparando en paralelo.
+
+Los dos pasan a `requestAnimationFrame`: da igual cuántos eventos lleguen, se
+recalcula **una vez por cuadro**. La píldora sólo tiene que quedar bien al final
+del movimiento, no en cada paso intermedio.
+
+**Lo NO tocado — la media pantalla blanca, y por qué.** El sospechoso es
+`content-visibility: auto` en las fichas de `DataTable` (v2.520.1). Su
+`contain-intrinsic-size: auto` hace que cada ficha **recuerde el alto que tuvo la
+última vez que se pintó** — y tras rotar, ese alto recordado es el de la *otra*
+orientación, porque el ancho pasó de 844 a 390. O sea que todas se re-miden y
+re-pintan a la vez. Medido tras rotar: **5 fichas con `content-visibility` activo
+dentro del viewport**, con 122px de alto real contra los 96 estimados.
+
+Encaja con el síntoma, **pero quitarlo reintroduce el jetsam del iPhone** que se
+cerró hace dos días — la muerte súbita al scrollear listas largas, que es un
+crash y no una aspereza. Cambiar eso a ciegas para arreglar algo que no se puede
+reproducir sería un mal negocio.
+
+**Y no se puede reproducir acá:** en WebKit headless la rotación estabiliza en
+**210ms** y `resize` dispara **0 veces** — Playwright no lo emula. El proyecto ya
+tenía escrito que headless miente sobre performance; esta vez además no dispara
+el evento que causa el problema. Por eso esta versión sale con lo que se sostiene
+solo (coalescer trabajo que se hacía de más es correcto lo reproduzca o no) y el
+resto espera una prueba en el teléfono.
+
+F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
+## v2.524.5 — El filo corre en la mantenida, y la hoja se cierra animada
+
+Tres reportes sobre la lista de conteos en el teléfono, y los dos primeros
+resultaron ser **el mismo error**.
+
+### El destello en toda la vista y «no sé que va a abrir algo»
+
+> «Al tener presionado hay como un flash en toda la vista, se ve raro.»
+> «La presiono pero no sé que va a abrir algo, sólo se ve presionada. Activale
+> el efecto del borde.»
+
+La versión anterior encogía la tarjeta hasta `scale(.96)` durante la mantenida.
+Las dos quejas salen de ahí:
+
+- **No decía nada nuevo.** Encoger más es el mismo gesto del `:active`, más
+  grande. El vocabulario de «acá está pasando algo» en este portal es **el filo
+  que recorre el canto** (§1.6), no el tamaño.
+- **Y por eso destellaba.** Animar `transform` cuadro a cuadro sobre un elemento
+  con `backdrop-filter` obliga al motor a re-muestrear el fondo en cada uno, y
+  con los blobs de ambiente detrás eso repinta la capa entera. Es exactamente la
+  familia de reglas que ya está escrita en `gotaApertura.js` —el motivo por el
+  que la gota anima `clip-path` y **no** `transform`— y la razón por la que §1.6
+  declara el filo con `opacity`, que junto con `transform` son las dos
+  propiedades que el compositor mueve sin repintar nada.
+
+Ahora la mantenida corre `filo-corre` sobre el `::after` del elemento, y **una
+vuelta completa dura lo que dura la mantenida**: el barrido no es decorado, es la
+cuenta regresiva. Sigue siendo canónico — lo dispara `data-manteniendo`, así que
+cualquier fila que use el hook lo hereda sin escribir una clase.
+
+**El filo ya existía; lo que le faltaba a un teléfono era un disparador.**
+`filo-corre` colgaba sólo de `:hover`, y el hover vive dentro de
+`@media (hover: hover)`: en un dedo el canto no corría **nunca**. La mantenida
+resultó ser el gesto que le faltaba.
+
+**Y hubo que declararlo con los tres selectores de §1.6.** Escrito sólo como
+`[data-manteniendo="true"]::after` —(0,1,0)— perdía contra
+`[data-surface]:not([data-surface="sheet"])::after`, que es (0,2,0): la regla
+existía, la animación corría, y `opacity` se quedaba en 0. O sea que el filo
+barría un pseudo invisible. Se vio midiendo —`animationName` = `filo-corre` y
+`opacity` = 0 en los 17 fotogramas de la mantenida—, no mirando la pantalla.
+
+### La hoja no se cerraba: desaparecía
+
+> «Al estar el modal abierto, si lo cierro presionando afuera (no deslizando) no
+> hace animación de cierre, sólo se desaparece.»
+
+`open={!!opciones}` con el cuerpo bajo `{opciones && …}` acoplaba **«qué conteo»**
+con **«está abierta»**. Al cerrar, poner el conteo en `null` desmontaba el cuerpo
+en el acto mientras `ModalShell` seguía montado animando su salida: la hoja no se
+cerraba, desaparecía.
+
+Por qué se notaba sólo tocando afuera: **arrastrando, el asa ya movió el panel
+bajo el dedo antes de soltar**, así que el recorrido se vio igual. Tocando el
+fondo no hay nada previo y el salto queda a la vista.
+
+Son dos estados, y es la lección que ya estaba escrita en `ModalShell`
+(v2.238.0) para exactamente este síntoma. El conteo se conserva mientras dura la
+salida y lo pisa la próxima apertura.
+
+**Verificado en WebKit/iPhone 13**: `filo-corre` con `animation-duration` de
+`0.5s` leída del var, `opacity` del `::after` en **1** durante la mantenida y
+**0** en reposo, y **ninguna animación propia** en el elemento — o sea que el
+`transform` por cuadro, que era la fuente del destello, ya no existe. Y una
+captura a los **110ms** del toque afuera agarra la hoja **a mitad del cierre**:
+contrayéndose hacia la fila, con las esquinas redondeándose hacia la gota y la
+segunda opción ya recortada. Antes de esto, a los 110ms no había nada que
+capturar.
+
+Canon actualizado en `DESIGN.md` §32.7, incluida la trampa de especificidad y la
+regla de los dos estados para cualquier hoja del portal.
+
 ## v2.524.4 — La franja del notch: el cajón oculto asomaba 31px acostado
 
 Reportado con una captura: acostado se veía una franja clara pegada al notch, en

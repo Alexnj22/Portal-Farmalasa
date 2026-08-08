@@ -5031,23 +5031,52 @@ nada. Se ofrece sólo si hay más de una opción real: un gesto que abre un men�
 con lo único que el toque ya hace es peor que no tenerlo. Y como un gesto que no
 se ve no existe, la lista lleva una línea al pie que lo anuncia.
 
-**El acuse visual es canónico y no se escribe por vista.** El hook marca
-`data-manteniendo="true"` en el elemento y `index.css` (§1.6, «La mantenida»)
-dibuja el encogido progresivo — mismo contrato que `data-surface` para el
-material y `data-interactive` para el gel. Es una **animación** y no una
-transición: una animación en curso le gana a cualquier declaración normal sin
-pelear especificidad contra el `:active` que también está encendido, no arrastra
-las demás propiedades que el componente transiciona, y `forwards` sostiene el
-último fotograma. La duración entra por `--pulsacion-retardo`, que el hook
-inyecta desde la misma constante que gobierna su `setTimeout` — una sola fuente
-de verdad, empujada de JS a CSS (el camino inverso es lo que ya se pagó en
-`ModalShell`, v2.238.0). Con `prefers-reduced-motion` la escala sale y queda un
-atenuado instantáneo: el acuse no se puede apagar del todo, porque **es** el
+**El acuse visual es canónico y no se escribe por vista: es el FILO del canto.**
+El hook marca `data-manteniendo="true"` en el elemento y `index.css` (§1.6, «La
+mantenida») corre `filo-corre` sobre su `::after` — mismo contrato que
+`data-surface` para el material y `data-interactive` para el gel. Una vuelta
+completa del filo dura lo que dura la mantenida, así que el barrido **es** la
+cuenta regresiva, no un adorno. La duración entra por `--pulsacion-retardo`, que
+el hook inyecta desde la misma constante que gobierna su `setTimeout` — una sola
+fuente de verdad, empujada de JS a CSS (el camino inverso es lo que ya se pagó
+en `ModalShell`, v2.238.0). Con `prefers-reduced-motion` el filo queda puesto,
+marcado y quieto: el acuse no se puede apagar del todo, porque **es** el
 indicador de que el gesto está corriendo.
 
-Medido en WebKit/iPhone 13 el 2026-08-08: `animationName` = `pulsacion-mantener`
-con `animation-duration` de `0.5s` leída del var, la escala baja hasta `0.96`
-exacto, y al disparar vuelve sola porque el atributo pasa a `"false"`.
+**No se anima `transform`, y el motivo es medido.** La primera versión encogía la
+tarjeta hasta `scale(.96)` durante la mantenida, y el usuario reportó las dos
+cosas que estaban mal: que no decía nada nuevo —encoger más es el mismo gesto del
+`:active`, más grande— y que producía **un destello en toda la vista**. Animar
+`transform` cuadro a cuadro sobre un elemento con `backdrop-filter` obliga al
+motor a re-muestrear el fondo en cada uno, y con los blobs de ambiente detrás eso
+repinta la capa entera. Es la misma familia de reglas por la que `gotaApertura.js`
+anima `clip-path` y no `transform`. El filo, en cambio, es `opacity` — una de las
+dos propiedades que el compositor mueve sin repintar.
+
+**El filo hay que declararlo con los TRES selectores** de §1.6 más el atributo.
+Escrito sólo como `[data-manteniendo="true"]::after` —(0,1,0)— pierde contra
+`[data-surface]:not([data-surface="sheet"])::after`, que es (0,2,0): la regla
+existe, la animación corre, y `opacity` se queda en 0, o sea que el filo barre un
+pseudo invisible. Medido así antes de corregirlo. Es el mismo motivo por el que
+el bloque de `:hover` de §1.6 también repite los tres.
+
+**Y un gesto táctil era justo lo que le faltaba al filo.** `filo-corre` colgaba
+sólo de `:hover`, dentro de `@media (hover: hover)` — o sea que en un teléfono el
+canto no corría nunca.
+
+Medido en WebKit/iPhone 13 el 2026-08-08: `animationName` = `filo-corre` con
+`animation-duration` de `0.5s` leída del var, `opacity` del `::after` en 1
+durante la mantenida y 0 en reposo, y **ninguna animación propia** en el
+elemento (la de escala se retiró).
+
+**Una hoja que se cierra necesita DOS estados, no uno.** `open={!!item}` con el
+cuerpo bajo `{item && …}` acopla «qué registro» con «está abierta»: al cerrar, el
+cuerpo se desmonta en el acto mientras `ModalShell` sigue montado animando su
+salida, así que la hoja no se cierra — desaparece. Arrastrándola no se nota,
+porque el asa ya movió el panel bajo el dedo antes de soltar; **tocando afuera el
+salto queda a la vista**, y así se reportó. Es la lección ya escrita en
+`ModalShell` (v2.238.0), y vale para todo llamador: el registro se conserva
+mientras dura la salida y lo pisa la próxima apertura.
 
 **Una fila suelta sobre la página va con `surface="card"`.** `ListRow` nace como
 fila *dentro* de un contenedor —menú, flyout—, así que en reposo no pinta fondo

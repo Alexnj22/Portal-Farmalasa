@@ -218,15 +218,35 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return { ADMIN: 'Administrador', EMPLEADO: 'Empleado' }[sr] || sr || '';
     })();
 
+    // ── Un solo recálculo por cuadro, no uno por evento ───────────────────────
+    // `resize` no dispara una vez: **al rotar el teléfono dispara decenas**,
+    // durante toda la animación del sistema. Cada uno hacía tres `setState` en el
+    // componente que envuelve el portal entero, así que la rotación pedía
+    // decenas de re-renders del shell completo mientras iOS ya está ocupado
+    // recomponiendo la pantalla. Es la mitad del «hay lag, no es nada fluido»
+    // que reportó el usuario el 2026-08-08.
+    //
+    // `requestAnimationFrame` los coalesce: da igual cuántos eventos lleguen,
+    // se recalcula **una vez por cuadro**. Y `isUltraDensity` mira el ALTO, así
+    // que al rotar sí cambia de valor — no es un `setState` que React descarte.
     useEffect(() => {
-        const check = () => {
+        let pendiente = 0;
+        const aplicar = () => {
+            pendiente = 0;
             setIsMobile(window.innerWidth < 1024);
             setIsWide(window.innerWidth >= 1280);
             setIsUltraDensity(window.innerWidth < 1152 || window.innerHeight < 700);
         };
-        check();
+        const check = () => {
+            if (pendiente) return;
+            pendiente = requestAnimationFrame(aplicar);
+        };
+        aplicar();
         window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
+        return () => {
+            if (pendiente) cancelAnimationFrame(pendiente);
+            window.removeEventListener('resize', check);
+        };
     }, []);
 
     useEffect(() => {
@@ -479,10 +499,25 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     useEffect(() => {
         const navEl = navRef.current;
         if (!navEl) return;
-        const ro = new ResizeObserver(() => recomputePill());
+        // Coalescido por el mismo motivo que el de arriba: al rotar, `resize` y
+        // el `ResizeObserver` disparan a la vez y decenas de veces, y cada
+        // llamada MIDE el nav (lee `getBoundingClientRect`) — o sea que fuerza
+        // un reflow sincrónico por evento, justo mientras el sistema recompone
+        // la pantalla. Uno por cuadro alcanza: la píldora sólo tiene que quedar
+        // bien al final del movimiento, no en cada paso intermedio.
+        let pendiente = 0;
+        const pedir = () => {
+            if (pendiente) return;
+            pendiente = requestAnimationFrame(() => { pendiente = 0; recomputePill(); });
+        };
+        const ro = new ResizeObserver(pedir);
         ro.observe(navEl);
-        window.addEventListener('resize', recomputePill);
-        return () => { ro.disconnect(); window.removeEventListener('resize', recomputePill); };
+        window.addEventListener('resize', pedir);
+        return () => {
+            if (pendiente) cancelAnimationFrame(pendiente);
+            ro.disconnect();
+            window.removeEventListener('resize', pedir);
+        };
     }, [recomputePill]);
 
     // Revela el ítem activo SOLO al navegar. Antes también dependía de

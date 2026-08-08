@@ -2863,50 +2863,58 @@ thead.sticky,
   transform: translateY(1px);
 }
 
-/* ── La mantenida: el acuse de que el gesto está corriendo (2026-08-08) ────
+/* ── La mantenida: el filo corre mientras el dedo sostiene (2026-08-08) ────
    Lo pone `usePulsacionLarga` (`src/hooks/`) marcando `data-manteniendo` en el
    elemento que se está presionando. **Canónico y no de una vista**: cualquier
    fila o tarjeta que use ese hook lo hereda sin escribir una clase, igual que
    `data-surface` trae el material y `data-interactive` el gel.
 
    Por qué hace falta: entre que el dedo apoya y que la hoja abre pasan 500ms, y
-   el `:active` de siempre es un `scale(.994)` pensado para un toque — se ve
-   igual sostenerlo que rozarlo. Sin este acuse, medio segundo de nada se lee
-   como que la pantalla no respondió, y el dedo se levanta justo antes de que
-   dispare.
+   el `:active` de siempre es un `scale(.994)`. Es el vocabulario de un TOQUE:
+   dice «te leí», no «esto va a abrir algo». Reportado así — «la presiono pero no
+   sé que va a abrir algo, sólo se ve presionada».
 
-   Es una ANIMACIÓN y no una transición, por tres razones concretas:
+   ── Por qué es el FILO y no una escala ─────────────────────────────────
+   La primera versión encogía la tarjeta hasta `scale(.96)` durante la mantenida.
+   Dos problemas, y el usuario reportó los dos:
 
-   · Una animación en curso le gana a cualquier declaración normal sin importar
-     la especificidad, así que no hay que pelearle a
-     `[data-surface][data-interactive]:active` —que también está encendido
-     mientras el dedo apoya— ni al `active:scale` que traiga el componente.
-   · `transition-duration` habría alcanzado a TODAS las propiedades que el
-     componente ya transiciona (fondo, borde, color), estirándolas a 500ms.
-   · `forwards` sostiene el último fotograma hasta que el atributo se va. Es la
-     lección de `ModalShell` (v2.238.0): la salida se sostiene con `fill-mode`,
-     no con un número.
+   · **No decía nada nuevo.** Encoger más es el mismo gesto del `:active`, más
+     grande. El vocabulario de «acá está pasando algo» en este portal es el filo
+     que recorre el canto (§1.6), no el tamaño.
+   · **Producía un destello en toda la vista.** Animar `transform` cuadro a
+     cuadro sobre un elemento con `backdrop-filter` obliga al motor a
+     re-muestrear el fondo en cada uno, y con los blobs de ambiente detrás eso
+     repinta la capa entera. Es la misma familia de reglas que ya está escrita en
+     `gotaApertura.js` —por eso la gota anima `clip-path` y NO `transform`— y la
+     razón por la que §1.6 declara el filo con `opacity`, que junto con
+     `transform` son las dos propiedades que el compositor mueve sin repintar.
 
-   Y la duración NO se escribe acá: entra por `--pulsacion-retardo`, que el hook
-   inyecta desde su propia constante. Un solo número, el que ya gobierna el
-   `setTimeout` — emparejar a mano un timer de JS con una duración de CSS es
-   exactamente lo que este proyecto ya pagó una vez. */
-@keyframes pulsacion-mantener {
-  from { transform: translateY(var(--card-lift-activo, 0px)) scale(1); }
-  to   { transform: translateY(var(--card-lift-activo, 0px)) scale(var(--pulsacion-escala, .96)); }
-}
-[data-manteniendo="true"] {
-  animation: pulsacion-mantener var(--pulsacion-retardo, 500ms) cubic-bezier(.33, 0, .67, 1) forwards;
-}
-/* En Solid se hunde en vez de ceder — el mismo vocabulario que su `:active`. */
-[data-theme="solid"]      [data-manteniendo="true"],
-[data-theme="solid-dark"] [data-manteniendo="true"] {
-  --pulsacion-escala: .985;
-  animation-name: pulsacion-mantener-solid;
-}
-@keyframes pulsacion-mantener-solid {
-  from { transform: translateY(0) scale(1); }
-  to   { transform: translateY(2px) scale(var(--pulsacion-escala, .985)); }
+   El filo ya existe, con su animación y su gradiente cónico: lo único que le
+   faltaba a un teléfono es un disparador. `filo-corre` cuelga de `:hover`, y el
+   hover vive dentro de `@media (hover: hover)` — o sea que en un dedo el canto
+   NUNCA corría. La mantenida es exactamente el gesto que le faltaba.
+
+   Y una vuelta completa del filo dura lo que dura la mantenida: el barrido no
+   es decorado, es la cuenta regresiva. La duración entra por
+   `--pulsacion-retardo`, que el hook inyecta desde la MISMA constante que
+   gobierna su `setTimeout` — un solo número, empujado de JS a CSS. Emparejar a
+   mano un timer con una duración que vive en CSS es lo que este proyecto ya
+   pagó una vez (`ModalShell`, v2.238.0).
+
+   ── Los TRES selectores, y por qué no alcanza uno ───────────────────────
+   Son los mismos tres con los que se declara el filo arriba, con el atributo
+   encima. Escrito sólo como `[data-manteniendo="true"]::after` —(0,1,0)— perdía
+   contra `[data-surface]:not([data-surface="sheet"])::after`, que es (0,2,0):
+   la regla existía, la animación corría, y `opacity` se quedaba en 0. O sea que
+   el filo barría el canto en un pseudo invisible. Medido antes de corregirlo:
+   `animationName` = `filo-corre` y `opacity` = 0 en los 17 fotogramas de la
+   mantenida. Es el mismo motivo por el que el bloque de `:hover` de arriba
+   también repite los tres en vez de escribir uno. */
+[data-surface]:not([data-surface="sheet"])[data-manteniendo="true"]::after,
+[data-interactive][data-manteniendo="true"]::after,
+[data-surface] :is(button, a[href], [role="button"])[data-manteniendo="true"]::after {
+  opacity: 1;
+  animation: filo-corre var(--pulsacion-retardo, 500ms) cubic-bezier(.35, 0, .2, 1) forwards;
 }
 
 
@@ -3425,11 +3433,15 @@ a:focus-visible,
   /* El acuse de la mantenida no se puede apagar a secas: ES el indicador de
      que el gesto está corriendo, y sin él quedan 500ms de nada que se leen
      como que la pantalla no respondió — el mismo caso que el pulso del campo
-     de PIN de arriba. Se cambia el medio: la escala sale y queda un atenuado
-     instantáneo, que acusa sin mover nada. */
-  [data-manteniendo="true"] {
+     de PIN de arriba. Se congela en el estado encendido: el filo queda puesto,
+     marcado y quieto, sin recorrer el canto.
+
+     `opacity` con importancia además de la animación: la regla base del filo
+     es (0,2,0) y ésta (0,1,0), o sea que sin el `!important` el pseudo se
+     quedaría invisible — el mismo empate que hubo que resolver allá. */
+  [data-manteniendo="true"]::after {
     animation: none !important;
-    opacity: .72;
+    opacity: 1 !important;
   }
 
   /* — Reducir a fade 120ms (sin transform ni filter) ————————— */

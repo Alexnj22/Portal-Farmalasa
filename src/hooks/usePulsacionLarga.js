@@ -126,7 +126,9 @@ export function usePulsacionLarga({ alMantener, alTocar, activo = true, retardo 
         // El acuse sale por acá y no por una clase que el llamador escriba: es
         // el mismo contrato de `data-surface` (el material) y `data-interactive`
         // (el gel) — el atributo lo pone quien sabe, y `index.css` lo dibuja
-        // para todos. Ver «La mantenida» en index.css §1.6.
+        // para todos. Ver «La mantenida» en index.css §1.6: lo que corre es el
+        // FILO del canto, que es el vocabulario del portal para «acá está
+        // pasando algo», y una vuelta completa dura lo que dura la mantenida.
         //
         // El atributo va SIEMPRE, en `"true"`/`"false"`: un atributo que
         // aparece y desaparece hace que el selector no exista en reposo, y

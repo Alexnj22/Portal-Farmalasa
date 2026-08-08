@@ -21,6 +21,70 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.516.0 — Caja negra para el fallo del iPhone, y el esqueleto de tabla en fichas
+
+**La hipótesis del desenfoque estaba muerta desde el principio, y ahora se sabe
+por qué.** El fallo del iPhone —«se recarga la página, se pone negro»— se
+persiguió tres veces por el lado del `backdrop-filter`: v2.507.1, v2.508.2 y la
+regla de anidados de v2.515.0. Las tres fallaron, y el motivo es medible:
+**la cuenta del usuario usa el tema `solid`**, donde `--backdrop-modal`,
+`--backdrop-dropdown` y `--backdrop-card` valen `none`. En su teléfono nunca
+hubo un desenfoque que romper. Consultado en `user_dashboard_prefs`: 7 cuentas
+en `solid`, 3 en `liquid`, 1 en `solid-dark`, 5 sin preferencia — la del
+reporte, en `solid`.
+
+(Lo de v2.515.0 no se revierte: quitar un blur dentro de otro sigue siendo
+correcto y sigue ahorrando dos pasadas de compositor en los temas Liquid. Lo que
+cambia es que **no era esto**.)
+
+**Lo que sí apareció, y es un bug real: los chunks del build anterior
+desaparecen.** Verificado contra producción — de 8 chunks del despliegue
+inmediatamente anterior, **8 devuelven `200 text/html`**, incluido el propio
+chunk de entrada. La causa es el rewrite de `vercel.json`, que atrapaba
+**también** `/assets/*`: un archivo que ya no existe no da 404, da `index.html`.
+Y eso es exactamente lo que `main.jsx` convierte en `window.location.reload()`
+al recibir `vite:preloadError` — o sea, la única cosa en todo el código que
+literalmente «recarga la página».
+
+Encaja con que sea el iPhone y no el escritorio: `index.html` ya documenta que
+la app agregada a inicio en iOS **se suspende en vez de recargarse y puede vivir
+días con el bundle viejo**. Un escritorio se recarga solo; el teléfono no.
+
+Dos correcciones:
+
+- `vercel.json` excluye `/assets/` del rewrite (`/((?!assets/).*)`), así que un
+  chunk que ya no está devuelve **404 honesto** en vez de HTML disfrazado de
+  JavaScript. Los archivos que sí existen los sigue sirviendo el sistema de
+  archivos, antes del rewrite.
+- El manejador de `vite:preloadError` ahora **anota siempre**, recargue o no. El
+  caso que NO recarga —dentro de la ventana de 30 s— era el que no dejaba
+  rastro: el chunk no carga, la vista no aparece y no pasa nada visible.
+
+**NO está confirmado que ésta sea la causa del reporte.** No se pudo reproducir
+en WebKit: los chunks de la sesión ya estaban cargados, así que ningún toque
+pidió uno nuevo. Es un bug verificado en producción y el único mecanismo del
+código que recarga la página; que sea *el* del iPhone hay que comprobarlo.
+
+**Para comprobarlo: una caja negra.** `src/utils/cajaNegra.js` es un anillo de 40
+entradas en `localStorage` —que sobrevive a la recarga, que es justo lo que la
+consola no hace— escrito desde `main.jsx` en el arranque, en cada error de JS,
+en cada recurso que no carga, en cada promesa sin capturar, en cada cambio de
+visibilidad y en cada `vite:preloadError`. Se lee en **`/ios-test`**, que además
+ahora dice si la app corre agregada a inicio o en el navegador, y qué versión
+está corriendo de verdad. No guarda nada de negocio.
+
+**Y el esqueleto de tabla, en fichas.** Reportado: «los canónicos de tabla, al
+estar en estado cargando se ve como tabla y no como cards en móvil».
+`DataTable` calculaba `enFichas` con `&& !isEmpty && !loading`, así que en el
+teléfono el esqueleto **y el estado vacío** se pintaban como tabla —con su
+`minWidth` de 600-720px y su carril horizontal— y la vista saltaba de tabla a
+fichas al llegar los datos. Ahora el modo del teléfono depende del ancho y nada
+más. El hueso copia la geometría de la ficha real (identidad ancha a la
+izquierda, ancla corta a la derecha, línea de contexto debajo) en vez de una
+fila de barras: un esqueleto que no tiene la forma de lo que viene después no es
+un esqueleto, es otro layout que se reemplaza. Medido en iPhone 13 (WebKit) a
+los 400 ms: 8 fichas de hueso, **cero `<table>`**, sin desborde horizontal.
+
 ## v2.515.2 — Facturas de mi Sala: una consulta en vez de tres
 
 Reportado: «el widget es lento». **No era la base.** Medido en producción, la

@@ -1,6 +1,10 @@
-import React from 'react';
-import { Smartphone, CheckCircle2, AlertCircle, Layers, Move } from 'lucide-react';
+import React, { useState } from 'react';
+import { Smartphone, CheckCircle2, AlertCircle, Layers, Move, Trash2, RefreshCw } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
+import Button from '../components/common/Button';
+import Badge from '../components/common/Badge';
+import { leerCajaNegra, limpiarCajaNegra, entorno } from '../utils/cajaNegra';
+import { APP_VERSION } from '../version';
 
 const Card = ({ title, children, accent }) => (
     <div data-surface="card" className={`p-4 ${accent || 'border-border-card'}`}>
@@ -26,6 +30,10 @@ const IOSTestView = () => {
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/.test(ua);
     const isCapacitor = !!(window.Capacitor);
+    // Se leen UNA vez al montar. Si se leyera en cada render, el propio acto de
+    // mirar el registro lo movería.
+    const [registro, setRegistro] = useState(() => leerCajaNegra());
+    const [env] = useState(() => entorno());
 
     return (
         <GlassViewLayout icon={Smartphone} title="Vista de Prueba iOS">
@@ -48,6 +56,59 @@ const IOSTestView = () => {
                     <Row label="Capacitor" value={isCapacitor ? 'Activo' : 'No detectado'} ok={isCapacitor} />
                     <Row label="viewport-fit" value="cover" ok={true} />
                     <Row label="status-bar" value="black-translucent" ok={true} />
+                    {/* Standalone es LA diferencia contra cualquier emulador: iOS suspende
+                        la app agregada a inicio en vez de recargarla, así que puede seguir
+                        corriendo código de varios despliegues atrás. Saberlo cambia el
+                        diagnóstico, y no se puede deducir del código. */}
+                    <Row label="Modo" value={env.standalone ? 'Agregada a inicio' : 'Navegador'} />
+                    <Row label="Versión que corre" value={APP_VERSION} />
+                    <Row label="Pantalla" value={env.pantalla} />
+                </Card>
+
+                {/* ── Caja negra ────────────────────────────────────────────
+                    Lo que quedó anotado del último rato, incluida la parte
+                    ANTERIOR a una recarga. Existe porque el fallo del teléfono
+                    recarga la página —y con ella se lleva la consola— y ningún
+                    emulador lo reproduce. Acá se puede leer y fotografiar. */}
+                <Card title="Caja negra — últimos eventos" accent="border-brand/30">
+                    <p className="text-body-sm text-content-3 leading-snug mb-2">
+                        Si la pantalla se recarga sola o se queda negra, vuelve aquí y mira las
+                        últimas líneas: sobreviven a la recarga.
+                    </p>
+                    {registro.length === 0 ? (
+                        <p className="text-body-sm text-content-3 italic py-2">Sin eventos registrados.</p>
+                    ) : (
+                        <div className="flex flex-col gap-1 mt-1 max-h-80 overflow-y-auto">
+                            {[...registro].reverse().map((e, i) => (
+                                <div key={i} className="flex items-start gap-2 py-1 border-b border-divider last:border-0">
+                                    <Badge size="sm" className="shrink-0"
+                                        variant={/error|fallido|no-cargo|sin-capturar/.test(e.tipo) ? 'danger' : 'neutral'}>
+                                        {e.tipo}
+                                    </Badge>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-caption text-content-2 break-words leading-snug">
+                                            {e.msg || e.src || e.url || e.estado || e.version || '—'}
+                                        </p>
+                                        <p className="text-micro text-content-3">
+                                            {e.t?.slice(11, 19)} · {e.ruta}
+                                            {e.recargando === true  && ' · recargó'}
+                                            {e.recargando === false && ' · NO recargó (dentro de los 30s)'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2 mt-3">
+                        <Button variant="secondary" size="sm" icon={Trash2}
+                            onClick={() => { limpiarCajaNegra(); setRegistro([]); }}>
+                            Vaciar
+                        </Button>
+                        <Button variant="secondary" size="sm" icon={RefreshCw}
+                            onClick={() => setRegistro(leerCajaNegra())}>
+                            Actualizar
+                        </Button>
+                    </div>
                 </Card>
 
                 {/* Qué verificar */}

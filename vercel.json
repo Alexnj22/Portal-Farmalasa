@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/oss-proxy/:path*", "destination": "/api/oss-proxy" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

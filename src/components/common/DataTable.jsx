@@ -228,8 +228,39 @@ export function DataTable({
   const childCount = React.Children.count(children);
   const isEmpty = !loading && childCount === 0;
   const enTelefono = useMediaQuery('(max-width: 1023.98px)');
-  const enFichas = enTelefono && movil !== false && !isEmpty && !loading;
+  // El modo del TELÉFONO no depende de si hay datos: depende del ancho. Se
+  // separa de `enFichas` porque cargando y vacío también son estados de esta
+  // vista, y hasta ahora los dos se caían al modo tabla.
+  const enMovil  = enTelefono && movil !== false;
+  const enFichas = enMovil && !isEmpty && !loading;
   const limpias = enFichas ? limpiarFilas(children) : null;
+
+  // ── Cargando y vacío TAMBIÉN son fichas (2026-08-07) ─────────────────────
+  // `enFichas` llevaba `&& !isEmpty && !loading`, así que en el teléfono el
+  // esqueleto y el estado vacío se pintaban como TABLA —con su `minWidth` y su
+  // carril horizontal— y recién al llegar los datos la vista saltaba a fichas.
+  // Reportado tal cual: «los canónicos de tabla, al estar en estado cargando se
+  // ve como tabla y no como cards en móvil».
+  //
+  // Un esqueleto que no tiene la forma de lo que viene después no es un
+  // esqueleto: es otro layout que se reemplaza. Por eso el hueso copia la
+  // geometría de `Cuerpo` —identidad ancha a la izquierda, ancla corta a la
+  // derecha, línea de contexto debajo— y no una fila de barras.
+  if (enMovil && (loading || isEmpty)) {
+    return (
+      <TableCtx.Provider value={tk}>
+        <div className="flex flex-col gap-2">
+          {toolbar && <div className="px-1 pb-1">{toolbar}</div>}
+          {loading
+            ? Array.from({ length: skeletonRows }, (_, i) => (
+                <FichaEsqueleto key={`sk-${i}`} i={i} pulse={tk.skeletonPulse} />
+              ))
+            : <VacioMovil empty={empty} tk={tk} />}
+          {footer && <div className="px-1 pt-1">{footer}</div>}
+        </div>
+      </TableCtx.Provider>
+    );
+  }
 
   if (enFichas && limpias.hijos.length) {
     return (
@@ -391,6 +422,51 @@ export function DataTable({
 
       </div>
     </TableCtx.Provider>
+  );
+}
+
+// ── El hueso de una ficha ─────────────────────────────────────────────────────
+// Copia la geometría de `Cuerpo`: identidad ancha arriba a la izquierda, ancla
+// corta a la derecha, línea de contexto debajo. El ancho de la identidad varía
+// con el índice —igual que hace el esqueleto de la tabla— para que la lista no
+// se lea como un patrón de barras idénticas, que es lo que delata un esqueleto
+// falso. La fórmula es determinista a propósito: `Math.random()` daría un ancho
+// nuevo en cada render y el hueso latiría.
+function FichaEsqueleto({ i, pulse }) {
+  const wIdent = 52 + ((i * 13) % 30);
+  const wCtx   = 34 + ((i * 7) % 22);
+  return (
+    <div data-surface="card" aria-hidden="true"
+      className="w-full px-3.5 py-3 rounded-card">
+      <div className="flex items-baseline justify-between gap-3">
+        <div className={`h-[13px] rounded-full animate-pulse ${pulse}`} style={{ width: `${wIdent}%` }} />
+        <div className={`h-[15px] w-14 shrink-0 rounded-full animate-pulse ${pulse}`} />
+      </div>
+      <div className={`h-[9px] mt-2 rounded-full animate-pulse ${pulse}`} style={{ width: `${wCtx}%` }} />
+    </div>
+  );
+}
+
+// El estado vacío en el teléfono. Mismo contenido que el de la tabla —ícono,
+// mensaje, subtexto y acción— pero sin `<table>` alrededor: envuelto en una,
+// arrastraba el `minWidth` de 600-720px y con él un carril horizontal en una
+// pantalla donde no hay ninguna columna que deslizar.
+function VacioMovil({ empty, tk }) {
+  return (
+    <div data-surface="card" className="w-full px-4 py-14 rounded-card">
+      <div className="flex flex-col items-center gap-3 text-center">
+        {empty.icon && <empty.icon size={32} strokeWidth={1.5} className={tk.emptyIcon} />}
+        <p className={`text-body font-bold ${tk.emptyText}`}>{empty.message}</p>
+        {empty.subtext && (
+          <p className={`text-label ${tk.emptyText} opacity-70`}>{empty.subtext}</p>
+        )}
+        {empty.action && (
+          <Button variant="primary" size="sm" className="mt-1" onClick={empty.action.onClick}>
+            {empty.action.label}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
 

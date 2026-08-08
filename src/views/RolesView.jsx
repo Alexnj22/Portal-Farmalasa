@@ -93,13 +93,27 @@ const RolesView = ({ openModal }) => {
         setZoom(Math.min(Math.max(newZoom, 0.3), 3));
     }, [zoom, activeTab]);
 
-    const handleMouseDown = (e) => {
+    // ── El lienzo se arrastra con el DEDO, no sólo con el mouse ───────────────
+    // Eran `onMouseDown/Move/Up`, y en un teléfono eso no existe para un
+    // arrastre: WebKit sintetiza un clic tras el tap, pero nunca el movimiento
+    // continuo. Como el visor es `overflow-hidden` a propósito —es un lienzo con
+    // pan y zoom, no una lista— el organigrama quedaba **inalcanzable**: medido
+    // el 2026-08-08, **113 elementos** fuera de cuadro en `roles#chart`, hasta
+    // 813px de distancia, sin ninguna forma de traerlos.
+    //
+    // Los eventos de puntero unifican mouse, dedo y lápiz en un solo camino, así
+    // que esto no es «agregar el caso táctil»: es dejar de tener dos.
+    // `setPointerCapture` mantiene el arrastre aunque el dedo se salga del
+    // elemento —sin él, soltar fuera dejaba el lienzo pegado al puntero—, y
+    // reemplaza al `onMouseLeave` que hacía ese trabajo a medias.
+    const handlePointerDown = (e) => {
         if (e.target.closest('.org-node-card') || e.target.closest('button')) return;
         setIsDragging(true);
         dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+        e.currentTarget.setPointerCapture?.(e.pointerId);
     };
 
-    const handleMouseMove = (e) => {
+    const handlePointerMove = (e) => {
         if (!isDragging) return;
         setPan({
             x: e.clientX - dragStart.current.x,
@@ -107,8 +121,9 @@ const RolesView = ({ openModal }) => {
         });
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = (e) => {
         setIsDragging(false);
+        e?.currentTarget?.releasePointerCapture?.(e.pointerId);
     };
 
     useEffect(() => {
@@ -757,11 +772,16 @@ const RolesView = ({ openModal }) => {
                         <div
                             ref={orgChartContainerRef}
                             className={`relative flex flex-col select-none bg-surface-card border border-border-card shadow-[var(--shadow-glass-4)] transition-all duration-[var(--dur-lento)] overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-header'}`}
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseUp}
-                            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                            onPointerDown={handlePointerDown}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerCancel={handlePointerUp}
+                            // `touchAction: none` es la otra mitad y sin ella el
+                            // dedo no arrastra nada: el navegador se queda el
+                            // gesto para scrollear la página y jamás llegan los
+                            // `pointermove`. No afecta a los botones de la barra
+                            // —un toque sigue siendo un toque—, sólo al lienzo.
+                            style={{ cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
                         >
                             {/* §15.1 · la barra flota FIJA sobre un lienzo que se
                                 arrastra, así que tiene la misma obligación que un

@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.524.10 — El organigrama se arrastra con el dedo
+
+El barrido marcaba **113 elementos fuera de cuadro** en `roles#chart`, hasta
+813px de distancia. Parecía un problema de tamaño y era de **alcance**: el visor
+es `overflow-hidden` a propósito —es un lienzo con pan y zoom, no una lista— pero
+el arrastre escuchaba `onMouseDown/Move/Up`, y en un teléfono eso no existe para
+un movimiento continuo. WebKit sintetiza un clic tras el tap; nunca el arrastre.
+
+O sea que el organigrama estaba **completo y era inalcanzable**: sólo se veía el
+trozo que cupiera en 390px, sin ninguna forma de traer el resto.
+
+Los eventos de puntero unifican mouse, dedo y lápiz, así que esto no es «agregar
+el caso táctil» sino dejar de tener dos caminos. Con `setPointerCapture`, que
+mantiene el arrastre aunque el dedo se salga del elemento —y reemplaza al
+`onMouseLeave` que hacía ese trabajo a medias—, y con **`touch-action: none`**,
+que es la otra mitad: sin ella el navegador se queda el gesto para scrollear la
+página y los `pointermove` no llegan nunca.
+
+**El desborde sigue en 113 y está bien que siga.** El árbol es más grande que la
+pantalla por definición; lo que cambió es que ahora se llega. Medir el desborde
+no podía verificar este arreglo — se verificó **arrastrando**: el lienzo pasa de
+`matrix(1,0,0,1,0,0)` a `matrix(1,0,0,1,-120,0)` con un arrastre táctil, y antes
+no se movía.
+
+De paso, una trampa de la prueba que vale más que el arreglo: disparar
+`pointerdown`+`move`+`up` en el mismo tick **no mueve nada**, porque
+`setIsDragging(true)` no se ve hasta el render siguiente y el `move` lee `false`.
+La primera verificación dio «sigue inalcanzable» con el arreglo ya funcionando.
+Un evento por tick, como un arrastre de verdad.
+
+Primer hallazgo de F8 en `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.524.9 — Revertir los dos intentos de arreglar la rotación
 
 Ninguno de los dos funcionó, y el segundo **empeoró lo que había**: el usuario

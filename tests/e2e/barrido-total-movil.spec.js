@@ -15,6 +15,17 @@ const E2E_USER = process.env.E2E_USER;
 const E2E_PASSWORD = process.env.E2E_PASSWORD;
 const SALIDA = 'test-results/barrido-total';
 
+// El informe lleva en el NOMBRE lo que lo distingue, y no es cosmética: la
+// corrida de referencia son ocho —dos mitades × cuatro temas— y un
+// `informe.json` fijo las hace pisarse una a otra, así que sólo sobrevive la
+// última y no hay nada contra qué comparar. El nombre sale solo del ambiente
+// que se pidió; `ETIQUETA=lo-que-sea` lo fuerza para las dos mitades.
+const ETIQUETA = process.env.ETIQUETA
+    || [process.env.TEMA || 'liquid',
+        process.env.PESTANAS ? 'pest' : null,
+        process.env.MODALES ? 'mod' : null].filter(Boolean).join('-');
+const INFORME = `${SALIDA}/informe-${ETIQUETA}.json`;
+
 // `RUTAS=productos,pedidos` acota el barrido. No es para uso normal —el barrido
 // es «todas»— sino para poder probar el propio instrumento en treinta segundos
 // en vez de una hora: las dos primeras versiones del recorrido de pestañas se
@@ -230,7 +241,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
             // corridas se cortaron por timeout con todo medido y el archivo sin
             // escribir: 25 minutos de medición perdidos porque el resultado
             // vivía en memoria hasta la última línea.
-            fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 1));
+            fs.writeFileSync(INFORME, JSON.stringify(informe, null, 1));
         };
 
         for (const [indice, ruta] of RUTAS.entries()) {
@@ -333,7 +344,7 @@ test.describe('Barrido total · WebKit iPhone 13', () => {
                 }
             }
         }
-        fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 1));
+        fs.writeFileSync(INFORME, JSON.stringify(informe, null, 1));
 
         const malas = informe.filter(v => v.error || v.reventó || v.desbordePagina > 0 || v.desbordan > 0 || v.tablas > 0 || v.zoomIOS > 0);
         console.log(`\n╔══ ${informe.length} vistas · con algo que corregir: ${malas.length} ══╗`);

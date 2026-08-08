@@ -5,6 +5,11 @@ on:
     branches: [main]
   push:
     branches: [main]
+  # El barrido móvil no puede ir en cada push: son ~16 minutos en dos mitades y
+  # necesita la app levantada con sesión. Va de noche y a pedido.
+  schedule:
+    - cron: '0 9 * * *'   # 03:00 SV — los crons de sync están quietos
+  workflow_dispatch:
 
 jobs:
   lint-and-unit:
@@ -32,6 +37,31 @@ jobs:
       - run: npm run lint
         continue-on-error: true
       - run: npm run test
+
+      # ── Los gates de diseño, BLOQUEANTES ───────────────────────────────────
+      # Hasta el 2026-08-08 sólo vivían en el pre-commit local, y
+      # `git commit --no-verify` los saltea — o sea que la única defensa contra
+      # que vuelva la deuda era que nadie usara una bandera que existe. Los dos
+      # baselines están hoy en su piso (`gate:design` con las 47 categorías en
+      # cero, `gate:movil` con `tabla-a-mano` en 26 y las otras tres en cero),
+      # así que cualquier hallazgo nuevo es código nuevo y tiene que doler acá.
+      #
+      # Son locales y sin red: ~1s cada uno. No hay motivo para que no bloqueen.
+      # `gate:bundle` NO está: necesita un `npm run build` previo y va en el
+      # cierre de un trabajo, no en cada push.
+      - name: gate:design (colores crudos, elementos nativos)
+        run: npm run gate:design
+      - name: gate:movil (lo canónico escrito a mano)
+        run: npm run gate:movil
+
+      # ── Y el instrumento del barrido, que se prueba a sí mismo ─────────────
+      # No necesita app, sesión ni secrets: arma su propio DOM. Corre acá porque
+      # es lo que protege la corrección de F1 —el medidor contaba 37 controles
+      # que no existían— y porque un medidor roto vuelve verde a todo el barrido
+      # por vacío. Cuesta un segundo.
+      - run: npx playwright install --with-deps webkit
+      - name: el instrumento puede fallar
+        run: E2E_BASE_URL=http://localhost:9 npx playwright test --project=webkit-movil -g "instrumento"
 
   e2e-smoke:
     name: Playwright smoke
@@ -62,4 +92,56 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 14
+
+  barrido-movil:
+    name: Barrido móvil (nocturno)
+    # SOLO de noche o a pedido. En cada push sería inviable: ~16 minutos en dos
+    # mitades, con la app levantada y sesión real.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      E2E_USER: ${{ secrets.E2E_USER }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+    strategy:
+      fail-fast: false
+      # Las DOS MITADES, y no es una preferencia: seis corridas seguidas del
+      # barrido completo murieron cerca de la pantalla 28 con «Target page,
+      # context or browser has been closed». Es el proceso de contenido de
+      # WebKit acumulando 37 vistas con sus pestañas y sus diálogos — la ruta
+      # donde muere, medida sola, siempre anda bien. Partirlo es la salida
+      # honesta; subir el techo ya se intentó tres veces.
+      matrix:
+        include:
+          - mitad: a
+            rutas: overview,ventas,compras,productos,pedidos,minmax,clientes,proveedores,facturacion,facturas-compra,cotizaciones,conteo-inventario,libro-compras-completo,libros-iva,resumen-fiscal,corte-z,ventas-perdidas,staff
+          - mitad: b
+            rutas: monitor,audit,schedules,payroll,requests,vacation-plan,announcements,encuesta,metas,branches,laboratorios,roles,permissions,sync-health,my-requests,my-documents,my-announcements,profile,dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      # Sin `E2E_BASE_URL`, Playwright levanta el preview solo (ver `webServer`
+      # en playwright.config.js): build de producción, nunca el dev server.
+      - name: Barrido · mitad ${{ matrix.mitad }}
+        run: npx playwright test --project=webkit-movil -g "todas las vistas"
+        env:
+          RUTAS: ${{ matrix.rutas }}
+          PESTANAS: '1'
+          MODALES: '1'
+          ETIQUETA: liquid-pest-mod-${{ matrix.mitad }}
+      # El informe SIEMPRE, no sólo al fallar: el barrido no falla el job por
+      # tener hallazgos —los cuenta—, así que sin el artefacto la corrida
+      # nocturna no dejaría nada que mirar.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: barrido-movil-${{ matrix.mitad }}
+          path: test-results/barrido-total/
           retention-days: 14

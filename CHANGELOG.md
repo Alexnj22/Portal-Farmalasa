@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.522.1 — Los gates de diseño entran a CI, y el barrido corre de noche
+
+Hasta hoy `gate:design` y `gate:movil` vivían **sólo en el pre-commit local**, y
+`git commit --no-verify` los saltea. O sea que la única defensa contra que
+volviera la deuda era que nadie usara una bandera que existe y está documentada.
+Los dos baselines están en su piso —las 47 categorías de diseño en cero,
+`tabla-a-mano` en 26 y las otras tres en cero—, así que cualquier hallazgo nuevo
+es código nuevo y ahora tumba el job.
+
+**Verificado en rojo, que es la única forma de saber que sirve:** se le metió una
+`<table>` a mano a una vista y el gate la cazó —`tabla-a-mano 27 / 26 SUBIÓ
++1`— antes de revertirla. Un gate verde prueba su detector, no la regla.
+
+**El barrido móvil, de noche y a pedido** (`schedule` a las 03:00 SV, más
+`workflow_dispatch`). No puede ir en cada push: son ~16 minutos y necesita la app
+levantada con sesión. Va en las **dos mitades** que ya exigía el spec —seis
+corridas seguidas del barrido completo murieron cerca de la pantalla 28 con
+«Target page, context or browser has been closed», y es el proceso de contenido
+de WebKit acumulando 37 vistas con sus pestañas y sus diálogos— como una
+`matrix`, así que las dos corren en paralelo y ninguna arrastra a la otra
+(`fail-fast: false`). El informe se sube **siempre**, no sólo al fallar: el
+barrido no tumba el job por tener hallazgos, los cuenta, y sin el artefacto la
+corrida nocturna no dejaría nada que mirar.
+
+**Y el instrumento se prueba en CI.** `instrumento-movil.spec.js` no necesita
+app, sesión ni secrets —arma su propio DOM—, así que entra al job barato. Es lo
+que protege la corrección de v2.521.3: un medidor roto vuelve verde a todo el
+barrido por vacío, y eso se ve igual que un barrido limpio.
+
+**El informe deja de pisarse a sí mismo.** El nombre sale del ambiente que se
+pidió (`informe-dark.json`, `informe-liquid-pest-mod-a.json`); con un
+`informe.json` fijo, la corrida de referencia —ocho, entre mitades y temas— sólo
+conservaba la última y no había nada contra qué comparar.
+
+F7 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.522.0 — recharts sale de las otras cuatro vistas, y el ratchet del bundle deja de aflojarse solo
 
 La deuda que v2.521.2 dejó anotada «con nombre y apellido», cobrada. Las cuatro

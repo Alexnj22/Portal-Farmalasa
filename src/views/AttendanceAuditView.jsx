@@ -725,7 +725,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           onClick={() => setExpanded(v => !v)}
           aria-expanded={expanded}
           aria-label={`${expanded ? 'Contraer' : 'Expandir'} la quincena de ${emp.name}`}
-          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+          className="flex items-center gap-3 flex-1 min-w-0 text-left transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
         >
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">

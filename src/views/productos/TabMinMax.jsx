@@ -1007,7 +1007,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             // Pide `relative`: el pseudo es `absolute`.
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div {...clickable(clickFn)}
-                                                    className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-[var(--dur-fast)] ${colorCls} ${borderCls} ${clickFn ? 'relative blanco-tactil cursor-pointer hover:brightness-95' : ''}`}>
+                                                    className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-[var(--dur-fast)] ${colorCls} ${borderCls} ${clickFn ? 'relative blanco-tactil cursor-pointer hover:brightness-95 active:scale-[0.97]' : ''}`}>
                                                     {val}
                                                 </div>
                                             );

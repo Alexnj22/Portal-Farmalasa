@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.517.0 — El acuse del toque, medido en las 37 vistas: 634 a 77
+
+La primera pasada (v2.503.0) midió **tres** vistas y bajó 141 → 5. El barrido
+completo mostró el número real: **634 controles mudos en las 37**. La diferencia
+no era un error de aquella medición sino su alcance —tres vistas no son el
+portal—, y es exactamente para lo que existe el barrido.
+
+Y otra vez se agrupó en un canónico: **457 de los 634 eran `ListRow`**, 361 sólo
+en Laboratorios, donde cada laboratorio es una fila. El resto, en dos formas más:
+las filas de empleado de Monitor y Auditoría (96) y las cajas de MIN·MAX (50).
+
+```
+laboratorios   361 → 4
+monitor         54 → 7
+audit           50 → 0
+TOTAL          634 → 77
+```
+
+`ListRow` lo declara **sólo cuando es interactiva** — sin `onClick` ni `href` es
+una fila de lectura, y encogerla al tocarla prometería algo que no pasa.
+
+De los 77 que quedan, **37 son un solo botón del sidebar**, uno por vista: en el
+teléfono el sidebar se esconde con `transform`, no con `display`, así que el
+medidor lo cuenta como visible aunque esté fuera de pantalla. Es deuda del
+medidor tanto como del botón, y queda anotada.
+
 ## v2.516.2 — La miga que hace concluyente a la caja negra
 
 `ExpedienteMovil` anota en la caja negra el momento exacto en que se abre.

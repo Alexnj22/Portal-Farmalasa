@@ -406,7 +406,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                 const apoyoBranch = apoyoDaysByDow?.[dId];
 
                 return (
-                    <td key={date} className={`p-0 align-top h-px ${(isReadOnly || apoyoBranch) ? 'cursor-default' : 'group/cell cursor-pointer relative z-base hover:z-sidebar-desktop'}`} {...clickable((e) => {
+                    <td key={date} className={`p-0 align-top h-px ${(isReadOnly || apoyoBranch) ? 'cursor-default' : 'group/cell cursor-pointer relative z-base hover:z-sidebar-desktop active:scale-[0.98] transition-transform'}`} {...clickable((e) => {
                         if (conf || isReadOnly || apoyoBranch) return;
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
@@ -555,7 +555,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                 })();
 
                 return (
-                    <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-base hover:z-sidebar-desktop"
+                    <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-base hover:z-sidebar-desktop active:scale-[0.98] transition-transform"
                         {...clickable(e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch))}>
                         <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-[var(--dur-fast)] flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay

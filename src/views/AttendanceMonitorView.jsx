@@ -445,7 +445,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       <button
         type="button"
         onClick={() => goToProfile(emp)}
-        className="flex items-center gap-3 text-left group w-full mb-3"
+        className="flex items-center gap-3 text-left group w-full mb-3 transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
       >
         <div className="relative shrink-0">
           <div

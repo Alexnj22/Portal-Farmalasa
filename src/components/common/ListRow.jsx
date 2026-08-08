@@ -117,9 +117,19 @@ const ListRow = memo(forwardRef(({
             {...(active && interactiva ? { 'aria-current': 'true' } : {})}
             {...(selected && interactiva ? { 'aria-pressed': true } : {})}
             {...(surface === 'card' && !onDark && !tone ? { 'data-surface': 'card' } : {})}
+            // `active:` sólo cuando la fila ES un control — una `ListRow` sin
+            // `onClick` ni `href` es una fila de lectura y encogerla al tocarla
+            // prometería algo que no pasa.
+            //
+            // Es el canónico que más veces aparece mudo en el portal: **457 de
+            // los 634 controles sin acuse** salían de acá, 361 sólo en
+            // Laboratorios, donde cada laboratorio es una fila. En un teléfono
+            // no hay `hover:`, así que sin esto tocar una fila no confirmaba
+            // nada.
             className={`w-full flex items-center text-left border
                 ${surface === 'card' ? 'rounded-card' : 'rounded-btn'}
-                transition-[background-color,border-color,color] duration-[var(--dur-base)]
+                ${interactiva ? 'active:scale-[0.99]' : ''}
+                transition-[background-color,border-color,color,transform] duration-[var(--dur-base)]
                 ${d.fila}
                 ${onDark
                     ? (active || selected

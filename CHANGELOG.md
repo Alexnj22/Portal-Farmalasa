@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.520.0 — El teléfono pide más alto: la fila sube a 150 y la franja vuelve
+
+v2.519.1 apagó la franja en el teléfono para que dejara de salirse de la
+tarjeta, y dejó anotada la decisión de fondo. Ésta es: **el alto de fila en
+móvil sube de 120 a 150** y la franja vuelve a encenderse ahí.
+
+La fila valía 120 en los dos tamaños. En el teléfono no alcanza, y el culpable
+no es la franja sino el título: con dos columnas la baldosa mide 171px y
+«Consulta de Inventario» envuelve a dos líneas — 30px donde en escritorio ocupa
+15. Mismo presupuesto vertical, el doble de título.
+
+150 y no 132 —lo justo— para que quepa también un título de tres líneas: un
+nombre más largo o una pantalla más angosta no tienen que volver a romperlo.
+Sale de la medida real: 111px de contenido con la franja, más 28 de padding,
+más los 15 de esa tercera línea.
+
+**Alcanza a todo el tablero en móvil, no sólo a Operación**, porque es el alto
+de la retícula. Ningún widget puede desbordar por esto —la fila sólo crece— así
+que lo que cambia es que los demás ganan aire y el tablero se hace más largo.
+Verificado en WebKit iPhone 13 recorriendo **las cuatro pestañas**: `gridAutoRows`
+en 150px y **cero desbordes** en las cuatro, midiendo cada celda y cada
+superficie de tarjeta adentro (General tiene 23). Cero errores de consola.
+
+El arrastre lee el alto nuevo por `isMobileRef` y no por la variable capturada:
+el handler de puntero se registra una vez, así que con la variable se quedaría
+calculando la fila contra un alto que ya no es el de la retícula.
+
+**Lo que sigue apagado en el teléfono es el desglose de texto**, y por un motivo
+distinto que subir la fila no arregla: a ése no lo limita el alto sino el ancho.
+Pegado al contador en 171px se corta en la segunda palabra («40 sin
+existenci…»). Queda la figura, que es lo que sí se lee a ese tamaño.
+
 ## v2.519.3 — la bisección corre en el teléfono: `?filas=N` y el alto junto al scroll
 
 Cuatro sesiones de hipótesis desde el escritorio y ninguna acertó — la última,

@@ -60,6 +60,23 @@ import {
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
 const ROW_H      = 120; // px per row unit
+// ── El teléfono necesita más alto que el escritorio (2026-08-08) ───────────
+// La fila valía 120 en los dos, y en el teléfono no alcanzaba: con dos columnas
+// la baldosa mide 171px y un título como «Consulta de Inventario» **envuelve a
+// dos líneas** —30px donde en escritorio ocupa 15—. O sea que el presupuesto
+// vertical era el mismo pero el título gastaba el doble, y la franja al pie de
+// las baldosas de Operación quedaba 12px afuera de la tarjeta (medido en WebKit
+// iPhone 13, v2.519.0: contenido 131 contra caja 118).
+//
+// 150 y no 132 —lo justo— para que quepa también un título de tres líneas: un
+// nombre más largo o una pantalla más angosta no tienen que volver a romperlo.
+// Sale de la medida real: 111px de contenido con la franja, más 28 de padding,
+// más los 15 de esa tercera línea.
+//
+// Aplica a TODO el tablero en móvil, no sólo a Operación: es el alto de la
+// retícula. Los demás widgets ganan aire — ninguno puede desbordar porque la
+// fila sólo crece— a cambio de un tablero más largo.
+const ROW_H_MOVIL = 150;
 const GAP_PX     = 16;  // gap-4
 const GRID_COLS  = 4;   // desktop columns
 const MOBILE_COLS = 2;  // mobile columns
@@ -1192,7 +1209,11 @@ const DashboardView = ({ openModal }) => {
       const gc    = activeColsRef.current;
       const rect  = gridRef.current.getBoundingClientRect();
       const cellW = (rect.width + GAP_PX) / gc;
-      const cellH = ROW_H + GAP_PX;
+      // `isMobileRef` y no `isMobile`: esto corre dentro de un handler de
+      // puntero registrado una vez, así que la variable capturada se quedaría
+      // con el valor del primer render y el arrastre calcularía la fila contra
+      // un alto que ya no es el de la retícula.
+      const cellH = (isMobileRef.current ? ROW_H_MOVIL : ROW_H) + GAP_PX;
       const relX  = mouseX - rect.left;
       const relY  = mouseY - rect.top;
       const eCols = Math.min(activeSizesRef.current[id]?.cols ?? getWidgetSize(id).minCols, gc);
@@ -3121,7 +3142,7 @@ const DashboardView = ({ openModal }) => {
         <div
           ref={gridRef}
           className={`grid gap-4 relative ${isMobile ? 'grid-cols-2' : 'grid-cols-4 min-w-[700px]'}`}
-          style={{ gridAutoRows: `${ROW_H}px` }}
+          style={{ gridAutoRows: `${isMobile ? ROW_H_MOVIL : ROW_H}px` }}
         >
           {buildWidgetList()}
 

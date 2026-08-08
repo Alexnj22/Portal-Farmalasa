@@ -221,27 +221,18 @@ export default function LanzadorSolicitud({
                         que no está — el mismo motivo y el mismo recurso que el
                         contenedor de herramientas del modal, más abajo.
 
-                        ── `hidden lg:block`: en el teléfono NO hay franja ────
-                        Reportado el 2026-08-08: «en móvil no se ven bien, se
-                        salen de la card». Medido en WebKit iPhone 13 y era
-                        exacto: con dos columnas la baldosa mide 171px, y ahí
-                        «Consulta de Inventario» **envuelve a dos líneas** — 30px
-                        de título en vez de 15. El contenido pasa de 118 a 131
-                        contra una caja de 118: 12px afuera.
+                        ── La franja también va en el teléfono ────────────────
+                        En v2.519.1 estaba apagada abajo de `lg`: con dos
+                        columnas la baldosa mide 171px y «Consulta de
+                        Inventario» **envuelve a dos líneas** —30px de título en
+                        vez de 15—, así que el contenido pasaba de 118 a 131
+                        contra una caja de 118 y se salía de la tarjeta.
 
-                        La fila mide 120px en el teléfono igual que en
-                        escritorio (`ROW_H`, una sola constante), así que el
-                        presupuesto es el mismo pero el título ocupa el doble.
-                        No hay 14px que sacarle sin apretar las cuatro medidas
-                        al milímetro, y ahí un título de tres líneas —una
-                        pantalla más angosta, una traducción más larga— vuelve a
-                        romperlo sin avisar.
-
-                        El corte es `lg` (1024px) y no `sm` a propósito: es el
-                        mismo umbral con el que `DashboardView` decide `isMobile`
-                        y cambia a la retícula angosta. Cualquier otro dejaría la
-                        franja encendida justo en los anchos donde no cabe. */}
-                    <div className="mt-1.5 empty:hidden hidden lg:block" aria-hidden="true">{instrumento}</div>
+                        La causa no era la franja sino que la fila valía 120px
+                        en los dos tamaños. Desde v2.520.0 el teléfono usa
+                        `ROW_H_MOVIL` (150), que es donde vive el arreglo de
+                        verdad, y acá ya no hace falta esconder nada. */}
+                    <div className="mt-1.5 empty:hidden" aria-hidden="true">{instrumento}</div>
                     <p className={`text-caption font-semibold mt-1 truncate ${hay ? acento.texto : 'text-content-3'}`}>
                         {pendientes === null
                             ? (sinDato ?? '—')
@@ -250,10 +241,13 @@ export default function LanzadorSolicitud({
                             no pendientes la baldosa: si tomara el tono, el
                             color dejaría de señalar «hay algo» y pasaría a ser
                             la piel del renglón entero. */}
-                        {/* El desglose se va con la franja: son la misma pieza
-                            —la figura no lleva etiquetas propias y éste es su
-                            leyenda— y en 171px de ancho no se leería igual, se
-                            corta en la segunda palabra. */}
+                        {/* El desglose SÍ sigue apagado en el teléfono, y por
+                            un motivo distinto al de la franja: a éste no lo
+                            limita el alto sino el ANCHO. Pegado al contador en
+                            una baldosa de 171px se corta en la segunda palabra
+                            («40 sin existenci…»), así que subir la fila no lo
+                            arregla. La figura queda, que es lo que sí se lee a
+                            ese tamaño. */}
                         {detalle && <span className="text-content-3 font-medium hidden lg:inline"> · {detalle}</span>}
                     </p>
                 </div>

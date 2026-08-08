@@ -219,8 +219,29 @@ export default function LanzadorSolicitud({
                         mostrar, y un elemento React que renderiza `null` sigue
                         siendo truthy. Sin esto quedaba el margen de una franja
                         que no está — el mismo motivo y el mismo recurso que el
-                        contenedor de herramientas del modal, más abajo. */}
-                    <div className="mt-1.5 empty:hidden" aria-hidden="true">{instrumento}</div>
+                        contenedor de herramientas del modal, más abajo.
+
+                        ── `hidden lg:block`: en el teléfono NO hay franja ────
+                        Reportado el 2026-08-08: «en móvil no se ven bien, se
+                        salen de la card». Medido en WebKit iPhone 13 y era
+                        exacto: con dos columnas la baldosa mide 171px, y ahí
+                        «Consulta de Inventario» **envuelve a dos líneas** — 30px
+                        de título en vez de 15. El contenido pasa de 118 a 131
+                        contra una caja de 118: 12px afuera.
+
+                        La fila mide 120px en el teléfono igual que en
+                        escritorio (`ROW_H`, una sola constante), así que el
+                        presupuesto es el mismo pero el título ocupa el doble.
+                        No hay 14px que sacarle sin apretar las cuatro medidas
+                        al milímetro, y ahí un título de tres líneas —una
+                        pantalla más angosta, una traducción más larga— vuelve a
+                        romperlo sin avisar.
+
+                        El corte es `lg` (1024px) y no `sm` a propósito: es el
+                        mismo umbral con el que `DashboardView` decide `isMobile`
+                        y cambia a la retícula angosta. Cualquier otro dejaría la
+                        franja encendida justo en los anchos donde no cabe. */}
+                    <div className="mt-1.5 empty:hidden hidden lg:block" aria-hidden="true">{instrumento}</div>
                     <p className={`text-caption font-semibold mt-1 truncate ${hay ? acento.texto : 'text-content-3'}`}>
                         {pendientes === null
                             ? (sinDato ?? '—')
@@ -229,7 +250,11 @@ export default function LanzadorSolicitud({
                             no pendientes la baldosa: si tomara el tono, el
                             color dejaría de señalar «hay algo» y pasaría a ser
                             la piel del renglón entero. */}
-                        {detalle && <span className="text-content-3 font-medium"> · {detalle}</span>}
+                        {/* El desglose se va con la franja: son la misma pieza
+                            —la figura no lleva etiquetas propias y éste es su
+                            leyenda— y en 171px de ancho no se leería igual, se
+                            corta en la segunda palabra. */}
+                        {detalle && <span className="text-content-3 font-medium hidden lg:inline"> · {detalle}</span>}
                     </p>
                 </div>
             </button>

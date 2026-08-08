@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.519.1 — La franja no cabía en el teléfono: el título envuelve y son 12px afuera
+
+Reportado: «en móvil no se ven bien, se salen de la card». Y era exacto — v2.519.0
+se verificó en el navegador, pero **sólo en escritorio**. Medido ahora en WebKit
+iPhone 13:
+
+```
+Consulta de Inventario   ancho 171px   título 2 líneas (30px)
+                         contenido 131  ·  caja 118  →  12px afuera
+```
+
+La causa no es la franja, es el **título**. Con dos columnas la baldosa mide
+171px y «Consulta de Inventario» envuelve a dos líneas: 30px donde en escritorio
+ocupa 15. La fila mide 120px en el teléfono igual que en escritorio (`ROW_H` es
+una sola constante), así que el presupuesto vertical es el mismo pero el título
+gasta el doble, y los 14px de la franja ya no entran.
+
+En el teléfono la franja y su desglose se ocultan (`hidden lg:block`). Se
+consideró recuperar los 14px apretando chip, márgenes y alto de figura, y se
+descartó: quedaba al milímetro, y un título de tres líneas —una pantalla más
+angosta, un nombre más largo— lo rompería otra vez sin avisar. Además una figura
+de seis columnas en 171px no se lee, y el desglose se corta en la segunda
+palabra. El corte es `lg` (1024px) porque es el mismo umbral con el que
+`DashboardView` decide `isMobile` y cambia a la retícula angosta; cualquier otro
+dejaría la franja encendida justo en los anchos donde no cabe.
+
+Verificado en los dos: teléfono 118 de contenido en 118 de caja en las cuatro
+baldosas, con títulos de una y de dos líneas, cero desbordes; escritorio sin
+cambios, la franja donde estaba.
+
+**Queda una decisión abierta:** el teléfono se quedó sin la mejora. Si se la
+quiere ahí, el camino es subir el alto de fila en móvil — pero eso mueve **todos**
+los widgets del tablero, no sólo estos seis, así que no se hizo por cuenta propia.
+
 ## v2.519.0 — La franja al pie: seis baldosas que dejan de decir lo mismo
 
 Reportado: las baldosas de Operación «se ven planas». No era falta de adorno.

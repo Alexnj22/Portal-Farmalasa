@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.525.0 — F8: lo que escondían las pestañas y los diálogos, en cero
+
+La corrida de 117 pantallas dejó 116 desbordes, 109 controles chicos y 1 input
+con zoom de iOS. **Los tres números están en cero.** Pero más de la mitad no eran
+deuda, y separarlos fue el trabajo:
+
+```
+109 chicos  →  58 falsos positivos (el shell tras el velo)
+               12 medían la referencia (el input, no su label)
+               39 reales, corregidos
+```
+
+**El velo del modal — 58 de golpe.** Con un diálogo abierto, el shell entero
+(`aside`, `main` y las tabs) recibe `pointer-events-none select-none
+scale-[0.98] blur-[2px]`: se aleja y se difumina a propósito. Eso hacía que
+controles que **ya cumplen** midieran 43.12 —que es 44 × 0.98— y entraran como
+deuda. Ninguno se puede tocar: el velo está encima. El medidor ahora recorre la
+cadena buscando `pointer-events: none`, que es la señal de que algo no recibe el
+toque. Sexta vez que este proyecto mide la referencia en vez del cuerpo.
+
+**El input que no es el blanco — 12.** Una casilla accesible pone el `input`
+`sr-only` a 1×1 y deja que el `<label>` sea el control. El medidor reportaba
+«input de 1×1», un tamaño que **no se puede arreglar** porque no es el del
+control. Ahora mide y reporta el label — y ahí aparecieron 5 casillas de verdad
+chicas (306×21 y 306×32) que el número viejo escondía. Descartar el caso habría
+tapado esas cinco; medir el elemento correcto las destapó.
+
+**Los reales, todos en canónicos o en la forma que se repite:**
+
+| n | Qué | Salida |
+|---|---|---|
+| 20 | fila de producto del tablero, 227×**31** | `min-h` + acuse |
+| 13 | encabezado de grupo de Solicitudes, 358×**24** | `min-h` + acuse |
+| 6 | «De dónde sale» de Metas, 113×**15** | `.blanco-tactil` — ahí el tamaño **es** el diseño |
+| 5 | casillas de `Checkbox`, 306×21 | `min-h` en el canónico, viaja a toda la app |
+| 3 | recortes de `facturas-compra#revision` | resueltos con el resto |
+
+**Y el acuse del toque en las pantallas que F4 nunca vio.** Aquella fase midió
+las 37 rutas; las pestañas internas y los diálogos tenían **46 controles mudos**
+más, en 5 formas. Van 34: las filas de solicitud (33, una forma), y el aspa de
+borrar fecha. Quedan **12** anotados —el selector de pestañas de `LiquidModal`
+(8), el campo de fecha (3) y un botón de Metas (1)—, que son de las pantallas
+más internas del portal.
+
+Verificado sobre 22 pantallas con pestañas y diálogos abiertos: desbordes 0,
+chicos 0, zoom de iOS 0, scroll lateral 0.
+
 ## v2.524.11 — La salida de la gota deja de depender de un apretón de estilo
 
 > «Sigue sin hacer la animación de cierre: en vez de cerrarse en gota sólo

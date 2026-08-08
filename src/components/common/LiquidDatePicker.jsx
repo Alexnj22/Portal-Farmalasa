@@ -629,7 +629,7 @@ const LiquidDatePicker = ({
                     que borrar la fecha era imposible sin mouse — en los 32 archivos que
                     usan este canónico. Un `<button>` de verdad lo da gratis. */}
                 {hasValue && (
-                    <button type="button" aria-label="Borrar la fecha" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className={`flex items-center justify-center rounded-full hover:bg-danger/10 text-content-3 hover:text-danger transition-all shrink-0 cursor-pointer ${esTactil ? 'w-11 h-11 -mr-2' : 'w-6 h-6'}`}>
+                    <button type="button" aria-label="Borrar la fecha" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className={`flex items-center justify-center rounded-full hover:bg-danger/10 text-content-3 hover:text-danger active:scale-[0.9] transition-all shrink-0 cursor-pointer ${esTactil ? 'w-11 h-11 -mr-2' : 'w-6 h-6'}`}>
                         <X size={14} strokeWidth={3} />
                     </button>
                 )}

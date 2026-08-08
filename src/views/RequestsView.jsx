@@ -139,7 +139,10 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                 abierto/cerrado vivía solo en el giro del chevron. */}
             <button onClick={() => setExpanded(v => !v)}
                 aria-expanded={expanded}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 transition-colors duration-[var(--dur-base)]">
+                // La fila de la solicitud es el control que la despliega, y en
+                // el teléfono sólo respondía al puntero: 33 de los 46 mudos que
+                // dejaron ver las pestañas internas salían de acá.
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 active:scale-[0.99] transition-[background-color,transform] duration-[var(--dur-base)]">
 
                 {/* El ícono dice el tipo; el color, el estado. Antes el círculo
                     iba relleno del color del tipo y era lo más brillante de la
@@ -745,7 +748,13 @@ const RequestsView = () => {
                         return (
                             <section key={type}>
                                 <button onClick={() => toggleSection(type)} aria-expanded={!isCollapsed}
-                                    className="w-full flex items-center gap-2 mb-3">
+                                    // El encabezado ES el control que pliega el
+                                    // grupo y medía 24px de alto. Mismo caso —y
+                                    // misma salida— que el de Laboratorios: acá
+                                    // el tamaño no es el diseño, era un descuido.
+                                    // `--tap-min` vale 0 en escritorio, así que
+                                    // ahí no cambia nada.
+                                    className="w-full flex items-center gap-2 mb-3 min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]">
                                     <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-divider bg-surface-card-hover text-content-2">
                                         <TypeIcon size={12} strokeWidth={2} />
                                     </div>

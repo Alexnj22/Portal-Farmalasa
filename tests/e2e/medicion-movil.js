@@ -42,7 +42,25 @@ export const MEDIR = () => {
     // NO se aplica a `desbordan`, que mide justamente lo que se sale de cuadro.
     const alcanzable = (el) => {
         const r = el.getBoundingClientRect();
-        return r.right > 0 && r.left < vw;
+        if (!(r.right > 0 && r.left < vw)) return false;
+        // Y lo que no recibe el toque tampoco es un blanco táctil, aunque se
+        // vea. Con un diálogo abierto, el shell entero —`aside`, `main` y las
+        // tabs— recibe `pointer-events-none select-none scale-[0.98]
+        // blur-[2px]`: se aleja y se difumina detrás del velo, a propósito.
+        //
+        // Eso producía **70 de los 109 «chicos»** de la corrida completa, todos
+        // en pantallas con modal y todos midiendo 43.12 — que es 44 × 0.98, o
+        // sea controles que YA cumplen y sólo se ven encogidos por el efecto de
+        // profundidad. Ninguno se puede tocar: el velo está encima y el shell
+        // no recibe eventos. Sexta vez que este proyecto mide la referencia en
+        // vez del cuerpo.
+        //
+        // Se mira la CADENA porque `pointer-events` se hereda: el atributo vive
+        // en el shell, no en cada botón.
+        for (let p = el; p; p = p.parentElement) {
+            if (getComputedStyle(p).pointerEvents === 'none') return false;
+        }
+        return true;
     };
     const sel = (el) => {
         const id = el.id ? `#${el.id}` : '';
@@ -172,13 +190,32 @@ export const MEDIR = () => {
             // en vez del cuerpo, por tercera vez en este proyecto.
             if (el.getAttribute('aria-hidden') === 'true') return;
             if (el.tabIndex < 0 && !el.hasAttribute('href')) return;
-            const a = areaEfectiva(el);
+            // Un `input` escondido dentro de su `<label>` no es el blanco: lo es
+            // el label. Es el patrón canónico de casilla accesible —`sr-only
+            // peer`, el input a 1×1 y el label pintando el estado— y el dedo
+            // siempre cae sobre el label, nunca sobre el input.
+            //
+            // Se MIDE el label en vez de descartar el caso: si el label cumple no
+            // hay nada que arreglar, y si no cumple el hallazgo es real pero hay
+            // que reportarlo sobre el label, que es lo que se puede corregir. La
+            // primera versión sólo descartaba cuando el label ya cumplía, así que
+            // los que no cumplían seguían saliendo como «input de 1×1» — un
+            // tamaño que no se puede arreglar porque no es el del control.
+            let blanco = el;
+            if (el.tagName === 'INPUT') {
+                const lab = el.closest('label');
+                if (lab) blanco = lab;
+            }
+            const a = areaEfectiva(blanco);
             if (a.w < 44 || a.h < 44) {
-                if (noCabe(el)) { imposibles.push({ sel: sel(el), tam: `${Math.round(a.w)}x${Math.round(a.h)}` }); return; }
-                chicos.push({ sel: sel(el),
+                if (noCabe(blanco)) { imposibles.push({ sel: sel(blanco), tam: `${Math.round(a.w)}x${Math.round(a.h)}` }); return; }
+                // Se reporta el BLANCO, no el elemento que disparó la búsqueda:
+                // un hallazgo que dice «input de 1×1» manda a arreglar un tamaño
+                // que no se puede tocar, porque el control real es su label.
+                chicos.push({ sel: sel(blanco),
                               tam: `${Math.round(a.w)}x${Math.round(a.h)} (caja ${a.caja})`,
-                              cadena: cadena(el),
-                              texto: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24) });
+                              cadena: cadena(blanco),
+                              texto: (blanco.textContent || blanco.getAttribute('aria-label') || '').trim().slice(0, 24) });
             }
         });
 

@@ -52,6 +52,12 @@ const PAGINA = `
        propósito: prueba de paso que chicos SÍ lo sigue contando, porque el
        tamaño no cambia cuando se habilite. -->
   <button id="apagado" disabled style="width:30px;height:30px">z</button>
+  <!-- Detrás del velo de un diálogo: el shell entero recibe pointer-events:none
+       (más scale 0.98 y blur) mientras hay un modal abierto. Se ve, pero no
+       recibe el toque — así que no es un blanco táctil ni le falta acuse. -->
+  <div id="tras-el-velo" style="pointer-events:none">
+    <button id="velado" style="width:30px;height:30px">w</button>
+  </div>
   <div style="height:4000px"></div>
 </body></html>`;
 
@@ -82,6 +88,10 @@ test.describe('el instrumento', () => {
         //     como chico, porque su tamaño no cambia cuando se habilite.
         expect(enSinAcuse('apagado'), '#apagado no debe pedir acuse: está disabled').toBe(false);
         expect(enChicos('apagado'), '#apagado SÍ es chico: disabled no lo agranda').toBe(true);
+
+        // 4 · Detrás del velo: se ve, pero no recibe el toque. Ni chico ni mudo.
+        expect(enChicos('velado'), '#velado no es un blanco táctil: pointer-events none').toBe(false);
+        expect(enSinAcuse('velado'), '#velado no necesita acuse: no se puede tocar').toBe(false);
 
         // Prueba de vida: cero hallazgos y cero datos se ven igual. Si el
         // medidor no vio NADA, las cuatro comprobaciones de arriba pasarían por

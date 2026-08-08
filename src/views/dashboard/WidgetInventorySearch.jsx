@@ -506,7 +506,11 @@ function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) 
                     {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}
                     <button
                       type="button"
-                      className="flex-1 min-w-0 flex items-center gap-2 text-left"
+                      // La fila del producto ES el control que abre su
+                      // detalle y medía 31px de alto: las 20 de la hoja
+                      // del tablero eran el hallazgo más repetido del
+                      // barrido. `--tap-min` vale 0 en escritorio.
+                      className="flex-1 min-w-0 flex items-center gap-2 text-left min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
                       onClick={() => onDrill({ erpProductId: prod.lots?.[0]?.erp_product_id ?? null, descripcion: prod.descripcion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                     >
                       <span className="flex-1 min-w-0 block">
@@ -913,7 +917,8 @@ function PanelInventario({ query = '', onQueryChange }) {
                 <button
                   type="button"
                   onClick={() => handleInput(f.descripcion)}
-                  className="flex-1 min-w-0 flex items-center gap-2 text-left"
+                  // Mismo caso que la fila de producto de arriba.
+                  className="flex-1 min-w-0 flex items-center gap-2 text-left min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
                 >
                   <PackageMinus size={13} className="text-warning-text shrink-0" strokeWidth={2.5} />
                   <span className="flex-1 min-w-0 block">

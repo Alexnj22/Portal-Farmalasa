@@ -661,7 +661,9 @@ const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, badge, punto,
         // con `[class*="active:"]`, que mira el atributo del propio elemento. Un
         // `group-active/bf:` en el hijo se ve igual pero deja al botón sin
         // ninguna de las dos cosas — ni acuse propio ni el prestado.
-        className="w-[60px] shrink min-w-11 flex flex-col items-center gap-1 group/bf
+        // El acuse: son los botones de la barra del pulgar, o sea los que más
+        // se tocan de la vista, y no lo tenían.
+        className="w-[60px] shrink min-w-11 flex flex-col items-center gap-1 group/bf active:scale-[0.97]
             transition-transform duration-[var(--dur-fast)] active:scale-[0.97]"
     >
         <span className={`relative grid place-items-center rounded-full

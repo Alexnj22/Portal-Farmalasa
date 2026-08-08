@@ -50,7 +50,14 @@ const Checkbox = memo(({
 
     return (
         <label htmlFor={id}
-            className={`group inline-flex items-start gap-2.5 select-none
+            // `min-h-[var(--tap-min)]` en el LABEL, que es el blanco táctil real:
+            // el `input` va `sr-only` a 1×1 y el dedo siempre cae acá. Medido el
+            // 2026-08-08 en los diálogos de Personal y del tablero — las casillas
+            // de una línea daban 21px de alto y las de dos, 32.
+            // En escritorio `--tap-min` vale 0, así que no cambia nada; en táctil
+            // suma aire vertical, que en una columna de casillas es justamente lo
+            // que evita marcar la de al lado.
+            className={`group inline-flex items-start gap-2.5 select-none min-h-[var(--tap-min)]
                 ${disabled ? 'opacity-45 cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
             <input
                 id={id}

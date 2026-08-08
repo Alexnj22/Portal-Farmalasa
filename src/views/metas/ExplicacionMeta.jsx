@@ -63,7 +63,12 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto })
         <div className="mt-1">
             <button
                 type="button" onClick={alternar} aria-expanded={abierto}
-                className="inline-flex items-center gap-1 text-micro font-black uppercase tracking-widest text-content-3 hover:text-content-2 transition-colors"
+                // 113×15: acá el tamaño **sí** es el diseño — es un rótulo al pie
+                // de la tarjeta, no un botón, y agrandarlo lo convertiría en otra
+                // cosa. `.blanco-tactil` sube el área de impacto a 44 sin tocar
+                // la pintura, igual que en el aspa de `LiquidSelect` y las cajas
+                // de MIN·MAX. Necesita `relative`: el pseudo-elemento se ancla ahí.
+                className="blanco-tactil relative inline-flex items-center gap-1 text-micro font-black uppercase tracking-widest text-content-3 hover:text-content-2 active:scale-[0.97] transition-[color,transform]"
             >
                 {abierto ? <ChevronUp size={11} strokeWidth={3} /> : <ChevronDown size={11} strokeWidth={3} />}
                 De dónde sale

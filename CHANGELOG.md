@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.516.2 — La miga que hace concluyente a la caja negra
+
+`ExpedienteMovil` anota en la caja negra el momento exacto en que se abre.
+
+Sin esta marca el registro es ambiguo justo donde importa: un log que se corta de
+golpe no distingue **«la página murió acá»** de **«el toque nunca llegó a
+registrarse»**, y esas son las dos lecturas opuestas del fallo del iPhone.
+
+Con la marca, las tres hipótesis vivas se separan solas al leer el registro:
+
+- `abre-expediente` → `arranque`  … la página se murió y volvió a arrancar
+- `abre-expediente` → `chunk-no-cargo` → `arranque`  … fue la recarga voluntaria
+  de `main.jsx` por un chunk que el servidor ya no tiene
+- `abre-expediente` y nada más  … abrió bien; el problema está en otro lado
+
+Va en el canónico y no en la vista, así que quedan instrumentadas las tres que
+montan expediente —Reglas, Productos y Compras— de una sola vez. Eso importa
+para este caso concreto: el usuario reporta que **en Productos NO falla**, y
+tener las tres en el mismo registro es lo que permite comparar una contra otra
+en el mismo aparato.
+
+Contexto del reporte, recogido hoy: falla **igual en Safari y en la app agregada
+a inicio**, con **cualquier** producto, y el ciclo es «se recarga → funciona →
+vuelvo a abrir → falla». O sea que es reproducible a voluntad, que es la mejor
+condición posible para que el registro lo atrape a la primera.
+
 ## v2.516.1 — Solicitar desde el detalle del producto
 
 **El botón faltaba justo en la pantalla a la que se llega para pedir.** En

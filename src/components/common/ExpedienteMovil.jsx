@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ModalShell from './ModalShell';
 import HojaMovil from './HojaMovil';
+import { anotar } from '../../utils/cajaNegra';
 
 
 /**
@@ -68,6 +69,23 @@ import HojaMovil from './HojaMovil';
  * superior ya queda fija.
  */
 export default function ExpedienteMovil({ abierto, onClose, titulo, subtitulo, variante = 'auto', children }) {
+    // ── La miga que hace CONCLUYENTE a la caja negra ──────────────────────
+    // Sin una marca en el momento exacto de abrir, un registro que termina de
+    // golpe es ambiguo: no se distingue «la página murió acá» de «el toque
+    // nunca llegó a registrarse». Con esta línea, un `arranque` inmediatamente
+    // después de un `abre-expediente` dice lo primero sin lugar a dudas — y un
+    // `chunk-no-cargo` en el medio dice que fue la recarga voluntaria de
+    // `main.jsx`. Son las dos hipótesis vivas del fallo del iPhone y este es el
+    // único punto donde se separan.
+    //
+    // Va en el canónico y no en la vista: las tres que montan expediente
+    // (Reglas, Productos, Compras) quedan instrumentadas de una vez, y como el
+    // usuario reporta que en Productos NO falla, tener las tres en el mismo
+    // registro es justamente lo que permite comparar.
+    useEffect(() => {
+        if (abierto) anotar('abre-expediente', { titulo, variante });
+    }, [abierto, titulo, variante]);
+
     const cuerpo = abierto ? children(abierto) : null;
 
     // ── El envase lo decide el CONTENIDO, no la vista ─────────────────────

@@ -1,7 +1,20 @@
 # PLAN — El canon móvil, y cómo se verifica solo
 
-**Estado:** abierto · **Abierto el** 2026-08-07 · **Antecesor:** `PLAN-MOBILE-2026-07.md`
+**Estado:** F0, F1 y F3 ✅ **CERRADAS** · F2 parcial · F4 abierta ·
+**Abierto el** 2026-08-07 · **Antecesor:** `PLAN-MOBILE-2026-07.md`
 (aquél arregla lo que hay; **éste evita que vuelva a pasar en lo que venga**).
+
+> **Estado real al 2026-08-08 — lo que sigue está desactualizado de F0, F1 y F3.**
+> Se cerraron el mismo 7 de agosto y no se anotó acá:
+> **F0** — la tabla del canon vive en `DESIGN.md:4831`, con la corrección de gaps
+> táctiles y safe-areas. **F1** — `scripts/mobile-gate.mjs` existe, corre en
+> pre-commit acotado a `src/(views|components)/` y da verde. **F3** — el checklist
+> es `docs/CHECKLIST-VISTA-NUEVA.md` (su criterio de aceptación, en cambio, sigue
+> sin probarse: falta construir una vista con él).
+> **F2 quedó a medias**: pestañas y modales corrieron (v2.513.0, v2.514.2), pero
+> **ningún tema que no sea el de por defecto se midió nunca** — de cuatro.
+> **F4 (CI) no se empezó.**
+> Lo que falta, con su número medido: **`docs/PLAN-CIERRE-MOVIL-2026-08-08.md`**.
 
 ## 0. Qué resuelve y qué no
 

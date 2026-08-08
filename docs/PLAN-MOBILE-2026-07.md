@@ -1,5 +1,13 @@
 # PLAN MÓVIL 2026-07 — Prompt de plan de acción
 
+> **Estado al 2026-08-08.** Fases 1, 2, 3 y 5 ✅ cerradas. De los siete criterios
+> de aceptación, el único que sigue en ⚠️ es el **4 (touch targets en iPad Mini)**
+> — `TabBarAction sm` a 36px y el disparador de `PeriodPicker` a 34px, que a
+> 768px con puntero grueso **sí se dibujan**. Y sigue sin hacerse la prueba en el
+> **teléfono real del usuario**, que es el reporte que originó todo esto.
+> Los dos, con su medición y las tres salidas de diseño evaluadas, viven en
+> **`docs/PLAN-CIERRE-MOVIL-2026-08-08.md`** (fases F5 y F6).
+
 > **Cómo usar este documento**: es un prompt ejecutable. Pégalo (o referéncialo) en una
 > sesión de Claude Code y dile "ejecuta la Fase N de PLAN-MOBILE-2026-07.md". Cada fase
 > es autocontenida, termina con verificación en WebKit + Chromium y un commit propio

@@ -143,5 +143,10 @@ jobs:
         if: always()
         with:
           name: barrido-movil-${{ matrix.mitad }}
-          path: test-results/barrido-total/
+          # Los dos: `barridos/` tiene el informe (fuera de `test-results/`
+          # porque Playwright limpia ese directorio en cada corrida) y
+          # `test-results/barrido-total/` las capturas.
+          path: |
+            barridos/
+            test-results/barrido-total/
           retention-days: 14

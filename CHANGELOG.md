@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.531.4 — Las últimas cinco tablas a mano: el ratchet llega a cero
+
+```
+tabla-a-mano            26 → 0
+modal-sin-cuerpo-canonico    0
+buscador-a-mano              0
+movil-false-sin-motivo       0
+```
+
+**Las cuatro categorías de `gate:movil` en cero.** A partir de acá cualquier
+`<table>` nuevo en `src/views` o `src/components` falla el commit.
+
+**Tres eran del expediente de Catálogo** — historial de compras, historial de
+precios y la matriz de precios vigentes. Las tres viven dentro de la fila
+expandida y ya tenían su rama de fichas para el teléfono (`comoPanel`), así que
+van con `plano` —la expansión ya trae su superficie— y `movil={false}` con su
+motivo escrito. Las clases por fila de la matriz (cambiada, en pérdida, normal)
+se conservan tal cual: son señales de negocio, no decoración de tabla, y el
+canónico no las conoce.
+
+**Una era el resumen por sucursal de Pedidos** — siete columnas de números que
+en 390px no entran. Ahora cada sucursal cae a ficha con el nombre arriba y sus
+pedidos a la derecha. El ancla se declara a mano porque ninguna columna está
+alineada a la derecha, y sin eso la inferencia habría tomado la última, que es
+el conteo de pausas.
+
+**Y la última es el detalle de ventas: trece columnas y encabezados
+ordenables.** Con ella se va `DH`, el encabezado ordenable local. Existía por un
+motivo real —`DataTable` no tenía teclado ni `aria-sort` hasta v2.119.0, y
+cuando el canónico se arregló esta tercera tabla de la vista ya estaba escrita a
+mano— pero hoy el canónico trae el contrato completo y mantener la copia era
+quedarse con la versión que hay que acordarse de arreglar dos veces.
+
+El `<tfoot>` con `colSpan` del total pasa a `footer`: un `colSpan` no significa
+nada en modo ficha, y el número que cierra la pantalla no se puede perder al
+girar el teléfono. `Lote` y `Vence` quedan **sin** `sortable` a propósito — el
+orden lo resuelve el servidor por las columnas que tiene indexadas, y una flecha
+que no hace nada es peor que ninguna flecha.
+
 ## v2.531.3 — Siete tablas a mano pasan al canónico
 
 De las 12 que quedaban tras separar impresión y matrices, se migran siete a

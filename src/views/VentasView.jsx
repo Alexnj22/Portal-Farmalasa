@@ -285,6 +285,30 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
 // (y una usaba `text-danger-text` donde la otra usa `text-danger-text`).
 const VARIANTE_DOC = { CCF: 'danger', FCF: 'chart-1' };
 
+// Las trece columnas del detalle de ventas. Es una función y no una constante
+// porque la de sucursal desaparece cuando ya se está filtrando por una: mostrar
+// una columna con el mismo valor en todas las filas gasta 90px de los 1,180 que
+// la tabla necesita.
+//
+// `Lote` y `Vence` no llevan `sortable` a propósito: el orden lo resuelve el
+// servidor por las columnas que tiene indexadas, y ofrecer una flecha que no
+// hace nada es peor que no ofrecerla.
+const COLS_DRILL = (conSucursal) => [
+    { key: 'fecha',           label: 'Fecha',        sortable: true },
+    { key: 'correlativo',     label: 'Correlativo',  sortable: true },
+    { key: 'tipo_documento',  label: 'Doc',          sortable: true },
+    { key: 'tipo_pago',       label: 'Pago',         sortable: true },
+    { key: 'cod_vendedor',    label: 'Vendedor',     sortable: true },
+    { key: 'cliente',         label: 'Cliente',      sortable: true },
+    ...(conSucursal ? [{ key: 'branch_id', label: 'Suc.', sortable: true }] : []),
+    { key: 'presentacion',    label: 'Presentación', sortable: true },
+    { key: 'lote',            label: 'Lote' },
+    { key: 'vence',           label: 'Vence', hideBelow: 'lg' },
+    { key: 'precio_display',  label: 'P. Unit.', align: 'right', sortable: true },
+    { key: 'cantidad',        label: 'Cant.',    align: 'right', sortable: true },
+    { key: 'neto_display',    label: 'Total',    align: 'right', sortable: true },
+];
+
 // Encabezado ordenable de las tablas propias de esta vista.
 // El `<button>` ya estaba —de hecho era MÁS accesible que el `DataTable`
 // canónico, que hasta v2.119.0 ponía el onClick en el `<th>` pelado—, pero le
@@ -2252,26 +2276,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             const nVentas  = usarSummary ? drillSummary.total_count : filteredDrill.length;
                                                             const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / drillPageSize));
                                                             const paginatedDrill  = filteredDrill.slice((drillPage - 1) * drillPageSize, drillPage * drillPageSize);
-                                                            // Era un `<th onClick>` pelado — el mismo defecto que
-                                                            // tenía `DataTable` hasta v2.119.0: sin teclado y sin
-                                                            // `aria-sort`. Es la tercera tabla de esta vista, así que
-                                                            // el arreglo del canónico no la alcanzaba.
-                                                            const DH = ({ col, label, right }) => {
-                                                                const active = drillSortCol === col;
-                                                                return (
-                                                                    <th aria-sort={active ? (drillSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                                                        className={`px-3 py-2 font-black text-micro uppercase tracking-wide select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-chart-1-text' : 'text-content-2'} hover:text-content-2`}>
-                                                                        <button type="button" onClick={() => handleDrillSort(col)}
-                                                                            aria-label={`Ordenar por ${label}${active && drillSortDir === 'asc' ? ', descendente' : ', ascendente'}`}
-                                                                            className={`inline-flex items-center gap-0.5 cursor-pointer font-black uppercase tracking-wide ${right ? 'flex-row-reverse' : ''}`}>
-                                                                            {label}
-                                                                            {active
-                                                                                ? (drillSortDir === 'asc' ? <ArrowUp size={9} /> : <ArrowDown size={9} />)
-                                                                                : <ChevronsUpDown size={9} className="opacity-30" />}
-                                                                        </button>
-                                                                    </th>
-                                                                );
-                                                            };
+                                                            // El encabezado ordenable local (`DH`) se fue en v2.531.4.
+                                                            // Existía porque `DataTable` no tenía teclado ni `aria-sort`
+                                                            // hasta v2.119.0 —y el arreglo del canónico no alcanzó a
+                                                            // esta tercera tabla de la vista, que ya estaba escrita a
+                                                            // mano—. Hoy el canónico trae el contrato completo, así que
+                                                            // mantener una copia era quedarse con la versión que hay
+                                                            // que acordarse de arreglar dos veces.
                                                             const pill = (val, field, label) => {
                                                                 const active = drillFilters[field] === val;
                                                                 return (
@@ -2324,26 +2335,30 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     </div>
 
                                                                     {/* Table */}
-                                                                    <div className="rounded-xl border border-divider overflow-hidden bg-surface-card shadow-sm overflow-x-auto">
-                                                                        <table className="min-w-full text-label">
-                                                                            <thead className="bg-surface-card-hover border-b border-divider">
-                                                                                <tr>
-                                                                                    <DH col="fecha"          label="Fecha" />
-                                                                                    <DH col="correlativo"    label="Correlativo" />
-                                                                                    <DH col="tipo_documento" label="Doc" />
-                                                                                    <DH col="tipo_pago"      label="Pago" />
-                                                                                    <DH col="cod_vendedor"   label="Vendedor" />
-                                                                                    <DH col="cliente"        label="Cliente" />
-                                                                                    {!filterBranch && <DH col="branch_id" label="Suc." />}
-                                                                                    <DH col="presentacion"     label="Presentación" />
-                                                                                    <th className="px-3 py-2 font-black text-micro uppercase tracking-wide text-content-2 text-left whitespace-nowrap">Lote</th>
-                                                                                    <th className="px-3 py-2 font-black text-micro uppercase tracking-wide text-content-2 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
-                                                                                    <DH col="precio_display"   label="P. Unit." right />
-                                                                                    <DH col="cantidad"         label="Cant." right />
-                                                                                    <DH col="neto_display"     label="Total" right />
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody className="divide-y divide-divider">
+                                                                    {/* Trece columnas y encabezados ordenables. `DataTable` ya
+                                                                        trae el contrato completo —`<button>`, `aria-sort` y
+                                                                        teclado— así que el `DH` local, que existía porque el
+                                                                        canónico no lo tenía, deja de hacer falta. El total va
+                                                                        en `footer`: como `<tfoot>` con `colSpan` no significa
+                                                                        nada en modo ficha, y acá el número que cierra la
+                                                                        pantalla no se puede perder. */}
+                                                                    <DataTable
+                                                                        columns={COLS_DRILL(!filterBranch)}
+                                                                        sortKey={drillSortCol} sortDir={drillSortDir} onSort={handleDrillSort}
+                                                                        dense minWidth="1180px"
+                                                                        movil={{ identidad: 'correlativo', ancla: 'neto_display', chips: ['fecha', 'cliente'] }}
+                                                                        footer={
+                                                                            <>
+                                                                                <span className="text-caption font-black text-content-3 uppercase tracking-wide">
+                                                                                    Total {filteredDrill.length < drillData.length ? '(filtrado)' : ''}
+                                                                                </span>
+                                                                                <span className="flex items-center gap-4">
+                                                                                    <span className="font-black text-content-2 tabular-nums">{fmtQty(totCant)}</span>
+                                                                                    <span className="font-black text-success-text tabular-nums">{fmt(totNeto)}</span>
+                                                                                </span>
+                                                                            </>
+                                                                        }
+                                                                    >
                                                                                 {paginatedDrill.map((line, li) => {
                                                                                     const emp        = employees?.find(e => e.code === line.cod_vendedor);
                                                                                     const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
@@ -2352,42 +2367,42 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-surface-card-hover text-content-3';
                                                                                     const docVariante = VARIANTE_DOC[line.tipo_documento] || 'neutral';
                                                                                     return (
-                                                                                        <tr key={li} className="hover:bg-chart-1/10 transition-colors">
-                                                                                            <td className="px-3 py-2 font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</td>
-                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                        <DataRow key={li} index={li}>
+                                                                                            <DataCell className="font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</DataCell>
+                                                                                            <DataCell className="whitespace-nowrap">
                                                                                                 <div className="flex flex-col leading-tight">
                                                                                                     <span className="font-mono text-content-2 text-label">{line.correlativo || '—'}</span>
                                                                                                     {line.erp_invoice_id && (
                                                                                                         <span className="font-mono text-micro text-content-3">#{line.erp_invoice_id}</span>
                                                                                                     )}
                                                                                                 </div>
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                            </DataCell>
+                                                                                            <DataCell className="whitespace-nowrap">
                                                                                                 {line.tipo_documento && <Badge variant={docVariante} size="sm">{line.tipo_documento}</Badge>}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                            </DataCell>
+                                                                                            <DataCell className="whitespace-nowrap">
                                                                                                 {line.tipo_pago && <span className={`text-micro font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                            </DataCell>
+                                                                                            <DataCell className="whitespace-nowrap">
                                                                                                 <div className="flex items-center gap-1.5">
                                                                                                     <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
                                                                                                     <span className="text-content-2 text-label">{empShort}</span>
                                                                                                 </div>
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-content-2 max-w-[160px] truncate">{line.cliente || '—'}</td>
-                                                                                            {!filterBranch && <td className="px-3 py-2 text-content-3 whitespace-nowrap">{branchName}</td>}
-                                                                                            <td className="px-3 py-2 text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</td>
-                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                            </DataCell>
+                                                                                            <DataCell className="text-content-2 max-w-[160px] truncate">{line.cliente || '—'}</DataCell>
+                                                                                            {!filterBranch && <DataCell className="text-content-3 whitespace-nowrap">{branchName}</DataCell>}
+                                                                                            <DataCell className="text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</DataCell>
+                                                                                            <DataCell className="whitespace-nowrap">
                                                                                                 {line.lote
                                                                                                     ? <Badge variant="chart-3" size="sm" uppercase={false}>{line.lote}</Badge>
                                                                                                     : <span className="text-content-3">—</span>}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 whitespace-nowrap hidden lg:table-cell">
+                                                                                            </DataCell>
+                                                                                            <DataCell className="whitespace-nowrap hidden lg:table-cell">
                                                                                                 {line.fecha_vencimiento
                                                                                                     ? <Badge variant="chart-9" size="sm" uppercase={false}>{line.fecha_vencimiento}</Badge>
                                                                                                     : <span className="text-content-3">—</span>}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-right whitespace-nowrap">
+                                                                                            </DataCell>
+                                                                                            <DataCell align="right" className="whitespace-nowrap">
                                                                                                 <div className="flex flex-col items-end gap-0.5">
                                                                                                     <span className="text-label font-semibold text-content-2">{fmt(line.precio_display)}</span>
                                                                                                     {line.tier && (
@@ -2414,24 +2429,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                         </div>
                                                                                                     )}
                                                                                                 </div>
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-right font-semibold text-content-2 whitespace-nowrap">{fmtQty(line.cantidad)}</td>
-                                                                                            <td className="px-3 py-2 text-right font-black text-content whitespace-nowrap">{fmt(line.neto_display)}</td>
-                                                                                        </tr>
+                                                                                            </DataCell>
+                                                                                            <DataCell align="right" className="font-semibold text-content-2 whitespace-nowrap">{fmtQty(line.cantidad)}</DataCell>
+                                                                                            <DataCell align="right" className="font-black text-content whitespace-nowrap">{fmt(line.neto_display)}</DataCell>
+                                                                                        </DataRow>
                                                                                     );
                                                                                 })}
-                                                                            </tbody>
-                                                                            <tfoot className="bg-surface-card-hover border-t-2 border-divider">
-                                                                                <tr>
-                                                                                    <td colSpan={!filterBranch ? 11 : 10} className="px-3 py-2 text-caption font-black text-content-3 uppercase tracking-wide">
-                                                                                        Total {filteredDrill.length < drillData.length ? `(filtrado)` : ''}
-                                                                                    </td>
-                                                                                    <td className="px-3 py-2 text-right font-black text-content-2">{fmtQty(totCant)}</td>
-                                                                                    <td className="px-3 py-2 text-right font-black text-success-text">{fmt(totNeto)}</td>
-                                                                                </tr>
-                                                                            </tfoot>
-                                                                        </table>
-                                                                    </div>
+                                                                    </DataTable>
                                                                     {drillTotalPages > 1 && (
                                                                         <div className="px-2 pt-2">
                                                                             <TablePagination

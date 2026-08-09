@@ -11,6 +11,17 @@ import {
 } from 'lucide-react';
 import { ERP_NAMES } from '../../constants/erp';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+
+const COLS_SUCURSAL = [
+    { key: 'sucursal',  label: 'Sucursal' },
+    { key: 'pedidos',   label: 'Pedidos',    align: 'center' },
+    { key: 'prep',      label: 'Prep. neto', align: 'center' },
+    { key: 'pausa',     label: 'Pausa',      align: 'center' },
+    { key: 'transito',  label: 'Tránsito',   align: 'center' },
+    { key: 'recuento',  label: 'Recuento',   align: 'center' },
+    { key: 'pausas',    label: 'Pausas',     align: 'center' },
+];
 
 const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 
@@ -164,43 +175,41 @@ export default function TabMetricas({ searchTerm = '' }) {
                                 Por sucursal
                             </p>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-label">
-                                <thead>
-                                    <tr className="border-b border-divider">
-                                        <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Sucursal</th>
-                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Pedidos</th>
-                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Prep. neto</th>
-                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Pausa</th>
-                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Tránsito</th>
-                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Recuento</th>
-                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Pausas</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredSucs.map(s => (
-                                        <tr key={s.id} className="border-b border-divider hover:bg-surface-card-hover/50 transition-colors">
-                                            <td className="px-4 py-2.5 font-semibold text-content-2">{s.nombre}</td>
-                                            <td className="px-3 py-2.5 text-center text-content-2 tabular-nums">{s.pedidos}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgPrep)}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-warning tabular-nums">{fmtMin(s.avgPausado)}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgTransito)}</td>
-                                            <td className="px-3 py-2.5 text-center font-medium text-chart-9-text tabular-nums">{fmtMin(s.avgRecuento)}</td>
-                                            <td className="px-3 py-2.5 text-center tabular-nums">
-                                                {s.numPausas > 0 ? (
-                                                    <span className="inline-flex items-center gap-0.5 text-warning font-semibold">
-                                                        <Pause size={9} />
-                                                        {s.numPausas}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-content-3">—</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        {/* Siete columnas de números no entran en 390px. En el
+                            teléfono cada sucursal cae a ficha: el nombre arriba,
+                            los pedidos a la derecha —que es el número por el que
+                            se abre esta pantalla— y los dos tiempos que más se
+                            miran en la línea de contexto. El ancla se declara
+                            porque acá no hay ninguna columna alineada a la
+                            derecha, y sin eso la inferencia tomaría la última,
+                            que es el conteo de pausas. `plano` porque la sección
+                            ya vive dentro de su propia tarjeta con encabezado. */}
+                        <DataTable
+                            columns={COLS_SUCURSAL}
+                            plano dense minWidth="640px"
+                            movil={{ identidad: 'sucursal', ancla: 'pedidos', chips: ['prep', 'transito'] }}
+                        >
+                            {filteredSucs.map((s, i) => (
+                                <DataRow key={s.id} index={i}>
+                                    <DataCell className="font-semibold text-content-2">{s.nombre}</DataCell>
+                                    <DataCell align="center" className="text-content-2 tabular-nums">{s.pedidos}</DataCell>
+                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgPrep)}</DataCell>
+                                    <DataCell align="center" className="font-medium text-warning tabular-nums">{fmtMin(s.avgPausado)}</DataCell>
+                                    <DataCell align="center" className="font-medium text-chart-3-text tabular-nums">{fmtMin(s.avgTransito)}</DataCell>
+                                    <DataCell align="center" className="font-medium text-chart-9-text tabular-nums">{fmtMin(s.avgRecuento)}</DataCell>
+                                    <DataCell align="center" className="tabular-nums">
+                                        {s.numPausas > 0 ? (
+                                            <span className="inline-flex items-center gap-0.5 text-warning font-semibold">
+                                                <Pause size={9} />
+                                                {s.numPausas}
+                                            </span>
+                                        ) : (
+                                            <span className="text-content-3">—</span>
+                                        )}
+                                    </DataCell>
+                                </DataRow>
+                            ))}
+                        </DataTable>
                     </div>
 
                     {/* Razones de pausa */}

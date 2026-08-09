@@ -694,6 +694,13 @@ const CLASIF_STYLE = {
     Regular:   { variante: 'chart-1', Icon: Package   },
 };
 
+const COLS_COMPRAS = [
+    { key: 'fecha',     label: 'Fecha' },
+    { key: 'proveedor', label: 'Proveedor' },
+    { key: 'cant',      label: 'Cant.',       align: 'center' },
+    { key: 'costo',     label: 'Costo unit.', align: 'right' },
+];
+
 function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = false }) {
     const [showAll, setShowAll] = useState(false);
 
@@ -761,36 +768,28 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = fal
             {comoPanel ? (
                 <div className="flex flex-col">{visible.map(filaCompraMovil)}</div>
             ) : (
-                <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
-                <table className="min-w-full text-sm">
-                    <thead>
-                        <tr className="bg-surface-card-hover/80 border-b border-divider">
-                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Fecha</th>
-                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Proveedor</th>
-                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Cant.</th>
-                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Costo unit.</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-divider">
-                        {visible.map((row, i) => (
-                            <tr key={i} className="hover:bg-surface-card-hover/40 transition-colors">
-                                <td className="px-3 py-2 text-label text-content-2 whitespace-nowrap">
-                                    {fmtDate(row.purchase_receipts?.fecha)}
-                                </td>
-                                <td className="px-3 py-2 text-label text-content-2 max-w-[180px] truncate">
-                                    {row.purchase_receipts?.proveedor || '—'}
-                                </td>
-                                <td className="px-3 py-2 text-label text-content-2 text-center tabular-nums">
-                                    {parseFloat(row.cantidad || 0).toLocaleString()}
-                                </td>
-                                <td className="px-3 py-2 text-body-sm font-semibold text-content-2 text-right tabular-nums">
-                                    {fmtCost(row.precio_unitario)}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                /* `movil={false}` con su motivo: en el teléfono esta rama no se
+                   dibuja — `comoPanel` de arriba ya entrega las fichas, que es el
+                   diseño hecho para el expediente. `plano` porque la sección vive
+                   dentro de la fila expandida, que ya trae su superficie. */
+                <DataTable columns={COLS_COMPRAS} plano dense movil={false} minWidth="480px">
+                    {visible.map((row, i) => (
+                        <DataRow key={i} index={i}>
+                            <DataCell className="text-label text-content-2 whitespace-nowrap">
+                                {fmtDate(row.purchase_receipts?.fecha)}
+                            </DataCell>
+                            <DataCell className="text-label text-content-2 max-w-[180px] truncate">
+                                {row.purchase_receipts?.proveedor || '—'}
+                            </DataCell>
+                            <DataCell align="center" className="text-label text-content-2 tabular-nums">
+                                {parseFloat(row.cantidad || 0).toLocaleString()}
+                            </DataCell>
+                            <DataCell align="right" className="text-body-sm font-semibold text-content-2 tabular-nums">
+                                {fmtCost(row.precio_unitario)}
+                            </DataCell>
+                        </DataRow>
+                    ))}
+                </DataTable>
             )}
 
             {rows.length > 8 && (
@@ -851,30 +850,29 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false })
             {comoPanel ? (
                 <div className="flex flex-col">{visible.map(filaPrecioMovil)}</div>
             ) : (
-                <div className="overflow-x-auto rounded-xl border border-divider shadow-sm">
-                <table className="min-w-full text-sm">
-                    <thead>
-                        <tr className="bg-surface-card-hover/80 border-b border-divider">
-                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Fecha</th>
-                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Presentación</th>
+                /* Las columnas de precio salen de `allowedPriceFields`, que
+                   depende del nivel del usuario: la lista se arma acá una vez y
+                   la fila la recorre igual, así que encabezado y celda no pueden
+                   quedar corridos. `movil={false}` porque el teléfono usa la
+                   rama `comoPanel` de arriba; `plano` porque la sección vive
+                   dentro de la fila expandida, que ya trae su superficie. */
+                <DataTable movil={false} plano dense minWidth="520px"
+                    columns={[
+                        { key: 'fecha', label: 'Fecha' },
+                        { key: 'pres',  label: 'Presentación' },
+                        ...allowedPriceFields.map(f => ({ key: f.key, label: f.label, align: 'right' })),
+                    ]}
+                >
+                    {visible.map((row, i) => (
+                        <DataRow key={row.id_presentacion + '-' + row.valid_from + '-' + i} index={i}>
+                            <DataCell className="text-label text-content-2 whitespace-nowrap">{fmtDate(row.valid_from)}</DataCell>
+                            <DataCell className="text-label text-content-2">{row.presentaciones?.tipo || '—'}</DataCell>
                             {allowedPriceFields.map(f => (
-                                <th key={f.key} className="px-3 py-2 text-micro font-black uppercase tracking-wider text-right text-content-2">{f.label}</th>
+                                <DataCell key={f.key} align="right" className="text-body-sm font-semibold text-content-2 tabular-nums">{fmtP(row[f.key])}</DataCell>
                             ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-divider">
-                        {visible.map((row, i) => (
-                            <tr key={row.id_presentacion + '-' + row.valid_from + '-' + i} className="hover:bg-surface-card-hover/40 transition-colors">
-                                <td className="px-3 py-2 text-label text-content-2 whitespace-nowrap">{fmtDate(row.valid_from)}</td>
-                                <td className="px-3 py-2 text-label text-content-2">{row.presentaciones?.tipo || '—'}</td>
-                                {allowedPriceFields.map(f => (
-                                    <td key={f.key} className="px-3 py-2 text-body-sm font-semibold text-content-2 text-right tabular-nums">{fmtP(row[f.key])}</td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </DataRow>
+                    ))}
+                </DataTable>
             )}
             {deduped.length > 8 && (
                 <Button variant="ghost" onClick={() => setShowAll(v => !v)}>{showAll ? 'Ver menos' : `Ver ${deduped.length - 8} cambio${deduped.length - 8 !== 1 ? 's' : ''} anterior${deduped.length - 8 !== 1 ? 'es' : ''}`}</Button>
@@ -1238,73 +1236,72 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     })}
                                 </div>
                             ) : (
-                                <div className={`overflow-x-auto rounded-xl border ${xk.pricingWrapper}`}>
-                                    <table className="min-w-full text-sm">
-                                        <thead>
-                                            <tr className={xk.pricingThead}>
-                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-left whitespace-nowrap ${xk.pricingThText}`}>Presentación</th>
-                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Factor</th>
-                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-right ${xk.pricingThText}`}>Costo</th>
-                                                {allowedPriceFields.map(f => (
-                                                    <th key={f.key} className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-right whitespace-nowrap ${xk.pricingThText}`}>{f.label}</th>
-                                                ))}
-                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Estado</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className={xk.pricingDivide}>
-                                            {visiblePrecios.map(pp => {
-                                                const pCh = changesMap[pp.id_presentacion] || {};
-                                                const rowChanged = Object.keys(pCh).length > 0;
-                                                const worst = worstMarginOf(pp, marginCheckFields);
-                                                return (
-                                                    <tr key={pp.id_presentacion} className={
-                                                        rowChanged ? xk.pricingRowChanged :
-                                                        worst !== null && worst < 0 ? xk.pricingRowLoss :
-                                                        xk.pricingRowNormal
-                                                    }>
-                                                        <td className="px-3 py-2.5 whitespace-nowrap">
-                                                            <span className={`text-body-sm font-semibold ${xk.pricingValueNormal}`}>{pp.presentaciones?.tipo || '—'}</span>
-                                                            {pp.descripcion && (
-                                                                <span className={`text-micro ml-1 ${xk.pricingFactor}`}>{pp.descripcion}</span>
-                                                            )}
-                                                        </td>
-                                                        <td className={`px-3 py-2.5 text-center text-label ${xk.pricingFactor}`}>{pp.factor ?? '—'}</td>
-                                                        <td className={`px-3 py-2.5 text-right text-label font-medium ${xk.pricingCosto}`}>{fmtP(pp.costo)}</td>
-                                                        {allowedPriceFields.map(f => {
-                                                            const ch = pCh[f.key];
-                                                            const m  = calcMargin(pp[f.key], pp.costo);
-                                                            return (
-                                                                <td key={f.key} className={`px-3 py-2.5 text-right ${ch ? xk.pricingCellChanged : ''}`}>
+                                /* La matriz de precios. `movil={false}` porque arriba
+                                   está la rama de fichas del expediente, y `plano`
+                                   porque la fila expandida ya trae su superficie. Las
+                                   clases por fila —cambiada, en pérdida, normal— siguen
+                                   siendo las de `xk`: son señales de negocio, no
+                                   decoración de tabla, y el canónico no las conoce. */
+                                <DataTable movil={false} plano dense minWidth="720px"
+                                    columns={[
+                                        { key: 'pres',   label: 'Presentación' },
+                                        { key: 'factor', label: 'Factor', align: 'center' },
+                                        { key: 'costo',  label: 'Costo',  align: 'right' },
+                                        ...allowedPriceFields.map(f => ({ key: f.key, label: f.label, align: 'right' })),
+                                        { key: 'estado', label: 'Estado', align: 'center' },
+                                    ]}
+                                >
+                                    {visiblePrecios.map((pp, i) => {
+                                        const pCh = changesMap[pp.id_presentacion] || {};
+                                        const rowChanged = Object.keys(pCh).length > 0;
+                                        const worst = worstMarginOf(pp, marginCheckFields);
+                                        return (
+                                            <DataRow key={pp.id_presentacion} index={i} className={
+                                                rowChanged ? xk.pricingRowChanged :
+                                                worst !== null && worst < 0 ? xk.pricingRowLoss :
+                                                xk.pricingRowNormal
+                                            }>
+                                                <DataCell className="whitespace-nowrap">
+                                                    <span className={`text-body-sm font-semibold ${xk.pricingValueNormal}`}>{pp.presentaciones?.tipo || '—'}</span>
+                                                    {pp.descripcion && (
+                                                        <span className={`text-micro ml-1 ${xk.pricingFactor}`}>{pp.descripcion}</span>
+                                                    )}
+                                                </DataCell>
+                                                <DataCell align="center" className={`text-label ${xk.pricingFactor}`}>{pp.factor ?? '—'}</DataCell>
+                                                <DataCell align="right" className={`text-label font-medium ${xk.pricingCosto}`}>{fmtP(pp.costo)}</DataCell>
+                                                {allowedPriceFields.map(f => {
+                                                    const ch = pCh[f.key];
+                                                    const m  = calcMargin(pp[f.key], pp.costo);
+                                                    return (
+                                                        <DataCell key={f.key} align="right" className={ch ? xk.pricingCellChanged : ''}>
+                                                            <div className="flex flex-col items-end gap-0.5">
+                                                                <span className={`text-body-sm font-semibold ${ch ? xk.pricingValueChanged : xk.pricingValueNormal}`}>
+                                                                    {fmtP(pp[f.key])}
+                                                                </span>
+                                                                {ch && (
                                                                     <div className="flex flex-col items-end gap-0.5">
-                                                                        <span className={`text-body-sm font-semibold ${ch ? xk.pricingValueChanged : xk.pricingValueNormal}`}>
-                                                                            {fmtP(pp[f.key])}
+                                                                        <span className={`text-micro line-through whitespace-nowrap ${xk.pricingOldValue}`}>
+                                                                            {fmtP(ch.anterior)}
                                                                         </span>
-                                                                        {ch && (
-                                                                            <div className="flex flex-col items-end gap-0.5">
-                                                                                <span className={`text-micro line-through whitespace-nowrap ${xk.pricingOldValue}`}>
-                                                                                    {fmtP(ch.anterior)}
-                                                                                </span>
-                                                                                <span className={`text-micro ${'text-content-3'}`}>
-                                                                                    {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                        {f.key !== 'precio_7' && <MarginPct pct={m} />}
+                                                                        <span className="text-micro text-content-3">
+                                                                            {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                                                        </span>
                                                                     </div>
-                                                                </td>
-                                                            );
-                                                        })}
-                                                        <td className="px-3 py-2.5 text-center">
-                                                            <Badge variant={pp.activo !== false ? 'success' : 'neutral'} size="sm" uppercase={false}>
-                                                                {pp.activo !== false ? 'Activa' : 'Inactiva'}
-                                                            </Badge>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                                )}
+                                                                {f.key !== 'precio_7' && <MarginPct pct={m} />}
+                                                            </div>
+                                                        </DataCell>
+                                                    );
+                                                })}
+                                                <DataCell align="center">
+                                                    <Badge variant={pp.activo !== false ? 'success' : 'neutral'} size="sm" uppercase={false}>
+                                                        {pp.activo !== false ? 'Activa' : 'Inactiva'}
+                                                    </Badge>
+                                                </DataCell>
+                                            </DataRow>
+                                        );
+                                    })}
+                                </DataTable>
                             )}
                             {inactiveCount > 0 && (
                                 <Button variant="ghost" size="xs" icon={Eye} className="mt-2"

@@ -1,7 +1,8 @@
 # PLAN — Cerrar al 100 la parte visual/móvil
 
-**Estado:** F1, F4, F5, F7 ✅ · F2 y F3 en su última corrida · F6 esperando un
-teléfono · **Abierto el** 2026-08-08 · **Cierra:** `PLAN-MOBILE-2026-07.md`
+**Estado:** F1–F5, F7, F8 ✅ · **F6 parcial** (dos hallazgos cerrados, falta
+standalone) · **F9 abierta** (la rotación) · **Abierto el** 2026-08-08 ·
+**Cierra:** `PLAN-MOBILE-2026-07.md`
 (fase 4 y criterio 4 de aceptación) y `PLAN-CANON-MOVIL-2026-08-07.md` (fases 2 y 4).
 
 > ## Bitácora — 2026-08-08
@@ -60,12 +61,43 @@ teléfono · **Abierto el** 2026-08-08 · **Cierra:** `PLAN-MOBILE-2026-07.md`
 > en `index.css`/`App.css`. La hipótesis viva es el **`font-size` del root**:
 > `w-11` son 2.75rem, y 2.75 × 15.68 = 43.12, o sea un root de 16 × 0.98.
 >
-> Antes de arreglar nada hay que cerrar esto, porque decide si son **70
-> hallazgos o cero**: un control del shell que está detrás del velo de un modal
-> **no se toca**, así que aunque el encogimiento sea real, contarlo como deuda
-> táctil es medir la referencia en vez del cuerpo — el error que este proyecto ya
-> cometió cinco veces. Y si el shell se encoge un 2% con cada modal, eso es un
-> efecto visual que nadie pidió y vale la pena saber de dónde sale.
+> **RESUELTO (v2.525.0).** Sale de `blurClasses`: con un diálogo abierto el shell
+> entero —`aside`, `main` y las tabs— recibe `pointer-events-none select-none
+> scale-[0.98] blur-[2px]`, o sea que se aleja y se difumina **a propósito**. Los
+> 70 eran controles que ya cumplen, medidos al 98%. Ninguno se puede tocar: el
+> velo está encima. El medidor ahora descarta lo que tiene `pointer-events: none`
+> en su cadena.
+>
+> ## F8 — cerrada el 2026-08-08
+>
+> ```
+> desbordes 116 → 0 · chicos 109 → 0 · zoom iOS 1 → 0 · sin acuse 46 → 0
+> ```
+>
+> De los 109 chicos, **58 eran el velo** y **12 medían la referencia** (el
+> `input` `sr-only` en vez de su `<label>` — y al corregir eso aparecieron 5
+> casillas de verdad chicas que el número viejo escondía). Los 39 reales salieron
+> por su forma o su canónico: filas de producto (20), encabezados de Solicitudes
+> (13), «De dónde sale» de Metas (6), el canónico `Checkbox` (5).
+>
+> Aparte, el **organigrama de Roles** no era un problema de tamaño sino de
+> alcance: el pan sólo escuchaba eventos de mouse, así que en el teléfono estaba
+> completo e **inalcanzable**. Ahora se arrastra con el dedo (v2.524.10).
+>
+> ## F9 — la rotación, ABIERTA
+>
+> Al girar, el contenido queda pintado al ancho de la orientación anterior y el
+> resto sale en blanco. **Se arregla solo al recargar o cambiar de vista**, así
+> que el ancho correcto existe: lo que no vuelve a ocurrir es el reparto.
+>
+> Probado y **fallido** (revertido en v2.524.9): re-parsear el meta viewport en
+> `orientationchange`, y forzar el reflow con un interruptor de `display` en la
+> raíz — éste además se veía. Tampoco sirve bloquear la orientación:
+> `screen.orientation.lock()` no existe en Safari de iOS.
+>
+> **Sin probar:** remontar el árbol de React con una `key` que cambie con la
+> orientación, que es lo que de verdad hace «abrir otra vista». El aviso está en
+> `index.html`, en el punto donde alguien iría a reintentarlo.
 
 Los dos planes anteriores están **más cerrados de lo que dicen sus documentos**:
 se commiteó entre el 6 y el 7 de agosto y no se anotó. Este plan parte de la foto

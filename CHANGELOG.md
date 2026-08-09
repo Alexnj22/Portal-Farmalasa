@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.531.6 — Los planes móviles dicen su estado real
+
+Cierre documental del trabajo móvil. Tres documentos afirmaban deuda que ya no
+existe, y uno de ellos por segunda vez en dos días.
+
+- **`PLAN-CANON-MOVIL`** decía «F2 parcial · F4 abierta» y «F4 (CI) no se
+  empezó». Las cinco fases están cerradas: el canon al día, `gate:movil` con sus
+  cuatro categorías en cero, el barrido verificado en vivo, el checklist escrito
+  y CI corriendo desde v2.522.1. Queda anotado que **la aceptación de F3 es a
+  futuro**: se prueba construyendo la próxima vista con el checklist y viendo
+  que el barrido la encuentre en cero **la primera vez**.
+- **`PLAN-MOBILE-2026-07`** marcaba su criterio 4 —blancos táctiles en iPad
+  Mini— en ⚠️ cuando se había cerrado en v2.523.2 con la matriz en **0 de 35
+  celdas**. Sus siete criterios están cumplidos.
+- La Fase 4 de ese plan, la pasada por vistas, cierra con `tabla-a-mano` en 0.
+
+**Lo único que queda del trabajo móvil necesita el teléfono del usuario** (F6), y
+aparte sigue vivo el trabón al girar, en pausa con su handoff.
+
 ## v2.531.5 — La regla de la sub-tabla decía lo contrario de lo que hay
 
 Los documentos que quedaron afirmando deuda que ya no existe, o una regla que el

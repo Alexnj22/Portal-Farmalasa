@@ -1,12 +1,20 @@
 # PLAN MÓVIL 2026-07 — Prompt de plan de acción
 
-> **Estado al 2026-08-08.** Fases 1, 2, 3 y 5 ✅ cerradas. De los siete criterios
-> de aceptación, el único que sigue en ⚠️ es el **4 (touch targets en iPad Mini)**
-> — `TabBarAction sm` a 36px y el disparador de `PeriodPicker` a 34px, que a
-> 768px con puntero grueso **sí se dibujan**. Y sigue sin hacerse la prueba en el
-> **teléfono real del usuario**, que es el reporte que originó todo esto.
-> Los dos, con su medición y las tres salidas de diseño evaluadas, viven en
-> **`docs/PLAN-CIERRE-MOVIL-2026-08-08.md`** (fases F5 y F6).
+> **Estado al 2026-08-09.** Fases 1, 2, 3 y 5 ✅ cerradas, y la 4 también: la
+> pasada por vistas terminó con `gate:movil` en cero en sus cuatro categorías
+> (v2.531.4). **Los siete criterios de aceptación están cumplidos.**
+>
+> El criterio **4 (touch targets en iPad Mini)** se cerró en v2.523.2 y este
+> encabezado siguió diciendo ⚠️ un día más: la matriz dio **0 de 35 celdas** —
+> la premisa del código era falsa y se midió. Ver F5 de
+> `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+>
+> **Lo único que queda es la prueba en el teléfono real del usuario**, que es el
+> reporte que originó todo esto y que ningún emulador puede sustituir: F6 del
+> plan de cierre, con guion en `docs/PRUEBA-EN-TELEFONO-REAL.md`.
+>
+> Aparte —y no es de este plan— sigue vivo el trabón al girar el teléfono, en
+> pausa y con handoff en `docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`.
 
 > **Cómo usar este documento**: es un prompt ejecutable. Pégalo (o referéncialo) en una
 > sesión de Claude Code y dile "ejecuta la Fase N de PLAN-MOBILE-2026-07.md". Cada fase

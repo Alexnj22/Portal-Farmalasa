@@ -1,20 +1,22 @@
 # PLAN — El canon móvil, y cómo se verifica solo
 
-**Estado:** F0, F1 y F3 ✅ **CERRADAS** · F2 parcial · F4 abierta ·
+**Estado:** **las cinco fases cerradas** (2026-08-09) ·
 **Abierto el** 2026-08-07 · **Antecesor:** `PLAN-MOBILE-2026-07.md`
 (aquél arregla lo que hay; **éste evita que vuelva a pasar en lo que venga**).
 
-> **Estado real al 2026-08-08 — lo que sigue está desactualizado de F0, F1 y F3.**
-> Se cerraron el mismo 7 de agosto y no se anotó acá:
-> **F0** — la tabla del canon vive en `DESIGN.md:4831`, con la corrección de gaps
-> táctiles y safe-areas. **F1** — `scripts/mobile-gate.mjs` existe, corre en
-> pre-commit acotado a `src/(views|components)/` y da verde. **F3** — el checklist
-> es `docs/CHECKLIST-VISTA-NUEVA.md` (su criterio de aceptación, en cambio, sigue
-> sin probarse: falta construir una vista con él).
-> **F2 quedó a medias**: pestañas y modales corrieron (v2.513.0, v2.514.2), pero
-> **ningún tema que no sea el de por defecto se midió nunca** — de cuatro.
-> **F4 (CI) no se empezó.**
-> Lo que falta, con su número medido: **`docs/PLAN-CIERRE-MOVIL-2026-08-08.md`**.
+> **Cierre — 2026-08-09.**
+>
+> | | |
+> |---|---|
+> | **F0** canon al día | ✅ la tabla vive en `DESIGN.md §32`. Reescrita otra vez el 09-08: su regla de la sub-tabla decía lo contrario de lo que hace el código |
+> | **F1** `gate:movil` | ✅ `scripts/mobile-gate.mjs`, en pre-commit. Desde v2.531.4 sus **cuatro categorías en cero** |
+> | **F2** barrido dinámico | ✅ verificada en vivo el 08-08: 148 pantallas × 4 temas, más 117 con pestañas y diálogos |
+> | **F3** checklist | ✅ escrito (`docs/CHECKLIST-VISTA-NUEVA.md`). **Su aceptación es a futuro**: se prueba construyendo la próxima vista con él |
+> | **F4** CI | ✅ v2.522.1 — gates bloqueantes y barrido nocturno, verificado en rojo |
+>
+> Lo único que queda del trabajo móvil es la prueba en el **teléfono real**
+> (F6 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`) y, aparte, el trabón al girar,
+> en pausa (`docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`).
 
 ## 0. Qué resuelve y qué no
 
@@ -93,7 +95,7 @@ lo que ya es canónico**. Lo demás lo mide C.
 
 ## 4. Fases
 
-### Fase 0 — Poner el canon al día  *(bloquea a las demás)*
+### Fase 0 — Poner el canon al día  ✅ **CERRADA** (`DESIGN.md §32`, reescrita otra vez el 2026-08-09)
 `DESIGN.md §32` afirma cosas falsas hoy. Reescribir:
 - «tabla → fichas no existe» → existe desde v2.480.0, y cómo se elige el papel de
   cada columna (identidad / ancla / contexto / hoja).
@@ -109,7 +111,7 @@ lo que ya es canónico**. Lo demás lo mide C.
 **Aceptación:** `§32` no contiene ninguna afirmación que el código desmienta, y
 la tabla de correspondencia vive ahí (este plan la referencia, no la duplica).
 
-### Fase 1 — `gate:movil` (estático)
+### Fase 1 — `gate:movil` (estático)  ✅ **CERRADA** — y desde v2.531.4 sus cuatro categorías están en **cero**
 Un gate nuevo, con la misma forma que `gate:design` (baseline + ratchet). Reglas,
 todas verificables leyendo el fuente:
 
@@ -162,7 +164,7 @@ Hoy cubre 37 rutas × 1 pestaña × 1 tema × 1 tamaño. Agregar, en este orden:
 **Aceptación:** el informe distingue *ruta · pestaña · modal · tema*, y cada
 combinación nueva arranca con su propio número, no mezclada.
 
-### Fase 3 — El checklist de vista nueva
+### Fase 3 — El checklist de vista nueva  ✅ **ESCRITO** (`docs/CHECKLIST-VISTA-NUEVA.md`) · su aceptación es a futuro
 Un archivo corto que se abre al crear un módulo. No prosa: preguntas con
 respuesta verificable, cada una apuntando a su fila de la tabla de §2.
 Se engancha al checklist de módulo nuevo que ya existe en memoria.
@@ -171,7 +173,7 @@ Se engancha al checklist de módulo nuevo que ya existe en memoria.
 encuentre en cero **la primera vez**. Ése es el único criterio que vale: si hay
 que corregirla después, el checklist no sirvió.
 
-### Fase 4 — CI
+### Fase 4 — CI  ✅ **CERRADA** (v2.522.1: gates bloqueantes + barrido nocturno, verificado en rojo)
 `gate:movil` en cada commit. El barrido completo, en el pipeline (4½ minutos), no
 en cada push.
 

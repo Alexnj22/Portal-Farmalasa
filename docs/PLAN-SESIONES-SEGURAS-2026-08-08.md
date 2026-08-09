@@ -302,7 +302,7 @@ supabase_auth_admin`. Se activa en **Authentication → Hooks**.
 
 **Cliente** — un latido que llama a `touch_session` con throttle de 60s,
 enganchado al `onActivity` que ya existe y sólo con la pestaña visible. El
-`device_class` se calcula con la misma detección de F2.4.
+`device_class` se lee de `sb_device_class`, que se fijó al iniciar sesión (F2.4).
 
 ### Reglas de seguridad de la construcción
 
@@ -332,7 +332,102 @@ holgura y sube los refrescos; 900s es el punto razonable.
 
 ---
 
-## F4 · Lo que queda anotado y no entra ahora
+## F4 · La vista de Conexiones, en Sistema
+
+Pedida por el usuario el 2026-08-08: ver las sesiones, cerrar una desde ahí, ver
+las últimas conexiones y lo que se pueda saber de cada una.
+
+### Dónde vive
+
+Módulo nuevo `sesiones` en el grupo **Sistema** (`AppLayout.jsx:98`, junto a
+`permissions`, `maintenance`, `auditview`, `sync_health`, `orphan_objects`).
+Ruta con `PermissionGuard moduleKey="sesiones"` en `App.jsx`, entrada `lazy` en
+`IMPORTADORES`, y la clave dada de alta en `permissionModules.js` — si no, no se
+puede repartir a ningún cargo. Se abre `docs/CHECKLIST-VISTA-NUEVA.md` **antes**
+de escribirla, no después.
+
+### Qué se puede mostrar — verificado, no supuesto
+
+`auth.sessions` tiene 15 columnas. Coberturas medidas hoy sobre las 3,585 filas:
+
+| Columna | Cobertura | Qué aporta |
+|---|---|---|
+| `created_at` | 3,585 | Cuándo empezó la sesión |
+| `user_agent` | 3,585 | Con qué dispositivo y navegador |
+| `ip` | 3,585 (279 distintas) | Desde dónde |
+| `refreshed_at` | **10** | Última renovación. Hoy casi siempre vacío; con el JWT en 900s (F1) pasa a ser un pulso de 15 min |
+| `not_after` | **0** | Caducidad. Se empieza a llenar recién con el *timebox* de F1 |
+| `aal` | 3,585 (0 en `aal2`) | Si la sesión pasó por MFA |
+
+Y de F3: **`session_activity.last_seen_at` y `device_class`**. Ésas son las que
+hacen útil la pantalla — «último uso» de verdad y qué límite le aplica a esa
+sesión. Sin F3, `refreshed_at` es lo único parecido y se mueve cada 15 minutos.
+
+**Trampa de tipo, para no repetir la de `recibido_mh`:** `refreshed_at` es
+`timestamp **without** time zone` mientras que `created_at` y `not_after` son
+`with time zone`. Hay que tratarla como UTC explícitamente o la columna miente
+por 6 horas y nadie lo nota.
+
+### Las dos RPC
+
+`auth.sessions` **no está expuesta a PostgREST** (vive en el esquema `auth`), así
+que todo pasa por función. Las dos SECURITY DEFINER, con
+`SET search_path = public, extensions`, `REVOKE EXECUTE FROM PUBLIC, anon` y
+`GRANT ... TO authenticated`.
+
+**`list_sessions(p_user_id uuid default null)`** — join de `auth.sessions` con
+`auth.users`, `employees` y `session_activity`. **Nunca devuelve material de
+credencial**: fuera `refresh_token_hmac_key`, `refresh_token_counter` y
+cualquier token. Devuelve id de sesión, empleado, inicio, último uso, clase de
+dispositivo, dispositivo, IP y caducidad.
+
+**`revoke_session(p_session_id uuid)`** — `DELETE FROM auth.sessions WHERE
+id = ...` (cae en cascada sobre `auth.refresh_tokens`) más el borrado de su fila
+en `session_activity`.
+
+### Autorización — dos niveles, y la identidad nunca del parámetro
+
+Ver las sesiones de todos es ver dónde y a qué hora se conecta cada empleado.
+Es dato sensible y no puede ir junto con el resto de Sistema sin distinguir:
+
+- `sesiones` · `can_view` → **sólo las propias**. Cualquiera debería poder ver
+  dónde tiene sesión abierta y cerrarla.
+- `sesiones` · scope `all` → las de todos, y cerrarlas.
+
+El chequeo va **dentro** de la función, no sólo en la ruta, con
+`auth_has_module_permission('sesiones', ...)` **envuelto en `(SELECT ...)`** —
+regla del incidente 2026-07-08. Y **`p_user_id` no decide identidad**: si quien
+llama no tiene scope `all`, el parámetro se ignora y se fuerza
+`auth_employee_id()`. Cerrar una sesión ajena va a `appendAuditLog`.
+
+### Cinco cosas que hay que resolver en el diseño de la pantalla
+
+1. **`qa.test` va a tapar la vista.** Son 3,338 de las 3,585 filas. Necesita
+   filtro por empleado y **ocultar las cuentas de prueba por defecto**, o al
+   abrirla no se ve nada útil.
+2. **Cerrar una sesión no corta al instante.** Borra la fila y el refresh token,
+   pero **el access token ya emitido sigue valiendo hasta que expire** — con F1,
+   hasta 15 minutos. La pantalla lo tiene que decir con esas palabras, no
+   prometer un corte inmediato.
+3. **`user_agent` e `ip` son lo que declaró el cliente y lo que vio el proxy.**
+   Sirven para que alguien reconozca «esto no fui yo»; no son prueba de nada.
+4. **La pantalla habla del portal.** Nada de «JWT», «token», «session_id» ni
+   «user agent» a la vista: **Conexiones**, **Último uso**, **Dispositivo**,
+   **Cerrar esta sesión**. Y se verifica abriendo la vista y barriendo el DOM
+   pintado más `title`/`aria-label`/`placeholder` — grepear el fuente no alcanza.
+5. **Es una lista de registros** → `DataTable` + `DataRow`/`DataCell`, que cae
+   solo a fichas bajo `lg:`. No se escribe una lista aparte para el teléfono.
+
+### Por qué va después de F3
+
+Las dos columnas que hacen útil la pantalla —último uso real y clase de
+dispositivo— **las produce F3**. Se puede entregar antes en versión reducida
+(inicio, dispositivo, IP y cerrar), pero entonces «último uso» no existe y
+`not_after` sale vacío hasta que F1 esté aplicado.
+
+---
+
+## F5 · Lo que queda anotado y no entra ahora
 
 - **MFA**: 0 de 86 usuarios. Vale al menos para las cuentas SU, pero es una
   decisión de producto aparte y no la pidió nadie.
@@ -350,8 +445,10 @@ holgura y sube los refrescos; 900s es el punto razonable.
    A de la CSP puede ir en el mismo commit; el Paso B va aparte.
 3. **F1** cuando F0 esté en producción: si algo del panel rompe un cliente viejo,
    conviene tener el frontend ya corregido.
-4. **F3** al final, y **en staging primero**. Es lo único que agrega una pieza
+4. **F3** después, y **en staging primero**. Es lo único que agrega una pieza
    nueva al camino crítico del login.
+5. **F4** al final: sus dos columnas más útiles las produce F3, y `not_after`
+   sale vacío hasta que F1 esté aplicado.
 
 ## Verificación — la lista de columnas
 
@@ -370,3 +467,10 @@ dice, no se omite:
 - **F3**: en staging, un empleado sin actividad por más de su límite recibe un
   fallo al refrescar; el mismo empleado activo no. Y un `curl` con un access
   token robado deja de funcionar al vencer los 900s sin poder refrescar.
+- **F4**: `gate:movil`, `gate:design` y `gate:permisos` en verde, y la vista
+  abierta en el teléfono con `desbordan`/`chicos`/`zoomIOS` en 0 y **las
+  capturas miradas**. Que un usuario sin scope `all` vea **sólo las suyas**
+  —probado con dos cuentas, no razonado—. Que cerrar una sesión desde la vista
+  la haga desaparecer de `auth.sessions` y que ese dispositivo quede afuera al
+  vencer su access token. Y el barrido del DOM pintado más
+  `title`/`aria-label`/`placeholder` sin una sola palabra de la tubería.

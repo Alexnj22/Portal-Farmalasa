@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.526.3 — La sonda del giro: medir en el teléfono en vez de adivinar
+
+Cuarto asalto contra el defecto de la rotación, y el primero que no propone un
+arreglo. Los tres anteriores —re-parsear el meta viewport (v2.524.7), forzar el
+reflow con un interruptor de `display` (v2.524.8), remontar el árbol de React
+(v2.526.0)— fallaron los tres, y fallaron por la misma razón: partían de una
+lectura equivocada del síntoma.
+
+**Lo que el usuario describió después del tercer intento cambia el problema
+entero:**
+
+> «al girar, media pantalla se adapta bien, rápido y todo, pero cuando pasa a
+> ocupar toda la pantalla es que se traba y se ve raro, son segundos en ese
+> tramo, por lo que se ve mal.»
+
+O sea que el ancho correcto **sí llega solo**. No hay ningún reparto que forzar
+—que es lo único que hacían los tres intentos—: lo que está mal es que el tramo
+dura segundos. Un ancho pegado y un tramo lento se ven casi igual mirando el
+teléfono, y esa diferencia es la que decide dónde está el defecto.
+
+**El remontaje de v2.526.0 queda APAGADO.** No arreglaba nada y cobraba el
+estado local de la vista —filtros, scroll, un formulario a medio llenar— en cada
+giro. No se borra: queda detrás de un interruptor en `/ios-test`, porque
+remontar es trabajo del hilo principal justo en el momento del trabón, o sea una
+de las tres explicaciones vivas. Descartarla exige girar con y sin él **en el
+mismo teléfono**: sin una corrida de control, la diferencia de tiempos no se le
+puede atribuir al cambio.
+
+**La sonda** (`iniciarSondaRotacion` en `utils/cajaNegra.js`) despierta con
+`matchMedia('(orientation: portrait)')` —no con `resize`, que dispara también al
+abrir el teclado y al colapsarse la barra de Safari— y mide dos cosas mientras
+la pantalla se acomoda: cuánto tarda la vista en ocupar el ancho del documento,
+y cuál fue el peor cuadro perdido. Con eso las tres explicaciones se separan
+solas, sin discutir ninguna:
+
+| | Lo que se ve en el número | Qué habría que arreglar |
+|---|---|---|
+| **A** | peor trabón ≥ 400 ms | código o recálculo de layout — el remontaje cae acá |
+| **B** | hilo libre, el ancho tarda | algo anima la geometría |
+| **C** | hilo libre y ancho listo ya | el **pintado**: las capas de vidrio recomponiéndose |
+
+C es la que ninguna medición de layout iba a mostrar, y es la que explicaría por
+qué tres arreglos de layout no movieron nada.
+
+El costo de medir está acotado a propósito: el bucle se corta apenas el ancho
+queda bien y pasa un segundo de calma, y los anchos se leen **sólo hasta ese
+momento** — leer `clientWidth` fuerza un recálculo, y una sonda que agrega
+trabajo al momento que viene a medir no mide nada.
+
+Se lee en `/ios-test`, con el veredicto derivado de los números y las fotos
+crudas al lado —sin ellas el veredicto es una conclusión sin su dato, y si el
+veredicto está mal no habría con qué darse cuenta— más un botón para copiar los
+tres últimos giros: transcribir a mano ya costó una vuelta entera.
+
+También queda anotado el **tema** de cada giro, y ese dato solo puede cerrar la
+explicación C: en `solid` los cuatro `--backdrop-*` valen `none`, así que no hay
+capas de vidrio que recomponer.
+
 ## v2.526.2 — La hoja de Filtros se cerraba vacía: el contenido se iba antes que la animación
 
 Cuarta ronda de «el modal se cierra sin animación, sólo desaparece». Las tres

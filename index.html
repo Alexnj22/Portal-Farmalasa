@@ -30,29 +30,35 @@
 
         // ⚠️ NO reintentar acá el arreglo de la rotación sin leer esto primero.
         //
-        // Al girar el teléfono, la pantalla ya es horizontal pero el contenido
-        // se queda pintado al ancho vertical y la otra mitad sale en blanco
-        // (390 de los 844 disponibles, medido sobre las capturas del usuario el
-        // 2026-08-08). Se arregla solo en cuanto se recarga o se abre otra
-        // vista, así que el ancho correcto existe: lo que no vuelve a ocurrir
-        // es el reparto.
+        // **El síntoma que se persiguió tres veces estaba mal leído.** Se creía
+        // que al girar el contenido quedaba pintado al ancho anterior y sólo
+        // volvía al recargar o abrir otra vista. El 2026-08-08, después del
+        // tercer fallo, el usuario lo describió mirando su teléfono: «media
+        // pantalla se adapta bien, rápido; cuando pasa a ocupar toda la
+        // pantalla es que se traba y se ve raro, son segundos en ese tramo».
         //
-        // Se probaron DOS remedios acá y **ninguno funcionó**:
+        // O sea que el ancho correcto **llega solo**. No hay ningún reparto que
+        // forzar — que es exactamente lo único que hacían los tres intentos, y
+        // por eso ninguno podía servir:
         //   · v2.524.7 — alternar el `content` del meta viewport en
         //     `orientationchange` para forzar el re-parseo. Sin efecto.
         //   · v2.524.8 — encender y apagar el `display` de la raíz con una
         //     lectura de `offsetHeight` en medio, para forzar el reflow
-        //     completo. Tampoco lo arregló, y **encima se veía**: el usuario
-        //     reportó «una actualización rara en los elementos, se ve feo».
-        //     Revertido en v2.524.9.
+        //     completo. Tampoco, y **encima se veía**: el usuario reportó «una
+        //     actualización rara en los elementos, se ve feo». Revertido en
+        //     v2.524.9.
+        //   · v2.526.0 — remontar el árbol de React con la orientación en la
+        //     `key`. Tampoco. Apagado en v2.526.3: cobraba el estado local de
+        //     la vista en cada giro y no compraba nada.
         //
         // Tampoco sirve bloquear la orientación: `screen.orientation.lock()`
         // no existe en Safari de iOS y el campo `orientation` del manifest lo
         // ignora incluso en modo standalone. Sólo aplicaría a un build nativo.
         //
-        // Lo que queda por probar es forzarlo desde React —remontar el árbol de
-        // la vista con una `key` que cambie con la orientación—, que es lo que
-        // de verdad hace «abrir otra vista». El detalle vive en
+        // Lo que hay desde v2.526.3 es una MEDICIÓN, no un cuarto remedio:
+        // `iniciarSondaRotacion` en `src/utils/cajaNegra.js` separa si el hilo
+        // se bloquea, si el ancho tarda, o si lo que tarda es el pintado. El
+        // próximo intento sale de ese número. Detalle en
         // `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`, F9.
       })();
     </script>

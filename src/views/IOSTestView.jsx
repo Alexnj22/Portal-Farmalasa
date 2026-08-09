@@ -3,7 +3,11 @@ import { Smartphone, CheckCircle2, AlertCircle, Layers, Move, Trash2, RefreshCw,
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
-import { leerCajaNegra, limpiarCajaNegra, entorno } from '../utils/cajaNegra';
+import Switch from '../components/common/Switch';
+import {
+    leerCajaNegra, limpiarCajaNegra, entorno,
+    leerRotaciones, limpiarRotaciones, remontarAlGirar, fijarRemontarAlGirar,
+} from '../utils/cajaNegra';
 import { APP_VERSION } from '../version';
 
 const Card = ({ title, children, accent }) => (
@@ -26,6 +30,33 @@ const Row = ({ label, value, ok }) => (
     </div>
 );
 
+// El veredicto sale de los números, no al revés. Las tres explicaciones que
+// quedaron vivas después de tres intentos fallidos se separan por dos medidas:
+// si el hilo principal se bloqueó, y si el ancho tardó en llegar. Ver el
+// encabezado de `iniciarSondaRotacion` en `cajaNegra.js`.
+const veredicto = (r) => {
+    if (r.peorSalto >= 400) return {
+        titulo: 'A · se bloqueó el hilo',
+        tono: 'danger',
+        dice: `La pantalla dejó de responder ${r.peorSalto} ms de un tirón. Eso es trabajo de código o `
+            + 'recálculo de la página, no las capas de vidrio. Hay que buscar qué corre al girar.',
+    };
+    if (r.anchoOk == null || r.anchoOk > 700) return {
+        titulo: 'B · el ancho tardó',
+        tono: 'warning',
+        dice: `El hilo nunca se trabó (peor ${r.peorSalto} ms) pero la vista tardó `
+            + `${r.anchoOk == null ? 'más de 6 s' : `${r.anchoOk} ms`} en ocupar el ancho nuevo. `
+            + 'El reparto mismo va lento: algo está animando la geometría.',
+    };
+    return {
+        titulo: 'C · fue el pintado',
+        tono: 'neutral',
+        dice: `El ancho quedó bien a los ${r.anchoOk} ms y el hilo nunca se trabó (peor ${r.peorSalto} ms). `
+            + 'Si aun así se vio feo varios segundos, lo que tarda es dibujar — no el reparto. '
+            + 'Si en cambio este giro se vio bien, esta medición no es la del defecto: repítela donde falla.',
+    };
+};
+
 const IOSTestView = () => {
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/.test(ua);
@@ -35,6 +66,9 @@ const IOSTestView = () => {
     const [registro, setRegistro] = useState(() => leerCajaNegra());
     const [env] = useState(() => entorno());
     const [copiado, setCopiado] = useState(false);
+    const [rotaciones, setRotaciones] = useState(() => leerRotaciones());
+    const [remontar, setRemontar] = useState(() => remontarAlGirar());
+    const [copiadoRot, setCopiadoRot] = useState(false);
 
     return (
         <GlassViewLayout icon={Smartphone} title="Vista de Prueba iOS">
@@ -143,6 +177,109 @@ const IOSTestView = () => {
                                 } catch { /* sin permiso de portapapeles */ }
                             }}>
                             {copiado ? 'Copiado' : 'Copiar todo'}
+                        </Button>
+                    </div>
+                </Card>
+
+                {/* ── Rotación ──────────────────────────────────────────────
+                    El tercer intento a ciegas contra el giro falló, y recién
+                    entonces el defecto se describió bien: el ancho correcto SÍ
+                    llega solo, lo que está mal es que el tramo dura segundos.
+                    Esta tarjeta no propone un arreglo — separa cuál de las tres
+                    explicaciones es, que es lo que faltaba. */}
+                <Card title="Rotación — qué tarda al girar" accent="border-warning/30">
+                    <p className="text-body-sm text-content-3 leading-snug mb-2">
+                        Gira el teléfono <strong className="text-content-2">en la pantalla donde se ve feo</strong>,
+                        espera a que se acomode, y vuelve aquí. Se guardan los últimos tres giros.
+                    </p>
+                    {rotaciones.length === 0 ? (
+                        <p className="text-body-sm text-content-3 italic py-2">Todavía no se midió ningún giro.</p>
+                    ) : (
+                        <div className="flex flex-col gap-3 mt-1">
+                            {[...rotaciones].reverse().map((r, i) => {
+                                const v = veredicto(r);
+                                return (
+                                    <div key={i} className="rounded-xl border border-divider p-2.5">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <Badge size="sm" variant={v.tono}>{v.titulo}</Badge>
+                                            <span className="text-micro text-content-3">
+                                                {r.t?.slice(11, 19)} · a {r.hacia} · {r.ruta}
+                                            </span>
+                                        </div>
+                                        <p className="text-caption text-content-2 leading-snug mb-2">{v.dice}</p>
+                                        <Row label="Tardó en llenar el ancho"
+                                            value={r.anchoOk == null ? 'no llegó en 6 s' : `${r.anchoOk} ms`}
+                                            ok={r.anchoOk != null && r.anchoOk <= 700} />
+                                        <Row label="Peor trabón del hilo" value={`${r.peorSalto} ms`}
+                                            ok={r.peorSalto < 400} />
+                                        <Row label="Cuadros lentos (>100 ms)" value={String(r.saltosLargos)} />
+                                        <Row label="Remontó la vista"
+                                            value={r.remontadaEn == null ? 'no' : `sí, a los ${r.remontadaEn} ms`} />
+                                        <Row label="Tema / elementos" value={`${r.tema} · ${Number(r.nodos || 0).toLocaleString('es-SV')}`} />
+                                        {/* Las fotos crudas: sin ellas el veredicto es una
+                                            conclusión sin su dato, y si el veredicto está mal
+                                            no habría con qué darse cuenta. */}
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                            <div className="flex text-micro font-black uppercase tracking-wider text-content-3">
+                                                <span className="w-14">ms</span>
+                                                <span className="w-16">documento</span>
+                                                <span className="w-16">vista</span>
+                                                <span className="flex-1">ventana</span>
+                                            </div>
+                                            {(r.muestras || []).map((m, j) => (
+                                                <div key={j} className="flex text-micro text-content-2">
+                                                    <span className="w-14">{m.t}</span>
+                                                    <span className="w-16">{m.doc}</span>
+                                                    <span className={`w-16 ${m.doc - m.vista > 8 ? 'text-danger-text font-bold' : ''}`}>{m.vista}</span>
+                                                    <span className="flex-1">{m.vp}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* El control del A/B. Sin una corrida SIN el cambio, la
+                        diferencia de tiempos no se le puede atribuir al cambio. */}
+                    <div className="mt-3 pt-3 border-t border-divider">
+                        <Switch size="md" checked={remontar}
+                            label="Remontar la vista al girar (v2.526.0)"
+                            onChange={(val) => { fijarRemontarAlGirar(val); setRemontar(val); location.reload(); }} />
+                        <p className="text-micro text-content-3 leading-snug mt-1.5">
+                            Viene apagado. Encendido, girar reconstruye la pantalla entera —y pierde filtros y
+                            scroll—. Sirve para girar una vez con cada posición y comparar los dos números de
+                            arriba. Cambiarlo recarga la página.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-3">
+                        <Button variant="secondary" size="sm" icon={Trash2}
+                            onClick={() => { limpiarRotaciones(); setRotaciones([]); }}>
+                            Vaciar
+                        </Button>
+                        <Button variant="secondary" size="sm" icon={RefreshCw}
+                            onClick={() => setRotaciones(leerRotaciones())}>
+                            Actualizar
+                        </Button>
+                        <Button variant="secondary" size="sm" icon={copiadoRot ? Check : ClipboardCopy}
+                            onClick={async () => {
+                                const texto = leerRotaciones().map(r =>
+                                    `${r.t?.slice(11, 19)} → ${r.hacia} · ${r.ruta}\n`
+                                    + `  ancho ok: ${r.anchoOk ?? 'nunca'} ms · peor trabón: ${r.peorSalto} ms · `
+                                    + `lentos: ${r.saltosLargos} · remonte: ${r.remontadaEn ?? 'no'} · `
+                                    + `tema: ${r.tema} · nodos: ${r.nodos} · cuadros: ${r.cuadros}\n`
+                                    + (r.muestras || []).map(m => `    ${String(m.t).padStart(4)}ms  doc ${m.doc}  vista ${m.vista}  ventana ${m.vp}`).join('\n'),
+                                ).join('\n\n');
+                                try {
+                                    await navigator.clipboard.writeText(
+                                        `rotación · ${APP_VERSION} · ${env.pantalla}\n(las horas son UTC)\n\n${texto}`);
+                                    setCopiadoRot(true);
+                                    setTimeout(() => setCopiadoRot(false), 2000);
+                                } catch { /* sin permiso de portapapeles */ }
+                            }}>
+                            {copiadoRot ? 'Copiado' : 'Copiar giros'}
                         </Button>
                     </div>
                 </Card>

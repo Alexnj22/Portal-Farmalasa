@@ -2,7 +2,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { anotar, entorno, iniciarPulso, recogerPulso } from "./utils/cajaNegra";
+import { anotar, entorno, iniciarPulso, iniciarSondaRotacion, recogerPulso } from "./utils/cajaNegra";
 import { APP_VERSION } from "./version";
 
 // Supabase uses the Web Locks API internally to serialize token refreshes.
@@ -30,6 +30,9 @@ window.addEventListener('unhandledrejection', (event) => {
 recogerPulso();
 anotar('arranque', { version: APP_VERSION, ...entorno() });
 iniciarPulso();
+// La sonda no corre sola: se queda dormida hasta que el teléfono gira, y ahí
+// mide un rato corto. Ver `cajaNegra.js` para qué separa.
+iniciarSondaRotacion();
 
 window.addEventListener('error', (e) => {
   // `error` también salta por un recurso que no cargó (img, script). Ahí no hay

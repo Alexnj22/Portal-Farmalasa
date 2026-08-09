@@ -84,20 +84,53 @@ standalone) · **F9 abierta** (la rotación) · **Abierto el** 2026-08-08 ·
 > alcance: el pan sólo escuchaba eventos de mouse, así que en el teléfono estaba
 > completo e **inalcanzable**. Ahora se arrastra con el dedo (v2.524.10).
 >
-> ## F9 — la rotación, ABIERTA
+> ## F9 — la rotación, ABIERTA · el síntoma era otro (2026-08-08)
 >
-> Al girar, el contenido queda pintado al ancho de la orientación anterior y el
-> resto sale en blanco. **Se arregla solo al recargar o cambiar de vista**, así
-> que el ancho correcto existe: lo que no vuelve a ocurrir es el reparto.
+> **Los tres intentos fallaron por la misma razón: el síntoma estaba mal leído.**
+> Se venía persiguiendo «el contenido queda pintado al ancho anterior y el resto
+> sale en blanco, y sólo vuelve al recargar o cambiar de vista». Después del
+> tercer fallo el usuario lo describió mirando su teléfono:
 >
-> Probado y **fallido** (revertido en v2.524.9): re-parsear el meta viewport en
-> `orientationchange`, y forzar el reflow con un interruptor de `display` en la
-> raíz — éste además se veía. Tampoco sirve bloquear la orientación:
-> `screen.orientation.lock()` no existe en Safari de iOS.
+> > «al girar, media pantalla se adapta bien, rápido y todo, pero cuando pasa a
+> > ocupar toda la pantalla es que se traba y se ve raro, son segundos en ese
+> > tramo, por lo que se ve mal.»
 >
-> **Sin probar:** remontar el árbol de React con una `key` que cambie con la
-> orientación, que es lo que de verdad hace «abrir otra vista». El aviso está en
-> `index.html`, en el punto donde alguien iría a reintentarlo.
+> El ancho correcto **llega solo**. No hay reparto que forzar — que es lo único
+> que hacían los tres intentos. Lo que está mal es que el tramo dura segundos.
+>
+> | Intento | Qué hacía | Resultado |
+> |---|---|---|
+> | v2.524.7 | re-parsear el meta viewport en `orientationchange` | no cambió nada |
+> | v2.524.8 | interruptor de `display` en la raíz para forzar reflow | no cambió nada **y se veía** |
+> | v2.526.0 | remontar el árbol de React con la orientación en la `key` | no cambió nada · **apagado en v2.526.3** |
+>
+> Tampoco sirve bloquear la orientación: `screen.orientation.lock()` no existe en
+> Safari de iOS.
+>
+> **El remontaje quedó APAGADO** (v2.526.3): cobraba el estado local de la vista
+> —filtros, scroll, un formulario a medio llenar— en cada giro y no compraba
+> nada. No se borró: vive detrás de un interruptor en `/ios-test`, porque
+> remontar es trabajo del hilo principal justo en el momento del trabón, o sea
+> una de las tres explicaciones vivas, y descartarla exige girar **con y sin él
+> en el mismo teléfono**.
+>
+> **Lo que hay ahora es una medición, no un remedio** (`iniciarSondaRotacion` en
+> `utils/cajaNegra.js`, se lee en `/ios-test`). Mide cuánto tarda la vista en
+> ocupar el ancho del documento y cuál fue el peor cuadro perdido, y con esos dos
+> números las tres explicaciones se separan solas:
+>
+> | | Lo que dice el número | Qué habría que arreglar |
+> |---|---|---|
+> | **A** | peor trabón ≥ 400 ms | código o recálculo — el remontaje cae acá |
+> | **B** | hilo libre, el ancho tarda | algo anima la geometría |
+> | **C** | hilo libre y ancho listo ya | el **pintado** (las capas de vidrio) |
+>
+> **C es la que ninguno de los tres intentos podía tocar**, y explicaría por qué
+> tres arreglos de layout no movieron nada. El tema queda anotado en cada giro
+> porque puede cerrarla sola: en `solid` los cuatro `--backdrop-*` valen `none`.
+>
+> **Siguiente paso: el veredicto sale del teléfono.** Girar donde se ve feo,
+> abrir `/ios-test`, copiar los giros. Recién con eso se elige qué arreglar.
 
 Los dos planes anteriores están **más cerrados de lo que dicen sus documentos**:
 se commiteó entre el 6 y el 7 de agosto y no se anotó. Este plan parte de la foto

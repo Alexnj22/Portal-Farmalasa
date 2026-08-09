@@ -33,6 +33,7 @@ import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
 import { prefetchRuta } from '../../constants/routeImporters';
 import { webpSignedUrl } from '../../utils/storageFiles';
+import { remontarAlGirar } from '../../utils/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
@@ -229,29 +230,33 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     // `requestAnimationFrame` los coalesce: da igual cuántos eventos lleguen,
     // se recalcula **una vez por cuadro**. Y `isUltraDensity` mira el ALTO, así
     // que al rotar sí cambia de valor — no es un `setState` que React descarte.
-    // ── La orientación, para REMONTAR la vista al girar ───────────────────────
-    // Al rotar, iOS deja el contenido repartido al ancho de la orientación
-    // anterior y la otra mitad sale en blanco. **Se arregla solo al recargar o
-    // al abrir otra vista** (reportado por el usuario el 2026-08-08), o sea que
-    // el ancho correcto existe: lo que no vuelve a ocurrir es el reparto.
+    // ── La orientación ────────────────────────────────────────────────────────
+    // Marca la vista con la orientación en que se montó. Sirve para dos cosas:
+    // que la sonda de rotación de `cajaNegra.js` encuentre el nodo de la vista y
+    // vea si fue reemplazado, y —sólo si el interruptor está encendido— para
+    // remontarla metiendo la orientación en la `key`.
     //
-    // Dos intentos sobre el DOCUMENTO fallaron —re-parsear el meta viewport y
-    // forzar el reflow con un interruptor de `display`, éste además visible
-    // (v2.524.7/8, revertidos)—. Lo que de verdad hace «abrir otra vista» es
-    // **remontar el árbol de React**, así que eso es lo que se hace: la `key` de
-    // la vista incluye la orientación.
+    // **El remontaje viene APAGADO** (v2.526.3). Se agregó en v2.526.0 leyendo
+    // el síntoma como «el ancho se queda pegado y sólo vuelve al recargar o
+    // abrir otra vista»; el usuario lo probó en su iPhone y lo describió mejor:
+    // «media pantalla se adapta bien, rápido; cuando pasa a ocupar toda la
+    // pantalla se traba y se ve raro, son segundos». El ancho correcto SÍ llega
+    // solo. No hay nada que remontar, y remontar cuesta el estado local de la
+    // vista (filtros, scroll, un formulario a medio llenar) en cada giro.
+    //
+    // Queda el interruptor porque remontar es trabajo del hilo principal en el
+    // momento exacto del trabón, o sea una de las tres explicaciones vivas. Para
+    // descartarla hay que girar con y sin él **en el mismo teléfono** — sin un
+    // control, la diferencia de tiempos no se le puede atribuir al cambio.
     //
     // Se escucha `matchMedia` y no `resize`: `resize` dispara también al abrir
-    // el teclado y al colapsarse la barra de Safari, y remontar la vista ahí
-    // sería tirar el estado del usuario sin motivo.
-    //
-    // ⚠️ Remontar PIERDE el estado local de la vista (filtros, scroll, un
-    // formulario a medio llenar). Por eso va sólo en móvil, donde girar es un
-    // gesto deliberado y la alternativa es media pantalla en blanco. En
-    // escritorio la `key` no lleva orientación y nada cambia.
+    // el teclado y al colapsarse la barra de Safari, y ahí no hay rotación.
     const [esVertical, setEsVertical] = useState(
         () => typeof window === 'undefined' || window.matchMedia('(orientation: portrait)').matches,
     );
+    // Se lee UNA vez al montar: cambiarlo a mitad de una medición mezclaría las
+    // dos corridas del A/B. El interruptor de `/ios-test` recarga la página.
+    const [remontarEnGiro] = useState(() => remontarAlGirar());
     useEffect(() => {
         const mq = window.matchMedia('(orientation: portrait)');
         const alGirar = (e) => setEsVertical(e.matches);
@@ -1290,12 +1295,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <NotificationBell variant="desktop" />
                             </div>
                         )}
-                        {/* La orientación entra en la `key` SÓLO en móvil: girar
-                            remonta la vista, que es lo mismo que hace «abrir otra
-                            vista» —lo único que se vio arreglar el reparto— sin
-                            pedirle al usuario que navegue. En escritorio la clave
-                            es la de siempre y no se remonta nada. */}
-                        <div key={isMobile ? `${activeId}-${esVertical ? 'v' : 'h'}` : activeId}
+                        {/* La orientación entra en la `key` sólo con el interruptor
+                            encendido y sólo en móvil (ver arriba: viene apagado,
+                            existe para poder medir el A/B en el teléfono). El
+                            atributo se pone SIEMPRE — es por donde la sonda de
+                            rotación encuentra la vista, y tiene que encontrarla
+                            también en la corrida sin remontaje. */}
+                        <div key={isMobile && remontarEnGiro ? `${activeId}-${esVertical ? 'v' : 'h'}` : activeId}
                             data-vista-montada={isMobile ? (esVertical ? 'v' : 'h') : 'escritorio'}
                             className="lg:h-full w-full animate-route-enter">
                             {children}

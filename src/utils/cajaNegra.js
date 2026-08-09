@@ -167,6 +167,175 @@ export function limpiarCajaNegra() {
     try { localStorage.removeItem(CLAVE); } catch { /* sin localStorage */ }
 }
 
+// ── La sonda de rotación — QUÉ tarda los segundos que se ven feos ────────────
+//
+// El 2026-08-08, tras fallar el tercer intento a ciegas, el usuario describió el
+// defecto con precisión: «al girar, media pantalla se adapta bien, rápido; pero
+// cuando pasa a ocupar toda la pantalla es que se traba y se ve raro, son
+// segundos». O sea que el ancho correcto SÍ llega — lo que está mal es el tramo,
+// y dura segundos.
+//
+// Los tres intentos anteriores (re-parsear el viewport, el interruptor de
+// `display`, remontar el árbol de React) partían de «el ancho se queda pegado»,
+// que era la lectura equivocada del mismo síntoma. Ninguno podía servir.
+//
+// Quedan tres explicaciones y esta sonda las separa **sola**, sin hipótesis:
+//
+//   A · el hilo principal BLOQUEADO → `peorSalto` de cientos de ms. Es trabajo
+//       de JavaScript o recálculo de layout (el remontaje cae acá).
+//   B · el hilo libre y el ANCHO tardando → algo anima la geometría (una
+//       transición CSS sobre width/padding), o Safari reparte en cámara lenta.
+//   C · el hilo libre y el ancho listo enseguida → entonces lo que tarda es el
+//       PINTADO: las capas de vidrio se re-componen al tamaño nuevo. No es
+//       layout y ninguna medición de layout lo iba a mostrar.
+//
+// El costo de medir está acotado a propósito: el bucle se corta apenas el ancho
+// queda bien y pasa un segundo de calma, y los anchos se leen sólo hasta ese
+// momento — leer `clientWidth` fuerza un recálculo, y una sonda que agrega
+// trabajo al momento que viene a medir no mide nada.
+const CLAVE_ROTACION = 'portal_rotacion';
+const TOPE_ROTACION  = 3;      // las últimas tres vueltas alcanzan para comparar
+const VENTANA_MS     = 6000;   // tope duro: si a los 6 s no se acomodó, se anota así
+const CALMA_MS       = 1000;   // cuánto se sigue mirando después de que el ancho llegó
+
+// Los instantes donde se guarda una foto de los anchos. Son pocos a propósito:
+// la tarjeta de `/ios-test` se lee en un teléfono y se fotografía.
+const HITOS = [0, 100, 250, 500, 1000, 2000, 3500, 6000];
+
+export function iniciarSondaRotacion() {
+    if (typeof window === 'undefined' || !window.matchMedia || !window.requestAnimationFrame) return;
+
+    const mq = window.matchMedia('(orientation: portrait)');
+    let corriendo = false;
+
+    const arrancar = (desde) => {
+        if (corriendo) return;
+        corriendo = true;
+
+        const t0    = performance.now();
+        const vista = () => document.querySelector('[data-vista-montada]');
+        const nodoInicial = vista();
+
+        // El ancho al que hay que llegar es el del DOCUMENTO, no `innerWidth`:
+        // `innerWidth` incluye la barra de Safari y en iOS se actualiza en otro
+        // momento que el layout. `clientWidth` del root ES el viewport de layout.
+        const muestras   = [];
+        let   peorSalto  = 0;
+        let   saltosLargos = 0;
+        let   anchoOk    = null;   // ms hasta que la vista ocupa el ancho del documento
+        let   remontadaEn = null;  // ms en que el nodo de la vista fue reemplazado
+        let   previo     = t0;
+        let   iHito      = 0;
+
+        const paso = () => {
+            const ahora = performance.now();
+            const t     = Math.round(ahora - t0);
+            const salto = Math.round(ahora - previo);
+            previo = ahora;
+
+            // El primer cuadro arrastra el tiempo que iOS pasó girando la
+            // pantalla, que no es un trabón nuestro: se ignora.
+            if (t > 40) {
+                if (salto > peorSalto) peorSalto = salto;
+                if (salto > 100) saltosLargos++;
+            }
+
+            const nodo = vista();
+            if (remontadaEn == null && nodoInicial && nodo && nodo !== nodoInicial) remontadaEn = t;
+
+            // Los anchos se leen hasta que quedan bien y ni un cuadro más.
+            let doc = null, anchoVista = null;
+            if (anchoOk == null) {
+                doc = document.documentElement.clientWidth;
+                anchoVista = Math.round(nodo?.getBoundingClientRect().width || 0);
+                // 4px de tolerancia: la vista lleva relleno propio por las
+                // áreas seguras, así que nunca calza al píxel con el documento.
+                if (anchoVista > 0 && doc - anchoVista <= Math.max(4, doc * 0.06)) anchoOk = t;
+            }
+
+            while (iHito < HITOS.length && t >= HITOS[iHito]) {
+                if (doc == null) {
+                    doc = document.documentElement.clientWidth;
+                    anchoVista = Math.round(nodo?.getBoundingClientRect().width || 0);
+                }
+                muestras.push({
+                    t,
+                    doc,
+                    vista: anchoVista,
+                    vp: `${Math.round(window.innerWidth)}×${Math.round(window.innerHeight)}`,
+                });
+                iHito++;
+            }
+
+            const seAcabo = t >= VENTANA_MS || (anchoOk != null && t >= anchoOk + CALMA_MS);
+            if (!seAcabo) { requestAnimationFrame(paso); return; }
+
+            corriendo = false;
+            const cuadros = muestras.length;
+            try {
+                const previas = JSON.parse(localStorage.getItem(CLAVE_ROTACION) || '[]');
+                const lista = Array.isArray(previas) ? previas : [];
+                lista.push({
+                    t: new Date().toISOString(),
+                    ruta: `${location.pathname}${location.search}`,
+                    hacia: mq.matches ? 'vertical' : 'horizontal',
+                    desde,
+                    anchoOk,
+                    peorSalto,
+                    saltosLargos,
+                    remontadaEn,
+                    // El tema decide si existen capas de vidrio que recomponer:
+                    // en `solid` los cuatro `--backdrop-*` valen `none`, así que
+                    // la explicación C queda descartada sin discutirla.
+                    tema: document.documentElement.getAttribute('data-theme') || '?',
+                    nodos: document.getElementsByTagName('*').length,
+                    cuadros,
+                    muestras,
+                });
+                localStorage.setItem(CLAVE_ROTACION, JSON.stringify(lista.slice(-TOPE_ROTACION)));
+            } catch { /* modo privado o cuota llena */ }
+        };
+
+        requestAnimationFrame(paso);
+    };
+
+    // `matchMedia` y no `resize`: `resize` dispara también al abrir el teclado y
+    // al colapsarse la barra de Safari, y ahí no hay ninguna rotación que medir.
+    mq.addEventListener('change', (e) => arrancar(e.matches ? 'horizontal' : 'vertical'));
+}
+
+export function leerRotaciones() {
+    try {
+        const a = JSON.parse(localStorage.getItem(CLAVE_ROTACION) || '[]');
+        return Array.isArray(a) ? a : [];
+    } catch { return []; }
+}
+
+export function limpiarRotaciones() {
+    try { localStorage.removeItem(CLAVE_ROTACION); } catch { /* sin localStorage */ }
+}
+
+// ── El interruptor del remontaje — para poder apagar UNA variable ────────────
+//
+// v2.526.0 hizo que girar remonte la vista. No arregló nada y cuesta el estado
+// local (filtros, scroll, un formulario a medio llenar), así que queda APAGADO
+// por defecto. Pero sigue siendo una de las tres explicaciones vivas —remontar
+// es justamente trabajo del hilo principal—, y para saberlo hay que girar con y
+// sin él **en el mismo teléfono**: una medición de latencia sin un control no
+// dice si el cambio fue el que movió el número.
+const CLAVE_REMONTAR = 'portal_remontar_al_girar';
+
+export function remontarAlGirar() {
+    try { return localStorage.getItem(CLAVE_REMONTAR) === '1'; } catch { return false; }
+}
+
+export function fijarRemontarAlGirar(valor) {
+    try {
+        if (valor) localStorage.setItem(CLAVE_REMONTAR, '1');
+        else localStorage.removeItem(CLAVE_REMONTAR);
+    } catch { /* sin localStorage */ }
+}
+
 /**
  * Cómo está corriendo la app. Lo necesita el diagnóstico porque el modo
  * **standalone** es la diferencia grande contra cualquier emulador: iOS SUSPENDE

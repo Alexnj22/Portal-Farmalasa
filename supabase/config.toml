@@ -151,7 +151,16 @@ site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = ["https://127.0.0.1:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
-jwt_expiry = 3600
+#
+# 900 (15 min) por F1 de docs/PLAN-SESIONES-SEGURAS-2026-08-08.md. Dos motivos:
+# un access token robado sirve 15 minutos en vez de una hora, y el hook de F3
+# sólo puede actuar CUANDO SE EMITE un token — así que este número es la holgura
+# máxima con la que se cumple el límite de inactividad de 5 minutos.
+#
+# Este archivo es sólo el entorno local. El valor que manda en producción está
+# en el panel (Authentication → Sessions), y se confirma decodificando un token
+# nuevo: exp - iat tiene que dar 900.
+jwt_expiry = 900
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
 # jwt_issuer = ""
 # Path to JWT signing key. DO NOT commit your signing keys file to git.

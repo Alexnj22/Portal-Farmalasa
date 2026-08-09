@@ -88,6 +88,8 @@ const IDLE_ADMIN_MS = 12 * 60 * 60 * 1000;
 const IDLE_APP_MS   = 30 * 24 * 60 * 60 * 1000; // 30 días — PWA instalada o build nativo
 const CHECK_EVERY_MS        = 30 * 1000;
 const ACTIVITY_THROTTLE_MS  = 2000;
+// Cada cuánto, como mucho, se le avisa al servidor que la sesión sigue viva.
+const HEARTBEAT_MS          = 60 * 1000;
 
 // La clase del dispositivo: 'app' (PWA instalada o build nativo) o 'navegador'.
 //
@@ -341,12 +343,47 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem(LS_LAST, String(now));
   };
 
-  const onActivity = useCallback(() => { if (userRef.current) writeLastActivity(false); }, []);
+  // El latido que le cuenta al SERVIDOR que esta sesión sigue viva.
+  //
+  // El sello de `localStorage` de arriba lo mira sólo este navegador: con el
+  // token en la mano y `curl`, los 5 minutos no existen. `touch_session` deja la
+  // marca del lado del servidor, y el hook de emisión de token
+  // (`custom_access_token_hook`) la usa para negarse a refrescar una sesión
+  // vencida. Ésa es la mitad que hace real el límite.
+  //
+  // Un minuto de throttle: la resolución que necesita el hook es de minutos, no
+  // de segundos, y con la pestaña oculta no se manda nada — estar mirando otra
+  // cosa no es actividad.
+  //
+  // `hayUsuario` existe por una carrera medida, no por gusto: `userRef` lo llena
+  // un `useEffect`, o sea DESPUÉS del render, y los cuatro caminos de login
+  // hacen `setUser(u)` y `startIdleWatcher(u)` uno detrás del otro en el mismo
+  // tick. Al llamarse desde ahí, `userRef.current` todavía es null y el primer
+  // latido se descartaba en silencio — la sesión no tenía fila del lado del
+  // servidor hasta que la persona moviera el mouse. Se descubrió porque
+  // `session_activity` quedó VACÍA después de un login de prueba.
+  const ultimoLatidoRef = useRef(0);
+  const latirSesion = useCallback((hayUsuario = false) => {
+    if (!hayUsuario && !userRef.current) return;
+    if (document.visibilityState === 'hidden') return;
+    const ahora = Date.now();
+    if (ahora - ultimoLatidoRef.current < HEARTBEAT_MS) return;
+    ultimoLatidoRef.current = ahora;
+    let clase = 'navegador';
+    try { clase = localStorage.getItem(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
+    // Sin `await` y sin reintento: si un latido se pierde, el próximo lo cubre.
+    // Lo que NO puede hacer es romper la interacción que lo disparó.
+    supabase.rpc('touch_session', { p_device_class: clase }).then(() => {}, () => {});
+  }, []);
+
+  const onActivity = useCallback(() => {
+    if (userRef.current) { writeLastActivity(false); latirSesion(); }
+  }, [latirSesion]);
 
   const onVisibilityChange = useCallback(() => {
     if (!userRef.current) return;
-    if (document.visibilityState === 'visible') writeLastActivity(true);
-  }, []);
+    if (document.visibilityState === 'visible') { writeLastActivity(true); latirSesion(); }
+  }, [latirSesion]);
 
   const stopIdleWatcher = () => {
     if (idleIntervalRef.current) { clearInterval(idleIntervalRef.current); idleIntervalRef.current = null; }
@@ -371,6 +408,7 @@ export const AuthProvider = ({ children }) => {
 
   const doLogout = () => {
     stopIdleWatcher();
+    ultimoLatidoRef.current = 0;   // que el próximo login lata de inmediato
     clearAuthCache();
     clearErpCache();
     setIsSU(false);   // el estado propio también se apaga: si no, el próximo login arranca con el privilegio del anterior
@@ -418,10 +456,17 @@ export const AuthProvider = ({ children }) => {
     return Date.now() - last >= getIdleLimitMs(u);
   };
 
-  const startIdleWatcher = () => {
+  // Recibe el usuario que los cuatro caminos de login ya le venían pasando —
+  // hasta ahora lo ignoraba. Hace falta: en ese momento `userRef` todavía no
+  // está puesto (ver la nota de `latirSesion`).
+  const startIdleWatcher = (u) => {
     stopIdleWatcher();
     fijarClaseDispositivo();
     if (!localStorage.getItem(LS_LAST)) writeLastActivity(true);
+    // Primer latido al arrancar: sin esto la sesión no tendría fila del lado del
+    // servidor hasta que alguien mueva el mouse, y el hook la vería «recién
+    // nacida» todo ese rato.
+    latirSesion(!!(u || userRef.current));
 
     window.addEventListener('mousemove',  onActivity, true);
     window.addEventListener('keydown',    onActivity, true);

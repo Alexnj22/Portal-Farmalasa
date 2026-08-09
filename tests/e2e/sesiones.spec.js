@@ -77,6 +77,28 @@ test.describe('F2 · sesiones', () => {
         expect(await leer(page, CLAVE_TOKEN)).toBeNull();
     });
 
+    // F3: el latido es la mitad que hace REAL el límite de inactividad — sin él
+    // el servidor no sabe que la sesión sigue viva y el hook no tiene qué mirar.
+    // Se afirma sobre la RED y no sobre el efecto, porque el primer intento de
+    // este latido fallaba en silencio (`userRef` todavía sin llenar al llamarlo
+    // desde `startIdleWatcher`) y `session_activity` quedaba vacía sin que nada
+    // lo dijera.
+    test('al entrar, el latido llega al servidor', async ({ page }) => {
+        const latidos = [];
+        page.on('response', (r) => {
+            if (r.url().includes('/rest/v1/rpc/touch_session')) latidos.push(r.status());
+        });
+
+        await iniciarSesion(page);
+        await expect
+            .poll(() => latidos, { timeout: 20_000, message: 'no salió ninguna llamada a touch_session' })
+            .not.toEqual([]);
+
+        // 204 = la fila quedó escrita. Un 401/403 querría decir que el RPC está
+        // ahí pero el permiso no, y el efecto sería el mismo: cero enforcement.
+        expect(latidos.every((s) => s === 204), `estados recibidos: ${latidos}`).toBe(true);
+    });
+
     test('la clase la fija la ventana que entró; una segunda no la cambia', async ({ page, context }) => {
         // Playwright no emula `display-mode`, así que se sustituye la consulta.
         // Es exactamente lo que ve el código: `matchMedia(...).matches`.

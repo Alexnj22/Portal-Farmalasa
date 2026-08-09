@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.529.0 — El límite de inactividad pasa a decidirlo el servidor
+
+F3 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Hasta hoy los 5 minutos del
+empleado, las 12 horas de gestión y los 30 días de la app vivían **sólo en
+`localStorage`**: con el token en la mano y `curl`, no existían. Ahora los
+decide Postgres.
+
+### Las piezas
+
+`public.session_activity` guarda, por sesión, cuándo se la usó por última vez y
+de qué clase de dispositivo es. `touch_session` la escribe **sacando el
+`session_id` del JWT, nunca de un parámetro** — quien llama no puede elegir qué
+sesión está renovando. `session_idle_limit_minutes` espeja `getIdleLimitMs` de
+`AuthContext.jsx`; no puede usar `auth_employee_id()`, que resuelve por
+`auth.uid()`, porque **dentro del hook no hay JWT de usuario**: recibe el
+`user_id` del evento y repite la misma resolución que esa función tiene en el
+catálogo, incluido el camino por `employee_auth_accounts` (29 filas en prod).
+
+Y `custom_access_token_hook` corre en cada emisión de token —login y cada
+refresco— y se niega a emitir si la sesión pasó su límite. Es el único momento
+en que el servidor puede actuar, y por eso **la holgura máxima es un ciclo de
+token**.
+
+Más un cron diario de purga cuyo criterio no es la edad sino que la sesión ya no
+exista: si se borrara por vieja, el hook la vería «sin fila» y la dejaría pasar.
+
+### Fail-open ante lo inesperado, a propósito
+
+El hook está en el camino crítico de **todo** refresco de token: si explota,
+nadie puede seguir usando el portal. Por eso termina en `EXCEPTION WHEN OTHERS
+THEN RETURN event`. Que rechace por «vencido» es el objetivo; que rechace por un
+error de programación sería una caída total.
+
+### Ensayo en staging, con rollback
+
+12 casos en el branch `ewcmerxqjvludtgskuin`, todos dentro de `BEGIN…ROLLBACK`:
+los seis límites (5 / 720 por SU / 720 por gestión / 720 por cuenta ligada /
+43200 por app / 5 por usuario desconocido) y los seis del hook (sin claims, sin
+fila, fresca, vencida, vencida-pero-app, y `session_id` corrupto → fail-open).
+Staging necesitó antes crear `employee_auth_accounts`, que existe en prod y allá
+faltaba — sin eso el ensayo no habría cubierto el camino alternativo.
+
+### El bug que apareció al medir, y que ninguna prueba de humo habría visto
+
+Después del primer login de prueba, `session_activity` quedó **vacía**.
+
+`latirSesion` cortaba en `if (!userRef.current)`, pero ese ref lo llena un
+`useEffect` —o sea **después** del render— y los cuatro caminos de login hacen
+`setUser(u)` y `startIdleWatcher(u)` uno detrás del otro **en el mismo tick**.
+Al llamarlo desde ahí el ref todavía era `null` y el primer latido se descartaba
+en silencio: la sesión no tenía fila del lado del servidor hasta que la persona
+moviera el mouse.
+
+`startIdleWatcher` ya venía recibiendo el usuario de sus cuatro llamadores —
+sencillamente lo ignoraba. Ahora lo usa.
+
+La prueba nueva **afirma sobre la red**, no sobre el efecto: exige que salga la
+llamada a `touch_session` y que devuelva 204. Un 401 significaría que el RPC
+está pero el permiso no, y el resultado sería el mismo — cero enforcement.
+
+### Todavía inerte
+
+Los objetos existen pero **el hook no corre hasta activarlo** en Authentication
+→ Hooks, y el límite no aprieta de verdad hasta que el JWT baje a 900s (F1).
+Las dos cosas son del panel.
+
 ## v2.528.0 — Leaflet y el código de barras salen del CDN, y la CSP pasa a bloquear de verdad
 
 F0 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Cierra el camino **concreto**

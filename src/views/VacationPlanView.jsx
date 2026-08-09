@@ -53,13 +53,29 @@ const HEADER_STATUS_META = {
 // además qué muestra la ficha en el teléfono. Con esta lista la inferencia da
 // identidad = Empleado, ancla = Estado, contexto = Sucursal · Período, y manda a
 // la hoja los tres que no entran (Días, Saldo, Comentario).
+// ── Ocho columnas en una columna de 608px ────────────────────────────────────
+//
+// Esta tabla NO vive a lo ancho de la vista: vive en el panel derecho, al lado
+// del formulario de 400px. Medido el 2026-08-09: el marco le da **620px a 1440 y
+// 460 a 1280** para **939px de columnas**, y lo que quedaba fuera era la columna
+// de acciones — los botones de cada asignación, inalcanzables.
+//
+// `hideBelow` no alcanzaba y conviene decir por qué: es una consulta de
+// VIEWPORT, y acá el que aprieta es el CONTENEDOR. Ni siquiera a 1536 el panel
+// llega a 939px (queda en ~752), así que ninguna combinación de peldaños lo
+// arregla. Lo que sobra son columnas para el espacio que esta tabla tiene, no
+// para la pantalla que la muestra.
+//
+// Salen las tres de contexto y se quedan las cinco que son la fila: de quién,
+// cuándo, cuánto, en qué estado y qué se puede hacer. La sucursal, el saldo y el
+// comentario siguen en el expediente del empleado.
 const COLS_ASIGNACIONES = [
     { key: 'empleado',   label: 'Empleado',   align: 'left' },
-    { key: 'sucursal',   label: 'Sucursal',   align: 'left' },
+    { key: 'sucursal',   label: 'Sucursal',   align: 'left', hideBelow: '2xl' },
     { key: 'periodo',    label: 'Período',    align: 'left' },
-    { key: 'dias',       label: 'Días',       align: 'left' },
-    { key: 'saldo',      label: 'Saldo',      align: 'left' },
-    { key: 'comentario', label: 'Comentario', align: 'left' },
+    { key: 'dias',       label: 'Días',       align: 'left', hideBelow: '2xl' },
+    { key: 'saldo',      label: 'Saldo',      align: 'left', hideBelow: '2xl' },
+    { key: 'comentario', label: 'Comentario', align: 'left', hideBelow: '2xl' },
     { key: 'estado',     label: 'Estado',     align: 'left' },
     { key: 'acciones',   label: '',           align: 'right' },
 ];
@@ -207,7 +223,7 @@ const GanttChart = ({ plans, year }) => {
     );
 
     return (
-        <div className="overflow-x-auto">
+        <div id="gantt-vacaciones-scroll" className="overflow-x-auto">
             <div className="min-w-[560px]">
                 {/* Month headers */}
                 <div className="flex mb-2 ml-[160px]">
@@ -734,7 +750,12 @@ const VacationPlanView = () => {
                 <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
                     {/* ── Panel izquierdo: Formulario (crear / editar) ── */}
-                    <div ref={panelRef} className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
+                    {/* 320px entre `lg` y `2xl`, 400 de ahí para arriba.
+                        La tabla del panel derecho recibía **460px a 1280** para
+                        599 de columnas, y lo que quedaba fuera eran sus botones.
+                        El formulario es el que puede ceder: sus campos son de
+                        ancho completo y a 320 siguen entrando. */}
+                    <div ref={panelRef} className="w-full lg:w-[320px] 2xl:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div data-surface="card" data-tono={editingPlan ? 'warning' : undefined}
                     className="p-6 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] relative">
                             <div className="flex items-center justify-between mb-6">
@@ -933,7 +954,7 @@ const VacationPlanView = () => {
                                 real cae a fichas, o sea que la carga y el resultado no
                                 se parecían. */}
                             {isLoadingVacationPlans ? (
-                                <DataTable columns={COLS_ASIGNACIONES} minWidth="600px"
+                                <DataTable columns={COLS_ASIGNACIONES} minWidth="420px"
                                     movil={{ acciones: true }} loading skeletonRows={5} />
                             ) : filtered.length === 0 ? (
                                 <EmptyState compact icon={Palmtree} title="Sin asignaciones en este período" />
@@ -949,7 +970,7 @@ const VacationPlanView = () => {
                                     acá los tres botones abren un modal o disparan una
                                     mutación de verdad —no despliegan una fila hermana—, y
                                     esconderlos dejaba la vista sin función en el teléfono. */}
-                                <DataTable columns={COLS_ASIGNACIONES} minWidth="600px"
+                                <DataTable columns={COLS_ASIGNACIONES} minWidth="420px"
                                     movil={{ acciones: true }}>
                                             {filtered.map(p => {
                                                 const isEditing = editingPlan?.id === p.id;
@@ -979,15 +1000,15 @@ const VacationPlanView = () => {
                                                                     )}
                                                                 </div>
                                                             </DataCell>
-                                                            <DataCell className="text-content-3 font-medium">{p.branch?.name || '—'}</DataCell>
+                                                            <DataCell hideBelow="2xl" className="text-content-3 font-medium">{p.branch?.name || '—'}</DataCell>
                                                             <DataCell className="text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</DataCell>
-                                                            <DataCell className="font-black text-content-2">{p.days}</DataCell>
-                                                            <DataCell>
+                                                            <DataCell hideBelow="2xl" className="font-black text-content-2">{p.days}</DataCell>
+                                                            <DataCell hideBelow="2xl">
                                                                 <Badge variant={remaining >= 0 ? 'info' : 'danger'} size="sm">
                                                                     {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
                                                                 </Badge>
                                                             </DataCell>
-                                                            <DataCell className="max-w-[160px]">
+                                                            <DataCell hideBelow="2xl" className="max-w-[160px]">
                                                                 {p.notes
                                                                     ? <p className="text-label text-content-3 font-medium leading-snug line-clamp-2">{p.notes}</p>
                                                                     : <span className="text-caption text-content-3">—</span>

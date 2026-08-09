@@ -54,7 +54,11 @@ const alcanceLabel = (c) => [
 const COLS = [
     { key: 'fecha', label: 'Fecha', align: 'left' },
     { key: 'sucursal', label: 'Sucursal', align: 'left' },
-    { key: 'alcance', label: 'Alcance', align: 'left', hideBelow: 'md' },
+    // `2xl`: a 1280 las ocho columnas piden 898px contra los 868 del marco y la
+    // de **acciones** queda fuera. El alcance del conteo —general o por
+    // laboratorio— es contexto y está en el detalle; los botones de la fila no
+    // se alcanzaban de ninguna forma.
+    { key: 'alcance', label: 'Alcance', align: 'left', hideBelow: '2xl' },
     { key: 'items', label: 'Ítems', align: 'center', hideBelow: 'md' },
     { key: 'diferencias', label: 'Diferencias', align: 'center' },
     { key: 'valor', label: 'Valor Neto', align: 'right', hideBelow: 'lg' },
@@ -431,7 +435,7 @@ export default function ConteoInventarioView() {
                         <DataRow key={c.id} index={i} onClick={() => navigate(`/conteo-inventario/${c.id}`)}>
                             <DataCell><span className="text-body-sm font-semibold text-content-2">{fmtDate(c.created_at)}</span></DataCell>
                             <DataCell><span className="text-body-sm font-bold text-content">{c.branches?.name || '—'}</span></DataCell>
-                            <DataCell hideBelow="md"><span className="text-label text-content-3">{alcanceLabel(c)}</span></DataCell>
+                            <DataCell hideBelow="2xl"><span className="text-label text-content-3">{alcanceLabel(c)}</span></DataCell>
                             <DataCell align="center" hideBelow="md">
                                 <div className="flex flex-col items-center gap-0.5">
                                     <span className="text-label tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span>

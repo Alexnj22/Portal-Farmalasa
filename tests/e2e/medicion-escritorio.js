@@ -74,6 +74,16 @@ export const MEDIR_ESCRITORIO = () => {
     // motivo—. Acusarlo sería pedirle que esconda un día de la semana.
     const exceptuado = (marco) => !!marco.closest('#schedule-table-scroll');
 
+    // Los carriles que SON la respuesta correcta, no el problema. Misma
+    // convención que `EXCEPCIONES` en `scripts/mobile-gate.mjs`: con su motivo.
+    //
+    // `#gantt-vacaciones-scroll` — la línea de tiempo del año en Vacaciones.
+    // Doce meses no entran en ningún ancho y deslizarlos es lo que se espera de
+    // una línea de tiempo; la regla lo acusaba porque su contenido (806px) cabe
+    // en la ventana, sin ver que el componente vive en un panel de 542.
+    const carrilExceptuado = (el) => !!el.closest('#gantt-vacaciones-scroll')
+        || el.id === 'gantt-vacaciones-scroll';
+
     const columnasFuera = [];
     document.querySelectorAll('table').forEach((t) => {
         if (!visible(t)) return;
@@ -130,6 +140,7 @@ export const MEDIR_ESCRITORIO = () => {
         if (!visible(el)) return;
         if (el.scrollWidth <= el.clientWidth + 1) return;
         if (el.querySelector('table')) return;              // eso es la regla 1
+        if (carrilExceptuado(el)) return;
         const r = el.getBoundingClientRect();
         const cortados = [...el.children].filter((c) => {
             const rc = c.getBoundingClientRect();

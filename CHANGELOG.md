@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.538.1 — Las últimas cuatro, y tres errores de lectura míos
+
+`vacation-plan`, `conteo-inventario`, `minmax` y `facturas-compra` en **cero**.
+Con eso, las cinco tandas cierran.
+
+**`vacation-plan`** no tenía un problema de columnas: su tabla vive en el panel
+derecho, al lado de un formulario de 400px, y recibía **460px a 1280 para 599 de
+columnas**. `hideBelow` no podía arreglarlo —es una consulta de *viewport* y el
+que aprieta es el *contenedor*— así que el formulario cede a 320px entre `lg` y
+`2xl`, y salen del panel angosto las cuatro columnas de contexto. Su `minWidth`
+de 600px, además, forzaba el desborde por sí solo en un marco de 460.
+
+**`minmax` y `facturas-compra`**: sus carriles no tenían el `flex-wrap` que sí
+recibieron las otras quince vistas, porque su fila contenedora está escrita
+distinto. Con `wrap` los filtros bajan de renglón y el carril se queda con la
+fila. `lg:flex-row` explícito para cumplir §17.0, que lo pide por la reserva de
+314px de `FilterBar`.
+
+**`conteo-inventario`**: `Alcance` a `2xl`.
+
+### Tres errores de lectura, y los tres los encontró la medición
+
+1. **Estuve editando la vista equivocada.** La ruta `conteo-inventario` es
+   `ConteoInventarioView`, no `ConteoDetailView`. Dos intentos —bajar el máximo
+   y después el mínimo del ancho del producto— sobre un archivo que la ruta ni
+   siquiera monta. Revertidos.
+2. **Bajé un encabezado sin su celda. Otra vez.** Tercera de la jornada: el
+   `hideBelow` del `<th>` de `Alcance` a `2xl` y el de su `<td>` en `md`. A 1280
+   el título desaparece y el dato no, y las columnas quedan corridas.
+3. **Declaré «carriles en cero» sobre una vista que no había cargado.** La
+   corrida acotada midió Mín·Máx con 1.1 pantallas —o sea vacía— y su carril no
+   apareció; lo di por resuelto en un commit y ante el usuario. La pasada
+   completa lo desmintió: seguía en 2. Cero hallazgos y cero datos se ven igual,
+   y esta vez me tocó a mí.
+
+### El Gantt del año pasa a excepción
+
+El carril que quedaba en `vacation-plan` es la línea de tiempo de doce meses en
+un panel de 542px. Un año no entra en ningún ancho y deslizarlo es lo que se
+espera de una línea de tiempo — misma familia que el calendario semanal de
+Horarios. Queda declarado con su motivo (`#gantt-vacaciones-scroll`), no
+arreglado.
+
 ## v2.538.0 — La bitácora y los expedientes se cierran: la vista pregunta en vez de pedir
 
 D3 y D4b de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`. No eran dos casos

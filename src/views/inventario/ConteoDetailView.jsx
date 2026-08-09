@@ -440,12 +440,7 @@ function ItemRow({
             {/* Con banda de grupo encima, esta celda solo marca la sangría. Sin
                 ella —un producto de un renglón— la fila ES el producto y lleva su
                 identidad, la misma que dibujaba `ProductGroupRow`. */}
-            {/* `max-w-[300px]` y no 340: a 1280 la hoja de captura se pasaba 30px
-                y la columna de acciones quedaba fuera del marco. Esconder una
-                columna de una hoja de conteo —donde todas son operativas— por
-                40px habría sido desproporcionado; el nombre ya venía truncado a
-                340 y a 300 sigue leyéndose. */}
-            <DataCell className={producto ? 'min-w-[180px] max-w-[300px]' : undefined}>
+            <DataCell className={producto ? 'min-w-[180px] max-w-[340px]' : undefined}>
                 {producto ? (
                     <div className="flex flex-col gap-0.5 py-0.5 min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
@@ -619,7 +614,7 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
                 El laboratorio pasó a ser el subtítulo del producto — dejó de ser
                 columna propia porque para filtrar ya está la píldora, y acá se lee
                 mejor pegado al nombre que a 180px de distancia. */}
-            <DataCell className="min-w-[180px] max-w-[300px]">
+            <DataCell className="min-w-[180px] max-w-[340px]">
                 <div className="flex flex-col gap-0.5 py-0.5 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0">
                         <p className={`font-bold text-body-sm truncate ${completo ? 'text-success' : 'text-content'}`}>

@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.533.1 — Los tres P2 de Inicio
+
+Cierra los tres que quedaban de la crítica de Inicio.
+
+**Las cuatro fichas se dibujaban idénticas.** Mismo tamaño, mismo peso, misma
+composición — con tres en cero había que leer las cuatro para descubrir que
+ninguna pedía nada, que es lo contrario de para qué existe una fila de
+indicadores. Ahora `KpiCard` acepta `pide`, y la jerarquía es de **estado**, no
+de tamaño: cuando algo requiere acción (solicitudes sin resolver, sucursales con
+alerta) su número toma el color de la ficha y un aro del mismo tinte; cuando no,
+los cuatro números son del color de lectura y la fila se lee como contexto en
+calma. Que no sea de tamaño importa: el layout no salta cuando el número cambia.
+
+Lo declara el llamador porque sólo él sabe qué es «pendiente» en su dominio.
+
+**Y `0% del total` cuando nadie marcó todavía se leía como un cálculo que
+falló**, no como la hora del día. Un cero con motivo tiene que decir el motivo:
+pasa a **«Sin marcaciones aún»**.
+
+**El gráfico de ventas no se podía leer como número.** Sin eje ni valores, la
+altura sólo daba forma: comparar el jueves con el domingo era estimar píxeles, y
+la cifra vivía escondida en el tooltip — que en un teléfono no existe. Ahora cada
+barra lleva su número encima, y sólo en la vista de **días**: son siete y entran;
+en horas son 24 y se pisarían.
+
+**La leyenda pasó arriba de las barras.** El color codifica el estado del día
+(`Muerta / Normal / Pico / Crítica`) y estaba explicado *debajo* de los datos que
+explica: se llegaba al gráfico sin saber qué significaba el naranja y había que
+volver a subir.
+
+**El aviso de construcción se leía a medias en el teléfono.** En 390px la frase
+se cortaba en «algunas pantallas se ven v…», y esta franja está en el tope de las
+37 vistas: un aviso interrumpido a media palabra erosiona más confianza que el
+defecto que anuncia. Ahora hay dos textos —no un `truncate` sobre uno largo— y la
+versión corta dice lo que importa en el ancho que hay.
+
+**La franja sigue siendo permanente**, que es una decisión del usuario anotada en
+v2.57.1. No se toca sin que él la reabra; lo que se corrigió es que se leía
+cortada.
+
 ## v2.533.0 — El tablero deja de dibujar el cero como si fuera un dato
 
 Primeros dos arreglos de la revisión de UX por vistas. Los dos P1 de Inicio, los

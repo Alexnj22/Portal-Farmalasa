@@ -576,20 +576,37 @@ const SalesBranchSkeleton = () => (
   </div>
 );
 
-const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
+// ── `pide`: cuál de las cuatro fichas hay que mirar ──────────────────────────
+//
+// Las cuatro se dibujaban idénticas: mismo tamaño, mismo peso, misma
+// composición. Con tres en cero, había que leer las cuatro para descubrir que
+// ninguna pedía nada — que es exactamente lo contrario de para qué existe una
+// fila de indicadores.
+//
+// `pide` lo declara el llamador porque sólo él sabe qué es «pendiente» en su
+// dominio: solicitudes sin resolver, sucursales con alerta. Cuando algo pide
+// acción, su número toma el color de la ficha y un aro del mismo tinte; cuando
+// no, los cuatro números son del color de lectura y la fila entera se lee como
+// contexto en calma. La jerarquía no es de tamaño: es de **estado**, así que no
+// salta el layout cuando el número cambia.
+const KpiCard = ({ icon: Icon, label, value, sub, color, onClick, pide = false }) => (
   <div data-surface="card" {...clickable(onClick)}
-    className={`group animate-kpi-enter relative rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)]' : ''}`}>
+    style={pide ? { boxShadow: `0 0 0 1.5px ${tinte(color, 45)}, var(--shadow-glass-3)` } : undefined}
+    className={`group animate-kpi-enter relative rounded-3xl border border-border-card p-4 flex flex-col gap-3 ${pide ? '' : 'shadow-[var(--shadow-glass-3)]'} ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)]' : ''}`}>
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
-      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] group-hover:scale-[1.08]" style={{ background: tinte(color, 9.4), border: `1px solid ${tinte(color, 12.5)}` }}>
+      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-[var(--dur-base)] ease-[var(--ease-spring)] group-hover:scale-[1.08]" style={{ background: tinte(color, pide ? 14 : 9.4), border: `1px solid ${tinte(color, pide ? 20 : 12.5)}` }}>
         <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
       <p className="text-label font-semibold text-content-3 leading-snug">{label}</p>
     </div>
     {/* Value + sub as context pair */}
     <div className="relative flex items-end justify-between gap-1">
-      <p className="text-display font-black text-content leading-none">{value}</p>
+      {/* `text-content` sigue siendo el default; el `style` sólo lo pisa cuando
+          la ficha pide acción. Sin la clase, el número heredaba el color del
+          contenedor y en un tema quedaba distinto que en otro. */}
+      <p className="text-display font-black text-content leading-none" style={pide ? { color } : undefined}>{value}</p>
       {sub && <span className="text-label font-bold text-content-3 pb-0.5">{sub}</span>}
     </div>
   </div>
@@ -2081,6 +2098,14 @@ const DashboardView = ({ openModal }) => {
             </div>
           }>
           <div className="px-5 pb-5 pt-3 overflow-visible h-full flex flex-col">
+            {/* La leyenda va ARRIBA de las barras. Estaba debajo, y el color es
+                lo que codifica el estado del día: se llegaba a los datos sin
+                saber qué significaba el naranja, y había que volver a subir. */}
+            <div className="flex flex-wrap gap-3 mb-3 shrink-0">
+              {[['var(--txvol-muerta)','Muerta'],['var(--txvol-normal)','Normal'],['var(--txvol-pico)','Pico'],['var(--txvol-critica)','Crítica']].map(([c,l])=>(
+                <div key={l} className="flex items-center gap-1 text-micro font-bold text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
+              ))}
+            </div>
             <div className="relative flex-1 min-h-0">
               <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-divider w-full"/><div className="border-t border-dashed border-divider w-full"/></div>
               <div className="flex items-end gap-1.5 w-full h-full relative overflow-visible">
@@ -2117,17 +2142,23 @@ const DashboardView = ({ openModal }) => {
                         )}
                         {salesView==='DAYS'&&<p className="text-micro text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
+                      {/* El número, sobre la barra. Sin eje ni valores, la altura
+                          sólo daba forma: comparar el jueves con el domingo era
+                          estimar píxeles, y la cifra vivía escondida en el
+                          tooltip, que en un teléfono no existe. Sólo en la vista
+                          de DÍAS: son siete barras y entran; en horas son 24 y
+                          se pisarían. `item.height` es un porcentaje, así que el
+                          `calc` deja la etiqueta pegada al tope de su barra. */}
+                      {salesView==='DAYS' && (
+                        <span className="absolute inset-x-0 text-center text-micro font-black text-content-2 tabular-nums pointer-events-none z-base"
+                          style={{ bottom: `calc(${item.height} + 3px)` }}>{item.avg}</span>
+                      )}
                       <div className={`w-full transition-[opacity,transform] duration-[var(--dur-slow)] ease-[var(--ease-spring)] group-hover:opacity-80 origin-bottom shadow-sm z-base ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
                       <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-9-text transition-[opacity,color] whitespace-nowrap z-base">{item.label}</span>
                     </div>
                   ));
                 })()}
               </div>
-            </div>
-            <div className="flex flex-wrap gap-3 mt-6 shrink-0">
-              {[['var(--txvol-muerta)','Muerta'],['var(--txvol-normal)','Normal'],['var(--txvol-pico)','Pico'],['var(--txvol-critica)','Crítica']].map(([c,l])=>(
-                <div key={l} className="flex items-center gap-1 text-micro font-bold text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
-              ))}
             </div>
           </div>
         </WidgetCard>
@@ -3159,9 +3190,12 @@ const DashboardView = ({ openModal }) => {
             ? <div key="kpi-general-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
-                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+                {/* `0% del total` cuando nadie marcó todavía se lee como un
+                    cálculo que falló, no como la hora del día. Un cero con
+                    motivo tiene que decir el motivo. */}
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiPresent===0?'Sin marcaciones aún':(kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:undefined)}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" pide={kpiPending>0} sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} pide={kpiBranchAlerts.length>0} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
               </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (

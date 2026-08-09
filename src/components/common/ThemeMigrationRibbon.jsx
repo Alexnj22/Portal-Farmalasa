@@ -29,7 +29,18 @@ export default function ThemeMigrationRibbon() {
         }}
       >
         <Construction size={15} strokeWidth={2.5} className="flex-shrink-0" />
-        <span className="truncate">
+        {/* Dos textos, no `truncate` sobre uno largo.
+            En 390px la frase completa se cortaba en «algunas pantallas se ven
+            v…»: un aviso que se interrumpe a media palabra erosiona más
+            confianza que el defecto que anuncia, y esta franja está en el tope
+            de las 37 vistas. La versión corta dice lo mismo que importa —qué
+            pasa y que los datos están bien— en el ancho que hay.
+            La franja sigue siendo PERMANENTE, que es decisión del usuario
+            (v2.57.1); lo que se corrige acá es que se leía a medias. */}
+        <span className="sm:hidden">
+          En construcción visual · tus datos están correctos
+        </span>
+        <span className="hidden sm:inline">
           Portal en construcción visual — algunas pantallas se ven distintas mientras avanza la migración de tema. Tus datos están correctos.
         </span>
       </div>

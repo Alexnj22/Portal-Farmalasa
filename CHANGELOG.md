@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.531.1 — El gate contaba HTML de impresión como deuda de interfaz
+
+`tabla-a-mano` era el único ratchet que no estaba en cero: **26**. Al abrir los
+26 uno por uno, sólo 12 son lo que la regla persigue. Este commit saca los otros
+14, que no eran deuda.
+
+**Ocho no eran ni siquiera JSX.** La regla busca `<table` sobre el texto entero
+del archivo, así que también alcanzaba los literales de plantilla — y ahí viven
+la boleta de pago y la planilla de `PayrollView` (6) y la cotización impresa de
+`CotizacionesView` (2). Son cadenas que van a `openPrintWindow`: nunca llegan al
+DOM de la app. Una boleta de pago **es** una tabla y `DataTable` no tiene nada
+que hacer ahí.
+
+Ahora el contenido de los backticks se reemplaza por espacios antes de mirar
+—espacios y no borrado, para que los hallazgos que quedan sigan reportando su
+línea real— y se aplica a las cuatro reglas, porque ninguna busca algo que pueda
+vivir legítimamente dentro de una plantilla de texto.
+
+**Verificado en rojo**, que es lo que convierte esto en un arreglo y no en un
+ablandamiento: un archivo de prueba con las dos formas —un `<table>` dentro de
+un backtick y otro en JSX— deja pasar el primero y acusa el segundo. Borrado
+después.
+
+Queda escrita la limitación: si algún día una plantilla se inyectara con
+`dangerouslySetInnerHTML`, sería interfaz y esta regla ya no la vería. Hoy los
+cuatro sitios son impresión.
+
+**Seis son matrices o papel, y pasan a excepción con motivo escrito** — el
+mecanismo que el gate ya tenía y que distingue «esto está bien así» de «esto hay
+que bajarlo»:
+
+| Archivo | Por qué |
+|---|---|
+| `EncuestaView` (3) | la fila es un bloque cruzado con jefes y colaboradores más su diferencia en puntos |
+| `EncuestaAdminView` | matriz empleados × bloques `B1..Bn`; las columnas las decide la encuesta |
+| `FormAiSchedulerPreview` | empleados × los siete días — el mismo caso que `ScheduleCalendar`, que ya era excepción |
+| `TabHistory` | vive dentro de `hidden print:block`: es el reporte impreso, no se ve en pantalla |
+
+El criterio, ahora explícito: **la fila tiene que ser un registro**. Donde es una
+entidad cruzada con sus columnas, el modo ficha no tiene qué mostrar — una ficha
+por fila repetiría el nombre y listaría las columnas debajo, que es la misma
+tabla otra vez y más larga.
+
+Baseline apretado de 26 a **12**, que son las que sí hay que migrar.
+
 ## v2.531.0 — Conexiones: ver quién tiene sesión abierta y cerrarla
 
 F4 y última de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Módulo nuevo

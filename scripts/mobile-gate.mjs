@@ -56,6 +56,32 @@ const leer = (rutaAbs, rel) => {
     }
 };
 
+// ── El HTML que se imprime no es la interfaz ─────────────────────────────────
+//
+// Las reglas buscan patrones de JSX sobre el texto del archivo, y eso también
+// alcanzaba a los literales de plantilla. Ocho de los 26 `tabla-a-mano` del
+// 2026-08-08 eran cadenas que van a `openPrintWindow`: la boleta de pago y la
+// planilla de `PayrollView` (6) y la cotización impresa de `CotizacionesView`
+// (2). Una boleta de pago **es** una tabla y `DataTable` no tiene nada que
+// hacer ahí — no llega nunca al DOM de la app.
+//
+// Así que el contenido de los backticks se reemplaza por espacios antes de
+// mirar. Espacios y no borrado: los saltos de línea se conservan para que los
+// hallazgos que sí quedan sigan reportando su línea real.
+//
+// JSX no vive dentro de backticks, así que esto no puede esconder un hallazgo
+// verdadero. **Salvo un caso, que hoy no ocurre:** una plantilla inyectada con
+// `dangerouslySetInnerHTML` sí sería interfaz, y esta regla ya no la vería. Los
+// cuatro sitios de hoy son impresión; si alguna vez se inyecta HTML construido
+// a mano, hay que revisar esto.
+//
+// Se aplica a TODAS las reglas y no sólo a `tabla-a-mano`: ninguna busca algo
+// que pueda vivir legítimamente dentro de una plantilla de texto.
+const sinPlantillas = (texto) => texto.replace(
+    /`(?:\\[\s\S]|\$\{(?:[^{}]|\{[^}]*\})*\}|[^\\`])*`/g,
+    (bloque) => bloque.replace(/[^\n]/g, ' '),
+);
+
 const RAIZ = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const BASELINE_PATH = join(RAIZ, 'scripts/mobile-gate-baseline.json');
 const RAICES = ['src/views', 'src/components'];
@@ -79,6 +105,25 @@ const EXCEPCIONES = {
     },
     'src/views/contabilidad/CorteZView.jsx': {
         'tabla-a-mano': 'Corte Z: documento fiscal con su formato propio, no una lista del portal.',
+    },
+    // ── Las cuatro del 2026-08-08 ────────────────────────────────────────────
+    // Salieron de abrir los 26 hallazgos uno por uno. El criterio es el mismo
+    // que ya usaban las de arriba y quedó escrito en DESIGN.md §32: **la fila
+    // tiene que ser un registro**. Donde la fila es una entidad CRUZADA con sus
+    // columnas —una matriz—, el modo ficha no tiene qué mostrar: una ficha por
+    // fila repetiría el nombre de la fila y listaría las columnas debajo, que es
+    // exactamente la tabla otra vez, más larga.
+    'src/views/EncuestaView.jsx': {
+        'tabla-a-mano': 'Las tres son matrices de la encuesta: la fila es un bloque cruzado con dos poblaciones (jefes y colaboradores) más su diferencia en puntos. La fila no es un registro que se pueda abrir.',
+    },
+    'src/views/EncuestaAdminView.jsx': {
+        'tabla-a-mano': 'Matriz empleados × bloques (B1..Bn): la cantidad de columnas la decide la encuesta, no el diseño. Comparar a un empleado con el de al lado es para lo que existe la vista.',
+    },
+    'src/components/forms/FormAiSchedulerPreview.jsx': {
+        'tabla-a-mano': 'Empleados × los siete días de la semana — el mismo caso que ScheduleCalendar, que ya está acá arriba por el mismo motivo. Siete columnas no entran en 390px de ninguna forma y deslizar un horario es lo que se espera de un horario.',
+    },
+    'src/views/branch-tabs/TabHistory.jsx': {
+        'tabla-a-mano': 'Vive dentro de `hidden print:block`: es el reporte que se imprime, no se ve nunca en pantalla. En papel no hay modo ficha ni teléfono.',
     },
 };
 
@@ -200,7 +245,7 @@ for (const raiz of RAICES) {
     try { dir = join(RAIZ, raiz); statSync(dir); } catch { continue; }
     for (const ruta of archivosJsx(dir)) {
         const rel = relative(RAIZ, ruta);
-        const texto = leer(ruta, rel);
+        const texto = sinPlantillas(leer(ruta, rel));
         for (const regla of REGLAS) {
             if (regla.aplica && !regla.aplica(rel)) continue;
             if (exceptuado(rel, regla.categoria)) continue;

@@ -37,17 +37,22 @@ test.describe('F4 · Conexiones', () => {
         // El `<h2>` del encabezado está oculto en el teléfono a propósito (el
         // shell móvil pone el título aparte), así que se espera al AVISO, que sí
         // se pinta en los dos tamaños.
-        await expect(page.getByText('Al cerrar una conexión')).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByText('se abre una conexión nueva')).toBeVisible({ timeout: 30_000 });
         await page.waitForTimeout(4_000);
 
-        // El botón de cerrar hace de doble prueba: sólo existe si hay al menos
-        // una conexión —o sea que la vista no abrió vacía y hay algo que medir—
-        // y además es el CONTROL de la pantalla, que en la ficha móvil es
-        // opt-in (`movil.acciones`). Sin esa prop la ficha se ve completa y no
-        // lo está: fue exactamente lo que pasó en la primera versión.
-        const cerrar = page.getByTitle('Cerrar esta conexión');
-        await expect(cerrar.first()).toBeVisible({ timeout: 15_000 });
-        expect(await cerrar.count(), 'la vista abrió sin ninguna conexión').toBeGreaterThan(0);
+        // Una tarjeta por persona. Si no hay ninguna, la vista abrió vacía y
+        // todo lo que se mida abajo pasaría por no tener nada que medir.
+        const tarjetas = page.locator('button[data-surface="card"]');
+        expect(await tarjetas.count(), 'la vista abrió sin ninguna persona').toBeGreaterThan(0);
+
+        // El control de la pantalla vive en el detalle: se abre y se comprueba
+        // que esté. Es el que se olvida — la versión anterior de esta vista lo
+        // perdía entero en el teléfono sin que nada lo dijera.
+        await tarjetas.first().click();
+        await expect(page.getByText('conexiones abiertas').or(page.getByText('conexión abierta')))
+            .toBeVisible({ timeout: 15_000 });
+        await expect(page.getByTitle('Cerrar esta conexión').first()).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByRole('button', { name: 'Cerrar todas' })).toBeVisible();
 
         // La pantalla habla del portal. Grepear el fuente NO alcanza: la mitad
         // de estos textos viven en `title`/`aria-label`/`placeholder`, así que
@@ -116,7 +121,7 @@ test.describe('F4 · Conexiones', () => {
         });
 
         await page.goto('/sesiones');
-        await expect(page.getByText('Al cerrar una conexión')).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByText('se abre una conexión nueva')).toBeVisible({ timeout: 30_000 });
         await page.waitForTimeout(3_000);
 
         // El control va PRIMERO: si la llamada nunca se interceptó, lo de abajo

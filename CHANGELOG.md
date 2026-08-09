@@ -21,6 +21,63 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.532.0 — Conexiones: una tarjeta por persona, con su foto y sus conexiones en el detalle
+
+Rediseño sobre la revisión del usuario, que abrió la vista y dijo cinco cosas.
+Cuatro eran síntomas de la misma: **estaba hecha como lista de conexiones y
+tenía que ser una lista de personas.**
+
+> «no hay paginación» · «del personal, incluir pruebas, ¿qué es?» · «no hay
+> cards, no hay filterpill» · «tenía en mente cards por persona, donde muestre
+> su última conexión y las sesiones abiertas al dar clic en un modal, con su
+> foto y todo»
+
+### Lo que hay ahora
+
+Una **tarjeta por persona** con su foto, su cargo, cuándo se conectó por última
+vez y cuántas conexiones tiene abiertas. Al tocarla, un modal con esas
+conexiones —dispositivo, hora, lugar— y un botón para cerrar cada una, más
+**«Cerrar todas»**, que es lo que uno quiere hacer al ver 205.
+
+De 214 filas se pasa a **9 tarjetas**, así que la paginación deja de hacer
+falta: no había nada que paginar, había que agrupar. Los filtros pasan a
+`FilterBar` con chips —**Activas hoy** y **Olvidadas**— en vez de pestañas.
+
+### «Incluir pruebas» se fue
+
+`qa.test` no es una persona: es nuestro Playwright, y son **3,338 de las 3,585**
+conexiones. Ofrecerlo como interruptor obligaba a la persona a entender una cosa
+nuestra para usar su pantalla. Ahora se excluyen siempre, del lado del servidor.
+
+### Por qué había 205 conexiones de una sola persona
+
+Se midió antes de responder: 214 conexiones reales repartidas entre 9 personas,
+y **205 son de una sola cuenta**, creadas entre el 6 y el 9 de agosto —los días
+de las pruebas en el teléfono—. **Sólo 5 de esas 205 se renovaron alguna vez**:
+las otras 200 se abrieron y se abandonaron dentro de la hora.
+
+No es un error de la pantalla. Cada entrada al portal abre una conexión, y hasta
+hoy **nada las cerraba**: `not_after` está en NULL en todas. Siguen siendo
+válidas de verdad. Es exactamente lo que arregla F1 —el *inactivity timeout* y
+el *timebox* del panel— y mientras tanto, «Cerrar todas» lo resuelve a mano.
+
+### El aviso pesaba más que el contenido
+
+La primera versión eran ocho renglones en azul y negrita que se comían la
+pantalla antes de dejar ver una sola tarjeta. Quedó en dos, en tono neutro, y la
+explicación de dónde salen el dispositivo y el lugar se mudó al detalle — que es
+donde esos datos se ven.
+
+### De paso, dos cosas que se estaban usando mal
+
+`trailingActions` de `ViewTabBar` **no existe** desde el 2026-07-30: se retiró
+justamente porque se había vuelto el cajón donde terminaban los filtros. Y el
+estado vacío canónico es `StateViews.EmptyState`, con `title`/`subtitle`.
+
+Barrido oficial sobre `/sesiones` en WebKit iPhone 13: **desbordan 0 · chicos 0
+· zoomIOS 0 · sinAcuse 0**, y las capturas miradas — que es como se encontró lo
+del aviso.
+
 ## v2.531.6 — Los planes móviles dicen su estado real
 
 Cierre documental del trabajo móvil. Tres documentos afirmaban deuda que ya no

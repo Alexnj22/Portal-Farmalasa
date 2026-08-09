@@ -1,20 +1,57 @@
 import { supabase } from '../supabaseClient';
+import { signPhotosDeep } from '../utils/storageFiles';
 
 // SesionesView.jsx (F4 de docs/PLAN-SESIONES-SEGURAS-2026-08-08.md).
 //
 // `auth.sessions` vive en el esquema `auth` y no está expuesta a PostgREST, así
-// que todo pasa por las dos RPC. `list_sessions` devuelve **json y no SETOF** a
+// que todo pasa por RPC. `list_sessions` devuelve **json y no SETOF** a
 // propósito: PostgREST trunca cualquier respuesta SETOF a 1000 filas en
-// silencio, y con las cuentas de prueba incluidas hay más de 3,500 conexiones.
+// silencio, y un listado que miente por truncamiento es peor que no tenerlo.
 
-export async function fetchSesiones(incluirPruebas = false) {
-    const { data, error } = await supabase.rpc('list_sessions', { p_incluir_pruebas: incluirPruebas });
+export async function fetchSesiones() {
+    const { data, error } = await supabase.rpc('list_sessions');
     if (error) return { data: [], error };
-    return { data: Array.isArray(data) ? data : [], error: null };
+    // Las fotos del personal viven en un bucket PRIVADO: lo que devuelve la RPC
+    // es el identificador crudo y hay que firmarlo o no se ve nada.
+    const filas = Array.isArray(data) ? data : [];
+    return { data: await signPhotosDeep(filas), error: null };
 }
 
 export function cerrarSesion(sessionId) {
     return supabase.rpc('revoke_session', { p_session_id: sessionId });
+}
+
+export function cerrarTodasDe(personaId) {
+    return supabase.rpc('revoke_person_sessions', { p_user_id: personaId });
+}
+
+// ── Agrupar por persona ─────────────────────────────────────────────────────
+// La vista es una tarjeta por PERSONA, no una fila por conexión: con 214
+// conexiones repartidas entre 9 personas, la lista plana no dejaba ver lo único
+// que importa de un vistazo —quién está conectado y desde cuándo—.
+export function agruparPorPersona(filas) {
+    const porPersona = new Map();
+    for (const f of filas) {
+        const clave = f.persona_id || f.cuenta;
+        if (!porPersona.has(clave)) {
+            porPersona.set(clave, {
+                persona_id: f.persona_id,
+                empleado: f.empleado,
+                cuenta: f.cuenta,
+                cargo: f.cargo,
+                foto: f.foto,
+                conexiones: [],
+            });
+        }
+        porPersona.get(clave).conexiones.push(f);
+    }
+    for (const p of porPersona.values()) {
+        p.conexiones.sort((a, b) => new Date(b.ultimo_movimiento) - new Date(a.ultimo_movimiento));
+        p.ultimo_movimiento = p.conexiones[0]?.ultimo_movimiento || null;
+        p.tiene_esta = p.conexiones.some(c => c.es_actual);
+    }
+    return [...porPersona.values()]
+        .sort((a, b) => new Date(b.ultimo_movimiento) - new Date(a.ultimo_movimiento));
 }
 
 // ── Qué dispositivo es, en palabras ─────────────────────────────────────────
@@ -60,6 +97,12 @@ export function haceCuanto(iso) {
     if (hrs < 24)      return `hace ${hrs} h`;
     const dias = Math.round(hrs / 24);
     return dias === 1 ? 'hace 1 día' : `hace ${dias} días`;
+}
+
+export function diasDesde(iso) {
+    const t = Date.parse(iso || '');
+    if (!Number.isFinite(t)) return Infinity;
+    return (Date.now() - t) / 86_400_000;
 }
 
 // El límite de inactividad que le toca a esa conexión, dicho en palabras del

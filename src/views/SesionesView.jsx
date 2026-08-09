@@ -1,24 +1,26 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { MonitorSmartphone, Smartphone, Monitor, LogOut, Clock, Info, AlertCircle } from 'lucide-react';
+import { MonitorSmartphone, Smartphone, Monitor, LogOut, Clock, Info, AlertCircle, MapPin } from 'lucide-react';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
+import LiquidAvatar from '../components/common/LiquidAvatar';
+import LiquidModal from '../components/common/LiquidModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
+import FilterBar from '../components/common/FilterBar';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import Notice from '../components/common/Notice';
+import { EmptyState } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
-import { fetchSesiones, cerrarSesion, describirDispositivo, haceCuanto, describirLimite } from '../data/sesiones';
+import {
+    fetchSesiones, cerrarSesion, cerrarTodasDe, agruparPorPersona,
+    describirDispositivo, haceCuanto, describirLimite, diasDesde,
+} from '../data/sesiones';
 import { tokenMatch } from '../utils/searchUtils';
 
 const EMPTY_ARRAY = [];
 const POLL_MS = 60_000;
-
-const TABS = [
-    { key: 'reales',  label: 'Del personal' },
-    { key: 'todas',   label: 'Incluir pruebas' },
-];
 
 const SesionesView = () => {
     const { user, hasPermission } = useAuth();
@@ -26,30 +28,24 @@ const SesionesView = () => {
     const appendAuditLog = useStaff(s => s.appendAuditLog);
     const showToast = useToastStore(s => s.showToast);
 
-    const [tab, setTab] = useState('reales');
     const [busqueda, setBusqueda] = useState('');
+    const [soloHoy, setSoloHoy] = useState(false);
+    const [soloOlvidadas, setSoloOlvidadas] = useState(false);
     const [filas, setFilas] = useState(EMPTY_ARRAY);
     const [cargando, setCargando] = useState(true);
-    // Un fallo NO puede verse igual que una lista vacía.
-    //
-    // La primera versión hacía `console.error` y dejaba las filas en cero, así
-    // que el rechazo del servidor —«sin permiso para ver las conexiones»— salía
-    // en pantalla como «Sin conexiones». El usuario abrió la vista y sólo pudo
-    // decir «me sale vacía»: la pantalla le estaba dando una respuesta a la
-    // pregunta equivocada, y encima una que parecía normal.
+    // Un fallo NO puede verse igual que una lista vacía. La primera versión
+    // hacía `console.error` y dejaba las filas en cero, así que el rechazo del
+    // servidor salía en pantalla como «Sin conexiones» y lo único que la persona
+    // podía reportar era «me sale vacía».
     const [fallo, setFallo] = useState(null);
-    const [porCerrar, setPorCerrar] = useState(null);
+    const [abierta, setAbierta] = useState(null);      // persona cuyo detalle se ve
+    const [porCerrar, setPorCerrar] = useState(null);  // { tipo: 'una'|'todas', … }
     const [cerrando, setCerrando] = useState(false);
 
-    const incluirPruebas = tab === 'todas';
-
     const cargar = useCallback(async () => {
-        const { data, error } = await fetchSesiones(incluirPruebas);
+        const { data, error } = await fetchSesiones();
         if (error) {
             console.error('SesionesView: list_sessions falló:', error.message);
-            // 42501 es el que devuelve la propia RPC cuando el cargo no tiene el
-            // módulo otorgado. Se distingue porque tiene arreglo concreto y la
-            // persona lo puede pedir: no es «se cayó algo».
             setFallo(error.code === '42501'
                 ? 'Tu cargo todavía no tiene acceso a Conexiones. Pídele a quien administra los permisos que te lo habilite.'
                 : 'No se pudo cargar la lista. Vuelve a intentar en un momento.');
@@ -58,7 +54,7 @@ const SesionesView = () => {
         }
         setFilas(data || EMPTY_ARRAY);
         setCargando(false);
-    }, [incluirPruebas]);
+    }, []);
 
     useEffect(() => {
         cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco periódico (mismo patrón que SyncHealthView.jsx)
@@ -66,166 +62,251 @@ const SesionesView = () => {
         return () => clearInterval(t);
     }, [cargar]);
 
-    const visibles = useMemo(() => {
-        if (!busqueda.trim()) return filas;
-        return filas.filter(f => tokenMatch(busqueda, f.empleado, f.cuenta));
-    }, [filas, busqueda]);
+    const personas = useMemo(() => agruparPorPersona(filas), [filas]);
+
+    const visibles = useMemo(() => personas.filter(p => {
+        if (busqueda.trim() && !tokenMatch(busqueda, p.empleado, p.cuenta, p.cargo)) return false;
+        const dias = diasDesde(p.ultimo_movimiento);
+        if (soloHoy && dias > 1) return false;
+        if (soloOlvidadas && dias <= 7) return false;
+        return true;
+    }), [personas, busqueda, soloHoy, soloOlvidadas]);
+
+    // La persona abierta se relee de `personas` en cada refresco: si se guardara
+    // el objeto, el detalle seguiría mostrando conexiones ya cerradas.
+    const detalle = useMemo(
+        () => (abierta ? personas.find(p => p.persona_id === abierta) || null : null),
+        [abierta, personas],
+    );
 
     const confirmarCierre = useCallback(async () => {
         if (!porCerrar) return;
         setCerrando(true);
-        const { data, error } = await cerrarSesion(porCerrar.session_id);
+        const esTodas = porCerrar.tipo === 'todas';
+        const { data, error } = esTodas
+            ? await cerrarTodasDe(porCerrar.persona.persona_id)
+            : await cerrarSesion(porCerrar.conexion.session_id);
         setCerrando(false);
-        if (error || data === false) {
-            showToast?.(
-                error ? 'No se pudo cerrar' : 'Ya no estaba abierta',
-                error ? 'La conexión sigue abierta. Intenta de nuevo.' : 'Esa conexión ya se había cerrado.',
-                'error',
-            );
+
+        if (error) {
+            showToast?.('No se pudo cerrar', 'Vuelve a intentar en un momento.', 'error');
         } else {
-            appendAuditLog?.('SESION_CERRADA', user?.id, {
-                sessionId: porCerrar.session_id,
-                persona: porCerrar.empleado,
-                cuenta: porCerrar.cuenta,
+            appendAuditLog?.(esTodas ? 'SESIONES_CERRADAS_PERSONA' : 'SESION_CERRADA', user?.id, {
+                persona: porCerrar.persona.empleado,
+                cuenta: porCerrar.persona.cuenta,
+                cerradas: esTodas ? data : 1,
+                sessionId: esTodas ? undefined : porCerrar.conexion.session_id,
                 actorName: user?.name,
             });
-            showToast?.('Conexión cerrada', 'Ese dispositivo ya no puede renovar su acceso.', 'success');
+            showToast?.(
+                esTodas ? `${data} conexiones cerradas` : 'Conexión cerrada',
+                'Esos dispositivos ya no pueden renovar su acceso.',
+                'success',
+            );
+            if (esTodas) setAbierta(null);
         }
         setPorCerrar(null);
         cargar();
     }, [porCerrar, appendAuditLog, user, showToast, cargar]);
 
+    const filtrosActivos = (soloHoy ? 1 : 0) + (soloOlvidadas ? 1 : 0);
+
+    // El buscador va en la píldora del encabezado; los filtros, en su propia
+    // barra a la derecha del cuerpo. `trailingActions` de `ViewTabBar` NO se
+    // usa: se retiró el 2026-07-30 justamente porque se había vuelto el cajón
+    // donde terminaban los filtros, y el encabezado no filtra (DESIGN.md §17).
     const filtersContent = (
         <ViewTabBar
-            tabs={TABS}
-            activeTab={tab}
-            onTabChange={setTab}
+            tabs={EMPTY_ARRAY}
             searchValue={busqueda}
             onSearchChange={setBusqueda}
             placeholder="Buscar por persona…"
         />
     );
 
+    const barraFiltros = (
+        <FilterBar
+            activeCount={filtrosActivos}
+            onClear={() => { setSoloHoy(false); setSoloOlvidadas(false); }}
+        >
+            {/* Chips y no un segmentado: son independientes y pueden estar los
+                dos apagados, que es el estado normal de la vista. */}
+            <FilterBar.Section label="estado">
+                <div className="flex items-center gap-1">
+                    <FilterBar.Chip tone="success" active={soloHoy} onToggle={() => setSoloHoy(v => !v)}>
+                        Activas hoy
+                    </FilterBar.Chip>
+                    <FilterBar.Chip tone="warning" active={soloOlvidadas} onToggle={() => setSoloOlvidadas(v => !v)}>
+                        Olvidadas
+                    </FilterBar.Chip>
+                </div>
+            </FilterBar.Section>
+        </FilterBar>
+    );
+
     return (
         <GlassViewLayout icon={MonitorSmartphone} title="Conexiones" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-4">
-                {/* Lo que la pantalla tiene que admitir y no disimular: cerrar
-                    una conexión corta la renovación, no el acceso en curso. */}
-                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-card">
-                    <Info size={14} className="text-content-3 shrink-0 mt-0.5" />
-                    <p className="text-caption text-content-2">
-                        Al cerrar una conexión, ese dispositivo deja de poder renovar su acceso y queda
-                        fuera en cuanto se le venza el que ya tiene — puede tardar unos minutos, no es
-                        inmediato. El dispositivo y el lugar son los que declaró el equipo al conectarse:
-                        sirven para reconocer algo raro, no como comprobante.
-                    </p>
-                </div>
+                {fallo && <Notice variant="danger" icon={AlertCircle}>{fallo}</Notice>}
 
-                {fallo && (
-                    <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-danger/[0.12] border border-danger/30">
-                        <AlertCircle size={14} className="text-danger shrink-0 mt-0.5" />
-                        <p className="text-caption font-semibold text-danger-text">{fallo}</p>
+                {/* Corto y en tono neutro a propósito: la primera versión eran
+                    ocho renglones en azul y negrita que se comían la pantalla
+                    antes de dejar ver una sola tarjeta. El resto de la
+                    explicación —de dónde salen el dispositivo y el lugar— vive
+                    en el detalle, que es donde esos datos se ven. */}
+                <Notice variant="neutral" icon={Info}>
+                    Cada vez que alguien entra al portal se abre una conexión nueva, y hoy ninguna se
+                    cierra sola: por eso una misma persona puede acumular muchas.
+                </Notice>
+
+                <div className="flex justify-end min-w-0">{barraFiltros}</div>
+
+                {cargando ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} data-surface="card" className="h-[104px] animate-pulse" />
+                        ))}
+                    </div>
+                ) : visibles.length === 0 ? (
+                    <EmptyState
+                        compact
+                        icon={MonitorSmartphone}
+                        title="Sin conexiones"
+                        subtitle="Nadie tiene una sesión abierta que coincida con este filtro."
+                    />
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {visibles.map(p => (
+                            <button
+                                key={p.persona_id || p.cuenta}
+                                type="button"
+                                data-surface="card"
+                                onClick={() => setAbierta(p.persona_id)}
+                                className="p-4 text-left w-full flex items-center gap-3 active:scale-[0.99] transition-transform duration-[var(--dur-base)]"
+                            >
+                                <LiquidAvatar
+                                    src={p.foto}
+                                    alt={p.empleado}
+                                    fallbackText={p.empleado}
+                                    className="w-12 h-12 rounded-2xl shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-label font-bold text-content-2 truncate">{p.empleado}</div>
+                                    {p.cargo && <div className="text-caption text-content-3 truncate">{p.cargo}</div>}
+                                    <div className="text-caption text-content-3 flex items-center gap-1 mt-1">
+                                        <Clock size={10} /> {haceCuanto(p.ultimo_movimiento) || '—'}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                    <Badge variant={p.conexiones.length > 5 ? 'warning' : 'neutral'} size="sm">
+                                        {p.conexiones.length}
+                                    </Badge>
+                                    {p.tiene_esta && <Badge variant="info" size="sm">Aquí</Badge>}
+                                </div>
+                            </button>
+                        ))}
                     </div>
                 )}
+            </div>
 
-                <DataTable
-                    columns={[
-                        { key: 'persona',    label: 'Persona' },
-                        { key: 'dispositivo', label: 'Dispositivo' },
-                        { key: 'ultimo',     label: 'Último uso' },
-                        { key: 'inicio',     label: 'Se conectó', hideBelow: 'md' },
-                        { key: 'lugar',      label: 'Lugar', hideBelow: 'lg' },
-                        { key: 'accion',     label: '' },
-                    ]}
-                    // Los papeles de la ficha van DECLARADOS y no inferidos, por
-                    // dos cosas que se vieron abriéndola en el teléfono:
-                    //
-                    //  · El ancla por defecto es la última columna útil, así que
-                    //    agarraba la IP y la pintaba en grande, con más peso que
-                    //    el nombre de la persona. El dato menos importante como
-                    //    motivo de la pantalla. El motivo real es **cuándo se usó
-                    //    por última vez**: es lo que dice si una conexión sobra.
-                    //  · `acciones` es opt-in: sin esto el botón de cerrar
-                    //    sencillamente no existe en el teléfono, que es donde más
-                    //    falta hace. La ficha se veía completa y no lo era.
-                    //
-                    // La IP cae a la hoja, que es su lugar: contexto, no titular.
-                    movil={{
-                        identidad: 'persona',
-                        ancla: 'ultimo',
-                        chips: ['dispositivo', 'inicio'],
-                        acciones: true,
-                    }}
-                    loading={cargando}
-                    empty={{
-                        icon: MonitorSmartphone,
-                        message: 'Sin conexiones',
-                        subtext: 'Nadie tiene una sesión abierta que coincida con este filtro.',
-                    }}
-                >
-                    {visibles.map((f, i) => {
-                        const esApp = f.clase === 'app';
+            {/* ── El detalle de una persona ───────────────────────────────── */}
+            <LiquidModal
+                open={!!detalle}
+                onClose={() => setAbierta(null)}
+                maxWidth="max-w-lg"
+                className="max-h-[85vh] h-fit"
+                ariaLabel={`Conexiones de ${detalle?.empleado || ''}`}
+            >
+                <LiquidModal.Header>
+                    <div className="flex items-center gap-3">
+                        <LiquidAvatar
+                            src={detalle?.foto}
+                            alt={detalle?.empleado}
+                            fallbackText={detalle?.empleado}
+                            className="w-11 h-11 rounded-2xl shrink-0"
+                        />
+                        <div className="min-w-0">
+                            <h3 className="text-body font-bold text-content truncate">{detalle?.empleado}</h3>
+                            <p className="text-caption text-content-3 truncate">
+                                {detalle?.conexiones.length === 1
+                                    ? '1 conexión abierta'
+                                    : `${detalle?.conexiones.length} conexiones abiertas`}
+                            </p>
+                        </div>
+                    </div>
+                </LiquidModal.Header>
+
+                <LiquidModal.Body className="space-y-2">
+                    <p className="text-caption text-content-3 px-0.5 pb-1">
+                        Cerrar una conexión le quita a ese dispositivo la posibilidad de renovar su
+                        acceso; sale del todo en cuanto se le venza el que ya tiene, y puede tardar
+                        unos minutos. El dispositivo y el lugar son los que declaró el equipo al
+                        conectarse: sirven para reconocer algo raro, no como comprobante.
+                    </p>
+                    {detalle?.conexiones.map(c => {
+                        const esApp = c.clase === 'app';
                         const Icono = esApp ? Smartphone : Monitor;
-                        const inicio = f.inicio ? new Date(f.inicio) : null;
-                        const usoTexto = haceCuanto(f.ultimo_uso || f.ultima_renovacion || f.inicio);
                         return (
-                            <DataRow key={f.session_id} index={i}>
-                                <DataCell>
-                                    <div className="text-label font-bold text-content-2 flex items-center gap-1.5">
-                                        {f.empleado}
-                                        {f.es_actual && <Badge variant="info" size="sm">Este equipo</Badge>}
+                            <div key={c.session_id} data-surface="card" className="p-3 flex items-start gap-3">
+                                <Icono size={15} className="text-content-3 shrink-0 mt-0.5" />
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-label font-bold text-content-2 flex items-center gap-1.5 flex-wrap">
+                                        {describirDispositivo(c.agente)}
+                                        {c.es_actual && <Badge variant="info" size="sm">Este equipo</Badge>}
                                     </div>
-                                    <div className="text-caption text-content-3 mt-0.5">{f.cuenta}</div>
-                                </DataCell>
-                                <DataCell>
-                                    <span className="inline-flex items-center gap-1.5 text-caption font-semibold text-content-2">
-                                        <Icono size={11} className="text-content-3" />
-                                        {describirDispositivo(f.agente)}
-                                    </span>
+                                    <div className="text-caption text-content-3 mt-0.5 flex items-center gap-1">
+                                        <Clock size={10} /> {haceCuanto(c.ultimo_uso || c.ultima_renovacion || c.inicio) || '—'}
+                                        {c.ip && (
+                                            <>
+                                                <span className="text-content-4">·</span>
+                                                <MapPin size={10} /> {c.ip}
+                                            </>
+                                        )}
+                                    </div>
                                     <div className="text-micro text-content-3 mt-0.5">
                                         {esApp ? 'App instalada' : 'Navegador'}
-                                        {f.limite_min != null && ` · se cierra sola a las ${describirLimite(f.limite_min)}`}
+                                        {c.limite_min != null && ` · se cierra sola tras ${describirLimite(c.limite_min)}`}
                                     </div>
-                                </DataCell>
-                                <DataCell>
-                                    <span className="inline-flex items-center gap-1 text-caption text-content-2">
-                                        <Clock size={10} className="text-content-3" />
-                                        {usoTexto || '—'}
-                                    </span>
-                                </DataCell>
-                                <DataCell hideBelow="md" className="text-caption text-content-3">
-                                    {inicio ? inicio.toLocaleDateString('es-SV') : '—'}
-                                </DataCell>
-                                <DataCell hideBelow="lg" className="text-caption text-content-3">
-                                    {f.ip || '—'}
-                                </DataCell>
-                                <DataCell>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        icon={LogOut}
-                                        iconOnly
-                                        disabled={!canEdit}
-                                        title="Cerrar esta conexión"
-                                        onClick={() => setPorCerrar(f)}
-                                    />
-                                </DataCell>
-                            </DataRow>
+                                </div>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    icon={LogOut}
+                                    iconOnly
+                                    disabled={!canEdit}
+                                    title="Cerrar esta conexión"
+                                    onClick={() => setPorCerrar({ tipo: 'una', persona: detalle, conexion: c })}
+                                />
+                            </div>
                         );
                     })}
-                </DataTable>
-            </div>
+                </LiquidModal.Body>
+
+                <LiquidModal.Footer>
+                    <Button variant="secondary" onClick={() => setAbierta(null)}>Volver</Button>
+                    <Button
+                        variant="destructive"
+                        icon={LogOut}
+                        disabled={!canEdit || !detalle?.conexiones.length}
+                        onClick={() => setPorCerrar({ tipo: 'todas', persona: detalle })}
+                    >
+                        Cerrar todas
+                    </Button>
+                </LiquidModal.Footer>
+            </LiquidModal>
 
             <ConfirmModal
                 isOpen={!!porCerrar}
                 onClose={() => setPorCerrar(null)}
                 onConfirm={confirmarCierre}
                 isProcessing={cerrando}
-                title="¿Cerrar esta conexión?"
+                title={porCerrar?.tipo === 'todas' ? '¿Cerrar todas sus conexiones?' : '¿Cerrar esta conexión?'}
                 message={
-                    porCerrar?.es_actual
-                        ? 'Es la conexión de este mismo equipo: vas a tener que volver a entrar.'
-                        : `${porCerrar?.empleado} tendrá que volver a entrar en ese dispositivo. Puede tardar unos minutos en salir del todo.`
+                    porCerrar?.tipo === 'todas'
+                        ? `${porCerrar?.persona?.empleado} tendrá que volver a entrar en todos sus dispositivos${porCerrar?.persona?.tiene_esta ? ', incluido este' : ''}. Puede tardar unos minutos en salir del todo.`
+                        : porCerrar?.conexion?.es_actual
+                            ? 'Es la conexión de este mismo equipo: vas a tener que volver a entrar.'
+                            : `${porCerrar?.persona?.empleado} tendrá que volver a entrar en ese dispositivo. Puede tardar unos minutos en salir del todo.`
                 }
                 confirmText="Sí, cerrar"
             />

@@ -259,7 +259,18 @@ export function iniciarSondaRotacion() {
         const buscarVista = () => document.querySelector('[data-vista-montada]') || document.body;
         const nodoInicial = document.querySelector('[data-vista-montada]');
 
-        const docInicial = document.documentElement.clientWidth;
+        // El viewport se da por entregado cuando el DOCUMENTO ya está orientado
+        // como la pantalla, y NO cuando su ancho difiere del inicial. La versión
+        // anterior comparaba contra el valor de arranque y escribió `nunca` en
+        // las cuatro corridas del 2026-08-08 03:15: en esas, Safari había
+        // entregado el ancho nuevo **antes del primer cuadro**, así que no había
+        // ninguna diferencia que ver y el mejor resultado posible se anotaba
+        // igual que el peor. Comparar ancho contra alto no necesita una foto
+        // previa y responde lo mismo en los dos casos.
+        const yaOrientado = () => {
+            const e = document.documentElement;
+            return hacia === 'vertical' ? e.clientWidth <= e.clientHeight : e.clientWidth >= e.clientHeight;
+        };
         const muestras   = [];
         let   peorSalto  = 0;
         let   saltosLargos = 0;
@@ -292,7 +303,7 @@ export function iniciarSondaRotacion() {
             const doc = document.documentElement.clientWidth;
             const anchoVista = Math.round(nodo?.getBoundingClientRect().width || 0);
 
-            if (viewportEn == null && doc !== docInicial) viewportEn = t;
+            if (viewportEn == null && yaOrientado()) viewportEn = t;
 
             // La vista se da por acomodada cuando su ancho no se mueve durante
             // tres cuadros seguidos, y sólo se empieza a contar después de que
@@ -310,7 +321,10 @@ export function iniciarSondaRotacion() {
             while (iHito < HITOS.length && t >= HITOS[iHito]) {
                 muestras.push({
                     t,
-                    doc,
+                    // El ALTO del documento va al lado del ancho porque es la
+                    // mitad que decide si el viewport ya giró: un `doc 352`
+                    // suelto no dice nada sin saber contra qué alto.
+                    doc: `${doc}×${document.documentElement.clientHeight}`,
                     vista: anchoVista,
                     vp: `${Math.round(window.innerWidth)}×${Math.round(window.innerHeight)}`,
                 });
@@ -332,6 +346,11 @@ export function iniciarSondaRotacion() {
                     peorSalto,
                     saltosLargos,
                     remontadaEn,
+                    // El ESTADO del interruptor, no sólo su efecto. Sin esto,
+                    // tres corridas con el remontaje encendido se leyeron como
+                    // si fueran la línea base, y el trabón de 1.5 s que traían
+                    // se le estuvo por atribuir al portal en general.
+                    conRemonte: remontarAlGirar(),
                     conShell: !!nodoInicial,
                     // `liquid` es el único tema que NO estampa `data-theme` (es
                     // el default). Leerlo como '?' hacía parecer que el dato

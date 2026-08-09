@@ -44,10 +44,10 @@ const veredicto = (r) => {
             + 'recálculo, y sí se puede perseguir: hay que ver qué corre al girar.',
     };
     if (r.viewportEn == null) return {
-        titulo: 'No cambió el ancho',
+        titulo: 'No se pudo determinar',
         tono: 'neutral',
-        dice: 'El ancho del documento nunca cambió en toda la medición. O el giro no llegó a completarse, '
-            + 'o la pantalla ya estaba en esa orientación.',
+        dice: 'El documento nunca quedó orientado como la pantalla durante la medición. '
+            + 'Repite el giro; si vuelve a salir así, hay algo que la sonda no está viendo.',
     };
     const propio = r.vistaEstableEn == null ? null : r.vistaEstableEn - r.viewportEn;
     if (r.viewportEn > 600) return {
@@ -234,6 +234,13 @@ const IOSTestView = () => {
                                         <Row label="Peor trabón del hilo" value={`${r.peorSalto} ms`}
                                             ok={r.peorSalto < 400} />
                                         <Row label="Cuadros lentos (>100 ms)" value={String(r.saltosLargos)} />
+                                        {/* El estado del interruptor va ARRIBA del efecto: tres
+                                            corridas con el remontaje encendido se leyeron como si
+                                            fueran la línea base, y su trabón de 1.5 s se le estuvo
+                                            por atribuir al portal entero. */}
+                                        <Row label="Remontaje"
+                                            value={r.conRemonte ? 'ENCENDIDO — no es la línea base' : 'apagado'}
+                                            ok={r.conRemonte === false} />
                                         <Row label="Remontó la vista"
                                             value={r.remontadaEn == null ? 'no' : `sí, a los ${r.remontadaEn} ms`} />
                                         <Row label="Tema"
@@ -245,16 +252,16 @@ const IOSTestView = () => {
                                             no habría con qué darse cuenta. */}
                                         <div className="mt-2 flex flex-col gap-0.5">
                                             <div className="flex text-micro font-black uppercase tracking-wider text-content-3">
-                                                <span className="w-14">ms</span>
-                                                <span className="w-16">documento</span>
-                                                <span className="w-16">vista</span>
+                                                <span className="w-12">ms</span>
+                                                <span className="w-20">documento</span>
+                                                <span className="w-12">vista</span>
                                                 <span className="flex-1">ventana</span>
                                             </div>
                                             {(r.muestras || []).map((m, j) => (
                                                 <div key={j} className="flex text-micro text-content-2">
-                                                    <span className="w-14">{m.t}</span>
-                                                    <span className="w-16">{m.doc}</span>
-                                                    <span className={`w-16 ${m.doc - m.vista > 8 ? 'text-danger-text font-bold' : ''}`}>{m.vista}</span>
+                                                    <span className="w-12">{m.t}</span>
+                                                    <span className="w-20">{m.doc}</span>
+                                                    <span className="w-12">{m.vista}</span>
                                                     <span className="flex-1">{m.vp}</span>
                                                 </div>
                                             ))}
@@ -311,7 +318,8 @@ const IOSTestView = () => {
                                     + `  safari: ${r.viewportEn ?? 'nunca'} ms · portal: `
                                     + `${r.vistaEstableEn != null && r.viewportEn != null ? `+${r.vistaEstableEn - r.viewportEn}` : '—'} ms · `
                                     + `peor trabón: ${r.peorSalto} ms · lentos: ${r.saltosLargos} · `
-                                    + `remonte: ${r.remontadaEn ?? 'no'} · tema: ${r.tema} · shell: ${r.conShell ? 'sí' : 'no'} · `
+                                    + `remontaje: ${r.conRemonte ? 'ENCENDIDO' : 'apagado'} (${r.remontadaEn ?? 'no'}) · `
+                                    + `tema: ${r.tema} · shell: ${r.conShell ? 'sí' : 'no'} · `
                                     + `escala: ${r.escala} · standalone: ${r.standalone ? 'sí' : 'no'} · nodos: ${r.nodos}\n`
                                     + (r.muestras || []).map(m => `    ${String(m.t).padStart(4)}ms  doc ${m.doc}  vista ${m.vista}  ventana ${m.vp}`).join('\n'),
                                 ).join('\n\n');

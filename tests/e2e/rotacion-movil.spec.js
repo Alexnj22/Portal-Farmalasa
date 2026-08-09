@@ -72,7 +72,7 @@ test.describe('Rotación · WebKit iPhone 13', () => {
         await page.goto('/ventas');
         await page.waitForTimeout(7000);
         await expect(page.locator(MARCA)).toHaveCount(1);
-        expect(await page.getAttribute(MARCA, 'data-vista-montada')).toBe('v');
+        expect(await page.getAttribute(MARCA, 'data-vista-montada')).toBe('movil');
 
         // ── Brazo 1: apagado (el default) ────────────────────────────────────
         // Es el control. Sin él, la corrida con remontaje no tendría contra qué
@@ -83,9 +83,10 @@ test.describe('Rotación · WebKit iPhone 13', () => {
 
         const apagado = await page.evaluate(() => window.__rot);
         expect(apagado.quitado, 'apagado, el nodo de la vista NO puede salir del DOM').toBe(false);
-        // Y sin embargo el atributo ya sigue la orientación nueva: la marca es
-        // para que la sonda encuentre la vista, no una señal de remontaje.
-        expect(await page.getAttribute(MARCA, 'data-vista-montada')).toBe('h');
+        // Y el atributo tampoco se mueve: apagado, el shell ni siquiera se
+        // suscribe a la orientación, así que girar no produce un solo re-render.
+        // La marca queda para que la sonda encuentre la vista, nada más.
+        expect(await page.getAttribute(MARCA, 'data-vista-montada')).toBe('movil');
 
         await page.setViewportSize({ width: 390, height: 844 });
         await page.waitForTimeout(1500);

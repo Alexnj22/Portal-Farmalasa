@@ -257,12 +257,20 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     // Se lee UNA vez al montar: cambiarlo a mitad de una medición mezclaría las
     // dos corridas del A/B. El interruptor de `/ios-test` recarga la página.
     const [remontarEnGiro] = useState(() => remontarAlGirar());
+    // Apagado NO se escucha nada, y eso importa: `setEsVertical` re-renderiza el
+    // shell entero —y con él la vista— en cada giro. Ninguno de los otros tres
+    // estados de tamaño cambia al rotar este teléfono (`isMobile` e
+    // `isUltraDensity` dan lo mismo en 352×715 que en 765×352), así que antes de
+    // v2.526.0 girar no producía **ningún** re-render, y este efecto lo había
+    // agregado sin que nadie lo pidiera. Suscribirse sólo cuando el interruptor
+    // está encendido devuelve ese cero.
     useEffect(() => {
+        if (!remontarEnGiro) return undefined;
         const mq = window.matchMedia('(orientation: portrait)');
         const alGirar = (e) => setEsVertical(e.matches);
         mq.addEventListener('change', alGirar);
         return () => mq.removeEventListener('change', alGirar);
-    }, []);
+    }, [remontarEnGiro]);
 
     useEffect(() => {
         let pendiente = 0;
@@ -1302,7 +1310,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             rotación encuentra la vista, y tiene que encontrarla
                             también en la corrida sin remontaje. */}
                         <div key={isMobile && remontarEnGiro ? `${activeId}-${esVertical ? 'v' : 'h'}` : activeId}
-                            data-vista-montada={isMobile ? (esVertical ? 'v' : 'h') : 'escritorio'}
+                            data-vista-montada={!isMobile ? 'escritorio' : (remontarEnGiro ? (esVertical ? 'v' : 'h') : 'movil')}
                             className="lg:h-full w-full animate-route-enter">
                             {children}
                         </div>

@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.526.7 — El teléfono no es el problema: 17 ms sin shell contra 1.5 s adentro
+
+El control funcionó. Cuatro giros en el iPhone del usuario, en modo agregado a
+inicio:
+
+| Dónde | Tema | Peor trabón del hilo |
+|---|---|---|
+| `/raw-test?sinvidrio=1` (sin shell) | — | **17 ms** |
+| `/compras` | solid | **1,512 ms** |
+| `/compras` | solid | **1,594 ms** |
+| `/ios-test` | solid | **1,459 ms** |
+
+Una página sin shell gira instantánea en el mismo teléfono, el mismo minuto y el
+mismo modo. **La demora la trae el portal**, y en estas cuatro corridas es el
+hilo principal bloqueado ~1.5 s — trabajo de JavaScript, no composición.
+
+Y el usuario ya lo había acotado él mismo: **«con solid sí me pasa en compras,
+así que no sólo es de liquid glass»**. Las tres corridas lentas son `tema:
+solid`, o sea sin una sola capa de vidrio. La hipótesis del vidrio no explica
+esto.
+
+**Pero esas tres corridas no son la línea base, y casi las leo como si lo
+fueran.** Traen `remonte: 14 / 67 / 78 ms`: el interruptor del remontaje estaba
+**encendido**. `activeId` sale sólo de la ruta y no cambia al girar, así que el
+nodo de la vista no se reemplaza por ninguna otra razón. O sea que lo medido es
+«portal + remontaje», y el remontaje es justamente un candidato a bloquear el
+hilo. Ahora la corrida anota el **estado del interruptor**, no sólo su efecto.
+
+**Un re-render que yo había agregado sin que nadie lo pidiera.** Con el
+interruptor apagado, `AppLayout` seguía suscrito a `matchMedia` para mantener
+`esVertical`, y ese `setState` re-renderiza el shell entero —y con él la vista—
+en cada giro. Ninguno de los otros tres estados de tamaño cambia al rotar este
+teléfono: `isMobile` e `isUltraDensity` dan lo mismo en 352×715 que en 765×352.
+O sea que **antes de v2.526.0 girar no producía ningún re-render**, y v2.526.3
+dejó ese costo puesto al apagar sólo la `key`. Ahora la suscripción existe sólo
+cuando el interruptor está encendido.
+
+**Y la sonda escribía `nunca` en su mejor resultado.** Detectaba la llegada del
+viewport comparando `clientWidth` contra su valor al arrancar; en estas cuatro
+corridas Safari lo entregó **antes del primer cuadro**, así que no había
+diferencia que ver y el caso ideal se anotaba igual que el peor. Pasa a
+comparar ancho contra alto —¿el documento ya está orientado como la pantalla?—,
+que no necesita una foto previa y responde lo mismo en los dos casos. Las
+muestras ahora traen el alto del documento al lado del ancho: un `doc 352`
+suelto no dice nada sin saber contra qué alto.
+
+Dato de entorno que apareció de paso y conviene tener presente: la cuenta corre
+con **zoom de página al 125%** (`escala: 1.25`), lo que da un viewport de
+352×765 en un teléfono de 440×956. Ningún emulador estaba midiendo eso.
+
 ## v2.526.6 — El control sin shell era inalcanzable y tenía vidrio adentro
 
 Se le pidió al usuario que girara el teléfono en `/raw-test` como control de la

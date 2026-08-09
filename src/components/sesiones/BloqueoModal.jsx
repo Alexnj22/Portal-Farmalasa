@@ -5,6 +5,7 @@ import Button from '../common/Button';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
+import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 
 // Bloquear a alguien es más grave que cerrarle una conexión, y el diálogo tiene
 // que decirlo: cerrar una conexión sólo impide renovar el acceso, mientras que
@@ -23,6 +24,11 @@ const DURACIONES = [
 ];
 
 export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesando }) {
+    // `persona` es a la vez «está abierto» y «a quién». Al cancelar pasa a null
+    // en el mismo tick y el panel sigue saliendo ~240ms, así que el título
+    // alcanzaba a quedar en «Bloquear a » sin nombre. El `open` sigue colgando
+    // de `persona`; lo que se dibuja, de la que sobrevive al cierre.
+    const visible = useSobreviveAlCierre(persona);
     const [duracion, setDuracion] = useState('24');
     const [motivo, setMotivo] = useState('');
 
@@ -38,7 +44,7 @@ export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesa
             open={!!persona}
             onClose={procesando ? undefined : onCancelar}
             maxWidth="max-w-md"
-            ariaLabel={`Bloquear a ${persona?.empleado || ''}`}
+            ariaLabel={`Bloquear a ${visible?.empleado || ''}`}
         >
             <LiquidModal.Header>
                 <div className="flex items-center gap-3">
@@ -46,7 +52,7 @@ export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesa
                         <ShieldOff size={16} className="text-danger" />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="text-body font-bold text-content truncate">Bloquear a {persona?.empleado}</h3>
+                        <h3 className="text-body font-bold text-content truncate">Bloquear a {visible?.empleado}</h3>
                         <p className="text-caption text-content-3">Le quita el acceso al portal por completo.</p>
                     </div>
                 </div>

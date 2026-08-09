@@ -19,6 +19,7 @@ import {
     bloquearPersona, desbloquearPersona, describirBloqueo,
 } from '../data/sesiones';
 import BloqueoModal from '../components/sesiones/BloqueoModal';
+import useSobreviveAlCierre from '../hooks/useSobreviveAlCierre';
 import { tokenMatch } from '../utils/searchUtils';
 
 const EMPTY_ARRAY = [];
@@ -83,6 +84,21 @@ const SesionesView = () => {
         () => (abierta ? personas.find(p => p.persona_id === abierta) || null : null),
         [abierta, personas],
     );
+    // ── Lo que se sigue dibujando MIENTRAS el diálogo sale ─────────────────
+    // `abierta` pasa a null al cerrar y el panel sigue montado ~240ms haciendo
+    // su salida: sin esto el encabezado alcanzaba a decir «undefined conexiones
+    // abiertas» con el avatar vacío y la lista de dispositivos ya borrada.
+    // Reportado como «se ve raro al cerrar», que es exactamente lo mismo que
+    // pasó con la hoja de Filtros en v2.526.2.
+    //
+    // Sobrevive el ID y no el objeto: `personas` se reconstruye en cada poll,
+    // así que guardar el objeto contaría un valor nuevo cada pocos segundos.
+    const ultimaAbierta = useSobreviveAlCierre(abierta);
+    const detalleVisible = useMemo(
+        () => (ultimaAbierta ? personas.find(p => p.persona_id === ultimaAbierta) || null : null),
+        [ultimaAbierta, personas],
+    );
+    const porCerrarVisible = useSobreviveAlCierre(porCerrar);
 
     const confirmarCierre = useCallback(async () => {
         if (!porCerrar) return;
@@ -282,29 +298,29 @@ const SesionesView = () => {
                 onClose={() => setAbierta(null)}
                 maxWidth="max-w-lg"
                 className="max-h-[85vh] h-fit"
-                ariaLabel={`Conexiones de ${detalle?.empleado || ''}`}
+                ariaLabel={`Conexiones de ${detalleVisible?.empleado || ''}`}
             >
                 <LiquidModal.Header>
                     <div className="flex items-center gap-3">
                         <LiquidAvatar
-                            src={detalle?.foto}
-                            alt={detalle?.empleado}
-                            fallbackText={detalle?.empleado}
+                            src={detalleVisible?.foto}
+                            alt={detalleVisible?.empleado}
+                            fallbackText={detalleVisible?.empleado}
                             className="w-11 h-11 rounded-2xl shrink-0"
                         />
                         <div className="min-w-0">
-                            <h3 className="text-body font-bold text-content truncate">{detalle?.empleado}</h3>
+                            <h3 className="text-body font-bold text-content truncate">{detalleVisible?.empleado}</h3>
                             <p className="text-caption text-content-3 truncate">
-                                {detalle?.conexiones.length === 1
+                                {detalleVisible?.conexiones.length === 1
                                     ? '1 conexión abierta'
-                                    : `${detalle?.conexiones.length} conexiones abiertas`}
+                                    : `${detalleVisible?.conexiones.length} conexiones abiertas`}
                             </p>
                         </div>
                     </div>
                 </LiquidModal.Header>
 
                 <LiquidModal.Body className="space-y-2">
-                    {detalle?.bloqueado && (
+                    {detalleVisible?.bloqueado && (
                         <Notice variant="danger" icon={ShieldOff}>
                             {describirBloqueo(detalle.bloqueado_hasta)}
                             {detalle.bloqueo_motivo ? ` · ${detalle.bloqueo_motivo}` : ''}. No puede entrar
@@ -317,7 +333,7 @@ const SesionesView = () => {
                         unos minutos. El dispositivo y el lugar son los que declaró el equipo al
                         conectarse: sirven para reconocer algo raro, no como comprobante.
                     </p>
-                    {detalle?.conexiones.map(c => {
+                    {detalleVisible?.conexiones.map(c => {
                         const esApp = c.clase === 'app';
                         const Icono = esApp ? Smartphone : Monitor;
                         return (
@@ -361,7 +377,7 @@ const SesionesView = () => {
                     {/* Bloquear no se ofrece sobre uno mismo: la base lo rechaza
                         —quedarías fuera y sin el permiso para deshacerlo— y un
                         botón que siempre falla es peor que no tenerlo. */}
-                    {detalle?.bloqueado ? (
+                    {detalleVisible?.bloqueado ? (
                         <Button
                             variant="secondary"
                             icon={ShieldCheck}
@@ -374,8 +390,8 @@ const SesionesView = () => {
                         <Button
                             variant="secondary"
                             icon={ShieldOff}
-                            disabled={!puedeBloquear || detalle?.tiene_esta}
-                            title={detalle?.tiene_esta ? 'No puedes bloquearte a ti mismo' : 'Quitarle el acceso al portal'}
+                            disabled={!puedeBloquear || detalleVisible?.tiene_esta}
+                            title={detalleVisible?.tiene_esta ? 'No puedes bloquearte a ti mismo' : 'Quitarle el acceso al portal'}
                             onClick={() => setPorBloquear(detalle)}
                         >
                             Bloquear
@@ -384,7 +400,7 @@ const SesionesView = () => {
                     <Button
                         variant="destructive"
                         icon={LogOut}
-                        disabled={!canEdit || !detalle?.conexiones.length}
+                        disabled={!canEdit || !detalleVisible?.conexiones.length}
                         onClick={() => setPorCerrar({ tipo: 'todas', persona: detalle })}
                     >
                         Cerrar todas
@@ -404,13 +420,13 @@ const SesionesView = () => {
                 onClose={() => setPorCerrar(null)}
                 onConfirm={confirmarCierre}
                 isProcessing={cerrando}
-                title={porCerrar?.tipo === 'todas' ? '¿Cerrar todas sus conexiones?' : '¿Cerrar esta conexión?'}
+                title={porCerrarVisible?.tipo === 'todas' ? '¿Cerrar todas sus conexiones?' : '¿Cerrar esta conexión?'}
                 message={
-                    porCerrar?.tipo === 'todas'
-                        ? `${porCerrar?.persona?.empleado} tendrá que volver a entrar en todos sus dispositivos${porCerrar?.persona?.tiene_esta ? ', incluido este' : ''}. Puede tardar unos minutos en salir del todo.`
-                        : porCerrar?.conexion?.es_actual
+                    porCerrarVisible?.tipo === 'todas'
+                        ? `${porCerrarVisible?.persona?.empleado} tendrá que volver a entrar en todos sus dispositivos${porCerrarVisible?.persona?.tiene_esta ? ', incluido este' : ''}. Puede tardar unos minutos en salir del todo.`
+                        : porCerrarVisible?.conexion?.es_actual
                             ? 'Es la conexión de este mismo equipo: vas a tener que volver a entrar.'
-                            : `${porCerrar?.persona?.empleado} tendrá que volver a entrar en ese dispositivo. Puede tardar unos minutos en salir del todo.`
+                            : `${porCerrarVisible?.persona?.empleado} tendrá que volver a entrar en ese dispositivo. Puede tardar unos minutos en salir del todo.`
                 }
                 confirmText="Sí, cerrar"
             />

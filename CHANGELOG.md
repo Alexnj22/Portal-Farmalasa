@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.540.4 — El diálogo se vaciaba antes de terminar de cerrarse
+
+Reportado con una captura: al cerrar el detalle de una persona, el diálogo
+alcanzaba a decir **«undefined conexiones abiertas»** con el avatar vacío y la
+lista de dispositivos ya borrada, y recién después desaparecía.
+
+Es el mismo acople de siempre: un solo estado hace dos trabajos —**si está
+abierto** y **qué muestra**—. Al cerrar pasa a `null` en el mismo tick, pero
+`ModalShell` sigue montado ~240ms haciendo su salida. El panel no se cierra: se
+vacía a la vista y después se va. Ya había pasado con la hoja de Filtros
+(v2.526.2), que se resolvió a mano recordando la clave del último panel abierto.
+
+Ahora es un canónico, `useSobreviveAlCierre`, porque en esta sola vista había
+**tres** diálogos con el mismo defecto: el detalle, el de bloqueo («Bloquear a »
+sin nombre) y la confirmación de cierre, que además cambiaba de texto al
+cerrarse porque su título sale de un ternario sobre el mismo estado.
+
+El `open` sigue colgando del estado real —lo que cierra es el nulo—; lo único
+que cambia es qué se dibuja mientras tanto. Dos decisiones anotadas en el hook:
+va con `setState` durante el render (el patrón que React documenta para recordar
+algo del render anterior: re-ejecuta el componente antes de pintar, sin render de
+más) y no con un ref, porque `react-hooks/refs` prohíbe leer un ref en render; y
+compara por identidad, así que a un valor DERIVADO de datos que se recargan hay
+que pasarle la clave y buscar después — acá sobrevive el `persona_id`, no el
+objeto, que el poll reconstruye.
+
+**Y la lentitud que se reportó junto con esto no era el vidrio.** Medido con el
+mismo recorrido, en el mismo minuto: 97ms con `backdrop-filter` contra 89 sin
+él en Chromium, 71 contra 71 en WebKit, y sin diferencia tampoco a 2560×1440. Lo
+que sí explica la sensación es contra qué se estaba mirando —el servidor de
+desarrollo, con React en modo dev y StrictMode renderizando dos veces—:
+
+```
+                 dev (:5173)   build (:4174)
+detalle              97 ms         61 ms      1.6×
+bloqueo              60 ms         34 ms      1.8×
+```
+
+El bloqueo es el que más penaliza, que es justo lo que se describió. Queda
+anotado porque la próxima vez que algo «se sienta lento» mientras Vercel esté
+caído, la comparación válida es `npm run preview`, no `npm run dev`.
+
 ## v2.540.3 — Las tarjetas de Conexiones dejan de estar dentro de otra tarjeta
 
 Reportado como «las cards en conexiones se ven gris», con la pregunta correcta

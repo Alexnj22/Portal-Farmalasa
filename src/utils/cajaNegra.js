@@ -179,55 +179,94 @@ export function limpiarCajaNegra() {
 // `display`, remontar el árbol de React) partían de «el ancho se queda pegado»,
 // que era la lectura equivocada del mismo síntoma. Ninguno podía servir.
 //
-// Quedan tres explicaciones y esta sonda las separa **sola**, sin hipótesis:
+// ── Lo que midió la primera corrida, en el iPhone del usuario ────────────────
 //
-//   A · el hilo principal BLOQUEADO → `peorSalto` de cientos de ms. Es trabajo
-//       de JavaScript o recálculo de layout (el remontaje cae acá).
-//   B · el hilo libre y el ANCHO tardando → algo anima la geometría (una
-//       transición CSS sobre width/padding), o Safari reparte en cámara lenta.
-//   C · el hilo libre y el ancho listo enseguida → entonces lo que tarda es el
-//       PINTADO: las capas de vidrio se re-componen al tamaño nuevo. No es
-//       layout y ninguna medición de layout lo iba a mostrar.
+// Y el resultado corrigió la sonda misma. Se había supuesto que el DOCUMENTO
+// entregaba el ancho nuevo enseguida y que lo que podía atrasarse era la VISTA.
+// Es al revés:
 //
-// El costo de medir está acotado a propósito: el bucle se corta apenas el ancho
-// queda bien y pasa un segundo de calma, y los anchos se leen sólo hasta ese
-// momento — leer `clientWidth` fuerza un recálculo, y una sonda que agrega
-// trabajo al momento que viene a medir no mide nada.
+//     4ms   doc 765  vista 641      ← ya está físicamente en vertical
+//   510ms   doc 765  vista 641
+//  1010ms   doc 765  vista 641
+//  2010ms   doc 352  vista 336      ← recién acá Safari entrega el ancho nuevo
+//
+// La vista mide **exactamente lo que le toca** para el documento que Safari le
+// reporta, en cada foto (641 de 765 son los 124px de la muesca en horizontal;
+// 336 de 352 son los 8px de relleno en vertical). O sea que el portal nunca se
+// repartió mal: se repartió bien para un viewport que Safari todavía no había
+// cambiado, y tardó **1.1 a 3.2 segundos** en cambiarlo. Con el hilo principal
+// LIBRE (peor trabón 89 ms en esa corrida).
+//
+// Eso cierra los tres intentos de una vez: ninguno podía servir, porque nuestro
+// reparto nunca estuvo mal. Y el trabajo que tarda está **fuera del hilo
+// principal** — o sea composición, no layout ni JavaScript.
+//
+// ── Qué mide esta versión ────────────────────────────────────────────────────
+//
+// Dos tiempos separados, que antes venían mezclados en uno solo:
+//
+//   · `viewportEn` — cuánto tardó **Safari** en entregar el ancho nuevo. Es el
+//     número grande y no depende de nosotros.
+//   · `vistaEstableEn` — cuánto tardó **el portal** en acomodarse DESPUÉS de
+//     eso. Es el único que podemos bajar escribiendo código.
+//
+// El primero se detecta por cambio de `documentElement.clientWidth` contra su
+// valor inicial, y no por una tolerancia contra el ancho de la vista: esa
+// tolerancia tenía que ser distinta en cada orientación —en horizontal la
+// muesca se come 124px y en vertical el relleno sólo 16— así que en la práctica
+// nunca disparaba al girar HACIA horizontal, y esas corridas se perdían.
+//
+// El costo de medir está acotado a propósito: el bucle se corta poco después de
+// que la vista deja de moverse, y los anchos se leen sólo hasta ahí — leer
+// `clientWidth` fuerza un recálculo, y una sonda que agrega trabajo al momento
+// que viene a medir no mide nada.
 const CLAVE_ROTACION = 'portal_rotacion';
-const TOPE_ROTACION  = 3;      // las últimas tres vueltas alcanzan para comparar
-const VENTANA_MS     = 6000;   // tope duro: si a los 6 s no se acomodó, se anota así
-const CALMA_MS       = 1000;   // cuánto se sigue mirando después de que el ancho llegó
+const TOPE_ROTACION  = 4;      // dos idas y dos vueltas: alcanza para comparar
+const VENTANA_MS     = 9000;   // tope duro: se midieron 3.2 s, así que 6 quedaba corto
+const CALMA_MS       = 600;    // cuánto se sigue mirando después de que la vista frenó
+const QUIETOS        = 3;      // cuadros con el mismo ancho para darla por acomodada
 
 // Los instantes donde se guarda una foto de los anchos. Son pocos a propósito:
 // la tarjeta de `/ios-test` se lee en un teléfono y se fotografía.
-const HITOS = [0, 100, 250, 500, 1000, 2000, 3500, 6000];
+const HITOS = [0, 100, 250, 500, 1000, 2000, 3500, 5000, 7000, 9000];
 
 export function iniciarSondaRotacion() {
     if (typeof window === 'undefined' || !window.matchMedia || !window.requestAnimationFrame) return;
 
     const mq = window.matchMedia('(orientation: portrait)');
-    let corriendo = false;
+    // Girar de vuelta mientras la corrida anterior seguía midiendo la hacía
+    // perderse —se descartaba la nueva— y encima etiquetaba a la vieja con la
+    // orientación equivocada, porque el rumbo se leía al ESCRIBIR, hasta nueve
+    // segundos después del giro. Ahora cada corrida lleva su número: la vieja se
+    // abandona sola en el cuadro siguiente y el rumbo viaja desde el evento.
+    let corridaActual = 0;
 
-    const arrancar = (desde) => {
-        if (corriendo) return;
-        corriendo = true;
+    const arrancar = (hacia) => {
+        const mia = ++corridaActual;
+        const t0  = performance.now();
 
-        const t0    = performance.now();
-        const vista = () => document.querySelector('[data-vista-montada]');
-        const nodoInicial = vista();
+        // Sin el marcador de la vista —`/raw-test`, `/login`, cualquier página
+        // fuera del shell— se mide el `body`. Un control sin shell es
+        // justamente lo que hace falta para saber si el retraso es del portal o
+        // del teléfono, así que la sonda tiene que poder correr ahí.
+        const buscarVista = () => document.querySelector('[data-vista-montada]') || document.body;
+        const nodoInicial = document.querySelector('[data-vista-montada]');
 
-        // El ancho al que hay que llegar es el del DOCUMENTO, no `innerWidth`:
-        // `innerWidth` incluye la barra de Safari y en iOS se actualiza en otro
-        // momento que el layout. `clientWidth` del root ES el viewport de layout.
+        const docInicial = document.documentElement.clientWidth;
         const muestras   = [];
         let   peorSalto  = 0;
         let   saltosLargos = 0;
-        let   anchoOk    = null;   // ms hasta que la vista ocupa el ancho del documento
-        let   remontadaEn = null;  // ms en que el nodo de la vista fue reemplazado
+        let   viewportEn = null;   // ms hasta que Safari entrega el ancho nuevo
+        let   vistaEstableEn = null; // ms hasta que la vista deja de moverse
+        let   remontadaEn = null;
+        let   anchoPrevio = null;
+        let   quietos    = 0;
         let   previo     = t0;
         let   iHito      = 0;
 
         const paso = () => {
+            if (mia !== corridaActual) return;   // giró otra vez: esta corrida se abandona
+
             const ahora = performance.now();
             const t     = Math.round(ahora - t0);
             const salto = Math.round(ahora - previo);
@@ -240,24 +279,28 @@ export function iniciarSondaRotacion() {
                 if (salto > 100) saltosLargos++;
             }
 
-            const nodo = vista();
-            if (remontadaEn == null && nodoInicial && nodo && nodo !== nodoInicial) remontadaEn = t;
+            const nodo = buscarVista();
+            if (remontadaEn == null && nodoInicial && nodo !== nodoInicial) remontadaEn = t;
 
-            // Los anchos se leen hasta que quedan bien y ni un cuadro más.
-            let doc = null, anchoVista = null;
-            if (anchoOk == null) {
-                doc = document.documentElement.clientWidth;
-                anchoVista = Math.round(nodo?.getBoundingClientRect().width || 0);
-                // 4px de tolerancia: la vista lleva relleno propio por las
-                // áreas seguras, así que nunca calza al píxel con el documento.
-                if (anchoVista > 0 && doc - anchoVista <= Math.max(4, doc * 0.06)) anchoOk = t;
+            const doc = document.documentElement.clientWidth;
+            const anchoVista = Math.round(nodo?.getBoundingClientRect().width || 0);
+
+            if (viewportEn == null && doc !== docInicial) viewportEn = t;
+
+            // La vista se da por acomodada cuando su ancho no se mueve durante
+            // tres cuadros seguidos, y sólo se empieza a contar después de que
+            // llegó el viewport nuevo: antes de eso está quieta porque no tiene
+            // a qué reaccionar todavía, y contarla ahí daría un cero engañoso.
+            if (viewportEn != null && vistaEstableEn == null) {
+                if (anchoVista === anchoPrevio) {
+                    if (++quietos >= QUIETOS) vistaEstableEn = t;
+                } else {
+                    quietos = 0;
+                }
             }
+            anchoPrevio = anchoVista;
 
             while (iHito < HITOS.length && t >= HITOS[iHito]) {
-                if (doc == null) {
-                    doc = document.documentElement.clientWidth;
-                    anchoVista = Math.round(nodo?.getBoundingClientRect().width || 0);
-                }
                 muestras.push({
                     t,
                     doc,
@@ -267,29 +310,34 @@ export function iniciarSondaRotacion() {
                 iHito++;
             }
 
-            const seAcabo = t >= VENTANA_MS || (anchoOk != null && t >= anchoOk + CALMA_MS);
+            const seAcabo = t >= VENTANA_MS || (vistaEstableEn != null && t >= vistaEstableEn + CALMA_MS);
             if (!seAcabo) { requestAnimationFrame(paso); return; }
 
-            corriendo = false;
-            const cuadros = muestras.length;
             try {
                 const previas = JSON.parse(localStorage.getItem(CLAVE_ROTACION) || '[]');
                 const lista = Array.isArray(previas) ? previas : [];
                 lista.push({
                     t: new Date().toISOString(),
                     ruta: `${location.pathname}${location.search}`,
-                    hacia: mq.matches ? 'vertical' : 'horizontal',
-                    desde,
-                    anchoOk,
+                    hacia,
+                    viewportEn,
+                    vistaEstableEn,
                     peorSalto,
                     saltosLargos,
                     remontadaEn,
-                    // El tema decide si existen capas de vidrio que recomponer:
-                    // en `solid` los cuatro `--backdrop-*` valen `none`, así que
-                    // la explicación C queda descartada sin discutirla.
-                    tema: document.documentElement.getAttribute('data-theme') || '?',
+                    conShell: !!nodoInicial,
+                    // `liquid` es el único tema que NO estampa `data-theme` (es
+                    // el default). Leerlo como '?' hacía parecer que el dato
+                    // faltaba cuando en realidad decía justo lo que importa:
+                    // que las capas de vidrio están encendidas.
+                    tema: document.documentElement.getAttribute('data-theme') || 'liquid',
+                    // El zoom de página de Safari cambia `innerWidth` sin que
+                    // cambie nada más, y explicaría medidas que no coinciden con
+                    // ningún tamaño de iPhone conocido.
+                    escala: Math.round((window.visualViewport?.scale ?? 1) * 100) / 100,
+                    standalone: (window.matchMedia?.('(display-mode: standalone)').matches)
+                        || window.navigator.standalone === true,
                     nodos: document.getElementsByTagName('*').length,
-                    cuadros,
                     muestras,
                 });
                 localStorage.setItem(CLAVE_ROTACION, JSON.stringify(lista.slice(-TOPE_ROTACION)));
@@ -301,7 +349,8 @@ export function iniciarSondaRotacion() {
 
     // `matchMedia` y no `resize`: `resize` dispara también al abrir el teclado y
     // al colapsarse la barra de Safari, y ahí no hay ninguna rotación que medir.
-    mq.addEventListener('change', (e) => arrancar(e.matches ? 'horizontal' : 'vertical'));
+    // El rumbo se toma del evento, no del final de la corrida.
+    mq.addEventListener('change', (e) => arrancar(e.matches ? 'vertical' : 'horizontal'));
 }
 
 export function leerRotaciones() {

@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.526.4 — La sonda midió al revés de lo supuesto: el que tarda es Safari
+
+Primera corrida de la sonda de rotación en el iPhone del usuario, y el resultado
+corrige a la sonda misma. Se había supuesto que el documento entregaba el ancho
+nuevo enseguida y que lo que podía atrasarse era la vista. Es al revés:
+
+```
+    4ms   doc 765  vista 641      ← la pantalla YA está en vertical
+  510ms   doc 765  vista 641
+ 1010ms   doc 765  vista 641
+ 2010ms   doc 352  vista 336      ← recién acá Safari entrega el ancho nuevo
+```
+
+La vista mide **exactamente lo que le toca** para el documento que Safari le
+reporta, en cada foto: 641 de 765 son los 124px de la muesca en horizontal, 336
+de 352 son los 8px de relleno en vertical. El portal nunca se repartió mal — se
+repartió bien para un viewport que Safari todavía no había cambiado, y tardó
+**1,105 / 1,516 / 3,185 ms** en cambiarlo, en tres giros seguidos. Con el hilo
+principal libre en dos de los tres (peor trabón 89 y 133 ms).
+
+**Eso cierra los tres intentos anteriores de una vez, y no por descarte:**
+v2.524.7, v2.524.8 y v2.526.0 forzaban nuestro propio reparto, y nuestro reparto
+nunca estuvo mal. Ninguno podía servir.
+
+Hilo libre + segundos de espera significa que el trabajo que tarda está **fuera
+del hilo principal** — composición, no layout ni JavaScript. Y el mismo registro
+trajo el dato que lo vuelve accionable: el campo `tema` salía `?`, que parecía un
+dato faltante y era lo contrario. **`liquid` es el único tema que no estampa
+`data-theme`**, o sea que la cuenta corre con las capas de vidrio encendidas.
+(La nota que decía que esta cuenta usaba `solid` era de otra investigación y
+quedó vieja.)
+
+**La sonda, corregida.** Ahora separa dos tiempos que antes venían en uno solo:
+
+| | Qué mide | Quién lo puede bajar |
+|---|---|---|
+| `viewportEn` | cuánto tarda **Safari** en entregar el ancho nuevo | nadie, escribiendo código |
+| `vistaEstableEn` | cuánto tarda **el portal** en acomodarse después | nosotros |
+
+Y tres defectos que la propia corrida destapó:
+
+- **El rumbo se leía al escribir**, hasta 6 s después del giro. Los tres
+  registros decían «a vertical» aunque uno fuera de ida. Ahora viaja desde el
+  evento.
+- **Girar de vuelta mientras la corrida seguía se descartaba en silencio**
+  (`if (corriendo) return`). Ahora cada corrida lleva su número y la vieja se
+  abandona sola.
+- **La tolerancia del ancho tenía que ser distinta en cada orientación** —la
+  muesca se come 124px en horizontal y el relleno sólo 16 en vertical— así que
+  en la práctica no disparaba al girar hacia horizontal y esas corridas se
+  perdían enteras. Se reemplazó por el cambio de `clientWidth` contra su valor
+  inicial, que no necesita tolerancia.
+
+Además, sin el marcador de la vista la sonda ahora mide el `body`, para poder
+correr **fuera del shell** (`/raw-test`, `/login`). Ése es el control que falta:
+si una página sin shell ni vidrio también tarda 1.5 s, el retraso es del
+teléfono y el portal no lo puede arreglar; si es rápida, lo trajimos nosotros.
+También quedan anotados el tema, el zoom de página y si corre agregada a inicio.
+
 ## v2.526.3 — La sonda del giro: medir en el teléfono en vez de adivinar
 
 Cuarto asalto contra el defecto de la rotación, y el primero que no propone un

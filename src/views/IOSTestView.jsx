@@ -30,30 +30,44 @@ const Row = ({ label, value, ok }) => (
     </div>
 );
 
-// El veredicto sale de los números, no al revés. Las tres explicaciones que
-// quedaron vivas después de tres intentos fallidos se separan por dos medidas:
-// si el hilo principal se bloqueó, y si el ancho tardó en llegar. Ver el
-// encabezado de `iniciarSondaRotacion` en `cajaNegra.js`.
+// El veredicto sale de los números, no al revés — y estos números vienen
+// separados en dos tiempos que la primera versión mezclaba: cuánto tardó SAFARI
+// en entregar el ancho nuevo, y cuánto tardó EL PORTAL en acomodarse después.
+// La primera corrida en el iPhone mostró que el grande es el primero, o sea el
+// que no depende de nosotros. Ver `iniciarSondaRotacion` en `cajaNegra.js`.
 const veredicto = (r) => {
     if (r.peorSalto >= 400) return {
-        titulo: 'A · se bloqueó el hilo',
+        titulo: 'Se bloqueó el hilo',
         tono: 'danger',
         dice: `La pantalla dejó de responder ${r.peorSalto} ms de un tirón. Eso es trabajo de código o `
-            + 'recálculo de la página, no las capas de vidrio. Hay que buscar qué corre al girar.',
+            + 'recálculo, y sí se puede perseguir: hay que ver qué corre al girar.',
     };
-    if (r.anchoOk == null || r.anchoOk > 700) return {
-        titulo: 'B · el ancho tardó',
+    if (r.viewportEn == null) return {
+        titulo: 'No cambió el ancho',
+        tono: 'neutral',
+        dice: 'El ancho del documento nunca cambió en toda la medición. O el giro no llegó a completarse, '
+            + 'o la pantalla ya estaba en esa orientación.',
+    };
+    const propio = r.vistaEstableEn == null ? null : r.vistaEstableEn - r.viewportEn;
+    if (r.viewportEn > 600) return {
+        titulo: 'Esperando a Safari',
         tono: 'warning',
-        dice: `El hilo nunca se trabó (peor ${r.peorSalto} ms) pero la vista tardó `
-            + `${r.anchoOk == null ? 'más de 6 s' : `${r.anchoOk} ms`} en ocupar el ancho nuevo. `
-            + 'El reparto mismo va lento: algo está animando la geometría.',
+        dice: `Safari tardó ${r.viewportEn} ms en entregar el ancho nuevo, con el hilo libre `
+            + `(peor trabón ${r.peorSalto} ms). El portal se acomodó ${propio == null ? 'después' : `${propio} ms`} `
+            + 'más tarde. Todo ese rato la pantalla ya estaba girada pero el documento seguía midiendo lo de '
+            + 'antes: el trabajo que tarda está fuera del hilo principal, o sea componiendo capas.',
+    };
+    if (propio != null && propio > 300) return {
+        titulo: 'El portal tardó',
+        tono: 'warning',
+        dice: `Safari entregó el ancho nuevo a los ${r.viewportEn} ms, rápido, pero el portal tardó `
+            + `${propio} ms más en acomodarse. Ese pedazo sí es nuestro.`,
     };
     return {
-        titulo: 'C · fue el pintado',
-        tono: 'neutral',
-        dice: `El ancho quedó bien a los ${r.anchoOk} ms y el hilo nunca se trabó (peor ${r.peorSalto} ms). `
-            + 'Si aun así se vio feo varios segundos, lo que tarda es dibujar — no el reparto. '
-            + 'Si en cambio este giro se vio bien, esta medición no es la del defecto: repítela donde falla.',
+        titulo: 'Este giro fue rápido',
+        tono: 'success',
+        dice: `Ancho nuevo a los ${r.viewportEn} ms y el portal acomodado ${propio ?? 0} ms después. `
+            + 'Si este giro se vio bien, esta medición no es la del defecto: repítela donde falla.',
     };
 };
 
@@ -207,15 +221,23 @@ const IOSTestView = () => {
                                             </span>
                                         </div>
                                         <p className="text-caption text-content-2 leading-snug mb-2">{v.dice}</p>
-                                        <Row label="Tardó en llenar el ancho"
-                                            value={r.anchoOk == null ? 'no llegó en 6 s' : `${r.anchoOk} ms`}
-                                            ok={r.anchoOk != null && r.anchoOk <= 700} />
+                                        <Row label="Safari entregó el ancho"
+                                            value={r.viewportEn == null ? 'nunca' : `${r.viewportEn} ms`}
+                                            ok={r.viewportEn != null && r.viewportEn <= 600} />
+                                        <Row label="El portal se acomodó"
+                                            value={r.vistaEstableEn == null || r.viewportEn == null
+                                                ? '—' : `${r.vistaEstableEn - r.viewportEn} ms después`}
+                                            ok={r.vistaEstableEn != null && r.viewportEn != null
+                                                && r.vistaEstableEn - r.viewportEn <= 300} />
                                         <Row label="Peor trabón del hilo" value={`${r.peorSalto} ms`}
                                             ok={r.peorSalto < 400} />
                                         <Row label="Cuadros lentos (>100 ms)" value={String(r.saltosLargos)} />
                                         <Row label="Remontó la vista"
                                             value={r.remontadaEn == null ? 'no' : `sí, a los ${r.remontadaEn} ms`} />
-                                        <Row label="Tema / elementos" value={`${r.tema} · ${Number(r.nodos || 0).toLocaleString('es-SV')}`} />
+                                        <Row label="Tema"
+                                            value={`${r.tema}${r.tema === 'liquid' ? ' (con vidrio)' : ''}`} />
+                                        <Row label="Shell / elementos"
+                                            value={`${r.conShell ? 'sí' : 'no'} · ${Number(r.nodos || 0).toLocaleString('es-SV')}`} />
                                         {/* Las fotos crudas: sin ellas el veredicto es una
                                             conclusión sin su dato, y si el veredicto está mal
                                             no habría con qué darse cuenta. */}
@@ -267,9 +289,11 @@ const IOSTestView = () => {
                             onClick={async () => {
                                 const texto = leerRotaciones().map(r =>
                                     `${r.t?.slice(11, 19)} → ${r.hacia} · ${r.ruta}\n`
-                                    + `  ancho ok: ${r.anchoOk ?? 'nunca'} ms · peor trabón: ${r.peorSalto} ms · `
-                                    + `lentos: ${r.saltosLargos} · remonte: ${r.remontadaEn ?? 'no'} · `
-                                    + `tema: ${r.tema} · nodos: ${r.nodos} · cuadros: ${r.cuadros}\n`
+                                    + `  safari: ${r.viewportEn ?? 'nunca'} ms · portal: `
+                                    + `${r.vistaEstableEn != null && r.viewportEn != null ? `+${r.vistaEstableEn - r.viewportEn}` : '—'} ms · `
+                                    + `peor trabón: ${r.peorSalto} ms · lentos: ${r.saltosLargos} · `
+                                    + `remonte: ${r.remontadaEn ?? 'no'} · tema: ${r.tema} · shell: ${r.conShell ? 'sí' : 'no'} · `
+                                    + `escala: ${r.escala} · standalone: ${r.standalone ? 'sí' : 'no'} · nodos: ${r.nodos}\n`
                                     + (r.muestras || []).map(m => `    ${String(m.t).padStart(4)}ms  doc ${m.doc}  vista ${m.vista}  ventana ${m.vp}`).join('\n'),
                                 ).join('\n\n');
                                 try {

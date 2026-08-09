@@ -84,7 +84,24 @@ standalone) · **F9 abierta** (la rotación) · **Abierto el** 2026-08-08 ·
 > alcance: el pan sólo escuchaba eventos de mouse, así que en el teléfono estaba
 > completo e **inalcanzable**. Ahora se arrastra con el dedo (v2.524.10).
 >
-> ## F9 — la rotación, ABIERTA · el síntoma era otro (2026-08-08)
+> ## F9 — la rotación, EN PAUSA (2026-08-08)
+>
+> **Handoff completo: `docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`.** Ahí está
+> todo: el aparato, las cuatro explicaciones descartadas con su número, las tres
+> que quedan vivas, el siguiente paso en orden, y las tres trampas del
+> instrumento que ya se pagaron. Lo de abajo es el registro de cómo se llegó.
+>
+> Pausado por el usuario después de tres rondas sin causa: «siento que estamos
+> en un círculo vicioso». **No se encontró la causa.** Sí se cerró que no es el
+> teléfono (una página sin shell gira en 17 ms), no es el vidrio (falla también
+> en `solid`), no es el reparto del DOM (leer el ancho cuesta 3 ms) y no es
+> código nuestro de más (los mismos 3 re-renders que en los giros rápidos).
+> Queda un bloqueo de ~1.9 s que llega **después** del reparto.
+>
+> Y quedó una ganancia real: girar ya no re-renderiza el shell, y Safari pasó de
+> tardar 1.1–3.2 s en entregar el viewport a 0–1 ms.
+>
+> ### El registro — el síntoma era otro
 >
 > **Los tres intentos fallaron por la misma razón: el síntoma estaba mal leído.**
 > Se venía persiguiendo «el contenido queda pintado al ancho anterior y el resto

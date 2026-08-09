@@ -10,50 +10,46 @@ de alcance las tomó el usuario el 2026-08-08:
 
 ---
 
-## ESTADO — cerrado el 2026-08-09, salvo F1
+## ESTADO — CERRADO el 2026-08-09
 
 | Fase | Estado | Versión |
 |---|---|---|
 | **F0** · terceros fuera del origen + CSP en enforce | ✅ | v2.528.0 |
+| **F1** · ajustes del panel de Supabase | ✅ **aplicado y verificado** | — |
 | **F2** · cerrar sesión sin red, `scope: 'local'`, clase de la sesión | ✅ | v2.527.0 |
-| **F3** · el límite lo decide el servidor | ✅ *(inerte hasta activar el hook)* | v2.529.0 |
+| **F3** · el límite lo decide el servidor | ✅ **activo en producción** | v2.529.0 |
 | **F4** · vista de Conexiones | ✅ | v2.531.0 → v2.532.0 |
-| **F1** · ajustes del panel de Supabase | ⏳ **PENDIENTE — sólo lo puede hacer una persona** | — |
 
-### Lo único que falta, y por qué no lo puede hacer una sesión de trabajo
+### Cómo se verificó F1 y el hook, contra producción
 
-La configuración de Auth **no está expuesta por el MCP de Supabase** ni por SQL:
-vive en la configuración de GoTrue. Se toca a mano en el panel, o con la API de
-gestión y un token personal que este repo no tiene (verificado: no hay
-`SUPABASE_ACCESS_TOKEN` ni en `.env` ni en el entorno).
+- **Access token en 900s** — decodificado de un token nuevo: `exp - iat = 900`.
+- **El hook rechaza de verdad.** Prueba con control sobre **la misma sesión**:
+  con la actividad fresca, el refresco devolvió **200**; envejecida a 780 minutos
+  contra un límite de 720, el mismo refresco devolvió **401 `session idle
+  timeout`** — que es literalmente el mensaje de la función. Sin la primera
+  mitad, el 401 no habría probado nada.
+- **El *inactivity timeout* y el *timebox* no se pueden observar hoy**: sólo
+  actúan cuando alguien cruza los 30 / 90 días. Quedan afirmados por el panel, no
+  medidos. Se dice, no se disimula.
 
-**Authentication → Sessions / JWT** del proyecto `sacecdkdmsdvgqnrsett`:
+### El hook firma su propio trabajo
 
-| Ajuste | Hoy | A poner |
-|---|---|---|
-| Access token (JWT) expiry | 3600s | **900** |
-| Refresh token rotation | activa | **activa + reuse interval 10s** |
-| Inactivity timeout | ninguno | **30 días** |
-| Session timebox | ninguno | **90 días** |
+Correr sin dejar huella fue un problema real ese mismo día: entrar y refrescar
+daban 200 con el hook puesto **y habrían dado 200 igual con el hook apagado**.
+Desde `20260809161631` el hook estampa `idle_limit_min` en el token, así que
+«¿está activo?» y «¿qué límite se le aplicó?» se contestan decodificando
+cualquier token. Y su **ausencia** distingue las dos formas de no actuar: el hook
+apagado, o el hook que se fue por el fail-open.
 
-**Authentication → Hooks → Customize Access Token (JWT) Claims** → función
-Postgres `public.custom_access_token_hook` (ya creada, probada y con permisos).
+Medido en un token de producción: `idle_limit_min: 720`.
 
-**El orden importa:** bajar el JWT ANTES de activar el hook. Al revés, el hook
-funciona pero el límite de 5 minutos se cumple con hasta una hora de retraso,
-porque sólo puede actuar cuando se emite un token.
+### Lo que queda arreglándose solo
 
-### Lo que sigue roto hasta que F1 se aplique
-
-Medido el 2026-08-09: **3,636 sesiones, todas con `not_after` en NULL**, la más
-vieja de hace **75 días**, y **2,767 abandonadas hace más de 7 días que siguen
-siendo válidas**. Cerrar el navegador no cierra sesión —nadie manda el aviso— y
-el token sobrevive en el disco. Hoy la única limpieza ocurre si esa persona
-vuelve a abrir ese navegador después de su límite; la computadora que no se
-vuelve a tocar no se limpia nunca.
-
-El *inactivity timeout* es el ajuste con más efecto de todo el plan: cosecha esas
-2,767 solo, sin que ningún navegador tenga que volver.
+Al momento de cerrar había **3,649 sesiones, todas con `not_after` en NULL**, la
+más vieja de hace 75 días, y **2,767 abandonadas hace más de 7 días**. El
+*inactivity timeout* las cosecha sin que ningún navegador tenga que volver a
+abrirse. `not_after` seguirá en NULL: GoTrue hace cumplir el plazo al refrescar,
+no estampando la fila — ver la nota de verificación al final.
 
 ---
 

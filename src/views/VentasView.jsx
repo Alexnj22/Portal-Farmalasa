@@ -690,10 +690,24 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     { key: 'fecha',      label: 'Fecha',        sortable: true },
                     { key: 'id',         label: 'ID',           sortable: true, hideBelow: 'md' },
                     { key: 'tipo',       label: 'Tipo',         sortable: true, hideBelow: 'sm' },
-                    { key: 'sucursal',   label: 'Sucursal',     sortable: true, hideBelow: 'lg' },
+                    /* `1440` y no `lg` en estas dos: a 1024+ se dibujaban las
+                       ocho columnas y no entran en los ~1080px que quedan al
+                       lado del menú, así que **Total quedaba fuera del marco** —
+                       cortado a media cifra en un portátil de 1440, que es el
+                       ancho más común. El número por el que se abre la lista era
+                       el único que no se podía leer, y en el teléfono sí se lee,
+                       porque ahí es el ancla de la ficha.
+                       Se demotan éstas dos y no `cliente` ni `total`: sucursal y
+                       método de pago son contexto (y sucursal ya viaja en los
+                       chips de la ficha); el cliente y el monto son la fila.
+                       `2xl` y no `1440`: el peldaño de 1440 se CUMPLE a 1440
+                       —`min-[1440px]`— así que a ese ancho no ocultaba nada y el
+                       total seguía cortado. Se midió y la primera versión no
+                       servía. */
+                    { key: 'sucursal',   label: 'Sucursal',     sortable: true, hideBelow: '2xl' },
                     { key: 'vendedor',   label: 'Vendedor',     sortable: true, hideBelow: 'md' },
                     { key: 'cliente',    label: 'Cliente',      sortable: true },
-                    { key: 'metodo',     label: 'Método pago',  sortable: true, hideBelow: 'sm' },
+                    { key: 'metodo',     label: 'Método pago',  sortable: true, hideBelow: '2xl' },
                     { key: 'total',      label: 'Total',        sortable: true, align: 'right' },
                 ]}
                 /* La inferencia toma la PRIMERA columna como identidad, y acá esa
@@ -745,7 +759,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         ? <Badge variant={tipoVariante} size="sm">{r.tipo_documento}</Badge>
                                         : <span className="text-content-3">—</span>}
                                 </DataCell>
-                                <DataCell hideBelow="lg">
+                                <DataCell hideBelow="2xl">
                                     <span className="text-label text-content-2">{getBranch(r.branch_id)}</span>
                                 </DataCell>
                                 <DataCell hideBelow="md">
@@ -775,7 +789,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         </div>
                                     )}
                                 </DataCell>
-                                <DataCell hideBelow="sm">
+                                <DataCell hideBelow="2xl">
                                     {r.tipo_pago
                                         ? <span className="text-label text-content-2 font-medium">{r.tipo_pago}</span>
                                         : <span className="text-content-3">—</span>}

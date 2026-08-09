@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.533.2 — Ventas: el total estaba fuera del marco en un portátil
+
+Segunda vista de la revisión de UX. El hallazgo se ve mejor comparando las dos
+formas de la misma lista:
+
+- **En el teléfono**, cada venta es una ficha con el cliente arriba y **el monto
+  a la derecha**, que es el par por el que se entra a una lista de ventas.
+- **En escritorio a 1440px** —el ancho de portátil más común— las ocho columnas
+  no entraban en los ~1080px que quedan al lado del menú, y la que quedaba
+  cortada era **Total**: `$3.` , `$28.` , `$8.` , a media cifra.
+
+O sea que el número por el que existe la pantalla era legible en el teléfono e
+ilegible en la computadora.
+
+`Sucursal` y `Método pago` bajan a `2xl`. Se demotan ésas y no `Cliente` ni
+`Total` porque son contexto —y la sucursal ya viaja en los chips de la ficha—
+mientras que el cliente y el monto **son** la fila. De paso la fecha dejó de
+partirse en tres renglones: con el espacio libre entra en dos, y cada fila bajó
+de alto.
+
+### La primera versión no servía, y mi propia medición dijo que sí
+
+Se usó el peldaño `1440` de `DataTable`. Está pensado para un corte medido, pero
+se implementa como `min-[1440px]:table-cell`: **se cumple A 1440**, así que a ese
+ancho exacto no ocultaba nada y el total seguía cortado.
+
+Peor: el chequeo que escribí buscaba el `<th>` cuyo texto empieza con «Total» y
+midió su borde derecho en 1,435 de 1,440 — «entra». La captura decía lo
+contrario. El selector había enganchado otro encabezado. La segunda medición no
+busca por texto: pregunta si el **contenedor** de la tabla necesita scroll
+horizontal y dónde termina la última celda visible de las primeras filas.
+
+Es la misma lección que esta sesión ya pagó dos veces: el instrumento miente
+antes que el efecto, y una captura vale más que un número que uno mismo escribió.
+
 ## v2.533.1 — Los tres P2 de Inicio
 
 Cierra los tres que quedaban de la crítica de Inicio.

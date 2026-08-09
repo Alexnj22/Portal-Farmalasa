@@ -597,7 +597,14 @@ const LiquidSelect = ({
 
     return (
         <div
-            className={`relative group w-full transition-transform duration-[var(--dur-slow)] transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:translate-y-[var(--lift-hover)]' : ''}`}
+            // SIN `transform-gpu` (2026-08-09). Ponía `translateZ(0)` PERMANENTE
+            // sobre la raíz del select, y un ancestro con transform es backdrop
+            // root: el `backdrop-filter` del `[data-surface="input"]` de adentro
+            // no se ejecutaba en ninguno de los 173 selects del portal. El lift
+            // lo sigue dando `hover:translate-y`, que sólo pone transform
+            // mientras el puntero está encima; en reposo —que es como se ve el
+            // 99% del tiempo— el vidrio ahora vive.
+            className={`relative group w-full transition-transform duration-[var(--dur-slow)] ${(!isOpen && !disabled && !bare) ? 'hover:translate-y-[var(--lift-hover)]' : ''}`}
             ref={selectRef}
         >
             {/* ICONO IZQUIERDO — omitido en nano (steppers/grillas densas sin espacio) */}

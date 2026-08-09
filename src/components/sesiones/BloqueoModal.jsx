@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldOff, AlertTriangle } from 'lucide-react';
+import { ShieldOff, AlertTriangle, Clock } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import Button from '../common/Button';
 import LiquidSelect from '../common/LiquidSelect';
@@ -63,7 +63,21 @@ export default function BloqueoModal({ persona, onCancelar, onConfirmar, procesa
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-1.5 block">
                         Por cuánto tiempo
                     </label>
-                    <LiquidSelect value={duracion} onChange={setDuracion} options={DURACIONES} />
+                    {/* `icon` y `clearable={false}` no son adorno:
+                        · Sin ícono propio, `LiquidSelect` cae en la LUPA, y una
+                          lupa sobre cinco opciones fijas promete un buscador
+                          que no hay. El reloj dice lo que el campo elige.
+                        · Limpiable, la ✕ roja dejaba el campo vacío y el
+                          bloqueo salía con `Number('')` = 0 horas, o sea
+                          vencido al nacer. La duración no tiene «ninguna». */}
+                    <LiquidSelect
+                        value={duracion}
+                        onChange={setDuracion}
+                        options={DURACIONES}
+                        icon={Clock}
+                        clearable={false}
+                        ariaLabel="Por cuánto tiempo"
+                    />
                 </div>
 
                 <PortalInput

@@ -559,7 +559,10 @@ const AnnouncementsView = ({ openModal }) => {
       <GlassViewLayout icon={Megaphone} title="Centro de Comunicaciones" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
         <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
-          <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar transform-gpu">
+          {/* SIN `transform-gpu`: ancestro de la tarjeta del formulario, y un
+              ancestro con transform apaga su `backdrop-filter`. Mismo caso que
+              el panel de Roles (2026-08-09). */}
+          <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar">
             <div data-surface="card" className={`p-6 md:p-8 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] relative overflow-visible ${editingAnnId ? 'bg-surface-card border border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]'}`}>              
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">

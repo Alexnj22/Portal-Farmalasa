@@ -33,7 +33,7 @@ const FormAuditDetail = ({ data }) => {
             <div data-surface="card" className="w-full md:w-5/12 p-7 flex flex-col relative overflow-hidden shrink-0 transform-gpu backface-hidden transition-all duration-[var(--dur-lento)] group/main">
                 
                 {/* Reflejos Dinámicos */}
-                <div className="absolute top-0 right-0 w-40 h-40 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none opacity-50 transform-gpu transition-opacity duration-[var(--dur-lento)] group-hover/main:opacity-80" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
+                <div className="absolute top-0 right-0 w-40 h-40 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none opacity-50 transition-opacity duration-[var(--dur-lento)] group-hover/main:opacity-80" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
 
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-10 relative z-base">
@@ -102,7 +102,7 @@ const FormAuditDetail = ({ data }) => {
             {/* =========================================================
                 COLUMNA DERECHA: TERMINAL CON HOVER INDEPENDIENTE
                 ========================================================= */}
-            <div className="w-full md:w-7/12 bg-[#020617] rounded-header shadow-[var(--shadow-elevation-xl)] flex flex-col overflow-hidden border border-border-card min-h-[400px] transform-gpu backface-hidden transition-all duration-[var(--dur-lento)] hover:scale-[1.02] hover:shadow-[var(--shadow-elevation-xl)]">
+            <div className="w-full md:w-7/12 bg-[#020617] rounded-header shadow-[var(--shadow-elevation-xl)] flex flex-col overflow-hidden border border-border-card min-h-[400px] backface-hidden transition-all duration-[var(--dur-lento)] hover:scale-[1.02] hover:shadow-[var(--shadow-elevation-xl)]">
                 
                 <div className="h-14 bg-surface-card flex items-center px-6 border-b border-border-card shrink-0">
                     <div className="flex gap-2 mr-6">

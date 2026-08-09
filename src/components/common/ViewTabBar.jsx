@@ -206,7 +206,7 @@ export default function ViewTabBar({
           `inert` —no `tabIndex={-1}`— porque también hay que sacar los botones de
           limpiar y cerrar, y de paso lo oculta a los lectores de pantalla. */}
       <div inert={!buscando ? true : undefined}
-        className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
+        className={`flex items-center h-full shrink-0 overflow-hidden
         transition-all duration-[var(--dur-lento)] ${spring} origin-left
         ${buscando
           ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3'
@@ -242,7 +242,7 @@ export default function ViewTabBar({
       {/* Normal mode — mismo caso al revés: con la búsqueda abierta, los tabs
           colapsados seguían tabulables. */}
       <div inert={buscando ? true : undefined}
-        className={`flex items-center h-full shrink-0 transform-gpu overflow-visible
+        className={`flex items-center h-full shrink-0 overflow-visible
         transition-all duration-[var(--dur-lento)] ${spring} origin-right
         ${buscando
           ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0'
@@ -316,7 +316,7 @@ export default function ViewTabBar({
         {mostrarLupa && (
           <button aria-label="Buscar" onClick={openSearch}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
-              transition-[background-color,transform] duration-[var(--dur-base)] hover:translate-y-[var(--lift-hover)] active:scale-[0.97] transform-gpu relative
+              transition-[background-color,transform] duration-[var(--dur-base)] hover:translate-y-[var(--lift-hover)] active:scale-[0.97] relative
               bg-brand text-white hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchValue && (

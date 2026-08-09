@@ -229,7 +229,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                             <div className="mt-4 grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-top-2 w-full">
                                                                 <div className="space-y-1.5">
                                                                     <label className="text-micro font-bold text-content-3 uppercase tracking-widest">A Sucursal</label>
-                                                                    <div className="rounded-2xl transition-all duration-[var(--dur-slow)] transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
+                                                                    <div className="rounded-2xl transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
                                                                         <LiquidSelect 
                                                                             options={branches.map(b => ({ value: b.id, label: b.name }))}
                                                                             value={formData.outgoingBranch || ''}
@@ -241,7 +241,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                                 </div>
                                                                 <div className="space-y-1.5">
                                                                     <label className="text-micro font-bold text-content-3 uppercase tracking-widest">Nuevo Rol</label>
-                                                                    <div className="rounded-2xl transition-all duration-[var(--dur-slow)] transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
+                                                                    <div className="rounded-2xl transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
                                                                         <LiquidSelect 
                                                                             options={[
                                                                                 { value: 'Dependiente de Farmacia', label: 'Dependiente de Farmacia' },
@@ -299,7 +299,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                             <label className="text-caption font-black uppercase tracking-widest text-warning-text mb-2 flex items-center gap-1.5 ml-1">
                                                 <AlertCircle size={12} strokeWidth={3}/> Fecha de Fin de Interinato
                                             </label>
-                                            <div className="transition-all duration-[var(--dur-slow)] transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-2xl">
+                                            <div className="transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-2xl">
                                                 <LiquidDatePicker 
                                                     value={formData.interimEndDate || ''}
                                                     onChange={(date) => setFormData({...formData, interimEndDate: date})}

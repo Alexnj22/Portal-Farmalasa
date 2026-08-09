@@ -122,7 +122,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
     };
 
     return (
-        <div className={`rounded-3xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu ${
+        <div className={`rounded-3xl border transition-all duration-[var(--dur-lento)] ease-out ${
             isComing
                 ? 'bg-surface-card border-border-card opacity-40 select-none'
                 : hasAnyPerm

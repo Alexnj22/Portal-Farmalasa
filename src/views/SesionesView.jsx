@@ -264,8 +264,14 @@ const SesionesView = () => {
             </div>
 
             {/* ── El detalle de una persona ───────────────────────────────── */}
+            {/* `&& !porBloquear && !porCerrar`: un diálogo sobre otro está
+                PROHIBIDO. `ModalShell` ya lo garantiza —el que no es el de
+                encima no pinta— pero eso es la red, no el diseño: acá el
+                detalle se CIERRA mientras se decide, y vuelve solo al cancelar
+                porque `abierta` nunca se tocó. Al confirmar no vuelve, porque
+                los dos confirmadores dejan la lista al día. */}
             <LiquidModal
-                open={!!detalle}
+                open={!!detalle && !porBloquear && !porCerrar}
                 onClose={() => setAbierta(null)}
                 maxWidth="max-w-lg"
                 className="max-h-[85vh] h-fit"

@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { EstadoDialogoCtx } from "./estadoDialogo";
 import { useGotaApertura, tiemposGota } from "./gotaApertura";
 import useMediaQuery from "../../hooks/useMediaQuery";
 import { usePanelLateral } from "../../hooks/useLayoutCompacto";
-import { marcarDialogoAbierto } from "./dialogosAbiertos";
+import { abrirDialogo, useEsDialogoDeEncima } from "./dialogosAbiertos";
 import { createPortal } from "react-dom";
 import { ArrowLeft } from "lucide-react";
 import Button from "./Button";
@@ -234,7 +234,41 @@ export default function ModalShell({
   // no tiene nada que hacer debajo de una hoja —transparentándose a través del
   // vidrio, que fue lo reportado—. Se cuenta en vez de encender un booleano
   // porque los diálogos se anidan.
-  useEffect(() => (open ? marcarDialogoAbierto() : undefined), [open]);
+  // ── UN SOLO DIÁLOGO A LA VISTA (2026-08-09) ───────────────────────────
+  // Un diálogo sobre otro está PROHIBIDO. No es una preferencia estética: dos
+  // paneles del mismo vidrio no se distinguen entre sí, así que el de abajo se
+  // lee entero a través del de encima —nombre, párrafos y botones encimados—.
+  // Reportado sobre Conexiones, con el bloqueo abierto sobre el detalle.
+  //
+  // Se resuelve acá y no en cada vista a propósito: pedirle a los 18 llamadores
+  // que cierren lo suyo antes de abrir lo otro es una regla de prosa, y una
+  // regla que sólo vive en prosa se rompe. Desde el canónico es estructural —
+  // el que no es el de encima no pinta, y no hay forma de saltárselo.
+  //
+  // Se OCULTA, no se desmonta: el de abajo conserva su estado y su scroll, y
+  // vuelve intacto en cuanto el de encima se va. Eso es lo que hace que
+  // «Cancelar» devuelva la pantalla exactamente como estaba.
+  const idDialogo = useId();
+  const esTope = useEsDialogoDeEncima(idDialogo);
+  const nombreRef = useRef(ariaLabel);
+  useEffect(() => { nombreRef.current = ariaLabel; }, [ariaLabel]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const { cerrar, debajo } = abrirDialogo(idDialogo, nombreRef.current);
+    if (import.meta.env.DEV && debajo) {
+      // Que la pantalla se salve no vuelve legítimo el anidamiento: el de abajo
+      // desaparece de golpe y quien lo abrió no lo pidió. El aviso nombra a los
+      // dos para poder rediseñar el flujo.
+      console.warn(
+        `[canónico] Diálogo sobre diálogo: «${nombreRef.current}» se abrió sobre `
+        + `«${debajo}». Está prohibido — el de abajo se oculta para que no se `
+        + `encimen, pero el flujo hay que rehacerlo (un paso dentro del mismo `
+        + `diálogo, o cerrar el primero antes de abrir el segundo).`,
+      );
+    }
+    return cerrar;
+  }, [open, idDialogo]);
 
   useEffect(() => {
     if (open) {
@@ -249,7 +283,11 @@ export default function ModalShell({
   }, [open]);
 
   useEffect(() => {
-    if (!open) return undefined;
+    // `esTope`: el teclado le pertenece al que se ve. Sin esto, un diálogo
+    // oculto seguía atrapando el Tab —su panel mide 0×0, así que la trampa no
+    // encontraba nada enfocable y devolvía el foco a sí misma, robándoselo al
+    // que sí está en pantalla— y Escape cerraba los dos a la vez.
+    if (!open || !esTope) return undefined;
 
     const onKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -308,7 +346,7 @@ export default function ModalShell({
           window.scrollTo(0, yPrevio);
       }
     };
-  }, [open, onClose, closeOnEsc, lockScroll]);
+  }, [open, esTope, onClose, closeOnEsc, lockScroll]);
 
   // Foco: entrar al abrir, y VOLVER al disparador al cerrar.
   // Lo segundo es lo que más se olvida y lo que más se nota: sin eso, cerrar un
@@ -418,21 +456,24 @@ export default function ModalShell({
   // index.css). Los dos gates de movimiento las alcanzan: en Solid duran
   // 130ms lineales y con prefers-reduced-motion pierden la geometría y queda
   // solo el fade.
-  // ── El contenedor NO se anima cuando no hay velo ──────────────────────
-  // `animate-in fade-in` le pone `opacity` entre 0 y 1 durante 500ms, y **un
-  // ancestro con opacidad < 1 es un backdrop root**: mientras dura el fade, el
-  // `backdrop-filter` de la hoja está muerto y el vidrio aparece de golpe al
-  // terminar. Medido: op 0 → 0.29 → 0.68 → 0.90 mientras la hoja se abría, que
-  // es exactamente lo que se reportó como "se ve transparente hasta que finaliza
-  // la animación". La misma regla que ya mordió por `transform`, ahora por
-  // `opacity`.
+  // ── El velo es una CAPA, no el fondo del contenedor (2026-08-09) ──────
+  // Estaba pintado sobre el mismo div que envuelve al panel, y por eso su
+  // desvanecido —`opacity` entre 0 y 1 durante 500ms— convertía al ANCESTRO
+  // del vidrio en backdrop root y dejaba el `backdrop-filter` del panel muerto
+  // mientras duraba. Medido: op 0 → 0.29 → 0.68 → 0.90 mientras la hoja se
+  // abría, o sea "se ve transparente hasta que finaliza la animación". La
+  // solución de entonces fue quitarle la animación cuando NO había velo; el
+  // caso con velo se quedó roto, que es justamente el de escritorio.
   //
-  // Sin velo no hay nada que desvanecer —el contenedor es transparente— así que
-  // la animación no solo sobra: es la que rompe el efecto. La hoja se anima
-  // sola.
-  const backdropAnim = !conVelo
-    ? ""
-    : open ? "animate-in fade-in duration-[var(--dur-lento)]" : `animate-out fade-out duration-[var(--dur-fast)] ${HOLD_EXIT}`;
+  // Como capa hermana el problema desaparece: el velo se desvanece solo, no es
+  // ancestro de nadie, y el panel lo tiene DEBAJO en el mismo contexto de
+  // apilamiento — así que su vidrio lo muestrea como muestrea el resto de la
+  // página. Es la misma mudanza que ya se le hizo a la sombra de la hoja.
+  // (El otro backdrop root, el `backdrop-filter` del propio velo, se fue por
+  // los tokens: §5.bis de `index.css`.)
+  const veloAnim = open
+    ? "animate-in fade-in duration-[var(--dur-lento)]"
+    : `animate-out fade-out duration-[var(--dur-fast)] ${HOLD_EXIT}`;
   // Una hoja inferior no hace zoom: sube y baja. Es la misma distinción que el
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.
@@ -491,13 +532,28 @@ export default function ModalShell({
       // blur, canto y lente— y sólo desenfoca 1px; en Solid oscurece 0.17
       // porque su panel es opaco. `--scrim` se quedó donde corresponde: el
       // fondo del sidebar móvil y los overlays de hover sobre fotos.
-      data-velo={conVelo ? 'si' : undefined}
-      className={`fixed inset-0 ${zClass} flex ${alignCls} ${backdropAnim}
-        ${conVelo ? '' : 'bg-transparent'}`}
+      className={`fixed inset-0 ${zClass} flex ${alignCls}`}
+      // El que no es el de encima NO PINTA. `display:none` y no `visibility` ni
+      // opacidad: hace falta que salga también del árbol de accesibilidad y del
+      // recorrido de Tab, o quedarían dos `aria-modal="true"` a la vez y un
+      // lector de pantalla anunciaría el diálogo tapado.
+      style={esTope ? undefined : { display: 'none' }}
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}
     >
+      {/* ── El velo ──────────────────────────────────────────────────────
+          Capa propia y hermana del panel (ver la nota de `veloAnim`). No
+          captura el puntero: el que cierra al hacer clic afuera es el botón de
+          abajo, que va después y por tanto encima. */}
+      {conVelo && (
+        <div
+          data-velo="si"
+          aria-hidden="true"
+          className={`absolute inset-0 pointer-events-none ${veloAnim}`}
+        />
+      )}
+
       {/* El fondo es una afordancia de MOUSE: duplica lo que Escape ya hace,
           así que va fuera del árbol de accesibilidad y fuera de Tab. Dejarlo
           tabulable metía una parada de foco invisible antes del contenido del

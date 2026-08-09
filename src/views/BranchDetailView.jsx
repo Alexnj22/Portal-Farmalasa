@@ -287,7 +287,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex items-center h-full shrink-0 transform-gpu origin-right animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]">
+                    <div className="flex items-center h-full shrink-0 origin-right animate-in fade-in zoom-in-95 duration-[var(--dur-slow)]">
 
                         <div inert={isEditMode ? true : undefined} className={`overflow-hidden transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div ref={tabsRef} className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 w-max relative">

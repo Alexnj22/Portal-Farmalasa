@@ -779,7 +779,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-content-3" />
-                                <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 transform-gpu overflow-hidden">
+                                <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 overflow-hidden">
                                     {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
                                 </div>
                                 <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">

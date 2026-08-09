@@ -164,7 +164,22 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
                     aria-describedby={isInvalid ? messageId : rest['aria-describedby']}
-                    className={`w-full h-full bg-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 ${compact ? 'text-body-sm' : alto ? 'text-display-sm' : 'text-body-xl'} font-bold ${t?.texto ?? od?.texto ?? 'text-content'} outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
+                    /* ── El placeholder no puede leerse como un VALOR ──────────
+                       El campo escribe `font-bold` y `text-body-xl`, y el
+                       placeholder los hereda: «Queda registrado junto al
+                       bloqueo» salía en negrita del mismo cuerpo que un dato
+                       tecleado, o sea que el campo parecía lleno. Y su color no
+                       era de ningún token — sin `::placeholder` declarado lo
+                       pone el navegador, que es justo el cromo nativo que el
+                       resto del canónico se ocupa de sacar (los spinners, acá
+                       al lado). Peso normal y `text-content-3`, que es el color
+                       de las pistas en todo el portal.
+                       `od` ya trae el suyo (`placeholder:text-white/35`): el
+                       kiosco es oscuro en los cuatro temas y no sale de los
+                       tokens. Dos clases de placeholder en el mismo elemento
+                       empatan en especificidad y gana la que caiga después en
+                       la hoja — o sea, azar. */
+                    className={`w-full h-full bg-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 ${compact ? 'text-body-sm' : alto ? 'text-display-sm' : 'text-body-xl'} font-bold placeholder:font-medium ${od ? '' : 'placeholder:text-content-3'} ${t?.texto ?? od?.texto ?? 'text-content'} outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-content-3" />}
             </div>

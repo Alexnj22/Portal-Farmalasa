@@ -494,7 +494,7 @@ export default function EncuestaAdminView() {
             <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                 {/* ══ LEFT PANEL ══════════════════════════════════════════════════ */}
-                {canManage && <div className="w-full lg:w-[560px] xl:w-[620px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar transform-gpu">
+                {canManage && <div className="w-full lg:w-[560px] xl:w-[620px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar">
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && canManage && (
@@ -990,7 +990,7 @@ export default function EncuestaAdminView() {
                             const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices, invertedIndices) : null;
 
                             return (
-                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group relative transform-gpu ${
+                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group relative ${
                                     isExpanded
                                         ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card z-base'
                                         : isEditing

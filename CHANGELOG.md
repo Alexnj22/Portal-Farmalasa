@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.540.0 — El vidrio vuelve a encenderse, y un diálogo sobre otro deja de ser posible
+
+Empezó por una captura de Conexiones: el diálogo de bloqueo abierto sobre el
+detalle de una persona, y los dos textos encimados. Lo que apareció al medirlo
+fue más grande que el síntoma — **en Inicio, 38 de 41 superficies canónicas con
+`backdrop-filter` no lo estaban ejecutando**. El tema no estaba mal calibrado:
+estaba apagado. Una tarjeta de Liquid claro sin su `blur(44px) saturate(200%)`
+es `rgba(230,245,255,.16)` sobre un degradado lavanda, o sea la mancha gris que
+se reportó como «gris sucio y no blanca cristal».
+
+La causa es una sola regla, por tres puertas distintas: un elemento con
+`transform`, `filter`, `backdrop-filter`, `opacity < 1` o `will-change` de esos
+se vuelve **backdrop root**, y desde ahí el `backdrop-filter` de sus
+descendientes deja de muestrear la página. El proyecto ya documentaba dos de las
+puertas (`transform` y `opacity`); faltaban las que más superficies se llevaban.
+
+- **El velo del modal llevaba `backdrop-filter: blur(1px)`.** Un píxel que
+  ningún ojo distingue a pantalla completa, y que costaba el
+  `blur(10px) saturate(160%)` de **todos** los modales del portal: por eso a
+  través de un diálogo se leían los nombres, los badges y las caras de la vista
+  de atrás. El token pasa a guardar un filtro entero (`--velo-filtro: none`)
+  porque `blur(0px)` sigue creando el root.
+- **El velo pasa a ser una capa hermana del panel**, no el fondo de su
+  contenedor. Su desvanecido de entrada usa `opacity`, que creaba el mismo
+  backdrop root durante los 500 ms de la apertura — la nota de `ModalShell` ya
+  describía ese síntoma («se ve transparente hasta que finaliza la animación») y
+  lo había resuelto sólo para el caso sin velo, o sea el que no es escritorio.
+- **`fill-mode: both` → `backwards` en las seis animaciones de entrada.**
+  `to { transform: none }` se interpola como matriz identidad, y `both` la sigue
+  aplicando para siempre: el tablero entero quedaba con un `transform` que no
+  movía nada y apagaba todo lo de adentro. Las de salida siguen con `both`.
+- **`transform-gpu` y `will-change-transform` fuera de 30 envoltorios** en 15
+  archivos, más el `transform-gpu` de la raíz de `LiquidSelect` (que apagaba el
+  vidrio de los 173 selects del portal). Sobre la superficie misma es inocuo;
+  sobre un `<div>` que envuelve, apaga todo lo que contiene. El lift de hover no
+  lo necesita.
+
+Verificado recorriendo el árbol **pintado** en 30 rutas —no se puede leer del
+fuente—: **0 superficies apagadas**. Lo que queda es vidrio dentro de vidrio,
+que no es defecto: una tarjeta dentro de un modal no puede desenfocar a través
+de algo ya desenfocado.
+
+**Y un diálogo sobre otro deja de ser posible.** No por un velo más oscuro —eso
+existió media tarde y se retiró— sino desde el canónico: `dialogosAbiertos`
+mantiene la pila y `ModalShell` no pinta si no es el de encima. El de abajo no
+se desmonta, así que conserva su estado y su scroll y vuelve intacto al cerrar
+el de arriba; el teclado (Escape y la trampa de Tab) le pertenece sólo al que se
+ve. En desarrollo, además, se imprime un aviso con los nombres de los dos
+diálogos: que la pantalla se salve no vuelve legítimo el anidamiento. El primer
+flujo rediseñado es el de Conexiones, donde el detalle ahora se cierra mientras
+se decide y vuelve solo al cancelar.
+
+De paso, en el diálogo de bloqueo: la **lupa** del campo «por cuánto tiempo» era
+el ícono por defecto de `LiquidSelect` y prometía un buscador sobre cinco
+opciones fijas (ahora es un reloj); la **✕ roja** vaciaba el campo y el bloqueo
+salía con `Number('')` = **0 horas**, vencido al nacer (la duración ya no es
+limpiable); y el **placeholder** de `PortalInput` heredaba `font-bold` sin
+declarar color, así que lo pintaba el navegador y se leía como un valor
+tecleado — el mismo cromo nativo que el canónico ya se ocupa de sacar en los
+spinners de al lado.
+
+`DESIGN.md` gana §5.ter (el backdrop root, con la tabla de las tres causas) y la
+sección de `ModalShell` se reescribió: la que había describía clases que se
+quitaron hace meses y afirmaba que `ConfirmModal` se saltaba el canónico.
+
 ## v2.539.1 — La puerta del historial y los documentos dice lo mismo que la pantalla
 
 Salió de auditar el cierre de ayer (D4b) preguntándose no «¿quién perdió

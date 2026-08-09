@@ -409,7 +409,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
             <style>{`@keyframes subtle-shake { 0%,100%{transform:rotate(0deg) scale(1.01);}25%{transform:rotate(-0.5deg) scale(1.01);}75%{transform:rotate(0.5deg) scale(1.01);}} .animate-subtle-shake{animation:subtle-shake 0.4s ease-in-out infinite;}`}</style>
 
             {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
-            <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar transform-gpu">
+            <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-sidebar">
                 <div data-surface="card" className={`p-6 md:p-8 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] flex flex-col hover:border-border-card hover:bg-surface-card transform-gpu ${editingGroup ? 'border-warning/40 shadow-[var(--shadow-glass-3)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-base">

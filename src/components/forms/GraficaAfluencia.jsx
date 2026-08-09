@@ -45,7 +45,7 @@ import ChartContainer from '../common/ChartContainer';
 export default function GraficaAfluencia({ data, tooltip, onBarClick, barCursor = 'default' }) {
     return (
         <ChartContainer>
-            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} transform-gpu>
+            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--divider)" />
                 <XAxis dataKey="displayLabel" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: 'var(--text-tertiary)' }} dy={12} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: 'var(--text-tertiary)' }} />
@@ -55,7 +55,7 @@ export default function GraficaAfluencia({ data, tooltip, onBarClick, barCursor 
                     radius={[5, 5, 0, 0]}
                     onClick={onBarClick}
                     cursor={barCursor}
-                    className="transform-gpu transition-all duration-[var(--dur-slow)] hover:opacity-90"
+                    className="transition-all duration-[var(--dur-slow)] hover:opacity-90"
                 >
                     {data.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />

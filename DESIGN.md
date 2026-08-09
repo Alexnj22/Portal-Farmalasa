@@ -784,6 +784,47 @@ No hay lista que mantener: sale del DOM. Si escribís un control dentro de una
 | **La dirección del realce la manda el ROL de la superficie** | la anidada **oscurece** porque se hunde; el panel del sidebar **aclara** porque flota; el hover **aclara siempre**. «En claro oscurecer» es falso. |
 | **Una superficie dentro de otra se aplana** | pierde el `backdrop-filter`, toma `--anidada` y `--card-radius-anidada`. Un vidrio sobre vidrio queda a 1.02:1 de su contenedor: invisible. |
 | **Una superficie `sticky` tiene que ocluir** | `--thead-bg`, nunca una opacidad de acento. Lo que pasa por debajo se lee a través. |
+| **Un ancestro con `transform` / `filter` / `opacity<1` APAGA el vidrio de todo lo que contiene** | Es la regla del *backdrop root*, y es la que hacía que el tema se viera «gris sucio». Ver §5.ter. |
+
+### 5.ter El backdrop root — lo único que puede apagar el vidrio (2026-08-09)
+
+Un elemento con `transform`, `filter`, `backdrop-filter`, `opacity < 1`, `mask`,
+`mix-blend-mode`, `contain: paint` o `will-change` de cualquiera de esos se vuelve
+**backdrop root**. Desde ahí hacia abajo, el `backdrop-filter` de sus descendientes
+**deja de muestrear la página**: no desenfoca, no satura, no hace nada. El elemento
+sigue pintando su color de fondo, así que no se rompe — se **apaga**. Una tarjeta de
+Liquid claro sin su `blur(44px) saturate(200%)` es `rgba(230,245,255,.16)` sobre un
+degradado lavanda, o sea una mancha gris.
+
+Medido el 2026-08-09 en Inicio: **38 de 41** superficies canónicas con vidrio no lo
+estaban ejecutando. Tres causas, las tres arregladas:
+
+| causa | dónde estaba | por qué se coló |
+|---|---|---|
+| `backdrop-filter: blur(1px)` en el **velo** del modal | `[data-velo]` | un píxel invisible a ojo, que costaba el vidrio de **todos** los modales |
+| `animation-fill-mode: both` en las animaciones de **entrada** | 6 clases de `index.css` | `to { transform: none }` se interpola como matriz identidad, y `both` la sigue aplicando para siempre |
+| `transform-gpu` / `will-change-transform` en **envoltorios** | 30 tags de 15 archivos | hábito pre-`will-change`; con el lift de hover no hace falta |
+
+Las reglas que quedan:
+
+- **`fill-mode` de una animación de ENTRADA: `backwards`, nunca `both`.** `backwards`
+  sostiene el primer fotograma durante el retardo —que es para lo único que servía—
+  y al terminar devuelve el elemento a su estilo base. Las de **salida** sí llevan
+  `both`: ahí el último fotograma no es el estilo base y el elemento se está yendo.
+- **`transform-gpu` no va nunca en un envoltorio.** Sobre la superficie misma es
+  inocuo *para ella*; sobre un `<div>` que envuelve, apaga todo lo de adentro. El
+  lift canónico (`hover:translate-y-[var(--lift-*)]`) sólo pone transform mientras
+  el puntero está encima, y eso es aceptable; declararlo permanente no.
+- **`will-change` de `transform`/`opacity`/`filter` tampoco.** Es la versión
+  permanente del mismo problema.
+- **Vidrio dentro de vidrio no es defecto.** Una tarjeta dentro de un modal, o el
+  carril de pestañas dentro del encabezado, no pueden desenfocar a través de algo ya
+  desenfocado: es la regla de «una superficie dentro de otra se aplana», y su forma
+  se la da su opacidad sobre el material de abajo.
+
+Cómo se verifica: no se puede leer del fuente. Se recorre el árbol **pintado** —para
+cada `[data-surface]` con `backdrop-filter`, mirar si algún ancestro crea un backdrop
+root—. Verificado así sobre 30 rutas: 0 superficies apagadas.
 
 ### Lo que NO es material
 
@@ -1657,17 +1698,57 @@ Full-featured select. Keyboard navigation (↑↓ Enter Esc). Smart flip positio
 
 File: `src/components/common/ModalShell.jsx`
 
-Base portal wrapper. `createPortal` to body. Default `z-[100]`. ESC key closes. Scroll-locks via `document.documentElement.style.overflow = "hidden"`. Has `data-surface="modal"` on inner container.
+Envoltura de **todo** diálogo del portal. `createPortal` al `body`, `z-modal` por
+defecto, `role="dialog"` + `aria-modal`, cierre con Escape, trampa de foco, bloqueo
+de scroll que restaura la posición previa, y la gota de apertura. En táctil convierte
+el diálogo en **hoja** (inferior de pie, lateral acostado); `align="pantalla"` lo
+vuelve un expediente a pantalla completa con su barra y su botón de volver.
 
-Props: `open`, `onClose`, `maxWidthClass` (`'max-w-sm'` etc.), `zClass`.
+Props principales: `open`, `onClose`, `maxWidthClass`, `zClass`, `align`
+(`center`|`top`|`bottom`|`pantalla`), `hojaEnTactil`, `scrim`, `surface`
+(`null` cuando el hijo ya declara la suya — si no quedan **dos vidrios apilados**),
+`ariaLabel` (pasar **siempre** el título real).
+
+#### UN SOLO DIÁLOGO A LA VISTA (2026-08-09)
+
+**Un diálogo sobre otro está prohibido.** No es preferencia: dos paneles del mismo
+vidrio no se distinguen entre sí, así que el de abajo se lee **entero** a través del
+de encima —nombre, párrafos y botones encimados—. Reportado sobre Conexiones, con el
+diálogo de bloqueo abierto sobre el detalle de la persona.
+
+La regla se sostiene desde el canónico, no desde cada vista:
+
+- `dialogosAbiertos.js` mantiene la **pila** de diálogos abiertos.
+- `ModalShell` pregunta si es el de encima; **si no lo es, no pinta** (`display:none`,
+  para salir también del árbol de accesibilidad y del recorrido de Tab).
+- El de abajo **no se desmonta**: conserva su estado y su scroll, y vuelve intacto
+  cuando el de encima se va. Por eso «Cancelar» devuelve la pantalla como estaba.
+- El teclado le pertenece al que se ve: Escape y la trampa de Tab se apagan en los
+  ocultos.
+
+**Eso es la red, no el diseño.** En desarrollo, abrir un diálogo sobre otro imprime
+`[canónico] Diálogo sobre diálogo: «A» se abrió sobre «B»`. Cuando aparezca, el flujo
+hay que rehacerlo: un **paso dentro del mismo diálogo**, o cerrar el primero al abrir
+el segundo (`SesionesView` lo hace derivando el `open` del detalle:
+`open={!!detalle && !porBloquear && !porCerrar}`).
+
+Excepción legítima y única: en **táctil**, `LiquidDatePicker` y `SelectorTactil` se
+presentan como hoja y pueden salir desde un formulario que ya es hoja. Ahí el
+comportamiento correcto es justamente el del canónico —el formulario se aparta
+mientras se elige y vuelve al terminar—, que es como se comporta el sistema operativo.
+En escritorio ninguno de los dos es diálogo (uno es popover anclado, el otro
+desplegable), así que el caso no existe.
 
 ### LiquidModal
 
 File: `src/components/common/LiquidModal.jsx`
 
-Wraps ModalShell. Adds inner glass layer:
-- **Hardcoded:** `bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%]` — **dark mode blindspot**
-- **Hardcoded shadow:** `shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)]`
+Envuelve `ModalShell` con `surface={null}` y declara **él** la superficie del panel
+(dos `data-surface="modal"` apilados no suman: multiplican lo que dejan pasar, y a
+0.51 daban ≈0.76 — o sea un modal casi opaco). Aporta la anatomía de hoja en táctil
+(asa que arrastra de verdad, esquinas rectas contra el filo, tope de 88dvh, pie con
+los botones apilados y su área segura) y las tres ranuras de composición:
+`LiquidModal.Header` / `.Body` / `.Footer`.
 
 ### UnifiedModal
 
@@ -1679,7 +1760,9 @@ Large orchestrator with 30+ type variants controlled by `type` string prop. `get
 
 File: `src/components/common/ConfirmModal.jsx`
 
-Destructive / non-destructive confirmation. `createPortal` to body directly (bypasses ModalShell). `z-[99999]`. CSS transitions (no ModalShell). Ya no lee un prop `theme` — 100% tokens (`bg-surface-card-hover`, `text-content`, etc.), la nota de "dark mode blindspot" quedó stale y se corrigió (2026-07-25).
+Confirmación destructiva / no destructiva. **Usa `ModalShell`** (la nota vieja decía
+que lo saltaba con su propio `createPortal` y un `z-[99999]`: dejó de ser cierto y
+enseñaba a escribir diálogos a mano). Ya no lee un prop `theme` — 100% tokens.
 
 Props: `isOpen`, `onClose`, `onConfirm`, `title`, `message`, `confirmText`, `cancelText`, `isDestructive` (default `true`), `isProcessing`.
 

@@ -1094,7 +1094,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="h-px bg-[rgb(var(--sidebar-realce)/0.07)] mx-1 my-2" />
 
                             <div
-                                className={`absolute left-2 right-2 rounded-xl transform-gpu pointer-events-none
+                                className={`absolute left-2 right-2 rounded-xl pointer-events-none
                                     transition-[opacity,top,height] duration-[var(--dur-base)] ease-[var(--ease-spring)]
                                     bg-gradient-to-r from-logo-magenta/[0.22] via-logo-magenta/[0.10] to-logo-green/[0.06]
                                     border border-logo-magenta/[0.20]

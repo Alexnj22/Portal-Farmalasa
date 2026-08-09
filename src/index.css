@@ -463,7 +463,27 @@
      1px, porque el panel de vidrio ya se separa solo con su blur, su canto y
      su lente, y oscurecer además duplicaría el efecto. */
   --velo:           rgba(3,11,28,0);
-  --velo-blur:      1px;
+  /* §5.bis · EL VELO NO LLEVA `backdrop-filter`, y ese 1px costaba el vidrio
+     ENTERO del modal (medido el 2026-08-09).
+     Cualquier valor distinto de `none` convierte al elemento en **backdrop
+     root**: a partir de ahí, el `backdrop-filter` de sus descendientes ya no
+     muestrea la página, sino sólo lo que se pinta dentro del root. O sea que
+     el `blur(10px) saturate(160%)` de `--backdrop-modal` no desenfocaba nada
+     — el panel seguía dejando pasar el 49% de su alfa, pero SIN mezclar, así
+     que detrás del texto del modal se leían los nombres, los badges y las
+     caras de las tarjetas de la vista. Es exactamente lo que se reportó como
+     «así se ve en liquidglass», y es la misma regla que este archivo ya
+     documenta para `opacity` y `transform`, ahora por la tercera vía.
+     Fotografiado con y sin: sin el 1px, lo de atrás pasa a ser un lavado
+     continuo. El 1px, además, nunca se vio — ningún ojo distingue un
+     desenfoque de un píxel a pantalla completa.
+     Se declara como FILTRO y no como longitud para poder decir `none`:
+     `blur(0px)` sigue creando el root. */
+  --velo-filtro:    none;
+  /* §5.4 · NO hay velo «de diálogo anidado», y no por olvido: un diálogo
+     sobre otro está PROHIBIDO (`ModalShell`, «un solo diálogo a la vista»).
+     Existió un `--velo-anidado` durante una tarde del 2026-08-09 y se retiró el
+     mismo día — era maquillaje para una situación que ya no puede ocurrir. */
   /* Barra de pestañas (§11) */
   --lift-track:    -2px;
   /* El thead pegajoso (§15.1): una superficie que TAPA lo que pasa por
@@ -1040,7 +1060,7 @@ thead.sticky,
      de vidrio ya se separa solo, y un velo oscuro competiría con lo que se ve
      a través de él. */
   --velo:        rgba(3,11,28,0);
-  --velo-blur:   1px;
+  --velo-filtro: none;   /* §5.bis · mataba el vidrio del panel; ver claro */
   --rim-grosor:  1.5px;
   --rim-base:    rgba(255,255,255,.10);
   --sidebar-pop-tint: 10 12 26;
@@ -1320,7 +1340,7 @@ thead.sticky,
      0.085. Se toma 0.17 como el alfa directo porque §5.3 dice «Solid SÍ
      oscurece» y 0.085 sobre una pantalla entera no oscurece nada. */
   --velo:           rgba(3,11,28,0.17);
-  --velo-blur:      0px;      /* es la capa más cara y en Solid no existe */
+  --velo-filtro:    none;     /* es la capa más cara y en Solid no existe */
   --lift-track:     0px;
   /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
      Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
@@ -1493,7 +1513,7 @@ thead.sticky,
      0.085. Se toma 0.17 como el alfa directo porque §5.3 dice «Solid SÍ
      oscurece» y 0.085 sobre una pantalla entera no oscurece nada. */
   --velo:           rgba(3,11,28,0.17);
-  --velo-blur:      0px;      /* es la capa más cara y en Solid no existe */
+  --velo-filtro:    none;     /* es la capa más cara y en Solid no existe */
   --lift-track:     0px;
   /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
      Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
@@ -2957,7 +2977,10 @@ thead.sticky,
    dropdown de acá al lado sale con las dos y este bloque salía con una. */
 [data-velo] {
   background: var(--velo);
-  backdrop-filter: blur(var(--velo-blur));
+  /* Ver §5.bis: si esto deja de ser `none`, el velo se vuelve backdrop root y
+     el `backdrop-filter` del panel que lleva encima deja de muestrear la
+     página. Por eso el token guarda un FILTRO entero y no una longitud. */
+  backdrop-filter: var(--velo-filtro);
 }
 
 /* §4 · EL MENÚ FLOTANTE tiene material PROPIO — cableado el 2026-08-06.
@@ -3172,12 +3195,36 @@ body::-webkit-scrollbar { display: none; }
   animation: routeFadeIn 220ms var(--ease-spring) both;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   §5.ter · `backwards` Y NO `both` EN TODA ANIMACIÓN DE ENTRADA QUE TOQUE
+   `transform` O `filter` — medido el 2026-08-09.
+
+   `to { transform: none }` NO se aplica como `none`: para poder interpolar,
+   el navegador convierte `none` en la matriz identidad, y `both` sigue
+   aplicándola cuando la animación ya terminó. El elemento queda con un
+   `transform: matrix(1,0,0,1,0,0)` permanente que no mueve nada… y que lo
+   convierte en **backdrop root**, o sea que apaga el `backdrop-filter` de
+   todo lo que lleva adentro. Idéntico con `filter: none` → `blur(0px)`.
+
+   Medido en Inicio: 38 de 41 superficies canónicas con vidrio NO lo estaban
+   ejecutando; con `backwards` pasan a 33 vivas. Es la causa de que el tema
+   se viera «gris sucio» — sin desenfoque y sin el `saturate(200%)`, una
+   tarjeta es su color de fondo al 16% y nada más.
+
+   `backwards` conserva lo único para lo que hacía falta `both`: sostener el
+   PRIMER fotograma durante el retardo (el escalonado). Al terminar devuelve
+   el elemento a su estilo base, que es exactamente el último fotograma —así
+   que ninguna animación cambia de aspecto.
+
+   Las de SALIDA sí se quedan con `both`: ahí el fotograma final NO es el
+   estilo base (es opacidad 0), y el elemento se está yendo de todos modos.
+   ══════════════════════════════════════════════════════════════════════ */
 @keyframes staggerEnter {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
 .animate-stagger-child {
-  animation: staggerEnter 220ms var(--ease-spring) both;
+  animation: staggerEnter 220ms var(--ease-spring) backwards;
   animation-delay: var(--stagger-delay, 0ms);
 }
 
@@ -3196,7 +3243,7 @@ body::-webkit-scrollbar { display: none; }
   from { opacity: 0; transform: translateY(10px) scale(0.97); }
   to   { opacity: 1; transform: none; }
 }
-.animate-kpi-enter { animation: kpiEnter 280ms cubic-bezier(0.23,1,0.32,1) both; }
+.animate-kpi-enter { animation: kpiEnter 280ms cubic-bezier(0.23,1,0.32,1) backwards; }   /* §5.ter */
 
 @keyframes widgetSettle {
   0%   { transform: scale(1.04) translateY(-7px); }
@@ -3204,7 +3251,10 @@ body::-webkit-scrollbar { display: none; }
   70%  { transform: scale(1.02) translateY(-2px); }
   100% { transform: none; }
 }
-.animate-widget-settle { animation: widgetSettle 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+/* §5.ter · `forwards` dejaba la identidad puesta y el widget recién asentado
+   perdía su vidrio. No tiene retardo, así que `backwards` es inerte y lo único
+   que cambia es que al terminar suelta el `transform`. */
+.animate-widget-settle { animation: widgetSettle 0.55s cubic-bezier(0.34,1.56,0.64,1) backwards; }
 
 /* ── Animaciones del ciclo de vida de un pedido (§11, 2026-07-28) ──────────
    Estaban en `StageAnims.jsx` con framer-motion: seis ilustraciones de bucle
@@ -3314,8 +3364,11 @@ body::-webkit-scrollbar { display: none; }
   from { opacity: 0; transform: translateX(-36px) scale(0.97); filter: blur(5px); }
   to   { opacity: 1; transform: none;                          filter: none; }
 }
-.animate-tab-enter-right { animation: tabEnterRight 380ms cubic-bezier(0.23,1,0.32,1) both; }
-.animate-tab-enter-left  { animation: tabEnterLeft  380ms cubic-bezier(0.23,1,0.32,1) both; }
+/* §5.ter · ENTRADA con `backwards`: estas dos animan `transform` Y `filter`,
+   así que con `both` dejaban las DOS identidades puestas sobre el contenedor
+   de la pestaña entera — o sea el vidrio muerto de todo lo que hay dentro. */
+.animate-tab-enter-right { animation: tabEnterRight 380ms cubic-bezier(0.23,1,0.32,1) backwards; }
+.animate-tab-enter-left  { animation: tabEnterLeft  380ms cubic-bezier(0.23,1,0.32,1) backwards; }
 
 /* Tab slide transitions — exit */
 @keyframes tabExitLeft {
@@ -3335,7 +3388,7 @@ body::-webkit-scrollbar { display: none; }
   to   { opacity: 1; transform: none;             filter: none; }
 }
 .animate-input-reveal {
-  animation: inputReveal 360ms cubic-bezier(0.23,1,0.32,1) both;
+  animation: inputReveal 360ms cubic-bezier(0.23,1,0.32,1) backwards;   /* §5.ter */
   animation-delay: var(--ir-delay, 0ms);
 }
 

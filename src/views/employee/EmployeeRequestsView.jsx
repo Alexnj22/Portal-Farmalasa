@@ -197,10 +197,10 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
         'border-border-card bg-surface-card';
 
     return (
-        <div className={`rounded-header border flex flex-col transition-all duration-[var(--dur-slow)] relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${cardBg}`}>
+        <div className={`rounded-header border flex flex-col transition-all duration-[var(--dur-slow)] relative shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${cardBg}`}>
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
                     <TypeIcon size={16} strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1025,7 +1025,7 @@ const EmployeeRequestsView = () => {
             <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                 {/* ── PANEL IZQUIERDO: Formulario ── */}
-                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar transform-gpu">
+                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] z-sidebar">
                     <div data-surface="card" className="p-6 md:p-8 hover:shadow-[var(--shadow-glass-5)] transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)]">
 
                         <div className="flex items-center gap-2 mb-6">
@@ -1214,7 +1214,7 @@ const EmployeeRequestsView = () => {
                                         statusFilter === 'APPROVED' ? 'bg-success' :
                                         statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'
                                     }`} />
-                                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
+                                    <div className={`relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-brand-text' :
                                         statusFilter === 'APPROVED' ? 'text-success' :
                                         statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'

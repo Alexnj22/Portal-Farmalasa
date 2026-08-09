@@ -78,7 +78,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     // ============================================================================
     // 🇸🇻 MOTOR DINÁMICO DE ASUETOS Y VACACIONES
     // ============================================================================
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- formData?.date en deps es a propósito (formData puede venir undefined); usar formData.date sin encadenamiento opcional rompería si formData es undefined
+    // `formData?.date` en deps es a propósito: `formData` puede venir undefined y
+    // `formData.date` sin encadenamiento opcional rompería. Tenía encima un
+    // `eslint-disable-next-line react-hooks/preserve-manual-memoization` que dejó
+    // de hacer falta y pasó a ser una advertencia por directiva sin usar.
     const getHolidayInfo = useMemo(() => {
         if (!formData?.date) return null;
         const [, m, d] = formData.date.split('-');
@@ -593,10 +596,35 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 className="mt-3 w-full"
                                 icon={Printer}
                                 disabled={!!codeConflict}
-                                onClick={() => {
+                                // El código de barras se dibuja ACÁ y a la ventana sólo viaja el
+                                // SVG ya hecho. Antes el documento traía dos `<script>`, uno de
+                                // ellos desde `cdn.jsdelivr.net` — y una ventana abierta con
+                                // `window.open('')` **hereda el origen del portal**, así que ese
+                                // script de un tercero veía el `localStorage` entero, token de
+                                // sesión incluido. El documento que se imprime ahora no lleva
+                                // ni un `<script>`.
+                                onClick={async () => {
+                                    // La ventana se abre SINCRÓNICA dentro del gesto: si se
+                                    // abriera después del `await`, el bloqueador de emergentes
+                                    // la mata por no venir de una interacción.
                                     const win = window.open('', '_blank', 'noopener');
+                                    if (!win) return;
                                     const safeName = (activeEmployee?.name || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                                     const safePin  = (formData.newKioskPin || '').replace(/[^A-Z0-9]/g, '');
+
+                                    let svgMarkup = '';
+                                    try {
+                                        const JsBarcode = (await import('jsbarcode')).default;
+                                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                                        JsBarcode(svg, safePin, { format: 'CODE128', width: 2, height: 50, displayValue: false, margin: 0 });
+                                        svgMarkup = new XMLSerializer().serializeToString(svg);
+                                    } catch {
+                                        // Sin código de barras el carné no sirve: mejor cerrar la
+                                        // ventana que imprimir uno mudo que parece bueno.
+                                        win.close();
+                                        return;
+                                    }
+
                                     win.document.write(`
                                         <html>
                                         <head>
@@ -609,9 +637,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         </head>
                                         <body>
                                             <h3>${safeName}</h3>
-                                            <svg id="barcode"></svg>
-                                            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
-                                            <script>JsBarcode("#barcode","${safePin}",{format:"CODE128",width:2,height:50,displayValue:false,margin:0})</script>
+                                            ${svgMarkup}
                                         </body>
                                         </html>
                                     `);

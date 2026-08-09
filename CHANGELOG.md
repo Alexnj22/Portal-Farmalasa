@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.528.0 — Leaflet y el código de barras salen del CDN, y la CSP pasa a bloquear de verdad
+
+F0 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Cierra el camino **concreto**
+por el que un tercero llegaba al token de sesión — que no era un XSS
+hipotético, era código ajeno corriendo dentro del origen del portal.
+
+### Lo que había
+
+Tres cargas en runtime, ninguna con `integrity`:
+
+| Dónde | Qué |
+|---|---|
+| `routeOptimizer.js` | `unpkg.com/leaflet@1.9.4` — script **y** hoja de estilo |
+| `FormNovedad.jsx` | `cdn.jsdelivr.net/npm/jsbarcode@3` |
+| `routeOptimizer.js` | `maps.googleapis.com` (se queda, por decisión) |
+
+La de jsdelivr era la peor: se inyectaba con `window.open()` +
+`document.write()`, y **un documento abierto así hereda el origen del portal**.
+Ese script veía el `localStorage` entero, token incluido. No hacía falta que
+atacaran al portal — alcanzaba con que comprometieran el paquete en el CDN.
+
+Y la defensa que debía frenarlo estaba apagada: la cabecera era
+`Content-Security-Policy-Report-Only`, sin `report-uri`. Ni bloqueaba ni
+reportaba.
+
+### Lo que hay
+
+Leaflet y JsBarcode vienen del paquete, por `await import()` —la regla de
+librerías pesadas de CLAUDE.md, la misma de `pdfmake`/`@zxing`/`@imgly`— y los
+dos quedaron **vigilados por `PESADAS` en `bundle-gate.mjs`**, que es lo que
+antes no podía existir: una librería que llega por CDN no la mide ningún gate.
+Cada una en su propio chunk (leaflet 150 kB, JsBarcode 68 kB en crudo), fuera
+del cierre estático de Pedidos, que quedó en 137 kB gzip.
+
+El carné genera su SVG en la app y a la ventana de impresión viaja **sólo el
+markup**: ese documento ya no lleva ni un `<script>`. Si la generación falla, la
+ventana se cierra en vez de imprimir un carné mudo que parece bueno.
+
+Y la CSP pasa a `Content-Security-Policy` a secas, sin `unpkg.com` ni
+`cdn.jsdelivr.net` en `script-src` ni en `style-src`.
+
+### Cómo se comprobó, y el control que lo hace válido
+
+`tests/e2e/csp.spec.js` **lee la política del propio `vercel.json`** —no una
+copia escrita a mano, que se desincronizaría el día que alguien la edite— y la
+inyecta en la respuesta del documento, porque `vite preview` nunca manda las
+cabeceras de Vercel y en local la CSP no se puede comprobar de otra forma.
+
+**El control positivo es unpkg.** Si un `<script>` a unpkg no queda bloqueado,
+la cabecera no se está aplicando y todo lo demás que mida el archivo no prueba
+nada. Resultado: unpkg **bloqueado**, jsdelivr **bloqueado**, Google Maps
+**cargó**, y cero violaciones de CSP en un paseo por Tablero, Pedidos,
+Productos e Inventario.
+
+### `'unsafe-inline'` se queda, y por qué
+
+Quitarlo resultó más caro de lo que parecía. Vite inyecta su polyfill de
+`modulepreload` **en línea**, y apagarlo (`build.modulePreload.polyfill: false`)
+rompe iOS Safari 16 y anteriores — inaceptable en un portal que se usa desde
+iPhone. Hashearlo obligaría a commitear hashes nuevos en cada build. Y en
+`style-src` es peor: los seis `L.divIcon` de los mapas pasan HTML con `style=`
+en línea. La salida real es un middleware que ponga un nonce por petición, y esa
+es otra decisión — queda anotada, no hecha.
+
+### De paso
+
+`FormNovedad.jsx` tenía un `eslint-disable-next-line
+react-hooks/preserve-manual-memoization` que dejó de hacer falta al volverse
+`async` el handler (el React Compiler analiza el componente entero). Se quitó la
+directiva y se conservó el motivo escrito, que sigue valiendo.
+
 ## v2.527.1 — La sonda cerraba los ojos justo antes del trabón
 
 El usuario contestó **«sinceramente, sigue igual»** mientras los números decían

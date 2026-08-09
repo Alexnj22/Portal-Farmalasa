@@ -201,24 +201,33 @@ export async function getDirectionsREST(points) {
   };
 }
 
-// ── Leaflet loader (fallback map — no API key needed) ─────────────────────
+// ── Leaflet loader (mapa de respaldo — no necesita API key) ───────────────
+//
+// Viene del paquete, NO de unpkg. Antes se inyectaban un `<script>` y un
+// `<link>` apuntando a `unpkg.com/leaflet@1.9.4`, o sea código de un tercero
+// corriendo **dentro del origen del portal**, con acceso a todo el
+// `localStorage` —token de sesión incluido— y sin `integrity` que lo atara a
+// una versión concreta. No hacía falta que atacaran al portal: alcanzaba con
+// que comprometieran ese paquete en el CDN.
+//
+// Va por `await import()` porque sólo hace falta al abrir un mapa: es la regla
+// de librerías pesadas de CLAUDE.md, la misma de `pdfmake`/`@zxing`/`@imgly`.
+// Lo vigila `PESADAS` en `scripts/bundle-gate.mjs`.
 let _leafletPromise = null;
 export function loadLeaflet() {
   if (_leafletPromise) return _leafletPromise;
   if (window.L?.map) { _leafletPromise = Promise.resolve(window.L); return _leafletPromise; }
-  _leafletPromise = new Promise((resolve, reject) => {
-    if (!document.querySelector('link[href*="leaflet"]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    s.onload = () => resolve(window.L);
-    s.onerror = (e) => { _leafletPromise = null; reject(e); };
-    document.head.appendChild(s);
-  });
+  _leafletPromise = Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')])
+    .then(([m]) => {
+      const L = m.default || m;
+      // `window.L` se sigue publicando a propósito: `RutaMapModal.jsx` lo lee
+      // directo en su camino de posición en vivo (`&& window.L`, y `const L =
+      // window.L` justo después). Quitarlo obliga a rehacer esos dos caminos
+      // para no comprar nada.
+      window.L = L;
+      return L;
+    })
+    .catch((err) => { _leafletPromise = null; throw err; });
   return _leafletPromise;
 }
 

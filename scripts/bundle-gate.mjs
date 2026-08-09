@@ -48,6 +48,8 @@ const PESADAS = {
   'ort.webgpu': 'onnxruntime (quitar fondo de fotos) — sólo al editar una foto.',
   'jszip': 'Sólo hace falta al exportar el ZIP.',
   'zxing': 'Sólo hace falta al abrir la cámara del escáner.',
+  'leaflet': 'Mapa de respaldo de Rutas — sólo al abrir un mapa. Entró al paquete el 2026-08-08 al sacarlo de unpkg (docs/PLAN-SESIONES-SEGURAS-2026-08-08.md F0.1); antes no lo vigilaba nadie porque venía de un CDN.',
+  'jsbarcode': 'Sólo hace falta al imprimir un carné. Mismo motivo que leaflet: salió de cdn.jsdelivr.net, donde además corría dentro del origen del portal.',
 };
 
 // Techo por vista, en kB gzip, para el cierre ESTÁTICO (lo que se baja al entrar).

@@ -38,6 +38,8 @@
     "client-zip": "^2.5.0",
     "framer-motion": "^12.40.0",
     "html-to-image": "^1.11.13",
+    "jsbarcode": "^3.12.3",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.575.0",
     "pdfjs-dist": "^6.1.200",
     "pdfmake": "^0.3.11",

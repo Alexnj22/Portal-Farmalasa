@@ -78,8 +78,18 @@ export const MEDIR_ESCRITORIO = () => {
             if (!ultima) continue;
             const r = ultima.getBoundingClientRect();
             if (r.right > rm.right + 1) {
+                // ¿Qué se está perdiendo? No siempre es el ancla.
+                //
+                // En Ventas la columna cortada era **Total** y eso es grave: el
+                // número por el que se entra a la lista. En Mín·Máx la cortada
+                // es la de **acciones** —«Poner 0 · Restaurar · Más»— y eso es
+                // otro defecto: los botones existen y no se alcanzan. Los dos
+                // hay que arreglarlos, pero no son la misma urgencia y mezclarlos
+                // en un solo número hace que el orden de trabajo salga mal.
+                const esAcciones = !!ultima.querySelector('button, a[href], [role="button"]');
                 columnasFuera.push({
                     sel: sel(t), cadena: cadena(t),
+                    esAcciones,
                     columnas: celdas.length,
                     sobra: Math.round(r.right - rm.right),
                     marco: `${Math.round(rm.width)}px`,
@@ -167,9 +177,21 @@ export const MEDIR_ESCRITORIO = () => {
 export const MEDIR_SCROLL = () => {
     const alto = document.documentElement.scrollHeight;
     const vp = window.innerHeight || document.documentElement.clientHeight;
+    const nodos = document.getElementsByTagName('*').length;
+    // ⚠️ Una vista que no cargó mide `pantallas: 1` — el alto del documento es
+    // exactamente el del viewport porque no hay nada que desborde. Y `1` se lee
+    // como «esta vista entra en una pantalla», que es la mejor nota posible.
+    //
+    // Pasó en la primera corrida: 15 de 19 rutas dieron 1 con **112 elementos**,
+    // o sea el cascarón de la app sin contenido, mientras Ventas daba 7.3 con
+    // 1,714. Si eso hubiera entrado al informe como dato, el orden de trabajo se
+    // habría armado sobre quince ceros que en realidad eran mediciones fallidas.
+    //
+    // Cero hallazgos y cero datos se ven igual, así que se distinguen: el
+    // umbral es el cascarón medido (112) con margen.
+    const valida = nodos >= 300;
     return {
-        alto, viewport: vp,
-        pantallas: Math.round((alto / vp) * 10) / 10,
-        nodos: document.getElementsByTagName('*').length,
+        alto, viewport: vp, nodos, valida,
+        pantallas: valida ? Math.round((alto / vp) * 10) / 10 : null,
     };
 };

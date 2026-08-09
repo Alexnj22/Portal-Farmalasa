@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.534.3 — El barrido medía el login y no lo decía
+
+Tres correcciones al medidor antes de usar su resultado, porque la primera
+corrida completa traía dos números que engañaban y uno que se perdió entero.
+
+**Quince rutas midieron la pantalla de login.** El recorrido móvil dio
+`pantallas: 1` en quince vistas, con **112 elementos** — contra los 1,714 de
+Ventas. 112 es el login: la sesión se cayó después de ~70 navegaciones y a partir
+de ahí el barrido estuvo midiendo el ingreso. Y `1` se lee como la mejor nota
+posible, «esta vista entra en una pantalla».
+
+Es el agujero que el barrido móvil ya tenía anotado —sin sesión mide el login N
+veces— con una variante: acá no falta al arrancar, se pierde en el camino. Ahora
+se verifica **antes de cada medición**, se vuelve a entrar si hace falta, y se
+vuelve a pedir la ruta —tras re-entrar el portal aterriza en el inicio, así que
+sin eso mediría otra vista—. Y toda medida con menos de 300 elementos se marca
+**inválida** en vez de contarse como buena: cero hallazgos y cero datos se ven
+igual. En la corrida corregida: **0 inválidas**.
+
+**La columna cortada no siempre es el ancla.** En Ventas era `Total`, el número
+por el que se entra a la lista. En Mín·Máx es la de **acciones** —«Poner 0 ·
+Restaurar · Más»—: botones que existen y no se alcanzan. Los dos son defectos,
+pero no la misma urgencia, y sumarlos en un número saca mal el orden de trabajo.
+Se distinguen con `esAcciones`.
+
+**Y la primera corrida murió en la última línea**, tras 10.8 minutos, al escribir
+el informe. Crear el directorio arregla el síntoma; el problema de fondo era
+jugarse una medición larga a un único escrito al final. Ahora vuelca **después de
+cada ruta**: si algo muere en la 30, quedan 29 medidas en disco.
+
+### La foto, ya limpia
+
+```
+ancla fuera del marco     5 vistas   libro-compras-completo, proveedores,
+                                     schedules, libros-iva, clientes
+acciones fuera del marco  7 vistas   minmax, facturas-compra, vacation-plan,
+                                     cotizaciones, staff, dashboard, conteo-inventario
+vistas de 30+ pantallas   2 vistas   laboratorios (33), sync-health (30.3)
+texto cortado            63 casos    monitor: nombres a 111px pidiendo 297
+carril recortado         18 casos    ventas, minmax, staff, dashboard, metas…
+errores de JavaScript     0
+```
+
+Baseline en `scripts/ux-gate-baseline.json`. A partir de acá ninguna categoría
+puede subir.
+
 ## v2.534.2 — Cerrar tus sesiones no te sacaba: `getSession` no le pregunta nada al servidor
 
 Reportado por el usuario: *«le di en cerrar sesión a mis sesiones que eran un

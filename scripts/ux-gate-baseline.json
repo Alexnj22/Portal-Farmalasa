@@ -1,0 +1,16 @@
+{
+  "_comment": "Ratchet de gate:ux (barrido de escritorio). Falla si una categoría SUBE. Regenerar SOLO al bajar deuda. Nunca para tapar un hallazgo nuevo: si subió, es código nuevo que hay que arreglar.",
+  "updated": "2026-08-09",
+  "medido": "2026-08-09T16:31:37.219Z",
+  "anchos": [
+    1440,
+    1280
+  ],
+  "categories": {
+    "columna-fuera-del-marco": 19,
+    "carril-recortado": 18,
+    "texto-cortado": 63,
+    "error-js": 0,
+    "vista-larga": 6
+  }
+}

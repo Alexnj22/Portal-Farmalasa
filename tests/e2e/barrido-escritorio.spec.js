@@ -68,7 +68,51 @@ test.describe('Barrido de escritorio', () => {
         // Es el mismo agujero que el barrido móvil ya conoce.
         expect(page.url(), 'no se pudo iniciar sesión').not.toMatch(/\/login/);
 
+        // ── La sesión se cae a mitad del barrido ─────────────────────────────
+        //
+        // Primera corrida completa: las cuatro primeras rutas del recorrido móvil
+        // midieron bien (Ventas 7.3 pantallas, 1,714 elementos) y **las quince
+        // siguientes dieron 112 elementos y `pantallas: 1`**. 112 es la pantalla
+        // de login. O sea que a partir de cierto punto el barrido estuvo midiendo
+        // el ingreso, no las vistas — y `1` se lee como la mejor nota posible,
+        // «esta vista entra en una pantalla».
+        //
+        // Es el mismo agujero que el barrido móvil ya tiene anotado —sin sesión
+        // mide el login N veces y sale en cero— sólo que acá la sesión no falta
+        // al arrancar: se pierde en el camino, después de 70+ navegaciones.
+        //
+        // Así que no alcanza con verificarla una vez: se verifica antes de cada
+        // medición y se vuelve a entrar si hace falta.
+        const asegurarSesion = async () => {
+            if (!/\/login/.test(page.url())) return true;
+            await page.locator('#username').fill(E2E_USER);
+            await page.locator('#password').fill(E2E_PASSWORD);
+            await page.locator('button[type="submit"]').first().click();
+            await page.waitForFunction(
+                () => !location.pathname.startsWith('/login'), null, { timeout: 60_000 },
+            ).catch(() => {});
+            await page.waitForTimeout(2500);
+            return !/\/login/.test(page.url());
+        };
+
         const informe = { fecha: new Date().toISOString(), anchos: ANCHOS, rutas: {} };
+
+        // Se vuelca DESPUÉS DE CADA RUTA, no al final.
+        //
+        // La primera corrida completa midió 10.8 minutos y murió en la última
+        // línea —`ENOENT` al escribir el informe— y se perdió entera. Playwright
+        // limpia `test-results/` por su cuenta, así que el `mkdir` del arranque
+        // no garantiza que el directorio siga ahí diez minutos después.
+        //
+        // Crear el directorio en cada volcado arregla el síntoma; volcar por
+        // ruta arregla el problema de fondo, que es jugarse una medición larga a
+        // un único escrito al final. Es la misma forma del cuelgue que el
+        // barrido móvil ya documenta: lo que falla tarde se lleva todo lo que
+        // ya estaba bien medido.
+        const volcar = () => {
+            fs.mkdirSync(SALIDA, { recursive: true });
+            fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 2));
+        };
 
         for (const ancho of ANCHOS) {
             await page.setViewportSize({ width: ancho, height: 900 });
@@ -79,8 +123,17 @@ test.describe('Barrido de escritorio', () => {
                     // Las vistas cargan sus datos después de montar; sin esta
                     // espera se mide el esqueleto, que no tiene columnas.
                     await page.waitForTimeout(6000);
+                    if (!await asegurarSesion()) throw new Error('sin sesión');
+                    if (/\/login/.test(page.url())) throw new Error('sin sesión');
+                    // Tras re-entrar, el portal aterriza en el inicio: hay que
+                    // volver a pedir la ruta o se mide otra vista.
+                    if (!page.url().includes(`/${ruta}`)) {
+                        await page.goto(`/${ruta}`, { waitUntil: 'domcontentloaded' });
+                        await page.waitForTimeout(6000);
+                    }
                 } catch {
                     (informe.rutas[ruta] ??= {})[ancho] = { murio: true };
+                    volcar();
                     continue;
                 }
                 const m = await page.evaluate(MEDIR_ESCRITORIO);
@@ -89,6 +142,7 @@ test.describe('Barrido de escritorio', () => {
                     erroresJs: erroresJs.slice(antes),
                     vacia: await page.evaluate(() => (document.body.innerText || '').trim().length < 40),
                 };
+                volcar();
             }
         }
 
@@ -98,11 +152,17 @@ test.describe('Barrido de escritorio', () => {
             try {
                 await page.goto(`/${ruta}`, { waitUntil: 'domcontentloaded' });
                 await page.waitForTimeout(5000);
+                if (!await asegurarSesion()) continue;
+                if (!page.url().includes(`/${ruta}`)) {
+                    await page.goto(`/${ruta}`, { waitUntil: 'domcontentloaded' });
+                    await page.waitForTimeout(5000);
+                }
                 (informe.rutas[ruta] ??= {}).movil = await page.evaluate(MEDIR_SCROLL);
+                volcar();
             } catch { /* ya quedó anotada arriba */ }
         }
 
-        fs.writeFileSync(`${SALIDA}/informe.json`, JSON.stringify(informe, null, 2));
+        volcar();
 
         // Resumen a consola: el informe es para el gate, esto es para leerlo.
         const filas = [];

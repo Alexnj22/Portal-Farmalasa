@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase, AUTH_STORAGE_KEY } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
@@ -70,6 +70,8 @@ const LS_PRICE = "sb_max_price_level";
 // autorización del gerente» —el camino de quien NO puede aprobar— y un segundo
 // después se convertía en «Aprobar / Devolver».
 const LS_SU    = "sb_is_su";
+// La clase del dispositivo de ESTA sesión. Ver `detectarClaseDispositivo`.
+const LS_DEVICE = "sb_device_class";
 
 const ERP_CACHE_KEYS = [
   CACHE_KEYS.BRANCHES,
@@ -83,19 +85,47 @@ const ERP_CACHE_KEYS = [
 
 const IDLE_EMP_MS   = 5 * 60 * 1000;
 const IDLE_ADMIN_MS = 12 * 60 * 60 * 1000;
-const IDLE_MOBILE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days — PWA / mobile browser
+const IDLE_APP_MS   = 30 * 24 * 60 * 60 * 1000; // 30 días — PWA instalada o build nativo
 const CHECK_EVERY_MS        = 30 * 1000;
 const ACTIVITY_THROTTLE_MS  = 2000;
 
-// True when running as installed PWA (standalone) or any mobile browser.
-const IS_MOBILE_SESSION = (() => {
+// La clase del dispositivo: 'app' (PWA instalada o build nativo) o 'navegador'.
+//
+// Se evalúa UNA vez, al empezar a vigilar la sesión, y no se vuelve a preguntar.
+// Antes se resolvía por ventana y además miraba el user-agent — dos errores
+// distintos:
+//
+//  · El user-agent le daba los 30 días a **cualquier** teléfono, aunque fuera
+//    una pestaña más del navegador. Nadie decidió eso.
+//  · Preguntar por ventana se rompe con la PWA instalada en la MISMA
+//    computadora: corre en el mismo perfil y el mismo origen que el navegador,
+//    así que comparte `localStorage` — es UNA sesión. Las dos ventanas
+//    contestaban distinto (`display-mode: standalone` es falso en la pestaña y
+//    verdadero en la PWA) mientras escribían el mismo sello de actividad y
+//    usaban el mismo token, así que el vigilante de la pestaña cerraba la
+//    sesión que la PWA estaba usando.
+//
+// Ahora la clase es de la SESIÓN: la fija la ventana desde la que se entró y
+// vale para todas. Además vuelve irrelevante cuánto comparten la app de
+// pantalla de inicio y el navegador en cada plataforma móvil, que varía.
+const detectarClaseDispositivo = () => {
   try {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
+    const instalada = window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true;
-    const mobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    return standalone || mobile;
-  } catch { return false; }
-})();
+    const nativo = !!(window.Capacitor?.isNativePlatform?.());
+    return (instalada || nativo) ? 'app' : 'navegador';
+  } catch { return 'navegador'; }
+};
+
+// Primera escritura gana: si esta sesión ya tiene clase, no se toca. Es lo que
+// hace que la segunda ventana no pueda contradecir a la primera.
+const fijarClaseDispositivo = () => {
+  try {
+    if (!localStorage.getItem(LS_DEVICE)) {
+      localStorage.setItem(LS_DEVICE, detectarClaseDispositivo());
+    }
+  } catch { /* localStorage no disponible */ }
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -284,7 +314,10 @@ export const AuthProvider = ({ children }) => {
   // ⏱️ Inactividad
   // -------------------------
   const getIdleLimitMs = (u) => {
-    if (IS_MOBILE_SESSION) return IDLE_MOBILE_MS;
+    // La clase la fijó la ventana desde la que se inició sesión y vale para
+    // todas las de esta sesión. Sin clase —sesión anterior a este cambio— manda
+    // el camino estricto, que es el que no regala tiempo.
+    if (localStorage.getItem(LS_DEVICE) === 'app') return IDLE_APP_MS;
     // El caché primero: `u.isSU` lo pierde cualquier refresco que rearme el
     // usuario, y sin esto un superadministrador terminaba con el tiempo de
     // inactividad corto sin que nadie lo hubiera decidido.
@@ -332,6 +365,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(LS_PERMS);
     localStorage.removeItem(LS_PRICE);
     localStorage.removeItem(LS_SU);
+    localStorage.removeItem(LS_DEVICE);
     clearSignedUrlCache();
   };
 
@@ -345,18 +379,48 @@ export const AuthProvider = ({ children }) => {
     setPermsLoading(false);
     setMaxPriceLevel(null);
     useStaffStore.getState().resetBootState();
-    supabase.auth.signOut().catch(() => {});
+
+    // Cerrar sesión tiene que ser cierto SIN RED, y no se puede delegar en
+    // `signOut()`: auth-js retorna antes de `_removeSession()` cuando la
+    // revocación falla por algo que no sea 401/403/404 (`_signOut` en
+    // GoTrueClient.js). O sea que un corte de red —la laptop que se durmió, que
+    // es justo el caso típico del cierre por inactividad— dejaba el token
+    // puesto con su refresh token vivo. Y como `clearAuthCache()` ya se llevó el
+    // sello de actividad, `isExpiredByIdle` contestaba «no vencido» en la
+    // próxima carga: recargabas y volvías adentro.
+    //
+    // Se le da una ventana corta para revocar del lado del servidor —el token
+    // tiene que seguir en `localStorage` mientras tanto, porque de ahí lo lee
+    // para saber qué revocar— y después se borra pase lo que pase.
+    //
+    // `scope: 'local'` revoca SOLO esta sesión. El default de auth-js es
+    // 'global': con él, cerrar por inactividad en la computadora se llevaba
+    // también la sesión larga del teléfono.
+    withTimeout(supabase.auth.signOut({ scope: 'local' }), 3000, 'signOut timeout')
+      .catch(() => {})
+      .finally(() => {
+        try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch { /* localStorage no disponible */ }
+      });
   };
 
-  const isExpiredByIdle = (u) => {
+  // `hayCache` = «esta pregunta se hace teniendo un usuario guardado».
+  //
+  // Sin sello de actividad y CON usuario en caché sólo puede haber pasado una
+  // cosa: alguien llamó a `clearAuthCache()`, o sea que la sesión ya se cerró.
+  // Contestar «no vencido» ahí era la otra mitad del agujero que arregla
+  // `doLogout`. Sin usuario en caché se mantiene el comportamiento de antes: no
+  // hay con qué decidir y no se echa a nadie.
+  const isExpiredByIdle = (u, hayCache = false) => {
     const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
-    if (!last || last > Date.now()) return false;
+    if (!last) return hayCache;
+    if (last > Date.now()) return false;
     if (Date.now() - last < 5000) return false;
     return Date.now() - last >= getIdleLimitMs(u);
   };
 
   const startIdleWatcher = () => {
     stopIdleWatcher();
+    fijarClaseDispositivo();
     if (!localStorage.getItem(LS_LAST)) writeLastActivity(true);
 
     window.addEventListener('mousemove',  onActivity, true);
@@ -385,7 +449,7 @@ export const AuthProvider = ({ children }) => {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (isExpiredByIdle(parsed)) {
+        if (isExpiredByIdle(parsed, true)) {   // hay usuario en caché: sin sello = cerrada
           clearAuthCache();
           clearErpCache();
         } else {

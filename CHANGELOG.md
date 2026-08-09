@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.527.0 — Cerrar sesión sin red ahora es cierto, y la clase del dispositivo es de la sesión
+
+F2 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`, la primera fase de la
+auditoría de sesiones. Cuatro cambios en `AuthContext.jsx`, tres de ellos
+arreglos de agujeros que no necesitaban ningún atacante para abrirse.
+
+### El cierre por inactividad se deshacía solo
+
+`signOut()` **no siempre borra el token**. En `GoTrueClient.js:1594-1601`,
+auth-js retorna antes de `_removeSession()` cuando la revocación falla por algo
+que no sea 401/403/404 — y `doLogout()` se lo tragaba con `.catch(() => {})`.
+Un corte de red dejaba el `refresh_token` vivo en el disco del que acababa de
+«cerrar sesión»: justo el caso típico, la laptop que se durmió.
+
+Encadenado con esto:
+
+```js
+const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+if (!last || last > Date.now()) return false;   // sin sello → NO vencido
+```
+
+`clearAuthCache()` acababa de borrar ese sello. Así que en la próxima carga
+`isExpiredByIdle` contestaba «no vencido» y la sesión se restauraba sola.
+
+Ahora `doLogout()` le da a `signOut({ scope: 'local' })` **3 segundos** para
+revocar del lado del servidor —el token tiene que seguir puesto mientras tanto,
+porque de ahí lo lee para saber qué revocar— y después lo borra pase lo que
+pase. Y `isExpiredByIdle` toma «sin sello **y** con usuario en caché» como
+sesión cerrada, que es lo único que ese estado puede significar.
+
+### Cerrar en la computadora ya no cierra el teléfono
+
+El default de `signOut()` es `scope: 'global'`: revocaba **todas** las sesiones
+del usuario en todos sus dispositivos. Cada timeout de 5 minutos en el
+escritorio se llevaba la sesión larga del celular. Pasa a `'local'`.
+
+### La clase del dispositivo es de la SESIÓN, no de la ventana
+
+`IS_MOBILE_SESSION` tenía dos problemas distintos. Miraba el **user-agent**, así
+que le daba los 30 días a cualquier teléfono aunque fuera una pestaña más del
+navegador — nadie decidió eso. Y se evaluaba **por ventana**, lo que se rompe
+con la PWA instalada en la misma computadora: corre en el mismo perfil y el
+mismo origen que el navegador, así que comparte `localStorage` y es **una**
+sesión. Las dos ventanas contestaban distinto mientras escribían el mismo sello
+y usaban el mismo token, y el vigilante de la pestaña cerraba la sesión que la
+PWA estaba usando.
+
+Ahora la clase se fija **una vez, al iniciar sesión** (`sb_device_class`,
+primera escritura gana) y vale para todas las ventanas de esa sesión. Queda
+`'app'` para PWA instalada o build nativo, `'navegador'` para el resto. Sin
+clase —sesión anterior a este cambio— manda el camino estricto.
+
+**Lo que se va a notar:** quien use el portal desde el navegador del teléfono
+sin instalarlo pasa de 30 días a los 5 minutos o 12 horas de su cargo. Es la
+decisión que se tomó, no un efecto colateral.
+
+### Verificado, y con el instrumento chequeado
+
+`tests/e2e/sesiones.spec.js`, dos pruebas contra el build de producción. La
+primera corta la red de `/auth/v1/logout`, envejece el sello 60 días —más que
+cualquiera de los tres límites, para que el veredicto no dependa de los permisos
+de la cuenta de QA— y exige que el token desaparezca.
+
+**Y cuenta los cortes, exigiendo al menos uno.** Sin eso, un test que nunca
+llegara a cortar nada pasaría igual —`signOut()` habría borrado el token por su
+cuenta— y estaría verificando el camino feliz mientras dice verificar el roto.
+
+La segunda sustituye `matchMedia('(display-mode: standalone)')`, entra como app
+instalada, y abre una segunda pestaña del mismo contexto sin el override: la
+clase tiene que seguir en `'app'`.
+
 ## v2.526.8 — El giro pasó de segundos a 200 ms — y queda un trabón de 1 en 4
 
 Primera línea base limpia: `/compras`, tema liquid, remontaje apagado, cuatro

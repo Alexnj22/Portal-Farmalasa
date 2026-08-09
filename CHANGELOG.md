@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.538.0 — La bitácora y los expedientes se cierran: la vista pregunta en vez de pedir
+
+D3 y D4b de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`. No eran dos casos
+sueltos: **compartían defecto**.
+
+### El defecto: la vista pedía los datos en vez de hacer la pregunta
+
+Dos pantallas se traían una tabla entera y calculaban en el cliente algo que el
+servidor contesta en una línea — y por eso la tabla **tenía** que estar abierta:
+
+- El historial de sucursal y el de producto leían **`audit_logs` completa** y
+  filtraban por `target_id` en el navegador. O sea que cualquiera con cuenta
+  podía leer quién hizo qué en todo el portal.
+- El enrutador de aprobadores leía los **eventos de otra persona** para decidir
+  un sí/no: si el candidato está de vacaciones. Lo dispara cualquier empleado al
+  crear una solicitud, así que `employee_events` estaba abierta a todos.
+
+Ahora hay tres funciones que contestan la pregunta —`audit_log_de_sucursal`,
+`audit_log_de_producto` y `empleado_no_disponible`— cada una exigiendo el permiso
+de **su** vista. Son dos RPC de bitácora y no una genérica a propósito: una
+«historial de cualquier objeto» tendría que aceptar `auditview OR branches OR
+minmax` para todo el mundo, más flojo que lo que cada pantalla necesita.
+
+### El orden no era negociable
+
+Cerrar primero habría sido un **fallo callado**: con la lectura denegada,
+`isUnavailable` recibía cero filas y respondía «disponible» **sin error**, y las
+solicitudes se habrían ido a aprobadores de vacaciones. Por eso las policies se
+aplicaron **después** de cambiar los llamadores, y ahora esa función además
+registra el error en vez de tragárselo.
+
+### Al portar la lógica a SQL se conservaron sus rarezas
+
+`empleado_no_disponible` reproduce el JS al pie de la letra: `!meta?.endDate` es
+falsy también para la cadena vacía (`nullif(…,'')`), la comparación de fechas era
+de **texto** y se dejó así para no cambiar el comportamiento ante un valor raro,
+y el «hoy» del cliente era `toISOString()` — o sea **UTC**, de ahí el
+`AT TIME ZONE`.
+
+### Verificado con el caso que importa
+
+Un empleado sin `auditview`: **0 filas** de la bitácora, ve **sólo sus propios**
+eventos… y **sí puede preguntar** si otra persona está disponible. Esa tercera
+línea es la que separa este cambio de haber roto el enrutador en silencio.
+
+Y por el camino nuevo, el historial de sucursal sigue devolviendo sus 19
+entradas.
+
+### Avance
+
+Policies que no preguntan nada: **83 → 70**.
+
 ## v2.537.0 — Tanda 5: el carril deja de arrancar en cero
 
 Los 18 «carriles recortados» no eran 18 defectos: era **un componente**,

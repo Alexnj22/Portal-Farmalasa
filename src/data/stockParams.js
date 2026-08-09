@@ -126,14 +126,15 @@ export function fetchEmployeesBasic() {
     return supabase.from('employees').select('name,photo_url');
 }
 
+// Por RPC y no leyendo `audit_logs`: el mismo motivo que en `branches.js`. El
+// filtro —incluido el OR con MINMAX_ZERO_ALL_BRANCHES, que es un evento global
+// sin sucursal— vive ahora del lado del servidor, junto con el permiso.
 export function fetchAuditLogsForProduct(actions, erpProductId, erpSucursalId) {
-    return supabase.from('audit_logs')
-        .select('id,user_name,user_id,action,details,created_at')
-        .in('action', actions)
-        .eq('target_id', String(erpProductId))
-        .or(`details->>sucursal_id.eq.${erpSucursalId},action.eq.MINMAX_ZERO_ALL_BRANCHES`)
-        .order('created_at', { ascending: false })
-        .limit(80);
+    return supabase.rpc('audit_log_de_producto', {
+        p_actions: actions,
+        p_target_id: String(erpProductId),
+        p_sucursal_id: erpSucursalId == null ? null : String(erpSucursalId),
+    });
 }
 
 // ── MinMaxView.jsx (2 sitios) ─────────────────────────────────────────────────

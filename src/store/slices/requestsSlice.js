@@ -1,7 +1,7 @@
 import { useToastStore } from '../toastStore';
 import { notifyEmployees } from '../../utils/notify';
 import {
-    fetchEmployeeAvailabilityEvents, fetchAllRolesHierarchy, fetchRolesByNamePattern,
+    fetchEmployeeUnavailable, fetchAllRolesHierarchy, fetchRolesByNamePattern,
     fetchActiveEmployeesInRoleAndBranch, fetchBranchAdmins, fetchGlobalAdmins, fetchAnyActiveAdmin,
     fetchApprovalRolePermissions, fetchActiveEmployeesInRoles, fetchActiveEmployeesBySystemRoleConditional,
     fetchActiveEmployeesByRoleIdConditional, fetchActiveBranchEmployeesExcluding, fetchRostersForWeekByEmployees,
@@ -108,18 +108,22 @@ const parseMeta = (raw) =>
  * y cuya endDate ≥ hoy (o sin endDate = vigente indefinidamente).
  */
 const isUnavailable = async (employeeId) => {
-    const today = new Date().toISOString().split('T')[0];
+    // La decisión la toma el servidor. Antes esto se traía los eventos de la otra
+    // persona y los evaluaba acá, lo que obligaba a que `employee_events`
+    // estuviera abierta a cualquier autenticado.
+    //
+    // El fallo por defecto sigue siendo «disponible», igual que antes: si esto no
+    // contesta, es mejor enrutar la solicitud a alguien que quizá esté de
+    // vacaciones que dejarla sin aprobador. Pero ahora el error se REGISTRA — con
+    // la versión vieja, cerrar la tabla habría devuelto cero filas y esta función
+    // habría dicho «disponible» sin que nada lo dijera.
     try {
-        const { data: events, error } = await fetchEmployeeAvailabilityEvents(employeeId);
-        if (error) console.error('isUnavailable: fetch employee_events failed:', error.message);
-
-        if (!events?.length) return false;
-
-        return events.some(ev => {
-            const meta = parseMeta(ev.metadata);
-            if (meta?.status === 'CANCELLED' || meta?.status === 'SUPERSEDED') return false;
-            return !meta?.endDate || meta.endDate >= today;
-        });
+        const { data, error } = await fetchEmployeeUnavailable(employeeId);
+        if (error) {
+            console.error('isUnavailable: empleado_no_disponible falló:', error.message);
+            return false;
+        }
+        return data === true;
     } catch {
         return false; // En caso de error, asumimos disponible
     }

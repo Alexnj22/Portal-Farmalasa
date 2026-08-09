@@ -32,8 +32,11 @@ export function fetchBranchDocuments(branchId) {
     return supabase.from('branch_documents').select('*').eq('branch_id', branchId).order('created_at', { ascending: false });
 }
 
+// Por RPC y no leyendo `audit_logs`: la bitácora entera no puede estar abierta
+// para que esta vista muestre el historial de UNA sucursal. El filtro va del
+// lado del servidor, junto con el permiso.
 export function fetchAuditLogsForBranch(branchId) {
-    return supabase.from('audit_logs').select('*').eq('target_id', branchId).order('created_at', { ascending: false });
+    return supabase.rpc('audit_log_de_sucursal', { p_branch_id: String(branchId) });
 }
 
 // ── Kioscos ──────────────────────────────────────────────────────────────────

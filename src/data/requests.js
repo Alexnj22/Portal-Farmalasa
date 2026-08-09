@@ -20,13 +20,17 @@ export function fetchEmployeeApprovalRequestsDetail(employeeId) {
 }
 
 // ── Disponibilidad del empleado (vacaciones/incapacidad vigentes) ──────────
+//
+// Pregunta, no pide. Antes se traía los eventos DE OTRA PERSONA y decidía en el
+// cliente; eso obligaba a que `employee_events` estuviera abierta a cualquiera.
+// El enrutador necesita un sí/no, no la tabla.
+//
+// Y el cierre de esa tabla habría sido un fallo CALLADO con la versión vieja: la
+// lectura devolvería cero filas, `isUnavailable` diría «disponible» sin error, y
+// la solicitud se iría a alguien de vacaciones.
 
-export function fetchEmployeeAvailabilityEvents(employeeId) {
-    return supabase.from('employee_events')
-        .select('date, metadata')
-        .eq('employee_id', employeeId)
-        .in('type', ['VACATION', 'DISABILITY'])
-        .lte('date', new Date().toISOString().split('T')[0]);
+export function fetchEmployeeUnavailable(employeeId) {
+    return supabase.rpc('empleado_no_disponible', { p_employee_id: employeeId });
 }
 
 // ── Roles / candidatos a aprobador ──────────────────────────────────────────

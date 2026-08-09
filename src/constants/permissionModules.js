@@ -30,7 +30,7 @@ import {
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
-    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes,
+    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone,
     BookOpen, Contact, Wrench, Users, Calculator, ReceiptText
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
@@ -353,6 +353,9 @@ const GRUPOS_CRUDOS = [
             { key: 'ios_test',     label: 'Prueba iOS',             desc: 'Vista de prueba para verificar safe areas y layout en iOS', icon: Smartphone,    hasApprove: false },
             { key: 'sync_health',  label: 'Salud de Syncs',         desc: 'Historial de corridas de sync por dominio (productos/minmax/compras/backup) y alertas de fallo', icon: RadioTower, hasApprove: false },
             { key: 'orphan_objects', label: 'Objetos Huérfanos',   desc: 'Tablero de seguimiento de candidatos a código muerto (componentes, funciones, edge functions sin caller)', icon: Ghost, hasApprove: false },
+            // Ver a qué hora y desde dónde se conecta cada persona es dato
+            // sensible: se reparte con cuidado. `can_edit` es el que cierra.
+            { key: 'sesiones',     label: 'Conexiones',             desc: 'Qué dispositivos tienen sesión abierta, cuándo se usaron por última vez y desde dónde; permite cerrar una a distancia', icon: MonitorSmartphone, hasApprove: false },
         ],
     },
 ];

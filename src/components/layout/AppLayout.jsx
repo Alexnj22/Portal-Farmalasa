@@ -95,7 +95,7 @@ const MENU_GROUPS = [
     // apoya en el mismo dato fiscal desde el otro lado del mostrador.
     { key: 'contabilidad', label: 'Datos Contables', icon: BookOpen,    modules: ['facturas_compra', 'libros_iva', 'libro_compras_completo', 'resumen_fiscal', 'corte_z'] },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
-    { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
+    { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'sync_health', 'orphan_objects', 'sesiones'] },
 ];
 
 const SELF_KEYS = ['emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];

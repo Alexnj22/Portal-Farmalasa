@@ -21,6 +21,67 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.531.0 — Conexiones: ver quién tiene sesión abierta y cerrarla
+
+F4 y última de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Módulo nuevo
+**Conexiones** en el grupo Sistema: qué dispositivos tienen sesión abierta,
+cuándo se usaron por última vez, desde dónde, y un botón para cerrar una a
+distancia.
+
+### Las dos RPC
+
+`auth.sessions` vive en el esquema `auth` y no está expuesta a PostgREST, así
+que todo pasa por función. **`list_sessions` devuelve `json` y no `SETOF`** a
+propósito: PostgREST trunca cualquier respuesta `SETOF` a 1000 filas **en
+silencio**, y con las cuentas de prueba incluidas hay 3,585 conexiones. Un
+listado que miente por truncamiento es peor que no tenerlo.
+
+Ninguna de las dos devuelve material de credencial: fuera
+`refresh_token_hmac_key`, `refresh_token_counter` y cualquier token. El permiso
+se chequea **dentro** de la función y no sólo en la ruta, con el `auth_*`
+envuelto en `(SELECT …)` por la regla del incidente del 2026-07-08.
+
+`revoke_session` borra la sesión, y sus refresh tokens caen en cascada.
+Verificado de punta a punta contra producción: la función devuelve `true`, la
+sesión, sus tokens y su fila de actividad quedan en **0**, y una segunda llamada
+devuelve `false` sin error.
+
+### Dos cosas que sólo se vieron abriéndola en el teléfono
+
+**La IP era el titular de cada ficha.** El ancla de la ficha móvil se infiere
+como la última columna útil, así que agarró el «Lugar» y lo pintó en grande, con
+más peso visual que el nombre de la persona — el dato menos importante como
+motivo de la pantalla. El motivo real es **cuándo se usó por última vez**, que es
+lo que dice si una conexión sobra.
+
+**Y faltaba el botón de cerrar.** Las celdas de acción en la ficha móvil son
+**opt-in** (`movil.acciones`): sin esa prop no existen. La ficha se veía completa
+y no lo estaba, justo en el aparato donde más falta hace. Los dos papeles ahora
+van declarados, no inferidos.
+
+### El instrumento que acusaba al que hizo bien el trabajo
+
+La primera versión de la prueba midió los blancos táctiles con
+`getBoundingClientRect()` y acusó al aspa del `LiquidSelect` compacto: se ve de
+20px y **se toca como uno de 44** porque extiende su área con `.blanco-tactil`.
+Es exactamente el error que `medicion-movil.js` tiene escrito en su encabezado
+desde antes. Se borró esa mitad de la prueba y se usa el barrido oficial, que ya
+sabe medir el área de impacto: `RUTAS=sesiones` da **desbordan 0 · chicos 0 ·
+zoomIOS 0 · sinAcuse 0**.
+
+Lo que sí quedó en la prueba propia es lo específico de esta vista: que traiga
+datos, que el botón de cerrar exista en el teléfono, y que **no nombre la
+tubería** — barriendo el DOM pintado más `title`/`aria-label`/`placeholder`,
+porque grepear el fuente no alcanza.
+
+### Anotado, no arreglado
+
+Ese barrido de jerga hubo que acotarlo a `<main>`: barriendo el `body` entero
+acusaba a esta vista de una palabra que no escribe. **El menú tiene un módulo
+rotulado «Salud de Syncs»**, y «sync» es jerga de la tubería que CLAUDE.md
+prohíbe en pantalla. Es deuda previa y de otro módulo; queda anotada acá en vez
+de arreglada de contrabando.
+
 ## v2.530.0 — Los avisos en el teléfono: el paso que faltaba no se veía
 
 Preparación para habilitar el portal en las sucursales. Medido hoy en producción:

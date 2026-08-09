@@ -11,7 +11,7 @@ import {
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, Wrench,
-    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText
+    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText, MonitorSmartphone
 } from 'lucide-react';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -36,6 +36,7 @@ export const MODULE_MAP = {
     auditview:         { path: '/auditview',       label: 'Auditoría General',        icon: Activity      },
     ios_test:          { path: '/ios-test',        label: 'Prueba iOS',               icon: Smartphone    },
     sync_health:       { path: '/sync-health',     label: 'Salud de Syncs',           icon: RadioTower    },
+    sesiones:          { path: '/sesiones',        label: 'Conexiones',               icon: MonitorSmartphone },
     orphan_objects:    { path: '/orphan-objects',  label: 'Objetos Huérfanos',        icon: Ghost         },
     maintenance:       { path: '/mantenimiento',  label: 'Mantenimiento',            icon: Wrench        },
     // ── Próximamente ──

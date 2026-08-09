@@ -924,36 +924,17 @@ const VacationPlanView = () => {
                                 <User size={10} /> Detalle de asignaciones
                             </p>
 
+                            {/* El esqueleto lo dibuja el MISMO `DataTable` que la
+                                lista, con las mismas `COLS_ASIGNACIONES`. La tabla a
+                                mano que había acá repetía los siete encabezados en
+                                texto plano —«Empleado», «Sucursal», …— y había que
+                                acordarse de tocarlos cada vez que cambiaba una columna.
+                                Y en el teléfono dibujaba una tabla justo donde la lista
+                                real cae a fichas, o sea que la carga y el resultado no
+                                se parecían. */}
                             {isLoadingVacationPlans ? (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[600px] text-body-sm">
-                                        <thead>
-                                            <tr className="border-b border-divider">
-                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">{h}</th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-divider">
-                                            {Array.from({ length: 5 }).map((_, i) => (
-                                                <tr key={i} className="border-b border-divider">
-                                                    <td className="py-3 pr-4">
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className="w-7 h-7 skeleton rounded-full shrink-0" />
-                                                            <div className="h-3 w-28 skeleton rounded-full" />
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-3 pr-4"><div className="h-3 w-20 skeleton rounded-full" /></td>
-                                                    <td className="py-3 pr-4"><div className="h-3 w-24 skeleton rounded-full" /></td>
-                                                    <td className="py-3 pr-4"><div className="h-3 w-8 skeleton rounded-full" /></td>
-                                                    <td className="py-3 pr-4"><div className="h-3 w-20 skeleton rounded-full" /></td>
-                                                    <td className="py-3 pr-4"><div className="h-5 w-16 skeleton rounded-md" /></td>
-                                                    <td className="py-3" />
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <DataTable columns={COLS_ASIGNACIONES} minWidth="600px"
+                                    movil={{ acciones: true }} loading skeletonRows={5} />
                             ) : filtered.length === 0 ? (
                                 <EmptyState compact icon={Palmtree} title="Sin asignaciones en este período" />
                             ) : (

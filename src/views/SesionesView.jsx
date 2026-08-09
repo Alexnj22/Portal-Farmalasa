@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { MonitorSmartphone, Smartphone, Monitor, LogOut, Clock, Info } from 'lucide-react';
+import { MonitorSmartphone, Smartphone, Monitor, LogOut, Clock, Info, AlertCircle } from 'lucide-react';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -30,6 +30,14 @@ const SesionesView = () => {
     const [busqueda, setBusqueda] = useState('');
     const [filas, setFilas] = useState(EMPTY_ARRAY);
     const [cargando, setCargando] = useState(true);
+    // Un fallo NO puede verse igual que una lista vacía.
+    //
+    // La primera versión hacía `console.error` y dejaba las filas en cero, así
+    // que el rechazo del servidor —«sin permiso para ver las conexiones»— salía
+    // en pantalla como «Sin conexiones». El usuario abrió la vista y sólo pudo
+    // decir «me sale vacía»: la pantalla le estaba dando una respuesta a la
+    // pregunta equivocada, y encima una que parecía normal.
+    const [fallo, setFallo] = useState(null);
     const [porCerrar, setPorCerrar] = useState(null);
     const [cerrando, setCerrando] = useState(false);
 
@@ -37,7 +45,17 @@ const SesionesView = () => {
 
     const cargar = useCallback(async () => {
         const { data, error } = await fetchSesiones(incluirPruebas);
-        if (error) console.error('SesionesView: list_sessions falló:', error.message);
+        if (error) {
+            console.error('SesionesView: list_sessions falló:', error.message);
+            // 42501 es el que devuelve la propia RPC cuando el cargo no tiene el
+            // módulo otorgado. Se distingue porque tiene arreglo concreto y la
+            // persona lo puede pedir: no es «se cayó algo».
+            setFallo(error.code === '42501'
+                ? 'Tu cargo todavía no tiene acceso a Conexiones. Pídele a quien administra los permisos que te lo habilite.'
+                : 'No se pudo cargar la lista. Vuelve a intentar en un momento.');
+        } else {
+            setFallo(null);
+        }
         setFilas(data || EMPTY_ARRAY);
         setCargando(false);
     }, [incluirPruebas]);
@@ -102,6 +120,13 @@ const SesionesView = () => {
                         sirven para reconocer algo raro, no como comprobante.
                     </p>
                 </div>
+
+                {fallo && (
+                    <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-danger/[0.12] border border-danger/30">
+                        <AlertCircle size={14} className="text-danger shrink-0 mt-0.5" />
+                        <p className="text-caption font-semibold text-danger-text">{fallo}</p>
+                    </div>
+                )}
 
                 <DataTable
                     columns={[

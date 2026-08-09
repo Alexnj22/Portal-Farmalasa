@@ -247,6 +247,23 @@ function printBranchPlanilla(branchEntries, branch, period, branches) {
 
 // ─── Edit entry form (no ModalShell — rendered inside parent's ModalShell) ───
 // ─── Branch-grouped table ─────────────────────────────────────────────────────
+// Fuera del componente porque lo usan DOS: la tabla y el esqueleto de carga.
+// Cuando vivía adentro, el esqueleto no podía verlo y se había escrito a mano —
+// una tabla paralela de diez celdas que había que mantener en sincronía con
+// estas diez columnas, sin nada que avisara si se desincronizaban.
+const COLS_PLANILLA = [
+    { key: 'empleado',   label: 'Empleado' },
+    { key: 'dias',       label: 'Días',        align: 'right' },
+    { key: 'salord',     label: 'Sal. Ord.',   align: 'right' },
+    { key: 'extras',     label: 'Extras',      align: 'right' },
+    { key: 'isss',       label: 'ISSS',        align: 'right' },
+    { key: 'afp',        label: 'AFP',         align: 'right' },
+    { key: 'renta',      label: 'Renta',       align: 'right' },
+    { key: 'desc',       label: 'Desc. Total', align: 'right' },
+    { key: 'liquido',    label: 'Líquido',     align: 'right' },
+    { key: 'acciones',   label: '' },
+];
+
 function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit, canDownload }) {
     const grouped = useMemo(() => {
         const map = new Map();
@@ -265,19 +282,6 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
             })
             .map(g => ({ ...g, entries: [...g.entries].sort((a, b) => roleOrder(a.employee) - roleOrder(b.employee)) }));
     }, [entries, branches]);
-
-    const COLS = [
-        { key: 'empleado',   label: 'Empleado' },
-        { key: 'dias',       label: 'Días',       align: 'right' },
-        { key: 'salord',     label: 'Sal. Ord.',  align: 'right' },
-        { key: 'extras',     label: 'Extras',     align: 'right' },
-        { key: 'isss',       label: 'ISSS',       align: 'right' },
-        { key: 'afp',        label: 'AFP',        align: 'right' },
-        { key: 'renta',      label: 'Renta',      align: 'right' },
-        { key: 'desc',       label: 'Desc. Total', align: 'right' },
-        { key: 'liquido',    label: 'Líquido',    align: 'right' },
-        { key: 'acciones',   label: '' },
-    ];
 
     return (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
@@ -322,7 +326,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                         </div>
 
                         {/* Table */}
-                        <DataTable columns={COLS} minWidth="720px">
+                        <DataTable columns={COLS_PLANILLA} minWidth="720px">
                             {grp.map((e, ei) => {
                                 const emp    = e.employee || {};
                                 const edited = e.status === 'EDITED';
@@ -646,8 +650,15 @@ const PayrollView = ({ openModal }) => {
                                 </div>
 
                                 {/* Entries */}
+                                {/* El esqueleto sale del MISMO `DataTable` que la tabla
+                                    real, con las mismas `COLS_PLANILLA`. Antes era una
+                                    tabla escrita a mano con diez celdas propias: había
+                                    que mantenerla en sincronía con las diez columnas y
+                                    nada avisaba si se desincronizaban. El encabezado de
+                                    sucursal se conserva porque en la carga todavía no
+                                    hay sucursales que agrupar. */}
                                 {isLoadingPayroll ? (
-                                    <div data-surface="card" className="overflow-hidden">
+                                    <div className="overflow-hidden">
                                         <div className="px-6 py-4 border-b border-border-card bg-surface-card flex items-center gap-3">
                                             <div className="w-8 h-8 skeleton rounded-xl" />
                                             <div className="space-y-1.5">
@@ -655,32 +666,7 @@ const PayrollView = ({ openModal }) => {
                                                 <div className="h-2 w-16 skeleton rounded-full" />
                                             </div>
                                         </div>
-                                        <table className="w-full text-caption">
-                                            <tbody className="divide-y divide-divider">
-                                                {Array.from({ length: 6 }).map((_, i) => (
-                                                    <tr key={i} className="border-b border-divider">
-                                                        <td className="px-6 py-3.5">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 skeleton rounded-xl shrink-0" />
-                                                                <div className="space-y-1.5">
-                                                                    <div className="h-3 w-28 skeleton rounded-full" />
-                                                                    <div className="h-2 w-16 skeleton rounded-full" />
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3.5"><div className="h-3 w-8 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-4 py-3.5"><div className="h-3 w-14 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-4 py-3.5"><div className="h-3 w-14 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-6 py-3.5"><div className="h-3 w-16 skeleton rounded-full ml-auto" /></td>
-                                                        <td className="px-6 py-3.5" />
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <DataTable columns={COLS_PLANILLA} minWidth="720px" loading skeletonRows={6} />
                                     </div>
                                 ) : filteredEntries.length === 0 ? (
                                     <div data-surface="card" className="p-12 text-center text-content-3 text-body-sm animate-in fade-in duration-[var(--dur-lento)]">

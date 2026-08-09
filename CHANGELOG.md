@@ -21,6 +21,105 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.531.3 — Siete tablas a mano pasan al canónico
+
+De las 12 que quedaban tras separar impresión y matrices, se migran siete a
+`DataTable`. **12 → 5.**
+
+**Dos eran esqueletos de carga escritos a mano** — `PayrollView` y
+`VacationPlanView`. Los dos archivos ya usaban `DataTable` para su lista real y
+al lado mantenían una tabla paralela que sólo dibujaba el esqueleto: diez celdas
+en uno, siete encabezados en texto plano en el otro, que había que mantener en
+sincronía con las columnas de verdad sin nada que avisara si se desincronizaban.
+Ahora el esqueleto sale del mismo `DataTable` y las mismas columnas. En
+`PayrollView` eso obligó a sacar `COLS` fuera del componente, que es de donde
+venía el problema: el esqueleto no podía verlas.
+
+Y en `VacationPlanView` había además un defecto real: la carga dibujaba una
+**tabla** justo donde la lista termina cayendo a **fichas**, así que el
+esqueleto y el resultado no se parecían.
+
+**Tres eran líneas de un documento** — ítems de compra, de cotización y de
+venta. La fila es un producto: un registro.
+
+- **Compras** ya tenía su versión de teléfono aparte (`ExpedienteMovil` con
+  `comoPanel`, el diseño que pidió el usuario: «sigue en modo tabla, no es
+  adaptado a móvil»), así que va con `movil={false}` y su motivo escrito — el
+  modo ficha acá sería una tercera forma de lo mismo compitiendo con la aprobada.
+- **Cotizaciones** son ocho columnas con crédito fiscal; en el teléfono cada
+  ítem cae a ficha con el producto arriba y su total a la derecha. Se declara la
+  identidad porque la inferencia tomaba la primera columna, que es el número de
+  línea y no le dice nada a nadie.
+- **Ventas**: el descuento por puntos deja de ser un `<tr>` con `colSpan` —que en
+  modo ficha no significa nada— y pasa a `footer`, que es donde el canónico pone
+  los totales y se dibuja igual en las dos formas.
+
+**Dos eran la misma tabla escrita dos veces** — el detalle de ubicaciones de
+Inventario: inventario regular y vencidos, casi idénticas, diferenciadas por el
+color del texto y el título. Ahora salen de un solo `TablaUbicaciones`.
+
+### `plano`, la salida que le faltaba al canónico
+
+Cinco de las tablas a mano del portal viven **dentro de una fila expandida** que
+ya trae su propio fondo —el detalle de Inventario y los tres historiales de
+Catálogo—. Anidar `DataTable` ahí pintaba su tarjeta encima de la que ya estaba,
+y dos capas del mismo material se suman: es el defecto que `VacationPlanView` ya
+documentaba («en Liquid claro 0.16 + 0.16 ≈ 0.30, se ve gris y parece
+deshabilitada») y que §20 del plan de materiales encontró en el tablero.
+
+`plano` quita **sólo** la superficie. El thead, los tokens, el alto de fila por
+densidad y el modo ficha siguen siendo los del canónico. Sin esa salida, esas
+cinco se quedaban escritas a mano para siempre.
+
+## v2.531.2 — Conexiones salía vacía: un rechazo se veía igual que una lista sin filas
+
+Reportado por el usuario apenas se subió F4: «si entro, no puedo ver nada, aún
+me sale la vista vacía». Dos cosas distintas, y la segunda es la que importa.
+
+### Por qué no veía nada
+
+**El frontend y el servidor no usan la misma definición de superusuario.**
+`hasPermission` corta con `if (isSU) return true`, y ese `isSU` sale de
+`roles.is_su`. La puerta del servidor es `auth_has_module_permission`, que
+reconoce superusuario por `employees.system_role = 'SUPERADMIN'` — **otra
+columna**. El cargo del usuario tiene `is_su = true` y `system_role =
+'SUPERVISOR'`, así que el menú lo dejaba entrar y la consulta lo rechazaba.
+
+No es un defecto de diseño a corregir en la vista: la convención del proyecto es
+repartir por **permiso explícito**, y ese cargo ya tenía **129 de 130** módulos
+otorgados. El que faltaba era justamente el recién creado. Se otorgó
+`sesiones` (ver y cerrar) al cargo, que tiene un solo empleado activo.
+
+### Lo que sí era un defecto
+
+**La vista se tragaba el error.** Hacía `console.error` y dejaba las filas en
+cero, así que «no tenés permiso» y «no hay conexiones» se veían **idénticos**. Lo
+único que la persona podía reportar era «me sale vacía» — la pantalla contestaba
+una pregunta que nadie hizo, y con cara de normalidad.
+
+Ahora un fallo se dice, y el código `42501` —«tu cargo no tiene el módulo»— se
+distingue de un problema de red, porque tiene un arreglo concreto que la persona
+puede pedir.
+
+### La prueba, y el control que la salvó
+
+Se agregó una prueba que finge el rechazo y exige que la vista lo diga. Falló
+primero, y **no por la vista**: `page.route` no ve las peticiones que pasan por
+un service worker, y el portal registra uno. Da igual que `sw.js` deje pasar la
+API de Supabase directo a la red sin tocarla; con el worker registrado, la
+intercepción nunca se aplica.
+
+Lo destrabó el control de «¿se interceptó algo?», puesto **antes** de la
+aserción real. Sin él, el test habría acusado a la vista de no mostrar un aviso
+que sí muestra. Es la tercera vez en esta tanda que el instrumento resulta ser
+el roto — y la tercera que un control lo separa del efecto.
+
+### Anotado donde se mira antes de escribir una vista
+
+`docs/CHECKLIST-VISTA-NUEVA.md` §2-bis: el módulo nuevo hay que **otorgarlo**
+—que aparezca en el menú no significa que la consulta lo acepte— y **un rechazo
+no puede verse como una lista vacía**. Le va a pasar a todo módulo que se cree.
+
 ## v2.531.1 — El gate contaba HTML de impresión como deuda de interfaz
 
 `tabla-a-mano` era el único ratchet que no estaba en cero: **26**. Al abrir los

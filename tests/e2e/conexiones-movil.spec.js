@@ -74,4 +74,60 @@ test.describe('F4 · Conexiones', () => {
         }, PROHIBIDAS);
         expect(jerga, `la pantalla nombra la tubería: ${JSON.stringify(jerga)}`).toEqual([]);
     });
+
+    // `page.route` NO ve las peticiones que pasan por un service worker, y el
+    // portal registra uno (`public/sw.js`). No importa que ese worker deje pasar
+    // la API de Supabase directo a la red sin tocarla: con el worker registrado,
+    // la intercepción del test nunca se aplica. Se bloquea sólo para esta prueba.
+    //
+    // Costó una vuelta encontrarlo porque `page.on('request')` SÍ mostraba el
+    // POST a `list_sessions`: la petición existía y el route no la agarraba. El
+    // control de «¿se interceptó algo?» fue lo que lo destrabó — sin él, el test
+    // habría acusado a la vista de no mostrar el aviso.
+    test.use({ serviceWorkers: 'block' });
+
+    // El bug que el usuario reportó como «me sale la vista vacía».
+    //
+    // La RPC lo rechazaba con 42501 —su cargo no tenía el módulo otorgado— y la
+    // vista se tragaba el error con un `console.error` y pintaba el estado
+    // vacío. Un fallo y una lista sin filas se veían IGUAL, así que lo único que
+    // la persona podía reportar era «está vacía»: la pantalla contestaba una
+    // pregunta que nadie hizo, y encima con cara de normalidad.
+    test('un rechazo del servidor NO se ve como una lista vacía', async ({ page }) => {
+        test.setTimeout(120_000);
+
+        await page.goto('/');
+        await page.locator('#username').fill(E2E_USER);
+        await page.locator('#password').fill(E2E_PASSWORD);
+        await page.locator('button[type="submit"]').click();
+        await expect(page.locator('#username')).toHaveCount(0, { timeout: 30_000 });
+
+        // Se finge exactamente lo que devuelve la RPC cuando falta el permiso.
+        let interceptada = 0;
+        const vistas = [];
+        page.on('request', (r) => { if (r.url().includes('/rpc/')) vistas.push(`${r.method()} ${r.url()}`); });
+        await page.route('**/rpc/list_sessions**', (route) => {
+            interceptada += 1;
+            return route.fulfill({
+                status: 403,
+                contentType: 'application/json',
+                body: JSON.stringify({ code: '42501', message: 'sin permiso para ver las conexiones' }),
+            });
+        });
+
+        await page.goto('/sesiones');
+        await expect(page.getByText('Al cerrar una conexión')).toBeVisible({ timeout: 30_000 });
+        await page.waitForTimeout(3_000);
+
+        // El control va PRIMERO: si la llamada nunca se interceptó, lo de abajo
+        // fallaría por el motivo equivocado y mandaría a arreglar la vista
+        // cuando el roto sería el test.
+        expect(interceptada, `la llamada nunca se interceptó. Peticiones a /rpc/ vistas:\n${vistas.join('\n') || '(ninguna)'}`).toBeGreaterThan(0);
+
+        const texto = await page.evaluate(() => (document.querySelector('main') || document.body).innerText);
+        expect(texto, `la vista no avisó del rechazo. Lo que se ve:\n${texto.slice(0, 600)}`)
+            .toContain('Tu cargo todavía no tiene acceso');
+
+        await page.unrouteAll({ behavior: 'ignoreErrors' });
+    });
 });

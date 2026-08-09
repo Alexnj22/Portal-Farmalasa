@@ -218,6 +218,19 @@ export function DataTable({
   footer,
   minWidth = '600px',
   dense = false,
+  // ── `plano`: la tabla va DENTRO de una superficie que ya existe ──────────
+  // Sin esto, una tabla anidada en una fila expandida pintaba su tarjeta encima
+  // de la tarjeta que ya tenía la expansión, y dos capas del mismo material se
+  // suman: es el mismo defecto que documenta `VacationPlanView` («en Liquid
+  // claro 0.16 + 0.16 ≈ 0.30, la ficha se ve gris y parece deshabilitada») y
+  // que §20 del plan de materiales encontró en el tablero.
+  //
+  // Existe porque la alternativa era peor: cinco de las tablas a mano del
+  // portal viven justamente ahí —el detalle de ubicaciones de Inventario y los
+  // tres historiales de Catálogo— y sin una salida se quedaban escritas a mano
+  // para siempre. Sólo quita la superficie; el thead, los tokens, el alto de
+  // fila por densidad y el modo ficha siguen siendo los del canónico.
+  plano = false,
   // `false` vuelve a la tabla con carril en el teléfono. Es la salida para las
   // tablas cuya fila no es un registro (matrices de precios, listas de tarifas).
   // Un objeto `{ ancla, identidad, chips }` fija los papeles a mano.
@@ -275,7 +288,7 @@ export function DataTable({
 
   return (
     <TableCtx.Provider value={tk}>
-      <div data-surface="card" className="overflow-hidden">
+      <div data-surface={plano ? undefined : 'card'} className="overflow-hidden">
 
         {/* ── Toolbar ─────────────────────────────────────────────────────── */}
         {toolbar && (

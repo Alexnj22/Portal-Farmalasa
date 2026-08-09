@@ -809,23 +809,34 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
                                                 const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
                                                 const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
-                                                const hdrTxt = 'text-content-3';
                                                 const nameTxt = 'text-content-2';
                                                 const numTxt = 'text-content-3';
-                                                const dividerCls = 'border-divider';
-                                                const rowHoverCls = 'hover:bg-surface-card';
                                                 return (
-                                                    <table className="w-full border-collapse">
-                                                        <thead>
-                                                            <tr className={`border-b ${dividerCls}`}>
-                                                                <th className={`text-left text-micro font-semibold uppercase tracking-wider pb-1.5 pl-2 pr-2 ${hdrTxt}`}>Producto</th>
-                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-12 ${hdrTxt}`}>Cant.</th>
-                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-20 hidden sm:table-cell ${hdrTxt}`}>P. Unit.</th>
-                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-16 ${hdrTxt}`}>Tipo</th>
-                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-20 ${hdrTxt}`}>Total</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
+                                                    /* `DataTable` y no una tabla a mano: en el teléfono cada
+                                                       línea cae a ficha con el producto arriba y su total a la
+                                                       derecha. El descuento por puntos deja de ser un `<tr>`
+                                                       con `colSpan` —que en modo ficha no significa nada— y
+                                                       pasa a `footer`, que es donde el canónico pone los
+                                                       totales y se dibuja igual en las dos formas. */
+                                                    <DataTable
+                                                        columns={[
+                                                            { key: 'producto', label: 'Producto' },
+                                                            { key: 'cant',     label: 'Cant.',    align: 'right' },
+                                                            { key: 'unit',     label: 'P. Unit.', align: 'right', hideBelow: 'sm' },
+                                                            { key: 'tipo',     label: 'Tipo',     align: 'right' },
+                                                            { key: 'total',    label: 'Total',    align: 'right' },
+                                                        ]}
+                                                        movil={{ identidad: 'producto', ancla: 'total', chips: ['cant', 'tipo'] }}
+                                                        footer={finalDiscount > 0 ? (
+                                                            <>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Badge variant="warning" size="sm">PUNTOS</Badge>
+                                                                    <span className="text-label font-semibold text-warning-text">Descuento por puntos</span>
+                                                                </div>
+                                                                <span className="text-label font-black text-warning-text">-{fmt(finalDiscount)}</span>
+                                                            </>
+                                                        ) : null}
+                                                    >
                                                             {regularItems.map((it, idx) => {
                                                                 // undefined = not yet fetched; [] = fetched, no catalog entry
                                                                 const cachedEntry = pricesCache[it.erp_product_id];
@@ -845,8 +856,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                     );
                                                                 const noPrice = pricesFetched && productPriceRows.length === 0;
                                                                 return (
-                                                                    <tr key={idx} className={`transition-colors ${rowHoverCls}`}>
-                                                                        <td className="py-1 pl-2 pr-2">
+                                                                    <DataRow key={idx} index={idx}>
+                                                                        <DataCell>
                                                                             <div className={`text-label font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
@@ -856,10 +867,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                                     {it.fecha_vencimiento && <Badge size="sm" uppercase={false}>Vence {it.fecha_vencimiento}</Badge>}
                                                                                 </div>
                                                                             )}
-                                                                        </td>
-                                                                        <td className={`py-1 text-right text-caption font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</td>
-                                                                        <td className="py-1 text-right text-caption whitespace-nowrap hidden sm:table-cell text-content-3">{fmt(it.precio_unitario)}</td>
-                                                                        <td className="py-1 text-right whitespace-nowrap">
+                                                                        </DataCell>
+                                                                        <DataCell align="right" className={`text-caption font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</DataCell>
+                                                                        <DataCell align="right" hideBelow="sm" className="text-caption whitespace-nowrap text-content-3">{fmt(it.precio_unitario)}</DataCell>
+                                                                        <DataCell align="right" className="whitespace-nowrap">
                                                                             {tier ? (
                                                                                 <Badge variant={tier.variante} size="sm">
                                                                                     {tier.label}
@@ -868,25 +879,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             ) : noPrice ? (
                                                                                 <span className="text-micro text-content-3">—</span>
                                                                             ) : null}
-                                                                        </td>
-                                                                        <td className={`py-1 text-right text-label font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</td>
-                                                                    </tr>
+                                                                        </DataCell>
+                                                                        <DataCell align="right" className={`text-label font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</DataCell>
+                                                                    </DataRow>
                                                                 );
                                                             })}
-                                                            {finalDiscount > 0 && (
-                                                                <tr className="border-t border-warning/30">
-                                                                    <td className="pt-1.5 pb-1 pl-2 pr-2" colSpan={3}>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <Badge variant="warning" size="sm">PUNTOS</Badge>
-                                                                            <span className="text-label font-semibold text-warning-text">Descuento por puntos</span>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td />
-                                                                    <td className="pt-1.5 pb-1 text-right text-label font-black text-warning-text">-{fmt(finalDiscount)}</td>
-                                                                </tr>
-                                                            )}
-                                                        </tbody>
-                                                    </table>
+                                                    </DataTable>
                                                 );
                                             })()
                                         )}

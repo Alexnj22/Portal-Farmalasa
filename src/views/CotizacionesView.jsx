@@ -889,60 +889,58 @@ export default function CotizacionesView() {
                         </div>
                     )}
 
-                    {/* Items */}
-                    <div className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm">
-                                <thead>
-                                    <tr className="bg-brand/5 border-b border-brand/10">
-                                        <th className="px-4 py-2.5 text-left text-micro font-black uppercase tracking-widest text-content-2">#</th>
-                                        <th className="px-4 py-2.5 text-left text-micro font-black uppercase tracking-widest text-content-2">Producto</th>
-                                        <th className="px-4 py-2.5 text-left text-micro font-black uppercase tracking-widest text-content-2">Pres.</th>
-                                        <th className="px-4 py-2.5 text-center text-micro font-black uppercase tracking-widest text-content-2">Cant.</th>
-                                        {isCCF ? (
-                                            <>
-                                                <th className="px-4 py-2.5 text-right text-micro font-black uppercase tracking-widest text-content-2">P.Unit s/IVA</th>
-                                                <th className="px-4 py-2.5 text-right text-micro font-black uppercase tracking-widest text-content-2">Subtotal s/IVA</th>
-                                                <th className="px-4 py-2.5 text-right text-micro font-black uppercase tracking-widest text-content-2">IVA 13%</th>
-                                                <th className="px-4 py-2.5 text-right text-micro font-black uppercase tracking-widest text-content-2">Total</th>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <th className="px-4 py-2.5 text-right text-micro font-black uppercase tracking-widest text-content-2">P.Unit.</th>
-                                                <th className="px-4 py-2.5 text-right text-micro font-black uppercase tracking-widest text-content-2">Subtotal</th>
-                                            </>
-                                        )}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {itemsData.map((it, i) => {
-                                        const dsg = desglose(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1));
-                                        return (
-                                            <tr key={it.id || i} className="border-t border-divider">
-                                                <td className="px-4 py-2.5 text-label font-black text-content-3">{i + 1}</td>
-                                                <td className="px-4 py-2.5 text-body-sm font-bold text-content max-w-[200px] truncate">{it.product_nombre}</td>
-                                                <td className="px-4 py-2.5 text-label text-content-3">{it.presentacion_desc || '—'}</td>
-                                                <td className="px-4 py-2.5 text-center text-body-sm font-bold text-content-2">{formatQty(it.cantidad, { decimalesMax: 3 })}</td>
-                                                {isCCF ? (
-                                                    <>
-                                                        <td className="px-4 py-2.5 text-right text-label text-content-2">{fmt(dsg.unitSinIva)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-label text-content-2">{fmt(dsg.subtotalSinIva)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-label text-chart-1-text">{fmt(dsg.subtotalIva)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-body font-black text-content">{fmt(dsg.total)}</td>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <td className="px-4 py-2.5 text-right text-body-sm text-content-2">{fmt(it.precio_unitario)}</td>
-                                                        <td className="px-4 py-2.5 text-right text-body font-black text-content">{fmt(it.subtotal)}</td>
-                                                    </>
-                                                )}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    {/* Items — `DataTable` y no una tabla a mano: con crédito
+                        fiscal son OCHO columnas, y ocho columnas en 390px son
+                        deslizar de lado para leer una línea. En el teléfono cada
+                        ítem cae a ficha: el producto arriba, su total a la
+                        derecha —que es el par por el que se abre una cotización—
+                        y el resto del desglose al tocar. La identidad se declara
+                        porque si no la infiere de la primera columna, que acá es
+                        el número de línea y no le dice nada a nadie. */}
+                    <DataTable
+                        columns={[
+                            { key: 'n',        label: '#' },
+                            { key: 'producto', label: 'Producto' },
+                            { key: 'pres',     label: 'Pres.' },
+                            { key: 'cant',     label: 'Cant.', align: 'center' },
+                            ...(isCCF ? [
+                                { key: 'unit',     label: 'P.Unit s/IVA',   align: 'right' },
+                                { key: 'subtotal', label: 'Subtotal s/IVA', align: 'right' },
+                                { key: 'iva',      label: 'IVA 13%',        align: 'right' },
+                                { key: 'total',    label: 'Total',          align: 'right' },
+                            ] : [
+                                { key: 'unit',     label: 'P.Unit.',  align: 'right' },
+                                { key: 'subtotal', label: 'Subtotal', align: 'right' },
+                            ]),
+                        ]}
+                        minWidth={isCCF ? '760px' : '560px'}
+                        movil={{ identidad: 'producto', chips: ['cant', 'pres'] }}
+                    >
+                        {itemsData.map((it, i) => {
+                            const dsg = desglose(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1));
+                            return (
+                                <DataRow key={it.id || i} index={i}>
+                                    <DataCell className="font-black text-content-3">{i + 1}</DataCell>
+                                    <DataCell className="font-bold text-content">{it.product_nombre}</DataCell>
+                                    <DataCell className="text-content-3">{it.presentacion_desc || '—'}</DataCell>
+                                    <DataCell align="center" className="font-bold text-content-2">{formatQty(it.cantidad, { decimalesMax: 3 })}</DataCell>
+                                    {isCCF ? (
+                                        <>
+                                            <DataCell align="right" className="text-content-2">{fmt(dsg.unitSinIva)}</DataCell>
+                                            <DataCell align="right" className="text-content-2">{fmt(dsg.subtotalSinIva)}</DataCell>
+                                            <DataCell align="right" className="text-chart-1-text">{fmt(dsg.subtotalIva)}</DataCell>
+                                            <DataCell align="right" className="font-black text-content">{fmt(dsg.total)}</DataCell>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <DataCell align="right" className="text-content-2">{fmt(it.precio_unitario)}</DataCell>
+                                            <DataCell align="right" className="font-black text-content">{fmt(it.subtotal)}</DataCell>
+                                        </>
+                                    )}
+                                </DataRow>
+                            );
+                        })}
+                    </DataTable>
 
                     {/* Totales */}
                     <div className="flex justify-end">

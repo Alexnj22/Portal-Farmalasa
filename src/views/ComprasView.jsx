@@ -132,51 +132,55 @@ function ItemsExpand({ receiptId, comoPanel = false }) {
         </div>
     );
 
+    // Encabezado y celda se filtran con la MISMA condición: filtrar uno solo
+    // deja las columnas corridas bajo títulos que no les corresponden. Con
+    // `DataTable` esa condición vive UNA vez acá y otra en la fila, en vez de
+    // repetirse en un `<th>` y un `<td>` que nadie garantiza que sigan juntos.
+    const COLS = [
+        { key: 'linea',  label: '#' },
+        { key: 'id',     label: 'ID Producto' },
+        { key: 'desc',   label: 'Descripción' },
+        { key: 'cant',   label: 'Cant.', align: 'center' },
+        ...(canVerMontos ? [
+            { key: 'unit',  label: 'P. Unit.',    align: 'right' },
+            { key: 'total', label: 'Total línea', align: 'right' },
+        ] : []),
+        { key: 'lote',   label: 'Lote',        align: 'center', hideBelow: 'md' },
+        { key: 'vence',  label: 'Vencimiento', align: 'center', hideBelow: 'md' },
+    ];
+
     return (
         <div className="px-4 py-3">
-            <div className="overflow-x-auto rounded-xl border border-divider bg-surface-card">
-                <table className="w-full text-label">
-                    <thead>
-                        <tr className="border-b border-divider bg-surface-card-hover/60">
-                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">#</th>
-                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">ID Producto</th>
-                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Descripción</th>
-                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Cant.</th>
-                            {/* Encabezado y celda se filtran con la MISMA condición:
-                                filtrar uno solo deja las columnas corridas bajo
-                                títulos que no les corresponden. */}
-                            {canVerMontos && <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">P. Unit.</th>}
-                            {canVerMontos && <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Total línea</th>}
-                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center hidden md:table-cell">Lote</th>
-                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center hidden md:table-cell">Vencimiento</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-divider">
-                        {items.map((it) => {
-                            const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
-                            return (
-                                <tr key={it.linea_num} className="hover:bg-chart-1/10 transition-colors">
-                                    <td className="px-3 py-2 text-content-3 tabular-nums">{it.linea_num}</td>
-                                    <td className="px-3 py-2 text-content-3 tabular-nums font-mono">{it.erp_product_id ?? '—'}</td>
-                                    <td className="px-3 py-2 text-content-2 font-medium">{it.descripcion || '—'}</td>
-                                    <td className="px-3 py-2 text-center text-content-2 tabular-nums">{fmtNum(it.cantidad)}</td>
-                                    {canVerMontos && <td className="px-3 py-2 text-right text-content-2 tabular-nums">{fmt$(it.precio_unitario)}</td>}
-                                    {canVerMontos && <td className="px-3 py-2 text-right font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</td>}
-                                    <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
-                                        {lote
-                                            ? <Badge variant="chart-3" uppercase={false}>{lote}</Badge>
-                                            : <span className="text-content-3">—</span>
-                                        }
-                                    </td>
-                                    <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
-                                        {fmtDate(it.fecha_vencimiento)}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+            {/* `movil={false}` con su motivo: en el teléfono esta rama NO se
+                dibuja. `ExpedienteMovil` monta el mismo componente con
+                `comoPanel`, que sale arriba en bloques —es el diseño que pidió
+                el usuario: «sigue en modo tabla, no es adaptado a móvil»— así que
+                el modo ficha de `DataTable` acá sería una tercera forma de lo
+                mismo, compitiendo con la que él aprobó. */}
+            <DataTable columns={COLS} movil={false} minWidth="700px">
+                {items.map((it, i) => {
+                    const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
+                    return (
+                        <DataRow key={it.linea_num} index={i}>
+                            <DataCell className="text-content-3 tabular-nums">{it.linea_num}</DataCell>
+                            <DataCell className="text-content-3 tabular-nums font-mono">{it.erp_product_id ?? '—'}</DataCell>
+                            <DataCell className="text-content-2 font-medium">{it.descripcion || '—'}</DataCell>
+                            <DataCell align="center" className="text-content-2 tabular-nums">{fmtNum(it.cantidad)}</DataCell>
+                            {canVerMontos && <DataCell align="right" className="text-content-2 tabular-nums">{fmt$(it.precio_unitario)}</DataCell>}
+                            {canVerMontos && <DataCell align="right" className="font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</DataCell>}
+                            <DataCell align="center" hideBelow="md" className="text-content-3">
+                                {lote
+                                    ? <Badge variant="chart-3" uppercase={false}>{lote}</Badge>
+                                    : <span className="text-content-3">—</span>
+                                }
+                            </DataCell>
+                            <DataCell align="center" hideBelow="md" className="text-content-3">
+                                {fmtDate(it.fecha_vencimiento)}
+                            </DataCell>
+                        </DataRow>
+                    );
+                })}
+            </DataTable>
         </div>
     );
 }

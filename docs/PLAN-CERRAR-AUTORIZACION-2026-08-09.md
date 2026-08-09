@@ -52,35 +52,35 @@ si alguna escritura ocurre desde otra vista.
 
 ---
 
-## D2 · Se puede falsificar la bitácora
+## ~~D2 · Se puede falsificar la bitácora~~ — RETIRADO: no existe
 
-**Está mal.** `audit_logs` tiene el INSERT **sin `WITH CHECK`**: cualquiera
-inserta una entrada a nombre de otra persona. Ya estaba levantado en la
-auditoría del 2026-07-30 y sigue abierto.
+**Esto lo reporté mal.** `audit_logs` **sí** tiene la restricción:
+`WITH CHECK (user_id = (SELECT auth.uid()))`, puesta el 2026-08-06. La bitácora
+no se puede falsificar. El propio `auditSlice.js` lo dice en un comentario que
+no leí: *«la policy de INSERT (20260806000957) sólo acepta el auth.uid() de la
+sesión»*.
 
-La tabla tiene `user_id` y `user_name`, y el cliente los manda en el payload
-(`src/data/audit.js` → `.insert([logData])`). O sea que **la autoría la elige
-quien escribe** — exactamente lo que la regla del repo prohíbe.
+**Por qué me equivoqué, escrito para que no se repita:** la consulta con la que
+audité mostraba la columna `qual` para todas las policies. **En una policy de
+INSERT `qual` es siempre NULL** — la restricción vive en `with_check`. Así que
+*toda* policy de INSERT me apareció como «sin restricción», y reporté cinco
+agujeros de los cuales **ninguno era real**:
 
-**Debería ser** que la autoría salga del JWT y no del payload:
+| Reportado | Verificado |
+|---|---|
+| `audit_logs` INSERT abierto | `WITH CHECK (user_id = auth.uid())` |
+| `push_subscriptions` INSERT abierto | `WITH CHECK (employee_id = …)` |
+| `user_dashboard_prefs` INSERT abierto | `WITH CHECK (user_id = auth.uid())` |
+| `pedidos_snapshots` INSERT abierto | `WITH CHECK (created_by = auth.uid())` |
+| `dashboard_canon` DELETE abierto | `USING (auth_is_su())` |
 
-```sql
-DROP POLICY audit_logs_insert ON public.audit_logs;
+Lo que sí era cierto —D1, D3, D4— salió de la columna `qual` de policies de
+**SELECT**, donde `qual` es la correcta.
 
-CREATE POLICY audit_logs_insert ON public.audit_logs
-  FOR INSERT TO authenticated
-  WITH CHECK (user_id = (SELECT public.auth_employee_id()));
-```
-
-**Ojo — hay un camino que se rompe:** el kiosco y los procesos de servicio
-escriben con `service_role`, que salta RLS y no se ve afectado. Pero **hay que
-verificar** si alguna escritura desde el navegador manda un `user_id` distinto
-del propio (por ejemplo, registrar una acción «en nombre de»). Si existe, ese
-caso concreto va por un RPC `SECURITY DEFINER` que valide el permiso, no
-relajando la policy.
-
-**Verificación:** con la sesión de A, insertar un log con `user_id` de B tiene
-que fallar; con el propio, pasar.
+**La regla que queda:** al auditar policies, mirar la columna que corresponde al
+comando. `qual` gobierna SELECT/UPDATE/DELETE; `with_check` gobierna INSERT y la
+mitad de escritura de UPDATE. Mirar sólo una de las dos fabrica hallazgos falsos
+en un sentido o agujeros invisibles en el otro.
 
 ---
 
@@ -208,14 +208,16 @@ está la ruta—.
 | Metas | `metas_config`, `metas_sucursal` | `metas` |
 | Inventario | `inventory`, `inventory_sync_log`, `product_stock_params`, `_history`, `minmax_ignored`, `espejo_conflictos` | `inventario` / `minmax` — **tablas calientes**, migración aparte |
 | Personal | `employee_branches`, `schedule_coverage`, `wfm_snapshots` | `staff_list` / `schedules` |
-| Otros | `ventas_perdidas`, `products_changelog`, `product_sales_*`, `product_last_sale`, `dashboard_canon` (+ su DELETE abierto) | por decidir |
+| Otros | `ventas_perdidas`, `products_changelog`, `product_sales_*`, `product_last_sale` | por decidir |
 | Catálogos — **se quedan abiertos** | `branches`, `roles`, `presentaciones`, `laboratorios`, `product_categories`, `product_active_principles`, `lab_locations`, `holidays`, `shifts`, `education_catalog_entries`, `erp_sucursal_map`, `module_locks`, `mv_refresh_state`, `stock_config`, `dispatch_rules`, `products` | Los necesita todo el portal y no son datos sensibles. **Es una decisión, no un olvido** |
 
-Aparte, tres INSERT sin `WITH CHECK` que permiten escribir a nombre de otro:
-`push_subscriptions`, `user_dashboard_prefs` y `pedidos_snapshots`. Los tres
-tienen el SELECT/UPDATE/DELETE bien acotados al dueño — **el INSERT es el que
-falta**, el mismo patrón que D2. Y `push_subscriptions` los tiene otorgados al
-rol `public` en vez de `authenticated`.
+Lo único que queda de la lista de escrituras: **`push_subscriptions` tiene sus
+policies otorgadas al rol `public` en vez de `authenticated`**. No es explotable
+—`anon` no tiene `auth.email()`, así que la subconsulta no empareja con nada—
+pero es un descuido que conviene corregir cuando se toque esa tabla.
+
+(Los «tres INSERT sin `WITH CHECK`» que este documento reportaba acá **no
+existían**: ver la nota de D2.)
 
 ---
 
@@ -224,10 +226,13 @@ rol `public` en vez de `authenticated`.
 1. **D5 primero.** Es la raíz: mientras haya dos definiciones de superusuario,
    cualquier cierre que haga puede dejar fuera a quien no debería, y lo vamos a
    descubrir en producción como ya pasó.
-2. **D1 y D2** — directos, sin dependencias, y son agujeros de **escritura**,
-   que pesan más que los de lectura.
-3. **D4** — una línea por tabla, con el `OR` del autoservicio.
-4. **D3** — pide el RPC de historial primero; es el único con refactor previo.
+2. **D1 y D4a** — directos, sin dependencias. D1 es el único agujero de
+   **escritura** que resultó real, y pesa más que los de lectura.
+3. **Los dos RPC** — `empleado_no_disponible` y `audit_log_de_objeto`, más el
+   cambio de sus llamadores. D3 y D4b comparten defecto: **la vista pide los
+   datos en vez de hacer la pregunta**, y por eso la tabla tiene que estar
+   abierta.
+4. **D3 y D4b** — las policies, recién cuando sus llamadores ya no lean la tabla.
 5. **D6** por grupos, empezando por Ventas y Compras y dejando Inventario para
    el final por ser tablas calientes.
 

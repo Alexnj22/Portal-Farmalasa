@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.536.3 — Cotizaciones ya no acepta escrituras de cualquiera, y los expedientes se cierran
+
+D1 y D4a de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`.
+
+### El único agujero de escritura que resultó real
+
+`cotizacion_items` tenía **una** policy `FOR ALL` con
+`USING ((SELECT auth.role()) = 'authenticated')` y el `WITH CHECK` nulo — y en un
+`FOR ALL` sin `WITH CHECK`, Postgres usa el `USING` también para escribir. O sea
+que **cualquier persona con cuenta podía insertar, modificar o borrar líneas de
+cualquier cotización**, sin permiso del módulo y sin dejar rastro de por qué
+cambió el monto.
+
+Ahora el ítem **hereda la regla de su cotización madre** con un `EXISTS`.
+`cotizaciones` ya resuelve módulo **y** ámbito de sucursal, y un ítem no puede
+tener una regla propia que se desincronice del documento al que pertenece: si
+mañana cambia el criterio del padre, el hijo lo sigue solo.
+
+### Los documentos del expediente
+
+`employee_documents` con `USING (true)`: cualquiera leía los documentos de
+cualquier empleado. Su INSERT ya estaba bien; el agujero era sólo la lectura.
+Pasa a **los propios O el módulo** — el `OR` del autoservicio hace falta porque
+«Mis Documentos» lee la misma tabla.
+
+### Y una corrección de lo que reporté ayer
+
+Al verificar defecto por defecto con la columna correcta, **cuatro de los que
+había reportado no existen**:
+
+| Reportado | Verificado |
+|---|---|
+| `audit_logs` INSERT abierto → «se puede falsificar la bitácora» | `WITH CHECK (user_id = auth.uid())`, desde el 2026-08-06 |
+| `push_subscriptions` INSERT abierto | `WITH CHECK (employee_id = …)` |
+| `user_dashboard_prefs` INSERT abierto | `WITH CHECK (user_id = auth.uid())` |
+| `pedidos_snapshots` INSERT abierto | `WITH CHECK (created_by = auth.uid())` |
+| `dashboard_canon` DELETE abierto | `USING (auth_is_su())` |
+
+**Por qué:** la consulta con la que audité mostraba la columna `qual` para todas
+las policies, y **en una policy de INSERT `qual` es siempre NULL** — la
+restricción vive en `with_check`. Toda policy de INSERT apareció como «sin
+restricción». Lo que sí era cierto —D1, D3, D4— salía de `qual` en policies de
+SELECT, donde esa columna sí es la que manda.
+
+La regla queda escrita en el documento: al auditar policies, mirar la columna que
+corresponde al comando. Mirar sólo una de las dos fabrica hallazgos falsos en un
+sentido, o agujeros invisibles en el otro.
+
+### Avance
+
+Las policies que no preguntan nada van de **83 → 72**.
+
 ## v2.536.2 — Tanda 4: los nombres del monitor se leen
 
 **63 → 0.** Las tarjetas del tablero de asistencia recortaban el nombre a 111px

@@ -33,7 +33,7 @@ import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
 import { prefetchRuta } from '../../constants/routeImporters';
 import { webpSignedUrl } from '../../utils/storageFiles';
-import { remontarAlGirar } from '../../utils/cajaNegra';
+import { remontarAlGirar, contarRenderShell } from '../../utils/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
@@ -254,6 +254,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const [esVertical, setEsVertical] = useState(
         () => typeof window === 'undefined' || window.matchMedia('(orientation: portrait)').matches,
     );
+    // Un efecto sin dependencias: corre una vez por commit. Lo lee la sonda de
+    // rotación para poder distinguir un trabón CON código nuestro corriendo de
+    // uno sin nada nuestro en el medio — que son dos defectos distintos y hasta
+    // ahora se veían iguales desde afuera.
+    useEffect(() => { contarRenderShell(); });
+
     // Se lee UNA vez al montar: cambiarlo a mitad de una medición mezclaría las
     // dos corridas del A/B. El interruptor de `/ios-test` recarga la página.
     const [remontarEnGiro] = useState(() => remontarAlGirar());

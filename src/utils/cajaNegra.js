@@ -227,6 +227,13 @@ export function limpiarCajaNegra() {
 // que la vista deja de moverse, y los anchos se leen sólo hasta ahí — leer
 // `clientWidth` fuerza un recálculo, y una sonda que agrega trabajo al momento
 // que viene a medir no mide nada.
+// Lo llama `AppLayout` en un efecto sin dependencias, o sea una vez por commit.
+// No es telemetría: existe para poder decir si durante un trabón corrió código
+// nuestro o no, que es la diferencia entre «hay algo que arreglar en el código»
+// y «el navegador está repartiendo un DOM que le queda grande».
+let rendersDelShell = 0;
+export function contarRenderShell() { rendersDelShell++; }
+
 const CLAVE_ROTACION = 'portal_rotacion';
 const TOPE_ROTACION  = 4;      // dos idas y dos vueltas: alcanza para comparar
 const VENTANA_MS     = 9000;   // tope duro: se midieron 3.2 s, así que 6 quedaba corto
@@ -272,6 +279,8 @@ export function iniciarSondaRotacion() {
             return hacia === 'vertical' ? e.clientWidth <= e.clientHeight : e.clientWidth >= e.clientHeight;
         };
         const muestras   = [];
+        const rendersAlEmpezar = rendersDelShell;
+        let   peorLectura = 0;
         let   peorSalto  = 0;
         let   saltosLargos = 0;
         let   viewportEn = null;   // ms hasta que Safari entrega el ancho nuevo
@@ -300,8 +309,20 @@ export function iniciarSondaRotacion() {
             const nodo = buscarVista();
             if (remontadaEn == null && nodoInicial && nodo !== nodoInicial) remontadaEn = t;
 
+            // ── Cuánto cuesta la LECTURA, no sólo cuánto tarda el cuadro ─────
+            // Un `clientWidth` obliga a Safari a terminar el recálculo de estilo
+            // y de layout que tenga pendiente antes de contestar. Así
+            // que el tiempo que tarda ESTA línea es el costo de repartir nuestro
+            // DOM, medido directo. Es lo que separa las dos explicaciones que
+            // quedan para el trabón de 1.9 s: si la lectura es cara, el trabajo
+            // es layout —y se baja simplificando el DOM—; si la lectura es
+            // instantánea y el cuadro igual tardó, el trabajo está en pintar,
+            // componer o recolectar basura, y el DOM no tiene la culpa.
+            const tLectura = performance.now();
             const doc = document.documentElement.clientWidth;
             const anchoVista = Math.round(nodo?.getBoundingClientRect().width || 0);
+            const lectura = Math.round(performance.now() - tLectura);
+            if (lectura > peorLectura) peorLectura = lectura;
 
             if (viewportEn == null && yaOrientado()) viewportEn = t;
 
@@ -344,6 +365,12 @@ export function iniciarSondaRotacion() {
                     viewportEn,
                     vistaEstableEn,
                     peorSalto,
+                    peorLectura,
+                    // Cuántas veces se re-renderizó el shell durante el giro. Es
+                    // el otro lado del mismo corte: si el hilo se trabó 1.9 s y
+                    // acá dice 0, ninguna línea nuestra corrió y el trabón es
+                    // trabajo del navegador sobre nuestro DOM, no código.
+                    renders: rendersDelShell - rendersAlEmpezar,
                     saltosLargos,
                     remontadaEn,
                     // El ESTADO del interruptor, no sólo su efecto. Sin esto,

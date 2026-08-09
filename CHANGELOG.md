@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.526.8 — El giro pasó de segundos a 200 ms — y queda un trabón de 1 en 4
+
+Primera línea base limpia: `/compras`, tema liquid, remontaje apagado, cuatro
+giros seguidos en el iPhone del usuario.
+
+| # | Safari entregó el ancho | El portal se acomodó | Peor trabón |
+|---|---|---|---|
+| 1 | 1 ms | +219 ms | 130 ms |
+| 2 | 1 ms | +205 ms | 172 ms |
+| 3 | 0 ms | +1,897 ms | **1,864 ms** |
+| 4 | 1 ms | +192 ms | 155 ms |
+
+**Safari entrega el viewport en 0–1 ms.** Los 1,105 / 1,516 / 3,185 ms que se
+midieron el 2026-08-08 03:00 desaparecieron, y la única diferencia entre esas
+corridas y éstas es que **el shell ya no se re-renderiza al girar** (v2.526.7
+quitó la suscripción a `matchMedia` que había agregado v2.526.0). O sea que
+aquel «Safari tarda segundos» probablemente no era Safari: era nuestro
+re-render sincrónico, disparado justo en el cambio de orientación, retrasando
+el commit del viewport.
+
+Vale anotarlo como lección: **el instrumento midió un retraso real y se lo
+atribuyó a quien no era**, porque el sospechoso —el navegador— era el único
+actor que la medición no podía ver por dentro. Y el tema, que parecía la
+variable, no lo era: estas cuatro corridas son `liquid` y son rápidas.
+
+**Lo que queda: 1 de cada 4 giros bloquea el hilo ~1.9 s.** Intermitente, misma
+pantalla, mismos 1,427 elementos, dos segundos de diferencia entre una corrida
+y la siguiente. En la corrida 3 el reparto ya estaba terminado en el cuadro cero
+—`doc 765×352`, `vista 641`, todo en su lugar— y el trabón vino **después**, lo
+cual descarta que sea el layout inicial.
+
+Para eso la sonda suma dos medidas que separan lo que queda:
+
+- **`peorLectura`** — cuánto tarda el propio `clientWidth`. Esa lectura obliga a
+  Safari a terminar el recálculo de estilo y layout pendiente, así que su
+  duración *es* el costo de repartir nuestro DOM, medido directo.
+- **`renders`** — cuántas veces se re-renderizó el shell durante el giro.
+
+Con las dos, el trabón cae en un casillero y no en una discusión: lectura cara →
+es el reparto del DOM (se baja simplificando la pantalla); lectura barata y
+renders > 0 → es código; lectura barata y cero renders → no es ninguno de los
+dos, y queda pintar, componer o una pausa de memoria.
+
 ## v2.526.7 — El teléfono no es el problema: 17 ms sin shell contra 1.5 s adentro
 
 El control funcionó. Cuatro giros en el iPhone del usuario, en modo agregado a

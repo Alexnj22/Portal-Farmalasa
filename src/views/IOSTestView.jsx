@@ -37,12 +37,27 @@ const Row = ({ label, value, ok }) => (
 // La primera corrida en el iPhone mostró que el grande es el primero, o sea el
 // que no depende de nosotros. Ver `iniciarSondaRotacion` en `cajaNegra.js`.
 const veredicto = (r) => {
-    if (r.peorSalto >= 400) return {
-        titulo: 'Se bloqueó el hilo',
-        tono: 'danger',
-        dice: `La pantalla dejó de responder ${r.peorSalto} ms de un tirón. Eso es trabajo de código o `
-            + 'recálculo, y sí se puede perseguir: hay que ver qué corre al girar.',
-    };
+    if (r.peorSalto >= 400) {
+        const cabeza = `La pantalla dejó de responder ${r.peorSalto} ms de un tirón. `;
+        if (r.peorLectura >= 300) return {
+            titulo: 'Repartir el DOM',
+            tono: 'danger',
+            dice: `${cabeza}Medir el ancho costó ${r.peorLectura} ms, o sea que el tiempo se fue `
+                + 'recalculando dónde va cada cosa. Se baja simplificando la pantalla, no el código.',
+        };
+        if (r.renders > 0) return {
+            titulo: 'Corrió código nuestro',
+            tono: 'danger',
+            dice: `${cabeza}Repartir el DOM fue barato (${r.peorLectura} ms) y el shell se re-renderizó `
+                + `${r.renders} ${r.renders === 1 ? 'vez' : 'veces'}. El tiempo se fue en código.`,
+        };
+        return {
+            titulo: 'Ni el DOM ni el código',
+            tono: 'danger',
+            dice: `${cabeza}Pero medir el ancho costó ${r.peorLectura} ms y no se re-renderizó nada. `
+                + 'No fue reparto ni código nuestro: queda pintar, componer o una pausa de memoria.',
+        };
+    }
     if (r.viewportEn == null) return {
         titulo: 'No se pudo determinar',
         tono: 'neutral',
@@ -233,6 +248,13 @@ const IOSTestView = () => {
                                                 && r.vistaEstableEn - r.viewportEn <= 300} />
                                         <Row label="Peor trabón del hilo" value={`${r.peorSalto} ms`}
                                             ok={r.peorSalto < 400} />
+                                        {r.peorLectura != null && (
+                                            <Row label="Lo caro fue repartir el DOM"
+                                                value={`${r.peorLectura} ms`} ok={r.peorLectura < 300} />
+                                        )}
+                                        {r.renders != null && (
+                                            <Row label="Re-renders del shell" value={String(r.renders)} />
+                                        )}
                                         <Row label="Cuadros lentos (>100 ms)" value={String(r.saltosLargos)} />
                                         {/* El estado del interruptor va ARRIBA del efecto: tres
                                             corridas con el remontaje encendido se leyeron como si
@@ -317,7 +339,8 @@ const IOSTestView = () => {
                                     `${r.t?.slice(11, 19)} → ${r.hacia} · ${r.ruta}\n`
                                     + `  safari: ${r.viewportEn ?? 'nunca'} ms · portal: `
                                     + `${r.vistaEstableEn != null && r.viewportEn != null ? `+${r.vistaEstableEn - r.viewportEn}` : '—'} ms · `
-                                    + `peor trabón: ${r.peorSalto} ms · lentos: ${r.saltosLargos} · `
+                                    + `peor trabón: ${r.peorSalto} ms (lectura ${r.peorLectura ?? '—'} ms · `
+                                    + `renders ${r.renders ?? '—'}) · lentos: ${r.saltosLargos} · `
                                     + `remontaje: ${r.conRemonte ? 'ENCENDIDO' : 'apagado'} (${r.remontadaEn ?? 'no'}) · `
                                     + `tema: ${r.tema} · shell: ${r.conShell ? 'sí' : 'no'} · `
                                     + `escala: ${r.escala} · standalone: ${r.standalone ? 'sí' : 'no'} · nodos: ${r.nodos}\n`

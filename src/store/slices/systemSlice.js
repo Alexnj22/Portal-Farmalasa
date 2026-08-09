@@ -214,29 +214,50 @@ export const createSystemSlice = (set, get) => ({
                         // de empleados— porque este `await` va antes del Promise.all
                         // (§7.6 de AUDITORIA-COMPLETA-2026-07-30). La consulta queda de
                         // respaldo para cuando el caché no esté.
-                        let canSeeAllStaff = true;
+                        // Tres puertas, no una. `staff_list` decide QUÉ EMPLEADOS se ven,
+                        // pero el historial y los documentos los gatea la BD con OTRO
+                        // permiso desde el cierre del 2026-08-09: `employee_events` pide
+                        // `staff_detail` (o el propio) y `employee_documents` pide
+                        // `staff_detail`. Pedirlos con `staff_list` no da error — RLS
+                        // devuelve sólo las filas propias y la vista queda vacía en
+                        // silencio, que es justo el fallo que no se ve. Cada consulta se
+                        // acota con el permiso que la BD le va a exigir.
+                        //
+                        // `schedules` entra en la del historial porque el calendario lo
+                        // consume (`emp.history` en ScheduleCalendar/FormPlanificador:
+                        // vacaciones e incapacidades marcan los días).
+                        let canSeeAllStaff   = true;
+                        let canSeeAllHistory = true;
+                        let canSeeAllDocs    = true;
                         let permResueltoDelCache = false;
                         try {
                             const cachedPerms = safeJsonParse(localStorage.getItem('sb_role_perms'));
                             if (cachedPerms && typeof cachedPerms === 'object' && 'staff_list' in cachedPerms) {
-                                canSeeAllStaff = !!cachedPerms.staff_list?.can_view;
+                                canSeeAllStaff   = !!cachedPerms.staff_list?.can_view;
+                                canSeeAllHistory = !!cachedPerms.staff_detail?.can_view || !!cachedPerms.schedules?.can_view;
+                                canSeeAllDocs    = !!cachedPerms.staff_detail?.can_view;
                                 permResueltoDelCache = true;
                             }
                         } catch { /* caché corrupto: cae al query de abajo */ }
 
                         if (!permResueltoDelCache && myRoleId) {
                             try {
-                                const { data: perm, error: permError } = await supabase
+                                const { data: perms, error: permError } = await supabase
                                     .from('role_permissions')
-                                    .select('can_view')
+                                    .select('module_key,can_view')
                                     .eq('role_id', myRoleId)
-                                    .eq('module_key', 'staff_list')
-                                    .maybeSingle();
-                                if (!permError) canSeeAllStaff = !!perm?.can_view;
+                                    .in('module_key', ['staff_list', 'staff_detail', 'schedules']);
+                                if (!permError && perms) {
+                                    const puede = k => !!perms.find(p => p.module_key === k)?.can_view;
+                                    canSeeAllStaff   = puede('staff_list');
+                                    canSeeAllHistory = puede('staff_detail') || puede('schedules');
+                                    canSeeAllDocs    = puede('staff_detail');
+                                }
                             } catch { /* red caída: se queda en true (comportamiento actual) */ }
                         }
-                        const scopeToMyBranch = !canSeeAllStaff && myBranchId != null;
-                        const scopeToMe = !canSeeAllStaff && myId != null;
+                        const scopeToMyBranch  = !canSeeAllStaff && myBranchId != null;
+                        const scopeEventsToMe  = !canSeeAllHistory && myId != null;
+                        const scopeDocsToMe    = !canSeeAllDocs && myId != null;
 
                         // Todas las queries en paralelo — de ~3-4s secuencial a ~600ms
                         // Tablas chicas (<1000 filas garantizadas) con select directo; las que
@@ -257,12 +278,12 @@ export const createSystemSlice = (set, get) => ({
                             }),
                             fetchAllRows(() => {
                                 let q = supabase.from('employee_events').select('*').order('id', { ascending: true });
-                                if (scopeToMe) q = q.eq('employee_id', myId);
+                                if (scopeEventsToMe) q = q.eq('employee_id', myId);
                                 return q;
                             }),
                             fetchAllRows(() => {
                                 let q = supabase.from('employee_documents').select('*').order('id', { ascending: true });
-                                if (scopeToMe) q = q.eq('employee_id', myId);
+                                if (scopeDocsToMe) q = q.eq('employee_id', myId);
                                 return q;
                             }),
                             fetchAllRows(() => supabase.from('employee_branches').select('employee_id, branch_id').order('employee_id', { ascending: true })),

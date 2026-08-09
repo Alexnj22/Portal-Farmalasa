@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.539.1 — La puerta del historial y los documentos dice lo mismo que la pantalla
+
+Salió de auditar el cierre de ayer (D4b) preguntándose no «¿quién perdió
+acceso?» —eso era el objetivo— sino **«¿alguien perdió algo que su pantalla sí
+le muestra?»**. Sobre las 50 cuentas activas con login, cruzando cada tabla
+cerrada contra el `PermissionGuard` de su ruta, apareció **un** desajuste.
+
+**El arranque pide con un permiso y la base entrega con otro.**
+`systemSlice.js` bajaba TODOS los `employee_events` y `employee_documents`
+cuando el cargo tiene `staff_list`; las policies de ayer los entregan con
+`staff_detail`. Eso no da error: RLS devuelve sólo las filas propias y la
+pantalla queda vacía **en silencio**. Alcanzaba a un cargo (Administrador, 1
+persona). Hoy no se veía porque `employee_documents` tiene 0 filas y
+`employee_events` 1 — o sea que el síntoma estaba tapado por la falta de datos,
+no resuelto.
+
+**El criterio ahora sale de quién CONSUME el dato, no de qué vista lo pide**, y
+se corrigieron los dos lados en el mismo commit:
+
+- `employee_events` → expediente (`staff_detail`) **y calendario de horarios**
+  (`schedules`): `emp.history` es lo que marca vacaciones e incapacidades en
+  `ScheduleCalendar`/`FormPlanificador`. Los 3 cargos con `schedules` hoy tienen
+  también `staff_detail`, así que nadie lo sufría — pero el próximo con horarios
+  y sin expediente perdía el calendario sin un error en consola.
+- `employee_documents` → sólo el expediente. **Se quitó la rama
+  `emp_documents`**: ese módulo es «Mis Documentos», que se arma con
+  `fetchOwnApprovalRequests` y no lee esta tabla. No habilitaba nada y sí abría
+  de más: un cargo la tiene sin `staff_detail` (Técnico de Mantenimiento, 2
+  personas) y con ella leía los adjuntos de **cualquier** empleado. Lo propio ya
+  lo cubre la primera condición.
+
+**Probado con filas reales dentro de `BEGIN…ROLLBACK`**, porque con las tablas
+casi vacías un `count = 0` no distingue «cerrado» de «no hay datos»: insertado
+un documento de un tercero, Mantenimiento ve **0**, Talento Humano ve **1** (el
+control, sin el cual el 0 no prueba nada) y el dueño ve **1**. Y forzando
+`staff_detail = false` sobre Talento Humano, el evento **sigue visible por
+`schedules`**. Verificado después del rollback: 0 documentos, permiso de Celina
+intacto.
+
+Del resto del cierre de ayer, sin cambios y verificado: 0 cargos con `encuesta`
+sin `encuesta_admin`, 0 con `schedules` sin `staff_detail`, el único
+`system_role = SUPERADMIN` quedó con cargo `is_su`, ningún empleado bloqueado, y
+las 4 funciones INVOKER que leen tablas cerradas las llama `service_role`.
+
 ## v2.539.0 — La revisión de UX cierra: cinco categorías en cero y su ratchet
 
 Pasada final sobre las **37 rutas × 1440 y 1280**, con cero mediciones inválidas:

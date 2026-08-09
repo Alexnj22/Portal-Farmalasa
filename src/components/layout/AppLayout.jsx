@@ -229,6 +229,36 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     // `requestAnimationFrame` los coalesce: da igual cuántos eventos lleguen,
     // se recalcula **una vez por cuadro**. Y `isUltraDensity` mira el ALTO, así
     // que al rotar sí cambia de valor — no es un `setState` que React descarte.
+    // ── La orientación, para REMONTAR la vista al girar ───────────────────────
+    // Al rotar, iOS deja el contenido repartido al ancho de la orientación
+    // anterior y la otra mitad sale en blanco. **Se arregla solo al recargar o
+    // al abrir otra vista** (reportado por el usuario el 2026-08-08), o sea que
+    // el ancho correcto existe: lo que no vuelve a ocurrir es el reparto.
+    //
+    // Dos intentos sobre el DOCUMENTO fallaron —re-parsear el meta viewport y
+    // forzar el reflow con un interruptor de `display`, éste además visible
+    // (v2.524.7/8, revertidos)—. Lo que de verdad hace «abrir otra vista» es
+    // **remontar el árbol de React**, así que eso es lo que se hace: la `key` de
+    // la vista incluye la orientación.
+    //
+    // Se escucha `matchMedia` y no `resize`: `resize` dispara también al abrir
+    // el teclado y al colapsarse la barra de Safari, y remontar la vista ahí
+    // sería tirar el estado del usuario sin motivo.
+    //
+    // ⚠️ Remontar PIERDE el estado local de la vista (filtros, scroll, un
+    // formulario a medio llenar). Por eso va sólo en móvil, donde girar es un
+    // gesto deliberado y la alternativa es media pantalla en blanco. En
+    // escritorio la `key` no lleva orientación y nada cambia.
+    const [esVertical, setEsVertical] = useState(
+        () => typeof window === 'undefined' || window.matchMedia('(orientation: portrait)').matches,
+    );
+    useEffect(() => {
+        const mq = window.matchMedia('(orientation: portrait)');
+        const alGirar = (e) => setEsVertical(e.matches);
+        mq.addEventListener('change', alGirar);
+        return () => mq.removeEventListener('change', alGirar);
+    }, []);
+
     useEffect(() => {
         let pendiente = 0;
         const aplicar = () => {
@@ -1260,7 +1290,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <NotificationBell variant="desktop" />
                             </div>
                         )}
-                        <div key={activeId} className="lg:h-full w-full animate-route-enter">
+                        {/* La orientación entra en la `key` SÓLO en móvil: girar
+                            remonta la vista, que es lo mismo que hace «abrir otra
+                            vista» —lo único que se vio arreglar el reparto— sin
+                            pedirle al usuario que navegue. En escritorio la clave
+                            es la de siempre y no se remonta nada. */}
+                        <div key={isMobile ? `${activeId}-${esVertical ? 'v' : 'h'}` : activeId}
+                            data-vista-montada={isMobile ? (esVertical ? 'v' : 'h') : 'escritorio'}
+                            className="lg:h-full w-full animate-route-enter">
                             {children}
                         </div>
                     </div>

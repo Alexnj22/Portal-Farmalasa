@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.526.1 — La hoja de Filtros se cerraba vacía: el contenido se iba antes que la animación
+
+_(pendiente de redactar)_
+
+## v2.526.0 — Girar remonta la vista: el enfoque de React para la rotación
+
+El tercer intento contra el defecto de la rotación, y el primero que ataca lo que
+el propio usuario había señalado: *«si recargo o abro otra vista sí se pone
+bien»*. Los dos anteriores tocaban el **documento** —re-parsear el meta viewport,
+forzar el reflow con un interruptor de `display`— y ninguno sirvió; el segundo
+además se veía. Lo que hace «abrir otra vista» es **remontar el árbol de React**,
+así que la `key` de la vista ahora incluye la orientación.
+
+La orientación se lee de `matchMedia('(orientation: portrait)')` y **no** de
+`resize`: éste dispara también al abrir el teclado y al colapsarse la barra de
+Safari, y remontar ahí sería tirar el estado del usuario sin motivo.
+
+**El costo, dicho claro: remontar pierde el estado local de la vista** — filtros,
+scroll, un formulario a medio llenar. Por eso va **sólo en móvil**, donde girar
+es un gesto deliberado y la alternativa es media pantalla en blanco. En
+escritorio la `key` es la de siempre y no se remonta nada.
+
+**Verificado en WebKit** (`tests/e2e/rotacion-movil.spec.js`), con un
+`MutationObserver` y no comparando un atributo: un atributo cambiaría igual si
+React sólo re-renderizara el mismo nodo, que es justo lo que ya pasaba y no
+alcanzaba. La prueba exige que el nodo **salga** del DOM y entre otro, en los dos
+sentidos de giro, y que la vista quede viva y con contenido — un remontaje que
+deja la pantalla vacía sería peor que el defecto.
+
+**Y verificado en rojo**, que costó dos intentos y dejó la mejor lección del día:
+la primera pasada dio verde **sin** el arreglo. El motivo no era la prueba: el
+`npm run build` había **fallado** —por un archivo a medio editar de otra sesión—
+y el preview seguía sirviendo el bundle anterior, o sea el que sí tenía el
+arreglo. **Un verde que sale de un build que no ocurrió no prueba nada**, y el
+fallo no se ve si sólo se mira la última línea de la salida. Con el build en
+verde, la prueba falla como debe: *«el nodo de la vista tiene que SALIR del DOM
+al girar»*.
+
+**Lo que esto NO afirma:** que arregle el defecto en un iPhone. No se reproduce
+en Playwright —ahí el viewport se re-mide bien—, así que el veredicto sigue
+siendo del teléfono. Lo que sí está probado es que el mecanismo ocurre.
+
+De paso, los dos últimos controles mudos que quedaban: el botón «Limpiar» de la
+barra flotante y las píldoras de filtro activo, los dos en `FilterBar`. Barrido
+de 18 pantallas con pestañas y diálogos: todo en cero.
+
+F9 de `docs/PLAN-CIERRE-MOVIL-2026-08-08.md`.
+
 ## v2.525.1 — El acuse llega a las pantallas más internas: 12 a 0
 
 Los 12 que quedaban de v2.525.0, y **ninguno se encontraba grepeando**: viven en

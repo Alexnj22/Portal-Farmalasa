@@ -1635,6 +1635,21 @@ const DashboardView = ({ openModal }) => {
     return Array.from({length:7},(_,i)=>{ const d=new Date(base); d.setDate(d.getDate()-(6-i)); const ds=localDateStr(d); const ids=new Set(); trendEmployees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===ds) ids.add(e.id);})); return {day:d.toLocaleDateString('es-SV',{weekday:'short'}).replace('.',''),date:ds,total:ids.size}; });
   },[trendEmployees,trendOffset]);
 
+  // ── Una semana sin marcaciones NO es una semana de cero asistencia ────────
+  //
+  // `trendData` siempre devuelve siete días; cuando no hay marcaciones, los
+  // siete traen `total: 0` y el área los dibuja: una línea plana pegada al eje,
+  // con los días rotulados debajo. Eso no se lee como «sin datos» — se lee como
+  // «no vino nadie en toda la semana», y es lo primero que ve quien abre el
+  // portal a primera hora, en el widget más grande de la pantalla.
+  //
+  // Con 49 empleados activos, una semana entera en cero es un dato que no
+  // existe, no un dato malo. Se distingue y se dice.
+  const tendenciaVacia = useMemo(
+    () => trendData.every(d => d.total === 0),
+    [trendData],
+  );
+
   const trendRangeLabel = useMemo(()=>{
     const base=new Date(); base.setDate(base.getDate()+trendOffset*7);
     const start=new Date(base); start.setDate(start.getDate()-6);
@@ -1773,10 +1788,26 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => { setVerComoRol(null); }, [activeTab, showConfig]);
 
   // ── wrapWidget: explicit grid position, resize button, drag handle ──────────
-  const wrapWidget = (id, content, staggerIdx = 0) => {
+  // ── `vacio`: un widget sin datos no paga pantalla en el teléfono ──────────
+  //
+  // En 390px el tablero mide 5,874px, o sea unas siete pantallas, y la segunda
+  // era **entera** el gráfico de asistencia vacío. Un widget que no tiene nada
+  // que decir ocupaba exactamente el mismo alto que uno lleno, porque el alto
+  // sale de la rejilla y la rejilla no sabe qué hay adentro.
+  //
+  // Quien lo declara es el widget, que es el único que sabe si su lista vino
+  // vacía. En escritorio no cambia nada: ahí el hueco es barato y mover la
+  // altura rompería el acomodo que el usuario guardó con «Personalizar».
+  //
+  // Baja a UNA fila (150px). Para que quepa, el vacío se dice en una línea:
+  // `EmptyState linea`, la tercera medida del canónico, que existe justamente
+  // por esto. Con `compact` (200px de mínimo) el recorte no servía de nada — se
+  // midió: el alto del tablero en 390px no bajó ni un píxel.
+  const wrapWidget = (id, content, staggerIdx = 0, vacio = false) => {
     const { label } = getWidgetSize(id);
     const eCols = getEffectiveCols(id);
-    const eRows = getEffectiveRows(id);
+    const eRowsBase = getEffectiveRows(id);
+    const eRows = esTelefono && vacio ? 1 : eRowsBase;
     const pos   = activeLayout[id] || { col: 1, row: 1 };
     const isActive     = dndActive === id;
     const isBouncing   = bouncingIds.has(id);
@@ -1949,6 +1980,22 @@ const DashboardView = ({ openModal }) => {
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
             {!attendanceLoaded ? (
               <EsqueletoTendencia />
+            ) : tendenciaVacia ? (
+              /* Sin marcaciones: no se dibuja la serie. Ver `tendenciaVacia`.
+                 El texto dice de dónde viene el dato, porque el vacío casi
+                 siempre es «todavía no», no «nunca». */
+              <EmptyState
+                compact={!esTelefono} linea={esTelefono}
+                icon={Activity}
+                title={trendOffset === 0 ? 'Sin marcaciones esta semana' : 'Sin marcaciones en esa semana'}
+                /* Sin subtítulo en el teléfono: el encabezado de este widget
+                   lleva el selector de semana, así que del alto de una fila
+                   quedan ~90px para el cuerpo y el segundo renglón se cortaba a
+                   la mitad. Un vacío recortado es peor que un vacío corto. */
+                subtitle={esTelefono ? undefined : (trendOffset === 0
+                  ? 'Cada entrada aparece acá al registrarse en el reloj.'
+                  : 'No hay registros de asistencia en ese rango.')}
+              />
             ) : (
               /* El mismo esqueleto como espera del chunk de `recharts`: las dos
                  esperas se leen como una y el gráfico entra una sola vez. */
@@ -1958,7 +2005,7 @@ const DashboardView = ({ openModal }) => {
             )}
           </div>
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, attendanceLoaded && tendenciaVacia);
     }
 
     /* ── SHIFTS ── */
@@ -2190,7 +2237,7 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
               </div>
             ))
-              :displayAbsences.length===0?<EmptyState compact icon={UserCheck} title="Sin ausencias activas" />
+              :displayAbsences.length===0?<EmptyState compact={!esTelefono} linea={esTelefono} icon={UserCheck} title="Sin ausencias activas" />
               :displayAbsences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
                 const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
@@ -2204,7 +2251,7 @@ const DashboardView = ({ openModal }) => {
               })}
           </div>
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, !absLoading && displayAbsences.length === 0);
     }
 
     /* ── REQUESTS ── */
@@ -2231,7 +2278,7 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))
-              :displayReqs.length===0?<EmptyState compact icon={ClipboardList} title="Sin solicitudes pendientes" />
+              :displayReqs.length===0?<EmptyState compact={!esTelefono} linea={esTelefono} icon={ClipboardList} title="Sin solicitudes pendientes" />
               // §15.7 — caja de ícono + título + subtítulo + algo al final: la
               // anatomía exacta de `ListRow`. Y sin `onClick` renderiza un
               // `<div>`, así que la fila deja de ser tabulable cuando el usuario
@@ -2249,7 +2296,7 @@ const DashboardView = ({ openModal }) => {
               ))}
           </div>
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, !reqLoading && displayReqs.length === 0);
     }
 
     /* ── BRANCHES ── */

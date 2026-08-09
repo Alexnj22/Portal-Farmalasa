@@ -65,8 +65,30 @@ export const EmptyState = memo(({
     // del dato. Se puede sobreescribir cuando la vista tiene una razón.
     glowClass = 'bg-logo-green/30',
     compact = false,
+    // ── `linea`: el vacío que no puede pagar una pantalla ────────────────────
+    //
+    // Tercera medida, para el vacío que vive DENTRO de un widget en el teléfono.
+    // `compact` mide 200px de alto mínimo; en el tablero de Inicio eso hacía que
+    // un widget sin datos ocupara lo mismo que uno lleno, y la segunda pantalla
+    // de las siete era, entera, un gráfico vacío (medido: 5,874px en 390px).
+    //
+    // Acá el vacío se dice en una línea: icono al lado del texto, sin halo y sin
+    // el levante al pasar el mouse —que en un teléfono no existe—. Sigue siendo
+    // el mismo componente y el mismo vocabulario; lo que cambia es cuánto
+    // espacio se permite ocupar cuando no tiene nada que mostrar.
+    linea = false,
     className = '',
-}) => (
+}) => (linea ? (
+    <div className={`flex items-center justify-center gap-2.5 px-4 py-5 text-center
+        animate-in fade-in duration-[var(--dur-lento)] ${className}`}>
+        <Icon size={16} strokeWidth={2} className={`shrink-0 ${iconClass}`} />
+        <div className="min-w-0">
+            <p className="text-body-sm font-bold text-content leading-tight">{title}</p>
+            {subtitle && <p className="text-caption text-content-3 leading-snug mt-0.5">{subtitle}</p>}
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
+    </div>
+) : (
     <div className={`flex flex-col items-center justify-center ${compact ? 'min-h-[200px]' : 'min-h-[400px]'}
         animate-in fade-in zoom-in-95 duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${className}`}>
         <div className="relative group flex flex-col items-center text-center">
@@ -86,7 +108,7 @@ export const EmptyState = memo(({
             {action && <div className="mt-5">{action}</div>}
         </div>
     </div>
-));
+)));
 
 /* ── Loading ──────────────────────────────────────────────────────────────
    Un solo componente con tres variantes, en vez de tres pantallas sueltas.

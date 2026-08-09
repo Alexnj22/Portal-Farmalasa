@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.533.0 — El tablero deja de dibujar el cero como si fuera un dato
+
+Primeros dos arreglos de la revisión de UX por vistas. Los dos P1 de Inicio, los
+que el usuario eligió: **los vacíos que mienten**.
+
+**«Tendencia de Asistencia» dibujaba una semana sin marcaciones.** `trendData`
+siempre devuelve siete días; sin marcaciones los siete traen `total: 0` y el área
+los pintaba: una línea plana pegada al eje con los días rotulados debajo. Eso no
+se lee como «sin datos», se lee como **«no vino nadie en toda la semana»** — y es
+lo primero que ve quien abre el portal a primera hora, en el widget más grande de
+la pantalla. Con 49 empleados activos, una semana entera en cero es un dato que
+no existe, no un dato malo. Ahora se distingue y se dice, con el rumbo del
+período: «Sin marcaciones esta semana» o «…en esa semana» si se navegó atrás.
+
+**Un widget vacío pagaba pantalla completa en el teléfono.** El alto sale de la
+rejilla y la rejilla no sabe qué hay adentro, así que el gráfico vacío ocupaba lo
+mismo que uno lleno: la segunda de las siete pantallas del tablero era, entera,
+ese vacío. Ahora el widget declara si vino sin datos y en el teléfono baja a una
+fila. En escritorio no cambia nada — ahí el hueco es barato y mover la altura
+rompería el acomodo que el usuario guardó con «Personalizar».
+
+**Medido, y menos de lo que suena:** 5,874px → **5,376px** en 390px. Son 498px,
+un 8.5%, porque en esta cuenta sólo tres widgets estaban vacíos; el ahorro es
+proporcional a cuántos lo estén. No convierte siete pantallas en tres.
+
+### `linea`, la tercera medida del estado vacío
+
+`EmptyState` tenía dos tamaños y el chico (`compact`) pide **200px** de alto
+mínimo. Con eso el recorte a una fila no servía de nada, y se midió: el alto del
+tablero no bajó **ni un píxel** en la primera pasada. `linea` dice el vacío en un
+renglón —icono al lado del texto, sin halo y sin el levante al pasar el mouse,
+que en un teléfono no existe—. Mismo componente y mismo vocabulario; lo que
+cambia es cuánto espacio se permite ocupar cuando no hay nada que mostrar.
+
+Y una corrección sobre la corrección: la primera versión mantenía el subtítulo, y
+como el encabezado de ese widget lleva el selector de semana, el segundo renglón
+se cortaba a la mitad. Un vacío recortado es peor que un vacío corto.
+
+**Crítica completa** en `.impeccable/critique/2026-08-09T15-27-18Z__src-views-dashboardview-jsx.md`
+— 26/40, contra 24 en mayo. Quedan tres P2 en Inicio: las cuatro fichas
+idénticas, el gráfico de ventas sin eje, y el aviso de «portal en construcción».
+
 ## v2.532.0 — Conexiones: una tarjeta por persona, con su foto y sus conexiones en el detalle
 
 Rediseño sobre la revisión del usuario, que abrió la vista y dijo cinco cosas.

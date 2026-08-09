@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Smartphone, CheckCircle2, AlertCircle, Layers, Move, Trash2, RefreshCw, ClipboardCopy, Check } from 'lucide-react';
+import { Smartphone, CheckCircle2, AlertCircle, Layers, Move, Trash2, RefreshCw, ClipboardCopy, Check, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -72,6 +73,7 @@ const veredicto = (r) => {
 };
 
 const IOSTestView = () => {
+    const navigate = useNavigate();
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/.test(ua);
     const isCapacitor = !!(window.Capacitor);
@@ -262,6 +264,23 @@ const IOSTestView = () => {
                             })}
                         </div>
                     )}
+
+                    {/* El control sin shell. `/raw-test` no está en el menú —es
+                        sólo una URL— y en la app agregada a inicio no hay barra
+                        de direcciones donde escribirla, así que sin este botón
+                        el control era inalcanzable justo en el modo donde más
+                        importa medirlo. Se vuelve con el gesto de atrás. */}
+                    <div className="mt-3 pt-3 border-t border-divider">
+                        <p className="text-body-sm text-content-3 leading-snug mb-2">
+                            <strong className="text-content-2">La prueba de control.</strong> Esta página no
+                            tiene menú, ni tarjetas, ni vidrio. Si al girar ahí también tarda, la demora es del
+                            teléfono y no del portal.
+                        </p>
+                        <Button variant="secondary" size="sm" icon={ExternalLink}
+                            onClick={() => navigate('/raw-test?sinvidrio=1')}>
+                            Abrir la página sin nada
+                        </Button>
+                    </div>
 
                     {/* El control del A/B. Sin una corrida SIN el cambio, la
                         diferencia de tiempos no se le puede atribuir al cambio. */}

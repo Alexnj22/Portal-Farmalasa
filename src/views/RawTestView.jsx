@@ -1,6 +1,17 @@
 import { useEffect } from 'react';
 
 export default function RawTestView() {
+    // `?sinvidrio=1` apaga el `backdrop-filter` de la barra.
+    //
+    // Esta página se usa como CONTROL de la sonda de rotación: si acá también
+    // tarda segundos en girar, la demora no la trae el portal. Pero el control
+    // no controlaba nada — su barra pegajosa lleva un `blur(44px)`, que es
+    // justamente la variable bajo sospecha, así que un resultado lento no se
+    // podía distinguir de «fue esa capa». Con el parámetro queda una página sin
+    // una sola capa de vidrio.
+    const sinVidrio = typeof window !== 'undefined'
+        && new URLSearchParams(window.location.search).get('sinvidrio') === '1';
+
     useEffect(() => {
         const html = document.documentElement;
         const body = document.body;
@@ -54,14 +65,19 @@ export default function RawTestView() {
                 position: 'sticky',
                 top: 'env(safe-area-inset-top, 0px)',
                 left: 0, right: 0, zIndex: 99,
-                background: 'rgba(221,216,255,0.88)',
-                backdropFilter: 'blur(44px)',
-                WebkitBackdropFilter: 'blur(44px)',
+                background: sinVidrio ? 'rgb(221,216,255)' : 'rgba(221,216,255,0.88)',
+                backdropFilter: sinVidrio ? 'none' : 'blur(44px)',
+                WebkitBackdropFilter: sinVidrio ? 'none' : 'blur(44px)',
                 borderBottom: '1px solid rgba(255,255,255,0.6)',
             }}>
                 <div style={{ padding: '12px 16px', fontFamily: 'system-ui', fontWeight: 800, fontSize: 15, color: '#1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>/raw-test</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>v10</span>
+                    {/* Enlace y no botón: sin el shell no hay navegación, y en la
+                        app agregada a inicio tampoco hay barra de direcciones. Sin
+                        esto, entrar acá era un camino de ida. */}
+                    <a href="/ios-test" style={{ color: '#6e46e6', textDecoration: 'none' }}>← /ios-test</a>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>
+                        {sinVidrio ? 'sin vidrio' : 'v10'}
+                    </span>
                 </div>
             </div>
 

@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.526.6 — El control sin shell era inalcanzable y tenía vidrio adentro
+
+Se le pidió al usuario que girara el teléfono en `/raw-test` como control de la
+medición de rotación. Contestó lo obvio: **«¿cómo entro en raw test en el
+iPhone? no me sale»**. Dos defectos, y el segundo es peor que el primero.
+
+**No se podía llegar.** `/raw-test` no tiene entrada en el menú —es sólo una
+URL— y en la app agregada a inicio no hay barra de direcciones donde escribirla,
+que es justamente el modo donde más importa medir. Ahora `/ios-test` tiene el
+botón, y `/raw-test` un enlace de vuelta: entrar ahí era un camino de ida.
+
+**Y el control no controlaba nada.** Su barra pegajosa lleva un `blur(44px)`, o
+sea la variable exacta bajo sospecha. Un resultado lento no se habría podido
+distinguir de «fue esa capa», y la conclusión que la página existía para
+habilitar —«si acá también tarda, la demora es del teléfono»— no se sostenía.
+`?sinvidrio=1` lo apaga, y el botón abre esa versión.
+
+Vale la pena anotarlo como error de método: el control se eligió por lo que la
+página **representa** —«la página cruda, sin shell»— y no por lo que la página
+**contiene**. Un control se lee entero antes de usarlo, igual que cualquier otra
+medición.
+
 ## v2.526.5 — El tema de la cuenta era un dato vivo, no un hecho fijo
 
 El encabezado de `cajaNegra.js` afirmaba que la cuenta del usuario usa el tema

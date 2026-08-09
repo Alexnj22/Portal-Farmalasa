@@ -23,23 +23,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.540.2 — v2.540.1 nunca llegó a producción
 
-Sin cambios de código: este commit existe para volver a disparar el despliegue.
+Sin cambios de código. Este commit se empujó para volver a disparar el
+despliegue, **y no sirvió** — queda como está, con el motivo escrito, porque el
+diagnóstico que traía era falso y el error vale más anotado que corregido en
+silencio.
 
-`cdac94d1` (v2.540.1) quedó en `main` y en GitHub, pero **Vercel no registró
-ningún deployment para él** — su último build siguió siendo `b03ff1a8`
-(v2.540.0). No hay `ignoreCommand` ni en `vercel.json` ni en el proyecto, así
-que fue el webhook de GitHub, que no llegó. Un webhook perdido no se reintenta:
-la única forma de recuperarlo es empujar otro commit.
+`cdac94d1` (v2.540.1) quedó en `main` y en GitHub, pero Vercel no registró
+ningún deployment para él. Lo atribuí a un webhook perdido —lo que ya había
+pasado el 2026-07-29— y empujé este commit como remedio. Tampoco desplegó.
 
-Queda anotado porque el síntoma engaña — el portal mostraba v2.540.0 con `main`
-en v2.540.1, y eso se lee como «el deploy está roto» cuando lo que había era un
-commit sin construir. La comprobación que lo distingue no es el panel de Vercel
-sino el bundle servido: `curl` al `index-*.js` de producción y buscar la
-constante `APP_VERSION`, que sobrevive a la minificación.
+**La causa era el cupo diario de Vercel: 100 despliegues, y la bolsa es de la
+CUENTA, no del proyecto.** Se agotó cerca de las 21:38 UTC entre este repo (~50
+ese día) y `casa-finanzas`, que gasta dos por commit. Agotado el cupo, un push
+no produce absolutamente nada: ni build, ni registro en `list_deployments`, ni
+GitHub Deployment. Se ve idéntico a un webhook perdido, y por eso lo confundí
+dos veces.
 
-Nada de lo que faltaba era visible: v2.540.1 sólo tocó `design-gate.mjs`,
-`DESIGN.md` y el changelog. Todo el trabajo de material de v2.540.0 llevaba
-desde el principio en producción — verificado en el CSS servido
+Lo que los distingue es mirar los **otros** proyectos de la cuenta: ahí los
+despliegues aparecen en estado `BLOCKED`, que es como Vercel marca «te pasaste
+del cupo». Uno solo en cualquier proyecto significa que la bolsa está vacía para
+todos. Y empujar otro commit para destrabarlo no sólo no funciona: gasta.
+
+Dos cosas que el síntoma esconde. La primera, que el portal mostrara v2.540.0
+con `main` en v2.540.2 se lee como «el deploy está roto» cuando lo que hay son
+commits sin construir; la comprobación que lo separa no es el panel de Vercel
+sino el bundle servido (`curl` al `index-*.js` y buscar `APP_VERSION`, que
+sobrevive a la minificación). La segunda, que este repo gasta un despliegue por
+commit —la regla es bumpear y pushear en cada uno— y con varias sesiones a la
+vez son decenas por día.
+
+Nada de lo que faltaba era visible: v2.540.1 y v2.540.2 sólo tocan
+`design-gate.mjs`, `DESIGN.md` y el changelog. Todo el trabajo de material de
+v2.540.0 llevaba desde el principio en producción — verificado en el CSS servido
 (`--velo-filtro:none` y las seis animaciones de entrada con `backwards`).
 
 ## v2.540.1 — El gate aprende a ver el backdrop root

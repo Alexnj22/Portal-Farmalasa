@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.530.0 — Los avisos en el teléfono: el paso que faltaba no se veía
+
+Preparación para habilitar el portal en las sucursales. Medido hoy en producción:
+
+```
+Administración   6 empleados   4 con avisos      última alta: 23-jul
+Salud 1..5, La Popular, Bodega, sin sucursal
+                44 empleados   0 con avisos
+```
+
+**Los «4 de 59» de la auditoría del 01-08 no eran un defecto** —el portal no
+estaba habilitado fuera de Administración, y así quedó decidido— pero el día que
+se habilite, el primero que lo abra en su teléfono entra por el navegador. Y
+hasta hoy ahí no veía **nada**.
+
+**Por qué no veía nada.** En iPhone los avisos con la app cerrada existen sólo si
+el portal está agregado a la pantalla de inicio; abierto como una página más del
+navegador, `Notification` ni siquiera está definido. El aviso que ofrece
+activarlos se mostraba sólo con `permission === 'default'`, y en ese caso el
+valor es `unsupported`. Ni oferta, ni explicación, ni forma de enterarse de que
+faltaba un paso — y el paso es de diez segundos.
+
+Ahora **«no se puede» y «falta agregar el portal a inicio» son estados
+distintos**, y el segundo se explica con su instrucción concreta: *Toca Compartir
+y luego «Agregar a inicio»*. Sin botón de acción, a propósito: el paso ocurre en
+el menú del teléfono y ningún botón nuestro puede dispararlo; uno que no hiciera
+nada sería peor que ninguno. Y su «no me lo muestres más» va a `localStorage`,
+no a `sessionStorage`: instalar la app es un trámite que la persona hace cuando
+puede, y volver a pedírselo en cada visita del día es acoso.
+
+**Dos silencios más, cerrados de paso:**
+
+- `isSupported` no miraba `Notification`, y `subscribe()` lo llama en su primera
+  línea. O sea que declaraba soportado un caso donde la primera instrucción
+  lanzaba excepción.
+- Esa excepción iba a `console.error` y nada más. En un teléfono no la lee nadie:
+  se apretaba «Activar», no pasaba nada, y no había cómo saber que había fallado.
+  Ahora avisa. Es la misma lección que ya costó siete meses de push caído
+  (`feedback_silence_is_not_success_in_alerts`).
+
 ## v2.529.0 — El límite de inactividad pasa a decidirlo el servidor
 
 F3 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`. Hasta hoy los 5 minutos del

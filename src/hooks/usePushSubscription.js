@@ -1,8 +1,33 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { upsertPushSubscription, deletePushSubscriptionByEndpoint } from '../data/pushSubscriptions';
+import { useToastStore } from '../store/toastStore';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+// ── En iPhone los avisos EXISTEN sólo con la app agregada a inicio ────────────
+//
+// iOS entrega avisos con la app cerrada únicamente cuando el portal está
+// agregado a la pantalla de inicio. Abierto como una página más del navegador,
+// `Notification` ni siquiera existe.
+//
+// Eso no era un detalle teórico: hoy hay **4 suscripciones sobre 50 empleados
+// activos, las 4 de Administración** (medido el 2026-08-08; la última es del 23
+// de julio). No es un defecto —el portal todavía no está habilitado para las
+// sucursales— pero cuando se habilite, el primero que lo abra en su teléfono va
+// a entrar por el navegador, y hasta hoy no veía **nada**: el aviso que ofrece
+// activarlas exige `permission === 'default'` y ahí el valor es `unsupported`.
+// Ni oferta, ni explicación, ni forma de enterarse de que faltaba un paso.
+//
+// Por eso «no se puede» y «falta instalar la app» dejan de ser el mismo estado.
+const esIOS = () => typeof navigator !== 'undefined'
+    && (/iPad|iPhone|iPod/.test(navigator.userAgent)
+        // iPadOS se hace pasar por Mac desde iOS 13; el táctil lo delata.
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+const esApp = () => typeof window !== 'undefined'
+    && ((window.matchMedia?.('(display-mode: standalone)').matches)
+        || window.navigator.standalone === true);
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -26,7 +51,17 @@ export function usePushSubscription() {
   );
   const [subscribed, setSubscribed] = useState(false);
 
-  const isSupported = 'serviceWorker' in navigator && 'PushManager' in window && !!VAPID_PUBLIC_KEY;
+  // `Notification` entra en la cuenta: `subscribe` lo llama en su primera línea,
+  // así que sin él «soportado» era una promesa que el propio hook no cumplía —
+  // la llamada tiraba una excepción que el `catch` mandaba a la consola y el
+  // usuario se quedaba mirando un botón que no hacía nada.
+  const isSupported = 'serviceWorker' in navigator
+    && 'PushManager' in window
+    && typeof Notification !== 'undefined'
+    && !!VAPID_PUBLIC_KEY;
+
+  // El caso que hay que EXPLICAR, no esconder: iPhone, todavía en el navegador.
+  const necesitaInstalar = !isSupported && esIOS() && !esApp();
 
   const refresh = useCallback(async () => {
     if (!isSupported) return;
@@ -67,7 +102,16 @@ export function usePushSubscription() {
       setSubscribed(true);
       window.dispatchEvent(new Event(SYNC_EVENT));
     } catch (err) {
+      // Un `console.error` en un teléfono no lo lee nadie: el usuario apretaba
+      // «Activar», no pasaba nada, y no había forma de saber que había fallado.
+      // Es la misma lección que ya costó un canal caído siete meses
+      // (`feedback_silence_is_not_success_in_alerts`).
       console.error('Push subscribe error:', err);
+      useToastStore.getState().showToast(
+        'No se pudieron activar los avisos',
+        'Vuelve a intentarlo. Si sigue igual, revisa que los avisos estén permitidos para el portal.',
+        'error',
+      );
     }
   }, [isSupported, user]);
 
@@ -87,5 +131,5 @@ export function usePushSubscription() {
     }
   }, [isSupported]);
 
-  return { permission, subscribed, subscribe, unsubscribe, isSupported };
+  return { permission, subscribed, subscribe, unsubscribe, isSupported, necesitaInstalar };
 }

@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.536.2 — Tanda 4: los nombres del monitor se leen
+
+**63 → 0.** Las tarjetas del tablero de asistencia recortaban el nombre a 111px
+cuando pedía hasta 297: «DOLORES CONCEPCION TEJADA HERNANDEZ» quedaba en
+«DOLORES CONCEPCION TE…».
+
+Truncar en una celda de tabla está bien —la fila tiene un ancho y el dato no—
+pero acá el nombre **es la identidad de la tarjeta**, y una tarjeta que no dice de
+quién es no sirve para nada. Una columna de kanban es angosta por diseño y no va
+a crecer.
+
+Dos pasos, y el segundo salió de medir el primero:
+
+1. **`shortEmployeeName`**, el canónico del portal —primer nombre + primer
+   apellido— que ya usan los avatares y los listados. Bajó de 63 a 12.
+2. Los 12 que quedaban ya eran nombres cortos pidiendo **113–119px en una caja de
+   111**: se pasaban por 2 a 8px. Cortar un apellido por ocho píxeles es lo peor
+   de los dos mundos, así que `line-clamp-2`: la caja crece un renglón sólo
+   cuando hace falta y el nombre nunca queda a medias.
+
+El nombre completo sigue en el `title` y en el detalle, a un toque.
+
 ## v2.536.1 — Un solo superusuario: `system_role` deja de decidir permisos
 
 D5 de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, y la raíz de los otros

@@ -29,6 +29,7 @@ import {
 
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
+import { shortEmployeeName } from "../utils/nameUtils";
 import { tokenMatch } from '../utils/searchUtils';
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from "../components/common/LiquidSelect";
@@ -472,8 +473,27 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           )}
         </div>
         <div className="min-w-0">
-          <h3 className="font-bold text-content text-body leading-tight truncate group-hover:text-brand-text transition-colors">
-            {emp.name}
+          {/* Nombre CORTO, no el completo truncado.
+              Medido el 2026-08-09: 63 tarjetas de este tablero recortaban el
+              nombre a 111px cuando pedía hasta 297 —«DOLORES CONCEPCION TEJADA
+              HERNANDEZ» quedaba en «DOLORES CONCEPCION TE…»—. Una columna de
+              kanban es angosta por diseño y no va a crecer.
+              Truncar en una celda de tabla está bien: la fila tiene un ancho y
+              el dato no. Pero acá el nombre ES la identidad de la tarjeta, y una
+              tarjeta que no dice de quién es no sirve para nada.
+              `shortEmployeeName` es el canónico del portal —primer nombre +
+              primer apellido— y ya lo usan los avatares y los listados. El
+              `truncate` se queda como red por si un nombre corto igual no entra;
+              el completo sigue en el detalle, a un toque.
+
+              Y `line-clamp-2` en vez de `truncate`: con el nombre corto los que
+              quedaban se pasaban por **2 a 8px** —«DOLORES TEJADA» pedía 118 en
+              una caja de 111— y cortar un apellido por ocho píxeles es lo peor
+              de los dos mundos. Envolviendo, la caja crece un renglón sólo
+              cuando hace falta y el nombre nunca queda a medias. */}
+          <h3 title={emp.name}
+            className="font-bold text-content text-body leading-tight line-clamp-2 break-words group-hover:text-brand-text transition-colors">
+            {shortEmployeeName(emp)}
           </h3>
           <p className="text-micro font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
             {emp.role || "Empleado"}

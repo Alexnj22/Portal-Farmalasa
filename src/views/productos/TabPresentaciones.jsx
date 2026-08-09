@@ -151,7 +151,7 @@ export default function TabPresentaciones({ searchTerm = '' }) {
             {/* §17.0 — carril y píldora en UNA fila, con el carril cediendo el
                 sobrante. En renglones separados `useMedidaFila` le descuenta a la
                 píldora el ancho de un carril que no tiene al lado. */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 {/* Las tarjetas son RESUMEN, no filtro — y por eso no llevan
                     `onClick`. La primera versión las hacía clickeables Y dejaba
                     los chips en la píldora: dos controles para el mismo dato, que

@@ -300,7 +300,7 @@ export default function LibroComprasCompletoView() {
             transparentBody={true}
         >
             <div className="p-5 md:p-6 space-y-5">
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen del libro completo">
                         <StatCard icon={BookOpen} label="Documentos" value={totales.docs} loading={loading}
                             sub={`${totales.docs - totales.sinCompra} registradas · ${totales.sinCompra} sin registrar`} />

@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.537.0 — Tanda 5: el carril deja de arrancar en cero
+
+Los 18 «carriles recortados» no eran 18 defectos: era **un componente**,
+`CarrilCards`, y **una línea**.
+
+Las vistas lo ponen con `flex-1` al lado de sus filtros, y `flex-1` es
+`flex: 1 1 0%` — **base cero**. El carril se encogía a lo que los filtros
+dejaran, y los filtros tienen ancho intrínseco. Medido a 1440:
+
+| Vista | Marco | Contenido | Ventana sin usar |
+|---|---|---|---|
+| Mín·Máx | 348px | 772px | 1,092px |
+| Ventas | 422px | 616px | 1,018px |
+| Metas | 551px | 616px | 889px |
+| Personal | 550px | 772px | 890px |
+
+En Ventas eso escondía «Ticket promedio» y «Puntos canjeados»; en Metas cortaba
+los montos: `$242,5…`, `$63,69…`.
+
+**El deslizamiento sigue siendo la decisión de julio y no se toca** —«entran las
+que quepan y el resto se alcanza deslizando», aprobado sobre mockup—. Lo que no
+era decisión es que el carril quedara en un tercio del ancho mientras sobraba
+pantalla.
+
+`lg:basis-auto`: la base deja de ser cero y pasa a ser el contenido. Si con los
+filtros no entra, los filtros bajan de renglón y el carril se queda con la fila.
+Se ajusta solo a cuántas tarjetas tenga cada vista.
+
+### El piso fijo no servía, y lo dijo la medición
+
+El primer intento fue `min-w-[480px]` —tres tarjetas—. Arregló Ventas y Personal
+y **no movió Metas ni Mín·Máx**: Metas recibía 551px, o sea MÁS que el piso, y
+sus cuatro tarjetas igual piden 616. Un piso fijo no puede saber cuántas
+tarjetas tiene cada vista; la base por contenido sí.
+
+### Lo que se revisó antes de tocar
+
+`FilterBar` reserva 314px cuando el carril está a su lado, y el comentario de
+Metas advierte que si el carril baja de renglón «le descuenta 314px a cambio de
+nada». Se leyó la guarda antes de agregar el `flex-wrap`: compara **centros
+verticales**, así que cuando el carril se va a otra fila deja de reservar. La
+advertencia ya estaba resuelta.
+
+**Resultado**: `carril-recortado` en 0 en las seis vistas medidas.
+
 ## v2.536.3 — Cotizaciones ya no acepta escrituras de cualquiera, y los expedientes se cierran
 
 D1 y D4a de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`.

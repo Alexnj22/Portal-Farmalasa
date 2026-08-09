@@ -259,7 +259,7 @@ export default function ConteoInventarioView() {
                 RESERVA_CARRIL (314px) por un carril que no tiene al lado. O sea que
                 el layout equivocado no falla: le roba 314px a la píldora en
                 silencio. El canónico es `StaffManagementView`. */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
             <CarrilCards className="flex-1" ariaLabel="Resumen de conteos">
                 {/* Ésta NO es un filtro: es el total, y por eso no lleva `active` ni
                     `onClick`. Con `active` StatCard dibuja una × de "quitar este

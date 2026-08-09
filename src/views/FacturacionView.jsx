@@ -645,7 +645,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                 clases por estado — o sea el vidrio del portal reescrito, que es
                 justo lo que `StatCard` existe para evitar. El color va donde ES
                 el dato: el número y el ícono. El fondo, nunca. */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de anulaciones">
                     <StatCard
                         icon={AlertTriangle} label="Pendientes" value={filtered.length}
@@ -1085,7 +1085,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     return (
         <div className="p-5 md:p-6 space-y-5">
             {/* Carril de métricas + píldora en UNA fila (§17.0). */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de pendientes de Hacienda">
                     <StatCard
                         icon={Clock} label="Pendientes MH" value={filtered.length}
@@ -1477,7 +1477,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
         <div className="p-5 md:p-6 space-y-6">
 
             {/* Carril de métricas + píldora en UNA fila (§17.0). */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de saltos de correlativo">
                     <StatCard
                         icon={History} label="Saltos" value={gaps.length}
@@ -1971,7 +1971,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                 pestañas. El desglose por forma de pago sigue siendo `Badge`,
                 que es lo suyo — son etiquetas, no métricas. */}
             <div className="p-5 md:p-6 pb-0 space-y-3">
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen de pagos no-efectivo">
                         <StatCard
                             icon={CreditCard} label="Pendientes" value={pendingFiltered.length}
@@ -2385,7 +2385,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 {/* Tarjetas FIJAS, tres a lo sumo (§17.0): el carril lo dibuja la
                     vista, no el dato. El desglose por código —que era una tarjeta
                     por clase de anomalía, con techo abierto— es ahora la ranura

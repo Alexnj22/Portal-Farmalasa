@@ -241,7 +241,7 @@ export default function FacturasSalaView() {
                     Las cuatro tarjetas SON el filtro de estado — por eso no hay
                     además una sección «estado» en la píldora: dos controles para
                     el mismo dato se leen como dos filtros distintos. */}
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de facturas tomadas">
                     <StatCard
                         icon={Clock} label="Sin cargar" value={conteos.sin_cargar}

@@ -644,7 +644,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
@@ -1144,7 +1144,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
@@ -1939,7 +1939,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);

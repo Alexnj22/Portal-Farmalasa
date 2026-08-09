@@ -496,7 +496,7 @@ export default function CorteZView() {
             transparentBody={true}
         >
             <div className="p-5 md:p-6 space-y-5">
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen del Corte Z">
                         <StatCard icon={Receipt} label="Sucursales" value={totales.sucursales}
                             sub="Del período" loading={loading} />

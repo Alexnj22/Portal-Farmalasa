@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.527.1 — La sonda cerraba los ojos justo antes del trabón
+
+El usuario contestó **«sinceramente, sigue igual»** mientras los números decían
+que 3 de cada 4 giros salían en 200 ms. Tenía razón él, y el error era del
+instrumento.
+
+La corrida terminaba 600 ms después de que la vista se acomodaba. Como
+acomodarse toma ~200 ms, **la sonda miraba unos 800 ms y se apagaba**. Y los dos
+giros lentos que sí se registraron son justamente aquellos donde el reparto ya
+estaba listo en el cuadro cero, o sea donde la ventana seguía abierta:
+
+```
+03:52:37 → vertical    medición hasta 505 ms    trabón   170 ms
+03:52:40 → horizontal  medición hasta 2001 ms   trabón 1,975 ms   ← la vio
+03:52:42 → vertical    medición hasta 505 ms    trabón   106 ms
+03:52:55 → vertical    medición hasta 515 ms    trabón    51 ms
+```
+
+El trabón puede estar en **todos** los giros; lo que cambiaba era si la medición
+seguía mirando. Una ventana que se cierra cuando el síntoma todavía no llegó no
+mide el síntoma — y peor, produce un «3 de 4 bien» que contradice a quien tiene
+el teléfono en la mano.
+
+Ahora se miran **siempre 5 segundos**. Para que eso no cueste, apenas la vista se
+acomoda se dejan de leer anchos —`clientWidth` es lo caro, porque fuerza el
+recálculo— y el resto de la ventana sólo cuenta cuadros, que es gratis. Sin ese
+corte, mirar 5 s serían ~300 recálculos y la sonda sería el trabón que vino a
+medir.
+
+**Y cada trabón se anota con su horario**, no sólo con su tamaño: uno a los 60 ms
+es el giro mismo, uno a los 1,200 ms es algo que llegó después y se puede ir a
+buscar por su hora.
+
+Lo que la corrida lenta ya descartó, de paso: **lectura 3 ms** —o sea que no es
+repartir el DOM— y **3 re-renders del shell**, los mismos que traen las rápidas,
+así que tampoco es código nuestro corriendo de más. Queda pintar, componer o una
+pausa de memoria.
+
 ## v2.527.0 — Cerrar sesión sin red ahora es cierto, y la clase del dispositivo es de la sesión
 
 F2 de `docs/PLAN-SESIONES-SEGURAS-2026-08-08.md`, la primera fase de la

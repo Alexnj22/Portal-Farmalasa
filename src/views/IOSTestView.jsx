@@ -256,6 +256,13 @@ const IOSTestView = () => {
                                             <Row label="Re-renders del shell" value={String(r.renders)} />
                                         )}
                                         <Row label="Cuadros lentos (>100 ms)" value={String(r.saltosLargos)} />
+                                        {/* El horario de cada trabón. El tamaño solo no alcanzaba:
+                                            uno a los 60 ms es el giro, uno a los 1,200 ms es algo
+                                            que llegó después y se puede ir a buscar por su hora. */}
+                                        {r.trabones?.length > 0 && (
+                                            <Row label="Se trabó a los"
+                                                value={r.trabones.map(x => `${x.en} ms (${x.ms})`).join(' · ')} />
+                                        )}
                                         {/* El estado del interruptor va ARRIBA del efecto: tres
                                             corridas con el remontaje encendido se leyeron como si
                                             fueran la línea base, y su trabón de 1.5 s se le estuvo
@@ -341,6 +348,7 @@ const IOSTestView = () => {
                                     + `${r.vistaEstableEn != null && r.viewportEn != null ? `+${r.vistaEstableEn - r.viewportEn}` : '—'} ms · `
                                     + `peor trabón: ${r.peorSalto} ms (lectura ${r.peorLectura ?? '—'} ms · `
                                     + `renders ${r.renders ?? '—'}) · lentos: ${r.saltosLargos} · `
+                                    + `trabones: ${(r.trabones || []).map(x => `${x.en}+${x.ms}`).join(', ') || 'ninguno'} · `
                                     + `remontaje: ${r.conRemonte ? 'ENCENDIDO' : 'apagado'} (${r.remontadaEn ?? 'no'}) · `
                                     + `tema: ${r.tema} · shell: ${r.conShell ? 'sí' : 'no'} · `
                                     + `escala: ${r.escala} · standalone: ${r.standalone ? 'sí' : 'no'} · nodos: ${r.nodos}\n`

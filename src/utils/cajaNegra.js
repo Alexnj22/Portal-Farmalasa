@@ -236,9 +236,31 @@ export function contarRenderShell() { rendersDelShell++; }
 
 const CLAVE_ROTACION = 'portal_rotacion';
 const TOPE_ROTACION  = 4;      // dos idas y dos vueltas: alcanza para comparar
-const VENTANA_MS     = 9000;   // tope duro: se midieron 3.2 s, así que 6 quedaba corto
-const CALMA_MS       = 600;    // cuánto se sigue mirando después de que la vista frenó
+const VENTANA_MS     = 12000;  // tope duro
 const QUIETOS        = 3;      // cuadros con el mismo ancho para darla por acomodada
+
+// ⚠️ La ventana MÍNIMA, y el motivo por el que existe.
+//
+// Hasta v2.527.0 la corrida terminaba 600 ms después de que la vista se
+// acomodaba. Como acomodarse toma ~200 ms, la sonda miraba unos 800 ms y se
+// apagaba. El 2026-08-08 03:52 el usuario mandó cuatro giros: dos rápidos, uno
+// de 1,975 ms, uno rápido. Los rápidos duraban 505 ms de medición y los lentos
+// eran justo aquellos donde el reparto ya estaba listo en el cuadro cero — o
+// sea que la ventana seguía abierta y **alcanzó a ver** el trabón.
+//
+// Dicho de otro modo: el trabón puede estar en todos los giros, y lo que
+// cambiaba era si la medición todavía estaba mirando. El usuario decía «sigue
+// igual» mientras los números decían «3 de 4 salieron bien»; tenía razón él.
+//
+// Una ventana que se cierra cuando el síntoma ya pasó no mide el síntoma. Ahora
+// se mira SIEMPRE 5 segundos. Para que eso no cueste, apenas la vista se
+// acomoda se dejan de leer anchos —la lectura de `clientWidth` es lo caro,
+// porque fuerza el recálculo— y el resto de la ventana sólo cuenta cuadros, que
+// es gratis.
+const VENTANA_MIN_MS = 5000;
+const CALMA_MS       = 600;    // cuánto se sigue LEYENDO después de que la vista frenó
+const TRABON_MIN_MS  = 150;    // desde acá un cuadro perdido se anota con su instante
+const TOPE_TRABONES  = 10;
 
 // Los instantes donde se guarda una foto de los anchos. Son pocos a propósito:
 // la tarjeta de `/ios-test` se lee en un teléfono y se fotografía.
@@ -279,10 +301,12 @@ export function iniciarSondaRotacion() {
             return hacia === 'vertical' ? e.clientWidth <= e.clientHeight : e.clientWidth >= e.clientHeight;
         };
         const muestras   = [];
+        const trabones   = [];   // los cuadros perdidos CON su instante
         const rendersAlEmpezar = rendersDelShell;
         let   peorLectura = 0;
         let   peorSalto  = 0;
         let   saltosLargos = 0;
+        let   leyendo    = true;  // se apaga cuando la vista se acomodó
         let   viewportEn = null;   // ms hasta que Safari entrega el ancho nuevo
         let   vistaEstableEn = null; // ms hasta que la vista deja de moverse
         let   remontadaEn = null;
@@ -304,6 +328,20 @@ export function iniciarSondaRotacion() {
             if (t > 40) {
                 if (salto > peorSalto) peorSalto = salto;
                 if (salto > 100) saltosLargos++;
+                // El instante importa tanto como el tamaño: un trabón a los
+                // 60 ms es el giro mismo, y uno a los 1,200 ms es algo que
+                // llegó DESPUÉS y hay que ir a buscar por su horario.
+                if (salto >= TRABON_MIN_MS && trabones.length < TOPE_TRABONES) {
+                    trabones.push({ en: t - salto, ms: salto });
+                }
+            }
+
+            // Terminada la parte cara, el resto de la ventana sólo cuenta
+            // cuadros. Sin esto, mirar 5 s obligaría a 300 recálculos de layout
+            // y la sonda sería el trabón que vino a medir.
+            if (!leyendo) {
+                if (t < VENTANA_MIN_MS) { requestAnimationFrame(paso); return; }
+                return cerrar(t);
             }
 
             const nodo = buscarVista();
@@ -352,9 +390,16 @@ export function iniciarSondaRotacion() {
                 iHito++;
             }
 
-            const seAcabo = t >= VENTANA_MS || (vistaEstableEn != null && t >= vistaEstableEn + CALMA_MS);
-            if (!seAcabo) { requestAnimationFrame(paso); return; }
+            // Se apagan las LECTURAS, no la ventana. A partir de acá el bucle
+            // sigue contando cuadros hasta los 5 s, que es donde aparecía el
+            // trabón que la versión anterior no llegaba a ver.
+            if (vistaEstableEn != null && t >= vistaEstableEn + CALMA_MS) leyendo = false;
 
+            if (t >= VENTANA_MS) return cerrar(t);
+            requestAnimationFrame(paso);
+        };
+
+        const cerrar = () => {
             try {
                 const previas = JSON.parse(localStorage.getItem(CLAVE_ROTACION) || '[]');
                 const lista = Array.isArray(previas) ? previas : [];
@@ -372,6 +417,10 @@ export function iniciarSondaRotacion() {
                     // trabajo del navegador sobre nuestro DOM, no código.
                     renders: rendersDelShell - rendersAlEmpezar,
                     saltosLargos,
+                    // La lista con su horario. `peorSalto` sólo decía cuánto;
+                    // esto dice CUÁNDO, que es lo que permite ir a buscar qué
+                    // pasa a esa altura del giro.
+                    trabones,
                     remontadaEn,
                     // El ESTADO del interruptor, no sólo su efecto. Sin esto,
                     // tres corridas con el remontaje encendido se leyeron como

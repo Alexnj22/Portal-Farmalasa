@@ -1600,6 +1600,32 @@ Y si la fila **sí** es un registro pero el teléfono ya tiene su propio camino
 `movil={false}` con su motivo en un comentario justo arriba: el modo ficha ahí
 sería una tercera forma de lo mismo compitiendo con la que ya se aprobó.
 
+#### El ancla de una fila no puede depender del ancho de la ventana (2026-08-09)
+
+En el teléfono, `DataTable` pone el **ancla** —el número por el que se entra a la
+lista: total, monto, saldo— arriba a la derecha de cada ficha. En escritorio ese
+mismo dato es la última columna, y ahí nadie lo protegía.
+
+Medido en Ventas: a **1440×900 con el menú abierto** quedan ~1080px de marco
+útil, sus ocho columnas pedían más, y la que se salía era **Total**. Se leía
+`$3.`, `$28.`, `$8.`, cortado a media cifra. O sea que el dato central de la
+pantalla era legible en el celular e ilegible en la computadora.
+
+**La regla:** si a 1440 con el menú abierto la última columna se sale del marco,
+**sobran columnas, no falta scroll**. Se baja a `hideBelow` lo que es contexto
+—sucursal, método de pago, un identificador secundario— y nunca lo que **es** la
+fila: quién y cuánto.
+
+⚠️ **El peldaño `1440` de `HIDE_BELOW` no sirve para esto.** Se implementa como
+`min-[1440px]:table-cell`, o sea que **se cumple a 1440** y a ese ancho exacto no
+oculta nada. Para que la columna desaparezca en un portátil de 1440 hay que usar
+`2xl`. Ya costó una iteración completa, con una medición propia que dijo «entra»
+mientras la captura mostraba lo contrario.
+
+Lo vigila `npm run gate:ux`, que lee el barrido de escritorio
+(`tests/e2e/barrido-escritorio.spec.js`). No corre en pre-commit —necesita el
+navegador y unos 20 minutos— sino en el trabajo nocturno, junto al barrido móvil.
+
 ### LiquidSelect
 
 File: `src/components/common/LiquidSelect.jsx`

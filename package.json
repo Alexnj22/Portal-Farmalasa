@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "gate:design": "node scripts/design-gate.mjs",
     "gate:movil": "node scripts/mobile-gate.mjs",
+    "gate:ux": "node scripts/ux-gate.mjs",
     "gate:data": "node scripts/data-gate.mjs",
     "gate:bundle": "node scripts/bundle-gate.mjs",
     "gate:doc": "node scripts/design-doc-gate.mjs",

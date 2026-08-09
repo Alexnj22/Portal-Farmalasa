@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.534.1 — gate:ux y la regla del ancla
+
+El ratchet del barrido de escritorio, y la regla que sale de lo que encontró.
+
+**`gate:ux`** tiene la forma de sus dos hermanos —una categoría por regla, un
+baseline, ninguna puede subir— con una diferencia que conviene entender: los
+otros dos leen el fuente y corren en cada commit; éste lee el informe de un
+barrido que necesita navegador y unos 20 minutos. **Por eso no va en
+pre-commit**: si no hay informe, no falla, avisa que no lo hay. Un gate que exige
+una corrida de 20 minutos antes de cada commit se desactiva a la semana, y un
+gate desactivado es peor que ninguno. Su lugar es el trabajo nocturno.
+
+**La regla, en `DESIGN.md §32`: el ancla de una fila no puede depender del ancho
+de la ventana.** En el teléfono `DataTable` pone el ancla —el número por el que
+se entra a la lista— arriba a la derecha de cada ficha. En escritorio ese mismo
+dato es la última columna, y ahí nadie lo protegía: si a 1440 con el menú abierto
+se sale del marco, **sobran columnas, no falta scroll**. Se baja a `hideBelow` lo
+que es contexto, nunca lo que **es** la fila: quién y cuánto.
+
+Con su advertencia: **el peldaño `1440` no sirve para esto**, porque se
+implementa como `min-[1440px]` y por lo tanto se cumple *a* 1440. Hay que usar
+`2xl`. Ya costó una iteración, con una medición propia que dijo «entra» mientras
+la captura mostraba lo contrario.
+
 ## v2.534.0 — El barrido de escritorio: el ancho que nadie medía
 
 El barrido móvil recorre las 37 rutas × 4 temas, con pestañas y diálogos, y está

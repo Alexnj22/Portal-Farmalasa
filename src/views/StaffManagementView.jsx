@@ -954,7 +954,11 @@ const StaffManagementView = ({
                         </Notice>
         )}
 
-        <DataTable
+        {/* `dense`: cinco columnas pedían 893px contra los 868 del marco a 1280 y
+            la de **Acciones** quedaba fuera — los botones de la fila existían y
+            no se alcanzaban. `px-6` → `px-3` devuelve ~12px por columna, de
+            sobra para 25. Misma tabla que usa el tablero de personal. */}
+        <DataTable dense
           columns={[
             { key: 'name',   label: isPracticantesView ? 'Practicante' : 'Empleado', sortable: !isPracticantesView },
             { key: 'branch', label: 'Sucursal',         sortable: !isPracticantesView },

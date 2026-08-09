@@ -20,7 +20,19 @@ import { MEDIR_ESCRITORIO, MEDIR_SCROLL } from './medicion-escritorio.js';
 const E2E_USER = process.env.E2E_USER;
 const E2E_PASSWORD = process.env.E2E_PASSWORD;
 
-const SALIDA = 'test-results/barrido-escritorio';
+// FUERA de `test-results/`, a propósito.
+//
+// Playwright administra ese directorio: lo limpia al arrancar una corrida. Con
+// el informe adentro, **cualquier otra suite que alguien corra en paralelo lo
+// borra** — y en este árbol hay varias sesiones. Pasó: el informe de las 37
+// rutas desapareció entre una medición y la siguiente, y la primera corrida ya
+// había muerto por lo mismo (`ENOENT` al escribir).
+//
+// El resultado de una medición de once minutos no puede vivir en un directorio
+// que otro proceso considera suyo. `barridos/` ya existe y ya está ignorado: el
+// barrido móvil aprendió lo mismo antes, así que se usa el mismo lugar en vez
+// de inventar otro.
+const SALIDA = 'barridos/escritorio';
 
 // La MISMA lista que el barrido móvil. Se copia en vez de importarse porque
 // aquél la define dentro de su spec; el día que se mueva a un módulo, las dos

@@ -1023,14 +1023,18 @@ export default function CotizacionesView() {
             </div>
 
             {/* Tabla */}
-            <DataTable
+            <DataTable dense
                 columns={[
                     { key: 'numero',     label: 'Número' },
                     { key: 'fecha',      label: 'Fecha' },
                     { key: 'cliente',    label: 'Cliente' },
                     { key: 'tipo',       label: 'Tipo',       hideBelow: 'sm' },
-                    { key: 'sucursal',   label: 'Sucursal',   hideBelow: 'lg' },
-                    { key: 'creadopor',  label: 'Creado por', hideBelow: 'md' },
+                    // `2xl` las dos: a 1280 las nueve columnas pedían 1,135px
+                    // contra los 932 del marco y la de **acciones** quedaba
+                    // fuera — los botones de la fila no se alcanzaban. Sucursal
+                    // y quién la creó son contexto y están en el detalle.
+                    { key: 'sucursal',   label: 'Sucursal',   hideBelow: '2xl' },
+                    { key: 'creadopor',  label: 'Creado por', hideBelow: '2xl' },
                     { key: 'estado',     label: 'Estado',     hideBelow: 'sm' },
                     { key: 'total',      label: 'Total',      align: 'right' },
                     { key: 'acciones',   label: '' },
@@ -1064,10 +1068,10 @@ export default function CotizacionesView() {
                                     {cot.document_type}
                                 </Badge>
                             </DataCell>
-                            <DataCell hideBelow="lg">
+                            <DataCell hideBelow="2xl">
                                 <span className="text-label text-content-2">{branchName}</span>
                             </DataCell>
-                            <DataCell hideBelow="md">
+                            <DataCell hideBelow="2xl">
                                 {cot.created_by_name ? (
                                     <div className="flex items-center gap-2">
                                         <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name} className="w-6 h-6 rounded-full shrink-0" />

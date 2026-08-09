@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.535.1 — Tanda 2: los botones de la fila vuelven al marco
+
+Segunda tanda. No es el mismo defecto que la primera: acá lo que quedaba fuera
+del marco era la columna de **acciones** — botones que existen y no se alcanzan.
+
+**Cerradas:** `staff`, `dashboard` (la misma tabla de cinco columnas en las dos)
+y `cotizaciones`.
+
+**Bajaron mucho pero siguen, todas a 1280:** `minmax` 225 → 83px,
+`facturas-compra` 195 → 39px, `conteo-inventario` 30px.
+
+**Sin tocar:** `vacation-plan`, que no es un problema de columnas — su marco mide
+**620px en una ventana de 1440** y 460 en una de 1280. Una tabla que recibe menos
+de la mitad del ancho disponible está encerrada en un contenedor, y eso se mira
+antes de esconderle columnas.
+
+`dense` hace el trabajo donde la diferencia es de decenas de píxeles —cinco
+columnas a 25px de sobra, ocho a 30— y las demociones a `2xl` donde son
+centenares: `Tipo` y `N° Control` en facturas de compra, `Sucursal` y
+`Creado por` en cotizaciones. El criterio no cambia: sale lo que es contexto y se
+queda lo que es la fila.
+
+### El informe se mudó fuera de `test-results/`
+
+Playwright administra ese directorio y lo limpia al arrancar. Con el informe
+adentro, **cualquier otra suite que alguien corra en paralelo lo borra** — y en
+este árbol hay varias sesiones. Pasó: el resultado de las 37 rutas desapareció
+entre una medición y la siguiente, y la primera corrida ya había muerto por lo
+mismo.
+
+Pasa a `barridos/`, que ya existe y ya está ignorado porque **el barrido móvil
+aprendió esto antes**. Un resultado de once minutos no vive en un directorio que
+otro proceso considera suyo.
+
 ## v2.535.0 — Bloquear a una persona: corta el acceso de verdad, por petición
 
 Sale de una pregunta del usuario: *«¿por qué no corta la sesión? Ante algo de

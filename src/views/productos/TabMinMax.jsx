@@ -691,6 +691,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 </Notice>
                 )}
                 <DataTable
+                    dense
                     columns={COLS}
                     // Ninguna columna de esta tabla se alinea a la derecha, así
                     // que la inferencia tomaba la última como ancla. El número

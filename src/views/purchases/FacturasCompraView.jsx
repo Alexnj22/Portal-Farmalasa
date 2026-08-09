@@ -48,8 +48,12 @@ const TABS = [
 const DOC_COLS = [
     { key: 'fecha',     label: 'Fecha',      align: 'left',  sortable: true },
     { key: 'proveedor', label: 'Proveedor',  align: 'left',  sortable: true },
-    { key: 'tipo',      label: 'Tipo',       align: 'left',  sortable: true },
-    { key: 'numero',    label: 'N° Control', align: 'left',  hideBelow: 'lg' },
+    // `2xl` las dos: a 1280 las seis columnas pedían 1,079px contra 884 y la
+    // columna de archivos —la que abre el PDF— quedaba fuera del marco. El tipo
+    // de documento y el número de control son contexto y siguen en el detalle;
+    // el acceso al archivo no se alcanzaba de ninguna forma.
+    { key: 'tipo',      label: 'Tipo',       align: 'left',  sortable: true, hideBelow: '2xl' },
+    { key: 'numero',    label: 'N° Control', align: 'left',  hideBelow: '2xl' },
     { key: 'monto',     label: 'Monto',      align: 'right', sortable: true },
     { key: 'archivos',  label: '',           align: 'center' },
 ];
@@ -1032,7 +1036,7 @@ function TabDocumentos({
                 </div>
             )}
 
-            <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
+            <DataTable dense columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
                 {pageRows.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={canOpen ? () => viewDetail(row) : undefined}>
                         <DataCell>

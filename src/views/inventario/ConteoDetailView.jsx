@@ -1944,7 +1944,8 @@ export default function ConteoDetailView() {
                 </div>
 
                 <div className="hidden md:block">
-                    <DataTable
+                    {/* `dense`: a 1280 la columna de acciones se salía 30px. */}
+                    <DataTable dense
                         columns={columnas(verSistema, simple)}
                         sortKey={orden.key} sortDir={orden.dir} onSort={handleSort}
                         // `dense`: 7 columnas de captura densa. Con el padding normal

@@ -13,7 +13,7 @@
 //
 // Su lugar es el trabajo nocturno, junto al barrido móvil.
 //
-//   npm run gate:ux                      lee test-results/barrido-escritorio/informe.json
+//   npm run gate:ux                      lee barridos/escritorio/informe.json
 //   npm run gate:ux -- --update-baseline SÓLO al bajar deuda
 //
 // El informe lo escribe `tests/e2e/barrido-escritorio.spec.js`.
@@ -23,7 +23,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = join(fileURLToPath(new URL('.', import.meta.url)), '..');
-const INFORME  = join(RAIZ, 'test-results/barrido-escritorio/informe.json');
+const INFORME  = join(RAIZ, 'barridos/escritorio/informe.json');
 const BASELINE = join(RAIZ, 'scripts/ux-gate-baseline.json');
 
 // Una vista larga no es un defecto por sí misma —una lista scrollea, y está

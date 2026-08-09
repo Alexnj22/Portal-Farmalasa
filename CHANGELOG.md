@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.534.2 — Cerrar tus sesiones no te sacaba: `getSession` no le pregunta nada al servidor
+
+Reportado por el usuario: *«le di en cerrar sesión a mis sesiones que eran un
+montón, pero no me sacó, y al actualizar me da Acceso denegado; si le doy volver
+no hace nada, y las notificaciones siguen apareciendo»*.
+
+### La causa
+
+`validateSession` usaba **`supabase.auth.getSession()`, que no valida nada**: lee
+el token del disco y lo devuelve. Se llamaba «validate» y su comentario decía
+«verifica que la sesión sigue activa», pero la única forma de que fallara era que
+no hubiera token guardado.
+
+Reproducido, y medido con los dos extremos usando un token cuya sesión ya no
+existe:
+
+| | |
+|---|---|
+| `/auth/v1/user` — lo que usa `getUser()` | **403 `session_not_found`** |
+| `/rest/v1/…` — los datos | **200** |
+
+O sea: revocar una sesión **no corta el acceso a los datos** hasta que vence el
+access token (15 min), y la única forma de enterarse es **preguntar**. Sin esa
+pregunta, el portal seguía pintando el tablero con el caché; y cuando el token
+por fin vencía, quedaba a medio morir —menú vacío, «Acceso denegado», «Volver»
+sin efecto, notificaciones viejas— en vez de volver a la pantalla de acceso.
+
+### El arreglo
+
+`validateSession` pasa a `getUser()`, que sí va al servidor, y **cierra sesión
+sólo ante un rechazo real** — un fallo de red no puede echar a nadie, porque
+quedarse sin señal en una sucursal no es haber perdido la sesión. Además se
+revalida al **volver a la pestaña**, con un minuto de throttle: ése es el momento
+natural para enterarse de que alguien te cerró la sesión desde otro lado.
+
+Y en Conexiones, cerrar la conexión de este mismo equipo —o «Cerrar todas» sobre
+uno mismo— **ahora te saca en el acto**, sin esperar a la próxima carga.
+
+### El mismo tropiezo, dos veces en un día
+
+La primera versión de este arreglo **no funcionaba**, y por el error que ya se
+había cometido con el latido de `touch_session`: cortaba en `if
+(!userRef.current)`, y ese ref lo llena un `useEffect` —después del render—
+mientras el efecto de montaje corre antes. La validación no se ejecutaba nunca.
+
+Lo agarró la prueba, no una lectura del código. Ahora existe `hayAlguienDentro()`
+con el motivo escrito, para que la tercera vez no haya que descubrirlo de nuevo:
+en el montaje y en los cuatro caminos de login, la respuesta vive en el caché, no
+en el ref.
+
+`tests/e2e/sesion-revocada-movil.spec.js` revoca la sesión por fuera del portal
+—como si otra persona la hubiera cerrado desde Conexiones— y exige que recargar
+lleve a la pantalla de acceso y que el token no quede en el disco. Con un control
+sobre la revocación: si no se aplicó, el test falla por su propio motivo.
+
 ## v2.534.1 — gate:ux y la regla del ancla
 
 El ratchet del barrido de escritorio, y la regla que sale de lo que encontró.

@@ -23,7 +23,7 @@ const EMPTY_ARRAY = [];
 const POLL_MS = 60_000;
 
 const SesionesView = () => {
-    const { user, hasPermission } = useAuth();
+    const { user, hasPermission, logout } = useAuth();
     const canEdit = hasPermission('sesiones', 'can_edit');
     const appendAuditLog = useStaff(s => s.appendAuditLog);
     const showToast = useToastStore(s => s.showToast);
@@ -88,6 +88,16 @@ const SesionesView = () => {
             : await cerrarSesion(porCerrar.conexion.session_id);
         setCerrando(false);
 
+        // ¿Me cerré a mí mismo? Con «Cerrar todas» sobre la propia cuenta, sí —
+        // y el aviso lo dice. Hay que actuar en consecuencia ACÁ: el navegador
+        // se queda con un token que el servidor ya no reconoce, y como la API de
+        // datos lo sigue aceptando hasta que vence, el portal seguía pintando el
+        // tablero como si nada. Lo reportó el usuario: «le di en cerrar sesión a
+        // mis sesiones, pero no me sacó».
+        const meCerreAMi = esTodas
+            ? porCerrar.persona.tiene_esta
+            : porCerrar.conexion.es_actual;
+
         if (error) {
             showToast?.('No se pudo cerrar', 'Vuelve a intentar en un momento.', 'error');
         } else {
@@ -100,14 +110,17 @@ const SesionesView = () => {
             });
             showToast?.(
                 esTodas ? `${data} conexiones cerradas` : 'Conexión cerrada',
-                'Esos dispositivos ya no pueden renovar su acceso.',
+                meCerreAMi
+                    ? 'Cerraste también la de este equipo: hay que volver a entrar.'
+                    : 'Esos dispositivos ya no pueden renovar su acceso.',
                 'success',
             );
             if (esTodas) setAbierta(null);
+            if (meCerreAMi) { setPorCerrar(null); logout(); return; }
         }
         setPorCerrar(null);
         cargar();
-    }, [porCerrar, appendAuditLog, user, showToast, cargar]);
+    }, [porCerrar, appendAuditLog, user, showToast, cargar, logout]);
 
     const filtrosActivos = (soloHoy ? 1 : 0) + (soloOlvidadas ? 1 : 0);
 

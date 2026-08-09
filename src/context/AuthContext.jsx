@@ -90,6 +90,8 @@ const CHECK_EVERY_MS        = 30 * 1000;
 const ACTIVITY_THROTTLE_MS  = 2000;
 // Cada cuánto, como mucho, se le avisa al servidor que la sesión sigue viva.
 const HEARTBEAT_MS          = 60 * 1000;
+// Cada cuánto, como mucho, se le PREGUNTA al servidor si la sesión sigue viva.
+const REVALIDATE_MS         = 60 * 1000;
 
 // La clase del dispositivo: 'app' (PWA instalada o build nativo) o 'navegador'.
 //
@@ -152,6 +154,18 @@ export const AuthProvider = ({ children }) => {
   // Candados de mantenimiento: { [module_key]: { locked_by_id, locked_by_name, reason, locked_at, expires_at } }
   const [moduleLocks, setModuleLocks] = useState({});
   const [maxPriceLevel, setMaxPriceLevel] = useState(null);
+
+  // «¿Hay alguien dentro?», contestable también durante el montaje.
+  //
+  // `userRef` sólo sirve DESPUÉS del primer render: lo llena un `useEffect`. En
+  // los efectos de montaje —y en los cuatro caminos de login, que hacen
+  // `setUser` y siguen en el mismo tick— todavía vale `null`, y usarlo como
+  // guarda apaga en silencio lo que venga detrás. Ya pasó dos veces en un día:
+  // con el latido de `touch_session` y con la validación de sesión.
+  const hayAlguienDentro = () => {
+    if (userRef.current) return true;
+    try { return !!localStorage.getItem(LS_USER); } catch { return false; }
+  };
 
   const idleIntervalRef  = useRef(null);
   const lastWriteRef     = useRef(0);
@@ -284,14 +298,37 @@ export const AuthProvider = ({ children }) => {
     refreshPermissions(user);
   }, [user?.id, user?.roleId, user?.secondaryRoleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refresca permisos solo al VOLVER a la pestaña (no al ocultarla)
+  // Refresca permisos solo al VOLVER a la pestaña (no al ocultarla), y de paso
+  // le pregunta al servidor si la sesión sigue existiendo.
+  //
+  // Lo segundo es la mitad que faltaba: sin esto, una sesión revocada desde otro
+  // lado —«Cerrar todas», o alguien cerrándola desde Conexiones— no se notaba
+  // hasta que venciera el access token. Volver a la pestaña es el momento
+  // natural para enterarse, y con el throttle no cuesta casi nada.
+  const ultimaValidacionRef = useRef(0);
+  const revalidarSesion = useCallback(async () => {
+    if (!hayAlguienDentro()) return;
+    const ahora = Date.now();
+    if (ahora - ultimaValidacionRef.current < REVALIDATE_MS) return;
+    ultimaValidacionRef.current = ahora;
+    try {
+      const { error } = await withTimeout(supabase.auth.getUser(), 5000, 'getUser timeout');
+      // Sólo un rechazo del servidor cierra sesión. Un fallo de red no puede
+      // echar a nadie — quedarse sin señal no es haber perdido la sesión.
+      if (error && !isNetworkError(error)) doLogout();
+    } catch { /* red inestable: se confía en el caché */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- doLogout usa sólo setters y refs estables
+
   useEffect(() => {
     const onVisible = () => {
-      if (userRef.current && document.visibilityState === 'visible') refreshPermissions();
+      if (userRef.current && document.visibilityState === 'visible') {
+        refreshPermissions();
+        revalidarSesion();
+      }
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [refreshPermissions]);
+  }, [refreshPermissions, revalidarSesion]);
 
   // Realtime: refresca permisos en el instante que el admin cambia role_permissions
   // del rol del usuario actual — menú y PermissionGuard reaccionan sin recargar.
@@ -554,16 +591,45 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     aliveRef.current = true;
 
-    // Solo verifica que la sesión sigue activa.
-    // onAuthStateChange (INITIAL_SESSION) maneja el refresh de perfil.
-    // Duplicar ensure_user_by_code aquí generaría el doble de llamadas a la edge function.
+    // Verifica CONTRA EL SERVIDOR que la sesión sigue existiendo.
+    //
+    // Antes usaba `getSession()`, que **no valida nada**: lee el token del disco
+    // y lo devuelve. Se llamaba `validateSession` y su comentario decía «verifica
+    // que la sesión sigue activa», pero la única forma de que fallara era que no
+    // hubiera token guardado.
+    //
+    // El agujero se vio el 2026-08-09, con «Cerrar todas» sobre la propia cuenta:
+    // se borraron las 3,406 sesiones del servidor y el portal siguió pintando el
+    // tablero, incluso tras recargar. Reproducido, y medido con los dos extremos:
+    //
+    //     /auth/v1/user  ->  403 session_not_found   ← getUser() SÍ pregunta
+    //     /rest/v1/…     ->  200                     ← los datos siguen saliendo
+    //
+    // O sea que revocar una sesión no corta el acceso a los datos hasta que
+    // vence el access token (15 min con el ajuste de F1); lo que sí se puede
+    // hacer, y es lo que faltaba, es enterarse y cerrar la puerta de este lado.
+    //
+    // `getUser()` cuesta una llamada de red al arrancar. Es el precio de que la
+    // pregunta se conteste de verdad.
     const validateSession = async () => {
+      // `userRef` NO sirve como guarda acá: lo llena un `useEffect`, o sea
+      // después del render, y este efecto de montaje corre antes. Preguntar por
+      // él daba siempre `null` y la validación no se ejecutaba nunca — el mismo
+      // tropiezo que ya se había arreglado en `latirSesion`, cometido otra vez
+      // el mismo día. Lo agarró la prueba, no una lectura del código.
+      //
+      // La pregunta correcta es «¿hay alguien dentro?», y en el arranque eso
+      // vive en el caché, no en el ref.
+      if (!hayAlguienDentro()) return;
       try {
-        const { data } = await withTimeout(supabase.auth.getSession(), 3500, 'getSession timeout');
+        const { error } = await withTimeout(supabase.auth.getUser(), 5000, 'getUser timeout');
         if (!aliveRef.current) return;
-        if (!data?.session?.user && userRef.current) doLogout();
+        // SÓLO se cierra ante un rechazo real del servidor. Un fallo de red no
+        // puede echar a nadie: sin esta distinción, quedarse sin señal en una
+        // sucursal sacaría a todo el mundo del portal.
+        if (error && !isNetworkError(error)) doLogout();
       } catch {
-        // Red inestable → confiamos en el cache local
+        // Timeout o red inestable → se confía en el caché local.
       }
     };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { MonitorSmartphone, Smartphone, Monitor, LogOut, Clock, Info, AlertCircle, MapPin } from 'lucide-react';
+import { MonitorSmartphone, Smartphone, Monitor, LogOut, Clock, Info, AlertCircle, MapPin, ShieldOff, ShieldCheck } from 'lucide-react';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import LiquidAvatar from '../components/common/LiquidAvatar';
@@ -16,7 +16,9 @@ import { useToastStore } from '../store/toastStore';
 import {
     fetchSesiones, cerrarSesion, cerrarTodasDe, agruparPorPersona,
     describirDispositivo, haceCuanto, describirLimite, diasDesde,
+    bloquearPersona, desbloquearPersona, describirBloqueo,
 } from '../data/sesiones';
+import BloqueoModal from '../components/sesiones/BloqueoModal';
 import { tokenMatch } from '../utils/searchUtils';
 
 const EMPTY_ARRAY = [];
@@ -41,6 +43,9 @@ const SesionesView = () => {
     const [abierta, setAbierta] = useState(null);      // persona cuyo detalle se ve
     const [porCerrar, setPorCerrar] = useState(null);  // { tipo: 'una'|'todas', … }
     const [cerrando, setCerrando] = useState(false);
+    const [porBloquear, setPorBloquear] = useState(null);
+    const [bloqueando, setBloqueando] = useState(false);
+    const puedeBloquear = hasPermission('bloqueos', 'can_edit');
 
     const cargar = useCallback(async () => {
         const { data, error } = await fetchSesiones();
@@ -121,6 +126,40 @@ const SesionesView = () => {
         setPorCerrar(null);
         cargar();
     }, [porCerrar, appendAuditLog, user, showToast, cargar, logout]);
+
+    const confirmarBloqueo = useCallback(async (hasta, motivo) => {
+        if (!porBloquear) return;
+        setBloqueando(true);
+        const { data, error } = await bloquearPersona(porBloquear.persona_id, hasta, motivo);
+        setBloqueando(false);
+        if (error) {
+            showToast?.('No se pudo bloquear', error.message || 'Vuelve a intentar.', 'error');
+        } else {
+            appendAuditLog?.('EMPLEADO_BLOQUEADO', user?.id, {
+                persona: porBloquear.empleado, cuenta: porBloquear.cuenta,
+                hasta: hasta || 'indefinido', motivo: motivo || null,
+                sesionesCerradas: data, actorName: user?.name,
+            });
+            showToast?.('Persona bloqueada',
+                `Se cerraron ${data} conexiones y ya no puede entrar.`, 'success');
+        }
+        setPorBloquear(null);
+        setAbierta(null);
+        cargar();
+    }, [porBloquear, appendAuditLog, user, showToast, cargar]);
+
+    const quitarBloqueo = useCallback(async (persona) => {
+        const { error } = await desbloquearPersona(persona.persona_id);
+        if (error) {
+            showToast?.('No se pudo desbloquear', error.message || 'Vuelve a intentar.', 'error');
+        } else {
+            appendAuditLog?.('EMPLEADO_DESBLOQUEADO', user?.id, {
+                persona: persona.empleado, cuenta: persona.cuenta, actorName: user?.name,
+            });
+            showToast?.('Bloqueo quitado', 'Ya puede volver a entrar al portal.', 'success');
+        }
+        cargar();
+    }, [appendAuditLog, user, showToast, cargar]);
 
     const filtrosActivos = (soloHoy ? 1 : 0) + (soloOlvidadas ? 1 : 0);
 
@@ -211,9 +250,11 @@ const SesionesView = () => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1 shrink-0">
-                                    <Badge variant={p.conexiones.length > 5 ? 'warning' : 'neutral'} size="sm">
-                                        {p.conexiones.length}
-                                    </Badge>
+                                    {p.bloqueado
+                                        ? <Badge variant="danger" size="sm" icon={ShieldOff}>Bloqueado</Badge>
+                                        : <Badge variant={p.conexiones.length > 5 ? 'warning' : 'neutral'} size="sm">
+                                            {p.conexiones.length}
+                                        </Badge>}
                                     {p.tiene_esta && <Badge variant="info" size="sm">Aquí</Badge>}
                                 </div>
                             </button>
@@ -250,6 +291,13 @@ const SesionesView = () => {
                 </LiquidModal.Header>
 
                 <LiquidModal.Body className="space-y-2">
+                    {detalle?.bloqueado && (
+                        <Notice variant="danger" icon={ShieldOff}>
+                            {describirBloqueo(detalle.bloqueado_hasta)}
+                            {detalle.bloqueo_motivo ? ` · ${detalle.bloqueo_motivo}` : ''}. No puede entrar
+                            al portal ni consultar nada mientras dure.
+                        </Notice>
+                    )}
                     <p className="text-caption text-content-3 px-0.5 pb-1">
                         Cerrar una conexión le quita a ese dispositivo la posibilidad de renovar su
                         acceso; sale del todo en cuanto se le venza el que ya tiene, y puede tardar
@@ -297,6 +345,29 @@ const SesionesView = () => {
 
                 <LiquidModal.Footer>
                     <Button variant="secondary" onClick={() => setAbierta(null)}>Volver</Button>
+                    {/* Bloquear no se ofrece sobre uno mismo: la base lo rechaza
+                        —quedarías fuera y sin el permiso para deshacerlo— y un
+                        botón que siempre falla es peor que no tenerlo. */}
+                    {detalle?.bloqueado ? (
+                        <Button
+                            variant="secondary"
+                            icon={ShieldCheck}
+                            disabled={!puedeBloquear}
+                            onClick={() => quitarBloqueo(detalle)}
+                        >
+                            Quitar bloqueo
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="secondary"
+                            icon={ShieldOff}
+                            disabled={!puedeBloquear || detalle?.tiene_esta}
+                            title={detalle?.tiene_esta ? 'No puedes bloquearte a ti mismo' : 'Quitarle el acceso al portal'}
+                            onClick={() => setPorBloquear(detalle)}
+                        >
+                            Bloquear
+                        </Button>
+                    )}
                     <Button
                         variant="destructive"
                         icon={LogOut}
@@ -307,6 +378,13 @@ const SesionesView = () => {
                     </Button>
                 </LiquidModal.Footer>
             </LiquidModal>
+
+            <BloqueoModal
+                persona={porBloquear}
+                procesando={bloqueando}
+                onCancelar={() => setPorBloquear(null)}
+                onConfirmar={confirmarBloqueo}
+            />
 
             <ConfirmModal
                 isOpen={!!porCerrar}

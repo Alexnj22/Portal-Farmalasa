@@ -40,14 +40,20 @@ export function agruparPorPersona(filas) {
                 cuenta: f.cuenta,
                 cargo: f.cargo,
                 foto: f.foto,
+                bloqueado_hasta: f.bloqueado_hasta,
+                bloqueo_motivo: f.bloqueo_motivo,
                 conexiones: [],
             });
         }
-        porPersona.get(clave).conexiones.push(f);
+        // `session_id` nulo = persona bloqueada SIN conexiones. Llega para que
+        // no desaparezca de la pantalla —si no, no habría dónde desbloquearla—
+        // pero no es una conexión y no entra en la lista.
+        if (f.session_id) porPersona.get(clave).conexiones.push(f);
     }
     for (const p of porPersona.values()) {
         p.conexiones.sort((a, b) => new Date(b.ultimo_movimiento) - new Date(a.ultimo_movimiento));
         p.ultimo_movimiento = p.conexiones[0]?.ultimo_movimiento || null;
+        p.bloqueado = estaBloqueado(p.bloqueado_hasta);
         p.tiene_esta = p.conexiones.some(c => c.es_actual);
     }
     return [...porPersona.values()]
@@ -118,4 +124,40 @@ export function describirLimite(minutos) {
         return h === 1 ? '1 hora sin usarse' : `${h} horas sin usarse`;
     }
     return `${minutos} min sin usarse`;
+}
+
+// ── Bloqueo ─────────────────────────────────────────────────────────────────
+// Bloquear corta de verdad: además de cerrar las sesiones, una policy
+// RESTRICTIVE en las 135 tablas deja a la persona sin leer ni escribir nada, y
+// el hook le niega tokens nuevos. Es la diferencia con cerrar una conexión, que
+// sólo impide renovar.
+
+export function bloquearPersona(personaId, hasta, motivo) {
+    return supabase.rpc('block_employee', {
+        p_employee_id: personaId,
+        p_until: hasta ?? null,      // null = indefinido
+        p_reason: motivo || null,
+    });
+}
+
+export function desbloquearPersona(personaId) {
+    return supabase.rpc('unblock_employee', { p_employee_id: personaId });
+}
+
+// `blocked_until` viene con 'infinity' cuando el bloqueo no tiene fecha. Ese
+// valor no se puede pasar por `new Date()` — hay que reconocerlo antes.
+export function describirBloqueo(hasta) {
+    if (!hasta) return null;
+    if (String(hasta).startsWith('infinity')) return 'Bloqueado indefinidamente';
+    const t = Date.parse(hasta);
+    if (!Number.isFinite(t)) return 'Bloqueado';
+    if (t <= Date.now()) return null;   // ya venció: se liberó solo
+    return `Bloqueado hasta el ${new Date(t).toLocaleDateString('es-SV')}`;
+}
+
+export function estaBloqueado(hasta) {
+    if (!hasta) return false;
+    if (String(hasta).startsWith('infinity')) return true;
+    const t = Date.parse(hasta);
+    return Number.isFinite(t) && t > Date.now();
 }

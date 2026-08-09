@@ -30,7 +30,7 @@ import {
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
-    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone,
+    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone, ShieldOff,
     BookOpen, Contact, Wrench, Users, Calculator, ReceiptText
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
@@ -356,6 +356,11 @@ const GRUPOS_CRUDOS = [
             // Ver a qué hora y desde dónde se conecta cada persona es dato
             // sensible: se reparte con cuidado. `can_edit` es el que cierra.
             { key: 'sesiones',     label: 'Conexiones',             desc: 'Qué dispositivos tienen sesión abierta, cuándo se usaron por última vez y desde dónde; permite cerrar una a distancia', icon: MonitorSmartphone, hasApprove: false },
+            // Aparte de `sesiones` a propósito: cerrar una conexión sólo impide
+            // renovarla, mientras que bloquear deja a la persona sin entrar y sin
+            // leer NADA desde la siguiente petición. Es más grave y se reparte a
+            // menos gente.
+            { key: 'bloqueos',     label: 'Bloquear Personas',      desc: 'Quitarle a alguien el acceso al portal por completo, por un tiempo o hasta que se le devuelva; cierra sus conexiones y le impide entrar', icon: ShieldOff, hasApprove: false },
         ],
     },
 ];

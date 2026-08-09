@@ -21,6 +21,73 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.535.0 — Bloquear a una persona: corta el acceso de verdad, por petición
+
+Sale de una pregunta del usuario: *«¿por qué no corta la sesión? Ante algo de
+seguridad no podría quitar el acceso… agreguemos que pueda bloquear a un
+usuario, por tiempo o indefinido»*.
+
+**Por qué cerrar una conexión no cortaba.** El access token es un papel firmado:
+PostgREST le mira la firma y la fecha, no si la sesión existe. Medido — con un
+token cuya sesión ya fue borrada, `/rest/v1/…` sigue contestando **200** hasta
+que vence. Lo que se corta al cerrar una conexión es la **renovación**, no el
+acceso en curso.
+
+### El hallazgo que apareció al medir el alcance
+
+Antes de construir nada se contó cuántas policies podría alcanzar un bloqueo. De
+las 252 de `public`, **83 no preguntan nada** —ni permiso ni identidad—, y entre
+ellas están **`customers`** (fichas con DUI y teléfonos), `employee_documents`,
+`employee_events`, `timesheets`, `payroll_periods`, `branch_expenses`,
+`survey_responses` y `audit_logs`.
+
+O sea que cualquier persona autenticada podía leer todo eso, bloqueada o no. Es
+más grande que la función pedida y es previo: un empleado sin permiso de Personal
+ya podía leer la planilla si sabía pedirla.
+
+### Cómo corta ahora
+
+Una policy **RESTRICTIVE** por tabla, en las **135 tablas con RLS**. Se combinan
+con AND contra todo lo demás, así que **no hubo que tocar ni una sola policy
+existente** — reescribir 83 habría sido cambiarles la semántica una por una para
+el mismo resultado. Cubre SELECT, INSERT, UPDATE y DELETE.
+
+El `(SELECT …)` no es decorativo: es la regla del incidente del 2026-07-08. Sin
+él Postgres evalúa la función **por fila**. Verificado con `EXPLAIN` — el plan
+dice `InitPlan 1`, una sola evaluación por consulta.
+
+Las 5 tablas calientes van en su propia migración: los crons les escriben cada
+minuto y `CREATE POLICY` necesita ACCESS EXCLUSIVE, que fue la causa exacta de
+aquel outage. Separadas, un lock timeout ahí no obliga a repetir las otras 130.
+
+### Verificado contra producción, con el mismo token
+
+| Con el token que segundos antes leía | Tras bloquear |
+|---|---|
+| `roles`, `branches`, `employees` | `[]` |
+| `customers`, `timesheets`, `audit_logs` | `[]` |
+| Volver a entrar | **403 `account blocked`** |
+
+Y al quitar el bloqueo, ese mismo token vuelve a leer y el login vuelve a 200.
+
+### Lo demás
+
+`blocked_until` es un solo campo: NULL sin bloqueo, `'infinity'` indefinido, una
+fecha para que **se libere solo**. Bloquear cierra todas sus conexiones en el
+mismo acto y el hook le niega tokens nuevos, así que tampoco puede entrar.
+
+**No se puede bloquear a uno mismo**, y el freno está en la base y no sólo en la
+pantalla: quedarías fuera y sin el permiso para deshacerlo.
+
+**Y la lista incluye a los bloqueados aunque no tengan conexiones.** Bloquear
+mata sus sesiones, así que con la lista armada sólo desde `auth.sessions` la
+persona desaparecía en el mismo acto de bloquearla — y como el botón de
+desbloquear vive en su tarjeta, quedaba encerrada sin forma de volver. Un
+callejón sin salida que se creaba uno mismo al usar la función.
+
+El permiso es un módulo propio (**Bloquear Personas**), aparte de Conexiones:
+cerrar una conexión sólo impide renovar, bloquear deja a la persona sin nada.
+
 ## v2.534.4 — Tanda 1: el ancla vuelve al marco en cinco vistas
 
 Primera tanda de la revisión de UX. El defecto de Ventas, repetido en cuatro

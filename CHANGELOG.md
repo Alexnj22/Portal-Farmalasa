@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.534.0 — El barrido de escritorio: el ancho que nadie medía
+
+El barrido móvil recorre las 37 rutas × 4 temas, con pestañas y diálogos, y está
+en cero. Corre `devices['iPhone 13']` **y nada más**.
+
+Revisando Ventas a ojo apareció lo que eso deja pasar: a **1440×900 con el menú
+abierto** —el portátil más común— las ocho columnas no entraban en los ~1080px de
+marco útil y la que quedaba cortada era **Total**. El número por el que existe la
+pantalla era legible en el teléfono e ilegible en la computadora, y 37 rutas
+barridas exhaustivamente no lo vieron nunca porque nadie miraba ese ancho.
+
+`tests/e2e/barrido-escritorio.spec.js` + `medicion-escritorio.js`. Cuatro reglas,
+y cada una nombra el defecto que la originó:
+
+| Regla | Qué acusa |
+|---|---|
+| `columna-fuera-del-marco` | la última columna visible termina más allá del borde de su marco — donde vive el ancla de la fila |
+| `carril-recortado` | un carril corta a un hijo **y** su contenido habría entrado en la ventana |
+| `texto-cortado` | elipsis **activa** en encabezado, rótulo, pestaña o botón: ahí el texto es la función |
+| `pantallas-de-scroll` | alto del documento ÷ viewport, en el teléfono |
+
+Dos decisiones que salen de errores ya cometidos: la columna se mide en las
+**celdas** y no en el `<th>` —buscar el encabezado por su texto ya enganchó otro
+y dijo «entra» mientras la captura mostraba lo contrario— y el carril sólo se
+acusa si el contenido **cabía**, porque un carril donde el contenido no entra es
+la respuesta correcta, no un defecto.
+
+**Verificado en rojo y en verde**, que es lo único que convierte un medidor nuevo
+en un medidor: con el `VentasView` anterior al arreglo la regla acusa 1; con el
+arreglo puesto, 0. Y en las dos corridas el carril de indicadores sigue en 1 —
+está sin arreglar y el medidor lo sabe. Un instrumento que nace en verde no probó
+nada.
+
+De paso encontró solo el carril de KPIs cortado a media ficha, que hasta ahora
+era una observación a ojo.
+
 ## v2.533.2 — Ventas: el total estaba fuera del marco en un portátil
 
 Segunda vista de la revisión de UX. El hallazgo se ve mejor comparando las dos

@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.540.3 — Las tarjetas de Conexiones dejan de estar dentro de otra tarjeta
+
+Reportado como «las cards en conexiones se ven gris», con la pregunta correcta
+detrás: *¿no usa el canónico?*. Lo usa — y **se ve gris porque lo usa bien**.
+
+Medido en la tarjeta de una persona:
+
+```
+        bg  rgba(12,20,48,.09)      ← --anidada, el escalón de tono, plano
+     blur   none                    ← el vidrio apagado
+    radio   14px                    ← --card-radius-anidada, no los 28
+ancestro    data-surface="card"     ← el marco de GlassViewLayout
+```
+
+Eso es exactamente lo que §5 manda hacer: una superficie dentro de otra se
+aplana, porque un vidrio sobre vidrio queda a 1.02:1 de su contenedor, o sea
+invisible. El defecto estaba un nivel más arriba — la vista pedía el marco de
+tarjeta de `GlassViewLayout` y después dibujaba tarjetas adentro.
+
+`transparentBody` y listo: `rgba(230,245,255,.16)` con `blur(44px) saturate(2)`
+y radio 28, sin ningún ancestro con superficie. Es la convención que ya siguen
+las cinco vistas de empleado desde el 2026-07-06; el marco es para las vistas
+que muestran UNA lista o tabla, no para las que son una grilla de tarjetas.
+
+**La distinción que importa, porque el barrido a ciegas sería peor:** anidar no
+está mal siempre. `--anidada` existe justo para una tarjeta de aviso dentro de
+una vista enmarcada. Lo que está mal es anidar el CONTENIDO PRINCIPAL, que es
+cuando la pantalla entera se aplana. De las 9 vistas que dibujan tarjetas
+propias dentro del marco, sólo las que son grilla-de-tarjetas piden el cambio;
+las cuatro que llevan `DataTable` (Ventas, Proveedores, Conteo, Conteo-detalle)
+tienen el marco por buenas razones y sus tarjetas están legítimamente anidadas.
+
 ## v2.540.2 — v2.540.1 nunca llegó a producción
 
 Sin cambios de código. Este commit se empujó para volver a disparar el

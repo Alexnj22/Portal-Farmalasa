@@ -197,7 +197,14 @@ const SesionesView = () => {
     );
 
     return (
-        <GlassViewLayout icon={MonitorSmartphone} title="Conexiones" filtersContent={filtersContent}>
+        // `transparentBody`: el cuerpo de esta vista son TARJETAS propias, así
+        // que el marco de tarjeta de `GlassViewLayout` las deja anidadas — y una
+        // superficie dentro de otra se aplana a propósito (§5): pierde el
+        // `backdrop-filter`, toma `--anidada` y el radio chico. Medido acá:
+        // `rgba(12,20,48,.09)` plano, sin vidrio, radio 14 en vez de 28. Eso era
+        // el gris reportado. Es la convención que ya siguen las vistas de
+        // empleado; el marco es para las que muestran UNA lista o tabla.
+        <GlassViewLayout icon={MonitorSmartphone} title="Conexiones" filtersContent={filtersContent} transparentBody>
             <div className="p-4 md:p-6 space-y-4">
                 {fallo && <Notice variant="danger" icon={AlertCircle}>{fallo}</Notice>}
 

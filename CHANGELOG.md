@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.535.2 — Tanda 2 cerrada salvo una, y una celda que quedó corrida
+
+`minmax` y `facturas-compra` en cero. Con ellas, **seis de las siete** vistas de
+la tanda 2 tienen su columna de acciones dentro del marco.
+
+**Y una corrección de algo que rompí en el commit anterior.** En
+`facturas-compra` bajé a `2xl` los ENCABEZADOS de `Tipo` y `N° Control` y no sus
+celdas: la celda de Tipo no tenía corte y la de N° Control seguía en `lg`. A 1280
+el encabezado desaparecía y la celda no, así que **las columnas quedaban corridas
+bajo títulos que no les correspondían** — que es exactamente lo que el comentario
+de `ComprasView` advierte desde hace meses. Lo delató el barrido: la vista seguía
+contando seis columnas visibles cuando debían ser cuatro.
+
+`minmax`: `Laboratorio` a `2xl`. Ocupa el 18% del ancho, es contexto del producto
+y tiene filtro propio arriba; los botones de la fila no se alcanzaban de ninguna
+forma.
+
+### `conteo-inventario` queda abierta, con su motivo
+
+30px a 1280 sobre la columna de acciones. Se intentó y no cedió: `dense` ya
+estaba puesto —con su propio comentario— y bajar el ancho máximo del nombre del
+producto de 340 a 300px no movió el número. Su fila declara **siete celdas para
+siete columnas**, así que las ocho que cuenta el barrido salen de otro bloque de
+la vista.
+
+Es el hallazgo más chico de los 37 y toda columna de una hoja de conteo es
+operativa. Se deja anotado en vez de forzar un arreglo a ciegas o de bajar el
+baseline como si estuviera resuelto.
+
 ## v2.535.1 — Tanda 2: los botones de la fila vuelven al marco
 
 Segunda tanda. No es el mismo defecto que la primera: acá lo que quedaba fuera

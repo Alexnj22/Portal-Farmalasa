@@ -843,7 +843,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     </DataCell>
 
                                     {/* Laboratorio */}
-                                    <DataCell hideBelow="lg" align="left" className="!py-2.5">
+                                    <DataCell hideBelow="2xl" align="left" className="!py-2.5">
                                         <span className="text-label text-content-2 truncate block max-w-[160px]">
                                             {row.laboratorio_nombre || <span className="text-content-3">—</span>}
                                         </span>

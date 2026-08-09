@@ -1055,7 +1055,7 @@ function TabDocumentos({
                                 }
                             />
                         </DataCell>
-                        <DataCell>
+                        <DataCell hideBelow="2xl">
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 <Badge size="sm" uppercase={false}>{dteTypeLabel(row.tipo_dte)}</Badge>
                                 {row.invalidado && (
@@ -1106,7 +1106,7 @@ function TabDocumentos({
                                 )}
                             </div>
                         </DataCell>
-                        <DataCell hideBelow="lg">
+                        <DataCell hideBelow="2xl">
                             <span className="font-mono text-caption text-content-3">{row.numero_control || '—'}</span>
                         </DataCell>
                         <DataCell align="right">

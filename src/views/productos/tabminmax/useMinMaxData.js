@@ -957,7 +957,11 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     // qué producto, cuánto MIN/MAX, y qué hacer con él.
     const COLS = [
         { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true, className: 'w-[30%]' },
-        { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]', hideBelow: 'lg' },
+        // `2xl`: a 1280 las seis columnas pedían 975px contra los 892 del marco y la
+        // de **Acciones** —«Poner 0 · Restaurar · Más»— quedaba fuera. El laboratorio
+        // ocupa el 18% del ancho, es contexto del producto y además tiene filtro
+        // propio arriba; los botones de la fila no se alcanzaban de ninguna forma.
+        { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]', hideBelow: '2xl' },
         { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14',    hideBelow: 'sm' },
         { key: 'effective_min', label: 'MIN · MAX',   align: 'center', sortable: true, className: 'w-[150px]' },
         { key: 'presentacion',  label: 'Presentación', align: 'center', className: 'w-[130px]', hideBelow: 'md' },

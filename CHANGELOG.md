@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.540.2 — v2.540.1 nunca llegó a producción
+
+Sin cambios de código: este commit existe para volver a disparar el despliegue.
+
+`cdac94d1` (v2.540.1) quedó en `main` y en GitHub, pero **Vercel no registró
+ningún deployment para él** — su último build siguió siendo `b03ff1a8`
+(v2.540.0). No hay `ignoreCommand` ni en `vercel.json` ni en el proyecto, así
+que fue el webhook de GitHub, que no llegó. Un webhook perdido no se reintenta:
+la única forma de recuperarlo es empujar otro commit.
+
+Queda anotado porque el síntoma engaña — el portal mostraba v2.540.0 con `main`
+en v2.540.1, y eso se lee como «el deploy está roto» cuando lo que había era un
+commit sin construir. La comprobación que lo distingue no es el panel de Vercel
+sino el bundle servido: `curl` al `index-*.js` de producción y buscar la
+constante `APP_VERSION`, que sobrevive a la minificación.
+
+Nada de lo que faltaba era visible: v2.540.1 sólo tocó `design-gate.mjs`,
+`DESIGN.md` y el changelog. Todo el trabajo de material de v2.540.0 llevaba
+desde el principio en producción — verificado en el CSS servido
+(`--velo-filtro:none` y las seis animaciones de entrada con `backwards`).
+
 ## v2.540.1 — El gate aprende a ver el backdrop root
 
 Categoría `backdrop-root` en `design-gate`: `transform-gpu` y

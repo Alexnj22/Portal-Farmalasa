@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.540.1 — El gate aprende a ver el backdrop root
+
+Categoría `backdrop-root` en `design-gate`: `transform-gpu` y
+`will-change-transform` en un tag que no declara `data-surface`. Es la única de
+las tres puertas de v2.540.0 que se puede leer del fuente, y es la versión
+**permanente** del problema —el lift de hover pone transform sólo mientras el
+puntero está encima, y eso es aceptable—. Sobre el mismo tag que declara la
+superficie no se marca: ahí el transform no apaga su propio vidrio.
+
+Arranca en **0** porque los 30 que había se barrieron en v2.540.0, así que
+cualquiera nuevo falla el gate en vez de sumar al ratchet. Ejercitado antes de
+darlo por bueno —un archivo de prueba con las dos formas y una superficie que no
+debe marcarse—: 2 hallazgos, el tercero correctamente ignorado. Un gate verde
+sólo prueba que el detector corre.
+
+Lo que el fuente no muestra —el `fill-mode` de una animación, un `opacity`
+heredado, un `contain` implícito— sigue necesitando el barrido con navegador que
+`DESIGN.md` §5.ter describe.
+
 ## v2.540.0 — El vidrio vuelve a encenderse, y un diálogo sobre otro deja de ser posible
 
 Empezó por una captura de Conexiones: el diálogo de bloqueo abierto sobre el

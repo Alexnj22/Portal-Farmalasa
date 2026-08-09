@@ -1913,6 +1913,45 @@ function scanFile(path) {
     }
   }
 
+  // ── Categoría `backdrop-root` (DESIGN.md §5.ter, 2026-08-09) ─────────────
+  // Un elemento con `transform` / `filter` / `opacity < 1` / `will-change` de
+  // esos se vuelve **backdrop root**, y desde ahí el `backdrop-filter` de sus
+  // descendientes deja de muestrear la página: la superficie no se rompe, se
+  // APAGA. Medido el 2026-08-09: **38 de 41** superficies canónicas de Inicio
+  // no ejecutaban su vidrio, y una tarjeta sin su `blur(44px) saturate(200%)`
+  // es su color de fondo al 16% — el «gris sucio» que se reportó.
+  //
+  // Lo que se marca es la puerta que se puede leer del fuente: `transform-gpu`
+  // y `will-change-transform` en un ENVOLTORIO. Son la versión PERMANENTE del
+  // problema —el lift de hover sólo pone transform mientras el puntero está
+  // encima, y eso es aceptable— y ninguno hace falta: el lift canónico compone
+  // solo. Se barrieron los 30 que había (15 archivos), así que la categoría
+  // arranca en 0 y cualquier hallazgo nuevo falla el gate.
+  //
+  // NO se marca sobre el mismo tag que declara `data-surface`: ahí el transform
+  // no apaga su propio vidrio, y lo que anide ya está aplanado por la regla de
+  // «una superficie dentro de otra».
+  //
+  // Las otras dos puertas no se ven en el fuente y por eso no están acá: el
+  // `fill-mode` de las animaciones vive en `index.css` (§5.ter lo fija en
+  // `backwards` para toda entrada) y el resto sólo aparece recorriendo el árbol
+  // pintado — para eso está el barrido con navegador que documenta §5.ter.
+  if (path.endsWith('.jsx') && !hasException(path, 'backdrop-root')) {
+    for (const m of text.matchAll(/<[a-zA-Z][^>]*?>/gs)) {
+      const tagAbre = m[0];
+      if (!/\btransform-gpu\b|\bwill-change-transform\b/.test(tagAbre)) continue;
+      if (/data-surface/.test(tagAbre)) continue;
+      findings.push({
+        line: text.slice(0, m.index).split('\n').length,
+        category: 'backdrop-root',
+        label: 'transform-gpu/will-change-transform en un envoltorio — apaga el '
+             + '`backdrop-filter` de toda superficie que contenga (§5.ter). El lift '
+             + 'canónico `hover:translate-y-[var(--lift-*)]` no lo necesita',
+        text: tagAbre.slice(0, 90).replace(/\s+/g, ' '),
+      });
+    }
+  }
+
   // ── Categoría `vidrio-a-mano` (PLAN-MATERIALES §18.1) ─────────────────────
   // Vidrio escrito a mano fuera de una superficie canónica. Existe porque el
   // hallazgo de §13.3 —243 `backdrop-blur` en 81 archivos, un segundo sistema

@@ -822,9 +822,16 @@ Las reglas que quedan:
   desenfocado: es la regla de «una superficie dentro de otra se aplana», y su forma
   se la da su opacidad sobre el material de abajo.
 
-Cómo se verifica: no se puede leer del fuente. Se recorre el árbol **pintado** —para
-cada `[data-surface]` con `backdrop-filter`, mirar si algún ancestro crea un backdrop
-root—. Verificado así sobre 30 rutas: 0 superficies apagadas.
+Cómo se verifica, en dos mitades:
+
+- **Lo que se ve en el fuente** lo vigila el gate, categoría `backdrop-root`:
+  `transform-gpu` / `will-change-transform` en un tag que no declara `data-surface`.
+  Arranca en **0** (se barrieron los 30 que había), así que cualquiera nuevo falla.
+- **Lo que no se ve en el fuente** —el `fill-mode` de una animación, un `opacity`
+  heredado, un `contain` implícito— sólo aparece recorriendo el árbol **pintado**:
+  para cada `[data-surface]` con `backdrop-filter`, mirar si algún ancestro crea un
+  backdrop root. Verificado así sobre 30 rutas: **0 superficies apagadas**, y lo que
+  queda son las anidadas, que es el caso legítimo.
 
 ### Lo que NO es material
 

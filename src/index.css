@@ -480,6 +480,17 @@
      Se declara como FILTRO y no como longitud para poder decir `none`:
      `blur(0px)` sigue creando el root. */
   --velo-filtro:    none;
+  /* §5.5 · EN LIQUID EL VELO NO SE RINDE (2026-08-09). Va pegado a `--velo`
+     porque es su consecuencia: con alfa 0, la capa es un rectángulo
+     transparente a pantalla completa que además se desvanece 500ms — o sea un
+     compuesto por fotograma para no mostrar nada. No lo ve nadie y no cierra
+     ningún clic (el fondo clicable es un botón aparte). Quien cambie `--velo`
+     a un alfa real tiene que mover este token en la misma línea de vista.
+     Lo que ahorra NO son capas de vidrio —el velo nunca tuvo `backdrop-filter`,
+     medido antes y después: 11 en los dos casos— sino una capa compuesta a
+     pantalla completa (1.30M px²) animando su opacidad durante `--dur-lento`
+     cada vez que se abre un diálogo. */
+  --velo-display:   none;
   /* §5.4 · NO hay velo «de diálogo anidado», y no por olvido: un diálogo
      sobre otro está PROHIBIDO (`ModalShell`, «un solo diálogo a la vista»).
      Existió un `--velo-anidado` durante una tarde del 2026-08-09 y se retiró el
@@ -1061,6 +1072,7 @@ thead.sticky,
      a través de él. */
   --velo:        rgba(3,11,28,0);
   --velo-filtro: none;   /* §5.bis · mataba el vidrio del panel; ver claro */
+  --velo-display: none;  /* §5.5 · alfa 0: la capa no se rinde */
   --rim-grosor:  1.5px;
   --rim-base:    rgba(255,255,255,.10);
   --sidebar-pop-tint: 10 12 26;
@@ -1341,6 +1353,7 @@ thead.sticky,
      oscurece» y 0.085 sobre una pantalla entera no oscurece nada. */
   --velo:           rgba(3,11,28,0.17);
   --velo-filtro:    none;     /* es la capa más cara y en Solid no existe */
+  --velo-display:   block;    /* §5.5 · acá el velo SÍ oscurece, así que se rinde */
   --lift-track:     0px;
   /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
      Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
@@ -1514,6 +1527,7 @@ thead.sticky,
      oscurece» y 0.085 sobre una pantalla entera no oscurece nada. */
   --velo:           rgba(3,11,28,0.17);
   --velo-filtro:    none;     /* es la capa más cara y en Solid no existe */
+  --velo-display:   block;    /* §5.5 · acá el velo SÍ oscurece, así que se rinde */
   --lift-track:     0px;
   /* La entrada de Solid (§7.4): era el literal 130ms dentro de la regla.
      Ni --dur-fast (90) ni --dur-base (120) — tenía su propio valor sin token. */
@@ -2976,6 +2990,7 @@ thead.sticky,
    Escrita sola, el prefijo lo agrega él —verificado contra `dist/`, donde el
    dropdown de acá al lado sale con las dos y este bloque salía con una. */
 [data-velo] {
+  display: var(--velo-display, block);
   background: var(--velo);
   /* Ver §5.bis: si esto deja de ser `none`, el velo se vuelve backdrop root y
      el `backdrop-filter` del panel que lleva encima deja de muestrear la

@@ -357,7 +357,16 @@ export default function ModalShell({
     if (!open) return undefined;
     disparadorRef.current = document.activeElement;
 
-    const t = setTimeout(() => {
+    // ── Dos fotogramas, no 60ms de reloj (2026-08-09) ──────────────────
+    // El plazo existía para dejar que un `autoFocus` del hijo llegue primero y
+    // para que el panel esté medido. Las dos cosas pasan cuando React commitea
+    // y el navegador pinta, o sea en el fotograma siguiente — no a los 60ms.
+    // Un temporizador fijo era una apuesta: en una máquina rápida sobraban
+    // ~45ms de espera antes de poder escribir, y en una lenta podía quedarse
+    // corto igual. Dos `requestAnimationFrame` seguidos esperan exactamente
+    // «después del próximo pintado», que es la condición real.
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => {
       const panel = panelRef.current;
       if (!panel || panel.contains(document.activeElement)) return; // un autoFocus ya lo movió
       const f = [...panel.querySelectorAll(ENFOCABLES)].filter(visible);
@@ -376,10 +385,11 @@ export default function ModalShell({
       // hoja sube con el teclado y el campo queda listo, que es el punto.
       const campo = [...panel.querySelectorAll(CAMPOS_DE_TEXTO)].filter(visible)[0];
       (campo || f[0] || panel).focus();
-    }, 60);
+    }); });
 
     return () => {
-      clearTimeout(t);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
       const previo = disparadorRef.current;
 
       // Se difiere un tick: varios modales del portal se despachan desde

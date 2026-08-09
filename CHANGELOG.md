@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.540.5 — Dos podas en el camino de abrir un diálogo
+
+Pedido «hacelo lo más eficiente que puedas». Lo primero fue medir el pacing real
+en vez del reloj de pared, y ahí no había nada que ganar: **55 fotogramas en
+900ms —61 fps—, cero perdidos y el peor en 17,7ms**, o sea un vsync exacto, al
+abrir, al bloquear y al cerrar. Lo que sí había era trabajo que no hace nada.
+
+**El velo de Liquid no se rinde.** `--velo` vale `rgba(3,11,28,0)` en los dos
+temas Liquid: la capa era un rectángulo transparente a pantalla completa que
+además desvanecía su opacidad durante `--dur-lento` en cada apertura. No lo ve
+nadie —y no cierra ningún clic, porque el fondo clicable es un botón aparte—.
+`--velo-display` vive pegado a `--velo` para que quien cambie el alfa vea el
+otro token en la misma línea de vista; en los dos Solid vale `block`, que es
+donde el velo sí oscurece.
+
+Corregido de paso un número que escribí mal y la medición desmintió: no baja de
+11 capas con vidrio a 10. El velo **nunca tuvo** `backdrop-filter` — son 11
+antes y después. Lo que se va es una capa compuesta de 1.30M px² animando
+opacidad, que es otra cosa y hay que decirla como es.
+
+**El foco ya no espera 60ms de reloj.** `ModalShell` difería el foco con un
+`setTimeout(60)` para dejar que un `autoFocus` del hijo llegara primero y que el
+panel estuviera medido. Las dos condiciones se cumplen cuando React commitea y
+el navegador pinta —el fotograma siguiente—, no a los 60ms: el temporizador era
+una apuesta que en una máquina rápida sobra y en una lenta puede quedarse corta
+igual. Dos `requestAnimationFrame` encadenados esperan exactamente «después del
+próximo pintado».
+
+Medido con el mismo recorrido contra dos builds servidos a la vez, uno por
+puerto, para que la comparación no dependa de la memoria:
+
+```
+clic → el campo puede recibir lo que se teclea
+   antes   101 ms
+   ahora    61 ms
+```
+
+Los 40ms son de espera pura, no de cómputo: es el tramo entre que el diálogo ya
+está en pantalla y el cursor aparece en el campo.
+
 ## v2.540.4 — El diálogo se vaciaba antes de terminar de cerrarse
 
 Reportado con una captura: al cerrar el detalle de una persona, el diálogo

@@ -1,3 +1,4 @@
+import useMediaQuery from '../../hooks/useMediaQuery';
 import React, { useState, useEffect, useCallback } from 'react';
 import ListRow from '../../components/common/ListRow';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -46,7 +47,24 @@ export default function TabLaboratorios({ searchTerm = '' }) {
     const [locations, setLocations] = useState({});
     const [loading,   setLoading]   = useState(true);
     const [expanded,  setExpanded]  = useState(null);
-    const [openSecs,  setOpenSecs]  = useState({ principales: true, insumos: true, cosmeticos: true });
+    // ── En el teléfono abre UNA sección, no las tres ─────────────────────────
+    //
+    // Las tres abiertas son 357 filas de una sola vez: **27,826px de alto, o sea
+    // 33 pantallas de scroll** (medido en 390px el 2026-08-09, la vista más alta
+    // de las 37 rutas). Nadie recorre 33 pantallas para encontrar un
+    // laboratorio; para eso está el buscador de arriba.
+    //
+    // En escritorio se quedan las tres: ahí el barrido visual de la matriz
+    // completa es justamente para lo que existe la vista, y el scroll cuesta
+    // mucho menos. La diferencia es de dispositivo, no de gusto.
+    //
+    // `content-visibility` (ver `LabRow`) resuelve el otro problema —el costo de
+    // pintar lo que no se ve, que es lo que cerró la pestaña en Reglas— pero no
+    // baja el alto: son dos cosas distintas y hacen falta las dos.
+    const esTelefono = useMediaQuery('(max-width: 1023.98px)');
+    const [openSecs,  setOpenSecs]  = useState(() => esTelefono
+        ? { principales: true, insumos: false, cosmeticos: false }
+        : { principales: true, insumos: true,  cosmeticos: true });
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -242,7 +260,40 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
     return (
         <motion.div
             layout
-            className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden ${
+            // ── `content-visibility` en la fila, no en la lista ──────────────
+            //
+            // Medido el 2026-08-09 en 390px: esta vista pide **27,826px de alto
+            // y 8,333 elementos**, o sea 33 pantallas de scroll. Es la más alta
+            // de las 37 rutas, y con diferencia.
+            //
+            // No se pagina porque no es una lista de registros: es una matriz de
+            // laboratorios × sucursales, y esconder laboratorios detrás de
+            // páginas rompe el barrido visual que la vista existe para dar. Lo
+            // que sí se puede es no PINTAR lo que está fuera de la ventana.
+            //
+            // Es la misma receta que el canónico ya aplica a sus fichas
+            // (`DataTable`, buscar `fueraDePantalla`) después del cierre de
+            // pestaña del iPhone en Reglas: el techo de memoria es de la
+            // pestaña, así que lo cruza cualquier lista alta y la que toque será
+            // «la vista que falla». Ésta es la siguiente candidata por altura.
+            //
+            // **68px, medido — no los 96 del canónico.** Copiar ese número
+            // salió mal y se vio en la medición: las 357 filas de esta vista
+            // miden 68px exactos, así que el placeholder de 96 le agregaba 28px
+            // a cada una y el alto del documento subió de 27,826 a **37,876px**
+            // — de 33 pantallas a 45. El arreglo empeoraba lo que venía a
+            // arreglar.
+            //
+            // `contain-intrinsic-size` es el alto ESTIMADO de lo que no se
+            // pinta: si estima de más, infla el documento. El `auto` corrige
+            // sólo después de que la fila se pintó una vez; las que nunca
+            // entraron en pantalla usan el número escrito acá, que son casi
+            // todas en una lista de 357.
+            //
+            // Safari lo entiende desde la 18; donde no, se ignora y todo sigue
+            // igual que antes.
+            className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden
+                [content-visibility:auto] [contain-intrinsic-size:auto_68px] ${
                 isOpen
                     ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card'
                     : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card'

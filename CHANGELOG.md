@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.536.0 — Tanda 3: las dos vistas que no terminaban
+
+Las dos más altas de las 37, medidas en 390px:
+
+| | Antes | Ahora |
+|---|---|---|
+| `sync-health` | 25,601px · 30.3 pantallas · 4,758 elementos | **2,919px · 3.5 · 1,270** |
+| `laboratorios` | 27,826px · 33 pantallas · 8,333 elementos | **18,984px · 22.5 · 5,767** |
+
+**`sync-health` no paginaba nada.** `filteredRows.map(...)` dentro de un
+`DataTable`, sin tope de ninguna clase, sobre un historial que sólo crece —siete
+sucursales por dominio, cada minuto—. `TablePagination` es el canónico y ya lo
+usan Auditoría, Ventas, Compras, Inventario y Productos. El default de 25 es el
+de Auditoría, que es la otra vista de historial del portal. Y el volver a la
+página 1 al cambiar de pestaña va en el manejador del evento, no en un efecto:
+es la consecuencia de un acto del usuario, no un estado derivado.
+
+**`laboratorios` abría sus tres secciones a la vez**: 357 filas de una. En el
+teléfono abre sólo la primera; en escritorio siguen las tres, porque ahí el
+barrido de la matriz completa es para lo que existe la vista y el scroll cuesta
+mucho menos. La diferencia es de dispositivo, no de gusto.
+
+### El arreglo que empeoró lo que venía a arreglar
+
+`content-visibility` se copió del canónico **con su número**: `auto 96px`. Las
+357 filas de esta vista miden **68px exactos**, así que el placeholder le sumaba
+28px a cada una y el alto subió de 27,826 a **37,876px** — de 33 pantallas a 45.
+
+`contain-intrinsic-size` es el alto *estimado* de lo que no se pinta: si estima
+de más, infla el documento. El `auto` corrige recién después de que la fila se
+pintó una vez, y en una lista de 357 casi ninguna llega a pintarse.
+
+Lo delató la medición, no el ojo. Ahora dice 68px, medido en la vista.
+
+### Dos problemas que había mezclado
+
+`content-visibility` cubre el **costo de pintar** lo que no se ve —que es lo que
+cerró la pestaña del iPhone en Reglas— y **no baja el alto**. Colapsar secciones
+baja el alto y no cambia el costo de pintar. Hacían falta las dos, y el plan
+las trataba como una.
+
+`laboratorios` sigue en 22.5 pantallas y eso es honesto: su sección principal
+tiene ~250 laboratorios de verdad. Para encontrar uno está el buscador de arriba,
+no el scroll.
+
 ## v2.535.2 — Tanda 2 cerrada salvo una, y una celda que quedó corrida
 
 `minmax` y `facturas-compra` en cero. Con ellas, **seis de las siete** vistas de

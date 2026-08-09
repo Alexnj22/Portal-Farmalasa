@@ -4,6 +4,7 @@ import { RadioTower, CheckCircle2, AlertCircle, Clock, Globe2 } from 'lucide-rea
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import TablePagination from '../components/common/TablePagination';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchSyncHealthRecent, SYNC_HEALTH_DOMAINS } from '../data/syncHealth';
 import { ERP_NAMES } from '../constants/erp';
@@ -59,11 +60,38 @@ const SyncHealthView = () => {
         return rows.filter(r => r.domain === activeTab);
     }, [rows, activeTab]);
 
+    // ── Paginar: esta vista pintaba TODAS las corridas de una ────────────────
+    //
+    // Medido el 2026-08-09 en 390px: **25,601px de alto y 4,758 elementos**, o
+    // sea 30 pantallas de scroll para leer un monitor. `filteredRows.map(...)`
+    // no tenía tope de ninguna clase, y el historial de syncs sólo crece —siete
+    // sucursales por dominio, cada minuto— así que el número tampoco tiene
+    // techo por sí solo.
+    //
+    // No es sólo scroll: es el perfil exacto del cierre de pestaña del iPhone
+    // (memoria `el techo de memoria es de la PESTAÑA, no de la vista`), donde
+    // una lista sin tope se llevó la sesión entera.
+    //
+    // `TablePagination` es el canónico y ya lo usan Auditoría, Ventas, Compras,
+    // Inventario y Productos. El default de 25 es el de Auditoría, que es la
+    // otra vista de historial del portal.
+    const [pagina, setPagina] = useState(1);
+    const [porPagina, setPorPagina] = useState(25);
+    const totalPaginas = Math.max(1, Math.ceil(filteredRows.length / porPagina));
+    const filasPagina = useMemo(
+        () => filteredRows.slice((pagina - 1) * porPagina, pagina * porPagina),
+        [filteredRows, pagina, porPagina],
+    );
+
     const filtersContent = (
         <ViewTabBar
             tabs={TABS}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            // Volver a la página 1 al cambiar de pestaña va acá y no en un
+            // efecto: es la consecuencia de un acto del usuario, no un estado
+            // derivado. Sin esto, quedar en la página 7 y saltar a una pestaña
+            // de dos páginas dejaba la tabla vacía sin decir por qué.
+            onTabChange={(t) => { setActiveTab(t); setPagina(1); }}
             showSearch={false}
         />
     );
@@ -86,7 +114,7 @@ const SyncHealthView = () => {
                         subtext: 'Los syncs de este dominio no han corrido desde que se activó este monitoreo.',
                     }}
                 >
-                    {filteredRows.map((row, i) => {
+                    {filasPagina.map((row, i) => {
                         const dt = new Date(row.checked_at);
                         return (
                             <DataRow key={`${row.domain}-${row.checked_at}-${i}`} index={i}>
@@ -124,6 +152,20 @@ const SyncHealthView = () => {
                         );
                     })}
                 </DataTable>
+
+                {filteredRows.length > porPagina && (
+                    <div className="mt-3">
+                        <TablePagination
+                            page={pagina}
+                            totalPages={totalPaginas}
+                            onPageChange={setPagina}
+                            pageSize={porPagina}
+                            onPageSizeChange={v => { setPorPagina(Number(v)); setPagina(1); }}
+                            total={filteredRows.length}
+                            unit="corridas"
+                        />
+                    </div>
+                )}
             </div>
         </GlassViewLayout>
     );

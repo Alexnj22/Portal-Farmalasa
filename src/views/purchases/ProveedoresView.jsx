@@ -30,7 +30,11 @@ const SIN_CATEGORIA = '__sin_categoria__';
 // "seleccionar todo"), por eso COLS deja de ser una constante suelta.
 const BASE_COLS = [
     { key: 'proveedor',  label: 'Proveedor',  align: 'left', className: 'w-[260px]', sortable: true },
-    { key: 'fiscal',     label: 'NIT / NRC',  align: 'left', hideBelow: 'md' },
+    // `2xl`: a 1280 las seis columnas piden 1,015px contra los 884 del marco y
+    // **Última compra se sale 131px**. NIT y NRC son identificadores fiscales
+    // —contexto de la ficha, no de la lista— y viven completos en el detalle;
+    // la fecha de la última compra no se alcanzaba de ninguna forma.
+    { key: 'fiscal',     label: 'NIT / NRC',  align: 'left', hideBelow: '2xl' },
     // "Tipo" (régimen fiscal) se quitó de la tabla el 2026-07-29: mostraba el
     // MISMO badge "Contribuyente IVA" en los 99 proveedores (verificado en
     // prod — 99 de 99 tienen NRC), o sea información cero por 175px, en una
@@ -45,7 +49,11 @@ const BASE_COLS = [
     // sigue visible; el match ERP además ya tiene filtro propio (H15) y se ve
     // completo en el detalle.
     { key: 'match_erp',  label: 'Registrado como', align: 'left', hideBelow: 'lg' },
-    { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: 'md', sortable: true },
+    // `2xl`: a 1440 las siete columnas pedían 1,113px contra los 1,044 del
+    // marco y **Última compra se salía 69px**. `Docs` es un conteo y además
+    // ordena, así que el dato se sigue alcanzando por el encabezado; la fecha
+    // de la última compra no se alcanzaba de ninguna forma.
+    { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: '2xl', sortable: true },
     { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg', sortable: true },
 ];
 
@@ -430,7 +438,7 @@ export default function ProveedoresView({ openModal }) {
                                     </div>
                                 </div>
                             </DataCell>
-                            <DataCell hideBelow="md">
+                            <DataCell hideBelow="2xl">
                                 <p className="font-mono text-caption text-content-2">{row.nit || row.dui || '—'}</p>
                                 {row.nrc && <p className="font-mono text-caption text-content-3">NRC {row.nrc}</p>}
                             </DataCell>
@@ -440,7 +448,7 @@ export default function ProveedoresView({ openModal }) {
                             <DataCell>
                                 <MatchErpCell row={row} />
                             </DataCell>
-                            <DataCell align="right" hideBelow="md">
+                            <DataCell align="right" hideBelow="2xl">
                                 <span className="tabular-nums font-bold text-content-2">{row.docs_count}</span>
                             </DataCell>
                             <DataCell hideBelow="lg">

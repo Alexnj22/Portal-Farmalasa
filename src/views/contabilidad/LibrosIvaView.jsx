@@ -166,7 +166,10 @@ const COLS_CONSUMIDOR = [
     { key: 'sucursal',  label: 'Sucursal',   align: 'left', hideBelow: 'md' },
     { key: 'del',       label: 'Del N.º',    align: 'left'  },
     { key: 'al',        label: 'Al N.º',     align: 'left'  },
-    { key: 'docs',      label: 'Docs',       align: 'center', hideBelow: 'sm' },
+    // `2xl`: a 1280 las ocho columnas pedían 1,009px contra 886 y **Total del
+    // día se salía 123px**. `Docs` es un conteo —contexto— y su total ya está
+    // en el carril de arriba.
+    { key: 'docs',      label: 'Docs',       align: 'center', hideBelow: '2xl' },
     // `Exentas` sale de la pantalla, igual que en compras: con `lg` estaba
     // visible a 1440 y empujaba "Total del día" fuera del marco (medido: 1128
     // contra 1046), y devolverla a `2xl` la traía de vuelta justo en 1536,
@@ -1451,6 +1454,11 @@ export default function LibrosIvaView({ openModal }) {
 
     const propsTabla = (cols) => ({
         columns: conOrden(cols, acceso),
+        // `dense` para TODOS los libros, que es donde vive: son tablas de ocho y
+        // nueve columnas y `px-6` les cobraba ~12px por columna. El libro de
+        // consumidor se pasaba 26px a 1280 y **Total del día** quedaba cortado;
+        // esconder una columna entera por 26px habría sido desproporcionado.
+        dense: true,
         loading,
         onSort: alOrdenar,
         sortKey: orden.key,
@@ -1703,7 +1711,7 @@ export default function LibrosIvaView({ openModal }) {
                                 <DataCell hideBelow="md">{nombreSucursal(r.branch_id)}</DataCell>
                                 <DataCell><span className="font-mono text-caption">{soloNumero(r.correlativo_del)}</span></DataCell>
                                 <DataCell><span className="font-mono text-caption">{soloNumero(r.correlativo_al)}</span></DataCell>
-                                <DataCell align="center" hideBelow="sm">{r.documentos}</DataCell>
+                                <DataCell align="center" hideBelow="2xl">{r.documentos}</DataCell>
                                 <DataCell align="right">{formatMoney(r.ventas_gravadas)}</DataCell>
                                 <DataCell align="right" hideBelow="md">{formatMoney(debitoDeConsumidor(Number(r.ventas_gravadas || 0)))}</DataCell>
                                 <DataCell align="right"><span className="font-black">{formatMoney(r.total_diario)}</span></DataCell>

@@ -99,8 +99,12 @@ const COLS = [
     { key: 'origen',    label: 'Registro',   align: 'left'  },
     { key: 'documento', label: 'Documento',  align: 'left'  },
     { key: 'proveedor', label: 'Proveedor',  align: 'left'  },
-    { key: 'nrc',       label: 'NRC',        align: 'left',  hideBelow: 'lg' },
-    { key: 'nit',       label: 'NIT',        align: 'left',  hideBelow: 'xl' },
+    // `2xl` y no `lg`/`xl`: a 1440 las nueve columnas piden 1,152px contra los
+    // 1,046 del marco y **Total se salía 106px**, cortado a media cifra. NRC y
+    // NIT son identificadores del proveedor —contexto— y el total es la fila.
+    // Los dos siguen enteros en el detalle y en el CSV.
+    { key: 'nrc',       label: 'NRC',        align: 'left',  hideBelow: '2xl' },
+    { key: 'nit',       label: 'NIT',        align: 'left',  hideBelow: '2xl' },
     { key: 'gravadas',  label: 'Gravadas',   align: 'right' },
     { key: 'credito',   label: 'Crédito',    align: 'right', hideBelow: 'md' },
     { key: 'total',     label: 'Total',      align: 'right' },
@@ -338,7 +342,7 @@ export default function LibroComprasCompletoView() {
                     título. De una compra, lo que la identifica es el PROVEEDOR;
                     la fecha y el estado son contexto. El número de documento va
                     a la hoja, donde entra completo y con su rótulo. */}
-                <DataTable columns={COLS} loading={loading} empty={vacio}
+                <DataTable columns={COLS} dense loading={loading} empty={vacio}
                     movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'] }}>
                     {paginadas.map((r, i) => (
                         <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}>
@@ -358,12 +362,12 @@ export default function LibroComprasCompletoView() {
                                     {r.proveedor || '—'}
                                 </span>
                             </DataCell>
-                            <DataCell hideBelow="lg">
+                            <DataCell hideBelow="2xl">
                                 {r.nrc
                                     ? <span className="font-mono text-caption whitespace-nowrap">{formatearNrc(r.nrc)}</span>
                                     : <Badge variant="warning" size="sm">Falta</Badge>}
                             </DataCell>
-                            <DataCell hideBelow="xl">
+                            <DataCell hideBelow="2xl">
                                 {r.nit
                                     ? <span className="font-mono text-caption whitespace-nowrap">{formatearNit(r.nit)}</span>
                                     : <Badge variant="warning" size="sm">Falta</Badge>}

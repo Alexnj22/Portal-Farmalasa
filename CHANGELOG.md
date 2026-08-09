@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.534.4 — Tanda 1: el ancla vuelve al marco en cinco vistas
+
+Primera tanda de la revisión de UX. El defecto de Ventas, repetido en cuatro
+vistas más: el dato por el que se entra a la lista terminaba fuera del marco.
+
+| Vista | Se pasaba | Qué se cortaba | Arreglo |
+|---|---|---|---|
+| `libro-compras-completo` | 106px @1440 · 15px @1280 | `$654.37` | NRC y NIT → `2xl`, y `dense` |
+| `libros-iva` | 123px @1280 | `$1,261.94` | Docs → `2xl`, y `dense` en todos los libros |
+| `proveedores` | 69px @1440 · 131px @1280 | `13/07/2026` | Docs y NIT/NRC → `2xl` |
+| `clientes` | 82px @1280 | `$481.10` | Ubicación → `2xl` |
+| `schedules` | 12px @1440 | `Descanso` | **excepción, no arreglo** |
+
+**`dense` antes que esconder.** Los dos libros quedaban pasados por 15 y 26px
+después de la primera democión, y esconder una columna entera por 15px es
+desproporcionado. `dense` cambia `px-6` por `px-3`: ~12px por columna, que en
+tablas de ocho y nueve es de sobra. En `LibrosIvaView` va en `propsTabla`, el
+envase común de todos los libros, así que además los unifica.
+
+**`schedules` no era un defecto.** Es el calendario semanal: su fila no es un
+registro sino un empleado cruzado con siete días, y su carril horizontal es la
+decisión correcta — ya estaba declarado así en el gate móvil por el mismo
+motivo. Acusarlo era pedirle que escondiera un día de la semana. Queda como
+excepción con su motivo escrito en el medidor, no como arreglo.
+
+Y una corrección sobre la marcha: el `dense` de `libros-iva` cayó primero en la
+tabla de retenciones, no en la del libro. Lo delató mirar el archivo, no la
+medición — la ruta seguía en rojo por otro motivo.
+
+**Medido después**: `columna-fuera-del-marco` en 0 en las cinco, a los dos
+anchos. Verificado además con captura a 1280, que es donde el número seguía
+cortado.
+
 ## v2.534.3 — El barrido medía el login y no lo decía
 
 Tres correcciones al medidor antes de usar su resultado, porque la primera

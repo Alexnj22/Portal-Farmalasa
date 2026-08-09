@@ -48,7 +48,9 @@ const COLS = [
     { key: 'nombre',   label: 'Cliente',        align: 'left',  className: 'w-[200px] sm:w-[240px]', sortable: true },
     { key: 'fiscal',   label: 'Documento',      align: 'left',  hideBelow: 'md' },
     { key: 'ficha',    label: 'Ficha',          align: 'left',  sortable: true },
-    { key: 'ubicacion',label: 'Ubicación',      align: 'left',  hideBelow: 'xl' },
+    // `2xl`: a 1280 las seis columnas pedían 968px contra 886 y **Facturado se
+    // salía 82px**. La ubicación es contexto; el monto es por lo que se entra.
+    { key: 'ubicacion',label: 'Ubicación',      align: 'left',  hideBelow: '2xl' },
     { key: 'facturas', label: 'Facturas',       align: 'right', hideBelow: 'lg', sortable: true },
     { key: 'total',    label: 'Facturado',      align: 'right', hideBelow: 'sm', sortable: true },
     // `2xl` y no `xl`: a 1440 de viewport ya estamos EN xl, así que la columna
@@ -523,7 +525,7 @@ export default function ClientesView({ openModal }) {
                                         )}
                                     </div>
                                 </DataCell>
-                                <DataCell hideBelow="xl"><UbicacionCell row={row} /></DataCell>
+                                <DataCell hideBelow="2xl"><UbicacionCell row={row} /></DataCell>
                                 <DataCell align="right" hideBelow="lg">
                                     <span className="tabular-nums font-bold text-content-2">
                                         {row.facturas.toLocaleString()}

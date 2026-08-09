@@ -64,11 +64,22 @@ export const MEDIR_ESCRITORIO = () => {
     // puede tener otro ancho que la celda —y porque buscar el `<th>` por su
     // texto ya falló una vez: enganchó otro encabezado y dijo «entra» mientras
     // la captura mostraba lo contrario.
+    // Excepción declarada, con su motivo — la misma convención que
+    // `EXCEPCIONES` en `scripts/mobile-gate.mjs`.
+    //
+    // El calendario semanal de Horarios (`#schedule-table-scroll`) se pasa por
+    // **12px** a 1440 y no hay nada que arreglar: su fila no es un registro
+    // sino un empleado cruzado con siete días, y su carril horizontal es la
+    // decisión correcta —ya está declarado así en el gate móvil por el mismo
+    // motivo—. Acusarlo sería pedirle que esconda un día de la semana.
+    const exceptuado = (marco) => !!marco.closest('#schedule-table-scroll');
+
     const columnasFuera = [];
     document.querySelectorAll('table').forEach((t) => {
         if (!visible(t)) return;
         const marco = recortador(t);
         if (!marco) return;
+        if (exceptuado(marco)) return;
         const rm = marco.getBoundingClientRect();
         if (marco.scrollWidth <= marco.clientWidth + 1) return;   // no hay recorte
         const filas = [...t.querySelectorAll('tbody tr')].slice(0, 3);

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.526.5 — El tema de la cuenta era un dato vivo, no un hecho fijo
+
+El encabezado de `cajaNegra.js` afirmaba que la cuenta del usuario usa el tema
+`solid` —consultado en `user_dashboard_prefs` el 2026-08-07— y con eso daba por
+descartada toda hipótesis de `backdrop-filter`. Un día después la sonda de
+rotación leyó el tema **del DOM, en el teléfono**, y salió `liquid`: con el
+vidrio encendido.
+
+Descartar una hipótesis con un dato viejo cuesta lo mismo que no comprobarla, y
+acá costó más: la explicación que quedó viva después de medir la rotación es
+justamente la composición de capas, que ese comentario declaraba imposible.
+
+El valor vacío además engaña en la dirección peor. **`liquid` es el único tema
+que NO estampa `data-theme`** —es el default—, así que un `null` significa «con
+vidrio», no «sin dato». La primera versión de la sonda lo mostraba como `?` y se
+leía como un campo que había fallado.
+
+Sólo comentario: no cambia una línea de comportamiento.
+
 ## v2.526.4 — La sonda midió al revés de lo supuesto: el que tarda es Safari
 
 Primera corrida de la sonda de rotación en el iPhone del usuario, y el resultado

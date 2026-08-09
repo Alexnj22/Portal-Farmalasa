@@ -3,9 +3,16 @@
 // Existe por un bug que sólo pasa en el iPhone del usuario y que ningún emulador
 // reproduce: al abrir el detalle de un producto «se recarga la página y se pone
 // negro». Se persiguió tres veces por el lado del `backdrop-filter` y las tres
-// falló, y el 2026-08-07 se comprobó por qué no podía ser eso: **su cuenta usa
-// el tema `solid`, donde los cuatro `--backdrop-*` valen `none`**. O sea que en
-// su teléfono nunca hubo desenfoque que romper.
+// falló, y el 2026-08-07 se creyó saber por qué no podía ser eso: la consulta a
+// `user_dashboard_prefs` decía que esa cuenta usaba el tema `solid`, donde los
+// cuatro `--backdrop-*` valen `none`.
+//
+// ⚠️ Un día después esa respuesta ya era falsa. El 2026-08-08 la sonda de
+// rotación leyó el tema **del DOM, en el teléfono**, y salió `liquid`: con el
+// vidrio encendido. El tema es un valor vivo — la consulta de ayer no describe
+// la sesión de hoy, y se había usado para descartar una hipótesis. Se lee de
+// `document.documentElement`, y ojo con el vacío: `liquid` es el único que NO
+// estampa `data-theme`, así que un `null` significa «con vidrio», no «sin dato».
 //
 // Cuando una hipótesis se cae tres veces, lo que falta no es otra hipótesis: es
 // una medición del aparato donde pasa. El problema es que la página se RECARGA,

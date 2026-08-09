@@ -21,9 +21,69 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.526.1 — La hoja de Filtros se cerraba vacía: el contenido se iba antes que la animación
+## v2.526.2 — La hoja de Filtros se cerraba vacía: el contenido se iba antes que la animación
 
-_(pendiente de redactar)_
+Cuarta ronda de «el modal se cierra sin animación, sólo desaparece». Las tres
+anteriores fallaron porque **estaba mirando la hoja equivocada**: medí la de
+opciones del conteo, que animaba bien en los dos motores y contra producción. El
+dato que lo destrabó vino de la consola del usuario, y no era ninguno de los
+números que le pedí — era la **URL**: `pedidos?tab=reglas`. Más su frase
+siguiente: «pasa lo mismo, en todos los modales».
+
+La hoja que fallaba es la de **«Filtros» y «Buscar» de la barra flotante**, que
+existe en **todas** las vistas. De ahí el «todos los modales».
+
+### La causa
+
+```jsx
+<ModalShell open={!!panelAbierto} …>
+    <HojaMovil titulo={panelAbierto?.tituloPanel}>{panelAbierto?.panel}</HojaMovil>
+```
+
+`panelAbierto` acoplaba «qué panel» con «está abierta». Al cerrar, `abierta` pasa
+a `null` en el mismo tick: el título y el cuerpo se van **en el acto** mientras
+`ModalShell` recién empieza su salida. La hoja no se cerraba, **se vaciaba**.
+
+Y por eso arrastrando sí se veía: el asa ya había movido el panel bajo el dedo
+antes de soltar, así que el recorrido ocurrió mientras el contenido todavía
+estaba. Tocando afuera no hay nada previo y el salto queda a la vista.
+
+### El control que lo prueba
+
+La misma medición contra producción (código viejo) y contra el arreglo:
+
+| | Producción | Arreglado |
+|---|---|---|
+| Contenido durante el cierre | **vacío** (`""`) | intacto hasta el último fotograma |
+| Recortes de `clip-path` animando | 15 | 15 |
+| Desmonta a los | 263ms | 258ms |
+
+**El recorte siempre animó.** Lo que faltaba era el contenido adentro: se
+encogía un rectángulo de vidrio en blanco. Por eso se reportaba como «no anima»
+—uno mira el contenido, y el contenido no viajaba— y por eso ninguna medición de
+la animación lo encontraba. Es la misma lección de `ModalShell` (v2.238.0), que
+ya estaba escrita para este síntoma exacto, aplicada donde faltaba.
+
+### Y el mismo defecto en otros diez modales
+
+Buscando por estructura apareció que **diez componentes** cortaban con
+`if (!open) return null` justo encima de su `<ModalShell>`: `UnifiedModal` —el de
+las fichas de empleado, clientes, proveedores y pagos—, los seis de Pedidos,
+`PracticanteModal` y `KioskConfigModal`. Eso los arranca del árbol en el mismo
+tick del cierre, así que `ModalShell` **nunca llega a ver `open=false`** y no hay
+salida posible. Medido antes en `NuevoConteoModal`: desmontaba a los **23ms**
+contra los ~260 de una hoja que sí hace su recorrido.
+
+Borrar la línea a secas no servía: dejaría el cuerpo renderizando siempre,
+también cerrado, y `RutaMapModal` monta un mapa y `UnifiedModal` carga sus
+formularios con `React.lazy`. Por eso el gate ahora pasa por
+**`useMontadoParaSalida`** (`src/hooks/`): montado mientras está abierto, montado
+mientras SALE, afuera después. Su plazo sale del reloj del tema y es
+deliberadamente más largo que la ventana propia de `ModalShell` — es un techo
+para que nadie corte por abajo, no una sincronización.
+
+`RutaMapModal` y `CrearRutaModal` además le pasaban `open` fijo en `true` a su
+modal, así que aunque quedaran montados nunca habrían salido.
 
 ## v2.526.0 — Girar remonta la vista: el enfoque de React para la rotación
 

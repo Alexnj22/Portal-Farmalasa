@@ -7,6 +7,7 @@ import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
 import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 
 // Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)
 const isNative = !!(window.Capacitor?.isNativePlatform?.());
@@ -30,6 +31,7 @@ function fmtTime(iso) {
 }
 
 export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
+    const montadoParaSalida = useMontadoParaSalida(open);
   const isConductor = !!(currentUserId && ruta?.conductor_id && String(currentUserId) === String(ruta.conductor_id));
 
   // ── DOM / Maps refs ─────────────────────────────────────────────────────────
@@ -446,7 +448,10 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
       leafletMapRef.current.setView([pos.lat, pos.lng], 16);
   }, [isConductor, gpsPos, driverPos]);
 
-  if (!open) return null;
+  // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
   // ── Badges de estado ────────────────────────────────────────────────────────
   const conductorBtnLabel = isConductor
@@ -470,7 +475,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     : (driverOnline ? 'text-success' : driverPos ? 'text-warning' : 'text-content-3');
 
   return (
-    <PedidoModal open onClose={onClose} maxWidth="max-w-2xl">
+    <PedidoModal open={open} onClose={onClose} maxWidth="max-w-2xl">
       <PedidoModal.Header className="px-5 pt-5 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect'; // 🚨 Asegúrate de que esta ruta sea correcta
 import PortalInput from '../common/PortalInput';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 
 const KioskConfigModal = ({
   isOpen,
@@ -23,7 +24,11 @@ const KioskConfigModal = ({
   onRevoke,
   onClose,
 }) => {
-  if (!isOpen) return null;
+  const montadoParaSalida = useMontadoParaSalida(isOpen);
+  // El gate mira el montaje-para-SALIDA y no `isOpen` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
   // Conversión segura del String de localStorage a Objeto
   let parsedConfig = kioskConfig;

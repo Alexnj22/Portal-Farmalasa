@@ -26,6 +26,7 @@ import { updatePedidoSucursalStatus } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
@@ -100,6 +101,7 @@ export default function RecepcionModal({
     hasFaltaItems = false, // hay items falta_caja:true en otros grupos (electrolit/especial/caja pendiente)
     especialesLlegadas = {}, // { 'E1': 'ok'|'danada'|'faltante', ... }
 }) {
+    const montadoParaSalida = useMontadoParaSalida(open);
     const { user } = useAuth();
 
     // Whether we have enough data to do per-box reception
@@ -594,7 +596,10 @@ export default function RecepcionModal({
         }
     }, [saveExtras, extras, pedido?.id, sucursalId, anyHasDiff, faltaCajas, hasFaltaItems, onConfirmed, onClose]);
 
-    if (!open) return null;
+    // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
     // Visible rows for the items grid
     const gridRows = selectedCaja !== null ? selectedCajaRows : sortedRows;

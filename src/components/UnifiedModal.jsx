@@ -9,6 +9,7 @@ import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
 import { LoadingState } from './common/StateViews';
 import { supabase } from '../supabaseClient';
+import useMontadoParaSalida from '../hooks/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages'; 
 
 // -------------------------
@@ -107,6 +108,7 @@ const getEmployeeValidationError = (formData, type) => {
 };
 
 const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubmit, activeEmployee, setView, setActiveEmployee: setGlobalActiveEmployee }) => {
+    const montadoParaSalida = useMontadoParaSalida(isOpen);
 
     const { branches, roles, shifts, saveWeeklyRoster, updateBranch, addBranch } = useStaff();
 
@@ -724,7 +726,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         }
     };
 
-    if (!isOpen) return null;
+    // El gate mira el montaje-para-SALIDA y no `isOpen` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
     const FallbackLoader = () => <LoadingState variant="content" label="Cargando Módulo…" />;
 

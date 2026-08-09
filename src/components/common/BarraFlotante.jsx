@@ -156,6 +156,13 @@ const BarraFlotante = memo(({
     const [enPantalla, setEnPantalla] = useState(true);
     const anclaRef = useRef(null);
     const [abierta, setAbierta] = useState(null);   // key de la acción con panel abierto
+    // La última que se abrió, que sobrevive al cierre para que la hoja tenga qué
+    // dibujar mientras SALE (ver `panelVisible` más abajo).
+    const [ultimaKey, setUltimaKey] = useState(null);
+    const abrirPanel = useCallback((key) => {
+        if (key) setUltimaKey(key);
+        setAbierta(key);
+    }, []);
     const [buscando, setBuscando] = useState(false);
     const ultimaY = useRef(0);
     const bajado = useRef(0);
@@ -294,6 +301,23 @@ const BarraFlotante = memo(({
     const botones = (buscador ? 1 : 0) + acciones.length + (principal ? 1 : 0) + (hayQueLimpiar ? 1 : 0);
     const rotulos = mostrarRotulos ?? botones > 1;
     const panelAbierto = acciones.find((a) => a.key === abierta && a.panel);
+    // El panel que hay que SEGUIR dibujando mientras la hoja sale.
+    //
+    // `panelAbierto` acoplaba «qué panel» con «está abierta»: al cerrar,
+    // `abierta` pasa a `null` en el mismo tick, así que el título y el cuerpo se
+    // iban en el acto mientras `ModalShell` recién empezaba su salida. La hoja no
+    // se cerraba: **se vaciaba y desaparecía**. Arrastrándola no se notaba —el asa
+    // ya había movido el panel bajo el dedo antes de soltar—; tocando afuera el
+    // salto queda a la vista, y así se reportó. Y se reportó como «en todos los
+    // modales» porque ésta es la hoja de «Filtros» y «Buscar»: existe en cada
+    // pantalla del portal.
+    //
+    // Es la misma lección que `ModalShell` ya tenía escrita (v2.238.0): «qué
+    // registro» y «está abierto» son dos cosas y hacen falta las dos. La clave
+    // del último panel se recuerda al abrirlo y la pisa la próxima apertura.
+    const panelVisible = panelAbierto
+        || acciones.find((a) => a.key === ultimaKey && a.panel)
+        || null;
 
     return (
         <>
@@ -314,8 +338,9 @@ const BarraFlotante = memo(({
                     principal={principal}
                     clusterRef={clusterRef}
                     rotulos={rotulos}
-                    setAbierta={setAbierta}
+                    setAbierta={abrirPanel}
                     panelAbierto={panelAbierto}
+                    panelVisible={panelVisible}
                 />,
                 document.body,
             )}
@@ -327,7 +352,7 @@ const BarraFlotante = memo(({
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
     alternarBusqueda, marcarBuscar, limpiarTodo, acciones, principal, rotulos,
-    setAbierta, panelAbierto, clusterRef,
+    setAbierta, panelAbierto, panelVisible, clusterRef,
 }) => {
     return (
         <>
@@ -593,7 +618,7 @@ const BarraPortal = ({
                     align="bottom"
                     maxWidthClass="max-w-none"
                     surface={null}
-                    ariaLabel={panelAbierto?.tituloPanel || panelAbierto?.label || 'Panel'}
+                    ariaLabel={panelVisible?.tituloPanel || panelVisible?.label || 'Panel'}
                 >
                     {/* `HojaMovil` y no el asa + título + relleno a mano que había
                         acá (2026-07-30). Esta hoja fue el MODELO al que se mandó
@@ -602,10 +627,10 @@ const BarraPortal = ({
                         área segura, duplicados. Si el canónico nació de copiar
                         esto, esto tiene que ser lo primero en usarlo. */}
                     <HojaMovil
-                        titulo={panelAbierto?.tituloPanel || panelAbierto?.label}
+                        titulo={panelVisible?.tituloPanel || panelVisible?.label}
                         superficie={MATERIAL_HOJA}
                     >
-                        {panelAbierto?.panel}
+                        {panelVisible?.panel}
                     </HojaMovil>
                 </ModalShell>
             )}

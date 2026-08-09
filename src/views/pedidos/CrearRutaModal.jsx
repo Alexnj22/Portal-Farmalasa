@@ -18,6 +18,7 @@ import {
 } from '../../data/pedidos';
 
 import { mensajeAmigable } from '../../utils/errorMessages';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -32,6 +33,7 @@ function fmtMin(min) {
 function svcMin() { return 10; }
 
 export default function CrearRutaModal({ open, onClose, onCreated, initialKeys = [] }) {
+  const montadoParaSalida = useMontadoParaSalida(open);
   const { user } = useAuth();
 
   const [step, setStep] = useState(1);
@@ -449,10 +451,13 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     }
   }, [conductorNombre, paradas, submitting, user, totalDist, totalDriveMin, onCreated, onClose]);
 
-  if (!open) return null;
+  // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
+  // mismo tick del cierre desmontaba el componente antes de que
+  // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+  if (!montadoParaSalida) return null;
 
   return (
-    <PedidoModal open onClose={onClose} maxWidth="max-w-3xl">
+    <PedidoModal open={open} onClose={onClose} maxWidth="max-w-3xl">
       <PedidoModal.Header className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">

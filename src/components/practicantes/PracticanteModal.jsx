@@ -18,6 +18,7 @@ import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../ut
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 
 const ESTADO_OPTIONS = [
     { value: 'ACTIVO', label: 'Activo' },
@@ -62,6 +63,7 @@ const emptyForm = {
 };
 
 export default function PracticanteModal({ isOpen, onClose, practicante, onSaved }) {
+    const montadoParaSalida = useMontadoParaSalida(isOpen);
     const { showToast } = useToastStore();
     const branches = useStaffStore((s) => s.branches);
     const employees = useStaffStore((s) => s.employees);
@@ -185,7 +187,10 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
         }
     };
 
-    if (!isOpen) return null;
+    // El gate mira el montaje-para-SALIDA y no `isOpen` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
     // §1.5 · un portaícono DENTRO de una superficie de vidrio no lleva vidrio
     // propio: medido, la anidada queda a 1.02:1 de su contenedor —invisible— y

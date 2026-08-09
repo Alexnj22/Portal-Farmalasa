@@ -5,6 +5,7 @@ import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package 
 import PedidoModal from './PedidoModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 
 const TOGGLE_CFG = {
     ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success-solid text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
@@ -25,6 +26,7 @@ export default function ReenvioLlegadaModal({
     especialesList  = [],
     cicloNum = 1, cajaMap = {},
 }) {
+    const montadoParaSalida = useMontadoParaSalida(open);
     const [estados,         setEstados]         = useState({});
     const [nota,            setNota]            = useState('');
     const [electrolitOk,    setElectrolitOk]    = useState(null); // null=sin responder, true=todas ok, false=aun faltan
@@ -64,7 +66,10 @@ export default function ReenvioLlegadaModal({
         onClose();
     };
 
-    if (!open) return null;
+    // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
     return (
         <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm" className="max-h-[90vh]">

@@ -7,8 +7,10 @@ import { getExactPageGroups } from '../../utils/pedidoPrint';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import FilterBar from '../../components/common/FilterBar';
 import PortalInput from '../../components/common/PortalInput';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 
 export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero, paginas = null, draftKey = null }) {
+    const montadoParaSalida = useMontadoParaSalida(open);
     const [screen,          setScreen]          = useState(1);
     const [totalCajasInput, setTotalCajasInput] = useState('');
     const [pageAssignments, setPageAssignments] = useState([]);
@@ -113,7 +115,10 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         clearDraft(draftKey);
     };
 
-    if (!open) return null;
+    // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
     const boxes = Array.from({ length: cajaCount }, (_, b) => b + 1);
     const parsedCajas = parseInt(totalCajasInput, 10);

@@ -11,6 +11,7 @@ import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
+import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
@@ -36,6 +37,7 @@ const TOGGLE_CFG = {
 };
 
 export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, cajasElectrolit = 0, cajasEspeciales = [], draftKey = null }) {
+    const montadoParaSalida = useMontadoParaSalida(open);
     const [estados,              setEstados]              = useState({});
     const [nota,                 setNota]                 = useState('');
     const [electrolitFaltantes,  setElectrolitFaltantes]  = useState(null); // null=sin responder, 0=todas ok, N=N faltantes
@@ -139,7 +141,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         clearDraft(draftKey);
     };
 
-    if (!open) return null;
+    // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
+    // mismo tick del cierre desmontaba el componente antes de que
+    // `ModalShell` pudiera animar nada. Ver `useMontadoParaSalida`.
+    if (!montadoParaSalida) return null;
 
     return (
         <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm" className="max-h-[90vh]">

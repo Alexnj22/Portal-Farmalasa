@@ -10,6 +10,53 @@ de alcance las tomó el usuario el 2026-08-08:
 
 ---
 
+## ESTADO — cerrado el 2026-08-09, salvo F1
+
+| Fase | Estado | Versión |
+|---|---|---|
+| **F0** · terceros fuera del origen + CSP en enforce | ✅ | v2.528.0 |
+| **F2** · cerrar sesión sin red, `scope: 'local'`, clase de la sesión | ✅ | v2.527.0 |
+| **F3** · el límite lo decide el servidor | ✅ *(inerte hasta activar el hook)* | v2.529.0 |
+| **F4** · vista de Conexiones | ✅ | v2.531.0 → v2.532.0 |
+| **F1** · ajustes del panel de Supabase | ⏳ **PENDIENTE — sólo lo puede hacer una persona** | — |
+
+### Lo único que falta, y por qué no lo puede hacer una sesión de trabajo
+
+La configuración de Auth **no está expuesta por el MCP de Supabase** ni por SQL:
+vive en la configuración de GoTrue. Se toca a mano en el panel, o con la API de
+gestión y un token personal que este repo no tiene (verificado: no hay
+`SUPABASE_ACCESS_TOKEN` ni en `.env` ni en el entorno).
+
+**Authentication → Sessions / JWT** del proyecto `sacecdkdmsdvgqnrsett`:
+
+| Ajuste | Hoy | A poner |
+|---|---|---|
+| Access token (JWT) expiry | 3600s | **900** |
+| Refresh token rotation | activa | **activa + reuse interval 10s** |
+| Inactivity timeout | ninguno | **30 días** |
+| Session timebox | ninguno | **90 días** |
+
+**Authentication → Hooks → Customize Access Token (JWT) Claims** → función
+Postgres `public.custom_access_token_hook` (ya creada, probada y con permisos).
+
+**El orden importa:** bajar el JWT ANTES de activar el hook. Al revés, el hook
+funciona pero el límite de 5 minutos se cumple con hasta una hora de retraso,
+porque sólo puede actuar cuando se emite un token.
+
+### Lo que sigue roto hasta que F1 se aplique
+
+Medido el 2026-08-09: **3,636 sesiones, todas con `not_after` en NULL**, la más
+vieja de hace **75 días**, y **2,767 abandonadas hace más de 7 días que siguen
+siendo válidas**. Cerrar el navegador no cierra sesión —nadie manda el aviso— y
+el token sobrevive en el disco. Hoy la única limpieza ocurre si esa persona
+vuelve a abrir ese navegador después de su límite; la computadora que no se
+vuelve a tocar no se limpia nunca.
+
+El *inactivity timeout* es el ajuste con más efecto de todo el plan: cosecha esas
+2,767 solo, sin que ningún navegador tenga que volver.
+
+---
+
 ## 0. La foto de partida, medida hoy
 
 Todo lo de esta sección está verificado contra el código instalado y contra

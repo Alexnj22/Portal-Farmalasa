@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.536.1 — Un solo superusuario: `system_role` deja de decidir permisos
+
+D5 de `docs/PLAN-CERRAR-AUTORIZACION-2026-08-09.md`, y la raíz de los otros
+cuatro. Sale de una pregunta del usuario que rechazó la premisa de la mía:
+*«¿por qué hay 2? sólo necesito superusuario que tenga siempre acceso a todo, y
+los roles normales por cargo»*.
+
+### Había dos, y ninguna cuenta lo era bajo ambas
+
+| Cuenta | `system_role` | Cargo | `roles.is_su` | Superusuario para… |
+|---|---|---|---|---|
+| `sufarmasalud` | **SUPERADMIN** | *(ninguno)* | — | el **servidor** |
+| `edwin.nunez` | SUPERVISOR | Supervisor/a de Ventas | **true** | el **frontend** |
+
+Imágenes espejo del mismo defecto. Ya había costado una vista que aparecía en el
+menú y contestaba «Acceso denegado», y **dos rodeos el mismo día** otorgando
+permisos explícitos en vez de arreglarlo.
+
+### El defecto de fondo no era que hubiera dos banderas
+
+Era que **una de ellas no es una bandera de permisos**. `employees.system_role`
+es la **jerarquía de aprobación** —EMPLEADO 36, JEFE 7, SUBJEFE 2, SUPERVISOR 2,
+ADMIN 1, SUPERADMIN 1— y la usa `src/data/requests.js` para decidir **quién
+aprueba** una solicitud, y `WidgetAnnulmentRequest.jsx` para encontrar un
+administrador. Su valor `SUPERADMIN` se había tomado prestado como atajo de
+autorización.
+
+Desde acá manda **`roles.is_su`**, que vive en el cargo, al lado del resto de los
+permisos. `system_role` conserva su trabajo real y deja de decidir accesos.
+
+### Eran tres funciones, no una
+
+`auth_has_module_permission` (94 policies), `auth_can_edit_any` y
+`auth_can_edit_scope_all`. Arreglar sólo la primera habría dejado la trampa viva
+en las de **escritura**.
+
+### El paso que no se podía separar
+
+`sufarmasalud` **no tenía cargo**. En cuanto el servidor deja de mirar
+`system_role`, esa cuenta pierde todo. Por eso el cargo nuevo —«Superusuario del
+Sistema»— y las tres funciones van en la **misma migración**: separadas, un fallo
+en el medio deja la cuenta de sistema afuera.
+
+### Verificado, incluido lo que debe cambiar
+
+10 casos en staging dentro de `BEGIN…ROLLBACK`, sobre las tres funciones — entre
+ellos el que **tiene** que cambiar: una cuenta con `SUPERADMIN` pero sin `is_su`
+ahora **niega**. En producción: `sufarmasalud` conserva todo, y el `EXPLAIN`
+sigue diciendo `InitPlan` (regla del outage del 2026-07-08 — sin el `(SELECT …)`
+la función se evaluaría por fila).
+
+### Y se quitaron los rodeos, que son la prueba
+
+`sesiones` y `bloqueos` se le habían otorgado al cargo 13 para esquivar este
+mismo defecto. **Se borraron.** Verificado después: ese cargo sigue viendo
+Conexiones, cerrando y bloqueando — por ser `is_su`. Dejarlos puestos habría
+escondido si el arreglo servía.
+
+### De paso, el gate atrapó un descuido mío
+
+`npm run gate:migrations --remote` encontró que
+`20260809165531_list_sessions_incluye_bloqueados` estaba **aplicada en producción
+y sin archivo local**. Es exactamente la deriva para la que existe ese gate:
+`apply_migration` escribe en el servidor y nunca en el disco, y olvidarlo no da
+ningún error. Recuperada del catálogo y archivada.
+
 ## v2.536.0 — Tanda 3: las dos vistas que no terminaban
 
 Las dos más altas de las 37, medidas en 390px:

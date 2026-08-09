@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.539.0 — La revisión de UX cierra: cinco categorías en cero y su ratchet
+
+Pasada final sobre las **37 rutas × 1440 y 1280**, con cero mediciones inválidas:
+
+```
+columna-fuera-del-marco   19 → 0
+carril-recortado          18 → 0
+texto-cortado             63 → 0
+error-js                       0
+vista-larga                6 → 5
+```
+
+El baseline queda en ese piso: **cualquier hallazgo nuevo falla el gate**.
+
+`vista-larga` es la única que no llega a cero, y se deja así con su motivo: son
+cinco vistas que piden 7+ pantallas en el teléfono porque **tienen esa cantidad
+de datos** —`laboratorios` 22.5 con ~250 laboratorios reales, `monitor` 12 con la
+plantilla entera—. Bajarlas más sería esconder información, no arreglar una
+vista. Las dos que sí eran defecto —`sync-health` con 30.3 y `laboratorios` con
+33— ya bajaron.
+
+### El barrido de escritorio entra al trabajo nocturno
+
+Job propio en CI, al lado del móvil, y `gate:ux` corriendo **después** del
+barrido porque lee el informe que aquél escribe. Chromium y una sola corrida:
+acá no se abren pestañas ni diálogos, así que no aplica el techo de las 28
+pantallas que obliga a partir el móvil en dos mitades. Son ~11 minutos.
+
+No va en cada push a propósito. Un gate que cobra once minutos antes de cada
+commit se desactiva a la semana, y uno desactivado es peor que ninguno.
+
 ## v2.538.1 — Las últimas cuatro, y tres errores de lectura míos
 
 `vacation-plan`, `conteo-inventario`, `minmax` y `facturas-compra` en **cero**.

@@ -150,3 +150,45 @@ jobs:
             barridos/
             test-results/barrido-total/
           retention-days: 14
+
+  barrido-escritorio:
+    name: Barrido de escritorio (nocturno)
+    # El hermano del móvil, y existe porque aquél no podía ver esto: corre
+    # `devices['iPhone 13']` y nada más. El 2026-08-09, revisando Ventas a ojo,
+    # apareció que a 1440 con el menú abierto la columna **Total** quedaba fuera
+    # del marco — el número por el que existe la pantalla, legible en el teléfono
+    # e ilegible en la computadora. 37 rutas barridas exhaustivamente no lo vieron
+    # nunca porque nadie miraba ese ancho.
+    #
+    # Chromium y una sola corrida: acá no se abren pestañas ni diálogos, así que
+    # no aplica el techo de las 28 pantallas que obliga a partir el móvil en dos.
+    # Son ~11 minutos.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      E2E_USER: ${{ secrets.E2E_USER }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Barrido de escritorio (1440 y 1280)
+        run: npx playwright test tests/e2e/barrido-escritorio.spec.js --project=chromium
+      # El ratchet, DESPUÉS del barrido: `gate:ux` lee el informe que aquél
+      # escribe. Va acá y no en cada push porque necesita navegador y sesión;
+      # un gate que cobra once minutos antes de cada commit se desactiva a la
+      # semana, y uno desactivado es peor que ninguno.
+      - name: gate:ux (el ratchet del barrido)
+        run: npm run gate:ux
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: barrido-escritorio
+          path: barridos/escritorio/
+          retention-days: 14

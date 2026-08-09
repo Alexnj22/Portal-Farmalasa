@@ -506,7 +506,14 @@ dice, no se omite:
   pestaña de red sin **ninguna** petición a unpkg o jsdelivr al abrir un mapa y
   al imprimir un carné. La consola sin violaciones de CSP.
 - **F1**: decodificar un access token nuevo y confirmar `exp - iat = 900`.
-  Confirmar que aparece `not_after` en las filas nuevas de `auth.sessions`.
+  **Y NO mirar `not_after` para dar por aplicado el *timebox*** — este plan lo
+  decía y estaba mal. GoTrue hace cumplir el *timebox* y el *inactivity timeout*
+  **en el momento de refrescar**, comparando contra `created_at` y
+  `refreshed_at`; `not_after` es otra cosa (una caducidad explícita de la fila) y
+  se queda en NULL aunque los dos ajustes estén puestos. Medido el 2026-08-09:
+  con el panel ya guardado, las 214 conexiones seguían con `caduca` vacío. La
+  única comprobación barata que sí sirve es la del access token —`exp - iat`—;
+  las otras dos sólo se pueden observar cuando alguien cruza el plazo.
 - **F2**: con la red cortada, forzar el cierre por inactividad y confirmar que
   `sb-<ref>-auth-token` **desapareció** de `localStorage` y que recargar deja en
   la pantalla de login. Confirmar que cerrar en escritorio **no** cierra el

@@ -614,7 +614,10 @@ const LiquidDatePicker = ({
                 aria-expanded={esTactil ? isOpen : undefined}
                 aria-label={esTactil ? (hasValue ? `Fecha ${dVal}/${mVal}/${yVal}, cambiar` : 'Elegir fecha') : undefined}
                 onKeyDown={esTactil ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } } : undefined}
-                className={`w-full h-full flex items-center gap-1 rounded-xl transition-all hover:bg-surface-card-hover group/picker focus-within:bg-surface-card-hover
+                // El campo entero es el control que abre el calendario, y sólo
+                // respondía al puntero. `active:` en el contenedor y no en cada
+                // casilla: lo que se toca es el campo.
+                className={`w-full h-full flex items-center gap-1 rounded-xl transition-all active:scale-[0.99] hover:bg-surface-card-hover group/picker focus-within:bg-surface-card-hover
                     ${esTactil ? 'cursor-pointer min-h-[44px]' : 'cursor-text'}
                     ${compact ? "px-2.5 min-w-[112px]" : "px-3 md:px-4 min-w-[140px]"}`}
                 onClick={() => {

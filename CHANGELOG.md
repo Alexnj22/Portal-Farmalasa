@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.525.1 — El acuse llega a las pantallas más internas: 12 a 0
+
+Los 12 que quedaban de v2.525.0, y **ninguno se encontraba grepeando**: viven en
+diálogos y sus clases son genéricas (`flex flex-col items-center gap-1.5 group`
+no dice de qué componente sale). Se les preguntó al DOM con el diálogo abierto,
+pidiendo el `data-*` más cercano — que sí identifica al dueño.
+
+```
+8  pasos del expediente de empleado   UnifiedModal   → + min-h, el rótulo es micro
+3  el campo de fecha                  LiquidDatePicker
+1  el aspa de limpiar (y su chevron)  LiquidSelect
+```
+
+**Los tres son canónicos**, así que el arreglo viaja: los pasos del expediente
+aparecen en cada alta y edición de empleado, el campo de fecha en todo formulario
+con fechas, y el aspa de `LiquidSelect` en los ~30 sitios donde hay un desplegable.
+
+De paso el chevron de `LiquidSelect` se llevó el mismo acuse aunque el barrido no
+lo marcara: es el hermano del aspa, en la misma píldora y con el mismo papel — la
+lección de la píldora de Facturación (v2.523.0), donde un segmento confirmaba el
+toque y el otro se quedaba mudo.
+
+**Verificado dos veces y con dos instrumentos**: una sonda que pregunta al DOM
+con el diálogo abierto (`/staff`, `/metas`, `/branches`, `/dashboard`: 0 en las
+cuatro) y el barrido canónico sobre **22 pantallas** con pestañas y diálogos —
+desbordes 0, chicos 0, zoom de iOS 0, scroll lateral 0, **sin acuse 0**.
+
+Con esto F8 queda cerrada: de los 116 desbordes, 109 chicos y 46 controles mudos
+que dejó ver la corrida de 117 pantallas, no queda ninguno.
+
 ## v2.525.0 — F8: lo que escondían las pestañas y los diálogos, en cero
 
 La corrida de 117 pantallas dejó 116 desbordes, 109 controles chicos y 1 input

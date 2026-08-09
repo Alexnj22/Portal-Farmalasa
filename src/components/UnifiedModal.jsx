@@ -795,7 +795,12 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                             <button
                                                 type="button"
                                                 onClick={() => setEmpActiveTab(step.key)}
-                                                className="flex flex-col items-center gap-1.5 group"
+                                                // El acuse: son los pasos del expediente de
+                                                // empleado y en el teléfono se tocan para
+                                                // saltar de sección. El círculo ya reacciona
+                                                // al puntero (`group-hover:`), que ahí no
+                                                // existe. `min-h` de paso: el rótulo es micro.
+                                                className="flex flex-col items-center gap-1.5 group min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.97]"
                                             >
                                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-[var(--dur-slow)] border-2 shadow-sm ${isComplete ? 'bg-success-solid border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}

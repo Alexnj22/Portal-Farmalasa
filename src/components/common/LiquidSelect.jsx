@@ -709,7 +709,7 @@ const LiquidSelect = ({
                 <button
                     type="button"
                     onClick={handleClear}
-                    className={`absolute ${rightIconPos} ${clearTap} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center ${areaTocable}`}
+                    className={`absolute ${rightIconPos} ${clearTap} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center active:scale-[0.9] transition-transform duration-[var(--dur-fast)] ${areaTocable}`}
                     title="Quitar selección"
                 >
                     <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-[var(--dur-slow)] group-hover:shadow-sm bg-danger/10 hover:bg-danger-solid text-danger hover:text-white">
@@ -727,7 +727,7 @@ const LiquidSelect = ({
                     aria-hidden="true"
                     tabIndex={-1}
                     onClick={handleToggle}
-                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-0.5 cursor-pointer flex items-center justify-center ${areaTocable}`}
+                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-0.5 cursor-pointer flex items-center justify-center active:scale-[0.9] transition-transform duration-[var(--dur-fast)] ${areaTocable}`}
                 >
                     <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-[var(--dur-slow)] ${isOpen
                             ? 'bg-brand/[0.12]'

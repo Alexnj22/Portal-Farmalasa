@@ -174,8 +174,41 @@ irrelevante en costo, y es lo que le da al hook de F3 su resolución: **el
 enforcement server-side sólo puede actuar cuando se emite un token**, así que la
 holgura máxima del «5 minutos» es un ciclo de token.
 
-El *inactivity timeout* y el *timebox* además **limpian solos** `auth.sessions`.
-No hace falta un cron de purga propio.
+### La acumulación de `auth.sessions`: de dónde sale de verdad
+
+Medido el 2026-08-08, porque «la tabla crece sin limpiarse» era cierto pero
+señalaba al culpable equivocado:
+
+| Cuenta | Sesiones | Refrescadas alguna vez |
+|---|---|---|
+| `qa.test` | **3,338** | 1 |
+| `edwin.nunez` | 205 | 5 |
+| `qa.e2e.test` | 32 | 0 |
+| `celina.escobar` | 2 | 2 |
+| resto | 3 | — |
+
+**El 93% es `qa.test`**, o sea el Playwright de las sesiones de trabajo. El
+**99.7% de todas las sesiones nunca se refrescó**: entran, hacen lo suyo en menos
+de una hora y el contexto del navegador se tira. El uso real de los últimos 7
+días son **5 usuarios distintos**. Entre el 26-jul y el 8-ago hubo días de 170 a
+278 sesiones nuevas generadas por **una sola cuenta**.
+
+Consecuencias para el plan:
+
+- El *inactivity timeout* y el *timebox* **limpian solos** `auth.sessions` —como
+  esas sesiones nunca se refrescan, quedan obsoletas de inmediato. **No hace
+  falta un cron de purga propio para `auth.sessions`.**
+- Pero el estado estable pasa a ser «lo generado en los últimos 30 días», y al
+  ritmo de QA de estas dos semanas eso siguen siendo miles. **El timeout acota el
+  crecimiento; no baja el número mientras las pruebas sigan logueando así.** La
+  palanca real es que los tests reusen el estado de sesión (`storageState` de
+  Playwright) en vez de hacer login en cada archivo.
+- **`scope: 'local'` (F2.3) empeora un poco la acumulación**, porque `global`
+  borraba todas las sesiones del usuario cada vez que corría. Es el precio
+  correcto por que cerrar en el escritorio no cierre el teléfono.
+- **`session_activity` (F3) sí necesita su propia purga desde el día uno** —
+  regla 7 de CLAUDE.md. Cron diario que borra las filas cuya sesión ya no existe
+  en `auth.sessions`.
 
 ---
 
@@ -193,10 +226,45 @@ Cuatro ediciones en `src/context/AuthContext.jsx`:
    este camino no se consulta.
 3. **`signOut({ scope: 'local' })`.** Cerrar por inactividad en un dispositivo no
    puede cerrar los demás (H3).
-4. **`IS_MOBILE_SESSION` deja de mirar el user-agent.** Queda
-   `display-mode: standalone` + `navigator.standalone` + `window.Capacitor` — la
-   misma detección que `index.html` ya hace para el zoom. Un teléfono en el
-   navegador normal vuelve al límite de su rol.
+4. **`IS_MOBILE_SESSION` deja de mirar el user-agent, y deja de ser una
+   pregunta que se hace cada vez.** La detección pasa a ser
+   `display-mode: standalone` + `navigator.standalone` + `window.Capacitor` —la
+   misma que `index.html` ya hace para el zoom— pero **se evalúa UNA sola vez, al
+   iniciar sesión**, y el resultado se guarda en `sb_device_class` junto al resto
+   del caché de auth. El vigilante de inactividad lo lee de ahí. Ver
+   «la clase es de la sesión» más abajo, que es el motivo de fondo.
+
+---
+
+## La clase del dispositivo es de la SESIÓN, no de la ventana
+
+Esto salió de una pregunta del usuario el 2026-08-08 —«si estoy en escritorio y
+tengo otra sesión en una PWA, ¿funcionará bien con los tiempos en cada
+dispositivo?»— y corrige un defecto del diseño original.
+
+**Dispositivos distintos funcionan bien y no hace falta nada especial**: cada uno
+tiene su propio `session_id`, su propia familia de refresh tokens, su propio
+`sb_last_activity_at` y su propia fila en `session_activity`. Con `scope: 'local'`
+(F2.3), cerrar uno ya no cierra el otro.
+
+**El caso que rompía es la PWA instalada en la MISMA computadora.** Una PWA de
+escritorio corre en el mismo perfil y el mismo origen que el navegador, así que
+**comparte `localStorage`**: no son dos sesiones, es una. Con la clase evaluada
+por ventana, las dos ventanas contestaban distinto —`display-mode: standalone`
+es falso en la pestaña y verdadero en la PWA— mientras escribían el mismo sello
+de actividad y usaban el mismo token. El vigilante de la pestaña cerraría la
+sesión que la PWA está usando. Y el `device_class` «congelado en el INSERT»
+quedaba a suerte de cuál ventana latió primero.
+
+**La regla, entonces: la clase se decide una vez al iniciar sesión, se guarda
+con la sesión, y ni el cliente ni `touch_session` vuelven a preguntarle al
+`display-mode` de la ventana actual.** Las dos ventanas coinciden siempre porque
+coinciden en la sesión: si entraste desde la PWA las dos tienen la ventana larga;
+si entraste desde la pestaña, las dos tienen la corta.
+
+En teléfono, cuánto comparten la app de pantalla de inicio y el navegador varía
+según la plataforma. Con esta regla **deja de importar cuál sea**, que es
+justamente por qué se prefiere a averiguarlo.
 
 ---
 
@@ -214,7 +282,9 @@ Con RLS y policy explícita, índice sobre `user_id`, y `GRANT SELECT` a
 `auth.jwt() ->> 'session_id'`, nunca de un parámetro** — es la regla del repo
 sobre autoría (`feedback_rpc_authorship_never_trust_client_param`).
 `INSERT ... ON CONFLICT (session_id) DO UPDATE SET last_seen_at = now()`:
-**`device_class` se fija sólo en el INSERT y no se puede cambiar después.**
+**`device_class` se fija sólo en el INSERT y no se puede cambiar después.** El
+cliente lo manda desde `sb_device_class`, que se calculó al iniciar sesión — no
+lo recalcula por ventana (ver «la clase del dispositivo es de la sesión»).
 
 **Función `session_idle_limit_minutes(p_user_id uuid, p_device_class text)`** —
 espeja `getIdleLimitMs` de `AuthContext.jsx`. No puede usar `auth_employee_id()`:

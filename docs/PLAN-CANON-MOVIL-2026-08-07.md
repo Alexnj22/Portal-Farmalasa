@@ -128,16 +128,28 @@ todas verificables leyendo el fuente:
 hoy y **ninguna categoría puede subir**. Y —lección del 2026-08-07— se verifica
 que **puede fallar**: se le mete una violación a propósito y se ve en rojo.
 
-### Fase 2 — Cerrar los huecos del barrido dinámico  ⚠️ **ESCRITA, SIN VERIFICAR EN VIVO**
+### Fase 2 — Cerrar los huecos del barrido dinámico  ✅ **VERIFICADA EN VIVO (2026-08-08)**
 
-> **Estado al 2026-08-07.** El código está: `ViewTabBar` estampa `data-pestanas`
-> (verificado en el bundle), el barrido lo lee y recorre las pestañas, y acepta
-> `TEMA=dark|solid|solid-dark|liquid`. **No se pudo correr**: el ingreso quedó
-> bloqueado por el límite de intentos de Supabase después de muchas corridas en
-> el día, y el cerrojo de sesión hizo lo suyo —cortó en 8 segundos en vez de
-> medir la pantalla de login 37 veces—. Queda pendiente **la primera corrida
-> verde**, que es lo único que convierte esto en verificado. Hasta entonces no se
-> puede afirmar que el recorrido de pestañas funcione.
+> **Estado al 2026-08-07 (histórico).** El código estaba escrito pero **no se
+> pudo correr**: el ingreso quedó bloqueado por el límite de intentos de Supabase
+> después de muchas corridas en el día, y el cerrojo de sesión hizo lo suyo
+> —cortó en 8 segundos en vez de medir la pantalla de login 37 veces—.
+>
+> **Cerrada el 2026-08-08.** El barrido corrió y con eso la fase quedó
+> verificada, no sólo escrita:
+>
+> - **37 rutas × 4 temas = 148 pantallas**, todo en cero. El tema **no cambia el
+>   layout**, que era la pregunta que abría el punto 3.
+> - **117 pantallas** con pestañas internas y diálogos —los puntos 1 y 2—, que
+>   nunca se habían medido. Encontraron deuda real que ningún barrido anterior
+>   podía ver: 226 controles chicos, 116 desbordes y un input con fuente <16px
+>   que hacía que iOS acercara la pantalla. Todo en cero al cerrar F8.
+>
+> Sólo fue posible después de arreglar el cuelgue de v2.524.1: hasta entonces
+> **8 de 14 rutas** morían en silencio.
+>
+> El detalle de lo que encontró, agrupado por forma, vive en
+> `PLAN-CIERRE-MOVIL-2026-08-08.md`.
 Hoy cubre 37 rutas × 1 pestaña × 1 tema × 1 tamaño. Agregar, en este orden:
 
 1. **Pestañas internas.** 37 archivos de vista declaran barra propia; sólo se

@@ -1,9 +1,24 @@
 # PLAN — Cerrar al 100 la parte visual/móvil
 
 **Estado:** F1–F5, F7, F8 ✅ · **F6 parcial** (dos hallazgos cerrados, falta
-standalone) · **F9 abierta** (la rotación) · **Abierto el** 2026-08-08 ·
+standalone) · **F9 EN PAUSA** (la rotación —
+`docs/RETOMAR-ROTACION-MOVIL-2026-08-08.md`) · **Abierto el** 2026-08-08 ·
 **Cierra:** `PLAN-MOBILE-2026-07.md`
 (fase 4 y criterio 4 de aceptación) y `PLAN-CANON-MOVIL-2026-08-07.md` (fases 2 y 4).
+
+> ## Al 2026-08-09 — qué queda
+>
+> **`gate:movil` en cero en sus cuatro categorías.** `tabla-a-mano` era el único
+> ratchet fuera de cero: 26 → 0 (v2.531.1 a v2.531.4). De los 26, ocho eran HTML
+> de impresión que el detector contaba mal, seis eran matrices o papel que pasan
+> a excepción con motivo escrito, y doce se migraron a `DataTable` — cinco de
+> ellas gracias a `plano`, la salida que le faltaba al canónico para las tablas
+> que viven dentro de una superficie que ya existe. La regla nueva —cuándo un
+> `<table>` a mano es correcto— quedó en `DESIGN.md §32`.
+>
+> **Lo único que sigue abierto de este plan es F6**, y necesita el teléfono del
+> usuario: ningún emulador reproduce el modo agregado a inicio ni las áreas
+> seguras. Guion en `docs/PRUEBA-EN-TELEFONO-REAL.md`.
 
 > ## Bitácora — 2026-08-08
 >

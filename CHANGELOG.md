@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.531.5 — La regla de la sub-tabla decía lo contrario de lo que hay
+
+Los documentos que quedaron afirmando deuda que ya no existe, o una regla que el
+código acababa de invertir.
+
+**`DESIGN.md §32` enseñaba lo opuesto.** La regla del 2026-07-29 decía: «una
+tabla que ya vive dentro de una tarjeta **no puede ser `DataTable`**, porque
+quedaría doble-tarjeta», y a cambio daba una receta de `<th>` para escribirla a
+mano. El diagnóstico era correcto —dos capas del mismo material se suman— pero
+la conclusión salía cara: esas tablas no heredaban **nada** del canónico, ni el
+modo ficha, ni el alto de fila por densidad, ni el contrato de teclado del
+encabezado ordenable. Y la receta no se podía verificar: seguían apareciendo
+variantes nuevas del mismo `<th>`.
+
+Con `plano` esa disyuntiva desaparece, así que la sección se reescribió — y se
+agregó lo que faltaba desde el principio: **cuándo un `<table>` a mano SÍ es
+correcto**. Tres casos, y ninguno es «esta tabla es chiquita»: HTML que se
+imprime, una matriz cuya fila no es un registro, y un documento con formato
+propio. Los dos últimos se declaran en `EXCEPCIONES` con el motivo escrito.
+
+**`PLAN-CANON-MOVIL` tenía su Fase 2 marcada «ESCRITA, SIN VERIFICAR EN VIVO».**
+Ya se había verificado el 08-08 y nadie lo anotó: 37 rutas × 4 temas = 148
+pantallas en cero, más 117 con pestañas internas y diálogos, que encontraron 226
+controles chicos y 116 desbordes que ningún barrido anterior podía ver. Queda
+cerrada con su número.
+
+**`PLAN-CIERRE-MOVIL` abre con la foto de hoy**: `gate:movil` en cero en sus
+cuatro categorías, y F6 —la prueba en el teléfono real— como lo único que sigue
+abierto, porque necesita el aparato del usuario.
+
+Es la contracara de la regla que este proyecto ya aprendió: un doc viejo no es
+neutro, enseña la deuda. Éste enseñaba a escribir la tabla a mano.
+
 ## v2.531.4 — Las últimas cinco tablas a mano: el ratchet llega a cero
 
 ```

@@ -1551,36 +1551,54 @@ Props: `data`, `columns`, `loading`, `skeletonRows`, `empty` (`{ icon, message }
 
 **Never wrap `DataTable` in an extra card container.** `DataTable` already renders its own `rounded-2xl` card via `tk.cardBg`/`cardBorder`/`cardShadow` — wrapping it in a second `data-surface="card"` div (or any custom `bg-white/... backdrop-blur... rounded-[Nrem]` wrapper) double-cards it and makes the view look inconsistent with every other table view in the app (visible regression fixed in `StaffManagementView` v2.4.2 — it had grown a `data-surface="card"` wrapper with its own internal `overflow-y-auto` scroll region, which also fought `GlassViewLayout`'s own scroll container). Reference implementation: `VentasView` — `<DataTable>...</DataTable>` and `<TablePagination>` are plain siblings directly in the page's `space-y-*` flow, no wrapping div, no toolbar row for a row-count label (the count lives only in `TablePagination`'s own total badge).
 
-#### La sub-tabla: cuándo NO va `DataTable` (2026-07-29)
+#### La sub-tabla: `plano`, no una tabla a mano (2026-08-09)
 
-`DataTable` es la tabla de una **vista de lista**: trae su propia tarjeta, su
-paginación, su orden y su vacío. Por eso la regla de arriba —*nunca envolverla
-en otra tarjeta*— también significa lo contrario: **una tabla que ya vive dentro
-de una tarjeta, un panel o un modal no puede ser `DataTable`**, porque quedaría
-doble-tarjeta.
+> **Reemplaza la regla del 2026-07-29**, que decía lo contrario: «una tabla que
+> ya vive dentro de una tarjeta **no puede ser `DataTable`**, porque quedaría
+> doble-tarjeta», y a cambio daba una receta de `<th>` para escribirla a mano.
+> El diagnóstico era correcto —dos capas del mismo material se suman— pero la
+> conclusión salía cara: esas tablas no heredaban **nada** del canónico. Ni el
+> modo ficha, ni el alto de fila por densidad, ni el contrato de teclado del
+> encabezado ordenable. Y la receta de `<th>` no se podía verificar: seguían
+> apareciendo variantes nuevas.
 
-Al auditar aparecieron **7 tablas así** (`ComprasView`, `EncuestaView`,
-`VacationPlanView`, `TabMetricas`, `TabCatalogo`, `FormPurchaseDteViewer`,
-`ScheduleCalendar`), y como el doc no decía qué hacer con ellas, **cada una
-inventó su propio encabezado**: `text-left py-2`, `px-3 py-2 font-semibold`,
-`px-4 py-2.5`, `text-micro tracking-widest`, `text-caption tracking-wider`…
-seis formas para lo mismo.
-
-El encabezado de una sub-tabla es **uno solo** — la misma etiqueta en
-versalitas que usan `PortalInput` y `DataTable`:
+La salida es **`plano`**, que quita **sólo** la superficie:
 
 ```jsx
-<th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">
+<DataTable columns={COLS} plano dense movil={false} minWidth="520px">
 ```
 
-Se le puede sumar alineación (`text-right`/`text-center` para numéricas, que
-reemplazan a `text-left`) y ancho (`min-w-*`, `w-[*]`), nada más. Si necesitás
-además orden, paginación o estado vacío, no era una sub-tabla: sacala del panel
-y usá `DataTable`.
+Todo lo demás sigue siendo del canónico. Con eso, las cinco sub-tablas que
+quedaban escritas a mano —el detalle de ubicaciones de Inventario y los tres
+historiales de Catálogo, más el resumen por sucursal de Pedidos— pasaron al
+canónico y `tabla-a-mano` llegó a **0** el 2026-08-09.
 
-`ScheduleCalendar` queda fuera a propósito: no es una tabla de datos sino una
-matriz de calendario con columna fija y `border-separate`. Es geometría, no
-lista.
+#### Cuándo un `<table>` a mano SÍ es correcto
+
+Tres casos, y ninguno es «esta tabla es chiquita»:
+
+1. **HTML que se imprime.** Una boleta de pago, una planilla, una cotización
+   impresa. Van en literales de plantilla hacia `openPrintWindow` y no llegan
+   nunca al DOM de la app; `gate:movil` los ignora desde v2.531.1 porque
+   neutraliza el contenido de los backticks antes de mirar.
+2. **La fila no es un registro: es una matriz.** Una entidad cruzada con sus
+   columnas —bloques × poblaciones en Encuesta, empleados × bloques,
+   empleados × siete días en `ScheduleCalendar` y en el previsor de horarios—.
+   El modo ficha no tiene qué mostrar ahí: una ficha por fila repetiría el
+   nombre y listaría las columnas debajo, o sea la misma tabla otra vez y más
+   larga.
+3. **Un documento con formato propio.** Los visores de DTE y el Corte Z: sus
+   columnas son las del documento fiscal y cambiarlas sería mostrar otro
+   documento.
+
+Los casos 2 y 3 se declaran en `EXCEPCIONES` de `scripts/mobile-gate.mjs`, **con
+el motivo escrito**. Una excepción dice «esto está bien así»; el baseline dice
+«esto hay que bajarlo». No se mezclan.
+
+Y si la fila **sí** es un registro pero el teléfono ya tiene su propio camino
+—`ExpedienteMovil` con `comoPanel`, como en Compras y Catálogo—, va
+`movil={false}` con su motivo en un comentario justo arriba: el modo ficha ahí
+sería una tercera forma de lo mismo compitiendo con la que ya se aprobó.
 
 ### LiquidSelect
 

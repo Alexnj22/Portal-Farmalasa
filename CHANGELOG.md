@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.1 — Auditoría de los widgets: las acciones miran el permiso del destino
+
+Barrido de los 26 widgets del Inicio (los 21 del catálogo más las 6 baldosas por
+sucursal, menos `kpi`) contra tres preguntas: si son canónicos, si lo que se
+toca lleva a donde dice, y si algo se ve mal.
+
+**Las acciones apuntaban bien pero se ofrecían mal.** Los 7 destinos existen y
+son los correctos —verificado cruzando cada `navigate()` contra el registro de
+rutas del portal, incluido `/dashboard`, que es el Listado de personal aunque el
+nombre engañe—. Lo que estaba mal es **quién ve el atajo**: los 16 puntos de
+navegación miraban `can_edit` del propio widget (`dash_*`) y tres no miraban
+nada. O sea que a alguien con el widget y sin el módulo, «Ver todas» lo mandaba
+a una página que no puede abrir. Ahora todos pasan por `puedeAbrir(ruta)`, que
+resuelve la ruta a su módulo con el mismo mapa que arma el menú —una sola lista
+de rutas— y pregunta por el `can_view` **del destino**.
+
+**Un widget que no dice nada se lee como roto.** «Estado de Turnos» tenía un
+cuarto caso sin dibujo: con empleados y con datos, pero ningún grupo con gente,
+los `return null` de adentro dejaban la tarjeta en blanco — ni dato, ni vacío,
+ni carga. Ahora tiene su estado vacío.
+
+**El canon está sano**: los 26 pasan por `WidgetCard`, ninguno repite su título
+adentro ni dibuja un segundo marco alrededor de todo su cuerpo, y ninguno recorta
+contenido sin poder recorrerlo (medido: 0 elementos por debajo del borde de su
+tarjeta sin un ancestro que scrollee). Cero errores de consola al pintar el
+tablero completo.
+
+Nota de método: el primer barrido marcó 11 widgets con «cuerpo vacío» y **eran
+falsos positivos del instrumento** —buscaba el cuerpo como el hermano del
+encabezado, y varios widgets compactos no tienen esa forma—. La captura del
+tablero entero los desmintió. Los tres hallazgos de arriba son los que sobrevivieron
+a mirar el dibujo.
+
 ## v2.551.0 — El tablero se arma solo, cuadrado y sólo con lo que cada quien ve
 
 Tres cosas del Inicio, y las dos primeras tenían la misma causa.

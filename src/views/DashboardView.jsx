@@ -44,6 +44,7 @@ import WidgetMetaSala from './dashboard/WidgetMetaSala';
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
 import WidgetVendedores from './dashboard/WidgetVendedores';
 import { SALAS_VENTA } from './metas/metasUtils';
+import { MODULE_MAP } from '../constants/moduleMap';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
@@ -158,6 +159,16 @@ const WIDGET_SIZES = {
   vendedores:    { minCols: 2, minRows: 3, label: 'Venta por vendedor' },
   traslados:     { minCols: 2, minRows: 2, label: 'Traslados'          },
 };
+
+// La acción de un widget manda a OTRO módulo, así que el permiso que decide si
+// se ofrece es el del DESTINO, no el del widget. Hasta el 2026-08-10 los 16
+// puntos de navegación del Inicio miraban `can_edit` del propio `dash_*` —o
+// nada, en tres de ellos—, así que a alguien con el widget y sin el módulo el
+// atajo lo mandaba a una página que no puede abrir. El mapa es el mismo que
+// arma el menú, para que no haya dos listas de rutas.
+const MODULO_DE_RUTA = Object.fromEntries(
+  Object.entries(MODULE_MAP).map(([clave, m]) => [m.path, clave])
+);
 
 const getWidgetSize = (id) => {
   if (id.startsWith('sales_branch_')) return { minCols: 1, minRows: 1, label: 'Hoy · Sucursal' };
@@ -901,6 +912,8 @@ const DashboardView = ({ openModal }) => {
     return hasPermission(p, 'can_view');
   }, [verComoRol, permisosPorCargo, hasPermission]);
   const canManage  = p  => !p || hasPermission(p,'can_edit');
+  // ¿Puede ABRIR esa página? (ver `MODULO_DE_RUTA`)
+  const puedeAbrir = useCallback((ruta) => canSee(MODULO_DE_RUTA[ruta]), [canSee]);
   // El interruptor de «Personalizar» sólo gobierna General, que es la única
   // pestaña propia. En las temáticas decide el permiso del cargo y nada más:
   // si el interruptor también contara ahí, apagar un widget en General lo
@@ -2129,6 +2142,13 @@ const DashboardView = ({ openModal }) => {
               </div>
             ) : shiftStatusData.length===0?(
               <EmptyState compact icon={Users} title="Sin empleados" />
+            // Había un cuarto caso sin dibujo: con empleados y con datos, pero
+            // ningún grupo con gente, los `return null` de adentro dejaban la
+            // tarjeta EN BLANCO — ni dato, ni vacío, ni carga. Un widget que no
+            // dice nada se lee como roto (auditoría del 2026-08-10).
+            ):Object.values(STATUS_CONFIG).every((_,i)=>!(shiftGroups[Object.keys(STATUS_CONFIG)[i]]||[]).length)?(
+              <EmptyState compact icon={Clock} title="Sin turnos hoy"
+                subtitle="Cuando la sucursal tenga turnos asignados, aparecen acá por estado." />
             ):(
               Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
                 const group=shiftGroups[status]||[]; if(!group.length) return null;
@@ -2336,7 +2356,7 @@ const DashboardView = ({ openModal }) => {
         : absences;
       return wrapWidget('absences',
         <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
-          action={canManage('dash_absences')&&<Button variant="ghost" onClick={()=>navigate('/requests')}>Ver <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/requests')&&<Button variant="ghost" onClick={()=>navigate('/requests')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -2377,7 +2397,7 @@ const DashboardView = ({ openModal }) => {
         : pendingReqs;
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
-          action={canManage('dash_requests')&&<Button variant="ghost" onClick={()=>navigate('/requests')}>Ver todas <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/requests')&&<Button variant="ghost" onClick={()=>navigate('/requests')}>Ver todas <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -2401,7 +2421,7 @@ const DashboardView = ({ openModal }) => {
                   iconBoxClass="bg-warning/10 border-warning/30"
                   title={getEmpName(r.employee_id)}
                   subtitle={REQUEST_TYPE_LABELS[r.type]||r.type}
-                  onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
+                  onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={<span className="text-caption text-content-3">{new Date(r.created_at).toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}</span>} />
               ))}
@@ -2422,7 +2442,7 @@ const DashboardView = ({ openModal }) => {
         : branches;
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
-          action={canManage('dash_branches')&&<Button variant="ghost" onClick={()=>navigate('/branches')}>Ver <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/branches')&&<Button variant="ghost" onClick={()=>navigate('/branches')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
@@ -2527,7 +2547,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
         <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
-          action={canManage('dash_announcements')&&<Button variant="ghost" onClick={()=>navigate('/announcements')}>Ver todos <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/announcements')&&<Button variant="ghost" onClick={()=>navigate('/announcements')}>Ver todos <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
@@ -2545,7 +2565,7 @@ const DashboardView = ({ openModal }) => {
                   iconBoxClass={a.priority==='URGENT'?'bg-danger/10 border-danger/30':'bg-chart-1/10 border-chart-1/30'}
                   title={a.title}
                   subtitle={new Date(a.date).toLocaleDateString('es-SV',{day:'2-digit',month:'short',year:'numeric'})}
-                  onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
+                  onClick={puedeAbrir('/announcements')?()=>navigate('/announcements'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false}>URGENTE</Badge>} />
               ))}
@@ -2662,7 +2682,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
-          action={<Button variant="ghost" onClick={() => navigate('/cotizaciones')}>Ver <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/cotizaciones')&&<Button variant="ghost" onClick={() => navigate('/cotizaciones')}>Ver <ChevronRight size={11}/></Button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
               <div className="flex items-end gap-4 px-4 pt-3 pb-2 border-b border-divider shrink-0">
@@ -2728,7 +2748,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
-          action={<Button variant="ghost" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/facturacion')&&<Button variant="ghost" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
           {factLoading ? (
             <div className="flex flex-col h-full px-4 py-3 gap-3">
               <div className="grid grid-cols-2 gap-3">
@@ -2793,7 +2813,7 @@ const DashboardView = ({ openModal }) => {
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
         <WidgetCard title="Top Productos · Mes Actual" icon={Package} category="productos"
-          action={<Button variant="ghost" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>}>
+          action={puedeAbrir('/ventas')&&<Button variant="ghost" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
               <div className="space-y-0.5 py-1">
@@ -3275,20 +3295,20 @@ const DashboardView = ({ openModal }) => {
           employees.length === 0
             ? <div key="kpi-general-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
+                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)" onClick={puedeAbrir('/dashboard')?()=>navigate('/dashboard'):undefined}/>
                 {/* `0% del total` cuando nadie marcó todavía se lee como un
                     cálculo que falló, no como la hora del día. Un cero con
                     motivo tiene que decir el motivo. */}
                 <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiPresent===0?'Sin marcaciones aún':(kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:undefined)}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" pide={kpiPending>0} sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} pide={kpiBranchAlerts.length>0} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" pide={kpiPending>0} sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} pide={kpiBranchAlerts.length>0} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={puedeAbrir('/branches')?()=>navigate('/branches'):undefined}/>
               </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
           <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="var(--brand)" sub="últ. 30 días" onClick={() => navigate('/cotizaciones')}/>
+            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="var(--brand)" sub="últ. 30 días" onClick={puedeAbrir('/cotizaciones')?()=>navigate('/cotizaciones'):undefined}/>
             <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={formatMoney(cotizStats.total, { decimales: 0 })} color="var(--success)" sub="en cotizaciones"/>
-            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="var(--brand-purple)" sub={factStats.count===1?'documento':'documentos'} onClick={() => navigate('/facturacion')}/>
+            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="var(--brand-purple)" sub={factStats.count===1?'documento':'documentos'} onClick={puedeAbrir('/facturacion')?()=>navigate('/facturacion'):undefined}/>
             <KpiCard icon={BarChart2}     label="Facturado hoy"         value={formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub="total del día"/>
           </div>
         )}
@@ -3298,8 +3318,8 @@ const DashboardView = ({ openModal }) => {
             : <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)"/>
                 <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
-                <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="var(--danger)" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="var(--danger)" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}/>
               </div>
         )}
           </>);

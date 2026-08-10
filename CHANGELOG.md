@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.543.1 — Las notificaciones se leen
+
+Reportado con una captura: *«la ✕ ahí no entiendo cuál estoy quitando»*, y
+después *«mejorá visualmente las notificaciones en general»*.
+
+**La ✕ no era un problema de dónde estaba escrita: era una trampa del canónico.**
+`Button` fija `relative` en sus clases base, y `relative` y `absolute` son
+utilidades de la MISMA especificidad — así que no decide el orden en el string,
+decide el orden en la hoja generada. Medido en el CSS de producción: `.absolute`
+en el byte 13190 y `.relative` en el 13240. La base le ganaba siempre a quien la
+usa, y un botón con `className="absolute top-2 right-2"` **caía al flujo** y
+aterrizaba abajo a la izquierda de la tarjeta — al lado de la notificación
+siguiente.
+
+El comentario del código decía que ya estaba anclado arriba a la derecha. Lo
+estaba **escrito**, no aplicado: nadie lo verificó mirando.
+
+Mordía en dos sitios, no en uno: la ✕ de la notificación y el botón de cerrar
+del visor de fotos. Por eso el arreglo va en `Button` y no en el llamador — el
+canónico cede la posición cuando se la piden, que es lo que espera quien la
+escribe. Documentarlo como «no le pases absolute» habría sido una regla que sólo
+vive en prosa.
+
+**Y el resto de la mejora**, cada punto contra algo que se veía mal:
+
+| se veía | ahora |
+|---|---|
+| dos avisos con el mismo título pegados, sin saber dónde terminaba uno | `divide-y` entre filas: cada aviso es una pieza |
+| el punto de «no leído» en la esquina, peleando el sitio de la ✕ | pegado al título, donde se lee como «este es nuevo» |
+| el cuerpo cortado en «El detal…», justo donde estaba el dato | tres líneas |
+| «HACE 12 H» en mayúsculas compitiendo de igual a igual con «VER» | la hora en minúscula y tenue; la acción es la que manda |
+| ⚠️ en el título **y** una campana genérica de ícono: la severidad dicha dos veces, una de ellas mal | el emoji elige ícono y tono —triángulo ámbar para aviso, círculo rojo para urgente— y se quita del texto |
+
+Lo último no necesita un mapa por tipo: quien escribe el aviso ya declaró la
+severidad en el emoji, así que se lee de ahí. El título arranca en su primera
+palabra.
+
 ## v2.543.0 — El aviso de CCF deja rastro, y el reenvío no espera al día siguiente
 
 Dos pedidos del usuario, y uno de ellos salió de un reporte: *«hace 2 días hubo

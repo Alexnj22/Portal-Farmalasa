@@ -237,7 +237,21 @@ const Button = memo(({
             // muerto hasta que la acción terminaba. Acá cubre a los catorce.
             // `active:translate-y-0` viaja con él porque es lo que cancela el
             // lift del hover en los que sí lo tienen.
-            className={`group relative overflow-hidden inline-flex items-center justify-center font-bold tracking-[-0.005em]
+            // ── `relative` sólo si quien llama no pidió otra posición ──────
+            // `relative` y `absolute` son utilidades de la MISMA especificidad,
+            // así que no decide el orden en el string: decide el orden en la
+            // hoja generada, y Tailwind emite `.relative` DESPUÉS de
+            // `.absolute` (medido en el CSS de producción: 13190 vs 13240).
+            // O sea que la base del canónico le ganaba siempre a la del
+            // consumidor, y un botón con `className="absolute top-2 right-2"`
+            // caía al flujo. Mordió en dos sitios: la ✕ de una notificación
+            // —reportado, «no entiendo cuál estoy quitando», porque aterrizaba
+            // abajo a la izquierda— y el cerrar del visor de fotos.
+            //
+            // No alcanza con documentar «no le pases absolute»: es una regla
+            // que sólo vive en prosa. El canónico cede la posición cuando se la
+            // piden, que es lo que el consumidor espera al escribirla.
+            className={`group ${/\b(absolute|fixed|sticky|static)\b/.test(className) ? '' : 'relative'} overflow-hidden inline-flex items-center justify-center font-bold tracking-[-0.005em]
                 min-w-[var(--tap-min)] min-h-[var(--tap-min)]
                 active:translate-y-0 active:scale-[0.98]
                 transition-[transform,box-shadow,background-color,color] duration-[var(--dur-fast)] ease-[var(--ease-spring)] whitespace-nowrap

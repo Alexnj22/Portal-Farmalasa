@@ -3,7 +3,7 @@ import Button from './Button';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Bell, BellRing, Check,
+    Bell, BellRing, Check, AlertTriangle, AlertCircle, CheckCircle2,
     Megaphone, ChevronRight, Trash2, X, ArrowRight, Undo2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -20,6 +20,26 @@ import Contador from './Contador';
 // caían todos al ícono genérico de campana, aunque cinco de ellos ya tenían
 // ícono propio en RequestsView.
 const iconForType = iconoDeTipo;
+
+// ── La severidad la dice el ÍCONO, no un emoji dentro del título ────────────
+// Los avisos que escribe la base traen su severidad como emoji al principio
+// («⚠️ El barrido de Hacienda terminó con fallas»), y el panel la ignoraba: el
+// ícono salía del TIPO, así que una alerta de fallas se dibujaba con la campana
+// genérica y el aviso quedaba diciendo dos veces lo mismo — una en emoji y
+// otra, mal, en ícono. Reportado como «mejorá cómo se ven».
+//
+// Se lee el emoji, se usa para elegir ícono y tono, y se quita del texto. El
+// título arranca en su primera palabra y la severidad se ve donde se mira
+// primero. No hace falta un mapa por tipo: quien escribe el aviso ya la declaró.
+const SEVERIDAD = [
+    { re: /^(🚨|❌|⛔)/u,  Icono: AlertCircle,   claro: 'bg-danger/10 text-danger border-danger/30',   oscuro: 'bg-danger/10 text-danger-text border-danger/40' },
+    { re: /^(⚠️|⚠)/u,     Icono: AlertTriangle, claro: 'bg-warning/10 text-warning border-warning/30', oscuro: 'bg-warning/10 text-warning-text border-warning/40' },
+    { re: /^(✅|✔️)/u,     Icono: CheckCircle2,  claro: 'bg-success/10 text-success border-success/25', oscuro: 'bg-success/10 text-success-text border-success/20' },
+];
+const severidadDelTitulo = (titulo = '') =>
+    SEVERIDAD.find(s => s.re.test(titulo.trim())) || null;
+const tituloSinEmoji = (titulo = '') =>
+    titulo.replace(/^\s*(?:🚨|❌|⛔|⚠️|⚠|✅|✔️)\s*/u, '');
 
 const tintForType = (type = '', metadata = {}, isDark = false) => {
     if (isDark) {
@@ -494,10 +514,15 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <p className={`relative text-body-sm font-medium mt-1 ${cx.emptySub}`}>Cuando algo requiera tu atención, aparecerá aquí.</p>
                                     </div>
                                 ) : (
-                                    <div className="py-1.5">
+                                    // `divide-y`: sin un corte entre filas, dos avisos con el
+                                    // mismo título se leen como un bloque continuo y no se sabe
+                                    // dónde termina uno. Reportado sobre dos «El barrido de
+                                    // Hacienda terminó con fallas» seguidos.
+                                    <div className="py-1.5 divide-y divide-divider">
                                         <AnimatePresence initial={false}>
                                             {notifications.map(n => {
-                                                const Icon = iconForType(n.type);
+                                                const sev  = severidadDelTitulo(n.title);
+                                                const Icon = sev ? sev.Icono : iconForType(n.type);
                                                 const unread = !n.read_at;
                                                 const isFlash = flashIds.has(n.id);
                                                 const pendingOne = pendingEntryByNotifId.get(n.id);
@@ -544,18 +569,28 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             className={`w-full flex items-start gap-3 pl-5 pr-10 py-3 text-left transition-colors
                                                                 ${n.link ? `cursor-pointer ${cx.rowHover}` : 'cursor-default'}`}
                                                         >
-                                                            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${tintForType(n.type, n.metadata, isDark)}`}>
+                                                            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
                                                                 <Icon size={16} strokeWidth={2} />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
+                                                                {/* El punto va PEGADO al título, no en la esquina.
+                                                                    Arriba a la derecha competía por el mismo sitio
+                                                                    que la ✕ y no se leía como «este es nuevo», sino
+                                                                    como un adorno suelto. */}
                                                                 <p className={`text-body leading-snug ${unread ? `font-bold ${cx.rowTitle}` : `font-semibold ${cx.rowTitleRead}`}`}>
-                                                                    {n.title}
+                                                                    {unread && (
+                                                                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand align-middle mr-1.5 -mt-0.5 shadow-[var(--shadow-glow-brand-sm)]" />
+                                                                    )}
+                                                                    {tituloSinEmoji(n.title)}
                                                                 </p>
                                                                 {n.body && (
-                                                                    <p className={`text-body-sm font-medium leading-snug mt-0.5 line-clamp-2 ${cx.rowBody}`}>{n.body}</p>
+                                                                    <p className={`text-body-sm font-medium leading-snug mt-0.5 line-clamp-3 ${cx.rowBody}`}>{n.body}</p>
                                                                 )}
                                                                 <div className="flex items-center gap-2 mt-1.5">
-                                                                    <span className={`text-caption font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
+                                                                    {/* La hora es contexto, no acción: en mayúsculas y con
+                                                                        tracking ancho competía de igual a igual con «VER»,
+                                                                        y son cosas de peso distinto. */}
+                                                                    <span className={`text-caption font-medium ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
                                                                     {actionLabel && (
                                                                         <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest transition-transform
                                                                             ${resuelta ? cx.chipMuted : `group-hover:translate-x-0.5 ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}`}>
@@ -568,7 +603,6 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            {unread && <span className="w-2 h-2 rounded-full bg-brand flex-shrink-0 mt-2 shadow-[var(--shadow-glow-brand-sm)]" />}
                                                         </button>
 
                                                         {/* Decidir sin salir de la campana.

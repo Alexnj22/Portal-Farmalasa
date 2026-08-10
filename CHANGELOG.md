@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.547.2 — La decisión sobre los equipos compartidos, anotada donde vive el criterio
+
+Al soltar la suscripción de avisos se distingue `app` de `navegador`, y el único
+caso que ese criterio no cubre es una PWA instalada en una computadora
+compartida: se clasificaría `app` y conservaría el defecto viejo. El usuario lo
+cerró —*«no se instalará como app en las computadoras del trabajo»*— y la
+decisión queda escrita junto al criterio, no en el hilo donde se tomó. Si algún
+día se instala en el mostrador, esto deja de alcanzar y hace falta una marca
+explícita del equipo.
+
 ## v2.547.1 — Los ocho hallazgos que el lint no podía mostrar
 
 `npm run lint` no fallaba por el código: fallaba siempre. `globalIgnores` tenía

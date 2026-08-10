@@ -79,6 +79,13 @@ export function reclamarPushDelEquipo(employeeId) {
  *     que existe, y la sesión también se cierra sola por inactividad.
  *   · `navegador` — se trata como compartido. Una computadora sin nadie adentro
  *     no le manda avisos a nadie; el siguiente que entre la reclama.
+ *
+ * El único caso que este criterio no cubriría es una PWA instalada en una
+ * computadora compartida: se clasificaría `app` y conservaría el defecto viejo.
+ * **Decisión del usuario, 2026-08-10: no se va a instalar como app en las
+ * computadoras del trabajo**, así que la clase de dispositivo alcanza. Si algún
+ * día se instala en el mostrador, esto deja de alcanzar y hace falta una marca
+ * explícita del equipo.
  */
 export async function soltarPushDelEquipoSiEsCompartido(claseDispositivo) {
     reclamo = { employeeId: null, promesa: null };

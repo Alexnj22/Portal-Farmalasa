@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.7 — Quién aprueba lo decide el servidor, no el navegador de quien pide
+
+La solicitud de descarte **se creó** (21:18) pero el supervisor no se enteró.
+`approver_id` estaba en NULL y la nota decía «Sin supervisión asignada».
+
+El widget elegía al aprobador **en el navegador**: recorría la lista de
+empleados del store buscando el cargo «Supervisor/a de Ventas». Pero esa lista
+sale de `staff_list`, y un cargo de sala no tiene ese permiso — Regente de
+Enfermería lo tiene en `can_view = false`. La lista llegaba vacía, no encontraba
+a nadie, y la solicitud nacía sin destinatario. Y `notificar_solicitud_creada`
+empieza con `IF ... NEW.approver_id IS NULL THEN RETURN NEW`: sin aprobador no
+hay aviso. La solicitud quedaba viva y sin que nadie lo supiera.
+
+Como lo puso el usuario: **tiene sentido que no vea el listado de empleados, y
+aun así el aviso tiene que salir, porque es algo interno.** Quién aprueba es una
+decisión del negocio, no un dato que el navegador de quien pide deba poder leer.
+Ahora la resuelve el servidor —misma regla, en un trigger BEFORE INSERT— para
+los seis tipos que elegían aprobador del lado del cliente. Y las solicitudes que
+ya estaban pendientes sin aprobador se rescataron: se les asignó y se les mandó
+el aviso que nunca salió.
+
+Verificado contra producción: la del 10-ago quedó con **Edwin Nuñez** de
+aprobador y su aviso en la campana; una solicitud nueva de prueba nace con
+aprobador y aviso, y se revirtió.
+
+**Y un fallo mío de la migración anterior, corregido acá**: `mmcr_insert`
+—crear una propuesta de Min/Max— seguía comparando contra `auth.uid()`. Mi
+barrido mostraba los primeros 90 caracteres de cada policy y en ésa el
+`auth.uid()` viene *después* del chequeo de permiso, justo fuera de la ventana:
+arreglé su `SELECT` y dejé su `INSERT`. Que un recorte de 90 caracteres decida
+qué se arregla es la lección — el barrido tiene que traer la expresión entera.
+Repasado sin truncar: **no queda ninguna** policy comparando una identidad de
+empleado contra `auth.uid()`.
+
+**El traslado entre salas nunca tuvo el problema**: no manda `approver_id`, el
+servidor calcula los destinatarios por sala y turno. Verificado sobre los datos
+— 6 de 6 traslados tienen su aviso y sus destinatarios puestos por el servidor.
+
 ## v2.551.6 — Las policies resolvían la cuenta, no al empleado
 
 El «no tienes permiso» del ajuste de inventario **no era un permiso faltante**.

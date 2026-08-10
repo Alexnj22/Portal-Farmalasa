@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.546.3 — El buscador baja al clúster aunque no haya filtros
+
+La regla —*«en el teléfono el buscador va al clúster flotante, al alcance del
+pulgar, no en el encabezado que se va con el scroll»*— existe desde que existe
+`CanalDeVista`. Lo que no se había notado es que **sólo se cumplía donde había
+un `FilterBar`**, porque la barra flotante la dibujaba únicamente él: una vista
+con buscador y sin filtros no tenía a quién entregárselo, así que se quedaba la
+lupa arriba.
+
+Medido en WebKit iPhone 13, **en todas sus pestañas**, eran 5 vistas:
+
+| Vista | Pestañas | Antes |
+|---|---|---|
+| Pedidos a Sucursales | 5 | lupa arriba en las 5 |
+| Laboratorios | 2 | lupa arriba en las 2 |
+| Roles | 2 | lupa arriba en las 2 |
+| Avisos | 3 | lupa arriba en las 3 |
+| Mantenimiento | — | lupa arriba |
+
+Ahora `GlassViewLayout` dibuja un **respaldo**: si se publicó un buscador y
+ningún `FilterBar` reclamó el clúster, monta un `BarraFlotante` con el buscador
+solo. Ninguna vista tuvo que cambiar — *el canónico decide, no el llamador*.
+
+**Lo delicado es el bucle, y por eso los canales ahora son tres.** El respaldo
+**lee `filtros`** (que escribe sólo `FilterBar`) y **escribe `barra`** (que es lo
+que hace que `ViewTabBar` suelte su lupa). Si leyera `barra` —lo que él mismo
+publica— la condición se apagaría sola: dibuja → publica → «ya hay barra» → deja
+de dibujar → vuelve a dibujar. Es exactamente la forma del bucle que este mismo
+canal ya produjo una vez (React #185, la vista entera al ErrorBoundary en el
+teléfono), así que se separó en vez de arriesgarlo.
+
+La otra pieza es que el respaldo usa `useLayoutCompacto()`, **la misma condición
+que `FilterBar`**: con dos cortes distintos habría anchos con dos clústeres o con
+ninguno.
+
+**Verificación.** 28 rutas en WebKit iPhone 13: las 25 que tienen buscador lo
+tienen abajo y **0 duplicados** (se contaron los `[data-barra-flotante]`
+visibles, no se asumió). En escritorio, 8 rutas comprobadas con **0 barras
+flotantes** y la lupa de vuelta en el encabezado — el respaldo no se asoma donde
+no va. Barrido de las 37 rutas: 0 vistas reventadas, 0 desbordes de página,
+0 inputs con zoom de iOS. `gate:bundle` en verde (272 kB de entrada, tope 301) —
+el respaldo mete `BarraFlotante` en las vistas que antes no lo cargaban, y entra.
+`gate:design`, `gate:movil`, `gate:doc` y eslint también. Canon en `DESIGN.md`
+§`ViewTabBar`.
+
 ## v2.546.2 — La píldora no baja de renglón: el que cede es el carril
 
 Revierte el mecanismo de v2.546.0 (`fix(ux): tanda 5 — el carril deja de

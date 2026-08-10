@@ -3,7 +3,49 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
 import useMediaQuery from '../hooks/useMediaQuery';
-import { CanalDeVistaCtx, useCanalesDeVista } from './common/CanalDeVista';
+import useLayoutCompacto from '../hooks/useLayoutCompacto';
+import BarraFlotante from './common/BarraFlotante';
+import {
+    CanalDeVistaCtx, useCanalesDeVista,
+    useBuscadorDeVista, useHayBarraDeFiltros, usePublicarBarraDeBusqueda,
+} from './common/CanalDeVista';
+
+/**
+ * El buscador de una vista SIN `FilterBar`, en el teléfono.
+ *
+ * La regla es *«si una vista no tiene barra de filtros pero sí buscador, en
+ * móvil el buscador baja al clúster flotante»* — y hasta el 2026-08-09 no se
+ * cumplía en 5 vistas, porque el clúster lo dibujaba únicamente `FilterBar`.
+ * Medido en WebKit iPhone 13, en TODAS sus pestañas: Pedidos (5), Laboratorios
+ * (2), Roles (2), Avisos (3) y Mantenimiento (sin pestañas) se quedaban con la
+ * lupa en el encabezado, que se va con el scroll — justo lo que el canal de
+ * `CanalDeVista` existía para evitar.
+ *
+ * Va como componente aparte y no en el cuerpo de `GlassViewLayout` por una
+ * razón dura: el layout es quien RENDERIZA el proveedor, así que un hook suyo
+ * leería el contexto de más arriba, no el propio. Tiene que ser un hijo.
+ *
+ * `useLayoutCompacto` es la misma condición que usa `FilterBar` para decidir si
+ * flota: si se copiara con otro corte, habría anchos donde se dibujan las dos
+ * barras o ninguna.
+ */
+function BuscadorFlotanteDeRespaldo() {
+    const compacto = useLayoutCompacto();
+    const buscador = useBuscadorDeVista();
+    const hayBarraDeFiltros = useHayBarraDeFiltros();
+
+    // Si hay `FilterBar`, el buscador ya es suyo: dibujar otro clúster sería
+    // el defecto opuesto —dos barras para el mismo término— que es peor que el
+    // que se está corrigiendo.
+    const activo = compacto && !!buscador && !hayBarraDeFiltros;
+
+    // Antes del retorno temprano: es lo que hace que `ViewTabBar` suelte la
+    // lupa, y un hook detrás de un `return` no existe.
+    usePublicarBarraDeBusqueda(activo);
+
+    if (!activo) return null;
+    return <BarraFlotante ariaLabel="Buscar" buscador={buscador} />;
+}
 
 const GlassViewLayout = ({
     icon: Icon,
@@ -74,6 +116,8 @@ const GlassViewLayout = ({
            y `FilterBar` por `children`, así que son hermanas y el único ancestro
            común es este layout. Ver `CanalDeVista.js`. */
         <CanalDeVistaCtx.Provider value={canalesDeVista}>
+        {/* Hijo del proveedor, no del cuerpo del layout: ver su comentario. */}
+        <BuscadorFlotanteDeRespaldo />
         <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans relative">
 
             {/* ── Scroll container ── */}

@@ -1540,6 +1540,31 @@ a la vista en Corte Z — una píldora de vidrio de 70px en escritorio con un bo
 que no hace nada. La condición ya existía en `usePublicarBuscador` (sin
 `onSearchChange` no se publica); faltaba en la lupa.
 
+**En el teléfono el buscador SIEMPRE baja al clúster flotante, haya `FilterBar`
+o no (2026-08-09).** La regla estaba escrita desde que existe `CanalDeVista`,
+pero sólo se cumplía donde había un `FilterBar`, porque **la barra flotante la
+dibujaba únicamente él**. Medido en WebKit iPhone 13, en todas sus pestañas, 5
+vistas se quedaban con la lupa arriba —donde se va con el scroll—: Pedidos (5
+pestañas), Laboratorios (2), Roles (2), Avisos (3) y Mantenimiento (sin
+pestañas).
+
+Hoy `GlassViewLayout` dibuja un **respaldo**: si se publicó un buscador y ningún
+`FilterBar` reclamó el clúster, monta un `BarraFlotante` con el buscador solo.
+Ninguna vista tiene que enterarse — es el mismo principio de siempre, *el
+canónico decide, no el llamador*.
+
+Los dos errores que hay que no cometer al tocarlo:
+
+- **El respaldo lee `filtros` y escribe `barra`, nunca al revés.** Si leyera lo
+  que él mismo publica, la condición se apagaría sola: dibuja → publica → «ya hay
+  barra» → deja de dibujar → … Es la misma forma del bucle que ya tiró la vista
+  al ErrorBoundary una vez (React #185).
+- **La condición es `useLayoutCompacto()`, la misma que usa `FilterBar`.** Con
+  dos cortes distintos habría anchos con dos clústeres o con ninguno.
+
+Verificado sobre 28 rutas: 25 con buscador lo tienen abajo, **0 duplicados**, y
+en escritorio **0 barras flotantes** en las 8 rutas comprobadas.
+
 El umbral es `> 1` y no `> 0`: lo que justifica la barra es que haya **entre qué
 elegir**, no que exista una pestaña. Con una sola, el desplegable abría una lista
 de un elemento y la fila dibujaba un botón permanentemente activo; en Corte Z era

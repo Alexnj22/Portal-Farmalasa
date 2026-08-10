@@ -98,9 +98,9 @@ function crearCanal() {
  */
 export const CanalDeVistaCtx = createContext(null);
 
-/** Crea los dos canales, una vez por vista. Lo llama `GlassViewLayout`. */
+/** Crea los canales, una vez por vista. Lo llama `GlassViewLayout`. */
 export const useCanalesDeVista = () =>
-    useMemo(() => ({ buscador: crearCanal(), barra: crearCanal() }), []);
+    useMemo(() => ({ buscador: crearCanal(), barra: crearCanal(), filtros: crearCanal() }), []);
 
 /**
  * Publica un valor en un canal. Sin array de dependencias a propósito: el
@@ -158,6 +158,37 @@ function useLeer(nombre) {
 export const usePublicarBuscador = cfg => usePublicar('buscador', cfg);
 export const useBuscadorDeVista = () => useLeer('buscador');
 
-/** `FilterBar` → `{ activa: true }` mientras dibuja la barra flotante táctil. */
-export const usePublicarBarraFlotante = activa => usePublicar('barra', activa ? { activa: true } : null);
+/**
+ * `FilterBar` → `{ activa: true }` mientras dibuja la barra flotante táctil.
+ *
+ * Escribe en DOS canales y la diferencia entre ellos es lo único que evita un
+ * bucle (ver `useHayBarraDeFiltros`):
+ *   `barra`    "hay una barra flotante abajo" — la escribe cualquiera que
+ *              dibuje una, y es lo que hace que `ViewTabBar` suelte su lupa.
+ *   `filtros`  "la barra la puso un `FilterBar`" — la escribe SOLO él.
+ */
+export const usePublicarBarraFlotante = (activa) => {
+    const valor = activa ? { activa: true } : null;
+    usePublicar('barra', valor);
+    usePublicar('filtros', valor);
+};
 export const useHayBarraFlotante = () => !!useLeer('barra');
+
+/**
+ * ── El respaldo del layout, y por qué NO puede leer `barra` ────────────────
+ * Una vista puede tener buscador y **no** tener `FilterBar` — pasa en 5
+ * (Pedidos, Laboratorios, Roles, Avisos, Mantenimiento). Como la barra flotante
+ * sólo la dibujaba `FilterBar`, en el teléfono esas cinco se quedaban con la
+ * lupa arriba, que se va con el scroll. `GlassViewLayout` dibuja entonces una
+ * barra flotante de respaldo con el buscador solo.
+ *
+ * Ese respaldo **publica** en `barra` (para que `ViewTabBar` suelte la lupa) y
+ * **lee** `filtros` para saber si hace falta. Leer `barra` —lo que él mismo
+ * escribe— sería la condición apagándose a sí misma: dibuja → publica → ahora
+ * "ya hay barra" → deja de dibujar → deja de publicar → vuelve a dibujar. Es la
+ * misma forma del bucle que documenta `usePublicar` más arriba (React #185, la
+ * vista entera al ErrorBoundary en el teléfono), y por eso los canales son dos.
+ */
+export const useHayBarraDeFiltros = () => !!useLeer('filtros');
+export const usePublicarBarraDeBusqueda = activa =>
+    usePublicar('barra', activa ? { activa: true } : null);

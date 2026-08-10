@@ -103,7 +103,7 @@ export default function TabPorRevisar({ openModal }) {
                 contenedor— y le descuenta RESERVA_CARRIL (314px) por un carril
                 que no tiene al lado. El layout equivocado no falla: le roba
                 314px a la píldora en silencio. Canónico: `StaffManagementView`. */}
-            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de fichas por revisar">
                     <StatCard icon={FileWarning} label="Por revisar"
                         value={(datos.congelado + datos.repetido).toLocaleString()}

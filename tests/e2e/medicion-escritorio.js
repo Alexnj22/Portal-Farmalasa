@@ -81,8 +81,28 @@ export const MEDIR_ESCRITORIO = () => {
     // Doce meses no entran en ningún ancho y deslizarlos es lo que se espera de
     // una línea de tiempo; la regla lo acusaba porque su contenido (806px) cabe
     // en la ventana, sin ver que el componente vive en un panel de 542.
+    //
+    // **El carril que comparte fila con la píldora de filtros** (2026-08-09).
+    // La regla 2 pregunta «¿habría entrado en la ventana?» y ahí siempre la
+    // respuesta es sí: lo que lo aprieta no es la ventana sino la píldora, que
+    // está al lado. Sus 18 hallazgos se «arreglaron» dejando bajar la píldora de
+    // renglón, y el usuario lo corrigió el mismo día: **la píldora no baja
+    // nunca; si no cabe, las tarjetas se esconden en el carril y se deslizan**.
+    // O sea que este carril recortado es la decisión de diseño, no el defecto —
+    // medirlo como defecto es lo que empuja a rehacer el layout equivocado.
+    // Se compara por CENTRO vertical, igual que `useMedidaFila` en `FilterBar`.
+    const compartePildora = (el) => {
+        const r = el.getBoundingClientRect();
+        return [...document.querySelectorAll('[data-pildora]')].some((p) => {
+            const rp = p.getBoundingClientRect();
+            if (!rp.height || !r.height) return false;
+            const centro = (x) => x.top + x.height / 2;
+            return Math.abs(centro(rp) - centro(r)) < Math.min(rp.height, r.height) / 2;
+        });
+    };
     const carrilExceptuado = (el) => !!el.closest('#gantt-vacaciones-scroll')
-        || el.id === 'gantt-vacaciones-scroll';
+        || el.id === 'gantt-vacaciones-scroll'
+        || compartePildora(el);
 
     const columnasFuera = [];
     document.querySelectorAll('table').forEach((t) => {

@@ -1890,13 +1890,25 @@ function scanFile(path) {
       const apertura = iDiv >= 0 ? antes.slice(iDiv) : '';
       // Es UNA fila si el contenedor es `flex` sin apilar (`flex-col`) y sin
       // envolver (`flex-wrap`), o si declara el `lg:flex-row` del canónico.
-      const unaFila = /lg:flex-row/.test(apertura)
-        || (/\bflex\b/.test(apertura) && !/\bflex-col\b/.test(apertura) && !/\bflex-wrap\b/.test(apertura));
+      //
+      // `flex-wrap` DESCALIFICA aunque haya `lg:flex-row` (2026-08-09). El
+      // detector daba por buena `lg:flex-row lg:flex-wrap` —la primera rama del
+      // OR se cumplía y ni miraba el wrap— así que las 17 vistas a las que se
+      // les puso `lg:flex-wrap` esa mañana pasaron el gate en verde mientras la
+      // píldora bajaba de renglón en todas. Lo corrigió el usuario mirando
+      // Mín·Máx, no el gate. `\b` alcanza para las dos formas: en
+      // `lg:flex-wrap` el `:` es un no-palabra.
+      const envuelve = /\bflex-wrap\b/.test(apertura);
+      const unaFila = !envuelve && (/lg:flex-row/.test(apertura)
+        || (/\bflex\b/.test(apertura) && !/\bflex-col\b/.test(apertura)));
       if (!unaFila) {
         findings.push({
           line: linea, category: 'carril-pildora',
-          label: 'carril y píldora en renglones separados — §17.0 pide `lg:flex-row` '
-               + 'en el contenedor (si no, FilterBar le descuenta 314px en silencio)',
+          label: envuelve
+            ? 'la fila del carril ENVUELVE (`flex-wrap`) — la píldora baja de renglón '
+              + 'cuando falta ancho, y §17.0 pide que lo que ceda sea el carril deslizando'
+            : 'carril y píldora en renglones separados — §17.0 pide `lg:flex-row` '
+              + 'en el contenedor (si no, FilterBar le descuenta 314px en silencio)',
           text: '<CarrilCards …',
         });
       }

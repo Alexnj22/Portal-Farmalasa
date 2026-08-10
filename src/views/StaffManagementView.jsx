@@ -883,7 +883,7 @@ const StaffManagementView = ({
             `StatCard` (148 mínimo, 200 máximo), y `CarrilCards` las mantiene en
             UNA fila: las que no entran se alcanzan deslizando, en vez de envolver
             y empujar la tabla hacia abajo un alto distinto en cada monitor. */}
-        <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           <CarrilCards className="flex-1" ariaLabel="Resumen del personal">
             <StaffStatCard
               icon={Users} color="blue" label="Total" value={stats.total}

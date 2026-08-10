@@ -882,9 +882,11 @@ function TabDocumentos({
             {/* Cards contables (izquierda, se reparten el ancho) + pill de
                 fecha/descarga/sync (derecha, ancho fijo) — mismo patrón que
                 VentasView/StaffManagementView. */}
-            {/* `flex-wrap`: el carril quedaba en 498px para 772 de tarjetas.
-                Con `wrap`, si no entra al lado de los filtros, baja de renglón. */}
-            <div className="flex flex-wrap lg:flex-row items-center gap-3">
+            {/* La fila NO envuelve (§17.0, corregido por el usuario el 2026-08-09):
+                la píldora no baja nunca. Si el ancho no alcanza —acá el carril
+                queda en 498px para 772 de tarjetas— lo que se esconde son las
+                tarjetas, y se alcanzan deslizando el carril. */}
+            <div className="flex items-center gap-3">
                 {showCards && (
                 <CarrilCards className="flex-1" ariaLabel="Resumen de facturas">
                     <StatCard

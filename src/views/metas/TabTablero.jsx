@@ -118,7 +118,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 reparto de ancho de `FilterBar` deja de funcionar: mide la FILA y
                 le reserva sitio al carril que tiene al lado, así que si el
                 carril está en otro renglón le descuenta 314px a cambio de nada. */}
-            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <CarrilCards className="flex-1" ariaLabel="Resumen de metas">
                 <StatCard
                     icon={Target} label="Meta del mes"

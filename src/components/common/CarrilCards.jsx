@@ -176,33 +176,32 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
         el.scrollBy({ left: dir * paso * 2, behavior: 'smooth' });
     };
 
-    // ── El carril necesita un piso de ancho ─────────────────────────────────
+    // ── El que cede es el CARRIL, nunca la píldora ──────────────────────────
     //
     // Los llamadores lo ponen con `flex-1` al lado de los filtros de la vista, y
     // `flex-1` es `flex: 1 1 0%`: base CERO. O sea que el carril se encoge a lo
-    // que los filtros dejen, y los filtros tienen ancho intrínseco.
+    // que los filtros dejen, y los filtros tienen ancho intrínseco. Eso es lo
+    // correcto y es deliberado.
     //
-    // Medido el 2026-08-09 a 1440: en Mín·Máx el carril recibía **348px para 772
-    // de tarjetas** —tres de cinco cortadas— con **1,092px de ventana sin usar**.
-    // En Ventas, 422 para 616. El deslizamiento es la decisión de diseño de
-    // julio y sigue en pie; lo que no era decisión es que quedara en un tercio
-    // del ancho disponible mientras sobraba pantalla.
+    // El 2026-08-09 se intentó lo contrario —`lg:basis-auto` acá y `lg:flex-wrap`
+    // en las 17 filas que lo acompañan— para que el carril arrancara en el ancho
+    // de su contenido y, si no entraba junto a los filtros, los filtros bajaran
+    // de renglón. El usuario lo corrigió mirando Mín·Máx: **la píldora no baja
+    // nunca**. Si el ancho no alcanza, lo que se esconde son las TARJETAS, que
+    // para eso el carril desliza. Una píldora en su propio renglón es la falla
+    // que §17.0 existe para evitar (ver [[feedback_la_pildora_va_en_la_fila_de_
+    // las_tarjetas]]): se estira de borde a borde, su cupo de ranuras no se
+    // agota nunca y el control de desborde no aparece jamás.
     //
-    // El arreglo no es un piso fijo —se probó `min-w-[480px]` y no sirvió: en
-    // Metas el carril recibía 551px, o sea MÁS que el piso, y sus cuatro
-    // tarjetas siguen pidiendo 616—. Lo que corresponde es que la base deje de
-    // ser cero: `lg:basis-auto` hace que el carril arranque en el ancho de su
-    // contenido, y entonces, si con los filtros no entra, los filtros bajan de
-    // renglón y el carril se queda con la fila entera. Se ajusta solo a cuántas
-    // tarjetas tenga cada vista, que es lo que un piso fijo no puede hacer.
+    // Lo que sí queda del intento: `FilterBar` reserva `RESERVA_CARRIL` (314px =
+    // dos tarjetas y su separación) cuando el carril está a su lado. Ese es el
+    // piso real del carril, y vive del lado de los filtros porque es el que
+    // reparte. Un carril de 348px con 772 de tarjetas no es un defecto: son
+    // dos tarjetas enteras, la tercera asomando y el resto a un deslizamiento.
     //
     // Por debajo de `lg` no aplica: ahí el carril ya ocupa su propia fila.
-    //
-    // El piso solo no alcanza: el padre tiene que poder envolver, o los filtros
-    // se salen en vez de bajar de renglón. Por eso las filas que lo acompañan
-    // llevan `lg:flex-wrap`.
     return (
-        <div className={`relative min-w-0 lg:basis-auto ${className}`}>
+        <div className={`relative min-w-0 ${className}`}>
             <div
                 ref={pistaRef}
                 role="group"

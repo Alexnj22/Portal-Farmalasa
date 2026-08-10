@@ -472,14 +472,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 línea y ahí `shrink-0` la dejaba estirarse de borde a borde: se
                 veía pegada a la izquierda y su cupo de ranuras nunca llegaba a
                 agotarse, así que el control de desborde no aparecía jamás. El
-                carril absorbe la falta de ancho deslizando las tarjetas. */}
-            {/* `flex-wrap`: el carril de indicadores comparte fila con los filtros y
-                `flex-1` lo dejaba en 348px para 772 de tarjetas —tres de cinco
-                cortadas— con 1,092px de ventana sin usar. Con `wrap`, cuando no
-                entran juntos los filtros bajan de renglón y el carril se queda
-                con la fila. `FilterBar` lo tolera: su reserva de 314px compara
-                centros verticales, así que al separarse deja de reservar. */}
-            <div className="flex flex-wrap lg:flex-row items-stretch gap-3 min-w-0">
+                carril absorbe la falta de ancho deslizando las tarjetas.
+
+                El 2026-08-09 se le puso `flex-wrap` a esta fila —el carril
+                recibía 348px para 772 de tarjetas y la idea era que los filtros
+                bajaran de renglón— y el usuario lo corrigió sobre esta misma
+                vista: la píldora no baja nunca; si no cabe, las tarjetas se
+                esconden en el carril y se deslizan. Revertido. */}
+            <div className="flex items-stretch gap-3 min-w-0">
 
                 {/* LEFT: Cost cards */}
                 <CarrilCards className="flex-1" ariaLabel="Resumen de costo del inventario">

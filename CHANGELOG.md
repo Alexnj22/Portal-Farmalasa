@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.546.2 — La píldora no baja de renglón: el que cede es el carril
+
+Revierte el mecanismo de v2.546.0 (`fix(ux): tanda 5 — el carril deja de
+arrancar en cero`). Aquella tanda perseguía 18 «carriles recortados» que
+contaba `medicion-escritorio.js`, y los resolvió al revés: `lg:basis-auto` en
+`CarrilCards` más `lg:flex-wrap` en las 17 filas que lo acompañan, para que el
+carril arrancara en el ancho de su contenido y **los filtros bajaran de
+renglón** cuando no entraban al lado.
+
+El usuario lo corrigió mirando Mín·Máx: *«el filterpill nunca debe bajar si no
+cabe; si no cabe, las cards se ocultan en el carrusel para deslizarlas»*. Es la
+regla de §17.0 y ya estaba escrita —una píldora sola en su renglón se estira de
+borde a borde, su cupo de ranuras no se agota nunca y el control de desborde no
+aparece jamás—; lo que faltaba era decir **quién cede** cuando no caben juntos.
+Cede el carril, y un carril recortado al lado de la píldora no es un defecto:
+su piso son los 314px que `FilterBar` le reserva, o sea dos tarjetas enteras y
+la tercera asomando.
+
+Verificado en Mín·Máx a 1600, 1440 y 1280: misma fila en los tres, con el
+carril en 484/348/306px para 772 de tarjetas y la píldora degradando ranuras a
+1280 (694→576px), que es justo lo que §17.0 pide.
+
+**Los dos instrumentos que lo dejaron pasar, corregidos** — porque el que
+volviera a medir iba a rehacer el mismo cambio:
+
+* `gate:design` daba por buena `lg:flex-row lg:flex-wrap`: su `unaFila` es un
+  OR y la primera rama se cumplía sin mirar el wrap. Las 17 vistas pasaron en
+  verde mientras la píldora bajaba en todas. Ahora `flex-wrap` descalifica
+  aunque esté el `lg:flex-row`, y el hallazgo lo dice con esas palabras.
+* la regla 2 de `medicion-escritorio.js` («carril que recorta donde no hacía
+  falta») exceptúa al carril que comparte fila con `[data-pildora]`: su
+  pregunta —¿habría entrado en la ventana?— siempre da que sí cuando lo que
+  aprieta es la píldora de al lado, no la ventana.
+
+Archivos: `CarrilCards` (se va `lg:basis-auto`) y las 17 filas (se va
+`lg:flex-wrap`; Mín·Máx y Facturas de Compra vuelven a su `flex` a secas).
+DESIGN.md §17.0 anota la regla y las dos correcciones.
+
 ## v2.546.1 — El encabezado del teléfono, en dos columnas
 
 Tres cosas del cromo de arriba, pedidas por el usuario. Las tres son canónicas:

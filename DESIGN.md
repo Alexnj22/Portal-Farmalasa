@@ -3512,6 +3512,24 @@ volver a medir *esta* píldora; si no se midió, va el canónico.
 acción quedar en ícono; a 1600 todo entra. El cambio de layout destapa
 truncamientos que antes no se veían, porque la tarjeta se angosta a 148px.
 
+**La píldora NO baja de renglón, nunca — el que cede es el carril** (regla del
+usuario, 2026-08-09). Nada de `flex-wrap`/`lg:flex-wrap` en esa fila, y el
+carril se queda con `flex-1` (base cero). Si el ancho no alcanza, lo que se
+esconde son las **tarjetas**, que para eso el carril desliza. Ese día se probó
+lo contrario —`lg:basis-auto` en `CarrilCards` y `lg:flex-wrap` en las 17 filas,
+para que el carril arrancara en el ancho de su contenido y los filtros bajaran
+cuando no entraban— porque un instrumento contaba 18 «carriles recortados». Un
+carril recortado al lado de la píldora **no es un defecto**: su piso real son los
+314px que `FilterBar` le reserva, o sea dos tarjetas enteras y la tercera
+asomando. Dos consecuencias para quien vuelva a medirlo:
+
+* el detector de `gate:design` daba `lg:flex-row lg:flex-wrap` por buena (la
+  primera rama del OR se cumplía y no miraba el wrap) — corregido: `flex-wrap`
+  descalifica aunque esté el `lg:flex-row`;
+* la regla 2 de `tests/e2e/medicion-escritorio.js` exceptúa al carril que
+  comparte fila con `[data-pildora]`, porque su pregunta —«¿habría entrado en la
+  ventana?»— siempre da que sí cuando lo que aprieta es la píldora de al lado.
+
 Lo vigila la categoría **`carril-pildora`** de `gate:design`, agregada el
 2026-08-05 justamente porque la regla ya estaba escrita en tres lugares —acá, en
 la memoria del proyecto y en el comentario de `ConteoInventarioView`— y se

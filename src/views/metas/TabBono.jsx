@@ -80,7 +80,7 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
                 </Notice>
             )}
 
-            <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen del bono">
                     <StatCard
                         icon={Coins} label="Bono de la sala"

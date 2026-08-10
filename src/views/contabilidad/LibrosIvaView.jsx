@@ -1543,7 +1543,7 @@ export default function LibrosIvaView({ openModal }) {
             transparentBody={true}
         >
             <div className="p-5 md:p-6 space-y-5">
-                <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     {/* Tres tarjetas FIJAS (§17.0): las mismas tres preguntas en
                         los siete libros, que es lo que deja compararlos de un
                         vistazo al cambiar de pestaña. Lo que cambia es CÓMO se

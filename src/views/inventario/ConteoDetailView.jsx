@@ -1846,7 +1846,7 @@ export default function ConteoDetailView() {
                     cambia de golpe. Con `conteos_inventario.total_*` —que escribe
                     recalcular_totales_conteo al cerrar— valían 0 justo durante los
                     días en que sirve saber cuánto falta. */}
-                <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     {resumen && (
                         <CarrilCards className="flex-1" ariaLabel="Resumen del conteo">
                             {tarjetasResumen(resumen, !hasResults, canVerMontos)}

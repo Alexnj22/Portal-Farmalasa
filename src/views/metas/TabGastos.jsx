@@ -111,7 +111,7 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
     return (
         <div className="space-y-4">
             {gastos.length > 0 && (
-                <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-3">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen de gastos">
                         <StatCard
                             icon={Coins} label="Por recuperar"

@@ -3,14 +3,17 @@ import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax          from './productos/TabMinMax';
-import TabMinMaxNetwork   from './productos/TabMinMaxNetwork';
 import TabMinMaxRequests  from './productos/TabMinMaxRequests';
 import { useAuth }       from '../context/AuthContext';
 import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data/stockParams';
 
+// La pestaña «Red» se retiró el 2026-08-09 a pedido del usuario: «no se me es de
+// utilidad». Se fue entera —vista, permiso `minmax_tab_red` y el RPC
+// `get_network_summary_json`, que no tenía otro consumidor— en vez de quedar
+// escondida detrás de un permiso apagado. Una vista que nadie abre pero que
+// sigue en el registro es deuda que parece función.
 const ALL_MINMAX_TABS = [
     { key: 'sucursal', label: 'Sucursal' },
-    { key: 'red',      label: 'Red'      },
 ];
 
 const DEFAULT_CONFIG = {
@@ -73,9 +76,8 @@ export default function MinMaxView() {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={
-            activeTab === 'red'         ? 'Buscar en vista red…'  :
-            activeTab === 'solicitudes' ? 'Buscar solicitud…'     :
-                                         'Buscar producto en Min/Max…'
+            activeTab === 'solicitudes' ? 'Buscar solicitud…'
+                                        : 'Buscar producto en Min/Max…'
         }
         />
     );
@@ -89,9 +91,6 @@ export default function MinMaxView() {
                     onConfigChange={setConfig}
                     lockedErpId={lockedErpId}
                 />
-            )}
-            {configLoaded && activeTab === 'red' && (
-                <TabMinMaxNetwork searchTerm={debouncedSearch} />
             )}
             {canApprove && activeTab === 'solicitudes' && (
                 <TabMinMaxRequests searchTerm={debouncedSearch} />

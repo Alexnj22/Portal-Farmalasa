@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.545.0 — La pestaña Red de Min/Max se retira entera
+
+Pedido del usuario: *«no se me es de utilidad»*.
+
+Se fue **completa**, no escondida detrás de un permiso apagado:
+
+- la pestaña y su rama de render en `MinMaxView`
+- la vista `TabMinMaxNetwork.jsx`
+- `minmax_tab_red` del registro de permisos y sus filas en `role_permissions`
+  (3 roles lo tenían)
+- el RPC `get_network_summary_json`, que no tenía otro consumidor
+
+Verificado antes de borrar cada pieza: el RPC no lo llama ninguna otra función
+del catálogo, y el permiso no lo consulta ningún otro punto del frontend.
+`gate:permisos` en verde después: todo lo declarado se consulta y todo lo
+consultado está declarado.
+
+Apagarla con un permiso habría sido más rápido y peor: una vista que nadie abre
+pero que sigue declarada es deuda que parece función, y aparece en «Objetos
+Huérfanos» a confundir a quien audite.
+
 ## v2.544.1 — El circuito de facturación queda documentado
 
 `docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`: el estado real del circuito

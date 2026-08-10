@@ -70,7 +70,11 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
     // vendiendo» son preguntas del presente. En un mes cerrado la respuesta ya
     // está en la tarjeta y en el Histórico.
     useEffect(() => {
-        if (!esMesActual) { setMes(null); return; }
+        // No hace falta limpiar `mes` al salir del mes en curso: la sección
+        // entera está detrás de `esMesActual`, y al volver el skeleton se
+        // enciende antes del fetch. O sea que el dato viejo no se ve nunca —
+        // y borrarlo era un setState sincrónico dentro del efecto.
+        if (!esMesActual) return;
         let alive = true;
         setCargandoMes(true); // eslint-disable-line react-hooks/set-state-in-effect -- reset del skeleton al cambiar de sala
         fetchMesEnCurso(salaMes || null)

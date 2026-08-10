@@ -40,7 +40,7 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
 
     useEffect(() => {
         let alive = true;
-        setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- reset del skeleton antes de re-fetch
+        setLoading(true);   // reset del skeleton antes de re-fetch
         setError(null);
         fetchMetasGastos()
             .then((gs) => { if (alive) { setGastos(gs); setLoading(false); } })

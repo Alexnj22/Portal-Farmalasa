@@ -45,7 +45,16 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
     useEffect(() => {
         let cancelado = false;
         fetchDisponibilidadTraslado(fila.id).then(r => {
-            if (!cancelado && !r.error) setDisp(r.disponibilidad);
+            if (cancelado || r.error) return;
+            setDisp(r.disponibilidad);
+            // Si ya no tiene, la única salida honesta es rechazar — y con el
+            // motivo que corresponde ya elegido, para no hacer buscar lo que el
+            // portal ya sabe. Se decide acá, donde llega la respuesta, y no en
+            // un efecto que vigile `disp`: es la misma decisión y un solo sitio.
+            if (r.disponibilidad && !r.disponibilidad?.origen?.puede) {
+                setModo('rechazo');
+                setMotivo('Sin existencia en físico');
+            }
         });
         return () => { cancelado = true; };
     }, [fila.id]);
@@ -57,15 +66,6 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
     const sugerencia = alternativas.length > 0
         ? `Sí hay en ${alternativas.slice(0, 3).map(a => `${a.sala} (${a.unidades})`).join(', ')}`
         : '';
-
-    // Si ya no tiene, la única salida honesta es rechazar — y con el motivo que
-    // corresponde ya elegido, para no hacer buscar lo que el portal ya sabe.
-    useEffect(() => {
-        if (disp && !disp?.origen?.puede) {
-            setModo('rechazo');
-            setMotivo('Sin existencia en físico');
-        }
-    }, [disp]);
 
     const confirmar = async () => {
         setError(''); setOcupado(true);

@@ -1008,7 +1008,7 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   /* Lista: las últimas N del ámbito, o los resultados de la búsqueda. Siempre
      server-side. El debounce solo aplica cuando se está escribiendo. */
   useEffect(() => {
-    if (!activeBranchId) { setInvoices([]); setLoading(false); return; } // eslint-disable-line react-hooks/set-state-in-effect -- limpieza al quedarse sin sucursal
+    if (!activeBranchId) { setInvoices([]); setLoading(false); return; }   // limpieza al quedarse sin sucursal
     const q = search.trim();
     const buscando = q.length >= 2;
     setLoading(true);
@@ -1025,7 +1025,8 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
     return () => { cancelado = true; clearTimeout(t); };
   }, [activeBranchId, ambito, search, buildTokens, reloadKey]);
 
-  useEffect(() => { setView('list'); setFocused(null); setSearch(''); setDateFilter(''); }, [propBranchId]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea el widget al cambiar de sucursal
+  // Resetea el widget al cambiar de sucursal.
+  useEffect(() => { setView('list'); setFocused(null); setSearch(''); setDateFilter(''); }, [propBranchId]);
 
   const buscando  = search.trim().length >= 2;
   // `parcial` y su leyenda «últimas 150 de 787» se quitaron a pedido del

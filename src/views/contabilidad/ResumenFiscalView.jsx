@@ -111,6 +111,7 @@ export default function ResumenFiscalView() {
         setLoading(false);
     }, [mes, filterBranch]);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- `cargar` enciende el skeleton antes de pedir el resumen; es carga inicial y re-fetch al cambiar mes/sucursal
     useEffect(() => { cargar(); }, [cargar]);
 
     const v   = datos?.ventas ?? {};

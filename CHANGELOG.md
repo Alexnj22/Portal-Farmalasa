@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.547.1 — Los ocho hallazgos que el lint no podía mostrar
+
+`npm run lint` no fallaba por el código: fallaba siempre. `globalIgnores` tenía
+`dist` pero no los `dist-<nombre>` que la regla multisesión manda crear, y con 27
+carpetas de build en el árbol ESLint moría formateando el informe
+(`RangeError: Invalid string length`). Arreglado el ignore, la corrida completa
+terminó y aparecieron ocho hallazgos que llevaban tiempo escondidos detrás del
+crash. Los ocho, corregidos:
+
+**Tres `setState` sincrónicos dentro de un efecto** — cada uno con su arreglo,
+no con un silenciador:
+
+- `TabTablero` limpiaba `mes` al salir del mes en curso. No hacía falta: la
+  sección entera está detrás de `esMesActual` y al volver el skeleton se enciende
+  antes del fetch, así que el dato viejo no se ve nunca. Se quitó la limpieza.
+- `FilasTraslado` tenía un segundo efecto que vigilaba `disp` para preseleccionar
+  el rechazo cuando la sala ya no tiene existencia. `disp` lo escribe un solo
+  sitio —la respuesta de `fetchDisponibilidadTraslado`—, así que la decisión se
+  movió ahí: misma decisión, un solo lugar, un render menos.
+- `ResumenFiscalView` enciende el skeleton antes de pedir el resumen. Ese sí es
+  el patrón legítimo de carga inicial + re-fetch al cambiar mes o sucursal, y
+  queda con su `eslint-disable` **con el motivo escrito**, como los otros del
+  repo.
+
+**Cuatro directivas `eslint-disable` que ya no aplicaban** (dos en
+`WidgetAnnulmentRequest`, una en `TabGastos`, una en `TabTablero`): la razón que
+las justificaba sobrevivió como comentario normal — explica igual y deja de
+prometer que apaga algo. Y **una variable sin usar** (`browserName`) en el banco
+de materiales.
+
+Vale la pena anotar por qué importa más que ocho renglones: un lint que revienta
+siempre se lee igual que un lint que pasa —el `exit 0` que se veía era el del
+`tail` al final de la tubería—, así que el repo estuvo sin red durante todo ese
+tiempo sin que nada lo dijera.
+
 ## v2.547.0 — El aviso del sistema es del equipo, y su dueño es quien tiene la sesión abierta ahí
 
 En el mostrador la computadora no es de nadie: el turno cambia de persona y la

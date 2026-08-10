@@ -57,7 +57,7 @@ test.describe('§6 · banco sobre la implementación real', () => {
     test.skip(!E2E_USER || !E2E_PASSWORD, 'Requiere E2E_USER/E2E_PASSWORD');
 
     for (const tema of TEMAS) {
-        test(`60fps con CPU ×6 · ${tema.nombre}`, async ({ page, browserName }, testInfo) => {
+        test(`60fps con CPU ×6 · ${tema.nombre}`, async ({ page }, testInfo) => {
             // Se niega a medir en headless en vez de devolver un número falso:
             // un banco que miente es peor que un banco que no corre.
             const headless = testInfo.project.use.headless !== false

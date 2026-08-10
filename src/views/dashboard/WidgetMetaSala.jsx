@@ -62,7 +62,7 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
     if (!row) {
         return (
             <EmptyState
-                compact
+                linea
                 icon={Target}
                 title="Sin sala asignada"
                 subtitle="Pide que te asignen una sala para ver su meta del mes."

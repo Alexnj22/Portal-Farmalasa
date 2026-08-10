@@ -2141,13 +2141,13 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : shiftStatusData.length===0?(
-              <EmptyState compact icon={Users} title="Sin empleados" />
+              <EmptyState linea icon={Users} title="Sin empleados" />
             // Había un cuarto caso sin dibujo: con empleados y con datos, pero
             // ningún grupo con gente, los `return null` de adentro dejaban la
             // tarjeta EN BLANCO — ni dato, ni vacío, ni carga. Un widget que no
             // dice nada se lee como roto (auditoría del 2026-08-10).
             ):Object.values(STATUS_CONFIG).every((_,i)=>!(shiftGroups[Object.keys(STATUS_CONFIG)[i]]||[]).length)?(
-              <EmptyState compact icon={Clock} title="Sin turnos hoy"
+              <EmptyState linea icon={Clock} title="Sin turnos hoy"
                 subtitle="Cuando la sucursal tenga turnos asignados, aparecen acá por estado." />
             ):(
               Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
@@ -2221,7 +2221,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
-                  if (!chartData?.length) return <EmptyState compact icon={BarChart2} title="Sin historial de ventas" />;
+                  if (!chartData?.length) return <EmptyState linea icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
                     <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})}
                       // El acuse SÓLO cuando la columna navega — misma regla que
@@ -2368,7 +2368,7 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
               </div>
             ))
-              :displayAbsences.length===0?<EmptyState compact={!esTelefono} linea={esTelefono} icon={UserCheck} title="Sin ausencias activas" />
+              :displayAbsences.length===0?<EmptyState linea icon={UserCheck} title="Sin ausencias activas" />
               :displayAbsences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
                 const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
@@ -2409,7 +2409,7 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))
-              :displayReqs.length===0?<EmptyState compact={!esTelefono} linea={esTelefono} icon={ClipboardList} title="Sin solicitudes pendientes" />
+              :displayReqs.length===0?<EmptyState linea icon={ClipboardList} title="Sin solicitudes pendientes" />
               // §15.7 — caja de ícono + título + subtítulo + algo al final: la
               // anatomía exacta de `ListRow`. Y sin `onClick` renderiza un
               // `<div>`, así que la fila deja de ser tabulable cuando el usuario
@@ -2557,7 +2557,7 @@ const DashboardView = ({ openModal }) => {
                   <Skel className="h-2.5 w-1/3" />
                 </div>
               </div>
-            )) : recentAnnouncements.length===0?<EmptyState compact icon={Megaphone} title="Sin avisos recientes" />
+            )) : recentAnnouncements.length===0?<EmptyState linea icon={Megaphone} title="Sin avisos recientes" />
               :recentAnnouncements.map(a=>(
                 <ListRow key={a.id} density="sm"
                   icon={a.priority==='URGENT'?Flame:Megaphone}
@@ -2722,7 +2722,7 @@ const DashboardView = ({ openModal }) => {
             </div>
             <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
               {cotizStats.recent.length === 0 ? (
-                <EmptyState compact icon={Receipt} title="Sin cotizaciones activas" />
+                <EmptyState linea icon={Receipt} title="Sin cotizaciones activas" />
               ) : cotizStats.recent.map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="w-6 h-6 rounded-lg bg-chart-1/10 border border-chart-1/30 flex items-center justify-center shrink-0">
@@ -2831,7 +2831,7 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : topProductos.length === 0 ? (
-              <EmptyState compact icon={Package} title="Sin datos este mes" />
+              <EmptyState linea icon={Package} title="Sin datos este mes" />
             ) : topProductos.map((p, i) => {
               const pct = Math.max(Math.round((p.neto / maxNeto) * 100), 4);
               return (

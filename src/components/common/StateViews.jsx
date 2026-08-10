@@ -67,7 +67,15 @@ export const EmptyState = memo(({
     compact = false,
     // ── `linea`: el vacío que no puede pagar una pantalla ────────────────────
     //
-    // Tercera medida, para el vacío que vive DENTRO de un widget en el teléfono.
+    // Tercera medida, para el vacío que vive DENTRO de un widget — y desde el
+    // 2026-08-10 en TODA pantalla, no sólo en el teléfono. `compact` mide 200px
+    // de alto MÍNIMO y una baldosa del tablero mide 120px (un renglón) o 256px
+    // con 50 de encabezado: no entra en ninguna de las dos. El usuario lo vio en
+    // Cotizaciones Activas, donde «Sin cotizaciones activas» quedaba cortado por
+    // el borde de la tarjeta —y no lo cazó ningún barrido, porque el vacío vive
+    // dentro de un contenedor con `overflow-y-auto` y «se puede recorrer» pasaba
+    // por bueno. Un widget donde hay que hacer scroll para leer que no hay nada
+    // no está diciendo que no hay nada.
     // `compact` mide 200px de alto mínimo; en el tablero de Inicio eso hacía que
     // un widget sin datos ocupara lo mismo que uno lleno, y la segunda pantalla
     // de las siete era, entera, un gráfico vacío (medido: 5,874px en 390px).

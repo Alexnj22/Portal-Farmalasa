@@ -811,7 +811,7 @@ function PanelInventario({ query = '', onQueryChange }) {
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {drillBranches.length === 0 ? (
-            <EmptyState compact icon={Package} title="Sin stock en ninguna sucursal" />
+            <EmptyState linea icon={Package} title="Sin stock en ninguna sucursal" />
           ) : (
             drillBranches.map((branch, bi) => {
               const theme = branch.isVencidos ? VENCIDOS_THEME : NEUTRAL_THEME;

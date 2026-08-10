@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.3 — El vacío dentro de un widget usa la medida del widget
+
+«Cotizaciones Activas» mostraba «Sin cotizaciones activas» **cortado por el
+borde de la tarjeta**: se veía media palabra y el icono gigante encima. La
+respuesta ya existía en el canónico y no se estaba usando.
+
+`EmptyState` tiene tres medidas, y la tercera —`linea`— se creó justamente para
+«el vacío que vive DENTRO de un widget», pero se aplicó **sólo en el teléfono**.
+En escritorio los widgets seguían pidiendo `compact`, que mide **200px de alto
+mínimo**: una baldosa del tablero mide 120px (un renglón) o 256px con 50 de
+encabezado, así que no entra en ninguna de las dos. Ahora los **10** vacíos de
+los widgets usan `linea` en toda pantalla — icono al lado del texto, una línea,
+sin halo.
+
+**Por qué ningún barrido lo cazó**: el vacío vive dentro de un contenedor con
+`overflow-y-auto`, y mi detector daba por bueno todo lo que tuviera un ancestro
+que se pudiera recorrer. Pero un widget donde hay que hacer scroll para leer que
+no hay nada no está diciendo que no hay nada. El detector nuevo pregunta otra
+cosa —¿hay algo *partido* por el borde de su tarjeta?— y sobre los 26 widgets
+deja **1**: la última fila de «Top Productos», 5px asomando al pie de una lista
+que se recorre, que es la señal de que hay más y no un defecto.
+
 ## v2.551.2 — Los encabezados de los widgets dejan de partirse en dos renglones
 
 Dos cosas que el usuario vio con capturas y que la auditoría anterior **no

@@ -2,15 +2,31 @@
 // role_permissions). Extraído de PermissionsView.jsx: 10 llamadas
 // supabase.from().
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchRolesForPermissions() {
     return supabase.from('roles').select('id, name, parent_role_id, max_price_level, is_su').order('id');
 }
 
-export function fetchRolePermissions() {
-    return supabase.from('role_permissions')
+// TODAS las filas de TODOS los cargos: es la que alimenta la pantalla de
+// Permisos, así que un corte silencioso ahí le apaga permisos a cargos enteros
+// EN PANTALLA aunque en la base estén puestos.
+//
+// Pasó el 2026-08-10: la tabla cruzó las 1,000 filas (1,293) y «Regente de
+// Enfermería» pasó a mostrar 7 de 74 módulos cuando en la base tenía 14. El
+// usuario lo leyó como «copiar de no funciona» — y la copia funcionaba: lo que
+// fallaba era la RELECTURA. Sin `order by`, PostgREST devuelve las primeras
+// 1,000 en orden físico, así que ni siquiera se cae siempre el mismo cargo.
+//
+// Devuelve la misma forma `{ data, error }` que un `.select()` para no tocar a
+// quien la llama.
+export async function fetchRolePermissions() {
+    const data = await fetchAllRows(() => supabase.from('role_permissions')
         .select('role_id, module_key, can_view, can_edit, can_approve, scope')
-        .not('role_id', 'is', null);
+        .not('role_id', 'is', null)
+        .order('role_id')
+        .order('module_key'));
+    return { data, error: data === null ? new Error('No se pudieron leer los permisos') : null };
 }
 
 export function upsertRolePermission(row) {

@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.5 — La pantalla de permisos leía 1,000 filas de 1,293
+
+«Asigné permisos a Regente de Enfermería y de repente no salen; y "copiar de" no
+funciona bien.» **La copia funcionaba: lo que fallaba era la relectura.**
+
+`role_permissions` cruzó las 1,000 filas —hoy **1,293**— y `fetchRolePermissions()`
+era un `.select()` **sin paginar**. Es la REGLA CRÍTICA de `CLAUDE.md`: PostgREST
+trunca en 1,000 sin error ni advertencia. La pantalla de Permisos nunca vio el
+resto.
+
+Medido contra producción en el momento del reporte:
+
+| | en la base | en pantalla |
+|---|---|---|
+| Regente de Enfermería | **14 de 74 módulos** | 7 de 74 |
+| Dependiente de Farmacia | 15 de 74 | 14 de 74 |
+
+Y como el `select` no llevaba `order by`, PostgREST devuelve las primeras 1,000
+en orden físico: ni siquiera se cae siempre el mismo cargo, que es exactamente
+la forma de «de repente». Ahora pasa por `fetchAllRows` con orden estable.
+
+**El cruce de las 1,000 filas fue hoy**, al llenar tres cargos a 130 claves cada
+uno (Jefe/a de Sala, Subjefe/a de Sala y Regente de Enfermería). Nada estaba mal
+antes; la tabla creció y el defecto que dormía desde siempre se despertó.
+
+**Lo del descarte era el mismo hilo, no otro problema.** Verificado contra
+producción con una Regente de Enfermería real, en transacción con ROLLBACK: la
+RLS de `approval_requests` la deja crear la solicitud, y
+`auth_can_edit_any('dash_inv_movement')` —el permiso que pide el bucket de la
+evidencia— le da `true`. O sea que con los permisos ya guardados el descarte
+funciona; el «no tienes permiso» fue de antes de guardarlos, o de una sesión con
+los permisos viejos en caché.
+
+Nota para el próximo: el mensaje del widget dice «No tienes permiso para crear
+solicitudes de inventario» ante **cualquier** error que contenga `row-level
+security`, y la subida de la foto pasa por otra policy —la del bucket— con otro
+permiso. Los dos caminos dan el mismo texto, y no son la misma causa.
+
 ## v2.551.4 — Un solo vacío para todo el tablero
 
 *«¿Por qué los vacíos no se ven iguales? ¿Hay diferentes formas canónicas de

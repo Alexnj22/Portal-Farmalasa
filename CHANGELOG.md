@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.540.6 — La ventana del cupo de Vercel es rodante, no diaria
+
+Sin cambios de código, y sirve además de disparo para el despliegue que quedó
+pendiente. Corrige la segunda predicción equivocada que hice sobre el mismo
+incidente.
+
+En v2.540.2 quedó escrito que había que «esperar a que ruede el día». Es falso:
+
+```
+21:38 UTC   se agota el cupo — un push deja de producir build
+22:07 UTC   ab96ff9e construye normal        ← 29 minutos, no un día
+22:27 UTC   92874e7d construye normal        (v2.540.4, lo que sirvió prod)
+22:37 UTC   4f3e88f5 se pushea y no produce nada — agotado otra vez
+```
+
+La ventana es **rodante**: se van liberando cupos a medida que los despliegues
+viejos cumplen 24 horas, así que se destraba en minutos y se vuelve a trabar
+enseguida si se sigue pusheando al mismo ritmo. La consecuencia práctica es la
+contraria de la que escribí: si el cupo se agota, se reintenta en media hora, no
+al día siguiente.
+
+Lo que sí se confirma es lo otro: Vercel **no reconstruye solo** lo que perdió
+mientras estuvo bloqueado. Después de la liberación hace falta un push o un
+Redeploy — por eso `4f3e88f5` seguía sin salir con el cupo ya libre.
+
 ## v2.540.5 — Dos podas en el camino de abrir un diálogo
 
 Pedido «hacelo lo más eficiente que puedas». Lo primero fue medir el pacing real

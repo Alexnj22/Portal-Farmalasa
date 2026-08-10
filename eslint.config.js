@@ -6,7 +6,13 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'android', 'ios', '.agents']),
+  // `dist-*` además de `dist`: la regla multisesión de CLAUDE.md manda compilar
+  // con `OUT_DIR=dist-<nombre> npm run build` para no pisar el `dist/` de otra
+  // sesión, así que el árbol acumula carpetas de build que este ignore no veía
+  // (27 el 2026-08-10). No era ruido: ESLint las recorría enteras y moría
+  // formateando el informe —`RangeError: Invalid string length`— o sea que
+  // `npm run lint` no fallaba por el código, fallaba siempre.
+  globalIgnores(['dist', 'dist-*', 'android', 'ios', '.agents']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

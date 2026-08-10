@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.0 — El tablero se arma solo, cuadrado y sólo con lo que cada quien ve
+
+Tres cosas del Inicio, y las dos primeras tenían la misma causa.
+
+**Por qué a otros roles el tablero les salía desordenado.** El acomodo se
+calculaba sobre **todos** los widgets del catálogo, no sobre los que esa persona
+puede ver. A los que su cargo no ve se les reservaba igual su celda y después
+`renderWidget` devolvía `null`: la celda quedaba vacía. De ahí los agujeros y
+que el tablero no empezara arriba — cuanto más acotado el rol, peor. Ahora el
+catálogo se filtra por permiso antes de acomodar (`catalogoVisible`).
+
+**Y se arma solo, cuadrado, mientras nadie lo haya tocado.** Filtrar no alcanzaba:
+las posiciones que hay antes de que el usuario mueva nada las calculó el arranque
+sobre el catálogo completo, así que conservaban los huecos. Mientras no exista
+acomodo propio para esa pestaña, el tablero se recalcula compacto y pasa por
+`rellenarFilas` —el mismo relleno que ya usaban las pestañas temáticas, que
+ensancha widgets para que el renglón quede lleno—. **Desde el primer arrastre
+manda lo del usuario y esto no vuelve a correr**, que es justo lo que se pidió:
+libertad de cada quien una vez que lo mueve.
+
+Medido con la mitad de los widgets ocultos: antes quedaban las celdas de los
+ocultos en blanco; ahora la primera fila ocupada es la 1 y sobre 60 celdas
+quedan **2** sin usar — el residuo que `rellenarFilas` no toca a propósito,
+porque sólo ensancha bandas parejas y prefiere un hueco a una superposición.
+
+**El encabezado del widget bajó un 25%.** Eran 56px: la baldosa del icono
+(28px), el título y la acción, con 14px de aire arriba y abajo. En una baldosa
+de 120px por renglón, casi la mitad del widget más chico gastada en decir cómo
+se llama. Ahora el icono va suelto —sin su recuadro, que era un marco dentro de
+otro— y el aire baja a 10px: **42px, en los 21 widgets a la vez**. El color de
+categoría sigue estando; lo lleva el glifo.
+
+**Y «Personalizar» sólo lista lo que el cargo puede abrir.** Antes ofrecía el
+catálogo entero, así que se podía encender un widget que el permiso no deja ver:
+el interruptor quedaba en «sí» y en el tablero no aparecía nada. Un control que
+no controla nada es peor que no tenerlo.
+
 ## v2.550.1 — La meta se lee en el widget de la meta, y dos listas nacían del tamaño de una baldosa
 
 **«¿Dónde se ve cuánto es la meta del mes?»** — la pregunta del usuario sobre el

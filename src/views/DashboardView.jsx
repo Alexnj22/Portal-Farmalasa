@@ -637,13 +637,16 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
           `DataTable` incluida, y su vidrio funciona. */}
       {/* Glass shine */}
       <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
-      {/* Header */}
-      <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-border-card shrink-0 gap-2 flex-wrap">
+      {/* Header — 56px de alto y tres piezas antes del 2026-08-10: la baldosa
+          del icono (28px), el título y la acción, con 14px de aire arriba y
+          abajo. En una baldosa de 120px por renglón eso es casi la mitad del
+          widget más chico gastada en decir cómo se llama.
+          Ahora el icono va suelto —sin su recuadro, que era un marco dentro de
+          otro— y el aire baja a 10px: 42px, un 25% menos, en los 21 widgets a
+          la vez. El color de categoría sigue estando; lo lleva el glifo. */}
+      <div className="relative flex items-center justify-between px-4 py-2.5 border-b border-border-card shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: tinte(cat.color, 10), border: `1px solid ${tinte(cat.color, 18)}` }}>
-            <Icon size={13} style={{ color: cat.color }} strokeWidth={2} />
-          </div>
+          <Icon size={15} style={{ color: cat.color }} strokeWidth={2.5} className="shrink-0" />
           <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
         </div>
         {/* `whitespace-nowrap`: el corte de línea cae en el espacio que hay
@@ -817,6 +820,24 @@ const DashboardView = ({ openModal }) => {
   });
   const [showConfig, setShowConfig] = useState(false);
 
+  // ¿El usuario acomodó ESTA pestaña alguna vez? Es la línea que separa «el
+  // tablero se arma solo» de «acá manda lo que esta persona dejó puesto».
+  // Mientras no haya acomodo propio conviene recalcular en cada carga, porque
+  // el catálogo visible cambia con los permisos; desde el primer arrastre, no
+  // se toca más nada.
+  const [tabsAcomodadas, setTabsAcomodadas] = useState(() => {
+    const s = new Set();
+    try {
+      TABS.forEach(t => {
+        if (localStorage.getItem(`portal_dash_layout_${user?.id || 'guest'}_${t.id}`)) s.add(t.id);
+      });
+    } catch { /* localStorage no disponible */ }
+    return s;
+  });
+  const marcarAcomodada = useCallback((tabId) => {
+    setTabsAcomodadas(prev => (prev.has(tabId) ? prev : new Set(prev).add(tabId)));
+  }, []);
+
   // ── Widget layout: per-tab { [tabId]: { [widgetId]: { col, row } } } ────────
   const [widgetLayout, setWidgetLayout] = useState(() => initTabLayouts(user?.id));
   // Per-widget size overrides: per-tab { [tabId]: { [widgetId]: { cols, rows } } }
@@ -869,19 +890,22 @@ const DashboardView = ({ openModal }) => {
   // cálculo no está previsualizando nada.
   const acomodoLibre  = puedeAcomodar(activeTab) && verComoRol == null;
 
-  const isWidgetOn = id => widgetConfig.find(w=>w.id===id)?.enabled !== false;
-  const canSee     = p  => {
+  // Los tres van en `useCallback` porque `activeLayout` los usa para armar el
+  // catálogo visible: rearmados en cada render, el memo se recalculaba siempre
+  // y el acomodo se rehacía en cada pintada.
+  const isWidgetOn = useCallback(id => widgetConfig.find(w=>w.id===id)?.enabled !== false, [widgetConfig]);
+  const canSee     = useCallback(p  => {
     if (!p) return true;
     // Con el previsualizador puesto manda el cargo elegido, no el mío.
     if (verComoRol != null) return !!permisosPorCargo?.[verComoRol]?.has(p);
     return hasPermission(p, 'can_view');
-  };
+  }, [verComoRol, permisosPorCargo, hasPermission]);
   const canManage  = p  => !p || hasPermission(p,'can_edit');
   // El interruptor de «Personalizar» sólo gobierna General, que es la única
   // pestaña propia. En las temáticas decide el permiso del cargo y nada más:
   // si el interruptor también contara ahí, apagar un widget en General lo
   // borraría de su categoría, donde ya no hay forma de volver a encenderlo.
-  const showWidget = (id,perm) => canSee(perm) && (activeTab === 'general' ? isWidgetOn(id) : true);
+  const showWidget = useCallback((id,perm) => canSee(perm) && (activeTab === 'general' ? isWidgetOn(id) : true), [canSee, activeTab, isWidgetOn]);
 
   // ── Mobile detection ────────────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
@@ -986,6 +1010,33 @@ const DashboardView = ({ openModal }) => {
     return rellenarFilas(autoPlaceOrder(orden, medidas, activeCols), medidas, activeCols);
   }, [acomodoLibre, activeTab, canon, esTelefono, anchoEnTelefono, activeCols, verComoRol, permisosPorCargo, hasPermission, widgetConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Lo que esta persona PUEDE ver en la pestaña abierta, en el orden del
+  // catálogo. Vive fuera de `activeLayout` porque lo necesitan los dos: el
+  // acomodo automático para armarlo y el guardado para depurarlo.
+  const catalogoVisible = useMemo(() => {
+    const dinamicos = Object.keys(widgetLayout[activeTab] || EMPTY_OBJ).filter(id => id.startsWith('sales_branch_'));
+    const visible = (id) => (id.startsWith('sales_branch_')
+      ? showWidget('sales', 'dash_sales')
+      : showWidget(id, WIDGET_DEFS.find(w => w.id === id)?.permission));
+    return [
+      ...(TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi' && visible(id)),
+      ...dinamicos.filter(visible),
+    ];
+  }, [activeTab, widgetLayout, showWidget]);
+
+  // El tablero que se arma solo, para quien todavía no movió nada.
+  //
+  // Devuelve layout Y medidas por el mismo motivo que `acomodoAdaptado`:
+  // `rellenarFilas` ensancha widgets para dejar el renglón lleno —«siempre
+  // cuadrado», pedido del usuario— y ese ancho es el que después lee
+  // `getEffectiveCols`. Si sólo devolviera posiciones, la rejilla diría una
+  // cosa y el widget mediría otra.
+  const acomodoAutomatico = useMemo(() => {
+    if (!acomodoLibre || isMobile || tabsAcomodadas.has(activeTab)) return null;
+    const medidas = widgetSizes[activeTab] || EMPTY_OBJ;
+    return rellenarFilas(autoPlaceOrder(catalogoVisible, medidas, GRID_COLS), medidas, GRID_COLS);
+  }, [acomodoLibre, isMobile, tabsAcomodadas, activeTab, widgetSizes, catalogoVisible]);
+
   // Los `sales_branch_*` entran al catálogo tomándolos del acomodo de
   // escritorio, que es donde su efecto los da de alta.
   const activeLayout = useMemo(() => {
@@ -998,9 +1049,14 @@ const DashboardView = ({ openModal }) => {
     // esto, un usuario con acomodo móvil propio no vería nunca la baldosa de una
     // sucursal nueva. Es la misma forma del defecto que se acaba de arreglar, y
     // era el único caso que quedaba abierto.
-    const dinamicos = Object.keys(tabLayout).filter(id => id.startsWith('sales_branch_'));
-    const catalogo = [...(TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi'), ...dinamicos];
-    const vigente = (id) => catalogo.includes(id) || id.startsWith('sales_branch_');
+    // El catálogo son los widgets que esta persona PUEDE VER, no todos los que
+    // existen (`catalogoVisible`). Sin ese filtro, los que su cargo no ve
+    // entraban igual al acomodo, se les reservaba su celda y después
+    // `renderWidget` devolvía `null`: el hueco quedaba puesto. Por eso a un rol
+    // acotado el tablero le salía agujereado y empezando a media pantalla en
+    // vez de arriba — reportado el 2026-08-10; era la causa, no el síntoma.
+    const catalogo = catalogoVisible;
+    const vigente = (id) => catalogo.includes(id);
     const porPosicion = (base) => (a, b) => {
       const pa = base[a], pb = base[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
@@ -1015,7 +1071,17 @@ const DashboardView = ({ openModal }) => {
       return { ...base, ...colocarEnHuecos(base, faltan, sizes, cols) };
     };
 
-    if (!isMobile) return alDia(tabLayout, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
+    // Mientras el usuario no haya movido NADA en esta pestaña, el tablero se
+    // arma solo (ver `acomodoAutomatico`): compacto, arriba a la izquierda,
+    // sobre el catálogo ya filtrado y con los renglones rellenos. `alDia`
+    // respeta las posiciones guardadas —que es lo correcto cuando alguien
+    // acomodó— pero las que hay antes de tocar nada las calculó el arranque
+    // sobre TODOS los widgets, así que conservan los huecos de los que este
+    // cargo no ve. En cuanto arrastra uno, manda lo suyo (`marcarAcomodada`).
+    if (!isMobile) {
+      if (acomodoAutomatico) return acomodoAutomatico.layout;
+      return alDia(tabLayout, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
+    }
 
     // Sin acomodo móvil propio se hereda el ORDEN del de escritorio, que es el
     // que el usuario acomodó. Por eso se mira el guardado CRUDO: `alDia` sobre
@@ -1033,7 +1099,7 @@ const DashboardView = ({ openModal }) => {
     if (esTelefono) return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS, anchoEnTelefono);
     if (hayMovil) return base;
     return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS);
-  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, widgetSizes, mobileLayout, activeTab, mobileSizes, acomodoLibre, acomodoAdaptado]);
+  }, [isMobile, esTelefono, anchoEnTelefono, widgetLayout, widgetSizes, mobileLayout, activeTab, mobileSizes, acomodoLibre, acomodoAdaptado, acomodoAutomatico, catalogoVisible]);
 
   // Las medidas salen del acomodo adaptado —no del canon crudo— cuando la
   // pestaña no es de quien la mira: son las del canon YA ensanchadas por
@@ -1042,7 +1108,11 @@ const DashboardView = ({ openModal }) => {
   // ser personal.
   const activeSizes = !acomodoLibre
     ? acomodoAdaptado.medidas
-    : (isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ));
+    // Con acomodo automático mandan SUS medidas: `rellenarFilas` ensanchó
+    // widgets para dejar el renglón lleno y `getEffectiveCols` tiene que leer
+    // ese ancho, no el que el usuario nunca eligió.
+    : (acomodoAutomatico ? acomodoAutomatico.medidas
+    : (isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ)));
 
   // Active cols clamped for effective size
   const getEffectiveCols = (id) => (esTelefono
@@ -1139,7 +1209,7 @@ const DashboardView = ({ openModal }) => {
                     ));
                   }
                   next[t.id] = tabLayout;
-                  try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+                  try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); marcarAcomodada(t.id); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
                 });
                 return next;
               });
@@ -1176,7 +1246,7 @@ const DashboardView = ({ openModal }) => {
         }
         setPrefsReady(true); // flip → habilita el effect de guardado (que toma la foto, no escribe)
       });
-  }, [user?.id]);
+  }, [user?.id, marcarAcomodada]);
 
   // Debounced save: fires 1.5 s after any prefs change.
   //
@@ -1319,7 +1389,7 @@ const DashboardView = ({ openModal }) => {
           try { localStorage.setItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
         } else {
           setWidgetLayout(prev => ({ ...prev, [tabId]: newLayout }));
-          try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+          try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); marcarAcomodada(tabId); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
         }
         // Spring-bounce the widgets that moved
         if (movedIds.length) {
@@ -1336,7 +1406,7 @@ const DashboardView = ({ openModal }) => {
     dndListeners.current = { move: onMove, up: onUp };
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerup', onUp);
-  }, [user]);
+  }, [user, marcarAcomodada]);
 
   const handleLongPressStart = useCallback((e, id) => {
     const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
@@ -1447,10 +1517,10 @@ const DashboardView = ({ openModal }) => {
         ...tabLayout,
         ...colocarEnHuecos(tabLayout, missing, widgetSizes.general ?? EMPTY_OBJ, GRID_COLS),
       };
-      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); marcarAcomodada('general'); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
       return { ...prev, general: nextTabLayout };
     });
-  }, [salesBranches, user, widgetSizes]);
+  }, [salesBranches, user, widgetSizes, marcarAcomodada]);
 
   useEffect(() => { if (!attendanceLoaded) loadAttendance(14); }, [attendanceLoaded, loadAttendance]);
 
@@ -3065,7 +3135,13 @@ const DashboardView = ({ openModal }) => {
           const esGeneral   = activeTab === 'general';
           const etiquetaTab = TABS.find(t => t.id === activeTab)?.label ?? activeTab;
           const tabWidgetIds = TAB_WIDGETS[activeTab] ?? [];
-          const tabDefs = WIDGET_DEFS.filter(w => w.id !== 'kpi' && tabWidgetIds.includes(w.id));
+          // Sólo lo que esta persona PUEDE ver (pedido del usuario,
+          // 2026-08-10). Antes se listaba el catálogo entero, así que la lista
+          // ofrecía encender widgets que su cargo no le deja abrir: el
+          // interruptor quedaba en «sí» y en el tablero no aparecía nada. Un
+          // control que no controla nada es peor que no tenerlo.
+          const tabDefs = WIDGET_DEFS.filter(w =>
+            w.id !== 'kpi' && tabWidgetIds.includes(w.id) && canSee(w.permission));
           const sinUbicar = esGeneral ? [] : widgetsSinUbicar(activeTab, canon?.[activeTab]?.orden);
           const rotuloDe = (id) => WIDGET_DEFS.find(w => w.id === id)?.label ?? id;
           return (

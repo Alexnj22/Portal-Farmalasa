@@ -21,6 +21,75 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.542.0 — El lazo: la corrida nocturna se entera de los rechazos
+
+La pregunta que lo destrabó fue del usuario: *«ya procesaste más de 20 mil con
+ese bloque, ¿por qué ahora hay problemas?»*. `bloque` no falló. **La corrida
+nocturna era un porte parcial de `bloque`.**
+
+`bloque.py` tenía tres reglas; la nocturna se llevó una:
+
+```python
+BORRAR_DUI_INVALIDO = True
+DEFECTO = {'departamento': '4', 'municipio': '36', 'distrito': '7'}
+if not campos.get('municipio'):   nuevos.update(DEFECTO)    # ① no portada
+elif not campos.get('distrito'):  elegir_distrito(...)      # ② sí portada
+                                  # ③ borrar DUI inválido — no portada
+```
+
+Se portó **la ②** —el matcher, lo difícil, lo verificado contra 25,946
+decisiones— y quedaron afuera las dos fáciles. Y `DEFECTO` (4/36/7) es
+exactamente `Chalatenango / Chalatenango Sur / CHALATENANGO`: las dos reglas que
+el usuario dictó hoy ya estaban escritas en `bloque` desde el principio.
+
+**El segundo desvío, más silencioso: la lista de trabajo cambió de fuente.**
+`bloque` leía la ficha del ERP —la que viaja a Hacienda—; la nocturna preguntaba
+al espejo (`customers.distrito IS NULL`) y escribía en el ERP. Cuando las dos
+copias divergen, mira la equivocada. Medido: una ficha con `CHALATENANGO` en el
+portal y el distrito **vacío** en el ERP no era candidata, y era justo la que
+Hacienda rechazaba. Invisible para el proceso hecho para arreglarla.
+
+Ahora la lista la da `fichas_para_corregir_dte()`: la señal reactiva —a quién
+rechazó Hacienda, que no depende del espejo— más la preventiva de siempre.
+
+**La tabla de decisión, sobre la ficha del ERP:**
+
+| estado | acción |
+|---|---|
+| sin municipio | el triple por defecto (regla ①) |
+| con municipio, sin distrito | el matcher (regla ②) |
+| rechazada por distrito | el triple por defecto (decisión del usuario) |
+| DUI que no cumple el algoritmo | borrarlo (regla ③) |
+| rechazo no accionable (`fecEmi`) | nada |
+
+**Alcance:** en el ERP se escriben **sólo consumidores**; a los contribuyentes se
+los espeja al portal y nada más — decisión explícita, con sus CCF pudiendo
+seguir trabados.
+
+**El freno:** `dte_correcciones_ficha` anota qué se corrigió. Si Hacienda vuelve
+a rechazar el mismo campo *después* de que se lo corrigió, la corrección no
+alcanzó: la ficha va a «Por revisar» con motivo `rechazo_persistente` en vez de
+reintentar lo mismo cada noche.
+
+**Tres cosas que casi salen mal y quedaron como guarda:**
+
+1. **Los códigos de ubicación del ERP son por departamento, no globales.** El
+   distrito `7` es «CHALATENANGO» en Chalatenango y **«TEJUTEPEQUE» en Cabañas**.
+   Un ensayo en seco que imprimía la *etiqueta* —no sólo el código— evitó
+   escribirle a un cliente de Ilobasco un distrito ajeno. `ponerUbicacion`
+   resuelve y verifica siempre por etiqueta.
+2. **Los selects son encadenados**, así que la ubicación va en cascada
+   releyendo entre paso y paso: la lista de municipios depende del departamento
+   ya guardado. No se pueden mandar los tres juntos.
+3. **Cambiar el padre vacía a los hijos, y eso es correcto.** La guarda de
+   `escribirCampo` lo leía como «se perdieron campos» y abortaba, dejando una
+   ficha a medio escribir (departamento nuevo, municipio y distrito en blanco).
+   `escribirCampos` ahora recibe qué vaciados son esperados.
+
+Aplicadas a mano de paso, con las mismas reglas, las tres facturas trabadas:
+OVED y FRANCISCO al triple por defecto, y el DUI `00000000-0` de OSCAR borrado.
+Quedan anotadas en `dte_correcciones_ficha` para que el freno tenga historia.
+
 ## v2.541.0 — Los rechazos de Hacienda por fin se ven enteros
 
 Salió de dos preguntas: *«cuando dan observaciones, ¿dónde las veo?»* y *«¿por

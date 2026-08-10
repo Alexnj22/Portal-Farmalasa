@@ -150,7 +150,104 @@ export async function escribirCampo(
   return { ok: true };
 }
 
-// ── Espejo al portal ────────────────────────────────────────────────────────
+
+// ── Escribir VARIOS campos, y la ubicación en cascada ────────────────────────
+
+/**
+ * Como `escribirCampo` pero con varios campos en un POST.
+ *
+ * `vaciadosEsperados` existe por los selects encadenados: al cambiar el
+ * departamento, el ERP limpia municipio y distrito porque los viejos ya no
+ * están en la lista nueva. Eso NO es pérdida de datos —es la consecuencia
+ * correcta— y confundirlo con pérdida deja la ficha a medio escribir:
+ * departamento nuevo, municipio y distrito en blanco. Pasó el 2026-08-09.
+ */
+export async function escribirCampos(
+  cookie: string, erpId: string,
+  cambios: Record<string, string>, vaciadosEsperados: string[] = [],
+): Promise<{ ok: boolean; motivo?: string; perdidos?: string[] }> {
+  const { campos } = await leerFicha(cookie, erpId);
+  if (!Object.keys(campos).length) return { ok: false, motivo: "el ERP no devolvió la ficha" };
+  const nuevos = { ...campos, ...cambios };
+  const cruda = await pedir(cookie, `${BASE}/procesos/clientes.php`,
+    new URLSearchParams({ ...nuevos, process: "edit", id_cliente: String(erpId) }));
+  let resp: { typeinfo?: string; msg?: string };
+  try { resp = JSON.parse(cruda); } catch { resp = { typeinfo: "NO-JSON", msg: cruda.slice(0, 200) }; }
+  if (resp.typeinfo !== "Success")
+    return { ok: false, motivo: resp.msg ?? resp.typeinfo ?? "rechazo sin motivo" };
+
+  const despues = (await leerFicha(cookie, erpId)).campos;
+  const malos = Object.entries(cambios)
+    .filter(([k, v]) => (despues[k] ?? "") !== v)
+    .map(([k, v]) => `${k}: envié '${v}', quedó '${despues[k] ?? ""}'`);
+  if (malos.length) return { ok: false, motivo: malos.join(" · ") };
+
+  const perdidos = Object.keys(campos)
+    .filter(k => !vaciadosEsperados.includes(k))
+    .filter(k => campos[k] && !despues[k] && nuevos[k] !== "");
+  if (perdidos.length) return { ok: false, motivo: "se perdieron campos", perdidos };
+  return { ok: true };
+}
+
+const igualEtiqueta = (a: string, b: string) => a.trim().toUpperCase() === b.trim().toUpperCase();
+
+/**
+ * Deja la ubicación de la ficha en el destino pedido, POR ETIQUETA.
+ *
+ * ⚠️ Los `value` de departamento/municipio/distrito NO son un catálogo global:
+ * el distrito `7` es «CHALATENANGO» en Chalatenango y «TEJUTEPEQUE» en Cabañas.
+ * Copiar un código de otra ficha escribe un lugar ajeno — casi pasa el
+ * 2026-08-09 sobre una ficha que alimenta documentos fiscales.
+ *
+ * Y por eso va en cascada releyendo entre paso y paso: la lista de municipios
+ * depende del departamento YA GUARDADO, y la de distritos del municipio ya
+ * guardado. Hasta que el padre no está escrito, el hijo no existe.
+ */
+export async function ponerUbicacion(
+  cookie: string, erpId: string,
+  destino: { departamento: string; municipio: string; distrito: string },
+): Promise<{ ok: boolean; motivo?: string; antes?: string; despues?: string; pasos: string[] }> {
+  const pasos: string[] = [];
+  const retrato = (f: Ficha) => (["departamento", "municipio", "distrito"] as const)
+    .map(c => Object.fromEntries(f.opciones[c] ?? [])[f.campos[c] ?? ""] ?? "(vacío)")
+    .join(" / ");
+
+  const antes = retrato(await leerFicha(cookie, erpId));
+
+  for (const campo of ["departamento", "municipio", "distrito"] as const) {
+    const { campos, opciones } = await leerFicha(cookie, erpId);
+    const par = (opciones[campo] ?? []).find(([, etiqueta]) => igualEtiqueta(etiqueta, destino[campo]));
+    if (!par) return { ok: false, pasos, antes, motivo: `«${destino[campo]}» no está entre las ${(opciones[campo] ?? []).length} opciones de ${campo}` };
+    const [codigo, etiqueta] = par;
+    if ((campos[campo] ?? "") === codigo) { pasos.push(`${campo} ya estaba en «${etiqueta}»`); continue; }
+    const dependientes = campo === "departamento" ? ["municipio", "distrito"]
+                       : campo === "municipio"    ? ["distrito"] : [];
+    const w = await escribirCampos(cookie, erpId, { [campo]: codigo }, dependientes);
+    if (!w.ok) return { ok: false, pasos, antes, motivo: `${campo}: ${w.motivo}` };
+    pasos.push(`${campo} → «${etiqueta}»`);
+  }
+
+  // Verificación final POR ETIQUETA: un código fuera de contexto no dice nada.
+  const fin = await leerFicha(cookie, erpId);
+  const despues = retrato(fin);
+  const ok = (["departamento", "municipio", "distrito"] as const).every(c =>
+    igualEtiqueta(Object.fromEntries(fin.opciones[c] ?? [])[fin.campos[c] ?? ""] ?? "", destino[c]));
+  return { ok, pasos, antes, despues, motivo: ok ? undefined : `quedó ${despues}` };
+}
+
+/** Puerto de `dui_valido` de bloque.py (a su vez de src/utils/duiUtils.js). */
+export function duiValido(dui: string | null | undefined): boolean | null {
+  if (!dui || !dui.trim()) return null;              // vacío: no opina
+  const d = dui.replace(/\D/g, "");
+  if (d.length !== 9) return false;
+  const dig = [...d].map(Number);
+  const ver = dig.pop()!;
+  const suma = dig.reduce((a, n, i) => a + n * (9 - i), 0);
+  const calc = 10 - (suma % 10);
+  return (calc === 10 ? 0 : calc) === ver;
+}
+
+// ── Espejo al portal ─────────────────────────────────────────────────────────
 const CAMPO_A_COLUMNA: Record<string, string> = {
   nit: "nit", dui: "dui", nrc: "nrc", telefono1: "phone", telefono2: "telefono2",
   correo: "email", direccion: "direccion", pasaporte: "pasaporte",

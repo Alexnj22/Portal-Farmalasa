@@ -1,7 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import {
-  login, leerFicha, idClienteDeFactura, escribirCampo, filaPortal,
+  login, leerFicha, idClienteDeFactura, escribirCampo, escribirCampos,
+  ponerUbicacion, duiValido, filaPortal,
 } from "../_shared/erp-clientes.ts";
 import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
 
@@ -14,14 +15,47 @@ import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
 // ── Qué hace, en orden ──────────────────────────────────────────────────────
 //   1. Fusiona las fichas sueltas que en realidad son duplicados.
 //   2. Las que no se parecen lo suficiente van a «Por revisar».
-//   3. Completa el distrito de las fichas que no lo tienen.
+//   3. Corrige la ficha DEL ERP —que es la que viaja a Hacienda— según la
+//      tabla de decisión de abajo.
 //   4. Copia los datos del ERP al portal.
 //
 // El orden importa: una ficha suelta que es duplicado NO se puede emparejar
 // —su número ya tiene dueño y la base rechaza el insert— así que fusionar va
 // antes que copiar.
 //
-// ── Sobre el paso 3 ─────────────────────────────────────────────────────────
+// ── El paso 3, y por qué la lista de trabajo cambió ─────────────────────────
+// Hasta v2.541.x la lista salía del ESPEJO (`customers.distrito IS NULL`) y la
+// corrección se escribía en el ERP. Cuando las dos copias divergen, el proceso
+// mira la copia equivocada: una ficha con CHALATENANGO en el portal y el
+// distrito VACÍO en el ERP no era candidata… y era justo la que Hacienda
+// rechazaba. Invisible para el proceso hecho para arreglarla.
+//
+// Ahora la lista la da `fichas_para_corregir_dte()`, que suma la señal que no
+// depende del espejo —a quién rechazó Hacienda— a la preventiva de siempre.
+//
+// ── La tabla de decisión, sobre la ficha DEL ERP ────────────────────────────
+//   sin municipio ................... el triple por defecto
+//   con municipio, sin distrito ..... el matcher
+//   rechazada por distrito .......... el triple por defecto
+//   DUI que no cumple el algoritmo .. borrarlo
+//   rechazo no accionable (fecEmi) .. nada, es informativo
+//
+// Las tres primeras y la cuarta son las reglas ① y ③ de `bloque.py`, que la
+// primera versión de esta función no se trajo: se portó el matcher —lo difícil,
+// lo verificado— y quedaron afuera las dos fáciles. Por eso «bloque procesó
+// 25,946 fichas sin problemas» y esto sí los tenía.
+//
+// ── Alcance: quién se toca y quién sólo se copia ────────────────────────────
+// En el ERP se escriben SÓLO consumidores (decisión del usuario, 2026-08-09).
+// A los contribuyentes se los espeja al portal y nada más — sus CCF pueden
+// seguir trabándose y eso está aceptado.
+//
+// ── El freno ────────────────────────────────────────────────────────────────
+// Si el campo ya se corrigió ANTES de este rechazo, la corrección no alcanzó:
+// la ficha va a «Por revisar» con motivo `rechazo_persistente` en vez de
+// reintentar lo mismo cada noche.
+//
+// ── Sobre el matcher ────────────────────────────────────────────────────────
 // `elegirDistrito` es una TRADUCCIÓN de `elegir_distrito` de `bloque.py`,
 // verificada contra las 25,946 decisiones del original con
 // `scripts/migracion-clientes/comparar_matcher.mjs`: 25,946 iguales, 0
@@ -44,14 +78,24 @@ const PRESUPUESTO_MS = 110_000;
 const MAX_FICHAS = 120;
 
 interface Candidato {
-  id: number;
+  customer_id: number;
   name: string;
   erp_id: string | null;
   categoria: string | null;
-  direccion: string | null;
-  departamento: string | null;
-  municipio: string | null;
+  origen: "rechazo" | "sin_distrito";
+  campo: string;                 // distrito | municipio | departamento | dui
+  motivo_mh: string | null;
+  puede_escribir: boolean;       // false = contribuyente: sólo espejo
+  ya_corregido: boolean;         // ya se intentó y Hacienda volvió a rechazar
 }
+
+// El mismo triple que `DEFECTO` de bloque.py (4 / 36 / 7), pero por ETIQUETA:
+// los códigos del ERP son por departamento y el 7 vale otro distrito en otro.
+const UBICACION_DEFECTO = {
+  departamento: "Chalatenango",
+  municipio: "Chalatenango Sur",
+  distrito: "CHALATENANGO",
+};
 
 /**
  * ¿Los dos nombres son la misma persona escrita distinto?
@@ -111,8 +155,8 @@ Deno.serve(async (req) => {
     }
 
     const { data: candidatos, error: eCand } =
-      await admin.rpc("clientes_sin_distrito_corregibles");
-    if (eCand) throw new Error(`clientes_sin_distrito_corregibles: ${eCand.message}`);
+      await admin.rpc("fichas_para_corregir_dte");
+    if (eCand) throw new Error(`fichas_para_corregir_dte: ${eCand.message}`);
     const lista: Candidato[] = (candidatos ?? []).slice(0, MAX_FICHAS);
     if (!lista.length)
       return json({ ok: true, revisadas: 0, mensaje: "no hay fichas que corregir" });
@@ -121,10 +165,12 @@ Deno.serve(async (req) => {
     const res = {
       fusionadas: 0, facturas_movidas: 0, a_revisar: 0,
       distrito_escrito: 0, distrito_sin_evidencia: 0, espejadas: 0,
-      fallidas: 0, cortada_por_tiempo: false,
+      ubicacion_por_defecto: 0, dui_borrado: 0, solo_espejo: 0,
+      frenadas: 0, fallidas: 0, cortada_por_tiempo: false,
     };
     const aRevisar: unknown[] = [];
     const aEspejar: Record<string, unknown>[] = [];
+    const correcciones: Record<string, unknown>[] = [];
     const detalle: unknown[] = [];
 
     for (const c of lista) {
@@ -135,7 +181,7 @@ Deno.serve(async (req) => {
         // ── 1 · Resolver el número, leyendo una factura suya ──────────
         if (!erpId) {
           const { data: fac } = await admin.from("sales_invoices")
-            .select("erp_invoice_id").eq("customer_id", c.id)
+            .select("erp_invoice_id").eq("customer_id", c.customer_id)
             .not("erp_invoice_id", "is", null).order("fecha", { ascending: false })
             .limit(1).maybeSingle();
           if (!fac?.erp_invoice_id) continue;      // sin factura, nada que leer
@@ -145,10 +191,10 @@ Deno.serve(async (req) => {
           // ¿Ese número ya tiene ficha? Entonces ésta es un duplicado.
           const { data: dueño } = await admin.from("customers")
             .select("id, name").eq("erp_id", erpId).maybeSingle();
-          if (dueño && dueño.id !== c.id) {
+          if (dueño && dueño.id !== c.customer_id) {
             if (parecidos(c.name, dueño.name)) {
               const { data: r, error } = await admin.rpc("fusionar_cliente_duplicado",
-                { p_huerfana: c.id, p_erp_id: erpId });
+                { p_huerfana: c.customer_id, p_erp_id: erpId });
               if (error) throw new Error(`fusionar: ${error.message}`);
               res.fusionadas++;
               res.facturas_movidas += (r as { facturas_movidas?: number })?.facturas_movidas ?? 0;
@@ -159,7 +205,7 @@ Deno.serve(async (req) => {
                 detalle: `El número interno ${erpId} corresponde a «${dueño.name}», ` +
                          `pero esta ficha se llama «${c.name}». Podrían ser dos ` +
                          `personas distintas: no se unieron.`,
-                datos: { ficha_suelta_id: c.id, ficha_suelta_nombre: c.name,
+                datos: { ficha_suelta_id: c.customer_id, ficha_suelta_nombre: c.name,
                          ficha_destino_id: dueño.id, ficha_destino_nombre: dueño.name },
               });
               res.a_revisar++;
@@ -168,9 +214,50 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── 2 · El distrito, si le falta ──────────────────────────────
+        // ── 2 · La tabla de decisión, sobre la ficha DEL ERP ──────────
         const ficha = await leerFicha(cookie, erpId);
-        if (!ficha.campos.distrito) {
+
+        // El freno: ya se corrigió y Hacienda volvió a rechazar lo mismo.
+        // Reintentarlo cada noche no lo arregla y esconde el caso.
+        if (c.ya_corregido) {
+          aRevisar.push({
+            erp_id: erpId, name: c.name, motivo: "rechazo_persistente",
+            detalle: `Ya se corrigió ${c.campo} en la ficha y Hacienda la volvió ` +
+                     `a rechazar: «${c.motivo_mh ?? "sin motivo"}». La corrección ` +
+                     `no alcanza — hay que mirarlo a mano.`,
+            datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
+          });
+          res.a_revisar++;
+        } else if (!c.puede_escribir) {
+          // Contribuyentes: no se tocan en el ERP, sólo se espejan.
+          res.solo_espejo++;
+        } else if (c.campo === "dui" || duiValido(ficha.campos.dui) === false) {
+          // Regla ③ de bloque: un DUI que no cumple el algoritmo se borra. La
+          // ficha queda limpia y el dato sigue disponible para corregirlo.
+          const antes = ficha.campos.dui ?? "";
+          if (antes) {
+            const w = await escribirCampos(cookie, erpId, { dui: "" });
+            if (w.ok) {
+              res.dui_borrado++;
+              correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "dui",
+                                  antes, despues: "", motivo: "dui_invalido" });
+              detalle.push({ ficha: c.name, accion: "dui borrado", antes });
+            } else { res.fallidas++; detalle.push({ ficha: c.name, accion: "dui", error: w.motivo }); }
+          }
+        } else if (!ficha.campos.municipio || c.origen === "rechazo") {
+          // Regla ① de bloque: sin municipio no hay de dónde deducir el
+          // distrito. Y si Hacienda rechazó la ubicación, el default también —
+          // decisión del usuario: no se diagnostica, se pone el de siempre.
+          const u = await ponerUbicacion(cookie, erpId, UBICACION_DEFECTO);
+          if (u.ok) {
+            res.ubicacion_por_defecto++;
+            correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "ubicacion",
+                                antes: u.antes, despues: u.despues,
+                                motivo: c.origen === "rechazo" ? "rechazo_distrito" : "sin_municipio" });
+            detalle.push({ ficha: c.name, accion: "ubicación por defecto", pasos: u.pasos });
+          } else { res.fallidas++; detalle.push({ ficha: c.name, accion: "ubicación", error: u.motivo }); }
+        } else if (!ficha.campos.distrito) {
+          // Regla ② — el matcher, verificado contra las 25,946 decisiones.
           const eleccion = await elegirDistrito(
             `erp:${erpId}`,
             ficha.campos.direccion ?? "",
@@ -184,6 +271,8 @@ Deno.serve(async (req) => {
             const w = await escribirCampo(cookie, erpId, "distrito", eleccion.value);
             if (w.ok) {
               res.distrito_escrito++;
+              correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "distrito",
+                                  antes: "", despues: eleccion.value, motivo: "sin_distrito" });
               detalle.push({ ficha: c.name, accion: "distrito", motivo: eleccion.motivo });
             } else {
               res.fallidas++;
@@ -195,7 +284,7 @@ Deno.serve(async (req) => {
         }
 
         // ── 3 · Copiar al portal ──────────────────────────────────────
-        aEspejar.push(filaPortal(c.id, erpId, await leerFicha(cookie, erpId)));
+        aEspejar.push(filaPortal(c.customer_id, erpId, await leerFicha(cookie, erpId)));
       } catch (e) {
         res.fallidas++;
         detalle.push({ ficha: c.name, error: e instanceof Error ? e.message : String(e) });
@@ -205,6 +294,13 @@ Deno.serve(async (req) => {
     if (aRevisar.length) {
       const { error } = await admin.rpc("upsert_clientes_por_revisar", { p_filas: aRevisar });
       if (error) console.error("upsert_clientes_por_revisar:", error.message);
+    }
+    // Lo corregido se anota SIEMPRE, y antes que nada: es lo que hace de freno
+    // la próxima vez. Sin este registro, un rechazo que vuelve mañana se lee
+    // como nuevo y se reintenta lo mismo para siempre.
+    if (correcciones.length) {
+      const { error } = await admin.from("dte_correcciones_ficha").insert(correcciones);
+      if (error) console.error("dte_correcciones_ficha:", error.message);
     }
     if (aEspejar.length) {
       // De a 250, igual que el script: el RPC hace un UPDATE masivo y una

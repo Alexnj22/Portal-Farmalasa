@@ -330,7 +330,7 @@ const GRUPOS_CRUDOS = [
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
             { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi Sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
             { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icon: Target, hasApprove: false, hasScope: true },
-            { key: 'dash_vendedores',     label: 'Widget: Quién está vendiendo',  desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icon: Users, hasApprove: false, hasScope: true },
+            { key: 'dash_vendedores',     label: 'Widget: Venta por vendedor',    desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icon: Users, hasApprove: false, hasScope: true },
         ],
     },
     {

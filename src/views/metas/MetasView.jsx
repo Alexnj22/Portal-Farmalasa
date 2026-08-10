@@ -54,22 +54,30 @@ export default function MetasView() {
     // pueda avisar CUÁLES vuelven a revisión antes de guardar.
     const [metasPorClave, setMetasPorClave] = useState({});
     const [reloadKey, setReloadKey] = useState(0);
+    // El interruptor del bono: encendido y HASTA CUÁNDO (null = indefinido).
+    // Los dos juntos porque la pestaña Bono los muestra y los cambia como una
+    // sola decisión.
     const [bonificacionesActivas, setBonificacionesActivas] = useState(false);
+    const [bonificacionesHastaYm, setBonificacionesHastaYm] = useState(null);
     // El día en que el portal propone las metas del mes siguiente. Confirmación
     // lo necesita para no adelantar una sección que todavía no tiene contenido.
     const [diaPropuesta, setDiaPropuesta] = useState(25);
 
+    // `reloadKey` entra en las dependencias: al mover el interruptor desde la
+    // pestaña Bono hay que releer, si no el resto de la vista sigue con el
+    // estado viejo hasta que alguien recargue la página.
     useEffect(() => {
         let alive = true;
         fetchMetasConfig()
             .then((cfg) => {
                 if (!alive) return;
                 setBonificacionesActivas(!!cfg?.bonificaciones_activas);
+                setBonificacionesHastaYm(cfg?.bonificaciones_hasta_ym ?? null);
                 if (cfg?.dia_propuesta) setDiaPropuesta(Number(cfg.dia_propuesta));
             })
-            .catch(() => { /* sin config legible: se queda el aviso de suspendidas */ });
+            .catch(() => { /* sin config legible: se queda como apagado */ });
         return () => { alive = false; };
-    }, []);
+    }, [reloadKey]);
 
     // Solo hace falta para el modal de gasto: saber cuáles de las metas que va a
     // tocar ya estaban firmadas, para decirlo ANTES de guardar.
@@ -142,7 +150,10 @@ export default function MetasView() {
                 <TabBono
                     salaNombre={salaNombre}
                     branchOptions={salaOptions}
+                    canEdit={canEdit}
                     bonificacionesActivas={bonificacionesActivas}
+                    bonificacionesHastaYm={bonificacionesHastaYm}
+                    onCambioBono={() => setReloadKey((k) => k + 1)}
                     reloadKey={reloadKey}
                     defaultBranchId={SALAS_VENTA.includes(Number(user?.branchId ?? user?.branch_id))
                         ? Number(user?.branchId ?? user?.branch_id)

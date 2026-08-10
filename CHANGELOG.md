@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.550.0 — El bono tiene interruptor, y sin bono la pantalla habla de la meta
+
+**El interruptor, en la pestaña Bono.** `bonificaciones_activas` ya existía como
+un booleano global sin forma de encenderlo con fecha de fin: o quedaba prendido
+para siempre o alguien tenía que acordarse de apagarlo. Ahora el encendido dice
+**hasta cuándo** — «Este mes» o «Indefinido»— y con «Este mes» el bono se apaga
+solo el día 1.
+
+La regla vive en la base (`metas_bono_activo(ym)`, migración `20260810174323`) y
+no en el navegador: la pregunta es *por mes* y la contestan igual el módulo, el
+widget del Inicio y el reparto del bono. Con una copia en JavaScript, el día que
+cambie la regla una de las tres se quedaría vieja — y sería la del Inicio, que
+es la que ve la sala. `set_bonificaciones_metas` exige `metas.can_edit` y el mes
+lo pone el servidor, nunca el llamador.
+
+**Con el bono apagado, la pantalla no nombra ningún bono.** Los tres tramos no
+son del bono, son de la meta, así que se llaman por lo único que sigue siendo
+cierto:
+
+| tramo | con bono | sin bono |
+|---|---|---|
+| ≥ 100% | Bono completo | **Meta completa** |
+| ≥ 95%  | Medio bono    | **Casi la meta** |
+| < 95%  | Sin bono      | **Sin meta** |
+
+El color y los umbrales no cambian: es el mismo semáforo con otro rótulo.
+`medio` no lo dictó el usuario; es el tramo del 95%, o sea «llegó cerca». Y la
+insignia de una sala sin meta asignada pasa a decir **«Sin meta asignada»**,
+porque si no serían la misma palabra para dos cosas distintas — una sala que no
+tiene meta este mes y una que la tiene y no va a llegar.
+
+De paso desaparecen las dos únicas frases que nombraban el bono estando
+apagado: el aviso «Bonificaciones suspendidas» del Tablero y la línea «El bono
+se muestra solo como referencia» del widget.
+
+**El widget «Meta del mes» ya no se corta.** Esa línea del bono era justamente
+la que se salía de la tarjeta; medido después del cambio, cero desborde.
+
+**«Quién está vendiendo» pasa a llamarse «Venta por vendedor»** y deja de tener
+un marco dentro de otro: el componente del ranking dibujaba SU tarjeta y SU
+encabezado adentro de los del widget, así que el título se leía dos veces, una
+debajo de la otra. En modo `compacto` ahora no pone envase ni rótulo — los pone
+el `WidgetCard`, que es de quien son.
+
+Verificado en el navegador: las insignias del Tablero con el bono apagado salen
+«Meta completa · Sin meta · Casi la meta», el interruptor aparece en la pestaña
+Bono y el widget de la meta entra entero en su tarjeta. La migración se probó
+contra producción en una transacción con ROLLBACK: apagado → `f`; indefinido →
+`t` este mes y dentro de un año; «sólo este mes» → `t` en agosto y `f` en
+septiembre.
+
 ## v2.549.0 — La gráfica termina en hoy y la proyección se ve
 
 Dos pedidos del usuario sobre «Cómo va el mes», los dos sobre lo mismo: que la

@@ -500,7 +500,7 @@ const WIDGET_DEFS = [
   { id: 'traslados',    label: 'Traslados entre Salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
   { id: 'facturas_sala',label: 'Facturas de mi Sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
-  { id: 'vendedores',   label: 'Quién está vendiendo',    permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
+  { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
 ];
 
 // El permiso de cada widget, indexado. Lo necesitan la barra de pestañas, el
@@ -2935,7 +2935,7 @@ const DashboardView = ({ openModal }) => {
         .sort((a, b) => META_SALA_IDS.indexOf(Number(a.id)) - META_SALA_IDS.indexOf(Number(b.id)))
         .map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('vendedores',
-        <WidgetCard title="Quién está vendiendo" icon={Users} category="ventas"
+        <WidgetCard title="Venta por vendedor" icon={Users} category="ventas"
           action={isVendAllScope && vendOpts.length > 1 && (
             <LiquidSelect
               value={metaBranch}

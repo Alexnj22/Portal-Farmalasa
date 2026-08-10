@@ -3,6 +3,8 @@ import { Coins, Users, AlertTriangle, RefreshCw, Wallet, UserMinus, Crown } from
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
+import Switch from '../../components/common/Switch';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import FilterBar from '../../components/common/FilterBar';
@@ -11,7 +13,9 @@ import ListRow from '../../components/common/ListRow';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
-import { fetchBonoMetaSala } from '../../data/metas';
+import { fetchBonoMetaSala, setBonificaciones } from '../../data/metas';
+import { useStaffStore } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG } from './metasUtils';
 
@@ -24,12 +28,24 @@ const COLS_BASE = [
 // La columna de proyección solo existe mientras el mes se puede mover.
 const COL_PROY = { key: 'proy', label: 'Si cierra así', align: 'right' };
 
+// Hasta cuándo valen las bonificaciones. Son las dos únicas respuestas que el
+// servidor entiende: con «Este mes» la vigencia queda en el mes en curso y el
+// bono se apaga solo al cambiar de mes.
+const VIGENCIAS = [
+    { value: 'mes',     label: 'Este mes' },
+    { value: 'siempre', label: 'Indefinido' },
+];
+
 // El bono de meta de UNA sala, persona por persona. La regla completa y su
 // verificación contra el cálculo anterior están en el §12 del plan; acá solo se
 // muestra lo que devuelve `get_bono_meta_sala`, sin recalcular nada del lado
 // del navegador — el reparto es dinero y vive en un solo lugar.
-export default function TabBono({ salaNombre, branchOptions, bonificacionesActivas, reloadKey, defaultBranchId }) {
+export default function TabBono({
+    salaNombre, branchOptions, canEdit, bonificacionesActivas, bonificacionesHastaYm,
+    onCambioBono, reloadKey, defaultBranchId,
+}) {
     const ymActual = ymHoySV();
+    const showToast = useToastStore((s) => s.showToast);
     const [ym, setYm] = useState(ymActual);
     const [sala, setSala] = useState(() => String(defaultBranchId ?? SALAS_VENTA[0]));
     const [data, setData] = useState(null);
@@ -40,7 +56,7 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
 
     useEffect(() => {
         let alive = true;
-        setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- reset del skeleton antes de re-fetch al cambiar de mes o de sala
+        setLoading(true);   // reset del skeleton antes de re-fetch al cambiar de mes o de sala
         setError(null);
         fetchBonoMetaSala(sala, ym)
             .then((d) => { if (alive) { setData(d); setLoading(false); } })
@@ -72,13 +88,75 @@ export default function TabBono({ salaNombre, branchOptions, bonificacionesActiv
     // personal de otra sala (se resuelve con la cobertura de horarios).
     const perdido = Number(data?.no_pagado ?? 0);
 
+    // ── El interruptor ────────────────────────────────────────────────────────
+    // Vive acá, en la pestaña del bono, y no en una pantalla de configuración:
+    // es la decisión de esta pantalla y quien la toma está mirando el reparto.
+    //
+    // «Este mes» no es un adorno del interruptor: es la diferencia entre un
+    // bono que se apaga solo el día 1 y uno que sigue encendido hasta que
+    // alguien se acuerde. El mes lo pone el servidor.
+    const [guardando, setGuardando] = useState(false);
+    const soloEsteMes = !!bonificacionesHastaYm;
+
+    const cambiarBono = async (activas, esteMes) => {
+        setGuardando(true);
+        try {
+            const r = await setBonificaciones(activas, esteMes);
+            useStaffStore.getState().appendAuditLog('METAS_BONO_INTERRUPTOR', 'metas_config', {
+                bonificaciones_activas: r?.bonificaciones_activas,
+                bonificaciones_hasta_ym: r?.bonificaciones_hasta_ym ?? null,
+            });
+            showToast(
+                activas ? 'Bonificaciones activadas' : 'Bonificaciones apagadas',
+                activas
+                    ? (esteMes ? `Sólo por ${ymLabel(ymActual).toLowerCase()}.` : 'Sin fecha de fin.')
+                    : 'Las pantallas vuelven a hablar solo de la meta.',
+                'success',
+            );
+            onCambioBono?.();
+        } catch (err) {
+            showToast('No se pudo cambiar', mensajeAmigable(err, 'Vuelve a intentarlo.'), 'error');
+        } finally {
+            setGuardando(false);
+        }
+    };
+
     return (
         <div className="space-y-4">
-            {!bonificacionesActivas && (
-                <Notice variant="warning">
-                    Bonificaciones suspendidas — el bono se muestra solo como referencia.
-                </Notice>
-            )}
+            <div data-surface="card" className="p-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2.5">
+                        <Switch
+                            checked={!!bonificacionesActivas}
+                            disabled={!canEdit || guardando}
+                            variant="success"
+                            label={bonificacionesActivas ? 'Apagar las bonificaciones' : 'Activar las bonificaciones'}
+                            onChange={canEdit ? (on) => cambiarBono(on, on ? soloEsteMes : false) : undefined}
+                        />
+                        <p className="text-body-sm font-black text-content">
+                            {bonificacionesActivas ? 'Bonificaciones activas' : 'Bonificaciones apagadas'}
+                        </p>
+                    </div>
+                    <p className="text-label font-semibold text-content-3 mt-1.5">
+                        {bonificacionesActivas
+                            ? (soloEsteMes
+                                ? <>Sólo por <strong className="text-content-2">{ymLabel(bonificacionesHastaYm).toLowerCase()}</strong> — el día 1 se apagan solas.</>
+                                : 'Sin fecha de fin: siguen activas hasta que las apagues.')
+                            : 'Las pantallas hablan de la meta y no nombran el bono en ningún lado.'}
+                    </p>
+                </div>
+
+                {/* Hasta cuándo: sólo tiene sentido con el interruptor encendido. */}
+                {bonificacionesActivas && canEdit && (
+                    <SegmentedControl
+                        options={VIGENCIAS}
+                        value={soloEsteMes ? 'mes' : 'siempre'}
+                        onChange={(v) => cambiarBono(true, v === 'mes')}
+                        size="sm"
+                        label="Hasta cuándo valen las bonificaciones"
+                    />
+                )}
+            </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen del bono">

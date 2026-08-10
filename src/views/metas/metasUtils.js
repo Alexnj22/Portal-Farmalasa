@@ -71,10 +71,26 @@ export function agruparHistoricoPorMes(rows, meses = 12) {
         }));
 }
 
-// Config del tramo del bono → cómo se pinta. El texto habla del negocio
-// («Bono completo»), nunca de la tubería.
+// Config del tramo → cómo se pinta y cómo se llama. El texto habla del negocio,
+// nunca de la tubería.
+//
+// **Dos juegos de nombres, y el que manda es si el bono está activo ESE mes**
+// (regla del usuario, 2026-08-10). Con las bonificaciones apagadas la pantalla
+// no puede nombrar un bono que nadie va a cobrar: los mismos tres tramos —que
+// no son del bono, son de la meta— se llaman por lo único que sigue siendo
+// cierto. `medio` no lo dictó el usuario; es el tramo del 95%, o sea «llegó
+// cerca», y se llama así.
+//
+// El color y el umbral NO cambian: es el mismo semáforo con otro rótulo.
 export const TRAMO_CFG = {
-    completo: { label: 'Bono completo', variante: 'success', textCls: 'text-success-text' },
-    medio:    { label: 'Medio bono',    variante: 'warning', textCls: 'text-warning-text' },
-    nada:     { label: 'Sin bono',      variante: 'danger',  textCls: 'text-danger-text' },
+    completo: { label: 'Bono completo', sinBono: 'Meta completa', variante: 'success', textCls: 'text-success-text' },
+    medio:    { label: 'Medio bono',    sinBono: 'Casi la meta',  variante: 'warning', textCls: 'text-warning-text' },
+    nada:     { label: 'Sin bono',      sinBono: 'Sin meta',      variante: 'danger',  textCls: 'text-danger-text' },
 };
+
+/** El nombre del tramo según haya bono o no. `tramo` puede venir vacío. */
+export function tramoLabel(tramo, bonoActivo) {
+    const cfg = TRAMO_CFG[tramo];
+    if (!cfg) return null;
+    return bonoActivo ? cfg.label : cfg.sinBono;
+}

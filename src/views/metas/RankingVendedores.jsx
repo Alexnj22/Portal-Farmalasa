@@ -38,9 +38,19 @@ export default function RankingVendedores({ data, compacto = false }) {
         return { filas: ord, promedio: prom, maximo: ord.length ? ord[0][clave] : 0 };
     }, [data, orden]);
 
+    // Dentro de un widget la tarjeta la pone el `WidgetCard`, y el título
+    // también: hasta el 2026-08-10 este componente dibujaba SU tarjeta y SU
+    // encabezado adentro de los del widget, así que se veía un marco dentro de
+    // otro y «Quién está vendiendo» escrito dos veces, una debajo de la otra.
+    //
+    // Es un objeto de props y no un componente envoltorio: un componente
+    // definido en el cuerpo del render se vuelve a crear en cada pintada y React
+    // desmonta y remonta todo lo que tiene adentro.
+    const envase = compacto ? {} : { 'data-surface': 'card', className: 'p-5' };
+
     if (!filas.length) {
         return (
-            <div data-surface="card" className="p-5">
+            <div {...envase}>
                 <EmptyState
                     compact icon={Users}
                     title="Sin ventas este mes"
@@ -71,12 +81,17 @@ export default function RankingVendedores({ data, compacto = false }) {
     const dosColumnas = !compacto && filas.length >= 12;
 
     return (
-        <div data-surface="card" className="p-5">
+        <div {...envase}>
             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                 <div className="min-w-0">
-                    <p className="text-caption font-black uppercase tracking-widest text-content-3">
-                        Quién está vendiendo · {data?.sala}
-                    </p>
+                    {/* El rótulo sólo fuera del widget: adentro ya lo dice el
+                        encabezado del `WidgetCard`, y con el selector de sala al
+                        lado el nombre de la sala también está dicho. */}
+                    {!compacto && (
+                        <p className="text-caption font-black uppercase tracking-widest text-content-3">
+                            Venta por vendedor · {data?.sala}
+                        </p>
+                    )}
                     <p className="text-label font-semibold text-content-3 mt-0.5 tabular-nums">
                         {filas.length} persona{filas.length !== 1 ? 's' : ''} · promedio{' '}
                         <strong className="text-content-2">{formatMoney(promedio)}</strong>{sufijo}

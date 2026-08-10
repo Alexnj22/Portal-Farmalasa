@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Target, TrendingUp, Gauge, BarChart3, Plus, AlertTriangle, RefreshCw, Search } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import Notice from '../../components/common/Notice';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import FilterBar from '../../components/common/FilterBar';
@@ -12,9 +11,9 @@ import BarraAvance from './BarraAvance';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import GraficaMes from './GraficaMes';
 import RankingVendedores from './RankingVendedores';
-import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso } from '../../data/metas';
+import { fetchMetasDashboard, fetchMetasRows, fetchMesEnCurso, fetchBonoActivo } from '../../data/metas';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG } from './metasUtils';
+import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, TRAMO_CFG, tramoLabel } from './metasUtils';
 
 const fmtPct = (v) => formatPct(v);
 
@@ -35,6 +34,15 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
     // re-disparar el efecto.
     const [intento, setIntento] = useState(0);
 
+    // ¿El bono estaba activo en el mes que se está mirando? La pregunta es por
+    // MES —se puede encender «sólo este mes»— así que no alcanza con el
+    // booleano de la vista, que no sabe qué mes tiene puesto el stepper. La
+    // contesta la base, que es donde vive la regla.
+    //
+    // Se siembra con lo que la vista ya sabe para que la primera pintada no
+    // parpadee de un juego de nombres al otro.
+    const [bonoActivo, setBonoActivo] = useState(!!bonificacionesActivas);
+
     // El mes en curso: cómo va y quién vende. Vive aparte del tablero porque
     // responde otra pregunta y se pide por sala — '' es todas juntas.
     const [salaMes, setSalaMes] = useState('');
@@ -46,10 +54,18 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
         let alive = true;
         setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- reset del skeleton antes de re-fetch al cambiar de mes
         setError(null);
-        Promise.all([fetchMetasDashboard(ym), fetchMetasRows([ym]).catch(() => [])])
-            .then(([data, filas]) => {
+        Promise.all([
+            fetchMetasDashboard(ym),
+            fetchMetasRows([ym]).catch(() => []),
+            // Si esta falla no se cae el tablero: se queda con lo que la vista
+            // ya sabía. Un rótulo con el nombre viejo es mucho menos que una
+            // pantalla en blanco.
+            fetchBonoActivo(ym).catch(() => null),
+        ])
+            .then(([data, filas, bono]) => {
                 if (!alive) return;
                 setRows(data);
+                if (bono !== null) setBonoActivo(bono);
                 const d = {};
                 for (const f of filas) {
                     if (Number(f.monto_recuperacion) > 0) {
@@ -110,11 +126,13 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
 
     return (
         <div className="space-y-4">
-            {!bonificacionesActivas && (
-                <Notice variant="warning">
-                    Bonificaciones suspendidas — el bono se muestra solo como referencia.
-                </Notice>
-            )}
+            {/* El aviso «Bonificaciones suspendidas — el bono se muestra solo
+                como referencia» se retiró el 2026-08-10: ya no hay ningún bono
+                que mostrar en esta pestaña cuando el interruptor está apagado
+                —las insignias hablan de la META—, así que el aviso nombraba
+                justo lo que la pantalla dejó de nombrar. El estado del
+                interruptor se ve y se cambia en la pestaña Bono, que es donde
+                vive. */}
 
             {/* Dos columnas: tarjetas a la izquierda, píldora a la derecha —
                 el layout de §17.0, el mismo de Personal. En renglones separados
@@ -257,11 +275,17 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                                             </p>
                                         )}
                                     </div>
+                                    {/* «Sin meta ASIGNADA» y no «Sin meta» a secas: desde
+                                        que el tramo más bajo se llama «Sin meta» con el
+                                        bono apagado, las dos insignias eran la misma
+                                        palabra para dos cosas distintas — una sala sin
+                                        meta este mes y una sala que tiene meta y no va
+                                        a llegar. */}
                                     {sinMeta
-                                        ? <Badge variant="neutral" size="sm">Sin meta</Badge>
+                                        ? <Badge variant="neutral" size="sm">Sin meta asignada</Badge>
                                         : r.estado !== 'oficial'
                                             ? <Badge variant="warning" size="sm">Pendiente de aprobar</Badge>
-                                            : tramo && <Badge variant={tramo.variante} size="sm">{tramo.label}</Badge>}
+                                            : tramo && <Badge variant={tramo.variante} size="sm">{tramoLabel(r.bono_tier, bonoActivo)}</Badge>}
                                 </div>
 
                                 {sinMeta ? (

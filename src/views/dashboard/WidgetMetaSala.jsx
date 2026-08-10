@@ -6,7 +6,7 @@ import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchMetaSala } from '../../data/metas';
 import BarraAvance from '../metas/BarraAvance';
-import { TRAMO_CFG, ymLabel } from '../metas/metasUtils';
+import { TRAMO_CFG, tramoLabel, ymLabel } from '../metas/metasUtils';
 
 // La meta de la sala en el Inicio. Es el mismo dato que el tablero del módulo,
 // pero contado desde la sala y para HOY: cuánto lleva el mes, cuánto vendió hoy,
@@ -87,11 +87,14 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
                         {ymLabel(row.year_month)} · día {row.dias_transcurridos} de {row.dias_mes}
                     </p>
                 </div>
+                {/* «Sin meta ASIGNADA»: desde que el tramo más bajo se llama
+                    «Sin meta» con el bono apagado, sin el adjetivo las dos
+                    insignias serían la misma palabra para dos cosas distintas. */}
                 {sinMeta
-                    ? <Badge variant="neutral" size="sm">Sin meta</Badge>
+                    ? <Badge variant="neutral" size="sm">Sin meta asignada</Badge>
                     : !oficial
                         ? <Badge variant="warning" size="sm">Pendiente de aprobar</Badge>
-                        : tramo && <Badge variant={tramo.variante} size="sm">{tramo.label}</Badge>}
+                        : tramo && <Badge variant={tramo.variante} size="sm">{tramoLabel(row.bono_tier, row.bonificaciones_activas)}</Badge>}
             </div>
 
             {sinMeta ? (
@@ -134,11 +137,12 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
                                 Meta alcanzada · {formatMoney(row.venta_acumulada - row.monto_meta)} por encima
                             </p>
                         )}
-                        {!row.bonificaciones_activas && oficial && (
-                            <p className="text-micro font-bold text-content-3">
-                                El bono se muestra solo como referencia.
-                            </p>
-                        )}
+                        {/* Se retiró «El bono se muestra solo como referencia»
+                            (2026-08-10): con el interruptor apagado el widget ya
+                            no nombra ningún bono —la insignia habla de la meta—,
+                            así que el único sitio donde aparecía la palabra era
+                            la aclaración de que no aplica. Además era la línea
+                            que se salía de la tarjeta y quedaba cortada. */}
                     </div>
                 </>
             )}

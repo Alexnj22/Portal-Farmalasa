@@ -28,10 +28,32 @@ export async function guardarMetaManual({ branchId, yearMonth, monto, nota }) {
     if (error) throw error;
 }
 
-// Una sola fila: umbrales del bono y el interruptor de bonificaciones
-// (hoy apagado — el tramo se muestra solo como referencia).
+// Una sola fila: umbrales del bono, el interruptor de bonificaciones y hasta
+// cuándo vale (`bonificaciones_hasta_ym`: NULL = indefinido).
 export async function fetchMetasConfig() {
     const { data, error } = await supabase.from('metas_config').select('*').limit(1).single();
+    if (error) throw error;
+    return data;
+}
+
+// ¿El bono estaba activo ESE mes? La regla —encendido + vigencia— vive en la
+// base (`metas_bono_activo`) y no acá: la contestan también `get_meta_sala` y
+// `get_bono_meta_sala`, y con una copia en JavaScript el día que cambie la
+// regla el Inicio y el módulo dirían cosas distintas.
+export async function fetchBonoActivo(ym) {
+    const { data, error } = await supabase.rpc('metas_bono_activo', { p_year_month: ym });
+    if (error) throw error;
+    return !!data;
+}
+
+// Enciende o apaga el bono. `soloEsteMes` deja la vigencia en el mes en curso y
+// el bono se apaga solo al cambiar de mes; sin él queda indefinido. El mes lo
+// pone el servidor.
+export async function setBonificaciones(activas, soloEsteMes) {
+    const { data, error } = await supabase.rpc('set_bonificaciones_metas', {
+        p_activas: !!activas,
+        p_solo_este_mes: !!soloEsteMes,
+    });
     if (error) throw error;
     return data;
 }

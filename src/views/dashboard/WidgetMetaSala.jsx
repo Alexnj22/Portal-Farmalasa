@@ -106,10 +106,19 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
                 </div>
             ) : (
                 <>
-                    <div className="flex items-baseline gap-2 flex-wrap mt-2">
+                    {/* La meta, con su nombre y en su propio renglón. Estaba —
+                        «de $41,155.66»— pegada al final de la línea del vendido
+                        y en gris chico: el número que le da nombre al widget era
+                        el menos visible de la tarjeta, y había que deducir cuál
+                        de los dos era. Es la misma forma que las tarjetas por
+                        sala del Tablero: «Meta $X» arriba, el vendido debajo. */}
+                    <p className="text-label font-bold text-content-2 tabular-nums mt-1.5">
+                        Meta <span className="text-content font-black">{formatMoney(row.monto_meta)}</span>
+                    </p>
+                    <div className="flex items-baseline gap-2 flex-wrap">
                         <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(row.venta_acumulada)}</span>
                         <span className="text-body-sm font-black text-chart-1-text tabular-nums">{formatPct(row.pct_cumplimiento)}</span>
-                        <span className="text-label font-semibold text-content-3 tabular-nums">de {formatMoney(row.monto_meta)}</span>
+                        <span className="text-label font-semibold text-content-3">vendido</span>
                     </div>
 
                     <BarraAvance

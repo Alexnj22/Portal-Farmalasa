@@ -147,6 +147,16 @@ const WIDGET_SIZES = {
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste Inventario' },
   facturas_sala: { minCols: 1, minRows: 1, label: 'Facturas Sala' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
+  // `vendedores` y `traslados` no tenían entrada, así que caían al mínimo de
+  // 1×1 — una baldosa de 312×120 donde entran el título y una línea, y ni una
+  // sola fila de la lista. Quien no las agrandara a mano veía dos widgets que
+  // no dicen nada. Los dos son listas: necesitan alto (2026-08-10).
+  //
+  // Barrido de los 21 del catálogo: eran los dos únicos sin tamaño. `kpi` no
+  // cuenta — es la franja de indicadores, que no es una baldosa de la grilla y
+  // se filtra por id antes de acomodar.
+  vendedores:    { minCols: 2, minRows: 3, label: 'Venta por vendedor' },
+  traslados:     { minCols: 2, minRows: 2, label: 'Traslados'          },
 };
 
 const getWidgetSize = (id) => {

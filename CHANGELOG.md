@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.550.1 — La meta se lee en el widget de la meta, y dos listas nacían del tamaño de una baldosa
+
+**«¿Dónde se ve cuánto es la meta del mes?»** — la pregunta del usuario sobre el
+widget que se llama justamente así. Estaba: «de $41,155.66», pegada al final de
+la línea del vendido y en gris chico. O sea que el número que le da nombre a la
+tarjeta era el menos visible de todos, y había que deducir cuál de los dos era.
+Ahora va en su propio renglón y con su nombre —**Meta $41,155.66**— arriba del
+vendido, que es exactamente la forma de las tarjetas por sala del Tablero. Sigue
+entrando entero en la tarjeta (desborde medido: 0).
+
+
+`WIDGET_SIZES` declara el tamaño mínimo de cada widget de la grilla, y lo que no
+está ahí cae a **1×1 — 312×120px**. Con «Venta por vendedor» se vio el efecto:
+en esa baldosa entran el título y la línea del promedio, y **ni una sola persona
+del ranking**. Quien no lo agrandara a mano veía un widget que no dice nada.
+
+Barrido de los 21 del catálogo: eran **dos**, y los dos son listas.
+
+| widget | antes | ahora |
+|---|---|---|
+| `vendedores` | 1×1 | 2×3 |
+| `traslados`  | 1×1 | 2×2 |
+
+`kpi` también aparece sin tamaño y está bien: es la franja de indicadores, no
+una baldosa de la grilla, y se filtra por id antes de acomodar.
+
+**De paso, la revisión de canon que pidió el usuario.** Los 21 widgets pasan por
+`WidgetCard` —una sola forma de tarjeta, título, icono y ranura de acción—, así
+que no hay variantes a mano compitiendo. El único que se salía era
+`RankingVendedores` (corregido en v2.550.0), y se salía por una razón: lo
+comparten el módulo Metas —donde ÉL es la tarjeta— y el widget del Inicio, donde
+la tarjeta la pone el `WidgetCard`; sin distinguir los dos casos dibujaba un
+marco dentro del otro. Los otros cuatro widgets que usan `data-surface="card"`
+adentro (`AnnulmentRequest`, `FacturasSala`, `InventoryMovement`,
+`InventorySearch`) lo hacen para **filas y sub-paneles**, que es el uso correcto,
+no para envolverse enteros. Y los rótulos en versalita que aparecían como
+sospechosos son nombres de campo («Presentación», «Lote») o de sucursal, no
+títulos repetidos.
+
 ## v2.550.0 — El bono tiene interruptor, y sin bono la pantalla habla de la meta
 
 **El interruptor, en la pestaña Bono.** `bonificaciones_activas` ya existía como

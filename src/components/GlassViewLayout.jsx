@@ -170,9 +170,45 @@ const GlassViewLayout = ({
                     "Gestión de Personal" se truncaba a "Gestión de …". El título es lo que
                     te dice dónde estás; las acciones son lo que podés posponer.
                     Con `flex-wrap` + `basis-[60%]`, cuando no entran juntos las acciones
-                    bajan a una segunda línea en vez de comerse el título. */}
+                    bajan a una segunda línea en vez de comerse el título.
+
+                    ── DOS COLUMNAS, no dos renglones (2026-08-09, pedido del usuario) ──
+                    Aquel `basis-[60%]` es lo que hacía que casi nunca entraran juntos: el
+                    reparto de líneas de un `flex-wrap` se decide con el tamaño
+                    HIPOTÉTICO de cada hijo, y 60% de 374px son 224 que, más los ~168 del
+                    selector de pestañas y el hueco, dan 404 > 358. O sea que el selector
+                    bajaba a un renglón propio **siempre** —incluso con un título de 75px,
+                    donde sobraba media pantalla—, y cada vista del teléfono empezaba con
+                    dos renglones de cromo antes del contenido.
+
+                    `basis-auto` hace que el título pida exactamente lo que MIDE, ni más
+                    ni menos. Con eso el reparto de líneas se vuelve la pregunta correcta
+                    —¿caben los dos de verdad?— y se contesta sola:
+
+                      · entran     → una fila, dos columnas (15 de 18 rutas medidas)
+                      · no entran  → el selector baja, como antes
+
+                    ── Y el que no entra en una línea, se parte en dos ─────────────────
+                    Con `basis-auto` los tres títulos largos del portal («Pedidos a
+                    Sucursales», «Bandeja de Aprobaciones», «Compras (Bodega)») seguían
+                    bajando el selector, porque a 374px de ancho no entran en UNA línea
+                    al lado suyo. Decisión del usuario: **partirlos en dos renglones**,
+                    centrados contra el ícono y el selector, antes que resignar la
+                    columna.
+
+                    Eso lo hace `line-clamp-2` en el `h2` — y obliga a volver a
+                    `basis-0`: el título tiene que pedir 0 por adelantado para que el
+                    reparto de líneas nunca lo mande abajo, y recién después crecer
+                    (`grow`) hasta el hueco que deja el selector. Dos renglones de
+                    `text-body-xl` con `leading-tight` miden 40px, o sea que entran
+                    dentro de los 48 que ya mide la barra de pestañas: el encabezado NO
+                    crece por partir el título.
+
+                    `truncate` ya no va —era lo que producía «Pedidos a Sucur…»—; la
+                    elipsis queda sólo como red del `line-clamp` a partir del tercer
+                    renglón. */}
                 <div className="lg:hidden pt-5 pb-4 px-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 min-h-0">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1 basis-[60%]">
+                    <div className="flex items-center gap-2.5 min-w-0 grow basis-0">
                         {headerLeft ? (
                             <div className="min-w-0">{headerLeft}</div>
                         ) : (
@@ -188,7 +224,7 @@ const GlassViewLayout = ({
                                         )}
                                     </div>
                                 )}
-                                <h2 className="font-bold text-body-xl tracking-tight truncate text-content">
+                                <h2 className="font-bold text-body-xl tracking-tight leading-tight line-clamp-2 text-content">
                                     {title}
                                 </h2>
                                 <ModuleLockChip />

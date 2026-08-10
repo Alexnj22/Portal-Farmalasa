@@ -150,7 +150,15 @@ export default function ViewTabBar({
   // buscador es suyo. Sin proveedor (`FilterBar` fuera de `GlassViewLayout`)
   // esto es `false` y la barra conserva su lupa, como antes.
   const hayBarraFlotante = useHayBarraFlotante();
-  const mostrarLupa = showSearch && !hayBarraFlotante;
+  // `onSearchChange` es parte de la condición, y no un detalle: `showSearch`
+  // vale `true` por defecto, así que una vista que sólo quería pestañas —Corte
+  // Z, sin ir más lejos— dibujaba igual la lupa, y esa lupa no filtraba nada
+  // porque no hay a quién avisarle. Con las pestañas de una sola opción ya
+  // retiradas quedaba a la vista: una píldora de vidrio de 70px con un botón
+  // que no hace nada. Es el mismo vidrio vacío de abajo, en escritorio.
+  // La condición ya existía tres líneas más abajo, en `usePublicarBuscador`:
+  // sin `onSearchChange` no se publica. Faltaba acá.
+  const mostrarLupa = showSearch && !!onSearchChange && !hayBarraFlotante;
   // El modo búsqueda solo existe si la lupa vive acá. Si la barra flotante se la
   // lleva —al girar a vertical con el campo abierto, por ejemplo— la mitad de
   // búsqueda tiene que colapsar sola o quedan los tabs escondidos tras un campo
@@ -183,12 +191,35 @@ export default function ViewTabBar({
   const activeTabObj = tabs.find(t => t.key === activeTab);
   const ActiveTabIcon = activeTabObj?.icon || activeTabObj?.Icon;
 
+  // ── Una sola pestaña no es navegación (2026-08-09) ───────────────────────
+  // Con una pestaña no hay a dónde ir: el desplegable abre una lista de un
+  // elemento y la fila dibuja un botón que ya está activo. En Corte Z era
+  // además una repetición literal del título de la vista —«Corte Z» debajo de
+  // «Corte Z»—, y en las vistas cuyas pestañas salen de los permisos
+  // (`allowedTabs`) le pasa a cualquiera que tenga una sola.
+  //
+  // El umbral es `> 1` y no `> 0` a propósito: lo que habilita la barra es que
+  // haya ENTRE QUÉ ELEGIR, no que exista una pestaña.
+  const hayPestanas = tabs.length > 1;
+
   const activeTabCls = 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]';
   const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:translate-y-[var(--lift-hover)] hover:shadow-md hover:border-surface-tab-active';
   const dividerCls   = 'bg-divider';
   const inputCls     = 'text-content-2 placeholder:text-content-3';
   const closeBtnCls  = 'text-content-3 hover:bg-surface-tab-active hover:text-brand-text hover:shadow-md';
   const clearBtnCls  = 'text-content-3 hover:text-danger';
+
+  // ── Sin pestañas y sin lupa no hay barra ─────────────────────────────────
+  // **16 vistas montan `ViewTabBar` sin una sola pestaña**: la usan nada más
+  // por el buscador. Cuando ese buscador se va —en táctil se lo lleva la barra
+  // flotante (`hayBarraFlotante`), y algunas vistas ni lo piden— la barra
+  // seguía dibujándose igual: un vidrio VACÍO arriba de todo, con su borde, su
+  // sombra y sus 48px de alto. Material sin contenido, en 16 vistas.
+  //
+  // Va DESPUÉS de todos los hooks —`usePublicarBuscador` incluido— para que la
+  // barra flotante siga recibiendo el buscador que esta barra ya no dibuja. Si
+  // el `return` subiera, el buscador desaparecería de las dos.
+  if (!hayPestanas && !mostrarLupa) return null;
 
   return (
     <div {...containerProps} ref={trackRef} data-surface="tab-track" className={`relative flex items-center transition-all duration-[var(--dur-lento)] ${spring}
@@ -254,11 +285,13 @@ export default function ViewTabBar({
             en vez de recortarse. Hoy el que decide es `cabeLaFila`, así que el
             techo solo tiene que ser mayor que la fila más ancha que se acepte. */}
         <div ref={filaRef}
-          inert={!cabeLaFila ? true : undefined}
-          aria-hidden={!cabeLaFila ? true : undefined}
-          className={`items-center gap-1 md:gap-1.5 ${cabeLaFila
-            ? 'hidden lg:flex'
-            : 'flex absolute left-0 top-0 invisible pointer-events-none'}`}>
+          inert={!cabeLaFila || !hayPestanas ? true : undefined}
+          aria-hidden={!cabeLaFila || !hayPestanas ? true : undefined}
+          className={`items-center gap-1 md:gap-1.5 ${!hayPestanas
+            ? 'hidden'
+            : cabeLaFila
+              ? 'hidden lg:flex'
+              : 'flex absolute left-0 top-0 invisible pointer-events-none'}`}>
           {tabs.map(tab => {
             const TabIcon = tab.icon || tab.Icon;
             const isActive = tab.key === activeTab;
@@ -290,10 +323,19 @@ export default function ViewTabBar({
             puede medir la que abre por defecto, que es el hueco de cobertura más
             grande que tenía (37 archivos de vista declaran pestañas propias).
             Lleva la lista de claves para no depender de abrir el desplegable. */}
-        {tabs.length > 0 && (
+        {hayPestanas && (
           <div ref={selectorRef}
             data-pestanas={tabs.map(t => t.key).join(',')}
-            className={`${cabeLaFila ? 'flex lg:hidden' : 'flex'} w-[150px] sm:w-[190px]`}>
+            /* El ancho era `w-[150px] sm:w-[190px]`, y esos 150 fijos son los que
+               dejaban al título con 75px en Pedidos — o sea, sin sitio ni para dos
+               renglones. Ahora el selector cede parte de lo suyo en las pantallas
+               más angostas y recupera los 190 apenas hay lugar.
+               Va en `style` y no en una clase arbitraria porque `clamp()` lleva
+               comas, y una coma rompe el parseo del valor arbitrario de Tailwind:
+               la utilidad no se genera, sin error y sin aviso (ver
+               `feedback_una_clase_de_tailwind_con_coma_no_se_genera`). */
+            style={{ width: 'clamp(8.75rem, 34vw, 11.875rem)' }}
+            className={cabeLaFila ? 'flex lg:hidden' : 'flex'}>
             <LiquidSelect
               value={activeTab}
               onChange={(key) => { onTabChange?.(key); setIsSearchMode(false); }}
@@ -306,7 +348,7 @@ export default function ViewTabBar({
           </div>
         )}
 
-        {tabs.length > 0 && mostrarLupa && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
+        {hayPestanas && mostrarLupa && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
 
         {/* D3.10: el botón de buscar iba con `--shadow-glow-brand` y
             `rounded-btn`. El halo se dibuja igual sobre fondo claro que oscuro

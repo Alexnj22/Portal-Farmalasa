@@ -1523,6 +1523,44 @@ como "Reglas de despacho" en Pedidos a Sucursales) compitan por ancho
 horizontal o se trunquen. Nunca un `<select>` nativo ni un dropdown nuevo —
 regla del proyecto, `LiquidSelect` en todas partes.
 
+**La barra existe sólo si tiene algo adentro (2026-08-09, v2.546.1).** Dos
+reglas, las dos medidas antes de escribirlas:
+
+| Situación | Qué se dibuja |
+|---|---|
+| `tabs.length > 1` | las pestañas (fila en escritorio, `LiquidSelect` en el teléfono) |
+| `tabs.length <= 1` | **nada de pestañas** — con una sola no hay a dónde ir |
+| `showSearch` pero **sin `onSearchChange`** | **nada de lupa** — no hay a quién avisarle |
+| sin pestañas y sin lupa | **la barra entera devuelve `null`** |
+
+La fila de `onSearchChange` es la que menos se ve venir: `showSearch` vale `true`
+por defecto, así que una vista que sólo quería pestañas dibujaba igual la lupa, y
+esa lupa no filtraba nada. Con las pestañas de una sola opción ya retiradas quedó
+a la vista en Corte Z — una píldora de vidrio de 70px en escritorio con un botón
+que no hace nada. La condición ya existía en `usePublicarBuscador` (sin
+`onSearchChange` no se publica); faltaba en la lupa.
+
+El umbral es `> 1` y no `> 0`: lo que justifica la barra es que haya **entre qué
+elegir**, no que exista una pestaña. Con una sola, el desplegable abría una lista
+de un elemento y la fila dibujaba un botón permanentemente activo; en Corte Z era
+además una repetición literal del título de la vista.
+
+Y el `return null` importa más de lo que parece: **16 vistas montan `ViewTabBar`
+sin una sola pestaña**, sólo por el buscador. Cuando ese buscador se va —en
+táctil se lo lleva `FilterBar` por el canal de `CanalDeVista`— quedaba un vidrio
+**vacío** de 48px con su borde y su sombra arriba de la vista. El `return` va
+**después de todos los hooks**, `usePublicarBuscador` incluido: si subiera, la
+barra flotante dejaría de recibir el buscador que esta barra ya no dibuja y
+desaparecería de las dos.
+
+**El ancho del selector en el teléfono es elástico.** Era `w-[150px]
+sm:w-[190px]`, y esos 150 fijos dejaban al título de Pedidos con 75px — sin
+sitio ni para dos renglones. Hoy es `clamp(8.75rem, 34vw, 11.875rem)` en `style`
+inline: cede en las pantallas angostas y recupera los 190 apenas hay lugar. Va en
+`style` y no en una clase arbitraria porque `clamp()` lleva comas y **una coma
+rompe el parseo del valor arbitrario de Tailwind** — la utilidad no se genera,
+sin error y sin aviso.
+
 **Anatomía:**
 - Contenedor: `data-surface="tab-track"` (nuevo primitivo — `background:
   var(--surface-tab-track)`, `border: var(--border-tab)`, `border-radius:
@@ -4992,6 +5030,43 @@ existía como toggle manual).
 
 > Al construir una vista nueva, el checklist que recorre esta tabla paso a paso
 > —y los gates que hay que correr— está en `docs/CHECKLIST-VISTA-NUEVA.md`.
+
+### El encabezado de una vista en el teléfono: DOS COLUMNAS
+
+> Agregada el 2026-08-09 por pedido del usuario: *«el selector de tab está abajo
+> del título, mejor que esté a la par, así se tienen 2 columnas en móvil, se
+> ahorra espacio vertical»*.
+
+En `<lg` el encabezado de `GlassViewLayout` es **una sola fila**: título a la
+izquierda, `filtersContent` (casi siempre el `ViewTabBar`) a la derecha.
+
+Antes eran dos renglones **siempre**, y no por falta de sitio: el título llevaba
+`basis-[60%]`, y el reparto de líneas de un `flex-wrap` se decide con el tamaño
+**hipotético** de cada hijo. 60% de 374px son 224 que, más los ~168 del selector
+y el hueco, dan 404 > 358 — o sea que el selector bajaba aunque el título midiera
+75px y sobrara media pantalla.
+
+Las tres piezas de la regla, en orden:
+
+1. **`basis-0` + `grow` en la columna del título.** Pide 0 por adelantado, así
+   que nunca fuerza el salto de línea, y después crece hasta el hueco que deja el
+   selector.
+2. **`line-clamp-2` + `leading-tight` en el `h2`, nunca `truncate`.** El título
+   que no entra en una línea se parte en dos, centrado contra el ícono y el
+   selector. Dos renglones de `text-body-xl` miden 40px y entran dentro de los 48
+   que ya mide la barra de pestañas: **el encabezado no crece por partir el
+   título.** `truncate` es lo que producía «Pedidos a Sucur…» y está prohibido
+   acá — recortar el nombre de la vista para ganar alto es exactamente lo que A2
+   corrigió en 2026-07-26.
+3. **El selector cede ancho** (ver `ViewTabBar`, `clamp(8.75rem, 34vw,
+   11.875rem)`). Sin esto el título de Pedidos se quedaba con 85px y «Sucursales»
+   no entraba ni partido.
+
+Medido en WebKit iPhone 13 sobre 18 rutas: **18 de 18 en una fila, 0 títulos
+recortados, 0 rótulos de pestaña recortados.** El encabezado mide **84px** en las
+vistas con pestañas y **68px** en las que no las tienen. Como referencia de lo que
+cuesta el renglón extra: en la variante intermedia que dejaba caer el selector,
+esas mismas rutas medían **124px**.
 
 **Cómo elegir la variante de `ExpedienteMovil`:** si el detalle son secciones e
 historiales, `pantalla`; si es una lista de líneas, la hoja (`auto`, el default).

@@ -21,6 +21,77 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.546.1 — El encabezado del teléfono, en dos columnas
+
+Tres cosas del cromo de arriba, pedidas por el usuario. Las tres son canónicas:
+tocan `GlassViewLayout` y `ViewTabBar`, o sea **las 51 vistas** que los usan.
+
+**1 · El selector de pestañas va A LA PAR del título, no debajo.**
+
+No estaba abajo por falta de sitio: el título llevaba `basis-[60%]`, y el reparto
+de líneas de un `flex-wrap` se decide con el tamaño **hipotético** de cada hijo.
+60% de 374px son 224 que, más los ~168 del selector y el hueco, dan 404 > 358 —
+así que el selector bajaba a un renglón propio **siempre**, incluso con un título
+de 75px y media pantalla libre. Cada vista del teléfono empezaba con dos renglones
+de cromo antes del contenido.
+
+Con `basis-0` el título deja de reclamar por adelantado y crece hasta el hueco que
+deja el selector.
+
+**Y el título que no entra en una línea se parte en dos** (decisión del usuario),
+centrado contra el ícono y el selector: `line-clamp-2` + `leading-tight` en vez de
+`truncate`. Dos renglones de `text-body-xl` miden 40px y entran dentro de los 48
+que ya mide la barra, o sea que **el encabezado no crece por partir el título**.
+`truncate` era lo que producía «Pedidos a Sucur…», y recortar el nombre de la
+vista para ganar alto es justo lo que se corrigió en 2026-07-26.
+
+La tercera pieza es que el selector cede ancho: era `w-[150px]` fijo y ahora es
+`clamp(8.75rem, 34vw, 11.875rem)`. Sin eso el título de Pedidos se quedaba con
+85px y «Sucursales» no entraba ni partido. Va en `style` inline porque `clamp()`
+lleva comas y una coma rompe el parseo del valor arbitrario de Tailwind — la
+utilidad no se genera, sin error y sin aviso.
+
+Medido en WebKit iPhone 13 sobre 18 rutas: **18 de 18 en una fila, 0 títulos
+recortados, 0 rótulos de pestaña recortados.** 84px de encabezado con pestañas,
+68 sin ellas; la variante intermedia que dejaba caer el selector medía 124.
+
+**2 · Una sola pestaña ya no dibuja pestañas.**
+
+Con una no hay a dónde ir: el desplegable abría una lista de un elemento y la fila
+un botón permanentemente activo. En **Corte Z** era además una repetición literal
+del título de la vista — «Corte Z» debajo de «Corte Z». El umbral es `> 1` y no
+`> 0`: lo que justifica la barra es que haya **entre qué elegir**. Alcanza también
+a las vistas cuyas pestañas salen de los permisos (`allowedTabs`), donde a
+cualquiera con un solo permiso le pasaba lo mismo.
+
+**3 · El vidrio vacío de arriba se fue.**
+
+**16 vistas montan `ViewTabBar` sin una sola pestaña**, nada más que por el
+buscador. Cuando ese buscador se va —en táctil se lo lleva `FilterBar` por el
+canal de `CanalDeVista`— la barra se seguía dibujando igual: un vidrio **vacío**
+de 48px con su borde y su sombra, arriba de la vista. Ahora devuelve `null`.
+
+El `return` va **después de todos los hooks**, `usePublicarBuscador` incluido: si
+subiera, la barra flotante dejaría de recibir el buscador que esta barra ya no
+dibuja y desaparecería de las dos.
+
+**Y su gemelo en escritorio.** Al retirar las pestañas de una sola opción quedó a
+la vista que Corte Z seguía mostrando una píldora de 70px con **una lupa que no
+busca nada**: `showSearch` vale `true` por defecto, así que una vista que sólo
+quería pestañas dibujaba igual el botón, sin `onSearchChange` a quien avisarle. La
+condición ya existía en `usePublicarBuscador` —sin `onSearchChange` no se
+publica—; faltaba en la lupa. Verificado que las vistas que sí cablean su
+buscador (Personal, entre otras) lo conservan.
+
+**Verificación.** Barrido de las 37 rutas en WebKit iPhone 13: **0 desbordes de
+página, 0 vistas reventadas, 0 inputs con zoom de iOS**. `gate:design`,
+`gate:movil`, `gate:doc` y eslint en verde. Canon actualizado en `DESIGN.md`
+(§`ViewTabBar` y §32).
+
+Aparte, sin relación con este cambio y sin tocar: el barrido levanta 2 blancos
+táctiles de 43px (falta 1) en el botón «Horario (Hoy)» de las tarjetas de
+Sucursales.
+
 ## v2.546.0 — Observaciones muestra el rechazo de Hacienda que ya no se arregla solo
 
 Pregunta del usuario: *«si en lo que corre en la noche encuentra observaciones,

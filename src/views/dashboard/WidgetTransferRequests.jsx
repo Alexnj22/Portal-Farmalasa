@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftRight, CheckCircle2 } from 'lucide-react';
 import LanzadorSolicitud from './LanzadorSolicitud';
 import { Flujo, FranjaVacia } from './InstrumentoBaldosa';
-import { SkeletonText } from '../../components/common/StateViews';
+import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { FilaPorConfirmar, FilaPorRecibir } from '../traslados/FilasTraslado';
@@ -81,12 +81,7 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
             {cargando && <SkeletonText lines={3} />}
 
             {vacio && (
-                <div className="flex flex-col items-center justify-center flex-1 gap-2 py-8">
-                    <CheckCircle2 size={28} strokeWidth={1.5} className="text-content-3" />
-                    <p className="text-label font-semibold text-content-3 text-center leading-snug">
-                        Nada por confirmar<br />ni por recibir
-                    </p>
-                </div>
+                <EmptyState linea icon={CheckCircle2} title="Sin traslados pendientes" />
             )}
 
             {!cargando && puedeConfirmar && porConfirmar.length > 0 && (
@@ -158,7 +153,7 @@ export default function WidgetTransferRequests() {
             pendientes={pendientes}
             etiquetaPendientes="te piden"
             etiquetaPendientesPlural="te piden"
-            vacio="Nada pendiente"
+            vacio="Sin traslados"
             tono="brand"
             maxWidth="max-w-lg"
             descripcion="Pedir producto a otra sala, y confirmar lo que te piden"

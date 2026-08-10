@@ -2094,17 +2094,16 @@ const DashboardView = ({ openModal }) => {
               /* Sin marcaciones: no se dibuja la serie. Ver `tendenciaVacia`.
                  El texto dice de dónde viene el dato, porque el vacío casi
                  siempre es «todavía no», no «nunca». */
+              /* Sin subtítulo y en medida `linea`, igual que los otros nueve
+                 vacíos del tablero. Era el último que quedaba en medida de
+                 PANEL —icono gigante en su caja, título grande y subtítulo—, y
+                 al lado de «Sin solicitudes pendientes» se leían como dos
+                 componentes distintos. El usuario lo señaló con captura el
+                 2026-08-10: «¿por qué los vacíos no se ven iguales?». */
               <EmptyState
-                compact={!esTelefono} linea={esTelefono}
+                linea
                 icon={Activity}
                 title={trendOffset === 0 ? 'Sin marcaciones esta semana' : 'Sin marcaciones en esa semana'}
-                /* Sin subtítulo en el teléfono: el encabezado de este widget
-                   lleva el selector de semana, así que del alto de una fila
-                   quedan ~90px para el cuerpo y el segundo renglón se cortaba a
-                   la mitad. Un vacío recortado es peor que un vacío corto. */
-                subtitle={esTelefono ? undefined : (trendOffset === 0
-                  ? 'Cada entrada aparece acá al registrarse en el reloj.'
-                  : 'No hay registros de asistencia en ese rango.')}
               />
             ) : (
               /* El mismo esqueleto como espera del chunk de `recharts`: las dos
@@ -2147,8 +2146,7 @@ const DashboardView = ({ openModal }) => {
             // tarjeta EN BLANCO — ni dato, ni vacío, ni carga. Un widget que no
             // dice nada se lee como roto (auditoría del 2026-08-10).
             ):Object.values(STATUS_CONFIG).every((_,i)=>!(shiftGroups[Object.keys(STATUS_CONFIG)[i]]||[]).length)?(
-              <EmptyState linea icon={Clock} title="Sin turnos hoy"
-                subtitle="Cuando la sucursal tenga turnos asignados, aparecen acá por estado." />
+              <EmptyState linea icon={Clock} title="Sin turnos hoy" />
             ):(
               Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
                 const group=shiftGroups[status]||[]; if(!group.length) return null;
@@ -2455,11 +2453,12 @@ const DashboardView = ({ openModal }) => {
                 </div>
               ))
             ) : displayBranchAlerts.length===0?(
-              <div className="flex flex-col items-center justify-center py-6 gap-2">
-                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center"><CheckCircle2 size={20} className="text-success-text"/></div>
-                <p className="text-body-sm font-bold text-content-3">Todo en orden</p>
-                <p className="text-caption text-content-3">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
-              </div>
+              /* Estaba escrito a mano —círculo verde de 40px, título y un
+                 conteo— y era la ÚNICA forma de vacío del tablero que no salía
+                 del canónico. Se veía distinta de las otras nueve porque lo
+                 era. El número de sucursales activas ya lo dice la baldosa de
+                 arriba, así que no se pierde nada al pasar a la línea. */
+              <EmptyState linea icon={CheckCircle2} title="Todo en orden" />
             ):(
               displayBranchAlerts.map(b=>{
                 const issue=getBranchIssue(b);
@@ -2624,10 +2623,10 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : displayBirthdays.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full py-8 text-content-3">
-                <Gift size={32} strokeWidth={1}/>
-                <p className="text-body-sm font-medium mt-2 text-center">Sin cumpleaños<br/>este mes</p>
-              </div>
+              /* Era el último vacío escrito a mano del tablero: icono de 32px
+                 y el texto partido con un `<br/>`, o sea 181px contra los 56 de
+                 los otros diez. */
+              <EmptyState linea icon={Gift} title="Sin cumpleaños este mes" />
             ) : (
               <div className="space-y-1.5">
                 {displayBirthdays.map((e,i)=>{

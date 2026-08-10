@@ -13,7 +13,7 @@ import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
-import { SkeletonText } from '../../components/common/StateViews';
+import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -823,13 +823,8 @@ function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId,
             {pestana === 'banco' && (
               <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {lineas.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3 px-4 text-center py-8">
-                        <op.icon size={26} strokeWidth={1.5} />
-                        <p className="text-body-sm font-semibold">Todavía no agregas ningún producto</p>
-                        <Button variant="secondary" size="sm" onClick={() => setPestana('agregar')}>
-                            Ir a agregar
-                        </Button>
-                    </div>
+                    <EmptyState linea icon={op.icon} title="Todavía no agregas ningún producto"
+                        action={<Button variant="secondary" size="sm" onClick={() => setPestana('agregar')}>Ir a agregar</Button>} />
                 )}
                 {lineas.length > 0 && (
                 <div className="space-y-1.5">
@@ -1256,7 +1251,7 @@ export default function WidgetInventoryMovement(props) {
             pendientes={plazo === null ? null : plazo.vencidas}
             etiquetaPendientes="línea vencida"
             etiquetaPendientesPlural="líneas vencidas"
-            vacio="Nada vencido"
+            vacio="Sin vencidos"
             tono="danger"
             descripcion="Cargar o descargar producto de tu sala"
             instrumento={franja === null

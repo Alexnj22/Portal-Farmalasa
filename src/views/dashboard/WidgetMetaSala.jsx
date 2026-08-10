@@ -61,12 +61,9 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
     // Sin fila: el usuario no tiene sala asignada, o su sala no vende.
     if (!row) {
         return (
-            <EmptyState
-                linea
-                icon={Target}
-                title="Sin sala asignada"
-                subtitle="Pide que te asignen una sala para ver su meta del mes."
-            />
+            /* Sin subtítulo, como los otros nueve del tablero: adentro de un
+               widget el vacío es UNA línea. */
+            <EmptyState linea icon={Target} title="Sin sala asignada" />
         );
     }
 

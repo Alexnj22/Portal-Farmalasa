@@ -5,7 +5,7 @@ import {
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
-import { SkeletonText } from '../../components/common/StateViews';
+import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import {
@@ -207,14 +207,8 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
             {cargando && <SkeletonText lines={4} />}
 
             {!cargando && visibles.length === 0 && (
-                <div className="flex flex-col items-center justify-center flex-1 gap-2 py-8">
-                    <PackageCheck size={28} strokeWidth={1.5} className="text-content-3" />
-                    <p className="text-label font-semibold text-content-3 text-center leading-snug">
-                        {busca
-                            ? <>Nada coincide con «{busca}»</>
-                            : <>No hay facturas esperando<br />en este período</>}
-                    </p>
-                </div>
+                <EmptyState linea icon={PackageCheck}
+                    title={busca ? `Nada coincide con «${busca}»` : 'No hay facturas esperando en este período'} />
             )}
 
             {!cargando && mias.length > 0 && (
@@ -341,7 +335,7 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
             pendientes={pendientes}
             etiquetaPendientes="factura esperando"
             etiquetaPendientesPlural="facturas esperando"
-            vacio="Nada esperando"
+            vacio="Sin facturas"
             tono="brand"
             maxWidth="max-w-2xl"
             descripcion="Toma la factura de tu sala para cargar la compra"

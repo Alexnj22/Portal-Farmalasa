@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.4 — Un solo vacío para todo el tablero
+
+*«¿Por qué los vacíos no se ven iguales? ¿Hay diferentes formas canónicas de
+hacerlo?»* — no había varias formas canónicas: había **una canónica y cinco
+escritas a mano**, más dos medidas distintas del canónico conviviendo.
+
+Lo que había, medido en pantalla:
+
+| forma | dónde | alto |
+|---|---|---|
+| `EmptyState linea` | 6 widgets | 56px |
+| `EmptyState compact` (medida de panel) | `trend` | ~200px |
+| a mano: círculo verde + título + conteo | `branches` | ~90px |
+| a mano: icono 32px + texto con `<br/>` | `birthdays` | 181px |
+| a mano ×4 | `annulment_req`, `facturas_sala`, `inv_movement`, `traslados` | varias |
+
+Ahora los **once** pasan por `EmptyState linea` y miden lo mismo: **56px, icono
+de 16**. Verificado en el navegador — un solo alto y un solo tamaño de icono en
+todo el tablero.
+
+Dos decisiones dentro de la unificación:
+
+- **Los subtítulos se van.** Adentro de un widget el vacío es una línea; el de
+  Turnos ocupaba tres. El texto que se pierde («Cuando la sucursal tenga turnos
+  asignados…») no le decía nada a nadie que ya está viendo el widget.
+- **Las dos pantallas de «Solicitud enviada» NO se tocaron.** Son confirmación
+  de una acción, no un vacío: dicen «listo, lo hiciste», no «no hay nada». Son
+  otro vocabulario y ya son consistentes entre sí.
+
+De paso, al pasar por el canónico, `gate:design` vio textos que antes se le
+escapaban por estar escritos a mano y marcó uno: «Nada por confirmar ni por
+recibir» no cumple §26.1, que pide `Sin <sustantivo>`. Se corrigió ese y los
+otros tres del mismo tipo en las baldosas de estado: `Nada esperando` → **Sin
+facturas**, `Nada vencido` → **Sin vencidos**, `Nada pendiente` → **Sin
+traslados**.
+
 ## v2.551.3 — El vacío dentro de un widget usa la medida del widget
 
 «Cotizaciones Activas» mostraba «Sin cotizaciones activas» **cortado por el

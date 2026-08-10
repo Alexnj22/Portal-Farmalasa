@@ -4,7 +4,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
 import Badge from '../../components/common/Badge';
-import { SkeletonText } from '../../components/common/StateViews';
+import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import {
   Search, Loader2, AlertTriangle, CheckCircle2, Clock,
   Eye, ArrowLeft, AlertCircle, Ban, CreditCard, UserCog,
@@ -1052,10 +1052,7 @@ function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
 
   if (!activeBranchId) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2">
-        <AlertTriangle size={28} strokeWidth={1.5} className="text-content-3" />
-        <p className="text-body-sm font-semibold text-content-3">Tu sucursal no está configurada</p>
-      </div>
+      <EmptyState linea icon={AlertTriangle} title="Tu sucursal no está configurada" />
     );
   }
 

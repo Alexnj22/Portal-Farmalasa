@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.542.4 — Una fila mala tumbaba las 70 del espejo
+
+Preguntado por el usuario: *«¿podemos asignar esos clientes a los del ERP, a los
+que ya tenemos completos?»*. Sí — y resultó que el proceso ya lo intentaba todas
+las noches y fallaba en silencio.
+
+**Por qué existen esas fichas.** Nacen en el portal: cuando `sync-dte-sales` no
+reconoce el nombre que viene en una factura, crea una ficha nueva sin número
+interno. El cliente real está en el ERP, escrito de otra forma. Comprobado
+pidiéndole al ERP a quién pertenece cada factura:
+
+```
+MARTA ZAMORA DE FUENTES  →  id_cliente 27807  «Marta zamora de FUENTES»
+FRANCISCO SALAZAR        →  id_cliente 27806  «FRANCISCO SALAZAR»
+DON POLLO SA DE CV       →  id_cliente 27805  «DON POLLO SA de CV»
+```
+
+No son duplicados: son clientes nuevos del ERP (ids correlativos) que el portal
+tenía sin ligar. La acción correcta no es fusionar — es **asignar el número**.
+
+**Por qué no pasaba.** Los contadores nuevos lo dejaron a la vista: el ERP
+resolvía 68 números, se juntaban 70 filas para el espejo… y el espejo devolvía
+**0**. Una fila sola actualizaba bien. El propio código lo advertía —*«una
+violación de constraint aborta la sentencia entera»*— y era exactamente eso: un
+`erp_id` duplicado se llevaba puestas a las 69 buenas. El error iba sólo a
+`console.error`, así que la corrida informaba «espejadas: 0» sin decir por qué.
+
+Ahora, si un lote falla, se reintenta **fila por fila**: las buenas entran y las
+que chocan quedan nombradas en el registro.
+
+Resultado de la misma corrida: **66 fichas ligadas, 1 rechazada y nombrada**.
+Las fichas sueltas pasaron de **83 a 17**, y los candidatos de la corrida de 92
+a 26.
+
 ## v2.542.3 — Las fichas sin número del ERP dejan de ser invisibles
 
 Preguntado por el usuario: *«¿por qué no le asignaste a esos 92 la información

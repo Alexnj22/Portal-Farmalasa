@@ -175,7 +175,8 @@ Deno.serve(async (req) => {
       fusionadas: 0, facturas_movidas: 0, a_revisar: 0,
       distrito_escrito: 0, distrito_sin_evidencia: 0, espejadas: 0,
       ubicacion_por_defecto: 0, dui_borrado: 0, solo_espejo: 0, ya_estaban: 0,
-      sin_numero_no_resuelto: 0,
+      sin_numero_no_resuelto: 0, numero_resuelto: 0, filas_a_espejar: 0,
+      espejo_rechazado: 0,
       frenadas: 0, fallidas: 0, cortada_por_tiempo: false,
     };
     const aRevisar: unknown[] = [];
@@ -234,6 +235,7 @@ Deno.serve(async (req) => {
             res.sin_numero_no_resuelto++;
             continue;
           }
+          res.numero_resuelto++;
 
           // ¿Ese número ya tiene ficha? Entonces ésta es un duplicado.
           const { data: dueño } = await admin.from("customers")
@@ -380,14 +382,35 @@ Deno.serve(async (req) => {
       const { error } = await admin.from("dte_correcciones_ficha").insert(correcciones);
       if (error) console.error("dte_correcciones_ficha:", error.message);
     }
+    res.filas_a_espejar = aEspejar.length;
     if (aEspejar.length) {
-      // De a 250, igual que el script: el RPC hace un UPDATE masivo y una
-      // violación de constraint aborta la sentencia entera.
+      // De a 250: el RPC hace un UPDATE masivo y **una** violación de
+      // constraint aborta la sentencia entera. Eso no era teoría — medido el
+      // 2026-08-09: un lote de 70 filas devolvió 0 actualizadas mientras la
+      // misma fila sola actualizaba bien. Un `erp_id` en conflicto (dos fichas
+      // sueltas que resuelven al mismo cliente, o uno que ya tiene dueño) se
+      // llevaba puestas a las 69 buenas.
+      //
+      // Y el error iba sólo a `console.error`, así que la corrida informaba
+      // «espejadas: 0» sin decir por qué. Ahora, si el lote falla, se reintenta
+      // FILA POR FILA: las buenas entran y las que chocan quedan nombradas.
       for (let i = 0; i < aEspejar.length; i += 250) {
-        const { data, error } = await admin.rpc("aplicar_espejo_erp",
-          { p_filas: aEspejar.slice(i, i + 250) });
-        if (error) { console.error("aplicar_espejo_erp:", error.message); continue; }
-        res.espejadas += (data as { actualizadas?: number })?.actualizadas ?? 0;
+        const lote = aEspejar.slice(i, i + 250);
+        const { data, error } = await admin.rpc("aplicar_espejo_erp", { p_filas: lote });
+        if (!error) {
+          res.espejadas += (data as { actualizadas?: number })?.actualizadas ?? 0;
+          continue;
+        }
+        detalle.push({ accion: "espejo por lote", error: error.message, filas: lote.length });
+        for (const fila of lote) {
+          const { data: d1, error: e1 } = await admin.rpc("aplicar_espejo_erp", { p_filas: [fila] });
+          if (e1) {
+            res.espejo_rechazado++;
+            detalle.push({ ficha: fila.match_name, accion: "espejo", error: e1.message });
+          } else {
+            res.espejadas += (d1 as { actualizadas?: number })?.actualizadas ?? 0;
+          }
+        }
       }
     }
 

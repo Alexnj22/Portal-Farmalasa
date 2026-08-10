@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { upsertPushSubscription, deletePushSubscriptionByEndpoint } from '../data/pushSubscriptions';
+import { reclamarPushSubscription, soltarPushSubscription } from '../data/pushSubscriptions';
+import { reclamarPushDelEquipo } from '../utils/pushEquipo';
 import { useToastStore } from '../store/toastStore';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
@@ -36,9 +37,15 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
-async function saveSubscription(employeeId, sub) {
+// El equipo se reclama, no se da de alta: en una computadora compartida el
+// `endpoint` puede venir ya ligado a quien estuvo antes, y entonces el upsert
+// directo lo rechazaba la RLS — o sea que apretar «Activar» fallaba justo en el
+// caso para el que existe el botón. El empleado lo resuelve el servidor desde el
+// token; por eso `saveSubscription` ya no recibe un id.
+async function saveSubscription(sub) {
   const { endpoint, keys: { p256dh, auth } } = sub.toJSON();
-  await upsertPushSubscription({ employee_id: employeeId, endpoint, p256dh, auth });
+  const { error } = await reclamarPushSubscription({ endpoint, p256dh, auth });
+  if (error) throw new Error(error.message);
 }
 
 const SYNC_EVENT = 'push-subscription-changed';
@@ -50,6 +57,11 @@ export function usePushSubscription() {
     typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
   );
   const [subscribed, setSubscribed] = useState(false);
+  // ¿Este navegador está ligado en la base al empleado que tiene la sesión? Es
+  // una pregunta distinta de «el navegador tiene suscripción», y hay que
+  // separarlas: en un equipo compartido el navegador puede tener una que quedó
+  // de otra persona. Si el reclamo falla, decir «avisos activos» sería mentir.
+  const [ligado, setLigado] = useState(true);
 
   // `Notification` entra en la cuenta: `subscribe` lo llama en su primera línea,
   // así que sin él «soportado» era una promesa que el propio hook no cumplía —
@@ -82,6 +94,18 @@ export function usePushSubscription() {
     return () => window.removeEventListener(SYNC_EVENT, refresh);
   }, [refresh]);
 
+  // Al entrar, este equipo pasa a ser de quien entró (ver `utils/pushEquipo.js`).
+  // Va acá y no en los cuatro caminos de login porque así cubre también la
+  // sesión restaurada al recargar, que es como llega la mayoría de las visitas.
+  useEffect(() => {
+    if (!user?.id) return;
+    let vivo = true;
+    reclamarPushDelEquipo(user.id).then(ok => {
+      if (vivo && ok !== null) setLigado(ok);
+    });
+    return () => { vivo = false; };
+  }, [user?.id]);
+
   const subscribe = useCallback(async () => {
     if (!isSupported || !user) return;
     try {
@@ -98,8 +122,9 @@ export function usePushSubscription() {
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         });
       }
-      await saveSubscription(user.id, sub);
+      await saveSubscription(sub);
       setSubscribed(true);
+      setLigado(true);
       window.dispatchEvent(new Event(SYNC_EVENT));
     } catch (err) {
       // Un `console.error` en un teléfono no lo lee nadie: el usuario apretaba
@@ -122,7 +147,7 @@ export function usePushSubscription() {
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
         await sub.unsubscribe();
-        await deletePushSubscriptionByEndpoint(sub.toJSON().endpoint);
+        await soltarPushSubscription(sub.toJSON().endpoint);
       }
       setSubscribed(false);
       window.dispatchEvent(new Event(SYNC_EVENT));
@@ -131,5 +156,7 @@ export function usePushSubscription() {
     }
   }, [isSupported]);
 
-  return { permission, subscribed, subscribe, unsubscribe, isSupported, necesitaInstalar };
+  // `subscribed` contesta «¿me van a llegar los avisos?», no «¿este navegador
+  // tiene suscripción?». En un equipo compartido las dos respuestas se separan.
+  return { permission, subscribed: subscribed && ligado, subscribe, unsubscribe, isSupported, necesitaInstalar };
 }

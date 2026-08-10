@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.547.0 — El aviso del sistema es del equipo, y su dueño es quien tiene la sesión abierta ahí
+
+En el mostrador la computadora no es de nadie: el turno cambia de persona y la
+máquina no. El aviso del sistema —el que llega con el portal cerrado— sí tenía
+dueño fijo, porque Web Push no puede pertenecer a una cuenta: el `endpoint` lo
+emite el navegador de esa computadora y es la única dirección que existe.
+
+Así que la suscripción se quedaba ligada al **primero que apretó «Activar»
+ahí**, y cerrar sesión no la soltaba. Tres consecuencias, las tres en el código:
+
+- Los avisos de quien ya se fue seguían cayendo en esa pantalla — el service
+  worker los muestra sin mirar quién tiene la sesión abierta.
+- El siguiente no recibía ninguno de los suyos **y ni se enteraba**: el aviso
+  que ofrece activarlos se calla cuando el NAVEGADOR ya tiene suscripción, que
+  es exactamente este caso, y la campanita de la barra lateral se veía en verde.
+- Y no podía tomar el equipo aunque quisiera: `push_subscriptions_update` valida
+  la fila **existente**, así que el upsert por `endpoint` de otro empleado moría
+  con `new row violates row-level security policy`. O sea que el botón
+  «Activar» fallaba justo en el caso para el que existe.
+
+Ahora el dueño es quien está adentro: **al entrar se reclama el equipo, al salir
+se suelta**. Dos funciones nuevas —`reclamar_push_del_equipo` y
+`soltar_push_del_equipo`— porque la operación cruza de un empleado a otro, que
+es lo que la RLS impide a propósito; el empleado no viaja por parámetro, lo
+resuelve el servidor con `auth_employee_id()` desde el token de quien llama.
+
+Dos decisiones que vale la pena anotar:
+
+- **Al soltar no se cancela la suscripción del navegador**, sólo se borra la
+  fila. El permiso ya concedido queda puesto, así que el siguiente empleado
+  queda ligado en silencio al iniciar sesión: no tiene que enterarse de nada ni
+  volver a autorizar avisos.
+- **Se suelta en `navegador`, no en `app`.** Con el portal agregado a la
+  pantalla de inicio el equipo es de una sola persona, y ahí la suscripción
+  tiene que sobrevivir al cierre de sesión: recibir avisos con la app cerrada es
+  lo único para lo que existe, y la sesión también vence sola por inactividad.
+  El cierre por inactividad es, además, el caso normal en el mostrador — nadie
+  aprieta «salir», se levanta y la sesión vence. Por eso el soltado va en
+  `doLogout`, que es el embudo de los tres cierres.
+
+Y `subscribed` pasa a contestar «¿me van a llegar los avisos?» en vez de «¿este
+navegador tiene suscripción?»: si el reclamo falla, la campanita deja de decir
+que están activos y el aviso vuelve a ofrecer «Activar», que rehace el vínculo.
+
+Verificado contra producción en una transacción con ROLLBACK (13 filas, 0
+tocadas): el upsert directo lo bloquea la RLS —el diagnóstico, confirmado—, el
+reclamo mueve el dueño, repetirlo no reescribe la fila, un equipo nuevo se da de
+alta y soltar limpia la fila que dejó otra persona.
+
 ## v2.546.3 — El buscador baja al clúster aunque no haya filtros
 
 La regla —*«en el teléfono el buscador va al clúster flotante, al alcance del

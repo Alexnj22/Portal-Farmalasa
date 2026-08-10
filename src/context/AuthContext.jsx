@@ -6,6 +6,7 @@ import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
+import { soltarPushDelEquipoSiEsCompartido } from "../utils/pushEquipo";
 
 const AuthContext = createContext(null);
 
@@ -446,6 +447,22 @@ export const AuthProvider = ({ children }) => {
   const doLogout = () => {
     stopIdleWatcher();
     ultimoLatidoRef.current = 0;   // que el próximo login lata de inmediato
+
+    // El aviso del sistema es del EQUIPO, no de la cuenta —lo emite el
+    // navegador de esa computadora—, así que en una máquina compartida cerrar
+    // sesión tiene que soltarlo: si no, los avisos de quien se fue siguen
+    // cayendo en esa pantalla. Va acá arriba por dos razones: `clearAuthCache()`
+    // se lleva la clase de dispositivo, que es el criterio, y el RPC necesita
+    // que el token siga puesto. Ver `utils/pushEquipo.js`.
+    //
+    // Este es el embudo de TODOS los cierres —el botón, el vencimiento por
+    // inactividad y la sesión que ya no vale—, que es justo lo que hace falta:
+    // en el mostrador el caso normal no es que alguien apriete «salir», es que
+    // se levante y la sesión venza sola.
+    let claseDispositivo = 'navegador';
+    try { claseDispositivo = localStorage.getItem(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
+    soltarPushDelEquipoSiEsCompartido(claseDispositivo);
+
     clearAuthCache();
     clearErpCache();
     setIsSU(false);   // el estado propio también se apaga: si no, el próximo login arranca con el privilegio del anterior

@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.542.3 — Las fichas sin número del ERP dejan de ser invisibles
+
+Preguntado por el usuario: *«¿por qué no le asignaste a esos 92 la información
+completa?»*. La respuesta no era la que yo suponía, y contarla vale más que el
+arreglo.
+
+**No es que no se les asigne: para 83 de las 92 no existe una ficha en el ERP a
+la que escribirle.** Son registros sueltos del portal, sin número interno. El
+paso 1 intenta averiguarlo preguntándole al ERP por una de sus facturas — que es
+exactamente lo que estuvo muerto por el `FORBIDDEN` desde que el proceso se
+automatizó.
+
+```
+92 candidatos
+ 83  sin número del ERP
+ 14  de esas, sin una sola factura de la cual deducirlo
+  9  con número
+```
+
+Y ahí había un defecto real, el mismo error de todo el día: **las que no se
+pueden resolver terminaban en un `continue` mudo**, sin contador y sin destino.
+Por eso la corrida informaba «92 candidatos, 0 acciones» y parecía no hacer
+nada — el silencio se lee igual que el éxito.
+
+Ahora las 14 sin factura van a «Por revisar» con motivo `sin_numero_erp` (no se
+resuelven solas nunca: hay que ligarlas a mano o darlas de baja), y las que
+tienen factura pero el ERP no reconoce se cuentan aparte en vez de desaparecer.
+Verificado: `a_revisar` pasó de 11 a **25** en la misma corrida, que son las 14.
+
+**Queda abierto**: 67 fichas siguen atravesando el bucle sin producir contador.
+Tienen factura, el número se resuelve, y aun así ninguna rama actúa. Está
+acotado y medido, pero no explicado — y prefiero dejarlo dicho así que inventar
+una causa.
+
 ## v2.542.2 — La deduplicación nocturna nunca funcionó
 
 La primera corrida completa del lazo dio 14 fallidas de 98. Ninguna escribió

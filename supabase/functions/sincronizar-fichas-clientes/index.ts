@@ -175,6 +175,7 @@ Deno.serve(async (req) => {
       fusionadas: 0, facturas_movidas: 0, a_revisar: 0,
       distrito_escrito: 0, distrito_sin_evidencia: 0, espejadas: 0,
       ubicacion_por_defecto: 0, dui_borrado: 0, solo_espejo: 0, ya_estaban: 0,
+      sin_numero_no_resuelto: 0,
       frenadas: 0, fallidas: 0, cortada_por_tiempo: false,
     };
     const aRevisar: unknown[] = [];
@@ -209,9 +210,30 @@ Deno.serve(async (req) => {
             .select("erp_invoice_id").eq("customer_id", c.customer_id)
             .not("erp_invoice_id", "is", null).order("fecha", { ascending: false })
             .limit(1).maybeSingle();
-          if (!fac?.erp_invoice_id) continue;      // sin factura, nada que leer
+          if (!fac?.erp_invoice_id) {
+            // Sin número del ERP y sin una sola factura: no hay documento del
+            // cual deducir a qué cliente pertenece, así que no se resuelve
+            // sola nunca. Antes era un `continue` mudo —sin contador y sin
+            // destino— y por eso la corrida decía «92 candidatos, 0 acciones»
+            // y parecía no hacer nada. El silencio se lee igual que el éxito.
+            aRevisar.push({
+              erp_id: null, name: c.name, motivo: "sin_numero_erp",
+              detalle: `«${c.name}» no tiene número interno ni ninguna factura ` +
+                       `de la cual deducirlo. Es una ficha suelta del portal: ` +
+                       `hay que ligarla a mano o darla de baja.`,
+              datos: { customer_id: c.customer_id },
+            });
+            res.a_revisar++;
+            continue;
+          }
           erpId = await idClienteDeFactura(cookie, String(fac.erp_invoice_id));
-          if (!erpId) continue;
+          if (!erpId) {
+            // Tiene factura pero el ERP no dice a qué cliente pertenece. Puede
+            // resolverse mañana con otra factura, así que NO va a revisar — pero
+            // se cuenta, para que la corrida no mienta con un cero.
+            res.sin_numero_no_resuelto++;
+            continue;
+          }
 
           // ¿Ese número ya tiene ficha? Entonces ésta es un duplicado.
           const { data: dueño } = await admin.from("customers")

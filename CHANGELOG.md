@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.544.1 — El circuito de facturación queda documentado
+
+`docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`: el estado real del circuito
+después de la sesión del 09-08, para poder retomarlo sin reconstruirlo.
+
+Trae el circuito hoy (con la segunda vuelta), la tabla de decisión sobre la
+ficha del ERP, por qué «bloque procesó 25,946 y ahora hay problemas» —era un
+porte parcial—, los cuatro procesos que informaban éxito sin hacer nada, las
+trampas medidas del ERP, los números al cierre y lo que queda abierto.
+
+El del 07-08 queda marcado como **reemplazado**, con las dos cosas suyas que hoy
+son falsas dichas arriba de todo: el bucle reactivo ya existe, y la consulta que
+daba como oficial para ver los rechazos no muestra 3 de cada 4.
+
+`CLAUDE.md` se actualizó en lo que se carga en cada sesión: apunta al doc nuevo,
+suma la regla de «sin sello VÁLIDO en los tres sitios», la de que la corrección
+se escribe en el ERP y no en el portal, y el alcance decidido (sólo
+consumidores).
+
+Un documento viejo que nadie marca enseña la deuda que ya se pagó.
+
 ## v2.544.0 — «Sin sello» pasa a significar sin sello VÁLIDO, en los tres sitios
 
 Salió de una pregunta del usuario sobre la pestaña de Observaciones: *«si están

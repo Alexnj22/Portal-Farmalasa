@@ -1,5 +1,14 @@
 # Fichas de clientes y envío a Hacienda — estado al 2026-08-07
 
+> ⚠️ **REEMPLAZADO por `RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`.** Se conserva
+> por el historial —el matcher, los duplicados, la migración— pero sus dos
+> puntos principales quedaron desactualizados el 09-08:
+>
+> - El **bucle reactivo** de §7d ya existe.
+> - La consulta que este documento da como oficial para ver los rechazos
+>   (`unnest(i.observaciones)`) **no muestra 3 de cada 4**: el motivo suele
+>   venir en `descripcion_msg`. Usar `dte_rechazos_vigentes`.
+
 Empezó con una pregunta simple: *«si validás una factura y el MH devuelve
 observaciones, las podés ver?»*. Se podían, pero estaban enterradas, y tirando
 de ese hilo salió una cadena de problemas encadenados que terminó en un proceso

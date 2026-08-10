@@ -292,15 +292,36 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    firmada (se genera en fetchBoot/login), `photo_url` = cruda; todo select directo de
    photo_url debe pasar por `signPhotosDeep()`. Públicos permitidos: solo product-photos/photos.
 
-## Fichas de clientes y envío a Hacienda: un circuito automático (2026-08-07)
+## Fichas de clientes y envío a Hacienda: un circuito automático (2026-08-09)
 
-Detalle completo en `docs/RETOMAR-FICHAS-Y-DTE-2026-08-07.md`. Lo que hay que
-saber antes de tocar cualquiera de sus piezas:
+Detalle completo en **`docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`** (el del
+07-08 quedó reemplazado). Lo que hay que saber antes de tocar cualquiera de sus
+piezas:
 
 **Dos crons encadenados, y el orden importa.** 21:30 SV
 `sincronizar-fichas-clientes` corrige las fichas; 22:30 SV `regularizar-dte`
 manda a Hacienda. Al revés, el envío recibe rechazos por datos que ya estaban
-arreglados.
+arreglados. **Y desde el 09-08 el envío cierra el lazo la MISMA noche**: si
+quedó algún rechazo accionable, llama a la corrida de fichas en alcance
+«rechazos» y reenvía, en vez de esperar 24 horas.
+
+**«Sin sello» significa sin sello VÁLIDO — y hay que decirlo en los TRES
+sitios.** `recibido_mh` es `text` con 40 caracteres: `IS NULL` y `!!valor` dan
+por buena cualquier basura. Estuvo mal en el filtro del barrido, en la guarda
+previa al envío y en la cola de Pendiente MH, y los tres tenían que fallar
+juntos para que una factura del 16-may-2025 pasara **un año** figurando como
+confirmada. Regla del usuario: lo único que NO se manda a Hacienda es lo que ya
+tiene sello y su observación es de otra cosa. Ver
+[[feedback_nombre_de_columna_no_es_su_tipo]] — «el tipo manda» se aplica al
+CONCEPTO, no sólo a la línea donde apareció el bug.
+
+**Al corregir una ficha se escribe en el ERP, NO en el portal.** `regularizar-dte`
+le pide al ERP que arme el DTE (`creaJsonDTe`), así que el receptor sale de la
+ficha del ERP; un `UPDATE` sobre `customers` es cosmético. Las dos copias
+divergen y el portal a veces muestra la buena. Y los códigos de
+departamento/municipio/distrito del ERP son **por departamento**: resolver por
+etiqueta y escribir en cascada — ver
+[[feedback_los_codigos_de_ubicacion_del_erp_son_por_departamento]].
 
 **`_shared/distrito.ts` es una TRADUCCIÓN verificada, no código nuevo.** El
 original es `elegir_distrito` de `scripts/migracion-clientes/bloque.py`, con
@@ -325,6 +346,10 @@ duplicado` resuelve el destino desde el `erp_id` para que el llamador no pueda
 elegirlo, y quien la llama agrega su propio freno: si los nombres no se parecen,
 no fusiona — publica en «Por revisar» con motivo `fusion_dudosa`. Unir a dos
 personas que no lo son mezcla sus historiales y no se deshace.
+
+**El alcance de la escritura al ERP son SÓLO consumidores** (decisión del
+usuario, 2026-08-09). A los contribuyentes se los espeja al portal y nada más;
+sus CCF pueden trabarse y está aceptado. 77 fichas sin distrito quedan fuera.
 
 **`identificacion.fecEmi` no es un dato del cliente** y NO se corrige: aparece
 siempre que se transmite hoy una factura emitida antes, y cambiarla sería

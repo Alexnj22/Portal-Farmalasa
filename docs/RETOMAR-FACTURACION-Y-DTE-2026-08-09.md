@@ -152,6 +152,30 @@ vieja. El total del ERP ya viene con la retención restada (Art. 162).
 Corregida, la categoría queda en cero. Un detector que marca 44 casos legítimos
 enseña a ignorarlo, y ahí se pierde el descuadre real.
 
+**Y desde el 09-08 muestra también el rechazo de Hacienda** (`RECHAZADA_POR_
+HACIENDA`, octava regla). Lo pidió el usuario al preguntar dónde se ven las
+observaciones del barrido: no se veían: el motivo vivía en `dte_mh_intentos` y
+en el JSON de la bitácora, y en pantalla la factura aparecía en Pendiente MH sin
+decir por qué.
+
+El criterio de entrada es el del usuario —*«las que después de corregir, y
+volver a enviar y aun así no se envían»*— y es la frontera que la pestaña ya
+tenía: **¿se resuelve solo o hay que tocarlo?**. Sin sello válido, y además: el
+motivo no es accionable (nunca se va a corregir solo), o ya se intentó ≥ 2 veces
+(la segunda vuelta corrige y reenvía la misma noche, así que el segundo rechazo
+ya es «no alcanzó»). Un rechazo accionable con un solo intento **no** entra:
+está en curso.
+
+Dos propiedades que hay que conservar si se toca:
+
+- **El motivo va como texto** (`motivos_mh`), no como código. Un código no dice
+  qué corregir.
+- **No se puede solventar.** `sales_observation_resolutions` se lleva por
+  `invoice_id` a secas, así que solventar saca la factura ENTERA de la pestaña
+  — y «alguien la miró» no es «se envió». Es exactamente lo que dejó al
+  `0000002848_COF` un año figurando como confirmada. Se cierra sola cuando
+  llegue el sello.
+
 ---
 
 ## 7 · Piezas nuevas de este cambio
@@ -226,6 +250,20 @@ emitieron ante Hacienda. Decisión de negocio.
 **f) Push en 4 de 59 tipos de notificación.** Viene del 01-08 y sigue abierto.
 El aviso de CCF ya no depende de eso —deja rastro en la campana— pero el resto
 sí.
+
+**g) «Recibido CON observaciones» no avisa a nadie.** Hacienda a veces acepta
+—hay sello, o sea que entró— y aun así tiene algo que decir. El barrido lo
+cuenta (`con_observaciones`) y sube la severidad de la bitácora a WARNING, pero
+`alertar_barrido_dte` corta con `fallidas = 0` y no manda nada; y como la
+factura sí tiene sello, tampoco cae en Observaciones. Pasó tres veces la noche
+del 09-08. Es una decisión pendiente, no un olvido: hay que definir si merece
+aviso o una regla propia.
+
+**h) La regla nueva no alcanza ninguna factura todavía.** `RECHAZADA_POR_
+HACIENDA` está ejercitada contra escenarios sintéticos (los 7 de accionable ×
+intentos × forma del sello), no contra una fila real en pantalla — hay 0
+rechazos vigentes. Igual que la segunda vuelta: la primera prueba real es el
+primer caso que aparezca, y conviene mirar las dos juntas cuando llegue.
 
 ---
 

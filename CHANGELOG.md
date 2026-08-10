@@ -21,6 +21,82 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.546.0 — Observaciones muestra el rechazo de Hacienda que ya no se arregla solo
+
+Pregunta del usuario: *«si en lo que corre en la noche encuentra observaciones,
+¿cómo o dónde las veo? ¿pasa a Observaciones de facturación?»*. No pasaba. El
+motivo que da Hacienda vivía en `dte_mh_intentos` y en el JSON de la bitácora;
+en pantalla, la factura aparecía en **Pendiente MH** sin decir por qué.
+
+Y el criterio con que hay que llevarlo ahí lo puso el usuario: *«las que después
+de corregir, y volver a enviar y aun así no se envían»*. No es una regla nueva
+—es la que la pestaña ya tenía, aplicada hasta el final—. La frontera entre
+Pendiente MH y Observaciones nunca fue «tiene sello o no», sino **¿se resuelve
+solo o hay que tocarlo?**; está escrita desde julio en `fetchPendingMhInvoices`.
+Una factura que Hacienda rechazó, que el circuito corrigió, reenvió, y que
+volvió a rebotar, por esa definición no está esperando nada.
+
+**`RECHAZADA_POR_HACIENDA`**, la octava regla de `get_invoice_observations`.
+Entra cuando no hay sello válido (`length <> 40`, NULL incluido) y además:
+
+- el motivo **no es accionable** (`identificacion.fecEmi`, `emisor.*`): el
+  circuito no lo corrige nunca, por diseño. Por el criterio literal no
+  aparecería jamás; por su intención —verla para hacer algo— es la que más
+  necesita a una persona; **o**
+- ya se intentó **≥ 2 veces**: la segunda vuelta corrige y reenvía la misma
+  noche, así que un segundo rechazo ya es «se corrigió y no alcanzó».
+
+Un rechazo accionable con un solo intento **no** entra: está en curso. Avisar de
+algo que se está arreglando solo es cómo se entrena a la gente a ignorar la
+pestaña — la misma razón por la que el vigilante de las 8 no avisa por cola
+pendiente.
+
+**El motivo viaja como texto, no como código.** `motivos_mh` es nuevo en el
+retorno del RPC y se pinta literal debajo del correlativo: un código dice que
+hay un problema, «[receptor.direccion.distrito] VALOR NO ES PERMITIDO» dice
+cuál. Une `observaciones` y `descripcion_msg` porque 3 de cada 4 rechazos vienen
+sólo en el segundo.
+
+**Esta observación no se puede dar por solventada.** `sales_observation_
+resolutions` se lleva por `invoice_id` a secas, no por código, así que solventar
+saca la factura entera de la pestaña. Para las siete reglas de forma está bien;
+para una que sigue sin sello, no: «alguien la miró» y «se envió» son cosas
+distintas, y confundirlas es lo que dejó al `0000002848_COF` un año figurando
+como confirmada **después** de marcarlo solventado. Se cierra sola el día que
+llegue el sello, y una resolución vieja tampoco la puede tapar.
+
+**Tres hallazgos del camino, los tres corregidos acá:**
+
+- **El cuarto sitio del mismo defecto.** `dte_rechazos_vigentes` —creada por el
+  arreglo que enseñó que «sin sello» significa *sin sello válido*— filtraba
+  `recibido_mh IS NULL OR = ''`. Una factura con `'undefined'` desaparecía de la
+  vista, y con ella del conteo que dispara la segunda vuelta. Hoy no escondía
+  nada (0 sellos basura sobre 344,852 facturas), y por eso mismo era el momento
+  de cerrarlo.
+- **El aviso de las 8 llevaba a la vista equivocada.** Decía «el detalle está en
+  la bitácora» y enlazaba `/audit`, que en este portal es **Auditoría de
+  Tiempos** — la bitácora es `/auditview`. Era el único `'/audit'` de todas las
+  funciones de la base. Ahora lleva a Observaciones, que es donde está lo que
+  hace falta para corregir.
+- **Un fallo ANTES de Hacienda no es un rechazo de Hacienda.** La primera
+  versión de la regla (migración `20260810033739`) preguntaba `NOT accionable`,
+  y sin motivos ese EXISTS da false: un sync caído entraba a la pestaña al
+  primer tropiezo, cuando ésos sí se reintentan solos. Corregido en
+  `20260810034107` y ejercitado contra los 7 escenarios de accionable ×
+  intentos × forma del sello; el único que cambia de veredicto es justamente
+  ése.
+
+**Alcance de lo verificado:** la regla no alcanza ninguna factura hoy —hay 0
+rechazos vigentes— así que lo ejercitado es la condición contra escenarios
+sintéticos, no una fila real en pantalla. Las 8 facturas con `recibido_mh IS
+NULL` de toda la base son exactamente las 8 anulaciones en lista negra, y quedan
+fuera por `dte_excluidas_del_barrido`: nunca van a tener sello, y una fila que
+no se puede resolver ni descartar es ruido permanente.
+
+Sigue abierto, y es distinto: una factura que Hacienda acepta **con**
+observaciones (entra, tiene sello, pero el MH dice algo) no dispara aviso —
+`alertar_barrido_dte` corta con `fallidas = 0`— y no aparece en ningún lado.
+
 ## v2.545.1 — Corte Z: el cotejo cabe en el teléfono
 
 En el teléfono la vista entera se salía de la pantalla. La causa era una sola y

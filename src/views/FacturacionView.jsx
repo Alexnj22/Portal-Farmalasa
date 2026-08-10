@@ -2198,10 +2198,16 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 // 14 caracteres, y una etiqueta truncada ("Sin código ge…") no dice nada.
 // `SIN_SELLO_VENCIDO` no está y no es un olvido: una factura sin sello es de
 // Pendiente MH, que es la cola con la cuenta regresiva del plazo fiscal. El RPC
-// dejó de emitirlo (migración de este mismo commit) — ver la nota de la frontera
+// dejó de emitirlo (migración 20260731203801) — ver la nota de la frontera
 // en `fetchPendingMhInvoices`.
+//
+// `RECHAZADA_POR_HACIENDA` **no lo contradice**, y conviene no confundirlos: no
+// mira el plazo, mira que Hacienda ya contestó que no y que el reintento
+// automático ya se ejercitó. Una factura así no está esperando nada — no se
+// arregla sola, y la frontera de esta pestaña siempre fue ésa.
 const OBSERVACIONES = {
     SELLO_INVALIDO:        { label: 'Sello inválido',  variant: 'danger'  },
+    RECHAZADA_POR_HACIENDA:{ label: 'Rechazada MH',    variant: 'danger'  },
     SIN_CODIGO_VENCIDO:    { label: 'Sin código',      variant: 'warning' },
     ESTADO_DESCONOCIDO:    { label: 'Estado inválido', variant: 'danger'  },
     TIPO_DOC_DESCONOCIDO:  { label: 'Tipo inválido',   variant: 'warning' },
@@ -2209,6 +2215,24 @@ const OBSERVACIONES = {
     TOTAL_INVALIDO:        { label: 'Total inválido',  variant: 'danger'  },
     SUMA_NO_CUADRA:        { label: 'No cuadra',       variant: 'warning' },
 };
+
+// Observaciones que NO se pueden dar por solventadas a mano.
+//
+// `sales_observation_resolutions` se lleva por `invoice_id` **a secas**, no por
+// código: solventar saca la factura de la pestaña ENTERA, con todas sus
+// observaciones. Para las siete reglas de forma eso está bien —«ya lo revisé»
+// es una respuesta legítima a «la suma no cuadra»—, pero no para una factura
+// que Hacienda rechazó y sigue sin sello: ahí «alguien la miró» y «se envió»
+// son cosas distintas, y confundirlas es exactamente lo que dejó al
+// `0000002848_COF` un año figurando como confirmada después de marcarlo
+// solventado.
+//
+// Esta observación se cierra sola el día que llegue el sello de 40 caracteres,
+// que es el único hecho que prueba que entró. Y si la factura ya tenía una
+// resolución vieja por otra cosa, vuelve a aparecer igual: la resolución no la
+// puede tapar.
+const NO_SOLVENTABLES = new Set(['RECHAZADA_POR_HACIENDA']);
+const esSolventable = (r) => !(r.observaciones || []).some(c => NO_SOLVENTABLES.has(c));
 
 // Un código que este mapa no conoce NO se oculta: se muestra crudo, en warning.
 // Es la misma idea que los catch-alls del RPC — si el servidor empieza a
@@ -2299,10 +2323,15 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
         return m;
     }, [resoluciones]);
 
-    const pendientes = useMemo(() => rows.filter(r => !resueltasMap.has(r.id)), [rows, resueltasMap]);
+    // `|| !esSolventable(r)`: una resolución vieja no puede tapar un rechazo de
+    // Hacienda que llegó después. La tabla no distingue por código, así que la
+    // distinción se hace acá.
+    const pendientes = useMemo(() =>
+        rows.filter(r => !resueltasMap.has(r.id) || !esSolventable(r)),
+        [rows, resueltasMap]);
 
     const resueltas = useMemo(() =>
-        rows.filter(r => resueltasMap.has(r.id))
+        rows.filter(r => resueltasMap.has(r.id) && esSolventable(r))
             .map(r => ({ ...r, resolution: resueltasMap.get(r.id) }))
             .sort((a, b) => String(b.resolution?.resolved_at || '').localeCompare(String(a.resolution?.resolved_at || ''))),
         [rows, resueltasMap]);
@@ -2496,6 +2525,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                         const isSolving = solvingId === r.id;
                                                         const isCopied  = copiedId === r.erp_invoice_id;
                                                         const isVisited = visitedIds.has(String(r.erp_invoice_id));
+                                                        const solventable = esSolventable(r);
                                                         return (
                                                             // La fila entera se apaga, no sólo el chip: es lo que
                                                             // deja ver de un vistazo cuánto queda por recorrer.
@@ -2512,7 +2542,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                                     onCopiar={() => copyErpId(r.erp_invoice_id)}
                                                                     etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     nombreResolver="esta observación"
-                                                                    onResolver={canEdit ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
+                                                                    onResolver={canEdit && solventable ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
                                                                 >
                                                                     <span className="text-micro font-black uppercase select-none">{r.tipo_documento || '—'}</span>
                                                                 </ChipDoc>
@@ -2544,6 +2574,24 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                                         dato que delata el problema, así que se muestra. */}
                                                                     {r.recibido_mh && r.recibido_mh.length !== 40 && (
                                                                         <div className="font-mono text-micro text-danger-text mt-0.5">sello: &ldquo;{r.recibido_mh}&rdquo;</div>
+                                                                    )}
+                                                                    {/* Lo que contestó Hacienda, literal y completo. Un
+                                                                        código no dice qué corregir: «[receptor.direccion.
+                                                                        distrito] VALOR NO ES PERMITIDO» sí. Se muestra
+                                                                        tal cual llegó —incluso si es un texto que nadie
+                                                                        previó— por la misma razón que un código
+                                                                        desconocido se pinta crudo. */}
+                                                                    {(r.motivos_mh || []).length > 0 && (
+                                                                        <div className="mt-1 space-y-0.5">
+                                                                            {r.motivos_mh.map((m, i) => (
+                                                                                <div key={`${i}-${m}`} className="text-micro text-danger-text break-words">{m}</div>
+                                                                            ))}
+                                                                            {!solventable && (
+                                                                                <div className="text-micro text-content-3">
+                                                                                    Se cierra sola cuando llegue el sello.
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                                 <span className="text-body-sm font-black text-content-2 shrink-0 ml-auto">{<Monto v={r.total} />}</span>

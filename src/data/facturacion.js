@@ -84,6 +84,14 @@ const SELLO_MH_LIKE = '_'.repeat(SELLO_MH_LARGO);
 // La frontera entre las dos pestañas es la CAUSA: NO TIENE SELLO VÁLIDO → acá;
 // el dato está mal escrito PERO el sello está → Observaciones.
 //
+// Dicho más al fondo —y así es como se aplicó el 2026-08-09—: la frontera es
+// **¿se resuelve solo o hay que tocarlo?**. Por eso una factura sin sello que
+// Hacienda ya rechazó, que el circuito corrigió, reenvió, y que volvió a
+// rebotar, aparece en las DOS: acá porque le falta el sello y el plazo corre,
+// y en Observaciones (`RECHAZADA_POR_HACIENDA`) porque no va a entrar sola y
+// alguien tiene que mirarla. Un rechazo que todavía no agotó el reintento
+// automático se queda sólo acá: está en curso.
+//
 // Decía «falta el sello» y filtraba `IS NULL`, que no es lo mismo: una factura
 // con `recibido_mh = 'undefined'` no aparecía en ninguna de las dos colas que
 // se atienden solas. El barrido usaba el mismo `IS NULL`, así que la daba por
@@ -139,7 +147,10 @@ export function fetchConfirmedMhInvoices(filterBranch, fini, ffin) {
 // catch-alls (ESTADO_DESCONOCIDO, TIPO_DOC_DESCONOCIDO) hacen que un valor que
 // el sync todavía no escribe aparezca solo el día que aparezca.
 //
-// Devuelve `observaciones` como array — una factura puede tener varias.
+// Devuelve `observaciones` como array — una factura puede tener varias — y
+// `motivos_mh`, que es lo que contestó Hacienda palabra por palabra cuando la
+// observación es `RECHAZADA_POR_HACIENDA`. El código dice que hay un problema;
+// el texto dice cuál, y sin él la fila no se puede corregir.
 export function fetchInvoiceObservations(desde, hasta, filterBranch) {
     return supabase.rpc('get_invoice_observations', {
         p_desde: desde,

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.541.0 — Los rechazos de Hacienda por fin se ven enteros
+
+Salió de dos preguntas: *«cuando dan observaciones, ¿dónde las veo?»* y *«¿por
+qué no se corrigen según lo esperado del flujo?»*. Las dos tenían la misma raíz
+y era peor de lo que parecía.
+
+**El motivo de un rechazo llega en tres formas y sólo se leía una.** Medido
+sobre los cuatro rechazos vivos:
+
+```
+[receptor.direccion.distrito] VALOR NO ES PERMITIDO     ← en descripcion_msg
+Campo #/receptor/numDocumento no cumple el formato…     ← en observaciones
+[identificacion.fecEmi] DIFIERE DE LA FECHA DE ENVIO    ← en observaciones
+```
+
+`clasificar_observacion_mh` sacaba la ruta sólo de la forma con corchetes, así
+que el **único** rechazo realmente accionable —un DUI `00000000-0` -— quedaba
+archivado como «desconocida / **no accionable**», estando `receptor.numDocumento`
+en su propia lista de accionables. Y tres de los cuatro traían `observaciones`
+vacío con el motivo en `descripcion_msg`, así que la consulta que el documento
+del circuito da como oficial (`unnest(i.observaciones)`) **no mostraba tres
+cuartas partes de los rechazos**. La herramienta para mirarlos no los mostraba.
+
+Ahora la función entiende también el puntero de JSON Schema (`#/receptor/x`,
+incluso anidado) y existe `dte_rechazos_vigentes`: el último rechazo de cada
+factura sin sello, con las dos fuentes del motivo unidas, ya clasificado y con
+la ficha del cliente al lado. Antes se veía 1 de 4 y mal; ahora los 4, con su
+campo identificado.
+
+Es **una sola definición** para la pantalla y para el proceso que corregirá: si
+leyeran cosas distintas se podría corregir algo que nadie ve, o mirar algo que
+nadie corrige.
+
+**Lo que el diagnóstico dejó en claro, y todavía no está hecho:**
+
+- El lazo reactivo sigue sin existir (punto (d) del plan del 07-08). Verificable:
+  ninguna de las cuatro fichas se tocó después de su rechazo.
+- **La corrección va escrita al ERP, no al portal.** `regularizar-dte` le pide al
+  ERP que arme el DTE (`creaJsonDTe`), así que el receptor sale de la ficha del
+  ERP. Un `UPDATE` sobre `customers` sería cosmético. Eso explica de paso el
+  misterio de Sensuntepeque —«cambiarle el departamento a mano lo evitó, no lo
+  explicó»—: lo que hizo el cambio a mano fue reescribir la ficha *en el ERP*.
+- Y explica por qué la ficha de OVED se ve **correcta** en el portal
+  (`Chalatenango / Chalatenango Sur / CHALATENANGO`, el mismo triple que llevan
+  **9,829 facturas selladas**) mientras Hacienda rechaza su distrito: las dos
+  copias divergieron y el portal muestra la buena.
+- La corrida nocturna que completa distritos sólo mira `categoria =
+  'Consumidor'`, criterio heredado de la migración de clientes. Deja fuera **77
+  fichas sin distrito** de contribuyentes — que son quienes reciben CCF, el
+  documento donde el distrito es obligatorio. Decisión del usuario: **el alcance
+  se queda en consumidores**, los demás no cuentan por ahora.
+
 ## v2.540.6 — La ventana del cupo de Vercel es rodante, no diaria
 
 Sin cambios de código, y sirve además de disparo para el despliegue que quedó

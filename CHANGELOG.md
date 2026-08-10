@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.543.2 — «No cuadra» era la retención
+
+Lo preguntó el usuario mirando la pestaña de Observaciones: *«¿no será que son
+porque tienen retención?»*. Sí, y no en parte — en las 44, sin una excepción.
+
+```
+facturas marcadas «No cuadra»        44
+de esas, con retención               44   (todas)
+cuadran al restar la retención       44   (todas)
+suma de las diferencias         $179.36
+suma de las retenciones         $179.36   ← el mismo número
+```
+
+Comprobado también en la otra dirección, que es donde estas cosas se caen: hay
+**44 facturas con retención en toda la base** —las mismas 44— y **cero** cuadran
+con la fórmula vieja. O sea que la regla no encontraba un desvío contable:
+encontraba la retención.
+
+El total del ERP ya viene con la retención restada —`subtotal + IVA − retención
+= total`, que es lo que exige el Art. 162— y la regla comparaba `subtotal + IVA`
+contra ese total. El descuadre estaba en la fórmula, no en las facturas.
+
+La categoría queda en **cero**, y eso es lo que se busca. Un detector que marca
+44 casos legítimos enseña a ignorarlo, y el día que aparezca un descuadre real se
+pierde entre ellos — que es exactamente el defecto que esta pestaña vino a
+cerrar, cuando 24 facturas con `recibido_mh = 'undefined'` figuraban como
+confirmadas y nadie las vio hasta que el libro de IVA no cuadró por $282.58.
+
+Queda una nota para quien mire el histórico: una de esas 44 figura como
+«solventada» con comentario. Se revisó y se dio por buena una fila que nunca
+tuvo nada malo. No se deshace —la resolución es un hecho, alguien la miró— pero
+explica por qué hay una constancia sobre una factura correcta.
+
 ## v2.543.1 — Las notificaciones se leen
 
 Reportado con una captura: *«la ✕ ahí no entiendo cuál estoy quitando»*, y

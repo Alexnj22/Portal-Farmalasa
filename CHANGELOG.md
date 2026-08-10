@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.6 — Las policies resolvían la cuenta, no al empleado
+
+El «no tienes permiso» del ajuste de inventario **no era un permiso faltante**.
+Era que once policies comparaban la identidad equivocada.
+
+El portal tiene dos identidades para la misma persona: su `employees.id` y el
+`auth.users.id` de la cuenta con la que entra. **Para 22 de los 50 empleados
+activos no son el mismo valor**: entran por una cuenta ligada en
+`employee_auth_accounts` (las `*@staff.local` del carné). Para eso existe
+`auth_employee_id()`, que resuelve la liga y devuelve siempre el id de empleado
+— y por eso lo usa el resto del sistema.
+
+Estas policies no lo usaban: comparaban una columna que guarda **id de
+empleado** contra `auth.uid()`, que es **id de cuenta**. Verificado sobre los
+datos y no sobre el nombre de la columna:
+
+| columna | filas con id de empleado |
+|---|---|
+| `approval_requests.employee_id` | 13 de 13 |
+| `audit_logs.user_id` | 13,654 de 13,702 |
+| `user_dashboard_prefs.user_id` | 16 de 16 |
+
+O sea que esas 22 personas **no podían crear ni ver ninguna solicitud, ni dejar
+registro en la bitácora, ni guardar el acomodo de su tablero**. No era del
+módulo de inventario: era de todo lo que pasara por esas tablas.
+
+Reproducido con Yessica Hernández (Regente de Enfermería, entra como
+`p5ghy5rp@staff.local`): `auth_employee_id()` la ubica, tiene el permiso del
+módulo en `can_edit`, y el INSERT devolvía `new row violates row-level security
+policy` — el texto exacto que el widget traduce a «no tienes permiso para crear
+solicitudes de inventario».
+
+Las once policies se reescribieron **sobre su propia definición**, no a mano:
+varias llevan además la rama del aprobador con su scope, y transcribirlas era
+arriesgar un error en la capa que decide quién ve qué. Si alguna no contenía el
+patrón esperado, la migración falla en vez de dejarla a medias.
+
+`session_activity` es aparte y no se reemplazó: guarda **las dos** identidades
+(163 filas con id de empleado, 19 con id de cuenta) porque la escriben dos
+caminos distintos. Ahí la policy acepta ambas — con sólo `auth.uid()` cada
+persona veía una parte de sus sesiones y la otra le quedaba invisible.
+
+Verificado contra producción con esa misma empleada, en transacción con
+ROLLBACK: crear el descarte ✓, ver su propia solicitud ✓, escribir en la
+bitácora ✓, guardar el tablero ✓. Cero filas de prueba al terminar.
+
 ## v2.551.5 — La pantalla de permisos leía 1,000 filas de 1,293
 
 «Asigné permisos a Regente de Enfermería y de repente no salen; y "copiar de" no

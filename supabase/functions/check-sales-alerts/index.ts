@@ -129,34 +129,50 @@ serve(async (req) => {
     }
 
     let sent = 0;
+    let fallidas = 0;
     for (const alert of allAlerts) {
-      // Loguear PRIMERO para evitar doble envío si la función falla a mitad
+      // ── La alerta DEJA RASTRO EN EL PORTAL, no sólo un push (2026-08-09) ──
+      // Reportado: «hubo un error con un CCF y no me notificó en el momento».
+      // Se había enviado —el destinatario era el correcto y tenía 8
+      // suscripciones— pero la alerta existía ÚNICAMENTE como push: si no
+      // llega, no queda absolutamente nada. Medido: `sales_alert_log` con la
+      // entrada de las 15:25 y CERO filas de CCF en `notifications` en 4 días.
+      //
+      // Un aviso que sólo vive en un push es un aviso que desaparece sin dejar
+      // huella. `notify_employees` crea la notificación en la campana Y manda
+      // el push, así que la del portal queda aunque el push falle.
+      const { error: notifErr } = await supabase.rpc('notify_employees', {
+        p_recipients: supervisorIds,
+        p_type: 'SALES_ALERT',
+        p_title: alert.title,
+        p_body: alert.message,
+        p_link: '/facturacion',
+        p_metadata: { alert_type: alert.alertType, alert_key: alert.alertKey, urgent: alert.urgent },
+        p_push: true,
+        p_branch_id: alert.branchId,
+      });
+
+      if (notifErr) {
+        // ── El log va DESPUÉS, y sólo si se avisó (2026-08-09) ──────────────
+        // Estaba antes «para evitar doble envío si la función falla a mitad»,
+        // y esa preocupación es legítima — pero convertía un envío fallido en
+        // silencio DEFINITIVO: el log decía «ya avisé» y ese correlativo no
+        // volvía a sonar nunca. Un aviso que no salió tiene que reintentarse
+        // en la próxima corrida; repetirlo una vez es barato, perderlo no.
+        fallidas++;
+        console.error('notify_employees:', alert.alertType, alert.alertKey, notifErr.message);
+        continue;
+      }
+
       const { error: logErr } = await supabase.from('sales_alert_log').upsert(
         { branch_id: alert.branchId, alert_type: alert.alertType, alert_key: alert.alertKey },
         { onConflict: 'branch_id,alert_type,alert_key', ignoreDuplicates: true },
       );
       if (logErr) console.error('log error:', logErr);
-
-      // Enviar push a supervisores
-      const pushRes = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`, 'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '' },
-        body: JSON.stringify({
-          title:        alert.title,
-          message:      alert.message,
-          url:          '/facturacion',
-          urgent:       alert.urgent,
-          target_type:  supervisorIds.length > 0 ? 'EMPLOYEE' : undefined,
-          target_value: supervisorIds.length > 0 ? supervisorIds : undefined,
-          announcement_id: `sales-alert-${alert.alertType}-${alert.alertKey}`,
-        }),
-      });
-
-      if (pushRes.ok) sent++;
-      else console.error('push error:', alert.alertType, await pushRes.text());
+      sent++;
     }
 
-    return new Response(JSON.stringify({ ok: true, alerts: allAlerts.length, sent }), {
+    return new Response(JSON.stringify({ ok: true, alerts: allAlerts.length, sent, fallidas }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

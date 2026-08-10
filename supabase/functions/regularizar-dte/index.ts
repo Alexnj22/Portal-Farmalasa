@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
 
   try {
     const cuerpo = await req.json().catch(() => ({}));
-    const { alcance = "todas", invoice_id, branch_id, bolsa } = cuerpo;
+    const { alcance = "todas", invoice_id, branch_id, bolsa, segundaVuelta = false } = cuerpo;
 
     // ── Quién llama ────────────────────────────────────────────────────
     const esCron = requireInvokeSecret(req);
@@ -362,6 +362,50 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── La segunda vuelta: corregir y REENVIAR la misma noche ─────────────
+    // Antes el ciclo tardaba un día: se enviaba a las 22:30, el rechazo
+    // quedaba anotado, la corrida de fichas del día SIGUIENTE lo corregía a
+    // las 21:30 y recién a las 22:30 se reintentaba. Una factura rechazada
+    // pasaba 24 horas sin sello por un dato que se arregla solo.
+    //
+    // Ahora, si quedó algún rechazo accionable —de los que se corrigen tocando
+    // la ficha— se llama a la corrida de fichas en alcance «rechazos» y se
+    // vuelve a enviar, todo dentro de la misma noche.
+    //
+    // `segundaVuelta` es el freno de recursión: la llamada de vuelta lo trae
+    // en true y ahí el bloque no se ejecuta. Sin eso, un rechazo que la
+    // corrección no arregla haría rebotar las dos funciones sin fin.
+    let segundaVueltaHecha = false;
+    if (!segundaVuelta && esCron) {
+      const { count } = await admin
+        .from("dte_rechazos_vigentes")
+        .select("invoice_id", { count: "exact", head: true })
+        .eq("accionable", true);
+
+      // Margen para las DOS llamadas encadenadas, no el resto del presupuesto:
+      // arrancar la cadena sin tiempo de terminarla deja la corrección hecha
+      // y el reenvío sin hacer, que es el peor de los dos mundos.
+      const MARGEN_SEGUNDA_VUELTA_MS = 60_000;
+      if ((count ?? 0) > 0 && Date.now() - arranque < PRESUPUESTO_MS - MARGEN_SEGUNDA_VUELTA_MS) {
+        try {
+          const cab = { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` };
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sincronizar-fichas-clientes`, {
+            method: "POST", headers: cab,
+            body: JSON.stringify({ alcance: "rechazos" }),
+            signal: AbortSignal.timeout(120_000),
+          });
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
+            method: "POST", headers: cab,
+            body: JSON.stringify({ alcance: "todas", segundaVuelta: true }),
+            signal: AbortSignal.timeout(120_000),
+          });
+          segundaVueltaHecha = true;
+        } catch (e) {
+          console.error("segunda vuelta:", e instanceof Error ? e.message : String(e));
+        }
+      }
+    }
+
     const { error: auditErr } = await admin.from("audit_logs").insert({
       action:    "DTE_REGULARIZADO",
       target_id: alcance === "una" ? String(invoice_id) : alcance,
@@ -384,6 +428,7 @@ Deno.serve(async (req) => {
         anuladas_sin_tramite: anuladasSinTramite,
         excluidas: excluidas.size,
         cortada_por_tiempo: cortadaPorTiempo,
+        segunda_vuelta: segundaVueltaHecha,
         detalle,
       },
     });
@@ -400,6 +445,7 @@ Deno.serve(async (req) => {
       anuladas_sin_tramite: anuladasSinTramite,
       excluidas: excluidas.size,
       cortada_por_tiempo: cortadaPorTiempo,
+      segunda_vuelta: segundaVueltaHecha,
       detalle,
     });
 

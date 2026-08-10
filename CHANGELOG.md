@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.543.0 — El aviso de CCF deja rastro, y el reenvío no espera al día siguiente
+
+Dos pedidos del usuario, y uno de ellos salió de un reporte: *«hace 2 días hubo
+un error con un CCF y no me notificó en el momento; antes lo hacía»*.
+
+**El aviso existía sólo como push.** `check-sales-alerts` detectó el problema
+—`sales_alert_log` tiene la entrada del 07-08 a las 15:25 para
+`0000000236_CCF`— y el destinatario era el correcto (rol 13, «Supervisor/a de
+Ventas», con 8 suscripciones registradas). Pero llamaba a
+`send-push-notification` y nada más: **cero filas de CCF en `notifications` en
+cuatro días**. Si el push no llega —dispositivo apagado, permiso revocado, una
+suscripción vieja— no queda absolutamente ningún rastro. Ni en la campana, ni en
+ninguna pantalla.
+
+Y un segundo defecto lo volvía permanente: el log de «ya avisé» se escribía
+**antes** de intentar el envío. La intención era evitar doble aviso si la
+función moría a mitad —legítima— pero convertía un envío fallido en silencio
+definitivo: ese correlativo no volvía a sonar nunca.
+
+Ahora usa `notify_employees`, que crea la notificación en la campana **y** manda
+el push, y el log se escribe **después** de confirmar. Un aviso que no salió se
+reintenta en la próxima corrida; repetirlo una vez es barato, perderlo no.
+
+**Y el reenvío ya no espera al día siguiente.** El ciclo era: 22:30 se envía →
+rechazo anotado → 21:30 del día SIGUIENTE se corrige → 22:30 se reintenta. Una
+factura pasaba 24 horas sin sello por un dato que se arregla solo. Ahora, si
+quedó algún rechazo accionable, `regularizar-dte` llama a la corrida de fichas
+en alcance «rechazos» y vuelve a enviar, todo la misma noche. `segundaVuelta`
+es el freno de recursión, y sólo arranca si quedan 60 s de presupuesto: empezar
+la cadena sin tiempo de terminarla dejaría la corrección hecha y el reenvío sin
+hacer, que es el peor de los dos mundos.
+
+**Lo que NO está demostrado, y hay que decirlo:** las dos piezas están
+desplegadas pero **no se ejecutaron ni una vez**, porque ahora mismo no hay nada
+que las dispare — el barrido devuelve `total_pendiente: 0` y la alerta
+`alerts: 0`. El sistema está limpio, y eso es justamente lo que impide
+probarlas. La primera prueba real es el primer caso que aparezca.
+
 ## v2.542.4 — Una fila mala tumbaba las 70 del espejo
 
 Preguntado por el usuario: *«¿podemos asignar esos clientes a los del ERP, a los

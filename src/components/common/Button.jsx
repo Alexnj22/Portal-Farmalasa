@@ -276,7 +276,17 @@ const Button = memo(({
                 Icon && <Icon size={ICON_PX[size] ?? 15} strokeWidth={2.5}
                     className={`relative ${claseTono || ''}`} />
             )}
-            {!iconOnly && <span className="relative">{children}</span>}
+            {/* `inline-flex` y no un `<span>` a secas: Preflight le pone
+                `display:block` a TODO svg, así que un icono pasado como HIJO
+                —`<Button>Ver <ChevronRight/></Button>`, que es como se escriben
+                las acciones de los widgets— se volvía un bloque y caía a su
+                propio renglón. Se veía «Ver» arriba y la flecha debajo, y de
+                paso estiraba el encabezado del widget (reportado con captura el
+                2026-08-10). `whitespace-nowrap` no podía evitarlo: no es un
+                corte de línea de texto, es una caja de bloque.
+                El camino de la prop `icon` nunca tuvo el defecto — ahí el icono
+                es hermano de este span y el `inline-flex` del botón lo alinea. */}
+            {!iconOnly && <span className="relative inline-flex items-center gap-1">{children}</span>}
         </button>
     );
 });

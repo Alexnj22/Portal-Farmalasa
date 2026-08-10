@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.551.2 — Los encabezados de los widgets dejan de partirse en dos renglones
+
+Dos cosas que el usuario vio con capturas y que la auditoría anterior **no
+detectó**: mi barrido midió recortes y canon, no si algo envolvía a dos
+renglones. Y de paso corrige un número que se dijo mal: los encabezados no
+median 42px sino **61px** — los 42 salieron de un widget sin acción, que es el
+único caso en que el botón no manda.
+
+**«Ver» y su flecha, uno debajo del otro.** La causa no estaba en el widget sino
+en el canónico: Preflight le pone `display: block` a **todo** `svg`, así que un
+icono pasado como HIJO —`<Button>Ver <ChevronRight/></Button>`, que es como se
+escriben las acciones del tablero— se volvía una caja de bloque y caía a su
+propio renglón. El `whitespace-nowrap` que ya tenía el botón no podía evitarlo:
+no era un corte de línea de texto. Ahora los hijos van en un `inline-flex`.
+**El camino de la prop `icon` nunca tuvo el defecto**, y por eso sobrevivió
+tanto: sólo se ve cuando alguien pasa el icono adentro. Son **20 sitios** en el
+portal, no sólo el Inicio.
+
+**«HORAS / DÍAS» apilados.** `SegmentedControl` lleva `flex-wrap` a propósito
+—con cuatro opciones de rótulo largo el riel medía más que la pantalla—, pero
+con **dos** envolver nunca es la respuesta: es un interruptor, y partido en dos
+renglones deja de leerse como uno. Ahora sólo envuelve con más de dos opciones.
+
+Medido en los 26 widgets, antes → después:
+
+| | antes | ahora |
+|---|---|---|
+| `sales` (Ventas por día) | **85px** | 61px |
+| los 7 con acción «Ver» | 61px | **50px** |
+| `shifts`, `vendedores`, `meta_sala` | 61px | 61px |
+
+Los tres que no bajan los sostiene el `LiquidSelect` de sucursal, que mide 40px
+aun en `compact bare`: ahí el piso ya no es el encabezado sino el control, y
+bajarlo es tocar un canónico que usa medio portal. Queda anotado, no hecho.
+
 ## v2.551.1 — Auditoría de los widgets: las acciones miran el permiso del destino
 
 Barrido de los 26 widgets del Inicio (los 21 del catálogo más las 6 baldosas por

@@ -97,7 +97,14 @@ const SegmentedControl = memo(({
                     // mejor que un carril: son cuatro opciones cortas, y una
                     // opción que hay que descubrir deslizando es una opción que
                     // no se ve.
-                    : `inline-flex flex-wrap items-center justify-center max-w-full rounded-btn
+                    //
+                    // Pero con DOS opciones envolver nunca es la respuesta: es
+                    // un interruptor, y partido en dos renglones deja de leerse
+                    // como uno —«HORAS» arriba y «DÍAS» abajo, reportado el
+                    // 2026-08-10 en el encabezado de Ventas por día, donde
+                    // además estiraba la cabecera del widget a 85px—. Con dos
+                    // se aprieta el resto de la fila, que es lo que cede.
+                    : `inline-flex ${options.length > 2 ? 'flex-wrap' : 'flex-nowrap'} items-center justify-center max-w-full rounded-btn
                        border border-border-card bg-surface-card-hover shadow-sm shrink-0 ${s.riel}`}
                 ${className} ${disabled ? 'opacity-45 pointer-events-none' : ''}`}>
             {options.map(op => {

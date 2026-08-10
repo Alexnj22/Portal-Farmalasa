@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.544.0 — «Sin sello» pasa a significar sin sello VÁLIDO, en los tres sitios
+
+Salió de una pregunta del usuario sobre la pestaña de Observaciones: *«si están
+ahí, la pasada de la noche también las evalúa y envía a Hacienda, ¿verdad?»*.
+No las evaluaba, y la respuesta destapó el mismo defecto repetido tres veces.
+
+La regla que fijó el usuario, textual: **lo único que no se manda a Hacienda es
+lo que YA tiene sello y su observación es de otra cosa.**
+
+`recibido_mh` es `text` y guarda el sello de 40 caracteres. Preguntarle
+`IS NULL` —o peor, `!!valor`— da por buena cualquier basura que se haya escrito
+ahí. Estaba mal en tres lugares, y los tres tenían que fallar juntos para que la
+factura desapareciera:
+
+| dónde | preguntaba | ahora |
+|---|---|---|
+| el filtro del barrido | `recibido_mh IS NULL` | `IS NULL` **o** no mide 40 |
+| la guarda antes de enviar | `!!ahora?.recibido_mh` | `tieneSello()` |
+| la pestaña Pendiente MH | `recibido_mh IS NULL` | la misma definición |
+
+El tercero importa tanto como los otros dos: si la cola que se mira y la que se
+atiende no coinciden, una factura puede estar fuera de las dos.
+
+**Y hacía falta corregir los tres.** Con sólo el filtro, la factura entró a la
+cola y se omitió igual —«ya estaba resuelta»— con el agravante de que ahora sí
+aparecía en el detalle, afirmando eso sobre una que nunca se envió. El silencio
+al menos no miente.
+
+**El caso real, cerrado:** `0000002848_COF` del 16-mayo-2025 tenía
+`recibido_mh = 'undefined'` (9 caracteres). Figuraba como confirmada por
+Hacienda, no estaba en ninguna lista negra, y **nada la iba a tocar nunca**. Es
+la sobreviviente del incidente que originó la pestaña de Observaciones: de las
+24 con `'undefined'` se limpiaron 23 y quedó ésta, marcada como «solventada» —
+alguien la miró y la dio por revisada, que no es lo mismo que enviada.
+
+Se envió y entró:
+
+```
+sello        202683955743B3F94B5D9B888949827893B9MPRC   (40, real)
+respuesta    RECIBIDO CON OBSERVACIONES
+observación  [identificacion.fecEmi] — la informativa
+```
+
+Estado al cierre: **facturas con sello inválido 0 · pendientes de sello 0 ·
+observaciones abiertas 0.**
+
 ## v2.543.2 — «No cuadra» era la retención
 
 Lo preguntó el usuario mirando la pestaña de Observaciones: *«¿no será que son

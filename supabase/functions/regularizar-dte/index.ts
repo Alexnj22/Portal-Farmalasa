@@ -67,6 +67,22 @@ const PAUSA_ENTRE_ENVIOS_MS = 400;
 // columna manda"). Mismo criterio que `SELLO_MH_LIKE` en src/data/facturacion.js.
 const SELLO_MH_LIKE = "_".repeat(40);
 
+/** ¿Esto es un sello de Hacienda? La FORMA del dato, no su ausencia de null. */
+const tieneSello = (v: unknown) => typeof v === "string" && v.length === 40;
+
+// ── «Sin sello» es SIN SELLO VÁLIDO, no «la columna está vacía» ────────────
+// El barrido preguntaba `recibido_mh IS NULL`, y eso deja fuera a una factura
+// con basura adentro: `recibido_mh = 'undefined'` no es null, así que para el
+// barrido ya estaba enviada y no la reintentaba nunca. Medido: una factura del
+// 16-may-2025 figuraba como confirmada por Hacienda sin estarlo, sin lista
+// negra y sin nada que la fuera a tocar.
+//
+// Es el MISMO defecto que originó la pestaña de Observaciones —allá era la
+// lectura, acá el envío— y por eso las dos usan ahora la misma definición: un
+// sello son 40 caracteres. Regla del usuario, textual: lo único que no se manda
+// a Hacienda es lo que YA tiene sello y su observación es de otra cosa.
+const SIN_SELLO_VALIDO = `recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`;
+
 interface Pendiente {
   id: number;
   erp_invoice_id: string;
@@ -197,7 +213,7 @@ Deno.serve(async (req) => {
       }
       if (bolsa !== "anuladas") {
         let q = admin.from("sales_invoices").select(cols)
-          .is("recibido_mh", null)
+          .or(SIN_SELLO_VALIDO)
           .not("estado", "in", '("NULA","DTE INVALIDADO EN MH")')
           .order("fecha", { ascending: true }).limit(MAX_POR_CORRIDA);
         if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
@@ -218,7 +234,10 @@ Deno.serve(async (req) => {
         // haría que `restantes` no llegue nunca a cero y el barrido pareciera
         // atrasado para siempre.
         ? q.eq("estado", "NULA").like("recibido_mh", SELLO_MH_LIKE)
-        : q.is("recibido_mh", null).not("estado", "in", '("NULA","DTE INVALIDADO EN MH")');
+        // El conteo usa EXACTAMENTE el mismo filtro que la selección. Si
+        // divergen, `restantes` miente y el barrido parece atrasado —o al
+        // día— sin serlo.
+        : q.or(SIN_SELLO_VALIDO).not("estado", "in", '("NULA","DTE INVALIDADO EN MH")');
       if (alcance === "sucursal") q = q.eq("branch_id", Number(branch_id));
       const { count } = await q;
       return count ?? 0;
@@ -282,9 +301,15 @@ Deno.serve(async (req) => {
         // mandarle a Hacienda un documento que ya entró.
         const { data: ahora } = await admin.from("sales_invoices")
           .select("estado, recibido_mh").eq("id", f.id).maybeSingle();
+        // `!!ahora?.recibido_mh` daba por resuelta a cualquier cadena no vacía,
+        // y `'undefined'` es una de ellas: el mismo defecto que el filtro de
+        // arriba, un nivel más adentro. Corregir sólo la consulta habría hecho
+        // que la factura entrara a la cola y se omitiera igual — con el
+        // agravante de que ahora sí aparecía en el detalle, diciendo «ya estaba
+        // resuelta» sobre una que nunca se envió.
         const yaResuelta = f.bolsa === "anuladas"
           ? ahora?.estado !== "NULA"
-          : !!ahora?.recibido_mh;
+          : tieneSello(ahora?.recibido_mh);
         if (yaResuelta) { detalle.push({ ...base, ok: true, omitida: "ya estaba resuelta" }); continue; }
 
         if (f.bolsa === "anuladas" && (!respCfg?.nombre || !respDui))

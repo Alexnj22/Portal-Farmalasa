@@ -81,14 +81,25 @@ const SELLO_MH_LIKE = '_'.repeat(SELLO_MH_LARGO);
 // corruptos que además ya figuraban en Observaciones. La misma factura pedía
 // solventarse dos veces, en dos tablas de resoluciones distintas.
 //
-// La frontera entre las dos pestañas es la CAUSA: falta el sello → acá;
-// el dato está mal escrito → Observaciones.
+// La frontera entre las dos pestañas es la CAUSA: NO TIENE SELLO VÁLIDO → acá;
+// el dato está mal escrito PERO el sello está → Observaciones.
+//
+// Decía «falta el sello» y filtraba `IS NULL`, que no es lo mismo: una factura
+// con `recibido_mh = 'undefined'` no aparecía en ninguna de las dos colas que
+// se atienden solas. El barrido usaba el mismo `IS NULL`, así que la daba por
+// enviada y no la reintentaba nunca — medido, una del 16-may-2025 llevaba un
+// año figurando como confirmada por Hacienda sin estarlo.
+//
+// Regla del usuario, textual: lo único que NO se manda a Hacienda es lo que ya
+// tiene sello y su observación es de otra cosa. Así que acá cae todo lo que no
+// tenga un sello de 40 caracteres, y las dos colas —ésta y el barrido nocturno—
+// usan la misma definición. Que no coincidan es cómo se pierde una factura.
 export function fetchPendingMhInvoices(filterBranch) {
     return fetchAllRows(() => {
         let q = supabase
             .from('sales_invoices')
             .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, recibido_mh')
-            .is('recibido_mh', null)
+            .or(`recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`)
             .not('estado', 'eq', 'NULA')
             .order('branch_id', { ascending: true })
             .order('fecha',     { ascending: true })

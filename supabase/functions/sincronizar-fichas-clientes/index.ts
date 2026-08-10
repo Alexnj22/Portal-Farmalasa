@@ -154,10 +154,19 @@ Deno.serve(async (req) => {
       actor = emp.name;
     }
 
+    // `alcance`: «rechazos» procesa SOLO lo que Hacienda rechazó; «todo» suma
+    // los preventivos. Existe para poder soltar el cambio por partes — la
+    // primera corrida con reglas nuevas sobre 94 fichas a la vez es mucho de
+    // una sola vez, y el rechazo es el conjunto chico y verificable.
+    const cuerpo = await req.json().catch(() => ({}));
+    const alcance: string = cuerpo?.alcance ?? "todo";
+
     const { data: candidatos, error: eCand } =
       await admin.rpc("fichas_para_corregir_dte");
     if (eCand) throw new Error(`fichas_para_corregir_dte: ${eCand.message}`);
-    const lista: Candidato[] = (candidatos ?? []).slice(0, MAX_FICHAS);
+    const lista: Candidato[] = (candidatos ?? [])
+      .filter((c: Candidato) => alcance === "todo" || c.origen === "rechazo")
+      .slice(0, MAX_FICHAS);
     if (!lista.length)
       return json({ ok: true, revisadas: 0, mensaje: "no hay fichas que corregir" });
 
@@ -165,7 +174,7 @@ Deno.serve(async (req) => {
     const res = {
       fusionadas: 0, facturas_movidas: 0, a_revisar: 0,
       distrito_escrito: 0, distrito_sin_evidencia: 0, espejadas: 0,
-      ubicacion_por_defecto: 0, dui_borrado: 0, solo_espejo: 0,
+      ubicacion_por_defecto: 0, dui_borrado: 0, solo_espejo: 0, ya_estaban: 0,
       frenadas: 0, fallidas: 0, cortada_por_tiempo: false,
     };
     const aRevisar: unknown[] = [];
@@ -239,6 +248,13 @@ Deno.serve(async (req) => {
             const w = await escribirCampos(cookie, erpId, { dui: "" });
             if (w.ok) {
               res.dui_borrado++;
+              // El espejo NO propaga borrados: `aplicar_espejo_erp` usa
+              // `coalesce`, que protege contra una lectura fallida del ERP
+              // blanqueando datos buenos. Correcto en general, pero deja al
+              // portal mostrando un DUI que en el ERP ya no está — la misma
+              // divergencia que causó todo esto. Como el borrado lo decidimos
+              // nosotros, lo propagamos nosotros, sin aflojar la guarda global.
+              await admin.from("customers").update({ dui: null }).eq("id", c.customer_id);
               correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "dui",
                                   antes, despues: "", motivo: "dui_invalido" });
               detalle.push({ ficha: c.name, accion: "dui borrado", antes });
@@ -249,12 +265,16 @@ Deno.serve(async (req) => {
           // distrito. Y si Hacienda rechazó la ubicación, el default también —
           // decisión del usuario: no se diagnostica, se pone el de siempre.
           const u = await ponerUbicacion(cookie, erpId, UBICACION_DEFECTO);
-          if (u.ok) {
+          if (u.ok && u.cambios > 0) {
             res.ubicacion_por_defecto++;
             correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "ubicacion",
                                 antes: u.antes, despues: u.despues,
                                 motivo: c.origen === "rechazo" ? "rechazo_distrito" : "sin_municipio" });
             detalle.push({ ficha: c.name, accion: "ubicación por defecto", pasos: u.pasos });
+          } else if (u.ok) {
+            // Ya estaba en el destino: no se escribe ni se anota. Una corrección
+            // que no ocurrió ensucia el freno — mañana parecería que se intentó.
+            res.ya_estaban++;
           } else { res.fallidas++; detalle.push({ ficha: c.name, accion: "ubicación", error: u.motivo }); }
         } else if (!ficha.campos.distrito) {
           // Regla ② — el matcher, verificado contra las 25,946 decisiones.

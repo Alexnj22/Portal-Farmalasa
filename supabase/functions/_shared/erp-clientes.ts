@@ -206,8 +206,9 @@ const igualEtiqueta = (a: string, b: string) => a.trim().toUpperCase() === b.tri
 export async function ponerUbicacion(
   cookie: string, erpId: string,
   destino: { departamento: string; municipio: string; distrito: string },
-): Promise<{ ok: boolean; motivo?: string; antes?: string; despues?: string; pasos: string[] }> {
+): Promise<{ ok: boolean; motivo?: string; antes?: string; despues?: string; pasos: string[]; cambios: number }> {
   const pasos: string[] = [];
+  let cambios = 0;   // cuántos campos se ESCRIBIERON de verdad
   const retrato = (f: Ficha) => (["departamento", "municipio", "distrito"] as const)
     .map(c => Object.fromEntries(f.opciones[c] ?? [])[f.campos[c] ?? ""] ?? "(vacío)")
     .join(" / ");
@@ -217,14 +218,15 @@ export async function ponerUbicacion(
   for (const campo of ["departamento", "municipio", "distrito"] as const) {
     const { campos, opciones } = await leerFicha(cookie, erpId);
     const par = (opciones[campo] ?? []).find(([, etiqueta]) => igualEtiqueta(etiqueta, destino[campo]));
-    if (!par) return { ok: false, pasos, antes, motivo: `«${destino[campo]}» no está entre las ${(opciones[campo] ?? []).length} opciones de ${campo}` };
+    if (!par) return { ok: false, pasos, antes, cambios, motivo: `«${destino[campo]}» no está entre las ${(opciones[campo] ?? []).length} opciones de ${campo}` };
     const [codigo, etiqueta] = par;
     if ((campos[campo] ?? "") === codigo) { pasos.push(`${campo} ya estaba en «${etiqueta}»`); continue; }
     const dependientes = campo === "departamento" ? ["municipio", "distrito"]
                        : campo === "municipio"    ? ["distrito"] : [];
     const w = await escribirCampos(cookie, erpId, { [campo]: codigo }, dependientes);
-    if (!w.ok) return { ok: false, pasos, antes, motivo: `${campo}: ${w.motivo}` };
+    if (!w.ok) return { ok: false, pasos, antes, cambios, motivo: `${campo}: ${w.motivo}` };
     pasos.push(`${campo} → «${etiqueta}»`);
+    cambios++;
   }
 
   // Verificación final POR ETIQUETA: un código fuera de contexto no dice nada.
@@ -232,7 +234,7 @@ export async function ponerUbicacion(
   const despues = retrato(fin);
   const ok = (["departamento", "municipio", "distrito"] as const).every(c =>
     igualEtiqueta(Object.fromEntries(fin.opciones[c] ?? [])[fin.campos[c] ?? ""] ?? "", destino[c]));
-  return { ok, pasos, antes, despues, motivo: ok ? undefined : `quedó ${despues}` };
+  return { ok, pasos, antes, despues, cambios, motivo: ok ? undefined : `quedó ${despues}` };
 }
 
 /** Puerto de `dui_valido` de bloque.py (a su vez de src/utils/duiUtils.js). */

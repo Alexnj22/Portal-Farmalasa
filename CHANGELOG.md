@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.542.1 — El espejo no propagaba borrados
+
+Salió de la primera corrida acotada del lazo, que fue justo para eso. Resultado:
+
+```
+candidatos 4 · ya_estaban 2 · solo_espejo 1 · espejadas 2 · fallidas 0
+```
+
+Todo correcto —los dos que ya estaban en su valor no se reescribieron ni
+anotaron una corrección falsa, y el contribuyente sólo se espejó— **menos una
+cosa**: el DUI `00000000-0` está vacío en el ERP desde hace una hora y el portal
+lo seguía mostrando.
+
+`aplicar_espejo_erp` usa `coalesce`: si el ERP devuelve vacío, conserva lo que
+había. Es la guarda correcta en general —una lectura fallida del ERP no puede
+blanquear datos buenos— pero significa que **un borrado nunca viaja**, y el
+portal se queda mostrando un dato que ya no existe. Exactamente la clase de
+divergencia que causó todo este hilo.
+
+No se afloja la guarda global, que protege a 30 mil fichas. Como el borrado lo
+decide el lazo, lo propaga el lazo: tras borrar el DUI en el ERP, escribe también
+`customers.dui = null`. Alineado a mano el de OSCAR, que se corrigió antes de que
+esto existiera.
+
 ## v2.542.0 — El lazo: la corrida nocturna se entera de los rechazos
 
 La pregunta que lo destrabó fue del usuario: *«ya procesaste más de 20 mil con

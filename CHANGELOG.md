@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.545.1 — Corte Z: el cotejo cabe en el teléfono
+
+En el teléfono la vista entera se salía de la pantalla. La causa era una sola y
+es aritmética: el **cotejo contra el libro** son cuatro columnas —el rótulo y
+tres cifras— y las tres cifras estaban fijadas en `6rem + 6rem + 5rem` más tres
+separaciones = **308px que no se encogen**. La tarjeta de una sucursal sólo
+tiene 316px útiles a 390px de ancho (390 − 40 del margen de la vista − 32 de su
+relleno), así que el rótulo no cabía, la tarjeta se plantaba en **471px dentro
+de una pista de 334px** y arrastraba todo lo demás con ella.
+
+Medido en WebKit iPhone 13 sobre julio 2026: **333 elementos desbordando** y
+scroll lateral en toda la página. Después del arreglo, **0**.
+
+La salida no fue encoger el rótulo hasta la elipsis —eso esconde el dato en vez
+de mostrarlo— sino cambiar la **forma** en el teléfono: una sola grilla con dos
+plantillas, compartida por la cabecera y las líneas para que las cifras sigan
+alineadas entre filas, que es para lo que sirve un cotejo.
+
+- **Teléfono**: el rótulo toma su propia línea y las tres cifras van debajo en
+  tres columnas iguales, con «Corte Z / Libro / Dif.» encima de las suyas.
+  Ninguna se trunca.
+- **`md:` en adelante**: la fila de cuatro columnas de siempre. Verificado a
+  1440px que la grilla mide `166 | 96 | 96 | 80` — los mismos 96/96/80 que daban
+  `w-24 w-24 w-20`, o sea que en escritorio no cambió un píxel.
+
+Las columnas del teléfono son `minmax(0,1fr)`: su mínimo es 0, así que ninguna
+cifra futura puede volver a empujar la tarjeta.
+
+**Dos cosas verificadas de más, porque medir sólo lo que se ve deja huecos:**
+
+- El panel **«Por qué difiere»** —con su tabla día por día— sólo se dibuja
+  cuando una sucursal no cuadra, y hoy las 12 filas cargadas cuadran al centavo:
+  con datos reales es inalcanzable. Se midió inyectando su marcado exacto dentro
+  de una tarjeta real: no desborda, y su tabla entra sin necesitar el carril
+  (272 de 272px).
+- **El barrido móvil no podía haber encontrado esto.** `corte-z` está en su
+  lista, pero la vista abre en el mes en curso y el Corte Z se trae el día 1 del
+  mes siguiente, así que el barrido siempre mide el estado vacío y devuelve cero
+  — la ausencia de datos y la ausencia de defectos se ven idénticas. Queda
+  anotado: el barrido no cubre esta vista aunque la liste.
+
 ## v2.545.0 — La pestaña Red de Min/Max se retira entera
 
 Pedido del usuario: *«no se me es de utilidad»*.

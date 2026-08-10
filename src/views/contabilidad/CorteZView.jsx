@@ -60,14 +60,37 @@ const CUADRA = 0.005;
 const cuadra = (n) => Math.abs(Number(n) || 0) < CUADRA;
 
 // ── Una línea del cotejo ─────────────────────────────────────────────────────
+//
+// El cotejo son cuatro columnas —el rótulo y tres cifras— y en el teléfono NO
+// caben. Medido el 2026-08-09 en WebKit iPhone 13: las tres cifras pedían
+// `6rem + 6rem + 5rem` más tres separaciones = **308px fijos**, y la tarjeta
+// sólo tiene 316px útiles a 390px de ancho (390 − 40 del margen de la vista −
+// 32 del relleno de la tarjeta). El rótulo no podía bajar de su palabra más
+// larga, así que la tarjeta se plantaba en **471px dentro de una pista de
+// 334px** y arrastraba la vista entera fuera de la pantalla: 333 elementos
+// desbordando y scroll lateral en toda la página.
+//
+// La salida NO es encoger el rótulo hasta la elipsis —eso esconde el dato en
+// vez de mostrarlo—, sino cambiar la FORMA en el teléfono: una sola grilla,
+// dos plantillas. Abajo de `md:` el rótulo toma su propia línea y las tres
+// cifras van debajo en tres columnas iguales; de `md:` en adelante vuelve la
+// fila de cuatro columnas, idéntica a la de siempre.
+//
+// Las dos plantillas las comparten la cabecera y las líneas, que es lo que
+// mantiene las cifras alineadas entre filas — sin eso un cotejo no se puede
+// leer. Y las columnas del teléfono son `minmax(0,1fr)` (vía `grid-cols-3`):
+// su mínimo es 0, así que ninguna cifra puede volver a empujar la tarjeta.
+const GRILLA_COTEJO = 'grid grid-cols-3 md:grid-cols-[minmax(0,1fr)_6rem_6rem_5rem] '
+                    + 'gap-x-3 gap-y-0.5 items-baseline';
+
 const LineaCotejo = ({ rotulo, z, portal, dif }) => {
     const ok = cuadra(dif);
     return (
-        <div className="flex items-baseline gap-3 py-1.5 border-b border-divider last:border-0">
-            <span className="flex-1 min-w-0 text-caption text-content-2 truncate">{rotulo}</span>
-            <span className="font-mono text-caption tabular-nums w-24 text-right">{formatMoney(z)}</span>
-            <span className="font-mono text-caption tabular-nums w-24 text-right text-content-3">{formatMoney(portal)}</span>
-            <span className={`font-mono text-caption tabular-nums w-20 text-right ${ok ? 'text-content-3' : 'font-bold'}`}>
+        <div className={`${GRILLA_COTEJO} py-1.5 border-b border-divider last:border-0`}>
+            <span className="col-span-3 md:col-span-1 min-w-0 text-caption text-content-2 truncate">{rotulo}</span>
+            <span className="font-mono text-caption tabular-nums text-right">{formatMoney(z)}</span>
+            <span className="font-mono text-caption tabular-nums text-right text-content-3">{formatMoney(portal)}</span>
+            <span className={`font-mono text-caption tabular-nums text-right ${ok ? 'text-content-3' : 'font-bold'}`}>
                 {ok ? '—' : formatMoney(dif)}
             </span>
         </div>
@@ -288,13 +311,16 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
             </div>
 
             <div>
-                <div className="flex items-baseline gap-3 pb-1 border-b border-divider">
-                    <span className="flex-1 text-micro font-semibold text-content-3 uppercase tracking-wide">
+                {/* La misma grilla que `LineaCotejo`: los tres rótulos de
+                    columna tienen que caer sobre sus cifras en los dos
+                    tamaños, también cuando en el teléfono bajan de línea. */}
+                <div className={`${GRILLA_COTEJO} pb-1 border-b border-divider`}>
+                    <span className="col-span-3 md:col-span-1 text-micro font-semibold text-content-3 uppercase tracking-wide">
                         Cotejo contra el libro
                     </span>
-                    <span className="text-micro text-content-3 w-24 text-right">Corte Z</span>
-                    <span className="text-micro text-content-3 w-24 text-right">Libro</span>
-                    <span className="text-micro text-content-3 w-20 text-right">Dif.</span>
+                    <span className="text-micro text-content-3 text-right">Corte Z</span>
+                    <span className="text-micro text-content-3 text-right">Libro</span>
+                    <span className="text-micro text-content-3 text-right">Dif.</span>
                 </div>
                 <LineaCotejo rotulo="Ventas con factura" z={fila.factura_total}
                     portal={fila.portal_factura} dif={fila.dif_factura} />

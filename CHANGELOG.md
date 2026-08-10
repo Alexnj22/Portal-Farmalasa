@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.548.0 — La sección «Cómo va el mes» deja de ser mitad blanco
+
+En el Tablero de Metas, la gráfica del mes y el ranking de vendedores eran dos
+tarjetas lado a lado. El carril era `grid xl:grid-cols-2` **sin `items-start`**,
+o sea `align-items: stretch`: las dos tarjetas se igualan a la más alta. Con 36
+personas el ranking mide 2,436px, así que arrastraba a la gráfica a medir lo
+mismo. Medido en el navegador antes de tocar nada:
+
+| | caja | contenido | vacío |
+|---|---|---|---|
+| Gráfica | 2,457px | 279px | **2,178px** |
+| Ranking | 2,457px | 2,436px | 21px |
+
+Media sección era una tarjeta blanca vacía del alto de dos pantallas. No era la
+gráfica la que estaba mal: era el reparto.
+
+Ahora van **una debajo de la otra, cada una a ancho completo**, y cada una usa
+ese ancho para algo:
+
+- La **gráfica** reparte los 31 días del mes en 1,312px en vez de 648, y crece a
+  260px de alto en escritorio — a 190px una franja de 7:1 dejaba las barras
+  aplastadas. En el teléfono no cambia nada.
+- El **ranking** parte su lista en **dos columnas** (`columns-2`, que reparte
+  solo: 18 y 18 con 36 personas, 19 y 18 con 37). La fila mide exactamente lo
+  mismo que antes —648px— pero entran dos, así que el alto se parte por la
+  mitad. El orden de lectura sigue siendo el del podio: se baja por la primera
+  columna y se sigue por la segunda.
+
+**La sección pasa de 2,500px a 1,616px sin esconder a nadie** — los 36 puestos
+siguen visibles, incluidos los 16 que están bajo el promedio.
+
+Dos detalles que costaron su comentario: las filas llevan `mb-0.5` en vez de
+`space-y` en la lista, porque con `columns` el `space-y` le pone margen arriba a
+la primera fila de la segunda columna —no es la primera hija— y las dos columnas
+arrancan desalineadas; y `break-inside-avoid` es lo que impide que una fila se
+parta al pie de la columna.
+
+Las dos columnas **no** aplican en el widget del tablero (`compacto`, columna
+angosta) ni por debajo de `xl`. Verificado en el navegador a 1920, 1680, 1536,
+1440, 1280 y 1100px y en iPhone 13: dos columnas parejas de 755 a 447px de
+ancho, un solo nombre recortado en el caso más angosto (el recorte del nombre ya
+era el comportamiento de siempre), una sola columna por debajo de 1280 y cero
+desborde horizontal en el teléfono. El termómetro a ancho completo también
+revisado.
+
 ## v2.547.2 — La decisión sobre los equipos compartidos, anotada donde vive el criterio
 
 Al soltar la suscripción de avisos se distingue `app` de `navegador`, y el único

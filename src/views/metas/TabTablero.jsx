@@ -334,18 +334,31 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
             {/* Cómo va el mes y quién lo está vendiendo. Debajo de las tarjetas
                 porque es el detalle de lo que ellas resumen, y solo para el mes
                 en curso. El selector es de esta sección, no de la vista: manda
-                sobre las dos tarjetas de abajo y sobre nada más. */}
+                sobre las dos tarjetas de abajo y sobre nada más.
+
+                Una debajo de la otra, y NO en dos columnas. Lo fueron hasta el
+                2026-08-10, y era el reparto el que estaba mal: en un `grid` sin
+                `items-start` las dos tarjetas se igualan a la más alta, y el
+                ranking de 36 personas mide 2,436px. Medido en el navegador, la
+                gráfica quedaba en una caja de 2,457px con 279px de contenido
+                —**2,178px de blanco**— y media sección era un vacío.
+
+                Apiladas, cada una usa el ancho entero para lo que le sirve: la
+                gráfica reparte los 31 días del mes en 1,312px en vez de 648, y
+                el ranking parte su lista en dos columnas (ver
+                `RankingVendedores`), así que la sección baja de 2,500px a
+                ~1,600px sin esconder a nadie. */}
             {esMesActual && (
                 <section className="space-y-4 pt-2">
                     <h2 className="text-body font-black">Cómo va {ymLabel(ym).toLowerCase()}</h2>
 
                     {cargandoMes ? (
-                        <div className="grid gap-4 xl:grid-cols-2">
-                            <div data-surface="card" className="p-5"><SkeletonText lines={6} /></div>
-                            <div data-surface="card" className="p-5"><SkeletonText lines={6} /></div>
+                        <div className="space-y-4">
+                            <div data-surface="card" className="p-5"><SkeletonText lines={5} /></div>
+                            <div data-surface="card" className="p-5"><SkeletonText lines={8} /></div>
                         </div>
                     ) : mes ? (
-                        <div className="grid gap-4 xl:grid-cols-2">
+                        <div className="space-y-4">
                             <GraficaMes data={mes} vista={vistaMes} onVista={setVistaMes} />
                             <RankingVendedores data={mes} />
                         </div>

@@ -53,6 +53,23 @@ export default function RankingVendedores({ data, compacto = false }) {
     const clave = orden === 'dia' ? 'venta_dia' : 'venta';
     const sufijo = orden === 'dia' ? ' por día' : '';
 
+    // En dos columnas cuando la lista es larga y hay ancho para las dos.
+    //
+    // Con 36 personas la lista mide 2,436px —dos pantallas y media— y era la
+    // mitad alta de un carril de dos tarjetas, así que arrastraba a la gráfica
+    // de al lado a medir lo mismo con 279px de contenido adentro. Hoy la tarjeta
+    // ocupa el ancho entero (ver `TabTablero`) y la fila sigue midiendo lo mismo
+    // que antes —648px— pero entran dos, y el alto se parte por la mitad.
+    //
+    // `columns-2` y no un grid: reparte solo, deja 18 y 18 sin que nadie cuente,
+    // y con 37 pone 19 y 18. El orden de lectura queda el del podio — se baja
+    // por la primera columna y se sigue por la segunda.
+    //
+    // No aplica en el widget del tablero (`compacto`), que vive en una columna
+    // angosta; ni con listas cortas, donde dos columnas de tres se leen como un
+    // error de maquetación.
+    const dosColumnas = !compacto && filas.length >= 12;
+
     return (
         <div data-surface="card" className="p-5">
             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
@@ -74,7 +91,7 @@ export default function RankingVendedores({ data, compacto = false }) {
                 />
             </div>
 
-            <ul className="space-y-0.5">
+            <ul className={dosColumnas ? 'xl:columns-2 xl:gap-x-8 [column-rule:1px_solid_var(--divider)]' : ''}>
                 {filas.map((v, i) => {
                     const valor = v[clave];
                     const bajo = valor < promedio;
@@ -89,7 +106,13 @@ export default function RankingVendedores({ data, compacto = false }) {
                     return (
                         <li
                             key={`${v.employee_id}-${v.sala}`}
-                            className={`grid grid-cols-[26px_1fr_auto] gap-3 items-center rounded-xl px-1.5 py-2 ${
+                            // `mb-0.5` en cada fila y no `space-y` en la lista:
+                            // con `columns`, `space-y` le pone margen arriba a la
+                            // primera de la segunda columna —no es la primera
+                            // hija— y las dos columnas arrancan desalineadas.
+                            // `break-inside-avoid` es lo que impide que una fila
+                            // se parta al pie de la columna.
+                            className={`grid grid-cols-[26px_1fr_auto] gap-3 items-center rounded-xl px-1.5 py-2 mb-0.5 break-inside-avoid ${
                                 top ? 'bg-chart-1/8' : bajo ? 'bg-danger/6' : ''
                             }`}
                         >

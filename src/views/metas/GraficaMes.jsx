@@ -93,7 +93,10 @@ export default function GraficaMes({ data, vista, onVista }) {
 
             {vistaReal === 'dias' ? (
                 <>
-                    <div className="h-[190px]">
+                    {/* Más alta cuando la tarjeta ocupa el ancho entero: 31 días
+                        en 1,312px con 190px de alto es una franja de 7:1 y las
+                        barras se leen aplastadas. El alto de teléfono no se toca. */}
+                    <div className="h-[190px] xl:h-[260px]">
                         <Suspense fallback={<EsqueletoBarras />}>
                             <GraficaMesDias dias={dias} ritmo={ritmo} />
                         </Suspense>

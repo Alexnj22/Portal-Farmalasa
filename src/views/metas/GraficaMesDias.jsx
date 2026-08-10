@@ -44,12 +44,18 @@ const COLOR = {
 };
 
 export default function GraficaMesDias({ dias, ritmo }) {
+    // El paso del eje sale de cuántos días hay, no de un 4 clavado. Desde que la
+    // gráfica termina en hoy, el mes empieza con pocas barras: con `interval={4}`
+    // el día 10 rotulaba dos días —el 1 y el 6— y el eje dejaba de decir nada.
+    // Apunta a ~8 rótulos: día 10 → uno sí uno no; mes entero → uno de cada 4.
+    const paso = Math.max(0, Math.ceil(dias.length / 8) - 1);
+
     return (
         <ChartContainer minHeight={190}>
             <BarChart data={dias} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid stroke={COLOR.rejilla} vertical={false} />
                 <XAxis
-                    dataKey="dia" interval={4} tickLine={false} axisLine={false}
+                    dataKey="dia" interval={paso} tickLine={false} axisLine={false}
                     tick={{ fontSize: 10, fill: COLOR.texto, fontWeight: 700 }}
                 />
                 <YAxis
@@ -77,7 +83,9 @@ export default function GraficaMesDias({ dias, ritmo }) {
                         fill: COLOR.texto, fontSize: 10, fontWeight: 800,
                     }}
                 />
-                <Bar dataKey="venta" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                {/* Tope de ancho: con diez días repartiéndose 1,150px la barra
+                    se iba a 115px y el dibujo se volvía un muro de bloques. */}
+                <Bar dataKey="venta" radius={[4, 4, 0, 0]} maxBarSize={56} isAnimationActive={false}>
                     {dias.map((d) => (
                         // El día de hoy va translúcido: todavía no termina, y
                         // pintarlo lleno lo haría parecer un mal día.

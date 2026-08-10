@@ -46,14 +46,23 @@ export default function GraficaMes({ data, vista, onVista }) {
     const conInterruptor = !!data?.todas;
     const vistaReal = conInterruptor ? vista : 'termo';
 
+    // La gráfica termina HOY (pedido del usuario, 2026-08-10). Antes el eje iba
+    // del 1 al 31 siempre, así que el día 10 dibujaba diez barras en un tercio
+    // del ancho y dos tercios de nada: el mes que todavía no pasó ocupaba más
+    // lugar que el que sí. Ahora las barras se reparten el ancho y lo que falta
+    // se dice en la franja de la derecha — un dato, no un hueco.
+    const diasMes = Number(data?.dias_mes || 30);
+    const diaHoy = Math.min(diasMes, Math.max(1, Number(data?.dia_hoy || diasMes)));
+    const porVenir = Math.max(0, diasMes - diaHoy);   // los que no empezaron; hoy NO cuenta, ya tiene barra
+
     const dias = useMemo(() => {
         const porDia = new Map((data?.dias || []).map((d) => [Number(d.dia), d]));
-        return Array.from({ length: Number(data?.dias_mes || 30) }, (_, i) => {
+        return Array.from({ length: diaHoy }, (_, i) => {
             const n = i + 1;
             const d = porDia.get(n);
             return { dia: n, venta: d ? Number(d.venta) : null, esHoy: !!d?.es_hoy };
         });
-    }, [data]);
+    }, [data, diaHoy]);
 
     const ritmo = Number(data?.ritmo_diario || 0);
     const cerrados = dias.filter((d) => d.venta != null && !d.esHoy);
@@ -96,13 +105,33 @@ export default function GraficaMes({ data, vista, onVista }) {
                     {/* Más alta cuando la tarjeta ocupa el ancho entero: 31 días
                         en 1,312px con 190px de alto es una franja de 7:1 y las
                         barras se leen aplastadas. El alto de teléfono no se toca. */}
-                    <div className="h-[190px] xl:h-[260px]">
-                        <Suspense fallback={<EsqueletoBarras />}>
-                            <GraficaMesDias dias={dias} ritmo={ritmo} />
-                        </Suspense>
+                    <div className="flex items-stretch gap-3 h-[190px] xl:h-[260px]">
+                        <div className="flex-1 min-w-0">
+                            <Suspense fallback={<EsqueletoBarras />}>
+                                <GraficaMesDias dias={dias} ritmo={ritmo} />
+                            </Suspense>
+                        </div>
+
+                        {/* Lo que falta del mes, dicho en vez de dibujado en
+                            blanco. El `mb` levanta la franja hasta el piso del
+                            área de dibujo — los 30px de abajo son la fila de
+                            días del eje, que no tiene nada que ver con esto. */}
+                        {porVenir > 0 && (
+                            <div className="shrink-0 w-[14%] min-w-[78px] max-w-[170px] mb-[30px]
+                                            flex flex-col items-center justify-center text-center px-2
+                                            rounded-xl border border-dashed border-divider bg-surface-card-hover/50">
+                                <span className="text-title-sm font-black tabular-nums text-content-2 leading-none">
+                                    {porVenir}
+                                </span>
+                                <span className="text-micro font-bold uppercase tracking-widest text-content-3 leading-tight mt-1">
+                                    días por<br />venir
+                                </span>
+                            </div>
+                        )}
                     </div>
                     <p className="text-micro font-semibold text-content-3 mt-2">
                         El día de hoy va más claro porque todavía no termina.
+                        {porVenir > 0 && <> La gráfica llega hasta hoy: quedan {porVenir} día{porVenir !== 1 ? 's' : ''} del mes.</>}
                     </p>
                 </>
             ) : (

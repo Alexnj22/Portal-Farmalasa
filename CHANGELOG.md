@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.549.0 — La gráfica termina en hoy y la proyección se ve
+
+Dos pedidos del usuario sobre «Cómo va el mes», los dos sobre lo mismo: que la
+pantalla muestre lo que ya sabía pero no dibujaba.
+
+**«Día por día» termina hoy.** El eje iba del 1 al 31 siempre, así que el día 10
+eran diez barras en un tercio del ancho y dos tercios de nada: el mes que no
+había pasado ocupaba más lugar que el que sí. Ahora las barras se reparten el
+ancho y lo que falta se dice —una franja a la derecha con «21 días por venir» y
+la línea de abajo, que ahora aclara que la gráfica llega hasta hoy—. Dos ajustes
+que hicieron falta al acortar el eje: el paso de los rótulos sale de cuántos
+días hay y no de un 4 clavado (con diez días rotulaba dos, el 1 y el 6, y el eje
+dejaba de decir nada), y las barras llevan tope de ancho, porque diez
+repartiéndose 1,150px se iban a 115px cada una y el dibujo era un muro.
+
+**En el termómetro, la proyección era la pieza menos visible de la barra** — un
+rombo hueco de 10px, siempre azul, sin número al lado. O sea que la única figura
+que contesta la pregunta de la pantalla, *¿vamos a llegar?*, había que leerla en
+el renglón de texto de abajo. Ahora:
+
+- El fondo de la barra se pinta en **las tres zonas del bono**: rojo hasta el
+  95%, ámbar entre el 95 y la meta, verde de la meta en adelante. La regla del
+  bono deja de ser algo que hay que saber y pasa a estar dibujada.
+- La proyección es un **alfiler del color de la zona donde cae**, con su
+  porcentaje en una insignia encima («cierra 97.5%»). El alfiler sube hasta
+  tocar la insignia: son la misma pieza. Sin ese tallo, con la proyección en el
+  tramo del medio quedaban tres marcas ámbar seguidas y ninguna se distinguía.
+- El color del tramo sale de `TRAMO_CFG`, el mismo que pinta la insignia «Bono
+  completo / Medio bono / Sin bono» de la tarjeta, así que **la insignia y la
+  barra no pueden decir cosas distintas**.
+
+`BarraAvance` la usan tres pantallas —las seis tarjetas por sala, el termómetro
+y el widget del Inicio—, y las tres se verificaron en el navegador: rojo en
+91.7% y 90.4%, ámbar en 96.5% y 97.2%, verde en 102.0% y 103.9%, cada una
+coincidiendo con la insignia de su tarjeta. La insignia es el `Badge` canónico y
+no un chip a mano: la primera versión lo escribió a mano y `gate:design` la
+frenó con razón.
+
 ## v2.548.0 — La sección «Cómo va el mes» deja de ser mitad blanco
 
 En el Tablero de Metas, la gráfica del mes y el ranking de vendedores eran dos

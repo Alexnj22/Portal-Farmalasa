@@ -178,6 +178,22 @@ Deno.serve(async (req) => {
       frenadas: 0, fallidas: 0, cortada_por_tiempo: false,
     };
     const aRevisar: unknown[] = [];
+    // El ERP tiene su propio control de duplicados y rechaza el guardado
+    // completo —`escribirCampo` reenvía los 21 campos, así que cualquier
+    // edición lo dispara—. No es un fallo técnico ni se arregla reintentando:
+    // hay dos fichas que el ERP considera la misma persona y eso lo decide
+    // alguien. Medido: 3 de 98 en la primera corrida completa.
+    const esRechazoPorDuplicado = (m?: string) => !!m && /ya se registro un cliente/i.test(m);
+    const aRevisarDuplicado = (c: Candidato, erpId: string, motivo?: string) => {
+      aRevisar.push({
+        erp_id: erpId, name: c.name, motivo: "erp_rechaza_duplicado",
+        detalle: `El sistema de origen no deja guardar la ficha de «${c.name}»: ` +
+                 `«${motivo ?? "sin motivo"}». Ya existe otra ficha que considera ` +
+                 `la misma persona — hay que unirlas o distinguirlas a mano.`,
+        datos: { customer_id: c.customer_id, erp_id: erpId, motivo },
+      });
+      res.a_revisar++;
+    };
     const aEspejar: Record<string, unknown>[] = [];
     const correcciones: Record<string, unknown>[] = [];
     const detalle: unknown[] = [];
@@ -226,6 +242,23 @@ Deno.serve(async (req) => {
         // ── 2 · La tabla de decisión, sobre la ficha DEL ERP ──────────
         const ficha = await leerFicha(cookie, erpId);
 
+        // Una ficha SIN NINGÚN campo es un `erp_id` que el ERP no reconoce:
+        // `editar_cliente.php` devuelve el formulario vacío. No hay nada que
+        // corregir y reintentarlo cada noche sólo suma ruido — verificado a
+        // mano sobre erp 23771, cero campos. Son enlaces huérfanos de la
+        // migración de abril.
+        if (!Object.keys(ficha.campos).length) {
+          aRevisar.push({
+            erp_id: erpId, name: c.name, motivo: "erp_id_inexistente",
+            detalle: `El número interno ${erpId} no existe en el sistema de ` +
+                     `origen: su ficha vuelve vacía. Hay que averiguar cuál es ` +
+                     `el número correcto de «${c.name}» o dar de baja la ficha.`,
+            datos: { customer_id: c.customer_id, erp_id: erpId },
+          });
+          res.a_revisar++;
+          continue;                       // sin ficha no hay nada que espejar
+        }
+
         // El freno: ya se corrigió y Hacienda volvió a rechazar lo mismo.
         // Reintentarlo cada noche no lo arregla y esconde el caso.
         if (c.ya_corregido) {
@@ -258,7 +291,8 @@ Deno.serve(async (req) => {
               correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "dui",
                                   antes, despues: "", motivo: "dui_invalido" });
               detalle.push({ ficha: c.name, accion: "dui borrado", antes });
-            } else { res.fallidas++; detalle.push({ ficha: c.name, accion: "dui", error: w.motivo }); }
+            } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
+            else { res.fallidas++; detalle.push({ ficha: c.name, accion: "dui", error: w.motivo }); }
           }
         } else if (!ficha.campos.municipio || c.origen === "rechazo") {
           // Regla ① de bloque: sin municipio no hay de dónde deducir el
@@ -275,7 +309,8 @@ Deno.serve(async (req) => {
             // Ya estaba en el destino: no se escribe ni se anota. Una corrección
             // que no ocurrió ensucia el freno — mañana parecería que se intentó.
             res.ya_estaban++;
-          } else { res.fallidas++; detalle.push({ ficha: c.name, accion: "ubicación", error: u.motivo }); }
+          } else if (esRechazoPorDuplicado(u.motivo)) { aRevisarDuplicado(c, erpId, u.motivo); }
+          else { res.fallidas++; detalle.push({ ficha: c.name, accion: "ubicación", error: u.motivo }); }
         } else if (!ficha.campos.distrito) {
           // Regla ② — el matcher, verificado contra las 25,946 decisiones.
           const eleccion = await elegirDistrito(
@@ -294,7 +329,8 @@ Deno.serve(async (req) => {
               correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "distrito",
                                   antes: "", despues: eleccion.value, motivo: "sin_distrito" });
               detalle.push({ ficha: c.name, accion: "distrito", motivo: eleccion.motivo });
-            } else {
+            } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
+            else {
               res.fallidas++;
               detalle.push({ ficha: c.name, accion: "distrito", error: w.motivo });
             }

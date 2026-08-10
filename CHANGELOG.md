@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.542.2 — La deduplicación nocturna nunca funcionó
+
+La primera corrida completa del lazo dio 14 fallidas de 98. Ninguna escribió
+nada —una escritura que falla no escribe— pero las tres familias eran
+informativas:
+
+| | qué era |
+|---|---|
+| 5 | `fusionar: FORBIDDEN` |
+| 6 | el `erp_id` del portal no existe en el ERP: la ficha vuelve vacía |
+| 3 | el ERP rechaza el guardado por su propio control de duplicados |
+
+**El FORBIDDEN es el hallazgo.** `fusionar_cliente_duplicado` empezaba con
+`IF NOT auth_can_edit_any(ARRAY['clientes'])`, y esa función resuelve al
+empleado desde el JWT. El cron invoca con el secreto de admin y la función usa
+`service_role`: no hay `auth.uid()`, así que la guarda dice que no. **El paso de
+fusionar duplicados nunca funcionó desde que el proceso se automatizó** — por
+eso las fichas sueltas no bajaban solas. Es la misma familia de error que todo
+este hilo: una pieza portada a un contexto donde su premisa —«hay un usuario
+detrás»— ya no se cumple. El bypass usa el patrón que ya tenía el baseline.
+
+Las otras dos ya no cuentan como fallo: tienen destino en «Por revisar» con
+motivos propios (`erp_id_inexistente`, `erp_rechaza_duplicado`). Reintentar cada
+noche un número que el ERP no reconoce, o un guardado que su control de
+duplicados rechaza, no arregla nada y esconde el caso entre el ruido.
+
+Misma corrida después del arreglo: **5 fusionadas, 8 facturas movidas, 0
+fallidas**.
+
+Y lo que cierra el hilo del día: las tres facturas trabadas **entraron**.
+
+```
+OVED       sellada   ← el ERP mandaba el distrito vacío
+OSCAR      sellada   ← DUI 00000000-0 borrado
+FRANCISCO  sellada   ← el default lo hizo pasar
+```
+
+Francisco de paso explica Sensuntepeque: su ficha estaba idéntica en los dos
+lados y el default la hizo entrar igual, así que el conflicto es con el catálogo
+del MH, no con la ficha. `dte_rechazos_vigentes` quedó en **0 accionables**.
+
 ## v2.542.1 — El espejo no propagaba borrados
 
 Salió de la primera corrida acotada del lazo, que fue justo para eso. Resultado:

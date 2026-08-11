@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.561.0 — Los widgets de venta del Inicio pueden hablar en porcentajes
+
+Los dos widgets de venta del Inicio —**Meta del mes** y **Venta por
+vendedor**— eran todo o nada: o se daban con los montos adentro, o no se
+daban. Ahora cada uno tiene su interruptor **Vista completa** en la pantalla
+de Permisos. Encendido, se ve exactamente lo de siempre. Apagado, el widget
+sigue estando y cambia de idioma: dice porcentajes.
+
+**Meta del mes**, con la vista completa apagada:
+
+- El número grande es la **meta**, no lo vendido, con el porcentaje de
+  cumplimiento al lado. La barra de avance no cambia.
+- El pie deja de decir «Hoy llevas $837.19 · cierra en $42,753.81 → 103.9%» y
+  dice **«Cierra en 103.9% de la meta»**; y en lugar de «Faltan $26,446.32 en
+  21 días» dice **«Falta 64.3% en 21 días»**.
+- Lo que **no** se va es el ritmo diario —«$1,259.35 por día»—: es lo que hay
+  que vender mañana para llegar. Es una instrucción, no el resultado de nadie,
+  y sin ella la línea no sirve para trabajar.
+
+**Venta por vendedor**, con la vista completa apagada:
+
+- Cada fila muestra su **participación en la venta de la sala** en vez del
+  monto. Ordena igual y la barra con la marca del promedio queda intacta, así
+  que se sigue leyendo quién va arriba y quién está bajo el promedio.
+- El **ticket promedio pasa al frente** y en negro, y se va la venta por día:
+  el ticket es lo que cada quien mueve en el mostrador.
+- El encabezado se reduce al **ticket de la sala**. El promedio vendido por
+  persona se fue: con el número de personas al lado, una multiplicación
+  devolvía la venta de la sala entera.
+
+Los dos nacen **encendidos** para todo cargo que ya tenía el widget, así que
+hoy nadie ve algo distinto. El módulo Metas —que es de supervisión— no cambia:
+usa el mismo ranking y lo ve siempre completo.
+
 ## v2.560.0 — Permiso para ver las tarjetas de resumen en Ventas
 
 Arriba de Ventas va el consolidado del período: total vendido, ticket

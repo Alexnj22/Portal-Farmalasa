@@ -5,6 +5,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { formatMoney, formatPct } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchMetaSala } from '../../data/metas';
+import { useAuth } from '../../context/AuthContext';
 import BarraAvance from '../metas/BarraAvance';
 import { TRAMO_CFG, tramoLabel, ymLabel } from '../metas/metasUtils';
 
@@ -19,9 +20,19 @@ import { TRAMO_CFG, tramoLabel, ymLabel } from '../metas/metasUtils';
 // mañana miente, y nadie recarga el Inicio para verificarlo.
 const REFRESCO_MS = 5 * 60 * 1000;
 
+// ── Dos lecturas del mismo widget ────────────────────────────────────────────
+// Con `dash_meta_sala_vista_completa` se ve lo de siempre. Sin ella, el widget
+// NO desaparece: cambia de idioma y habla en porcentajes. Se van los montos
+// —lo vendido, lo vendido hoy, la proyección en dólares, lo que falta— y quedan
+// la meta (que es el objetivo, no una venta), el porcentaje de cumplimiento, la
+// proyección de cierre en % y el ritmo diario que hace falta, que es la única
+// cifra en dólares que sobrevive porque es una instrucción, no un resultado.
+//
 // Al cambiar de sala el widget se REMONTA (el padre le pasa `key`), así que el
 // skeleton vuelve solo: no hace falta un setLoading(true) dentro del efecto.
 export default function WidgetMetaSala({ selectedBranchId = null, conSelector = false }) {
+    const { hasPermission } = useAuth();
+    const vistaCompleta = hasPermission('dash_meta_sala_vista_completa');
     const [row, setRow] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -96,9 +107,15 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
 
             {sinMeta ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center gap-1.5 py-3">
-                    <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(row.venta_acumulada)}</span>
+                    {/* Sin vista completa este bloque se queda sin número: lo
+                        único que tenía era el monto vendido. Queda la frase, que
+                        es la que explica por qué el widget está vacío. */}
+                    {vistaCompleta && (
+                        <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(row.venta_acumulada)}</span>
+                    )}
                     <p className="text-label font-semibold text-content-3 max-w-[240px]">
-                        Vendido este mes. Todavía no hay meta para {ymLabel(row.year_month).toLowerCase()}.
+                        {vistaCompleta && 'Vendido este mes. '}
+                        Todavía no hay meta para {ymLabel(row.year_month).toLowerCase()}.
                     </p>
                 </div>
             ) : (
@@ -108,15 +125,28 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
                         y en gris chico: el número que le da nombre al widget era
                         el menos visible de la tarjeta, y había que deducir cuál
                         de los dos era. Es la misma forma que las tarjetas por
-                        sala del Tablero: «Meta $X» arriba, el vendido debajo. */}
-                    <p className="text-label font-bold text-content-2 tabular-nums mt-1.5">
-                        Meta <span className="text-content font-black">{formatMoney(row.monto_meta)}</span>
-                    </p>
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(row.venta_acumulada)}</span>
-                        <span className="text-body-sm font-black text-chart-1-text tabular-nums">{formatPct(row.pct_cumplimiento)}</span>
-                        <span className="text-label font-semibold text-content-3">vendido</span>
-                    </div>
+                        sala del Tablero: «Meta $X» arriba, el vendido debajo.
+                        Sin vista completa no hay renglón del vendido: entonces
+                        la meta sube al lugar grande y no se dice dos veces. */}
+                    {vistaCompleta ? (
+                        <>
+                            <p className="text-label font-bold text-content-2 tabular-nums mt-1.5">
+                                Meta <span className="text-content font-black">{formatMoney(row.monto_meta)}</span>
+                            </p>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(row.venta_acumulada)}</span>
+                                <span className="text-body-sm font-black text-chart-1-text tabular-nums">{formatPct(row.pct_cumplimiento)}</span>
+                                <span className="text-label font-semibold text-content-3">vendido</span>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex items-baseline gap-2 flex-wrap mt-1.5">
+                            <span className="text-2xl font-black tabular-nums tracking-tight">{formatMoney(row.monto_meta)}</span>
+                            <span className="text-label font-semibold text-content-3">de meta</span>
+                            <span className="text-body-sm font-black text-chart-1-text tabular-nums">{formatPct(row.pct_cumplimiento)}</span>
+                            <span className="text-label font-semibold text-content-3">cumplido</span>
+                        </div>
+                    )}
 
                     <BarraAvance
                         pct={Number(row.pct_cumplimiento)}
@@ -126,21 +156,38 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
                     />
 
                     <div className="mt-3 space-y-1">
-                        <p className="text-label font-semibold text-content-2 tabular-nums">
-                            Hoy llevas <strong>{formatMoney(row.venta_hoy)}</strong>
-                            {row.proyeccion != null && (
-                                <> · cierra en <strong>{formatMoney(row.proyeccion)}</strong>
-                                    {' → '}<strong className={tramo?.textCls || ''}>{formatPct(row.pct_proyectado)}</strong></>
-                            )}
-                        </p>
+                        {/* Las dos líneas del pie dicen lo mismo en dos monedas:
+                            con vista completa, en dólares; sin ella, en
+                            porcentaje. Lo que NO cambia es el ritmo diario
+                            (`ritmo_necesario`): es lo que hay que vender mañana
+                            para llegar —una instrucción, no el resultado de
+                            nadie— y sin él la línea no sirve para trabajar. */}
+                        {vistaCompleta ? (
+                            <p className="text-label font-semibold text-content-2 tabular-nums">
+                                Hoy llevas <strong>{formatMoney(row.venta_hoy)}</strong>
+                                {row.proyeccion != null && (
+                                    <> · cierra en <strong>{formatMoney(row.proyeccion)}</strong>
+                                        {' → '}<strong className={tramo?.textCls || ''}>{formatPct(row.pct_proyectado)}</strong></>
+                                )}
+                            </p>
+                        ) : row.pct_proyectado != null && (
+                            <p className="text-label font-semibold text-content-2 tabular-nums">
+                                Cierra en <strong className={tramo?.textCls || ''}>{formatPct(row.pct_proyectado)}</strong> de la meta
+                            </p>
+                        )}
                         {row.falta > 0 ? (
                             <p className="text-label font-semibold text-content-3 tabular-nums">
-                                Faltan <strong className="text-content-2">{formatMoney(row.falta)}</strong> en {row.dias_restantes} día{row.dias_restantes !== 1 ? 's' : ''}
+                                {vistaCompleta
+                                    ? <>Faltan <strong className="text-content-2">{formatMoney(row.falta)}</strong></>
+                                    : <>Falta <strong className="text-content-2">{formatPct(Math.max(0, 100 - Number(row.pct_cumplimiento)))}</strong></>}
+                                {' '}en {row.dias_restantes} día{row.dias_restantes !== 1 ? 's' : ''}
                                 {row.ritmo_necesario != null && <> · <strong className="text-content-2">{formatMoney(row.ritmo_necesario)}</strong> por día</>}
                             </p>
                         ) : (
                             <p className="text-label font-bold text-success-text tabular-nums">
-                                Meta alcanzada · {formatMoney(row.venta_acumulada - row.monto_meta)} por encima
+                                Meta alcanzada · {vistaCompleta
+                                    ? `${formatMoney(row.venta_acumulada - row.monto_meta)} por encima`
+                                    : `${formatPct(Math.max(0, Number(row.pct_cumplimiento) - 100))} por encima`}
                             </p>
                         )}
                         {/* Se retiró «El bono se muestra solo como referencia»

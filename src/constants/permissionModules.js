@@ -350,8 +350,19 @@ const GRUPOS_CRUDOS = [
             // una factura. El alcance importa de verdad acá: con scope BRANCH la
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
             { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi Sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
-            { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icon: Target, hasApprove: false, hasScope: true },
-            { key: 'dash_vendedores',     label: 'Widget: Venta por vendedor',    desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icon: Users, hasApprove: false, hasScope: true },
+            // Los dos widgets de venta tienen DOS lecturas, y la capacidad
+            // «vista completa» es la que decide cuál se pinta. Apagada, el
+            // widget sigue estando —la sala necesita saber cómo va— pero habla
+            // en porcentajes: se van los montos y quedan el cumplimiento, el
+            // ritmo diario que hace falta y el ticket promedio. Es lo que se le
+            // puede dejar puesto a una sala sin publicarle a cada quien cuánto
+            // vendió el de al lado.
+            { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icon: Target, hasApprove: false, hasScope: true, sub: [
+                { key: 'dash_meta_sala_vista_completa', label: 'Vista completa (con los montos vendidos)', tipo: 'cap' },
+            ]},
+            { key: 'dash_vendedores',     label: 'Widget: Venta por vendedor',    desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icon: Users, hasApprove: false, hasScope: true, sub: [
+                { key: 'dash_vendedores_vista_completa', label: 'Vista completa (con lo vendido por cada quien)', tipo: 'cap' },
+            ]},
         ],
     },
     {

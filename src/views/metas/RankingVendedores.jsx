@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { EmptyState } from '../../components/common/StateViews';
-import { formatMoney } from '../../utils/formatNumber';
+import { formatMoney, formatPct } from '../../utils/formatNumber';
 
 // Quién está vendiendo este mes. Top 2 resaltado, el resto en gris, y en ROJO
 // quien está bajo el promedio de la sala (decisión del usuario 2026-08-05).
@@ -21,10 +21,16 @@ const ORDENES = [
     { value: 'dia',   label: 'Por día trabajado' },
 ];
 
-export default function RankingVendedores({ data, compacto = false }) {
+// `vistaCompleta` (permiso `dash_vendedores_vista_completa` en el widget del
+// Inicio; siempre true dentro del módulo Metas, que es de supervisión): apagada,
+// el ranking sigue completo pero deja de decir CUÁNTO vendió cada quien. En su
+// lugar va su participación en la venta de la sala —el mismo orden, la misma
+// barra, la misma marca del promedio— y el ticket promedio pasa al frente, que
+// es lo que la persona puede mover con lo que hace en el mostrador.
+export default function RankingVendedores({ data, compacto = false, vistaCompleta = true }) {
     const [orden, setOrden] = useState('total');
 
-    const { filas, promedio, maximo } = useMemo(() => {
+    const { filas, promedio, maximo, total } = useMemo(() => {
         const base = (data?.vendedores || []).map((v) => ({
             ...v,
             venta: Number(v.venta),
@@ -35,7 +41,14 @@ export default function RankingVendedores({ data, compacto = false }) {
         const clave = orden === 'dia' ? 'venta_dia' : 'venta';
         const prom = orden === 'dia' ? Number(data?.promedio_dia || 0) : Number(data?.promedio_venta || 0);
         const ord = [...base].sort((a, b) => b[clave] - a[clave]);
-        return { filas: ord, promedio: prom, maximo: ord.length ? ord[0][clave] : 0 };
+        return {
+            filas: ord,
+            promedio: prom,
+            maximo: ord.length ? ord[0][clave] : 0,
+            // La suma de la columna que se está ordenando: es el denominador de
+            // la participación de cada quien cuando no se muestran montos.
+            total: ord.reduce((s, v) => s + v[clave], 0),
+        };
     }, [data, orden]);
 
     // Dentro de un widget la tarjeta la pone el `WidgetCard`, y el título
@@ -92,11 +105,23 @@ export default function RankingVendedores({ data, compacto = false }) {
                             Venta por vendedor · {data?.sala}
                         </p>
                     )}
+                    {/* Sin vista completa la línea se reduce al ticket de la
+                        sala: el promedio vendido por persona es un monto, y con
+                        el número de personas al lado se despeja la venta total
+                        de la sala en una multiplicación. */}
                     <p className="text-label font-semibold text-content-3 mt-0.5 tabular-nums">
-                        {filas.length} persona{filas.length !== 1 ? 's' : ''} · promedio{' '}
-                        <strong className="text-content-2">{formatMoney(promedio)}</strong>{sufijo}
-                        {data?.promedio_ticket != null && (
-                            <> · ticket de la sala <strong className="text-content-2">{formatMoney(data.promedio_ticket)}</strong></>
+                        {vistaCompleta ? (
+                            <>
+                                {filas.length} persona{filas.length !== 1 ? 's' : ''} · promedio{' '}
+                                <strong className="text-content-2">{formatMoney(promedio)}</strong>{sufijo}
+                                {data?.promedio_ticket != null && (
+                                    <> · ticket de la sala <strong className="text-content-2">{formatMoney(data.promedio_ticket)}</strong></>
+                                )}
+                            </>
+                        ) : data?.promedio_ticket != null ? (
+                            <>Ticket de la sala <strong className="text-content-2">{formatMoney(data.promedio_ticket)}</strong></>
+                        ) : (
+                            <>{filas.length} persona{filas.length !== 1 ? 's' : ''}</>
                         )}
                     </p>
                 </div>
@@ -154,13 +179,28 @@ export default function RankingVendedores({ data, compacto = false }) {
                                         <span className="shrink-0 text-micro font-semibold text-content-3">&nbsp;· {v.sala}</span>
                                     )}
                                 </p>
-                                <p className="text-micro font-semibold text-content-3 tabular-nums mt-0.5">
-                                    {v.tickets} tickets · {formatMoney(v.ticket)} c/u ·{' '}
-                                    <span className={pocosDias ? 'text-warning-text font-black' : undefined}>
-                                        {v.dias} día{v.dias !== 1 ? 's' : ''}
-                                    </span>
-                                    {' · '}{formatMoney(v.venta_dia)}/día
-                                </p>
+                                {/* Con vista completa, el ticket es un dato más de
+                                    la línea. Sin ella pasa al frente y en negro:
+                                    es lo único que queda para comparar dos filas
+                                    de cerca, y la venta por día se va con los
+                                    demás montos. */}
+                                {vistaCompleta ? (
+                                    <p className="text-micro font-semibold text-content-3 tabular-nums mt-0.5">
+                                        {v.tickets} tickets · {formatMoney(v.ticket)} c/u ·{' '}
+                                        <span className={pocosDias ? 'text-warning-text font-black' : undefined}>
+                                            {v.dias} día{v.dias !== 1 ? 's' : ''}
+                                        </span>
+                                        {' · '}{formatMoney(v.venta_dia)}/día
+                                    </p>
+                                ) : (
+                                    <p className="text-label font-semibold text-content-3 tabular-nums mt-0.5">
+                                        <strong className="text-body-sm font-black text-content">{formatMoney(v.ticket)}</strong>
+                                        {' '}de ticket · {v.tickets} tickets ·{' '}
+                                        <span className={pocosDias ? 'text-warning-text font-black' : undefined}>
+                                            {v.dias} día{v.dias !== 1 ? 's' : ''}
+                                        </span>
+                                    </p>
+                                )}
                                 <div className="relative h-1.5 rounded-full bg-surface-card-hover mt-1.5">
                                     <span
                                         className={`absolute inset-y-0 left-0 rounded-full ${
@@ -178,8 +218,14 @@ export default function RankingVendedores({ data, compacto = false }) {
                             </div>
 
                             <div className="text-right">
+                                {/* Sin vista completa, la participación en la venta
+                                    de la sala: ordena igual que el monto y deja
+                                    leer la distancia entre dos puestos, sin decir
+                                    cuánto vendió nadie. */}
                                 <p className={`text-body-sm font-black tabular-nums ${bajo ? 'text-danger-text' : 'text-content'}`}>
-                                    {formatMoney(valor)}
+                                    {vistaCompleta
+                                        ? formatMoney(valor)
+                                        : formatPct(total > 0 ? (valor / total) * 100 : 0)}
                                 </p>
                                 {/* El color no viaja solo: cada fila lo dice con
                                     palabras, para quien no distingue rojo y verde. */}

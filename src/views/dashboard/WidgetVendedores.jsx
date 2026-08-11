@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SkeletonText } from '../../components/common/StateViews';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchMesEnCurso } from '../../data/metas';
+import { useAuth } from '../../context/AuthContext';
 import RankingVendedores from '../metas/RankingVendedores';
 
 // Quién está vendiendo, en el Inicio de la sala. Es el MISMO componente que usa
@@ -15,6 +16,11 @@ import RankingVendedores from '../metas/RankingVendedores';
 const REFRESCO_MS = 5 * 60 * 1000;
 
 export default function WidgetVendedores({ selectedBranchId = null }) {
+    // `dash_vendedores_vista_completa` decide si el ranking dice montos o
+    // porcentajes. El módulo Metas —que es supervisión— usa el mismo componente
+    // sin la prop y ve siempre la versión completa.
+    const { hasPermission } = useAuth();
+    const vistaCompleta = hasPermission('dash_vendedores_vista_completa');
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -55,5 +61,5 @@ export default function WidgetVendedores({ selectedBranchId = null }) {
 
     // `compacto`: dentro de un widget la nota al pie sobra — el espacio es poco
     // y la regla del promedio ya la dice cada fila.
-    return <RankingVendedores data={data} compacto />;
+    return <RankingVendedores data={data} compacto vistaCompleta={vistaCompleta} />;
 }

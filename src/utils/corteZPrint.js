@@ -1,4 +1,5 @@
 import { formatMoney } from './formatNumber';
+import { EMPRESA } from '../constants/empresa';
 
 // PDF del Corte Z — uno o todas las sucursales en un solo archivo.
 //
@@ -48,8 +49,24 @@ function filasSeccion(sec = {}) {
     ];
 }
 
+/**
+ * La dirección de la sucursal: la del local y su departamento, en una línea.
+ *
+ * Sin municipio a propósito. La dirección guardada ya nombra el lugar («…,
+ * Nueva Concepción», «…, Agua Caliente»), mientras que el municipio del
+ * catálogo es el de la división de 2024 —«Chalatenango Sur»—, así que ponerlos
+ * juntos daría «Nueva Concepción, Chalatenango Sur, Chalatenango»: dos nombres
+ * distintos para el mismo sitio, uno al lado del otro.
+ *
+ * Devuelve cadena vacía si no hay nada: el encabezado omite la línea en vez de
+ * dejar un renglón en blanco que se lee como una dirección que no se cargó.
+ */
+export const direccionDe = (fila) =>
+    [fila.direccion, fila.departamento].filter(Boolean).join(', ');
+
 function bloqueSucursal(fila, { conSalto }) {
     const sec = fila.detalle?.secciones || {};
+    const direccion = direccionDe(fila);
     const secciones = [
         ['Ventas con tiquete',        sec.tiquete],
         ['Ventas con factura',        sec.factura],
@@ -63,7 +80,16 @@ function bloqueSucursal(fila, { conSalto }) {
 
     return [
         ...(conSalto ? [{ text: '', pageBreak: 'before' }] : []),
+
+        // Quién declara, arriba de todo. Va en CADA bloque y no una sola vez al
+        // principio del archivo porque el archivo de "todas las sucursales" es
+        // una sucursal por hoja, y una hoja suelta tiene que poder identificarse
+        // sola: es un documento que se presenta, no un listado interno.
+        { text: EMPRESA.razonSocial, style: 'empresa' },
+        { text: `NIT: ${EMPRESA.nit}    NRC: ${EMPRESA.nrc}`, style: 'fiscal' },
+
         { text: fila.sucursal, style: 'suc' },
+        ...(direccion ? [{ text: direccion, style: 'dir' }] : []),
         { text: `Corte Z mensual · ${etiquetaPeriodo(fila.periodo)}`, style: 'sub' },
         { text: `Del ${fila.fecha_inicio} al ${fila.fecha_fin}`, style: 'sub2' },
 
@@ -139,7 +165,10 @@ export async function descargarCorteZPdf(filas, nombreArchivo) {
         }),
         content: filas.flatMap((f, i) => bloqueSucursal(f, { conSalto: i > 0 })),
         styles: {
+            empresa:   { fontSize: 11, bold: true, color: '#222' },
+            fiscal:    { fontSize: 9, color: '#555', margin: [0, 1, 0, 10] },
             suc:       { fontSize: 16, bold: true, margin: [0, 0, 0, 2] },
+            dir:       { fontSize: 9, color: '#555', margin: [0, 0, 0, 3] },
             sub:       { fontSize: 10, color: '#444' },
             sub2:      { fontSize: 9,  color: '#777', margin: [0, 0, 0, 12] },
             secTitulo: { fontSize: 10, bold: true, margin: [0, 6, 0, 4] },

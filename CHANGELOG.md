@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.563.0 — El Corte Z dice quién declara y desde dónde
+
+El Corte Z llevaba los números y el cotejo, pero no la identificación de quien
+los declara. Ahora la lleva, en la pantalla y en el PDF:
+
+- **La dirección de cada sucursal** — la del local y su departamento, tal como
+  están cargadas en el maestro de sucursales. Va debajo del nombre en la
+  tarjeta y en el encabezado de cada hoja del PDF.
+- **NIT y NRC de la empresa** — `0401-210685-101-0` y `213237-5`, junto a la
+  razón social.
+
+Tres decisiones que conviene tener anotadas:
+
+- **El municipio queda fuera a propósito.** La dirección guardada ya nombra el
+  lugar («…, Nueva Concepción», «…, Agua Caliente»), mientras que el municipio
+  del catálogo es el de la división de 2024 —«Chalatenango Sur»—. Ponerlos
+  juntos daría «Nueva Concepción, Chalatenango Sur, Chalatenango»: dos nombres
+  distintos para el mismo sitio, uno al lado del otro.
+- **En pantalla el NIT y el NRC van una sola vez; en el PDF, por hoja.** Son de
+  la empresa y no de la sucursal, así que repetirlos en las seis tarjetas los
+  convierte en adorno. En el PDF sí van en cada bloque, porque el archivo de
+  «todas las sucursales» es una sucursal por hoja y una hoja suelta tiene que
+  poder identificarse sola.
+- **`src/constants/empresa.js`** — los datos fiscales viven en un solo lugar en
+  vez de escritos dentro del informe que los estrenó. Un NIT copiado en cada
+  PDF es un NIT que el día que cambie va a quedar bien en unos y mal en otros,
+  sin que nada lo avise.
+
+La dirección y el departamento salen del RPC (`get_cortes_z`, migración
+`20260811202407`), en la misma fila que los números y no en una consulta
+aparte: cruzar el catálogo de sucursales contra el Corte Z en el frontend es
+donde se cuela mostrar la dirección de una sucursal sobre las cifras de otra.
+
+Verificado en el navegador con las seis sucursales de julio 2026 —Chromium a
+1440px y WebKit iPhone 13—: la dirección se pinta completa, sin desborde
+horizontal ni scroll lateral en el teléfono, y el PDF descargado abre con el
+encabezado nuevo.
+
 ## v2.562.0 — un traslado por producto: el modelo de datos
 
 Base para la recepción parcial que pidió el usuario: poder confirmar una hoja

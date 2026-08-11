@@ -14,7 +14,8 @@ import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchCortesZ, fetchCorteZDias } from '../../data/corteZ';
-import { descargarCorteZPdf, etiquetaPeriodo } from '../../utils/corteZPrint';
+import { descargarCorteZPdf, direccionDe, etiquetaPeriodo } from '../../utils/corteZPrint';
+import { EMPRESA } from '../../constants/empresa';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORTE Z — el Gran Z mensual de cada sucursal.
@@ -282,12 +283,23 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
 const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDias, onVerDias }) => {
     const sec = fila.detalle?.secciones || {};
     const ok = cuadra(fila.dif_total);
+    // La misma función que arma la línea del PDF: si la pantalla y el documento
+    // componen la dirección cada uno por su lado, el día que cambie el criterio
+    // uno de los dos se queda atrás y nadie lo nota hasta que alguien compara.
+    const direccion = direccionDe(fila);
 
     return (
         <section data-surface="card" className="flex flex-col p-4 md:p-5 gap-4">
             <header className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <h3 className="text-body font-bold truncate">{fila.sucursal}</h3>
+                    {/* La dirección del local, la misma que sale impresa. No se
+                        trunca: es un dato de identificación —el documento dice
+                        DÓNDE se declaró— y una dirección cortada en la elipsis
+                        deja de servir para eso. */}
+                    {direccion && (
+                        <p className="text-micro text-content-3 leading-snug">{direccion}</p>
+                    )}
                     <p className="text-micro text-content-3">
                         Del {fila.fecha_inicio} al {fila.fecha_fin}
                     </p>
@@ -550,6 +562,15 @@ export default function CorteZView() {
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">{barraFiltros}</div>
                 </div>
+
+                {/* Quién declara. Va UNA vez para toda la vista y no dentro de
+                    cada tarjeta: el NIT y el NRC son de la empresa, no de la
+                    sucursal, y repetirlos seis veces los convierte en adorno.
+                    En el PDF sí van por hoja, porque ahí cada hoja viaja sola. */}
+                <p className="text-micro text-content-3">
+                    <span className="font-semibold text-content-2">{EMPRESA.razonSocial}</span>
+                    {' · '}NIT {EMPRESA.nit}{' · '}NRC {EMPRESA.nrc}
+                </p>
 
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 

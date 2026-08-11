@@ -47,6 +47,9 @@ export const REQUEST_TYPES = {
     // `INVENTORY_TRANSFER_REQUEST`. Su pantalla propia es `/traslados` —acá se
     // ve para saber que existe, no para resolverlo.
     INVENTORY_TRANSFER_REQUEST:{ label: 'Traslado entre Salas',   color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    // Vive en otra tabla (`minmax_change_requests`) pero se muestra en el mismo
+    // centro: para quien mira la sala es una solicitud más. Ver `adaptarMinMax`.
+    MINMAX_CHANGE_REQUEST:     { label: 'Ajuste de Min/Max',      color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
 };
 
 /**
@@ -91,6 +94,67 @@ export const REQUEST_TYPES_QUE_SE_APLICAN = new Set([
     ...FACTURACION_REQUEST_TYPES,
     ...INVENTARIO_REQUEST_TYPES,
 ]);
+
+/**
+ * OPERATIVAS: hablan de la SALA — su existencia y sus facturas.
+ *
+ * Las otras hablan de una PERSONA (vacaciones, permiso, incapacidad, anticipo,
+ * constancia) y van por el módulo `requests_personales`, con su propia pantalla.
+ *
+ * **Este conjunto es el espejo de `es_solicitud_operativa()` en Postgres**, que
+ * es quien manda: las policies de `approval_requests` deciden con esa función.
+ * Si acá se agrega un tipo y allá no —o al revés— la pantalla y el RLS dejan de
+ * coincidir, y el síntoma es de los mudos: la lista llega vacía sin error, o
+ * peor, muestra de más. Al tocar uno, tocar el otro en la misma sesión.
+ */
+export const TIPOS_OPERATIVOS = new Set([
+    ...FACTURACION_REQUEST_TYPES,
+    ...INVENTARIO_REQUEST_TYPES,
+    'INVENTORY_TRANSFER_REQUEST',
+]);
+
+export const esOperativa = (type) => TIPOS_OPERATIVOS.has(type);
+
+/**
+ * Min/Max no vive en `approval_requests` sino en su propia tabla
+ * (`minmax_change_requests`), con otras columnas y otro ciclo. Pero para quien
+ * mira la sala **es una solicitud más**, y tenerla en otra pantalla era parte
+ * de lo que el usuario pidió arreglar: «que no se tenga que andar perdido
+ * buscando en varios lados».
+ *
+ * Se adapta a la forma de una solicitud para poder mostrarla en la misma lista.
+ * El id lleva prefijo para que no choque con un uuid de `approval_requests`, y
+ * la fila original viaja en `_minmax` porque decidirla usa sus propias RPC.
+ */
+export const MINMAX_REQUEST_TYPE = 'MINMAX_CHANGE_REQUEST';
+
+const ESTADO_MINMAX = { pending: 'PENDING', approved: 'APPROVED', rejected: 'REJECTED' };
+
+export function adaptarMinMax(fila, nombreDeSucursal) {
+    return {
+        id: `minmax:${fila.id}`,
+        type: MINMAX_REQUEST_TYPE,
+        status: ESTADO_MINMAX[String(fila.status ?? '').toLowerCase()] ?? 'PENDING',
+        note: fila.reason ?? null,
+        approver_note: fila.decision_note ?? null,
+        created_at: fila.requested_at,
+        updated_at: fila.decided_at ?? fila.requested_at,
+        employee_id: fila.requested_by_id ?? null,
+        employee: { id: fila.requested_by_id, name: fila.requested_by_name ?? fila.requested_by ?? 'Alguien' },
+        approver: null,
+        approvals: [],
+        metadata: {
+            producto: fila.product_name,
+            erp_product_id: fila.erp_product_id,
+            erp_sucursal_id: fila.erp_sucursal_id,
+            branch_name: nombreDeSucursal?.(fila.erp_sucursal_id) ?? null,
+            min_actual: fila.current_min, max_actual: fila.current_max,
+            min_pedido: fila.requested_min, max_pedido: fila.requested_max,
+            ventas_6m: fila.current_sales_6m,
+        },
+        _minmax: fila,
+    };
+}
 
 // Bucket A — severidad real del estado de la solicitud.
 export const REQUEST_STATUS = {

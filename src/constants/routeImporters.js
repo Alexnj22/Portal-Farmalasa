@@ -107,6 +107,9 @@ export const IMPORTADOR_POR_RUTA = {
     'proveedores': IMPORTADORES.ProveedoresView,
     'raw-test': IMPORTADORES.RawTestView,
     'requests': IMPORTADORES.RequestsView,
+    // Misma vista, otro ámbito y otro permiso — comparte el importador para que
+    // el prefetch de una sirva a la otra.
+    'requests-personales': IMPORTADORES.RequestsView,
     'roles': IMPORTADORES.RolesView,
     'schedules': IMPORTADORES.SchedulesView,
     'sync-health': IMPORTADORES.SyncHealthView,

@@ -21,7 +21,9 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
-import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
+import { REQUEST_TYPES, REQUEST_STATUS, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
+import { fetchAllMinMaxChangeRequests, decidirMinMax } from '../data/minmaxRequests';
+import { ERP_NAMES } from '../constants/erp';
 import { ICONO_POR_TIPO } from '../constants/tipoIconos';
 import PortalTextarea from '../components/common/PortalTextarea';
 import ModalShell from '../components/common/ModalShell';
@@ -106,6 +108,8 @@ const CompactSummary = ({ req }) => {
     // y el producto, que es lo que se está por sacar de la sala, no aparecía.
     if (esMovimiento(req.type))
         return <span className="text-caption text-content-3 truncate max-w-[220px]">{resumenMovimiento(meta)}</span>;
+    if (req.type === 'MINMAX_CHANGE_REQUEST')
+        return <span className="text-caption text-content-3 truncate max-w-[220px]">{meta.producto ?? `#${meta.erp_product_id}`} · MIN {meta.min_actual ?? '—'}→{meta.min_pedido ?? '—'}</span>;
     if (req.note) return <span className="text-caption text-content-3 italic truncate max-w-[160px]">&ldquo;{req.note}&rdquo;</span>;
     return null;
 };
@@ -379,10 +383,28 @@ const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDecidir, o
 };
 
 // ─── Vista principal ───────────────────────────────────────────────────────────
-const RequestsView = () => {
+/**
+ * El centro de solicitudes, en dos ámbitos que comparten TODO el diseño y no
+ * comparten NADA de permisos.
+ *
+ *   · `sucursal`   — lo que pasa en la sala: descartes, cargas, traslados,
+ *                    Min/Max y cambios a facturación. La ve toda la sala.
+ *   · `personales` — lo que pasa con una persona: vacaciones, permiso,
+ *                    incapacidad, anticipo, constancia. Sólo Talento Humano.
+ *
+ * Un solo componente y no dos archivos: el usuario pidió «mismo estilo/diseño,
+ * pero con fin distinto», y dos copias del mismo diseño se separan en cuanto
+ * alguien mejora una. Lo que cambia es el MÓDULO de permisos y qué tipos
+ * entran — y las dos cosas salen de este parámetro, así que no hay forma de que
+ * una vista lea con el permiso de la otra.
+ */
+const RequestsView = ({ ambito = 'sucursal' }) => {
+    const esSucursal = ambito !== 'personales';
+    const MODULO     = esSucursal ? 'requests' : 'requests_personales';
+
     const { user, hasPermission, getScope } = useAuth();
-    const canApprove = hasPermission('requests', 'can_approve');
-    const canCreate  = hasPermission('requests', 'can_edit');
+    const canApprove = hasPermission(MODULO, 'can_approve');
+    const canCreate  = hasPermission(MODULO, 'can_edit');
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -408,6 +430,43 @@ const RequestsView = () => {
             .filter(e => e.status !== 'INACTIVO')
             .map(e => ({ value: String(e.id), label: e.name }))
     , [employees]);
+
+    /* Min/Max vive en OTRA tabla, con otras columnas y otro ciclo — pero para
+     * quien mira la sala es una solicitud más, y tenerla en otra pantalla era
+     * parte de lo que había que arreglar: «que no se tenga que andar perdido
+     * buscando en varios lados». Se trae y se adapta a la forma común.
+     *
+     * Sólo en el ámbito de sucursal: un ajuste de Min/Max no es asunto personal
+     * de nadie. Y el RLS ya recorta cuáles — con `requests.can_view` se ven las
+     * de la propia sala, sin que eso abra el módulo de Min/Max. */
+    const [minmax, setMinmax] = useState([]);
+    useEffect(() => {
+        // El ámbito personal no las pide; y no hace falta vaciar el estado al
+        // salir, porque `delAmbito` sólo las mezcla cuando `esSucursal`.
+        if (!esSucursal) return;
+        let vivo = true;
+        // `fetchAllRows` devuelve **el array**, no `{ data, error }` — devolverlo
+        // desestructurado daba `undefined`, la lista quedaba vacía y la pantalla
+        // se veía igual que si no hubiera ni una solicitud de Min/Max. Cero
+        // filas y cero datos se ven idénticos: lo delató que el grupo no
+        // apareciera habiendo dos filas en la base.
+        fetchAllMinMaxChangeRequests()
+            .then(filas => {
+                if (filas === null) { console.error('RequestsView: fetch min/max falló'); return; }
+                if (vivo) setMinmax((filas ?? []).map(f => adaptarMinMax(f, id => ERP_NAMES[id])));
+            })
+            .catch(e => console.error('RequestsView: fetch min/max failed:', e?.message ?? e));
+        return () => { vivo = false; };
+    }, [esSucursal]);
+
+    /* El corte por ámbito. Una solicitud personal NO puede aparecer en el centro
+     * de la sala aunque el RLS la dejara pasar, y al revés: son dos pantallas
+     * con dos permisos, y mezclarlas acá volvería decorativo el corte del
+     * servidor. */
+    const delAmbito = useMemo(() => {
+        const propias = (requests ?? []).filter(r => esOperativa(r.type) === esSucursal);
+        return esSucursal ? [...propias, ...minmax] : propias;
+    }, [requests, minmax, esSucursal]);
 
     const [statusFilter,      setStatusFilter]      = useState('PENDING');
     const [rawSearch,         setRawSearch]         = useState('');
@@ -459,7 +518,7 @@ const RequestsView = () => {
     useEffect(() => {
         const id = searchParams.get('solicitud');
         if (!id) return;
-        const req = (requests || []).find(r => String(r.id) === String(id));
+        const req = delAmbito.find(r => String(r.id) === String(id));
         if (!req) return;
 
         const accion = searchParams.get('accion');
@@ -474,7 +533,7 @@ const RequestsView = () => {
         limpio.delete('solicitud');
         limpio.delete('accion');
         setSearchParams(limpio, { replace: true });
-    }, [searchParams, setSearchParams, requests, statusFilter]);
+    }, [searchParams, setSearchParams, delAmbito, statusFilter]);
 
     const handleCreateRequest = async () => {
         if (!createEmployeeId || !createNote.trim()) return;
@@ -491,19 +550,19 @@ const RequestsView = () => {
 
     useEffect(() => {
         const apId = canApprove ? user?.id : null;
-        const brId = getScope('requests') === 'BRANCH' ? user?.branchId : null;
+        const brId = getScope(MODULO) === 'BRANCH' ? user?.branchId : null;
         fetchRequests(null, brId, apId);
-    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests]);
+    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests, MODULO]);
 
     useEffect(() => {
         const handler = () => {
             const apId = canApprove ? user?.id : null;
-            const brId = getScope('requests') === 'BRANCH' ? user?.branchId : null;
+            const brId = getScope(MODULO) === 'BRANCH' ? user?.branchId : null;
             fetchRequests(null, brId, apId);
         };
         window.addEventListener('requests-updated', handler);
         return () => window.removeEventListener('requests-updated', handler);
-    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests]);
+    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests, MODULO]);
 
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
@@ -523,6 +582,24 @@ const RequestsView = () => {
      * El cambio de turno es la excepción y se queda como estaba: en su primer
      * nivel lo contesta el compañero, no una jefatura, y no es asunto de nadie
      * más. */
+    /* Quién puede decidir ESTA solicitud. No alcanza un `canApprove` único: en
+     * el centro conviven tres familias con tres dueños distintos, y confundirlos
+     * sería repartir poder sin querer.
+     *
+     *   · Min/Max  → `minmax.can_approve` (su RPC lo cobra igual del lado del
+     *                servidor; acá sólo se evita ofrecer un botón que va a
+     *                rebotar).
+     *   · Traslado → NADIE desde acá: se confirma en Traslados, que relee la
+     *                existencia de la sala antes de despachar.
+     *   · El resto → el módulo del ámbito.
+     */
+    const puedeDecidir = (req) => {
+        if (!req) return false;
+        if (req.type === 'MINMAX_CHANGE_REQUEST')      return hasPermission('minmax', 'can_approve');
+        if (req.type === 'INVENTORY_TRANSFER_REQUEST') return false;
+        return canApprove;
+    };
+
     const soloMira = !canApprove;
 
     const visible = (r) => {
@@ -533,9 +610,9 @@ const RequestsView = () => {
         return String(r.approver?.id) === myId;
     };
 
-    const pendingCount = requests.filter(r => r.status === 'PENDING' && visible(r)).length;
+    const pendingCount = delAmbito.filter(r => r.status === 'PENDING' && visible(r)).length;
 
-    const statusFiltered = requests.filter(r => {
+    const statusFiltered = delAmbito.filter(r => {
         if (!visible(r)) return false;
         if (statusFilter !== 'ALL' && r.status !== statusFilter) return false;
         return true;
@@ -593,6 +670,25 @@ const RequestsView = () => {
     const handleDecidir = async ({ req, modo, nota, aceptadas }) => {
         if (modo === 'reject' && !nota) return;
         setIsActioning(true);
+
+        // Min/Max se resuelve por su propia RPC y con su propio permiso. No pasa
+        // por `approveRequest` porque no vive en `approval_requests`.
+        if (req.type === 'MINMAX_CHANGE_REQUEST') {
+            const r = await decidirMinMax(req._minmax?.id ?? req.id, modo === 'approve', nota);
+            setIsActioning(false);
+            if (r.ok) {
+                useToastStore.getState().showToast('Listo',
+                    modo === 'approve' ? 'Ajuste de Min/Max aplicado.' : 'Ajuste de Min/Max rechazado.', 'success');
+                setAbierta(null);
+                setMinmax(prev => prev.map(x => x.id === req.id
+                    ? { ...x, status: modo === 'approve' ? 'APPROVED' : 'REJECTED', approver_note: nota || null }
+                    : x));
+            } else {
+                useToastStore.getState().showToast('No se pudo', r.error ?? 'Error al resolver el ajuste.', 'error');
+            }
+            return;
+        }
+
         const ok = modo === 'approve'
             ? await approveRequest(req.id, user.id, nota, null, aceptadas)
             : await rejectRequest(req.id, user.id, nota);
@@ -646,7 +742,9 @@ const RequestsView = () => {
     ) : null;
 
     return (
-        <GlassViewLayout icon={Inbox} title="Bandeja de Aprobaciones" filtersContent={filtersContent} transparentBody={true}>
+        <GlassViewLayout icon={esSucursal ? Inbox : Palmtree}
+            title={esSucursal ? 'Solicitudes de Sucursal' : 'Solicitudes Personales'}
+            filtersContent={filtersContent} transparentBody={true}>
             <div className="pt-4 px-2 md:px-0 pb-8 space-y-6">
                 {filtrosCuerpo && <div className="flex justify-end">{filtrosCuerpo}</div>}
 
@@ -753,8 +851,8 @@ const RequestsView = () => {
             {abierta && (
                 <ModalSolicitud
                     key={abierta.req.id}
-                    req={requests.find(r => r.id === abierta.req.id) ?? abierta.req}
-                    canApprove={canApprove}
+                    req={delAmbito.find(r => r.id === abierta.req.id) ?? abierta.req}
+                    canApprove={puedeDecidir(abierta.req)}
                     employeesById={employeesById}
                     accionInicial={abierta.accionInicial}
                     ocupado={isActioning}

@@ -54,7 +54,7 @@ const MENU_GROUPS = [
     // —vive en `approval_requests`, con su ciclo pedir → confirmar → recibir— y
     // su permiso nace en este grupo, aparte de `requests` para que confirmar un
     // envío no arrastre aprobar vacaciones.
-    { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests', 'traslados'] },
+    { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests', 'requests_personales', 'traslados'] },
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
     { key: 'clima',         label: 'Clima Organizacional', icon: BarChart2, modules: ['encuesta', 'encuesta_admin']       },

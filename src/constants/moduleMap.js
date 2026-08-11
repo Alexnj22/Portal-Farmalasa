@@ -25,7 +25,11 @@ export const MODULE_MAP = {
     monitor:           { path: '/monitor',         label: 'Monitor Real-Time',        icon: Monitor       },
     time_audit:        { path: '/audit',           label: 'Auditoría de Tiempos',     icon: AlertTriangle },
     schedules:         { path: '/schedules',       label: 'Horarios y Turnos',        icon: Calendar      },
-    requests:          { path: '/requests',        label: 'Gestión de Solicitudes',   icon: ClipboardList },
+    // El centro de la sala: descartes, cargas, traslados, Min/Max y facturación.
+    // Se llamaba «Gestión de Solicitudes», que prometía gestionar a quien sólo
+    // mira — y desde el 2026-08-10 la sala entera lo ve sin poder decidir.
+    requests:            { path: '/requests',             label: 'Solicitudes de Sucursal', icon: ClipboardList },
+    requests_personales: { path: '/requests-personales',  label: 'Solicitudes Personales',  icon: Palmtree },
     vacation_plan:     { path: '/vacation-plan',   label: 'Plan de Vacaciones',       icon: Palmtree      },
     traslados:         { path: '/traslados',       label: 'Traslados entre Salas',    icon: ArrowLeftRight },
     payroll:           { path: '/payroll',          label: 'Nómina',                   icon: DollarSign    },

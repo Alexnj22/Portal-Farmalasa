@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import {
     ArrowLeftRight, Stethoscope, FileImage, AlertTriangle, CalendarDays,
     Banknote, FileCheck2, Ban, CreditCard, Receipt, CheckCircle2,
-    PackagePlus, Trash2, ImageOff, Minus, Plus,
+    PackagePlus, Trash2, ImageOff, Minus, Plus, BarChart2,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
@@ -32,7 +32,7 @@ import { lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento } from './movim
 const DE_LEGAJO_AJENO = new Set([
     'ANNULMENT_REQUEST', 'PAYMENT_CHANGE_REQUEST', 'VENDOR_CHANGE_REQUEST',
     'CLIENT_CHANGE_REQUEST', 'INVENTORY_LOAD_REQUEST', 'INVENTORY_DISCARD_REQUEST',
-    'INVENTORY_TRANSFER_REQUEST',
+    'INVENTORY_TRANSFER_REQUEST', 'MINMAX_CHANGE_REQUEST',
 ]);
 
 const fmtDate     = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
@@ -385,6 +385,47 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     rechazadas={rechazadasDe(meta)} ajustadas={ajustadasDe(meta)}
                     esCarga={t === 'INVENTORY_LOAD_REQUEST'} />
                 <EvidenciaFotos urls={meta.evidencia_urls} />
+            </div>
+        );
+    }
+
+    /* Min/Max — vive en otra tabla y se muestra acá igual que el resto. */
+    if (t === 'MINMAX_CHANGE_REQUEST') {
+        const baja = Number(meta.min_pedido) < Number(meta.min_actual);
+        return (
+            <div className="space-y-2">
+                <Caja tono="hover">
+                    <div className="flex items-start gap-2">
+                        <BarChart2 size={14} className="text-content-2 shrink-0 mt-0.5" strokeWidth={2} />
+                        <div className="flex-1 min-w-0">
+                            <Rotulo>Producto</Rotulo>
+                            <p className="text-body-sm font-bold text-content-2 leading-tight">
+                                {meta.producto ?? `#${meta.erp_product_id}`}
+                            </p>
+                            {meta.branch_name && <p className="text-caption text-content-2 mt-0.5">{meta.branch_name}</p>}
+                        </div>
+                    </div>
+                </Caja>
+                <div className="grid grid-cols-2 gap-2">
+                    <Caja>
+                        <Rotulo>Hoy</Rotulo>
+                        <p className="text-body-sm font-black text-content-2">
+                            MIN {meta.min_actual ?? '—'} · MAX {meta.max_actual ?? '—'}
+                        </p>
+                    </Caja>
+                    <Caja tono="hover">
+                        <Rotulo>Se pide</Rotulo>
+                        <p className={`text-body-sm font-black ${baja ? 'text-warning-text' : 'text-content-2'}`}>
+                            MIN {meta.min_pedido ?? '—'} · MAX {meta.max_pedido ?? '—'}
+                        </p>
+                    </Caja>
+                </div>
+                {Number.isFinite(Number(meta.ventas_6m)) && (
+                    <Caja>
+                        <Rotulo>Vendidas en 6 meses</Rotulo>
+                        <p className="text-body font-black text-content-2">{meta.ventas_6m}</p>
+                    </Caja>
+                )}
             </div>
         );
     }

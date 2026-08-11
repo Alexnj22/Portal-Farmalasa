@@ -26,6 +26,24 @@ export function insertMinMaxChangeRequest(payload) {
     return supabase.from('minmax_change_requests').insert(payload);
 }
 
+/**
+ * Resolver un ajuste de Min/Max desde el centro de solicitudes.
+ *
+ * Es la MISMA RPC que usa la pestaña de Min/Max (`TabMinMaxRequests`), no una
+ * segunda forma de decidir lo mismo: la autoría la resuelve la función con
+ * `auth.email()` y el permiso lo cobra `mmcr_update`, que sigue pidiendo
+ * `minmax.can_approve`.
+ *
+ * Eso último es lo que hace que traer Min/Max al centro **no reparta poder**:
+ * la sala entera lo VE porque `mmcr_select` acepta `requests.can_view`, y no
+ * puede decidirlo porque el UPDATE nunca aflojó.
+ */
+export async function decidirMinMax(requestId, aprobar, nota = '') {
+    const fn = aprobar ? 'approve_minmax_request' : 'reject_minmax_request';
+    const { error } = await supabase.rpc(fn, { p_request_id: requestId, p_note: nota || null });
+    return { ok: !error, error: error?.message ?? null };
+}
+
 // ── TabMinMaxRequests.jsx (bandeja de aprobación — todas las solicitudes) ──
 
 // `.limit(1000)` está prohibido (CLAUDE.md): es el cap EXACTO de PostgREST, así

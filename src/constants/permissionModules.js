@@ -76,7 +76,20 @@ const GRUPOS_CRUDOS = [
                 { key: 'schedules_tab_shifts',   label: 'Catálogo de Turnos', tipo: 'tab' },
                 { key: 'schedules_tab_holidays', label: 'Feriados',           tipo: 'tab' },
             ]},
-            { key: 'requests',     label: 'Solicitudes',            desc: 'Revisión y aprobación de permisos, vacaciones e incapacidades', icon: ClipboardList, hasApprove: true,  hasScope: true },
+            // ── Las solicitudes se partieron en dos el 2026-08-10 ────────────
+            // `approval_requests` guarda dos cosas que no se parecen: las que
+            // hablan de la SALA (existencia y facturas) y las que hablan de una
+            // PERSONA (vacaciones, incapacidad, anticipo). Con un solo módulo,
+            // abrirle el centro a la sala —pedido del usuario: «toda la
+            // sucursal debe poder ver las solicitudes»— le habría abierto de
+            // arrastre quién está incapacitado y quién pidió adelanto.
+            //
+            // El corte lo hace `es_solicitud_operativa()` en Postgres, y las
+            // policies de `approval_requests` piden un módulo u otro según de
+            // qué lado caiga el tipo. Un tipo nuevo sin clasificar cae en
+            // PERSONAL, que es el lado cerrado.
+            { key: 'requests',     label: 'Solicitudes de Sucursal', desc: 'El centro de solicitudes de la sala: descartes y cargas de inventario, traslados, Min/Max y cambios a facturación. Ver = estar al día de lo que pidió la sala y cómo se resolvió; Aprobar = decidirlas', icon: ClipboardList, hasApprove: true,  hasScope: true },
+            { key: 'requests_personales', label: 'Solicitudes Personales', desc: 'Las que hablan de una persona y no de la sala: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver acá es ver datos sensibles del expediente ajeno', icon: Palmtree, hasApprove: true, hasScope: true },
             // Módulo aparte de `requests` a propósito: acá `can_approve` habilita
             // confirmar un traslado de la propia sala y NADA más. Metido dentro de
             // Solicitudes, dárselo a una jefatura de sala le entregaría de arrastre

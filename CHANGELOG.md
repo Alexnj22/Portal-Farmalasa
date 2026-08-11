@@ -21,6 +21,76 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.554.0 — Un solo centro de solicitudes para la sala, y las personales aparte
+
+Pedido del usuario: «necesito que al final ahí sea todo el centro de solicitudes
+—Min/Max, traslados, todas—, que no se tenga que andar perdido buscando en
+varios lados… toda la sucursal debe poder ver las solicitudes, cuáles se
+aprobaron, cuáles no, los motivos». Y en el mismo aliento el límite: **«que vean
+no significa que aprueben»**.
+
+**Min/Max entra al centro.** Vivía en otra tabla, en otra pantalla y con otro
+permiso, y era invisible para toda la sala: su policy `mmcr_select` exigía
+`minmax.can_approve` **para VER** — el mismo defecto que `requests` tenía ayer,
+donde mirar y decidir eran el mismo permiso. Ahora se ve con `requests.can_view`
+y se decide con `minmax.can_approve`, que es exactamente el corte que pedía la
+frase. Se adapta a la forma común para listarse junto al resto; decidirla usa la
+misma RPC de siempre, no una segunda forma de resolver lo mismo.
+
+**Las solicitudes se parten en dos, por TIPO y no por tabla.**
+`approval_requests` guarda dos cosas que no se parecen: las que hablan de la sala
+(descarte, carga, traslado, anulación, forma de pago, vendedor, cliente) y las
+que hablan de una persona (vacaciones, permiso, incapacidad, anticipo,
+constancia). Abrir «la tabla» a la sala habría abierto las dos. Hoy las
+personales no se usan, así que el daño no habría sido inmediato — habría sido el
+día que se enciendan, cuando ya nadie recordara que esta policy las dejaba pasar.
+
+El corte lo hace `es_solicitud_operativa()` en Postgres, en UNA función y no
+repetida en cuatro policies. **Un tipo nuevo sin clasificar cae en personal**,
+que es el lado cerrado.
+
+**Dos pantallas, mismo diseño, permisos que no se tocan**: `Solicitudes de
+Sucursal` (`requests`) y `Solicitudes Personales` (`requests_personales`, nuevo).
+Un solo componente parametrizado por ámbito —dos copias del mismo diseño se
+separan en cuanto alguien mejora una—, pero cada ruta con su guardián, y el
+módulo de permisos sale del parámetro, así que no hay forma de que una vista lea
+con el permiso de la otra.
+
+**Quién queda dónde**, verificado rol por rol contra producción:
+
+| | Ve operativas | Aprueba operativas | Ve personales | Aprueba personales |
+|---|---|---|---|---|
+| Dependiente (20), Regente (7), Jefe de Sala (6), Auxiliar de Bodega (5) | ✅ su sala | ❌ | ❌ | ❌ |
+| Supervisor/a de Ventas | ✅ todas | ✅ | ✅ | ✅ |
+| Jefe/a de Talento Humano | ❌ | ❌ | ✅ | ✅ |
+
+**38 personas ven; dos aprueban.** Y quien decide cada solicitud se calcula por
+tipo, no con un permiso único: Min/Max pide `minmax.can_approve`, el traslado no
+se decide desde acá —se confirma en Traslados, que relee la existencia de la sala
+antes de despachar— y el resto va por el módulo del ámbito.
+
+**Bodega no vende.** Los 5 auxiliares tenían ocho pantallas de venta y
+facturación encendidas (`ventas_tab_*`, `facturacion_tab_*`). No se les abrían
+—el módulo padre estaba apagado— pero ese es justo el estado del que sale una
+fuga el día que alguien encienda el padre sin mirar qué quedó abajo. Se apagaron,
+y se les encendió `inventario`, que sí es lo suyo y no tenían. El ajuste de
+inventario queda sólo en la jefatura, que ya lo tenía.
+
+**Dos defectos que salieron al auditar lo aplicado**, no al escribirlo:
+
+- El `UPDATE` que abría el operativo a los roles de sala **no tocó a Auxiliar de
+  Bodega**: ese rol no tenía fila de `requests`, y un UPDATE no crea filas. El
+  nombre estaba en la lista y no pasó nada, sin error. Lo delató comparar el
+  resultado contra la intención rol por rol.
+- `fetchAllRows` devuelve **el array**, no `{ data, error }`. Desestructurarlo
+  daba `undefined` y el grupo de Min/Max no aparecía — idéntico a que no hubiera
+  ni una solicitud. Lo delató que no saliera habiendo dos filas en la base.
+
+Verificado en WebKit/iPhone 13: el centro muestra las tres familias agrupadas y
+ordenadas, el modal de Min/Max trae producto, sala, MIN·MAX de hoy contra lo
+pedido y las ventas de 6 meses, la vista personal no deja colarse ni una
+operativa, sin desborde horizontal y cero errores de consola.
+
 ## v2.553.0 — La decisión por línea también ajusta cantidades; el vendedor se ve por cara y nombre
 
 Tres cosas pedidas al ver la versión anterior funcionando en el teléfono.

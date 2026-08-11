@@ -630,7 +630,13 @@ function MainApp() {
                                     <Route path="monitor" element={<PermissionGuard moduleKey="monitor"><AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
                                     <Route path="audit" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
                                     <Route path="schedules" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
-                                    <Route path="requests" element={<PermissionGuard moduleKey="requests"><RequestsView /></PermissionGuard>} />
+                                    {/* Dos ámbitos, un componente. Cada ruta con SU módulo:
+                                        `requests` es el centro de la sala, `requests_personales`
+                                        son las que hablan de una persona. Que sean rutas
+                                        distintas con guardianes distintos es lo que impide que
+                                        abrirle una a alguien le abra la otra. */}
+                                    <Route path="requests" element={<PermissionGuard moduleKey="requests"><RequestsView ambito="sucursal" /></PermissionGuard>} />
+                                    <Route path="requests-personales" element={<PermissionGuard moduleKey="requests_personales"><RequestsView ambito="personales" /></PermissionGuard>} />
                                     <Route path="vacation-plan" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
                                     <Route path="payroll" element={<PermissionGuard moduleKey="payroll"><PayrollView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />

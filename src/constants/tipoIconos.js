@@ -44,6 +44,9 @@ export const ICONO_POR_TIPO = {
     INVENTORY_LOAD_REQUEST:     PackagePlus,
     INVENTORY_DISCARD_REQUEST:  Trash2,
     INVENTORY_TRANSFER_REQUEST: ArrowLeftRight,
+    // Min/Max vive en otra tabla pero se muestra en el mismo centro, así que
+    // necesita su ícono acá igual que los demás.
+    MINMAX_CHANGE_REQUEST:      BarChart2,
 
     // ── Tipos propios del canal de notificaciones ──
     PEDIDO_TRACKING:  Package,

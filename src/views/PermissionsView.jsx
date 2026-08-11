@@ -86,9 +86,20 @@ const PERMISSION_TYPES = [
 
 // El tono por opción NO es adorno: distingue "Todos" de "Mi Sucursal" de un
 // vistazo en una pantalla llena de toggles.
+// «Sólo míos» se agregó el 2026-08-10 (pedido del usuario) junto con el centro
+// de solicitudes: hay módulos donde el escalón más chico no es la sucursal sino
+// la propia persona — quien puede mandar una solicitud personal pero no tiene
+// por qué ver la de su compañero.
+//
+// El valor NO tiene CHECK en `role_permissions.scope` (verificado), así que
+// agregarlo no rompe filas viejas: las 1,320 existentes son ALL o BRANCH y
+// siguen leyéndose igual. Lo que sí hay que hacer al usarlo es enseñarle a la
+// policy qué significa — una policy que sólo distingue ALL de «lo demás» trata
+// MINE como BRANCH y abre de más.
 const SCOPE_OPTIONS = [
     { value: 'ALL',    label: 'Todos',       tone: 'chart-3' },
     { value: 'BRANCH', label: 'Mi Sucursal', tone: 'chart-9' },
+    { value: 'MINE',   label: 'Sólo míos',   tone: 'chart-4' },
 ];
 
 // Tooltip descriptivo por tipo de permiso

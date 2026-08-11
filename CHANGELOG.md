@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.555.1 — Alcance «sólo míos» y Personales sólo para Talento Humano
+
+Primer tramo de la consolidación en **dos vistas** que pediste.
+
+**Alcance con tres escalones**: Todos · Mi Sucursal · **Sólo míos**. Hacía falta
+porque para las personales ninguno de los dos viejos sirve — quien manda su
+permiso no tiene por qué ver el de su compañero, y «Mi Sucursal» le daría justo
+eso.
+
+El riesgo de agregar un valor de alcance es una policy escrita a medias: la que
+sólo pregunta  y trata todo lo demás como sucursal leería  como
+ y **abriría de más** — el valor nuevo haría lo contrario de lo que
+promete. Por eso las dos policies se reescribieron en la misma migración que lo
+introduce, con un  de tres ramas. Y con alcance «sólo míos» **no se decide
+nada**, ni siquiera lo propio.
+
+**Personales queda sólo para Talento Humano y Supervisión** (decisión tuya:
+«ahorita que solo tenga permiso talento humano y edwin»). El resto en false,
+listo para encender.
+
 ## v2.555.0 — Mis Solicitudes usa el canónico; se quita la pestaña de Min/Max
 
 **Una sola puerta para Min/Max.** Se quitó su pestaña «Solicitudes» (decisión

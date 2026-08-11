@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.557.4 — Cada notificación es una tarjeta, con sus botones adentro
+
+El arreglo de v2.557.3 —llevar el realce del `<button>` al contenedor de la
+fila— era correcto y no alcanzaba: **el problema no era el hover, era que la
+notificación no tenía forma**. Eran franjas planas separadas por una línea, y en
+una franja plana los botones de decisión no tienen dónde estar adentro: quedaban
+colgando entre dos avisos, sin nada que los atara a ninguno. Reportado dos veces
+con captura, la segunda ya sobre la versión «arreglada»:
+
+> «los botones quedan afuera del recuadro de la card de la notificación»
+
+Ahora cada aviso es una tarjeta canónica (`data-surface="card"`) con su borde,
+su radio y aire entre una y otra. El corte entre avisos —lo que daba `divide-y`—
+sigue resuelto, y de paso se gana lo que una línea sola no podía decir: dónde
+**empieza** y dónde **termina** cada notificación. Los botones, el detalle
+desplegado y el enlace de salida quedan visiblemente dentro de su tarjeta.
+
+**El realce pasó a un velo.** `[data-surface="card"]` fija su fondo desde
+`index.css`, que va sin `@layer` y le gana a cualquier utilidad de Tailwind — un
+`hover:bg-*` sobre la tarjeta no pinta nada (es el mismo motivo por el que existe
+`data-tono`). Van dos capas absolutas: una para el estado —sin leer, recién
+llegada— y otra para el puntero, que **suma** en vez de reemplazar; con una sola,
+apuntar una tarjeta sin leer le cambiaba el tinte por otro y se leía como que
+había pasado a leída.
+
+Verificado en el navegador contra el build, **en los cuatro temas**
+(Liquid claro, Solid claro, Liquid oscuro, Solid oscuro): la tarjeta con sus dos
+botones adentro, el detalle desplegado dentro del mismo borde, y el realce al
+apuntar. Fue la comparación entre temas la que encontró la causa: en Solid el
+bloque de hover se confundía con el fondo del panel y parecía un problema de
+cobertura, mientras que en Liquid se veía que **no había recuadro** que cubrir.
+
 ## v2.557.3 — Notificaciones: la tarjeta cubre sus botones, y se despliega con el detalle de la solicitud
 
 **El realce se quedaba a mitad de la tarjeta.** El `hover` vivía en el `<button>`

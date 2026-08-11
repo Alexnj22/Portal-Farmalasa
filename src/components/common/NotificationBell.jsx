@@ -372,7 +372,14 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const cx = isDark ? {
         headerBorder: 'border-white/[0.07]',
         title: 'text-white/90',
-        rowHover: 'hover:bg-white/[0.06]',
+        // El realce va en un VELO absoluto sobre la tarjeta, no en la tarjeta:
+        // `[data-surface="card"]` fija su fondo desde `index.css`, que va sin
+        // `@layer` y le gana a cualquier utilidad de Tailwind — un
+        // `hover:bg-*` ahí no pinta nada (mismo motivo por el que existe
+        // `data-tono`). Y por eso es `group-hover`: el velo no recibe el
+        // puntero, lo recibe la tarjeta.
+        rowHover: 'group-hover:opacity-100',
+        veloHover: 'bg-white/[0.06]',
         rowUnread: 'bg-chart-1/[0.07]',
         rowTitle: 'text-white/90', rowTitleRead: 'text-white/60',
         rowBody: 'text-white/50',
@@ -387,7 +394,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     } : {
         headerBorder: 'border-border-card/60',
         title: 'text-content',
-        rowHover: 'hover:bg-surface-card',
+        rowHover: 'group-hover:opacity-100',
+        veloHover: 'bg-brand/[0.06]',
         rowUnread: 'bg-chart-1/10',
         rowTitle: 'text-content', rowTitleRead: 'text-content-2',
         rowBody: 'text-content-3',
@@ -567,11 +575,18 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <p className={`relative text-body-sm font-medium mt-1 ${cx.emptySub}`}>Cuando algo requiera tu atención, aparecerá aquí.</p>
                                     </div>
                                 ) : (
-                                    // `divide-y`: sin un corte entre filas, dos avisos con el
-                                    // mismo título se leen como un bloque continuo y no se sabe
-                                    // dónde termina uno. Reportado sobre dos «El barrido de
-                                    // Hacienda terminó con fallas» seguidos.
-                                    <div className="py-1.5 divide-y divide-divider">
+                                    /* ── Cada aviso es una TARJETA, no una franja (2026-08-11) ──
+                                       Eran filas planas separadas por una línea, y en una fila plana
+                                       los botones de decisión no tienen dónde estar adentro: quedaban
+                                       colgando entre dos avisos y se leían como si no fueran de
+                                       ninguno. Reportado dos veces con captura — «los botones quedan
+                                       afuera del recuadro de la card de la notificación».
+
+                                       El corte entre avisos lo daba `divide-y`, y eso sigue resuelto:
+                                       ahora lo dan el borde y el aire de cada tarjeta, que además
+                                       dicen dónde EMPIEZA y dónde TERMINA cada una — que es lo que
+                                       una línea sola no puede decir. */
+                                    <div className="p-2 flex flex-col gap-2">
                                         <AnimatePresence initial={false}>
                                             {notifications.map(n => {
                                                 const sev  = severidadDelTitulo(n.title);
@@ -603,7 +618,13 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             key={n.id}
                                                             layout="position"
                                                             exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
-                                                            className={`relative flex items-center justify-between pl-5 pr-3 py-3 ${cx.undoStrip}`}
+                                                            // La tarjeta borrada conserva la forma de las
+                                                            // demás: en una lista con aire entre tarjetas,
+                                                            // una franja a ancho completo se lee como que
+                                                            // la lista se rompió, no como un aviso en
+                                                            // espera de deshacerse.
+                                                            className={`relative flex items-center justify-between pl-4 pr-3 py-3
+                                                                rounded-card overflow-hidden ${cx.undoStrip}`}
                                                         >
                                                             <span className={`text-body-sm font-semibold truncate pr-3 ${cx.undoText}`}>
                                                                 Notificación borrada
@@ -622,26 +643,27 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         animate={{ opacity: inPendingAll ? 0.35 : 1, y: 0 }}
                                                         exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
                                                         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                                                        /* ── El realce es de la TARJETA, no del texto ──────
-                                                           Estaba en el `<button>` del encabezado, que no
-                                                           llega ni a los botones de decisión ni al detalle
-                                                           desplegado: al apuntar la fila se encendía la
-                                                           mitad de arriba y Aprobar/Rechazar se quedaban
-                                                           sobre el fondo del panel, leyéndose como si
-                                                           fueran de otra cosa. Reportado con captura
-                                                           (2026-08-11): «la card no cubre los botones».
-                                                           Acá cubre la fila entera —encabezado, detalle y
-                                                           acciones— porque el hover vive en el contenedor
-                                                           que los tiene a los tres adentro. */
-                                                        className={`relative group transition-colors duration-[var(--dur-lento)]
-                                                            ${inPendingAll ? 'pointer-events-none' : ''}
-                                                            ${interactiva ? cx.rowHover : ''}
-                                                            ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10') : unread ? cx.rowUnread : ''}`}
+                                                        data-surface="card"
+                                                        className={`relative group overflow-hidden
+                                                            ${inPendingAll ? 'pointer-events-none' : ''}`}
                                                     >
+                                                        {/* El estado de la tarjeta —sin leer, recién
+                                                            llegada— y el realce al apuntarla. Van en velos
+                                                            porque el fondo de la tarjeta lo fija
+                                                            `index.css` (ver `cx.rowHover`). Dos capas y no
+                                                            una: así apuntar una tarjeta sin leer SUMA
+                                                            realce en vez de reemplazar su tinte. */}
+                                                        <div aria-hidden="true"
+                                                            className={`absolute inset-0 pointer-events-none transition-colors duration-[var(--dur-lento)]
+                                                                ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10') : unread ? cx.rowUnread : ''}`} />
+                                                        <div aria-hidden="true"
+                                                            className={`absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-[var(--dur-base)]
+                                                                ${cx.veloHover} ${interactiva ? cx.rowHover : ''}`} />
+
                                                         <button
                                                             onClick={() => handleNotifClick(n)}
                                                             aria-expanded={expandible ? abierta : undefined}
-                                                            className={`w-full flex items-start gap-3 pl-5 pr-10 py-3 text-left
+                                                            className={`relative w-full flex items-start gap-3 pl-3.5 pr-9 py-3 text-left
                                                                 ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
                                                         >
                                                             <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
@@ -735,7 +757,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             Se monta SOLO al abrirla — el contenido pesa y no
                                                             tiene por qué viajar por cada fila de la lista. */}
                                                         {abierta && (
-                                                            <div className={`px-5 pb-3 pt-1 border-t ${cx.headerBorder}`}>
+                                                            <div className={`relative px-3.5 pb-3 pt-2 border-t ${cx.headerBorder}`}>
                                                                 <NotificacionDetalle notif={n} />
                                                                 {/* La salida. La campana muestra la solicitud;
                                                                     Solicitudes es donde vive, con su historial
@@ -764,7 +786,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             // la hora; con el detalle abierto ese renglón no es
                                                             // el vecino de arriba, así que subir los botones los
                                                             // pegaría al enlace de salida.
-                                                            <div className={`flex items-stretch gap-2 px-5 pb-3 ${abierta ? '' : '-mt-1'}`}>
+                                                            <div className={`relative flex items-stretch gap-2 px-3.5 pb-3 ${abierta ? '' : '-mt-1'}`}>
                                                                 {/* `soft` y no relleno sólido: es el caso que
                                                                     nombra DESIGN.md §15.2 — dos acciones de
                                                                     categoría juntas donde ninguna manda. Y
@@ -806,7 +828,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             aparecía suelto abajo a la izquierda de la tarjeta,
                                                             debajo de Aprobar/Rechazar. */}
                                                         <Button variant="ghost" icon={X} title="Borrar" iconOnly
-                                                            className={`absolute top-2 right-2 z-base ${cx.iconBtn}`}
+                                                            className={`absolute top-1.5 right-1.5 z-base ${cx.iconBtn}`}
                                                             onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }} />
                                                     </motion.div>
                                                 );

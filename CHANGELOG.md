@@ -21,6 +21,89 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.552.0 — Las solicitudes dicen qué son, se abren completas y se pueden aprobar en parte
+
+Reportado así: «en la solicitud de descarte, no me dice qué es, se debe poder
+confirmar unos y rechazar otros, y para cuando le llega al jefe poder ver todas
+las solicitudes de descartes, cargas, facturación de la sucursal».
+
+**Lo que veía quien aprobaba un descarte era el nombre de quien lo pidió, la
+fecha y la palabra «inyectorio».** La solicitud traía guardado el producto, la
+cantidad, la existencia, el lote, el vencimiento, el motivo con nombre y hasta
+las fotos — nada de eso se pintaba. La Bandeja tenía bloque de detalle escrito
+para **10 tipos**, y ninguno era de los **tres que mueven producto**: carga,
+descarte y traslado. Se aprobaba a ciegas un movimiento de existencias que no
+se deshace con un clic.
+
+**El detalle ahora es UN archivo con dos consumidores.** Estaba escrito dos
+veces —la Bandeja y Mis Solicitudes— y las copias ya se habían separado: 10
+tipos contra 2. Por eso quien pedía un descarte tampoco podía releer lo que
+había mandado. Ahora los dos lados hablan de lo mismo con las mismas palabras.
+
+**Las fotos de evidencia nunca se habían visto.** El widget obliga a tomarlas
+cuando el producto está dañado y las sube a un bucket privado. `getSignedFileUrl`
+no conocía ese bucket, así que aunque alguien hubiera escrito el bloque antes,
+habrían salido rotas. No lo detectó nadie porque hasta hoy ninguna pantalla las
+mostraba.
+
+**Las tarjetas se abren en modal, ya no se despliegan.** Desplegarse empujaba
+toda la fila de la rejilla, y lo que hay que mostrar —la tabla de líneas, las
+fotos, la casilla por renglón— no entra en un tercio de ancho ni sirve en el
+teléfono. Además era un botón con más botones adentro. Y la tarjeta ahora dice
+**de qué tipo es**: el nombre vivía sólo en el encabezado del grupo, y el ícono
+caía al genérico justo en los tres tipos de inventario, que ya lo tienen propio.
+El color sigue reservado al **estado** — un color por tipo ya existió y se quitó
+por medido, con nueve tintes compitiendo el estado dejaba de leerse.
+
+**Se puede aprobar una parte.** En un descarte de varias líneas, cada renglón
+lleva su casilla: entran las marcadas y el resto queda rechazado con el motivo
+que se escriba, en un solo acto y sin pedirle a nadie que lo mande de nuevo. Los
+índices los valida el servidor contra lo que se guardó al crear la solicitud —
+si el navegador mandara las líneas, estaría eligiendo qué se mueve, y ese
+endpoint tiene credenciales para mover inventario de cualquier sala. Aprobar
+cero líneas no se acepta: eso es rechazar con otro nombre y tiene su propio
+camino. No hay quinto estado: sigue siendo `APPROVED` —agregar uno obligaba a
+revisar cada consumidor que hoy pregunta `=== 'APPROVED'`— y la insignia
+«Aprobada parcial» sale de la metadata.
+
+**El jefe de sala ve las solicitudes de su sucursal.** Tenía dos candados
+encima: el rol no tenía el módulo (`can_view = false`, 6 personas activas), y la
+policy exigía `can_approve` para VER, o sea que mirar y decidir eran el mismo
+permiso. Es el agujero que ya estaba anotado en `TrasladosView` —«si algún día
+se le da can_view a secas a alguien, esta vista se le va a abrir vacía»— y este
+fue ese día. **Ve, no decide**: la policy de UPDATE no se tocó. Pivotar el
+SELECT a `can_view` no le quita acceso a nadie: verificado, los dos roles con
+`can_approve` tienen los dos `can_view`.
+
+**Aprobar un traslado desde la Bandeja lo daba por hecho sin moverlo.** No
+estaba en ninguno de los dos conjuntos que se aplican afuera, así que caía al
+camino genérico: lo marcaba `APPROVED` sin llamar al despacho, y con eso
+desaparecía de las tres pestañas de Traslados —de «por confirmar» por estado, y
+de «por recibir» porque ese filtro exige un `erp_traslado` que nunca se escribió.
+Producto que no salió, solicitud dada por resuelta, ninguna pantalla donde
+volver a encontrarla. Ahora se resuelve donde corresponde, que es además donde
+se relee la existencia de la sala antes de enviar.
+
+**Y cuatro arreglos más del mismo barrido:**
+
+- **«Aplicado» decía `— → —`** en carga y descarte: el bloque asumía la forma de
+  facturación (`campo`/`de`/`a`), que un movimiento de inventario no tiene —
+  tiene líneas, unidades y costo.
+- **`INVENTORY_TRANSFER_REQUEST` no tenía rótulo**, así que un traslado
+  pendiente encabezaba su sección con la clave cruda.
+- **Lo pendiente se ordena de lo más viejo a lo más nuevo.** Traía el orden de
+  un muro de novedades, donde lo que más lleva esperando se hunde justo por
+  haber esperado. Lo resuelto sigue al revés. Es el orden que ya usa Traslados.
+- **El aviso nombra el producto** cuando hay una sola línea, como ya hacía el
+  traslado: «solicita descartar 2 unidades de ALGODON MIGASA 100 GRS. por
+  VENCIMIENTO en Salud 5». Antes decía «1 producto» y había que abrir la
+  solicitud para saber cuál. Y el enlace de la campana con `&accion=aprobar`
+  abría el diálogo de decisión **sin haber mostrado una sola línea**: ahora abre
+  la solicitud con su detalle y la decisión lista abajo.
+- **La búsqueda mira el producto y el correlativo**, no sólo el nombre de quien
+  pidió — que es lo que uno busca en una bandeja donde conviven descartes,
+  cargas y facturación.
+
 ## v2.551.7 — Quién aprueba lo decide el servidor, no el navegador de quien pide
 
 La solicitud de descarte **se creó** (21:18) pero el supervisor no se enteró.

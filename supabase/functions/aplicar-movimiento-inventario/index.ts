@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
     // aprueba sale del JWT y no se recibe nunca por parámetro.
-    const { request_id, approver_note } = await req.json().catch(() => ({}));
+    const { request_id, approver_note, lineas_aceptadas } = await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
 
     // ── Quién llama. Nunca del payload: del JWT. ──────────────────────────
@@ -234,9 +234,44 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);
 
     const meta = (typeof sol.metadata === "string" ? JSON.parse(sol.metadata) : sol.metadata) ?? {};
-    const lineas: Linea[] = Array.isArray(meta.items) ? meta.items : [];
-    if (lineas.length === 0)
+    const todas: Linea[] = Array.isArray(meta.items) ? meta.items : [];
+    if (todas.length === 0)
       return json({ ok: false, error: "La solicitud no tiene ni un producto." }, 422);
+
+    // ── Aprobación parcial: entran unas líneas y el resto queda rechazado ──
+    //
+    // El cliente manda ÍNDICES, no líneas. La diferencia no es de estilo: con
+    // las líneas, el navegador elegiría qué producto se mueve y en qué
+    // cantidad, y este endpoint tiene credenciales para mover inventario de
+    // cualquier sala. Con índices, lo único que puede hacer es señalar cuáles
+    // de las que YA se guardaron entran.
+    //
+    // Índices repetidos, fuera de rango o que no son enteros se descartan en
+    // silencio; lo que no se puede es quedarse sin ninguna, porque «aprobar
+    // cero líneas» no es aprobar — es rechazar con otro nombre, y el rechazo
+    // tiene su propio camino con su motivo obligatorio.
+    let indices = todas.map((_, i) => i);
+    if (Array.isArray(lineas_aceptadas)) {
+      indices = [...new Set(lineas_aceptadas)]
+        .filter((i) => Number.isInteger(i) && i >= 0 && i < todas.length)
+        .sort((a: number, b: number) => a - b) as number[];
+      if (indices.length === 0)
+        return json({
+          ok: false,
+          error: "No quedó ninguna línea para aplicar. Si no entra nada, rechazá la solicitud.",
+        }, 422);
+    }
+
+    const parcial = indices.length < todas.length;
+    const lineas: Linea[] = indices.map((i) => todas[i]);
+    // El motivo de las que quedan afuera es la nota del aprobador: es lo que
+    // acaba de escribir explicando por qué no entran, y el formulario la exige
+    // justamente cuando hay líneas afuera.
+    const motivoFuera = String(approver_note ?? "").trim() || "Sin motivo";
+    const rechazadas = parcial
+      ? todas.map((_, i) => i).filter((i) => !indices.includes(i))
+          .map((i) => ({ i, motivo: motivoFuera }))
+      : [];
 
     const erpSucursal = Number(meta.erp_sucursal_id);
     const erpUbicacion = Number(meta.erp_ubicacion_id);
@@ -511,23 +546,37 @@ Deno.serve(async (req) => {
       total: Number(total.toFixed(4)),
       msg: resp.msg,
       detalle,
+      // Cuántas de las que se pidieron entraron. Sin esto, una constancia de 2
+      // líneas sobre una solicitud de 5 se lee como si se hubieran pedido 2.
+      parcial,
+      lineas_pedidas: todas.length,
     };
 
     const { error: updErr } = await admin
       .from("approval_requests")
       .update({
+        // Sigue siendo APPROVED aunque haya entrado sólo una parte: la
+        // solicitud se resolvió y se cerró. `status` admite cuatro valores y
+        // agregarle un quinto obligaría a revisar cada consumidor que hoy
+        // pregunta `=== 'APPROVED'`. Lo parcial es un matiz de esa aprobación,
+        // y por eso vive en la metadata — de donde la pantalla saca su
+        // insignia «Aprobada parcial».
         status: "APPROVED",
         approver_id: aprobador.id,
         approver_note: typeof approver_note === "string" && approver_note.trim()
           ? approver_note.trim() : null,
-        metadata: { ...meta, erp_aplicado: aplicado },
+        metadata: {
+          ...meta,
+          erp_aplicado: aplicado,
+          ...(parcial ? { lineas_rechazadas: rechazadas } : {}),
+        },
         updated_at: new Date().toISOString(),
       })
       .eq("id", sol.id)
       .eq("status", "PENDING");          // no pisar si otro la resolvió en el medio
     if (updErr) throw updErr;
 
-    return json({ ok: true, aplicado });
+    return json({ ok: true, aplicado, lineas_rechazadas: rechazadas });
 
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);

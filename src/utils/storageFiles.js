@@ -3,7 +3,12 @@ import { supabase } from '../supabaseClient';
 // Buckets privados (2026-07-02): las URLs "public" guardadas en BD quedaron
 // como identificadores — para mostrarlas hay que convertirlas a URL firmada
 // con expiración. Los buckets públicos y URLs externas se devuelven tal cual.
-const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte', 'sales-dte'];
+// `inventario-evidencia` se agregó el 2026-08-10. Era privado en la base desde
+// que nació, pero nunca estuvo en esta lista, así que `getSignedFileUrl` le
+// devolvía la URL cruda: las fotos de un descarte por daño habrían salido rotas
+// el día que alguien las pintara. No lo detectó nadie porque hasta ese día
+// NINGUNA pantalla las mostraba — se subían y ahí quedaban.
+const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte', 'sales-dte', 'inventario-evidencia'];
 const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
 // Extrae {bucket, path} de una URL formato-public de Supabase Storage — para

@@ -42,6 +42,11 @@ export const REQUEST_TYPES = {
     CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
     INVENTORY_LOAD_REQUEST:    { label: 'Carga de Inventario',    color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
     INVENTORY_DISCARD_REQUEST: { label: 'Descarte de Inventario', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
+    // Faltaba, y se notaba: la Bandeja agrupa por tipo usando este rótulo, así
+    // que un traslado pendiente encabezaba su sección con la clave cruda
+    // `INVENTORY_TRANSFER_REQUEST`. Su pantalla propia es `/traslados` —acá se
+    // ve para saber que existe, no para resolverlo.
+    INVENTORY_TRANSFER_REQUEST:{ label: 'Traslado entre Salas',   color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
 };
 
 /**
@@ -701,8 +706,9 @@ export const createRequestsSlice = (set, get) => ({
      * entra, esto devuelve false y la solicitud sigue PENDING con el motivo a
      * la vista.
      */
-    _aprobarInventario: async (requestId, req, approverId, approverNote) => {
-        const { ok, error, aplicado } = await aplicarMovimientoInventarioEnErp(requestId, approverNote);
+    _aprobarInventario: async (requestId, req, approverId, approverNote, aceptadas = null) => {
+        const { ok, error, aplicado, lineas_rechazadas: rechazadas } =
+            await aplicarMovimientoInventarioEnErp(requestId, approverNote, aceptadas);
 
         if (!ok) {
             useToastStore.getState().showToast('No se aplicó el movimiento', error, 'error');
@@ -713,7 +719,8 @@ export const createRequestsSlice = (set, get) => ({
             requests: state.requests.map(r =>
                 r.id === requestId
                     ? { ...r, status: 'APPROVED', approver_id: approverId, approver_note: approverNote,
-                        metadata: { ...parseMeta(r.metadata), erp_aplicado: aplicado } }
+                        metadata: { ...parseMeta(r.metadata), erp_aplicado: aplicado,
+                                    lineas_rechazadas: rechazadas ?? parseMeta(r.metadata).lineas_rechazadas } }
                     : r
             ),
         }));
@@ -728,11 +735,17 @@ export const createRequestsSlice = (set, get) => ({
             `${aplicado?.lineas ?? 0} ${aplicado?.lineas === 1 ? 'producto' : 'productos'}`,
             `${aplicado?.unidades ?? 0} ${aplicado?.unidades === 1 ? 'unidad' : 'unidades'}`,
         ];
+        // Lo que quedó afuera se ANUNCIA. Un parcial que se avisa igual que un
+        // completo se lee como completo, y quien pidió se entera recién cuando
+        // busca el producto y no está.
+        const fuera = rechazadas?.length ?? 0;
+        if (fuera > 0) partes.push(`${fuera} ${fuera === 1 ? 'línea quedó' : 'líneas quedaron'} sin aplicar`);
         // Un recorte que no se anuncia se lee como que entró completo.
         if (aplicado?.concepto_recortado) partes.push('el detalle se guardó abreviado');
 
         useToastStore.getState().showToast(
-            esCarga ? 'Carga aplicada' : 'Descarte aplicado',
+            fuera > 0 ? (esCarga ? 'Carga aplicada en parte' : 'Descarte aplicado en parte')
+                      : (esCarga ? 'Carga aplicada' : 'Descarte aplicado'),
             partes.join(' · '),
             'success',
         );
@@ -874,10 +887,31 @@ export const createRequestsSlice = (set, get) => ({
         return true;
     },
 
-    approveRequest: async (requestId, approverId, approverNote = '', _reqOverride = null) => {
+    /**
+     * @param aceptadas  Índices de `metadata.items` que SÍ entran, cuando el
+     *                   aprobador dejó líneas afuera. `null` = entra todo.
+     *                   Sólo lo entiende el inventario: una factura no tiene
+     *                   líneas que aprobar por separado.
+     */
+    approveRequest: async (requestId, approverId, approverNote = '', _reqOverride = null, aceptadas = null) => {
         try {
             const req = _reqOverride || get().requests.find(r => r.id === requestId);
             if (!req) return false;
+
+            // Un traslado NO se aprueba desde acá. Su confirmación relee la
+            // existencia de la sala de origen y despacha; el camino genérico lo
+            // marcaba APPROVED **sin mover nada**, y con eso desaparecía de las
+            // tres pestañas de Traslados: de «por confirmar» por estado, y de
+            // «por recibir» porque ese filtro exige un `erp_traslado` que nunca
+            // se escribió. Producto que no salió, solicitud dada por resuelta y
+            // ninguna pantalla donde volver a encontrarla.
+            if (req.type === 'INVENTORY_TRANSFER_REQUEST') {
+                useToastStore.getState().showToast(
+                    'Se resuelve en Traslados',
+                    'Este traslado se confirma en la pantalla de Traslados, que revisa la existencia de la sala antes de enviarlo.',
+                    'error');
+                return false;
+            }
 
             // Facturación: aprobar ES aplicar el cambio en el ERP. No pasa por
             // el flujo genérico porque ese marca APPROVED primero y notifica
@@ -890,7 +924,7 @@ export const createRequestsSlice = (set, get) => ({
             // Inventario: igual, pero moviendo existencias. Rechazar tampoco
             // toca nada afuera — eso sigue en `rejectRequest`.
             if (INVENTARIO_REQUEST_TYPES.has(req.type))
-                return await get()._aprobarInventario(requestId, req, approverId, approverNote);
+                return await get()._aprobarInventario(requestId, req, approverId, approverNote, aceptadas);
 
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;

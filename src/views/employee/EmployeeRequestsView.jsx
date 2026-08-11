@@ -26,6 +26,8 @@ import FileField from '../../components/common/FileField';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
+import { BloquePorTipo } from '../solicitudes/DetalleSolicitud';
+import { esMovimiento, esParcial } from '../solicitudes/movimientoTexto';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -211,7 +213,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         <span className="text-content-3">·</span>
                         <span className={`flex items-center gap-1 text-caption font-bold ${statConf.color.split(' ')[1]}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
-                            {statConf.label}
+                            {esParcial(req) ? 'Aprobada parcial' : statConf.label}
                         </span>
                         {req.status === 'PENDING' && req.current_level && req.type !== 'DISABILITY' && (
                             <span className="text-micro font-bold text-brand-text">· Niv. {req.current_level}/{maxLevels}</span>
@@ -235,6 +237,16 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                     <p className="text-content-2 text-body-lg leading-relaxed font-medium whitespace-pre-wrap">
                         {req.note}
                     </p>
+                )}
+
+                {/* Los tres que mueven producto. Esta pantalla tenía bloque para
+                    DOS tipos —cambio de turno e incapacidad— así que quien pedía
+                    un descarte no podía releer NI UNA de las líneas que había
+                    mandado, ni ver cuáles le aprobaron. Se usa el mismo bloque
+                    que ve quien decide, para que los dos lados hablen de lo
+                    mismo con las mismas palabras. */}
+                {esMovimiento(req.type) && (
+                    <BloquePorTipo req={req} meta={meta} />
                 )}
 
                 {req.type === 'SHIFT_CHANGE' && (

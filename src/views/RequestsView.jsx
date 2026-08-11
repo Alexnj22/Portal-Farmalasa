@@ -7,12 +7,11 @@ import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    Inbox, Check, X, ChevronRight, ChevronDown,
-    User, Calendar, Loader2, ClipboardList,
+    Inbox, Check, X, ChevronDown,
+    User, ClipboardList,
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
-    CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
-    Search, ArrowLeftRight, CalendarDays, Banknote, FileCheck2,
-    Ban, CreditCard, Receipt, Plus,
+    CheckCircle2, XCircle,
+    Search, ArrowLeftRight, Plus, Eye,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +25,8 @@ import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { ICONO_POR_TIPO } from '../constants/tipoIconos';
 import PortalTextarea from '../components/common/PortalTextarea';
 import ModalShell from '../components/common/ModalShell';
-import { formatMoney } from '../utils/formatNumber';
+import DetalleSolicitud from './solicitudes/DetalleSolicitud';
+import { resumenMovimiento, esMovimiento, lineasDe, esParcial } from './solicitudes/movimientoTexto';
 
 const CREATABLE_TYPES = [
     { key: 'VACATION',     icon: Palmtree },
@@ -61,19 +61,11 @@ const TYPE_ICONS = ICONO_POR_TIPO;
 // El canon queda: superficie neutra (`data-surface="card"`), el tipo se lee por
 // ícono + nombre, y **el color se reserva para el estado**, en su insignia.
 
-// El ID con el que se ubica la venta. Sale de la solicitud (`erp_invoice_id`,
-// que el widget guarda desde v2.414.0) o de lo que quedó registrado al
-// aplicarla. NUNCA cae al id interno del portal: son dos numeraciones distintas
-// y mostrarlas bajo la misma etiqueta manda a buscar la venta equivocada.
-const idDeVenta = (meta) =>
-    meta?.erp_invoice_id ?? meta?.erp_aplicado?.erp_invoice_id ?? null;
-
-const IdVenta = ({ meta }) => {
-    const id = idDeVenta(meta);
-    if (!id) return null;
-    return <p className="text-caption text-content-3 font-mono mt-0.5">ID de venta {id}</p>;
-};
-
+// El detalle por tipo —y el `IdVenta` que vivía acá— se mudó a
+// `solicitudes/DetalleSolicitud.jsx` el 2026-08-10. Estaba escrito dos veces,
+// acá y en `EmployeeRequestsView`, y las dos copias ya se habían separado: esta
+// cubría 10 tipos y la otra 2. Con un solo archivo, el tipo nuevo aparece en los
+// dos lados.
 
 const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 const fmtDateFull = (iso) => !iso ? '—' : new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -107,375 +99,227 @@ const CompactSummary = ({ req }) => {
         return <span className="text-caption text-content-3">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
     if (req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo)
         return <span className="text-caption text-content-3">{meta.correlativo} · {(meta.current_cliente || 'Sin nombre').split(' ')[0]} → {(meta.new_client_name || '').split(' ')[0]}</span>;
-    if (req.note) return <span className="text-caption text-content-3 italic truncate max-w-[160px]">"{req.note}"</span>;
+    // Los tres que mueven producto. Sin esta rama caían al `req.note`, o sea que
+    // un descarte se resumía con el texto libre de quien lo pidió —«inyectorio»—
+    // y el producto, que es lo que se está por sacar de la sala, no aparecía.
+    if (esMovimiento(req.type))
+        return <span className="text-caption text-content-3 truncate max-w-[220px]">{resumenMovimiento(meta)}</span>;
+    if (req.note) return <span className="text-caption text-content-3 italic truncate max-w-[160px]">&ldquo;{req.note}&rdquo;</span>;
     return null;
 };
 
 // ─── Tarjeta ──────────────────────────────────────────────────────────────────
-const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employeesById }) => {
-    const [expanded, setExpanded] = useState(false);
-
-    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
-    const TypeIcon  = TYPE_ICONS[req.type] || FileText;
-    const meta      = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
+//
+// La tarjeta DICE, el modal MUESTRA.
+//
+// Antes se desplegaba en el sitio, y traía tres problemas encima:
+//
+//  1. Las tarjetas viven en una rejilla de hasta 3 columnas. Desplegar una
+//     empujaba toda su fila, con un `max-h-[900px]` de salto.
+//  2. Lo que hay que mostrar no entra en un tercio de ancho —la tabla de
+//     líneas, las fotos, y sobre todo la decisión por línea, que necesita una
+//     casilla por renglón—. En el teléfono era inusable.
+//  3. Era un `<button>` con más botones adentro, y por eso hacía falta `inert`
+//     para que el teclado no cayera en controles escondidos.
+//
+// Y falta lo que la tarjeta NO decía: su tipo. El nombre del tipo vivía sólo en
+// el encabezado del grupo, así que una tarjeta mirada sola no lo tenía, y el
+// ícono caía al genérico en los tres tipos de inventario. Ahora el tipo se lee
+// en la tarjeta misma, por ícono y por nombre — **nunca por color**: el color
+// sigue reservado al estado, que es la decisión que ya tomó la auditoría de
+// tema y que nueve tintes compitiendo habían roto.
+const RequestCard = memo(({ req, onOpen }) => {
+    const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
+    const TypeIcon = TYPE_ICONS[req.type] || FileText;
+    const typeConf = REQUEST_TYPES[req.type] || { label: req.type };
     const isRejected = req.status === 'REJECTED';
     const isUrgent   = req.type === 'DISABILITY' && req.status === 'PENDING';
+    const parcial    = esParcial(req);
 
-    const getApproverLabel = (ap) => {
-        const emp = ap.approverId ? employeesById.get(String(ap.approverId)) : null;
-        return emp ? `${emp.name}${emp.role ? ` · ${emp.role}` : ''}` : `Nivel ${ap.level}`;
-    };
-
-    // Superficie canónica. El borde solo se colorea por ESTADO —una incapacidad
-    // pendiente es urgente, una rechazada quedó cerrada—, nunca por tipo: eso
-    // era lo que hacía competir nueve matices por decir algo que el nombre ya
-    // dice.
     return (
-        <div data-surface="card" className={`transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] overflow-hidden transform-gpu
-            ${isUrgent ? '!border-danger' : isRejected ? '!border-danger/30' : ''}`}>
+        <button data-surface="card" onClick={() => onOpen(req)}
+            className={`w-full text-left px-4 py-3.5 flex items-center gap-3 overflow-hidden transform-gpu
+                hover:bg-surface-card-hover/40 active:scale-[0.99]
+                transition-[background-color,transform,border-color] duration-[var(--dur-base)]
+                ${isUrgent ? '!border-danger' : isRejected ? '!border-danger/30' : ''}`}>
 
-            {/* Compact header — click to expand */}
-            {/* Encabezado plegable. Le faltaba `aria-expanded`: el estado
-                abierto/cerrado vivía solo en el giro del chevron. */}
-            <button onClick={() => setExpanded(v => !v)}
-                aria-expanded={expanded}
-                // La fila de la solicitud es el control que la despliega, y en
-                // el teléfono sólo respondía al puntero: 33 de los 46 mudos que
-                // dejaron ver las pestañas internas salían de acá.
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 active:scale-[0.99] transition-[background-color,transform] duration-[var(--dur-base)]">
+            {/* El ícono dice el tipo; el color, el estado. */}
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-surface-card-hover border border-divider">
+                <TypeIcon size={15} strokeWidth={2} className="text-content-2" />
+            </div>
 
-                {/* El ícono dice el tipo; el color, el estado. Antes el círculo
-                    iba relleno del color del tipo y era lo más brillante de la
-                    tarjeta — el ojo iba ahí y no al estado. */}
-                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-surface-card-hover border border-divider">
-                    <TypeIcon size={15} strokeWidth={2} className="text-content-2" />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                        {req.employee && (
-                            <span className="text-body font-semibold text-content truncate leading-tight max-w-[160px]">
-                                {req.employee.name}
-                            </span>
-                        )}
-                        <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
-                            {statConf.label}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                    {req.employee && (
+                        <span className="text-body font-semibold text-content truncate leading-tight max-w-[160px]">
+                            {req.employee.name}
                         </span>
-                        {isUrgent && <span className="text-micro font-black text-danger animate-pulse shrink-0">URGENTE</span>}
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <CompactSummary req={req} />
-                        <span className="text-micro text-content-3 shrink-0">{fmtDateFull(req.created_at)}</span>
-                        {req.current_level && req.status === 'PENDING' && req.type !== 'DISABILITY' && (
-                            <span className="text-micro text-content-3 shrink-0">· Niv. {req.current_level}/{req.type === 'SHIFT_CHANGE' ? 2 : 3}</span>
-                        )}
-                    </div>
+                    )}
+                    <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
+                        {parcial ? 'Aprobada parcial' : statConf.label}
+                    </span>
+                    {isUrgent && <span className="text-micro font-black text-danger animate-pulse shrink-0">URGENTE</span>}
                 </div>
 
-                <ChevronDown size={14} strokeWidth={2.5}
-                    className={`text-content-3 flex-shrink-0 transition-transform duration-[var(--dur-slow)] ${expanded ? 'rotate-180' : ''}`} />
-            </button>
+                {/* El tipo, escrito. Una tarjeta fuera de su grupo no lo tenía. */}
+                <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-0.5 truncate">
+                    {typeConf.label}
+                </p>
 
-            {/* Expandable body */}
-            <div inert={!(expanded) ? true : undefined} className={`overflow-hidden transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] ${expanded ? 'max-h-[900px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="px-4 pb-4 pt-3 border-t border-border-card space-y-2.5">
-
-                    {/* SHIFT_CHANGE */}
-                    {req.type === 'SHIFT_CHANGE' && (
-                        <div className="space-y-2">
-                            {(meta.targetEmployeeName || meta.date) && (
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-3/10 border border-chart-3/30">
-                                    <ArrowLeftRight size={12} className="text-chart-3-text flex-shrink-0" strokeWidth={2} />
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {meta.targetEmployeeName && <span className="text-body-sm font-bold text-chart-3-text">↔ {meta.targetEmployeeName}</span>}
-                                        {meta.date && <span className="text-label text-chart-3-text">{new Date(meta.date+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}</span>}
-                                    </div>
-                                </div>
-                            )}
-                            {(meta.myShift || meta.targetShift) && (
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                        <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
-                                        <p className="text-label font-black text-content-2">{meta.myShift || '—'}</p>
-                                    </div>
-                                    <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl p-2.5">
-                                        <p className="text-micro font-black text-chart-3-text uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
-                                        <p className="text-label font-black text-content-2">{meta.targetShift || '—'}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* DISABILITY */}
-                    {req.type === 'DISABILITY' && (
-                        <div className="space-y-2">
-                            {meta.startDate && (
-                                <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
-                                    <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
-                                    <div>
-                                        <p className="text-caption font-black uppercase tracking-widest text-danger mb-0.5">Período</p>
-                                        <p className="text-body font-bold text-danger-text">
-                                            {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
-                                            {meta.days && <span className="text-danger font-medium ml-1.5">· {meta.days}d</span>}
-                                        </p>
-                                        {Number(meta.days) > 3 && <p className="text-caption text-content-2 font-black mt-0.5">Requiere boleta ISSS</p>}
-                                    </div>
-                                </div>
-                            )}
-                            {meta.docUrl ? (
-                                <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card border border-border-card text-label font-bold text-content-2 hover:text-brand-text transition-all">
-                                    <FileImage size={12} strokeWidth={2} />{meta.docName || 'Ver certificado adjunto'}
-                                </a>
-                            ) : (
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card-hover border border-divider">
-                                    <AlertTriangle size={11} className="text-warning flex-shrink-0" strokeWidth={2} />
-                                    <p className="text-caption text-content-2 font-medium">Sin certificado adjunto.</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* VACATION */}
-                    {req.type === 'VACATION' && meta.startDate && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-success/10 border border-success/30">
-                            <CalendarDays size={13} className="text-success flex-shrink-0" strokeWidth={2} />
-                            <div>
-                                <p className="text-caption font-black uppercase tracking-widest text-success mb-0.5">Período</p>
-                                <p className="text-body-sm font-bold text-success-text">
-                                    {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* PERMIT */}
-                    {req.type === 'PERMIT' && (meta.permissionDates || []).length > 0 && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30">
-                            <p className="text-caption font-black uppercase tracking-widest text-success-text mb-2">Días de Permiso</p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {meta.permissionDates.map(d => (
-                                    <Badge key={d} variant="success" uppercase={false}>{new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}</Badge>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ADVANCE */}
-                    {req.type === 'ADVANCE' && meta.amount && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card-hover border border-divider">
-                            <Banknote size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                            <div>
-                                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Monto solicitado</p>
-                                <p className="text-body font-black text-content-2">${Number(meta.amount).toLocaleString('es-SV')}</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* CERTIFICATE */}
-                    {req.type === 'CERTIFICATE' && meta.certificateType && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card-hover border border-divider">
-                            <FileCheck2 size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                            <div>
-                                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Tipo</p>
-                                <p className="text-body-sm font-bold text-content-2">
-                                    {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ANNULMENT_REQUEST */}
-                    {req.type === 'ANNULMENT_REQUEST' && meta.correlativo && (
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
-                                <Ban size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura a anular</p>
-                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                                    {meta.fecha && <p className="text-caption text-content-2">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
-                                    <IdVenta meta={meta} />
-                                </div>
-                                {meta.tipo_documento && (
-                                    <Badge variant={meta.tipo_documento === 'CCF' ? 'danger' : 'neutral'} size="sm" className="shrink-0">{meta.tipo_documento}</Badge>
-                                )}
-                            </div>
-                            {meta.reason && (
-                                <div className="px-3 py-2 rounded-2xl bg-surface-card border border-border-card">
-                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Motivo de anulación</p>
-                                    <p className="text-label font-bold text-content-2">{meta.reason}</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* PAYMENT_CHANGE_REQUEST */}
-                    {req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo && (
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
-                                <CreditCard size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                                    <IdVenta meta={meta} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
-                                    <p className="text-body-sm font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
-                                </div>
-                                <div className="bg-surface-card-hover border border-divider rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Cambiar a</p>
-                                    <p className="text-body-sm font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* VENDOR_CHANGE_REQUEST */}
-                    {req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo && (
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
-                                <Receipt size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                                    <IdVenta meta={meta} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Vendedor actual</p>
-                                    {meta.current_vendor_photo && (
-                                        <img src={meta.current_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
-                                    )}
-                                    <p className="text-label font-black text-content-2">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
-                                    {meta.current_vendor_code && <p className="text-micro text-content-3 font-mono">#{meta.current_vendor_code}</p>}
-                                </div>
-                                <div className="bg-surface-card-hover border border-divider rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Asignar a</p>
-                                    {meta.new_vendor_photo && (
-                                        <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
-                                    )}
-                                    <p className="text-label font-black text-content-2">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
-                                    {meta.new_vendor_code && <p className="text-micro text-content-3 font-mono">#{meta.new_vendor_code}</p>}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* CLIENT_CHANGE_REQUEST */}
-                    {req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo && (
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider">
-                                <Receipt size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                                    <IdVenta meta={meta} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Cliente actual</p>
-                                    <div className="w-6 h-6 rounded-full bg-surface-card-hover flex items-center justify-center mb-1">
-                                        <span className="text-content-3 font-black text-caption leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
-                                    </div>
-                                    <p className="text-label font-black text-content-2 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
-                                </div>
-                                <div className="bg-surface-card-hover border border-divider rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Cambiar a</p>
-                                    <div className="w-6 h-6 rounded-full bg-surface-card border border-divider flex items-center justify-center mb-1">
-                                        <span className="text-content-2 font-black text-caption leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
-                                    </div>
-                                    <p className="text-label font-black text-content-2 leading-tight">{meta.new_client_name}</p>
-                                    {(meta.new_client_nit || meta.new_client_dui) && (
-                                        <p className="text-micro text-content-3 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Constancia de lo aplicado. Sin esto, aprobar y que el
-                        cambio ocurra fuera del portal se ve igual que aprobar
-                        y que no ocurra nada — que es como estaba antes. */}
-                    {meta.erp_aplicado && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-surface-card-hover border border-divider space-y-1">
-                            <p className="text-micro font-black uppercase tracking-widest text-content-2">Aplicado</p>
-                            <p className="text-label font-bold text-content">
-                                {meta.erp_aplicado.campo === 'anulacion'
-                                    ? 'Factura anulada'
-                                    : `${meta.erp_aplicado.de || '—'} → ${meta.erp_aplicado.a || '—'}`}
-                                {meta.erp_aplicado.by_name && ` · por ${meta.erp_aplicado.by_name}`}
-                            </p>
-                            {meta.erp_aplicado.hacienda?.sello && (
-                                <p className="text-micro text-content-3 font-mono break-all">
-                                    Sello de Hacienda: {meta.erp_aplicado.hacienda.sello}
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Note */}
-                    {req.note && (
-                        <div>
-                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo del empleado</p>
-                            <p className="text-body-sm text-content-2 bg-surface-card rounded-2xl p-3 border border-border-card leading-relaxed">{req.note}</p>
-                        </div>
-                    )}
-
-                    {/* Rejection reason */}
-                    {isRejected && req.approver_note && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
-                            <p className="text-micro font-black uppercase tracking-widest text-danger mb-1">Motivo de rechazo</p>
-                            <p className="text-body-sm text-danger-text font-medium leading-relaxed">{req.approver_note}</p>
-                        </div>
-                    )}
-
-                    {/* Approval note */}
-                    {!isRejected && req.approver_note && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30">
-                            <p className="text-micro font-black uppercase tracking-widest text-success mb-1">Nota del aprobador</p>
-                            <p className="text-body-sm text-success-text font-medium leading-relaxed">{req.approver_note}</p>
-                        </div>
-                    )}
-
-                    {/* Approval history */}
-                    {req.approvals && req.approvals.length > 0 && (
-                        <div className="space-y-1.5">
-                            <p className="text-micro font-black uppercase tracking-widest text-content-2">Historial</p>
-                            {req.approvals.map((ap, i) => (
-                                <div key={i} className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-2xl p-2.5">
-                                    <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                                    <div className="min-w-0">
-                                        <p className="text-label font-black text-success-text">{getApproverLabel(ap)}</p>
-                                        <p className="text-micro text-content-3 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
-                                        {ap.approverNote && <p className="text-caption text-content-2 mt-0.5 italic">"{ap.approverNote}"</p>}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {req.employee?.code && (
-                        <p className="text-caption text-content-3">Código: <span className="font-mono font-bold text-content-2">{req.employee.code}</span></p>
-                    )}
-
-                    {req.status === 'PENDING' && (
-                        <div className="flex items-center gap-2 pt-1">
-                            <Button tone="success" icon={Check} disabled={!canApprove} onClick={() => onApprove(req)}>Aprobar</Button>
-                            <Button variant="destructive" icon={X} disabled={!canApprove} onClick={() => onReject(req)}>Rechazar</Button>
-                        </div>
-                    )}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <CompactSummary req={req} />
+                    <span className="text-micro text-content-3 shrink-0">{fmtDateFull(req.created_at)}</span>
                 </div>
             </div>
-        </div>
+
+            <Eye size={14} strokeWidth={2.5} className="text-content-3 flex-shrink-0" />
+        </button>
     );
 });
+RequestCard.displayName = 'RequestCard';
+
+// ─── El modal de una solicitud ────────────────────────────────────────────────
+//
+// Ver primero, decidir después. El diálogo de aprobar/rechazar era una ventana
+// aparte que se abría SIN haber mostrado nunca qué se estaba aprobando — y el
+// enlace de la campana con `&accion=aprobar` iba derecho ahí. O sea que el
+// camino más corto hasta una decisión era el que menos información daba.
+//
+// Acá la decisión vive DENTRO del detalle: se despliega debajo de lo que se
+// está mirando, como hace la fila de un traslado, en vez de taparlo con otra
+// ventana encima.
+const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDecidir, ocupado, accionInicial }) => {
+    const [modo, setModo]   = useState(accionInicial ?? null);   // null | 'approve' | 'reject'
+    const [nota, setNota]   = useState('');
+    const navigate          = useNavigate();
+
+    const meta      = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
+    const lineas    = lineasDe(meta);
+    const esTraslado = req.type === 'INVENTORY_TRANSFER_REQUEST';
+    const decidible  = req.status === 'PENDING' && canApprove && !esTraslado;
+
+    // Qué líneas entran. Sólo tiene sentido donde hay más de una: con una sola,
+    // aceptar «parte» es aceptar todo o nada, que es lo que ya hacen los botones.
+    const porLinea = decidible && esMovimiento(req.type) && lineas.length > 1;
+    const [seleccion, setSeleccion] = useState(() => new Set(lineas.map((_, i) => i)));
+    const alternar = (i) => setSeleccion(prev => {
+        const s = new Set(prev);
+        s.has(i) ? s.delete(i) : s.add(i);
+        return s;
+    });
+
+    const fuera = lineas.length - seleccion.size;
+    const parcial = porLinea && fuera > 0 && seleccion.size > 0;
+
+    // Aprobar sin nada seleccionado no es aprobar: es rechazar con otro nombre,
+    // y se dice en vez de dejar apretar un botón que no hace lo que promete.
+    const nadaSeleccionado = porLinea && seleccion.size === 0;
+
+    const faltaMotivo = (modo === 'reject' && !nota.trim())
+                     || (modo === 'approve' && parcial && !nota.trim());
+
+    const confirmar = () => onDecidir({
+        req, modo, nota: nota.trim(),
+        // Los índices que entran, sólo cuando de verdad se dejó algo afuera.
+        aceptadas: parcial ? [...seleccion].sort((a, b) => a - b) : null,
+    });
+
+    const statConf = REQUEST_STATUS[req.status] || { label: req.status };
+    const TypeIcon = TYPE_ICONS[req.type] || FileText;
+
+    return (
+        <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-xl" zClass="z-toast"
+            closeOnEsc={!ocupado} surface={null}
+            ariaLabel={`Solicitud de ${REQUEST_TYPES[req.type]?.label ?? req.type}`}>
+            <CuerpoDialogo
+                titulo={REQUEST_TYPES[req.type]?.label ?? req.type}
+                subtitulo={`${req.employee?.name ?? 'Sin nombre'} · ${fmtDateFull(req.created_at)} · ${esParcial(req) ? 'Aprobada parcial' : statConf.label}`}
+                icono={TypeIcon}
+                anchoEscritorio="max-w-xl"
+                pie={<>
+                    {decidible && modo === null && (
+                        <>
+                            <Button tone="success" icon={Check} disabled={ocupado}
+                                onClick={() => { setModo('approve'); setNota(''); }}>Aprobar</Button>
+                            <Button variant="destructive" icon={X} disabled={ocupado}
+                                onClick={() => { setModo('reject'); setNota(''); }}>Rechazar</Button>
+                        </>
+                    )}
+                    {decidible && modo !== null && (
+                        <>
+                            <Button onClick={confirmar} loading={ocupado}
+                                disabled={faltaMotivo || nadaSeleccionado}
+                                tone={modo === 'approve' ? 'success' : 'danger'}
+                                icon={modo === 'approve' ? Check : X}>
+                                {modo === 'approve'
+                                    ? (parcial ? `Aplicar ${seleccion.size} de ${lineas.length}` : 'Confirmar')
+                                    : 'Confirmar rechazo'}
+                            </Button>
+                            <Button variant="ghost" disabled={ocupado} onClick={() => { setModo(null); setNota(''); }}>
+                                Volver
+                            </Button>
+                        </>
+                    )}
+                    {esTraslado && req.status === 'PENDING' && (
+                        <Button icon={ArrowLeftRight} onClick={() => navigate('/traslados')}>
+                            Resolver en Traslados
+                        </Button>
+                    )}
+                    <Button variant="secondary" disabled={ocupado} onClick={onCerrar}>Cerrar</Button>
+                </>}
+            >
+                <div className="space-y-3 text-left max-h-[60vh] overflow-y-auto pr-1">
+                    {/* Un traslado se resuelve en su pantalla, no acá. Y no es un
+                        detalle de gusto: confirmarlo relee la existencia de la
+                        sala de origen justo antes de despachar y ofrece los
+                        motivos de rechazo que la base valida. Aprobarlo desde
+                        acá lo marcaba APROBADO **sin mover nada** y lo hacía
+                        desaparecer de las tres pestañas de Traslados. */}
+                    {esTraslado && req.status === 'PENDING' && (
+                        <Notice variant="info" icon={ArrowLeftRight}>
+                            Este traslado se confirma o se rechaza en la pantalla de Traslados,
+                            donde se revisa la existencia de la sala antes de enviarlo.
+                        </Notice>
+                    )}
+
+                    <DetalleSolicitud req={req} employeesById={employeesById}
+                        seleccion={porLinea && modo === 'approve' ? seleccion : undefined}
+                        onToggle={porLinea && modo === 'approve' ? alternar : undefined} />
+
+                    {modo === 'approve' && porLinea && (
+                        <Notice variant={nadaSeleccionado ? 'danger' : parcial ? 'warning' : 'info'} icon={Check}>
+                            {nadaSeleccionado
+                                ? 'No dejaste ninguna línea marcada. Si no entra nada, rechazá la solicitud.'
+                                : parcial
+                                    ? `Entran ${seleccion.size} de ${lineas.length}. Las otras ${fuera} quedan rechazadas con el motivo que escribas.`
+                                    : 'Entran todas las líneas.'}
+                        </Notice>
+                    )}
+
+                    {modo !== null && (
+                        <div>
+                            <label className="text-label font-black uppercase tracking-widest text-content-2 mb-1.5 block">
+                                {modo === 'reject' ? 'Motivo de rechazo'
+                                    : parcial ? 'Por qué no entran las otras'
+                                    : 'Nota para quien la envió'}
+                                {(modo === 'reject' || parcial) && <span className="text-danger ml-1">*</span>}
+                            </label>
+                            <PortalTextarea
+                                value={nota}
+                                onChange={e => setNota(e.target.value)}
+                                rows={3}
+                                placeholder={modo === 'approve' && !parcial ? 'Opcional...' : 'Explicá el motivo...'}
+                                readOnly={ocupado}
+                                textareaClassName="disabled:opacity-50"
+                            />
+                        </div>
+                    )}
+                </div>
+            </CuerpoDialogo>
+        </ModalShell>
+    );
+};
 
 // ─── Vista principal ───────────────────────────────────────────────────────────
 const RequestsView = () => {
@@ -511,8 +355,10 @@ const RequestsView = () => {
     const [statusFilter,      setStatusFilter]      = useState('PENDING');
     const [rawSearch,         setRawSearch]         = useState('');
     const [collapsedSections, setCollapsedSections] = useState(new Set());
-    const [actionModal,       setActionModal]       = useState(null);
-    const [actionNote,        setActionNote]        = useState('');
+    // Una sola ventana: la que muestra la solicitud. La decisión se despliega
+    // adentro. Antes eran dos estados (`actionModal` + `actionNote`) para una
+    // ventana que se abría SIN haber mostrado nunca qué se estaba decidiendo.
+    const [abierta,           setAbierta]           = useState(null); // { req, accionInicial }
     const [isActioning,       setIsActioning]       = useState(false);
 
     // ── Crear solicitud a nombre de un empleado (RRHH) ──────────────────────
@@ -540,10 +386,15 @@ const RequestsView = () => {
     }, [location.state?.prefillEmployeeId, location.pathname, navigate]);
 
     /* Deep-link desde la notificación: `?solicitud=<id>` abre esa solicitud, y
-       `&accion=aprobar|rechazar` abre además su diálogo de decisión.
+       `&accion=aprobar|rechazar` la abre con su decisión ya desplegada.
        Es lo que convierte el aviso en «acá está» en vez de «andá a buscarla»,
        y es el camino que usa iPhone, donde iOS no dibuja los botones de acción
        de una notificación web.
+
+       Antes `accion` abría el diálogo de decisión A SECAS: se llegaba desde la
+       campana a un «¿aprobar?» sin haber visto una sola línea de lo que se
+       aprobaba. Ahora abre la solicitud —con su detalle— y deja la decisión
+       lista abajo, que es el mismo atajo sin el punto ciego.
 
        Se espera a que `requests` tenga la solicitud: la campana es global y la
        lista puede llegar después. Los parámetros se limpian recién cuando se
@@ -555,10 +406,10 @@ const RequestsView = () => {
         if (!req) return;
 
         const accion = searchParams.get('accion');
-        if (accion === 'aprobar' || accion === 'rechazar') {
-            setActionModal({ req, mode: accion === 'aprobar' ? 'approve' : 'reject' }); // eslint-disable-line react-hooks/set-state-in-effect -- abre el diálogo por deep-link
-            setActionNote('');
-        }
+        setAbierta({ // eslint-disable-line react-hooks/set-state-in-effect -- abre la solicitud por deep-link
+            req,
+            accionInicial: accion === 'aprobar' ? 'approve' : accion === 'rechazar' ? 'reject' : null,
+        });
         // Sin esto la solicitud podría quedar escondida tras el filtro activo.
         if (req.status !== statusFilter) setStatusFilter(req.status);
 
@@ -601,26 +452,61 @@ const RequestsView = () => {
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
 
-    const pendingCount = requests.filter(r => {
+    /* Quién ve qué.
+     *
+     * Con `can_approve` la bandeja es la de UNO: lo que le toca decidir. La
+     * consulta ya recortó a `approver_id = yo` o sin asignar, y estos filtros lo
+     * repiten para el estado.
+     *
+     * **Sin `can_approve` la bandeja es la de la SALA**: quien sólo mira no
+     * tiene «asignadas a mí», así que aplicarle el mismo filtro le vaciaba la
+     * pantalla entera — que es exactamente lo que le pasaba al jefe de sala. Lo
+     * que puede ver ya lo decidió el RLS; acá sólo se ordena.
+     *
+     * El cambio de turno es la excepción y se queda como estaba: en su primer
+     * nivel lo contesta el compañero, no una jefatura, y no es asunto de nadie
+     * más. */
+    const soloMira = !canApprove;
+
+    const visible = (r) => {
         const myId = String(user?.id);
         if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
-        return r.status === 'PENDING' && (!r.approver || String(r.approver?.id) === myId);
-    }).length;
+        if (soloMira) return true;
+        if (r.status === 'PENDING') return !r.approver || String(r.approver?.id) === myId;
+        return String(r.approver?.id) === myId;
+    };
+
+    const pendingCount = requests.filter(r => r.status === 'PENDING' && visible(r)).length;
 
     const statusFiltered = requests.filter(r => {
-        const myId = String(user?.id);
-        if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
-        const assignedToMe  = !r.approver || String(r.approver?.id) === myId;
-        const processedByMe = String(r.approver?.id) === myId;
-        if (statusFilter === 'PENDING'  && !(r.status === 'PENDING'  && assignedToMe))  return false;
-        if (statusFilter === 'APPROVED' && !(r.status === 'APPROVED' && processedByMe)) return false;
-        if (statusFilter === 'REJECTED' && !(r.status === 'REJECTED' && processedByMe)) return false;
+        if (!visible(r)) return false;
+        if (statusFilter !== 'ALL' && r.status !== statusFilter) return false;
         return true;
     });
 
+    /* La búsqueda miraba SÓLO el nombre de quien pidió. En una bandeja donde ya
+     * conviven descartes, cargas y facturación, lo que uno busca es el producto
+     * o el número de factura — y ninguno de los dos estaba. */
     const { results: baseFiltered, isFuzzy: isReqSearchFuzzy } = !rawSearch.trim()
         ? { results: statusFiltered, isFuzzy: false }
-        : smartFilter(rawSearch, statusFiltered, r => [r.employee?.name]);
+        : smartFilter(rawSearch, statusFiltered, r => [
+            r.employee?.name,
+            r.metadata?.correlativo,
+            r.metadata?.branch_name,
+            ...lineasDe(r.metadata).map(i => i.descripcion),
+        ]);
+
+    /* El orden de la cola.
+     *
+     * Lo pendiente va con **lo más viejo arriba**: es una cola que alguien vacía,
+     * y con el orden que traía la consulta (lo más nuevo primero, que es el de un
+     * muro de novedades) lo que más llevaba esperando se hundía justo por haber
+     * esperado. Lo ya resuelto va al revés, porque ahí uno busca lo que acaba de
+     * pasar. Es además el orden que ya usa Traslados en sus tres pestañas. */
+    const ordenar = (lista) => [...lista].sort((a, b) =>
+        a.status === 'PENDING' && b.status === 'PENDING'
+            ? new Date(a.created_at) - new Date(b.created_at)
+            : new Date(b.created_at) - new Date(a.created_at));
 
     const groupedByType = Object.entries(
         baseFiltered.reduce((acc, r) => {
@@ -629,7 +515,7 @@ const RequestsView = () => {
             acc[t].push(r);
             return acc;
         }, {})
-    );
+    ).map(([tipo, cards]) => [tipo, ordenar(cards)]);
 
     const toggleSection = (type) => {
         setCollapsedSections(prev => {
@@ -639,17 +525,29 @@ const RequestsView = () => {
         });
     };
 
-    const handleConfirmAction = async () => {
-        if (!actionModal) return;
-        if (actionModal.mode === 'reject' && !actionNote.trim()) return;
+    /**
+     * La decisión, con o sin líneas afuera.
+     *
+     * `aceptadas` son los índices que SÍ entran, y sólo llega cuando se dejó
+     * algo afuera. Viaja hasta la Edge Function, que es la que valida los
+     * índices contra las líneas guardadas y aplica nada más esas: si el
+     * navegador mandara las líneas mismas, estaría eligiendo qué se mueve.
+     */
+    const handleDecidir = async ({ req, modo, nota, aceptadas }) => {
+        if (modo === 'reject' && !nota) return;
         setIsActioning(true);
-        const ok = actionModal.mode === 'approve'
-            ? await approveRequest(actionModal.req.id, user.id, actionNote.trim())
-            : await rejectRequest(actionModal.req.id, user.id, actionNote.trim());
+        const ok = modo === 'approve'
+            ? await approveRequest(req.id, user.id, nota, null, aceptadas)
+            : await rejectRequest(req.id, user.id, nota);
         setIsActioning(false);
         if (ok) {
-            useToastStore.getState().showToast('Listo', `Solicitud ${actionModal.mode === 'approve' ? 'aprobada' : 'rechazada'}.`, 'success');
-            setActionModal(null);
+            useToastStore.getState().showToast(
+                'Listo',
+                modo === 'approve'
+                    ? (aceptadas ? `Se aplicaron ${aceptadas.length} líneas; el resto quedó rechazado.` : 'Solicitud aprobada.')
+                    : 'Solicitud rechazada.',
+                'success');
+            setAbierta(null);
         } else {
             useToastStore.getState().showToast('Error', 'No se pudo procesar la acción.', 'error');
         }
@@ -769,10 +667,7 @@ const RequestsView = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 pb-2">
                                         {cards.map(req => (
                                             <RequestCard key={req.id} req={req}
-                                                onApprove={(r) => { setActionModal({ mode: 'approve', req: r }); setActionNote(''); }}
-                                                onReject={(r)  => { setActionModal({ mode: 'reject',  req: r }); setActionNote(''); }}
-                                                canApprove={canApprove}
-                                                employeesById={employeesById}
+                                                onOpen={(r) => setAbierta({ req: r, accionInicial: null })}
                                             />
                                         ))}
                                     </div>
@@ -785,54 +680,30 @@ const RequestsView = () => {
             </div>
 
             {/* ModalShell: escrito a mano no atrapaba el foco, no cerraba con
-                Escape y no se anunciaba como diálogo (auditoría 2026-07-29). */}
-            {/* El `actionModal &&` NO es defensivo de más: sin él la vista CRASHEA.
+                Escape y no se anunciaba como diálogo (auditoría 2026-07-29).
+
+                El `abierta &&` NO es defensivo de más: sin él la vista CRASHEA.
                 Los hijos de un elemento JSX se evalúan al CREARLO, no cuando el
-                padre decide pintarlos — así que `actionModal.mode` de aquí abajo
-                corre en cada render, incluido el primero, cuando `actionModal` es
-                `null`. "TypeError: null is not an object (evaluating 'c.mode')" y
-                la vista entera al ErrorBoundary.
-                El modal a mano que había antes sí tenía la guarda; se perdió al
-                pasarlo a `ModalShell` en v2.183.0, porque `open={!!actionModal}`
-                LEE como si condicionara los hijos y no los condiciona. */}
-            {actionModal && (
-            <ModalShell open={!!actionModal} onClose={() => !isActioning && setActionModal(null)} maxWidthClass="max-w-md" zClass="z-toast" closeOnEsc={!isActioning} surface={null} ariaLabel={actionModal?.mode === 'approve' ? 'Aprobar la solicitud' : 'Rechazar la solicitud'}>
-                    <CuerpoDialogo
-                        titulo={actionModal.mode === 'approve' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
-                        subtitulo={`${REQUEST_TYPES[actionModal.req.type]?.label} · ${actionModal.req.employee?.name}`}
-                        icono={actionModal.mode === 'approve' ? CheckCircle2 : XCircle}
-                        tono={actionModal.mode === 'approve' ? 'success' : 'danger'}
-                        anchoEscritorio="max-w-md"
-                        pie={<>
-                            <Button
-                                onClick={handleConfirmAction}
-                                loading={isActioning}
-                                disabled={!canApprove || (actionModal.mode === 'reject' && !actionNote.trim())}
-                                tone={actionModal.mode === 'approve' ? 'success' : 'danger'}
-                                icon={actionModal.mode === 'approve' ? Check : X}
-                            >
-                                {actionModal.mode === 'approve' ? 'Aprobar' : 'Rechazar'}
-                            </Button>
-                            <Button variant="secondary" disabled={isActioning}
-                                onClick={() => !isActioning && setActionModal(null)}>Cancelar</Button>
-                        </>}
-                    >
-                        <div className="text-left">
-                        <label className="text-label font-black uppercase tracking-widest text-content-2 mb-1.5 block">
-                            {actionModal.mode === 'reject' ? 'Motivo de rechazo' : 'Nota para el empleado'}
-                            {actionModal.mode === 'reject' && <span className="text-danger ml-1">*</span>}
-                        </label>
-                        <PortalTextarea
-                            value={actionNote}
-                            onChange={e => setActionNote(e.target.value)}
-                            rows={3}
-                            placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
-                            readOnly={isActioning}
-                            textareaClassName="disabled:opacity-50"
-                        />
-                        </div>
-                    </CuerpoDialogo>
-            </ModalShell>
+                padre decide pintarlos, así que leer `abierta.req` corre en cada
+                render — incluido el primero, cuando vale `null`. Ya pasó una vez:
+                el modal a mano SÍ tenía la guarda y se perdió al pasarlo a
+                `ModalShell` en v2.183.0, porque `open={!!x}` LEE como si
+                condicionara los hijos y no los condiciona.
+
+                `key` por id y la fila releída del store: al decidir, el store
+                reemplaza la solicitud, y sin releerla el modal seguiría mostrando
+                la foto vieja —sin su constancia de aplicado— hasta cerrarlo. */}
+            {abierta && (
+                <ModalSolicitud
+                    key={abierta.req.id}
+                    req={requests.find(r => r.id === abierta.req.id) ?? abierta.req}
+                    canApprove={canApprove}
+                    employeesById={employeesById}
+                    accionInicial={abierta.accionInicial}
+                    ocupado={isActioning}
+                    onCerrar={() => !isActioning && setAbierta(null)}
+                    onDecidir={handleDecidir}
+                />
             )}
 
             <ModalShell open={createModalOpen} onClose={() => !isCreatingReq && setCreateModalOpen(false)} maxWidthClass="max-w-lg" zClass="z-toast" closeOnEsc={!isCreatingReq} surface={null} ariaLabel="Nueva solicitud">

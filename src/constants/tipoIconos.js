@@ -2,6 +2,7 @@ import {
     Palmtree, FileText, RefreshCw, Coffee, DollarSign, FileCheck, Stethoscope,
     Ban, CreditCard, UserCog, Contact,
     Package, BarChart2, ClipboardList, Info, Bell,
+    PackagePlus, Trash2, ArrowLeftRight,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,6 +37,13 @@ export const ICONO_POR_TIPO = {
     PAYMENT_CHANGE_REQUEST: CreditCard,
     VENDOR_CHANGE_REQUEST:  UserCog,
     CLIENT_CHANGE_REQUEST:  Contact,
+
+    // Los tres que mueven producto. Faltaban los tres, así que en la Bandeja y
+    // en la campana caían al ícono genérico — justo los tipos donde el ícono
+    // más ayuda, porque un descarte y una carga se leen distinto de un golpe.
+    INVENTORY_LOAD_REQUEST:     PackagePlus,
+    INVENTORY_DISCARD_REQUEST:  Trash2,
+    INVENTORY_TRANSFER_REQUEST: ArrowLeftRight,
 
     // ── Tipos propios del canal de notificaciones ──
     PEDIDO_TRACKING:  Package,

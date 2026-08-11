@@ -187,10 +187,15 @@ export async function aplicarSolicitudEnErp(requestId, approverNote = '') {
  *
  * Devuelve `{ ok, aplicado }` o `{ ok:false, error }`. Nunca lanza.
  */
-export async function aplicarMovimientoInventarioEnErp(requestId, approverNote = '') {
+export async function aplicarMovimientoInventarioEnErp(requestId, approverNote = '', aceptadas = null) {
     try {
         const { data, error } = await supabase.functions.invoke('aplicar-movimiento-inventario', {
-            body: { request_id: requestId, approver_note: approverNote },
+            // `lineas_aceptadas` son ÍNDICES dentro de `metadata.items`, no las
+            // líneas mismas: mandar las líneas sería dejar que el navegador
+            // eligiera qué se mueve y en qué cantidad. El servidor las resuelve
+            // contra lo que quedó guardado al crear la solicitud.
+            body: { request_id: requestId, approver_note: approverNote,
+                    ...(aceptadas ? { lineas_aceptadas: aceptadas } : {}) },
         });
         if (!error) return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
 

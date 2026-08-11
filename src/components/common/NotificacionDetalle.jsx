@@ -5,6 +5,7 @@ import { fetchApprovalRequestById } from '../../data/requests';
 import { fetchMinMaxChangeRequestById } from '../../data/minmaxRequests';
 import { adaptarMinMax } from '../../store/slices/requestsSlice';
 import { ERP_NAMES } from '../../constants/erp';
+import { buscadorDePersonas } from '../../views/solicitudes/movimientoTexto';
 import { mensajeAmigable } from '../../utils/errorMessages';
 
 // El detalle de una solicitud, DENTRO de la campana.
@@ -81,9 +82,17 @@ export default function NotificacionDetalle({ notif }) {
     // volviera a desplegarla.
     const req = useMemo(() => {
         if (!fila) return null;
-        if (esMinMax) return adaptarMinMax(fila, sucursalId => ERP_NAMES[sucursalId]);
-        return { ...fila, employee: employeesById.get(String(fila.employee_id)) ?? null };
-    }, [fila, esMinMax, employeesById]);
+        // El tercer parámetro le pone cara a las dos personas del ajuste: su
+        // tabla las guarda como texto —un uuid y el correo de quien decidió— y
+        // sin el buscador la ficha muestra la dirección de correo pelada.
+        if (esMinMax) return adaptarMinMax(fila, sucursalId => ERP_NAMES[sucursalId],
+            buscadorDePersonas(employees));
+        return {
+            ...fila,
+            employee: employeesById.get(String(fila.employee_id)) ?? null,
+            approver: employeesById.get(String(fila.approver_id)) ?? null,
+        };
+    }, [fila, esMinMax, employees, employeesById]);
 
     if (error) {
         return <p className="text-label font-semibold text-danger-text px-1 py-2">{error}</p>;

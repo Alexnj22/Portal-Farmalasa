@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -33,7 +33,7 @@ import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'));
 const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
-import { lineasDe } from './solicitudes/movimientoTexto';
+import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
 
 // El mapa vivía acá y se mudó a `constants/tipoIconos` (2026-08-01): la campana
 // de notificaciones necesita los mismos íconos para los mismos tipos, y tener
@@ -137,16 +137,12 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * minuto. */
     const ahora = useNowTick(60_000);
 
-    /* El maestro de personal, buscado por id O por correo. Min/Max guarda a
-     * quien decidió como el CORREO con el que entró (`auth.email()`), que es la
-     * única forma que tiene esa tabla de nombrar a alguien; sin este cruce la
-     * ficha mostraría la dirección en vez de la persona. */
-    const buscarPersona = useCallback((idOEmail) => {
-        if (!idOEmail) return null;
-        const clave = String(idOEmail).toLowerCase();
-        return (employees || []).find(e =>
-            String(e.id).toLowerCase() === clave || String(e.email ?? '').toLowerCase() === clave) ?? null;
-    }, [employees]);
+    /* El maestro de personal, buscado por id, correo o usuario. Min/Max guarda a
+     * quien decidió como el CORREO con el que entró, y ese correo se ARMA con el
+     * usuario: buscar por la columna `email` no encontraba a casi nadie —está
+     * vacía en 49 de 50— y la ficha terminaba mostrando la dirección en vez de
+     * la persona. El detalle, en `buscadorDePersonas`. */
+    const buscarPersona = useMemo(() => buscadorDePersonas(employees), [employees]);
 
     /* Min/Max vive en OTRA tabla, con otras columnas y otro ciclo — pero para
      * quien mira la sala es una solicitud más, y tenerla en otra pantalla era

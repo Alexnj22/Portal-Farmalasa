@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.567.1 — El aprobador de Min/Max se busca por usuario, no por correo
+
+Un ajuste de Min/Max aprobado mostraba «edwin.nunez@farmalasa.app» donde tenía
+que ir la cara y el nombre de quien lo aprobó. El cruce existía desde v2.564.0 y
+buscaba por la columna `employees.email` — que está **vacía en 49 de 50**
+empleados activos (medido en prod hoy). La llave real es `username`: el correo
+con el que se entra al portal se ARMA con él (`${username}@farmalasa.app`, ver
+`AuthContext`), y `decided_by` guarda ese correo, no una dirección de la ficha.
+
+Ahora la búsqueda mira las cuatro formas en que puede venir la misma persona: su
+id, su correo guardado, su usuario, y el usuario dentro del correo — lo último
+para que siga funcionando el día que cambie el dominio. Vale para las solicitudes
+viejas: no se guardó nada nuevo, se lee distinto lo que ya estaba.
+
+De paso, el detalle que abre la campana también recibe el buscador (mostraba lo
+mismo) y resuelve al aprobador de una solicitud normal, que antes llegaba vacío.
+
 ## v2.567.0 — La solicitud de facturación muestra la venta entera
 
 Anular una factura es irreversible y se decidía a ciegas. La solicitud mostraba

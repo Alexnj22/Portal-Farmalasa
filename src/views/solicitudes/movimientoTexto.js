@@ -196,6 +196,35 @@ export const personasDe = (req, empleadosPorId) => {
 };
 
 /**
+ * Buscar a una persona por lo poco que a veces se guardó de ella.
+ *
+ * Min/Max no guarda un id de empleado en «quién decidió»: guarda el CORREO con
+ * el que esa persona entró (`auth.email()`, así lo escribe
+ * `approve_minmax_request`). Y ese correo **se arma con el usuario** —
+ * `${username}@farmalasa.app`, ver `AuthContext` — no sale de `employees`.
+ *
+ * Por eso buscar por la columna `email` no encuentra a casi nadie: medido el
+ * 2026-08-11 en prod, **1 de 50** empleados activos la tiene llena, contra 50 de
+ * 50 con `username`. Ése es el motivo de que el modal mostrara
+ * «edwin.nunez@farmalasa.app» en vez del nombre y la cara.
+ *
+ * Se compara contra las cuatro formas en que puede venir la misma persona: su
+ * id, su correo guardado, su usuario, y el usuario dentro del correo. Lo último
+ * es lo que hace que siga funcionando el día que cambie el dominio.
+ */
+export const buscadorDePersonas = (empleados) => (idOCorreo) => {
+    if (!idOCorreo) return null;
+    const clave   = String(idOCorreo).trim().toLowerCase();
+    const usuario = clave.includes('@') ? clave.slice(0, clave.indexOf('@')) : clave;
+    if (!clave) return null;
+    return (empleados ?? []).find(e =>
+        String(e.id ?? '').toLowerCase() === clave
+        || (e.email    && String(e.email).toLowerCase() === clave)
+        || (e.username && String(e.username).toLowerCase() === usuario)
+    ) ?? null;
+};
+
+/**
  * Cuándo se resolvió.
  *
  * `approvals` es la fuente buena cuando existe —guarda el instante de cada

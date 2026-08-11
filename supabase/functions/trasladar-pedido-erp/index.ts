@@ -395,6 +395,8 @@ Deno.serve(async (req) => {
           // Un producto con dos lotes son dos renglones del mismo traslado, no
           // dos traslados: sigue siendo un producto y se recibe de una vez.
           const renglones: { cantidad: number; idLote: string; lote: string | null }[] = [];
+          const avisos: string[] = [];
+
           if (!f.regulado) {
             renglones.push({ cantidad: Number(ln.cantidad), idLote: "0", lote: null });
           } else {
@@ -407,31 +409,64 @@ Deno.serve(async (req) => {
               .filter((l) => l.cantidad > 0);
 
             let resto = Number(ln.cantidad);
-            let falla: string | null = null;
+            const usados = new Set<string>();
+
+            // 1. Lo que el pedido reservó y todavía está. Un lote que ya no
+            //    está NO corta: se anota y se cubre más abajo.
             for (const a of asignados) {
               if (resto <= 0) break;
               const lote = f.lotes.find((x) =>
                 norm(x.numero) === norm(a.numero) && (!a.vence || x.vence.slice(0, 10) === a.vence)
               );
               if (!lote) {
-                falla = `El lote ${a.numero || "(sin número)"} ya no está en bodega. `
-                  + `Hay: ${f.lotes.map((x) => `${x.numero} ${x.vence}`).join(", ") || "ninguno"}.`;
-                break;
+                avisos.push(`el lote ${a.numero || "(sin número)"} que reservó el pedido ya no está en bodega`);
+                continue;
               }
-              const toma = Math.min(a.cantidad, resto);
-              if (toma * Number(pres.unidad) > lote.stock) {
-                falla = `El lote ${lote.numero} tiene ${lote.stock} unidades y hacen falta `
-                  + `${toma * Number(pres.unidad)}.`;
-                break;
+              const cabe = Math.floor(lote.stock / Number(pres.unidad));
+              const toma = Math.min(a.cantidad, resto, cabe);
+              if (toma <= 0) {
+                avisos.push(`el lote ${lote.numero} quedó sin existencia suficiente`);
+                continue;
+              }
+              if (toma < Math.min(a.cantidad, resto)) {
+                avisos.push(`del lote ${lote.numero} solo alcanzaban ${toma}`);
               }
               renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+              usados.add(lote.id);
               resto -= toma;
             }
-            if (!falla && resto > 0) {
-              falla = `Los lotes del pedido no alcanzan para las ${ln.cantidad} confirmadas: `
-                + `faltan ${resto} sin lote asignado.`;
+
+            // 2. Lo que quedó sin cubrir sale del lote que VENCE PRIMERO entre
+            //    los que hay. Es lo que quien levanta hizo físicamente: tomó lo
+            //    del estante, no consultó la reserva del portal. Frenar acá
+            //    sería frenar mercadería que sí va en la caja.
+            //    Decisión del usuario (2026-08-11): despachar y avisar.
+            if (resto > 0) {
+              const disponibles = [...f.lotes]
+                .filter((x) => !usados.has(x.id) && x.stock > 0)
+                .sort((a, b) => (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
+              for (const lote of disponibles) {
+                if (resto <= 0) break;
+                const cabe = Math.floor(lote.stock / Number(pres.unidad));
+                if (cabe <= 0) continue;
+                const toma = Math.min(cabe, resto);
+                renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+                usados.add(lote.id);
+                avisos.push(
+                  `se despacharon ${toma} del lote ${lote.numero} (vence ${lote.vence || "sin fecha"}), `
+                  + `que no es el que el pedido había reservado`,
+                );
+                resto -= toma;
+              }
             }
-            if (falla) { await fallar(falla); continue; }
+
+            if (resto > 0) {
+              await fallar(
+                `Ningún lote en bodega alcanza para las ${ln.cantidad} confirmadas: faltan ${resto}. `
+                + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
+              );
+              continue;
+            }
           }
 
           // El vale se lee de la página y no se inventa: es un `uniqid()` que el
@@ -484,6 +519,9 @@ Deno.serve(async (req) => {
             numero_vale: vale,
             enviado_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            // Lo que no frenó el envío pero hay que mirar — casi siempre, que
+            // el lote despachado no es el que el pedido había reservado.
+            aviso: avisos.length ? avisos.join(" · ") : null,
             detalle: {
               producto: it.nombre,
               presentacion: `${it.presentacion_tipo} (${pres.unidad})`,
@@ -606,56 +644,56 @@ Deno.serve(async (req) => {
             }))
             .filter((l) => l.cantidad > 0);
 
-          if (asignados.length === 0) {
-            hallazgos.push({
-              erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "LLEVA_LOTE_SIN_ASIGNAR",
-              detalle: "El sistema le exige lote y el pedido no guardó ninguno.",
-            });
-            continue;
-          }
-          // Los lotes se reparten sobre lo que REALMENTE se envía, que puede no
-          // ser lo asignado. Vienen en orden de vencimiento desde que se armó el
-          // pedido, así que mandar de menos es tomar de los que vencen primero.
-          // Si Bodega mandó de MÁS, los lotes no alcanzan: no se adivina de
-          // dónde salió el excedente — se avisa y no se despacha ese renglón.
-          const suma = asignados.reduce((s, l) => s + l.cantidad, 0);
+          // Que el pedido no haya guardado lote no corta: se cubre igual con lo
+          // que hay, empezando por el que vence primero. El despacho real hace
+          // exactamente eso, y las dos tienen que coincidir.
+          //
+          // ⚠️ Esta repartición tiene que dar el MISMO resultado que la del
+          // despacho real. El simulacro es lo que le avisa a Bodega qué va a
+          // pasar, y su salida pone en cero los productos con problema en la
+          // pantalla de confirmar: si acá se marcara como problema un lote que
+          // el despacho resuelve solo, Bodega dejaría de enviar mercadería que
+          // sí está en la caja. Si se toca una, se toca la otra.
+          //
+          // Que el lote reservado ya no esté NO es un problema: se cubre con el
+          // que vence primero, que es lo que quien levanta hizo físicamente.
           let resto = it.cantidad;
-          const aTomar: typeof asignados = [];
+          const usados = new Set<string>();
+
           for (const a of asignados) {
             if (resto <= 0) break;
-            const toma = Math.min(a.cantidad, resto);
-            aTomar.push({ ...a, cantidad: toma });
-            resto -= toma;
-          }
-          if (resto > 0) {
-            hallazgos.push({
-              erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "LOTES_NO_CUADRAN",
-              detalle: `Los lotes del pedido suman ${suma} y se confirmaron ${it.cantidad} para enviar. `
-                + `Falta decir de qué lote salen los ${resto} de más.`,
-            });
-            continue;
-          }
-
-          let falla: string | null = null;
-          for (const a of aTomar) {
             const lote = f.lotes.find((x) =>
               norm(x.numero) === norm(a.numero) && (!a.vence || x.vence.slice(0, 10) === a.vence)
             );
-            if (!lote) {
-              falla = `El lote ${a.numero || "(sin número)"} ya no está en bodega. `
-                + `Hay: ${f.lotes.map((x) => `${x.numero} ${x.vence}`).join(", ") || "ninguno"}.`;
-              break;
-            }
-            const necesita = a.cantidad * Number(pres.unidad);
-            if (necesita > lote.stock) {
-              falla = `El lote ${lote.numero} tiene ${lote.stock} unidades y hacen falta ${necesita}.`;
-              break;
-            }
-            lineasItem.push({ cantidad: a.cantidad, idLote: lote.id, lote: lote.numero });
+            if (!lote) continue;
+            const cabe = Math.floor(lote.stock / Number(pres.unidad));
+            const toma = Math.min(a.cantidad, resto, cabe);
+            if (toma <= 0) continue;
+            lineasItem.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+            usados.add(lote.id);
+            resto -= toma;
           }
-          if (falla) {
+
+          if (resto > 0) {
+            const disponibles = [...f.lotes]
+              .filter((x) => !usados.has(x.id) && x.stock > 0)
+              .sort((a, b) => (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
+            for (const lote of disponibles) {
+              if (resto <= 0) break;
+              const cabe = Math.floor(lote.stock / Number(pres.unidad));
+              if (cabe <= 0) continue;
+              const toma = Math.min(cabe, resto);
+              lineasItem.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+              usados.add(lote.id);
+              resto -= toma;
+            }
+          }
+
+          if (resto > 0) {
             hallazgos.push({
-              erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "LOTE_NO_EXISTE", detalle: falla,
+              erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_LOTE_SUFICIENTE",
+              detalle: `Ningún lote en bodega alcanza para las ${it.cantidad} unidades: faltan ${resto}. `
+                + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
             });
             continue;
           }

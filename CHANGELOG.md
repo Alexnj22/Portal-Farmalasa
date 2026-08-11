@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.565.1 — el lote que no está se sustituye, y se avisa
+
+El pedido reserva lotes al generarse y los imprime en la hoja. Entre que se arma
+y se despacha, la bodega se mueve: medido en el #96, **9 de 476 productos pedían
+un lote que ya no estaba** — y en los cuatro que revisé **el producto sí estaba,
+en otro lote** (COLMIBE pedía 75406 y hay 75397; MILEVA pedía 49532 y hay
+49791).
+
+Quien levanta en bodega toma lo que hay en el estante; no consulta la reserva
+del portal. Así que ese producto va en la caja igual, y frenar la línea por eso
+era frenar mercadería que sí viaja. Ahora se cubre con el lote que vence
+primero y queda `pedido_traslado_linea.aviso` para que Bodega lo revise
+—decisión del usuario: despachar y avisar, no frenar—.
+
+**Y se alineó el simulacro con el despacho.** Al cambiar solo el despacho, el
+simulacro habría seguido marcando esos 9 como problema, y su salida es la que
+pone en cero los productos en la pantalla de confirmar: Bodega habría dejado de
+enviar mercadería que sí estaba en la caja. Quedó anotado en las dos: si se toca
+una repartición de lotes, se toca la otra.
+
+Medido antes y después sobre el mismo pedido: **de 43 sin existencia + 9 de lote
+a 45 sin existencia y 0 de lote**. Los 9 se resuelven solos; los que quedan son
+productos que la bodega genuinamente no tiene.
+
+Migración `20260811205455`.
+
+_(pendiente de redactar)_
+
 ## v2.565.0 — el despacho por producto, retomable
 
 El corazón del traslado automático: `trasladar-pedido-erp` ya no manda un

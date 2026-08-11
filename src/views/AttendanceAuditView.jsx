@@ -1208,6 +1208,9 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     key: 'cerrar',
     icon: isClosingQuincena ? Loader2 : LockKeyhole,
     label: isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena',
+    // El avance vive en el `label` —y en el ícono, que gira— pero no en el
+    // rótulo del clúster: ahí cambiar de ancho mientras trabaja mueve la fila.
+    rotulo: 'Quincena',
     variant: 'primary',
     disabled: isClosingQuincena,
     onClick: handleCloseQuincena,

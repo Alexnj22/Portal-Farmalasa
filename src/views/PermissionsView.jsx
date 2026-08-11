@@ -686,6 +686,9 @@ const PermissionsView = () => {
                 key: 'activar',
                 icon: activatingAll ? Loader2 : Zap,
                 label: 'Activar todo',
+                // "TODO" solo, que es lo que daría la regla, no dice nada bajo un
+                // ícono de rayo.
+                rotulo: 'Activar',
                 tone: 'warning',
                 disabled: activatingAll || !!copyingFrom,
                 onClick: () => setConfirmActivate(true),

@@ -715,6 +715,9 @@ const SchedulesView = ({ openModal, setView }) => {
         key: 'publicar',
         icon: isPublishing ? Loader2 : weekIsPublished ? CheckCircle2 : Save,
         label: isPublishing ? 'Publicando…' : weekIsPublished ? 'Publicado' : 'Publicar',
+        // Bajo el pulgar el rótulo es fijo: los tres estados los dicen el ícono
+        // (guardar / reloj / ✔) y el color, y "PUBLICANDO…" no entra en la columna.
+        rotulo: 'Publicar',
         variant: weekIsPublished ? 'quiet' : 'primary',
         tone: 'success',
         disabled: isPublishing || weekIsPublished || employeesInView.length === 0 || isPastWeek,

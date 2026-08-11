@@ -2831,6 +2831,9 @@ export default function FacturacionView() {
         key: 'pausa',
         icon: paused ? Play : Pause,
         label: paused ? 'Reanudar' : 'Pausar',
+        // Un rótulo fijo bajo el ícono del pulgar: el estado lo dicen el ícono
+        // (▶/⏸) y el color, y "REANUDAR" no entra en la columna.
+        rotulo: 'Pausa',
         title: paused ? 'Reanudar actualización automática' : 'Pausar actualización automática',
         activo: paused,
         tone: paused ? 'warning' : undefined,

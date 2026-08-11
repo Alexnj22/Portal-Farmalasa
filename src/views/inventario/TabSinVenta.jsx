@@ -623,7 +623,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     resto del portal. */}
                 <FilterBar
                     acciones={[{
-                        key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true,
+                        key: 'descargar', icon: Download, label: 'Descargar', rotulo: 'Descarga', soloIcono: true,
                         disabled: activeLoading || filtered.length === 0,
                         onClick: exportarCsv,
                     }]}

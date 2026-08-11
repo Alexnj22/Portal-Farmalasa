@@ -287,6 +287,9 @@ const accionesAuditoria = [
         key: 'vivo',
         icon: isLive ? Radio : Power,
         label: isLive ? 'En vivo' : 'En vivo (off)',
+        // El rótulo del clúster no lleva el estado: ya lo dicen el color y el
+        // ícono, y "(off)" hace que la etiqueta cambie de ancho al prenderse.
+        rotulo: 'En vivo',
         tone: isLive ? 'danger' : 'brand',
         variant: isLive ? 'primary' : 'quiet',
         activo: isLive,

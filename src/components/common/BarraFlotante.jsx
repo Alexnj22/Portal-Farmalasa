@@ -130,6 +130,64 @@ const SALTO = 120;
 // supera. Media pantalla es un recorrido que se hizo a propósito.
 const FRACCION_OCULTAR = 0.35;
 
+// ── El rótulo del clúster ocupa UN renglón, siempre ───────────────────────
+//
+// La columna mide 60px y el rótulo iba con `line-clamp-2`, así que cualquier
+// nombre de dos palabras se partía en dos renglones: ese botón quedaba más alto
+// que sus vecinos, el clúster entero crecía y los rótulos dejaban de leerse
+// como una fila. Medido en el barrido del teléfono (iPhone 13, WebKit): se
+// partían 8 —"Nuevo Empleado", "Nueva Solicitud", "Nueva Sucursal", "Nuevo
+// Conteo", "Agregar meta", "Ocultar montos", "PDF de todas", "Nueva Sucursal"—
+// y ninguno de una sola palabra.
+//
+// La causa no es el ancho: NINGUNA etiqueta de dos palabras entra en 60px
+// —"NUEVO EMPLEADO" mide 99,8px de corrido, "CONFIGURAR PARÁMETROS" 149,3—, así
+// que ensanchar la columna sólo mueve el problema. Lo que entra en un renglón es
+// **una palabra**, y el ícono ya dice el verbo: un `+` sobre "EMPLEADO" es
+// "nuevo empleado" sin escribirlo.
+//
+// Anchos medidos a `text-micro` (10px en el teléfono) negra en mayúsculas:
+//   "VENDEDOR"  (8) 59,5px      "SOLICITUD" (9) 58,9px
+//   "PUBLICADO" (9) 63,3px      "DESCARGAR" (9) 66,8px
+// O sea que 9 caracteres es el techo y el ancho real depende de las letras. Por
+// eso el número de abajo decide **si hay que acortar**, no promete que entre:
+// quien garantiza el renglón es el `truncate` del rótulo.
+export const LARGO_ROTULO_CLUSTER = 9;
+
+// El arranque que el ÍCONO ya dice. Es una lista de verbos y determinantes del
+// español, no un registro de la aplicación: no se desincroniza con nada porque
+// no nombra ninguna entidad del portal.
+const ARRANQUE = /^(?:nuev[oa]s?|agregar|añadir|crear|registrar|abrir|ver|editar|cerrar|configurar|activar|mostrar|ocultar|generar|imprimir|el|la|los|las|un|una)\s+/i;
+
+/**
+ * De la etiqueta descriptiva al rótulo de una palabra que va bajo el ícono.
+ *
+ * `label` sigue siendo la frase completa —la píldora de escritorio, la hoja de
+ * "Acciones" y el `aria-label` la usan tal cual—; esto es sólo lo que se dibuja
+ * en 60px. Lo decide el canónico y no cada vista, por lo mismo que el umbral de
+ * `FilterBar.Opciones`: una decisión que se toma vista por vista se toma
+ * distinto en cada vista.
+ *
+ * `rotulo` en el descriptor es la escotilla para lo que la regla no puede
+ * acortar bien: un rótulo que lleva el AVANCE adentro ("Publicando…", "Bayer
+ * 3/7", "Sincronizando (tanda 3)") no tiene forma corta derivable, y además no
+ * debería cambiar de ancho mientras trabaja. Que nadie lo olvide lo vigila
+ * `tests/e2e/rotulos-cluster-movil.spec.js`, que falla si algún rótulo del
+ * clúster se parte o se corta con puntos suspensivos.
+ */
+function rotuloCluster(label, rotulo) {
+    if (rotulo) return rotulo;
+    const texto = String(label ?? '').trim();
+    if (!texto || texto.length <= LARGO_ROTULO_CLUSTER) return texto;
+    const sinVerbo = texto.replace(ARRANQUE, '');
+    if (sinVerbo.length <= LARGO_ROTULO_CLUSTER) return sinVerbo;
+    // Sigue sin entrar: la primera palabra, que es la que carga el significado
+    // ("PDF de todas" → "PDF"). Si tampoco entra se devuelve entera y el corte
+    // lo hace el CSS — preferible a inventar una abreviatura.
+    const primera = sinVerbo.split(/\s+/)[0];
+    return primera.length <= LARGO_ROTULO_CLUSTER ? primera : sinVerbo;
+}
+
 const BarraFlotante = memo(({
     buscador = null,
     acciones = [],
@@ -536,6 +594,7 @@ const BarraPortal = ({
                         <Boton
                             icon={principal.icon}
                             label={principal.label}
+                            rotuloCorto={principal.rotulo}
                             rotulo={rotulos}
                             principal
                             onClick={principal.onClick}
@@ -547,6 +606,7 @@ const BarraPortal = ({
                             key={a.key}
                             icon={a.icon}
                             label={a.label}
+                            rotuloCorto={a.rotulo}
                             rotulo={rotulos}
                             badge={a.badge}
                             activo={a.activo ?? (a.badge > 0)}
@@ -645,9 +705,16 @@ const BarraPortal = ({
  * El rótulo va DEBAJO del ícono y no en un `title`: en táctil no hay hover, así
  * que un `title` no existe. Igual se emite `aria-label` porque el rótulo puede
  * estar apagado (un solo botón).
+ *
+ * `rotulo` es el interruptor (¿se dibuja el texto?) y `rotuloCorto` la escotilla
+ * para elegir la palabra — el texto en sí lo resuelve `rotuloCluster` acá
+ * adentro, no cada llamador, así que ninguna barra puede quedarse con la frase
+ * larga por olvido.
  */
-const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, badge, punto, activo, tono,
-    principal, onClick, onPointerDown }) => (
+const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, rotuloCorto, badge, punto, activo, tono,
+    principal, onClick, onPointerDown }) => {
+  const texto = rotuloCluster(label, rotuloCorto);
+  return (
     <button
         type="button"
         onClick={onClick}
@@ -669,8 +736,9 @@ const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, badge, punto,
         //
         // 60px es lo que necesita "FILTROS" en `text-micro`; 44 es el mínimo
         // táctil, y es el suelo al que puede llegar sin dejar de ser un objetivo
-        // válido. Entre los dos, el rótulo se reparte en dos líneas —que
-        // `line-clamp-2` ya contemplaba— en vez de que el botón se salga.
+        // válido. Entre los dos el rótulo se recorta, que es lo que lo mantiene
+        // en UN renglón (ver `rotuloCluster`): repartirlo en dos hacía crecer al
+        // botón y con él a todo el clúster.
         // `w-[60px] shrink min-w-11` y no `basis-[60px]`: con `flex-grow: 0` el
         // navegador dimensiona el clúster por el contenido de cada botón, no por
         // su base, así que con `basis` las columnas se cerraban al ancho del
@@ -720,29 +788,25 @@ const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, badge, punto,
             )}
         </span>
         {rotulo && (
-            // Dos líneas, no `truncate`. Con una sola, "NUEVO EMPLEADO" salía
-            // "NUEVO E…" en los 60px de la columna — y un rótulo cortado a la
-            // mitad no dice qué hace el botón, que es justo para lo que está.
-            // `line-clamp-2` acota el peor caso; `items-start` en el clúster ya
-            // mantiene alineados los íconos aunque un rótulo ocupe dos líneas.
-            // `hyphens-auto` además de `break-words`: con las columnas
-            // comprimidas a 52px, "ACCIONES" se partía en "ACCIONE" + "S" y esa
-            // letra suelta en la segunda línea se lee como un error de dibujo,
-            // no como una palabra cortada. `break-words` parte donde caiga;
-            // `hyphens-auto` prefiere una sílaba y pone el guion — el documento
-            // ya declara `lang="es"`, que es lo que el navegador necesita para
-            // saber dónde cortar. Se dejan los dos: la separación silábica no
-            // cubre nombres propios ni siglas, y ahí `break-words` sigue siendo
-            // la red de seguridad que evita el desborde.
-            <span className={`text-micro font-black uppercase leading-tight text-center w-full line-clamp-2 break-words hyphens-auto
+            // UN renglón, siempre. Antes iba con `line-clamp-2` y el motivo
+            // escrito era bueno —"NUEVO E…" no dice qué hace el botón— pero
+            // atacaba el síntoma: el problema no era el corte sino que la
+            // etiqueta descriptiva no cabe en 60px de ninguna manera. Ahora el
+            // que llega acá ya es el rótulo corto que arma `rotuloCluster`, y
+            // `truncate` es la red de seguridad para lo que se le escape — con
+            // la frase completa viva en el `aria-label` y en la hoja de
+            // "Acciones". Un rótulo que se parte en dos hace más alto a su botón
+            // y desalinea el clúster entero, que es lo que se veía en 8 vistas.
+            <span className={`text-micro font-black uppercase leading-tight text-center w-full truncate
                 ${principal ? 'text-chart-9-text'
                     : tono === 'danger' ? 'text-danger-text'
                         : activo ? 'text-brand-text' : 'text-content-3'}`}>
-                {label}
+                {texto}
             </span>
         )}
     </button>
-));
+  );
+});
 Boton.displayName = 'BarraFlotante.Boton';
 
 BarraFlotante.displayName = 'BarraFlotante';

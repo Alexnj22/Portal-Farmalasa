@@ -958,6 +958,9 @@ function TabDocumentos({
                             // expandía sin parar. El avance va en su propia
                             // barra, arriba de la tabla.
                             label: bulkDownloading ? 'Descargando…' : 'Descargar',
+                            // El del pulgar es fijo y de una palabra: "DESCARGAR"
+                            // (66,8px) y "DESCARGANDO…" no entran en la columna.
+                            rotulo: 'Descarga',
                             title: 'Descargar todos los filtrados en un ZIP',
                             disabled: bulkDownloading, onClick: downloadBulk,
                         }] : []),
@@ -966,6 +969,10 @@ function TabDocumentos({
                             label: syncing
                                 ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando')
                                 : 'Sincronizar',
+                            // El rótulo del clúster dice QUÉ trae, no cómo: la tanda
+                            // en curso cambiaría de ancho en cada paso, y en 60px no
+                            // entra ninguna de las tres variantes.
+                            rotulo: 'Facturas',
                             disabled: syncing, onClick: runSyncNow,
                         }] : []),
                     ]}

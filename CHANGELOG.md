@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.554.1 — El rótulo del clúster del pulgar ocupa un solo renglón
+
+Reportado por el usuario: en el teléfono, algunos botones de la barra flotante
+usaban **dos renglones para su nombre**. Ese botón quedaba más alto que sus
+vecinos, la barra entera crecía y los rótulos dejaban de leerse como una fila.
+
+**La auditoría, sobre el teléfono y no sobre el código.** Barrido de las 43
+rutas en WebKit/iPhone 13 midiendo cada rótulo del clúster. Se partían **ocho**:
+`Nuevo Empleado` (Personal y Panel), `Nueva Solicitud`, `Nueva Sucursal`, `Nuevo
+Conteo`, `Agregar meta`, `Ocultar montos` y `PDF de todas`. Ninguno de una sola
+palabra. Contar renglones se hace por **bandas** —dos cajas están en renglones
+distintos sólo si sus franjas verticales no se tocan— y con `Range`, porque el
+rótulo es un nodo de texto suelto; comparar el `top` de los hijos marca como
+partido todo lo que se alinee al centro.
+
+**La causa no era el ancho.** Medido a `text-micro` (10px) negra en mayúsculas,
+`NUEVO EMPLEADO` pide 99,8px de corrido y `CONFIGURAR PARÁMETROS` 149,3, contra
+los 60px de la columna: **ninguna etiqueta de dos palabras entra**, así que
+ensanchar sólo movía el problema. Lo que entra en un renglón es una palabra —y
+el ícono ya dice el verbo: un `+` sobre `EMPLEADO` es "nuevo empleado" sin
+escribirlo.
+
+**El canónico decide, no la vista.** `BarraFlotante` arma el rótulo corto: si la
+etiqueta pasa de 9 caracteres le quita el verbo o el determinante de arranque
+(`Nuevo`, `Agregar`, `Ver`, `Cerrar`…) y se queda con el sustantivo — `Nuevo
+Empleado` → `EMPLEADO`, `PDF de todas` → `PDF`. Las vistas no cambian su
+etiqueta: la frase completa sigue viva en la píldora de escritorio, en la hoja
+de «Acciones» y en el `aria-label`.
+
+**`rotulo` en el descriptor, para lo que la regla no puede acortar.** Un rótulo
+que lleva el AVANCE adentro (`Publicando…`, `Bayer 3/7`, `Sincronizando (tanda
+3)`) no tiene forma corta derivable, y además no debería cambiar de ancho
+mientras trabaja. Diez acciones lo declaran; el avance se sigue viendo en el
+ícono que gira y en el color.
+
+**Y el rótulo ya no puede partirse: lleva `truncate`.** Eso muda el defecto de
+«dos renglones» a «…», así que el barrido mira las dos cosas —y
+`tests/e2e/rotulos-cluster-movil.spec.js` **falla**, no informa: un `rotulo` que
+falta no se nota leyendo el código, porque en escritorio la etiqueta larga se ve
+bien.
+
 ## v2.554.0 — Un solo centro de solicitudes para la sala, y las personales aparte
 
 Pedido del usuario: «necesito que al final ahí sea todo el centro de solicitudes

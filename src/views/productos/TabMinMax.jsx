@@ -427,21 +427,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 : calcMode === 'all' && calcProgress
                     ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}`
                     : 'Calculando…',
+            // …pero NO en el clúster del pulgar: ahí la columna mide 60px y un
+            // rótulo que cambia de texto por sucursal cambiaría de ancho en cada
+            // paso. El avance se ve en el ícono, que gira.
+            rotulo: 'Calcular',
             disabled: !canManage || calculating || loading,
             onClick: () => setCalcularConfirm({ open: true, mode: 'single' }),
         }]),
         ...(canDownload ? [{
-            key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true,
+            key: 'descargar', icon: Download, label: 'Descargar', rotulo: 'Descarga', soloIcono: true,
             disabled: data.length === 0 || loading,
             onClick: exportarCsv,
         }] : []),
         {
-            key: 'config', icon: Settings2, label: 'Configurar parámetros', soloIcono: true,
+            key: 'config', icon: Settings2, label: 'Configurar parámetros', rotulo: 'Ajustes', soloIcono: true,
             disabled: !canManage, activo: configOpen,
             onClick: () => setConfigOpen(o => !o),
         },
         {
-            key: 'labs', icon: FlaskConical, label: 'Laboratorios ocultos', soloIcono: true,
+            key: 'labs', icon: FlaskConical, label: 'Laboratorios ocultos', rotulo: 'Ocultos', soloIcono: true,
             disabled: !canManage, activo: labsOpen,
             onClick: () => setLabsOpen(o => !o),
         },

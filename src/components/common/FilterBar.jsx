@@ -7,7 +7,7 @@ import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 // (desborde, otros, y el de borradores que TabMinMax mete como ranura).
 import useAnclaje from '../../hooks/useAnclaje';
 import Contador from './Contador';
-import BarraFlotante from './BarraFlotante';
+import BarraFlotante, { LARGO_ROTULO_CLUSTER } from './BarraFlotante';
 import TabBarAction from './TabBarAction';
 import SegmentedControl from './SegmentedControl';
 import LiquidSelect from './LiquidSelect';
@@ -320,6 +320,17 @@ const rotuloDeSeccion = (sec) => {
     if (valor) return valor;
     const l = sec?.props?.label;
     return l ? l.charAt(0).toUpperCase() + l.slice(1) : undefined;
+};
+// El mismo dato, pero para los 60px del clúster del pulgar. El valor gana sólo
+// si entra en un renglón: "Últimos 3 meses" acortado por la regla de
+// `rotuloCluster` daría "ÚLTIMOS", que no dice nada, así que ahí el botón vuelve
+// al NOMBRE del filtro ("Período") — corto, y se entiende sin abrirlo. El valor
+// completo sigue en el `aria-label` y en el encabezado de la hoja.
+const rotuloCortoDeSeccion = (sec) => {
+    const valor = rotuloDeSeccion(sec);
+    if (valor && valor.length <= LARGO_ROTULO_CLUSTER) return valor;
+    const l = sec?.props?.label;
+    return l ? l.charAt(0).toUpperCase() + l.slice(1) : valor;
 };
 
 const PanelDesborde = memo(({ secciones, aplicadas }) => {
@@ -639,10 +650,14 @@ const FilterBar = memo(({
         const secundarias = enTactil.filter(a => a !== principal);
         const agrupar = secundarias.length > 1 || (!!accionesExtra && secundarias.length > 0);
 
+        // `rotulo` viaja junto al `label`: es la palabra que va bajo el ícono en
+        // los 60px del clúster, y sin ella la barra dibujaría la frase larga (ver
+        // `rotuloCluster` en `BarraFlotante`).
         const botonesSueltos = agrupar ? [] : secundarias.map(a => ({
             key: a.key,
             icon: a.icon,
             label: a.label,
+            rotulo: a.rotulo,
             activo: a.activo,
             onClick: a.disabled ? undefined : a.onClick,
         }));
@@ -681,6 +696,7 @@ const FilterBar = memo(({
                     principal={principal && !principal.disabled ? {
                         icon: principal.icon,
                         label: principal.label,
+                        rotulo: principal.rotulo,
                         onClick: principal.onClick,
                     } : null}
                     acciones={[...(secciones.length === 1 ? [{
@@ -699,6 +715,7 @@ const FilterBar = memo(({
                         key: 'filtro-unico',
                         icon: iconoDeSeccion(secciones[0]) || SlidersHorizontal,
                         label: rotuloDeSeccion(secciones[0]) || 'Filtros',
+                        rotulo: rotuloCortoDeSeccion(secciones[0]) || 'Filtros',
                         tituloPanel: rotuloDeSeccion(secciones[0]) || title,
                         badge: activeCount,
                         panel: (

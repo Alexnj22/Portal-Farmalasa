@@ -856,7 +856,12 @@ const StaffManagementView = ({
   const accionesPersonal = [
     { key: 'empleado', icon: UserPlus, label: 'Nuevo Empleado', variant: 'primary',
       disabled: !canEdit, onClick: handleOpenNewEmployee },
-    { key: 'practicante', icon: GraduationCap, label: 'Nuevo Practicante', tone: 'chart-3',
+    // `rotulo`: bajo el pulgar la columna mide 60px y "PRACTICANTE" pide 76,8 —
+    // es la única palabra del portal que no entra por sí sola. Se dice
+    // "PASANTE", que es la misma persona en una palabra que sí entra y hace
+    // pareja con "EMPLEADO" del botón de al lado; el nombre completo sigue en el
+    // `aria-label`, en la píldora de escritorio y en la hoja de "Acciones".
+    { key: 'practicante', icon: GraduationCap, label: 'Nuevo Practicante', rotulo: 'Pasante', tone: 'chart-3',
       disabled: !canEdit, onClick: handleOpenNewPracticante },
     // Solo ícono en escritorio: `Download` es el ícono canónico de exportar en el
     // portal (Auditoría y el historial de sucursal usan el mismo) y con texto le

@@ -55,7 +55,10 @@ interface ItemPedido {
   id: number;
   erp_product_id: number;
   erp_presentacion_id: number | null;
+  /** Lo que se mueve: lo que Bodega confirmó que sale, o lo asignado si todavía no confirmó. */
+  cantidad: number;
   cantidad_asignada: number;
+  confirmada: boolean;
   factor: number | null;
   lotes_asignados: { lote?: string; fecha_vencimiento?: string; take?: number; packs?: number }[] | null;
   presentacion_tipo: string;
@@ -76,23 +79,38 @@ async function leerItems(
   const CHUNK = 1000;
   const todos: ItemPedido[] = [];
   for (let page = 0; ; page++) {
+    // El `.range()` va pegado al `.select()` y no al final de la cadena a
+    // propósito: `gate:data` mira los 450 caracteres que siguen al `.from()`
+    // para decidir si la consulta pagina, y con el select largo de acá el
+    // `.range()` quedaba fuera de esa ventana. La paginación era real igual,
+    // pero un detector que no la ve es un detector que no sirve.
     const { data, error } = await admin
       .from("pedido_items")
-      .select(`id, erp_product_id, erp_presentacion_id, cantidad_asignada, factor, lotes_asignados,
+      .select(`id, erp_product_id, erp_presentacion_id, cantidad_asignada,
+               cantidad_enviada, status, factor, lotes_asignados,
                products ( nombre ), presentaciones!erp_presentacion_id ( tipo )`)
+      .range(page * CHUNK, (page + 1) * CHUNK - 1)
       .eq("pedido_id", pedidoId)
       .eq("erp_sucursal_id", sucId)
       .eq("sin_stock", false)
       .gt("cantidad_asignada", 0)
-      .order("id", { ascending: true })
-      .range(page * CHUNK, (page + 1) * CHUNK - 1);
+      // Lo que Bodega decidió no mandar no se traslada. Es un estado terminal:
+      // el renglón ya está cerrado y el MIN/MAX lo volverá a pedir.
+      .neq("status", "no_enviado")
+      .order("id", { ascending: true });
     if (error) throw error;
     const filas = (data ?? []) as Record<string, unknown>[];
     for (const r of filas) {
+      // Se mueve lo ENVIADO. El COALESCE deja que el simulacro corra antes de
+      // que Bodega confirme —que es justo cuando sirve, para saber qué avisarle—
+      // y que un pedido viejo, sin la columna, siga comportándose igual.
+      const confirmada = r.cantidad_enviada != null;
       todos.push({
         id: Number(r.id),
         erp_product_id: Number(r.erp_product_id),
         erp_presentacion_id: r.erp_presentacion_id == null ? null : Number(r.erp_presentacion_id),
+        cantidad: Number(confirmada ? r.cantidad_enviada : r.cantidad_asignada),
+        confirmada,
         cantidad_asignada: Number(r.cantidad_asignada),
         factor: r.factor == null ? null : Number(r.factor),
         lotes_asignados: Array.isArray(r.lotes_asignados) ? r.lotes_asignados as ItemPedido["lotes_asignados"] : null,
@@ -289,12 +307,12 @@ Deno.serve(async (req) => {
 
         // El tope se relee ACÁ y no al generar el pedido: entre que se armó y
         // se despacha, bodega vendió, trasladó o descartó.
-        const enUnidades = it.cantidad_asignada * Number(pres.unidad);
+        const enUnidades = it.cantidad * Number(pres.unidad);
         if (enUnidades > f.existencia) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",
             detalle: `Quedan ${f.existencia} unidades en bodega y el pedido lleva `
-              + `${it.cantidad_asignada} × ${pres.unidad} = ${enUnidades}.`,
+              + `${it.cantidad} × ${pres.unidad} = ${enUnidades}.`,
           });
           continue;
         }
@@ -306,7 +324,7 @@ Deno.serve(async (req) => {
         // productos con dos lotes de igual número y vencimientos distintos.
         const lineasItem: { cantidad: number; idLote: string; lote: string | null }[] = [];
         if (!f.regulado) {
-          lineasItem.push({ cantidad: it.cantidad_asignada, idLote: "0", lote: null });
+          lineasItem.push({ cantidad: it.cantidad, idLote: "0", lote: null });
         } else {
           const asignados = (it.lotes_asignados ?? [])
             .map((l) => ({
@@ -323,17 +341,31 @@ Deno.serve(async (req) => {
             });
             continue;
           }
+          // Los lotes se reparten sobre lo que REALMENTE se envía, que puede no
+          // ser lo asignado. Vienen en orden de vencimiento desde que se armó el
+          // pedido, así que mandar de menos es tomar de los que vencen primero.
+          // Si Bodega mandó de MÁS, los lotes no alcanzan: no se adivina de
+          // dónde salió el excedente — se avisa y no se despacha ese renglón.
           const suma = asignados.reduce((s, l) => s + l.cantidad, 0);
-          if (suma !== it.cantidad_asignada) {
+          let resto = it.cantidad;
+          const aTomar: typeof asignados = [];
+          for (const a of asignados) {
+            if (resto <= 0) break;
+            const toma = Math.min(a.cantidad, resto);
+            aTomar.push({ ...a, cantidad: toma });
+            resto -= toma;
+          }
+          if (resto > 0) {
             hallazgos.push({
               erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "LOTES_NO_CUADRAN",
-              detalle: `Los lotes del pedido suman ${suma} y la cantidad despachada es ${it.cantidad_asignada}.`,
+              detalle: `Los lotes del pedido suman ${suma} y se confirmaron ${it.cantidad} para enviar. `
+                + `Falta decir de qué lote salen los ${resto} de más.`,
             });
             continue;
           }
 
           let falla: string | null = null;
-          for (const a of asignados) {
+          for (const a of aTomar) {
             const lote = f.lotes.find((x) =>
               norm(x.numero) === norm(a.numero) && (!a.vence || x.vence.slice(0, 10) === a.vence)
             );
@@ -371,6 +403,8 @@ Deno.serve(async (req) => {
             presentacion: `${it.presentacion_tipo} (${pres.unidad})`,
             id_presentacion_erp: pres.id,
             cantidad: l.cantidad,
+            cantidad_asignada: it.cantidad_asignada,
+            envio_confirmado: it.confirmada,
             lote: l.lote,
             id_lote_erp: l.idLote !== "0" ? l.idLote : null,
             regulado: f.regulado,
@@ -408,6 +442,19 @@ Deno.serve(async (req) => {
       if (partes.length === 0) {
         await cerrar({ estado: "error", error_msg: "No quedó ni una línea que mandar." });
         return { despachado: false, hallazgos: 0 };
+      }
+      // Despachar sin que Bodega haya confirmado sería mover lo que el reparto
+      // supuso, no lo que salió — que es justo lo que esta columna vino a
+      // arreglar. El simulacro sí corre sin confirmar, porque su trabajo es
+      // avisarle a Bodega ANTES de que confirme.
+      const sinConfirmar = items.filter((i) => !i.confirmada).length;
+      if (sinConfirmar > 0) {
+        await cerrar({
+          estado: "error",
+          error_msg: `El envío todavía no se confirmó: ${sinConfirmar} de ${items.length} productos `
+            + `no tienen cantidad confirmada por Bodega.`,
+        });
+        return { despachado: false, codigo: "SIN_CONFIRMAR" };
       }
 
       // El vale no se inventa: es un `uniqid()` que el servidor pre-rellena en

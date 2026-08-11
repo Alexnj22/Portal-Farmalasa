@@ -681,6 +681,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 onConfirm={handleFinalizarConCajas}
                 items={finalizarModal?.rows ?? []}
                 sucId={finalizarModal?.sucId}
+                pedidoId={finalizarModal?.pedidoId}
                 pedidoNumero={finalizarModal?.numero}
                 paginas={finalizarModal?.paginas ?? null}
                 draftKey={finalizarModal ? `finalizar_${finalizarModal.pedidoId}_${finalizarModal.sucId}` : null}

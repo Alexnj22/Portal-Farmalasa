@@ -20,6 +20,7 @@ import {
     fetchPedidoItemsAll, fetchPedidoItemEventosAll, fetchPedidoItemsPendientesIds,
     fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
+    confirmarEnvioPedido,
 } from '../../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 
@@ -543,7 +544,7 @@ export function usePedidosData({ searchTerm = '' }) {
         } catch (e) { console.error('openFinalizarModal:', e); } finally { setBusyAction(null); }
     }, [busyAction, items, fetchItems]);
 
-    const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems }) => {
+    const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems, ajustesEnvio = [] }) => {
         if (!finalizarModal) return;
         const { pedidoId, sucId } = finalizarModal;
         const allRows = finalizarModal.rows ?? [];
@@ -569,15 +570,40 @@ export function usePedidosData({ searchTerm = '' }) {
         setFinalizarModal(null);
         setBusyAction('finalizar');
         try {
-            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            // 1. Qué sale de verdad. Va ANTES de finalizar porque la RPC solo
+            //    toca renglones en 'pendiente', y porque el traslado al sistema
+            //    se apoya en este dato: sin él mandaría lo asignado, que es
+            //    justo lo que puede no haber salido.
+            const { error: envErr } = await confirmarEnvioPedido(pedidoId, sucId, ajustesEnvio);
+            if (envErr) throw envErr;
+
+            // 2. Finalizar. El `error` de esta RPC NO se puede ignorar: rechaza
+            //    con excepción cuando hay una pausa sin reanudar, y supabase-js
+            //    devuelve el error en vez de lanzarlo — sin este chequeo el
+            //    rechazo se perdía y el resto seguía escribiendo igual.
+            const { error: lcErr } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'finalizar', p_user_id: user?.id ?? null,
             });
-            await updatePedidoSucursalStatus(pedidoId, sucId,
+            if (lcErr) throw lcErr;
+
+            // 3. Cajas y hojas.
+            const { error: pssErr } = await updatePedidoSucursalStatus(pedidoId, sucId,
                 { total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems, cajas_electrolit: cajasElectrolit, cajas_especiales: cajasEspeciales });
-            useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, { totalCajas, cajasElectrolit, cajasEspeciales: cajasEspeciales.length, cajas: Object.keys(cajaMap).length });
+            if (pssErr) throw pssErr;
+
+            useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, {
+                totalCajas, cajasElectrolit,
+                cajasEspeciales: cajasEspeciales.length,
+                cajas: Object.keys(cajaMap).length,
+                ajustes_envio: ajustesEnvio.length,
+                no_enviados: ajustesEnvio.filter(a => a.cantidad_enviada === 0).length,
+            });
             await loadActive();
-        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+        } catch (e) {
+            console.error('handleFinalizarConCajas:', e);
+            useToastStore.getState().showToast('No se pudo finalizar', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+        } finally { setBusyAction(null); }
     }, [finalizarModal, user, loadActive]);
 
     const handleLlegada = useCallback(async (pedidoId, sucId, key) => {

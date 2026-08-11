@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.559.0 — Bodega confirma qué sale de verdad
+
+Al pedido le faltaba el dato del medio. Guardaba lo **asignado** (lo que el
+reparto decidió) y lo **recibido** (lo que la sucursal contó), y daba por hecho
+que entre esos dos salía exactamente lo asignado. No es cierto: entre que se
+arma el pedido y que se despacha, la bodega se mueve. Medido sobre el pedido
+#96, dos horas después de generarlo, 13 de 476 productos ya no estaban.
+
+Ahora `pedido_items` tiene **`cantidad_enviada`** (con `enviado_at`,
+`enviado_por` y `motivo_no_envio`), y al finalizar hay una tercera pantalla
+donde Bodega confirma qué sale: puede salir menos, más, o nada.
+
+**Se confirma por EXCEPCIÓN.** La verificación contra el sistema arranca al
+ABRIR el modal —tarda unos 40 s, que es justo el rato que lleva contar cajas y
+repartir páginas—, así que llega hecha. La pantalla muestra solo los productos
+con problema, ya marcados en cero, con lo asignado al lado y editables: el
+sistema informa, Bodega decide. Todo lo demás sale como se asignó, y hay un
+buscador para corregir cualquier otro. Pedirle a alguien que confirme 476
+productos uno por uno es pedirle que apriete «sí» 476 veces, que no confirma
+nada.
+
+- **Lo que no sale se CIERRA** (`status = 'no_enviado'`, un estado terminal
+  propio — no se reusa `anulado`, que es la anulación del pedido entero). El
+  faltante no queda pendiente: el MIN/MAX vuelve a detectar el hueco y lo pide
+  solo en el próximo pedido. Sin un estado terminal el renglón se quedaría en
+  «pendiente» para siempre, que es exactamente el atraso que hubo que limpiar.
+- **La recepción se compara contra lo enviado, no contra lo asignado.** Si
+  Bodega mandó 3 de 5, recibir 3 está bien y ya no cuenta como diferencia. Los
+  pedidos viejos, sin la columna, se comportan igual que antes.
+- **El traslado al sistema manda lo enviado**, y se niega a despachar si Bodega
+  todavía no confirmó. Los lotes se reparten sobre lo que realmente sale; si se
+  mandó de más, no se adivina de qué lote salió el excedente: se avisa.
+- **`handleFinalizarConCajas` ya no se traga los errores.** Ignoraba el de
+  `update_pedido_sucursal_lifecycle`, que rechaza con excepción cuando hay una
+  pausa sin reanudar — supabase-js lo devuelve en vez de lanzarlo, así que el
+  rechazo se perdía y el resto seguía escribiendo igual. Era el hallazgo menor
+  de la auditoría de hoy.
+
+**Mantenimiento aparte:** se cerraron en forma forzosa los 54 pedidos del 9 de
+agosto hacia atrás (#31 a #90, 16,221 ítems). La recepción todavía no está
+habilitada para las sucursales, así que esos renglones nunca tuvieron por dónde
+cerrarse y arrastraban desde el 29 de junio. Los 5 anulados no se tocaron y los
+6 en vuelo tampoco. `received_by` quedó en NULL a propósito: es lo que los
+distingue de una recepción real, donde siempre se graba quién fue. Queda una
+entrada en la bitácora con el alcance completo.
+
+Migración `20260811181214_pedido_items_cantidad_enviada`.
+
+_(pendiente de redactar)_
+
 ## v2.558.0 — traslado del pedido al sistema: simulacro
 
 Primera mitad de automatizar el traslado a la sucursal de destino. Hasta hoy,

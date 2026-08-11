@@ -203,6 +203,52 @@ export function updatePedidoItemsFaltaCaja(ids, value) {
     return supabase.from('pedido_items').update({ falta_caja: value }).in('id', ids);
 }
 
+// ── Confirmación de lo que sale, y su verificación contra el sistema ────────
+//
+// Al finalizar hay que decir qué se envía de verdad: puede salir menos que lo
+// asignado, más, o nada. Lo normal es que salga lo asignado, así que sólo
+// viajan las EXCEPCIONES — pedirle a alguien que confirme 476 productos uno por
+// uno es pedirle que apriete "sí" 476 veces, que no confirma nada.
+//
+// `ajustes`: [{ pedido_item_id, cantidad_enviada, motivo }]
+export function confirmarEnvioPedido(pedidoId, sucId, ajustes = []) {
+    return supabase.rpc('confirmar_envio_pedido', {
+        p_pedido_id: pedidoId, p_sucursal_id: sucId, p_ajustes: ajustes,
+    });
+}
+
+/**
+ * Verifica el pedido contra el sistema SIN escribir nada, y devuelve el id de
+ * la corrida. Tarda ~40 s para una sucursal grande, así que responde enseguida
+ * y sigue trabajando por su cuenta: el resultado se lee después con
+ * `fetchTrasladoErp`.
+ *
+ * Se dispara al ABRIR el modal de finalizar, no al llegar a la pantalla de
+ * confirmación: mientras quien despacha cuenta cajas y reparte páginas, la
+ * verificación ya viene corriendo y llega hecha.
+ */
+export async function lanzarSimulacroTraslado(pedidoId, sucId) {
+    const { data, error } = await supabase.functions.invoke('trasladar-pedido-erp', {
+        body: { pedido_id: pedidoId, erp_sucursal_id: sucId, simulacro: true, background: true },
+    });
+    if (error) {
+        // El motivo real viaja en el cuerpo; sin leerlo todo fallo se ve como un
+        // "non-2xx status code" indistinguible.
+        try {
+            const cuerpo = await error.context?.json?.();
+            if (cuerpo) return { trasladoId: null, error: cuerpo.error ?? 'No se pudo verificar.' };
+        } catch { /* el cuerpo no era JSON */ }
+        return { trasladoId: null, error: error.message ?? 'No se pudo verificar.' };
+    }
+    return { trasladoId: data?.traslado_id ?? null, error: null };
+}
+
+export function fetchTrasladoErp(id) {
+    return supabase.from('pedido_traslado_erp')
+        .select('id, estado, productos, lineas, hallazgos, ms_total, error_msg')
+        .eq('id', id).maybeSingle();
+}
+
 // ── pedido_sucursal_status ──────────────────────────────────────────────────
 // Getter/setter genéricos — mismo par (pedido_id, erp_sucursal_id) en TODOS
 // los sitios que los usan, solo cambian las columnas seleccionadas o el

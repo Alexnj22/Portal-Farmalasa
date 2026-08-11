@@ -606,13 +606,25 @@ export function usePedidosData({ searchTerm = '' }) {
             //    de cada traslado. Responde enseguida y sigue en segundo plano;
             //    el avance se sigue en `pedido_traslado_erp`.
             //
-            //    Un fallo acá NO tumba el finalizado, que ya está hecho y es lo
-            //    que importaba: se avisa y se puede reintentar.
-            const despacho = await despacharTrasladoPedido(pedidoId, sucId);
-            if (!despacho.ok) {
+            //    Un fallo acá NO tumba el finalizado, y por eso va en su PROPIO
+            //    try: si se cayera al catch de afuera, el mensaje diría «no se
+            //    pudo finalizar» sobre un pedido que sí quedó finalizado, y
+            //    quien despacha lo intentaría de nuevo. Un tropiezo de red al
+            //    invocar no puede reescribir lo que ya pasó.
+            try {
+                const despacho = await despacharTrasladoPedido(pedidoId, sucId);
+                if (!despacho.ok) {
+                    useToastStore.getState().showToast(
+                        'El pedido quedó finalizado, pero no salió del sistema',
+                        despacho.error ?? 'Se puede reintentar desde el pedido.',
+                        'warning',
+                    );
+                }
+            } catch (e) {
+                console.error('despacho del traslado:', e);
                 useToastStore.getState().showToast(
                     'El pedido quedó finalizado, pero no salió del sistema',
-                    despacho.error ?? 'Se puede reintentar desde el pedido.',
+                    mensajeAmigable(e, 'Se puede reintentar desde el pedido.'),
                     'warning',
                 );
             }

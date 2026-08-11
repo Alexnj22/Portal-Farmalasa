@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   CONCEPTO_MAX,
@@ -154,14 +154,14 @@ Deno.serve(async (req) => {
 
   try {
     const cuerpo = await req.json().catch(() => ({}));
-    const pedidoId = String(cuerpo.pedido_id ?? "");
-    const sucId = Number(cuerpo.erp_sucursal_id ?? 0);
+    let pedidoId = String(cuerpo.pedido_id ?? "");
+    let sucId = Number(cuerpo.erp_sucursal_id ?? 0);
     // El simulacro es el valor por omisión a propósito: esta función mueve
     // inventario real, y escribir tiene que ser una decisión explícita.
-    const simulacro = cuerpo.simulacro !== false;
+    let simulacro = cuerpo.simulacro !== false;
     // 'enviar' saca de bodega; 'recibir' ingresa en la sucursal. Son las dos
     // mitades que el sistema distingue, y corren en sesiones distintas.
-    const accion = cuerpo.accion === "recibir" ? "recibir" : "enviar";
+    let accion = cuerpo.accion === "recibir" ? "recibir" : "enviar";
     // Qué recibir: una hoja entera, o unos productos sueltos —el que la
     // sucursal va a vender antes de contar la caja—.
     const hoja = cuerpo.hoja == null ? null : Number(cuerpo.hoja);
@@ -169,30 +169,71 @@ Deno.serve(async (req) => {
       ? cuerpo.pedido_item_ids.map(Number).filter(Number.isFinite)
       : [];
     // Y el background también: 450 productos no entran en una respuesta.
-    const background = cuerpo.background !== false;
+    let background = cuerpo.background !== false;
+    let empBranchId: number | null = null;
+
+    // ── Continuación automática ───────────────────────────────────────────
+    // 900 productos no entran en una corrida: el despacho se corta por
+    // presupuesto y hay que retomarlo. Sin esto la maquinaria de reanudación no
+    // servía de nada — nadie la llamaba, y un pedido grande se quedaba a medio
+    // despachar en silencio, que es justo el escenario peligroso.
+    //
+    // El cron la invoca con el secreto de siempre y SOLO un `run_id`: ni el
+    // pedido ni la sucursal ni el actor vienen de afuera, salen de la corrida.
+    const interno = requireInvokeSecret(req);
+    let quien: { id: string; name: string } | null = null;
+    let alcanceTodo = false;
+
+    if (interno) {
+      const runId = String(cuerpo.run_id ?? "");
+      if (!runId) return json({ ok: false, error: "Falta run_id." }, 400);
+      const { data: run } = await admin
+        .from("pedido_traslado_erp")
+        .select("id, pedido_id, erp_sucursal_id, estado, modo, paso, creado_por")
+        .eq("id", runId).maybeSingle();
+      if (!run || run.estado !== "en_curso" || run.modo !== "real" || run.paso !== "enviar")
+        return json({
+          ok: false, codigo: "NADA_QUE_CONTINUAR",
+          error: "Esa corrida no está en curso.",
+        }, 409);
+      pedidoId = String(run.pedido_id);
+      sucId = Number(run.erp_sucursal_id);
+      const { data: autor } = await admin
+        .from("employees").select("id, name").eq("id", run.creado_por).maybeSingle();
+      quien = autor ?? { id: String(run.creado_por ?? ""), name: "Continuacion automatica" };
+      alcanceTodo = true;
+      accion = "enviar";
+      simulacro = false;
+      background = true;
+    }
 
     if (!pedidoId || !sucId)
       return json({ ok: false, error: "Faltan pedido_id o erp_sucursal_id." }, 400);
 
-    // ── Quién llama. Nunca del payload: del JWT. ──────────────────────────
-    const quien = await requireActiveEmployeeUser(req, admin);
-    if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+    if (!interno) {
+      // ── Quién llama. Nunca del payload: del JWT. ────────────────────────
+      const usuario = await requireActiveEmployeeUser(req, admin);
+      if (!usuario) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+      quien = { id: usuario.id, name: usuario.name };
 
-    // ── El permiso es el del módulo Pedidos ───────────────────────────────
-    // Se repite acá porque esta función usa la llave de servicio y el RLS no la
-    // frena. Es el mismo que exige `confirm_pedido`: quien puede generar y
-    // finalizar un pedido es quien puede mandarlo al sistema.
-    const { data: emp } = await admin
-      .from("employees").select("role_id, secondary_role_id, system_role")
-      .eq("id", quien.id).maybeSingle();
-    const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
-    const { data: permisos } = await admin
-      .from("role_permissions").select("can_edit")
-      .in("role_id", roles.length ? roles : [-1])
-      .eq("module_key", "pedidos");
-    const puede = emp?.system_role === "SUPERADMIN" || (permisos ?? []).some((p) => p.can_edit);
-    if (!puede)
-      return json({ ok: false, error: "No tienes permiso de edición en Pedidos." }, 403);
+      // ── El permiso es el del módulo Pedidos ─────────────────────────────
+      // Se repite acá porque esta función usa la llave de servicio y el RLS no
+      // la frena. Es el mismo que exige `confirm_pedido`.
+      const { data: emp } = await admin
+        .from("employees").select("role_id, secondary_role_id, system_role, branch_id")
+        .eq("id", usuario.id).maybeSingle();
+      const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
+      const { data: permisos } = await admin
+        .from("role_permissions").select("can_edit, scope")
+        .in("role_id", roles.length ? roles : [-1])
+        .eq("module_key", "pedidos");
+      const puede = emp?.system_role === "SUPERADMIN" || (permisos ?? []).some((p) => p.can_edit);
+      if (!puede)
+        return json({ ok: false, error: "No tienes permiso de edición en Pedidos." }, 403);
+      alcanceTodo = emp?.system_role === "SUPERADMIN"
+        || (permisos ?? []).some((p) => p.can_edit && p.scope === "ALL");
+      empBranchId = emp?.branch_id == null ? null : Number(emp.branch_id);
+    }
 
     // ── Origen y destino salen del mapa, nunca del cliente ────────────────
     // La ubicación es una propiedad de la sala. Pedírsela al navegador sería
@@ -200,7 +241,7 @@ Deno.serve(async (req) => {
     // `aplicar-traslado-inventario` dejó de recibirla.
     const { data: mapas, error: mapaErr } = await admin
       .from("erp_sucursal_map")
-      .select("erp_sucursal_id, nombre, es_bodega, inv_ubicaciones");
+      .select("erp_sucursal_id, nombre, es_bodega, branch_id, inv_ubicaciones");
     if (mapaErr) throw mapaErr;
     const mapaOrigen = (mapas ?? []).find((m) => m.es_bodega) ?? null;
     const mapaDestino = (mapas ?? []).find((m) => m.erp_sucursal_id === sucId) ?? null;
@@ -231,6 +272,19 @@ Deno.serve(async (req) => {
       if (!ubicDestino)
         return json({ ok: false, error: `No se conoce la ubicación de la sala que recibe (${sucId}).` }, 422);
 
+      // Recibir mete inventario en una sala, así que tiene que ser LA SUYA.
+      // Sin esto, cualquiera con permiso de edición en Pedidos podía ingresar
+      // el traslado de otra sucursal — y eso mueve existencias ajenas.
+      // `aplicar-traslado-inventario` ya exigía lo mismo; acá faltaba.
+      if (!alcanceTodo) {
+        const branchDestino = Number(mapaDestino.branch_id ?? 0);
+        if (!empBranchId || empBranchId !== branchDestino)
+          return json({
+            ok: false,
+            error: "El traslado lo recibe la sala a la que va.",
+          }, 403);
+      }
+
       let q = admin.from("pedido_traslado_linea")
         .select("id, pedido_item_id, erp_product_id, id_traslado, clave, hoja, cantidad")
         .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
@@ -259,6 +313,16 @@ Deno.serve(async (req) => {
 
       for (const ln of lineas) {
         if (Date.now() - arranque > PRESUPUESTO_FG_MS) break;
+
+        // Se toma la línea ANTES de tocar el sistema. Dos personas de la sala
+        // confirmando la misma hoja a la vez pasarían las dos la lectura de
+        // arriba; acá la segunda no entra. Recibir dos veces duplicaría la
+        // existencia, y eso no se deshace solo.
+        const { data: tomadaRec } = await admin.from("pedido_traslado_linea")
+          .update({ estado: "recibiendo", updated_at: new Date().toISOString() })
+          .eq("id", ln.id).eq("estado", "enviada")
+          .select("id").maybeSingle();
+        if (!tomadaRec) continue;
 
         const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(ln.id_traslado))}`,
           undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
@@ -301,6 +365,9 @@ Deno.serve(async (req) => {
         }
 
         if (partes.length === 0) {
+          await admin.from("pedido_traslado_linea")
+            .update({ estado: "enviada", updated_at: new Date().toISOString() })
+            .eq("id", ln.id);
           fallos.push({ clave: String(ln.clave), error: "No se pudo leer ni una línea del traslado." });
           continue;
         }
@@ -318,6 +385,11 @@ Deno.serve(async (req) => {
         }), { extra: { Referer: RECIBIR } }));
 
         if (!resp.ok) {
+          // Vuelve a 'enviada': el traslado sigue vivo y se puede reintentar.
+          await admin.from("pedido_traslado_linea")
+            .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la recepción.",
+                      updated_at: new Date().toISOString() })
+            .eq("id", ln.id);
           fallos.push({ clave: String(ln.clave), error: resp.msg || "sin detalle" });
           continue;
         }
@@ -691,12 +763,28 @@ Deno.serve(async (req) => {
         detalle: resumen ?? null,
       });
 
+      // ── Retomar ──────────────────────────────────────────────────────
+      // Si se cortó por presupuesto y todavía queda, hay que volver. El cron
+      // de cada minuto levanta las corridas 'en_curso', así que basta con
+      // dejarla en ese estado — que es lo que hace `cerrar` de arriba.
+      //
+      // Y si una corrida avanza CERO, se corta la cadena: sin ese freno, un
+      // sistema caído genera reintentos para siempre.
+      if (sinTiempo && quedan > 0 && hechas === 0) {
+        await cerrar({
+          estado: "error",
+          error_msg: `La corrida no pudo despachar ni un producto y quedan ${quedan}. `
+            + `Se detiene para no reintentar en vano; revisar el sistema de origen.`,
+        });
+      }
+
       return {
         despachado: quedan === 0,
         en_esta_corrida: hechas,
         fallidas,
         quedan,
         sin_tiempo: sinTiempo,
+        continua: sinTiempo && quedan > 0 && hechas > 0,
         plan,
       };
     };

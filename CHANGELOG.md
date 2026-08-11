@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.567.2 — reauditoría del traslado: cinco huecos
+
+Revisión completa de lo construido hoy, pedida antes de que esto toque el
+inventario de las sucursales. Aparecieron cinco cosas, dos de ellas serias.
+
+**1. Nadie retomaba una corrida cortada.** Lo más grave. La maquinaria de
+reanudación existía y el portal invoca el despacho **una sola vez**, al
+finalizar: si el presupuesto se agotaba con productos pendientes, la corrida
+quedaba `en_curso` para siempre y el pedido a medio despachar **en silencio**.
+Entra un cron de cada minuto que las levanta. Su umbral de 5 minutos no es
+decorativo: una corrida vive 240 s como mucho, y con ese margen **nunca hay dos
+workers despachando el mismo pedido a la vez** — importa porque el id del
+traslado se deduce comparando la lista de pendientes antes y después, y con dos
+escribiendo esa deducción le pone a una línea el id de la otra. Además, si una
+corrida avanza **cero** productos se corta la cadena, para no reintentar en vano
+contra un sistema caído.
+
+**2. La recepción no miraba de qué sala era quien recibe.** Cualquiera con
+permiso de edición en Pedidos podía ingresar el traslado de otra sucursal — o
+sea, mover existencias ajenas. `aplicar-traslado-inventario` ya lo exigía; acá
+faltaba.
+
+**3. `REVOKE ... FROM PUBLIC` no le quita el permiso a `authenticated`.** Es una
+trampa ya conocida en este proyecto y volví a caer. `planificar_traslado_pedido`
+—que escribe las líneas del traslado de cualquier pedido— y
+`incrementar_reanudacion_traslado` quedaron invocables desde cualquier sesión
+del portal. Revocadas explícitamente.
+
+**4. Recibir dos veces duplicaba la existencia.** Dos personas de la sala
+confirmando la misma hoja a la vez pasaban las dos la lectura. Entra el estado
+`recibiendo` como candado, y si el sistema rechaza, la línea vuelve a `enviada`
+para poder reintentar.
+
+**5. El pedido afirmaba un envío que no ocurrió.** El planificador marcaba la
+línea `omitida` —lo que no salió impreso en ninguna hoja— pero no tocaba el
+renglón, que venía con `cantidad_enviada = cantidad_asignada`. Ahora se cierra
+como `no_enviado` con su motivo.
+
+Y una del lado del portal: el despacho se invocaba dentro del mismo `try` que el
+finalizado, así que **un tropiezo de red habría dicho «no se pudo finalizar»
+sobre un pedido que sí quedó finalizado**, y quien despacha lo habría intentado
+de nuevo. Va en su propio `try`.
+
+Verificado después de los cambios: los tres caminos de autenticación (sin
+sesión → 401, usuario normal → simulacro, modo real → se niega por hojas), el
+cron activo, las funciones internas cerradas a `authenticated`, y el advisor de
+seguridad en **0 errores**.
+
+_(pendiente de redactar)_
+
 ## v2.567.1 — El aprobador de Min/Max se busca por usuario, no por correo
 
 Un ajuste de Min/Max aprobado mostraba «edwin.nunez@farmalasa.app» donde tenía

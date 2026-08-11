@@ -21,13 +21,11 @@ import {
     fetchOwnApprovalRequests, fetchPendingShiftChangeRequestsForApprover,
     fetchOwnMinMaxChangeRequests, fetchEmployeeNamesByIds, fetchEmployeeEventsByTypes,
 } from '../../data/employeeSelfService';
-import { updateApprovalRequest } from '../../data/requests';
 import FileField from '../../components/common/FileField';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
-import { BloquePorTipo } from '../solicitudes/DetalleSolicitud';
-import { esMovimiento, esParcial } from '../solicitudes/movimientoTexto';
+import { RequestCard, ModalSolicitud } from '../solicitudes/TarjetaSolicitud';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -180,176 +178,25 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RequestCard — solicitud propia
+// La tarjeta propia se quitó el 2026-08-10: esta pantalla usa el CANÓNICO.
+//
+// Tenía su propia `RequestCard`, escrita a mano y con otro diseño — se desplegaba
+// en el sitio en vez de abrir el modal, no decía de qué tipo era, y su detalle
+// cubría dos tipos contra los trece del canónico. Preguntado así por el usuario:
+// «¿por qué mis solicitudes no tiene la vista canónica de solicitudes de
+// sucursal?». No había motivo: nadie la había unificado.
+//
+// Cancelar la solicitud viaja como `accionPropia` del canónico.
+//
+// Lo que SÍ se fue con la tarjeta vieja: **adjuntar el certificado de una
+// incapacidad ya enviada**. Se dice en vez de dejarlo implícito. Hoy es
+// inalcanzable —las solicitudes personales están apagadas, así que no se puede
+// crear una incapacidad— y el certificado se adjunta al momento de enviarla, en
+// el formulario de más abajo. Si algún día se encienden y hace falta poder
+// adjuntarlo después, el canónico ya tiene la ranura: pasarle `extra` con el
+// `FileField`, que sigue importado.
 // ─────────────────────────────────────────────────────────────────────────────
-const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
-    const typeConf  = REQUEST_TYPES[req.type]    || { label: req.type,   color: 'bg-surface-card-hover text-content-2', border: 'border-divider' };
-    const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
-    const TypeIcon  = TYPE_ICONS[req.type] || FileText;
-    const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : 3;
-    const [meta, setMeta] = useState(
-        typeof req.metadata === 'object' && req.metadata ? req.metadata : {}
-    );
-    const [uploadingDoc, setUploadingDoc] = useState(false);
 
-    const cardBg =
-        req.status === 'PENDING'   ? 'border-brand/30 bg-surface-card' :
-        req.status === 'APPROVED'  ? 'border-success/40 bg-success/10' :
-        req.status === 'REJECTED'  ? 'border-danger/40 bg-surface-card' :
-        'border-border-card bg-surface-card';
-
-    return (
-        <div className={`rounded-header border flex flex-col transition-all duration-[var(--dur-slow)] relative shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${cardBg}`}>
-            {/* ── Header ── */}
-            <div className="p-5 flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
-                    <TypeIcon size={16} strokeWidth={2} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                        <span className={`text-caption font-black uppercase tracking-widest ${typeConf.color.split(' ')[1]}`}>
-                            {typeConf.label}
-                        </span>
-                        <span className="text-content-3">·</span>
-                        <span className={`flex items-center gap-1 text-caption font-bold ${statConf.color.split(' ')[1]}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
-                            {esParcial(req) ? 'Aprobada parcial' : statConf.label}
-                        </span>
-                        {req.status === 'PENDING' && req.current_level && req.type !== 'DISABILITY' && (
-                            <span className="text-micro font-bold text-brand-text">· Niv. {req.current_level}/{maxLevels}</span>
-                        )}
-                        {req.type === 'DISABILITY' && req.status === 'PENDING' && (
-                            <span className="text-micro font-black text-danger uppercase tracking-widest">· Urgente</span>
-                        )}
-                    </div>
-                    <p className="text-caption font-bold text-content-2 uppercase tracking-widest">
-                        {new Date(req.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </p>
-                </div>
-                {req.status === 'PENDING' && (
-                    <Button variant="secondary" icon={X} onClick={() => onCancel(req.id)}>Cancelar</Button>
-                )}
-            </div>
-
-            {/* ── Contenido ── */}
-            <div className="px-5 pb-5 flex flex-col gap-3 border-t border-divider pt-4">
-                {req.note && (
-                    <p className="text-content-2 text-body-lg leading-relaxed font-medium whitespace-pre-wrap">
-                        {req.note}
-                    </p>
-                )}
-
-                {/* Los tres que mueven producto. Esta pantalla tenía bloque para
-                    DOS tipos —cambio de turno e incapacidad— así que quien pedía
-                    un descarte no podía releer NI UNA de las líneas que había
-                    mandado, ni ver cuáles le aprobaron. Se usa el mismo bloque
-                    que ve quien decide, para que los dos lados hablen de lo
-                    mismo con las mismas palabras. */}
-                {esMovimiento(req.type) && (
-                    <BloquePorTipo req={req} meta={meta} />
-                )}
-
-                {req.type === 'SHIFT_CHANGE' && (
-                    <div className="space-y-2">
-                        {(meta.targetEmployeeName || meta.date) && (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-9/10 border border-chart-9/30">
-                                <RefreshCw size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
-                                <div className="flex flex-wrap items-center gap-2 min-w-0">
-                                    {meta.targetEmployeeName && (
-                                        <span className="text-body-sm font-black text-chart-9-text">↔ {meta.targetEmployeeName}</span>
-                                    )}
-                                    {meta.date && (
-                                        <span className="text-label font-bold text-chart-9-text">
-                                            {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-2">
-                            <div data-surface="card" className="p-3">
-                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
-                                <p className="text-body-sm font-black text-content-2">
-                                    {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
-                                </p>
-                            </div>
-                            <div className="bg-chart-9/10 border border-chart-9/20 rounded-2xl p-3">
-                                <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
-                                <p className="text-body-sm font-black text-content-2">
-                                    {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {req.type === 'DISABILITY' && (
-                    <div className="space-y-2">
-                        {meta.startDate && (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/10 border border-danger/30">
-                                <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
-                                <span className="text-body-sm font-bold text-danger-text">
-                                    {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
-                                    {meta.endDate && meta.endDate !== meta.startDate && (
-                                        <> – {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</>
-                                    )}
-                                    {meta.days && <span className="text-danger font-medium ml-1.5">({meta.days} días)</span>}
-                                </span>
-                            </div>
-                        )}
-                        {meta.docUrl && (
-                            <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-label font-bold text-content-2 hover:text-brand-text hover:border-brand/30 transition-all">
-                                <FileImage size={13} strokeWidth={2} />
-                                {meta.docName || 'Ver certificado adjunto'}
-                            </a>
-                        )}
-                        {/* Canónico `FileField` (2c, 2026-07-27). `busy` conserva el
-                            "Subiendo…": acá el archivo se sube apenas se elige, y sin
-                            esa señal la fila se queda muda varios segundos. */}
-                        {req.status === 'PENDING' && uploadFileToStorage && (
-                            <FileField
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                density="sm"
-                                emptyState="pending"
-                                busy={uploadingDoc}
-                                url={meta.docUrl}
-                                name={meta.docName}
-                                onChange={async (file) => {
-                                    if (!file || !uploadFileToStorage) return;
-                                    setUploadingDoc(true);
-                                    const url = await uploadFileToStorage(file, 'documents', 'disability');
-                                    if (url) {
-                                        const newMeta = { ...meta, docUrl: url, docName: file.name };
-                                        await updateApprovalRequest(req.id, { metadata: newMeta });
-                                        setMeta(newMeta);
-                                        useToastStore.getState().showToast('Documento actualizado', 'El certificado fue reemplazado correctamente.');
-                                    }
-                                    setUploadingDoc(false);
-                                }}
-                            />
-                        )}
-                    </div>
-                )}
-
-                {req.approver_note && (
-                    <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-body-sm font-bold border ${
-                        req.status === 'APPROVED' ? 'bg-success/10 border-success/30 text-success-text' :
-                        req.status === 'REJECTED' ? 'bg-danger/10 border-danger/30 text-danger' :
-                        'bg-surface-card-hover border-divider text-content-2'
-                    }`}>
-                        <AlertCircle size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                        <span>{req.approver_note}</span>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Vista principal
-// ─────────────────────────────────────────────────────────────────────────────
 const EmployeeRequestsView = () => {
     const { user } = useAuth();
     const createRequest = useStaffStore(s => s.createRequest);
@@ -359,6 +206,8 @@ const EmployeeRequestsView = () => {
     const holidays = useStaffStore(s => s.holidays);
     const employees = useStaffStore(s => s.employees);
     const uploadFileToStorage = useStaffStore(s => s.uploadFileToStorage);
+    // La solicitud abierta en el modal canónico — el mismo de la Bandeja.
+    const [abierta, setAbierta] = useState(null);
 
     const [requests, setRequests]         = useState([]);
     const [peerRequests, setPeerRequests] = useState([]);
@@ -1247,12 +1096,8 @@ const EmployeeRequestsView = () => {
                         ) : (
                             <>
                                 {filtered.map(req => (
-                                    <RequestCard
-                                        key={req.id}
-                                        req={req}
-                                        onCancel={id => setCancelConfirmId(id)}
-                                        uploadFileToStorage={uploadFileToStorage}
-                                    />
+                                    <RequestCard key={req.id} req={req}
+                                        onOpen={r => setAbierta(r)} />
                                 ))}
                                 {filteredMinmax.map(req => (
                                     <MinMaxStatusCard key={`mm-${req.id}`} req={req} />
@@ -1263,6 +1108,25 @@ const EmployeeRequestsView = () => {
                 </div>
 
             </div>
+        {/* El modal canónico, el mismo de «Solicitudes de Sucursal». Lo propio
+            de esta pantalla entra por props: cancelar la solicitud, que no es
+            una decisión de nadie más, y adjuntar el certificado de una
+            incapacidad, que sólo puede hacer quien la pidió. */}
+        {abierta && (
+            <ModalSolicitud
+                key={abierta.id}
+                req={requests.find(r => r.id === abierta.id) ?? abierta}
+                canApprove={false}
+                onCerrar={() => setAbierta(null)}
+                onDecidir={() => {}}
+                ocupado={false}
+                accionPropia={abierta.status === 'PENDING'
+                    ? { label: 'Cancelar solicitud',
+                        onClick: (r) => { setAbierta(null); setCancelConfirmId(r.id); } }
+                    : null}
+            />
+        )}
+
         <ConfirmModal
             isOpen={!!cancelConfirmId}
             onClose={() => setCancelConfirmId(null)}

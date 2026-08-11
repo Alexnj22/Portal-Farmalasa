@@ -3,7 +3,6 @@ import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax          from './productos/TabMinMax';
-import TabMinMaxRequests  from './productos/TabMinMaxRequests';
 import { useAuth }       from '../context/AuthContext';
 import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data/stockParams';
 
@@ -34,11 +33,18 @@ const DEFAULT_CONFIG = {
 
 export default function MinMaxView() {
     const { user, hasPermission, getScope } = useAuth();
-    const canApprove = hasPermission('minmax', 'can_approve');
-    const BASE_TABS = ALL_MINMAX_TABS.filter(t => hasPermission(`minmax_tab_${t.key}`));
-    const TABS = canApprove && hasPermission('minmax_tab_solicitudes')
-        ? [...BASE_TABS, { key: 'solicitudes', label: 'Solicitudes' }]
-        : BASE_TABS;
+    // La pestaña «Solicitudes» se quitó el 2026-08-10 (decisión del usuario:
+    // «quita el de min y max, lo siento innecesario»). Los ajustes pendientes
+    // viven ahora en el centro de solicitudes junto al resto de lo que pide la
+    // sala, que es donde se los va a buscar. Se resuelven ahí con la MISMA RPC
+    // y con este mismo permiso (`minmax.can_approve`): lo que se fue es la
+    // segunda puerta, no la llave.
+    //
+    // Lo que la pestaña tenía y el centro no: aprobar en lote. Se descartó a
+    // sabiendas — con dos puertas al mismo cuarto, la que se usa menos se queda
+    // vieja, que es exactamente lo que le pasó al detalle de las solicitudes
+    // (dos copias, una con 10 tipos y otra con 2).
+    const TABS = ALL_MINMAX_TABS.filter(t => hasPermission(`minmax_tab_${t.key}`));
 
     const [activeTab,       setActiveTab]       = useState(TABS[0]?.key ?? 'sucursal');
     const [rawSearch,       setRawSearch]       = useState('');
@@ -91,9 +97,6 @@ export default function MinMaxView() {
                     onConfigChange={setConfig}
                     lockedErpId={lockedErpId}
                 />
-            )}
-            {canApprove && activeTab === 'solicitudes' && (
-                <TabMinMaxRequests searchTerm={debouncedSearch} />
             )}
         </GlassViewLayout>
     );

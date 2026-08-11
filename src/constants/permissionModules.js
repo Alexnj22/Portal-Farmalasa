@@ -175,7 +175,6 @@ const GRUPOS_CRUDOS = [
             { key: 'inventario', label: 'Inventario', desc: 'Existencia por sucursal en tiempo real con desglose de lotes, vencimientos y productos ya vencidos', icon: Boxes, hasApprove: false },
             { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true, hasScope: true, sub: [
                 { key: 'minmax_tab_sucursal',    label: 'Sucursal',    tipo: 'tab' },
-                { key: 'minmax_tab_solicitudes', label: 'Solicitudes', tipo: 'tab' },
                 { key: 'minmax_ver_costos',      label: 'Ver costos de compra y venta', tipo: 'cap' },
                 { key: 'minmax_descargar',       label: 'Descargar el análisis (CSV)',  tipo: 'cap' },
             ]},

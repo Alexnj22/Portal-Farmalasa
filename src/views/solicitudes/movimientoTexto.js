@@ -114,3 +114,13 @@ export function textoBuscableMovimiento(req) {
         m.motivo_label ?? '', m.subtipo ?? '', req?.note ?? '',
     ].join(' ');
 }
+
+/* ── Fechas, para las tres pantallas de solicitudes ───────────────────────── */
+// Viven acá y no junto a la tarjeta porque son puras: un archivo que exporta
+// componentes Y funciones rompe el fast refresh de Vite, que es la misma razón
+// por la que este archivo existe.
+export const fmtDiaMes = (iso) => !iso ? '—'
+    : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
+
+export const fmtDateFull = (iso) => !iso ? '—'
+    : new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });

@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.555.0 — Mis Solicitudes usa el canónico; se quita la pestaña de Min/Max
+
+**Una sola puerta para Min/Max.** Se quitó su pestaña «Solicitudes» (decisión
+del usuario: «quita el de min y max, lo siento innecesario»). Los ajustes viven
+en el centro junto al resto de lo que pide la sala, se resuelven con la **misma
+RPC** y con el **mismo permiso** (`minmax.can_approve`): lo que se fue es la
+segunda puerta, no la llave. Se pierde a sabiendas la aprobación en lote.
+
+Antes de borrarla había que mover tres cosas que vivían dentro y se habrían
+apagado en silencio:
+
+- **El aviso a quien propuso el ajuste** y **la bitácora** los mandaba la
+  pestaña, no la RPC. Sin traerlos, decidir habría seguido funcionando y habría
+  dejado de avisar y de registrar — dos ausencias que no dan error y que se
+  notan semanas después, cuando alguien pregunta por qué nunca le contestaron.
+- **El enlace de la notificación** apuntaba a `/minmax?tab=solicitudes&…`, una
+  pestaña que ya no existe. No habría dado error: habría abierto Min/Max en otra
+  pestaña y quien lo tocara no habría encontrado nada. Ahora apunta al centro,
+  con el id prefijado (`minmax:26`) porque ahí conviven dos numeraciones.
+
+**«Mis Solicitudes» pasa al canónico.** Preguntado así: «¿por qué mis
+solicitudes no tiene la vista canónica de solicitudes de sucursal?». No había
+motivo — era una **tercera** copia escrita a mano: se desplegaba en el sitio en
+vez de abrir el modal, no decía de qué tipo era, y su detalle cubría dos tipos
+contra los trece del canónico.
+
+La tarjeta y el modal se extrajeron a `solicitudes/TarjetaSolicitud.jsx` y ahora
+los usan las tres pantallas. Es el mismo error que ya se había corregido un nivel
+más abajo con `DetalleSolicitud`: dos copias del mismo componente se separan en
+cuanto alguien mejora una, y la que no se mejora es la que menos gente mira.
+
+Lo propio de esa pantalla viaja como props: **cancelar la solicitud**
+(`accionPropia`). Lo que sí se fue con la tarjeta vieja —y se dice en vez de
+dejarlo implícito— es **adjuntar el certificado de una incapacidad ya enviada**:
+hoy es inalcanzable (las personales están apagadas) y el certificado se adjunta
+al momento de enviarla. El canónico ya tiene la ranura (`extra`) para
+devolverlo.
+
 ## v2.554.1 — El rótulo del clúster del pulgar ocupa un solo renglón
 
 Reportado por el usuario: en el teléfono, algunos botones de la barra flotante

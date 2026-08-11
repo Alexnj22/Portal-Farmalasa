@@ -158,6 +158,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                 factor:                row.factor,
                 dispatch_tipo:         row.dispatch_tipo,
                 dispatch_factor:       row.dispatch_factor,
+                // confirm_pedido ya lo leía del payload, pero nadie se lo mandaba:
+                // el COALESCE lo dejaba en 1 para todo el catálogo aunque la regla
+                // dijera otra cosa (391 reglas tienen un múltiplo distinto de 1).
+                dispatch_multiplo:     row.dispatch_multiplo ?? 1,
                 caja_especial:         row.caja_especial ?? false,
             }));
             const esEmpleado = employees.some(e => e.id === user?.id);
@@ -218,9 +222,18 @@ export default function TabGenerar({ searchTerm = '' }) {
             ;(async () => {
                 try {
                     for (const sid of sucIds) {
-                        const { data: rawItems } = await fetchPedidoItemsForPrintCapture(pedidoId, sid);
+                        const rawItems = await fetchPedidoItemsForPrintCapture(pedidoId, sid);
                         if (!rawItems?.length) continue;
-                        const groups = await getExactPageGroups(sid, rawItems);
+                        // `tiene_dispatch_label` no es columna de pedido_items: sale de la
+                        // regla de despacho y se deriva acá igual que en usePedidosData.
+                        // isAdicional() lo necesita para reconocer las cajas de Electrolit;
+                        // sin él la captura las cuenta como filas de la tabla numerada y las
+                        // hojas guardadas dejan de coincidir con el PDF que se imprimió.
+                        const itemsConLabel = rawItems.map(r => ({
+                            ...r,
+                            tiene_dispatch_label: !!(r.products?.dispatch_rules?.[0]?.dispatch_label),
+                        }));
+                        const groups = await getExactPageGroups(sid, itemsConLabel);
                         if (groups.length) {
                             await updatePedidoSucursalStatus(pedidoId, sid, { paginas: groups });
                         }

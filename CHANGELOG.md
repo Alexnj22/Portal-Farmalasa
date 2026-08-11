@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.557.5 — las hojas del pedido no eran las que se imprimían
+
+Auditoría del módulo de Pedidos, pedida antes de automatizar el traslado a la
+sucursal de destino. La premisa que había que confirmar —que los productos se
+asignan bien según las hojas— resultó falsa, y por tres causas encadenadas.
+
+**El PDF imprime dos bloques**: la tabla numerada (hojas 1..N) y un bloque
+aparte, «CAJAS ADICIONALES», con las cajas especiales y las de Electrolit.
+`isAdicional()` decide cuál es cuál mirando `caja_especial` y
+`tiene_dispatch_label`. Al **imprimir** funcionaba, porque las filas venían de
+`get_pedido_preview`, que devuelve los dos campos. Al **guardar** las hojas no:
+la captura leía de `pedido_items`, donde `caja_especial` era siempre `false` y
+`dispatch_label` ni se consultaba. Los adicionales entraban entonces en la tabla
+numerada, corrían los saltos de página, y `pagina_items` —la tabla que dice qué
+producto va en qué caja— terminaba apuntando a la hoja equivocada.
+
+Medido en producción: los 16 pedidos con hojas guardadas tienen entre 1 y 9
+productos adicionales metidos adentro. El primero aparece en la posición 14 a
+78 del orden impreso, así que de ahí en adelante quedaban desplazadas entre 350
+y 507 filas por sucursal.
+
+- **`confirm_pedido` descartaba `caja_especial` y `agotamiento`.** El navegador
+  los manda desde que existe la RPC; el INSERT nunca los nombró. El pedido #34
+  (2026-07-01) es el último que los tiene: los 62 siguientes quedaron con ambos
+  en su valor por defecto. Efectos: las cajas E1..En no se registraban al
+  finalizar, y la sección «Stock insuficiente en bodega» salía siempre vacía.
+- **`dispatch_multiplo` se leía del payload pero nadie lo mandaba**, así que el
+  `COALESCE` lo dejaba en 1 para todo el catálogo — 391 reglas tienen otro.
+- **`pedido_items` no tenía policy de UPDATE.** Solo la de SELECT más la
+  RESTRICTIVE `bloqueo_global`; sin ninguna permisiva, Postgres deniega por
+  defecto. La escritura de `falta_caja` afectaba 0 filas **sin devolver error**,
+  o sea que el bloqueo de los ítems de una caja que no llegó nunca se escribía.
+  Nunca se ejercitó en producción —ninguna llegada registró caja faltante—, así
+  que era un defecto latente: se activaba la primera vez que faltara una caja.
+  Su tabla hermana `pedido_sucursal_status` sí tiene `pss_update` con esta misma
+  forma, era una omisión.
+
+De paso, la consulta que alimenta la captura de hojas queda paginada con
+`fetchAllRows`: ahí se decide qué producto cae en qué hoja, así que el corte
+silencioso a las 1000 filas de PostgREST no daría un error sino hojas
+incompletas — el mismo defecto por otra puerta. Lo levantó `gate:data` al
+commitear.
+
+Los pedidos #35 al #96 se dejan como están: ya se despacharon y recibieron, y
+reescribir sus hojas ahora no cambia nada físico y sí altera el registro.
+
+Migración `20260811170608_pedidos_persistir_flags_y_policy_update_items`.
+
+
+_(pendiente de redactar)_
+
 ## v2.557.4 — Cada notificación es una tarjeta, con sus botones adentro
 
 El arreglo de v2.557.3 —llevar el realce del `<button>` al contenedor de la

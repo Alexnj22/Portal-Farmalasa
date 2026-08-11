@@ -250,10 +250,21 @@ export function fetchPedidoSucursalStatusForPedidos(pedidoIds, sucIds) {
         .in('pedido_id', pedidoIds).in('erp_sucursal_id', sucIds);
 }
 
+// `dispatch_rules(dispatch_label)` no es decorativo: junto con `caja_especial`
+// es lo que `isAdicional()` mira para separar el bloque "CAJAS ADICIONALES" del
+// PDF de la tabla numerada. Sin traerlo, la captura de hojas metía las cajas de
+// Electrolit dentro de las hojas numeradas y las que se guardaban dejaban de
+// ser las que se imprimieron (auditoría 2026-08-11).
+//
+// Y va paginado por el mismo motivo: acá se decide qué producto cae en qué
+// hoja, así que un corte silencioso a las 1000 filas no daría un error — daría
+// hojas incompletas, que es el mismo defecto por otra puerta. Hoy la sucursal
+// más grande ronda las 520 filas, pero el margen no es una garantía.
+// Devuelve el array directo (no `{ data }`), como todo lo que pasa por el helper.
 export function fetchPedidoItemsForPrintCapture(pedidoId, sucId) {
-    return supabase.from('pedido_items')
-        .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, caja_especial, products(nombre, es_antibiotico, laboratorios(nombre))')
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).gt('cantidad_asignada', 0);
+    return fetchAllRows(() => supabase.from('pedido_items')
+        .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, caja_especial, products(nombre, es_antibiotico, laboratorios(nombre), dispatch_rules(dispatch_label))')
+        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).gt('cantidad_asignada', 0));
 }
 
 // ── CrearRutaModal.jsx (6 sitios — 2 de ellos reutilizan updateRutaStatus y

@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import {
     ArrowLeftRight, Stethoscope, FileImage, AlertTriangle, CalendarDays,
     Banknote, FileCheck2, Ban, CreditCard, Receipt, CheckCircle2,
-    PackagePlus, Trash2, ImageOff, Minus, Plus, BarChart2,
+    PackagePlus, Trash2, ImageOff, Minus, Plus, BarChart2, Clock,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
@@ -514,6 +514,30 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     ))}
                 </div>
             </div>
+        );
+    }
+
+    /* Horas Extra. El formulario pide la fecha Y cuántas horas desde la fusión
+     * de «Mis Solicitudes» (v2.557.0) — pero acá no había rama, así que el dato
+     * se guardaba y no se pintaba: quien aprueba abría la solicitud y sólo veía
+     * el motivo. Capturar el número que define la solicitud y no mostrarlo deja
+     * el defecto exactamente donde estaba. */
+    if (t === 'OVERTIME' && (meta.date || meta.hours)) {
+        return (
+            <Caja tono="hover" className="flex items-center gap-2">
+                <Clock size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
+                <div>
+                    <Rotulo>Horas extra</Rotulo>
+                    <p className="text-body font-black text-content-2">
+                        {meta.hours ? `${meta.hours} h` : 'Sin especificar'}
+                    </p>
+                    {meta.date && (
+                        <p className="text-caption text-content-2">
+                            {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}
+                        </p>
+                    )}
+                </div>
+            </Caja>
         );
     }
 

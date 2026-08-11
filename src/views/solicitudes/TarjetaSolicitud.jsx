@@ -44,6 +44,10 @@ export const CompactSummary = ({ req }) => {
     }
     if (req.type === 'ADVANCE' && meta.amount)
         return <span className="text-caption text-content-3">${Number(meta.amount).toLocaleString('es-SV')}</span>;
+    // Horas Extra caía al `req.note`: la lista mostraba el texto libre y no la
+    // fecha ni las horas, que es lo único que distingue una de otra.
+    if (req.type === 'OVERTIME' && (meta.date || meta.hours))
+        return <span className="text-caption text-content-3">{[meta.date && fmtDate(meta.date), meta.hours && `${meta.hours} h`].filter(Boolean).join(' · ')}</span>;
     if (req.type === 'CERTIFICATE' && meta.certificateType) {
         const labels = { LABORAL: 'Laboral', SALARIO: 'Salario', BANCARIA: 'Bancaria' };
         return <span className="text-caption text-content-3">{labels[meta.certificateType] || meta.certificateType}</span>;

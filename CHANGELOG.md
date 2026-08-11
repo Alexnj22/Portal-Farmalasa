@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.557.1 — Horas Extra: el aprobador ve cuántas horas
+
+La versión anterior le dio formulario a Horas Extra —fecha y cantidad de
+horas— porque el tipo existía sin él y quien aprobaba no tenía el dato que
+define la solicitud. El formulario quedó bien y el dato se guarda, pero **no
+lo pintaba nadie**: `metadata.hours` no aparecía ni en `TarjetaSolicitud` ni
+en `DetalleSolicitud`. O sea que se corrigió la captura y el defecto se quedó
+donde estaba — el aprobador abría la solicitud y seguía viendo sólo el motivo,
+igual que antes.
+
+Ahora la tarjeta resume `fecha · N h` (antes caía al texto libre de `note`, que
+es lo único que NO distingue una solicitud de otra) y el detalle abre su propia
+caja con las horas y el día en largo.
+
+Encontrado al preparar solicitudes de prueba para revisión: la de Horas Extra
+se iba a ver incompleta. Es el mismo patrón que ya cuesta caro en este repo —
+un dato que se escribe y no se lee no falla, sólo no aparece.
+
 ## v2.557.0 — Mis Solicitudes se fusiona con Personales
 
 Eran dos pantallas para el mismo expediente. En `/my-requests` uno mandaba su

@@ -499,7 +499,7 @@ export function usePedidosData({ searchTerm = '' }) {
             const existing = prev[cardKey] ?? { preparacion: [], recepcion: [] };
             const bucket   = existing[tipo] ?? [];
             if (bucket.find(e => e.id === emp.id)) return prev;
-            return { ...prev, [cardKey]: { ...existing, [tipo]: [...bucket, { id: emp.id, name: emp.name, photo_url: emp.photo_url }] } };
+            return { ...prev, [cardKey]: { ...existing, [tipo]: [...bucket, { id: emp.id, name: emp.name, first_names: emp.first_names, last_names: emp.last_names, photo_url: emp.photo_url }] } };
         });
         loadActive();
     }, [loadActive]);

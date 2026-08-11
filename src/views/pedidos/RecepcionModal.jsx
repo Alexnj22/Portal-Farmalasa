@@ -27,14 +27,15 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
     const avatarCls = size === 'sm' ? 'w-6 h-6 rounded-full text-caption' : 'w-8 h-8 rounded-full text-body-sm';
     return (
         <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-surface-card border border-divider shadow-sm">
-            <LiquidAvatar src={emp.photo_url} alt={emp.name} fallbackText={emp.name} className={avatarCls} />
-            <span className="text-label font-semibold text-content-2 whitespace-nowrap">{emp.name}</span>
+            <LiquidAvatar src={emp.photo_url} alt={emp.name} fallbackText={shortEmployeeName(emp)} className={avatarCls} />
+            <span className="text-label font-semibold text-content-2 whitespace-nowrap">{shortEmployeeName(emp)}</span>
             {sub && <span className="text-micro text-content-3 whitespace-nowrap">{sub}</span>}
             {onRemove && (
                 <Button variant="ghost" icon={X} iconOnly onClick={onRemove} />

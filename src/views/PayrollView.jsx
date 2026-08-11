@@ -22,6 +22,7 @@ import ListRow from '../components/common/ListRow';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
@@ -334,9 +335,9 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                     <DataRow key={e.id} index={ei} className={edited ? 'bg-warning/10' : ''}>
                                         <DataCell className="whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-8 h-8 rounded-xl shrink-0" />
+                                                <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={shortEmployeeName(emp)} className="w-8 h-8 rounded-xl shrink-0" />
                                                 <div>
-                                                    <p className="font-black text-content text-label leading-tight">{emp.name || '—'}</p>
+                                                    <p className="font-black text-content text-label leading-tight">{shortEmployeeName(emp)}</p>
                                                     {emp.role && <p className="text-micro text-content-3 font-medium leading-tight">{emp.role}</p>}
                                                     {edited && <Badge variant="warning" size="sm" uppercase={false} className="mt-0.5">editado</Badge>}
                                                 </div>

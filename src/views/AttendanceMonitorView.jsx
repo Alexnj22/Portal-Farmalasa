@@ -29,7 +29,7 @@ import {
 
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
-import { shortEmployeeName } from "../utils/nameUtils";
+import { shortEmployeeName, employeeInitials } from "../utils/nameUtils";
 import { tokenMatch } from '../utils/searchUtils';
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from "../components/common/LiquidSelect";
@@ -460,7 +460,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             {emp.photo ? (
               <img src={emp.photo} className="w-full h-full object-cover" alt="Foto" />
             ) : (
-              String(emp?.name || "?").charAt(0)
+              employeeInitials(emp)
             )}
           </div>
           {emp.hasLactation && (

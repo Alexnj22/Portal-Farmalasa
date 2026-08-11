@@ -44,6 +44,7 @@ import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { inputHoverClass } from '../../utils/inputStyles';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 const PAGE_SIZE = 25;
 
@@ -591,7 +592,7 @@ function ItemRow({
                             : <span className="text-content-3 text-micro">Pendiente</span>}
                     {(item.recontado_at || revelado) && (
                         <Badge variant="chart-1" size="sm" icon={ShieldCheck}
-                            title={item.recontado_por_nombre ? `Recontado por ${item.recontado_por_nombre}` : 'Recontado'}>
+                            title={item.recontado_por_nombre ? `Recontado por ${shortEmployeeName(item.recontado_por_nombre)}` : 'Recontado'}>
                             Recontada
                         </Badge>
                     )}
@@ -1111,11 +1112,11 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
                                 <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <LiquidAvatar src={h.contado_por_photo_url} alt=""
-                                            fallbackText={h.contado_por_nombre || '?'}
+                                            fallbackText={employeeInitials(h.contado_por_nombre)}
                                             className="w-9 h-9 rounded-full shrink-0" />
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                <p className="text-label font-bold text-content-2 truncate">{h.contado_por_nombre || 'Desconocido'}</p>
+                                                <p className="text-label font-bold text-content-2 truncate" title={h.contado_por_nombre}>{h.contado_por_nombre ? shortEmployeeName(h.contado_por_nombre) : 'Desconocido'}</p>
                                                 <Badge variant={ev.variante} size="sm" uppercase={false}>{ev.label}</Badge>
                                             </div>
                                             <p className="text-micro text-content-3 tabular-nums">{fmtDateTime(h.contado_at)}</p>

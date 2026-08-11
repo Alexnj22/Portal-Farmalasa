@@ -33,6 +33,7 @@ import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
 import { prefetchRuta } from '../../constants/routeImporters';
 import { webpSignedUrl } from '../../utils/storageFiles';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import { remontarAlGirar, contarRenderShell } from '../../utils/cajaNegra';
 import { useHayDialogo } from '../common/dialogosAbiertos';
 
@@ -134,6 +135,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     // importar en qué módulo aterrice al entrar (admin, empleado, etc.).
     const myEmp = useMemo(() => employees.find(e => String(e.id) === String(user?.id)), [employees, user?.id]);
     const myBirthDate = myEmp?.birth_date;
+
+    // El sidebar pinta el nombre corto (primer nombre + primer apellido). `user`
+    // viene de la sesión y sólo trae `name` concatenado; la ficha del store sí
+    // tiene first_names/last_names, que es el corte exacto — por eso se prefiere
+    // `myEmp` y `user` queda de respaldo (arranque en frío, empleado fuera del
+    // alcance del store).
+    const myShortName = useMemo(() => shortEmployeeName(myEmp || user), [myEmp, user]);
     const myBirthday = useMemo(() => {
         if (!myBirthDate) return null;
         const bDate = new Date(myBirthDate + 'T12:00:00');
@@ -1143,8 +1151,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
+                                        {/* min-w-0: sin esto el Link no puede achicarse por debajo del
+                                            ancho natural de su contenido (min-width:auto de los flex
+                                            items), así que un nombre largo empujaba el botón de cerrar
+                                            sesión fuera de la fila. El `truncate` de adentro no alcanza:
+                                            recorta el texto, no devuelve el espacio del contenedor. */}
                                         <Link to="/profile"
-                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-realce)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
+                                            className={`flex-1 min-w-0 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-realce)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
                                                 <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-[rgb(var(--sidebar-ink)/0.12)] shadow-[var(--shadow-elevation-xl)] bg-[rgb(var(--sidebar-realce)/0.08)] text-[rgb(var(--sidebar-ink)/0.55)] group-hover/user:border-[rgb(var(--sidebar-ink)/0.2)]">
                                                     {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
@@ -1155,11 +1168,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex-1 overflow-hidden">
-                                                <p className="text-body font-semibold truncate transition-colors leading-tight text-[rgb(var(--sidebar-ink)/0.8)] group-hover/user:text-[rgb(var(--sidebar-ink))]">{user?.name || 'Usuario'}{myBirthday ? ' 🎂' : ''}</p>
+                                            <div className="flex-1 min-w-0 overflow-hidden">
+                                                <p className="text-body font-semibold truncate transition-colors leading-tight text-[rgb(var(--sidebar-ink)/0.8)] group-hover/user:text-[rgb(var(--sidebar-ink))]" title={user?.name || 'Usuario'}>{myShortName}{myBirthday ? ' 🎂' : ''}</p>
                                             </div>
                                         </Link>
-                                        <Button variant="destructive" icon={LogOut} iconOnly className={focusRing} onClick={handleLogout} />
+                                        <Button variant="destructive" icon={LogOut} title="Cerrar sesión" iconOnly className={`shrink-0 ${focusRing}`} onClick={handleLogout} />
                                     </div>
 
                                     <p className="text-center text-micro font-medium text-[rgb(var(--sidebar-ink)/0.55)] tracking-wider pt-1">
@@ -1487,7 +1500,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-[#7DB8FF]" />}
                                     </div>
                                     <div className="flex flex-col items-start pr-1">
-                                        <span className="text-body font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
+                                        <span className="text-body font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{myShortName}</span>
                                         <span className="text-label text-[#7DB8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>
                                     </div>
                                 </Link>

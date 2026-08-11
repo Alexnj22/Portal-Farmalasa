@@ -871,7 +871,7 @@ const ScheduleCalendar = memo(({
                                                                     {e.photo_url ? <img src={e.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={18} className="text-content-3" />}
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <p className="text-body-sm font-black text-content truncate">{e.name}</p>
+                                                                    <p className="text-body-sm font-black text-content truncate" title={e.name}>{shortEmployeeName(e)}</p>
                                                                     <p className="text-caption text-chart-3-text font-bold truncate">{br?.name || 'Sin sucursal'}</p>
                                                                 </div>
                                                             </button>

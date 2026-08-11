@@ -28,6 +28,7 @@ import { searchCustomersByTokens } from '../../data/customers';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import ListRow from '../../components/common/ListRow';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 const GRACE_DAYS = 3;
 
@@ -158,7 +159,7 @@ function VendorAvatar({ employee, size = 6 }) {
     return <div className={base}><img src={webpSignedUrl(employee.photo || employee.photo_url)} loading="lazy" decoding="async" className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
   return (
     <div className={`${base} bg-surface-card-hover`}>
-      <span className="text-content-2 font-black text-caption leading-none">{employee.name?.charAt(0)}</span>
+      <span className="text-content-2 font-black text-caption leading-none">{employeeInitials(employee)}</span>
     </div>
   );
 }
@@ -697,7 +698,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                     data-surface="card" data-tono={isSelected ? 'brand' : undefined}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all">
                     <VendorAvatar employee={emp} size={8} />
-                    <p className={`text-body-sm font-black flex-1 truncate ${isSelected ? 'text-brand-text' : 'text-content-2'}`}>{emp.name}</p>
+                    <p className={`text-body-sm font-black flex-1 truncate ${isSelected ? 'text-brand-text' : 'text-content-2'}`} title={emp.name}>{shortEmployeeName(emp)}</p>
                     {isSelected && (
                       <div className="w-4 h-4 rounded-full bg-brand flex items-center justify-center shrink-0">
                         <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>

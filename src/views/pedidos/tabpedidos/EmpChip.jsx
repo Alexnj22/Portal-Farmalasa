@@ -1,5 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { UserCircle2 } from 'lucide-react';
+import { shortEmployeeName } from '../../../utils/nameUtils';
 
 export default function EmpChip({ emp, label }) {
     if (!emp) return null;
@@ -10,7 +11,7 @@ export default function EmpChip({ emp, label }) {
                 ? <img src={emp.photo} alt={emp.name} className="w-5 h-5 rounded-full object-cover border border-border-card shadow-sm" />
                 : <span className="w-5 h-5 rounded-full bg-surface-card-hover flex items-center justify-center"><UserCircle2 size={12} className="text-content-3" /></span>
             }
-            <span className="text-content font-semibold">{emp.name?.split(' ')[0] ?? '—'}</span>
+            <span className="text-content font-semibold whitespace-nowrap">{shortEmployeeName(emp)}</span>
         </span>
     );
 }

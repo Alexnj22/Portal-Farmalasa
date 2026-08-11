@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
 import PortalInput from '../components/common/PortalInput';
 import TablePagination from '../components/common/TablePagination';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 
 // ============================================================================
@@ -665,7 +666,7 @@ const AnnouncementsView = ({ openModal }) => {
                         <SearchInput value={empSearch} onChange={setEmpSearch} placeholder="Buscar persona por nombre..." disabled={isSubmitting} />
                         {empSearch.trim() && (
                           <div data-surface="dropdown" className="absolute z-content w-full mt-2 max-h-60 overflow-y-auto p-1">
-                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<Button  onClick={() => addEmployee(emp.id)}><p className="text-body font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand-text" /></Button>)) : <div className="p-3 text-body-sm text-content-3 font-bold text-center">Sin resultados.</div>}
+                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<Button  onClick={() => addEmployee(emp.id)}><p className="text-body font-bold text-content-2">{shortEmployeeName(emp)}</p><Plus size={14} className="text-brand-text" /></Button>)) : <div className="p-3 text-body-sm text-content-3 font-bold text-center">Sin resultados.</div>}
                           </div>
                         )}
                       </div>

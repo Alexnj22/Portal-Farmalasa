@@ -19,6 +19,7 @@ import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const ESTADO_OPTIONS = [
     { value: 'ACTIVO', label: 'Activo' },
@@ -114,7 +115,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     const handleChange = (e) => set(e.target.name, e.target.value);
 
     const branchOpts = useMemo(() => buildBranchOpts(branches), [branches]);
-    const supervisorOpts = (employees || []).map((e) => ({ value: e.id, label: `${e.first_names || ''} ${e.last_names || ''}`.trim() }));
+    const supervisorOpts = (employees || []).map((e) => ({ value: e.id, label: shortEmployeeName(e) }));
     const institucionOpts = useMemo(() => buildCatalogOptions(institucionCatalog, 'Otra institución...'), [institucionCatalog]);
 
     // Edad/menor de edad decide DUI (adulto) vs documento alterno (menor) — Art.

@@ -10,6 +10,7 @@ import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice'
 import { ICONO_POR_TIPO } from '../../constants/tipoIconos';
 import DetalleSolicitud from './DetalleSolicitud';
 import { resumenMovimiento, esMovimiento, lineasDe, esParcial, fmtDiaMes as fmtDate, fmtDateFull } from './movimientoTexto';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 // La tarjeta y el modal de una solicitud — el canónico, para las TRES pantallas
 // que muestran solicitudes.
@@ -111,8 +112,8 @@ export const RequestCard = memo(({ req, onOpen }) => {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                     {req.employee && (
-                        <span className="text-body font-semibold text-content truncate leading-tight max-w-[160px]">
-                            {req.employee.name}
+                        <span className="text-body font-semibold text-content truncate leading-tight max-w-[160px]" title={req.employee.name}>
+                            {shortEmployeeName(req.employee)}
                         </span>
                     )}
                     <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
@@ -241,7 +242,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
             ariaLabel={`Solicitud de ${REQUEST_TYPES[req.type]?.label ?? req.type}`}>
             <CuerpoDialogo
                 titulo={REQUEST_TYPES[req.type]?.label ?? req.type}
-                subtitulo={`${req.employee?.name ?? 'Sin nombre'} · ${fmtDateFull(req.created_at)} · ${esParcial(req) ? 'Aprobada parcial' : statConf.label}`}
+                subtitulo={`${req.employee ? shortEmployeeName(req.employee) : 'Sin nombre'} · ${fmtDateFull(req.created_at)} · ${esParcial(req) ? 'Aprobada parcial' : statConf.label}`}
                 icono={TypeIcon}
                 anchoEscritorio="max-w-xl"
                 pie={<>

@@ -6,6 +6,7 @@ import { calcPayrollEntry } from '../../store/slices/payrollSlice';
 import { fetchOvertimeBankRows } from '../../data/payroll';
 import NocturnalLegalInfo from '../common/NocturnalLegalInfo';
 import { formatMoney } from '../../utils/formatNumber';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -102,7 +103,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
         <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 bg-brand/5 border border-brand/15 rounded-2xl px-4 py-2.5">
                 <p className="text-label font-black text-brand-text">
-                    {emp.name} — Salario diario: ${daily.toFixed(2)}
+                    {shortEmployeeName(emp)} — Salario diario: ${daily.toFixed(2)}
                 </p>
             </div>
 

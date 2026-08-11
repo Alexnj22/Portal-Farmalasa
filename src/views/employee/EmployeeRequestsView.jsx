@@ -26,6 +26,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { RequestCard, ModalSolicitud } from '../solicitudes/TarjetaSolicitud';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -132,7 +133,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                     </div>
                     <div>
                         <p className="text-body font-black text-content leading-tight">
-                            {req.employee?.name || 'Compañero'}
+                            {req.employee ? shortEmployeeName(req.employee) : 'Compañero'}
                         </p>
                         <p className="text-caption text-content-3 font-medium">quiere cambiar turno contigo</p>
                     </div>

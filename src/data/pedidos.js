@@ -47,7 +47,7 @@ export function fetchBranchNamesForSucursales(sucIds) {
 
 export function fetchApoyoForPedidos(pedidoIds, sucId) {
     let q = supabase.from('pedido_apoyo')
-        .select('pedido_id, erp_sucursal_id, employee_id, tipo, employees(name, photo_url)')
+        .select('pedido_id, erp_sucursal_id, employee_id, tipo, employees(name, first_names, last_names, photo_url)')
         .in('pedido_id', pedidoIds);
     if (sucId) q = q.eq('erp_sucursal_id', sucId);
     return q;
@@ -55,7 +55,7 @@ export function fetchApoyoForPedidos(pedidoIds, sucId) {
 
 export function fetchApoyoForPedido(pedidoId, sucId) {
     let q = supabase.from('pedido_apoyo')
-        .select('id, employee_id, tipo, employees(name, photo_url)')
+        .select('id, employee_id, tipo, employees(name, first_names, last_names, photo_url)')
         .eq('pedido_id', pedidoId);
     if (sucId) q = q.eq('erp_sucursal_id', sucId);
     return q;
@@ -79,7 +79,7 @@ export function fetchEmployeeByKioskPin(code) {
     const v = String(code || '').trim();
     return supabase
         .from('employees')
-        .select('id, name, photo_url')
+        .select('id, name, first_names, last_names, photo_url')
         .or(`code.eq.${v},kiosk_pin.eq.${v}`)
         .limit(1)
         .maybeSingle();

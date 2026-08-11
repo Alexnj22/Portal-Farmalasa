@@ -60,6 +60,7 @@ import { fetchRolesForPermissions, fetchRolePermissions } from '../data/permissi
 import { clickable } from '../utils/clickable';
 import { formatMoney } from '../utils/formatNumber';
 import useCapaFlotante from '../utils/capaFlotante';
+import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
 import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
 } from '../constants/dashboardTabs';
@@ -2630,7 +2631,7 @@ const DashboardView = ({ openModal }) => {
             ) : (
               <div className="space-y-1.5">
                 {displayBirthdays.map((e,i)=>{
-                  const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+                  const initials=employeeInitials(e);
                   const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es-SV',{month:'short'})}`;
                   const cardCls = e.isToday
                     ? 'bg-brand/5 border-brand/20 shadow-[var(--shadow-glow-brand)]'
@@ -2652,7 +2653,7 @@ const DashboardView = ({ openModal }) => {
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-body-sm font-black truncate leading-tight ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content'}`}>{e.name}</p>
+                        <p className={`text-body-sm font-black truncate leading-tight ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content'}`} title={e.name}>{shortEmployeeName(e)}</p>
                         <p className="text-micro text-content-3 font-medium truncate">{e.branchName}</p>
                       </div>
                       {/* Badges */}

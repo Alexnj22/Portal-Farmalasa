@@ -10,6 +10,7 @@ import { useToastStore } from '../../../store/toastStore';
 import PedidoModal from '../PedidoModal';
 import { fetchEmployeeByKioskPin, upsertPedidoApoyo } from '../../../data/pedidos';
 import { mensajeAmigable } from '../../../utils/errorMessages';
+import { shortEmployeeName } from '../../../utils/nameUtils';
 
 export default function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess, tipo = 'preparacion' }) {
     const [displayDots, setDisplayDots] = useState(0);
@@ -95,7 +96,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
         if (existingApoyo.some(a => a.id === employee.id)) {
             useToastStore.getState().showToast(
                 'Ya está de apoyo',
-                `${employee.name} ya está registrado en este pedido.`,
+                `${shortEmployeeName(employee)} ya está registrado en este pedido.`,
                 'warning'
             );
             onClose();
@@ -169,7 +170,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>
-                                <p className="font-bold text-success-text text-body-lg">{employee.name}</p>
+                                <p className="font-bold text-success-text text-body-lg">{shortEmployeeName(employee)}</p>
                                 <p className="text-label text-success-text mt-0.5">Confirma para registrar como apoyo</p>
                             </div>
                         </div>

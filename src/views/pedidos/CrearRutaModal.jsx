@@ -19,6 +19,7 @@ import {
 
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
+import { shortEmployeeName } from '../../utils/nameUtils';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -39,7 +40,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   const [step, setStep] = useState(1);
 
   // Data
+  // `conductorNombre` es el nombre COMPLETO: es lo que queda guardado en la ruta
+  // y en la bitácora. Lo que se ve —y lo que dice el aviso a la sucursal— es el
+  // corto (`conductorCorto`).
   const [conductorNombre, setConductorNombre] = useState('');
+  const [conductorCorto,  setConductorCorto]  = useState('');
   const [conductorPhoto,  setConductorPhoto]  = useState(null);
   const [pedidosDisp,     setPedidosDisp]     = useState([]);
   const [coordsMap,       setCoordsMap]       = useState({});
@@ -77,6 +82,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       fetchEmployeeDriverInfo(user.id)
         .then(({ data }) => {
           setConductorNombre(data ? `${data.first_names} ${data.last_names}`.trim() : (user.email ?? 'Usuario'));
+          setConductorCorto(data ? shortEmployeeName(data) : (user.email ?? 'Usuario'));
           if (data?.photo_url) { signPhotosDeep(data).then(() => setConductorPhoto(data.photo_url)); } else { setConductorPhoto(null); }
         });
     }
@@ -435,7 +441,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
           notifyBranch(bid, {
             type: 'PEDIDO_TRACKING',
             title: `Pedido ${numeros} en camino`,
-            body: `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorNombre}.`,
+            body: `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorCorto}.`,
             link: '/pedidos',
           });
         }
@@ -449,7 +455,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     } finally {
       setSubmitting(false);
     }
-  }, [conductorNombre, paradas, submitting, user, totalDist, totalDriveMin, onCreated, onClose]);
+  }, [conductorNombre, conductorCorto, paradas, submitting, user, totalDist, totalDriveMin, onCreated, onClose]);
 
   // El gate mira el montaje-para-SALIDA y no `open` a secas: cortar en el
   // mismo tick del cierre desmontaba el componente antes de que
@@ -490,7 +496,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               }
               <div>
                 <p className="text-micro font-semibold text-chart-3-text uppercase tracking-wider">Conductor (tú)</p>
-                <p className="text-body-sm font-bold text-chart-3-text">{conductorNombre || '…'}</p>
+                <p className="text-body-sm font-bold text-chart-3-text">{conductorCorto || '…'}</p>
               </div>
             </div>
 
@@ -586,7 +592,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 : <div className="w-6 h-6 rounded-full bg-chart-3-solid flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
               }
               <span className="text-body-sm text-content-2 font-medium">Conductor:</span>
-              <span className="text-body-sm font-bold text-content">{conductorNombre}</span>
+              <span className="text-body-sm font-bold text-content">{conductorCorto}</span>
             </div>
 
             {/* ── Timeline de paradas ───────────────────────────────────── */}

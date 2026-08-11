@@ -8,6 +8,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
 import { clickable } from '../../utils/clickable';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const FormNursingRegents = ({ formData, setFormData }) => {
     const employees = useStaff(state => state.employees);
@@ -18,7 +19,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
     const nurseOptions = useMemo(() => {
         return employees
             .filter(emp => (emp.role || '').toUpperCase().includes('ENFERMER'))
-            .map(emp => ({ value: emp.id, label: emp.name }));
+            .map(emp => ({ value: emp.id, label: shortEmployeeName(emp) }));
     }, [employees]);
 
     const updateLegalField = (field, value) => {

@@ -2,6 +2,7 @@
 import { UserCircle2, PackageCheck, AlertTriangle, PackageX, Truck, Database, UserPlus, Loader2 } from 'lucide-react';
 import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
+import { shortEmployeeName } from '../../../utils/nameUtils';
 
 // Mismas etiquetas que LLEGADA_TIPO_INFO en PostCompletionSection.jsx (solo
 // el texto — el estilo de esta tarjeta sigue el patrón "completado" propio
@@ -19,7 +20,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {emp.photo_url
                 ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-border-card shadow-sm" alt="" />
                 : <UserCircle2 size={12} className="text-content-3" />}
-            {emp.name?.split(' ')[0]}
+            <span className="whitespace-nowrap">{shortEmployeeName(emp)}</span>
         </span>
     ) : null;
 
@@ -27,8 +28,8 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
         <div className="flex items-center gap-0.5">
             {cardApoyo.slice(0, 4).map((a, i) => (
                 a.photo_url
-                    ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full object-cover border-2 border-border-card shadow-sm shrink-0" alt="" />
-                    : <span key={a.id} role="img" title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-surface-card-hover border-2 border-border-card flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-content-3" /></span>
+                    ? <img key={a.id} src={a.photo_url} title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full object-cover border-2 border-border-card shadow-sm shrink-0" alt="" />
+                    : <span key={a.id} role="img" title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-surface-card-hover border-2 border-border-card flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-content-3" /></span>
             ))}
         </div>
     ) : null;

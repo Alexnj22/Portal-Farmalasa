@@ -33,6 +33,7 @@ import { updateApprovalRequest } from '../data/requests';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -375,7 +376,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             />
             <div className="flex items-center justify-between gap-2">
               <p className="text-caption font-bold text-content-3">
-                Por: <span className="text-content-2">{user?.name || user?.email || '—'}</span>
+                Por: <span className="text-content-2">{user?.name ? shortEmployeeName(user) : (user?.email || '—')}</span>
               </p>
               <Button disabled={saving || !newType || !newTime} onClick={handleAdd}>{saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}</Button>
             </div>
@@ -724,7 +725,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           type="button"
           onClick={() => setExpanded(v => !v)}
           aria-expanded={expanded}
-          aria-label={`${expanded ? 'Contraer' : 'Expandir'} la quincena de ${emp.name}`}
+          aria-label={`${expanded ? 'Contraer' : 'Expandir'} la quincena de ${shortEmployeeName(emp)}`}
           className="flex items-center gap-3 flex-1 min-w-0 text-left transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
         >
         {/* Avatar + alert dot */}
@@ -732,7 +733,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-surface-card shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
             {emp.photo
               ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
-              : <span className="text-body-xl">{emp.name?.charAt(0) || '?'}</span>}
+              : <span className="text-body-xl">{employeeInitials(emp)}</span>}
           </div>
           {alertColor ? (
             <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-micro font-black shadow-sm`}>
@@ -747,7 +748,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 
         {/* Name + role + alert chips */}
         <div className="flex-1 min-w-0">
-          <p className="text-body font-black text-content leading-none truncate">{emp.name}</p>
+          <p className="text-body font-black text-content leading-none truncate" title={emp.name}>{shortEmployeeName(emp)}</p>
           <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
@@ -1015,7 +1016,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
       appendAuditLog?.('TIMESHEETS_BULK_APPROVED', user?.id, { empId: emp.id, count: ids.length, quincena: selectedQuincena, actorName: user?.name });
-      showToast('Aprobado', `${ids.length} día(s) aprobado(s) para ${emp.name}.`, 'success');
+      showToast('Aprobado', `${ids.length} día(s) aprobado(s) para ${shortEmployeeName(emp)}.`, 'success');
     } else {
       showToast('Error', 'No se pudo aprobar.', 'error');
     }

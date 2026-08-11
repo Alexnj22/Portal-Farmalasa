@@ -29,6 +29,7 @@ import {
 } from '../data/encuestas';
 import SearchInput from '../components/common/SearchInput';
 import LiquidTooltip from '../components/common/LiquidTooltip';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
@@ -442,7 +443,7 @@ export default function EncuestaAdminView() {
     const availableEmployeeOptions = useMemo(() =>
         employees.filter(e => !respondedIds.has(e.id)).map(e => ({
             value: e.id,
-            label: `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim(),
+            label: shortEmployeeName(e),
             sublabel: e.branch?.name || '',
             avatar: e.photo_url || '',
         })),
@@ -673,7 +674,7 @@ export default function EncuestaAdminView() {
                                                 {selectedEmps.length > 0 && (
                                                     <div className="flex flex-wrap gap-1.5 p-2.5 bg-surface-card rounded-2xl border border-border-card">
                                                         {selectedEmps.map(e => {
-                                                            const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                            const fn = shortEmployeeName(e);
                                                             return (
                                                                 <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1 rounded-lg text-label font-bold border border-brand/20">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
@@ -694,7 +695,7 @@ export default function EncuestaAdminView() {
                                                 {empResults.length > 0 && (
                                                     <div data-surface="card" className="overflow-hidden">
                                                         {empResults.map(e => {
-                                                            const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                            const fn = shortEmployeeName(e);
                                                             return (
                                                                 <button key={e.id} type="button"
                                                                     aria-pressed={sfScopeIds.includes(e.id)}
@@ -768,11 +769,11 @@ export default function EncuestaAdminView() {
                                         <div data-surface="card" className="flex items-center gap-2.5 py-3 px-4">
                                             <PersonAvatar
                                                 src={editingResponse.employee?.photo_url}
-                                                name={`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
+                                                name={shortEmployeeName(editingResponse.employee)}
                                                 size={24} />
                                             <div>
                                                 <div className="text-body font-bold text-content-2">
-                                                    {`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
+                                                    {shortEmployeeName(editingResponse.employee)}
                                                 </div>
                                                 <div className="text-caption text-content-3">{editingResponse.employee?.branch?.name}</div>
                                             </div>
@@ -1103,7 +1104,7 @@ export default function EncuestaAdminView() {
                                                     </p>
                                                     <div className="flex flex-wrap gap-1.5">
                                                         {pendingEmployees.map(e => {
-                                                            const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                            const fn = shortEmployeeName(e);
                                                             return (
                                                                 <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
@@ -1145,9 +1146,7 @@ export default function EncuestaAdminView() {
                                                                     </thead>
                                                                     <tbody>
                                                                         {allRows.map(row => {
-                                                                            const fn = (row.employee?.first_names || '').split(' ')[0];
-                                                                            const ln = (row.employee?.last_names  || '').split(' ')[0];
-                                                                            const nombre = `${fn} ${ln}`.trim() || '–';
+                                                                            const nombre = row.employee ? shortEmployeeName(row.employee) : '–';
                                                                             const global = blockScore(row.responses || [], allIndices, invertedIndices);
                                                                             const isRowExp = expandedResponseId === row.id;
                                                                             return (

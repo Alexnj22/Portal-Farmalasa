@@ -10,7 +10,8 @@ import { useToastStore } from '../store/toastStore';
 import { LoadingState } from './common/StateViews';
 import { supabase } from '../supabaseClient';
 import useMontadoParaSalida from '../hooks/useMontadoParaSalida';
-import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages'; 
+import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -230,18 +231,18 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     const getModalSubtitle = () => {
         if (type === "manageKiosks") return formData?.name;
-        if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
+        if (type === "planSchedule") return `${shortEmployeeName(formData?.employee)} • ${formData?.employee?.role}`;
         if (type === "newEmployee") return null;
         if (type === "editEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
         if (type === "rehireEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
-        if (type === "vacationRecall") return formData?.employee?.name?.toUpperCase() || "EMPLEADO";
+        if (type === "vacationRecall") return shortEmployeeName(formData?.employee).toUpperCase();
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
         if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "EMPLEADO";
         if (type === "changeOwnPassword") return "TU CUENTA";
         if (type === "editContact") return formData?.name?.toUpperCase() || "TU PERFIL";
         if (type === "newPayrollPeriod") return "PERÍODO DE NÓMINA";
-        if (type === "editPayrollEntry") return (formData?._entry?.employee?.name || 'EMPLEADO').toUpperCase();
+        if (type === "editPayrollEntry") return shortEmployeeName(formData?._entry?.employee).toUpperCase();
         if (type === "editProveedor") return formData?.nit || formData?.dui || 'PROVEEDOR';
         if (type === "editCliente") return "FICHA FISCAL";
         if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
@@ -671,7 +672,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const { showToast } = useToastStore.getState();
                 showToast(
                     "Ingreso Autorizado",
-                    `${formData.employee.name} — ${result.hoursWorked}h trabajadas. Total debidas: ${result.newOwed}h`,
+                    `${shortEmployeeName(formData.employee)} — ${result.hoursWorked}h trabajadas. Total debidas: ${result.newOwed}h`,
                     "success"
                 );
                 onClose();
@@ -700,7 +701,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
                 const { showToast } = useToastStore.getState();
-                if (showToast) showToast("Turnos Asignados", `Horario de ${employee.name} actualizado con éxito.`, "success");
+                if (showToast) showToast("Turnos Asignados", `Horario de ${shortEmployeeName(employee)} actualizado con éxito.`, "success");
 
                 onClose();
             } catch {

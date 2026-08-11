@@ -1,6 +1,7 @@
 import React from 'react';
 import Button from '../common/Button';
 import { ScanBarcode, ShieldAlert, XCircle, Bell } from 'lucide-react';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 // Anillo "esperando escaneo" — reemplaza el <input> que simulaba tecleo
 // manual. El carné ya no se escribe: el escáner alimenta un listener global
@@ -87,7 +88,7 @@ export default function IdleScanPanel({
               {lunchAlerts.map(alert => (
                 <div key={alert.employee.id} className="flex items-center justify-between gap-2">
                   <span className="text-white/80 text-label font-semibold truncate">
-                    {alert.employee.name}
+                    {shortEmployeeName(alert.employee)}
                   </span>
                   <span className={`text-caption font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-danger' : 'text-chart-4-text'}`}>
                     {alert.minsOverdue > 0 ? `${alert.minsOverdue} min tarde` : `${alert.lunchTime}`}

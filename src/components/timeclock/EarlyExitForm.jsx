@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
+import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 const EARLY_EXIT_OPTIONS = [
   'Permiso Médico / Consulta',
@@ -55,11 +56,11 @@ function EarlyExitForm({
               {photoUrl ? (
                 <img src={photoUrl} alt={employee.name} className="w-full h-full object-cover" />
               ) : (
-                employee.name?.charAt(0) || '?'
+                employeeInitials(employee)
               )}
             </div>
             <div className="text-left flex-1 overflow-hidden">
-              <h3 className="text-white font-semibold text-sm sm:text-body-xl leading-tight truncate">{employee.name}</h3>
+              <h3 className="text-white font-semibold text-sm sm:text-body-xl leading-tight truncate" title={employee.name}>{shortEmployeeName(employee)}</h3>
               <p className="text-white/40 text-micro sm:text-micro uppercase tracking-widest mt-0.5 truncate">
                 Perfil a autorizar
               </p>

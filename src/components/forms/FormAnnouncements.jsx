@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight, User, ChevronDown } from 'lucide-react';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 // 3. Componente de Controles de Paginación (Liquidglass)
 const PaginationControls = ({ currentPage, totalPages, setPage }) => {
@@ -127,8 +128,8 @@ const FormAnnouncements = ({ data }) => {
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-body-sm font-black text-content truncate">
-                              {emp.name}
+                            <p className="text-body-sm font-black text-content truncate" title={emp.name}>
+                              {shortEmployeeName(emp)}
                             </p>
                             <p className="text-micro text-content-3 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
                           </div>
@@ -181,8 +182,8 @@ const FormAnnouncements = ({ data }) => {
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                            <p className="text-body-sm font-bold text-content-2 truncate transition-colors group-hover:text-content">
-                              {emp.name}
+                            <p className="text-body-sm font-bold text-content-2 truncate transition-colors group-hover:text-content" title={emp.name}>
+                              {shortEmployeeName(emp)}
                             </p>
                             <p className="text-micro text-content-2 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
                           </div>

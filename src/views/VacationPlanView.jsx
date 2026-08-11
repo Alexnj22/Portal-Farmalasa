@@ -22,6 +22,7 @@ import PeriodStepper from '../components/common/PeriodStepper';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import { smartFilter } from '../utils/searchUtils';
 import PortalTextarea from '../components/common/PortalTextarea';
+import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -258,10 +259,10 @@ const GanttChart = ({ plans, year }) => {
                                         <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                             {(emp?.photo || emp?.photo_url)
                                                 ? <img src={emp?.photo || emp?.photo_url} alt={emp?.name} className="w-full h-full object-cover" />
-                                                : (emp?.name || '?').charAt(0).toUpperCase()
+                                                : employeeInitials(emp)
                                             }
                                         </div>
-                                        <span className="text-label font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors">{emp?.name || 'Empleado'}</span>
+                                        <span className="text-label font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors" title={emp?.name}>{shortEmployeeName(emp)}</span>
                                     </div>
                                     <div className="flex-1 h-7 bg-surface-card border border-divider rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}
@@ -983,10 +984,10 @@ const VacationPlanView = () => {
                                                                     <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                                         {p.employee?.photo
                                                                             ? <img src={p.employee.photo} alt={p.employee.name} className="w-full h-full object-cover" />
-                                                                            : (p.employee?.name || '?').charAt(0).toUpperCase()
+                                                                            : employeeInitials(p.employee)
                                                                         }
                                                                     </div>
-                                                                    <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee?.name || '—'}</p>
+                                                                    <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee ? shortEmployeeName(p.employee) : '—'}</p>
                                                                     {p.metadata?.original_start_date && (
                                                                         <Badge variant="warning" size="sm" icon={Pencil} className="group/badge relative">
                                                                             Editado
@@ -1063,11 +1064,11 @@ const VacationPlanView = () => {
                                                         <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                             {emp?.photo_url
                                                                 ? <img src={emp.photo || emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
-                                                                : (emp?.name || '?').charAt(0).toUpperCase()
+                                                                : employeeInitials(emp)
                                                             }
                                                         </div>
                                                         <div>
-                                                            <p className="text-body-sm font-black text-content">{emp?.name || 'Empleado'}</p>
+                                                            <p className="text-body-sm font-black text-content">{shortEmployeeName(emp)}</p>
                                                             <p className="text-caption text-content-3 font-medium">
                                                                 Solicita: <strong>{fmtShort(meta.requested_start)}</strong>
                                                                 <ArrowRight size={10} className="inline mx-1" strokeWidth={2.5} />

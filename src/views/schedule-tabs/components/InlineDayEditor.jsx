@@ -9,6 +9,7 @@ import TimePicker12 from '../../../components/common/TimePicker12';
 import { useStaffStore } from '../../../store/staffStore'; 
 import { timeToMins, formatHourAMPM } from '../../../utils/scheduleHelpers';
 import { clickable } from '../../../utils/clickable';
+import { shortEmployeeName } from '../../../utils/nameUtils';
 
 // Helper para convertir 24h string ("16:00") a 12h string ("4:00 pm")
 const formatTime12hStr = (time24) => {
@@ -323,7 +324,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                 : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}
                         </div>
                         <div className="min-w-0">
-                            <p className="text-body font-black text-content truncate leading-tight">{employee?.name || '—'}</p>
+                            <p className="text-body font-black text-content truncate leading-tight" title={employee?.name}>{shortEmployeeName(employee)}</p>
                             <p className="text-caption font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
                                 {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })}{' '}
                                 <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>

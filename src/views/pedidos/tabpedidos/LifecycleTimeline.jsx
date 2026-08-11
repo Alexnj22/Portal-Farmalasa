@@ -4,6 +4,7 @@
 import React from 'react';
 import { UserCircle2 } from 'lucide-react';
 import { fmtMin, elapsed } from './helpers';
+import { shortEmployeeName } from '../../../utils/nameUtils';
 
 function fmtHM(iso) {
     if (!iso) return '';
@@ -26,7 +27,7 @@ const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, 
 function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     const mins     = pause ? elapsed(pause.pausado_at, pause.reanudado_at ?? undefined) : null;
     const isActive = isPaused && !pause?.reanudado_at;
-    const empName  = (id) => { const e = empMap.get(id); return e ? `${e.first_names} ${e.last_names}`.trim() : null; };
+    const empName  = (id) => { const e = empMap.get(id); return e ? shortEmployeeName(e) : null; };
     return (
         <div className="group/pb relative">
             {/* §11 — el parpadeo de "en pausa" es un `@keyframes`, no una
@@ -220,7 +221,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-surface-card shadow-md shrink-0" alt="" />
                                         : <span className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-content-3" /></span>
                                     }
-                                    <span className="text-micro text-content-2 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
+                                    <span className="text-micro text-content-2 leading-tight font-medium text-center">{shortEmployeeName(node.emp)}</span>
                                 </div>
                             )}
                             {/* Apoyo avatar stack */}
@@ -228,8 +229,8 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                 <div className="flex justify-center mt-0.5" style={{ paddingLeft: node.apoyo.length > 1 ? 6 : 0 }}>
                                     {node.apoyo.slice(0, 3).map((a, i) => (
                                         a.photo_url
-                                            ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-surface-card shadow-sm shrink-0 relative" alt="" />
-                                            : <span key={a.id} role="img" title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-surface-card flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
+                                            ? <img key={a.id} src={a.photo_url} title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-surface-card shadow-sm shrink-0 relative" alt="" />
+                                            : <span key={a.id} role="img" title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-surface-card flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
                                     ))}
                                 </div>
                             )}

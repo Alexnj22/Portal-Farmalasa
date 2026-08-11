@@ -1189,7 +1189,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const ticket       = r.count > 0 ? r.total / r.count : 0;
                     const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
-                    const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
+                    const displayName  = r.specialName || (r.emp ? shortEmployeeName(r.emp) : r.cod_vendedor);
                     const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider';
                     const expandBorder = 'border-chart-1/30';
                     const cardNormal   = 'bg-surface-card border-border-card';
@@ -2376,7 +2376,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                 {paginatedDrill.map((line, li) => {
                                                                                     const emp        = employees?.find(e => e.code === line.cod_vendedor);
                                                                                     const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
-                                                                                    const empShort   = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
+                                                                                    const empShort   = emp ? shortEmployeeName(emp) : empName;
                                                                                     const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
                                                                                     const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-surface-card-hover text-content-3';
                                                                                     const docVariante = VARIANTE_DOC[line.tipo_documento] || 'neutral';

@@ -6,6 +6,7 @@ import LiquidAvatar from '../common/LiquidAvatar';
 import { useStaffStore } from '../../store/staffStore';
 import { formatDate } from '../../utils/helpers';
 import PortalTextarea from '../common/PortalTextarea';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const FormVacationRecall = ({ formData, setFormData }) => {
     const { shifts } = useStaffStore();
@@ -52,10 +53,10 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             {emp && (
                 <div data-surface="card" className="p-4 flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
-                        <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-full h-full" />
+                        <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={shortEmployeeName(emp)} className="w-full h-full" />
                     </div>
                     <div>
-                        <p className="text-body font-black text-content">{emp.name}</p>
+                        <p className="text-body font-black text-content">{shortEmployeeName(emp)}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Palmtree size={10} className="text-success" strokeWidth={2.5} />
                             <span className="text-caption text-success-text font-bold">

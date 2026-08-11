@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle, Building2, Globe, CalendarDays, MapPin } from 'lucide-react';
 import { clickable } from '../../utils/clickable';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
@@ -156,7 +157,7 @@ const hasInjections = legal.injections === true;
                                         {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-body-lg font-black text-content truncate leading-tight">{emp.name}</h4>
+                                        <h4 className="text-body-lg font-black text-content truncate leading-tight">{shortEmployeeName(emp)}</h4>
                                         <span className="text-caption font-bold uppercase tracking-widest text-content-3 mt-1 block truncate">{slot.roleName}</span>
                                     </div>
                                 </div>
@@ -164,7 +165,7 @@ const hasInjections = legal.injections === true;
                                 {/* 🚨 Panel Deslizante Liquid Glass */}
                                 <div data-cobertura className="absolute inset-0 border-t border-border-card p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-[var(--dur-lento)] ease-[var(--ease-spring)] shadow-[var(--shadow-sticky-t)]">
                                     <div className="flex justify-between items-center mb-2 border-b border-divider pb-2">
-                                        <span className="text-content font-black text-body-sm truncate">{emp.name}</span>
+                                        <span className="text-content font-black text-body-sm truncate">{shortEmployeeName(emp)}</span>
                                         <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center shadow-md">
                                             <ArrowUpRight size={12} className="text-white shrink-0" strokeWidth={3} />
                                         </div>
@@ -212,7 +213,7 @@ const hasInjections = legal.injections === true;
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-label font-bold text-content-2 leading-tight group-hover:text-brand-text transition-colors whitespace-normal truncate">{emp.name}</h4>
+                                    <h4 className="text-label font-bold text-content-2 leading-tight group-hover:text-brand-text transition-colors whitespace-normal truncate">{shortEmployeeName(emp)}</h4>
                                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
                                 </div>
                             </div>

@@ -10,6 +10,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import Button from '../common/Button';
 import SearchInput from '../common/SearchInput';
 import { clickable } from '../../utils/clickable';
+import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 const getTenure = (dateString) => {
     if (!dateString) return 'N/A';
@@ -111,10 +112,10 @@ const FormLeadership = ({ formData, setFormData }) => {
                             >
                                 <div className="flex items-center gap-3">
                                     <div data-surface={isSelected ? undefined : 'card'} className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'text-content-3'}`}>
-                                        {emp.photo ? <img src={webpSignedUrl(emp.photo)} alt="" className="w-full h-full object-cover"/> : emp.name.charAt(0)}
+                                        {emp.photo ? <img src={webpSignedUrl(emp.photo)} alt="" className="w-full h-full object-cover"/> : employeeInitials(emp)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-body font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`}>{emp.name}</p>
+                                        <p className={`text-body font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`} title={emp.name}>{shortEmployeeName(emp)}</p>
                                         <p className="text-micro font-bold text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin puesto'}</p>
                                     </div>
                                     {isSelected && <CheckCircle2 size={18} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
@@ -147,10 +148,10 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <div data-surface="card" className="p-5 relative overflow-hidden">
                             <div className="flex items-center gap-4 relative z-base">
                                 <div className="w-16 h-16 rounded-full border-[3px] border-border-card shadow-md overflow-hidden bg-surface-card-hover shrink-0">
-                                    {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-content-3 font-black text-2xl">{selectedEmp.name.charAt(0)}</div>}
+                                    {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-content-3 font-black text-2xl">{employeeInitials(selectedEmp)}</div>}
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-lg font-black text-content leading-tight">{selectedEmp.name}</h3>
+                                    <h3 className="text-lg font-black text-content leading-tight">{shortEmployeeName(selectedEmp)}</h3>
                                     <div className="flex items-center gap-2 mt-1">
                                         <Badge variant="chart-1" size="sm">{selectedEmp.role || 'Sin Rol'}</Badge>
                                         <span className="text-caption font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
@@ -214,7 +215,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                             <span className="text-label font-black uppercase tracking-widest text-danger">Relevo de Personal</span>
                                         </div>
                                         <p className="text-label font-bold text-danger-text/80 leading-relaxed mb-4">
-                                            <strong className="text-danger-text font-black">{currentAssigneeObj.name}</strong> dejará la jefatura. ¿Qué deseas hacer con su perfil operativo?
+                                            <strong className="text-danger-text font-black">{shortEmployeeName(currentAssigneeObj)}</strong> dejará la jefatura. ¿Qué deseas hacer con su perfil operativo?
                                         </p>
                                         
                                         <div className="space-y-3">

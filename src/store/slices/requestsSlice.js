@@ -575,7 +575,7 @@ export const createRequestsSlice = (set, get) => ({
             // 3. Fetch empleados por IDs
             let empRows = [];
             if (empIds.length > 0) {
-                const { data, error: empErr } = await fetchEmployeesByIds(empIds, 'id, name, code, role_id, branch_id, system_role');
+                const { data, error: empErr } = await fetchEmployeesByIds(empIds, 'id, name, first_names, last_names, code, role_id, branch_id, system_role');
                 if (empErr) console.error('fetchRequests: fetch employees failed:', empErr.message);
                 empRows = data || [];
             }
@@ -588,7 +588,7 @@ export const createRequestsSlice = (set, get) => ({
                 (requests || []).map(r => r.approver_id).filter(id => id && !empMap[id])
             )];
             if (missingIds.length > 0) {
-                const { data: extra, error: extraErr } = await fetchEmployeesByIds(missingIds, 'id, name, code, role_id, branch_id, system_role');
+                const { data: extra, error: extraErr } = await fetchEmployeesByIds(missingIds, 'id, name, first_names, last_names, code, role_id, branch_id, system_role');
                 if (extraErr) console.error('fetchRequests: fetch missing approvers failed:', extraErr.message);
                 (extra || []).forEach(e => { empMap[e.id] = e; });
             }

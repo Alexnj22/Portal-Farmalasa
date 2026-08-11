@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2, TimerReset } from 'lucide-react';
+import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 // 🚨 MAPA DE TEMAS LIQUIDGLASS DARK (Glows, Bordes e Íconos)
 const THEME_MAP = {
@@ -90,7 +91,7 @@ export default function FeedbackOverlay({
                     />
                   ) : (
                     <span className="text-6xl md:text-7xl font-bold text-white/50 drop-shadow-md">
-                      {employee?.name?.charAt(0) || '?'}
+                      {employeeInitials(employee)}
                     </span>
                   )}
                 </div>
@@ -98,7 +99,7 @@ export default function FeedbackOverlay({
                 {/* Nombre: Píldora encrustada */}
                 <div className="absolute -bottom-4 z-content px-6 py-2.5 rounded-full bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[var(--shadow-glass-3)] max-w-[120%] w-max flex items-center justify-center">
                   <h2 className="text-caption sm:text-label md:text-xs font-black text-white uppercase tracking-[0.2em] drop-shadow-md truncate">
-                    {employee?.name}
+                    {shortEmployeeName(employee)}
                   </h2>
                 </div>
               </div>

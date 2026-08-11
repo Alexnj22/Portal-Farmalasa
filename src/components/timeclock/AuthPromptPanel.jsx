@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import Button from '../common/Button';
 import { ShieldAlert, XCircle, SkipForward } from 'lucide-react';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
 
@@ -32,7 +33,7 @@ const AuthPromptPanel = ({
   if (!authPrompt) return null;
 
   const promptType = authPrompt.type;
-  const employeeName = authPrompt.employee?.name || 'Empleado';
+  const employeeName = shortEmployeeName(authPrompt.employee);
   const shiftEnd = authPrompt.customConfig?.shiftEndD;
   const expectedIn = authPrompt.customConfig?.expectedIn;
   const empRole = String(authPrompt.employee?.role || '').toUpperCase();

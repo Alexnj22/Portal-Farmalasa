@@ -9,6 +9,7 @@ import Checkbox from '../../components/common/Checkbox';
 import { formatMoney } from '../../utils/formatNumber';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento } from './movimientoTexto';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 // El detalle de una solicitud, en UN solo lugar.
 //
@@ -445,11 +446,11 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 {(meta.myShift || meta.targetShift) && (
                     <div className="grid grid-cols-2 gap-2">
                         <Caja>
-                            <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
+                            <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5 truncate" title={req.employee?.name}>{shortEmployeeName(req.employee)}</p>
                             <p className="text-label font-black text-content-2">{meta.myShift || '—'}</p>
                         </Caja>
                         <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl p-2.5">
-                            <p className="text-micro font-black text-chart-3-text uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
+                            <p className="text-micro font-black text-chart-3-text uppercase tracking-widest mb-0.5 truncate" title={meta.targetEmployeeName}>{shortEmployeeName(meta.targetEmployeeName)}</p>
                             <p className="text-label font-black text-content-2">{meta.targetShift || '—'}</p>
                         </div>
                     </div>
@@ -663,7 +664,7 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
 
     const etiquetaAprobador = (ap) => {
         const emp = ap.approverId ? employeesById?.get(String(ap.approverId)) : null;
-        return emp ? `${emp.name}${emp.role ? ` · ${emp.role}` : ''}` : `Nivel ${ap.level}`;
+        return emp ? `${shortEmployeeName(emp)}${emp.role ? ` · ${emp.role}` : ''}` : `Nivel ${ap.level}`;
     };
 
     return (

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.556.0 — Un nombre no puede empujar al botón de salir
+
+En el sidebar, quien tiene dos nombres y dos apellidos empujaba el botón de
+cerrar sesión fuera de su fila. Medido: con «MARIA FERNANDA HERNANDEZ
+CASTELLANOS», el bloque del nombre se estiraba a 301px y el botón quedaba
+**167px fuera** del panel. El `truncate` que ya estaba escrito nunca actuaba,
+porque al contenedor le faltaba `min-w-0`: un flex item no se achica por debajo
+del ancho natural de su contenido, así que el texto no tenía por qué recortarse.
+Con `min-w-0` el nombre trunca y el botón vuelve a 0px de desborde — verificado
+en el navegador con el control al lado (mismo nombre, sólo esa clase de
+diferencia).
+
+**Y de paso la regla que pediste: en todo el portal se ve primer nombre +
+primer apellido.** Estaba sólo en tres vistas; ahora es el canónico
+`shortEmployeeName` en **~45 archivos**: solicitudes (tarjeta, detalle,
+aprobadores, «Mis Solicitudes»), pedidos (chips de apoyo, línea de tiempo,
+diferencias, recepción, rutas), asistencia, vacaciones, planilla, horarios,
+reloj marcador, encuestas, anuncios, conteo, tablero y el sidebar. Se agregó
+`employeeInitials` para los avatares sin foto, que sacaban la inicial del
+nombre completo.
+
+**Dos excepciones, a propósito.** El módulo de **Personal** —el listado y la
+ficha— muestra el nombre completo: es el listado maestro donde se identifica a
+la persona. Y todo lo que SALE del portal —CSV de asistencia y de Personal,
+planilla del banco, boleta impresa— conserva el nombre legal completo.
+
+El corte sale de `first_names`/`last_names`, que son columnas separadas.
+Partir el nombre concatenado es adivinar dónde estaba la frontera: con tres
+palabras «ANA PEREZ LOPEZ» puede ser un nombre y dos apellidos o dos y uno, y en
+producción hay empleados de las dos formas. Por eso se agregaron esas dos
+columnas a las consultas que sólo traían `name` (solicitudes, apoyo de pedidos,
+búsqueda por carné) en vez de confiar en el corte.
+
 ## v2.555.1 — Alcance «sólo míos» y Personales sólo para Talento Humano
 
 Primer tramo de la consolidación en **dos vistas** que pediste.

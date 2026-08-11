@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Button from '../common/Button';
 import { Clock, SkipForward, CheckCircle2 } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
     const [start, setStart] = useState('08:00');
@@ -24,7 +25,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                         Declara tu Horario
                     </h1>
                     <p className="text-micro sm:text-xs font-bold uppercase tracking-[0.25em] text-warning/80">
-                        Turno Extra — {employee?.name || 'Empleado'}
+                        Turno Extra — {shortEmployeeName(employee)}
                     </p>
                     <p className="text-white/40 text-caption sm:text-xs leading-relaxed mt-2.5 px-2">
                         Indica el horario que trabajarás hoy. Talento Humano lo revisará y confirmará.

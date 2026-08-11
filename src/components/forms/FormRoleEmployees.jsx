@@ -2,6 +2,7 @@ import React from 'react';
 import { webpSignedUrl } from '../../utils/storageFiles';
 import { User, ShieldCheck } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore'; // ✅ Corregido para usar Zustand
+import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 const FormRoleEmployees = ({ formData }) => {
     const { employees } = useStaff();
@@ -45,12 +46,12 @@ const FormRoleEmployees = ({ formData }) => {
                                     {emp.photo ? (
                                         <img src={webpSignedUrl(emp.photo)} className="w-full h-full object-cover" alt="Perfil" />
                                     ) : (
-                                        emp.name.charAt(0)
+                                        employeeInitials(emp)
                                     )}
                                 </div>
                                 <div>
                                     <p className="font-bold text-content text-body-lg md:text-subtitle leading-tight group-hover:text-brand-text transition-colors">
-                                        {emp.name}
+                                        {shortEmployeeName(emp)}
                                     </p>
                                     <p className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">
                                         {emp.code || 'SIN CÓDIGO'}

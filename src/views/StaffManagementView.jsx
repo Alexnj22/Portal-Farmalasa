@@ -208,7 +208,12 @@ const getBranchWeight = (branchStr) => {
 const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onRehireEmployee, canEdit = false, staggerIndex = 0 }) => {
   const computedStatus = getEffectiveStatus(emp);
   const statusInfo = getStatusInfo(computedStatus);
+  // Personal es la EXCEPCIÓN a la regla del nombre corto: acá el nombre completo
+  // es el dato —es el listado maestro donde se identifica a la persona—. El corto
+  // (primer nombre + primer apellido) manda en el resto del portal y acá queda
+  // sólo para las iniciales del avatar.
   const shortName = shortEmployeeName(emp);
+  const fullName = emp.name || shortName;
   const isAbsent = ['INACTIVO', 'Inactivo', 'En Vacaciones', 'Incapacitado', 'Maternidad', 'Liquidado'].includes(computedStatus);
 
   // CEREBRO DE CUMPLEAÑOS PRO — lenguaje relativo y natural (Mañana / En N días),
@@ -341,8 +346,8 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             )}
 
             <div className="flex items-center gap-1.5 relative z-base">
-              <p className="font-black text-content text-body-sm md:text-body truncate transition-colors group-hover:text-brand-text tracking-tight" title={emp.name}>
-                {shortName}
+              <p className="font-black text-content text-body-sm md:text-body truncate transition-colors group-hover:text-brand-text tracking-tight" title={fullName}>
+                {fullName}
               </p>
               {isPendingData(emp) && <PendingBadge emp={emp} />}
 

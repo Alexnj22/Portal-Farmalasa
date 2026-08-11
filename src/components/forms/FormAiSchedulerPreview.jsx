@@ -8,6 +8,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import AlertModal from '../common/AlertModal';
 import Badge from '../common/Badge';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 const AI_LOADING_PHRASES = [
     "Analizando horarios de apertura y cierre...",
@@ -290,7 +291,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                             return (
                                 <tr key={emp.id} className="hover:bg-surface-card-hover transition-colors group/row">
                                     <td className="p-3 border-r border-divider bg-surface-card sticky left-0 z-base shadow-[var(--shadow-sticky-r)]">
-                                        <p className="text-body-sm font-black text-content truncate">{emp.name}</p>
+                                        <p className="text-body-sm font-black text-content truncate" title={emp.name}>{shortEmployeeName(emp)}</p>
                                         <p className="text-micro font-bold text-content-3 uppercase truncate">{emp.role}</p>
                                     </td>
                                     <td className="p-2 text-center align-middle border-r border-divider">

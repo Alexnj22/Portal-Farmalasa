@@ -7,6 +7,7 @@ import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
+import { shortEmployeeName } from '../../../utils/nameUtils';
 
 const ERROR_TIPO_LABEL = {
     faltante:     { label: 'Faltante',        variante: 'danger'           },
@@ -129,7 +130,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             <X size={10} className="text-danger mt-0.5 shrink-0" />
                                             <div>
                                                 <span className="font-semibold text-danger-text">Rechazado</span>
-                                                {rechazadoEmp && <span className="text-danger"> por {rechazadoEmp.name?.split(' ')[0]}</span>}
+                                                {rechazadoEmp && <span className="text-danger"> por {shortEmployeeName(rechazadoEmp)}</span>}
                                                 {item.nota_rechazo && <p className="text-danger italic">{item.nota_rechazo}</p>}
                                             </div>
                                         </div>
@@ -166,7 +167,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                             : <UserCircle2 size={14} className="text-chart-3-text shrink-0 mt-0.5" />}
                                         <div className="flex-1">
                                             <span className="font-semibold text-chart-3-text">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
-                                            {resueltoEmp && <span className="text-chart-3-text"> — {resueltoEmp.name?.split(' ')[0]}</span>}
+                                            {resueltoEmp && <span className="text-chart-3-text"> — {shortEmployeeName(resueltoEmp)}</span>}
                                             {item.resolucion_nota && <p className="text-chart-3-text italic">{item.resolucion_nota}</p>}
                                         </div>
                                     </div>
@@ -204,7 +205,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                 <div className="text-caption bg-danger/10 rounded-lg px-2.5 py-1.5 border border-danger/30 space-y-0.5">
                                     <div>
                                         <span className="font-semibold text-danger-text">Rechazada</span>
-                                        {rechazadoEmp && <span className="text-danger"> por {rechazadoEmp.name?.split(' ')[0]}</span>}
+                                        {rechazadoEmp && <span className="text-danger"> por {shortEmployeeName(rechazadoEmp)}</span>}
                                     </div>
                                     {item.nota_rechazo && <p className="text-danger italic">{item.nota_rechazo}</p>}
                                     <p className="text-content-3">Esperando nueva propuesta de bodega…</p>
@@ -216,7 +217,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                 <div className="flex flex-wrap items-center gap-1.5 text-caption text-success-text">
                                     <CheckCircle2 size={11} className="text-success shrink-0" />
                                     <strong>{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</strong>
-                                    {confirmadoEmp && <span className="text-success">— {confirmadoEmp.name?.split(' ')[0]}</span>}
+                                    {confirmadoEmp && <span className="text-success">— {shortEmployeeName(confirmadoEmp)}</span>}
                                     {item.resolucion_nota && <span className="text-success italic">· {item.resolucion_nota}</span>}
                                 </div>
                             )}
@@ -251,7 +252,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                     <CheckCircle2 size={10} className="text-success mt-0.5 shrink-0" />
                                     <div>
                                         <span className="font-semibold text-success-text">Bodega marcó la corrección</span>
-                                        {corrBodegaEmp && <span className="text-success"> — {corrBodegaEmp.name?.split(' ')[0]}</span>}
+                                        {corrBodegaEmp && <span className="text-success"> — {shortEmployeeName(corrBodegaEmp)}</span>}
                                         {row.corregido_bodega_nota && <p className="text-success italic">{row.corregido_bodega_nota}</p>}
                                     </div>
                                 </div>
@@ -264,7 +265,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                         <div className="flex flex-wrap items-center gap-1.5 text-caption text-success-text">
                             <CheckCircle2 size={11} className="text-success shrink-0" />
                             <strong>Corrección confirmada</strong>
-                            {corrConfEmp && <span className="text-success">— {corrConfEmp.name?.split(' ')[0]}</span>}
+                            {corrConfEmp && <span className="text-success">— {shortEmployeeName(corrConfEmp)}</span>}
                         </div>
                     )}
                 </div>
@@ -281,7 +282,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                             <div key={ev.id} className="flex items-start gap-2 text-caption text-content-2">
                                 <span className="text-content-3 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
                                 <span>
-                                    <strong className="text-content-2">{emp?.name?.split(' ')[0] ?? '—'}</strong>{' '}
+                                    <strong className="text-content-2">{emp ? shortEmployeeName(emp) : '—'}</strong>{' '}
                                     {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
                                     {ev.resolucion_tipo && <em className="text-content-3"> ({RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo})</em>}
                                     {itemName && <span className="text-content-3"> · {itemName}</span>}

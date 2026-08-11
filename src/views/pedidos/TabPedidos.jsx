@@ -20,6 +20,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { notifyBranch } from '../../utils/notify';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import RecepcionModal from './RecepcionModal';
@@ -370,7 +371,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                         ? <img src={a.photo_url} alt={a.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
                                                         : <span className="w-5 h-5 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={10} className="text-content-3" /></span>
                                                     }
-                                                    <span className="text-label font-semibold text-content-2 whitespace-nowrap">{a.name}</span>
+                                                    <span className="text-label font-semibold text-content-2 whitespace-nowrap">{shortEmployeeName(a)}</span>
                                                 </span>
                                             ))}
                                         </div>
@@ -595,7 +596,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 }
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
-                                                <span className="text-label text-content-3">{ruta.conductor_nombre}</span>
+                                                <span className="text-label text-content-3">{shortEmployeeName(conductorEmp || ruta.conductor_nombre)}</span>
                                                 <span className="text-caption text-content-3 tabular-nums">{entregadas}/{total} entregas</span>
                                             </div>
                                         </div>

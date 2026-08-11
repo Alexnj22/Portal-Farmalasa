@@ -4,6 +4,7 @@ import { CalendarClock, History, X, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import TimePicker12 from '../../components/common/TimePicker12';
+import { shortEmployeeName } from '../../utils/nameUtils';
 
 function fmtEntradaParts(iso) {
     if (!iso) return { date: '', time: '' };
@@ -85,7 +86,10 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                         <div className="space-y-1.5">
                             {[...historial].reverse().map((h, i) => {
                                 const emp = empMap.get(h.por);
-                                const nombre = h.nombre ?? emp?.name ?? '—';
+                                // La ficha del store manda sobre el nombre guardado en el
+                                // historial: es la única que trae el corte exacto de
+                                // nombres/apellidos.
+                                const nombre = emp ? shortEmployeeName(emp) : (h.nombre ? shortEmployeeName(h.nombre) : '—');
                                 return (
                                     <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-xl bg-surface-card-hover/80 border border-divider">
                                         <div className="flex-1 min-w-0">

@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.567.4 — el embed devuelve objeto, no arreglo
+
+Dos hallazgos que sólo aparecieron generando un pedido **grande y real** desde
+el portal, en un navegador de verdad (Playwright contra el build de producción).
+El de Salud 5 no los mostró: salió con una sola hoja y sus Electrolit sin
+existencia.
+
+**1. `dispatch_rules?.[0]?.dispatch_label` nunca funcionó.**
+`dispatch_rules.erp_product_id` es UNIQUE, así que PostgREST trata el embed como
+uno-a-uno y devuelve un **objeto**, no un arreglo. Indexar `[0]` sobre un objeto
+da `undefined`: medido sobre el pedido #100, **0 de 378 filas** derivaron bien
+`tiene_dispatch_label`.
+
+La consecuencia no era cosmética. `isAdicional()` nunca reconoció las cajas de
+Electrolit, así que se colaban dentro de las hojas numeradas en vez de ir al
+bloque aparte del PDF — o sea que **la corrección de las hojas de v2.557.5
+estaba a medias**: la mitad de `caja_especial` sí funcionaba, la de la etiqueta
+no. El bug estaba en `usePedidosData` desde que existe la recepción, y yo lo
+copié al arreglar la captura. Ahora hay un solo `tieneEtiquetaDeDespacho()` en
+la capa de datos, que acepta las dos formas por si algún día se cae la
+restricción única.
+
+Verificado regenerando el mismo pedido de Salud 3: de `confiables: false` con
+1 adicional metido en la hoja 3, a **`confiables: true`** con 11 hojas y 0
+adicionales adentro.
+
+**2. «Sin hoja» son dos cosas distintas, y confundirlas dejaba producto sin
+trasladar.** El PDF imprime las hojas numeradas y, aparte, CAJAS ADICIONALES.
+Un producto de ese segundo bloque no pertenece a ninguna hoja **y sin embargo sí
+se despacha**. El planificador lo trataba como «no se levantó de bodega» y lo
+cerraba como no enviado: ELECTROLIT UVA, 12 packs, habría quedado sin trasladar
+y el pedido habría dicho que no se envió. Ahora se planifica igual, con el aviso
+de que viaja en las cajas adicionales, y su clave lleva `-HA-` en vez de `-H0-`.
+
+La definición de «adicional» pasa a vivir en un solo lugar
+(`es_despacho_adicional`), y es la misma que `isAdicional()` del impresor.
+
+Medido antes/después sobre el pedido #101: de 372 planificadas + 1 omitida
+(el Electrolit perdido) a **373 planificadas y 0 omitidas**.
+
+Migración `20260811215616`.
+
+_(pendiente de redactar)_
+
 ## v2.567.3 — Los PDF vuelven a verse: la CSP no permitía enmarcar Storage
 
 Reportado por el usuario: los PDF de compras no abrían. La consola lo decía

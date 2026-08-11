@@ -21,6 +21,7 @@ import Contador from '../../components/common/Contador';
 import {
     fetchActiveEmployeesBasic, fetchPedidoNumero, fetchPedidoIdsSinceExcluding,
     fetchPedidoSucursalStatusForPedidos, fetchPedidoItemsForPrintCapture, updatePedidoSucursalStatus,
+    tieneEtiquetaDeDespacho,
 } from '../../data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
@@ -231,7 +232,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         // hojas guardadas dejan de coincidir con el PDF que se imprimió.
                         const itemsConLabel = rawItems.map(r => ({
                             ...r,
-                            tiene_dispatch_label: !!(r.products?.dispatch_rules?.[0]?.dispatch_label),
+                            tiene_dispatch_label: tieneEtiquetaDeDespacho(r),
                         }));
                         const groups = await getExactPageGroups(sid, itemsConLabel);
                         if (groups.length) {

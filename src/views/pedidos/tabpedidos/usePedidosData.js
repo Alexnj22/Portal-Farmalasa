@@ -20,7 +20,7 @@ import {
     fetchPedidoItemsAll, fetchPedidoItemEventosAll, fetchPedidoItemsPendientesIds,
     fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
-    confirmarEnvioPedido, despacharTrasladoPedido,
+    confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho,
 } from '../../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 
@@ -367,7 +367,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 .filter(pp => pp.activo !== false)
                 .map(pp => ({ factor: pp.factor, tipo: pp.presentaciones?.tipo }))
                 .filter(p => p.tipo && p.factor >= 1),
-            tiene_dispatch_label: !!(row.products?.dispatch_rules?.[0]?.dispatch_label),
+            tiene_dispatch_label: tieneEtiquetaDeDespacho(row),
         }));
         setItems(prev => ({ ...prev, [key]: resolved }));
         setEventosMap(prev => ({ ...prev, [key]: allEvRows }));

@@ -203,6 +203,29 @@ export function updatePedidoItemsFaltaCaja(ids, value) {
     return supabase.from('pedido_items').update({ falta_caja: value }).in('id', ids);
 }
 
+/**
+ * Si el producto lleva etiqueta de despacho propia (la «CAJA» de Electrolit).
+ *
+ * Vive acá y no repetido en cada vista porque la forma del dato **no es la que
+ * parece**: `dispatch_rules.erp_product_id` es UNIQUE, así que PostgREST trata
+ * el embed como uno-a-uno y devuelve un OBJETO, no un arreglo. El código hacía
+ * `dispatch_rules?.[0]?.dispatch_label` —indexar un objeto— y daba `undefined`
+ * siempre: medido sobre un pedido real, **0 de 378 filas** lo derivaron bien.
+ *
+ * La consecuencia no era cosmética: `isAdicional()` nunca reconocía las cajas
+ * de Electrolit, así que se colaban dentro de las hojas numeradas en vez de ir
+ * al bloque aparte del PDF. Lo destapó generar un pedido de Salud 3 con 11
+ * hojas — el de Salud 5 no lo mostró porque sus Electrolit no tenían existencia.
+ *
+ * Acepta las dos formas a propósito: si algún día se cae la restricción única,
+ * PostgREST pasaría a devolver arreglo y esto seguiría funcionando.
+ */
+export function tieneEtiquetaDeDespacho(row) {
+    const reglas = row?.products?.dispatch_rules;
+    const label = Array.isArray(reglas) ? reglas[0]?.dispatch_label : reglas?.dispatch_label;
+    return !!label;
+}
+
 // ── Confirmación de lo que sale, y su verificación contra el sistema ────────
 //
 // Al finalizar hay que decir qué se envía de verdad: puede salir menos que lo

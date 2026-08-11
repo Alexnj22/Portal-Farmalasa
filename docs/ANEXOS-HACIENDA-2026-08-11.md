@@ -351,19 +351,102 @@ Otros, para tener el mapa completo:
 
 ---
 
-## 6. Lo que queda por resolver
+## 6. Qué falta exactamente, y cómo se arregla con lo que ya hay
 
-1. **Pedirle al contador un anexo real ya subido** (F-07 de un mes reciente, los
-   tres archivos) y cotejarlo columna por columna contra §2. Eso decide si los 7
-   hallazgos de §4 son reales o si el contador ya los corrige a mano.
-2. **Decidir las columnas de Renta.** Para las ventas son constantes (`1` y `3`).
-   Para las compras hay que clasificar por proveedor: costo vs gasto y sector.
-   Es un campo nuevo en `proveedores_maestro`, no un cálculo.
-3. **Confirmar si ya se presentan el F-983 y el F-987.** Si el umbral se cruza y
-   no se están presentando, es una omisión con multa, no un tema de sistema.
-4. **El F-971 no es alcanzable sin contabilidad formal.** Si el interés es ése,
-   el orden está en `CONTABILIDAD-ALCANCE-2026-08-01.md` §5: primero el costo
-   por línea vendida, sin eso no hay estado de resultados.
+Medido contra prod el 2026-08-11. Separado por **qué tipo de problema es**,
+porque el costo de cada grupo es distinto en un orden de magnitud.
+
+### Grupo A — sólo hay que reordenar columnas (no falta ningún dato)
+
+Los tres archivos de ventas. Todo el dato existe y está bien; el archivo está
+armado con el layout viejo.
+
+| Qué | Arreglo |
+|---|---|
+| Anexo 1: faltan `R` y `S` | son **constantes** para esta farmacia: `1` (gravada) y `3` (actividades comerciales) |
+| Anexo 2: faltan `U` y `V` | las mismas dos constantes |
+| Anexo 1 col. `G` (control interno) lleva el `erp_invoice_id` | debe ir **vacío** en DTE |
+| Anexo 1: `H` lleva el NRC y `Q` el NIT | `Q` es el **DUI** (9 caracteres, sólo personas naturales) y es **excluyente** con `H`. `customers` ya tiene las tres columnas: de los 313 CCF de 2026, 312 tienen NRC y NIT, y 141 tienen DUI |
+| Anexo 2: `D`,`E`,`F`,`G` llevan número de control, sello e ids internos | el manual pide literalmente `N/A` en las cuatro |
+| Sobra una columna en cada archivo de ventas | (`'0'` en contribuyentes, `'0.0000'` en consumidor) |
+| Anulados: código de generación sin guiones (32) | el manual pide **36**, o sea **con** guiones |
+
+**Todo esto es una sola migración de `generar_csv_libro`.** Sin datos nuevos, sin
+pantalla, sin tocar el sync. Es el arreglo más barato y el que más cierra.
+
+### Grupo B — falta el dato, y una parte se recupera de lo que ya tenemos
+
+El anexo 3 (compras). Sobre los **2,714 recibos de 2026**:
+
+1. **Tipo de documento (columna C, obligatoria): sólo 1,133 de 2,714 lo tienen**
+   — el 58% viene NULL desde el origen. `purchase_dte_documents.tipo_dte` sí lo
+   tiene, con los seis tipos reales: `03` (1,237), `09` (210), `05` (142), `01`
+   (20), `06` (4), `07` (1). **Se recupera cruzando contra esa tabla.**
+2. **El número de documento viene TRUNCADO a 20 caracteres.** El anexo pide el
+   código de generación completo (32 sin guiones); lo que hay es
+   `C7980C1F-7494-4A20-B` — un UUID cortado a la mitad. La columna en la base es
+   `text`, o sea que **la mutilación viene del sistema de origen**, no del
+   portal. Hoy **ninguna** fila del anexo de compras puede identificar su
+   documento. **766 de 1,133 (68%) se recuperan por prefijo** contra
+   `purchase_dte_documents.codigo_generacion` (los DTE que llegan por correo).
+   El resto necesita que el origen mande el campo entero.
+3. **`Q;R;S;T` van fijos en `1;1;2;5`** para toda fila. Correcto para mercadería,
+   equivocado para servicios y gastos. Se resuelve con **columnas nuevas en
+   `proveedores_maestro`** (clasificación costo/gasto, sector, tipo de
+   costo/gasto): son **162 proveedores**, 104 ya con código de actividad para
+   proponer el valor por defecto. Es una tabla chica que se clasifica una vez.
+4. Sobran las dos columnas finales (percepción y sello): son del libro, no del
+   anexo.
+
+### Grupo C — el archivo hay que rehacerlo entero
+
+**Anexo 8 — percepción del 1% que le hacen a la farmacia (casilla 163).** No es
+cosmético: son **540 compras y $3,588.22 en 2026**, dinero que se acredita.
+
+Lo que produce el portal hoy tiene 9 columnas, igual que el anexo, pero **no son
+las mismas**: lleva correlativo y nombre del proveedor (que el anexo no pide), le
+faltan el DUI del agente y el número de anexo, el sello sale vacío y los montos
+van con 4 decimales donde Hacienda toma 2.
+
+El anexo 8 pide: `A` NIT del agente · `B` fecha · `C` tipo (`03`/`05`/`06`/`12`)
+· `D` **sello de recepción** · `E` código de generación sin guiones · `F` monto
+sujeto · `G` percepción · `H` DUI del agente · `I` `8`.
+
+Depende de los mismos dos datos del grupo B: el sello (hoy 791 de 2,714) y el
+código de generación completo.
+
+**Anexo 7 — retención del 1% que le hacen a la farmacia (casilla 162).** Cero
+compras con retención en 2026, pero hay un pendiente abierto de **$48.95 sobre
+ventas** (memoria `project_retencion_iva_ventas_art162`). Si a la farmacia le
+retienen sobre una venta, va acá, con el NIT del **cliente que retuvo** como
+agente. Hoy existe un CSV de retención sobre ventas que no replica ningún archivo
+del origen; hay que ver si ése es el insumo de este anexo.
+
+**Anexo 5 — sujetos excluidos.** Existe `get_libro_sujeto_excluido`, pero el
+endpoint del origen nunca se encontró (9 nombres probados). Preguntar al contador
+si la farmacia compra a sujetos excluidos; si compra, hoy eso no se ve.
+
+### El orden
+
+1. **Pedirle al contador un anexo real ya subido** y cotejarlo contra §2. Media
+   hora, y decide si los grupos A y B son problemas de verdad o si él ya los
+   corrige a mano. **Nada más debería empezar antes de esto.**
+2. **Grupo A**: una migración de `generar_csv_libro`.
+3. **Grupo B.1 y B.2**: recuperar tipo y código de generación desde
+   `purchase_dte_documents` — un backfill del histórico y el mismo cruce en el
+   sync de aquí en adelante. Y **pedirle al proveedor del sistema de origen el
+   número de documento completo**, que es la única solución de fondo del 32%
+   restante.
+4. **Grupo B.3**: clasificar los 162 proveedores.
+5. **Grupo C**: rehacer el anexo 8.
+
+### Aparte, y más grande
+
+- **Confirmar si ya se presentan el F-983 y el F-987.** Si el umbral se cruza y
+  no se están presentando, es una omisión con multa — no es un tema de sistema.
+- **El F-971 no es alcanzable sin contabilidad formal.** El orden está en
+  `CONTABILIDAD-ALCANCE-2026-08-01.md` §5: primero el costo por línea vendida.
+  Sin eso no hay estado de resultados.
 
 ---
 

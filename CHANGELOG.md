@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.562.0 — un traslado por producto: el modelo de datos
+
+Base para la recepción parcial que pidió el usuario: poder confirmar una hoja
+completa de un saque, o un solo producto porque la sucursal lo va a vender.
+
+**Lo que se averiguó del sistema de origen** (leyendo su pantalla de recepción
+y su código, sin escribir nada):
+
+- La columna `Recibido` es **editable** y `Esperado` es de solo lectura, y nada
+  valida que coincidan. Recibir una cantidad distinta ya es nativo.
+- Se pueden **quitar renglones** antes de confirmar; solo viajan los que quedan.
+- Pero un renglón en cero **bloquea todo el envío**: para no recibir algo hay que
+  borrar la fila, no ponerle cero.
+- Un traslado es **binario**: `anulada=0 AND finalizada=0` es su definición de
+  «pendiente». No hay estado intermedio, así que «recibí la mitad y el resto
+  después» no es algo que se le pueda pedir.
+
+**La salida es no necesitarlo.** Si cada producto viaja en su propio traslado,
+recibir uno es recibirlo entero. Confirmar una hoja = recibir sus N traslados;
+confirmar un producto suelto = recibir el suyo.
+
+**Y no entra en una sola corrida.** Medido: ~370 ms por producto (92 ms cargar
+la página del vale —que no se reutiliza—, ~80 ms verificar, ~200 ms escribir).
+900 productos son **333 s** contra el techo duro de **400 s** de una edge
+function en plan Pro, que `EdgeRuntime.waitUntil` **no corre**. Por eso el
+modelo nace pensado para retomarse.
+
+Entra `pedido_traslado_linea`, una fila por producto, con:
+
+- `clave` (`P96-S2-H3-I68179`) que va **dentro del concepto** del traslado y es
+  la llave de idempotencia: si la corrida muere entre que el sistema creó el
+  traslado y que se anotó su id, al retomar se la busca en los conceptos en vez
+  de crear un duplicado. Un traslado duplicado mueve inventario dos veces.
+- Índice único por renglón del pedido: el freno al doble despacho vive en el
+  esquema, no en el código.
+- `hoja`, resuelta desde `pagina_items` y, si todavía no existe, desde `paginas`.
+
+**Un hallazgo que salió de probar el planificador:** hay renglones con cantidad
+asignada que **no aparecen en ninguna hoja del PDF**. Cuando lo asignado es
+menos de una unidad de despacho la conversión lo redondea a cero y el impresor
+lo descarta — DOLACO 10MG, 2 unidades con factor de despacho 10 → `round(2/10)`
+= 0. Nadie los levanta, y se quedan pendientes para siempre; son parte del
+atraso que hubo que cerrar a mano. Ahora se marcan `omitida` y **no se
+trasladan**: crearles un traslado movería inventario que nunca se movió. Son 1 o
+2 por pedido y sucursal.
+
+Verificado con `ROLLBACK` sobre el pedido #96: 476 líneas, 13 hojas —las mismas
+del PDF—, 476 claves únicas de 17 caracteres, 1 omitida.
+
+Migraciones `20260811202447`, `20260811202528`, `20260811202653`.
+
+_(pendiente de redactar)_
+
 ## v2.561.1 — el presupuesto de la funcion estaba sobre el techo del runtime
 
 _(pendiente de redactar)_

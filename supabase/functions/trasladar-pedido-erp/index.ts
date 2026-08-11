@@ -48,8 +48,16 @@ import {
 // `factor`, que es lo que se le descuenta a Bodega. Confundirlos mueve una
 // cantidad distinta de la despachada.
 
+// El techo NO es negociable y NO lo corre `EdgeRuntime.waitUntil`: la
+// documentación de Supabase dice que evita que maten al worker por inactividad,
+// pero el límite de reloj de pared sigue siendo **400 s** en plan Pro (150 s en
+// free). Un presupuesto por encima de eso es una guarda que nunca se dispara:
+// al worker lo matan antes, y el trabajo queda cortado sin que nadie lo anote.
+//
+// 240 s deja un 40% de margen para un día lento del sistema de origen — que los
+// tiene: hay endpoints suyos medidos en 167 s.
 const PRESUPUESTO_FG_MS = 110_000; // respuesta directa: hay que alcanzar a contestar
-const PRESUPUESTO_BG_MS = 540_000; // background: el tope es el del runtime, no el nuestro
+const PRESUPUESTO_BG_MS = 240_000; // background: corto y se retoma, nunca una corrida larga
 
 interface ItemPedido {
   id: number;

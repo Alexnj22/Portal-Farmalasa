@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.561.1 — el presupuesto de la funcion estaba sobre el techo del runtime
+
+_(pendiente de redactar)_
+
 ## v2.561.0 — Los widgets de venta del Inicio pueden hablar en porcentajes
 
 Los dos widgets de venta del Inicio —**Meta del mes** y **Venta por

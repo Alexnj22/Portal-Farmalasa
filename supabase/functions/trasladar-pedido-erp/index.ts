@@ -10,6 +10,7 @@ import {
   sesionEn,
   soloAscii,
   traerFila,
+  RECIBIR,
   TRASLADO,
 } from "../_shared/erp-traslado.ts";
 
@@ -158,6 +159,15 @@ Deno.serve(async (req) => {
     // El simulacro es el valor por omisión a propósito: esta función mueve
     // inventario real, y escribir tiene que ser una decisión explícita.
     const simulacro = cuerpo.simulacro !== false;
+    // 'enviar' saca de bodega; 'recibir' ingresa en la sucursal. Son las dos
+    // mitades que el sistema distingue, y corren en sesiones distintas.
+    const accion = cuerpo.accion === "recibir" ? "recibir" : "enviar";
+    // Qué recibir: una hoja entera, o unos productos sueltos —el que la
+    // sucursal va a vender antes de contar la caja—.
+    const hoja = cuerpo.hoja == null ? null : Number(cuerpo.hoja);
+    const itemIds: number[] = Array.isArray(cuerpo.pedido_item_ids)
+      ? cuerpo.pedido_item_ids.map(Number).filter(Number.isFinite)
+      : [];
     // Y el background también: 450 productos no entran en una respuesta.
     const background = cuerpo.background !== false;
 
@@ -203,6 +213,136 @@ Deno.serve(async (req) => {
     const ubicOrigen = ubicacionDeTrabajo(mapaOrigen);
     if (!ubicOrigen)
       return json({ ok: false, error: "No se conoce la ubicación de trabajo de la bodega." }, 422);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // PASO 2 · RECIBIR — una hoja entera, o un producto suelto
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Acá se ve para qué sirvió mandar un traslado por producto: cada uno se
+    // recibe ENTERO, así que «confirmo la hoja 3» son los N traslados de esa
+    // hoja y «necesito este producto para venderlo» es el suyo y nada más. No
+    // hace falta que el sistema soporte recepción parcial, que no la soporta.
+    //
+    // No lleva fila de corrida: recibir pasa muchas veces por pedido —una por
+    // hoja, o una por producto apurado— y el índice único de `pedido_traslado_erp`
+    // está pensado para lo contrario, un despacho y nada más.
+    if (accion === "recibir") {
+      const ubicDestino = ubicacionDeTrabajo(mapaDestino);
+      if (!ubicDestino)
+        return json({ ok: false, error: `No se conoce la ubicación de la sala que recibe (${sucId}).` }, 422);
+
+      let q = admin.from("pedido_traslado_linea")
+        .select("id, pedido_item_id, erp_product_id, id_traslado, clave, hoja, cantidad")
+        .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+        .eq("estado", "enviada")
+        .not("id_traslado", "is", null)
+        .order("hoja", { ascending: true })
+        .limit(500);
+      if (hoja != null)     q = q.eq("hoja", hoja);
+      if (itemIds.length)   q = q.in("pedido_item_id", itemIds);
+
+      const { data: lineas, error: lineasErr } = await q;
+      if (lineasErr) throw lineasErr;
+      if (!lineas?.length)
+        return json({
+          ok: false, codigo: "NADA_QUE_RECIBIR",
+          error: hoja != null
+            ? `La hoja ${hoja} no tiene traslados pendientes de recibir.`
+            : "No hay traslados pendientes de recibir para eso.",
+        }, 409);
+
+      // Sesión en el DESTINO: la sucursal es estado global de la sesión del
+      // sistema, y recibir escribe en la sala que recibe.
+      const cookie = await sesionEn(sucId, login);
+      let recibidas = 0;
+      const fallos: { clave: string; error: string }[] = [];
+
+      for (const ln of lineas) {
+        if (Date.now() - arranque > PRESUPUESTO_FG_MS) break;
+
+        const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(ln.id_traslado))}`,
+          undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+
+        const filas = [...pagina.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
+          .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
+
+        if (filas.length === 0) {
+          // Un traslado ya recibido deja de mostrar líneas. No es un error del
+          // portal: es que alguien lo recibió por el sistema. Se anota como
+          // recibido para que el pedido no quede colgado esperándolo.
+          await admin.from("pedido_traslado_linea").update({
+            estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
+            aviso: "Ya no mostraba líneas: se había recibido o anulado desde el sistema.",
+            updated_at: new Date().toISOString(),
+          }).eq("id", ln.id);
+          recibidas++;
+          continue;
+        }
+
+        // Se recibe COMPLETO lo que se despachó. Recibir de menos es declarar un
+        // faltante, y eso necesita a alguien mirando la caja, no una función:
+        // esa diferencia se cuenta en el portal, en la pantalla de recepción.
+        const partes: string[] = [];
+        let total = 0;
+        for (const tr of filas) {
+          const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
+          const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+          const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+          const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+          const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+          const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+          const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+          if (!idProd || !idPres) continue;
+          // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. El encabezado
+          // lo dice —Esperado · Recibido · Lote · Vence— y `cant` es lo
+          // RECIBIDO. Mismo lugar del string que en el envío, otro significado.
+          partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+          total += Number(compra) * Number(esp);
+        }
+
+        if (partes.length === 0) {
+          fallos.push({ clave: String(ln.clave), error: "No se pudo leer ni una línea del traslado." });
+          continue;
+        }
+
+        const concepto = soloAscii(`${ln.clave} recibe: ${quien.name}`).slice(0, CONCEPTO_MAX);
+        const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
+          process: "insert",
+          datos: partes.join("#") + "#",
+          cuantos: String(partes.length),
+          total: total.toFixed(4),
+          fecha: hoySV(),
+          concepto,
+          destino: String(ubicDestino),
+          id_traslado: String(ln.id_traslado),
+        }), { extra: { Referer: RECIBIR } }));
+
+        if (!resp.ok) {
+          fallos.push({ clave: String(ln.clave), error: resp.msg || "sin detalle" });
+          continue;
+        }
+
+        recibidas++;
+        await admin.from("pedido_traslado_linea").update({
+          estado: "recibida",
+          recibido_at: new Date().toISOString(),
+          recibido_por: quien.id,
+          updated_at: new Date().toISOString(),
+        }).eq("id", ln.id);
+      }
+
+      const { data: resumen } = await admin.rpc("resumen_traslado_pedido", {
+        p_pedido_id: pedidoId, p_sucursal_id: sucId,
+      });
+
+      return json({
+        ok: fallos.length === 0,
+        recibidas,
+        pedidas: lineas.length,
+        fallos,
+        resumen,
+      }, fallos.length === 0 ? 200 : 207);
+    }
 
     // ── El pedido tiene que estar finalizado ──────────────────────────────
     // Para el traslado real: finalizar es el momento en que Bodega dice que

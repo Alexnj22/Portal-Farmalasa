@@ -249,6 +249,68 @@ export function fetchTrasladoErp(id) {
         .eq('id', id).maybeSingle();
 }
 
+/**
+ * Saca el pedido de bodega en el sistema: un traslado por producto.
+ *
+ * Se dispara al finalizar y no bloquea nada — responde enseguida y sigue en
+ * segundo plano, porque 900 productos no entran en una respuesta. El avance
+ * vive en `pedido_traslado_erp` y el detalle en `pedido_traslado_linea`.
+ *
+ * Se niega si las hojas guardadas no son las del PDF impreso: el traslado lleva
+ * el número de hoja adentro y una hoja equivocada es peor que ninguna.
+ */
+export async function despacharTrasladoPedido(pedidoId, sucId) {
+    const { data, error } = await supabase.functions.invoke('trasladar-pedido-erp', {
+        body: {
+            pedido_id: pedidoId, erp_sucursal_id: sucId,
+            accion: 'enviar', simulacro: false, background: true,
+        },
+    });
+    if (error) {
+        try {
+            const cuerpo = await error.context?.json?.();
+            if (cuerpo) return { ok: false, error: cuerpo.error ?? 'No se pudo despachar.', codigo: cuerpo.codigo };
+        } catch { /* el cuerpo no era JSON */ }
+        return { ok: false, error: error.message ?? 'No se pudo despachar.' };
+    }
+    return { ok: true, ...data };
+}
+
+/**
+ * Ingresa en la sucursal lo que ya salió de bodega.
+ *
+ * `hoja` recibe una hoja entera; `itemIds` recibe productos sueltos —el que la
+ * sala va a vender antes de terminar de contar la caja—. Como cada producto
+ * viaja en su propio traslado, cualquiera de las dos formas recibe traslados
+ * COMPLETOS: no depende de que el sistema soporte recepción parcial, que no la
+ * soporta.
+ */
+export async function recibirTrasladoPedido(pedidoId, sucId, { hoja = null, itemIds = [] } = {}) {
+    const { data, error } = await supabase.functions.invoke('trasladar-pedido-erp', {
+        body: {
+            pedido_id: pedidoId, erp_sucursal_id: sucId, accion: 'recibir',
+            ...(hoja != null ? { hoja } : {}),
+            ...(itemIds.length ? { pedido_item_ids: itemIds } : {}),
+        },
+    });
+    if (error) {
+        try {
+            const cuerpo = await error.context?.json?.();
+            if (cuerpo) return { ok: false, error: cuerpo.error ?? 'No se pudo recibir.', codigo: cuerpo.codigo, ...cuerpo };
+        } catch { /* el cuerpo no era JSON */ }
+        return { ok: false, error: error.message ?? 'No se pudo recibir.' };
+    }
+    return { ok: true, ...data };
+}
+
+/** El avance del traslado de una sucursal, por estado y por hoja. */
+export async function fetchResumenTraslado(pedidoId, sucId) {
+    const { data, error } = await supabase.rpc('resumen_traslado_pedido', {
+        p_pedido_id: pedidoId, p_sucursal_id: sucId,
+    });
+    return { resumen: data ?? null, error };
+}
+
 // ── pedido_sucursal_status ──────────────────────────────────────────────────
 // Getter/setter genéricos — mismo par (pedido_id, erp_sucursal_id) en TODOS
 // los sitios que los usan, solo cambian las columnas seleccionadas o el

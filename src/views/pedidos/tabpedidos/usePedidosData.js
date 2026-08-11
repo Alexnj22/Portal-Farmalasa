@@ -20,7 +20,7 @@ import {
     fetchPedidoItemsAll, fetchPedidoItemEventosAll, fetchPedidoItemsPendientesIds,
     fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
-    confirmarEnvioPedido,
+    confirmarEnvioPedido, despacharTrasladoPedido,
 } from '../../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 
@@ -599,6 +599,24 @@ export function usePedidosData({ searchTerm = '' }) {
                 ajustes_envio: ajustesEnvio.length,
                 no_enviados: ajustesEnvio.filter(a => a.cantidad_enviada === 0).length,
             });
+
+            // 4. Y recién ahora sale del sistema: un traslado por producto.
+            //    Va al final a propósito — necesita `finalizado_at` y necesita
+            //    las hojas ya escritas, porque el número de hoja viaja adentro
+            //    de cada traslado. Responde enseguida y sigue en segundo plano;
+            //    el avance se sigue en `pedido_traslado_erp`.
+            //
+            //    Un fallo acá NO tumba el finalizado, que ya está hecho y es lo
+            //    que importaba: se avisa y se puede reintentar.
+            const despacho = await despacharTrasladoPedido(pedidoId, sucId);
+            if (!despacho.ok) {
+                useToastStore.getState().showToast(
+                    'El pedido quedó finalizado, pero no salió del sistema',
+                    despacho.error ?? 'Se puede reintentar desde el pedido.',
+                    'warning',
+                );
+            }
+
             await loadActive();
         } catch (e) {
             console.error('handleFinalizarConCajas:', e);

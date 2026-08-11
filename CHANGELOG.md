@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.566.0 — el circuito cierra: recepción y disparo al finalizar
+
+Las dos piezas que faltaban. El pedido ya no necesita que nadie teclee el
+movimiento en el sistema.
+
+**El disparo.** Al finalizar, después de confirmar qué sale y de escribir las
+cajas y las hojas, el portal despacha solo. Va al final a propósito: necesita
+`finalizado_at` y necesita las hojas ya escritas, porque el número de hoja viaja
+dentro de cada traslado. Responde enseguida y sigue en segundo plano. **Un fallo
+ahí no tumba el finalizado** —que ya está hecho y es lo que importaba—: se avisa
+y se puede reintentar.
+
+**La recepción.** `accion: 'recibir'` ingresa en la sucursal lo que ya salió de
+bodega, en las dos formas que se pidieron:
+
+- **`hoja: 3`** recibe los N traslados de esa hoja de un saque.
+- **`pedido_item_ids: [...]`** recibe productos sueltos — el que la sala va a
+  vender antes de terminar de contar la caja.
+
+Cualquiera de las dos recibe traslados **completos**, que es la razón de haber
+mandado uno por producto: no depende de que el sistema soporte recepción
+parcial, que no la soporta.
+
+Dos detalles del sistema que quedan atendidos: un traslado ya recibido **deja de
+mostrar líneas**, y eso no es un error del portal sino que alguien lo recibió por
+el sistema — se marca recibido con su aviso para que el pedido no quede colgado.
+Y el octavo campo del envío es el lote pero en la recepción es **lo esperado**;
+el encabezado de la tabla lo dice y son el mismo lugar del string con distinto
+significado.
+
+La recepción no lleva fila de corrida: recibir pasa muchas veces por pedido —una
+por hoja, o una por producto apurado— y el índice único de
+`pedido_traslado_erp` está pensado para lo contrario.
+
+Verificado: la recepción de una hoja sin traslados despachados contesta
+`NADA_QUE_RECIBIR` sin tocar el sistema.
+
+⚠️ **A partir de acá, el próximo pedido que Bodega finalice mueve inventario
+real.**
+
+_(pendiente de redactar)_
+
 ## v2.565.1 — el lote que no está se sustituye, y se avisa
 
 El pedido reserva lotes al generarse y los imprime en la hoja. Entre que se arma

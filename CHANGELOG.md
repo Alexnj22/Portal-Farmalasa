@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.557.6 — El filo del hover recorre la tarjeta de la notificación, no su encabezado
+
+Tercera pasada sobre lo mismo, y esta vez el reporte señaló la pieza exacta:
+
+> «mirá la animación hover, aún lo corta. La animación hover no pasa por el borde
+> de la card.»
+
+Y era literal. El filo —la animación que recorre el canto de una superficie al
+apuntarla (§1.6)— corre **la pieza más interna bajo el cursor**, y ahí el
+encabezado de la notificación es un `<button>` que ocupa el 80% de la tarjeta y
+deja afuera Aprobar/Rechazar. O sea que la animación dibujaba el rectángulo del
+encabezado —esquinas rectas, cortado justo arriba de los botones— en vez del
+borde redondeado de la tarjeta. Con las tarjetas de v2.557.4 el corte quedó más
+a la vista, porque ahora hay un borde correcto contra el cual comparar.
+
+**`data-filo="ceder"`**: el botón que ES la cara de su tarjeta cede el filo y lo
+corre la tarjeta. Son dos reglas en `index.css` porque hay dos cosas que
+arreglar —que el botón no dibuje el suyo (`content: none`) y que la guarda
+`:not(:has(…:hover))` deje de tapar el de la tarjeta mientras el puntero está
+sobre él— y las dos se escribieron cuidando la especificidad, que acá decide
+todo: `[data-surface] button[data-filo]` empata en (0,2,2) con la regla base de
+los botones y gana por orden; escrita sin el tipo daría (0,2,1) y perdería en
+silencio. Es exactamente la trampa que §1.6 ya documentaba para
+`[data-manteniendo]`.
+
+Verificado filmando la animación contra el build (Liquid claro): el filo recorre
+el borde de la tarjeta por debajo de Aprobar/Rechazar, tanto cerrada (161 px)
+como desplegada (448 px), y el `::after` del encabezado queda en `content: none`.
+Documentado en `DESIGN.md` §5 junto al resto del contrato del filo.
+
 ## v2.557.5 — las hojas del pedido no eran las que se imprimían
 
 Auditoría del módulo de Pedidos, pedida antes de automatizar el traslado a la

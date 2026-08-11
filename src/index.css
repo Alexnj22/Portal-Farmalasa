@@ -2695,6 +2695,35 @@ thead.sticky,
   }
 }
 
+/* ── `data-filo="ceder"` — el botón que ES la cara de su tarjeta (2026-08-11) ──
+   La regla de arriba —«corre la pieza más interna»— asume que un botón dentro de
+   una superficie es una PIEZA de ella. A veces no lo es: es su cara. En la
+   campana, el encabezado de cada notificación es un botón que ocupa el 80% de la
+   tarjeta y deja afuera los botones de decisión, así que el filo corría el
+   rectángulo del encabezado y **cortaba la tarjeta en dos**, justo arriba de
+   Aprobar/Rechazar. Reportado con captura: «la animación hover no pasa por el
+   borde de la card».
+
+   El botón cede el filo y lo corre la tarjeta, que es la forma que el ojo
+   reconoce. Son dos reglas porque hay dos cosas que arreglar: que el botón no
+   dibuje el suyo, y que la guarda `:not(:has(…:hover))` deje de tapar el de la
+   tarjeta mientras el puntero está sobre él.
+
+   Especificidades, que acá deciden todo:
+     · `[data-surface] button[data-filo]::after` = (0,2,2), empata con la regla
+       base de los botones y gana por orden — escrita con `[data-surface] [data-filo]`
+       daría (0,2,1) y perdería en silencio (mismo error que documenta §1.6 del
+       DESIGN sobre `[data-manteniendo]`).
+     · la de hover queda en (0,3,1) contra el `opacity: 0` de la base (0,2,1). */
+[data-surface] button[data-filo="ceder"]::after { content: none; }
+
+@media (hover: hover) {
+  [data-surface="card"]:has(> button[data-filo="ceder"]:hover)::after {
+    opacity: 1;
+    animation: filo-corre 1.9s cubic-bezier(.35, 0, .2, 1) forwards;
+  }
+}
+
 /* El gel: la superficie cede al presionarla. En Solid no hay gel —no hay
    material que ceder— y en su lugar se hunde, que es su vocabulario. */
 [data-interactive]:active { transform: scale(.994); }

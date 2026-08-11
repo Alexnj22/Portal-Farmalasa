@@ -768,6 +768,16 @@ No hay lista que mantener: sale del DOM. Si escribís un control dentro de una
   tarjeta entera). Sale de `clickable()`, no se pone a mano.
 - Corre **sólo la pieza más interna** bajo el cursor. Si agregás una superficie nueva,
   no hace falta hacer nada: la guarda `:not(:has(…))` ya la contempla.
+- **`data-filo="ceder"`: el botón que ES la cara de su tarjeta** (2026-08-11). «La pieza
+  más interna» asume que un botón dentro de una superficie es *una parte* de ella. A
+  veces no lo es: es su cara. En la campana, el encabezado de cada notificación es un
+  botón que ocupa el 80% de la tarjeta y deja afuera Aprobar/Rechazar — el filo corría
+  el rectángulo del encabezado y **cortaba la tarjeta en dos**, justo arriba de los
+  botones («la animación hover no pasa por el borde de la card»). Con el atributo, el
+  botón no dibuja su filo y lo corre la tarjeta, que es la forma que el ojo reconoce.
+  Son **dos** reglas en `index.css` —el `content: none` del botón y el `:has(> …:hover)`
+  de la tarjeta—, porque la guarda `:not(:has(…))` también hay que levantarla. Va sólo
+  donde el botón sea la cara de la superficie, nunca en un control que es una pieza.
 - **El destello invierte su color por tema, y su flanco también.** En claro el destello
   es oscuro (`--rim-glint`) sobre flanco blanco (`--rim-sombra`); en oscuro, al revés;
   en los dos Solid ambos igualan a `--rim-base` y el anillo queda plano. El canto se

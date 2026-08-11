@@ -663,6 +663,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         <button
                                                             onClick={() => handleNotifClick(n)}
                                                             aria-expanded={expandible ? abierta : undefined}
+                                                            // Este botón no es una pieza de la tarjeta: es su
+                                                            // cara. Sin ceder el filo, la animación al apuntar
+                                                            // corre SU rectángulo y corta la tarjeta justo
+                                                            // arriba de Aprobar/Rechazar. Ver `index.css`.
+                                                            data-filo="ceder"
                                                             className={`relative w-full flex items-start gap-3 pl-3.5 pr-9 py-3 text-left
                                                                 ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
                                                         >

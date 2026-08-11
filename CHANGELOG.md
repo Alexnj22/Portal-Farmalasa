@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.558.0 — traslado del pedido al sistema: simulacro
+
+Primera mitad de automatizar el traslado a la sucursal de destino. Hasta hoy,
+que un pedido llegara al sistema de origen era una marca en el portal
+(«recibido en el sistema») y alguien tecleándolo: una promesa, no un asiento.
+
+**`trasladar-pedido-erp`** (edge function nueva) arma el traslado de Bodega a
+la sucursal a partir de los ítems del pedido. Sale en **modo simulacro por
+omisión**: hace todas las verificaciones contra el sistema y no escribe ni una
+línea. Escribir tiene que ser una decisión explícita (`simulacro: false`).
+
+Por qué no se parece a `aplicar-traslado-inventario`, que hace el mismo
+movimiento entre salas: aquella despacha 1 a 5 líneas con una persona mirando;
+acá son **147 a 553 líneas** por sucursal, y cada producto necesita dos viajes
+al sistema (`traerdatos` para existencia y lotes, `getpresentacion` para
+confirmar el factor). De ahí que corra en background y que el rastro sea una
+tabla —`pedido_traslado_erp`— y no la respuesta: en background no hay a quién
+contarle un error.
+
+La cantidad va con `erp_presentacion_id` y `factor`, **nunca** con
+`dispatch_tipo`/`dispatch_factor`: esos son la comodidad para armar las cajas
+—la «CAJA ×12» de la hoja—, no la presentación con la que el producto vive en
+el sistema. Confundirlos movería una cantidad distinta de la despachada.
+
+El candado no está en el código sino en el esquema: un índice único
+`(pedido, sucursal, paso) WHERE modo='real' AND estado<>'error'` hace que un
+segundo despacho simultáneo no pueda ni insertar su fila.
+
+**Primera corrida real, pedido #96 (Salud 2), en simulacro:** 476 productos
+verificados en **38 segundos**, 463 líneas armadas (157 con lote, que son los
+que el sistema controla), 944 packs. Y 13 hallazgos: 11 productos que ya no
+tienen existencia en bodega y 2 cuyo lote se acabó. Son reales — el pedido se
+generó dos horas antes y la bodega se movió en el medio.
+
+Ese número de hallazgos es el resultado importante, y abre una decisión
+pendiente: hoy el despacho real es todo-o-nada (el criterio de
+`aplicar-traslado-inventario`, «medio traslado es peor que ninguno»), y con 13
+productos movidos entre generar y despachar, un pedido no se despacharía nunca.
+Queda por definir con el usuario si el traslado sale con lo que sí verifica y
+reporta lo que dejó afuera.
+
+Los parsers de las pantallas de traslado se copiaron a
+`_shared/erp-traslado.ts`, que manda de acá en adelante.
+`aplicar-traslado-inventario` sigue con los suyos adentro a propósito: mueve
+inventario real y está en uso, y refactorizarla en el mismo cambio que estrena
+una función que salió en simulacro es meter riesgo donde se acordó no meterlo.
+Queda pendiente pasarla a importar de ahí; mientras tanto un arreglo a esos
+parsers va a los dos archivos.
+
+Migración `20260811174216_pedido_traslado_erp`.
+
+
+_(pendiente de redactar)_
+
 ## v2.557.6 — El filo del hover recorre la tarjeta de la notificación, no su encabezado
 
 Tercera pasada sobre lo mismo, y esta vez el reporte señaló la pieza exacta:

@@ -75,6 +75,13 @@ const ACTION_LABEL = {
     PEDIDO_PROBLEMA: 'Ver detalle',
 };
 
+/* Los dos avisos que existen para PEDIR una decisión — y que por eso se van de
+ * la campana en cuanto la decisión se toma. Son los únicos: el resto de los
+ * avisos de solicitud CUENTAN lo que pasó (`REQUEST_RESOLVED`,
+ * `REQUEST_DECIDED`, `MINMAX_DECIDED`) y ésos se quedan, porque son la
+ * respuesta que alguien estaba esperando. */
+const PIDE_DECISION = new Set(['REQUEST_PENDING', 'MINMAX_PENDING']);
+
 const UNDO_MS = 3000;
 
 const timeAgo = (iso) => {
@@ -114,7 +121,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const { user, hasPermission } = useAuth();
     const { isDark } = useTheme();
 
-    const notifications = useStaff(s => s.notifications || []);
+    const todasLasNotifs = useStaff(s => s.notifications || []);
     const announcements = useStaff(s => s.announcements || []);
     const roles = useStaff(s => s.roles || []);
     const employees = useStaff(s => s.employees || []);
@@ -143,6 +150,31 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const canSeeAnnouncements = hasPermission('emp_announcements', 'can_view');
     const canApprove          = hasPermission('requests', 'can_approve');
     const canApproveMinMax    = hasPermission('minmax', 'can_approve');
+
+    /* Lo ya decidido se va de la campana.
+     *
+     * Un `REQUEST_PENDING` / `MINMAX_PENDING` existe para PEDIR una decisión.
+     * Tomada la decisión, el aviso no tiene nada que pedir: quedarse en la lista
+     * lo único que hace es competir por atención con lo que sí falta atender.
+     * Decisión del usuario, 2026-08-11: «si una solicitud ya se confirmó o
+     * rechazó, en notificaciones ya no debe de salir».
+     *
+     * Se filtra por `metadata.resuelta`, que escribe el trigger
+     * `marcar_notificacion_solicitud_resuelta` en el instante de la decisión —y
+     * que desde hoy llega en vivo, porque el canal también escucha UPDATE.
+     *
+     * NO alcanza con mirar `type`: los avisos que CUENTAN el desenlace
+     * (`REQUEST_RESOLVED`, `REQUEST_DECIDED`) también llevan `resuelta` en su
+     * metadata, y ésos son justamente los que hay que conservar — son la
+     * respuesta que esperaba quien pidió.
+     *
+     * La fila queda en la base y se la lleva «Borrar todas», que borra por
+     * fecha del lado del servidor. */
+    const notifications = useMemo(
+        () => todasLasNotifs.filter(n =>
+            !(PIDE_DECISION.has(n.type) && n.metadata?.resuelta)),
+        [todasLasNotifs]
+    );
 
     const pendingIds = useMemo(() => {
         const s = new Set();

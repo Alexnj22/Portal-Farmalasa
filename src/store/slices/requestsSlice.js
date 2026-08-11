@@ -13,6 +13,7 @@ import {
 } from '../../data/requests';
 import { fetchEmployeeRosterSchedule } from '../../data/employees';
 import { upsertWeeklyRoster } from '../../data/system';
+import { signStorageUrls } from '../../utils/storageFiles';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -116,6 +117,25 @@ export const TIPOS_OPERATIVOS = new Set([
 export const esOperativa = (type) => TIPOS_OPERATIVOS.has(type);
 
 /**
+ * Lo devuelve `approveRequest` cuando la rama que falló YA mostró su motivo.
+ *
+ * El store de toasts tiene UNA sola ranura (`showToast` pisa el anterior y le
+ * reinicia el temporizador), así que el aviso genérico de la vista —«No se pudo
+ * procesar la acción.»— borraba el mensaje específico que acababa de escribir
+ * la rama. Los dos salían; el usuario solo alcanzaba a ver el segundo.
+ *
+ * Eso escondió un rechazo real el 2026-08-11: la anulación de la 0000068132_COF
+ * no entró, el motivo llegó al navegador dentro del cuerpo de la respuesta, y
+ * la pantalla lo reemplazó por el genérico. Sin el motivo no había nada que
+ * corregir ni que reintentar con criterio.
+ *
+ * Es un tercer valor a propósito, y no un `false` con bandera aparte: quien
+ * agregue mañana una rama que avisa por su cuenta tiene que elegir qué
+ * devuelve, y el `if (ok)` de la vista no lo deja pasar por descuido.
+ */
+export const YA_AVISADO = 'YA_AVISADO';
+
+/**
  * Min/Max no vive en `approval_requests` sino en su propia tabla
  * (`minmax_change_requests`), con otras columnas y otro ciclo. Pero para quien
  * mira la sala **es una solicitud más**, y tenerla en otra pantalla era parte
@@ -130,7 +150,17 @@ export const MINMAX_REQUEST_TYPE = 'MINMAX_CHANGE_REQUEST';
 
 const ESTADO_MINMAX = { pending: 'PENDING', approved: 'APPROVED', rejected: 'REJECTED' };
 
-export function adaptarMinMax(fila, nombreDeSucursal) {
+/**
+ * @param buscarPersona  Opcional: `(idOEmail) => empleado | null`. Sirve para
+ *   ponerle cara a las dos personas de un ajuste de Min/Max, que su tabla guarda
+ *   como texto suelto: quien lo pidió por `requested_by_id` (uuid) y quien lo
+ *   decidió por `decided_by`, que es el **correo** con el que entró (así lo
+ *   escribe `approve_minmax_request`: `auth.email()`). Sin el buscador se cae al
+ *   texto guardado, que es lo que se mostraba hasta ahora.
+ */
+export function adaptarMinMax(fila, nombreDeSucursal, buscarPersona) {
+    const pidio  = buscarPersona?.(fila.requested_by_id) ?? null;
+    const decidio = fila.decided_by ? (buscarPersona?.(fila.decided_by) ?? null) : null;
     return {
         id: `minmax:${fila.id}`,
         type: MINMAX_REQUEST_TYPE,
@@ -139,9 +169,14 @@ export function adaptarMinMax(fila, nombreDeSucursal) {
         approver_note: fila.decision_note ?? null,
         created_at: fila.requested_at,
         updated_at: fila.decided_at ?? fila.requested_at,
+        decided_at: fila.decided_at ?? null,
         employee_id: fila.requested_by_id ?? null,
-        employee: { id: fila.requested_by_id, name: fila.requested_by_name ?? fila.requested_by ?? 'Alguien' },
-        approver: null,
+        employee: pidio
+            ?? { id: fila.requested_by_id, name: fila.requested_by_name ?? fila.requested_by ?? 'Alguien' },
+        // Sin `decided_by` no hay a quién nombrar: el ajuste no lo decide un
+        // aprobador asignado de antemano, lo resuelve quien tenga el permiso.
+        approver: decidio
+            ?? (fila.decided_by ? { id: fila.decided_by, name: fila.decided_by } : null),
         approvals: [],
         metadata: {
             producto: fila.product_name,
@@ -170,6 +205,78 @@ const parseMeta = (raw) =>
     typeof raw === 'object' && raw !== null
         ? raw
         : (() => { try { return JSON.parse(raw); } catch { return {}; } })();
+
+/* ── Las dos personas de una solicitud ──────────────────────────────────────
+ *
+ * Quien la manda y quien la decide son la mitad de lo que hay que saber para
+ * leerla, y hasta el 2026-08-11 llegaban con el nombre pelado: la lista traía
+ * `id, name, code, role_id, branch_id` y nada más. Por eso la bandeja no podía
+ * mostrar una cara ni decir de qué sala salió, aunque las dos cosas ya
+ * estuvieran en la base.
+ *
+ * `photo_url` es la URL CRUDA de un bucket privado — pintarla directo da una
+ * imagen rota, así que se firma acá mismo y se deja en `photo`, que es el
+ * nombre que ya usa el maestro de personal. `email` es lo que Min/Max guarda
+ * como «quien decidió», y sirve para reconocerlo sin una consulta extra.
+ */
+const COLUMNAS_PERSONA = 'id, name, first_names, last_names, code, email, photo_url, role_id, branch_id, system_role';
+
+/**
+ * Le agrega a cada persona su foto firmada, el NOMBRE de su cargo y el de su
+ * sala. Los dos catálogos ya están en el store —los baja el arranque—, así que
+ * no cuesta una consulta: lo que costaba era no cruzarlos.
+ *
+ * Muta las filas a propósito: son objetos recién traídos de la base que nadie
+ * más tiene todavía, y devolver copias obligaría a rehacer los dos mapas.
+ */
+const ponerleCara = async (filas, get) => {
+    if (!filas?.length) return filas;
+
+    const estado = get();
+    const cargoPorId = new Map((estado.roles ?? []).map(r => [String(r.id), r.name]));
+    const salaPorId  = new Map((estado.branches ?? []).map(b => [String(b.id), b.name]));
+
+    filas.forEach(e => {
+        e.role = cargoPorId.get(String(e.role_id)) ?? null;
+        e.branch_name = salaPorId.get(String(e.branch_id)) ?? null;
+    });
+
+    // Una sola firma para todas: `signStorageUrls` reusa las que siguen vigentes
+    // en caché, así que abrir la bandeja dos veces no vuelve a pedirlas.
+    try {
+        const firmadas = await signStorageUrls(filas.map(e => e.photo_url).filter(Boolean));
+        filas.forEach(e => { if (e.photo_url) e.photo = firmadas.get(e.photo_url) || e.photo_url; });
+    } catch (e) {
+        console.error('fetchRequests: firmar fotos falló:', e?.message ?? e);
+    }
+    return filas;
+};
+
+/**
+ * El sello de quien acaba de decidir, para el estado local.
+ *
+ * La fila de la base ya lo guarda, pero el reflejo en memoria no lo escribía:
+ * al rechazar sólo cambiaba `status` y la nota, así que la solicitud recién
+ * resuelta se quedaba mostrando al aprobador ANTERIOR —o a ninguno— y sin hora
+ * de decisión hasta la próxima recarga. Se notaba poco mientras la pantalla no
+ * mostraba ni una cosa ni la otra; ahora las muestra las dos.
+ */
+const selloDeQuienDecidio = (get, approverId) => ({
+    approver_id: approverId,
+    approver: (get().employees ?? []).find(e => String(e.id) === String(approverId)) ?? null,
+    updated_at: new Date().toISOString(),
+});
+
+/**
+ * Apagar, en el acto, el aviso que pedía esta decisión.
+ *
+ * En la base ya lo hace un trigger; esto es el reflejo en memoria para quien
+ * acaba de decidir. Sin él, la campana de la MISMA persona que aprobó le seguía
+ * ofreciendo «Aprobar / Rechazar» sobre lo ya resuelto hasta recargar la
+ * página.
+ */
+const apagarAviso = (get, requestId, estado) =>
+    get().marcarAvisoDeSolicitudResuelto?.(requestId, estado);
 
 /**
  * Verifica si un empleado está actualmente en vacaciones o incapacidad.
@@ -583,7 +690,7 @@ export const createRequestsSlice = (set, get) => ({
             // 3. Fetch empleados por IDs
             let empRows = [];
             if (empIds.length > 0) {
-                const { data, error: empErr } = await fetchEmployeesByIds(empIds, 'id, name, first_names, last_names, code, role_id, branch_id, system_role');
+                const { data, error: empErr } = await fetchEmployeesByIds(empIds, COLUMNAS_PERSONA);
                 if (empErr) console.error('fetchRequests: fetch employees failed:', empErr.message);
                 empRows = data || [];
             }
@@ -596,10 +703,12 @@ export const createRequestsSlice = (set, get) => ({
                 (requests || []).map(r => r.approver_id).filter(id => id && !empMap[id])
             )];
             if (missingIds.length > 0) {
-                const { data: extra, error: extraErr } = await fetchEmployeesByIds(missingIds, 'id, name, first_names, last_names, code, role_id, branch_id, system_role');
+                const { data: extra, error: extraErr } = await fetchEmployeesByIds(missingIds, COLUMNAS_PERSONA);
                 if (extraErr) console.error('fetchRequests: fetch missing approvers failed:', extraErr.message);
                 (extra || []).forEach(e => { empMap[e.id] = e; });
             }
+
+            await ponerleCara(Object.values(empMap), get);
 
             const enriched = (requests || []).map(r => ({
                 ...r,
@@ -743,17 +852,19 @@ export const createRequestsSlice = (set, get) => ({
 
         if (!ok) {
             useToastStore.getState().showToast('No se aplicó el cambio', error, 'error');
-            return false;
+            return YA_AVISADO;
         }
 
         set(state => ({
             requests: state.requests.map(r =>
                 r.id === requestId
-                    ? { ...r, status: 'APPROVED', approver_id: approverId, approver_note: approverNote,
+                    ? { ...r, status: 'APPROVED', ...selloDeQuienDecidio(get, approverId),
+                        approver_note: approverNote,
                         metadata: { ...parseMeta(r.metadata), erp_aplicado: aplicado } }
                     : r
             ),
         }));
+        apagarAviso(get, requestId, 'APPROVED');
 
         if (req.employee?.id) {
             await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED',
@@ -785,19 +896,21 @@ export const createRequestsSlice = (set, get) => ({
 
         if (!ok) {
             useToastStore.getState().showToast('No se aplicó el movimiento', error, 'error');
-            return false;
+            return YA_AVISADO;
         }
 
         set(state => ({
             requests: state.requests.map(r =>
                 r.id === requestId
-                    ? { ...r, status: 'APPROVED', approver_id: approverId, approver_note: approverNote,
+                    ? { ...r, status: 'APPROVED', ...selloDeQuienDecidio(get, approverId),
+                        approver_note: approverNote,
                         metadata: { ...parseMeta(r.metadata), erp_aplicado: aplicado,
                                     lineas_rechazadas: rechazadas ?? parseMeta(r.metadata).lineas_rechazadas,
                                     lineas_ajustadas:  ajustadas ?? parseMeta(r.metadata).lineas_ajustadas } }
                     : r
             ),
         }));
+        apagarAviso(get, requestId, 'APPROVED');
 
         if (req.employee?.id) {
             await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED',
@@ -836,9 +949,13 @@ export const createRequestsSlice = (set, get) => ({
 
         set(state => ({
             requests: state.requests.map(r =>
-                r.id === requestId ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals } : r
+                r.id === requestId
+                    ? { ...r, status: 'APPROVED', ...selloDeQuienDecidio(get, approverId),
+                        approver_note: approverNote, approvals: newApprovals }
+                    : r
             ),
         }));
+        apagarAviso(get, requestId, 'APPROVED');
 
         if (req.employee?.id) {
             const meta = parseMeta(req.metadata);
@@ -987,7 +1104,7 @@ export const createRequestsSlice = (set, get) => ({
                     'Se resuelve en Traslados',
                     'Este traslado se confirma en la pantalla de Traslados, que revisa la existencia de la sala antes de enviarlo.',
                     'error');
-                return false;
+                return YA_AVISADO;
             }
 
             // Facturación: aprobar ES aplicar el cambio en el ERP. No pasa por
@@ -1106,10 +1223,12 @@ export const createRequestsSlice = (set, get) => ({
             set((state) => ({
                 requests: state.requests.map(r =>
                     r.id === requestId
-                        ? { ...r, status: 'REJECTED', approver_note: approverNote }
+                        ? { ...r, status: 'REJECTED', ...selloDeQuienDecidio(get, approverId),
+                            approver_note: approverNote }
                         : r
                 ),
             }));
+            apagarAviso(get, requestId, 'REJECTED');
 
             // Notificar al empleado via anuncio interno
             if (req?.employee?.id) {
@@ -1174,9 +1293,12 @@ export const createRequestsSlice = (set, get) => ({
 
             set((state) => ({
                 requests: state.requests.map(r =>
-                    r.id === requestId ? { ...r, status: 'CANCELLED' } : r
+                    r.id === requestId
+                        ? { ...r, status: 'CANCELLED', updated_at: new Date().toISOString() }
+                        : r
                 ),
             }));
+            apagarAviso(get, requestId, 'CANCELLED');
 
             return true;
         } catch (err) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, ArrowLeftRight, Eye, FileText } from 'lucide-react';
+import { Check, X, ArrowLeftRight, Eye, FileText, Clock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
@@ -9,7 +9,12 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice';
 import { ICONO_POR_TIPO } from '../../constants/tipoIconos';
 import DetalleSolicitud from './DetalleSolicitud';
-import { resumenMovimiento, esMovimiento, lineasDe, esParcial, fmtDiaMes as fmtDate, fmtDateFull } from './movimientoTexto';
+import { CaraPersona, ChipPersona } from './PersonasSolicitud';
+import {
+    resumenMovimiento, esMovimiento, lineasDe, esParcial,
+    fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
+    personasDe, cuandoSeDecidio,
+} from './movimientoTexto';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
 // La tarjeta y el modal de una solicitud — el canónico, para las TRES pantallas
@@ -93,7 +98,26 @@ export const CompactSummary = ({ req }) => {
 // en la tarjeta misma, por ícono y por nombre — **nunca por color**: el color
 // sigue reservado al estado, que es la decisión que ya tomó la auditoría de
 // tema y que nueve tintes compitiendo habían roto.
-export const RequestCard = memo(({ req, onOpen }) => {
+//
+// ── La cara y la hora (2026-08-11) ─────────────────────────────────────────
+// Faltaban las dos, y con ellas la mitad de lo que uno pregunta al mirar la
+// bandeja: quién la mandó (el nombre lo decía, la cara no), quién la resolvió
+// —que no aparecía en ningún lado— y a qué hora pasó cada cosa. El día suelto
+// («11 ago 2026») hacía indistinguibles un descarte de las 8 de la mañana y uno
+// de las 9 de la noche.
+//
+// El pie de la tarjeta es el que contesta esas tres: a la izquierda cuándo se
+// mandó —y cuánto lleva esperando, si sigue pendiente—; a la derecha quién la
+// tiene que decidir o quién ya la decidió, con su cara y su hora.
+/**
+ * @param empleadosPorId  El maestro de personal. Trae la foto ya firmada y el
+ *                        cargo; sin él la tarjeta se cae a lo que hidrató
+ *                        `fetchRequests`, que desde hoy también las trae.
+ * @param ahora           El reloj, de `useNowTick`. Viene de la vista y no de
+ *                        acá: un `setInterval` por tarjeta serían cincuenta
+ *                        relojes para pintar el mismo minuto.
+ */
+export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
     const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
     const TypeIcon = TYPE_ICONS[req.type] || FileText;
     const typeConf = REQUEST_TYPES[req.type] || { label: req.type };
@@ -101,44 +125,96 @@ export const RequestCard = memo(({ req, onOpen }) => {
     const isUrgent   = req.type === 'DISABILITY' && req.status === 'PENDING';
     const parcial    = esParcial(req);
 
+    const { solicitante, aprobador } = personasDe(req, empleadosPorId);
+    const meta        = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
+    const sala        = meta.branch_name || solicitante?.branch_name || null;
+    const decidida    = req.status === 'APPROVED' || req.status === 'REJECTED';
+    /* Un ajuste de Min/Max no tiene aprobador asignado: su tabla no guarda uno y
+     * lo resuelve quien tenga el permiso del módulo. Decir «Espera a: Sin
+     * asignar» ahí sonaría a que se perdió el destinatario — y lo que pasa es
+     * que nunca hubo uno. */
+    const sinAprobadorFijo = req.type === 'MINMAX_CHANGE_REQUEST' && !aprobador;
+    const cuandoCerro = cuandoSeDecidio(req);
+    const espera      = req.status === 'PENDING' ? desdeHace(req.created_at, ahora) : '';
+    // Dos días esperando ya no es «recién llegada»: la espera se tiñe sola para
+    // que la cola se lea sin contar fechas. El umbral es el mismo que usa la
+    // baldosa del tablero para decir que alguien se está durmiendo.
+    const esperaLarga = req.status === 'PENDING' && ahora
+        && (ahora - new Date(req.created_at).getTime()) > 2 * 86400000;
+
     return (
         <button data-surface="card" onClick={() => onOpen(req)}
-            className={`w-full text-left px-4 py-3.5 flex items-center gap-3 overflow-hidden transform-gpu
+            className={`w-full text-left px-4 py-3.5 flex flex-col gap-2.5 overflow-hidden transform-gpu
                 hover:bg-surface-card-hover/40 active:scale-[0.99]
                 transition-[background-color,transform,border-color] duration-[var(--dur-base)]
                 ${isUrgent ? '!border-danger' : isRejected ? '!border-danger/30' : ''}`}>
 
-            {/* El ícono dice el tipo; el color, el estado. */}
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-surface-card-hover border border-divider">
-                <TypeIcon size={15} strokeWidth={2} className="text-content-2" />
+            <div className="flex items-center gap-3">
+                {/* La cara dice quién; la insignia, de qué es; el color, el estado. */}
+                <div className="relative flex-shrink-0">
+                    <CaraPersona persona={solicitante} className="w-10 h-10 rounded-full" />
+                    <span className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full
+                                     bg-surface-card border border-border-card flex items-center justify-center">
+                        <TypeIcon size={10} strokeWidth={2.5} className="text-content-2" />
+                    </span>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                        {solicitante && (
+                            <span className="text-body font-semibold text-content truncate leading-tight max-w-[160px]" title={solicitante.name}>
+                                {shortEmployeeName(solicitante)}
+                            </span>
+                        )}
+                        <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
+                            {parcial ? 'Aprobada parcial' : statConf.label}
+                        </span>
+                        {isUrgent && <span className="text-micro font-black text-danger animate-pulse shrink-0">URGENTE</span>}
+                    </div>
+
+                    {/* El tipo, escrito. Una tarjeta fuera de su grupo no lo tenía.
+                        Y la sala al lado: con alcance sobre todas, la bandeja
+                        mezcla siete y la tarjeta no decía de cuál venía. La del
+                        movimiento manda —es donde pasa la cosa— y si no hay,
+                        la de quien la mandó. */}
+                    <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-0.5 truncate">
+                        {typeConf.label}
+                        {sala && <span className="font-bold normal-case tracking-normal"> · {sala}</span>}
+                    </p>
+
+                    <CompactSummary req={req} />
+                </div>
+
+                <Eye size={14} strokeWidth={2.5} className="text-content-3 flex-shrink-0 self-start mt-1" />
             </div>
 
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                    {req.employee && (
-                        <span className="text-body font-semibold text-content truncate leading-tight max-w-[160px]" title={req.employee.name}>
-                            {shortEmployeeName(req.employee)}
+            {/* El pie: cuándo entró y en manos de quién está. */}
+            <div className="flex items-center justify-between gap-2 flex-wrap pt-2 border-t border-divider">
+                <span className="flex items-center gap-1 min-w-0 text-micro text-content-3">
+                    <Clock size={11} strokeWidth={2.5} className="flex-shrink-0" />
+                    <span className="truncate">{fmtFechaHora(req.created_at)}</span>
+                    {espera && (
+                        <span className={`shrink-0 font-bold ${esperaLarga ? 'text-warning-text' : 'text-content-3'}`}>
+                            · {espera}
                         </span>
                     )}
-                    <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
-                        {parcial ? 'Aprobada parcial' : statConf.label}
+                </span>
+
+                {(decidida || (req.status === 'PENDING' && !sinAprobadorFijo)) && (
+                    <span className="flex items-center gap-1.5 min-w-0">
+                        <span className={`text-micro font-black uppercase tracking-widest shrink-0
+                            ${isRejected ? 'text-danger' : decidida ? 'text-success' : 'text-content-3'}`}>
+                            {isRejected ? 'Rechazó' : decidida ? 'Aprobó' : 'Espera a'}
+                        </span>
+                        <ChipPersona persona={aprobador}
+                            vacio={decidida ? 'Sin registro' : 'Sin asignar'} />
+                        {decidida && cuandoCerro && (
+                            <span className="text-micro text-content-3 shrink-0">{fmtHora(cuandoCerro)}</span>
+                        )}
                     </span>
-                    {isUrgent && <span className="text-micro font-black text-danger animate-pulse shrink-0">URGENTE</span>}
-                </div>
-
-                {/* El tipo, escrito. Una tarjeta fuera de su grupo no lo tenía. */}
-                <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-0.5 truncate">
-                    {typeConf.label}
-                </p>
-
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    <CompactSummary req={req} />
-                    <span className="text-micro text-content-3 shrink-0">{fmtDateFull(req.created_at)}</span>
-                </div>
+                )}
             </div>
-
-            <Eye size={14} strokeWidth={2.5} className="text-content-3 flex-shrink-0" />
         </button>
     );
 });
@@ -246,7 +322,11 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
             ariaLabel={`Solicitud de ${REQUEST_TYPES[req.type]?.label ?? req.type}`}>
             <CuerpoDialogo
                 titulo={REQUEST_TYPES[req.type]?.label ?? req.type}
-                subtitulo={`${req.employee ? shortEmployeeName(req.employee) : 'Sin nombre'} · ${fmtDateFull(req.created_at)} · ${esParcial(req) ? 'Aprobada parcial' : statConf.label}`}
+                /* El nombre se fue del subtítulo: lo dice —con su cara, su cargo
+                   y su sala— la ficha que abre el detalle, y repetirlo dos
+                   renglones más arriba gastaba el único lugar donde cabía la
+                   hora. */
+                subtitulo={`${esParcial(req) ? 'Aprobada parcial' : statConf.label} · ${fmtFechaHora(req.created_at)}`}
                 icono={TypeIcon}
                 anchoEscritorio="max-w-xl"
                 pie={<>

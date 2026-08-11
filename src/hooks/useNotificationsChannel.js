@@ -12,6 +12,7 @@ export function useNotificationsChannel() {
     const showToast = useToastStore(s => s.showToast);
     const fetchNotifications = useStaffStore(s => s.fetchNotifications);
     const _addNotification = useStaffStore(s => s._addNotification);
+    const _replaceNotification = useStaffStore(s => s._replaceNotification);
 
     useEffect(() => {
         if (!user?.id) return;
@@ -34,8 +35,23 @@ export function useNotificationsChannel() {
                     );
                 }
             )
+            /* Un aviso también CAMBIA, no sólo llega.
+             *
+             * Cuando alguien decide una solicitud, un trigger le escribe a su
+             * notificación en qué terminó (`metadata.resuelta`) — y eso es lo
+             * que le quita los botones de «Aprobar / Rechazar». Escuchando sólo
+             * INSERT, ese cambio no llegaba nunca: la campana pedía una decisión
+             * ya tomada hasta que alguien recargara la página.
+             *
+             * Sin toast ni aviso del navegador: no es novedad, es la misma fila
+             * puesta al día. */
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` },
+                ({ new: n }) => _replaceNotification(n),
+            )
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, [user?.id, fetchNotifications, _addNotification, showToast]);
+    }, [user?.id, fetchNotifications, _addNotification, _replaceNotification, showToast]);
 }

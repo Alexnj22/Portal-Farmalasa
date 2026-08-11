@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -14,8 +14,9 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
+import { useNowTick } from '../hooks/useNowTick';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
+import { REQUEST_TYPES, esOperativa, adaptarMinMax, YA_AVISADO } from '../store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests, decidirMinMax } from '../data/minmaxRequests';
 import { notifyEmployees } from '../utils/notify';
 import { ERP_NAMES } from '../constants/erp';
@@ -122,11 +123,29 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const approveRequest = useStaff(s => s.approveRequest);
     const rejectRequest  = useStaff(s => s.rejectRequest);
     const appendAuditLog = useStaff(s => s.appendAuditLog);
+    const marcarAvisoResuelto = useStaff(s => s.marcarAvisoDeSolicitudResuelto);
 
     const employeesById = useMemo(() => {
         const m = new Map();
         (employees || []).forEach(e => m.set(String(e.id), e));
         return m;
+    }, [employees]);
+
+    /* Un solo reloj para toda la bandeja. La espera de cada tarjeta («hace 3 h»)
+     * se congelaría en el valor del último render sin algo que lata, y un
+     * `setInterval` por tarjeta serían cincuenta relojes pintando el mismo
+     * minuto. */
+    const ahora = useNowTick(60_000);
+
+    /* El maestro de personal, buscado por id O por correo. Min/Max guarda a
+     * quien decidió como el CORREO con el que entró (`auth.email()`), que es la
+     * única forma que tiene esa tabla de nombrar a alguien; sin este cruce la
+     * ficha mostraría la dirección en vez de la persona. */
+    const buscarPersona = useCallback((idOEmail) => {
+        if (!idOEmail) return null;
+        const clave = String(idOEmail).toLowerCase();
+        return (employees || []).find(e =>
+            String(e.id).toLowerCase() === clave || String(e.email ?? '').toLowerCase() === clave) ?? null;
     }, [employees]);
 
     /* Min/Max vive en OTRA tabla, con otras columnas y otro ciclo — pero para
@@ -137,7 +156,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * Sólo en el ámbito de sucursal: un ajuste de Min/Max no es asunto personal
      * de nadie. Y el RLS ya recorta cuáles — con `requests.can_view` se ven las
      * de la propia sala, sin que eso abra el módulo de Min/Max. */
-    const [minmax, setMinmax] = useState([]);
+    const [minmaxFilas, setMinmaxFilas] = useState([]);
     useEffect(() => {
         // El ámbito personal no las pide; y no hace falta vaciar el estado al
         // salir, porque `delAmbito` sólo las mezcla cuando `esSucursal`.
@@ -151,11 +170,19 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         fetchAllMinMaxChangeRequests()
             .then(filas => {
                 if (filas === null) { console.error('RequestsView: fetch min/max falló'); return; }
-                if (vivo) setMinmax((filas ?? []).map(f => adaptarMinMax(f, id => ERP_NAMES[id])));
+                if (vivo) setMinmaxFilas(filas ?? []);
             })
             .catch(e => console.error('RequestsView: fetch min/max failed:', e?.message ?? e));
         return () => { vivo = false; };
     }, [esSucursal]);
+
+    /* Las personas se resuelven al PINTAR, no dentro de la carga: el maestro de
+     * personal es otra fuente y puede llegar después que estas filas. Sellarlas
+     * al traerlas dejaría las fichas sin cara para siempre — es la misma razón
+     * por la que el detalle de la campana lo hace así. */
+    const minmax = useMemo(
+        () => minmaxFilas.map(f => adaptarMinMax(f, id => ERP_NAMES[id], buscarPersona)),
+        [minmaxFilas, buscarPersona]);
 
     /* El corte por ámbito. Una solicitud personal NO puede aparecer en el centro
      * de la sala aunque el RLS la dejara pasar, y al revés: son dos pantallas
@@ -437,20 +464,36 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                 useToastStore.getState().showToast('Listo',
                     modo === 'approve' ? 'Ajuste de Min/Max aplicado.' : 'Ajuste de Min/Max rechazado.', 'success');
                 setAbierta(null);
-                setMinmax(prev => prev.map(x => x.id === req.id
-                    ? { ...x, status: modo === 'approve' ? 'APPROVED' : 'REJECTED', approver_note: nota || null }
-                    : x));
+                /* El parche va sobre la fila CRUDA, que es de donde sale la
+                 * adaptada. Y lleva quién y cuándo con la misma forma que
+                 * escribe la base —`decided_by` es el correo, así lo guarda
+                 * `approve_minmax_request`— para que la ficha muestre la cara de
+                 * quien acaba de decidir y no espere a la próxima recarga. */
+                setMinmaxFilas(prev => prev.map(f => `minmax:${f.id}` === req.id
+                    ? { ...f,
+                        status: aprobo ? 'approved' : 'rejected',
+                        decision_note: nota || null,
+                        decided_by: user?.email ?? f.decided_by ?? null,
+                        decided_at: new Date().toISOString() }
+                    : f));
+                /* Y se apaga el aviso que pedía esta decisión. En la base lo
+                 * hace un trigger; acá se refleja al instante para quien acaba
+                 * de decidir — si no, su propia campana le sigue ofreciendo
+                 * «Aprobar / Rechazar» sobre lo que ya resolvió. El id del aviso
+                 * es el de la FILA de Min/Max, sin el prefijo del adaptador. */
+                marcarAvisoResuelto(fila.id ?? String(req.id).replace('minmax:', ''),
+                    aprobo ? 'APPROVED' : 'REJECTED');
             } else {
                 useToastStore.getState().showToast('No se pudo', r.error ?? 'Error al resolver el ajuste.', 'error');
             }
             return;
         }
 
-        const ok = modo === 'approve'
+        const resultado = modo === 'approve'
             ? await approveRequest(req.id, user.id, nota, null, aceptadas)
             : await rejectRequest(req.id, user.id, nota);
         setIsActioning(false);
-        if (ok) {
+        if (resultado === true) {
             useToastStore.getState().showToast(
                 'Listo',
                 modo === 'approve'
@@ -458,7 +501,11 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     : 'Solicitud rechazada.',
                 'success');
             setAbierta(null);
-        } else {
+        } else if (resultado !== YA_AVISADO) {
+            /* Sólo si nadie explicó ya el motivo. Las ramas que hablan con el
+             * sistema de facturación o mueven existencias devuelven el detalle
+             * de por qué no entró, y este aviso genérico lo borraba: el store de
+             * toasts tiene una sola ranura. */
             useToastStore.getState().showToast('Error', 'No se pudo procesar la acción.', 'error');
         }
     };
@@ -603,6 +650,8 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 pb-2">
                                         {cards.map(req => (
                                             <RequestCard key={req.id} req={req}
+                                                empleadosPorId={employeesById}
+                                                ahora={ahora}
                                                 onOpen={(r) => setAbierta({ req: r, accionInicial: null })}
                                             />
                                         ))}

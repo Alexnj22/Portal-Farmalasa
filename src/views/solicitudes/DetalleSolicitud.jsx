@@ -8,7 +8,10 @@ import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
 import { formatMoney } from '../../utils/formatNumber';
 import { getSignedFileUrl } from '../../utils/storageFiles';
-import { lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento } from './movimientoTexto';
+import {
+    lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
+} from './movimientoTexto';
+import { CaraPersona, BloquePersonas } from './PersonasSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
 // El detalle de una solicitud, en UN solo lugar.
@@ -686,13 +689,13 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
     const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     const isRejected = req.status === 'REJECTED';
 
-    const etiquetaAprobador = (ap) => {
-        const emp = ap.approverId ? employeesById?.get(String(ap.approverId)) : null;
-        return emp ? `${shortEmployeeName(emp)}${emp.role ? ` · ${emp.role}` : ''}` : `Nivel ${ap.level}`;
-    };
+    const personaDelNivel = (ap) => (ap.approverId ? employeesById?.get(String(ap.approverId)) : null) ?? null;
 
     return (
         <div className="space-y-2.5 text-left">
+            {/* Quién y cuándo, antes que el qué. */}
+            <BloquePersonas req={req} empleadosPorId={employeesById} />
+
             <BloquePorTipo req={req} meta={meta} seleccion={seleccion} onToggle={onToggle}
                 onCantidad={onCantidad} cantidades={cantidades} />
 
@@ -719,19 +722,29 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
                 </div>
             )}
 
-            {req.approvals?.length > 0 && (
+            {/* El historial sólo tiene algo que agregar cuando hubo MÁS de un
+                nivel: con uno solo repite, palabra por palabra, la ficha de
+                quien decidió que está arriba. */}
+            {req.approvals?.length > 1 && (
                 <div className="space-y-1.5">
                     <Rotulo>Historial</Rotulo>
-                    {req.approvals.map((ap, i) => (
-                        <div key={i} className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-2xl p-2.5">
-                            <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-                            <div className="min-w-0">
-                                <p className="text-label font-black text-success-text">{etiquetaAprobador(ap)}</p>
-                                <p className="text-micro text-content-3 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
-                                {ap.approverNote && <p className="text-caption text-content-2 mt-0.5 italic">&ldquo;{ap.approverNote}&rdquo;</p>}
+                    {req.approvals.map((ap, i) => {
+                        const quien = personaDelNivel(ap);
+                        return (
+                            <div key={i} className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-2xl p-2.5">
+                                {quien
+                                    ? <CaraPersona persona={quien} className="w-7 h-7 rounded-full mt-0.5" />
+                                    : <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />}
+                                <div className="min-w-0">
+                                    <p className="text-label font-black text-success-text">
+                                        {quien ? `${shortEmployeeName(quien)}${quien.role ? ` · ${quien.role}` : ''}` : `Nivel ${ap.level}`}
+                                    </p>
+                                    <p className="text-micro text-content-3 mt-0.5">{fmtFechaHora(ap.approvedAt)}</p>
+                                    {ap.approverNote && <p className="text-caption text-content-2 mt-0.5 italic">&ldquo;{ap.approverNote}&rdquo;</p>}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

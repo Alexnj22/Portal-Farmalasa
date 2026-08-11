@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.564.0 — Las solicitudes muestran quién pide, quién aprueba y a qué hora
+
+Una solicitud se leía sin ninguna de las dos caras y sin una sola hora. Decía el
+nombre de quien la mandó, y de quien la resolvió —el dato que uno busca al abrir
+una aprobada— no había rastro en ninguna pantalla. La fecha era el día pelado:
+un descarte de las 8 de la mañana y uno de las 9 de la noche se veían idénticos.
+
+Ahora la tarjeta cerrada dice, sin abrirla: la **cara** de quien pidió (con el
+tipo de solicitud en una insignia sobre la foto), en **qué sala** pasó, el
+**día y la hora** en que entró, **cuánto lleva esperando** si sigue pendiente
+—y se tiñe sola pasadas 48 horas— y, a la derecha, **quién la aprobó o rechazó,
+con su cara y su hora**, o a quién le toca decidirla.
+
+El modal abre con las dos puntas lado a lado: quién solicitó —con su cargo y su
+sala— y en qué terminó, con la hora de cada cosa y cuánto tardó (*«en 1 min»*).
+El historial de niveles también lleva cara.
+
+Lo que faltaba estaba en la base y nadie lo cruzaba: la consulta traía `id, name,
+code, role_id` y ni la foto ni el nombre del cargo. Ahora se firma la foto del
+bucket privado en la misma lectura y se resuelven cargo y sala contra los
+catálogos que el arranque ya bajó — cero consultas nuevas.
+
+De paso, **al decidir se escribe en memoria QUIÉN decidió y cuándo**. La base lo
+guardaba; el reflejo local sólo cambiaba el estado, así que una solicitud recién
+rechazada seguía mostrando al aprobador anterior hasta recargar.
+
+### Y el aviso de una solicitud ya decidida se va de la campana
+
+Pedido del usuario: *«si una solicitud ya se confirmó o rechazó, en
+notificaciones ya no debe de salir. ahora sigue esperando respuesta de confirmar
+/ rechazar»*.
+
+La causa no era la campana: **el canal en vivo sólo escuchaba INSERT**. El
+trigger `marcar_notificacion_solicitud_resuelta` escribe en el aviso en qué
+terminó la solicitud en el mismo instante de la decisión, y ese dato —el que
+apaga los botones— llegaba a la base y nunca al navegador. La campana se refresca
+al montar, así que había que recargar la página entera para que dejara de pedir
+una decisión ya tomada.
+
+Tres piezas:
+
+1. El canal escucha **UPDATE** además de INSERT, y reemplaza la fila (sin toast:
+   no es novedad, es la misma fila al día).
+2. Quien decide lo ve **en el acto**, sin esperar al realtime: aprobar, rechazar
+   y cancelar apagan su propio aviso en memoria.
+3. Un `REQUEST_PENDING` / `MINMAX_PENDING` ya resuelto **desaparece de la
+   lista**. Sólo esos dos: los avisos que CUENTAN el desenlace
+   (`REQUEST_RESOLVED`, `REQUEST_DECIDED`, `MINMAX_DECIDED`) se quedan, porque
+   son la respuesta que alguien estaba esperando. La fila queda en la base y se
+   la lleva «Borrar todas».
+
+Verificado en el navegador con notificaciones fabricadas —interceptando la
+lectura, sin decidir ni una solicitud real: aprobar un descarte mueve
+existencias—: de cuatro avisos quedan los dos que corresponden y un solo botón
+«Aprobar» en el panel.
+
 ## v2.563.1 — el traslado no sale si las hojas no son las del PDF
 
 La hoja impresa es la unidad real de trabajo: es lo que Bodega tiene en la mano

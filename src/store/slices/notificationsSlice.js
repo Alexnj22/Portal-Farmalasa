@@ -38,6 +38,49 @@ export const createNotificationsSlice = (set, get) => ({
         });
     },
 
+    /* Realtime UPDATE → reemplazar la fila.
+     *
+     * Faltaba, y por eso una solicitud ya decidida seguía ofreciendo
+     * «Aprobar / Rechazar» en la campana: el trigger
+     * `marcar_notificacion_solicitud_resuelta` escribe `metadata.resuelta` en el
+     * momento de la decisión, pero el canal sólo escuchaba INSERT. O sea que el
+     * dato que apaga los botones llegaba a la base y no al navegador — y la
+     * campana sólo se refresca al montar, así que había que recargar la página
+     * entera para que la notificación dejara de pedir una decisión ya tomada.
+     *
+     * Si la fila no está en la lista se ignora: puede ser una vieja que quedó
+     * fuera de las 100 que carga la campana, y meterla acá la haría aparecer de
+     * la nada por un cambio que nadie pidió ver. */
+    _replaceNotification: (notif) => {
+        set(state => {
+            if (!state.notifications.some(n => n.id === notif.id)) return state;
+            return { notifications: state.notifications.map(n => n.id === notif.id ? { ...n, ...notif } : n) };
+        });
+    },
+
+    /**
+     * Apagar el pedido de decisión de un aviso, en el acto.
+     *
+     * Es lo mismo que hace el trigger en la base, reflejado en memoria para
+     * quien acaba de decidir: el realtime puede tardar o no llegar, y en esa
+     * ventana la campana de la MISMA persona que aprobó le sigue ofreciendo
+     * aprobar. La marca lleva el estado —no un booleano— porque la campana
+     * escribe con él la etiqueta de en qué terminó.
+     */
+    marcarAvisoDeSolicitudResuelto: (requestId, estado) => {
+        if (!requestId) return;
+        const clave = String(requestId);
+        set(state => ({
+            notifications: state.notifications.map(n =>
+                (n.type === 'REQUEST_PENDING' || n.type === 'MINMAX_PENDING')
+                && String(n.metadata?.request_id ?? '') === clave
+                    ? { ...n,
+                        metadata: { ...(n.metadata ?? {}), resuelta: estado },
+                        read_at: n.read_at ?? new Date().toISOString() }
+                    : n),
+        }));
+    },
+
     markNotificationRead: async (id) => {
         const readAt = new Date().toISOString();
         set(state => ({

@@ -124,3 +124,89 @@ export const fmtDiaMes = (iso) => !iso ? '—'
 
 export const fmtDateFull = (iso) => !iso ? '—'
     : new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
+
+/* ── La hora ──────────────────────────────────────────────────────────────
+ *
+ * Faltaba en las tres pantallas, y es la mitad del dato: una solicitud de
+ * descarte de las 8 de la mañana y una de las 9 de la noche no se leen igual, y
+ * «11 ago 2026» en las dos las hacía indistinguibles. La base la guarda desde
+ * siempre (`created_at` es timestamptz); nadie la mostraba.
+ */
+export const fmtHora = (iso) => !iso ? ''
+    : new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+export const fmtFechaHora = (iso) => !iso ? '—' : `${fmtDateFull(iso)}, ${fmtHora(iso)}`;
+
+/**
+ * «hace 5 min» / «hace 3 h» / «hace 2 d».
+ *
+ * `ahora` es OBLIGATORIO y no un `Date.now()` por defecto: leer el reloj durante
+ * el render es una llamada impura que el compilador de React rechaza, y además
+ * congelaría el valor hasta el siguiente re-render. Quien la llama lo saca de
+ * `useNowTick`, que es el que hace latir el número.
+ */
+export const desdeHace = (iso, ahora) => {
+    if (!iso || !ahora) return '';
+    const ms = ahora - new Date(iso).getTime();
+    if (!Number.isFinite(ms)) return '';
+    const min = Math.floor(ms / 60000);
+    if (min < 1)  return 'recién';
+    if (min < 60) return `hace ${min} min`;
+    const horas = Math.floor(min / 60);
+    if (horas < 24) return `hace ${horas} h`;
+    const dias = Math.floor(horas / 24);
+    if (dias < 30) return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
+    const meses = Math.floor(dias / 30);
+    return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+};
+
+/** Cuánto tardó en resolverse, para ponerlo al lado de la hora de la decisión. */
+export const cuantoTardo = (desde, hasta) => {
+    if (!desde || !hasta) return '';
+    const ms = new Date(hasta).getTime() - new Date(desde).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return '';
+    const min = Math.floor(ms / 60000);
+    if (min < 1)  return 'al momento';
+    if (min < 60) return `en ${min} min`;
+    const horas = Math.floor(min / 60);
+    if (horas < 24) return `en ${horas} h`;
+    const dias = Math.floor(horas / 24);
+    return `en ${dias} ${dias === 1 ? 'día' : 'días'}`;
+};
+
+/* ── Quién es quién ────────────────────────────────────────────────────────
+ *
+ * Las dos personas de una solicitud llegan de dos fuentes que no siempre traen
+ * lo mismo: `fetchRequests` las hidrata con foto y cargo, pero la campana abre
+ * el detalle desde una lectura suelta que sólo tiene los ids. Por eso se cae al
+ * maestro de personal antes de rendirse — y por eso esto está escrito UNA vez.
+ */
+export const personasDe = (req, empleadosPorId) => {
+    const buscar = (obj, id) => {
+        const delMaestro = id ? empleadosPorId?.get(String(id)) : null;
+        // El maestro gana cuando el objeto de la solicitud no trae foto: son la
+        // misma persona y ahí está la cara.
+        if (delMaestro && (!obj || (!obj.photo && !obj.photo_url))) return delMaestro;
+        return obj ?? delMaestro ?? null;
+    };
+    return {
+        solicitante: buscar(req?.employee, req?.employee_id ?? req?.employee?.id),
+        aprobador:   buscar(req?.approver, req?.approver_id ?? req?.approver?.id),
+    };
+};
+
+/**
+ * Cuándo se resolvió.
+ *
+ * `approvals` es la fuente buena cuando existe —guarda el instante de cada
+ * nivel— y `updated_at` el respaldo, que es lo único que queda en un rechazo o
+ * en una cancelación. Mientras está pendiente no hay nada que decir: devolver
+ * `updated_at` ahí sería llamar «decisión» a cualquier retoque de la fila.
+ */
+export const cuandoSeDecidio = (req) => {
+    if (!req || req.status === 'PENDING') return null;
+    const ultima = Array.isArray(req.approvals) && req.approvals.length
+        ? req.approvals[req.approvals.length - 1]?.approvedAt
+        : null;
+    return ultima ?? req.decided_at ?? req.updated_at ?? null;
+};

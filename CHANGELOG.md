@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.568.0 — la recepción ingresa al sistema
+
+El circuito cierra de punta a punta. Al confirmar una caja en la pantalla de
+recepción, sus productos entran al inventario de la sucursal en el sistema — sin
+que nadie teclee nada.
+
+Engancha donde el flujo ya vivía: la recepción se confirma **caja por caja**, y
+cada producto de esa caja viaja en su propio traslado, así que confirmarla es
+recibir esos traslados **enteros**. Ahí se ve para qué sirvió mandar uno por
+producto: la recepción parcial que el sistema no soporta deja de hacer falta.
+
+Tres decisiones que van con esto:
+
+- **Nunca bloquea.** Va en su propio `try`: lo que se acaba de contar ya quedó
+  guardado en el portal, y un tropiezo en el sistema no puede deshacerlo ni
+  hacer creer que no se contó. Se avisa y se puede reintentar.
+- **`NADA_QUE_RECIBIR` no es un error.** Es lo normal en los pedidos que se
+  despacharon a mano —o sea, todos los anteriores a hoy—, así que se calla en
+  vez de alarmar por algo esperado.
+- Se mandan los ítems que se acaban de confirmar, no la hoja: una caja puede
+  llevar varias hojas, y sólo lo contado debe ingresar.
+
+**Falta todavía** el control para confirmar **un producto suelto** —el que la
+sala necesita vender antes de terminar de contar la caja—. La función ya lo
+acepta (`pedido_item_ids`) y está probada; lo que no existe es el botón.
+
+_(pendiente de redactar)_
+
 ## v2.567.4 — el embed devuelve objeto, no arreglo
 
 Dos hallazgos que sólo aparecieron generando un pedido **grande y real** desde

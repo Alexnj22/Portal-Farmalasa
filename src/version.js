@@ -25,4 +25,4 @@
 // línea acá, la colisión es de una línea y se resuelve sola.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const APP_VERSION = '2.567.4';
+export const APP_VERSION = '2.568.0';

@@ -22,7 +22,7 @@ import {
     fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, fetchPedidoApoyoBasic,
     searchAvailableProducts, fetchLastDispatchInfo, insertPedidoRecepcionExtras,
 } from '../../data/recepcion';
-import { updatePedidoSucursalStatus } from '../../data/pedidos';
+import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -386,6 +386,31 @@ export default function RecepcionModal({
                 p_items, p_received_by: user?.id ?? null,
             });
             if (error) throw error;
+
+            // ── Y lo mismo en el sistema ────────────────────────────────────
+            // Cada producto viaja en su propio traslado, así que confirmar esta
+            // caja es recibir esos traslados ENTEROS. Por eso no hace falta que
+            // el sistema soporte recepción parcial: no la soporta.
+            //
+            // Va en su PROPIO try y nunca bloquea: lo que se acaba de contar ya
+            // quedó guardado en el portal, y un tropiezo acá no puede
+            // deshacerlo ni hacer creer que no se contó.
+            //
+            // `NADA_QUE_RECIBIR` no es un error: es lo normal en los pedidos
+            // que se despacharon a mano, que son todos los anteriores a hoy.
+            try {
+                const erp = await recibirTrasladoPedido(pedido.id, sucursalId, {
+                    itemIds: p_items.map(it => it.pedido_item_id),
+                });
+                if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') {
+                    setSaveError(
+                        `Se guardó la recepción, pero el ingreso al sistema quedó pendiente: ${erp.error ?? 'sin detalle'}`,
+                    );
+                }
+            } catch (e) {
+                console.error('recepción en el sistema:', e);
+                setSaveError('Se guardó la recepción, pero no se pudo ingresar al sistema. Se puede reintentar.');
+            }
 
             const boxHasDiff = p_items.some(it => it.error_tipo !== null);
             const newAnyDiff = anyHasDiff || boxHasDiff;

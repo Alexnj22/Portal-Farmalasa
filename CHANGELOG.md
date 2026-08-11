@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.568.1 — las tres proyecciones de lotes, y la captura que fallaba callada
+
+Dos hallazgos abiertos de la auditoría, cerrados.
+
+**1. Las tres proyecciones de lotes ahora coinciden.** Hay tres caminos que
+arman la orden —la impresión al generar, el reimpreso del Historial y la captura
+de hojas— y el primero repartía distinto: convertía a la presentación de
+despacho y *después* repartía, al revés que `lotes_asignados`. Como cada lote
+extra suma alto a la fila, un número distinto de renglones de lote puede **correr
+un salto de página**: el papel y las hojas guardadas dejaban de coincidir.
+
+Ahora los tres reparten primero en packs del sistema —que es lo que queda
+guardado y lo que viaja al traslado— y convierten después. `lotesToDispatch`
+queda sin uso en los caminos de impresión; se conserva exportada y con sus
+pruebas.
+
+**2. La captura de hojas ya no falla en silencio.** Corría en segundo plano con
+un `catch` vacío. Le falló al pedido **#97 —460 productos, un pedido real—** y
+nadie se enteró: quedó sin saber qué producto va en qué hoja. Ahora avisa, y
+sobre todo **el recálculo se guarda**: antes el modal de finalizar lo recalculaba
+en memoria y lo perdía, así que el pedido seguía sin hojas y el traslado no podía
+salir. Acá es donde un pedido con la captura cortada se repara de verdad.
+
+El aviso además pide lo único que hace falta del lado humano: dejar la pestaña
+abierta unos segundos después de generar.
+
+_(pendiente de redactar)_
+
 ## v2.568.0 — la recepción ingresa al sistema
 
 El circuito cierra de punta a punta. Al confirmar una caja en la pantalla de

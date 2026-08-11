@@ -10,7 +10,7 @@ import PortalInput from '../../components/common/PortalInput';
 import Notice from '../../components/common/Notice';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { smartFilter } from '../../utils/searchUtils';
-import { lanzarSimulacroTraslado, fetchTrasladoErp } from '../../data/pedidos';
+import { lanzarSimulacroTraslado, fetchTrasladoErp, updatePedidoSucursalStatus } from '../../data/pedidos';
 
 export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoId, pedidoNumero, paginas = null, draftKey = null }) {
     const montadoParaSalida = useMontadoParaSalida(open);
@@ -57,10 +57,21 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         setLoadingPages(true);
         setPageGroups([]);
         getExactPageGroups(sucId, items)
-            .then(groups => setPageGroups(groups))
-            .catch(() => setPageGroups([]))
+            .then(groups => {
+                setPageGroups(groups);
+                // Y se GUARDA. Antes se recalculaba en memoria y se perdía: el
+                // pedido seguía sin hojas, así que el traslado no podía salir y
+                // la próxima apertura volvía a calcular. Acá es donde se repara
+                // de verdad un pedido al que se le cortó la captura —le pasó al
+                // #97, con 460 productos—.
+                if (groups.length && pedidoId) {
+                    updatePedidoSucursalStatus(pedidoId, sucId, { paginas: groups })
+                        .then(({ error }) => { if (error) console.error('guardar hojas:', error.message); });
+                }
+            })
+            .catch(e => { console.error('recalcular hojas:', e); setPageGroups([]); })
             .finally(() => setLoadingPages(false));
-    }, [open, items, sucId, paginas, draftKey]);
+    }, [open, items, sucId, pedidoId, paginas, draftKey]);
 
     // La verificación arranca al ABRIR, no al llegar a la pantalla 3: tarda ~40 s
     // para una sucursal grande, y ese es justo el rato que lleva contar las cajas

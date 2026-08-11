@@ -221,6 +221,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
             // Capturar grupos de páginas en background para que Finalizar sea instantáneo
             ;(async () => {
+                let capturadas = 0;
                 try {
                     for (const sid of sucIds) {
                         const rawItems = await fetchPedidoItemsForPrintCapture(pedidoId, sid);
@@ -237,9 +238,25 @@ export default function TabGenerar({ searchTerm = '' }) {
                         const groups = await getExactPageGroups(sid, itemsConLabel);
                         if (groups.length) {
                             await updatePedidoSucursalStatus(pedidoId, sid, { paginas: groups });
+                            capturadas++;
                         }
                     }
-                } catch { /* silencioso — Finalizar tiene fallback */ }
+                } catch (e) {
+                    // Ya NO en silencio. Este bloque se quedó callado cuando le
+                    // falló al pedido #97 —460 productos, un pedido real— y el
+                    // pedido siguió sin saber qué producto va en qué hoja hasta
+                    // que alguien lo finalizara. El respaldo existe, pero
+                    // enterarse recién ahí es enterarse tarde.
+                    console.error('[pedidos] captura de hojas:', e);
+                }
+                if (capturadas < sucIds.length) {
+                    showToast(
+                        'Las hojas quedaron a medias',
+                        'Se van a recalcular al finalizar. Si puedes, deja esta pestaña abierta '
+                        + 'unos segundos después de generar.',
+                        'warning',
+                    );
+                }
             })();
 
             showToast(

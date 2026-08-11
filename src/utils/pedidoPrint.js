@@ -600,7 +600,16 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
                 es_antibiotico:    row.es_antibiotico,
                 qty,
                 qty_base: isLabel ? qty * dispFactor : null,
-                lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
+                // MISMA proyección que la captura y que el reimpreso: primero se
+                // reparte en packs del sistema —que es lo que queda guardado en
+                // `lotes_asignados` y lo que después viaja al traslado— y recién
+                // ahí se convierte a la presentación de despacho. Al revés daba
+                // un número de renglones de lote distinto, y como cada lote extra
+                // suma alto a la fila, podía correr un salto de página: el papel
+                // y las hojas guardadas dejaban de coincidir.
+                lotes: lotesAsignadosToDispatch(
+                    fefoProject(row.lotes_bodega, getAdjusted(row)), erpFactor, dispFactor,
+                ),
             };
         }).filter(r => r.qty > 0);
 
@@ -613,9 +622,8 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
                 const dispF    = row.dispatch_factor ?? erpF;
                 const qty      = toDispatch(getAdjusted(row) ?? 1, erpF, dispF);
                 const dispTipo = row.dispatch_tipo ?? row.presentacion_tipo ?? '';
-                const rawLotes = fefoProject(
-                    lotesToDispatch(row.lotes_bodega ?? [], erpF, dispF),
-                    qty,
+                const rawLotes = lotesAsignadosToDispatch(
+                    fefoProject(row.lotes_bodega ?? [], getAdjusted(row) ?? 0), erpF, dispF,
                 ).filter(l => l.lote || l.fecha_vencimiento);
                 const lotPool  = rawLotes.map(l => ({ ...l, _rem: l.take ?? l.cantidad ?? l.packs ?? 0 }));
                 return Array.from({ length: qty }, () => {

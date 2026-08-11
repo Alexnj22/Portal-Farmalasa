@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.557.3 — Notificaciones: la tarjeta cubre sus botones, y se despliega con el detalle de la solicitud
+
+**El realce se quedaba a mitad de la tarjeta.** El `hover` vivía en el `<button>`
+del encabezado, que no llega ni a Aprobar/Rechazar ni a nada de lo que se agregue
+abajo: al apuntar la fila se encendía la mitad de arriba y los dos botones se
+quedaban sobre el fondo del panel, leyéndose como si fueran de otra notificación.
+Reportado con captura: «la card no cubre los botones». Ahora el realce lo lleva el
+contenedor que los tiene a los tres adentro —encabezado, detalle y acciones—, así
+que la fila se enciende entera.
+
+**Y el aviso ahora se despliega.** El cuerpo contaba lo que pasó en tres renglones
+y ahí se acababa: qué producto se descarta, de qué factura habla o de cuánto a
+cuánto va un Min/Max no cabían, así que decidir desde la campana era decidir a
+ciegas. Tocar una notificación con solicitud detrás la abre en el sitio, con el
+detalle completo —las líneas de producto con su lote y su existencia, la factura
+con su motivo, las fotos de evidencia, el motivo escrito por quien la mandó— y
+debajo los mismos Aprobar/Rechazar de siempre.
+
+Se **reusa `DetalleSolicitud`**, el canónico de las tres pantallas de solicitudes,
+en vez de escribir una cuarta versión «para el panel»: cubre los trece tipos y la
+historia de ese archivo es justamente que las copias se separan. Viaja por
+`lazy()` porque la campana está en `AppLayout` —o sea en el chunk que se baja
+siempre— y el detalle sólo hace falta al desplegar. Verificado en el build: sale
+en su propio `DetalleSolicitud-*.js`.
+
+**Salir sigue estando**: el detalle abierto trae su propio «Ver en Solicitudes ↗»,
+que es donde la solicitud vive con su historial y el resto de la bandeja al lado.
+
+**Quién y de qué sala, sin abrir nada.** Cada fila muestra ahora la cara y el
+nombre de quien la originó y su sucursal. Las dos ya estaban en la tabla
+—`created_by` lo escribe `notificar_solicitud_creada` y `branch_id` sale del
+metadata de la solicitud— y no se leían: `fetchNotifications` no las pedía. Cero
+consultas nuevas.
+
+Verificado en el navegador contra el build, en tema claro y oscuro: el realce
+cubriendo la tarjeta entera, el descarte con sus dos líneas de producto, la
+anulación con su factura y su motivo, y el cambio de cliente con el antes → después.
+La rama de Min/Max (`fetchMinMaxChangeRequestById`) **no se pudo ver en pantalla**:
+`minmax_change_requests` está vacía en producción.
+
 ## v2.557.2 — El tablero se ordena solo hasta que vos lo acomodes
 
 El tablero de Inicio abría con huecos: franjas en blanco entre widgets, en vez

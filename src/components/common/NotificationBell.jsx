@@ -4,14 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell, BellRing, Check, AlertTriangle, AlertCircle, CheckCircle2,
-    Megaphone, ChevronRight, Trash2, X, ArrowRight, Undo2,
+    Megaphone, ChevronRight, ChevronDown, Trash2, X, ArrowRight, ArrowUpRight, Undo2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { iconoDeTipo } from '../../constants/tipoIconos';
+import { shortEmployeeName } from '../../utils/nameUtils';
 import Contador from './Contador';
+import LiquidAvatar from './LiquidAvatar';
+import NotificacionDetalle from './NotificacionDetalle';
 
 // ── Apariencia por tipo de notificación ──────────────────────────────────────
 // El ícono sale del catálogo compartido (`constants/tipoIconos`). Antes se
@@ -114,6 +117,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const notifications = useStaff(s => s.notifications || []);
     const announcements = useStaff(s => s.announcements || []);
     const roles = useStaff(s => s.roles || []);
+    const employees = useStaff(s => s.employees || []);
+    const branches = useStaff(s => s.branches || []);
     const markNotificationRead = useStaff(s => s.markNotificationRead);
     const markAllNotificationsRead = useStaff(s => s.markAllNotificationsRead);
     const deleteNotificationsByIds = useStaff(s => s.deleteNotificationsByIds);
@@ -123,6 +128,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const [confirmClear, setConfirmClear] = useState(false);
     const [justRang, setJustRang] = useState(false);
     const [flashIds, setFlashIds] = useState(() => new Set());
+    // Qué filas están desplegadas. Un `Set` y no un solo id: cerrar una para
+    // abrir otra obliga a re-leer el aviso anterior para comparar dos
+    // solicitudes, que es justo lo que se hace cuando llegan tres seguidas.
+    const [expandidas, setExpandidas] = useState(() => new Set());
     // Borrados en ventana de deshacer: [{ key, ids: string[], isAll }]
     const [pendingDeletes, setPendingDeletes] = useState([]);
     const rootRef = useRef(null);
@@ -151,6 +160,22 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         () => notifications.filter(n => !n.read_at && !pendingIds.has(n.id)),
         [notifications, pendingIds]
     );
+
+    // ── Quién y dónde, sin abrir nada ────────────────────────────────────────
+    // Las dos salen de la fila de la notificación: `created_by` es quien la
+    // originó y `branch_id` la sala de la que habla. Ya estaban en la tabla —lo
+    // que faltaba era leerlas (ver `fetchNotifications`)— así que la cara y la
+    // sucursal no cuestan ni una consulta más.
+    const empleadosPorId = useMemo(() => {
+        const m = new Map();
+        employees.forEach(e => m.set(String(e.id), e));
+        return m;
+    }, [employees]);
+    const sucursalesPorId = useMemo(() => {
+        const m = new Map();
+        branches.forEach(b => m.set(String(b.id), b.name));
+        return m;
+    }, [branches]);
 
     const unreadAnnouncements = useMemo(() => {
         if (!user || !canSeeAnnouncements) return [];
@@ -255,12 +280,40 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
     useEffect(() => { if (!isOpen) setConfirmClear(false); }, [isOpen]);
 
+    /* Una notificación que tiene una solicitud detrás se DESPLIEGA en el sitio;
+       el resto sigue llevando a su pantalla como siempre.
+
+       El aviso cuenta lo que pasó en tres renglones y ahí se acaba: qué producto
+       se descarta, de qué factura habla o de cuánto a cuánto va un Min/Max no
+       cabían. Desplegar es lo que convierte «avisame» en «mostrame», y sin salir
+       de la campana no se pierde el resto de la bandeja.
+
+       Salir sigue estando: el detalle desplegado trae su propio «Ver en
+       Solicitudes», que es donde la solicitud vive con su historial completo. */
+    const puedeExpandir = (n) => Boolean(n.metadata?.request_id);
+
+    const alternarExpansion = (id) => setExpandidas(prev => {
+        const s = new Set(prev);
+        s.has(id) ? s.delete(id) : s.add(id);
+        return s;
+    });
+
     const handleNotifClick = (n) => {
         if (!n.read_at) markNotificationRead(n.id);
+        if (puedeExpandir(n)) { alternarExpansion(n.id); return; }
         if (n.link) {
             setIsOpen(false);
             navigate(n.link);
         }
+    };
+
+    // El enlace de salida del detalle. `n.link` ya trae la forma correcta para
+    // cada familia —incluida `minmax:<id>`, que es otra tabla—; el respaldo sólo
+    // cubre avisos viejos, escritos antes de que el enlace se guardara.
+    const irASolicitudes = (n) => {
+        if (!n.read_at) markNotificationRead(n.id);
+        setIsOpen(false);
+        navigate(n.link || `/requests?solicitud=${n.metadata?.request_id ?? ''}`);
     };
 
     /* Una notificación de solicitud pendiente puede decidirse desde acá, pero
@@ -534,6 +587,15 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                     ? (RESUELTA_LABEL[resuelta] || 'Resuelta')
                                                     : (n.link ? (ACTION_LABEL[n.type] || 'Ver') : null);
 
+                                                const expandible = puedeExpandir(n);
+                                                const abierta    = expandidas.has(n.id);
+                                                // Interactiva es la que hace ALGO al tocarla: desplegarse
+                                                // o llevar a su pantalla. De eso depende el realce, que
+                                                // es la promesa de que se puede tocar.
+                                                const interactiva = expandible || Boolean(n.link);
+                                                const quien    = n.created_by ? empleadosPorId.get(String(n.created_by)) : null;
+                                                const sucursal = n.branch_id ? sucursalesPorId.get(String(n.branch_id)) : null;
+
                                                 // Fila en ventana de deshacer (borrado individual)
                                                 if (pendingOne) {
                                                     return (
@@ -560,14 +622,27 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         animate={{ opacity: inPendingAll ? 0.35 : 1, y: 0 }}
                                                         exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
                                                         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                                                        /* ── El realce es de la TARJETA, no del texto ──────
+                                                           Estaba en el `<button>` del encabezado, que no
+                                                           llega ni a los botones de decisión ni al detalle
+                                                           desplegado: al apuntar la fila se encendía la
+                                                           mitad de arriba y Aprobar/Rechazar se quedaban
+                                                           sobre el fondo del panel, leyéndose como si
+                                                           fueran de otra cosa. Reportado con captura
+                                                           (2026-08-11): «la card no cubre los botones».
+                                                           Acá cubre la fila entera —encabezado, detalle y
+                                                           acciones— porque el hover vive en el contenedor
+                                                           que los tiene a los tres adentro. */
                                                         className={`relative group transition-colors duration-[var(--dur-lento)]
                                                             ${inPendingAll ? 'pointer-events-none' : ''}
+                                                            ${interactiva ? cx.rowHover : ''}
                                                             ${isFlash ? (isDark ? 'bg-chart-1/[0.14]' : 'bg-chart-1/10') : unread ? cx.rowUnread : ''}`}
                                                     >
                                                         <button
                                                             onClick={() => handleNotifClick(n)}
-                                                            className={`w-full flex items-start gap-3 pl-5 pr-10 py-3 text-left transition-colors
-                                                                ${n.link ? `cursor-pointer ${cx.rowHover}` : 'cursor-default'}`}
+                                                            aria-expanded={expandible ? abierta : undefined}
+                                                            className={`w-full flex items-start gap-3 pl-5 pr-10 py-3 text-left
+                                                                ${interactiva ? 'cursor-pointer' : 'cursor-default'}`}
                                                         >
                                                             <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${sev ? (isDark ? sev.oscuro : sev.claro) : tintForType(n.type, n.metadata, isDark)}`}>
                                                                 <Icon size={16} strokeWidth={2} />
@@ -584,14 +659,53 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     {tituloSinEmoji(n.title)}
                                                                 </p>
                                                                 {n.body && (
-                                                                    <p className={`text-body-sm font-medium leading-snug mt-0.5 line-clamp-3 ${cx.rowBody}`}>{n.body}</p>
+                                                                    <p className={`text-body-sm font-medium leading-snug mt-0.5 ${abierta ? '' : 'line-clamp-3'} ${cx.rowBody}`}>{n.body}</p>
                                                                 )}
+
+                                                                {/* ── De quién y de qué sala ──────────────────────
+                                                                    El nombre viaja adentro del cuerpo («QA Testing
+                                                                    solicita…»), pero ahí es una palabra más en un
+                                                                    párrafo de tres renglones: no se distingue de
+                                                                    un vistazo y la sala no aparecía en ninguna
+                                                                    parte. Acá van como dato, con la cara adelante
+                                                                    —que es lo que de verdad se reconoce— y sin
+                                                                    costar una consulta: las dos salen de la fila. */}
+                                                                {(quien || sucursal) && (
+                                                                    <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
+                                                                        {quien && (
+                                                                            <LiquidAvatar
+                                                                                src={quien.photo || quien.photo_url}
+                                                                                alt=""
+                                                                                fallbackText={quien.name}
+                                                                                className="w-5 h-5 rounded-full shrink-0 text-micro"
+                                                                            />
+                                                                        )}
+                                                                        <span className={`text-caption font-bold truncate ${cx.rowTitleRead}`}>
+                                                                            {quien ? shortEmployeeName(quien) : sucursal}
+                                                                        </span>
+                                                                        {quien && sucursal && (
+                                                                            <span className={`text-caption font-medium truncate ${cx.rowTime}`}>· {sucursal}</span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
                                                                 <div className="flex items-center gap-2 mt-1.5">
                                                                     {/* La hora es contexto, no acción: en mayúsculas y con
                                                                         tracking ancho competía de igual a igual con «VER»,
                                                                         y son cosas de peso distinto. */}
                                                                     <span className={`text-caption font-medium ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
-                                                                    {actionLabel && (
+                                                                    {/* En una fila que se despliega, el verbo tiene que
+                                                                        decir QUÉ hace el toque. «Revisar solicitud →»
+                                                                        prometía irse a otra pantalla, y eso ahora lo
+                                                                        ofrece el enlace de abajo del detalle. */}
+                                                                    {expandible ? (
+                                                                        <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest
+                                                                            ${unread && !abierta ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}>
+                                                                            {abierta ? 'Ocultar' : 'Ver detalle'}
+                                                                            <ChevronDown size={11} strokeWidth={3}
+                                                                                className={`transition-transform duration-[var(--dur-base)] ${abierta ? 'rotate-180' : ''}`} />
+                                                                        </span>
+                                                                    ) : actionLabel && (
                                                                         <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest transition-transform
                                                                             ${resuelta ? cx.chipMuted : `group-hover:translate-x-0.5 ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}`}>
                                                                             {actionLabel}
@@ -601,9 +715,41 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                             {!resuelta && <ArrowRight size={10} strokeWidth={3} />}
                                                                         </span>
                                                                     )}
+                                                                    {/* El estado de una solicitud ya decidida se pierde
+                                                                        al cambiar el verbo por «Ver detalle»: sin esto,
+                                                                        una aprobada y una pendiente se leen igual. */}
+                                                                    {expandible && resuelta && (
+                                                                        <span className={`text-caption font-black uppercase tracking-widest ${cx.chipMuted}`}>
+                                                                            {RESUELTA_LABEL[resuelta] || 'Resuelta'}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </button>
+
+                                                        {/* ── El detalle, desplegado ─────────────────────────
+                                                            Lo que hay que ver para decidir: las líneas de
+                                                            producto de un ajuste, la factura de una
+                                                            modificación, el MIN/MAX de antes y el propuesto,
+                                                            las fotos de evidencia y el motivo escrito.
+                                                            Se monta SOLO al abrirla — el contenido pesa y no
+                                                            tiene por qué viajar por cada fila de la lista. */}
+                                                        {abierta && (
+                                                            <div className={`px-5 pb-3 pt-1 border-t ${cx.headerBorder}`}>
+                                                                <NotificacionDetalle notif={n} />
+                                                                {/* La salida. La campana muestra la solicitud;
+                                                                    Solicitudes es donde vive, con su historial
+                                                                    y el resto de la bandeja al lado. */}
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); irASolicitudes(n); }}
+                                                                    className={`mt-2 inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1.5 -ml-2 rounded-xl transition-colors
+                                                                        ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
+                                                                >
+                                                                    Ver en Solicitudes
+                                                                    <ArrowUpRight size={11} strokeWidth={3} />
+                                                                </button>
+                                                            </div>
+                                                        )}
 
                                                         {/* Decidir sin salir de la campana.
                                                             No repiten el flujo de decisión: llevan AL diálogo
@@ -614,7 +760,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             Además es lo que funciona en iPhone: iOS ignora
                                                             los botones de acción de una notificación web. */}
                                                         {puedeDecidir(n) && (
-                                                            <div className="flex items-stretch gap-2 px-5 pb-3 -mt-1">
+                                                            // El `-mt-1` recupera el aire que deja el renglón de
+                                                            // la hora; con el detalle abierto ese renglón no es
+                                                            // el vecino de arriba, así que subir los botones los
+                                                            // pegaría al enlace de salida.
+                                                            <div className={`flex items-stretch gap-2 px-5 pb-3 ${abierta ? '' : '-mt-1'}`}>
                                                                 {/* `soft` y no relleno sólido: es el caso que
                                                                     nombra DESIGN.md §15.2 — dos acciones de
                                                                     categoría juntas donde ninguna manda. Y

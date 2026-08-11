@@ -5,9 +5,15 @@
 // lectura/marcado-como-leído/borrado del lado del destinatario.
 import { supabase } from '../supabaseClient';
 
+// `created_by` es QUIÉN la originó — lo escribe `notificar_solicitud_creada` con
+// el `employee_id` de la solicitud. Estaba en la tabla y no se leía, así que la
+// campana no podía poner la cara de quien pide: había que abrir la solicitud
+// para saber de quién era. Verificado contra prod (2026-08-11): resuelve a un
+// empleado en las 16 REQUEST_PENDING y las 10 REQUEST_RESOLVED; los avisos del
+// sistema lo traen nulo y ahí la fila se dibuja como antes.
 export function fetchNotifications() {
     return supabase.from('notifications')
-        .select('id, type, title, body, link, metadata, branch_id, created_at, read_at')
+        .select('id, type, title, body, link, metadata, branch_id, created_by, created_at, read_at')
         .order('created_at', { ascending: false })
         .limit(100);
 }

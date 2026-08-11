@@ -27,6 +27,22 @@ export function insertMinMaxChangeRequest(payload) {
 }
 
 /**
+ * Una sola solicitud de Min/Max, por id.
+ *
+ * La usa el detalle que se despliega en la campana: el aviso trae
+ * `metadata.request_id`, pero un ajuste de Min/Max NO vive en
+ * `approval_requests` —es otra tabla— así que sin esto había que bajar la lista
+ * entera (`fetchAllMinMaxChangeRequests`) para mostrar una fila.
+ *
+ * `maybeSingle` y no `single`: una solicitud borrada o fuera del alcance del RLS
+ * devuelve `null` sin error, que es exactamente el caso que la campana tiene que
+ * poder contar («ya no está») en vez de pintar un error técnico.
+ */
+export function fetchMinMaxChangeRequestById(id) {
+    return supabase.from('minmax_change_requests').select('*').eq('id', id).maybeSingle();
+}
+
+/**
  * Resolver un ajuste de Min/Max desde el centro de solicitudes.
  *
  * Es la MISMA RPC que usa la pestaña de Min/Max (`TabMinMaxRequests`), no una

@@ -12,6 +12,7 @@ import {
     lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento, fmtFechaHora,
 } from './movimientoTexto';
 import { CaraPersona, BloquePersonas } from './PersonasSolicitud';
+import LaVenta from './VentaDeSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
 // El detalle de una solicitud, en UN solo lugar.
@@ -39,8 +40,9 @@ const DE_LEGAJO_AJENO = new Set([
     'INVENTORY_TRANSFER_REQUEST', 'MINMAX_CHANGE_REQUEST',
 ]);
 
-const fmtDate     = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
-const fmtDateFull = (iso) => !iso ? '—' : new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
+const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
+// `fmtDateFull` vivía acá y lo usaba el recuadro de la factura que reemplazó
+// `LaVenta`, que trae su propio formato con hora.
 
 // El ID con el que se ubica la venta. Sale de la solicitud (`erp_invoice_id`) o
 // de lo que quedó registrado al aplicarla. NUNCA cae al id interno del portal:
@@ -369,7 +371,7 @@ const BloqueAplicado = ({ req, aplicado }) => {
 };
 
 /* ─── El bloque que depende del tipo ──────────────────────────────────────── */
-export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cantidades }) => {
+export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cantidades, employeesById }) => {
     const t = req.type;
 
     /* Los tres que mueven producto de verdad. */
@@ -570,27 +572,22 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
         );
     }
 
+    /* ── Las cuatro de facturación ─────────────────────────────────────────
+     * Todas hablan de la MISMA venta, así que todas abren con ella entera
+     * —cliente, quién atendió, forma de pago, sello, productos— y después
+     * dicen qué se pide cambiar. Antes cada una mostraba cuatro datos sueltos
+     * (correlativo, total, fecha) y con eso no se decide nada. */
     if (t === 'ANNULMENT_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <Caja tono="hover" className="flex items-center gap-2">
-                    <Ban size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                    <div className="flex-1 min-w-0">
-                        <Rotulo>Factura a anular</Rotulo>
-                        <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                        {meta.fecha && <p className="text-caption text-content-2">{fmtDateFull(meta.fecha + 'T12:00:00')}</p>}
-                        <IdVenta meta={meta} />
-                    </div>
-                    {meta.tipo_documento && (
-                        <Badge variant={meta.tipo_documento === 'CCF' ? 'danger' : 'neutral'} size="sm" className="shrink-0">{meta.tipo_documento}</Badge>
-                    )}
-                </Caja>
+                <LaVenta meta={meta} employeesById={employeesById} />
                 {meta.reason && (
                     <Caja>
                         <Rotulo>Motivo de anulación</Rotulo>
                         <p className="text-label font-bold text-content-2">{meta.reason}</p>
                     </Caja>
                 )}
+                <IdVenta meta={meta} />
             </div>
         );
     }
@@ -598,17 +595,10 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <Caja tono="hover" className="flex items-center gap-2">
-                    <CreditCard size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                    <div className="flex-1 min-w-0">
-                        <Rotulo>Factura</Rotulo>
-                        <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                        <IdVenta meta={meta} />
-                    </div>
-                </Caja>
+                <LaVenta meta={meta} employeesById={employeesById} />
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
-                        <Rotulo>Actual</Rotulo>
+                        <Rotulo>Pago actual</Rotulo>
                         <p className="text-body-sm font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
                     </Caja>
                     <Caja tono="hover">
@@ -616,6 +606,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         <p className="text-body-sm font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                     </Caja>
                 </div>
+                <IdVenta meta={meta} />
             </div>
         );
     }
@@ -623,14 +614,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'VENDOR_CHANGE_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <Caja tono="hover" className="flex items-center gap-2">
-                    <Receipt size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                    <div className="flex-1 min-w-0">
-                        <Rotulo>Factura</Rotulo>
-                        <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                        <IdVenta meta={meta} />
-                    </div>
-                </Caja>
+                <LaVenta meta={meta} employeesById={employeesById} />
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
                         <Rotulo>Atendió</Rotulo>
@@ -642,6 +626,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         <Persona photo={meta.new_vendor_photo} nombre={meta.new_vendor_name} />
                     </Caja>
                 </div>
+                <IdVenta meta={meta} />
             </div>
         );
     }
@@ -649,14 +634,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     if (t === 'CLIENT_CHANGE_REQUEST' && meta.correlativo) {
         return (
             <div className="space-y-2">
-                <Caja tono="hover" className="flex items-center gap-2">
-                    <Receipt size={13} className="text-content-2 flex-shrink-0" strokeWidth={2} />
-                    <div className="flex-1 min-w-0">
-                        <Rotulo>Factura</Rotulo>
-                        <p className="text-body-sm font-bold text-content-2">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
-                        <IdVenta meta={meta} />
-                    </div>
-                </Caja>
+                <LaVenta meta={meta} employeesById={employeesById} />
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
                         <Rotulo>Cliente actual</Rotulo>
@@ -670,6 +648,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         )}
                     </Caja>
                 </div>
+                <IdVenta meta={meta} />
             </div>
         );
     }
@@ -697,7 +676,7 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
             <BloquePersonas req={req} empleadosPorId={employeesById} />
 
             <BloquePorTipo req={req} meta={meta} seleccion={seleccion} onToggle={onToggle}
-                onCantidad={onCantidad} cantidades={cantidades} />
+                onCantidad={onCantidad} cantidades={cantidades} employeesById={employeesById} />
 
             <BloqueAplicado req={req} aplicado={meta.erp_aplicado ?? meta.erp_traslado} />
 

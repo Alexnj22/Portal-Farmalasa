@@ -77,6 +77,21 @@ export function fetchInvoiceItemsByIds(invoiceIds) {
         .order('total_linea', { ascending: false });
 }
 
+/**
+ * Una venta puntual, por su id INTERNO.
+ *
+ * Nunca por correlativo: el número se repite entre salas —medido en prod, el
+ * `0000068132_COF` existe en Salud 4 y en La Popular, con distinto cliente y
+ * distinto monto— así que buscar por ahí puede traer la venta de otra sucursal.
+ * `metadata.invoice_id` de la solicitud es esta clave.
+ *
+ * Reusa las columnas de la lista: es exactamente lo que hace falta para leer una
+ * venta entera, y una segunda lista de columnas se separaría de aquélla.
+ */
+export function fetchInvoiceById(invoiceId) {
+    return supabase.from('sales_invoices').select(COLUMNAS_LISTA).eq('id', invoiceId).maybeSingle();
+}
+
 export function fetchInvoiceItemsForInvoice(invoiceId) {
     return supabase.from('sales_invoice_items')
         .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')

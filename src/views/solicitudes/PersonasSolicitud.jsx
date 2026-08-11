@@ -74,12 +74,17 @@ export const FichaPersona = ({ rotulo, persona, cuando, apunte, vacio = 'Sin asi
         warning: 'text-warning-text',
     }[tono] ?? 'text-content-2';
 
+    /* Todo en una columna al lado de la cara, sin línea divisoria ni bloque
+     * aparte para la hora. La versión con divisor medía 150px por ficha y en el
+     * teléfono las dos se apilan: entre eso y el encabezado, la primera pantalla
+     * se iba entera en quién pidió, y lo que hay que mirar para decidir —la
+     * venta, los productos— quedaba abajo del pliegue. */
     return (
         <div className={`px-3 py-2.5 rounded-2xl border ${fondo}`}>
             <p className={`text-micro font-black uppercase tracking-widest mb-1.5 ${tinta}`}>{rotulo}</p>
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-start gap-2.5 min-w-0">
                 {persona && <CaraPersona persona={persona} className="w-9 h-9 rounded-full" />}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <p className={`text-body-sm leading-tight truncate ${persona ? 'font-bold text-content' : 'font-medium text-content-3 italic'}`}>
                         {persona ? shortEmployeeName(persona) : vacio}
                     </p>
@@ -88,14 +93,15 @@ export const FichaPersona = ({ rotulo, persona, cuando, apunte, vacio = 'Sin asi
                             {[persona.role, persona.branch_name].filter(Boolean).join(' · ')}
                         </p>
                     )}
+                    {(cuando || apunte) && (
+                        <p className="text-caption text-content-2 font-medium leading-tight mt-1">
+                            {cuando && fmtFechaHora(cuando)}
+                            {cuando && apunte && <span className="text-content-3"> · </span>}
+                            {apunte && <span className="text-content-3">{apunte}</span>}
+                        </p>
+                    )}
                 </div>
             </div>
-            {(cuando || apunte) && (
-                <div className="mt-1.5 pt-1.5 border-t border-divider">
-                    {cuando && <p className="text-caption text-content-2 font-medium">{fmtFechaHora(cuando)}</p>}
-                    {apunte && <p className="text-micro text-content-3">{apunte}</p>}
-                </div>
-            )}
         </div>
     );
 };

@@ -21,6 +21,59 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.567.0 — La solicitud de facturación muestra la venta entera
+
+Anular una factura es irreversible y se decidía a ciegas. La solicitud mostraba
+cuatro datos —correlativo, total, fecha y el motivo elegido de una lista— y con
+eso no se puede decir que sí. Palabras del usuario: *«no me dice nada, la venta,
+tipo de pago, productos… son criterios para aprobar o no»*.
+
+Las cuatro solicitudes de facturación —anular, cambiar el pago, el vendedor o el
+cliente— abren ahora con **la venta entera**:
+
+- **A quién se le vendió** y **quién la atendió**, con su cara.
+- **Forma de pago**, sala, fecha **y hora** de la venta.
+- **Si Hacienda ya la selló** y **si ya está anulada** — los dos datos que más
+  pesan para decidir, y ninguno se veía. Una venta ya anulada abre con un aviso
+  rojo: no hay nada que anular.
+- **Qué se llevó el cliente**: cada renglón con su presentación, lote,
+  vencimiento, cantidad, precio unitario y total.
+- El desglose fiscal: gravado, IVA, retención y total.
+
+La foto que la solicitud guardó al pedirse se sigue mostrando siempre; el resto
+sale de la venta **viva**, porque entre que se pidió y que se decide la venta
+pudo anularse o llegarle el sello. Y la cabecera vive detrás de `ventas.can_view`
+con su alcance por sala: si no llega, se pinta lo que la solicitud guardó y no se
+inventa el resto.
+
+### Los renglones que no suman el total
+
+Al armar el detalle apareció que las líneas no siempre cuadran con el total de la
+venta. Medido antes de decidir qué hacer: **2,980 de 3,000** facturas de agosto
+cuadran al centavo. De las 132 descuadradas de julio y agosto, **59** traen un
+renglón **sin descripción** que la venta **resta** en vez de sumar —un descuento,
+la parte que cubre un seguro— guardado con signo positivo, y en las **59** la
+diferencia se explica exactamente restándolo. Las otras 73 tienen otra causa, y
+no se adivina.
+
+Así que la pantalla **no asume**: comprueba. Si restando esos renglones la cuenta
+cierra contra el total que fue a Hacienda, los pinta como resta (*«Ajuste sobre
+la venta −$16.14»*) y no los cuenta como unidades vendidas. Si no cierra de
+ninguna de las dos formas, lo dice en vez de mostrar una suma que engaña.
+
+### Detalles
+
+- La venta se busca por su **id interno, nunca por correlativo**: el número se
+  repite entre salas —`0000068132_COF` existe en Salud 4 y en La Popular, con
+  distinto cliente y distinto monto—, así que buscar por ahí trae la venta de
+  otra sucursal.
+- El criterio de «tiene sello» pasa a ser **uno solo** (`tieneSelloMh`, 40
+  caracteres exactos) en vez de repetirse a mano — es el bug que dejó una factura
+  figurando un año como confirmada.
+- Las fichas de quién pidió y quién decide se compactaron a tres renglones: en el
+  teléfono ocupaban la primera pantalla entera y empujaban la venta abajo del
+  pliegue.
+
 ## v2.566.0 — el circuito cierra: recepción y disparo al finalizar
 
 Las dos piezas que faltaban. El pedido ya no necesita que nadie teclee el

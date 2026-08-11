@@ -70,6 +70,16 @@ export function fetchNulaInvoices(filterBranch) {
 const SELLO_MH_LARGO = 40;
 const SELLO_MH_LIKE = '_'.repeat(SELLO_MH_LARGO);
 
+/**
+ * ¿Esta venta tiene sello VÁLIDO de Hacienda?
+ *
+ * El mismo criterio que el filtro de arriba, para el lado del navegador — una
+ * sola definición, que es justo lo que faltó cuando el bug del sello vivía en
+ * tres sitios a la vez y los tres tenían que fallar juntos para que una factura
+ * figurara un año como confirmada.
+ */
+export const tieneSelloMh = (recibidoMh) => String(recibidoMh ?? '').length === SELLO_MH_LARGO;
+
 // ── Pendientes de confirmación Hacienda (SIN sello, esperando) ──────────────
 //
 // `recibido_mh IS NULL` a secas, y no "sin sello válido": un sello presente

@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.563.1 — el traslado no sale si las hojas no son las del PDF
+
+La hoja impresa es la unidad real de trabajo: es lo que Bodega tiene en la mano
+cuando arma la caja, y de ahí sale qué producto va en qué caja. El traslado
+lleva ese número adentro, así que si el mapa producto→hoja no corresponde al
+papel, el traslado queda apoyado en un dato falso y nadie se entera.
+
+Entra `verificar_hojas_pedido`, y el planificador **se niega** si no pasa.
+
+La prueba es directa, no un proxy de versión: **el PDF nunca imprime las cajas
+adicionales dentro de la tabla numerada** —van en su propio bloque, al final—.
+Si una hoja guardada contiene un producto de caja especial o de Electrolit,
+esas hojas se calcularon con el defecto corregido en v2.557.5 y no son las del
+papel. Tampoco puede haber un producto en dos hojas. Sí se acepta que falte
+alguno: lo que se redondea a cero no sale impreso y se marca `omitida`.
+
+Medido sobre los 6 pedidos en vuelo: **los 6 dan `confiables: false`**, con
+entre 1 y 8 adicionales metidos dentro de sus hojas numeradas. El #96 tiene 5.
+Verificado que el planificador se niega y **no escribe ni una línea** — sin el
+guardián habría creado 476 traslados contra hojas equivocadas.
+
+Corrección a lo dicho en v2.562.0: ahí se afirmó que el #96 tenía «13 hojas,
+las mismas del PDF». No es cierto — el #96 se generó a las 16:22, antes de que
+saliera la corrección. Lo que aquella prueba demostró es que el planificador
+lee bien las hojas que hay; no que esas hojas sean las correctas.
+
+Consecuencia práctica: el traslado automático solo va a poder correr sobre
+pedidos generados DESPUÉS de la corrección. Los que están en vuelo necesitan
+que se les recalculen las hojas antes.
+
+_(pendiente de redactar)_
+
 ## v2.563.0 — El Corte Z dice quién declara y desde dónde
 
 El Corte Z llevaba los números y el cotejo, pero no la identificación de quien

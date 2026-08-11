@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.565.0 — el despacho por producto, retomable
+
+El corazón del traslado automático: `trasladar-pedido-erp` ya no manda un
+traslado por pedido sino **uno por producto**, y lo hace en corridas cortas que
+se retoman.
+
+**Por qué uno por producto.** El sistema de origen trata el traslado como un
+hecho binario —o pendiente o finalizado, sin estado intermedio—, así que
+«recibí la mitad y el resto después» no se le puede pedir. Con un traslado por
+producto, recibir uno es recibirlo ENTERO: la sucursal confirma una hoja
+completa (se reciben sus N traslados) o un solo producto —el que va a vender—
+sin pelearse con eso.
+
+**Por qué retomable.** Una edge function vive 400 s en plan Pro y
+`EdgeRuntime.waitUntil` no lo corre. A ~370 ms por producto, 900 son 333 s: no
+entra con margen. Cada corrida trabaja hasta 240 s y la siguiente adopta la
+anterior; el índice único deja de ser un rechazo y pasa a ser el punto de
+encuentro.
+
+- **Verifica y despacha en la misma pasada por producto.** Separar «verificar
+  todo» de «despachar todo» obligaría a reconstruir dónde quedó; así cada
+  producto se resuelve entero y su estado vive en su propia fila.
+- **Los lotes van dentro del mismo traslado.** Un producto con dos lotes son dos
+  renglones de un traslado, no dos traslados.
+- **Una línea cortada NO se reintenta a ciegas.** Si la corrida murió entre que
+  el sistema creó el traslado y que se anotó su id, la línea queda en error
+  pidiendo verificación con la clave en la mano. Reintentar movería el
+  inventario dos veces, y eso no se deshace.
+- **El concepto empieza con la clave** (`P96-S2-H3-I68179`): es lo que permite
+  encontrar un traslado entre los ~900 del pedido.
+
+**Verificado sin escribir en el sistema.** El pedido #94 está finalizado pero
+sus hojas no son las del PDF: el camino real se negó con `HOJAS_NO_CONFIABLES`,
+dejó la corrida en error con el motivo, y creó **0 líneas** y **0 marcas** en
+los renglones del pedido.
+
+**Y un número que salió de la regresión:** el mismo simulacro sobre el pedido
+#96, corrido con tres horas de diferencia, pasó de **13 a 52 productos** que ya
+no se pueden trasladar (43 sin existencia, 9 con el lote agotado) sobre 476 —de
+2% a 11%—. Ningún código de hallazgo nuevo, así que no es una regresión: es la
+bodega moviéndose. Es el argumento más fuerte a favor de despachar apenas se
+finaliza, y de la pantalla de confirmación.
+
+Migración `20260811204343` (`resumen_traslado_pedido`,
+`incrementar_reanudacion_traslado`).
+
+**Falta:** la recepción (por hoja y por producto) y el disparo al finalizar.
+
+_(pendiente de redactar)_
+
 ## v2.564.0 — Las solicitudes muestran quién pide, quién aprueba y a qué hora
 
 Una solicitud se leía sin ninguna de las dos caras y sin una sola hora. Decía el

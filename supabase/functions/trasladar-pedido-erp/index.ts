@@ -4,7 +4,6 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   CONCEPTO_MAX,
   hoySV,
-  identificarTrasladoNuevo,
   norm,
   pendientesDeOrigen,
   resolverPresentacion,
@@ -243,17 +242,34 @@ Deno.serve(async (req) => {
       })
       .select("id")
       .maybeSingle();
+    let filaId = fila?.id as string | undefined;
     if (filaErr) {
-      // 23505 = el índice único. Ya hay un traslado real vivo para esta sucursal.
-      if (String((filaErr as { code?: string }).code) === "23505")
-        return json({
-          ok: false,
-          codigo: "YA_DESPACHADO",
-          error: "Este pedido ya tiene un traslado en curso o despachado para esa sucursal.",
-        }, 409);
-      throw filaErr;
+      // 23505 = el índice único: ya hay una corrida real viva para esta
+      // sucursal. Eso NO es un error — es lo normal cuando se retoma. 900
+      // productos no entran en los 400 s de techo del runtime, así que el
+      // despacho se hace en varias corridas y cada una adopta la anterior.
+      // Solo una ya DESPACHADA por completo se rechaza.
+      if (String((filaErr as { code?: string }).code) === "23505") {
+        const { data: viva } = await admin
+          .from("pedido_traslado_erp")
+          .select("id, estado")
+          .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+          .eq("modo", "real").eq("paso", "enviar")
+          .neq("estado", "error")
+          .maybeSingle();
+        if (!viva || viva.estado !== "en_curso")
+          return json({
+            ok: false,
+            codigo: "YA_DESPACHADO",
+            error: "Este pedido ya se despachó para esa sucursal.",
+          }, 409);
+        filaId = viva.id as string;
+        await admin.rpc("incrementar_reanudacion_traslado", { p_run_id: filaId });
+      } else {
+        throw filaErr;
+      }
     }
-    const filaId = fila!.id as string;
+    if (!filaId) throw new Error("No se pudo abrir ni adoptar la corrida.");
 
     const cerrar = async (patch: Record<string, unknown>) => {
       await admin.from("pedido_traslado_erp")
@@ -262,11 +278,259 @@ Deno.serve(async (req) => {
     };
 
     // ══════════════════════════════════════════════════════════════════════
+    // PASO 1 · DESPACHAR — un traslado por producto, retomable
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Un traslado por producto y no uno por pedido, porque el sistema trata el
+    // traslado como un hecho binario: o está pendiente o está finalizado. No
+    // hay «recibí la mitad». Con un traslado por producto, recibir uno es
+    // recibirlo ENTERO, y la sucursal puede confirmar una hoja completa o un
+    // solo producto —el que va a vender— sin pelearse con eso.
+    //
+    // Verifica y despacha en la MISMA pasada por producto. Separar «verificar
+    // todo» de «despachar todo» haría que retomar tuviera que reconstruir en
+    // qué punto quedó; así cada producto se resuelve entero antes de pasar al
+    // siguiente y el estado vive en su propia fila.
+    const despachar = async (cookie: string, presupuesto: number) => {
+      // El plan se arma en la base y es idempotente. Se NIEGA si las hojas
+      // guardadas no son las del PDF impreso: el traslado lleva el número de
+      // hoja adentro, y una hoja equivocada es peor que ninguna.
+      const { data: plan, error: planErr } = await admin.rpc("planificar_traslado_pedido", {
+        p_pedido_id: pedidoId, p_sucursal_id: sucId, p_run_id: filaId,
+      });
+      if (planErr) {
+        await cerrar({ estado: "error", error_msg: planErr.message });
+        return { despachado: false, error: planErr.message };
+      }
+
+      // Despachar sin que Bodega haya confirmado sería mover lo que el reparto
+      // supuso, no lo que salió.
+      const sinConfirmar = items.filter((i) => !i.confirmada).length;
+      if (sinConfirmar > 0) {
+        await cerrar({
+          estado: "error",
+          error_msg: `El envío todavía no se confirmó: ${sinConfirmar} de ${items.length} productos `
+            + `no tienen cantidad confirmada por Bodega.`,
+        });
+        return { despachado: false, codigo: "SIN_CONFIRMAR" };
+      }
+
+      // Una línea en 'enviando' es residuo de una corrida que murió justo entre
+      // que el sistema creó el traslado y que alcanzamos a anotarlo. NO se
+      // reintenta a ciegas: reintentar movería el inventario dos veces y eso no
+      // se deshace solo. Se marca para que alguien la mire con la clave en la
+      // mano, que es lo que permite encontrarla en el sistema.
+      await admin.from("pedido_traslado_linea")
+        .update({
+          estado: "error",
+          error_msg: "La corrida anterior se cortó mientras se despachaba este producto. "
+            + "Hay que verificar en el sistema si el traslado entró (buscar la clave en el concepto) "
+            + "antes de reintentarlo — reintentar a ciegas lo movería dos veces.",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId).eq("estado", "enviando");
+
+      const porItem = new Map(items.map((i) => [i.id, i]));
+      const { data: ped } = await admin.from("pedidos").select("numero").eq("id", pedidoId).maybeSingle();
+      const numero = ped?.numero ?? "-";
+
+      // La foto de los pendientes: el traslado nuevo es el que no estaba. El
+      // `insert` no devuelve el id y el listado ignora el orden que se le pide.
+      let conocidos = await pendientesDeOrigen(cookie, ubicOrigen);
+
+      let hechas = 0, fallidas = 0, sinTiempo = false;
+
+      for (;;) {
+        if (Date.now() - arranque > presupuesto) { sinTiempo = true; break; }
+
+        const { data: tanda, error: tandaErr } = await admin
+          .from("pedido_traslado_linea")
+          .select("id, pedido_item_id, erp_product_id, hoja, cantidad, clave")
+          .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+          .eq("estado", "planificada")
+          .order("hoja", { ascending: true })
+          .order("pedido_item_id", { ascending: true })
+          .limit(25);
+        if (tandaErr) throw tandaErr;
+        if (!tanda?.length) break;
+
+        for (const ln of tanda) {
+          if (Date.now() - arranque > presupuesto) { sinTiempo = true; break; }
+
+          const fallar = async (msg: string) => {
+            fallidas++;
+            await admin.from("pedido_traslado_linea")
+              .update({ estado: "error", error_msg: msg, updated_at: new Date().toISOString() })
+              .eq("id", ln.id);
+          };
+
+          const it = porItem.get(ln.pedido_item_id as number);
+          if (!it) { await fallar("El renglón ya no está en el pedido."); continue; }
+
+          // Se toma la línea ANTES de tocar el sistema: si esto no escribe,
+          // nadie más la agarra, y si el worker muere después queda la marca.
+          const { data: tomada } = await admin.from("pedido_traslado_linea")
+            .update({ estado: "enviando", updated_at: new Date().toISOString() })
+            .eq("id", ln.id).eq("estado", "planificada")
+            .select("id").maybeSingle();
+          if (!tomada) continue;   // otra corrida se la llevó
+
+          const f = await traerFila(cookie, ln.erp_product_id as number, ubicOrigen);
+          if (!f.encontrado) { await fallar("Ya no tiene existencia en bodega."); continue; }
+
+          const pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, Number(it.factor ?? 0));
+          if (!pres) {
+            await fallar(`Se despachó ${it.presentacion_tipo} de ${it.factor}, y hoy ninguna presentación `
+              + `con ese nombre trae ese factor. Ofrece: ${f.presentaciones.map((p) => p.tipo).join(", ") || "ninguna"}.`);
+            continue;
+          }
+
+          const enUnidades = Number(ln.cantidad) * Number(pres.unidad);
+          if (enUnidades > f.existencia) {
+            await fallar(`Quedan ${f.existencia} unidades en bodega y hacen falta ${enUnidades}.`);
+            continue;
+          }
+
+          // ── Los lotes van DENTRO del mismo traslado ────────────────────
+          // Un producto con dos lotes son dos renglones del mismo traslado, no
+          // dos traslados: sigue siendo un producto y se recibe de una vez.
+          const renglones: { cantidad: number; idLote: string; lote: string | null }[] = [];
+          if (!f.regulado) {
+            renglones.push({ cantidad: Number(ln.cantidad), idLote: "0", lote: null });
+          } else {
+            const asignados = (it.lotes_asignados ?? [])
+              .map((l) => ({
+                numero: String(l.lote ?? ""),
+                vence: String(l.fecha_vencimiento ?? "").slice(0, 10),
+                cantidad: Number(l.take ?? l.packs ?? 0),
+              }))
+              .filter((l) => l.cantidad > 0);
+
+            let resto = Number(ln.cantidad);
+            let falla: string | null = null;
+            for (const a of asignados) {
+              if (resto <= 0) break;
+              const lote = f.lotes.find((x) =>
+                norm(x.numero) === norm(a.numero) && (!a.vence || x.vence.slice(0, 10) === a.vence)
+              );
+              if (!lote) {
+                falla = `El lote ${a.numero || "(sin número)"} ya no está en bodega. `
+                  + `Hay: ${f.lotes.map((x) => `${x.numero} ${x.vence}`).join(", ") || "ninguno"}.`;
+                break;
+              }
+              const toma = Math.min(a.cantidad, resto);
+              if (toma * Number(pres.unidad) > lote.stock) {
+                falla = `El lote ${lote.numero} tiene ${lote.stock} unidades y hacen falta `
+                  + `${toma * Number(pres.unidad)}.`;
+                break;
+              }
+              renglones.push({ cantidad: toma, idLote: lote.id, lote: lote.numero });
+              resto -= toma;
+            }
+            if (!falla && resto > 0) {
+              falla = `Los lotes del pedido no alcanzan para las ${ln.cantidad} confirmadas: `
+                + `faltan ${resto} sin lote asignado.`;
+            }
+            if (falla) { await fallar(falla); continue; }
+          }
+
+          // El vale se lee de la página y no se inventa: es un `uniqid()` que el
+          // servidor pre-rellena en cada carga. Uno por traslado, no se reutiliza.
+          const html = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
+          const vale = html.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
+          if (!vale) { await fallar("El sistema no entregó el número de vale."); continue; }
+
+          // La CLAVE va primero en el concepto: es lo que permite encontrar este
+          // traslado entre los ~900 del pedido, y lo que se busca al retomar
+          // para no duplicarlo.
+          const concepto = soloAscii(
+            `${ln.clave} Pedido ${numero} ${mapaDestino.nombre} hoja ${ln.hoja ?? "-"} ${it.nombre}`,
+          ).slice(0, CONCEPTO_MAX);
+
+          const total = renglones.reduce((s, r) => s + Number(pres.costo || 0) * r.cantidad, 0);
+          const datos = renglones.map((r) => [
+            ln.erp_product_id, pres.costo, pres.precio, r.cantidad, pres.unidad,
+            f.vence || "", pres.id, r.idLote,
+          ].join("|")).join("#") + "#";
+
+          const resp = leerRespuesta(await pedir(cookie, TRASLADO, new URLSearchParams({
+            process: "insert",
+            datos,
+            id_traslado_guardado: "0",
+            cuantos: String(renglones.length),
+            total: total.toFixed(4),
+            fecha: hoySV(),
+            concepto,
+            origen: String(ubicOrigen),
+            id_suc_destino: String(sucId),
+            id_ubicacion_destino: "0",
+            numero_vale: vale,
+          }), { extra: { Referer: TRASLADO } }));
+
+          if (!resp.ok) {
+            await fallar(`El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`);
+            continue;
+          }
+
+          const despues = await pendientesDeOrigen(cookie, ubicOrigen);
+          const nuevos = [...despues.keys()].filter((id) => !conocidos.has(id));
+          conocidos = despues;
+          const idTraslado = nuevos.length === 1 ? nuevos[0] : null;
+
+          hechas++;
+          await admin.from("pedido_traslado_linea").update({
+            estado: "enviada",
+            id_traslado: idTraslado,
+            numero_vale: vale,
+            enviado_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            detalle: {
+              producto: it.nombre,
+              presentacion: `${it.presentacion_tipo} (${pres.unidad})`,
+              id_presentacion_erp: pres.id,
+              renglones,
+              concepto,
+              existencia_previa: f.existencia,
+              regulado: f.regulado,
+            },
+            // El traslado ENTRÓ igual; lo único que falta es su número para
+            // poder recibirlo desde el portal. Se dice, no se calla.
+            error_msg: idTraslado ? null
+              : `Entró, pero no se pudo distinguir cuál es entre ${nuevos.length} candidatos. `
+                + `Buscar «${ln.clave}» en el concepto.`,
+          }).eq("id", ln.id);
+        }
+      }
+
+      const { data: resumen } = await admin.rpc("resumen_traslado_pedido", {
+        p_pedido_id: pedidoId, p_sucursal_id: sucId,
+      });
+      const quedan = Number((resumen as Record<string, unknown>)?.por_despachar ?? 0);
+
+      await cerrar({
+        estado: quedan > 0 ? "en_curso" : "despachado",
+        lineas: Number((resumen as Record<string, unknown>)?.enviadas ?? hechas),
+        detalle: resumen ?? null,
+      });
+
+      return {
+        despachado: quedan === 0,
+        en_esta_corrida: hechas,
+        fallidas,
+        quedan,
+        sin_tiempo: sinTiempo,
+        plan,
+      };
+    };
+
+    // ══════════════════════════════════════════════════════════════════════
     // El trabajo
     // ══════════════════════════════════════════════════════════════════════
     const correr = async () => {
       const presupuesto = background ? PRESUPUESTO_BG_MS : PRESUPUESTO_FG_MS;
       const cookie = await sesionEn(erpOrigen, login);
+
+      if (!simulacro) return await despachar(cookie, presupuesto);
 
       const partes: string[] = [];
       const detalle: Record<string, unknown>[] = [];
@@ -434,104 +698,6 @@ Deno.serve(async (req) => {
         return { verificados, lineas: partes.length, hallazgos: hallazgos.length };
       }
 
-      // ── Real: o entra entero, o no entra ────────────────────────────────
-      // Medio traslado es peor que ninguno — el mismo criterio que
-      // `aplicar-traslado-inventario`. El simulacro existe justamente para que
-      // los hallazgos se vean ANTES y no frenen el despacho del día.
-      if (hallazgos.length > 0) {
-        await cerrar({
-          estado: "error",
-          hallazgos,
-          detalle,
-          error_msg: `No se despachó nada: ${hallazgos.length} producto(s) no se pudieron resolver.`,
-        });
-        return { despachado: false, hallazgos: hallazgos.length };
-      }
-      if (partes.length === 0) {
-        await cerrar({ estado: "error", error_msg: "No quedó ni una línea que mandar." });
-        return { despachado: false, hallazgos: 0 };
-      }
-      // Despachar sin que Bodega haya confirmado sería mover lo que el reparto
-      // supuso, no lo que salió — que es justo lo que esta columna vino a
-      // arreglar. El simulacro sí corre sin confirmar, porque su trabajo es
-      // avisarle a Bodega ANTES de que confirme.
-      const sinConfirmar = items.filter((i) => !i.confirmada).length;
-      if (sinConfirmar > 0) {
-        await cerrar({
-          estado: "error",
-          error_msg: `El envío todavía no se confirmó: ${sinConfirmar} de ${items.length} productos `
-            + `no tienen cantidad confirmada por Bodega.`,
-        });
-        return { despachado: false, codigo: "SIN_CONFIRMAR" };
-      }
-
-      // El vale no se inventa: es un `uniqid()` que el servidor pre-rellena en
-      // el HTML de cada carga de la página, y su JS lo valida pero nunca lo
-      // genera. Hay que hacer el GET y sacarlo de ahí.
-      const html = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
-      const vale = html.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
-      if (!vale) {
-        await cerrar({ estado: "error", error_msg: "El sistema no entregó el número de vale del traslado." });
-        return { despachado: false };
-      }
-
-      const { data: ped } = await admin.from("pedidos").select("numero").eq("id", pedidoId).maybeSingle();
-      const concepto = soloAscii(
-        `Pedido ${ped?.numero ?? "-"} - prepara: ${quien.name} - destino: ${mapaDestino.nombre}`,
-      ).slice(0, CONCEPTO_MAX);
-
-      // La foto de ANTES: el id del traslado nuevo es el que no estaba. El
-      // `insert` no lo devuelve y el listado no respeta el orden que se le pide.
-      const antes = await pendientesDeOrigen(cookie, ubicOrigen);
-
-      const resp = leerRespuesta(await pedir(cookie, TRASLADO, new URLSearchParams({
-        process: "insert",
-        datos: partes.join("#") + "#",
-        id_traslado_guardado: "0",
-        cuantos: String(partes.length),
-        total: total.toFixed(4),
-        fecha: hoySV(),
-        concepto,
-        origen: String(ubicOrigen),
-        id_suc_destino: String(sucId),
-        id_ubicacion_destino: "0",
-        numero_vale: vale,
-      }), { extra: { Referer: TRASLADO } }));
-
-      if (!resp.ok) {
-        await cerrar({
-          estado: "error",
-          numero_vale: vale,
-          lineas: partes.length,
-          detalle,
-          error_msg: `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`,
-        });
-        return { despachado: false, error: resp.msg };
-      }
-
-      const despues = await pendientesDeOrigen(cookie, ubicOrigen);
-      const { id: idTraslado, candidatos } = await identificarTrasladoNuevo(
-        cookie, antes, despues, html, sucId, detalle.slice(0, 5).map((d) => String(d.producto ?? "")),
-      );
-
-      await cerrar({
-        estado: "despachado",
-        id_traslado: idTraslado,
-        numero_vale: vale,
-        lineas: partes.length,
-        unidades,
-        total: Number(total.toFixed(4)),
-        detalle,
-        // Si quedó sin id el traslado ENTRÓ igual: lo único que falta es el
-        // número para poder recibirlo desde el portal. Se dice, no se calla.
-        hallazgos: idTraslado
-          ? []
-          : [{
-            erp_product_id: 0, producto: "—", codigo: "ID_AMBIGUO",
-            detalle: `El traslado entró, pero no se pudo distinguir cuál es entre ${candidatos.length} candidatos.`,
-          }],
-      });
-      return { despachado: true, id_traslado: idTraslado, lineas: partes.length };
     };
 
     // ── Background: la respuesta sale ya ──────────────────────────────────

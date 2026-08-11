@@ -7,7 +7,6 @@
 // justamente resolver y evaluar el módulo.
 export const IMPORTADORES = {
     EmployeeAnnouncementsView: () => import("../views/employee/EmployeeAnnouncementsView"),
-    EmployeeRequestsView: () => import("../views/employee/EmployeeRequestsView"),
     EmployeeProfileView: () => import("../views/employee/EmployeeProfileView"),
     EmployeeDocumentsView: () => import("../views/employee/EmployeeDocumentsView"),
     AttendanceMonitorView: () => import("../views/AttendanceMonitorView"),
@@ -96,7 +95,9 @@ export const IMPORTADOR_POR_RUTA = {
     'monitor': IMPORTADORES.AttendanceMonitorView,
     'my-announcements': IMPORTADORES.EmployeeAnnouncementsView,
     'my-documents': IMPORTADORES.EmployeeDocumentsView,
-    'my-requests': IMPORTADORES.EmployeeRequestsView,
+    // `/my-requests` se fusionó en `/requests-personales` el 2026-08-11 y hoy
+    // sólo redirige. Sin vista propia, no hay nada que precargar.
+    'my-requests': IMPORTADORES.RequestsView,
     'orphan-objects': IMPORTADORES.OrphanObjectsView,
     'overview': IMPORTADORES.DashboardView,
     'payroll': IMPORTADORES.PayrollView,

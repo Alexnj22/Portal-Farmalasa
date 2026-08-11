@@ -248,7 +248,7 @@ function CabeceraMovimiento({ op, branchName, onBack, lineas, unidades }) {
     );
 }
 
-function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId, selectorSucursal, onHecho }) {
+export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId, selectorSucursal, onHecho }) {
     const { user } = useAuth();
     const employees = useStaffStore(s => s.employees);
     const appendAuditLog = useStaffStore(s => s.appendAuditLog);

@@ -38,7 +38,7 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     'corte-z', 'ventas-perdidas', 'inventario', 'gestion-stock', 'traslados',
     'staff', 'monitor', 'audit', 'auditview', 'schedules', 'payroll', 'requests',
     'vacation-plan', 'announcements', 'encuesta', 'encuesta-admin', 'metas',
-    'branches', 'laboratorios', 'roles', 'permissions', 'sync-health', 'my-requests',
+    'branches', 'laboratorios', 'roles', 'permissions', 'sync-health', 'requests-personales',
     'my-documents', 'my-announcements', 'profile', 'dashboard',
 ];
 

@@ -44,7 +44,7 @@ const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
     'staff', 'monitor', 'audit', 'schedules', 'payroll', 'requests', 'vacation-plan',
     'announcements', 'encuesta', 'metas', 'branches', 'laboratorios', 'roles',
-    'permissions', 'sync-health', 'my-requests', 'my-documents', 'my-announcements',
+    'permissions', 'sync-health', 'requests-personales', 'my-documents', 'my-announcements',
     'profile', 'dashboard',
 ];
 

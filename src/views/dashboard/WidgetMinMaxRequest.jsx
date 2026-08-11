@@ -222,7 +222,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 }
 
 /* ── Main: busca producto → formulario ── */
-function FormularioMinMax({ selectedErp = null }) {
+export function FormularioMinMax({ selectedErp = null }) {
   const { user }       = useAuth();
   const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 

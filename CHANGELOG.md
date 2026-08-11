@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.557.0 — Mis Solicitudes se fusiona con Personales
+
+Eran dos pantallas para el mismo expediente. En `/my-requests` uno mandaba su
+solicitud y no podía ver ninguna otra; en `/requests-personales` Talento Humano
+las resolvía y no veía las propias. Cada una con su módulo de permiso, su
+consulta y su formulario — y el de Talento Humano no tenía **ninguna** de las
+guardas del otro: se le podían aprobar vacaciones a alguien con nueve meses de
+antigüedad.
+
+Ahora es una ruta. Lo que las junta es el alcance que se estrenó ayer: con
+«todos» se ve la sala entera y se decide, con «sólo míos» se ve lo de uno y se
+manda. Adentro hay un filtro **Todos / Sólo yo** —también en Solicitudes de
+Sucursal— que sólo aparece cuando hay algo más que lo propio que mirar.
+`/my-requests` redirige y se lleva la consulta, para que el enlace de un aviso
+siga cayendo en su solicitud y no en la lista.
+
+**El formulario nuevo** es el de autoservicio, en un modal, con el empleado
+como un campo más. Conserva las cuatro guardas que valían la pena —la
+antigüedad, el choque con una incapacidad aprobada, la boleta del ISSS desde el
+día 4, el turno del compañero— y suma tres cosas: el resumen de lo que se va a
+mandar vive en el encabezado y no se va con el scroll; **Horas Extra** por fin
+pide cuántas horas son (tenía tipo y no tenía formulario); y avisa si ya hay una
+pendiente del mismo tipo, para cualquier tipo y no sólo para vacaciones.
+
+**Solicitudes de Sucursal estrena «Nueva solicitud»**, con los mismos tres
+formularios de las baldosas del tablero —ajuste de inventario, modificación a
+facturación, ajuste de Min/Max—. No son copias: se exportaron los que ya
+existían y se separó de `LanzadorSolicitud` su modal con ranuras, que es la
+mitad que no depende de la baldosa. Se cargan tarde, así que entrar a
+Solicitudes sigue costando lo mismo (45 kB gzip). El traslado entre salas queda
+fuera y se dice por qué: su formulario arranca con un producto ya elegido.
+
+**Cuatro cosas rotas que la fusión destapó**, todas en la misma migración:
+
+- **«Sólo míos» no cabía en la columna.** `role_permissions.scope` tiene un
+  CHECK de `ALL | BRANCH`. La migración de ayer afirma «no tiene CHECK
+  (verificado)» — no lo estaba: el alcance salió a producción con su opción
+  visible en Permisos y sin poder guardarse.
+- **Cancelar la solicitud propia fallaba en silencio.** La policy de UPDATE
+  tiene tres ramas y ninguna nombra a quien la mandó. Cero filas afectadas no es
+  un error para PostgREST.
+- **El cambio de turno no lo podía contestar el compañero**, que es justamente
+  quien lo contesta en el primer nivel.
+- **Min/Max leía «sólo míos» como «mi sucursal».** El mismo error que la
+  migración de ayer se escribió para evitar, en la tabla de al lado.
+
+`emp_requests` desaparece: era la segunda llave de la misma puerta. Los tres
+cargos que la tenían conservan lo que tenían — dos ya estaban en «todos», y
+Jefe/a de Compras y Logística pasa a «sólo míos».
+
 ## v2.556.0 — Un nombre no puede empujar al botón de salir
 
 En el sidebar, quien tiene dos nombres y dos apellidos empujaba el botón de

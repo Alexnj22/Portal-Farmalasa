@@ -3,7 +3,6 @@
 // usuario real buscaría sin saber el nombre exacto del módulo.
 export const MODULE_SEARCH_KEYWORDS = {
     overview:           ['inicio', 'resumen', 'panorama general', 'bienvenida'],
-    emp_requests:       ['solicitudes propias', 'permisos personales', 'vacaciones propias'],
     emp_announcements:  ['comunicados', 'avisos internos'],
     emp_profile:        ['datos personales', 'mi cuenta', 'mi informacion'],
     emp_documents:      ['incapacidades', 'constancias', 'documentos personales'],

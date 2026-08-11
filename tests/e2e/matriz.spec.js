@@ -58,7 +58,7 @@ const ESCENARIOS = [
     { id: 'login',       url: '/login', sinSesion: true },
     { id: 'tablero',     url: '/overview' },
     { id: 'ventas',      url: '/ventas' },
-    { id: 'solicitudes', url: '/my-requests' },
+    { id: 'solicitudes', url: '/requests-personales' },
     { id: 'pedidos',     url: '/pedidos' },
     { id: 'menu',        url: '/overview', accion: abrirMenu },
     { id: 'modal',       url: '/overview', accion: abrirModal },

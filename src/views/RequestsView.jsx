@@ -1,44 +1,38 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import CuerpoDialogo from '../components/common/CuerpoDialogo';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import Notice from '../components/common/Notice';
-import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
+import ConfirmModal from '../components/common/ConfirmModal';
 import FilterBar from '../components/common/FilterBar';
+import SegmentedControl from '../components/common/SegmentedControl';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    Inbox, Check, X, ChevronDown,
-    User, ClipboardList,
-    Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
-    CheckCircle2, XCircle,
-    Search, ArrowLeftRight, Plus, Eye,
+    Inbox, ChevronDown, ClipboardList, Palmtree, FileText,
+    CheckCircle2, Search, Plus, Users, User,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
 import GlassViewLayout from '../components/GlassViewLayout';
-import LiquidSelect from '../components/common/LiquidSelect';
-import RangeDatePicker from '../components/common/RangeDatePicker';
-import LiquidDatePicker from '../components/common/LiquidDatePicker';
-import { REQUEST_TYPES, REQUEST_STATUS, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
+import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests, decidirMinMax } from '../data/minmaxRequests';
 import { notifyEmployees } from '../utils/notify';
 import { ERP_NAMES } from '../constants/erp';
 import { ICONO_POR_TIPO } from '../constants/tipoIconos';
-import PortalTextarea from '../components/common/PortalTextarea';
-import ModalShell from '../components/common/ModalShell';
 import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
+/* Los dos formularios se cargan tarde. No es una optimización de gusto: es la
+ * regla del proyecto —lo que sólo hace falta al apretar un botón no viaja en el
+ * paquete de la vista— y acá se midió. Importados de frente, entrar a
+ * Solicitudes costaba 66 kB gzip contra un tope de 56, y lo pagaba todo el
+ * mundo, incluido quien sólo entra a mirar la cola.
+ *
+ * `familiasDisponibles` SÍ es estático, y por eso vive en su propio módulo: la
+ * vista lo necesita antes de decidir si dibuja el botón. */
+const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'));
+const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
+import { familiasDisponibles } from './solicitudes/familiasOperativas';
 import { lineasDe } from './solicitudes/movimientoTexto';
-
-const CREATABLE_TYPES = [
-    { key: 'VACATION',     icon: Palmtree },
-    { key: 'PERMIT',       icon: FileText },
-    { key: 'SHIFT_CHANGE', icon: RefreshCw },
-    { key: 'OVERTIME',     icon: Coffee },
-    { key: 'ADVANCE',      icon: DollarSign },
-    { key: 'CERTIFICATE',  icon: FileCheck },
-];
 
 // El mapa vivía acá y se mudó a `constants/tipoIconos` (2026-08-01): la campana
 // de notificaciones necesita los mismos íconos para los mismos tipos, y tener
@@ -87,14 +81,34 @@ const TYPE_ICONS = ICONO_POR_TIPO;
  * alguien mejora una. Lo que cambia es el MÓDULO de permisos y qué tipos
  * entran — y las dos cosas salen de este parámetro, así que no hay forma de que
  * una vista lea con el permiso de la otra.
+ *
+ * ── «Mis Solicitudes» vive ACÁ desde el 2026-08-11 ────────────────────────
+ * Era una tercera ruta (`/my-requests`) con su propio módulo (`emp_requests`),
+ * su propia consulta y su propio formulario. Dos pantallas para el mismo
+ * expediente: en una se mandaba la solicitud y en la otra se resolvía, y la
+ * primera no tenía forma de mostrar más que lo propio ni la segunda de mostrar
+ * lo propio siquiera.
+ *
+ * Lo que las junta es el ALCANCE, que se estrenó el día anterior: con «todos»
+ * se ve el expediente de la sala entera y se decide; con «sólo míos» se ve lo
+ * de uno y se manda. Es la misma pantalla mirada desde dos permisos, que es
+ * exactamente lo que el usuario pidió — «que mejor adentro haya un filtro para
+ * ver todos o sólo yo, pero con alcance global si tiene el permiso».
  */
 const RequestsView = ({ ambito = 'sucursal' }) => {
     const esSucursal = ambito !== 'personales';
     const MODULO     = esSucursal ? 'requests' : 'requests_personales';
 
     const { user, hasPermission, getScope } = useAuth();
-    const canApprove = hasPermission(MODULO, 'can_approve');
+    const alcance    = getScope(MODULO);
+    const soloMio    = alcance === 'MINE';
+    /* Con «sólo míos» no se decide NADA, ni lo propio. No es una precaución de
+     * pantalla: es lo que dice la policy (`CASE … WHEN 'MINE' THEN false`), y
+     * si acá dijera otra cosa el botón existiría para que la base lo rechazara
+     * con un error que no explica nada. */
+    const canApprove = hasPermission(MODULO, 'can_approve') && !soloMio;
     const canCreate  = hasPermission(MODULO, 'can_edit');
+    const miId       = String(user?.id ?? '');
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -107,7 +121,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const fetchRequests  = useStaff(s => s.fetchRequests);
     const approveRequest = useStaff(s => s.approveRequest);
     const rejectRequest  = useStaff(s => s.rejectRequest);
-    const createRequest  = useStaff(s => s.createRequest);
     const appendAuditLog = useStaff(s => s.appendAuditLog);
 
     const employeesById = useMemo(() => {
@@ -115,12 +128,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         (employees || []).forEach(e => m.set(String(e.id), e));
         return m;
     }, [employees]);
-
-    const employeeOptions = useMemo(() =>
-        (employees || [])
-            .filter(e => e.status !== 'INACTIVO')
-            .map(e => ({ value: String(e.id), label: e.name }))
-    , [employees]);
 
     /* Min/Max vive en OTRA tabla, con otras columnas y otro ciclo — pero para
      * quien mira la sala es una solicitud más, y tenerla en otra pantalla era
@@ -168,26 +175,32 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const [abierta,           setAbierta]           = useState(null); // { req, accionInicial }
     const [isActioning,       setIsActioning]       = useState(false);
 
-    // ── Crear solicitud a nombre de un empleado (RRHH) ──────────────────────
-    const [createModalOpen, setCreateModalOpen] = useState(false);
-    const [createEmployeeId, setCreateEmployeeId] = useState('');
-    const [createType,      setCreateType]      = useState('VACATION');
-    const [createPayload,   setCreatePayload]   = useState({});
-    const [createNote,      setCreateNote]      = useState('');
-    const [isCreatingReq,   setIsCreatingReq]   = useState(false);
+    /* ── El filtro «Todas / Sólo mías» ────────────────────────────────────
+     * Con alcance «sólo míos» no se ofrece: no hay una segunda cosa que ver, y
+     * un interruptor con un solo lado útil se lee como que la pantalla esconde
+     * algo. Con los otros dos alcances arranca en «todas», que es la bandeja.
+     *
+     * «Mías» son las que UNO mandó. Un cambio de turno dirigido a mí no entra
+     * —no es mía, es de mi compañero— y por eso el alcance «sólo míos» no
+     * aplica este filtro: allá la consulta ya trajo las dos cosas y esconder la
+     * mitad dejaría a la persona sin poder contestar. */
+    const [quien, setQuien] = useState('TODAS');
+    const filtrandoMias = !soloMio && quien === 'MIAS';
 
-    const openCreateModal = (employeeId = '') => {
-        setCreateEmployeeId(employeeId ? String(employeeId) : '');
-        setCreateType('VACATION');
-        setCreatePayload({});
-        setCreateNote('');
-        setCreateModalOpen(true);
-    };
+    // ── Crear ────────────────────────────────────────────────────────────────
+    const [nuevaAbierta, setNuevaAbierta] = useState(false);
+    const [prefillEmpleado, setPrefillEmpleado] = useState('');
+
+    // Cancelar la propia. No es una decisión —no la toma quien aprueba y no
+    // lleva motivo— así que viaja aparte, por `accionPropia` del modal.
+    const cancelRequest = useStaff(s => s.cancelRequest);
+    const [cancelarId, setCancelarId] = useState(null);
 
     // Deep-link desde EmployeeDetailView ("+ Nueva Solicitud" de un empleado puntual)
     useEffect(() => {
         if (location.state?.prefillEmployeeId) {
-            openCreateModal(location.state.prefillEmployeeId); // eslint-disable-line react-hooks/set-state-in-effect -- abre el modal por deep-link al montar
+            setPrefillEmpleado(String(location.state.prefillEmployeeId)); // eslint-disable-line react-hooks/set-state-in-effect -- abre el modal por deep-link al montar
+            setNuevaAbierta(true);
             navigate(location.pathname, { replace: true });
         }
     }, [location.state?.prefillEmployeeId, location.pathname, navigate]);
@@ -226,34 +239,28 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         setSearchParams(limpio, { replace: true });
     }, [searchParams, setSearchParams, delAmbito, statusFilter]);
 
-    const handleCreateRequest = async () => {
-        if (!createEmployeeId || !createNote.trim()) return;
-        setIsCreatingReq(true);
-        const result = await createRequest(createEmployeeId, createType, createPayload, createNote.trim());
-        setIsCreatingReq(false);
-        if (result) {
-            useToastStore.getState().showToast('Enviada', `Solicitud de ${REQUEST_TYPES[createType]?.label} registrada.`, 'success');
-            setCreateModalOpen(false);
-        } else {
-            useToastStore.getState().showToast('Error', 'No se pudo crear la solicitud.', 'error');
+    /* Qué se le pide a la base, según el alcance.
+     *
+     * `ownId` es lo que faltaba y no daba error: con `approverId` la consulta
+     * trae «lo que me toca decidir», y una solicitud PROPIA tiene a otro de
+     * aprobador. O sea que la pantalla que ahora también es «Mis Solicitudes»
+     * habría llegado sin ninguna de las mías. */
+    const criterios = useMemo(() => (soloMio
+        ? { soloMiasId: user?.id }
+        : {
+            branchId:   alcance === 'BRANCH' ? user?.branchId : null,
+            approverId: canApprove ? user?.id : null,
+            ownId:      user?.id,
         }
-    };
+    ), [soloMio, alcance, canApprove, user?.id, user?.branchId]);
+
+    useEffect(() => { fetchRequests(criterios); }, [criterios, fetchRequests]);
 
     useEffect(() => {
-        const apId = canApprove ? user?.id : null;
-        const brId = getScope(MODULO) === 'BRANCH' ? user?.branchId : null;
-        fetchRequests(null, brId, apId);
-    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests, MODULO]);
-
-    useEffect(() => {
-        const handler = () => {
-            const apId = canApprove ? user?.id : null;
-            const brId = getScope(MODULO) === 'BRANCH' ? user?.branchId : null;
-            fetchRequests(null, brId, apId);
-        };
+        const handler = () => fetchRequests(criterios);
         window.addEventListener('requests-updated', handler);
         return () => window.removeEventListener('requests-updated', handler);
-    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests, MODULO]);
+    }, [criterios, fetchRequests]);
 
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
@@ -282,29 +289,48 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      *                rebotar).
      *   · Traslado → NADIE desde acá: se confirma en Traslados, que relee la
      *                existencia de la sala antes de despachar.
+     *   · Cambio de turno → el COMPAÑERO al que se le pide, y sin permiso de
+     *                módulo: en su primer nivel no lo contesta una jefatura. Sin
+     *                esta rama, encender el alcance «sólo míos» dejaba a la
+     *                persona mirando una solicitud dirigida a ella y sin botón.
      *   · El resto → el módulo del ámbito.
      */
+    const deQuienEs = (r) => String(r.employee_id ?? r.employee?.id ?? '');
+    const paraQuien = (r) => String(r.approver_id ?? r.approver?.id ?? '');
+
     const puedeDecidir = (req) => {
         if (!req) return false;
         if (req.type === 'MINMAX_CHANGE_REQUEST')      return hasPermission('minmax', 'can_approve');
         if (req.type === 'INVENTORY_TRANSFER_REQUEST') return false;
+        if (req.type === 'SHIFT_CHANGE' && req.status === 'PENDING'
+            && paraQuien(req) === miId && deQuienEs(req) !== miId) return true;
         return canApprove;
     };
 
     const soloMira = !canApprove;
 
     const visible = (r) => {
-        const myId = String(user?.id);
-        if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
+        // Lo propio se ve SIEMPRE. Es la mitad que llegó con la fusión, y
+        // cualquier filtro de bandeja que se le aplique la esconde: una
+        // solicitud mía tiene a otro de aprobador por definición.
+        if (deQuienEs(r) === miId) return true;
+        // El cambio de turno lo contesta el compañero y no es asunto de nadie
+        // más mientras está pendiente.
+        if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && paraQuien(r) !== miId) return false;
+        // Con «sólo míos» no se ve nada ajeno salvo lo que hay que contestar,
+        // que ya pasó por la línea de arriba.
+        if (soloMio) return paraQuien(r) === miId;
         if (soloMira) return true;
-        if (r.status === 'PENDING') return !r.approver || String(r.approver?.id) === myId;
-        return String(r.approver?.id) === myId;
+        if (r.status === 'PENDING') return !r.approver || paraQuien(r) === miId;
+        return paraQuien(r) === miId;
     };
 
-    const pendingCount = delAmbito.filter(r => r.status === 'PENDING' && visible(r)).length;
+    const enFiltro = (r) => visible(r) && (!filtrandoMias || deQuienEs(r) === miId);
+
+    const pendingCount = delAmbito.filter(r => r.status === 'PENDING' && enFiltro(r)).length;
 
     const statusFiltered = delAmbito.filter(r => {
-        if (!visible(r)) return false;
+        if (!enFiltro(r)) return false;
         if (statusFilter !== 'ALL' && r.status !== statusFilter) return false;
         return true;
     });
@@ -461,15 +487,39 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         />
     );
 
-    // §17: la acción vive en la píldora del CUERPO, no en el header. Esta vista
-    // no tenía `FilterBar` —sus estados son pestañas, no filtros— así que la
-    // píldora existe justo para esto: es el lugar donde el usuario busca lo que
-    // puede hacer, y en el teléfono es lo único que no se va con el scroll.
-    const filtrosCuerpo = canCreate ? (
-        <FilterBar acciones={[{
-            key: 'nueva', icon: Plus, label: 'Nueva Solicitud', variant: 'primary',
-            onClick: () => openCreateModal(),
-        }]} />
+    /* En sucursal, «Nueva» abre los formularios de la sala, y cuáles se pueden
+     * abrir lo dice el permiso de cada uno. Sin ninguno disponible el botón no
+     * se dibuja: una puerta que abre a un menú vacío es peor que no estar. */
+    const puedeCrear = canCreate && (!esSucursal || familiasDisponibles(hasPermission).length > 0);
+
+    // §17: la acción vive en la píldora del CUERPO, no en el header. Y desde la
+    // fusión la barra lleva además el filtro de a quién pertenece lo que se
+    // está mirando, que es el control que convierte la bandeja en «lo mío».
+    const filtrosCuerpo = (puedeCrear || !soloMio) ? (
+        <FilterBar
+            activeCount={filtrandoMias ? 1 : 0}
+            onClear={filtrandoMias ? () => setQuien('TODAS') : undefined}
+            acciones={puedeCrear ? [{
+                key: 'nueva', icon: Plus, label: 'Nueva Solicitud', variant: 'primary',
+                onClick: () => { setPrefillEmpleado(''); setNuevaAbierta(true); },
+            }] : []}
+        >
+            {!soloMio && (
+                <FilterBar.Section label="de quién" active={filtrandoMias}
+                    onClear={() => setQuien('TODAS')}>
+                    <SegmentedControl
+                        size="sm" tone="neutro"
+                        label="De quién son las solicitudes"
+                        value={quien}
+                        onChange={setQuien}
+                        options={[
+                            { value: 'TODAS', label: 'Todos',    icon: Users },
+                            { value: 'MIAS',  label: 'Sólo yo',  icon: User  },
+                        ]}
+                    />
+                </FilterBar.Section>
+            )}
+        </FilterBar>
     ) : null;
 
     return (
@@ -579,106 +629,73 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                 `key` por id y la fila releída del store: al decidir, el store
                 reemplaza la solicitud, y sin releerla el modal seguiría mostrando
                 la foto vieja —sin su constancia de aplicado— hasta cerrarlo. */}
-            {abierta && (
-                <ModalSolicitud
-                    key={abierta.req.id}
-                    req={delAmbito.find(r => r.id === abierta.req.id) ?? abierta.req}
-                    canApprove={puedeDecidir(abierta.req)}
-                    employeesById={employeesById}
-                    accionInicial={abierta.accionInicial}
-                    ocupado={isActioning}
-                    onCerrar={() => !isActioning && setAbierta(null)}
-                    onDecidir={handleDecidir}
+            {abierta && (() => {
+                const req = delAmbito.find(r => r.id === abierta.req.id) ?? abierta.req;
+                /* Cancelar la propia. Sólo mientras está pendiente, y sólo de
+                 * quien la mandó — llegó con la fusión y sin esto se habría
+                 * perdido en silencio, porque el modal canónico no la ofrece
+                 * por su cuenta. Min/Max vive en otra tabla y su cancelación
+                 * es otro camino: queda fuera a propósito. */
+                const esPropiaPendiente = deQuienEs(req) === miId && req.status === 'PENDING'
+                    && req.type !== 'MINMAX_CHANGE_REQUEST';
+                return (
+                    <ModalSolicitud
+                        key={req.id}
+                        req={req}
+                        canApprove={puedeDecidir(req)}
+                        employeesById={employeesById}
+                        accionInicial={abierta.accionInicial}
+                        ocupado={isActioning}
+                        onCerrar={() => !isActioning && setAbierta(null)}
+                        onDecidir={handleDecidir}
+                        accionPropia={esPropiaPendiente ? {
+                            label: 'Cancelar solicitud',
+                            onClick: (r) => { setAbierta(null); setCancelarId(r.id); },
+                        } : null}
+                    />
+                );
+            })()}
+
+            <ConfirmModal
+                isOpen={!!cancelarId}
+                onClose={() => setCancelarId(null)}
+                onConfirm={async () => {
+                    await cancelRequest(cancelarId);
+                    setCancelarId(null);
+                    fetchRequests(criterios);
+                }}
+                title="Cancelar Solicitud"
+                message="¿Seguro que quieres cancelar esta solicitud? No se puede deshacer."
+                confirmText="Sí, cancelar"
+                isDestructive={true}
+            />
+
+            {/* Nueva solicitud. Son dos formularios muy distintos porque
+                son dos mundos distintos: el personal pregunta por la persona
+                (antigüedad, incapacidad, turno del compañero) y el de la sala
+                pregunta por el producto o la factura. Los dos abren desde el
+                MISMO botón, que es lo que el usuario tiene que recordar. */}
+            {nuevaAbierta && <Suspense fallback={null}>{esSucursal ? (
+                <ModalNuevaOperativa
+                    onClose={() => setNuevaAbierta(false)}
+                    hasPermission={hasPermission}
+                    branchIdUsuario={user?.branchId ?? user?.branch_id}
+                    alcanceTodas={alcance === 'ALL'}
                 />
-            )}
-
-            <ModalShell open={createModalOpen} onClose={() => !isCreatingReq && setCreateModalOpen(false)} maxWidthClass="max-w-lg" zClass="z-toast" closeOnEsc={!isCreatingReq} surface={null} ariaLabel="Nueva solicitud">
-                    <CuerpoDialogo
-                        titulo="Nueva solicitud"
-                        subtitulo="A nombre de un empleado"
-                        icono={ClipboardList}
-                        anchoEscritorio="max-w-lg"
-                        pie={<>
-                            <Button disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
-                                loading={isCreatingReq} icon={Check}
-                                onClick={handleCreateRequest}>Enviar</Button>
-                            <Button variant="secondary" disabled={isCreatingReq}
-                                onClick={() => !isCreatingReq && setCreateModalOpen(false)}>Cancelar</Button>
-                        </>}
-                    >
-                        <div className="space-y-4 text-left">
-
-                        <div>
-                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">Empleado <span className="text-danger">*</span></p>
-                            <LiquidSelect
-                                value={createEmployeeId}
-                                onChange={setCreateEmployeeId}
-                                options={employeeOptions}
-                                placeholder="Seleccionar empleado..."
-                                icon={User}
-                                compact
-                                clearable={false}
-                            />
-                        </div>
-
-                        <div>
-                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Tipo</p>
-                            <div className="flex flex-wrap gap-2">
-                                {CREATABLE_TYPES.map(({ key, icon: Icon }) => {
-                                    const conf = REQUEST_TYPES[key];
-                                    return (
-                                        <Button
-                                            variant="secondary"
-                                            icon={Icon}
-                                            key={key}
-                                            type="button"
-                                            onClick={() => { setCreateType(key); setCreatePayload({}); }}
-                                        >{conf.label}</Button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div>
-                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">
-                                {createType === 'VACATION' ? 'Período de Vacaciones' :
-                                 createType === 'PERMIT'   ? 'Días de Permiso' :
-                                 'Fecha'}
-                            </p>
-                            {createType === 'VACATION' ? (
-                                <RangeDatePicker
-                                    startDate={createPayload.startDate || ''}
-                                    endDate={createPayload.endDate || ''}
-                                    onRangeChange={(s, e) => setCreatePayload(prev => ({ ...prev, startDate: s, endDate: e }))}
-                                    holidays={holidays}
-                                    defaultDays={15}
-                                    label="vacaciones"
-                                />
-                            ) : (
-                                <LiquidDatePicker
-                                    value={createPayload.date || ''}
-                                    onChange={(v) => setCreatePayload(prev => ({ ...prev, date: v }))}
-                                    placeholder="Seleccionar fecha"
-                                    holidays={holidays}
-                                />
-                            )}
-                        </div>
-
-                        <div>
-                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo / Descripción <span className="text-danger">*</span></p>
-                            <PortalTextarea
-                                value={createNote}
-                                onChange={e => setCreateNote(e.target.value)}
-                                rows={3}
-                                placeholder="Describe la solicitud..."
-                                readOnly={isCreatingReq}
-                                textareaClassName="disabled:opacity-50"
-                            />
-                        </div>
-
-                        </div>
-                    </CuerpoDialogo>
-            </ModalShell>
+            ) : (
+                <ModalNuevaPersonal
+                    onClose={() => setNuevaAbierta(false)}
+                    sujetoId={prefillEmpleado || user?.id}
+                    /* A nombre de otro sólo con alcance sobre todos: con «mi
+                       sucursal» o «sólo míos» la base rechaza la fila, así que
+                       ofrecer el campo prometería un alcance que no existe. */
+                    puedeElegirEmpleado={alcance === 'ALL'}
+                    empleados={employees || []}
+                    solicitudes={requests || []}
+                    holidays={holidays}
+                    onEnviado={() => fetchRequests(criterios)}
+                />
+            )}</Suspense>}
         </GlassViewLayout>
     );
 };

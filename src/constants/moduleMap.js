@@ -17,7 +17,6 @@ import {
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 export const MODULE_MAP = {
     overview:          { path: '/overview',        label: 'Inicio',                   icon: Home          },
-    emp_requests:      { path: '/my-requests',    label: 'Mis Solicitudes',          icon: ClipboardList },
     emp_announcements: { path: '/my-announcements',label: 'Mis Avisos',               icon: Bell          },
     emp_profile:       { path: '/profile',         label: 'Mi Perfil',                icon: User          },
     emp_documents:     { path: '/my-documents',   label: 'Mis Documentos',           icon: FolderOpen    },
@@ -76,8 +75,8 @@ export const MODULE_MAP = {
 
 
 // Ruta actual → key del módulo. AppLayout compara por el PRIMER SEGMENTO porque
-// varios paths no coinciden con su key (emp_requests → /my-requests,
-// staff_list → /dashboard, time_audit → /audit), y las vistas de detalle cuelgan
+// varios paths no coinciden con su key (staff_list → /dashboard,
+// time_audit → /audit), y las vistas de detalle cuelgan
 // del mismo segmento (/branches/:id).
 export function moduleKeyForPath(pathname) {
     const seg = (pathname || '').split('/')[1] || '';

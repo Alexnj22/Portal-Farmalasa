@@ -887,7 +887,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 }
 
 /* ─── Main component ─────────────────────────────────────────────────────────── */
-function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
+export function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
   const { user }       = useAuth();
   const employees      = useStaffStore(s => s.employees);
   const branches       = useStaffStore(s => s.branches);

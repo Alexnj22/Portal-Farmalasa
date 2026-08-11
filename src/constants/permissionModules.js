@@ -40,7 +40,10 @@ const GRUPOS_CRUDOS = [
         group: 'Autogestión',
         color: 'text-success-text',
         modules: [
-            { key: 'emp_requests',      label: 'Mis Solicitudes',     desc: 'Crear y seguir solicitudes propias (permiso, vacación, etc.)', icon: ClipboardList, hasApprove: false },
+            // `emp_requests` («Mis Solicitudes») se fue el 2026-08-11: era la
+            // segunda llave de la misma puerta. Quien sólo manda las suyas hoy
+            // lleva `requests_personales` con alcance «sólo míos» — una fila
+            // en esta pantalla en vez de dos que se contradicen.
             { key: 'emp_announcements', label: 'Mis Avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icon: Bell,          hasApprove: false },
             { key: 'emp_profile',       label: 'Mi Perfil',           desc: 'Ver y actualizar datos personales propios',                  icon: User,          hasApprove: false },
             { key: 'emp_documents',     label: 'Mis Documentos',      desc: 'Consultar documentos personales: incapacidades, constancias, etc.', icon: FolderOpen, hasApprove: false },

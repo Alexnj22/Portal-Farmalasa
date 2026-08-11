@@ -112,11 +112,29 @@ export function fetchBranchActiveEmployeeIds(branchId) {
     return supabase.from('employees').select('id').eq('branch_id', branchId).eq('status', 'ACTIVO');
 }
 
-export function fetchApprovalRequestsList({ employeeId, branchEmpIds, approverId }) {
+/**
+ * La lista del centro de solicitudes.
+ *
+ * `ownId` es lo que faltaba al fusionar «Mis Solicitudes» adentro de la vista
+ * (2026-08-11): con `approverId` la consulta pedía «las que me toca decidir»,
+ * y una solicitud PROPIA tiene a otro de aprobador, así que las mías quedaban
+ * fuera de mi propia pantalla. No daba error — devolvía una lista sin ellas.
+ *
+ * `soloMiasId` es el alcance «sólo míos», y son DOS cosas: las que mandé y las
+ * que me toca contestar como compañero (el primer nivel de un cambio de turno
+ * lo responde el otro, no una jefatura). Sin la segunda mitad, encender el
+ * alcance nuevo apagaba los cambios de turno sin decirlo.
+ */
+export function fetchApprovalRequestsList({ employeeId, branchEmpIds, approverId, ownId, soloMiasId }) {
     let q = supabase.from('approval_requests').select(REQUEST_SIMPLE_SELECT).order('created_at', { ascending: false });
     if (employeeId) q = q.eq('employee_id', employeeId);
+    if (soloMiasId) return q.or(`employee_id.eq.${soloMiasId},approver_id.eq.${soloMiasId}`);
     if (branchEmpIds && branchEmpIds.length > 0) q = q.in('employee_id', branchEmpIds);
-    if (approverId) q = q.or(`approver_id.eq.${approverId},approver_id.is.null`);
+    if (approverId) {
+        const ramas = [`approver_id.eq.${approverId}`, 'approver_id.is.null'];
+        if (ownId) ramas.push(`employee_id.eq.${ownId}`);
+        q = q.or(ramas.join(','));
+    }
     return q;
 }
 

@@ -55,7 +55,7 @@ const MENU_GROUPS = [
     // —vive en `approval_requests`, con su ciclo pedir → confirmar → recibir— y
     // su permiso nace en este grupo, aparte de `requests` para que confirmar un
     // envío no arrastre aprobar vacaciones.
-    { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests', 'requests_personales', 'traslados'] },
+    { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['requests', 'requests_personales', 'traslados'] },
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
     { key: 'clima',         label: 'Clima Organizacional', icon: BarChart2, modules: ['encuesta', 'encuesta_admin']       },
@@ -99,7 +99,7 @@ const MENU_GROUPS = [
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'sync_health', 'orphan_objects', 'sesiones'] },
 ];
 
-const SELF_KEYS = ['emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
+const SELF_KEYS = ['emp_announcements', 'emp_profile', 'emp_documents'];
 
 // Ancla el grupo recién abierto dentro del viewport del nav: scrollea lo
 // mínimo para que header + hijos queden visibles. Nunca persigue al ítem

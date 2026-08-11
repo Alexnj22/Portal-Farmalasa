@@ -6,33 +6,24 @@
 // (data/vacationPlans.js) ya existentes.
 import { supabase } from '../supabaseClient';
 
-// ── EmployeeRequestsView.jsx ─────────────────────────────────────────────────
+// ── Solicitudes propias ──────────────────────────────────────────────────────
+//
+// Acá vivían cuatro consultas más —las propias, los cambios de turno donde uno
+// es el compañero, los Min/Max propios y los nombres de quienes piden—, todas
+// de `EmployeeRequestsView`. Esa vista se fusionó con «Solicitudes Personales»
+// el 2026-08-11 y las cuatro se fueron con ella: la vista unificada usa
+// `fetchApprovalRequestsList` con el criterio `soloMiasId`, que hace las dos
+// primeras en UNA consulta, y `fetchAllMinMaxChangeRequests` para la tercera.
+// Los nombres ya los trae el enriquecido de `fetchRequests`.
+//
+// `fetchOwnApprovalRequests` se queda: la usa «Mis Documentos», que no tiene
+// nada que ver con esto.
 
 export function fetchOwnApprovalRequests(employeeId) {
     return supabase.from('approval_requests')
         .select('id, type, status, note, approver_note, created_at, current_level, metadata')
         .eq('employee_id', employeeId)
         .order('created_at', { ascending: false });
-}
-
-export function fetchPendingShiftChangeRequestsForApprover(approverId) {
-    return supabase.from('approval_requests')
-        .select('id, type, status, note, metadata, created_at, employee_id')
-        .eq('approver_id', approverId)
-        .eq('type', 'SHIFT_CHANGE')
-        .eq('status', 'PENDING');
-}
-
-export function fetchOwnMinMaxChangeRequests(userId) {
-    return supabase.from('minmax_change_requests')
-        .select('*')
-        .eq('requested_by_id', userId)
-        .order('requested_at', { ascending: false })
-        .limit(200);
-}
-
-export function fetchEmployeeNamesByIds(empIds) {
-    return supabase.from('employees').select('id, name').in('id', empIds);
 }
 
 export function fetchEmployeeEventsByTypes(employeeId) {

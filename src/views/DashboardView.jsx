@@ -27,6 +27,16 @@ import {
   ReceiptText, Upload, Eye, Lock
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
+// Los mapas del sistema de origen se mudaron a `constants/erp` el 2026-08-11:
+// «Solicitudes de Sucursal» abre los mismos formularios y necesita los mismos
+// mapas, y dos copias a mano se desincronizan. `MM_ERP_NAMES` era además una
+// segunda escritura de `ERP_NAMES`, carácter por carácter.
+import {
+    ERP_NAMES as MM_ERP_NAMES,
+    ERP_ORDEN as MM_ERP_ORDER,
+    BRANCH_A_ERP as MM_BRANCH_TO_ERP,
+    ERP_UBICACION_POR_SUCURSAL,
+} from '../constants/erp';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
@@ -348,22 +358,13 @@ const TABS = [
   { id: 'operacion', label: 'Operación', icon: Zap             },
 ];
 
-// Min/Max usa sucursal ERP (1-7); el portal usa branch_id. Mapeo por nombre (calzan exacto).
-const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
-const MM_ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
-const MM_BRANCH_TO_ERP = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
+// Min/Max usa sucursal ERP (1-7); el portal usa branch_id. Los mapas están en
+// `constants/erp` y se importan arriba con sus nombres de acá.
 // Las siete salas de `MM_BRANCH_TO_ERP` son las que cargan compras; el resto
 // (Administración) no. Ésta es la que abre el widget de Facturas de mi Sala
 // cuando la propia no está entre ellas — La Popular, la primera del orden de
 // despacho, igual que en el resto del tablero.
 const SALA_COMPRAS_POR_DEFECTO = 2;
-
-// La ubicación con la que se mueve el inventario de cada sucursal. Leída del
-// propio sistema el 2026-08-06 y no adivinada: son numeraciones distintas de
-// las de sucursal, y la equivocada apunta a otro almacén sin dar error.
-// Bodega tiene dos (1 BODEGA, 2 BODEGA DE VENCIDOS); acá va la de operación,
-// porque la de vencidos es a donde llega lo descartado, no de donde sale.
-const ERP_UBICACION_POR_SUCURSAL = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 1, 7: 8 };
 
 // Las salas que venden (Bodega no tiene meta) — la lista vive en el módulo de
 // Metas, que es su dueño; acá solo se consume.

@@ -90,6 +90,113 @@ export function PieModal({ children }) {
     return <Ranura nombre="pie">{children}</Ranura>;
 }
 
+/**
+ * El MODAL con sus tres ranuras, sin la baldosa.
+ *
+ * Se separó el 2026-08-11, cuando «Solicitudes de Sucursal» estrenó su botón
+ * «Nueva solicitud»: los formularios que abre son los mismos cinco del tablero,
+ * y los cinco escriben su encabezado, sus herramientas y sus botones por estas
+ * ranuras. Sin separarla, la única forma de abrir uno era desde su baldosa —o
+ * sea que el botón nuevo habría necesitado una segunda anatomía de modal, que
+ * es exactamente el desparramo que esta puerta vino a terminar.
+ *
+ * La baldosa sigue siendo el uso normal; esto es la mitad de abajo.
+ */
+export function ModalConRanuras({
+    icon: Icon,
+    label,
+    descripcion,
+    maxWidth = 'max-w-2xl',
+    onClose,
+    children,               // (cerrar) => contenido
+}) {
+    const [nodos, setNodos] = useState({});
+    const [inquilinos, setInquilinos] = useState({ herramientas: 0, pie: 0, encabezado: 0 });
+
+    // Callbacks estables: un `ref` inline cambia de identidad en cada render y
+    // React lo llama con `null` y con el nodo cada vez — con un `setState`
+    // adentro, eso es un bucle. La comparación `n[k] === el` corta el segundo.
+    const refHerramientas = useCallback((el) => {
+        setNodos(n => (n.herramientas === el ? n : { ...n, herramientas: el }));
+    }, []);
+    const refPie = useCallback((el) => {
+        setNodos(n => (n.pie === el ? n : { ...n, pie: el }));
+    }, []);
+    const refEncabezado = useCallback((el) => {
+        setNodos(n => (n.encabezado === el ? n : { ...n, encabezado: el }));
+    }, []);
+
+    const registrar = useCallback((nombre) => {
+        setInquilinos(c => ({ ...c, [nombre]: c[nombre] + 1 }));
+        return () => setInquilinos(c => ({ ...c, [nombre]: c[nombre] - 1 }));
+    }, []);
+
+    const ranuras = useMemo(() => ({ nodos, registrar }), [nodos, registrar]);
+
+    return (
+        <LiquidModal open onClose={onClose} maxWidth={maxWidth} ariaLabel={label}
+            className="max-h-[85dvh]">
+            <RanurasCtx.Provider value={ranuras}>
+                <LiquidModal.Header>
+                    <div className="flex items-center gap-2.5">
+                        {/* `contents`: lo que se portalea acá SON los
+                            hijos directos de esta fila, así que hereda su
+                            reparto en vez de quedar encajonado. Mismo
+                            motivo que en el pie. */}
+                        <div ref={refEncabezado} className="contents" />
+                        {/* El título de la puerta cede el lugar cuando el
+                            contenido trae el suyo. El botón de cerrar NO:
+                            ése es de la puerta y se queda siempre. */}
+                        {inquilinos.encabezado === 0 && (
+                          <>
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
+                                <Icon size={16} strokeWidth={2} className="text-content-2" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-body font-black text-content leading-tight truncate">{label}</p>
+                                {descripcion && (
+                                    <p className="text-label text-content-3 mt-0.5 truncate">{descripcion}</p>
+                                )}
+                            </div>
+                          </>
+                        )}
+                        <Button variant="ghost" size="xs" icon={X} iconOnly
+                            onClick={onClose} aria-label="Cerrar" />
+                    </div>
+                    {/* `empty:hidden` y no un contador: mientras nadie
+                        portalee nada el div no tiene ni un hijo, así que
+                        `:empty` lo agarra y el margen no se aplica —
+                        `display:none` no deja margen. Sin esto quedaba
+                        un renglón de aire bajo el título. */}
+                    <div ref={refHerramientas} className="mt-3 empty:hidden" />
+                </LiquidModal.Header>
+
+                {/* `flex flex-col min-h-0`: los formularios de adentro
+                    tienen su propio scroller con `flex-1 min-h-0`, y un
+                    hijo de un flex en columna no baja de su contenido sin
+                    eso — el scroll se escapa hacia arriba en la cadena y
+                    no lo agarra nadie. Medido el 2026-08-06 en la consulta
+                    de inventario: caja de 708px con 1134 de contenido. */}
+                <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
+                    {children(onClose)}
+                </LiquidModal.Body>
+
+                {inquilinos.pie > 0 && (
+                    <LiquidModal.Footer>
+                        {/* `contents` y NO un flex propio: el pie canónico
+                            ya reparte —`justify-between` en escritorio,
+                            apilado a ancho completo en táctil— y un
+                            contenedor en el medio se comía las dos cosas.
+                            Sin caja, los botones portaleados SON los hijos
+                            del pie y heredan su gramática. */}
+                        <div ref={refPie} className="contents" />
+                    </LiquidModal.Footer>
+                )}
+            </RanurasCtx.Provider>
+        </LiquidModal>
+    );
+}
+
 export default function LanzadorSolicitud({
     icon: Icon,
     label,
@@ -146,29 +253,6 @@ export default function LanzadorSolicitud({
     // existe: Tailwind arma las clases leyendo el fuente, así que una armada
     // por interpolación nunca llega a la hoja de estilos y el color no aparece.
     const acento = hay ? TONOS[tono] ?? TONOS.brand : APAGADO;
-
-    const [nodos, setNodos] = useState({});
-    const [inquilinos, setInquilinos] = useState({ herramientas: 0, pie: 0, encabezado: 0 });
-
-    // Callbacks estables: un `ref` inline cambia de identidad en cada render y
-    // React lo llama con `null` y con el nodo cada vez — con un `setState`
-    // adentro, eso es un bucle. La comparación `n[k] === el` corta el segundo.
-    const refHerramientas = useCallback((el) => {
-        setNodos(n => (n.herramientas === el ? n : { ...n, herramientas: el }));
-    }, []);
-    const refPie = useCallback((el) => {
-        setNodos(n => (n.pie === el ? n : { ...n, pie: el }));
-    }, []);
-    const refEncabezado = useCallback((el) => {
-        setNodos(n => (n.encabezado === el ? n : { ...n, encabezado: el }));
-    }, []);
-
-    const registrar = useCallback((nombre) => {
-        setInquilinos(c => ({ ...c, [nombre]: c[nombre] + 1 }));
-        return () => setInquilinos(c => ({ ...c, [nombre]: c[nombre] - 1 }));
-    }, []);
-
-    const ranuras = useMemo(() => ({ nodos, registrar }), [nodos, registrar]);
 
     return (
         <>
@@ -261,66 +345,10 @@ export default function LanzadorSolicitud({
                 baldosa del tablero cargaría su catálogo al entrar, que es
                 justo el peso que se buscaba sacar. */}
             {abierto && (
-                <LiquidModal open onClose={cerrar} maxWidth={maxWidth} ariaLabel={label}
-                    className="max-h-[85dvh]">
-                    <RanurasCtx.Provider value={ranuras}>
-                        <LiquidModal.Header>
-                            <div className="flex items-center gap-2.5">
-                                {/* `contents`: lo que se portalea acá SON los
-                                    hijos directos de esta fila, así que hereda su
-                                    reparto en vez de quedar encajonado. Mismo
-                                    motivo que en el pie. */}
-                                <div ref={refEncabezado} className="contents" />
-                                {/* El título de la puerta cede el lugar cuando el
-                                    contenido trae el suyo. El botón de cerrar NO:
-                                    ése es de la puerta y se queda siempre. */}
-                                {inquilinos.encabezado === 0 && (
-                                  <>
-                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
-                                        <Icon size={16} strokeWidth={2} className="text-content-2" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-body font-black text-content leading-tight truncate">{label}</p>
-                                        {descripcion && (
-                                            <p className="text-label text-content-3 mt-0.5 truncate">{descripcion}</p>
-                                        )}
-                                    </div>
-                                  </>
-                                )}
-                                <Button variant="ghost" size="xs" icon={X} iconOnly
-                                    onClick={cerrar} aria-label="Cerrar" />
-                            </div>
-                            {/* `empty:hidden` y no un contador: mientras nadie
-                                portalee nada el div no tiene ni un hijo, así que
-                                `:empty` lo agarra y el margen no se aplica —
-                                `display:none` no deja margen. Sin esto quedaba
-                                un renglón de aire bajo el título. */}
-                            <div ref={refHerramientas} className="mt-3 empty:hidden" />
-                        </LiquidModal.Header>
-
-                        {/* `flex flex-col min-h-0`: los formularios de adentro
-                            tienen su propio scroller con `flex-1 min-h-0`, y un
-                            hijo de un flex en columna no baja de su contenido sin
-                            eso — el scroll se escapa hacia arriba en la cadena y
-                            no lo agarra nadie. Medido el 2026-08-06 en la consulta
-                            de inventario: caja de 708px con 1134 de contenido. */}
-                        <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
-                            {children(cerrar)}
-                        </LiquidModal.Body>
-
-                        {inquilinos.pie > 0 && (
-                            <LiquidModal.Footer>
-                                {/* `contents` y NO un flex propio: el pie canónico
-                                    ya reparte —`justify-between` en escritorio,
-                                    apilado a ancho completo en táctil— y un
-                                    contenedor en el medio se comía las dos cosas.
-                                    Sin caja, los botones portaleados SON los hijos
-                                    del pie y heredan su gramática. */}
-                                <div ref={refPie} className="contents" />
-                            </LiquidModal.Footer>
-                        )}
-                    </RanurasCtx.Provider>
-                </LiquidModal>
+                <ModalConRanuras icon={Icon} label={label} descripcion={descripcion}
+                    maxWidth={maxWidth} onClose={cerrar}>
+                    {children}
+                </ModalConRanuras>
             )}
         </>
     );

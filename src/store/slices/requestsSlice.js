@@ -354,7 +354,7 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
         body: isApproved
             ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}`
             : `Tu solicitud de ${typeLabel} fue rechazada.${approverNote ? ` Motivo: "${approverNote}"` : ''}`,
-        link: '/my-requests',
+        link: '/requests-personales',
         push: true,
         metadata: {
             requestType,
@@ -547,7 +547,15 @@ export const createRequestsSlice = (set, get) => ({
     isLoadingRequests: false,
 
     // ── Fetch ──────────────────────────────────────────────────────────────
-    fetchRequests: async (employeeId = null, branchId = null, approverId = null) => {
+    /**
+     * Pasó de tres parámetros posicionales a un objeto el 2026-08-11, al
+     * fusionar «Mis Solicitudes»: los criterios ya son cinco y en posicional
+     * el cuarto y el quinto se confunden entre sí a simple vista. `ownId` mete
+     * las propias además de las asignadas; `soloMiasId` es el alcance «sólo
+     * míos» y reemplaza a todo lo demás. Ver `fetchApprovalRequestsList`.
+     */
+    fetchRequests: async ({ employeeId = null, branchId = null, approverId = null,
+                            ownId = null, soloMiasId = null } = {}) => {
         set({ isLoadingRequests: true });
         try {
             // Si se pide filtro por sucursal, obtener IDs de empleados de esa sucursal
@@ -563,7 +571,7 @@ export const createRequestsSlice = (set, get) => ({
             // existir tras el fallback de createRequest, pero si alguna se cuela no
             // debe quedar invisible para todo aprobador (RLS ya permite verlas: la
             // policy de SELECT da acceso total a can_approve, este filtro es solo UI).
-            const { data: requests, error } = await fetchApprovalRequestsList({ employeeId, branchEmpIds, approverId });
+            const { data: requests, error } = await fetchApprovalRequestsList({ employeeId, branchEmpIds, approverId, ownId, soloMiasId });
             if (error) throw error;
 
             // 2. IDs únicos de empleados y aprobadores
@@ -660,7 +668,7 @@ export const createRequestsSlice = (set, get) => ({
                 // El aviso al compañero lo crea el trigger
                 // `notificar_solicitud_creada`, en la misma transacción que la
                 // solicitud — incluido el caso de nivel 1, que apunta a
-                // /my-requests y no a /requests.
+                // /requests-personales y no a /requests.
                 return enrichedPeer;
             }
 

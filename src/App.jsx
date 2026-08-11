@@ -21,7 +21,6 @@ import { LoadingState } from './components/common/StateViews';
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
 const EmployeeAnnouncementsView = lazy(IMPORTADORES.EmployeeAnnouncementsView);
-const EmployeeRequestsView = lazy(IMPORTADORES.EmployeeRequestsView);
 const EmployeeProfileView = lazy(IMPORTADORES.EmployeeProfileView);
 const EmployeeDocumentsView = lazy(IMPORTADORES.EmployeeDocumentsView);
 const AttendanceMonitorView = lazy(IMPORTADORES.AttendanceMonitorView);
@@ -165,6 +164,20 @@ const PermissionGuard = ({ moduleKey, children }) => {
     return children;
 };
 
+/**
+ * `/my-requests` → `/requests-personales`.
+ *
+ * La ruta vieja se conserva porque la nombran avisos ya enviados y los
+ * favoritos de quien la usaba. **Se lleva la consulta**: el enlace de una
+ * notificación puede traer `?solicitud=<id>`, y un `<Navigate>` a secas la
+ * descarta — la persona llegaría a la lista general en vez de a su solicitud,
+ * que es la mitad de lo que el aviso prometía.
+ */
+const IrAPersonales = () => {
+    const { search, hash } = useLocation();
+    return <Navigate to={`/requests-personales${search}${hash}`} replace />;
+};
+
 // ============================================================================
 // ⏳ FALLBACK DE SUSPENSE — mismo lenguaje glass del loader de sesión, para
 // la carga diferida (React.lazy) de cada vista por ruta.
@@ -208,7 +221,7 @@ function ScrollToTop() {
 // aterrizar ahí sería el 404.
 const LANDING_PREFERIDO = [
     'overview', 'staff_list', 'monitor', 'requests', 'schedules',
-    'announcements', 'branches', 'emp_requests', 'emp_announcements',
+    'announcements', 'branches', 'requests_personales', 'emp_announcements',
     'emp_documents', 'emp_profile',
 ];
 
@@ -589,7 +602,11 @@ function MainApp() {
                                     <Route index element={<Navigate to={defaultRedirect} replace />} />
 
                                     {/* ── Self-service ── */}
-                                    <Route path="my-requests" element={<PermissionGuard moduleKey="emp_requests"><EmployeeRequestsView /></PermissionGuard>} />
+                                    {/* «Mis Solicitudes» se fusionó con Personales el 2026-08-11.
+                                        La ruta queda porque la nombran notificaciones ya enviadas
+                                        y los favoritos de quien la usaba: sin ella, el aviso de
+                                        una solicitud aprobada llevaría al 404. */}
+                                    <Route path="my-requests" element={<IrAPersonales />} />
                                     <Route path="my-announcements" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
                                     <Route path="my-documents" element={<PermissionGuard moduleKey="emp_documents"><EmployeeDocumentsView /></PermissionGuard>} />
                                     <Route path="profile" element={<PermissionGuard moduleKey="emp_profile"><EmployeeProfileView openModal={openModal} /></PermissionGuard>} />
@@ -762,7 +779,6 @@ const ROUTE_TITLES = {
     '/roles':             'Roles',
     '/permissions':       'Permisos',
     '/auditview':         'Auditoría',
-    '/my-requests':       'Mis Solicitudes',
     '/my-announcements':  'Mis Avisos',
     '/my-documents':      'Mis Documentos',
     '/profile':           'Mi Perfil',

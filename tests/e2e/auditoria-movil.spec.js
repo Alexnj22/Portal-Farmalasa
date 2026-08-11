@@ -21,7 +21,7 @@ const SALIDA = 'test-results/auditoria-movil';
 // Las que el personal usa en tienda primero, que es el orden que pide la fase 4.
 const VISTAS = [
     { id: 'inicio',      url: '/' },
-    { id: 'solicitudes', url: '/my-requests' },
+    { id: 'solicitudes', url: '/requests-personales' },
     { id: 'monitor',     url: '/monitor' },
     { id: 'pedidos',     url: '/pedidos' },
     { id: 'productos',   url: '/productos' },

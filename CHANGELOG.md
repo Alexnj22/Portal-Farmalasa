@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.567.3 — Los PDF vuelven a verse: la CSP no permitía enmarcar Storage
+
+Reportado por el usuario: los PDF de compras no abrían. La consola lo decía
+exacto —`Refused to load … because it does not appear in the frame-src
+directive`— y no era una URL vencida ni un permiso del bucket: el archivo
+llegaba bien, el navegador se negaba a **enmarcarlo**.
+
+La política de seguridad que se puso en enforce en v2.528.0 (F0.3) llevaba
+`frame-src 'self' blob:`. Esa lista venía tal cual de la política vieja, que
+corría en modo **sólo-aviso**: ahí nunca rompió nada porque no bloqueaba nada, y
+el trabajo de F0.3 estaba mirando los CDN de `script-src`/`style-src`. Nadie
+notó que Storage jamás había estado permitido para enmarcar, aunque sí lo
+estuviera para `img-src` y `connect-src`.
+
+Alcanzaba a **tres** visores, no sólo al de compras:
+
+- el DTE de compras y el DTE de ventas, que comparten `PdfZoomViewer`;
+- los documentos de empleados (`FormDocumentViewer`).
+
+`frame-src` ahora incluye `https://*.supabase.co`, igual que las otras dos
+directivas que ya lo tenían. Es lo mínimo: sigue sin permitirse enmarcar nada de
+afuera del proyecto.
+
+**El de documentos tenía además un camino muerto.** Pintaba un
+`<object type="application/pdf">` con el `<iframe>` de respaldo adentro, y la
+misma política lleva `object-src 'none'` — o sea que el `<object>` nunca cargó
+desde v2.528.0 y siempre terminaba en el respaldo. Se dejó el `<iframe>` a
+secas. **No se aflojó `object-src`**: esa directiva es de las que valen y el
+respaldo ya hacía el trabajo.
+
 ## v2.567.2 — reauditoría del traslado: cinco huecos
 
 Revisión completa de lo construido hoy, pedida antes de que esto toque el

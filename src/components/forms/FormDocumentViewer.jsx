@@ -50,17 +50,14 @@ const FormDocumentViewer = ({ formData }) => {
                     </div>
                 ) : url ? (
                     <div className="flex-1 min-h-0 w-full rounded-3xl border border-divider bg-surface-card shadow-sm overflow-hidden flex flex-col">
-                        {/* Usamos object/embed para mejor compatibilidad con PDFs en navegadores.
-                            Fallback a iframe si falla.
-                        */}
-                        <object data={url} type="application/pdf" className="w-full h-full">
-                            <iframe src={url} className="w-full h-full border-none" title="Visor de Documento">
-                                <div className="p-8 text-center text-content-3">
-                                    <p>Tu navegador no soporta la visualización de este tipo de archivo.</p>
-                                    <a href={url} target="_blank" rel="noreferrer" className="text-brand-text underline mt-2 block">Haz clic aquí para abrirlo directamente</a>
-                                </div>
-                            </iframe>
-                        </object>
+                        {/* Era un <object type="application/pdf"> con el <iframe> de
+                            respaldo adentro. La CSP lleva `object-src 'none'` (v2.528.0),
+                            así que el <object> nunca cargaba: siempre terminaba cayendo
+                            al respaldo. Se deja el <iframe> a secas — no se afloja la
+                            directiva, que es de las que valen. Su contenido de respaldo
+                            también se fue: ningún navegador actual lo pinta, y el botón
+                            de descarga del encabezado ya cubre ese caso. */}
+                        <iframe src={url} className="w-full h-full border-none" title="Visor de Documento" />
                     </div>
                 ) : (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm border-dashed">

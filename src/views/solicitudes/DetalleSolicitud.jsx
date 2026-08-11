@@ -2,13 +2,13 @@ import React, { useState, useEffect, memo } from 'react';
 import {
     ArrowLeftRight, Stethoscope, FileImage, AlertTriangle, CalendarDays,
     Banknote, FileCheck2, Ban, CreditCard, Receipt, CheckCircle2,
-    PackagePlus, Trash2, ImageOff,
+    PackagePlus, Trash2, ImageOff, Minus, Plus,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
 import { formatMoney } from '../../utils/formatNumber';
 import { getSignedFileUrl } from '../../utils/storageFiles';
-import { lineasDe, rechazadasDe, contextoMovimiento } from './movimientoTexto';
+import { lineasDe, rechazadasDe, ajustadasDe, contextoMovimiento } from './movimientoTexto';
 
 // El detalle de una solicitud, en UN solo lugar.
 //
@@ -25,6 +25,16 @@ import { lineasDe, rechazadasDe, contextoMovimiento } from './movimientoTexto';
 // Con un solo archivo, agregar un tipo nuevo lo agrega en los dos lados. Que es
 // justo lo que no pasó las últimas tres veces.
 
+// Las solicitudes que NO hablan del expediente de quien las manda: hablan de una
+// factura o de una existencia. Ya no anotan nada en el legajo (ver
+// `REQUEST_TYPES_QUE_SE_APLICAN`), y por lo mismo su detalle no muestra el
+// código de empleado.
+const DE_LEGAJO_AJENO = new Set([
+    'ANNULMENT_REQUEST', 'PAYMENT_CHANGE_REQUEST', 'VENDOR_CHANGE_REQUEST',
+    'CLIENT_CHANGE_REQUEST', 'INVENTORY_LOAD_REQUEST', 'INVENTORY_DISCARD_REQUEST',
+    'INVENTORY_TRANSFER_REQUEST',
+]);
+
 const fmtDate     = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 const fmtDateFull = (iso) => !iso ? '—' : new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 
@@ -39,6 +49,56 @@ const IdVenta = ({ meta }) => {
     if (!id) return null;
     return <p className="text-caption text-content-3 font-mono mt-0.5">ID de venta {id}</p>;
 };
+
+/* ─── La cara de una persona ──────────────────────────────────────────────── */
+/**
+ * Foto y nombre. **El código no se muestra** — decisión del usuario, 2026-08-10:
+ * «con el cambio de vendedor no quiero el código, quiero las fotos y nombre».
+ * Un `#140` no le dice a nadie quién atendió; la cara sí.
+ *
+ * La URL guardada es `photo_url`, o sea la CRUDA de un bucket privado, así que
+ * hay que firmarla — pintarla directo daba una imagen rota, que es exactamente
+ * lo que hacía este bloque hasta hoy. Sin foto se cae a la inicial, nunca a un
+ * hueco.
+ */
+const Avatar = memo(({ photo, nombre, size = 40 }) => {
+    // Se guarda la foto JUNTO a su firma, no la firma sola: si el componente se
+    // reusa para otra persona, una firma suelta pintaría la cara anterior hasta
+    // que llegue la nueva. Comparar contra `photo` hace imposible ese cruce.
+    const [firmada, setFirmada] = useState({ photo: null, url: null });
+
+    useEffect(() => {
+        if (!photo) return;
+        let vivo = true;
+        getSignedFileUrl(photo)
+            .then(url => { if (vivo) setFirmada({ photo, url }); })
+            .catch(() => {});
+        return () => { vivo = false; };
+    }, [photo]);
+
+    const src = firmada.photo === photo ? firmada.url : null;
+    const inicial = (nombre || '?').trim().charAt(0).toUpperCase();
+    return (
+        <div className="rounded-full overflow-hidden border border-border-card bg-surface-card-hover
+                        flex items-center justify-center shrink-0"
+            style={{ width: size, height: size }}>
+            {src
+                ? <img src={src} alt="" className="w-full h-full object-cover" />
+                : <span className="text-content-2 font-black text-body">{inicial}</span>}
+        </div>
+    );
+});
+Avatar.displayName = 'Avatar';
+
+/** Una persona en una tarjeta de «antes → después». */
+const Persona = ({ photo, nombre, vacio = 'Sin asignar' }) => (
+    <div className="flex items-center gap-2 mt-1">
+        <Avatar photo={photo} nombre={nombre} size={36} />
+        <p className="text-label font-black text-content-2 leading-tight min-w-0 break-words">
+            {nombre || vacio}
+        </p>
+    </div>
+);
 
 /* ─── Rótulo de sección ───────────────────────────────────────────────────── */
 const Rotulo = ({ children }) => (
@@ -109,7 +169,7 @@ EvidenciaFotos.displayName = 'EvidenciaFotos';
  * volvió a mirar.
  */
 export const LineasMovimiento = memo(({
-    meta, seleccion, onToggle, rechazadas, esCarga = false,
+    meta, seleccion, onToggle, onCantidad, cantidades, rechazadas, ajustadas, esCarga = false,
 }) => {
     const items = lineasDe(meta);
     if (items.length === 0) {
@@ -126,47 +186,98 @@ export const LineasMovimiento = memo(({
         <div data-surface="card" className="overflow-hidden">
             {items.map((it, i) => {
                 const motivoRechazo = rechazadas?.get(i);
-                const marcada = decidiendo ? seleccion?.has(i) : !motivoRechazo;
+                const marcada  = decidiendo ? seleccion?.has(i) : !motivoRechazo;
+                const pedida   = Number(it.cantidad) || 0;
+                // La cantidad que se va a aplicar: la que el aprobador dejó, o
+                // la pedida. Nunca puede superar a la pedida — aprobar MÁS de lo
+                // que alguien pidió no es aprobar, es otra solicitud.
+                const actual   = decidiendo ? (cantidades?.get(i) ?? pedida) : (ajustadas?.get(i) ?? pedida);
+                const recortada = actual !== pedida;
+                const unidad   = it.presentacion_tipo ?? 'u';
 
                 return (
                     <div key={i}
-                        className={`flex items-start gap-2.5 px-3 py-2 ${i > 0 ? 'border-t border-divider' : ''}
-                                    ${motivoRechazo ? 'opacity-60' : ''}`}>
-
-                        {decidiendo && (
-                            <div className="pt-0.5 shrink-0">
-                                <Checkbox size="sm" checked={Boolean(marcada)}
-                                    onChange={() => onToggle(i)}
-                                    name={`linea-${i}`} />
-                            </div>
-                        )}
-
-                        <div className="flex-1 min-w-0">
-                            <p className={`text-label font-bold text-content-2 leading-tight
-                                           ${motivoRechazo ? 'line-through' : ''}`}>
-                                {it.descripcion ?? `Producto #${it.erp_product_id}`}
-                            </p>
-                            <p className="text-micro text-content-3 mt-0.5">
-                                {it.cantidad} {it.presentacion_tipo ?? 'u'}
-                                {Number.isFinite(Number(it.existencia)) && ` · había ${it.existencia}`}
-                            </p>
-                            {(it.lote || it.numero_lote || it.vence) && (
-                                <p className="text-micro text-content-3 mt-0.5">
-                                    <span className="font-mono">{it.lote || it.numero_lote || 'sin lote'}</span>
-                                    {it.vence && ` · vence ${fmtDate(it.vence)}`}
-                                </p>
+                        className={`px-3 py-2.5 ${i > 0 ? 'border-t border-divider' : ''}
+                                    ${motivoRechazo || (decidiendo && !marcada) ? 'opacity-55' : ''}`}>
+                        <div className="flex items-start gap-2.5">
+                            {decidiendo && (
+                                <div className="pt-0.5 shrink-0">
+                                    <Checkbox size="sm" checked={Boolean(marcada)}
+                                        onChange={() => onToggle(i)} name={`linea-${i}`} />
+                                </div>
                             )}
-                            {motivoRechazo && (
-                                <p className="text-micro font-semibold text-danger-text mt-1">
-                                    No entró — {motivoRechazo}
+
+                            <div className="flex-1 min-w-0">
+                                <p className={`text-label font-bold text-content-2 leading-tight
+                                               ${motivoRechazo ? 'line-through' : ''}`}>
+                                    {it.descripcion ?? `Producto #${it.erp_product_id}`}
                                 </p>
+                                <p className="text-micro text-content-3 mt-0.5">
+                                    {!decidiendo && `${actual} ${unidad}`}
+                                    {!decidiendo && Number.isFinite(Number(it.existencia)) && ' · '}
+                                    {Number.isFinite(Number(it.existencia)) && `había ${it.existencia}`}
+                                </p>
+                                {(it.lote || it.numero_lote || it.vence) && (
+                                    <p className="text-micro text-content-3 mt-0.5">
+                                        <span className="font-mono">{it.lote || it.numero_lote || 'sin lote'}</span>
+                                        {it.vence && ` · vence ${fmtDate(it.vence)}`}
+                                    </p>
+                                )}
+                                {motivoRechazo && (
+                                    <p className="text-micro font-semibold text-danger-text mt-1">
+                                        No entró — {motivoRechazo}
+                                    </p>
+                                )}
+                                {!decidiendo && recortada && !motivoRechazo && (
+                                    <p className="text-micro font-semibold text-warning-text mt-1">
+                                        Entraron {actual} de las {pedida} que se pidieron
+                                    </p>
+                                )}
+                            </div>
+
+                            {!decidiendo && (
+                                <Badge variant={esCarga ? 'success' : 'neutral'} size="sm" uppercase={false}
+                                    className="shrink-0 mt-0.5">
+                                    {motivoRechazo ? '—' : `${esCarga ? '+' : '−'}${actual}`}
+                                </Badge>
                             )}
                         </div>
 
-                        <Badge variant={esCarga ? 'success' : 'neutral'} size="sm" uppercase={false}
-                            className="shrink-0 mt-0.5">
-                            {esCarga ? '+' : '−'}{it.cantidad}
-                        </Badge>
+                        {/* Cuánto de esa línea entra. Pedido del usuario: no
+                            alcanzaba con quitar renglones enteros —«quitar unos,
+                            o modificar unos»—, porque lo normal es que de las 4
+                            que se pidieron entren 2. El tope es lo pedido. */}
+                        {decidiendo && marcada && typeof onCantidad === 'function' && (
+                            <div className="flex items-center gap-2 mt-2 ml-7">
+                                <button type="button" aria-label="Quitar uno"
+                                    disabled={actual <= 1}
+                                    onClick={() => onCantidad(i, actual - 1)}
+                                    className="w-11 h-11 rounded-xl border border-border-card bg-surface-card
+                                               flex items-center justify-center text-content-2
+                                               disabled:opacity-40 active:scale-[0.97]
+                                               transition-transform duration-[var(--dur-fast)]">
+                                    <Minus size={15} strokeWidth={2.5} />
+                                </button>
+                                <div className="min-w-[92px] text-center">
+                                    <p className="text-body font-black text-content leading-none">{actual}</p>
+                                    <p className="text-micro text-content-3 mt-0.5">{unidad}</p>
+                                </div>
+                                <button type="button" aria-label="Agregar uno"
+                                    disabled={actual >= pedida}
+                                    onClick={() => onCantidad(i, actual + 1)}
+                                    className="w-11 h-11 rounded-xl border border-border-card bg-surface-card
+                                               flex items-center justify-center text-content-2
+                                               disabled:opacity-40 active:scale-[0.97]
+                                               transition-transform duration-[var(--dur-fast)]">
+                                    <Plus size={15} strokeWidth={2.5} />
+                                </button>
+                                {recortada && (
+                                    <span className="text-micro text-warning-text font-semibold">
+                                        pidió {pedida}
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 );
             })}
@@ -176,11 +287,17 @@ export const LineasMovimiento = memo(({
 LineasMovimiento.displayName = 'LineasMovimiento';
 
 /* ─── Encabezado de un movimiento: por qué y dónde ────────────────────────── */
-const CabeceraMovimiento = ({ req, meta }) => {
+const CabeceraMovimiento = ({ req, meta, unidadesAplicadas = null }) => {
     const { motivo, sala, origen, unidades } = contextoMovimiento(meta);
     const esTraslado = req.type === 'INVENTORY_TRANSFER_REQUEST';
     const esCarga    = req.type === 'INVENTORY_LOAD_REQUEST';
     const Icono      = esTraslado ? ArrowLeftRight : esCarga ? PackagePlus : Trash2;
+
+    // El total de arriba tiene que seguir a lo que se está decidiendo. Si dice
+    // «9 unidades» mientras abajo se dejaron 5, el número más grande de la
+    // pantalla es el único que miente.
+    const vivo    = unidadesAplicadas ?? unidades;
+    const cambió  = unidadesAplicadas !== null && unidadesAplicadas !== unidades;
 
     return (
         <Caja tono="hover">
@@ -194,8 +311,10 @@ const CabeceraMovimiento = ({ req, meta }) => {
                     {motivo && <p className="text-caption text-content-2 mt-0.5">{motivo}</p>}
                 </div>
                 <div className="text-right shrink-0">
-                    <p className="text-body font-black text-content-2">{unidades}</p>
-                    <p className="text-micro text-content-3">{unidades === 1 ? 'unidad' : 'unidades'}</p>
+                    <p className={`text-body font-black ${cambió ? 'text-warning-text' : 'text-content-2'}`}>{vivo}</p>
+                    <p className="text-micro text-content-3">
+                        {cambió ? `de ${unidades}` : (vivo === 1 ? 'unidad' : 'unidades')}
+                    </p>
                 </div>
             </div>
         </Caja>
@@ -246,16 +365,25 @@ const BloqueAplicado = ({ req, aplicado }) => {
 };
 
 /* ─── El bloque que depende del tipo ──────────────────────────────────────── */
-export const BloquePorTipo = ({ req, meta, seleccion, onToggle }) => {
+export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cantidades }) => {
     const t = req.type;
 
     /* Los tres que mueven producto de verdad. */
     if (t === 'INVENTORY_LOAD_REQUEST' || t === 'INVENTORY_DISCARD_REQUEST' || t === 'INVENTORY_TRANSFER_REQUEST') {
+        // Las unidades que de verdad van a entrar, mientras se decide.
+        const deLinea = (l, i) => cantidades?.get(i) ?? (Number(l?.cantidad) || 0);
+        const aplicadas = seleccion
+            ? [...seleccion].reduce((s, i) => s + deLinea(lineasDe(meta)[i], i), 0)
+            : (cantidades
+                ? lineasDe(meta).reduce((s, l, i) => s + deLinea(l, i), 0)
+                : null);
         return (
             <div className="space-y-2">
-                <CabeceraMovimiento req={req} meta={meta} />
+                <CabeceraMovimiento req={req} meta={meta} unidadesAplicadas={aplicadas} />
                 <LineasMovimiento meta={meta} seleccion={seleccion} onToggle={onToggle}
-                    rechazadas={rechazadasDe(meta)} esCarga={t === 'INVENTORY_LOAD_REQUEST'} />
+                    onCantidad={onCantidad} cantidades={cantidades}
+                    rechazadas={rechazadasDe(meta)} ajustadas={ajustadasDe(meta)}
+                    esCarga={t === 'INVENTORY_LOAD_REQUEST'} />
                 <EvidenciaFotos urls={meta.evidencia_urls} />
             </div>
         );
@@ -436,20 +564,13 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle }) => {
                 </Caja>
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
-                        <Rotulo>Vendedor actual</Rotulo>
-                        {meta.current_vendor_photo && (
-                            <img src={meta.current_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
-                        )}
-                        <p className="text-label font-black text-content-2">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
-                        {meta.current_vendor_code && <p className="text-micro text-content-3 font-mono">#{meta.current_vendor_code}</p>}
+                        <Rotulo>Atendió</Rotulo>
+                        <Persona photo={meta.current_vendor_photo} nombre={meta.current_vendor_name}
+                            vacio="Sin vendedor" />
                     </Caja>
                     <Caja tono="hover">
-                        <Rotulo>Asignar a</Rotulo>
-                        {meta.new_vendor_photo && (
-                            <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
-                        )}
-                        <p className="text-label font-black text-content-2">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
-                        {meta.new_vendor_code && <p className="text-micro text-content-3 font-mono">#{meta.new_vendor_code}</p>}
+                        <Rotulo>Pasa a</Rotulo>
+                        <Persona photo={meta.new_vendor_photo} nombre={meta.new_vendor_name} />
                     </Caja>
                 </div>
             </div>
@@ -495,7 +616,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle }) => {
  * `seleccion`/`onToggle` sólo se pasan cuando se está DECIDIENDO por línea; sin
  * ellos el detalle es de lectura y las líneas se ven sin casillas.
  */
-export default function DetalleSolicitud({ req, employeesById, seleccion, onToggle }) {
+export default function DetalleSolicitud({ req, employeesById, seleccion, onToggle, onCantidad, cantidades }) {
     const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     const isRejected = req.status === 'REJECTED';
 
@@ -506,7 +627,8 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
 
     return (
         <div className="space-y-2.5 text-left">
-            <BloquePorTipo req={req} meta={meta} seleccion={seleccion} onToggle={onToggle} />
+            <BloquePorTipo req={req} meta={meta} seleccion={seleccion} onToggle={onToggle}
+                onCantidad={onCantidad} cantidades={cantidades} />
 
             <BloqueAplicado req={req} aplicado={meta.erp_aplicado ?? meta.erp_traslado} />
 
@@ -547,7 +669,11 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
                 </div>
             )}
 
-            {req.employee?.code && (
+            {/* El código de empleado sirve para ubicar a alguien en su legajo —
+                vacaciones, permisos, constancias—, no para decidir sobre una
+                factura ni sobre una existencia. En esas hablamos del documento o
+                del producto, y el número sobra. */}
+            {req.employee?.code && !DE_LEGAJO_AJENO.has(req.type) && (
                 <p className="text-caption text-content-3">Código: <span className="font-mono font-bold text-content-2">{req.employee.code}</span></p>
             )}
         </div>

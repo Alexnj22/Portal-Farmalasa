@@ -238,40 +238,73 @@ Deno.serve(async (req) => {
     if (todas.length === 0)
       return json({ ok: false, error: "La solicitud no tiene ni un producto." }, 422);
 
-    // ── Aprobación parcial: entran unas líneas y el resto queda rechazado ──
+    // ── Aprobación parcial: qué líneas entran y con cuánta cantidad ────────
     //
-    // El cliente manda ÍNDICES, no líneas. La diferencia no es de estilo: con
-    // las líneas, el navegador elegiría qué producto se mueve y en qué
-    // cantidad, y este endpoint tiene credenciales para mover inventario de
-    // cualquier sala. Con índices, lo único que puede hacer es señalar cuáles
-    // de las que YA se guardaron entran.
+    // El cliente manda ÍNDICES con su cantidad, nunca las líneas. La diferencia
+    // no es de estilo: con las líneas, el navegador elegiría qué producto se
+    // mueve, y este endpoint tiene credenciales para mover inventario de
+    // cualquier sala. Con índices, lo único que puede hacer es señalar cuáles de
+    // las que YA se guardaron entran, y bajarles la cantidad.
     //
-    // Índices repetidos, fuera de rango o que no son enteros se descartan en
-    // silencio; lo que no se puede es quedarse sin ninguna, porque «aprobar
-    // cero líneas» no es aprobar — es rechazar con otro nombre, y el rechazo
-    // tiene su propio camino con su motivo obligatorio.
-    let indices = todas.map((_, i) => i);
+    // **Bajarla, nunca subirla.** Aprobar más de lo que alguien pidió no es
+    // aprobar: es otra solicitud, sin el motivo ni la firma de quien la habría
+    // pedido. Por eso el tope es siempre lo pedido, y se aplica acá — la
+    // pantalla también lo topa, pero la pantalla es una sugerencia.
+    //
+    // Se acepta la forma vieja (un array de índices a secas) además de la nueva
+    // (`{i, cantidad}`): son dos versiones del mismo cliente y durante un
+    // despliegue conviven.
+    //
+    // Índices repetidos, fuera de rango o no enteros se descartan en silencio;
+    // lo que no se puede es quedarse sin ninguna, porque «aprobar cero líneas»
+    // no es aprobar — es rechazar con otro nombre, y el rechazo tiene su propio
+    // camino con su motivo obligatorio.
+    type Aceptada = { i: number; cantidad: number };
+    let aceptadas: Aceptada[] = todas.map((l, i) => ({ i, cantidad: Number(l.cantidad) || 0 }));
+
     if (Array.isArray(lineas_aceptadas)) {
-      indices = [...new Set(lineas_aceptadas)]
-        .filter((i) => Number.isInteger(i) && i >= 0 && i < todas.length)
-        .sort((a: number, b: number) => a - b) as number[];
-      if (indices.length === 0)
+      const vistos = new Set<number>();
+      aceptadas = [];
+      for (const bruto of lineas_aceptadas) {
+        const i = typeof bruto === "number" ? bruto : Number(bruto?.i);
+        if (!Number.isInteger(i) || i < 0 || i >= todas.length || vistos.has(i)) continue;
+        vistos.add(i);
+
+        const pedida = Number(todas[i].cantidad) || 0;
+        const pedidaCliente = typeof bruto === "number" ? pedida : Number(bruto?.cantidad);
+        const cantidad = Number.isFinite(pedidaCliente)
+          ? Math.min(pedida, Math.max(0, pedidaCliente))
+          : pedida;
+        if (cantidad <= 0) continue;   // cantidad cero = la línea no entra
+        aceptadas.push({ i, cantidad });
+      }
+      aceptadas.sort((a, b) => a.i - b.i);
+
+      if (aceptadas.length === 0)
         return json({
           ok: false,
           error: "No quedó ninguna línea para aplicar. Si no entra nada, rechazá la solicitud.",
         }, 422);
     }
 
-    const parcial = indices.length < todas.length;
-    const lineas: Linea[] = indices.map((i) => todas[i]);
-    // El motivo de las que quedan afuera es la nota del aprobador: es lo que
-    // acaba de escribir explicando por qué no entran, y el formulario la exige
-    // justamente cuando hay líneas afuera.
+    const entran = new Set(aceptadas.map((a) => a.i));
+    const ajustes = aceptadas.filter((a) => a.cantidad !== (Number(todas[a.i].cantidad) || 0));
+    const parcial = entran.size < todas.length || ajustes.length > 0;
+
+    // Las líneas que de verdad se van a mover, con la cantidad decidida.
+    const lineas: Linea[] = aceptadas.map((a) => ({ ...todas[a.i], cantidad: a.cantidad }));
+
+    // El motivo es la nota del aprobador: es lo que acaba de escribir explicando
+    // por qué no entra todo, y el formulario la exige justamente en ese caso.
     const motivoFuera = String(approver_note ?? "").trim() || "Sin motivo";
-    const rechazadas = parcial
-      ? todas.map((_, i) => i).filter((i) => !indices.includes(i))
-          .map((i) => ({ i, motivo: motivoFuera }))
-      : [];
+    const rechazadas = todas.map((_, i) => i).filter((i) => !entran.has(i))
+      .map((i) => ({ i, motivo: motivoFuera }));
+    const ajustadas = ajustes.map((a) => ({
+      i: a.i,
+      pedida: Number(todas[a.i].cantidad) || 0,
+      aplicada: a.cantidad,
+      motivo: motivoFuera,
+    }));
 
     const erpSucursal = Number(meta.erp_sucursal_id);
     const erpUbicacion = Number(meta.erp_ubicacion_id);
@@ -550,6 +583,7 @@ Deno.serve(async (req) => {
       // líneas sobre una solicitud de 5 se lee como si se hubieran pedido 2.
       parcial,
       lineas_pedidas: todas.length,
+      lineas_ajustadas: ajustadas.length,
     };
 
     const { error: updErr } = await admin
@@ -568,7 +602,8 @@ Deno.serve(async (req) => {
         metadata: {
           ...meta,
           erp_aplicado: aplicado,
-          ...(parcial ? { lineas_rechazadas: rechazadas } : {}),
+          ...(rechazadas.length ? { lineas_rechazadas: rechazadas } : {}),
+          ...(ajustadas.length ? { lineas_ajustadas: ajustadas } : {}),
         },
         updated_at: new Date().toISOString(),
       })
@@ -576,7 +611,8 @@ Deno.serve(async (req) => {
       .eq("status", "PENDING");          // no pisar si otro la resolvió en el medio
     if (updErr) throw updErr;
 
-    return json({ ok: true, aplicado, lineas_rechazadas: rechazadas });
+    return json({ ok: true, aplicado,
+                  lineas_rechazadas: rechazadas, lineas_ajustadas: ajustadas });
 
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);

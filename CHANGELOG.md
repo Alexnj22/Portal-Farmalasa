@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.553.0 — La decisión por línea también ajusta cantidades; el vendedor se ve por cara y nombre
+
+Tres cosas pedidas al ver la versión anterior funcionando en el teléfono.
+
+**«No veo la opción de quitar unos, o modificar unos.»** Quitar renglones
+enteros no alcanzaba: lo normal es que de las 4 unidades pedidas entren 2, y con
+sólo la casilla eso obligaba a rechazar la línea completa y pedir que la mandaran
+de nuevo. Ahora cada línea lleva su **−/+** además de su casilla, topado en lo
+que se pidió. **Bajarla, nunca subirla**: aprobar más de lo que alguien pidió no
+es aprobar, es otra solicitud sin el motivo ni la firma de quien la habría hecho
+— y el tope se aplica en el servidor, porque la pantalla es una sugerencia.
+
+El total de la cabecera sigue a lo que se está decidiendo: si dice «9 unidades»
+mientras abajo quedaron 5, el número más grande de la pantalla es el único que
+miente. Con recorte muestra **«5 de 9»**.
+
+Lo que entró queda anotado por línea (`lineas_ajustadas`), y quien pidió lo ve
+en su propia pantalla: «Entraron 2 de las 4 que se pidieron». Un parcial que se
+avisa igual que un completo se lee como completo.
+
+**«Con el cambio de vendedor no quiero el código, quiero las fotos y nombre.»**
+Se fueron los `#140`, de la tarjeta y del detalle, y entraron la cara y el
+nombre. Las etiquetas pasan a **«Atendió»** y **«Pasa a»**.
+
+Y ahí había un defecto escondido, el mismo del bucket de evidencia: el widget
+guarda `photo_url`, o sea la URL **cruda** de un bucket privado, y el detalle la
+pintaba directo — la foto salía rota. Ahora se firma, y sin foto se cae a la
+inicial, nunca a un hueco.
+
+**Y pulido de uso en el teléfono:**
+
+- Al entrar en modo decisión, el motivo que **habilita** el botón se trae a la
+  vista. Estaba debajo del pliegue: se veía un botón apagado y ninguna pista de
+  por qué.
+- «Cerrar» desaparece mientras se decide — al lado de «Volver» eran dos salidas
+  para lo mismo y empujaban el pie a dos renglones.
+- El botón dice **«Aplicar lo marcado»** o **«Aprobar completo»**, que es lo que
+  va a pasar, en vez de un genérico «Confirmar».
+- El **código de empleado** ya no aparece en las solicitudes de factura ni de
+  inventario: sirve para ubicar a alguien en su legajo, no para decidir sobre un
+  documento o una existencia.
+
+Verificado en WebKit/iPhone 13 sobre ocho solicitudes de prueba —una de cada
+tipo— creadas y borradas en producción: los ocho modales entran en pantalla, sin
+desborde horizontal, cero errores de consola; el control de cantidad respeta su
+piso y su techo, y el aviso combina bien las dos cosas («Queda 1 producto afuera
+y a 1 le bajaste la cantidad»).
+
 ## v2.552.0 — Las solicitudes dicen qué son, se abren completas y se pueden aprobar en parte
 
 Reportado así: «en la solicitud de descarte, no me dice qué es, se debe poder

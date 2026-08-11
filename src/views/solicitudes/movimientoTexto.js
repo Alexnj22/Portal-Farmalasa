@@ -39,6 +39,22 @@ export const rechazadasDe = (meta) => {
 };
 
 /**
+ * Las líneas que entraron con MENOS cantidad de la pedida, por índice → cuánto
+ * entró.
+ *
+ * Es la otra mitad de la decisión por línea: no alcanza con quitar renglones
+ * enteros, porque lo normal es que de las 4 unidades pedidas entren 2. Quitar la
+ * línea completa por no poder ajustar la cantidad obligaba a rechazar y pedir de
+ * nuevo — que es justo lo que esto viene a evitar.
+ */
+export const ajustadasDe = (meta) => {
+    const lista = Array.isArray(meta?.lineas_ajustadas) ? meta.lineas_ajustadas : [];
+    return new Map(lista
+        .filter(a => Number.isInteger(a?.i) && Number.isFinite(Number(a?.aplicada)))
+        .map(a => [a.i, Number(a.aplicada)]));
+};
+
+/**
  * Una aprobación PARCIAL — entró parte y el resto quedó rechazado con su motivo.
  *
  * No es un quinto estado: `approval_requests.status` sólo admite cuatro y
@@ -48,7 +64,8 @@ export const rechazadasDe = (meta) => {
  * de esa aprobación y por eso vive en su metadata.
  */
 export const esParcial = (req) =>
-    req?.status === 'APPROVED' && rechazadasDe(req?.metadata).size > 0;
+    req?.status === 'APPROVED'
+    && (rechazadasDe(req?.metadata).size > 0 || ajustadasDe(req?.metadata).size > 0);
 
 /** Cuántas unidades suman las líneas dadas. */
 export const unidadesDe = (items) =>

@@ -707,7 +707,8 @@ export const createRequestsSlice = (set, get) => ({
      * la vista.
      */
     _aprobarInventario: async (requestId, req, approverId, approverNote, aceptadas = null) => {
-        const { ok, error, aplicado, lineas_rechazadas: rechazadas } =
+        const { ok, error, aplicado,
+                lineas_rechazadas: rechazadas, lineas_ajustadas: ajustadas } =
             await aplicarMovimientoInventarioEnErp(requestId, approverNote, aceptadas);
 
         if (!ok) {
@@ -720,7 +721,8 @@ export const createRequestsSlice = (set, get) => ({
                 r.id === requestId
                     ? { ...r, status: 'APPROVED', approver_id: approverId, approver_note: approverNote,
                         metadata: { ...parseMeta(r.metadata), erp_aplicado: aplicado,
-                                    lineas_rechazadas: rechazadas ?? parseMeta(r.metadata).lineas_rechazadas } }
+                                    lineas_rechazadas: rechazadas ?? parseMeta(r.metadata).lineas_rechazadas,
+                                    lineas_ajustadas:  ajustadas ?? parseMeta(r.metadata).lineas_ajustadas } }
                     : r
             ),
         }));
@@ -738,14 +740,17 @@ export const createRequestsSlice = (set, get) => ({
         // Lo que quedó afuera se ANUNCIA. Un parcial que se avisa igual que un
         // completo se lee como completo, y quien pidió se entera recién cuando
         // busca el producto y no está.
-        const fuera = rechazadas?.length ?? 0;
-        if (fuera > 0) partes.push(`${fuera} ${fuera === 1 ? 'línea quedó' : 'líneas quedaron'} sin aplicar`);
+        const fuera   = rechazadas?.length ?? 0;
+        const menores = ajustadas?.length ?? 0;
+        if (fuera > 0)   partes.push(`${fuera} ${fuera === 1 ? 'producto quedó' : 'productos quedaron'} afuera`);
+        if (menores > 0) partes.push(`${menores} con menos cantidad de la pedida`);
         // Un recorte que no se anuncia se lee como que entró completo.
         if (aplicado?.concepto_recortado) partes.push('el detalle se guardó abreviado');
 
         useToastStore.getState().showToast(
-            fuera > 0 ? (esCarga ? 'Carga aplicada en parte' : 'Descarte aplicado en parte')
-                      : (esCarga ? 'Carga aplicada' : 'Descarte aplicado'),
+            (fuera > 0 || menores > 0)
+                ? (esCarga ? 'Carga aplicada en parte' : 'Descarte aplicado en parte')
+                : (esCarga ? 'Carga aplicada' : 'Descarte aplicado'),
             partes.join(' · '),
             'success',
         );

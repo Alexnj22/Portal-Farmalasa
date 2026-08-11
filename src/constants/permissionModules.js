@@ -117,10 +117,16 @@ const GRUPOS_CRUDOS = [
         modules: [
             // Sin `_ver_montos` a propósito (canon §7-bis): en Ventas el monto ES
             // la vista — esconder los $ deja una pantalla sin sentido.
+            // Lo que sí se puede separar es el RESUMEN del período: las tarjetas
+            // de arriba (total vendido, ticket promedio, utilidad, margen) son el
+            // consolidado de la sala, y se puede querer que alguien trabaje la
+            // lista factura por factura sin ver el acumulado. Gatea las tarjetas
+            // de las tres pestañas, no las columnas de la tabla.
             { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false, hasScope: true, sub: [
                 { key: 'ventas_tab_ventas',     label: 'Ventas',     tipo: 'tab' },
                 { key: 'ventas_tab_vendedores', label: 'Vendedores', tipo: 'tab' },
                 { key: 'ventas_tab_productos',  label: 'Productos',  tipo: 'tab' },
+                { key: 'ventas_ver_cards',      label: 'Ver las tarjetas de resumen', tipo: 'cap' },
             ]},
             { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, sub: [
                 { key: 'facturacion_tab_anuladas',      label: 'Anuladas',      tipo: 'tab' },

@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.560.0 — Permiso para ver las tarjetas de resumen en Ventas
+
+Arriba de Ventas va el consolidado del período: total vendido, ticket
+promedio, utilidad y margen. Es el número de la sala entera, y hasta hoy lo
+veía cualquiera que pudiera abrir la vista —no había forma de dar la lista de
+facturas sin dar también el acumulado.
+
+Ahora es un permiso propio, **Ver las tarjetas de resumen**, dentro de Ventas
+en la pantalla de Permisos. Apagado, la vista abre directo en la lista y las
+tarjetas no se dibujan en ninguna de las tres pestañas; la píldora de filtros
+se corre sola a su lugar. Las columnas de la tabla no cambian: quien tenía la
+vista sigue viendo lo mismo factura por factura.
+
+Nace **encendido** para los nueve cargos que ya tenían Ventas, así que hoy
+nadie ve algo distinto: apagarlo es una decisión explícita, cargo por cargo.
+
+Una excepción deliberada: la tarjeta **Ocultos** se queda aunque el permiso
+esté apagado. No es un monto —es el único interruptor que entra al modo «solo
+ocultos», y un producto oculto sólo aparece en la lista dentro de ese modo, así
+que sin ella esconder uno sería irreversible desde esta vista.
+
 ## v2.559.0 — Bodega confirma qué sale de verdad
 
 Al pedido le faltaba el dato del medio. Guardaba lo **asignado** (lo que el

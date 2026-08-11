@@ -342,7 +342,8 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
 function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions, privacyMode, setPrivacyMode }) {
-    const { getScope } = useAuth();
+    const { getScope, hasPermission } = useAuth();
+    const verCards = hasPermission('ventas_ver_cards');
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
@@ -645,6 +646,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                {/* Sin el permiso del resumen no se dibuja el carril; el `lg:flex-1`
+                    pasa entonces a la columna de la píldora para que siga pegada a
+                    la derecha en vez de caer al borde izquierdo. */}
+                {verCards && (
                 <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
@@ -671,7 +676,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </CarrilCards>
-                <div className="flex justify-end min-w-0">
+                )}
+                <div className={`flex justify-end min-w-0 ${verCards ? '' : 'lg:flex-1'}`}>
                 <FilterControls
                     monthRange={monthRange} setMonthRange={setMonthRange}
                     filterBranch={filterBranch} setFilterBranch={setFilterBranch}
@@ -980,7 +986,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
 function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode, setPrivacyMode }) {
-    const { getScope } = useAuth();
+    const { getScope, hasPermission } = useAuth();
+    const verCards = hasPermission('ventas_ver_cards');
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
     const [expanded, setExpanded]       = useState(null);
@@ -1145,6 +1152,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                {/* Ver comentario en TabVentas: sin el permiso del resumen, el
+                    `lg:flex-1` viaja a la columna de la píldora. */}
+                {verCards && (
                 <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
@@ -1160,7 +1170,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </CarrilCards>
-                <div className="flex justify-end min-w-0"><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
+                )}
+                <div className={`flex justify-end min-w-0 ${verCards ? '' : 'lg:flex-1'}`}><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 
             {isVendSearchFuzzy && searchTerm && (
@@ -1468,7 +1479,8 @@ function mapAggRow(item) {
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode, setPrivacyMode }) {
-    const { maxPriceLevel, getScope, user: currentUser } = useAuth();
+    const { maxPriceLevel, getScope, hasPermission, user: currentUser } = useAuth();
+    const verCards = hasPermission('ventas_ver_cards');
     const allowedDrillTiers = useMemo(() => {
         if (!maxPriceLevel) return DRILL_TIERS;
         const maxIdx = DRILL_TIER_ORDER.indexOf(maxPriceLevel);
@@ -1940,6 +1952,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                {/* Ver comentario en TabVentas: sin el permiso del resumen, el
+                    `lg:flex-1` viaja a la columna de la píldora.
+                    «Ocultos» SOBREVIVE al permiso a propósito: no es un monto,
+                    es el único interruptor que entra al modo «solo ocultos», y
+                    un producto oculto sólo aparece en la lista dentro de ese
+                    modo — sin la tarjeta, esconder uno sería irreversible desde
+                    esta vista. */}
+                {(verCards || hiddenCount > 0 || showHidden) && (
                 <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
@@ -1950,17 +1970,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     // comparar un total acotado contra uno de todos los laboratorios.
                     const pctIngresos = filterLab ? null : dailyPct(totNeto, curDaysP, prevProdStats.sum, prevDaysP);
                     return [
+                        ...(verCards ? [
                         { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-chart-1 to-chart-3',   text: 'text-chart-1-text',    pct: pctIngresos, sub: !filterLab && prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined, conIva: totNetoConIva },
                         { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-danger to-chart-4',    text: 'text-danger-text',     pct: null,        sub: undefined },
                         { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-success to-chart-9',  text: 'text-success-text', pct: null,        sub: undefined },
                         { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-warning to-warning',  text: 'text-warning-text',   pct: null,        sub: undefined },
+                        ] : []),
                         ...(hiddenCount > 0 || showHidden ? [
                             { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-chart-8 to-chart-8/70', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
                         ] : []),
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
                 </CarrilCards>
-                <div className="flex justify-end min-w-0"><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
+                )}
+                <div className={`flex justify-end min-w-0 ${(verCards || hiddenCount > 0 || showHidden) ? '' : 'lg:flex-1'}`}><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 
             {error && (

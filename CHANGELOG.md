@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.557.2 — El tablero se ordena solo hasta que vos lo acomodes
+
+El tablero de Inicio abría con huecos: franjas en blanco entre widgets, en vez
+de quedar compacto arriba a la izquierda. Reportado con captura.
+
+**La causa.** `tabsAcomodadas` —lo único que apaga el acomodo automático— se
+armaba con la sola **existencia** de `portal_dash_layout_<user>_<tab>` en
+`localStorage`. Pero esa clave la escribe la app sola, en dos sitios: al colocar
+las baldosas `sales_branch_*` cuando responden las ventas, y al mezclar el
+layout que baja de `user_dashboard_prefs`. O sea que **el tablero se daba por
+acomodado en la primera carga de cualquiera**, sin que nadie moviera un widget,
+y el acomodo automático —el único que arma la rejilla sobre los widgets que esa
+persona VE— no volvía a correr nunca.
+
+Y las posiciones guardadas se calculan sobre el catálogo **completo**. Medido en
+prod: el layout guardado traía 26 posiciones y casi todo el mundo veía 22. Cada
+widget no visible dejaba su hueco exactamente donde estaba. Por eso el único
+tablero sano era el del superusuario, que los ve los 26 — que fue justo lo que
+delató el bug.
+
+**El arreglo.** «Acomodada» pasa a ser una decisión explícita: la escriben sólo
+el arrastre y el cambio de tamaño. Va en `localStorage` y también en la columna
+nueva `user_dashboard_prefs.arranged`, para que quien sí acomodó su tablero lo
+conserve al abrirlo en otro equipo. Mientras una pestaña no esté marcada, se
+recalcula compacta en cada carga sobre los widgets activos de esa persona.
+
+Dos cosas más que aparecieron al mirar:
+
+- **Cambiar el tamaño no marcaba nada**, así que el ancho elegido se perdía en
+  la siguiente carga. Ahora marca.
+- **El redimensionado partía del layout guardado** (`widgetLayoutRef`) y no del
+  mostrado, mientras el arrastre sí usaba el mostrado (`activeLayoutRef`). Con
+  el tablero en automático los dos difieren, así que tocar un ancho reescribía
+  los huecos del layout viejo. Ahora los dos resuelven contra la misma base.
+
+**Verificado con control** (`tests/e2e/tablero-orden-general.spec.js`): mismo
+build, misma cuenta, mismos datos, cambiando sólo la marca. Sin marca, 20
+widgets en 12 renglones y **0 celdas libres**; con la marca puesta a mano, los
+mismos 20 se estiran a 15 renglones con **16 celdas libres**, incluido un
+renglón entero vacío.
+
+La primera versión de esa prueba contaba renglones vacíos y daba **verde sobre
+el tablero roto**: en el reporte los renglones de arriba sí están ocupados —por
+un widget a la derecha— y el hueco son las columnas de la izquierda. El agujero
+es de celdas, no de renglones.
+
 ## v2.557.1 — Horas Extra: el aprobador ve cuántas horas
 
 La versión anterior le dio formulario a Horas Extra —fecha y cantidad de

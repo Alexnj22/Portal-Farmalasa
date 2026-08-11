@@ -6,7 +6,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchUserDashboardPrefs(userId) {
     return supabase.from('user_dashboard_prefs')
-        .select('layout, sizes, widgets, mobile_layout, mobile_sizes')
+        .select('layout, sizes, widgets, mobile_layout, mobile_sizes, arranged')
         .eq('user_id', userId)
         .maybeSingle();
 }

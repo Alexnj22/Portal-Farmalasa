@@ -779,6 +779,11 @@ const initTabLayouts = (userId) => {
   });
   return result;
 };
+// La marca de «esta pestaña la acomodó la PERSONA». Deliberadamente separada
+// del layout guardado: ese lo escribe la app sola en dos sitios, así que su
+// existencia no prueba que nadie haya movido nada. Ver `tabsAcomodadas`.
+const claveAcomodada = (userId, tabId) => `portal_dash_acomodada_${userId || 'guest'}_${tabId}`;
+
 const initTabSizes = (userId) => {
   const result = {};
   TABS.forEach(tab => {
@@ -838,18 +843,30 @@ const DashboardView = ({ openModal }) => {
   // Mientras no haya acomodo propio conviene recalcular en cada carga, porque
   // el catálogo visible cambia con los permisos; desde el primer arrastre, no
   // se toca más nada.
+  //
+  // Lo que decide es una marca EXPLÍCITA, no que exista un layout guardado.
+  // Mirar el layout era la causa de los huecos: la app escribe
+  // `portal_dash_layout_*` sola —al colocar las baldosas de sucursal cuando
+  // cargan las ventas, y al mezclar lo que baja de la base—, así que el tablero
+  // se daba por acomodado en la PRIMERA carga y este acomodo automático, que es
+  // el único que filtra por los widgets que esta persona ve, no volvía a correr
+  // nunca. Y como las posiciones guardadas se calcularon sobre el catálogo
+  // COMPLETO, cada widget que su cargo no ve dejaba su hueco: medido, el layout
+  // guardado tenía 26 posiciones y casi todo el mundo veía 22. El único tablero
+  // sin huecos era el del superusuario, que los ve todos.
   const [tabsAcomodadas, setTabsAcomodadas] = useState(() => {
     const s = new Set();
     try {
       TABS.forEach(t => {
-        if (localStorage.getItem(`portal_dash_layout_${user?.id || 'guest'}_${t.id}`)) s.add(t.id);
+        if (localStorage.getItem(claveAcomodada(user?.id, t.id)) === '1') s.add(t.id);
       });
     } catch { /* localStorage no disponible */ }
     return s;
   });
   const marcarAcomodada = useCallback((tabId) => {
+    try { localStorage.setItem(claveAcomodada(user?.id, tabId), '1'); } catch { /* localStorage no disponible */ }
     setTabsAcomodadas(prev => (prev.has(tabId) ? prev : new Set(prev).add(tabId)));
-  }, []);
+  }, [user?.id]);
 
   // ── Widget layout: per-tab { [tabId]: { [widgetId]: { col, row } } } ────────
   const [widgetLayout, setWidgetLayout] = useState(() => initTabLayouts(user?.id));
@@ -1143,15 +1160,26 @@ const DashboardView = ({ openModal }) => {
     const cols  = activeColsRef.current;
     const tabId = activeTabRef.current;
     const sizesRef  = isM ? mobileSizesRef  : widgetSizesRef;
-    const layoutRef = isM ? mobileLayoutRef : widgetLayoutRef;
     const setSizes  = isM ? setMobileSizes  : setWidgetSizes;
     const setLayout = isM ? setMobileLayout : setWidgetLayout;
+
+    // Cambiar el tamaño ES acomodar, así que a partir de acá manda lo que la
+    // persona dejó. Sin esta marca, el tablero se rearmaba solo en la siguiente
+    // carga y el ancho elegido se perdía. En el teléfono no se marca: el
+    // acomodo móvil es otro (`hayMovil`) y marcar acá daría por acomodado el
+    // tablero de escritorio, que esta persona no tocó.
+    if (!isM) marcarAcomodada(tabId);
 
     const newTabSizes = { ...sizesRef.current, [id]: { ...(sizesRef.current[id]||{}), [dim]: val } };
     setSizes(prev => ({ ...prev, [tabId]: newTabSizes }));
     try { localStorage.setItem(`portal_dash_${isM?'mobile_':''}sizes_${user?.id||'guest'}_${tabId}`, JSON.stringify(newTabSizes)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
 
-    const currentLayout = layoutRef.current;
+    // El layout MOSTRADO, no el guardado. Con el tablero en automático los dos
+    // difieren —el guardado conserva las posiciones del catálogo completo— y
+    // resolver contra el guardado volvía a escribir sus huecos en cuanto
+    // alguien tocaba un ancho. Es la misma base que usa el arrastre
+    // (`activeLayoutRef`); tenerlas distintas era la incoherencia de fondo.
+    const currentLayout = activeLayoutRef.current;
     let pos = currentLayout[id];
     if (pos) {
       let layoutForResolve = currentLayout;
@@ -1174,7 +1202,7 @@ const DashboardView = ({ openModal }) => {
         setTimeout(() => setBouncingIds(new Set()), 700);
       }
     }
-  }, [user]);
+  }, [user, marcarAcomodada]);
 
   // ── Supabase prefs persistence ─────────────────────────────────────────────
   const [prefsReady, setPrefsReady] = useState(false);
@@ -1224,7 +1252,11 @@ const DashboardView = ({ openModal }) => {
                     ));
                   }
                   next[t.id] = tabLayout;
-                  try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); marcarAcomodada(t.id); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+                  // Guarda el layout pero NO marca la pestaña como acomodada:
+                  // esto es la app mezclando lo que bajó de la base, no alguien
+                  // moviendo un widget. Marcarlo acá apagaba el acomodo
+                  // automático en la primera carga de todo el mundo.
+                  try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
                 });
                 return next;
               });
@@ -1258,6 +1290,20 @@ const DashboardView = ({ openModal }) => {
           if (data.mobile_sizes && TABS.some(t => t.id in data.mobile_sizes)) {
             setMobileSizes(prev => ({ ...prev, ...data.mobile_sizes }));
           }
+          // Quién acomodó qué, según la base. Va acá y no en el arranque porque
+          // `localStorage` es de ESTE navegador: sin esto, abrir el tablero en
+          // otro equipo descartaba el acomodo propio y lo rearmaba solo.
+          if (data.arranged && typeof data.arranged === 'object') {
+            const marcadas = TABS.filter(t => data.arranged[t.id]).map(t => t.id);
+            if (marcadas.length) {
+              setTabsAcomodadas(prev => {
+                const n = new Set(prev);
+                marcadas.forEach(id => n.add(id));
+                return n;
+              });
+              try { marcadas.forEach(id => localStorage.setItem(claveAcomodada(user.id, id), '1')); } catch { /* localStorage no disponible */ }
+            }
+          }
         }
         setPrefsReady(true); // flip → habilita el effect de guardado (que toma la foto, no escribe)
       });
@@ -1276,7 +1322,10 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     if (!prefsReady || !user?.id) return;
     const payload = { user_id: user.id, layout: widgetLayout, sizes: widgetSizes,
-      widgets: widgetConfig, mobile_layout: mobileLayout, mobile_sizes: mobileSizes };
+      widgets: widgetConfig, mobile_layout: mobileLayout, mobile_sizes: mobileSizes,
+      // Qué pestañas acomodó a mano. Sin esto el acomodo propio no cruzaría de
+      // dispositivo: la marca vive en `localStorage`, que es de un navegador.
+      arranged: Object.fromEntries([...tabsAcomodadas].map(id => [id, true])) };
     const foto = JSON.stringify(payload);
     if (prefsBaselineRef.current === null) { prefsBaselineRef.current = foto; return; }
     if (prefsBaselineRef.current === foto) return;   // nada cambió de verdad
@@ -1289,7 +1338,7 @@ const DashboardView = ({ openModal }) => {
         });
     }, 1500);
     return () => clearTimeout(saveTimerRef.current);
-  }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, mobileLayout, mobileSizes, user?.id]);
+  }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, mobileLayout, mobileSizes, tabsAcomodadas, user?.id]);
 
   // ── Resize popover ─────────────────────────────────────────────────────────
   const [resizeOpenId, setResizeOpenId] = useState(null);
@@ -1532,10 +1581,14 @@ const DashboardView = ({ openModal }) => {
         ...tabLayout,
         ...colocarEnHuecos(tabLayout, missing, widgetSizes.general ?? EMPTY_OBJ, GRID_COLS),
       };
-      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); marcarAcomodada('general'); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+      // Tampoco marca acomodada: colocar las baldosas de sucursal que acaban de
+      // aparecer es trabajo de la app. Ésta era la marca que se disparaba en la
+      // primera carga de CUALQUIERA —basta con que la sucursal tenga ventas— y
+      // dejaba el tablero congelado con los huecos del catálogo completo.
+      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
       return { ...prev, general: nextTabLayout };
     });
-  }, [salesBranches, user, widgetSizes, marcarAcomodada]);
+  }, [salesBranches, user, widgetSizes]);
 
   useEffect(() => { if (!attendanceLoaded) loadAttendance(14); }, [attendanceLoaded, loadAttendance]);
 

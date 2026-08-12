@@ -65,7 +65,7 @@ export default function PedidosView() {
     );
 
     return (
-        <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales" filtersContent={filtersContent}>
+        <GlassViewLayout icon={ClipboardList} title="Pedidos a sucursales" filtersContent={filtersContent}>
             {activeTab === 'generar'  && <TabGenerar  searchTerm={debouncedSearch} />}
             {activeTab === 'pedidos'  && <TabPedidos  searchTerm={debouncedSearch} />}
             {activeTab === 'rutas'    && <TabRutas    searchTerm={debouncedSearch} />}

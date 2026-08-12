@@ -661,7 +661,7 @@ const PermissionsView = () => {
                 <Lock className="text-white" size={20} strokeWidth={1.5} />
             </div>
             <h2 className="font-semibold text-title-sm md:text-title-lg text-content tracking-tight">
-                Permisos de Acceso
+                Permisos de acceso
             </h2>
             {selectedOrgRole && (
                 <>

@@ -197,7 +197,7 @@ export default function TrasladosView() {
     const limpiarTodo = () => { setSala(''); setTipo(''); };
 
     return (
-        <GlassViewLayout icon={ArrowLeftRight} title="Traslados entre Salas" filtersContent={filtersContent}>
+        <GlassViewLayout icon={ArrowLeftRight} title="Traslados entre salas" filtersContent={filtersContent}>
             {/* La píldora §17: TODO el filtro de la vista en un solo lugar. El
                 tipo sólo se ofrece en Historial —en las otras dos pestañas no
                 hay dos desenlaces que separar— y ofrecerlo igual sería un

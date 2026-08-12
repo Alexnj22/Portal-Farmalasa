@@ -291,7 +291,7 @@ const EmployeeDocumentsView = () => {
     return (
         <GlassViewLayout
             icon={FolderOpen}
-            title="Mis Documentos"
+            title="Mis documentos"
             filtersContent={renderFilters()}
             transparentBody={true}
             fixedScrollMode={false}

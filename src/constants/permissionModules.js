@@ -22,7 +22,7 @@
 // de los módulos debe ser claro, como en permisos". El registro de AppLayout
 // (constants/moduleMap.js) tiene etiquetas de MENÚ, que son más cortas y a veces
 // ambiguas fuera de su grupo: ahí `staff_list` es "Listado" y acá es "Listado de
-// Personal"; `staff_detail` no está en el menú y acá es "Expediente Completo".
+// Personal"; `staff_detail` no está en el menú y acá es "Expediente completo".
 import {
     ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
@@ -44,28 +44,28 @@ const GRUPOS_CRUDOS = [
             // segunda llave de la misma puerta. Quien sólo manda las suyas hoy
             // lleva `requests_personales` con alcance «sólo míos» — una fila
             // en esta pantalla en vez de dos que se contradicen.
-            { key: 'emp_announcements', label: 'Mis Avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icon: Bell,          hasApprove: false },
-            { key: 'emp_profile',       label: 'Mi Perfil',           desc: 'Ver y actualizar datos personales propios',                  icon: User,          hasApprove: false },
-            { key: 'emp_documents',     label: 'Mis Documentos',      desc: 'Consultar documentos personales: incapacidades, constancias, etc.', icon: FolderOpen, hasApprove: false },
+            { key: 'emp_announcements', label: 'Mis avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icon: Bell,          hasApprove: false },
+            { key: 'emp_profile',       label: 'Mi perfil',           desc: 'Ver y actualizar datos personales propios',                  icon: User,          hasApprove: false },
+            { key: 'emp_documents',     label: 'Mis documentos',      desc: 'Consultar documentos personales: incapacidades, constancias, etc.', icon: FolderOpen, hasApprove: false },
         ],
     },
     {
         group: 'Personal',
         color: 'text-chart-3-text',
         modules: [
-            { key: 'staff_list',   label: 'Listado de Personal',    desc: 'Ver y buscar empleados, datos básicos y estado',            icon: User,          hasApprove: false, hasScope: true, sub: [
+            { key: 'staff_list',   label: 'Listado de personal',    desc: 'Ver y buscar empleados, datos básicos y estado',            icon: User,          hasApprove: false, hasScope: true, sub: [
                 { key: 'staff_list_descargar', label: 'Descargar el listado (CSV)', tipo: 'cap' },
             ]},
-            { key: 'staff_detail', label: 'Expediente Completo',    desc: 'Perfil, historial, eventos y documentos del empleado',      icon: User,          hasApprove: false, hasScope: true },
-            { key: 'staff_salary', label: 'Salarios e Ingresos',    desc: 'Información salarial y ajustes de nómina (datos sensibles)',icon: User,          hasApprove: false, hasScope: true },
+            { key: 'staff_detail', label: 'Expediente completo',    desc: 'Perfil, historial, eventos y documentos del empleado',      icon: User,          hasApprove: false, hasScope: true },
+            { key: 'staff_salary', label: 'Salarios e ingresos',    desc: 'Información salarial y ajustes de nómina (datos sensibles)',icon: User,          hasApprove: false, hasScope: true },
         ],
     },
     {
         group: 'Asistencia',
         color: 'text-warning',
         modules: [
-            { key: 'monitor',      label: 'Monitor Real-Time',      desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false, hasScope: true },
-            { key: 'time_audit',   label: 'Auditoría de Tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false, hasScope: true, sub: [
+            { key: 'monitor',      label: 'Monitor real-time',      desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false, hasScope: true },
+            { key: 'time_audit',   label: 'Auditoría de tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false, hasScope: true, sub: [
                 { key: 'time_audit_descargar', label: 'Descargar las marcaciones (CSV)', tipo: 'cap' },
             ]},
         ],
@@ -74,9 +74,9 @@ const GRUPOS_CRUDOS = [
         group: 'Operaciones',
         color: 'text-chart-1-text',
         modules: [
-            { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false, hasScope: true, sub: [
+            { key: 'schedules',    label: 'Horarios y turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false, hasScope: true, sub: [
                 { key: 'schedules_tab_calendar', label: 'Calendario',         tipo: 'tab' },
-                { key: 'schedules_tab_shifts',   label: 'Catálogo de Turnos', tipo: 'tab' },
+                { key: 'schedules_tab_shifts',   label: 'Catálogo de turnos', tipo: 'tab' },
                 { key: 'schedules_tab_holidays', label: 'Feriados',           tipo: 'tab' },
             ]},
             // ── Las solicitudes se partieron en dos el 2026-08-10 ────────────
@@ -91,8 +91,8 @@ const GRUPOS_CRUDOS = [
             // policies de `approval_requests` piden un módulo u otro según de
             // qué lado caiga el tipo. Un tipo nuevo sin clasificar cae en
             // PERSONAL, que es el lado cerrado.
-            { key: 'requests',     label: 'Solicitudes de Sucursal', desc: 'El centro de solicitudes de la sala: descartes y cargas de inventario, traslados, Min/Max y cambios a facturación. Ver = estar al día de lo que pidió la sala y cómo se resolvió; Aprobar = decidirlas', icon: ClipboardList, hasApprove: true,  hasScope: true },
-            { key: 'requests_personales', label: 'Solicitudes Personales', desc: 'Las que hablan de una persona y no de la sala: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver acá es ver datos sensibles del expediente ajeno', icon: Palmtree, hasApprove: true, hasScope: true },
+            { key: 'requests',     label: 'Solicitudes de sucursal', desc: 'El centro de solicitudes de la sala: descartes y cargas de inventario, traslados, Min/Max y cambios a facturación. Ver = estar al día de lo que pidió la sala y cómo se resolvió; Aprobar = decidirlas', icon: ClipboardList, hasApprove: true,  hasScope: true },
+            { key: 'requests_personales', label: 'Solicitudes personales', desc: 'Las que hablan de una persona y no de la sala: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver acá es ver datos sensibles del expediente ajeno', icon: Palmtree, hasApprove: true, hasScope: true },
             // Módulo aparte de `requests` a propósito: acá `can_approve` habilita
             // confirmar un traslado de la propia sala y NADA más. Metido dentro de
             // Solicitudes, dárselo a una jefatura de sala le entregaría de arrastre
@@ -102,8 +102,8 @@ const GRUPOS_CRUDOS = [
             // tiene vista propia (`/traslados`, 2026-08-07) también abre el
             // historial, y buscarlo en esta pantalla por «vista» o «historial»
             // no daba nada — reportado así: «¿no está en permisos?».
-            { key: 'traslados',    label: 'Traslados entre Salas',  desc: 'Abrir la vista de traslados —lo que está en camino y el historial con sus motivos— y confirmar el envío de producto que otra sala pide',  icon: Truck,         hasApprove: true,  hasScope: true },
-            { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false, hasScope: true },
+            { key: 'traslados',    label: 'Traslados entre salas',  desc: 'Abrir la vista de traslados —lo que está en camino y el historial con sus motivos— y confirmar el envío de producto que otra sala pide',  icon: Truck,         hasApprove: true,  hasScope: true },
+            { key: 'vacation_plan',label: 'Plan de vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false, hasScope: true },
             { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true,  hasScope: true, sub: [
                 // La boleta y la planilla impresas se llevan el salario de cada
                 // empleado en papel. Es la descarga más sensible del portal.
@@ -180,14 +180,14 @@ const GRUPOS_CRUDOS = [
             // Permisos sería prometer un recorte que el código no hace — es lo
             // mismo que heredan de haber sido pestañas de `productos`, que
             // tampoco lo declara.
-            { key: 'gestion_stock', label: 'Gestión de Stock', desc: 'Qué se está vendiendo sin parámetros de reposición y qué existencia lleva medio año sin moverse, con la sugerencia de qué hacer con cada caso', icon: Activity, hasApprove: false },
+            { key: 'gestion_stock', label: 'Gestión de stock', desc: 'Qué se está vendiendo sin parámetros de reposición y qué existencia lleva medio año sin moverse, con la sugerencia de qué hacer con cada caso', icon: Activity, hasApprove: false },
             { key: 'inventario', label: 'Inventario', desc: 'Existencia por sucursal en tiempo real con desglose de lotes, vencimientos y productos ya vencidos', icon: Boxes, hasApprove: false },
             { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true, hasScope: true, sub: [
                 { key: 'minmax_tab_sucursal',    label: 'Sucursal',    tipo: 'tab' },
                 { key: 'minmax_ver_costos',      label: 'Ver costos de compra y venta', tipo: 'cap' },
                 { key: 'minmax_descargar',       label: 'Descargar el análisis (CSV)',  tipo: 'cap' },
             ]},
-            { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false, sub: [
+            { key: 'ventas_perdidas', label: 'Ventas perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false, sub: [
                 { key: 'ventas_perdidas_descargar', label: 'Descargar el registro (CSV)', tipo: 'cap' },
             ]},
             { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false, sub: [
@@ -201,11 +201,11 @@ const GRUPOS_CRUDOS = [
             // propio período y su propio ciclo. `can_edit` es lo que habilita
             // liberar una factura tomada por una sala: la sala sola no puede si
             // ya quedó cargada como compra.
-            { key: 'facturas_sala', label: 'Facturas de Sala', desc: 'Qué factura tomó cada sala, quién la tomó y si terminó cargada como compra; liberar una tomada por error', icon: ReceiptText, hasApprove: false, sub: [
+            { key: 'facturas_sala', label: 'Facturas de sala', desc: 'Qué factura tomó cada sala, quién la tomó y si terminó cargada como compra; liberar una tomada por error', icon: ReceiptText, hasApprove: false, sub: [
                 { key: 'facturas_sala_ver_montos', label: 'Ver montos', tipo: 'cap' },
             ]},
             { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icon: Truck, hasApprove: false },
-            { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, sub: [
+            { key: 'conteo_inventario', label: 'Conteo de inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, sub: [
                 // El conteo es CIEGO mientras está abierto: sin este permiso la
                 // existencia del sistema NO SALE de la base (no es un switch en
                 // la vista, que era lo de antes). Con el conteo ya finalizado los
@@ -229,7 +229,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'conteo_inventario_eliminar',   label: 'Eliminar un conteo ya empezado o finalizado', tipo: 'cap' },
             ]},
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
-            { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, sub: [
+            { key: 'pedidos', label: 'Pedidos a sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, sub: [
                 { key: 'pedidos_tab_generar',   label: 'Generar',             tipo: 'tab' },
                 { key: 'pedidos_tab_historial', label: 'Pedidos (unificado)', tipo: 'tab' },
                 { key: 'pedidos_tab_rutas',     label: 'Rutas de entrega',    tipo: 'tab' },
@@ -246,12 +246,12 @@ const GRUPOS_CRUDOS = [
     {
         // Datos Contables (2026-07-31). El grupo del menú y el de esta pantalla
         // se mantienen espejados a propósito: si el permiso vive en "Inventario"
-        // y el menú lo muestra en "Datos Contables", quien reparte accesos lo
+        // y el menú lo muestra en "Datos contables", quien reparte accesos lo
         // busca donde no está.
-        group: 'Datos Contables',
+        group: 'Datos contables',
         color: 'text-chart-1-text',
         modules: [
-            { key: 'facturas_compra', label: 'Facturas de Compra (Correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icon: FileText, hasApprove: false, sub: [
+            { key: 'facturas_compra', label: 'Facturas de compra (correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icon: FileText, hasApprove: false, sub: [
                 // Tres cosas distintas, tres permisos (pedido del usuario
                 // 2026-08-03): ver el listado (facturas_compra.can_view),
                 // ABRIR el documento en pantalla, y DESCARGAR el archivo. Sin
@@ -284,20 +284,20 @@ const GRUPOS_CRUDOS = [
                 { key: 'corte_z_descargar',  label: 'Descargar el PDF', tipo: 'cap' },
                 { key: 'corte_z_ver_montos', label: 'Ver montos',       tipo: 'cap' },
             ]},
-            { key: 'libro_compras_completo', label: 'Libro de Compras Completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras registradas más los documentos del proveedor que llegaron por correo y nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sirve para cotejarse contra el archivo original. Exporta el número de documento completo, no el cortado a 20 caracteres', icon: BookOpen, hasApprove: false, hasScope: true, sub: [
+            { key: 'libro_compras_completo', label: 'Libro de compras completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras registradas más los documentos del proveedor que llegaron por correo y nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sirve para cotejarse contra el archivo original. Exporta el número de documento completo, no el cortado a 20 caracteres', icon: BookOpen, hasApprove: false, hasScope: true, sub: [
                 { key: 'libro_compras_completo_descargar',  label: 'Exportar el libro (CSV)', tipo: 'cap' },
                 { key: 'libro_compras_completo_ver_montos', label: 'Ver montos',              tipo: 'cap' },
             ]},
 
-            { key: 'resumen_fiscal', label: 'Resumen Fiscal', desc: 'El movimiento fiscal del mes en un número por concepto: débito por ventas, crédito por compras (incluidas las que llegaron como documento y no se registraron), notas de crédito y débito, percepción, retención, y el pago a cuenta del 1.75% sobre ventas (Art. 151). Es un indicador: NO incluye el saldo a favor del mes anterior, así que no reemplaza a la declaración', icon: Calculator, hasApprove: false, hasScope: true },
+            { key: 'resumen_fiscal', label: 'Resumen fiscal', desc: 'El movimiento fiscal del mes en un número por concepto: débito por ventas, crédito por compras (incluidas las que llegaron como documento y no se registraron), notas de crédito y débito, percepción, retención, y el pago a cuenta del 1.75% sobre ventas (Art. 151). Es un indicador: NO incluye el saldo a favor del mes anterior, así que no reemplaza a la declaración', icon: Calculator, hasApprove: false, hasScope: true },
         ],
     },
     {
         group: 'RRHH',
         color: 'text-chart-3-text',
         modules: [
-            { key: 'encuesta',       label: 'Clima Organizacional', desc: 'Dashboard de resultados de encuesta de clima 2026 con análisis por bloque, sucursal y empleado', icon: BarChart2,   hasApprove: false },
-            { key: 'encuesta_admin', label: 'Gestión de Encuesta',  desc: 'Agregar y eliminar respuestas de encuestas de clima organizacional',                              icon: BarChart2,   hasApprove: false },
+            { key: 'encuesta',       label: 'Clima organizacional', desc: 'Dashboard de resultados de encuesta de clima 2026 con análisis por bloque, sucursal y empleado', icon: BarChart2,   hasApprove: false },
+            { key: 'encuesta_admin', label: 'Gestión de encuesta',  desc: 'Agregar y eliminar respuestas de encuestas de clima organizacional',                              icon: BarChart2,   hasApprove: false },
             { key: 'entrevistas',    label: 'Entrevistas',          desc: 'Gestión del proceso de selección y entrevistas de candidatos (próximamente)',                    icon: Briefcase,  hasApprove: false, comingSoon: true },
         ],
     },
@@ -345,7 +345,7 @@ const GRUPOS_CRUDOS = [
             { key: 'dash_annulment_req',  label: 'Widget: Solicitud de Anulación',desc: 'Crear solicitudes de anulación de facturas dentro del período de gracia de 3 días',  icon: Receipt,    hasApprove: false, hasScope: true },
             { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Min/Max',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación del supervisor', icon: BarChart2, hasApprove: false, hasScope: true },
             { key: 'dash_inv_movement',   label: 'Widget: Ajuste de Inventario',  desc: 'Solicitar que se cargue o se descargue producto —vencimiento, descarte, producto dañado o consumo interno—; el inventario se mueve al aprobarla', icon: PackageMinus, hasApprove: false, hasScope: true },
-            { key: 'dash_traslados',      label: 'Widget: Traslados entre Salas', desc: 'Ver lo que otra sala pide del inventario propio y lo que uno pidió y viene en camino', icon: Truck, hasApprove: false, hasScope: true },
+            { key: 'dash_traslados',      label: 'Widget: Traslados entre salas', desc: 'Ver lo que otra sala pide del inventario propio y lo que uno pidió y viene en camino', icon: Truck, hasApprove: false, hasScope: true },
             // `can_view` lista y descarga; `can_edit` es lo que habilita TOMAR
             // una factura. El alcance importa de verdad acá: con scope BRANCH la
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
@@ -371,7 +371,7 @@ const GRUPOS_CRUDOS = [
         modules: [
             { key: 'kiosk_pin',    label: 'PIN de Marcación',       desc: 'Ver y copiar el PIN personal para marcar en el kiosco',     icon: ShieldCheck,   hasApprove: false },
             { key: 'su_pin',       label: 'Código SU (Supervisores)', desc: 'Ver el código SU de 6 dígitos para autorizar marcajes de jefes y subjefes', icon: ShieldAlert, hasApprove: false },
-            { key: 'permissions',  label: 'Permisos de Acceso',     desc: 'Control de acceso por rol a módulos del sistema',           icon: Lock,          hasApprove: false },
+            { key: 'permissions',  label: 'Permisos de acceso',     desc: 'Control de acceso por rol a módulos del sistema',           icon: Lock,          hasApprove: false },
             // Faltaba en este registro y por eso NO se podía otorgar desde
             // Permisos (auditoría 2026-08-03): la ruta ya exigía
             // `PermissionGuard moduleKey="maintenance"`, el menú ya lo listaba
@@ -380,10 +380,10 @@ const GRUPOS_CRUDOS = [
             // a los demás en solo lectura, así que quedarse sin forma de
             // asignarlo es justo lo que no conviene.
             { key: 'maintenance',  label: 'Mantenimiento',          desc: 'Poner un módulo en solo lectura para el resto del personal, con motivo y duración: se sigue viendo todo, no se puede editar ni aprobar', icon: Wrench, hasApprove: false },
-            { key: 'auditview',    label: 'Auditoría General',      desc: 'Registro completo de cambios y acciones en el sistema',     icon: Activity,      hasApprove: false },
+            { key: 'auditview',    label: 'Auditoría general',      desc: 'Registro completo de cambios y acciones en el sistema',     icon: Activity,      hasApprove: false },
             { key: 'ios_test',     label: 'Prueba iOS',             desc: 'Vista de prueba para verificar safe areas y layout en iOS', icon: Smartphone,    hasApprove: false },
-            { key: 'sync_health',  label: 'Salud de Syncs',         desc: 'Historial de corridas de sync por dominio (productos/minmax/compras/backup) y alertas de fallo', icon: RadioTower, hasApprove: false },
-            { key: 'orphan_objects', label: 'Objetos Huérfanos',   desc: 'Tablero de seguimiento de candidatos a código muerto (componentes, funciones, edge functions sin caller)', icon: Ghost, hasApprove: false },
+            { key: 'sync_health',  label: 'Salud de syncs',         desc: 'Historial de corridas de sync por dominio (productos/minmax/compras/backup) y alertas de fallo', icon: RadioTower, hasApprove: false },
+            { key: 'orphan_objects', label: 'Objetos huérfanos',   desc: 'Tablero de seguimiento de candidatos a código muerto (componentes, funciones, edge functions sin caller)', icon: Ghost, hasApprove: false },
             // Ver a qué hora y desde dónde se conecta cada persona es dato
             // sensible: se reparte con cuidado. `can_edit` es el que cierra.
             { key: 'sesiones',     label: 'Conexiones',             desc: 'Qué dispositivos tienen sesión abierta, cuándo se usaron por última vez y desde dónde; permite cerrar una a distancia', icon: MonitorSmartphone, hasApprove: false },
@@ -391,7 +391,7 @@ const GRUPOS_CRUDOS = [
             // renovarla, mientras que bloquear deja a la persona sin entrar y sin
             // leer NADA desde la siguiente petición. Es más grave y se reparte a
             // menos gente.
-            { key: 'bloqueos',     label: 'Bloquear Personas',      desc: 'Quitarle a alguien el acceso al portal por completo, por un tiempo o hasta que se le devuelva; cierra sus conexiones y le impide entrar', icon: ShieldOff, hasApprove: false },
+            { key: 'bloqueos',     label: 'Bloquear personas',      desc: 'Quitarle a alguien el acceso al portal por completo, por un tiempo o hasta que se le devuelva; cierra sus conexiones y le impide entrar', icon: ShieldOff, hasApprove: false },
         ],
     },
 ];

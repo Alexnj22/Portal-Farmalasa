@@ -526,7 +526,7 @@ const BranchCard = memo(({
                     type="button"
                     onClick={() => openModal && openModal("viewBranchEmployees", branch)}
                     className={`flex flex-col gap-1.5 items-start group/personal hover:bg-surface-card p-2 -ml-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
-                    title="Ver Listado de Personal"
+                    title="Ver listado de personal"
                 >
                     <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/personal:text-content-2">
                         <Users size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/personal:scale-110 group-hover/personal:text-brand-text" strokeWidth={2.5} />

@@ -29,7 +29,7 @@ import { mensajeAmigable } from '../utils/errorMessages';
  *
  * Los nombres y las descripciones salen del registro de Permisos
  * (constants/permissionModules.js), no de las etiquetas del menú: ahí
- * `staff_list` es "Listado" y acá tiene que decir "Listado de Personal".
+ * `staff_list` es "Listado" y acá tiene que decir "Listado de personal".
  */
 
 // El servidor acota a [1, 24] igual (LEAST/GREATEST en lock_module); esto es para

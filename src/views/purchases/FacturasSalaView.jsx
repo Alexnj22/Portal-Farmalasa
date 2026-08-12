@@ -228,7 +228,7 @@ export default function FacturasSalaView() {
     );
 
     return (
-        <GlassViewLayout icon={ReceiptText} title="Facturas de Sala" filtersContent={filtersContent}>
+        <GlassViewLayout icon={ReceiptText} title="Facturas de sala" filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
 
                 {/* §17.0 — el carril y la píldora van en UNA fila, con el carril

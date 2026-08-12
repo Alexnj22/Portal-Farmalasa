@@ -37,7 +37,7 @@ export default function GestionStockView() {
     );
 
     return (
-        <GlassViewLayout icon={Activity} title="Gestión de Stock" filtersContent={filtersContent}>
+        <GlassViewLayout icon={Activity} title="Gestión de stock" filtersContent={filtersContent}>
             <TabSinVenta searchTerm={debouncedSearch} />
         </GlassViewLayout>
     );

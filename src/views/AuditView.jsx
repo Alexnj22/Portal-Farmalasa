@@ -341,7 +341,7 @@ const filtrosCuerpo = (
     return (
         <GlassViewLayout
             icon={ShieldCheck}
-            title="Auditoría de Sistema"
+            title="Auditoría de sistema"
             liveIndicator={isLive}
             filtersContent={filtersContent}
         >

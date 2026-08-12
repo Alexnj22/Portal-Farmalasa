@@ -69,7 +69,7 @@ function PanelTraslados({ porConfirmar, porRecibir, error, onCambio }) {
                     <ArrowLeftRight size={16} strokeWidth={2} className="text-brand-text" />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-body-sm font-black text-content leading-tight">Traslados entre Salas</p>
+                    <p className="text-body-sm font-black text-content leading-tight">Traslados entre salas</p>
                     <p className="text-micro text-content-3 mt-0.5">
                         Lo que te piden de tu sala y lo que viene en camino
                     </p>
@@ -149,7 +149,7 @@ export default function WidgetTransferRequests() {
     return (
         <LanzadorSolicitud
             icon={ArrowLeftRight}
-            label="Traslados entre Salas"
+            label="Traslados entre salas"
             pendientes={pendientes}
             etiquetaPendientes="te piden"
             etiquetaPendientesPlural="te piden"

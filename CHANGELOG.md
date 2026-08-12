@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.6 — Un nombre por pantalla: sentence case en los cinco registros
+
+§26.4 dice sentence case en todo, y los nombres de módulo eran la excepción que
+nadie había barrido: «Gestión de Personal», «Centro de Comunicaciones»,
+«Auditoría de Tiempos», «Objetos Huérfanos». 43 nombres, 108 apariciones, 37
+archivos.
+
+**Lo que hizo falta saber antes de tocar nada: cada nombre vive en hasta cinco
+registros.** El `title=` de la vista, `moduleMap.js`, `permissionModules.js`, el
+menú de `AppLayout.jsx` y el mapa `ROUTE_TITLES` de `App.jsx` que fija el título
+del navegador. Cambiar uno solo deja los otros cuatro contradiciéndolo, así que
+el barrido va a los cinco a la vez o no va.
+
+El reemplazo es de **valor entrecomillado completo**, nunca de subcadena: los
+`desc:` de `permissionModules.js` son prosa y mencionan los mismos nombres
+adentro. Antes se verificó que ninguno de los 43 se use en una comparación de
+igualdad —un `=== 'Mis Documentos'` habría quedado siempre falso, en silencio—.
+Después quedaron nueve sueltos que el reemplazo por valor no alcanza, porque son
+texto de JSX (`>Perfil de Empleado<`) o llevan prefijo (`Ver Listado de
+Personal`, `Widget: Traslados entre Salas`); esos van a mano.
+
+Se quedan como están las siglas y los nombres propios: `Corte Z`, `Libros IVA`,
+`Min / Max`, `Pendiente MH`, `Código SU (Supervisores)`, `Cargos / Organigrama`,
+`Prueba iOS`, `Portal FarmaSalud`.
+
+Verificado en el navegador: el menú lateral entero, el encabezado de siete
+vistas, el título del navegador de cada una, y cero nombres viejos pintados en
+la pantalla de Permisos —que es la que los lista todos—.
+
+**Hallazgo que este barrido destapó y NO se corrige acá.** Unificar el caso dejó
+a la vista que el problema de fondo es otro: **13 rutas se llaman distinto según
+el registro**, y en tres casos el título del navegador nombra otra pantalla.
+
+| ruta | menú / `moduleMap` | título del navegador | encabezado de la vista |
+|---|---|---|---|
+| `/staff` | Listado | **Dashboard** | Gestión de personal |
+| `/monitor` | Monitor real-time | Asistencia | Monitor en tiempo real |
+| `/payroll` | Nómina | **Planilla** | Nómina |
+| `/announcements` | Gestionar avisos | Comunicados | Centro de comunicaciones |
+| `/audit` | Auditoría de tiempos | Auditoría de tiempo | Auditoría de tiempos |
+| `/libro-compras-completo` | Compras completo | Libro de compras completo | Compras completo |
+
+`/staff` diciendo «Dashboard» es resto de antes de que el tablero pasara a
+llamarse «Inicio». Elegir qué nombre gana en cada fila es una decisión de
+producto, no una corrección mecánica, así que queda anotada y sin tocar.
+
 ## v2.571.5 — Pedidos a sucursales: el vidrio sale del canónico y la línea de tiempo deja de encimarse
 
 Pasada sobre las cinco pestañas de la vista. El gate de diseño estaba en verde

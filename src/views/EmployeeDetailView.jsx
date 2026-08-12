@@ -409,7 +409,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     </div>
 
                     <div className="flex flex-col items-start justify-center cursor-default">
-                        <h2 className="text-title md:text-title-lg font-black text-content leading-none tracking-tight">Perfil de Empleado</h2>
+                        <h2 className="text-title md:text-title-lg font-black text-content leading-none tracking-tight">Perfil de empleado</h2>
                     </div>
                 </div>
             }

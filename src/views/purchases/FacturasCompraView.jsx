@@ -1484,7 +1484,7 @@ export default function FacturasCompraView({ openModal }) {
     );
 
     return (
-        <GlassViewLayout icon={FileText} title="Facturas de Compra" filtersContent={filtersContent}>
+        <GlassViewLayout icon={FileText} title="Facturas de compra" filtersContent={filtersContent}>
             {activeTab === 'documentos' && (
                 <TabDocumentos
                     dateRange={dateRange}

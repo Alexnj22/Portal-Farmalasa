@@ -150,7 +150,7 @@ export default function ResumenFiscalView() {
     return (
         <GlassViewLayout
             icon={Calculator}
-            title="Resumen Fiscal"
+            title="Resumen fiscal"
             transparentBody={true}
         >
             <div className="p-5 md:p-6 space-y-5">

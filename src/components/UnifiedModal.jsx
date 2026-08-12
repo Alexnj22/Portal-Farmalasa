@@ -194,7 +194,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewAuditDetail": return "Detalle de Auditoría";
             case "manageKiosks": return "Dispositivos Kiosco";
             case "planSchedule": return "Planificación Semanal";
-            case "manageShifts": return "Catálogo de Turnos";
+            case "manageShifts": return "Catálogo de turnos";
             case "newEmployee": return "Nuevo Empleado";
             case "editEmployee": return "Actualizar Información";
             case "rehireEmployee": return "Recontratación";

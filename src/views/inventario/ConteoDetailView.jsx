@@ -1720,7 +1720,7 @@ export default function ConteoDetailView() {
     );
 
     return (
-        <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
+        <GlassViewLayout icon={ClipboardCheck} title="Conteo de inventario" filtersContent={filtersContent}>
             <div className="px-2 py-4 pb-28 md:p-6 md:pb-6 lg:p-8 space-y-6">
                 {conteo && (
                     <div data-surface="card" className="p-4 md:p-5">

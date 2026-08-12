@@ -243,7 +243,7 @@ export default function ConteoInventarioView() {
     );
 
     return (
-        <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
+        <GlassViewLayout icon={ClipboardCheck} title="Conteo de inventario" filtersContent={filtersContent}>
             {/* El padding del cuerpo lo pone la VISTA, no `GlassViewLayout` — el
                 canónico es `StaffManagementView`. Sin este envoltorio el contenido
                 nacía sobre el filo de la tarjeta: medido a 1600px, 0px de aire

@@ -600,7 +600,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   );
 
   return (
-    <GlassViewLayout icon={Clock} title="Monitor en Tiempo Real" liveIndicator filtersContent={filtersContent} transparentBody>
+    <GlassViewLayout icon={Clock} title="Monitor en tiempo real" liveIndicator filtersContent={filtersContent} transparentBody>
       <div className="p-4 md:p-6 lg:p-8 space-y-5">
 
       {filtrosCuerpo && <div className="flex justify-end">{filtrosCuerpo}</div>}

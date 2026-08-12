@@ -58,7 +58,7 @@ const MENU_GROUPS = [
     { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['requests', 'requests_personales', 'traslados'] },
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
-    { key: 'clima',         label: 'Clima Organizacional', icon: BarChart2, modules: ['encuesta', 'encuesta_admin']       },
+    { key: 'clima',         label: 'Clima organizacional', icon: BarChart2, modules: ['encuesta', 'encuesta_admin']       },
     { key: 'personal',      label: 'Personal',      icon: User,          modules: ['staff_list']                         },
     { key: 'nomina',        label: 'Nómina',        icon: DollarSign,    modules: ['payroll']                            },
     { key: 'asistencia',    label: 'Asistencia',    icon: Monitor,       modules: ['monitor', 'time_audit']               },
@@ -77,7 +77,7 @@ const MENU_GROUPS = [
     // el grupo queda como el slot de Bonificaciones, que se construye después.
     { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift, modules: ['bonificaciones'] },
     { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
-    { key: 'pedidos_sucursales', label: 'Pedidos a Sucursales', icon: ClipboardList, modules: ['pedidos'] },
+    { key: 'pedidos_sucursales', label: 'Pedidos a sucursales', icon: ClipboardList, modules: ['pedidos'] },
     // `gestion_stock` e `inventario` van PRIMERO y no al final de la lista
     // (pedido del usuario, 2026-08-08): las dos eran pestañas de Productos y
     // son las dos preguntas con las que alguien entra a este grupo —qué se
@@ -94,7 +94,7 @@ const MENU_GROUPS = [
     // DTE, su JSON/PDF y el proveedor fiscal—, no para decidir qué reponer, que
     // es de lo que trata el resto de ese grupo. Y aquí nace Libros IVA, que se
     // apoya en el mismo dato fiscal desde el otro lado del mostrador.
-    { key: 'contabilidad', label: 'Datos Contables', icon: BookOpen,    modules: ['facturas_compra', 'libros_iva', 'libro_compras_completo', 'resumen_fiscal', 'corte_z'] },
+    { key: 'contabilidad', label: 'Datos contables', icon: BookOpen,    modules: ['facturas_compra', 'libros_iva', 'libro_compras_completo', 'resumen_fiscal', 'corte_z'] },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'sync_health', 'orphan_objects', 'sesiones'] },
 ];
@@ -1199,7 +1199,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
                                                 openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                             }}
-                                            onMouseLeave={closeFlyout} aria-label="Mi Perfil"
+                                            onMouseLeave={closeFlyout} aria-label="Mi perfil"
                                             className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:translate-y-[var(--lift-hover)] active:scale-[0.97]
                                                 bg-[rgb(var(--sidebar-realce)/0.08)] border border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.55)]
                                                 shadow-[var(--shadow-glass-1)]
@@ -1278,7 +1278,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     en el menú lateral, que es su lugar. */}
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
-                                    <Link to="/profile" aria-label="Mi Perfil"
+                                    <Link to="/profile" aria-label="Mi perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}

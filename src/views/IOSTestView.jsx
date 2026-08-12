@@ -102,7 +102,7 @@ const IOSTestView = () => {
     const [copiadoRot, setCopiadoRot] = useState(false);
 
     return (
-        <GlassViewLayout icon={Smartphone} title="Vista de Prueba iOS">
+        <GlassViewLayout icon={Smartphone} title="Vista de prueba iOS">
             <div className="p-4 lg:p-8 flex flex-col gap-4">
 
                 {/* Encabezado */}

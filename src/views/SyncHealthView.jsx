@@ -97,7 +97,7 @@ const SyncHealthView = () => {
     );
 
     return (
-        <GlassViewLayout icon={RadioTower} title="Salud de Syncs" filtersContent={filtersContent}>
+        <GlassViewLayout icon={RadioTower} title="Salud de syncs" filtersContent={filtersContent}>
             <div className="p-4 md:p-6">
                 <DataTable
                     columns={[

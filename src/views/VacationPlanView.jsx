@@ -745,7 +745,7 @@ const VacationPlanView = () => {
     return (
         <>
 
-            <GlassViewLayout icon={Palmtree} title="Plan Anual de Vacaciones" filtersContent={filtersContent} transparentBody={true} fixedScrollMode={true}>
+            <GlassViewLayout icon={Palmtree} title="Plan anual de vacaciones" filtersContent={filtersContent} transparentBody={true} fixedScrollMode={true}>
                 {/* Barra de filtros: cuerpo, a la derecha (§17) */}
                 <div className="flex justify-end px-2 md:px-0 pb-4">{filtrosCuerpo}</div>
                 <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
@@ -889,7 +889,7 @@ const VacationPlanView = () => {
                                         <Palmtree size={16} className="text-white" strokeWidth={2} />
                                     </div>
                                     <div>
-                                        <p className="text-body font-black text-content">Plan de Vacaciones {year}</p>
+                                        <p className="text-body font-black text-content">Plan de vacaciones {year}</p>
                                         {activeHeader ? (
                                             <Badge variant={HEADER_STATUS_META[activeHeader.status]?.variante || 'neutral'} size="sm">
                                                 {HEADER_STATUS_META[activeHeader.status]?.label || activeHeader.status}

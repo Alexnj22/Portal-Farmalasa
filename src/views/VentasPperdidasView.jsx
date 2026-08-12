@@ -120,7 +120,7 @@ export default function VentasPperdidasView() {
     );
 
     return (
-        <GlassViewLayout icon={PackageMinus} title="Ventas Perdidas" filtersContent={filtersContent}>
+        <GlassViewLayout icon={PackageMinus} title="Ventas perdidas" filtersContent={filtersContent}>
             <div className="flex flex-col gap-4 p-4 pb-8">
 
                 {/* Tab explanation */}

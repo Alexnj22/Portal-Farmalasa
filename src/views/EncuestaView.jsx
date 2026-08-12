@@ -623,8 +623,8 @@ export default function EncuestaView() {
             icon={BarChart2}
             title={
                 <div className="flex items-center gap-3">
-                    <Button variant="secondary" size="sm" icon={ArrowLeft} title="Volver a Gestión de Encuesta" iconOnly onClick={() => navigate('/encuesta-admin')} />
-                    <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima Organizacional'}</span>
+                    <Button variant="secondary" size="sm" icon={ArrowLeft} title="Volver a Gestión de encuesta" iconOnly onClick={() => navigate('/encuesta-admin')} />
+                    <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima organizacional'}</span>
                 </div>
             }
             subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} empleados`}

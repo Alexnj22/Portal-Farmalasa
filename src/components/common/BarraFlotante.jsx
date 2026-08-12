@@ -93,7 +93,7 @@ import HojaMovil, { MATERIAL_HOJA, MATERIAL_CLUSTER } from './HojaMovil';
  * En las vistas de autogestión (`hasSelfOnly`) `AppLayout` dibuja una nav fija
  * abajo, en el mismo sitio que esta barra. `--alto-nav-inferior` lo publica ese
  * layout —vale `0px` donde no hay nav—, así que la barra se sube justo lo que
- * mide y no hay que enterarse de nada desde acá. "Mis Documentos" es
+ * mide y no hay que enterarse de nada desde acá. "Mis documentos" es
  * exactamente ese caso: autogestión y con `FilterBar`.
  *
  * ── Uso ───────────────────────────────────────────────────────────────────

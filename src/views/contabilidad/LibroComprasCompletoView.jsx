@@ -295,7 +295,7 @@ export default function LibroComprasCompletoView() {
     return (
         <GlassViewLayout
             icon={BookOpen}
-            title="Compras Completo"
+            title="Compras completo"
             filtersContent={filtersContent}
             transparentBody={true}
         >

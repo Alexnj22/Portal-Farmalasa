@@ -717,7 +717,7 @@ const EmployeeAnnouncementsView = () => {
     ) : null;
 
     return (
-        <GlassViewLayout icon={Bell} title="Mis Avisos" filtersContent={filtersContent} transparentBody={true}>
+        <GlassViewLayout icon={Bell} title="Mis avisos" filtersContent={filtersContent} transparentBody={true}>
             <div className="pb-8">
                 {filtrosCuerpo && <div className="flex justify-end mb-4">{filtrosCuerpo}</div>}
                 {isStoreLoading ? (

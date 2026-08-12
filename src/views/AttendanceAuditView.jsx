@@ -1256,7 +1256,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   );
 
   return (
-    <GlassViewLayout icon={AlertTriangle} title="Auditoría de Tiempos" filtersContent={filtersContent}>
+    <GlassViewLayout icon={AlertTriangle} title="Auditoría de tiempos" filtersContent={filtersContent}>
       {/* Correction modal */}
       <DayCorrectionModal
         isOpen={!!correctionTarget}

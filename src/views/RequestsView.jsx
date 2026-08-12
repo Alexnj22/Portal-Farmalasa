@@ -567,7 +567,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
 
     return (
         <GlassViewLayout icon={esSucursal ? Inbox : Palmtree}
-            title={esSucursal ? 'Solicitudes de Sucursal' : 'Solicitudes Personales'}
+            title={esSucursal ? 'Solicitudes de sucursal' : 'Solicitudes personales'}
             filtersContent={filtersContent} transparentBody={true}>
             <div className="pt-4 px-2 md:px-0 pb-8 space-y-6">
                 {filtrosCuerpo && <div className="flex justify-end">{filtrosCuerpo}</div>}

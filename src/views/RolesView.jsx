@@ -469,7 +469,7 @@ const RolesView = ({ openModal }) => {
     return (
         <GlassViewLayout
             icon={Network}
-            title="Jerarquía Institucional"
+            title="Jerarquía institucional"
             filtersContent={renderFiltersContent()}
             transparentBody={true}
             fixedScrollMode={true}

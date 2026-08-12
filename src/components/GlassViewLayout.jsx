@@ -211,7 +211,7 @@ const GlassViewLayout = ({
                 {/* A2 (2026-07-26) — la prioridad estaba declarada al revés: el título
                     llevaba `min-w-0` (puede encogerse hasta desaparecer) y las acciones
                     `flex-shrink-0` (nunca ceden), así que en móvil ganaba lo secundario y
-                    "Gestión de Personal" se truncaba a "Gestión de …". El título es lo que
+                    "Gestión de personal" se truncaba a "Gestión de …". El título es lo que
                     te dice dónde estás; las acciones son lo que podés posponer.
                     Con `flex-wrap` + `basis-[60%]`, cuando no entran juntos las acciones
                     bajan a una segunda línea en vez de comerse el título.

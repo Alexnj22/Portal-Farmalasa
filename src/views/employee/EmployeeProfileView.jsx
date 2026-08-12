@@ -195,7 +195,7 @@ const EmployeeProfileView = ({ openModal }) => {
     }, [emp]);
 
     if (!emp) return (
-        <GlassViewLayout icon={User} title="Mi Perfil" transparentBody={true}>
+        <GlassViewLayout icon={User} title="Mi perfil" transparentBody={true}>
             <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 flex flex-col lg:flex-row gap-5 items-start animate-in fade-in duration-[var(--dur-slow)]">
                 <div className="w-full lg:w-[400px] shrink-0 space-y-4">
                     <div className="skeleton rounded-header h-80" />
@@ -234,7 +234,7 @@ const EmployeeProfileView = ({ openModal }) => {
                 <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-border-card shadow-sm" />
             </div>
             <div className="min-w-0">
-                <p className="text-caption font-black text-content-2 uppercase tracking-widest">Mi Perfil</p>
+                <p className="text-caption font-black text-content-2 uppercase tracking-widest">Mi perfil</p>
                 <h2 className="font-black text-title md:text-display text-content tracking-tight leading-tight truncate">{emp.name}</h2>
                 <p className="text-caption font-bold text-content-3 truncate">
                     {emp.role || 'Empleado'}{branch ? ` · ${branch.name}` : ''}
@@ -330,7 +330,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                     {/* Mi Expediente — credenciales (employee_documents JSONB): CV, Contrato,
                         DUI, y (si aplica por Cargo/Profesión) Carné + Anualidad JVPQF/JVPE.
-                        Nombrado distinto de "Mis Documentos" (menú aparte, adjuntos de
+                        Nombrado distinto de "Mis documentos" (menú aparte, adjuntos de
                         solicitudes) para no confundir ambos conceptos. */}
                     <SectionCard>
                         <SectionLabel icon={FolderOpen} label="Mi Expediente" />
@@ -352,7 +352,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     {/* Plan de vacaciones */}
                     {myVacPlans.length > 0 && (
                         <SectionCard>
-                            <SectionLabel icon={Palmtree} label="Plan de Vacaciones" color="text-success" />
+                            <SectionLabel icon={Palmtree} label="Plan de vacaciones" color="text-success" />
                             <div className="space-y-2">
                                 {myVacPlans.map(vp => {
                                     const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;

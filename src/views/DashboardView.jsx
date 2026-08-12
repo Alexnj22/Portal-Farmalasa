@@ -520,7 +520,7 @@ const WIDGET_DEFS = [
   { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Ajuste de Inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
-  { id: 'traslados',    label: 'Traslados entre Salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
+  { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
   { id: 'facturas_sala',label: 'Facturas de mi Sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },

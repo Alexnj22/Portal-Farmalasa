@@ -487,7 +487,7 @@ export default function EncuestaAdminView() {
     return (
         <GlassViewLayout
             icon={PenLine}
-            title="Gestión de Encuestas"
+            title="Gestión de encuestas"
             filtersContent={filtersContent}
             transparentBody={true}
             fixedScrollMode={true}>

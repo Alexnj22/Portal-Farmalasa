@@ -881,7 +881,7 @@ const StaffManagementView = ({
   return (
     <GlassViewLayout
       icon={Users}
-      title="Gestión de Personal"
+      title="Gestión de personal"
       filtersContent={filtersContent}
     >
       <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-[var(--dur-lento)]">

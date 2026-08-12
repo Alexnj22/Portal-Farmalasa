@@ -76,7 +76,7 @@ const OrphanObjectsView = () => {
     );
 
     return (
-        <GlassViewLayout icon={Ghost} title="Objetos Huérfanos" filtersContent={filtersContent}>
+        <GlassViewLayout icon={Ghost} title="Objetos huérfanos" filtersContent={filtersContent}>
             <div className="p-4 md:p-6">
                 <div className="mb-4 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                     <p className="text-label text-content-2 font-medium leading-snug">

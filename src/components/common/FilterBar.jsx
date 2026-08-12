@@ -201,7 +201,7 @@ Chip.displayName = 'FilterBar.Chip';
  * **Hasta 3 opciones es `SegmentedControl`; de 4 en adelante, `LiquidSelect`.**
  * Los dos son lo mismo semánticamente —uno de N— y la diferencia es de ancho:
  * un segmentado de 5 opciones se come la píldora entera y deja a las demás
- * ranuras sin sitio, que es lo que pasaba en "Mis Documentos" (Todos + los 4
+ * ranuras sin sitio, que es lo que pasaba en "Mis documentos" (Todos + los 4
  * estados). El umbral es del canónico y no del llamador por el mismo motivo de
  * siempre: si es una decisión que se toma vista por vista, se toma distinto en
  * cada vista.

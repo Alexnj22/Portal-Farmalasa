@@ -11,6 +11,7 @@ import { isMobileOrApp } from './utils/helpers';
 import { MODULE_MAP } from './constants/moduleMap';
 import AlertModal from "./components/common/AlertModal";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import AvisoEntornoPruebas from "./components/common/AvisoEntornoPruebas";
 
 // Layouts (shell — necesarios en toda ruta, se quedan eager)
 import AppLayout from "./components/layout/AppLayout";
@@ -756,32 +757,32 @@ const ROUTE_TITLES = {
     '/overview':          'Inicio',
     '/dashboard':         'Dashboard',
     '/monitor':           'Asistencia',
-    '/audit':             'Auditoría de Tiempo',
+    '/audit':             'Auditoría de tiempo',
     '/schedules':         'Horarios',
     '/requests':          'Solicitudes',
-    '/vacation-plan':     'Plan de Vacaciones',
+    '/vacation-plan':     'Plan de vacaciones',
     '/payroll':           'Planilla',
     '/announcements':     'Comunicados',
     '/ventas':            'Ventas',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/productos':         'Productos',
-    '/pedidos':           'Pedidos a Sucursales',
+    '/pedidos':           'Pedidos a sucursales',
     '/encuesta':          'Encuesta',
     '/encuesta-admin':    'Encuesta',
     '/compras':           'Compras',
-    '/facturas-compra':   'Facturas de Compra',
+    '/facturas-compra':   'Facturas de compra',
     '/libros-iva':        'Libros IVA',
-    '/libro-compras-completo': 'Libro de Compras Completo',
-    '/resumen-fiscal': 'Resumen Fiscal',
-    '/conteo-inventario': 'Conteo de Inventario',
+    '/libro-compras-completo': 'Libro de compras completo',
+    '/resumen-fiscal': 'Resumen fiscal',
+    '/conteo-inventario': 'Conteo de inventario',
     '/branches':          'Sucursales',
     '/roles':             'Roles',
     '/permissions':       'Permisos',
     '/auditview':         'Auditoría',
-    '/my-announcements':  'Mis Avisos',
-    '/my-documents':      'Mis Documentos',
-    '/profile':           'Mi Perfil',
+    '/my-announcements':  'Mis avisos',
+    '/my-documents':      'Mis documentos',
+    '/profile':           'Mi perfil',
     '/kiosk':             'Reloj',
     '/login':             'Portal FarmaSalud',
 };
@@ -795,7 +796,7 @@ const AppWithToast = () => {
         const base = '/' + path.split('/')[1];
         const isDashboardEmployee = path.startsWith('/dashboard/empleado/');
         const label = isDashboardEmployee
-            ? 'Perfil de Empleado'
+            ? 'Perfil de empleado'
             : (ROUTE_TITLES[base] ?? null);
         document.title = label ? `${label} — FarmaSalud` : 'Portal FarmaSalud';
     }, [location.pathname]);
@@ -819,6 +820,10 @@ const AppWithToast = () => {
             <div className="w-full h-full">
                 <MainApp />
                 <LiquidToast theme={isKioskMode ? 'dark' : 'light'} />
+                {/* Fuera de <Routes> a propósito: el aviso tiene que estar puesto
+                    también en /login y /kiosk, o sea ANTES de que alguien escriba
+                    una credencial creyendo que está en producción. */}
+                <AvisoEntornoPruebas />
             </div>
         </>
     );

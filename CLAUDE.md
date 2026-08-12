@@ -175,13 +175,21 @@ freeze global. Para DDL sobre las tablas calientes listadas arriba, además
 considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
 `12-23,0-5`).
 
-**Probar primero en staging.** Existe un branch de Supabase dedicado para esto
-(`ewcmerxqjvludtgskuin`, esquema reconstruido, cero PII — ver
-`docs/planes-cerrados/PLAN-EJECUCION-2026-07.md` Bloque 3). Para DDL sobre las tablas calientes
-listadas arriba, aplicar primero ahí con `apply_migration` apuntando a ese
-`project_id`, confirmar que no rompe nada, y solo entonces aplicar a prod.
-Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2 (secretos de Vault
-en `cron.job.command`) — ambos sin incidentes.
+**Probar primero en staging.** Existe un branch de Supabase dedicado para esto:
+**`cbnjplmnfmfsambavjce`** (nombre `staging`, persistente). Para DDL sobre las
+tablas calientes listadas arriba, aplicar primero ahí con `apply_migration`
+apuntando a ese `project_id`, confirmar que no rompe nada, y solo entonces
+aplicar a prod. Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2
+(secretos de Vault en `cron.job.command`) — ambos sin incidentes.
+
+⚠️ **El ref cambia cada vez que se rehace el branch.** El de julio
+(`ewcmerxqjvludtgskuin`) está borrado; si encontrás ese en un doc, es viejo. El
+vigente sale de `supabase branches list` o del `VITE_SUPABASE_URL` de
+`.env.staging`. Su esquema es **idéntico al de prod** —verificado por huella md5
+de tablas, funciones, policies e índices— y trae datos de muestra, cero PII.
+
+**Cómo levantar el portal contra ese entorno** (ver §«Entorno de pruebas» al
+final de este archivo): `npm run dev:staging`.
 
 **Todo `apply_migration` necesita su archivo local en el mismo commit, nombrado
 con la versión de 14 dígitos que devolvió el servidor** — `apply_migration` NUNCA
@@ -523,3 +531,69 @@ emergencia real, no para silenciar un hallazgo.
   `material-a-mano` (18), `carril-pildora` (15)— y las tres se bajaron con la
   receta de §20 de `docs/planes-cerrados/PLAN-MATERIALES-2026-08-02.md`.
   O sea que hoy **cualquier hallazgo nuevo falla el gate**, no suma al ratchet.
+
+---
+
+## Entorno de pruebas — probar sin miedo a producción (2026-08-12)
+
+**Por defecto, `npm run dev` y `npm run preview` hablan con PRODUCCIÓN.** El
+`.env` del repo apunta al proyecto real, así que cualquier clic en el navegador
+local escribe en la base de la que vive la empresa. Eso no cambió: lo que se
+agregó es un segundo camino.
+
+```bash
+npm run dev:staging      # el portal contra el branch de pruebas
+npm run build:staging    # compilar apuntando ahí (sale a dist-staging/)
+```
+
+Usuario **`pruebas`**, contraseña **`pruebas2026`** (rol Gerente General). El
+portal pinta un marco y una píldora «ENTORNO DE PRUEBAS» — **derivados de la URL
+de Supabase**, no de una bandera aparte: una bandera se olvida al armar un
+`.env` nuevo, y olvidarla significa creerse en pruebas mientras se escribe en
+producción. El aviso vive fuera de `<Routes>` para aparecer también en el login,
+antes de que alguien escriba una credencial. Lógica en `src/entorno.js`.
+
+**`.env.staging` está en `.gitignore`** (patrón `.env.*`), así que en un clon
+nuevo hay que crearlo: `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` del branch
+—panel de Supabase, o `supabase branches list`— más `VITE_VAPID_PUBLIC_KEY` y
+`VITE_GOOGLE_MAPS_API_KEY` copiadas del `.env`.
+
+### El branch se construye solo
+
+Para uno limpio: borrarlo y crearlo de nuevo. Sale con el esquema completo,
+sembrado y con la cuenta puesta. Lo hacen tres migraciones, **las tres no-op en
+producción** (verificado ejecutándolas contra prod y comparando conteos):
+
+| migración | qué siembra | por qué en esa posición |
+|---|---|---|
+| `20260729223031` | `roles`, `branches`, `role_permissions` | 25 migraciones insertan permisos con `role_id` fijos; sin las filas, la FK corta el replay |
+| `20260729223032` | los 9 buckets de Storage y sus policies | se crearon desde el panel, no por migración: un `ALTER POLICY` no encontraba qué alterar |
+| `20260812160000` | 300 productos con existencias, precios, MIN·MAX + la cuenta de pruebas | va al final: nada depende de productos, y ahí las tablas ya tienen su forma definitiva |
+
+**La cuenta de pruebas sólo nace si la base no tiene ni un empleado.** Es lo
+único que separa «sembrar un branch» de «abrir un Gerente General en la base
+real». No quitar esa guarda.
+
+**Al sembrar temprano, la tabla tiene la forma de ESE punto de la historia, no
+la de hoy.** Sembrar `role_permissions` con `scope='MINE'` abortó el replay
+entero: ese valor lo acepta un CHECK de agosto. Por eso las semillas que nadie
+necesita van al final.
+
+### Las edge functions NO están desplegadas ahí, a propósito
+
+Cinco (`sync-dte-sales`, `regularizar-dte`, `push-cliente-erp`,
+`sincronizar-fichas-clientes`, `aplicar-solicitud-facturacion`) escriben en el
+ERP real y transmiten a Hacienda. Con credenciales de producción convertirían el
+entorno seguro en uno capaz de tocar el sistema real. El login por usuario **no
+las necesita** (verificado). Si hace falta probar una sin efectos externos, se
+despliega esa sola.
+
+### A los branches sólo se llega por el MCP
+
+Sus bases son **solo IPv6 y sin entrada en el pooler**, y esta máquina no tiene
+IPv6: ni `psql`, ni `supabase db push`, ni `db dump` llegan. El único canal es
+`execute_sql`/`apply_migration`. Para mover SQL grande sin gastarlo en contexto:
+generarlo en prod y escribirlo a disco con
+`supabase db query --linked -o json | node -e '...' > archivo`, meterlo en
+`schema_migrations` con SQL server-side, y **crear el branch de nuevo** — lo
+replica solo. Detalle en la memoria `reference_branches_de_supabase_son_solo_ipv6`.

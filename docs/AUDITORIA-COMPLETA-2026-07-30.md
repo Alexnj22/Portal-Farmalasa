@@ -548,7 +548,10 @@ decisión de negocio**, no sólo código.
 
 A3 no necesita decisión, pero **sí** el cuidado de CLAUDE.md: `attendance` no es
 tabla caliente, pero la migración lleva `SET lock_timeout = '5s'` igual, y
-conviene probarla en el branch de staging (`ewcmerxqjvludtgskuin`) antes de prod.
+conviene probarla en el branch de staging antes de prod. **El ref cambia cada
+vez que se rehace el branch** — sale de `supabase branches list`, no de este
+documento; el que decía acá (`ewcmerxqjvludtgskuin`) se borró el 2026-08-12.
+Ver §«Entorno de pruebas» de CLAUDE.md.
 
 ### Fase B — rendimiento (§1, §7)
 

@@ -366,8 +366,13 @@ conviene que quede escrito.
 
 **El hook es un punto único de fallo del login.** Si explota, nadie refresca su
 token. Por eso: **fail-open ante una excepción inesperada, fail-closed sólo ante
-un veredicto claro de «vencido»**. Y se prueba primero en el branch de staging
-(`ewcmerxqjvludtgskuin`), como exige CLAUDE.md.
+un veredicto claro de «vencido»**. Y se prueba primero en el branch de staging,
+como exige CLAUDE.md. El ref sale de `supabase branches list`, no de acá: el que
+figuraba (`ewcmerxqjvludtgskuin`) se borró el 2026-08-12 al rehacer el entorno.
+
+Ese entorno ahora sirve para probar esto **de verdad**: tiene un usuario con
+sesión real (`pruebas`), así que el hook se puede ejercitar con un login
+completo en vez de simulando claims. Ver §«Entorno de pruebas» de CLAUDE.md.
 
 **La holgura es de un ciclo de token.** Con el JWT en 900s, el «5 minutos» del
 empleado se cumple con hasta 15 minutos de retraso. Bajar más el JWT reduce la

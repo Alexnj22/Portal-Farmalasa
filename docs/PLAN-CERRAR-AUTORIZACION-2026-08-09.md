@@ -242,10 +242,13 @@ existían**: ver la nota de D2.)
   migración y con reintentos.
 - Toda llamada a `auth_*` dentro de una policy **envuelta en `(SELECT …)`** —
   regla del outage del 2026-07-08, verificada con `EXPLAIN`.
-- Ensayo en staging (`ewcmerxqjvludtgskuin`) dentro de `BEGIN…ROLLBACK`, con
+- Ensayo en staging dentro de `BEGIN…ROLLBACK`, con
   `SET LOCAL role authenticated` y el JWT simulado por
   `set_config('request.jwt.claims', …)` — sin cambiar de rol, RLS ni siquiera se
-  evalúa y la prueba no prueba nada.
+  evalúa y la prueba no prueba nada. El ref del branch sale de
+  `supabase branches list`, no de este documento: el que figuraba acá
+  (`ewcmerxqjvludtgskuin`) se borró el 2026-08-12 — ver §«Entorno de pruebas»
+  de CLAUDE.md.
 - La puerta de cada tabla se elige **midiendo** quién la lee y con qué
   `PermissionGuard`, nunca por intuición.
 - Cada tanda con su archivo de migración nombrado con la versión que devolvió el

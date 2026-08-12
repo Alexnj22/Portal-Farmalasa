@@ -15,7 +15,7 @@ import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
 
 const TABS = [
-    { key: 'UNREAD', label: 'Sin Leer' },
+    { key: 'UNREAD', label: 'Sin leer' },
     { key: 'READ',   label: 'Leídos'   },
 ];
 

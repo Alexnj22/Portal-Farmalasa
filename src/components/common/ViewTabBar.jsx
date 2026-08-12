@@ -12,7 +12,7 @@ const spring = 'ease-[var(--ease-spring)]';
  * ── `trailingActions` se retiró el 2026-07-30 ─────────────────────────────
  * Esta barra llegó a tener una prop `trailingActions` con los botones de acción
  * de la vista, y ahí se mezclaron tres cosas distintas: acciones de verdad
- * ("Nuevo Empleado", "Publicar", "Exportar"), **filtros** —el rango de fechas de
+ * ("Nuevo empleado", "Publicar", "Exportar"), **filtros** —el rango de fechas de
  * `TabHistory`, el `SegmentedControl` de tipo de `EmployeeAnnouncementsView`— y
  * hasta un `LiquidSelect` de "Copiar desde…". O sea que la píldora del header
  * terminó filtrando, que es exactamente lo que §17 dice que no hace.

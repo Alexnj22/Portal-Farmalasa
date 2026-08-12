@@ -52,7 +52,7 @@ const MODES = [
     },
     {
         key:    'stock_ret',
-        label:  'Stock Retenido',
+        label:  'Stock retenido',
         sub:    'stock físico sin venta 6m',
         Icon:   Archive,
         rpc:    'get_stagnant_inventory',

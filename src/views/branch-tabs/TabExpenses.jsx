@@ -14,7 +14,7 @@ const GraficaGastos = lazy(() => import('./GraficaGastos'));
 // MOTOR DE ESTADOS FINANCIEROS
 // ============================================================================
 const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
-    if (!dueDay || !paidThrough) return { state: 'unknown', label: 'Sin Configurar', colorClass: 'border-divider bg-surface-card-hover/50 text-content-3' };
+    if (!dueDay || !paidThrough) return { state: 'unknown', label: 'Sin configurar', colorClass: 'border-divider bg-surface-card-hover/50 text-content-3' };
 
     if (isReceiptPending) {
         return {
@@ -34,14 +34,14 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const ptMonth = parseInt(ptMonthStr, 10);
 
     if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-success-md)] ring-1 ring-success/30' };
+        return { state: 'paid', label: 'Al día', colorClass: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-success-md)] ring-1 ring-success/30' };
     }
 
     if (ptYear === currentYear && ptMonth === currentMonth - 1) {
         if (currentDay > dueDay) {
             return { state: 'expired', label: 'Vencido', colorClass: 'border-danger bg-danger/10 text-danger-text shadow-[var(--shadow-glow-danger-md)] ring-1 ring-danger/30' };
         } else {
-            return { state: 'pending', label: 'Vence Pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning-md)] ring-1 ring-warning/30' };
+            return { state: 'pending', label: 'Vence pronto', colorClass: 'border-warning bg-warning/10 text-warning-text shadow-[var(--shadow-glow-warning-md)] ring-1 ring-warning/30' };
         }
     }
 

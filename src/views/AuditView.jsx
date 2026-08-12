@@ -100,7 +100,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 </Badge>
             </DataCell>
             <DataCell align="right">
-                <Button variant="secondary" size="sm" icon={Database} title="Ver Detalles" onClick={() => openModal('viewAuditDetail', log)}><span className="hidden md:inline">Detalles</span></Button>
+                <Button variant="secondary" size="sm" icon={Database} title="Ver detalles" onClick={() => openModal('viewAuditDetail', log)}><span className="hidden md:inline">Detalles</span></Button>
             </DataCell>
         </DataRow>
     );
@@ -369,7 +369,7 @@ const filtrosCuerpo = (
                     icon: ListFilter,
                     message: 'Sin registros',
                     subtext: 'Limpia los filtros o cambia la búsqueda.',
-                    action: { label: 'Limpiar Filtros', onClick: clearFilters },
+                    action: { label: 'Limpiar filtros', onClick: clearFilters },
                 }}
                 // §17.2 — la paginación NUNCA se escribe a mano. Esta era tres
                 // islas separadas por `justify-between`, con "Pág 1 de 52" pero

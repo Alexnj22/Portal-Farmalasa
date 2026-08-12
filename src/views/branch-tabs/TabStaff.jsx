@@ -159,7 +159,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             <div className="absolute bottom-3 right-3 z-content">
-                <Button size="sm" title="Ver Expediente de Personal" onClick={(e) => { e.stopPropagation(); onClick(employee); }}><CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" /></Button>
+                <Button size="sm" title="Ver expediente de personal" onClick={(e) => { e.stopPropagation(); onClick(employee); }}><CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" /></Button>
             </div>
         </div>
     );
@@ -610,7 +610,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 {isGeneratingAi ? (
                                     /* SKELETON DE CARGA NEURONAL */
                                     <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 animate-pulse relative z-base">
-                                        <AiThinkingState size="sm" title="Analizando Organización" className="mb-2" />
+                                        <AiThinkingState size="sm" title="Analizando organización" className="mb-2" />
                                         <div className="space-y-4">
                                             <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
                                             <div className="h-3 bg-indigo-200/50 rounded-full w-full mb-2"></div>

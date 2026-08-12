@@ -670,7 +670,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const pctPuntos = dailyPct(totalPuntos,  curDays, prevStats.puntos, prevDays);
                     return [
                         { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
-                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
+                        { label: 'Total ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
                         { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
@@ -1165,7 +1165,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pctCount = dailyPct(totalFacturas, curDaysV, prevVendStats.count, prevDaysV);
                     return [
                         { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    pct: null,     sub: undefined },
-                        { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
+                        { label: 'Total ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
                         { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}

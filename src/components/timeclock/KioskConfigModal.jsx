@@ -116,7 +116,7 @@ const KioskConfigModal = ({
                     options={branchOptions}
                     value={selectedBranchId}
                     onChange={(val) => onChangeBranch?.(val)}
-                    placeholder="-- Seleccionar Sucursal --"
+                    placeholder="-- Seleccionar sucursal --"
                     className="w-full"
                   />
                 </div>

@@ -69,7 +69,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
 
             {/* Fecha de ingreso */}
             <div>
-                <label className={labelClass}>Fecha de Ingreso</label>
+                <label className={labelClass}>Fecha de ingreso</label>
                 <LiquidDatePicker
                     value={formData?.recall_date || ''}
                     onChange={val => set('recall_date', val)}

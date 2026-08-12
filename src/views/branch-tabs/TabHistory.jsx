@@ -410,7 +410,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             {isGeneratingAi ? (
                                 /* SKELETON DE CARGA NEURONAL */
                                 <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 animate-pulse relative z-base">
-                                    <AiThinkingState size="sm" title="Sintetizando Historial" className="mb-2" />
+                                    <AiThinkingState size="sm" title="Sintetizando historial" className="mb-2" />
                                     <div className="space-y-4">
                                         <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
                                         <div className="h-3 bg-indigo-200/50 rounded-full w-full mb-2"></div>

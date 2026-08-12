@@ -86,7 +86,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Tipo de contrato */}
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Contrato</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de contrato</label>
                         <LiquidSelect value={formData.rehire_contract_type || 'INDEFINIDO'} onChange={handleContractChange}
                             options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalProps} />
                     </div>
@@ -118,7 +118,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
                     {/* Horas semanales */}
                     <PortalInput
-                        label="Horas Semanales" name="rehire-horas" icon={Clock}
+                        label="Horas semanales" name="rehire-horas" icon={Clock}
                         type="number"
                         value={formData.rehire_weekly_hours || '44'}
                         onChange={e => set('rehire_weekly_hours', e.target.value)}

@@ -200,13 +200,13 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card";
 
     return (
-        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}>
+        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo practicante'}>
             <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-base shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-3-text`}><GraduationCap size={22} strokeWidth={2.5} /></div>
                     <div>
                         <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
-                            {isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}
+                            {isEditMode ? 'Actualizar Practicante' : 'Nuevo practicante'}
                         </h3>
                         <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
                     </div>
@@ -218,7 +218,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 <div className="flex flex-col min-h-full w-full px-6 md:px-10 py-6 gap-4">
 
                     <div className={`${islandClass} ${islandHoverClass}`}>
-                        <IslandHeader icon={User} title="Datos del Practicante" />
+                        <IslandHeader icon={User} title="Datos del practicante" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <PortalInput label="Nombres" name="first_names" value={form.first_names} onChange={handleChange} icon={User} placeholder="Nombres" required />
                             <PortalInput label="Apellidos" name="last_names" value={form.last_names} onChange={handleChange} icon={User} placeholder="Apellidos" required />
@@ -257,7 +257,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                     </div>
 
                     <div className={`${islandClass} ${islandHoverClass}`}>
-                        <IslandHeader icon={Building2} title="Institución y Tutor" />
+                        <IslandHeader icon={Building2} title="Institución y tutor" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="md:col-span-2">
                                 <label className={fieldLabel}><span>Institución Educativa</span>{institucionMissing && reqBadge}</label>
@@ -291,7 +291,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                     </div>
 
                     <div className={`${islandClass} ${islandHoverClass}`}>
-                        <IslandHeader icon={Clock} title="Período y Horas" />
+                        <IslandHeader icon={Clock} title="Período y horas" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className={fieldLabel}><span>Fecha Inicio</span>{!form.fecha_inicio && reqBadge}</label>
@@ -317,7 +317,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                     </div>
 
                     <div className={`${islandClass} ${islandHoverClass}`}>
-                        <IslandHeader icon={Upload} title="Convenio y Notas" />
+                        <IslandHeader icon={Upload} title="Convenio y notas" />
                         <div>
                             <label className={fieldLabel}>
                                 <span>Convenio Institucional (PDF/imagen)</span>

@@ -8,7 +8,7 @@ import TabPoliticaVencimiento from './productos/TabPoliticaVencimiento';
 
 const TABS = [
     { key: 'ubicaciones', label: 'Ubicaciones',           icon: MapPin },
-    { key: 'vencimiento',  label: 'Política de Vencimiento', icon: CalendarClock },
+    { key: 'vencimiento',  label: 'Política de vencimiento', icon: CalendarClock },
 ];
 const VALID_TABS = new Set(TABS.map(t => t.key));
 

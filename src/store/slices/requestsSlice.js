@@ -31,18 +31,18 @@ import { signStorageUrls } from '../../utils/storageFiles';
 export const REQUEST_TYPES = {
     VACATION:     { label: 'Vacaciones',         color: 'bg-warning/10 text-warning-text', border: 'border-warning/30', variante: 'warning' },
     PERMIT:       { label: 'Permiso / Licencia', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
-    SHIFT_CHANGE: { label: 'Cambio de Turno',    color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
-    OVERTIME:     { label: 'Horas Extra',        color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
+    SHIFT_CHANGE: { label: 'Cambio de turno',    color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
+    OVERTIME:     { label: 'Horas extra',        color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-success/10 text-success-text', border: 'border-success/30', variante: 'success' },
     CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
     DISABILITY:             { label: 'Incapacidad',             color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     SHIFT_EXCEPTION:        { label: 'Excepción Turno (Kiosk)', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
-    ANNULMENT_REQUEST:      { label: 'Anulación de Factura',    color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
-    PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
-    VENDOR_CHANGE_REQUEST:  { label: 'Cambio de Vendedor',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
-    CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
-    INVENTORY_LOAD_REQUEST:    { label: 'Carga de Inventario',    color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
-    INVENTORY_DISCARD_REQUEST: { label: 'Descarte de Inventario', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
+    ANNULMENT_REQUEST:      { label: 'Anulación de factura',    color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
+    PAYMENT_CHANGE_REQUEST: { label: 'Cambio de forma de pago', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
+    VENDOR_CHANGE_REQUEST:  { label: 'Cambio de vendedor',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    CLIENT_CHANGE_REQUEST:  { label: 'Cambio de cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
+    INVENTORY_LOAD_REQUEST:    { label: 'Carga de inventario',    color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
+    INVENTORY_DISCARD_REQUEST: { label: 'Descarte de inventario', color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     // Faltaba, y se notaba: la Bandeja agrupa por tipo usando este rótulo, así
     // que un traslado pendiente encabezaba su sección con la clave cruda
     // `INVENTORY_TRANSFER_REQUEST`. Su pantalla propia es `/traslados` —acá se

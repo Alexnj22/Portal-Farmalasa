@@ -308,7 +308,7 @@ const EmployeeDocumentsView = () => {
                             { label: 'Total',         value: allDocs.length,                                               color: 'text-content-2',    bg: 'bg-surface-card'       },
                             { label: 'Incapacidades', value: allDocs.filter(d => d.type === 'DISABILITY').length,           color: 'text-danger',      bg: 'bg-danger/10'      },
                             { label: 'Constancias',   value: allDocs.filter(d => d.type === 'CERTIFICATE').length,          color: 'text-chart-1-text',     bg: 'bg-chart-1/10'     },
-                            { label: 'Con Archivo',   value: allDocs.filter(d => d.meta?.docUrl).length,                   color: 'text-success',  bg: 'bg-success/10'  },
+                            { label: 'Con archivo',   value: allDocs.filter(d => d.meta?.docUrl).length,                   color: 'text-success',  bg: 'bg-success/10'  },
                         ].map(s => (
                             <div key={s.label} className={`${s.bg} border border-border-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[var(--shadow-elevation-xs)]`}>
                                 <div className="flex-1 min-w-0">

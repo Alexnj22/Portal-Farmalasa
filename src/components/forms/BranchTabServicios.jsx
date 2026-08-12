@@ -80,7 +80,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                                     mode="month" 
                                     value={services[srv.id]?.paidThrough || ""} 
                                     onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)} 
-                                    placeholder="Seleccionar Mes"
+                                    placeholder="Seleccionar mes"
                                 />
                             </div>
                         </div>

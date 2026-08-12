@@ -268,7 +268,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
                 isOpen={!!ndConfirm}
                 onClose={() => setNdConfirm(null)}
                 onConfirm={confirmMarkLabND}
-                title="Marcar como No Devolutivo"
+                title="Marcar como no devolutivo"
                 message={ndConfirm ? `Esto marcará los ${ndConfirm.count} producto${ndConfirm.count === 1 ? '' : 's'} de "${ndConfirm.lab.nombre}" como No Devolutivo (ND). ¿Continuar?` : ''}
                 confirmText="Marcar ND"
                 cancelText="Cancelar"

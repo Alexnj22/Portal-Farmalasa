@@ -407,7 +407,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         if (!isEditMode) return [];
         const items = [];
         if (!formData?.dui) items.push('DUI');
-        if (!formData?.birth_date) items.push('Fecha de Nacimiento');
+        if (!formData?.birth_date) items.push('Fecha de nacimiento');
         if (!formData?.isss_number && !formData?.afp_number) items.push('ISSS o AFP');
         // Documento de identidad (imagen): no bloquea el alta, pero se marca como
         // pendiente si no se pudo completar al crear el expediente.
@@ -1114,7 +1114,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         {birthDateInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{birthDateErrorMsg}</span>}
                                     </label>
                                     <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-danger !bg-danger/10' : isMinor ? '!border-warning/40 !bg-warning/10' : 'border-divider'}`}>
-                                        <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} placeholder="Seleccionar Fecha" />
+                                        <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} placeholder="Seleccionar fecha" />
                                     </div>
                                 </div>
 
@@ -1594,7 +1594,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         const depAgeInvalid = isDependentAgeInvalid(dep);
                                         const depAge = depAgeOnly ? getDependentAge(dep) : calcAge(dep.birth_date);
                                         const copyOptions = [
-                                            { value: 'employee', label: 'Mi Dirección (Empleado)' },
+                                            { value: 'employee', label: 'Mi dirección (empleado)' },
                                             ...(formData.economic_dependents || [])
                                                 .map((d, i) => ({ d, i }))
                                                 .filter(({ d, i }) => i !== idx && (d.address || d.department))
@@ -1618,7 +1618,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                             <span className="flex items-center gap-1.5">
-                                                                {depAgeOnly ? 'Edad' : 'Fecha de Nacimiento'}
+                                                                {depAgeOnly ? 'Edad' : 'Fecha de nacimiento'}
                                                                 {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
                                                             </span>
                                                             <Button variant="ghost" onClick={() => toggleDependentAgeMode(idx)}>{depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}</Button>
@@ -1630,7 +1630,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             </div>
                                                         ) : (
                                                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
-                                                                <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} placeholder="Seleccionar Fecha" />
+                                                                <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} placeholder="Seleccionar fecha" />
                                                             </div>
                                                         )}
                                                         {!depAgeOnly && depAge !== null && <span className="text-content-3 font-bold text-caption ml-1 mt-1 block">· {depAge} años</span>}
@@ -1920,13 +1920,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className={`grid grid-cols-1 gap-4 ${contractHasEndDate ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 {isEditMode ? (
                                     <>
-                                        <LockedField label="Tipo de Contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
+                                        <LockedField label="Tipo de contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
                                         <LockedField label="Fecha de Inicio de Contrato" value={formData.contract_start_date ? new Date(formData.contract_start_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
                                     </>
                                 ) : (
                                     <>
                                         <div className="relative z-tabs">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Contrato</label>
+                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de contrato</label>
                                             <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
                                         </div>
                                         <div className="relative z-tabs">
@@ -1979,7 +1979,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                             <div className={`grid grid-cols-1 gap-4 mt-4 ${hoursMode === 'OTRO' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 <div className="relative z-content">
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Semanales</label>
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas semanales</label>
                                     <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
                                 </div>
                                 {hoursMode === 'OTRO' && (
@@ -2017,7 +2017,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Banco (Planilla)</label>
-                                    <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar Banco..." icon={Building2} clearable={false} {...portalSelectProps} />
+                                    <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar banco…" icon={Building2} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="relative z-content">

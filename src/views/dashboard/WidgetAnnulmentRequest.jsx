@@ -252,7 +252,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
             <div>
               {[
                 { label: 'Tipo Doc.',     value: inv.tipo_documento || '—' },
-                { label: 'Forma de Pago', value: PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || '—' },
+                { label: 'Forma de pago', value: PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || '—' },
                 { label: 'ID Venta',      value: `#${inv.id}`, mono: true },
               ].map(({ label, value, mono }, i) => (
                 <div key={i} className={`px-3 py-1.5 ${i > 0 ? 'border-t border-divider' : ''}`}>
@@ -339,22 +339,22 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
 
   const types = [
     {
-      key: 'annul',     icon: Ban,       label: 'Anulación de Factura',
+      key: 'annul',     icon: Ban,       label: 'Anulación de factura',
       desc: isCCF ? 'CCF — requiere nota de crédito' : `Período de gracia: ${GRACE_DAYS} días`,
       color: 'text-danger-text',   bg: 'bg-danger/10 border-danger/30',   iconBg: 'bg-danger/10',
     },
     {
-      key: 'pay_change', icon: CreditCard, label: 'Cambio de Forma de Pago',
+      key: 'pay_change', icon: CreditCard, label: 'Cambio de forma de pago',
       desc: `Actual: ${PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || 'N/A'}`,
       color: 'text-warning-text',    bg: 'bg-warning/10 border-warning/20',     iconBg: 'bg-warning/10',
     },
     {
-      key: 'vendor_change', icon: UserCog, label: 'Cambio de Vendedor',
+      key: 'vendor_change', icon: UserCog, label: 'Cambio de vendedor',
       desc: vendor ? vendor.name.split(' ')[0] : `Vendedor: #${inv.cod_vendedor || 'N/A'}`,
       color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30', iconBg: 'bg-chart-3/10',
     },
     {
-      key: 'client_change', icon: Contact, label: 'Cambio de Cliente',
+      key: 'client_change', icon: Contact, label: 'Cambio de cliente',
       desc: `Actual: ${inv.cliente || 'Sin nombre'}`,
       color: 'text-chart-9-text', bg: 'bg-chart-9/10 border-chart-9/30', iconBg: 'bg-chart-9/10',
     },
@@ -1262,7 +1262,7 @@ export default function WidgetAnnulmentRequest(props) {
   return (
     <LanzadorSolicitud
       icon={Receipt}
-      label="Modificar Facturación"
+      label="Modificar facturación"
       pendientes={filas === null ? null : filas.length}
       etiquetaPendientes="solicitud pendiente"
       etiquetaPendientesPlural="solicitudes pendientes"

@@ -195,11 +195,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "manageKiosks": return "Dispositivos Kiosco";
             case "planSchedule": return "Planificación Semanal";
             case "manageShifts": return "Catálogo de turnos";
-            case "newEmployee": return "Nuevo Empleado";
+            case "newEmployee": return "Nuevo empleado";
             case "editEmployee": return "Actualizar Información";
             case "rehireEmployee": return "Recontratación";
             case "vacationRecall": return "Ingreso en Vacaciones";
-            case "newBranch": return "Nueva Sucursal";
+            case "newBranch": return "Nueva sucursal";
             case "editBranch": return "Configuración General";
             case "editBranchHorarios": return "Horarios de Atención";
             case "editBranchLegal": return "Configuración Legal";

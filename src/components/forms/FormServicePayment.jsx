@@ -51,7 +51,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
     // Lógica en tiempo real para previsualizar el estado
     const calculatePreviewStatus = () => {
         const { dueDay, paidThrough } = currentData;
-        if (!dueDay || !paidThrough) return { state: 'Sin Configurar', color: 'text-content-3 bg-surface-card-hover border-divider', icon: AlertTriangle };
+        if (!dueDay || !paidThrough) return { state: 'Sin configurar', color: 'text-content-3 bg-surface-card-hover border-divider', icon: AlertTriangle };
         
         const today = new Date();
         const currentYear = today.getFullYear();
@@ -65,7 +65,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
         }
         if (ptYear === currentYear && ptMonth === currentMonth - 1) {
             if (currentDay > parseInt(dueDay, 10)) return { state: 'Estará Vencido', color: 'text-danger-text bg-danger/10 border-danger/30', icon: AlertTriangle };
-            return { state: 'Vence Pronto', color: 'text-warning-text bg-warning/10 border-warning/30', icon: Clock };
+            return { state: 'Vence pronto', color: 'text-warning-text bg-warning/10 border-warning/30', icon: Clock };
         }
         return { state: 'Estará Vencido', color: 'text-danger-text bg-danger/10 border-danger/30', icon: AlertTriangle };
     };

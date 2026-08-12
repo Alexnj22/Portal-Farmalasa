@@ -57,7 +57,7 @@ const FormDocumentViewer = ({ formData }) => {
                             directiva, que es de las que valen. Su contenido de respaldo
                             también se fue: ningún navegador actual lo pinta, y el botón
                             de descarga del encabezado ya cubre ese caso. */}
-                        <iframe src={url} className="w-full h-full border-none" title="Visor de Documento" />
+                        <iframe src={url} className="w-full h-full border-none" title="Visor de documento" />
                     </div>
                 ) : (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm border-dashed">

@@ -64,7 +64,7 @@ const GRUPOS_CRUDOS = [
         group: 'Asistencia',
         color: 'text-warning',
         modules: [
-            { key: 'monitor',      label: 'Monitor real-time',      desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false, hasScope: true },
+            { key: 'monitor',      label: 'Monitor en tiempo real', desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false, hasScope: true },
             { key: 'time_audit',   label: 'Auditoría de tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false, hasScope: true, sub: [
                 { key: 'time_audit_descargar', label: 'Descargar las marcaciones (CSV)', tipo: 'cap' },
             ]},
@@ -340,16 +340,16 @@ const GRUPOS_CRUDOS = [
             { key: 'dash_birthdays',      label: 'Widget: Cumpleaños del mes',    desc: 'Cumpleañeros del mes con foto, sucursal y edad',                           icon: Gift,            hasApprove: false, hasScope: true },
             { key: 'dash_cotizaciones',   label: 'Widget: Cotizaciones activas',  desc: 'Resumen de cotizaciones activas del mes con montos en el dashboard',       icon: Receipt,         hasApprove: false, hasScope: true },
             { key: 'dash_facturacion',    label: 'Widget: Facturación hoy',       desc: 'Documentos emitidos hoy (CCF/FCF) con total facturado en el dashboard',   icon: FileText,        hasApprove: false, hasScope: true },
-            { key: 'dash_top_productos',  label: 'Widget: Top Productos del mes', desc: 'Ranking de los 10 productos más vendidos en el mes actual',               icon: Package,         hasApprove: false, hasScope: true },
-            { key: 'dash_inv_search',     label: 'Widget: Consulta de Inventario',desc: 'Buscar productos en inventario multi-sucursal con desglose de lotes y vencimientos', icon: Package,    hasApprove: false, hasScope: true },
-            { key: 'dash_annulment_req',  label: 'Widget: Solicitud de Anulación',desc: 'Crear solicitudes de anulación de facturas dentro del período de gracia de 3 días',  icon: Receipt,    hasApprove: false, hasScope: true },
+            { key: 'dash_top_productos',  label: 'Widget: Top productos del mes', desc: 'Ranking de los 10 productos más vendidos en el mes actual',               icon: Package,         hasApprove: false, hasScope: true },
+            { key: 'dash_inv_search',     label: 'Widget: Consulta de inventario',desc: 'Buscar productos en inventario multi-sucursal con desglose de lotes y vencimientos', icon: Package,    hasApprove: false, hasScope: true },
+            { key: 'dash_annulment_req',  label: 'Widget: Solicitud de anulación',desc: 'Crear solicitudes de anulación de facturas dentro del período de gracia de 3 días',  icon: Receipt,    hasApprove: false, hasScope: true },
             { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Min/Max',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación del supervisor', icon: BarChart2, hasApprove: false, hasScope: true },
-            { key: 'dash_inv_movement',   label: 'Widget: Ajuste de Inventario',  desc: 'Solicitar que se cargue o se descargue producto —vencimiento, descarte, producto dañado o consumo interno—; el inventario se mueve al aprobarla', icon: PackageMinus, hasApprove: false, hasScope: true },
+            { key: 'dash_inv_movement',   label: 'Widget: Ajuste de inventario',  desc: 'Solicitar que se cargue o se descargue producto —vencimiento, descarte, producto dañado o consumo interno—; el inventario se mueve al aprobarla', icon: PackageMinus, hasApprove: false, hasScope: true },
             { key: 'dash_traslados',      label: 'Widget: Traslados entre salas', desc: 'Ver lo que otra sala pide del inventario propio y lo que uno pidió y viene en camino', icon: Truck, hasApprove: false, hasScope: true },
             // `can_view` lista y descarga; `can_edit` es lo que habilita TOMAR
             // una factura. El alcance importa de verdad acá: con scope BRANCH la
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
-            { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi Sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
+            { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
             // Los dos widgets de venta tienen DOS lecturas, y la capacidad
             // «vista completa» es la que decide cuál se pinta. Apagada, el
             // widget sigue estando —la sala necesita saber cómo va— pero habla

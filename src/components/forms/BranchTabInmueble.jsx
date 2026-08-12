@@ -31,7 +31,7 @@ const BranchTabInmueble = ({
         { value: 'AGUA', label: 'Agua Presurizada' },
         { value: 'ESPUMA', label: 'Espuma (AFFF)' },
         { value: 'K', label: 'Acetato de Potasio (Clase K)' },
-        { value: 'MIXTO', label: 'Múltiples Tipos' },
+        { value: 'MIXTO', label: 'Múltiples tipos' },
     ], []);
 
     // 🚨 REGLA DE NEGOCIO: Si tiene inyecciones, los desechos son obligatorios

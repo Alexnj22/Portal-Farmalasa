@@ -247,7 +247,7 @@ function ScoreCard({ pct, label, color, desc }) {
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS = [
     { key: 'resumen',    label: 'Resumen',    Icon: BarChart2     },
-    { key: 'bloques',    label: 'Por Bloque', Icon: TrendingUp    },
+    { key: 'bloques',    label: 'Por bloque', Icon: TrendingUp    },
     { key: 'segmentos',  label: 'Segmentos',  Icon: Users         },
     { key: 'personas',   label: 'Individuos', Icon: UserCheck     },
     { key: 'comentarios',label: 'Comentarios',Icon: MessageSquare },

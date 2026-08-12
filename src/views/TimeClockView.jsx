@@ -158,7 +158,7 @@ const TimeClockView = ({ setView }) => {
           isOpen={isRevokeModalOpen}
           onClose={() => setIsRevokeModalOpen(false)}
           onConfirm={executeRevokeConfig}
-          title="¿Desvincular Dispositivo?"
+          title="¿Desvincular dispositivo?"
           message="Este dispositivo dejará de funcionar para marcar asistencia inmediatamente."
           confirmText="Sí, desvincular"
         />

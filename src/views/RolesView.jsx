@@ -23,7 +23,7 @@ import PortalInput from '../components/common/PortalInput';
 import { mensajeAmigable } from '../utils/errorMessages';
 
 const SCOPE_OPTIONS = [
-    { value: 'BRANCH', label: 'Por Sucursal' },
+    { value: 'BRANCH', label: 'Por sucursal' },
     { value: 'GLOBAL', label: 'Global' }
 ];
 
@@ -503,7 +503,7 @@ const RolesView = ({ openModal }) => {
                 isOpen={confirmDialog.isOpen}
                 onClose={() => setConfirmDialog({ isOpen: false, role: null })}
                 onConfirm={executeDeleteRole}
-                title="¿Eliminar Cargo?"
+                title="¿Eliminar cargo?"
                 message={`Estás a punto de eliminar el cargo "${confirmDialog.role?.name}". Esta acción no se puede deshacer.`}
                 confirmText="Sí, Eliminar"
             />
@@ -612,7 +612,7 @@ const RolesView = ({ openModal }) => {
                                             value={parentRoleId || ''}
                                             onChange={(val) => { setParentRoleId(val); if(error) setError(''); }}
                                             options={roleOptions}
-                                            placeholder="-- Nivel Raíz --"
+                                            placeholder="-- Nivel raíz --"
                                             icon={CornerDownRight}
                                             clearable={true}
                                             menuPosition="fixed"
@@ -756,7 +756,7 @@ const RolesView = ({ openModal }) => {
                                                     size="md"
                                                     variant="primary"
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
-                                                    title="Ver Empleados"
+                                                    title="Ver empleados"
                                                 />
                                             </div>
                                         </div>

@@ -109,7 +109,7 @@ const FormDispositivos = ({ formData }) => {
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <Button variant="destructive" size="sm" icon={PowerOff} title="Desconectar Kiosco" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
+                                                <Button variant="destructive" size="sm" icon={PowerOff} title="Desconectar kiosco" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
                                             )}
                                         </div>
 

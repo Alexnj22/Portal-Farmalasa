@@ -543,7 +543,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
             activeCount={filtrandoMias ? 1 : 0}
             onClear={filtrandoMias ? () => setQuien('TODAS') : undefined}
             acciones={puedeCrear ? [{
-                key: 'nueva', icon: Plus, label: 'Nueva Solicitud', variant: 'primary',
+                key: 'nueva', icon: Plus, label: 'Nueva solicitud', variant: 'primary',
                 onClick: () => { setPrefillEmpleado(''); setNuevaAbierta(true); },
             }] : []}
         >
@@ -709,7 +709,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     setCancelarId(null);
                     fetchRequests(criterios);
                 }}
-                title="Cancelar Solicitud"
+                title="Cancelar solicitud"
                 message="¿Seguro que quieres cancelar esta solicitud? No se puede deshacer."
                 confirmText="Sí, cancelar"
                 isDestructive={true}

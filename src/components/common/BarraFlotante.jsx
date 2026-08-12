@@ -136,8 +136,8 @@ const FRACCION_OCULTAR = 0.35;
 // nombre de dos palabras se partía en dos renglones: ese botón quedaba más alto
 // que sus vecinos, el clúster entero crecía y los rótulos dejaban de leerse
 // como una fila. Medido en el barrido del teléfono (iPhone 13, WebKit): se
-// partían 8 —"Nuevo Empleado", "Nueva Solicitud", "Nueva Sucursal", "Nuevo
-// Conteo", "Agregar meta", "Ocultar montos", "PDF de todas", "Nueva Sucursal"—
+// partían 8 —"Nuevo empleado", "Nueva solicitud", "Nueva sucursal", "Nuevo
+// Conteo", "Agregar meta", "Ocultar montos", "PDF de todas", "Nueva sucursal"—
 // y ninguno de una sola palabra.
 //
 // La causa no es el ancho: NINGUNA etiqueta de dos palabras entra en 60px

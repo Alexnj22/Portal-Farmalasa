@@ -51,7 +51,7 @@ import { useBuscadorDeVista, usePublicarBarraFlotante } from './CanalDeVista';
  *
  * Hasta esta fecha las acciones vivían en `ViewTabBar.trailingActions`, y esa
  * ranura se había vuelto un cajón de sastre: además de acciones de verdad
- * ("Nuevo Empleado", "Publicar", "Exportar") guardaba **filtros** —el rango de
+ * ("Nuevo empleado", "Publicar", "Exportar") guardaba **filtros** —el rango de
  * fechas de `TabHistory`, el `SegmentedControl` de tipo de
  * `EmployeeAnnouncementsView`, el selector "Copiar desde…" de `PermissionsView`—.
  * O sea que el header terminó filtrando, que es justo lo que §17 dice que no
@@ -67,7 +67,7 @@ import { useBuscadorDeVista, usePublicarBarraFlotante } from './CanalDeVista';
  *   <FilterBar
  *       activeCount={n} onClear={limpiar}
  *       acciones={[
- *           { key: 'nuevo',  icon: Plus,     label: 'Nuevo Empleado', variant: 'primary', onClick: crear },
+ *           { key: 'nuevo',  icon: Plus,     label: 'Nuevo empleado', variant: 'primary', onClick: crear },
  *           { key: 'export', icon: Download, label: 'Exportar', tone: 'success', onClick: exportar },
  *       ]}
  *   >
@@ -243,7 +243,7 @@ Opciones.displayName = 'FilterBar.Opciones';
  * FilterBar.Sucursal — la ranura de ámbito, que es la primera de §17 y la que
  * más se repetía a mano.
  *
- * Estaba escrita en 9 vistas con 4 textos distintos ("Todas las Sucursales",
+ * Estaba escrita en 9 vistas con 4 textos distintos ("Todas las sucursales",
  * "Todas las sucursales", "Todas", ninguno) y anchos entre 150 y 220px, así que
  * la misma ranura se veía diferente en cada pantalla. El texto canónico es
  * **"Sucursales"**: nombra el filtro en vez de describir su estado vacío, que es
@@ -254,7 +254,7 @@ const Sucursal = memo(({ value, onChange, options = [], ancho = '150px', ...rest
     // La opción "todas" también se normaliza, y es la mitad del arreglo: casi
     // todas las vistas la traen DENTRO de `options` con su propio texto ("Todas
     // las Sucursales", "Todas las sucursales", "Todas"), así que el select
-    // mostraba ese label y no el placeholder — y "Todas las Sucursales" en 150px
+    // mostraba ese label y no el placeholder — y "Todas las sucursales" en 150px
     // se corta a "Todas las Suc…". El valor no se toca, solo cómo se lee.
     const opciones = options.map(o =>
         /^todas?\b/i.test(String(o?.label ?? '')) ? { ...o, label: 'Sucursales' } : o);
@@ -460,7 +460,7 @@ PanelAcciones.displayName = 'FilterBar.PanelAcciones';
 //
 // Y NO se estima: se MIDE. El primer intento modelaba cada acción en 150px y se
 // equivocaba por 62 en una sola píldora — medidas reales en Personal: "Nuevo
-// Empleado" 166, "Nuevo Practicante" 186, "Exportar" (solo ícono) 36. El ancho
+// Empleado" 166, "Nuevo practicante" 186, "Exportar" (solo ícono) 36. El ancho
 // de una acción es el de su rótulo, así que ninguna constante lo puede
 // representar. Lo único que sí es fijo es la forma degradada: un botón sin
 // rótulo mide `w-9` = 36px, siempre.

@@ -290,10 +290,10 @@ const EmployeeProfileView = ({ openModal }) => {
                     {/* Quick info 2×2 */}
                     <div className="grid grid-cols-2 gap-3">
                         {[
-                            { label: 'Fecha de Ingreso',    value: emp.hire_date  ? formatDate(emp.hire_date)  : '—', icon: Calendar,  color: 'text-chart-1-text',   bg: 'bg-chart-1/10'   },
-                            { label: 'Fecha de Nacimiento', value: emp.birth_date ? formatDate(emp.birth_date) : '—', icon: Sparkles,  color: 'text-chart-6',   bg: 'bg-chart-6/10',  extra: birthdayCountdown },
-                            { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10' },
-                            { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
+                            { label: 'Fecha de ingreso',    value: emp.hire_date  ? formatDate(emp.hire_date)  : '—', icon: Calendar,  color: 'text-chart-1-text',   bg: 'bg-chart-1/10'   },
+                            { label: 'Fecha de nacimiento', value: emp.birth_date ? formatDate(emp.birth_date) : '—', icon: Sparkles,  color: 'text-chart-6',   bg: 'bg-chart-6/10',  extra: birthdayCountdown },
+                            { label: 'Tipo de contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10' },
+                            { label: 'Horas semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
                             <div key={label} className={`${bg} border border-border-card rounded-2xl p-4 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-[var(--dur-base)] cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />

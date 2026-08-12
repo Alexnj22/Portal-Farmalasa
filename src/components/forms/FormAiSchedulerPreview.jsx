@@ -427,7 +427,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 isOpen={!!saveError}
                 onClose={() => setSaveError('')}
                 type="error"
-                title="Error al Guardar"
+                title="Error al guardar"
                 message={saveError}
             />
         </div>

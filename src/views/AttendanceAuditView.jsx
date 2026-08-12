@@ -43,7 +43,7 @@ const PUNCH_TYPE_LABELS = {
   IN_LUNCH: 'Regreso Almuerzo', IN_LACTATION: 'Regreso Lactancia',
   OUT: 'Salida', OUT_LATE: 'Salida con Overtime', OUT_EARLY: 'Salida Anticipada',
   OUT_LUNCH: 'Salida Almuerzo', OUT_LACTATION: 'Salida Lactancia',
-  OUT_BUSINESS: 'Gestión Externa', OUT_EXTRA: 'Salida Extra',
+  OUT_BUSINESS: 'Gestión externa', OUT_EXTRA: 'Salida Extra',
 };
 const PUNCH_TYPE_OPTIONS = [
   { value: 'IN',            label: 'Entrada' },
@@ -53,7 +53,7 @@ const PUNCH_TYPE_OPTIONS = [
   { value: 'OUT_LACTATION', label: 'Salida Lactancia' },
   { value: 'IN_LACTATION',  label: 'Regreso Lactancia' },
   { value: 'OUT_EARLY',     label: 'Salida Anticipada' },
-  { value: 'OUT_BUSINESS',  label: 'Gestión Externa' },
+  { value: 'OUT_BUSINESS',  label: 'Gestión externa' },
 ];
 const IN_TYPES  = new Set(['IN','IN_EARLY','IN_AFTER_SHIFT','IN_EXTRA','IN_RETURN','PUNCH_IN']);
 const OUT_TYPES = new Set(['OUT','OUT_LATE','OUT_EARLY','OUT_EXTRA','OUT_BUSINESS','PUNCH_OUT']);
@@ -255,7 +255,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
       { value: 'IN',           label: 'Entrada' },
       { value: 'OUT',          label: 'Salida' },
       { value: 'OUT_EARLY',    label: 'Salida Anticipada' },
-      { value: 'OUT_BUSINESS', label: 'Gestión Externa' },
+      { value: 'OUT_BUSINESS', label: 'Gestión externa' },
     ];
     if (dayConfig?.hasLunch || dayConfig?.lunchStart) {
       base.splice(2, 0,
@@ -1038,7 +1038,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   // ── Export quincena CSV ──────────────────────────────────────────────────
   const handleExportCSVQuincena = useCallback(() => {
     const rows = [
-      ['Sucursal', 'Nombre', 'Cargo', 'Horas Regulares', 'Horas Extra', 'Tardanzas (min)', 'Ausencias', 'Aprobados', 'Total días'],
+      ['Sucursal', 'Nombre', 'Cargo', 'Horas Regulares', 'Horas extra', 'Tardanzas (min)', 'Ausencias', 'Aprobados', 'Total días'],
     ];
     quincenaSummary.forEach(({ emp, stats }) => {
       rows.push([

@@ -59,7 +59,7 @@ const KANBAN_COLUMNS = [
   },
   {
     id: "pending",
-    label: "Sin Marcar",
+    label: "Sin marcar",
     match: (status) => status === "PENDING",
     tint: "bg-surface-card-hover border-divider",
     dot: "bg-content-3",
@@ -142,7 +142,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   }, [branches]);
 
   const branchOptions = useMemo(() => [
-    { value: "ALL", label: "Todas las Sucursales" },
+    { value: "ALL", label: "Todas las sucursales" },
     ...(branches || []).map((b) => ({ value: String(b.id), label: b.name })),
   ], [branches]);
 
@@ -344,9 +344,9 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const statCards = [
     { id: "ALL", label: "Total", count: stats.total, color: "text-content", border: "border-border-card", bg: "bg-surface-card" },
     { id: "WORKING", label: "En Turno", count: stats.working, color: "text-success-text", border: "border-success/30", bg: "bg-success/10" },
-    { id: "EXTRA", label: "Horas Extra", count: stats.extra, color: "text-chart-3-text", border: "border-chart-3/30", bg: "bg-chart-3/10" },
+    { id: "EXTRA", label: "Horas extra", count: stats.extra, color: "text-chart-3-text", border: "border-chart-3/30", bg: "bg-chart-3/10" },
     { id: "PAUSE", label: "En Pausa", count: stats.pause, color: "text-chart-4-text", border: "border-chart-4/30", bg: "bg-chart-4/10" },
-    { id: "LATE", label: "Con Atraso", count: stats.late, color: "text-danger-text", border: "border-danger/30", bg: "bg-danger/10", icon: AlertTriangle },
+    { id: "LATE", label: "Con atraso", count: stats.late, color: "text-danger-text", border: "border-danger/30", bg: "bg-danger/10", icon: AlertTriangle },
     { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-divider", bg: "bg-surface-card-hover/40" },
   ];
 
@@ -385,7 +385,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "BUSINESS_OUT":
         return (
-          <Badge variant="warning" icon={MapPin}>Gestión Externa</Badge>
+          <Badge variant="warning" icon={MapPin}>Gestión externa</Badge>
         );
       case "OFF_DAY":
         return (

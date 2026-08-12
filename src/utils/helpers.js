@@ -153,7 +153,7 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
 
     const p = (emp.attendance || []).filter(a => a.timestamp?.startsWith(todayStr));
 
-    if (p.length === 0) return { status: 'ABSENT', label: 'Sin Marcar', color: 'bg-surface-card-hover text-content-2 border-divider' };
+    if (p.length === 0) return { status: 'ABSENT', label: 'Sin marcar', color: 'bg-surface-card-hover text-content-2 border-divider' };
 
     const l = p[p.length - 1];
     const lastType = l.type || '';
@@ -166,7 +166,7 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
         return { status: 'LACTATION', label: 'En Lactancia', color: 'bg-chart-6/10 text-chart-6-text border-chart-6/30' };
     else if (lastType === 'OUT_BUSINESS')
         // 🚨 NUEVO: Etiqueta especial para Gestión Externa
-        return { status: 'BUSINESS', label: 'Gestión Externa', color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' };
+        return { status: 'BUSINESS', label: 'Gestión externa', color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' };
     else
         return { status: 'OUT', label: 'Salida Laboral', color: 'bg-surface-card-hover text-content-2 border-divider' };
 };

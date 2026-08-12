@@ -211,11 +211,11 @@ const FormTurnos = ({ branches }) => {
                                     <Button variant="destructive" size="xs" icon={Check} iconOnly onClick={() => handleArchiveShift(shift)} />
                                 </>
                             ) : isArchived ? (
-                                <Button tone="success" size="sm" icon={Plus} title="Restaurar Turno" iconOnly onClick={() => handleRestoreShift(shift)} />
+                                <Button tone="success" size="sm" icon={Plus} title="Restaurar turno" iconOnly onClick={() => handleRestoreShift(shift)} />
                             ) : (
                                 <>
                                     <Button size="sm" icon={Pencil} title="Editar Turno" iconOnly onClick={() => startEditing(shift)} />
-                                    <Button variant="destructive" size="sm" icon={Package} title="Archivar Turno" iconOnly onClick={() => setConfirmingArchiveId(shift.id)} />
+                                    <Button variant="destructive" size="sm" icon={Package} title="Archivar turno" iconOnly onClick={() => setConfirmingArchiveId(shift.id)} />
                                 </>
                             )}
                         </div>
@@ -267,7 +267,7 @@ const FormTurnos = ({ branches }) => {
                                 value={currentForm.branchId}
                                 onChange={val => setCurrentForm({ ...currentForm, branchId: val })}
                                 options={branches.map(b => ({ value: b.id, label: b.name }))}
-                                placeholder="Seleccionar Sucursal"
+                                placeholder="Seleccionar sucursal"
                                 clearable={false}
                             />
                         </div>
@@ -333,7 +333,7 @@ const FormTurnos = ({ branches }) => {
                             options={[
                                 { value: 'ACTIVE', label: 'Activos' },
                                 { value: 'ARCHIVED', label: 'Histórico' },
-                                { value: 'ALL', label: 'Ver Todos' },
+                                { value: 'ALL', label: 'Ver todos' },
                             ]}
                             clearable={false}
                             compact

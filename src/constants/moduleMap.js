@@ -21,7 +21,9 @@ export const MODULE_MAP = {
     emp_profile:       { path: '/profile',         label: 'Mi perfil',                icon: User          },
     emp_documents:     { path: '/my-documents',   label: 'Mis documentos',           icon: FolderOpen    },
     staff_list:        { path: '/dashboard',       label: 'Listado',                  icon: User          },
-    monitor:           { path: '/monitor',         label: 'Monitor real-time',        icon: Monitor       },
+    // «Monitor real-time» era la única etiqueta del menú en inglés, y el
+    // encabezado de la vista ya decía «Monitor en tiempo real».
+    monitor:           { path: '/monitor',         label: 'Monitor en tiempo real',   icon: Monitor       },
     time_audit:        { path: '/audit',           label: 'Auditoría de tiempos',     icon: AlertTriangle },
     schedules:         { path: '/schedules',       label: 'Horarios y turnos',        icon: Calendar      },
     // El centro de la sala: descartes, cargas, traslados, Min/Max y facturación.

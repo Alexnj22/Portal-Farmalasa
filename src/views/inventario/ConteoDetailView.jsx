@@ -2078,7 +2078,7 @@ export default function ConteoDetailView() {
                 isOpen={promptAprobarOpen}
                 onClose={() => setPromptAprobarOpen(false)}
                 onConfirm={confirmAprobar}
-                title="Aprobar Conteo"
+                title="Aprobar conteo"
                 message="Queda cerrado y con firma auditable. No puedes aprobar un conteo que finalizaste tú mismo."
                 placeholder="Nota de aprobación (opcional)"
                 confirmText="Aprobar"

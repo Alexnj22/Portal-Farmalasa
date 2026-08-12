@@ -179,7 +179,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
       <div class="meta-value"><span class="badge ${cot.document_type === 'CCF' ? 'badge-ccf' : 'badge-cof'}">${cot.document_type}</span></div>
     </div>
     <div class="meta-block">
-      <div class="meta-title">Forma de Pago</div>
+      <div class="meta-title">Forma de pago</div>
       <div class="meta-value">${{EFECTIVO:'Efectivo',TARJETA:'Tarjeta',TRANSFERENCIA:'Transferencia',CHEQUE:'Cheque'}[cot.payment_type]||cot.payment_type}</div>
     </div>
     ${cot.created_by_name ? `<div class="meta-block"><div class="meta-title">Preparado por</div><div class="meta-value">${esc(cot.created_by_name)}</div></div>` : ''}
@@ -705,7 +705,7 @@ export default function CotizacionesView() {
                                 options={DOC_OPTS} placeholder="Tipo..." icon={FileText} compact clearable={false} />
                         </div>
                         <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Forma de Pago</label>
+                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Forma de pago</label>
                             <LiquidSelect value={paymentType} onChange={setPaymentType}
                                 options={PAY_OPTS} placeholder="Forma de pago..." icon={CreditCard} compact clearable={false} />
                         </div>
@@ -863,7 +863,7 @@ export default function CotizacionesView() {
                         {[
                             { icon: User,       label: 'Cliente',       val: cot.customer_name, sub: cot.customer_nit ? `NIT: ${cot.customer_nit}` : '' },
                             { icon: FileText,   label: 'Documento',     val: isCCF ? 'Crédito Fiscal (CCF)' : 'Consumidor Final (COF)' },
-                            { icon: CreditCard, label: 'Forma de Pago', val: { EFECTIVO:'Efectivo', TARJETA:'Tarjeta', TRANSFERENCIA:'Transferencia', CHEQUE:'Cheque' }[cot.payment_type] },
+                            { icon: CreditCard, label: 'Forma de pago', val: { EFECTIVO:'Efectivo', TARJETA:'Tarjeta', TRANSFERENCIA:'Transferencia', CHEQUE:'Cheque' }[cot.payment_type] },
                             { icon: Building2,  label: 'Sucursal',      val: branchName || `Suc. ${cot.branch_id}`, sub: fmtD(cot.fecha) },
                         ].map(c => (
                             <div key={c.label} data-surface="card" className="p-4">

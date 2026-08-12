@@ -1179,7 +1179,7 @@ export default function WidgetInventorySearch() {
   return (
     <LanzadorSolicitud
       icon={Package}
-      label="Consulta de Inventario"
+      label="Consulta de inventario"
       pendientes={faltantesDeMiSala ? faltantesDeMiSala.length : null}
       etiquetaPendientes="sin existencia acá"
       etiquetaPendientesPlural="sin existencia acá"

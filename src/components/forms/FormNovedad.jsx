@@ -253,7 +253,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     value={formData?.type || ''}
                     onChange={(val) => setFormData(prev => ({ ...prev, type: val }))} 
                     options={actionOptions}
-                    placeholder="-- Seleccione un Evento --"
+                    placeholder="-- Seleccione un evento --"
                     icon={GitPullRequest}
                     menuPosition="fixed"
                 />

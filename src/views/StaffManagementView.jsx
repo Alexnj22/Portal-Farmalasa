@@ -56,7 +56,7 @@ import StatCard from '../components/common/StatCard';
 import CarrilCards from '../components/common/CarrilCards';
 
 import { mensajeAmigable } from '../utils/errorMessages';
-const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
+const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las sucursales' }];
 
 // Las mismas cinco vistas que ofrecen las tarjetas de arriba. Existen también acá
 // porque la píldora de filtros tiene que ofrecer todo lo que cuenta en su badge:
@@ -811,7 +811,7 @@ const StaffManagementView = ({
   };
 
   const handleExportCSV = () => {
-    const headers = ['Código', 'Nombre Completo', 'Sucursal', 'Cargo Principal', 'Cargo Secundario', 'Estado Operativo', 'Teléfono', 'DUI', 'Fecha Ingreso', 'Fecha Nacimiento'];
+    const headers = ['Código', 'Nombre Completo', 'Sucursal', 'Cargo Principal', 'Cargo Secundario', 'Estado operativo', 'Teléfono', 'DUI', 'Fecha Ingreso', 'Fecha Nacimiento'];
 
     const rows = sortedEmployees.map(emp => {
       const branch = branchMap.get(Number(emp.branchId || emp.branch_id)) || 'Sin Asignar';
@@ -859,14 +859,14 @@ const StaffManagementView = ({
   // —o sea invisible en el teléfono, donde ni siquiera hay hover para leer su
   // `title`—. Ahora es una acción como las otras dos.
   const accionesPersonal = [
-    { key: 'empleado', icon: UserPlus, label: 'Nuevo Empleado', variant: 'primary',
+    { key: 'empleado', icon: UserPlus, label: 'Nuevo empleado', variant: 'primary',
       disabled: !canEdit, onClick: handleOpenNewEmployee },
     // `rotulo`: bajo el pulgar la columna mide 60px y "PRACTICANTE" pide 76,8 —
     // es la única palabra del portal que no entra por sí sola. Se dice
     // "PASANTE", que es la misma persona en una palabra que sí entra y hace
     // pareja con "EMPLEADO" del botón de al lado; el nombre completo sigue en el
     // `aria-label`, en la píldora de escritorio y en la hoja de "Acciones".
-    { key: 'practicante', icon: GraduationCap, label: 'Nuevo Practicante', rotulo: 'Pasante', tone: 'chart-3',
+    { key: 'practicante', icon: GraduationCap, label: 'Nuevo practicante', rotulo: 'Pasante', tone: 'chart-3',
       disabled: !canEdit, onClick: handleOpenNewPracticante },
     // Solo ícono en escritorio: `Download` es el ícono canónico de exportar en el
     // portal (Auditoría y el historial de sucursal usan el mismo) y con texto le
@@ -973,7 +973,7 @@ const StaffManagementView = ({
             { key: 'name',   label: isPracticantesView ? 'Practicante' : 'Empleado', sortable: !isPracticantesView },
             { key: 'branch', label: 'Sucursal',         sortable: !isPracticantesView },
             { key: 'role',   label: isPracticantesView ? 'Tipo' : 'Cargos Asignados', sortable: !isPracticantesView },
-            { key: 'status', label: 'Estado Operativo', sortable: !isPracticantesView },
+            { key: 'status', label: 'Estado operativo', sortable: !isPracticantesView },
             { key: 'actions',label: 'Acciones',         align: 'right' },
           ]}
           sortKey={sortConfig.key}
@@ -985,7 +985,7 @@ const StaffManagementView = ({
             icon: isPracticantesView ? GraduationCap : Search,
             message: isPracticantesView ? 'Sin practicantes registrados' : 'No hay nadie aquí',
             subtext: 'Ajusta el filtro de sucursal o limpia la búsqueda.',
-            action: hasActiveFilters ? { label: 'Limpiar Filtros', onClick: clearFilters } : undefined,
+            action: hasActiveFilters ? { label: 'Limpiar filtros', onClick: clearFilters } : undefined,
           }}
           minWidth="800px"
           movil={{ usarAccionDeFila: true }}
@@ -1024,7 +1024,7 @@ const StaffManagementView = ({
         isOpen={!!practicanteToDelete}
         onClose={() => setPracticanteToDelete(null)}
         onConfirm={confirmDeletePracticante}
-        title="Eliminar Registro"
+        title="Eliminar registro"
         message={`¿Eliminar el registro de "${practicanteToDelete?.first_names} ${practicanteToDelete?.last_names}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         cancelText="Cancelar"

@@ -84,7 +84,7 @@ const PERMISSION_TYPES = [
     { key: 'can_approve', label: 'Aprobar',                      icon: CheckCircle2, activeColor: 'bg-success' },
 ];
 
-// El tono por opción NO es adorno: distingue "Todos" de "Mi Sucursal" de un
+// El tono por opción NO es adorno: distingue "Todos" de "Mi sucursal" de un
 // vistazo en una pantalla llena de toggles.
 // «Sólo míos» se agregó el 2026-08-10 (pedido del usuario) junto con el centro
 // de solicitudes: hay módulos donde el escalón más chico no es la sucursal sino
@@ -98,7 +98,7 @@ const PERMISSION_TYPES = [
 // MINE como BRANCH y abre de más.
 const SCOPE_OPTIONS = [
     { value: 'ALL',    label: 'Todos',       tone: 'chart-3' },
-    { value: 'BRANCH', label: 'Mi Sucursal', tone: 'chart-9' },
+    { value: 'BRANCH', label: 'Mi sucursal', tone: 'chart-9' },
     { value: 'MINE',   label: 'Sólo míos',   tone: 'chart-4' },
 ];
 

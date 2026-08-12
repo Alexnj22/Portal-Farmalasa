@@ -349,7 +349,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             value={shiftId} 
                             onChange={setShiftId} 
                             options={shiftOptions} 
-                            placeholder="Seleccionar Turno..." 
+                            placeholder="Seleccionar turno…" 
                             clearable={false} 
                             compact 
                         />

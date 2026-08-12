@@ -21,6 +21,73 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.8 — La pestaña del navegador nombra su pantalla, y el resto del sentence case
+
+Cierra lo que v2.571.6 dejó anotado.
+
+**La deriva de nombres, resuelta con una regla.** 13 rutas se llamaban distinto
+según el registro. La regla que se aplicó, y que evita que vuelva a pasar: **la
+pestaña del navegador se copia del ENCABEZADO de la vista, no del menú.** El menú
+puede abreviar porque se lee dentro de su grupo («Listado» bajo Personal); la
+pestaña se lee sola, entre otras veinte abiertas.
+
+| ruta | decía | dice |
+|---|---|---|
+| `/dashboard` | Dashboard | Gestión de personal |
+| `/payroll` | Planilla | Nómina |
+| `/monitor` | Asistencia | Monitor en tiempo real |
+| `/announcements` | Comunicados | Centro de comunicaciones |
+| `/roles` | Roles | Jerarquía institucional |
+| `/auditview` | Auditoría | Auditoría de sistema |
+| `/encuesta` · `/encuesta-admin` | Encuesta (las dos) | Clima organizacional · Gestión de encuestas |
+| `/audit` | Auditoría de tiempo | Auditoría de tiempos |
+| `/requests` | Solicitudes | Solicitudes de sucursal |
+| `/permissions` | Permisos | Permisos de acceso |
+| `/libro-compras-completo` | Libro de compras completo | Compras completo |
+
+`Dashboard` en `/dashboard` era doblemente falso: el tablero se renombró a
+«Inicio» hace semanas, y esa ruta ni siquiera es el tablero — es el listado de
+personal, con el path legado.
+
+Se agregaron además **19 rutas que no tenían entrada** y caían al genérico
+«Portal FarmaSalud»: Traslados, Metas, Clientes, Proveedores, Corte Z, Min / Max,
+Gestión de stock, Ventas perdidas, Facturas de sala, Conexiones, Salud de syncs,
+Objetos huérfanos y el resto.
+
+`Monitor real-time` era la única etiqueta del menú en inglés — pasa a «Monitor en
+tiempo real» en los tres registros donde vivía.
+
+**El resto del sentence case: 107 etiquetas, 163 apariciones, 58 archivos.**
+Botones, títulos de sección, confirmaciones, marcadores de posición y nombres de
+widget: `Cancelar Solicitud`, `Limpiar Filtros`, `Seleccionar Sucursal`,
+`¿Archivar Aviso?`, `Ver Expediente de Personal`, `Widget: Top Productos del mes`.
+
+**Lo que NO se tocó, y por qué.** De 343 candidatas quedaron fuera 236, y no por
+descuido:
+
+- **Catálogos que viajan a la base**: cargos (`Dependiente de Farmacia`),
+  categorías de documento (`Documentos Legales`), tipos de contrato
+  (`Tiempo Completo 44h`), motivos de baja (`Renuncia Voluntaria`), tipos de
+  ausencia (`Incapacidad Médica`), clases de extintor (`Polvo Químico Seco
+  (ABC)`), categorías de gasto (`Agua Potable`, `Energía Eléctrica`). Cambiar el
+  rótulo de un valor almacenado lo desincroniza del dato.
+- **Nombres propios**: bancos y AFP (`Banco Cuscatlán`, `AFP Confía`).
+- **Documentos legales y fiscales con nombre oficial**: `CCF — Crédito Fiscal`,
+  `COF — Consumidor Final`, `Carné JVPQF — Regente / Químico Farmacéutico`,
+  `Solvencia Municipal`, `Partida de Nacimiento`.
+- **Términos del portal ya decididos**: `Sistema de Ventas` y `Sis. Ventas` (así
+  se nombra al origen en pantalla), `Bajo Receta`, `Min / Max`, `Libros IVA`.
+- **Encabezados de columna y versalitas**, que el tema pinta en mayúsculas: la
+  caja del fuente no cambia nada en pantalla y §26.4 los exceptúa.
+- **Ejemplos de marcador de posición** (`Ej: Juan Perez`), donde la mayúscula es
+  contenido.
+
+Antes de aplicar se verificó que ninguna de las 107 se use en una comparación de
+igualdad, como `value:` ni como clave de objeto — un `=== 'Ver Detalles'` habría
+quedado falso para siempre, en silencio.
+
+Verificado en el navegador: el título de 17 rutas, y cero errores de consola.
+
 ## v2.571.7 — El cotejo del Corte Z se ancla en las ventas gravadas
 
 Lo levantó el contador, no el cuadre: «no me cuadra la venta de contribuyentes

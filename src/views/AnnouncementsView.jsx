@@ -554,7 +554,7 @@ const AnnouncementsView = ({ openModal }) => {
     <>
       <style>{`@keyframes subtle-shake { 0%, 100% { transform: rotate(0deg) scale(1.01); } 25% { transform: rotate(-0.5deg) scale(1.01); } 75% { transform: rotate(0.5deg) scale(1.01); } } .animate-subtle-shake { animation: subtle-shake 0.4s ease-in-out infinite; }`}</style>
       <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, annId: null })} onConfirm={executeDelete} title="¿Eliminar este aviso?" message="Esta acción borrará el aviso para siempre. No podrás recuperarlo ni ver las estadísticas." confirmText="Sí, Eliminar" isProcessing={isSubmitting} isDestructive={true} />
-      <ConfirmModal isOpen={archiveDialog.isOpen} onClose={() => setArchiveDialog({ isOpen: false, annId: null })} onConfirm={executeArchive} title="¿Archivar Aviso?" message="El aviso se moverá a la pestaña de Archivo y dejará de mostrarse en los Kioscos. ¿Continuar?" confirmText="Sí, Archivar" isProcessing={isSubmitting} isDestructive={false} />
+      <ConfirmModal isOpen={archiveDialog.isOpen} onClose={() => setArchiveDialog({ isOpen: false, annId: null })} onConfirm={executeArchive} title="¿Archivar aviso?" message="El aviso se moverá a la pestaña de Archivo y dejará de mostrarse en los Kioscos. ¿Continuar?" confirmText="Sí, Archivar" isProcessing={isSubmitting} isDestructive={false} />
       <AlertModal isOpen={alertDialog.isOpen} onClose={() => setAlertDialog({ isOpen: false, title: '', message: '' })} title={alertDialog.title} message={alertDialog.message} type="error" />
 
       <GlassViewLayout icon={Megaphone} title="Centro de comunicaciones" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
@@ -635,7 +635,7 @@ const AnnouncementsView = ({ openModal }) => {
                           value={targetValue}
                           onChange={setTargetValue}
                           options={(branches || []).map((b) => ({ value: b.id, label: b.name }))}
-                          placeholder="-- Seleccionar Sucursal --"
+                          placeholder="-- Seleccionar sucursal --"
                           disabled={isSubmitting}
                           clearable={false}
                         />
@@ -645,7 +645,7 @@ const AnnouncementsView = ({ openModal }) => {
                           value={targetValue}
                           onChange={setTargetValue}
                           options={uniqueRoles.map((r) => ({ value: r, label: r }))}
-                          placeholder="-- Seleccionar Cargo --"
+                          placeholder="-- Seleccionar cargo --"
                           disabled={isSubmitting}
                           clearable={false}
                         />

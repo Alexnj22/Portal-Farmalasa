@@ -626,7 +626,7 @@ const PayrollView = ({ openModal }) => {
                                                 { label:'Sal. Ordinario', value:totals.grossA,  color:'text-content' },
                                                 { label:'Extras / Otros', value:totals.extrasB, color:'text-chart-1-text'  },
                                                 { label:'Deducciones',    value:totals.deducts,  color:'text-danger'  },
-                                                { label:'Total a Pagar',  value:totals.net,      color:'text-success-text' },
+                                                { label:'Total a pagar',  value:totals.net,      color:'text-success-text' },
                                             ].map(t => (
                                                 <div key={t.label} data-surface="card" className="text-center py-3 px-2">
                                                     <p className="text-micro text-content-2 uppercase tracking-widest font-black">{t.label}</p>

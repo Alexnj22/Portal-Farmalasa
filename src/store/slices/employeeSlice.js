@@ -1115,7 +1115,7 @@ export const createEmployeeSlice = (set, get) => ({
                 IN: 'Entrada', OUT: 'Salida',
                 OUT_LUNCH: 'Inicio Almuerzo', IN_LUNCH: 'Fin Almuerzo',
                 OUT_LACTATION: 'Inicio Lactancia', IN_LACTATION: 'Fin Lactancia',
-                OUT_EARLY: 'Salida Anticipada', OUT_BUSINESS: 'Gestión Externa',
+                OUT_EARLY: 'Salida Anticipada', OUT_BUSINESS: 'Gestión externa',
                 IN_RETURN: 'Regreso de Gestión', IN_EXTRA: 'Entrada Extra',
                 OUT_EXTRA: 'Salida Extra',
             };

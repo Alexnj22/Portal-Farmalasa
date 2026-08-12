@@ -364,7 +364,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             size="lg"
                             variant="secondary"
                             onClick={() => navigate('/branches')}
-                            title="Volver a Sucursales"
+                            title="Volver a sucursales"
                         />
 
                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl md:rounded-2xl bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">

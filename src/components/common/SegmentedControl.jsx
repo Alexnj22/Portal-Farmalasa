@@ -18,7 +18,7 @@ import React, { memo } from 'react';
  *   · Si cada opción dispara una acción distinta → son botones sueltos.
  *
  * Cada opción puede llevar su propio `tone`. No es adorno: en el selector de
- * alcance de permisos, el color distingue "Todos" de "Mi Sucursal" y esa
+ * alcance de permisos, el color distingue "Todos" de "Mi sucursal" y esa
  * distinción es información, no decoración. El `tone` del grupo queda como
  * valor por defecto.
  *

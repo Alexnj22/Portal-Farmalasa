@@ -61,7 +61,7 @@ const COLS = [
     { key: 'alcance', label: 'Alcance', align: 'left', hideBelow: '2xl' },
     { key: 'items', label: 'Ítems', align: 'center', hideBelow: 'md' },
     { key: 'diferencias', label: 'Diferencias', align: 'center' },
-    { key: 'valor', label: 'Valor Neto', align: 'right', hideBelow: 'lg' },
+    { key: 'valor', label: 'Valor neto', align: 'right', hideBelow: 'lg' },
     { key: 'estado', label: 'Estado', align: 'center' },
     { key: 'acciones', label: '', align: 'right' },
 ];
@@ -302,7 +302,7 @@ export default function ConteoInventarioView() {
                 <FilterBar activeCount={(branchFilter && !isBranchScoped ? 1 : 0) + (foco !== 'TODOS' ? 1 : 0)}
                     onClear={() => { if (!isBranchScoped) setBranchFilter(''); setFoco('TODOS'); }}
                     acciones={canEdit ? [{
-                        key: 'nuevo', icon: Plus, label: 'Nuevo Conteo', variant: 'primary',
+                        key: 'nuevo', icon: Plus, label: 'Nuevo conteo', variant: 'primary',
                         onClick: () => setShowModal(true),
                     }] : []}>
                     <FilterBar.Section
@@ -426,7 +426,7 @@ export default function ConteoInventarioView() {
                     : 'Ningún conteo cae en este filtro. Prueba con "Todos".',
                 action: foco !== 'TODOS'
                     ? { label: 'Ver todos', onClick: () => setFoco('TODOS') }
-                    : (canEdit ? { label: 'Nuevo Conteo', onClick: () => setShowModal(true) } : undefined),
+                    : (canEdit ? { label: 'Nuevo conteo', onClick: () => setShowModal(true) } : undefined),
             }}>
                 {filtered.map((c, i) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;

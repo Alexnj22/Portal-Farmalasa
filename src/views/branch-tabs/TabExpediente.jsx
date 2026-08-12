@@ -15,7 +15,7 @@ import { EmptyState } from '../../components/common/StateViews';
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
 // ============================================================================
 const getDocStatus = (url, expDate) => {
-    if (!url) return { type: 'MISSING', label: 'Falta Documento', color: 'text-warning bg-warning/10 border-warning/30', icon: AlertCircle };
+    if (!url) return { type: 'MISSING', label: 'Falta documento', color: 'text-warning bg-warning/10 border-warning/30', icon: AlertCircle };
 
     if (expDate) {
         const diff = Math.ceil((new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24));
@@ -23,7 +23,7 @@ const getDocStatus = (url, expDate) => {
         if (diff <= 45) return { type: 'WARNING', label: `Vence en ${diff}d`, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', icon: Clock };
     }
 
-    return { type: 'OK', label: 'Al Día', color: 'text-success bg-success/10 border-success/30', icon: CheckCircle2 };
+    return { type: 'OK', label: 'Al día', color: 'text-success bg-success/10 border-success/30', icon: CheckCircle2 };
 };
 
 const formatDate = (dateStr) => {
@@ -52,10 +52,10 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                     <Button variant="secondary" size="sm" icon={Eye} title="Ver PDF" iconOnly onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })} />
                 )}
 
-                <Button variant="secondary" size="sm" icon={Pencil} title="Editar/Actualizar Datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
+                <Button variant="secondary" size="sm" icon={Pencil} title="Editar/actualizar datos" iconOnly onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })} />
 
                 {doc.isCustom && !doc.url && (
-                    <Button variant="destructive" size="sm" icon={Trash2} title="Eliminar Espacio" iconOnly onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }} />
+                    <Button variant="destructive" size="sm" icon={Trash2} title="Eliminar espacio" iconOnly onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }} />
                 )}
             </div>
 
@@ -76,7 +76,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 iconOnly
                                 size="sm"
                                 variant="ghost"
-                                title="Ver Análisis de IA del Documento"
+                                title="Ver análisis de IA del documento"
                             />
 
                             {/* 🔮 EL TOOLTIP HOLOGRÁFICO */}
@@ -304,7 +304,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                 isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={confirmDeleteDoc}
-                title="Eliminar Documento"
+                title="Eliminar documento"
                 message="¿Estás seguro de eliminar este espacio vacío del expediente? Se quitará de la vista actual."
                 confirmText="Eliminar"
                 cancelText="Cancelar"
@@ -316,7 +316,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                 isOpen={!!deleteError}
                 onClose={() => setDeleteError('')}
                 type="error"
-                title="Error al Eliminar"
+                title="Error al eliminar"
                 message={deleteError}
             />
 
@@ -359,7 +359,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             variant="secondary"
                             icon={Layers}
                             onClick={() => setShowAllDocs(!showAllDocs)}
-                        >{showAllDocs ? 'Ocultar' : 'Ver Todos'}</Button>
+                        >{showAllDocs ? 'Ocultar' : 'Ver todos'}</Button>
 
                         <Button variant="secondary" icon={Plus} onClick={() => openModal('addCustomDocument', liveBranch)}>Nuevo</Button>
 

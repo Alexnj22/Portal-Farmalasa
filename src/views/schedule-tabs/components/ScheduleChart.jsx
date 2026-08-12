@@ -55,7 +55,7 @@ const ScheduleChart = ({
                         />
                     </div>
                     <div className="opacity-0 group-hover/chart:opacity-100 focus-within:opacity-100 transition-opacity duration-[var(--dur-base)]">
-                        <Button tone="chart-1" size="xs" icon={Maximize2} title="Expandir Análisis" iconOnly onClick={() => openModal && openModal('viewWfmAnalytics')} />
+                        <Button tone="chart-1" size="xs" icon={Maximize2} title="Expandir análisis" iconOnly onClick={() => openModal && openModal('viewWfmAnalytics')} />
                     </div>
                 </div>
             </div>

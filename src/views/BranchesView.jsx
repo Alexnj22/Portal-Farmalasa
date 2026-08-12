@@ -27,7 +27,7 @@ import { smartFilter } from '../utils/searchUtils';
 
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
-    { value: "ALERTS", label: "Con Alertas" },
+    { value: "ALERTS", label: "Con alertas" },
     { value: "INACTIVE", label: "Inactivas" },
     { value: "RENTED", label: "Alquiladas" },
     { value: "OWNED", label: "Propias" },
@@ -345,7 +345,7 @@ const BranchCard = memo(({
                 {/* Contenido del Overlay */}
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-hide relative z-base">
                     {isGeneratingAi ? (
-                        <AiThinkingState size="sm" title="Analizando Telemetría" steps="Ejecutando modelo neuronal" className="absolute inset-0" />
+                        <AiThinkingState size="sm" title="Analizando telemetría" steps="Ejecutando modelo neuronal" className="absolute inset-0" />
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                             {aiSummaryData?.split('\n').map((paragraph, index) => (
@@ -393,11 +393,11 @@ const BranchCard = memo(({
                         <div className="w-px h-4 bg-divider mx-0.5"></div>
                         </>
                     )}
-                    <Button size="sm" icon={Eye} title="Ver Perfil" iconOnly onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} />
-                    <Button tone="chart-3" size="sm" icon={Pencil} disabled={!canEdit} title="Ajustes Generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
+                    <Button size="sm" icon={Eye} title="Ver perfil" iconOnly onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} />
+                    <Button tone="chart-3" size="sm" icon={Pencil} disabled={!canEdit} title="Ajustes generales" iconOnly onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} />
 
                     {!deleteDisabled && (
-                        <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar Sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} />
+                        <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar sucursal" iconOnly onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} />
                     )}
                 </div>
                 {alertStatus.hasAlerts && (
@@ -482,7 +482,7 @@ const BranchCard = memo(({
                             onWhatsApp={(e) => handleWhatsAppAction(e, branch.cell)} />
                     </div>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-[var(--dur-slow)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-hover)]'}`} title="Configurar Horarios">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-[var(--dur-slow)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-hover)]'}`} title="Configurar horarios">
                         <div className="flex items-center gap-2">
                             <Clock size={14} className={`transition-colors duration-[var(--dur-slow)] ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand-text'}`} strokeWidth={2.5} />
                             <span className={`text-caption font-black uppercase tracking-widest transition-colors duration-[var(--dur-slow)] ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
@@ -543,7 +543,7 @@ const BranchCard = memo(({
                 {!['ADMINISTRATIVA','EXTERNA'].includes(branch.type) && (
                     <>
                         <div className="w-px h-8 bg-divider mx-2"></div>
-                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer" title="Gestionar Kioscos">
+                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-surface-card p-2 -mr-2 -my-2 rounded-xl transition-all active:scale-[0.97] cursor-pointer" title="Gestionar kioscos">
                             <div className="flex items-center gap-2 text-content-3 transition-colors duration-[var(--dur-slow)] group-hover/kiosk:text-content-2">
                                 <span className="text-caption font-bold uppercase tracking-widest">Kioscos</span>
                                 <Monitor size={14} className="transition-transform duration-[var(--dur-slow)] group-hover/kiosk:scale-110 group-hover/kiosk:text-chart-3-text" strokeWidth={2.5} />
@@ -727,7 +727,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
             onClear={() => setFilterStatus('ALL')}
             activeCount={filterStatus !== 'ALL' ? 1 : 0}
             acciones={canEdit ? [{
-                key: 'nueva', icon: Plus, label: 'Nueva Sucursal', variant: 'primary',
+                key: 'nueva', icon: Plus, label: 'Nueva sucursal', variant: 'primary',
                 onClick: () => openModal?.('newBranch'),
             }] : []}
         >

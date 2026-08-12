@@ -147,7 +147,7 @@ const WIDGET_SIZES = {
   birthdays:     { minCols: 2, minRows: 2, label: 'Cumpleaños'   },
   cotizaciones:  { minCols: 1, minRows: 2, label: 'Cotizaciones' },
   facturacion:   { minCols: 2, minRows: 2, label: 'Facturación'  },
-  top_productos: { minCols: 2, minRows: 3, label: 'Top Productos'},
+  top_productos: { minCols: 2, minRows: 3, label: 'Top productos'},
   // 1×1 como sus tres hermanas: `WidgetInventorySearch` ya no trae el buscador
   // adentro —es un `LanzadorSolicitud`, o sea una baldosa que abre un modal—,
   // pero el registro conservaba el 2×3 del widget viejo. Resultado en el
@@ -516,8 +516,8 @@ const WIDGET_DEFS = [
   { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'dash_cotizaciones',  icon: Receipt,      category: 'ventas'    },
   { id: 'facturacion',   label: 'Facturación hoy',         permission: 'dash_facturacion',   icon: FileText,     category: 'ventas'    },
   { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package,      category: 'productos' },
-  { id: 'inv_search',   label: 'Consulta de Inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
-  { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
+  { id: 'inv_search',   label: 'Consulta de inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
+  { id: 'annulment_req',label: 'Solicitud de anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Ajuste de Inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
@@ -2128,7 +2128,7 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'trend') {
       if (!showWidget('trend','dash_trend')) return null;
       return wrapWidget('trend',
-        <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
+        <WidgetCard title="Tendencia de asistencia" icon={Activity} category="personal"
           action={
             <PeriodStepper
               size="sm"
@@ -2176,7 +2176,7 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'shifts') {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
-        <WidgetCard title="Estado de Turnos" icon={Clock} category="personal"
+        <WidgetCard title="Estado de turnos" icon={Clock} category="personal"
           action={getScope('dash_shifts') !== 'BRANCH' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
             {employees.length === 0 ? (
@@ -2408,7 +2408,7 @@ const DashboardView = ({ openModal }) => {
           })
         : absences;
       return wrapWidget('absences',
-        <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
+        <WidgetCard title="Ausencias activas" icon={UserX} category="personal"
           action={puedeAbrir('/requests')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/requests')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
@@ -2449,7 +2449,7 @@ const DashboardView = ({ openModal }) => {
           })
         : pendingReqs;
       return wrapWidget('requests',
-        <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
+        <WidgetCard title="Solicitudes pendientes" icon={ClipboardList} category="personal"
           action={puedeAbrir('/requests')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/requests')}>Ver todas <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
@@ -2600,7 +2600,7 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'announcements') {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
-        <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
+        <WidgetCard title="Avisos recientes" icon={Megaphone} category="general"
           action={puedeAbrir('/announcements')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/announcements')}>Ver todos <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
@@ -2735,7 +2735,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('cotizaciones', 'dash_cotizaciones')) return null;
       const fmt = v => formatMoney(v);
       return wrapWidget('cotizaciones',
-        <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
+        <WidgetCard title="Cotizaciones activas" icon={Receipt} category="ventas"
           action={puedeAbrir('/cotizaciones')&&<Button variant="ghost" size="xs" onClick={() => navigate('/cotizaciones')}>Ver <ChevronRight size={11}/></Button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
@@ -2801,7 +2801,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('facturacion', 'dash_facturacion')) return null;
       const fmt = v => formatMoney(v);
       return wrapWidget('facturacion',
-        <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
+        <WidgetCard title="Facturación hoy" icon={FileText} category="ventas"
           action={puedeAbrir('/facturacion')&&<Button variant="ghost" size="xs" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
           {factLoading ? (
             <div className="flex flex-col h-full px-4 py-3 gap-3">
@@ -2866,7 +2866,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v, { decimales: 0 });
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
-        <WidgetCard title="Top Productos · Mes Actual" icon={Package} category="productos"
+        <WidgetCard title="Top productos · mes actual" icon={Package} category="productos"
           action={puedeAbrir('/ventas')&&<Button variant="ghost" size="xs" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (

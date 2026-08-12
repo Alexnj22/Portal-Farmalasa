@@ -61,7 +61,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
 
     // ── Tab Solicitudes: solo lectura, historial del empleado (crear/cancelar
-    // se hace desde Gestión de Solicitudes — ver botón "Nueva Solicitud" abajo) ──
+    // se hace desde Gestión de Solicitudes — ver botón "Nueva solicitud" abajo) ──
     const [empRequests, setEmpRequests]       = useState([]);
     const [isLoadingEmpReqs, setIsLoadingEmpReqs] = useState(false);
 
@@ -400,7 +400,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 if (typeof setView === 'function') setView('dashboard');
                                 else navigate('/dashboard');
                             }}
-                            title="Volver a Personal"
+                            title="Volver a personal"
                         />
                     )}
 
@@ -1040,7 +1040,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
                                                 <ClipboardList size={18} className="text-brand-text"/> Solicitudes del Empleado
                                             </h3>
-                                            <Button icon={Plus} onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}>Nueva Solicitud</Button>
+                                            <Button icon={Plus} onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}>Nueva solicitud</Button>
                                         </div>
 
                                         {isLoadingEmpReqs ? (
@@ -1102,7 +1102,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 isOpen={showResetConfirm}
                 onClose={() => !isResetting && setShowResetConfirm(false)}
                 onConfirm={executeResetPassword}
-                title="Restablecer Contraseña"
+                title="Restablecer contraseña"
                 message={`¿Restablecer contraseña de ${emp.name}? Deberá cambiarla en su próximo acceso.`}
                 confirmText="Restablecer"
                 isDestructive={false}

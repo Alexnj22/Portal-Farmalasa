@@ -753,33 +753,66 @@ export default function App() {
     );
 }
 
+// ── El título del navegador nombra la MISMA pantalla que su encabezado ──────
+// Esta tabla venía derivando de las otras cuatro que nombran un módulo (el
+// `title=` de la vista, `moduleMap`, `permissionModules` y el menú), y como
+// nada la cruza con ellas, terminó contradiciéndolas en 13 rutas: `/dashboard`
+// decía «Dashboard» —resto de antes de que el tablero pasara a llamarse
+// «Inicio», y encima esa ruta es el listado de personal—, `/payroll` decía
+// «Planilla» mientras el menú y el encabezado dicen «Nómina», y `/monitor`
+// decía «Asistencia», que es el nombre de OTRO grupo del menú.
+//
+// La regla, para que no vuelva a pasar: **la pestaña se copia del encabezado de
+// la vista**, no del menú. El menú puede abreviar porque se lee dentro de su
+// grupo («Listado» bajo Personal); la pestaña se lee sola, entre otras veinte.
+//
+// Faltaban además 19 rutas, que caían al genérico «Portal FarmaSalud».
 const ROUTE_TITLES = {
     '/overview':          'Inicio',
-    '/dashboard':         'Dashboard',
-    '/monitor':           'Asistencia',
-    '/audit':             'Auditoría de tiempo',
+    '/dashboard':         'Gestión de personal',   // el path es legado: la ruta es el listado
+    '/monitor':           'Monitor en tiempo real',
+    '/audit':             'Auditoría de tiempos',
     '/schedules':         'Horarios',
-    '/requests':          'Solicitudes',
+    '/requests':          'Solicitudes de sucursal',
+    '/requests-personales': 'Solicitudes personales',
     '/vacation-plan':     'Plan de vacaciones',
-    '/payroll':           'Planilla',
-    '/announcements':     'Comunicados',
+    '/payroll':           'Nómina',
+    '/bonificaciones':    'Bonificaciones',
+    '/entrevistas':       'Entrevistas',
+    '/announcements':     'Centro de comunicaciones',
     '/ventas':            'Ventas',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
+    '/clientes':          'Clientes',
+    '/metas':             'Metas',
     '/productos':         'Productos',
+    '/laboratorios':      'Laboratorios',
     '/pedidos':           'Pedidos a sucursales',
-    '/encuesta':          'Encuesta',
-    '/encuesta-admin':    'Encuesta',
+    '/traslados':         'Traslados entre salas',
+    '/inventario':        'Inventario',
+    '/gestion-stock':     'Gestión de stock',
+    '/minmax':            'Min / Max',
+    '/ventas-perdidas':   'Ventas perdidas',
+    '/encuesta':          'Clima organizacional',
+    '/encuesta-admin':    'Gestión de encuestas',
     '/compras':           'Compras',
     '/facturas-compra':   'Facturas de compra',
+    '/facturas-sala':     'Facturas de sala',
+    '/proveedores':       'Proveedores',
     '/libros-iva':        'Libros IVA',
-    '/libro-compras-completo': 'Libro de compras completo',
-    '/resumen-fiscal': 'Resumen fiscal',
+    '/libro-compras-completo': 'Compras completo',
+    '/resumen-fiscal':    'Resumen fiscal',
+    '/corte-z':           'Corte Z',
     '/conteo-inventario': 'Conteo de inventario',
     '/branches':          'Sucursales',
-    '/roles':             'Roles',
-    '/permissions':       'Permisos',
-    '/auditview':         'Auditoría',
+    '/roles':             'Jerarquía institucional',
+    '/permissions':       'Permisos de acceso',
+    '/auditview':         'Auditoría de sistema',
+    '/mantenimiento':     'Mantenimiento',
+    '/sync-health':       'Salud de syncs',
+    '/sesiones':          'Conexiones',
+    '/orphan-objects':    'Objetos huérfanos',
+    '/ios-test':          'Vista de prueba iOS',
     '/my-announcements':  'Mis avisos',
     '/my-documents':      'Mis documentos',
     '/profile':           'Mi perfil',

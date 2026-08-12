@@ -66,7 +66,7 @@ const TIPOS = [
     { key: 'SHIFT_CHANGE', icon: RefreshCw,   label: 'Cambio Turno' },
     { key: 'ADVANCE',      icon: DollarSign,  label: 'Anticipo'     },
     { key: 'CERTIFICATE',  icon: FileCheck,   label: 'Constancia'   },
-    { key: 'OVERTIME',     icon: Coffee,      label: 'Horas Extra'  },
+    { key: 'OVERTIME',     icon: Coffee,      label: 'Horas extra'  },
 ];
 
 const CERT_TYPES = [

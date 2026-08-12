@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.2 — La clave del traslado nombra la sala como el portal, y el concepto va en mayusculas
+
+La clave decía `P102-S7-H1-I71445` para un pedido de **Salud 5**. El `S7` era el
+`erp_sucursal_id` pelado, y la numeración del sistema de origen no coincide con
+el nombre de la sala en las tres últimas: 5 es La Popular, 6 Bodega, 7 Salud 5.
+Quien leyera `S7` en el kardex leía «Salud 7», que no existe — y peor, `S5` se
+leía «Salud 5» siendo La Popular. **Las dos salas que más aparecen eran las dos
+que mentían.**
+
+Ahora la clave nombra la sala como la nombra el portal: `P102-S5-H1-I71445`. El
+código sale del **registro** (`erp_sucursal_map.codigo`, nuevo: `S1`…`S5`, `PO`,
+`BO`, con `CHECK` de forma y `UNIQUE`) y no de un `CASE` dentro de cada RPC —
+dos listas a mano se desincronizan a la primera sala nueva. Una sala sin código
+**no despacha**: el RPC falla al planificar, antes de que se mueva nada.
+
+**La devolución pasa a llevar la clave del despacho con `DEV-` adelante**,
+carácter por carácter, hoja incluida: `DEV-P102-S5-H1-I71445`. Antes se armaba
+aparte y sin `-H`. Buscar `P102-S5-H1-I71445` en el kardex ahora encuentra las
+dos puntas del mismo renglón —la salida y el retorno—, y la hoja es justo lo que
+hay que ir a revisar cuando algo no cuadra. Sale de reusar
+`pedido_traslado_linea.clave` en vez de recalcularla.
+
+**Todo el concepto en MAYÚSCULAS.** Los nombres salen de `employees` con
+capitalización dispar —«DOLORES TEJADA» al lado de «Adriana Ramirez»— y dos
+formatos en la misma columna del kardex se leen como dos sistemas distintos
+escribiendo ahí.
+
+**El traslado entre salas nombra la sala de cada persona**:
+`PIDE ADRIANA RAMIREZ (S1) ENV DOLORES TEJADA (BO)`. Ese movimiento no nace de un
+pedido, así que no tiene clave donde meterla, y son dos salas distintas: la que
+pide y la que suelta. Es la sala **de la persona**, no la del movimiento — con
+alcance de supervisión se puede despachar desde una sala ajena, y entonces el
+origen del listado no dice quién lo hizo. El pedido y la devolución **no** la
+repiten al lado del nombre porque ya la llevan dentro de la clave.
+
+De paso, dos cosas que estaban sueltas:
+
+- **`armarConcepto` es una sola puerta para las cinco escrituras** (ASCII,
+  mayúsculas y tope). Antes cada llamador hacía su propio
+  `soloAscii(...).slice(0, CONCEPTO_MAX)` y **sólo uno avisaba del recorte**,
+  justo lo que el comentario de `CONCEPTO_MAX` promete que no pase: un tope
+  callado se lee como que entró completo.
+- `aplicar-traslado-inventario` pedía el registro de salas **dos veces** (origen
+  y destino). Ahora lo trae entero una vez —son 7 filas— y resuelve por las tres
+  llaves que necesita. Es una consulta menos que antes.
+
+Verificado contra prod: los tres renglones ya escritos el 11-08 darían hoy
+`P102-S5-H1-I7144x`. Esos tres conservan su clave vieja a propósito —es la que
+de verdad quedó en el kardex—, y su devolución la reusa, así que el par sigue
+cuadrando. Nada de esto está desplegado todavía: las edge functions cambian su
+texto recién al desplegarlas, y los dos interruptores siguen abajo.
+
 ## v2.571.1 — El concepto del asiento: sólo lo que el sistema no sabe
 
 Antes de estrenar la devolución había que definir qué queda escrito en el

@@ -2,14 +2,13 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
-  CONCEPTO_MAX,
+  armarConcepto,
   hoySV,
   nombreCorto,
   norm,
   pendientesDeOrigen,
   resolverPresentacion,
   sesionEn,
-  soloAscii,
   traerFila,
   RECIBIR,
   TRASLADO,
@@ -412,7 +411,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const concepto = soloAscii(`${ln.clave} rec ${yo}`).slice(0, CONCEPTO_MAX);
+        const { concepto } = armarConcepto(`${ln.clave} REC ${yo}`);
         const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
           process: "insert",
           datos: partes.join("#") + "#",
@@ -736,7 +735,7 @@ Deno.serve(async (req) => {
           // muestra en la misma pantalla (destino) o en el detalle del traslado
           // (producto), o que va DENTRO de la clave (pedido y hoja). Medido el
           // 2026-08-12: se repetían 45 de los 75 caracteres.
-          const concepto = soloAscii(`${ln.clave} env ${yo}`).slice(0, CONCEPTO_MAX);
+          const { concepto } = armarConcepto(`${ln.clave} ENV ${yo}`);
 
           const total = renglones.reduce((s, r) => s + Number(pres.costo || 0) * r.cantidad, 0);
           const datos = renglones.map((r) => [

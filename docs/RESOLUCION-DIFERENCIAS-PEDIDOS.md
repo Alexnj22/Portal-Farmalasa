@@ -180,9 +180,10 @@ Sistema › Mantenimiento cuando la prueba esté hecha.
 | Pantalla de las dos partes | `DevolucionBloque`, dentro de las diferencias |
 | Freno | `traslado_interruptor`: `devolver_enviar`, `devolver_recibir` |
 
-Un movimiento **por producto**, con su clave `DEV-P<pedido>-S<sala>-I<renglón>`
-primero en el concepto: es lo que permite encontrarlo entre los ~900 del pedido y
-lo que se busca antes de reintentar una línea cortada, para no moverla dos veces.
+Un movimiento **por producto**, con su clave primero en el concepto: es lo que
+permite encontrarlo entre los ~900 del pedido y lo que se busca antes de
+reintentar una línea cortada, para no moverla dos veces. La clave de la
+devolución es **la del despacho con `DEV-` adelante** (ver abajo).
 
 El renglón del pedido se cierra **cuando el producto entró en bodega**, no cuando
 la sala lo pide ni cuando bodega acepta. Antes de eso está en tránsito.
@@ -200,31 +201,74 @@ Definido el 2026-08-12, después de **medir dónde se lee** en el sistema:
   **el concepto es el único lugar donde aparece la persona real**.
 
 De ahí la regla: **el concepto no repite nada que el sistema ya muestre.** Queda
-`<clave> <qué pasó> <quién>`, en ASCII (el sistema relee los bytes como Latin-1 y
-un acento sale partido en dos).
+`<clave> <qué pasó> <quién>`, en MAYÚSCULAS y en ASCII.
 
 | Momento | Concepto | Largo |
 |---|---|---|
-| El pedido sale de bodega | `P102-S7-H1-I71445 env DOLORES TEJADA` | 36 |
-| El pedido entra a la sala | `P102-S7-H1-I71445 rec Adriana Ramirez` | 37 |
-| La devolución sale de la sala | `DEV-P102-S7-I71445 no llego pide Adriana Ramirez ok DOLORES TEJADA` | 66 |
-| La devolución entra a bodega | `DEV-P102-S7-I71445 rec DOLORES TEJADA` | 37 |
-| Traslado entre salas, sale | `pide Adriana Ramirez env DOLORES TEJADA` | 39 |
-| Traslado entre salas, entra | `rec Adriana Ramirez env DOLORES TEJADA` | 38 |
+| El pedido sale de bodega | `P102-S5-H1-I71445 ENV DOLORES TEJADA` | 36 |
+| El pedido entra a la sala | `P102-S5-H1-I71445 REC ADRIANA RAMIREZ` | 37 |
+| La devolución sale de la sala | `DEV-P102-S5-H1-I71445 NO LLEGO PIDE ADRIANA RAMIREZ OK DOLORES TEJADA` | 69 |
+| La devolución entra a bodega | `DEV-P102-S5-H1-I71445 REC DOLORES TEJADA` | 40 |
+| Traslado entre salas, sale | `PIDE ADRIANA RAMIREZ (S1) ENV DOLORES TEJADA (BO)` | 49 |
+| Traslado entre salas, entra | `REC ADRIANA RAMIREZ (S1) ENV DOLORES TEJADA (BO)` | 48 |
 
-Tres decisiones adentro:
+#### La clave, pedazo por pedazo
+
+`P102-S5-H1-I71445`
+
+| | Sale de | Es |
+|---|---|---|
+| `P102` | `pedidos.numero` | El pedido 102, el mismo número del portal y del PDF de despacho. |
+| `S5` | `erp_sucursal_map.codigo` | La sala. **Salud 5**, no la numeración interna. |
+| `H1` | `pedido_items.hoja` | La hoja 1 del despacho. `HA` si viaja en las cajas adicionales (E1, E2…), que no llevan hoja numerada. |
+| `I71445` | `pedido_items.id` | El renglón del pedido. Es el único pedazo que hace la clave única: una hoja lleva muchos productos. |
+
+Cinco decisiones adentro:
 
 1. **El pedido pasó de 75 a 36 caracteres.** Decía «Pedido 102 Salud 5 hoja 1
    \<producto\>»: el destino está en la pantalla, el producto en el detalle, y el
    pedido y la hoja **van dentro de la clave**. Se repetían 45 de 75 caracteres.
-2. **La devolución nombra a las DOS personas** —quien la pidió en la sala y quien
+2. **La sala sale del registro, no del `erp_sucursal_id`.** La numeración del
+   sistema de origen no coincide con el nombre de la sala en las tres últimas
+   —5 es La Popular, 6 Bodega, 7 Salud 5—, así que armar la clave con el id daba
+   `S7` para Salud 5 («Salud 7» no existe) y `S5` para La Popular, que se lee
+   como otra sala que **sí** existe. Las dos salas que más aparecen eran las dos
+   que mentían. El código vive en `erp_sucursal_map.codigo` (`S1`…`S5`, `PO`,
+   `BO`) con `CHECK` de forma y `UNIQUE`; una sala sin código **no despacha**, el
+   RPC falla al planificar antes de que se mueva nada.
+3. **La devolución lleva la MISMA clave del despacho con `DEV-` adelante**,
+   carácter por carácter, hoja incluida. Buscar `P102-S5-H1-I71445` en el kardex
+   encuentra las dos puntas del mismo renglón —la salida y el retorno—, y la hoja
+   es justo lo que hay que ir a revisar cuando algo no cuadra. Sale de reusar
+   `pedido_traslado_linea.clave`, no de recalcularla: dos fórmulas separadas se
+   separan más. Si el pedido no se despachó por el portal no hay hoja que citar y
+   se arma con `H0`.
+4. **La devolución nombra a las DOS personas** —quien la pidió en la sala y quien
    la autorizó en bodega— porque nada se mueve sin que las dos coincidan y el
    sistema no guarda ninguna de las dos.
-3. **El nombre es el mismo que muestra el portal** (primer nombre + primer
-   apellido, la regla de `shortEmployeeName`). Recortarlo a la inicial ahorra 8
-   caracteres por persona y se puede hacer en una línea (`nombreCorto` en
-   `_shared/erp-traslado.ts`), pero con dos «DOLORES» en la misma sala habría que
-   abrir el portal para saber quién fue.
+5. **El nombre es el mismo que muestra el portal** (primer nombre + primer
+   apellido, la regla de `shortEmployeeName`), en mayúsculas. Recortarlo a la
+   inicial ahorra 8 caracteres por persona y se puede hacer en una línea
+   (`nombreCorto` en `_shared/erp-traslado.ts`), pero con dos «DOLORES» en la
+   misma sala habría que abrir el portal para saber quién fue.
+
+**Mayúsculas en todo.** Los nombres salen de `employees` con capitalización
+dispar —«DOLORES TEJADA» al lado de «Adriana Ramirez»— y dos formatos en la misma
+columna del kardex se leen como dos sistemas distintos escribiendo ahí. Y ASCII
+porque el sistema relee los bytes como Latin-1 y un acento sale partido en dos.
+Las dos cosas las hace `armarConcepto`, **una sola puerta para las cinco
+escrituras** — que además es la que avisa del recorte a `CONCEPTO_MAX`: antes
+cada llamador hacía su propio `slice` y **sólo uno avisaba**.
+
+**Por qué el traslado entre salas SÍ lleva la sala pegada al nombre y el pedido
+no.** En el pedido la sala ya está dentro de la clave (`P102-S5-…`), así que
+repetirla al lado del nombre sería justo lo que la regla prohíbe. El traslado
+entre salas no nace de un pedido: no tiene clave, y son **dos salas distintas**
+—la que pide y la que suelta—. Va junto a cada persona porque es lo que la
+identifica: hay nombres repetidos entre salas y la columna «usuario» del listado
+es siempre la misma cuenta del portal. Y es la sala **de la persona**, no la del
+movimiento: con alcance de supervisión se puede despachar desde una sala ajena, y
+entonces el origen del listado no dice quién lo hizo.
 
 ### Lo que ya se comprobó (2026-08-12, sin tocar inventario)
 

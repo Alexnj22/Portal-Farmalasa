@@ -2,14 +2,13 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
-  CONCEPTO_MAX,
+  armarConcepto,
   hoySV,
   nombreCorto,
   norm,
   pendientesDeOrigen,
   resolverPresentacion,
   sesionEn,
-  soloAscii,
   traerFila,
   RECIBIR,
   TRASLADO,
@@ -62,13 +61,14 @@ const PRESUPUESTO_MS = 110_000;
 // 'enviando' es residuo de una corrida que murió, no de una en curso.
 const CORTADA_MS = 5 * 60_000;
 
-// El motivo, en la palabra que va al asiento. Corta y sin acentos —el sistema
-// relee los bytes como Latin-1—, pero entendible por alguien que abra el kardex
-// dentro de un año y no tenga el portal a mano.
+// El motivo, en la palabra que va al asiento. Corta, en mayúsculas y sin
+// acentos —el sistema relee los bytes como Latin-1—, pero entendible por alguien
+// que abra el kardex dentro de un año y no tenga el portal a mano. Son las
+// mismas tres ideas que la pantalla ofrece al pedir la devolución.
 const MOTIVO_CONCEPTO: Record<string, string> = {
-  faltante: "no llego",
-  danado:   "danado",
-  vencido:  "vencido",
+  faltante: "NO LLEGO",
+  danado:   "DANADO",
+  vencido:  "VENCIDO",
 };
 
 interface Devolucion {
@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const concepto = soloAscii(`${d.clave} rec ${yo}`).slice(0, CONCEPTO_MAX);
+        const { concepto } = armarConcepto(`${d.clave} REC ${yo}`);
         const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
           process: "insert",
           datos: partes.join("#") + "#",
@@ -574,9 +574,9 @@ Deno.serve(async (req) => {
         // lo autorizó en bodega—, porque nada se mueve sin que las dos partes
         // coincidan y el sistema no guarda ni una ni la otra. El producto, el
         // origen y el destino ya están en su propia pantalla.
-        const concepto = soloAscii(
-          `${d.clave} ${MOTIVO_CONCEPTO[d.motivo] ?? d.motivo} pide ${quienPidio.get(d.id) ?? "-"} ok ${yo}`,
-        ).slice(0, CONCEPTO_MAX);
+        const { concepto } = armarConcepto(
+          `${d.clave} ${MOTIVO_CONCEPTO[d.motivo] ?? d.motivo} PIDE ${quienPidio.get(d.id) ?? "-"} OK ${yo}`,
+        );
 
         const total = renglones.reduce((s, r) => s + Number(pres.costo || 0) * r.cantidad, 0);
         const datos = renglones.map((r) => [

@@ -51,13 +51,30 @@ export const CONCEPTO_MAX = 200;
  *
  *     <clave> <qué pasó> <quién>
  *
- * La clave va primero porque es lo que se busca. Todo en ASCII, porque el
- * sistema relee los bytes como Latin-1 y un acento sale partido en dos.
+ * La clave va primero porque es lo que se busca.
  *
- *   P102-S7-H1-I71445 env Ana Gomez           (el pedido sale de bodega)
- *   P102-S7-H1-I71445 rec Jose Martinez       (el pedido entra a la sala)
- *   DEV-P102-S7-I71445 falto pide Jose Martinez ok Ana Gomez
- *   DEV-P102-S7-I71445 rec Ana Gomez          (la devolución entra a bodega)
+ *   P102-S5-H1-I71445 ENV DOLORES TEJADA          (el pedido sale de bodega)
+ *   P102-S5-H1-I71445 REC ADRIANA RAMIREZ         (el pedido entra a la sala)
+ *   DEV-P102-S5-H1-I71445 NO LLEGO PIDE ADRIANA RAMIREZ OK DOLORES TEJADA
+ *   DEV-P102-S5-H1-I71445 REC DOLORES TEJADA      (la devolución entra a bodega)
+ *   PIDE ADRIANA RAMIREZ (S1) ENV DOLORES TEJADA (BO)   (traslado entre salas)
+ *
+ * **La sala del renglón va DENTRO de la clave, no pegada al nombre.** Por eso el
+ * pedido y la devolución no repiten `(S5)`: ya está en `P102-S5-…`. El traslado
+ * entre salas no tiene clave —no nace de un pedido—, así que ahí la sala sí se
+ * escribe, y va junto a cada persona porque son de salas distintas: una pide y
+ * la otra suelta.
+ *
+ * **La devolución lleva la MISMA clave del despacho con `DEV-` adelante**,
+ * carácter por carácter, hoja incluida. Buscar `P102-S5-H1-I71445` en el kardex
+ * encuentra las dos puntas del mismo renglón: la salida y el retorno. Y la hoja
+ * es justo lo que hay que ir a revisar cuando algo no cuadra.
+ *
+ * Todo en MAYÚSCULAS y en ASCII. ASCII porque el sistema relee los bytes como
+ * Latin-1 y un acento sale partido en dos. Mayúsculas porque los nombres salen
+ * de `employees` con capitalización dispar —«DOLORES TEJADA» al lado de
+ * «Adriana Ramirez»— y dos formatos en la misma columna del kardex se leen como
+ * dos sistemas distintos escribiendo ahí.
  */
 
 /**
@@ -101,6 +118,46 @@ export function soloAscii(s: string): string {
     .replace(/[^\x20-\x7E]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * El concepto tal como entra al sistema: ASCII, MAYÚSCULAS y con el tope puesto.
+ *
+ * Una sola puerta para las cinco escrituras. Antes cada una hacía su
+ * `soloAscii(...).slice(0, CONCEPTO_MAX)` y **sólo una avisaba del recorte**,
+ * justo lo que el comentario de `CONCEPTO_MAX` promete que no pase: un tope
+ * callado se lee como que entró completo. Ahora el aviso viene con el valor y
+ * quien lo ignore lo está ignorando a la vista.
+ */
+export function armarConcepto(
+  texto: string,
+): { concepto: string; recortado: boolean; completo: string } {
+  const completo = soloAscii(texto).toUpperCase();
+  return {
+    concepto: completo.slice(0, CONCEPTO_MAX),
+    recortado: completo.length > CONCEPTO_MAX,
+    completo,
+  };
+}
+
+/**
+ * El nombre corto con su sala: «ADRIANA RAMIREZ (S1)».
+ *
+ * El código sale del registro (`erp_sucursal_map.codigo`) y NUNCA del
+ * `erp_sucursal_id`: la numeración del sistema de origen no coincide con el
+ * nombre de la sala en las tres últimas —5 es La Popular, 6 Bodega, 7 Salud 5—,
+ * así que construirlo con el id da «S7» para Salud 5 y, peor, «S5» para La
+ * Popular, que se lee como otra sala que sí existe.
+ *
+ * Sin código no se inventa uno: se escribe el nombre solo. Un paréntesis
+ * equivocado es peor que ninguno.
+ */
+export function conSala(
+  emp: { first_names?: string | null; last_names?: string | null; name?: string | null } | null,
+  codigo?: string | null,
+): string {
+  const quien = nombreCorto(emp);
+  return codigo ? `${quien} (${codigo})` : quien;
 }
 
 /** La fecha de El Salvador (UTC-6 todo el año), en yyyy-mm-dd. */

@@ -54,16 +54,15 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 // 2026-08-11. El módulo se armó copiando de este archivo, así que la extracción
 // es literal — no cambia una coma de comportamiento.
 import {
-  CONCEPTO_MAX,
+  armarConcepto,
+  conSala,
   contenidoDeTraslado,
-  nombreCorto,
   direccionesPorSucursal,
   hoySV,
   norm,
   pendientesDeOrigen,
   RECIBIR,
   sesionEn as abrirSesionEn,
-  soloAscii,
   TRASLADO,
   leerFila,
 } from "../_shared/erp-traslado.ts";
@@ -138,33 +137,40 @@ Deno.serve(async (req) => {
     if (!erpOrigen || !erpDestino)
       return json({ ok: false, error: "La solicitud no trae la sala de origen o la de destino." }, 422);
 
-    // ── La ubicación de ORIGEN sale del mapa, no del cliente ──────────────
+    // ── El registro de salas, de una sola vez ─────────────────────────────
+    // Son 7 filas. Antes se pedía dos veces —origen y destino— y ahora hace
+    // falta una tercera llave, el `branch_id`, para ponerle su sala a cada
+    // persona del concepto. Traerlo entero es una consulta MENOS que antes y
+    // deja las tres búsquedas contra el mismo dato.
+    const { data: mapaSalas, error: mapaErr } = await admin
+      .from("erp_sucursal_map").select("erp_sucursal_id, branch_id, codigo, inv_ubicaciones, nombre");
+    if (mapaErr) throw mapaErr;
+    const porSucursal = new Map((mapaSalas ?? []).map((m) => [Number(m.erp_sucursal_id), m]));
+    const porBranch   = new Map((mapaSalas ?? []).map((m) => [Number(m.branch_id), m]));
+
+    // El código con que la sala se nombra en el concepto — «S1», «PO», «BO».
+    // Sale del registro y NUNCA del `erp_sucursal_id`: la numeración del sistema
+    // de origen no coincide con el nombre de la sala en las tres últimas.
+    const codigoDeBranch = (b: unknown) => porBranch.get(Number(b))?.codigo ?? null;
+
+    // ── Las ubicaciones de ORIGEN y DESTINO salen del mapa, no del cliente ─
     // Es la sala de OTRO: pedírsela al navegador sería dejar que elija de dónde
     // sale el producto. La de trabajo es la que NO es de vencidos — Bodega tiene
     // las dos y la de vencidos es un destino, nunca un origen.
-    const { data: mapaOrigen } = await admin
-      .from("erp_sucursal_map").select("inv_ubicaciones, nombre")
-      .eq("erp_sucursal_id", erpOrigen).maybeSingle();
-    const deTrabajo = (m: { inv_ubicaciones?: unknown } | null) => Number(
+    //
+    // La del destino venía en la solicitud, o sea del navegador. La pantalla de
+    // pedido no la manda —no tiene por qué saberla— así que llegaba `undefined`,
+    // viajaba como «NaN» y el sistema contestaba «No se proporcionaron los datos
+    // correctos para actualizar el stock». Lo destapó la primera prueba de punta
+    // a punta POR LA PANTALLA: el mismo camino por API pasaba, porque el script
+    // de prueba se la pasaba a mano. La ubicación es una propiedad de la sala,
+    // no un dato que el cliente elija.
+    const deTrabajo = (m: { inv_ubicaciones?: unknown } | null | undefined) => Number(
       (Array.isArray(m?.inv_ubicaciones) ? m!.inv_ubicaciones as { id: number; isVencidos: boolean }[] : [])
         .find((u) => !u.isVencidos)?.id ?? 0,
     );
-    const ubicOrigen = deTrabajo(mapaOrigen);
-
-    // ── Y la del DESTINO, también del mapa ────────────────────────────────
-    // Venía en la solicitud, o sea del navegador. La pantalla de pedido no la
-    // manda —no tiene por qué saberla— así que llegaba `undefined`, viajaba como
-    // «NaN» y el sistema contestaba «No se proporcionaron los datos correctos
-    // para actualizar el stock». Lo destapó la primera prueba de punta a punta
-    // POR LA PANTALLA: el mismo camino por API pasaba, porque el script de
-    // prueba se la pasaba a mano.
-    //
-    // Es el mismo argumento que para el origen: la ubicación es una propiedad de
-    // la sala, no un dato que el cliente elija.
-    const { data: mapaDestino } = await admin
-      .from("erp_sucursal_map").select("inv_ubicaciones, nombre")
-      .eq("erp_sucursal_id", erpDestino).maybeSingle();
-    const ubicDestino = deTrabajo(mapaDestino);
+    const ubicOrigen  = deTrabajo(porSucursal.get(erpOrigen));
+    const ubicDestino = deTrabajo(porSucursal.get(erpDestino));
 
     // ══════════════════════════════════════════════════════════════════════
     // PASO 2 · RECIBIR (en destino)
@@ -252,13 +258,22 @@ Deno.serve(async (req) => {
         return json({ ok: false, error: `No se pudo leer ni una línea del traslado ${idTraslado}.` }, 502);
 
       // Nombra a las DOS personas que el sistema no guarda —quien despachó y
-      // quien recibe—, y nada más: el origen es una columna de su propio
-      // listado. Misma gramática que el pedido y la devolución (ver
-      // `erp-traslado.ts`): lo que el sistema ya muestra no se repite acá.
-      const despacho = nombreCorto({ name: String(meta.erp_traslado?.by_name ?? "-") });
-      const concepto = soloAscii(
-        `rec ${nombreCorto({ ...emp, name: quien.name })} env ${despacho}`,
-      ).slice(0, CONCEPTO_MAX);
+      // quien recibe—, cada una con su sala. Misma gramática que el pedido y la
+      // devolución (ver `erp-traslado.ts`): lo que el sistema ya muestra no se
+      // repite acá, pero la sala de la PERSONA no la muestra en ningún lado —el
+      // listado trae origen y destino del movimiento, que no es lo mismo: una
+      // supervisión puede despachar desde una sala que no es la suya.
+      //
+      // La del despachador se guardó al enviar. Si es una solicitud vieja no
+      // está, y entonces el nombre va solo: un paréntesis equivocado es peor que
+      // ninguno.
+      const despacho = conSala(
+        { name: String(meta.erp_traslado?.by_name ?? "-") },
+        meta.erp_traslado?.by_sala ?? null,
+      );
+      const { concepto } = armarConcepto(
+        `REC ${conSala({ ...emp, name: quien.name }, codigoDeBranch(emp?.branch_id))} ENV ${despacho}`,
+      );
 
       const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
         process: "insert",
@@ -317,17 +332,27 @@ Deno.serve(async (req) => {
         error: "Este traslado lo confirma la sala que tiene el producto.",
       }, 403);
 
-    const { data: solicitante } = await admin
-      .from("employees").select("name, first_names, last_names").eq("id", sol.employee_id).maybeSingle();
+    const { data: solicitante, error: solicitanteErr } = await admin
+      .from("employees").select("name, first_names, last_names, branch_id")
+      .eq("id", sol.employee_id).maybeSingle();
+    if (solicitanteErr) throw solicitanteErr;
 
-    // Las dos personas del acuerdo: quien pidió el producto y quien lo soltó.
-    // El origen sale del listado del propio sistema, así que no se repite.
-    // Todo en ASCII, porque relee los bytes como Latin-1 y un acento sale
-    // partido en dos caracteres.
-    const concepto = soloAscii(
-      `pide ${nombreCorto(solicitante)} env ${nombreCorto({ ...emp, name: quien.name })}`,
+    // Las dos personas del acuerdo, cada una con su sala: quien pidió el
+    // producto y quien lo soltó. Este traslado no nace de un pedido, así que no
+    // tiene clave donde meter la sala —a diferencia del pedido y la devolución,
+    // que la llevan en `P102-S5-…`—, y acá son DOS salas distintas: la que pide
+    // y la que suelta. Va junto al nombre porque es lo que identifica a la
+    // persona: hay nombres repetidos entre salas y la columna «usuario» del
+    // listado es siempre la misma cuenta del portal.
+    //
+    // La sala es la de la PERSONA y no la del movimiento: con alcance de
+    // supervisión se puede despachar desde una sala ajena, y entonces el origen
+    // del listado no dice quién lo hizo.
+    const codigoDespacha = codigoDeBranch(emp?.branch_id);
+    const { concepto, recortado: conceptoRecortado, completo: conceptoCompleto } = armarConcepto(
+      `PIDE ${conSala(solicitante, codigoDeBranch(solicitante?.branch_id))}`
+      + ` ENV ${conSala({ ...emp, name: quien.name }, codigoDespacha)}`,
     );
-    const conceptoRecortado = concepto.length > CONCEPTO_MAX;
 
     // ── Una sesión propia, en la sala de ORIGEN ───────────────────────────
     const cookie = await sesionEn(erpOrigen);
@@ -518,7 +543,7 @@ Deno.serve(async (req) => {
       cuantos: String(partes.length),
       total: total.toFixed(4),
       fecha: hoySV(),
-      concepto: concepto.slice(0, CONCEPTO_MAX),
+      concepto,
       origen: String(ubicOrigen),         // la UBICACIÓN de donde sale
       id_suc_destino: String(erpDestino), // la SUCURSAL que recibe
       id_ubicacion_destino: "0",
@@ -574,6 +599,10 @@ Deno.serve(async (req) => {
     const aplicado = {
       at: new Date().toISOString(),
       by: quien.id, by_name: quien.name,
+      // La sala de quien despachó, para que el concepto de la RECEPCIÓN la
+      // pueda nombrar: ahí ya no se tiene a esta persona a mano, sólo lo que
+      // quedó guardado acá.
+      by_sala: codigoDespacha,
       id_traslado: idTraslado,
       // Si quedó en null, el traslado ENTRÓ igual: lo único que falta es el
       // número para poder recibirlo desde el portal. Se dice, no se calla.
@@ -582,9 +611,9 @@ Deno.serve(async (req) => {
       erp_sucursal_origen: erpOrigen,
       erp_ubicacion_origen: ubicOrigen,
       erp_sucursal_destino: erpDestino,
-      concepto: concepto.slice(0, CONCEPTO_MAX),
+      concepto,
       concepto_recortado: conceptoRecortado,
-      concepto_completo: conceptoRecortado ? concepto : undefined,
+      concepto_completo: conceptoRecortado ? conceptoCompleto : undefined,
       lineas: partes.length,
       unidades,
       total: Number(total.toFixed(4)),

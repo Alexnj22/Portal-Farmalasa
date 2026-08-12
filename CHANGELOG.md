@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.575.3 — El login ya no muestra el código del carné
+
+Al pasar el carné por el lector, la pantalla de login imprimía **Código: 123**
+arriba del mensaje de estado. Es la única pantalla del portal que se ve sin
+haber entrado —está a la vista de quien pase por el mostrador—, y ese número es
+la mitad de la credencial: con él se arma el PIN del kiosco.
+
+Ahora ese renglón dice **Lector de carné** y el código no sale del handler: no
+se guarda en el estado de React, sólo viaja a `login()`. La caja conserva sus
+dos renglones, así que no cambia de alto entre «Verificando…», «¡Acceso
+concedido!» y el error.
+
 ## v2.575.2 — Una carga sin lote no sale, salvo que conste que el producto no lo lleva
 
 Con `es_regulado` poblado, el portal sabe de casi todos los productos si llevan

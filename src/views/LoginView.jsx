@@ -221,19 +221,21 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         busyRef.current = true;
         endScanHold();
         setError('');
-        setScanFeedback({ status: 'reading', code, message: 'Verificando...' });
+        // El código leído NO se guarda en el estado: la pantalla de login es
+        // pública y llegó a mostrarlo en pantalla. Sólo viaja a `login()`.
+        setScanFeedback({ status: 'reading', message: 'Verificando...' });
         setIsLoading(true);
         try {
             const result = await login(code);
             if (!result.ok) {
-                setScanFeedback({ status: 'error', code, message: result.error || 'Carné no reconocido.' });
+                setScanFeedback({ status: 'error', message: result.error || 'Carné no reconocido.' });
                 setTimeout(() => setScanFeedback(cur => (cur?.status === 'error' ? null : cur)), 2500);
                 return false;
             }
-            setScanFeedback({ status: 'success', code, message: '¡Acceso concedido!' });
+            setScanFeedback({ status: 'success', message: '¡Acceso concedido!' });
             return true;
         } catch {
-            setScanFeedback({ status: 'error', code, message: 'Error de conexión' });
+            setScanFeedback({ status: 'error', message: 'Error de conexión' });
             setTimeout(() => setScanFeedback(cur => (cur?.status === 'error' ? null : cur)), 2500);
             return false;
         } finally {
@@ -406,7 +408,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <div className="flex-1 min-w-0 text-left">
                         {scanFeedback ? (
                             <>
-                                <p className="text-micro font-black uppercase tracking-widest text-content-3 truncate">Código: {scanFeedback.code}</p>
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3 truncate">Lector de carné</p>
                                 <p className={`text-body-sm font-bold truncate ${st==='error'?'text-danger':st==='success'?'text-success':'text-brand-text'}`}>{scanFeedback.message}</p>
                             </>
                         ) : cameraActive ? (

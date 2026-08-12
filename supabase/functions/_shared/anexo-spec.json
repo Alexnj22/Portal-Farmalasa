@@ -43,8 +43,8 @@
       "origen": {
         "columnas": 22,
         "mapa": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, null, null, 21],
-        "valor_diverge": [],
-        "motivo": "El origen trae un '0.0000' de mas en su columna 13, que el anexo no tiene, y no trae las dos de Renta de enero 2025. Todo lo demas se compara alineado."
+        "valor_diverge": [7, 8],
+        "motivo": "El origen trae un '0.0000' de mas en su columna 13, que el anexo no tiene, y no trae las dos de Renta de enero 2025. Ademas las dos columnas del CODIGO DE GENERACION del primer y ultimo documento del dia (7 y 8) divergen SIEMPRE, y no por un desajuste de forma: el origen pone el minimo y el maximo ALFABETICOS del dia en vez del primero y el ultimo emitidos. Verificado el 2026-08-11 sobre S001P005 del 01/06: min() y max() del texto de los codigos de ese dia dan exactamente los dos que el trae, y sus propias columnas de id interno apuntan a otros dos documentos. Nosotros emitimos los correctos, ordenados por correlativo, asi que compararlas daria DIFIERE todos los dias por un error que es del origen. Si algun dia el origen lo corrige, hay que sacarlas de aca y volveran a compararse."
       }
     },
     "contribuyente": {

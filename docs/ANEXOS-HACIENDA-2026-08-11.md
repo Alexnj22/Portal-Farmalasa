@@ -123,10 +123,10 @@ emitido.
 | A | Fecha de emisión | `DD/MM/AAAA` |
 | B | Clase de documento | `4` |
 | C | Tipo de documento | `01` factura · `02` venta simplificada · `10` tiquetes · `11` exportación |
-| D | Número de resolución | **`N/A`** (porque se agrupa por día) |
-| E | Serie de documento | **`N/A`** |
-| F | Número de control interno (del) | **`N/A`** |
-| G | Número de control interno (al) | **`N/A`** |
+| D | Número de resolución | el manual dice **`N/A`**; el archivo real que se presenta lleva el **número de control del primer DTE** — ver la nota de abajo |
+| E | Serie de documento | manual: `N/A`; archivo real: **sello de recepción del primero** |
+| F | Número de control interno (del) | manual: `N/A`; archivo real: **id interno del primero** |
+| G | Número de control interno (al) | manual: `N/A`; archivo real: **id interno del último** |
 | H | Número de documento (**del**) | **código de generación del PRIMER DTE del día** |
 | I | Número de documento (**al**) | **código de generación del ÚLTIMO DTE del día** |
 | J | Nº de máquina registradora | **en blanco** (ni siquiera cero) |
@@ -146,6 +146,14 @@ emitido.
 
 Nota del manual: las exportaciones se **cruzan contra lo que reporta la
 Dirección General de Aduanas**.
+
+**Nota sobre `D`–`G` y el `N/A`** (agregada el 2026-08-11, corrige lo que decía
+antes este documento): el manual pide literalmente `N/A` en esas cuatro por
+tratarse de DTE agrupados por día, pero **el anexo real que se presenta las
+lleva con datos** —número de control y sello del primer documento, e ids
+internos del primero y el último— y Hacienda lo acepta. Se verificó contra la
+línea de junio 2026 del archivo del contador. **Manda el archivo aceptado, no la
+lectura literal del manual.**
 
 ### Anexo 3 — Compras · 21 columnas
 
@@ -251,7 +259,7 @@ resulta que ese formato es el del anexo — pero no en todos los casos está al 
 | Anulados | 10 | 10 | **coincide**, salvo un detalle (ver abajo) |
 | Compras | 23 | 21 | A–U alineado; **col. C sale vacía** y sobran 2 columnas al final |
 | Ventas a contribuyentes | 19 | 20 | **no coinciden** |
-| Ventas a consumidor final | 22 | 23 | **no coinciden** |
+| Ventas a consumidor final | ~~22~~ → **23** | 23 | ✅ **corregido el 2026-08-11 (v2.569.1)** — ver §7 |
 
 Hallazgos concretos, todos verificables abriendo el archivo:
 
@@ -268,9 +276,11 @@ Hallazgos concretos, todos verificables abriendo el archivo:
    ahí tendría que ser gasto (`2`) y sector `4`. Hoy nadie lo distingue.
 4. **En compras sobran dos columnas** al final (percepción con 4 decimales y
    sello). Son del libro, no del anexo.
-5. **En consumidor final, las columnas D-E-F-G llevan datos** (número de
-   control, sello, ids internos) donde el manual pide literalmente `N/A` por
-   tratarse de DTE agrupados por día.
+5. ~~En consumidor final, las columnas D-E-F-G llevan datos donde el manual pide
+   `N/A`.~~ **Este hallazgo era falso** y se retira (2026-08-11): el anexo real
+   que el contador presenta también las lleva con datos, y Hacienda lo acepta.
+   Leí el manual como si fuera la práctica. En su lugar, en consumidor final
+   había algo peor y está en §7.
 6. **En anulados, el código de generación va sin guiones (32 caracteres)** y el
    manual pide **36**.
 7. **En contribuyentes, el NIT va en la penúltima columna**, que en el anexo es
@@ -447,6 +457,74 @@ si la farmacia compra a sujetos excluidos; si compra, hoy eso no se ve.
 - **El F-971 no es alcanzable sin contabilidad formal.** El orden está en
   `CONTABILIDAD-ALCANCE-2026-08-01.md` §5: primero el costo por línea vendida.
   Sin eso no hay estado de resultados.
+
+---
+
+## 7. El cotejo contra el anexo real, y lo que se corrigió (2026-08-11)
+
+El contador mandó su archivo `anexos junio`. Una línea de ventas a consumidor
+final, sucursal `S001P005`, día 01/06/2026 — y con eso se resolvió el anexo 2
+entero, porque un archivo aceptado vale más que la lectura del manual.
+
+**Suyo (23 columnas):**
+
+```
+01/06/2026 · 4 · 01 · DTE01S001P005000000000019619 · 2026AA4324…207KW8 · 297361 · 298111
+010D5CAF 6015 4E83 B0AC 43B6DE45F6CE · FF69D633 1855 4164 8A92 02EF215E0731 · (vacío)
+0 · 0 · 0 · 1164.98 · 0 · 0 · 0 · 0 · 0 · 1164.98 · 1 · 3 · 2
+```
+
+**El del portal, mismo día y sucursal, antes de corregir (22 columnas):**
+
+```
+01/06/2026 · 4 · 01 · DTE01S001P005000000000019619 · 2026AA4324…207KW8 · 297361 · 298111
+A8AEE366 35E0 44B1 BE80 CE99BBC8DAAF · E0CA8B8C 90B8 4340 AE83 F3B2957E724E · (vacío)
+0.00 · 0.00 · 0.00 · 0.0000 · 1164.98 · 0.00 · 0.00 · 0.00 · 0.00 · 0.00 · 1164.98 · 2
+```
+
+### Lo que estaba mal del lado del portal — y era grave
+
+Sobraba un **`0.0000`** entre «no sujetas» y «gravadas locales». No es una
+columna de más al final: **corría todo el resto un lugar a la izquierda**. En esa
+fila, con $1,164.98 de ventas de un día:
+
+| Casilla del anexo | Lo que caía ahí |
+|---|---|
+| N — ventas gravadas locales | **0.00** |
+| O — exportaciones dentro del área centroamericana | **1,164.98** |
+| S — venta a cuenta de terceros no domiciliados | **1,164.98** |
+| T — total de ventas | **0.00** |
+| V — tipo de ingreso (Renta) | **2** (era el número de anexo) |
+
+Un archivo así declara la venta del mes como **exportación** y cero de ventas
+gravadas. Corregido en **v2.569.1**: se quitó el `0.0000` y se agregaron
+`1` (gravada) y `3` (actividades comerciales) antes del número de anexo. La
+salida ahora es idéntica en estructura a la del contador.
+
+### Lo que está mal del lado de su archivo — y no se copió
+
+Las columnas `H` e `I` deben llevar el código de generación del **primer** y del
+**último** DTE del día. Su archivo lleva **el mínimo y el máximo alfabéticos**:
+
+- `min()` y `max()` del texto de los códigos de ese día en esa sucursal dan
+  exactamente `010D5CAF…` y `FF69D633…` — los dos que trae.
+- Los reales son `A8AEE366…` (id interno **297361**, correlativo 51106) y
+  `E0CA8B8C…` (id **298111**, correlativo 51241).
+- **Sus propias columnas F y G declaran 297361 → 298111.** O sea que el archivo
+  se contradice a sí mismo: dice un rango y muestra los códigos de otros dos
+  documentos, del medio del día.
+
+Un código de generación es un UUID y no tiene orden temporal, así que cuál cae
+de cada lado es azar — por eso en unos días salen invertidos y en otros no. Es
+el hallazgo §4.1 de `LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md`, ahora con su
+causa. El portal sigue emitiendo los correctos.
+
+### Lo que quedó pendiente de este cotejo
+
+**Falta la línea de ventas a contribuyentes de ese mismo archivo.** Es el que el
+contador dijo que está mal, y sin su versión no se sabe cuál de las dos columnas
+sospechosas del nuestro sobra (la 11, formateada como dinero, o la 12, entera).
+Con esa línea el anexo 1 se cierra igual de rápido que éste.
 
 ---
 

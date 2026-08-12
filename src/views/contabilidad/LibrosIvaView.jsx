@@ -822,22 +822,40 @@ const construirLibro = (tab, d, tot) => {
         // lleva: clase y tipo, el código de generación del primero y del
         // último del día, el sello del primero y los IDs del ERP. Los cinco
         // estaban guardados y este CSV no los sacaba.
-        // Réplica del archivo real (22 columnas, sin encabezado), verificada
-        // columna por columna contra junio 2026 el 2026-08-01.
+        // **23 columnas**, sin encabezado. Eran 22 hasta el 2026-08-11: se
+        // cotejó contra el anexo de junio que el contador presenta y contra el
+        // manual del F-07 v14, y sobraba un '0.0000' entre "no sujetas" y
+        // "gravadas locales" que corría TODO el resto un lugar. Con $1,164.98
+        // de ventas de un día, la casilla de gravadas quedaba en cero y el
+        // monto se declaraba como **exportación dentro del área
+        // centroamericana**. Los cuatro decimales eran la pista: acá Hacienda
+        // toma dos en todas.
         //
-        // Las columnas 10-13 y 15-19 van en cero porque están en cero en TODA
-        // la muestra disponible. No se pudo determinar cuál es cuál —haría
-        // falta un día con ventas exentas o exportaciones, y no existe uno en
-        // el histórico—, así que quedan escritas como constantes y dichas
-        // acá en vez de adivinadas.
+        // Las que faltaban al final son las de enero 2025, y para una farmacia
+        // son constantes: tipo de operación 1 (gravada) y tipo de ingreso 3
+        // (actividades comerciales).
+        //
+        // Ahora las columnas sí están identificadas —salen del manual, no de
+        // mirar ceros—: 11 exentas · 12 exentas no sujetas a proporcionalidad ·
+        // 13 no sujetas · 14 gravadas locales (con IVA) · 15-17 exportaciones
+        // dentro de CA, fuera de CA y de servicios · 18 zonas francas y DPA ·
+        // 19 cuenta de terceros · 20 total.
         //
         // Las de código de generación son las DOS que el reporte original
-        // trae MAL: verificado en 2 de 2 días, no son las del primero ni las
-        // del último documento del día sino las de documentos del medio, y
-        // encima invertidas entre sí (el que llama "al" tenía correlativo
-        // MENOR que el "del"). Acá van las correctas. Replicar un dato
-        // equivocado en un libro que se declara sería copiar el error, no el
-        // formato — misma decisión que con las notas de crédito.
+        // trae MAL, y el 2026-08-11 apareció la causa: el origen toma el
+        // **mínimo y el máximo alfabéticos** del código de generación del día,
+        // no el del primer y último documento emitido. Verificado contra el
+        // anexo de junio del contador, sucursal S001P005 del 01/06: trae
+        // `010D5CAF…` y `FF69D633…`, que son exactamente `min()` y `max()` del
+        // texto de los UUID de ese día; los reales son `A8AEE366…` (erp 297361,
+        // correlativo 51106) y `E0CA8B8C…` (erp 298111, correlativo 51241) —
+        // los mismos ids internos que el propio archivo declara dos columnas
+        // antes. Un UUID no tiene orden temporal, así que cuál cae de cada lado
+        // es azar: por eso en unos días salen invertidos y en otros no.
+        //
+        // Acá van las correctas. Replicar un dato equivocado en un libro que se
+        // declara sería copiar el error, no el formato — misma decisión que con
+        // las notas de crédito.
         return { base: 'libro-consumidor-final', headers: null, rows:
             d.consumidor.map(r => [
                 fmtFecha(r.fecha), '4', '01',
@@ -846,11 +864,11 @@ const construirLibro = (tab, d, tot) => {
                 r.erp_id_del || '', r.erp_id_al || '',
                 cgEspacios(r.codigo_gen_del), cgEspacios(r.codigo_gen_al),
                 '',
-                num(r.ventas_exentas), '0.00', '0.00', '0.0000',
+                num(r.ventas_exentas), '0.00', '0.00',
                 num(r.ventas_gravadas),
                 '0.00', '0.00', '0.00', '0.00', '0.00',
                 num(r.total_diario),
-                '2',
+                '1', '3', '2',
             ]) };
     }
     if (tab === 'contribuyente') {

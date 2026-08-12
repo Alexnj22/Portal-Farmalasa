@@ -21,29 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.569.2 — un solo parser de las pantallas de traslado
-
-Se cierra la última deuda declarada del traslado. Los parsers de las pantallas
-del sistema —leer una fila de existencias, los lotes, la lista de pendientes,
-la sesión por sucursal— vivían **duplicados** en `aplicar-traslado-inventario` y
-en `_shared/erp-traslado.ts`.
-
-Se dejaron así a propósito y por un rato: no se refactoriza una función que
-mueve inventario real en el mismo cambio que estrena otra. Pero son parsers de
-HTML, y dos copias que se toquen por separado leen la misma pantalla distinto —
-el día que el sistema cambie un `<select>`, una se arregla y la otra no.
-
-Ahora `aplicar-traslado-inventario` importa del módulo compartido y borró las
-suyas. La extracción es literal: el módulo se armó copiando de ese archivo.
-
-Verificado después de desplegar las dos funciones: la vieja contesta 401 sin
-sesión y 404 ante una solicitud inexistente —o sea que el módulo carga, la
-autenticación corre y llega a leer la base—, y la nueva sigue negándose por
-hojas no confiables. Ninguna cambió de comportamiento.
-
-_(pendiente de redactar)_
-
-## v2.569.1 — El anexo de consumidor sale con sus 23 columnas
+## v2.569.3 — El anexo de consumidor sale con sus 23 columnas
 
 **Una columna de más corría toda la fila, y las ventas se declaraban como
 exportaciones.** El archivo de ventas a consumidor final salía con 22 columnas
@@ -75,6 +53,28 @@ correctos, ordenados por correlativo.
 
 El libro de ventas a contribuyentes tiene sus propios hallazgos y no se tocó
 todavía: están en `docs/AUDITORIA-LIBRO-CONTRIBUYENTES-2026-08-11.md`.
+
+## v2.569.2 — un solo parser de las pantallas de traslado
+
+Se cierra la última deuda declarada del traslado. Los parsers de las pantallas
+del sistema —leer una fila de existencias, los lotes, la lista de pendientes,
+la sesión por sucursal— vivían **duplicados** en `aplicar-traslado-inventario` y
+en `_shared/erp-traslado.ts`.
+
+Se dejaron así a propósito y por un rato: no se refactoriza una función que
+mueve inventario real en el mismo cambio que estrena otra. Pero son parsers de
+HTML, y dos copias que se toquen por separado leen la misma pantalla distinto —
+el día que el sistema cambie un `<select>`, una se arregla y la otra no.
+
+Ahora `aplicar-traslado-inventario` importa del módulo compartido y borró las
+suyas. La extracción es literal: el módulo se armó copiando de ese archivo.
+
+Verificado después de desplegar las dos funciones: la vieja contesta 401 sin
+sesión y 404 ante una solicitud inexistente —o sea que el módulo carga, la
+autenticación corre y llega a leer la base—, y la nueva sigue negándose por
+hojas no confiables. Ninguna cambió de comportamiento.
+
+_(pendiente de redactar)_
 
 ## v2.569.0 — recibir un producto suelto, y ver el traslado en la tarjeta
 

@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:staging": "vite --mode staging",
     "build": "vite build --outDir ${OUT_DIR:-dist}",
+    "build:staging": "vite build --mode staging --outDir ${OUT_DIR:-dist-staging}",
     "lint": "eslint .",
     "preview": "vite preview --outDir ${OUT_DIR:-dist} --strictPort --port ${QA_PORT:-4173}",
     "test": "vitest run",

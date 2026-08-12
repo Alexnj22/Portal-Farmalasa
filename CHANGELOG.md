@@ -21,6 +21,70 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.573.0 — Entorno de pruebas: los branches se construyen solos
+
+`create_branch` no producía un staging usable: moría en la primera migración de
+abril y dejaba el branch a 24 de 288. La causa era que **el historial no
+alcanzaba para reconstruir la base**, por tres motivos distintos que había que
+destrabar en orden.
+
+1. **Las 731 migraciones legacy** (abr–jul 2026) seguían en el registro de prod
+   aunque el proyecto ya las había archivado en `migrations-legacy/`. Un branch
+   replica el historial del padre, así que intentaba correrlas y chocaba con
+   `employees.is_admin`, una columna que no existe desde julio. Borradas del
+   registro —`migration-gate` ya las ignoraba desde el corte del 29-jul, o sea
+   que eran ruido muerto para el propio tooling— con respaldo íntegro en
+   `supabase_migrations.schema_migrations_legacy_bak_20260812`.
+2. **Los datos que las migraciones dan por sentados.** 25 migraciones insertan
+   permisos con `role_id` fijos, y un branch nace sin datos: la FK a `roles`
+   rompía el replay. Nueva migración `20260729223031` con `roles`, `branches` y
+   las 1,330 filas de `role_permissions`.
+3. **Storage.** Los 9 buckets y sus 22 policies se habían creado desde el panel,
+   no por migración, así que un `ALTER POLICY ... ON storage.objects` no
+   encontraba nada que alterar. Nueva migración `20260729223032`.
+
+Más `20260812160000`, con 300 productos —elegidos entre los que tienen
+existencias, para que las pantallas no se vean muertas—, sus precios,
+existencias y parámetros de MIN·MAX, y una cuenta de pruebas. **Las tres son
+no-op en producción**, verificado ejecutándolas y comparando los conteos antes y
+después; la cuenta además sólo se crea si la base no tiene ni un empleado.
+
+Resultado medido: un branch nuevo llega a las 288 migraciones y su esquema es
+idéntico al de prod en las cuatro huellas md5 (tablas, funciones, policies,
+índices) más el conteo de tablas con RLS.
+
+Del lado del portal, `npm run dev:staging` levanta contra ese entorno y
+`src/entorno.js` **deriva** de la URL si es producción o no —en vez de una
+bandera aparte, que se puede olvidar justo cuando importa— para pintar un marco
+y una píldora de aviso. Van fuera de `<Routes>`: aparecen también en el login,
+antes de que alguien escriba una contraseña creyendo estar en otro lado.
+
+También: `migration-gate` contaba las filas pre-baseline con una constante fija
+(731) y la imprimía sin medirla. Al quedar el registro en cero, el gate pasaba
+en verde anunciando algo falso. Ahora las cuenta en vivo.
+
+## v2.572.2 — El PDF del Corte Z vuelve a una hoja por sucursal
+
+La nota de la retención (v2.571.7) y las comprobaciones (v2.572.0) empujaban una
+**segunda hoja** con puro texto. Decisión del usuario: el PDF lleva las cifras,
+la pantalla lleva la explicación.
+
+Salen del PDF los dos bloques y sus estilos. **Se quedan** las cifras, que son
+lo que se presenta: las tres secciones del ticket, el TOTAL GENERAL, «Para la
+declaración», el cotejo completo y su línea de retención — esa es una fila, cabe
+en la hoja, y sin ella el cuadro tendría un número que no se puede seguir.
+
+En el portal no cambia nada: la nota y las seis comprobaciones siguen ahí.
+
+Queda escrito en el encabezado de `corteZPrint.js` que **una hoja por sucursal
+es un requisito, no una casualidad**, para que el próximo bloque que se quiera
+agregar se mida contra eso primero.
+
+**Consecuencia asumida:** sin la nota, la hoja muestra los totales de sección
+del ticket (que suman $49,501.94 en Salud 3 de julio) junto a un TOTAL GENERAL
+de $49,544.86, sin decir por qué difieren. La explicación está en pantalla y el
+cotejo de la misma hoja muestra las dos columnas cuadrando en cero.
+
 ## v2.572.1 — El cargo se resuelve contra la tabla, y si no resuelve no se escribe
 
 Paso 1 de `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`. **El bug estaba

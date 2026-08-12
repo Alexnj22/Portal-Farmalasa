@@ -47,9 +47,12 @@ const BASELINE = '20260101000000';
  *  que el gate detecta. Solo cambia si algún día se re-genera el baseline. */
 const CORTE = '20260729223030';
 
-/** Filas del registro de prod que son historia pre-baseline (medido al cierre de C2).
- *  Informativo: sirve para notar si el registro cambió de forma inesperada. */
-const PRE_BASELINE_ESPERADAS = 731;
+/* Acá vivía PRE_BASELINE_ESPERADAS = 731, las filas de historia pre-baseline
+ * medidas al cierre de C2. Se eliminó el 2026-08-12: ese día esas 731 filas se
+ * borraron del registro de prod —eran lo que hacía fallar a `create_branch`, que
+ * replica el historial del padre y moría en las migraciones de abril— y quedaron
+ * respaldadas en `supabase_migrations.schema_migrations_legacy_bak_20260812`.
+ * El gate ahora las cuenta en vivo en vez de anunciar una constante. */
 
 const NOMBRE = /^(\d{14})_([a-z0-9_]+)\.sql$/;
 
@@ -169,16 +172,26 @@ if (process.argv.includes('--remote')) {
     restaurar();
   }
 
-  let filas;
+  let filas, preBaseline;
   process.on('exit', restaurar);
   for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { restaurar(); process.exit(130); });
   try {
     mover('.env', HOLD);
-    const sql = `select version, name from supabase_migrations.schema_migrations
-                 where version = '${BASELINE}' or version >= '${CORTE}' order by version`;
-    const out = execFileSync('supabase', ['db', 'query', '--linked', '--agent', 'no', '-o', 'json', sql],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-    filas = JSON.parse(out);
+    const consultar = (sql) => JSON.parse(execFileSync(
+      'supabase', ['db', 'query', '--linked', '--agent', 'no', '-o', 'json', sql],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
+
+    filas = consultar(`select version, name from supabase_migrations.schema_migrations
+                       where version = '${BASELINE}' or version >= '${CORTE}' order by version`);
+
+    // Se CUENTAN, no se asumen. Hasta el 2026-08-12 este número era la constante
+    // PRE_BASELINE_ESPERADAS (731) impresa a ciegas; ese día las filas legacy se
+    // borraron del registro para que `create_branch` pudiera replicar el esquema,
+    // y el gate siguió anunciando 731 ignoradas cuando ya no quedaba ninguna. Un
+    // gate que reporta un número que no midió miente incluso estando en verde.
+    preBaseline = Number(consultar(
+      `select count(*) as n from supabase_migrations.schema_migrations
+       where version <> '${BASELINE}' and version < '${CORTE}'`)[0]?.n ?? 0);
   } catch (e) {
     console.log(`\n  ⚠ No pude leer el registro de prod (${e.message.split('\n')[0]}).`);
     console.log('    Los chequeos locales de arriba sí corrieron. Para el cruce hace falta');
@@ -189,7 +202,10 @@ if (process.argv.includes('--remote')) {
 
   if (filas) {
     const remotas = new Map(filas.map(f => [f.version, f.name]));
-    console.log(`  registro de prod: ${remotas.size} fila(s) desde el corte (+ ${PRE_BASELINE_ESPERADAS} pre-baseline ignoradas)`);
+    const nota = preBaseline === 0
+      ? 'sin filas pre-baseline'
+      : `+ ${preBaseline} pre-baseline ignoradas`;
+    console.log(`  registro de prod: ${remotas.size} fila(s) desde el corte (${nota})`);
 
     for (const [version, name] of remotas) {
       if (!versiones.has(version)) {

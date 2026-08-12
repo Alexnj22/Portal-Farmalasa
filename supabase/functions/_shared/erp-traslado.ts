@@ -59,6 +59,12 @@ export const CONCEPTO_MAX = 200;
  *   DEV-P102-S5-H1-I71445 REC DOLORES TEJADA      (la devolución entra a bodega)
  *   PIDE ADRIANA RAMIREZ (S1) ENV DOLORES TEJADA (BO)   (traslado entre salas)
  *
+ * El segmento del medio dice POR DÓNDE viaja el renglón: `H<n>` una hoja
+ * numerada del despacho, `CE` una caja especial —Electrolit, andaderas, sillas—,
+ * que no lleva hoja. La caja especial MANDA sobre la hoja: la clave la arma
+ * `planificar_traslado_pedido` mirando la regla del producto, no la foto de las
+ * hojas impresas, que se congela al imprimir y puede haber quedado vieja.
+ *
  * **La sala del renglón va DENTRO de la clave, no pegada al nombre.** Por eso el
  * pedido y la devolución no repiten `(S5)`: ya está en `P102-S5-…`. El traslado
  * entre salas no tiene clave —no nace de un pedido—, así que ahí la sala sí se

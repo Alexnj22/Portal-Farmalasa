@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.3 — La caja especial se llama CE en la clave, y manda sobre la hoja
+
+El segmento del medio decía `HA` —«hoja A»— para los productos que no viajan en
+una hoja numerada sino en cajas especiales: Electrolit, andaderas, bastones,
+sillas. No es ninguna hoja y no dice qué es. Ahora dice **`CE`**:
+
+```
+P102-S5-H1-I71445    ← viaja en la hoja 1 del despacho
+P101-S3-CE-I71417    ← viaja en caja especial (ELECTROLIT UVA)
+P33-S5-CE-I35148     ← viaja en caja especial (ANDADERA PLEGABLE C/ RUEDAS)
+```
+
+La `H` desaparece porque una caja especial no es una hoja. El segmento pasa a
+decir **por dónde viaja** el renglón, con dos respuestas posibles.
+
+**Y la caja especial ahora manda sobre la hoja.** Antes la hoja ganaba
+(`COALESCE(hoja, 'A')`), así que un producto de caja especial que además
+figuraba en la foto de las hojas impresas salía con hoja: medido,
+`P100-S3-H3-I70667` para un ELECTROLIT UVA. La causa era un dato mal puesto —esa
+regla no tenía activo el interruptor de caja especial, y ya se corrigió— pero la
+fórmula no debe depender de que el dato esté bien. Si el producto **es** de caja
+especial, la clave lo dice. Es además lo que hace el PDF, que evalúa la regla de
+hoy (`isAdicional`, `pedidoPrint.js:43`) y no la foto de lo que se imprimió
+alguna vez; con el orden invertido, la clave y el papel vuelven a coincidir.
+
+El interruptor vive en la regla del producto (`dispatch_rules.caja_especial`,
+21 productos activos) y se copia al renglón al confirmar el pedido. Verificado
+contra prod: los 5 renglones de caja especial de los últimos 6 pedidos dan `CE`,
+incluido el que antes daba `H3`; y los renglones normales siguen dando `H<n>`.
+
+Lo que la clave **no** puede decir todavía es en qué caja concreta (`E1`, `E2`)
+viajó: esas etiquetas se calculan al imprimir, en el navegador, y no se guardan
+en ninguna columna.
+
 ## v2.571.2 — La clave del traslado nombra la sala como el portal, y el concepto va en mayusculas
 
 La clave decía `P102-S7-H1-I71445` para un pedido de **Salud 5**. El `S7` era el

@@ -220,8 +220,22 @@ De ahí la regla: **el concepto no repite nada que el sistema ya muestre.** Qued
 |---|---|---|
 | `P102` | `pedidos.numero` | El pedido 102, el mismo número del portal y del PDF de despacho. |
 | `S5` | `erp_sucursal_map.codigo` | La sala. **Salud 5**, no la numeración interna. |
-| `H1` | `pedido_items.hoja` | La hoja 1 del despacho. `HA` si viaja en las cajas adicionales (E1, E2…), que no llevan hoja numerada. |
+| `H1` | `pedido_items.hoja` | **Por dónde viaja.** `H<n>` = la hoja n del despacho; **`CE` = caja especial** (Electrolit, andaderas, sillas), que no lleva hoja numerada. |
 | `I71445` | `pedido_items.id` | El renglón del pedido. Es el único pedazo que hace la clave única: una hoja lleva muchos productos. |
+
+La **caja especial manda sobre la hoja**: si el producto la tiene activa en su
+regla, la clave dice `CE` aunque el renglón figure en la foto de las hojas
+impresas. Esa foto se congela al imprimir y la regla se evalúa hoy, así que
+pueden discrepar — pasó con un ELECTROLIT UVA que salió `H3`, por una regla que
+todavía no tenía el interruptor. La regla se corrigió, pero **la fórmula no
+depende de que el dato esté bien**: si el producto es de caja especial, la clave
+lo dice. Es además lo que hace el PDF, que también mira la regla de hoy
+(`isAdicional`, `pedidoPrint.js:43`) y no la foto.
+
+Lo que la clave **no** puede decir todavía es en qué caja concreta (`E1`, `E2`)
+viajó: esas etiquetas se calculan al imprimir, en el navegador, y no se guardan
+—`pedido_items` no tiene columna de caja—. Para que la clave dijera `CE1` habría
+que persistirlas primero.
 
 Cinco decisiones adentro:
 

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.573.4 — El PDF dice en una línea cuál total es el correcto
+
+Al sacar la segunda hoja (v2.573.2) quedó una hoja con **dos números para lo
+mismo y nada que dijera cuál usar**: la sección «Ventas con crédito fiscal»
+imprime Total $976.73 y unos renglones más abajo «Para la declaración» imprime
+$980.33. Sumadas, las tres secciones dan $49,501.94 contra un TOTAL GENERAL de
+$49,544.86.
+
+No es que faltara contexto: **la hoja estaba mal armada**. Lo confirmó el
+usuario al no poder leerla, que es la única prueba que vale para un documento
+que se presenta.
+
+Un renglón bajo el TOTAL GENERAL, y sólo cuando hay retención:
+
+> Las secciones de arriba copian el Corte Z, que resta $42.92 de retención dos
+> veces. Este total es el correcto.
+
+Va pegado al número que corrige y no al pie, porque una aclaración que se lee
+tres bloques después del dato ya no aclara. La hoja sigue siendo una.
+
+Se conserva la fotocopia completa del ticket —decisión del usuario entre quitar
+el renglón malo o explicarlo— porque el PDF es también la constancia de qué
+declaró la sucursal.
+
 ## v2.573.3 — Una solicitud se decide una sola vez, aunque haya dos pestañas
 
 Con el portal abierto en varias pestañas, la campana sí se ponía al día sola

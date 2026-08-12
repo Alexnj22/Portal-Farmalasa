@@ -4,11 +4,18 @@ import { EMPRESA } from '../constants/empresa';
 // PDF del Corte Z — uno o todas las sucursales en un solo archivo.
 //
 // UNA HOJA POR SUCURSAL, y es un requisito, no una casualidad (decisión del
-// usuario, 2026-08-12). El PDF lleva las cifras: las tres secciones del ticket,
-// el total, las cifras para declarar y el cotejo. Lo que EXPLICA —la nota de la
-// retención duplicada y las seis comprobaciones— vive en la pantalla y se sacó
-// de acá porque empujaba una segunda hoja. Antes de agregar cualquier bloque
-// nuevo: si no cabe en la hoja, no va.
+// usuario, 2026-08-12). El PDF lleva las cifras —las tres secciones del ticket,
+// el total, las cifras para declarar y el cotejo— más UN renglón de explicación
+// bajo el total. Las seis comprobaciones viven sólo en la pantalla: se sacaron
+// de acá porque empujaban una segunda hoja de puro texto.
+//
+// Ese renglón único es lo que se conservó de la explicación, y no es opcional:
+// las secciones copian el ticket con su resta duplicada, así que sumadas dan
+// MENOS que el TOTAL GENERAL. Sin la línea, la hoja tiene dos números para lo
+// mismo y nada que diga cuál usar — que fue exactamente lo que confundió al
+// usuario cuando se probó sin ella.
+//
+// Antes de agregar cualquier bloque nuevo: si no cabe en la hoja, no va.
 //
 // pdfmake va por `await import()`: son ~809 kB gzip que solo hacen falta al
 // apretar el botón, no al entrar a la vista (regla de librerías pesadas de
@@ -130,8 +137,21 @@ function bloqueSucursal(fila, { conSalto }) {
                 ]],
             },
             layout: 'noBorders',
-            margin: [0, 6, 0, 14],
+            margin: [0, 6, 0, conRetencion ? 2 : 14],
         },
+
+        // El único renglón de explicación que lleva la hoja, y sólo cuando hace
+        // falta. Las tres secciones de arriba son la copia del ticket, así que
+        // arrastran su resta duplicada: sumadas dan menos que este total. Sin
+        // esta línea, la hoja tiene dos números para lo mismo —«Total $976.73»
+        // en la sección y «$980.33» en la declaración— y el lector tiene que
+        // adivinar cuál usar. Va acá y no al pie porque se lee junto al número
+        // que corrige.
+        ...(conRetencion ? [{
+            text: `Las secciones de arriba copian el Corte Z, que resta `
+                + `${dinero(fila.retencion)} de retención dos veces. Este total es el correcto.`,
+            style: 'nota',
+        }] : []),
 
         { text: 'Para la declaración', style: 'secTitulo' },
         {
@@ -225,6 +245,7 @@ export async function descargarCorteZPdf(filas, nombreArchivo) {
             totalVal:  { fontSize: 12, bold: true, alignment: 'right' },
             ok:        { fontSize: 9, color: '#1a7f37' },
             alerta:    { fontSize: 9, color: '#b42318', bold: true },
+            nota:      { fontSize: 8, color: '#555', margin: [0, 0, 0, 12], lineHeight: 1.25 },
         },
         defaultStyle: { fontSize: 9 },
     };

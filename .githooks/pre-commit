@@ -106,6 +106,17 @@ if git diff --cached --name-only | grep -qE '^src/(views|components)/'; then
   node scripts/mobile-gate.mjs --hook || exit 1
 fi
 
+# Una hoja por sucursal en el PDF del Corte Z: sólo si el commit toca el archivo
+# que lo arma. Renderiza el documento con el motor de Node y CUENTA las páginas.
+#
+# Existe porque el requisito se rompió TRES veces el 2026-08-12 —el bloque de
+# comprobaciones, después un único renglón de veredicto que se pasó solo, y de
+# nuevo el aviso del total— y las tres las encontró el usuario abriendo el
+# archivo. El alto de una hoja no se lee en el código: se mide. ~2s, sin red.
+if git diff --cached --name-only | grep -q '^src/utils/corteZPrint\.js$'; then
+  node scripts/corte-z-una-hoja.mjs || exit 1
+fi
+
 # La FORMA de los anexos que se presentan a Hacienda: sólo si el commit toca lo
 # que los produce. Corre en ~1s y sin red.
 #

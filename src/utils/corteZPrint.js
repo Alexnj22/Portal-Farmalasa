@@ -214,16 +214,20 @@ function bloqueSucursal(fila, { conSalto }) {
 }
 
 /**
+ * El documento, separado de su descarga: así se puede MEDIR sin un navegador.
+ *
+ * `scripts/corte-z-una-hoja.mjs` lo renderiza con el motor de Node y cuenta las
+ * hojas. Existe porque «una hoja por sucursal» se rompió dos veces seguidas sin
+ * que nada avisara —primero por las comprobaciones, después por un solo renglón
+ * de veredicto que se pasó solo— y mirar el código no lo detecta: el alto de una
+ * hoja no se lee, se mide.
+ *
  * @param {Array} filas  las que devuelve `get_cortes_z` (una por sucursal)
- * @param {string} nombreArchivo
  */
-export async function descargarCorteZPdf(filas, nombreArchivo) {
-    if (!filas?.length) throw new Error('No hay Corte Z para descargar en este período.');
-    const pdfMake = await getPdfMake();
-
-    const doc = {
+export function construirCorteZDoc(filas) {
+    return {
         pageSize: 'LETTER',
-        pageMargins: [40, 40, 40, 44],
+        pageMargins: [40, 34, 40, 30],
         // El pie lleva el número de página porque el archivo de "todas las
         // sucursales" es una sucursal por hoja: sin numerar, dos hojas sueltas
         // no se sabe si son de la misma corrida.
@@ -249,6 +253,14 @@ export async function descargarCorteZPdf(filas, nombreArchivo) {
         },
         defaultStyle: { fontSize: 9 },
     };
+}
 
-    pdfMake.createPdf(doc).download(nombreArchivo);
+/**
+ * @param {Array} filas  las que devuelve `get_cortes_z` (una por sucursal)
+ * @param {string} nombreArchivo
+ */
+export async function descargarCorteZPdf(filas, nombreArchivo) {
+    if (!filas?.length) throw new Error('No hay Corte Z para descargar en este período.');
+    const pdfMake = await getPdfMake();
+    pdfMake.createPdf(construirCorteZDoc(filas)).download(nombreArchivo);
 }

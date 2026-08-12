@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "gate:design": "node scripts/design-gate.mjs",
+    "gate:pdf": "node scripts/corte-z-una-hoja.mjs",
     "gate:movil": "node scripts/mobile-gate.mjs",
     "gate:ux": "node scripts/ux-gate.mjs",
     "gate:data": "node scripts/data-gate.mjs",

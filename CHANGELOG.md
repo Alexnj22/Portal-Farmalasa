@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.573.5 — El PDF del Corte Z entra en una hoja, y ahora se mide
+
+Tercera vez en el día que la hoja se pasa de largo, y las tres las encontró el
+usuario abriendo el archivo. Esta vez lo que sobraba era **un solo renglón** —el
+veredicto «Sin diferencia contra el libro.»— solo en la segunda página.
+
+**El alto de una hoja no se lee en el código: se mide.** Por eso el arreglo no
+es apretar márgenes y confiar.
+
+- `construirCorteZDoc()` se separa de `descargarCorteZPdf()`. El documento
+  ahora se puede armar sin navegador, que es lo que lo hace medible. La descarga
+  quedó en dos líneas.
+- **`npm run gate:pdf`** (`scripts/corte-z-una-hoja.mjs`) renderiza con el motor
+  de Node de pdfmake y **cuenta las páginas**. No parsea el PDF —pdfkit comprime
+  y contar por texto es frágil— sino que envuelve el `footer`, al que pdfmake le
+  pasa el total ya resuelto: el mismo número que sale impreso en «Página 1 de N».
+- Mide el caso **peor** (sucursal con retención: suma el aviso del total y una
+  fila más en el cotejo), el más corto, y dos sucursales juntas para confirmar
+  que siguen siendo una hoja cada una.
+- Se compila el fuente con **esbuild** en vez de adaptar sus imports: lo que se
+  mide tiene que ser el archivo que se despacha, no una variante para el script.
+- Corre en el **pre-commit** cuando el commit toca `corteZPrint.js`. ~2s, sin red.
+
+Márgenes de página de `[40, 40, 40, 44]` a `[40, 34, 40, 30]`.
+
+**Verificado que el detector detecta**, no sólo que da verde: con los márgenes
+anteriores reporta **2 hojas**; con los nuevos, **1**. Un gate que nunca vio
+rojo no prueba nada.
+
 ## v2.573.4 — El PDF dice en una línea cuál total es el correcto
 
 Al sacar la segunda hoja (v2.573.2) quedó una hoja con **dos números para lo

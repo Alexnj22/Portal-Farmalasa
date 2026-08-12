@@ -145,6 +145,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         apoyoMap,
         apoyoModal, setApoyoModal,
         cardStats,
+        trasladoStats,
         anularModal, setAnularModal,
         busyAnular,
         printingPdf,
@@ -349,6 +350,26 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {cardStats[cardKey] && (
                                         <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
                                             <Badge uppercase={false}>{cardStats[cardKey].enviados} enviados</Badge>
+                                            {(() => {
+                                                // El traslado al sistema. Sólo se pinta si el
+                                                // pedido llegó a intentarlo: en los que se
+                                                // despacharon a mano no hay nada que decir.
+                                                const tr = trasladoStats?.[cardKey];
+                                                if (!tr) return null;
+                                                const nHall = Array.isArray(tr.hallazgos) ? tr.hallazgos.length : 0;
+                                                if (tr.estado === 'despachado') return (
+                                                    <Badge variant={nHall > 0 ? 'warning' : 'success'} uppercase={false}>
+                                                        {nHall > 0 ? `en el sistema · ${nHall} con aviso` : 'en el sistema'}
+                                                    </Badge>
+                                                );
+                                                if (tr.estado === 'en_curso') return (
+                                                    <Badge variant="chart-3" uppercase={false}>saliendo al sistema…</Badge>
+                                                );
+                                                if (tr.estado === 'error') return (
+                                                    <Badge variant="danger" uppercase={false}>no salió al sistema</Badge>
+                                                );
+                                                return null;
+                                            })()}
                                             {(cardStats[cardKey].agotamiento ?? 0) > 0 && (
                                                 <Badge uppercase={false}>{cardStats[cardKey].agotamiento} stock insuf.</Badge>
                                             )}

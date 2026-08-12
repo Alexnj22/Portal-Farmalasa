@@ -326,6 +326,19 @@ export async function recibirTrasladoPedido(pedidoId, sucId, { hoja = null, item
     return { ok: true, ...data };
 }
 
+/**
+ * El estado del traslado de VARIOS pedidos, en una sola consulta.
+ *
+ * Una por tarjeta serían N viajes para pintar un badge. Se filtra al despacho
+ * real —el simulacro es diagnóstico y no es lo que la tarjeta cuenta—.
+ */
+export function fetchTrasladosDePedidos(pedidoIds) {
+    return supabase.from('pedido_traslado_erp')
+        .select('pedido_id, erp_sucursal_id, estado, lineas, productos, hallazgos, error_msg')
+        .in('pedido_id', pedidoIds)
+        .eq('modo', 'real').eq('paso', 'enviar');
+}
+
 /** El avance del traslado de una sucursal, por estado y por hoja. */
 export async function fetchResumenTraslado(pedidoId, sucId) {
     const { data, error } = await supabase.rpc('resumen_traslado_pedido', {

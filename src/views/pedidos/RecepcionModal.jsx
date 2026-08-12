@@ -111,6 +111,8 @@ export default function RecepcionModal({
     // ── Screen ─────────────────────────────────────────────────────────────────
     const [screen,              setScreen]              = useState('cajas');
     const [selectedCaja,        setSelectedCaja]        = useState(null);
+    // Los que se recibieron de a uno, para pintarlos sin recargar todo.
+    const [sueltosOk,           setSueltosOk]           = useState(() => new Set());
     const [selectedEspecial,    setSelectedEspecial]    = useState(null); // { label, item }
     const [confirmedEspecialIds,setConfirmedEspecialIds] = useState(new Set());
     const [localRec,     setLocalRec]     = useState([]);   // confirmed this session
@@ -366,6 +368,45 @@ export default function RecepcionModal({
             })
         );
     }, [extras, rows, pedido?.id, sucursalId, presMap, user]);
+
+    // ── Recibir UN producto, sin contar el resto de la caja ─────────────────────
+    // El caso real: llegó la caja, todavía no se cuenta, y hace falta ese
+    // producto para venderlo AHORA. Sin esto habría que confirmar la caja
+    // entera —o sea contarla— antes de poder facturarlo.
+    //
+    // Se puede porque cada producto viaja en su propio traslado: recibirlo es
+    // recibir ese traslado ENTERO, sin tocar los demás.
+    const handleRecibirSolo = useCallback(async (row) => {
+        setSaving(true); setSaveError(null);
+        try {
+            const p_items = buildPItems([row]);
+            const { error } = await supabase.rpc('receive_pedido_sucursal', {
+                p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
+                p_items, p_received_by: user?.id ?? null,
+            });
+            if (error) throw error;
+
+            const erp = await recibirTrasladoPedido(pedido.id, sucursalId, { itemIds: [row.id] });
+            setSueltosOk(prev => new Set([...prev, row.id]));
+
+            useStaff.getState().appendAuditLog('RECIBIR_PRODUCTO_SUELTO', pedido.id, {
+                sucursal_id: sucursalId, pedido_item_id: row.id,
+                producto: row.products?.nombre ?? null,
+                entro_al_sistema: erp.ok === true,
+            });
+
+            if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') {
+                setSaveError(
+                    `Quedó recibido en el portal, pero el ingreso al sistema falló: ${erp.error ?? 'sin detalle'}. `
+                    + 'Todavía no se puede facturar.',
+                );
+            }
+        } catch (e) {
+            setSaveError(mensajeAmigable(e));
+        } finally {
+            setSaving(false);
+        }
+    }, [buildPItems, pedido, sucursalId, user]);
 
     // ── Confirm a single box (or all if no caja map) ────────────────────────────
     const handleConfirmarCaja = useCallback(async () => {
@@ -1230,6 +1271,23 @@ export default function RecepcionModal({
                                         onClick={toggleProblema}
                                         title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
                                     />
+
+                                    {/* Recibir SOLO este, para poder venderlo antes de
+                                        contar el resto de la caja. */}
+                                    {sueltosOk.has(r.id) || r.status === 'recibido' ? (
+                                        <Badge variant="success" size="sm" uppercase={false}>listo</Badge>
+                                    ) : (
+                                        <Button
+                                            icon={PackageCheck}
+                                            iconOnly
+                                            size="sm"
+                                            tone="success"
+                                            soft
+                                            disabled={saving}
+                                            onClick={() => handleRecibirSolo(r)}
+                                            title="Recibir solo este producto e ingresarlo al sistema ahora"
+                                        />
+                                    )}
                                 </div>
 
                                 {panelOpen && (

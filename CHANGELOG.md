@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.569.0 — recibir un producto suelto, y ver el traslado en la tarjeta
+
+**Recibir un producto sin contar el resto de la caja.** El caso real que pidió
+el usuario: llegó la caja, todavía no se cuenta, y hace falta ese producto para
+venderlo ahora. Sin esto había que confirmar la caja entera —o sea contarla—
+antes de poder facturarlo.
+
+Se puede porque cada producto viaja en su propio traslado: recibirlo es recibir
+ese traslado **entero**, sin tocar los demás. El botón vive en la fila del
+producto, junto al de reportar problema, y el renglón queda marcado como listo
+sin recargar la pantalla.
+
+Si el ingreso al sistema falla, lo dice con todas las letras —«quedó recibido en
+el portal, pero todavía no se puede facturar»—, porque ahí la diferencia entre
+las dos cosas es justo lo que la sala necesita saber.
+
+**El traslado se ve en la tarjeta del pedido.** Hasta ahora su estado vivía sólo
+en la base: para saber si un pedido había salido al sistema había que
+consultarla. Ahora la tarjeta lo dice —«saliendo al sistema…», «en el sistema»,
+«en el sistema · N con aviso», «no salió al sistema»— en una sola consulta para
+todas las tarjetas, y su fallo no puede tumbar la carga del tablero.
+
+Sólo se pinta en los pedidos que llegaron a intentarlo: en los despachados a
+mano no hay nada que decir, y un badge vacío sería ruido.
+
+**Y el control de sala al recibir quedó verificado.** Era el único punto de
+seguridad que estaba leído pero no ejercitado, porque la cuenta de prueba tiene
+alcance global. Se le acotó el alcance un momento: la recepción de una sucursal
+ajena responde **403 «El traslado lo recibe la sala a la que va»**. Restaurada
+después a 133/133 módulos.
+
+_(pendiente de redactar)_
+
 ## v2.568.1 — las tres proyecciones de lotes, y la captura que fallaba callada
 
 Dos hallazgos abiertos de la auditoría, cerrados.

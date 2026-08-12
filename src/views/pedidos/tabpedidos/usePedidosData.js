@@ -21,6 +21,7 @@ import {
     fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
     confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho,
+    fetchTrasladosDePedidos,
 } from '../../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 
@@ -95,6 +96,7 @@ export function usePedidosData({ searchTerm = '' }) {
     const [apoyoModal, setApoyoModal] = useState(null); // { pedidoId, sucId, cardKey }
 
     // Card stats (for collapsed pill display)
+    const [trasladoStats, setTrasladoStats] = useState({});
     const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
 
     // ── Cargar rutas activas ──────────────────────────────────────────────────
@@ -137,6 +139,19 @@ export function usePedidosData({ searchTerm = '' }) {
             });
         }
         setCardStats(stats);
+
+        // El estado del traslado al sistema, para que la tarjeta lo muestre. Va
+        // en una sola consulta para las N tarjetas, y su fallo no puede tumbar
+        // la carga del tablero: sin esto simplemente no se pinta el badge.
+        const traslados = {};
+        if (ids.length) {
+            const { data: trRows, error: trErr } = await fetchTrasladosDePedidos(ids);
+            if (trErr) console.error('loadActive: traslados failed:', trErr.message);
+            (trRows ?? []).forEach(t => {
+                traslados[`act_${t.pedido_id}_${t.erp_sucursal_id}`] = t;
+            });
+        }
+        setTrasladoStats(traslados);
         return rows;
     }, []);
 
@@ -1235,6 +1250,7 @@ export function usePedidosData({ searchTerm = '' }) {
         apoyoMap,
         apoyoModal, setApoyoModal,
         cardStats,
+        trasladoStats,
         anularModal, setAnularModal,
         busyAnular,
         printingPdf,

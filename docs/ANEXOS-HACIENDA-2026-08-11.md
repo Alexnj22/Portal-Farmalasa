@@ -528,6 +528,106 @@ Con esa línea el anexo 1 se cierra igual de rápido que éste.
 
 ---
 
+## 8. La conciliación completa de junio 2026 (2026-08-11)
+
+El contador mandó cuatro archivos: `DATO JUNIO` (su resumen), `JUNIO 2026 VCT`
+(contribuyentes, 20 columnas), `JUNIO 2026 VCF` (consumidor, 23) y
+`JUNIO 2026 ANULADAS` (10). Se cotejó **todo** contra producción.
+
+### Estructura: los tres archivos suyos están bien; los nuestros estaban cortos
+
+| Archivo | Suyo | Nuestro antes | Nuestro ahora |
+|---|---|---|---|
+| Consumidor final | 23 | 22 ✗ | **23** ✓ (v2.569.3) |
+| Contribuyentes | 20 | 19 ✗ | **20** ✓ (v2.569.5) |
+| Anulados | 10 | 10 ✓ | 10 ✓ |
+
+En los dos de ventas la columna que sobraba estaba **en el medio**, así que no
+era «faltan columnas al final»: corría toda la fila y los montos caían en
+casillas equivocadas. En contribuyentes el total terminaba dentro de la casilla
+del **DUI del cliente**.
+
+### Datos: los documentos coinciden, y las diferencias son cuatro
+
+**Contribuyentes — 49 documentos, cotejados uno a uno:**
+
+| Qué se comparó | Diferencias |
+|---|---|
+| Documentos presentes | **0** — los 49 son los mismos |
+| Sello de recepción | **0** |
+| Código de generación | **0** |
+| NRC del cliente | **0** |
+| Ventas gravadas | **0** |
+| Débito fiscal | **2** de un centavo |
+| Total | 39 de 49 — pero **su archivo usa dos criterios** |
+
+- **El débito**: su archivo recalcula 13% sobre las gravadas y redondea. En
+  `DTE03M001P003…094` da 2.03 y en `DTE03S003P001…051` da 5.89. Se consultaron
+  **los dos DTE sellados por Hacienda** (`dteqr_json.php`): dicen **2.02** y
+  **5.88**, que son los nuestros. El libro refleja el documento, no lo
+  recalcula. Su archivo declara **$0.02 de débito de más**.
+- **El total**: 39 de sus 49 filas llevan la base y 10 llevan base + IVA — su
+  propio archivo mezcla los dos criterios, así que no puede ser el árbitro. Se
+  adoptó la base, que es lo coherente con el Art. 85 l), con el anexo de
+  consumidor, y con la mayoría de sus filas.
+- Una fila suya lleva **tipo de ingreso `2` (servicios)** en vez de `3`
+  (comerciales): la de BANCO PROMERICA del 09/06.
+
+**Consumidor final — 180 días (6 sucursales × 30), sólo 3 difieren:**
+
+| Día | Sucursal | Suyo | Nuestro | Diferencia |
+|---|---|---|---|---|
+| 25/06 | S001P005 | 2,019.70 | 2,024.55 | **+4.85** |
+| 20/06 | S003P001 | 1,617.65 | 1,663.63 | **+45.98** |
+| 25/06 | S005P002 | 1,487.05 | 1,480.60 | **−6.45** |
+
+Y cada una tiene nombre y apellido:
+
+- **$4.85** — correlativo `0000054124_COF`, id interno 315442. Está **dentro del
+  rango que su propio archivo declara** (314896 → 315551, idéntico al nuestro).
+  Su archivo no lo cuenta.
+- **$45.98** — correlativo `0000073824_COF`, id interno 311737. Igual: dentro de
+  su propio rango declarado (311262 → 311967).
+- **$6.45** — correlativo `0000057420_COF`. Es un **DTE invalidado en Hacienda**
+  que su archivo cuenta como venta. Nosotros lo excluimos del libro y lo
+  reportamos como anulado.
+
+**Anulados — 79 suyos contra 80 nuestros:** los 79 códigos de generación
+coinciden uno a uno. **El de más es exactamente el de $6.45 de arriba** — o sea
+que ese documento está mal de las dos maneras a la vez en su declaración: contado
+como venta y no reportado como anulado.
+
+### El efecto en lo declarado
+
+| Concepto | Efecto |
+|---|---|
+| Ventas a consumidor final | **$44.38 menos** de lo que corresponde |
+| Débito fiscal de esas ventas (13/113) | ≈ **$5.11 menos** |
+| Débito fiscal de contribuyentes | **$0.02 más** |
+
+Su resumen `DATO JUNIO` declara **$1,077.16** de IVA. Con estas tres correcciones
+el débito sube alrededor de **$5.09**.
+
+### Lo que su archivo tiene mal y no se copió
+
+1. Los **códigos de generación del primer y último documento del día** en el
+   anexo de consumidor: trae el mínimo y el máximo **alfabéticos** (§7).
+2. El **débito recalculado** en vez del que dice el DTE.
+3. El **documento invalidado contado como venta**, y ausente de los anulados.
+4. Los **dos documentos que no aparecen**, estando dentro del rango que él mismo
+   declara.
+5. En anulados, el **tipo de documento va como `1`** y el manual pide dos
+   caracteres (`01`). Nosotros emitimos `01`. Conviene preguntárselo: puede ser
+   que su sistema se lo coma y Hacienda lo acepte igual.
+
+### Cómo reproducirlo
+
+Los archivos vinieron en `libros/` en la raíz del repo. **No están commiteados y
+no deben estarlo**: llevan nombres de clientes. Moverlos fuera del repo o
+borrarlos al terminar.
+
+---
+
 ## Fuentes
 
 - Ministerio de Hacienda — *Manual de usuario para carga de archivo de los anexos

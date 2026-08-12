@@ -4,6 +4,7 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   CONCEPTO_MAX,
   hoySV,
+  nombreCorto,
   norm,
   pendientesDeOrigen,
   resolverPresentacion,
@@ -61,6 +62,15 @@ const PRESUPUESTO_MS = 110_000;
 // 'enviando' es residuo de una corrida que murió, no de una en curso.
 const CORTADA_MS = 5 * 60_000;
 
+// El motivo, en la palabra que va al asiento. Corta y sin acentos —el sistema
+// relee los bytes como Latin-1—, pero entendible por alguien que abra el kardex
+// dentro de un año y no tenga el portal a mano.
+const MOTIVO_CONCEPTO: Record<string, string> = {
+  faltante: "no llego",
+  danado:   "danado",
+  vencido:  "vencido",
+};
+
 interface Devolucion {
   id: string;
   pedido_id: string;
@@ -73,6 +83,7 @@ interface Devolucion {
   clave: string;
   estado: string;
   id_traslado: string | null;
+  solicitada_por: string | null;
 }
 
 /** La ubicación de trabajo de una sala (la de vencidos nunca es origen). */
@@ -121,8 +132,11 @@ Deno.serve(async (req) => {
     // Se repite acá porque esta función usa la llave de servicio y el RLS no la
     // frena. Es el mismo que exige la recepción del pedido.
     const { data: emp } = await admin
-      .from("employees").select("role_id, secondary_role_id, system_role, branch_id")
+      .from("employees").select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
       .eq("id", quien.id).maybeSingle();
+    // El concepto es el único lugar del sistema donde aparece la persona real:
+    // su columna «usuario» muestra siempre la cuenta del portal.
+    const yo = nombreCorto({ ...emp, name: quien.name });
     const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
     const { data: permisos } = await admin
       .from("role_permissions").select("can_edit, scope")
@@ -186,7 +200,7 @@ Deno.serve(async (req) => {
     const { data: devsRaw, error: devErr } = await admin
       .from("pedido_devolucion")
       .select("id, pedido_id, erp_sucursal_id, pedido_item_id, erp_product_id, "
-            + "motivo, viaja, cantidad, clave, estado, id_traslado, detalle, updated_at")
+            + "motivo, viaja, cantidad, clave, estado, id_traslado, detalle, updated_at, solicitada_por")
       .in("id", ids);
     if (devErr) throw devErr;
     const devs = (devsRaw ?? []) as (Devolucion & { detalle: Record<string, unknown> | null; updated_at: string })[];
@@ -304,7 +318,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const concepto = soloAscii(`${d.clave} recibe: ${quien.name}`).slice(0, CONCEPTO_MAX);
+        const concepto = soloAscii(`${d.clave} rec ${yo}`).slice(0, CONCEPTO_MAX);
         const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
           process: "insert",
           datos: partes.join("#") + "#",
@@ -383,6 +397,17 @@ Deno.serve(async (req) => {
       nombre: String((r.products as { nombre?: string } | null)?.nombre ?? r.id),
       tipo: String((r.presentaciones as { tipo?: string } | null)?.tipo ?? ""),
     }]));
+
+    // Quién pidió cada devolución, para el concepto. Es la mitad del acuerdo que
+    // no está en ninguna parte del sistema: su columna «usuario» muestra la
+    // cuenta del portal, y quien autoriza no es quien pidió.
+    const { data: solicitantes } = await admin
+      .from("employees").select("id, name, first_names, last_names")
+      .in("id", [...new Set(aEnviar.map((d) => d.solicitada_por).filter(Boolean))]);
+    const porEmpleado = new Map((solicitantes ?? []).map((e) => [String(e.id), nombreCorto(e)]));
+    const quienPidio = new Map(
+      aEnviar.map((d) => [d.id, porEmpleado.get(String(d.solicitada_por)) ?? "-"]),
+    );
 
     // Los lotes con los que el producto LLEGÓ. Salen de lo que de verdad se
     // movió al despachar, no de lo que el pedido había reservado: entre una cosa
@@ -539,11 +564,18 @@ Deno.serve(async (req) => {
         const vale = html.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
         if (!vale) { await fallar("El sistema no entregó el número de vale."); continue; }
 
-        // La CLAVE va primero en el concepto: es lo que permite encontrar este
-        // movimiento en el sistema y lo que se busca antes de reintentar una
-        // línea cortada, para no moverla dos veces.
+        // ── El concepto ───────────────────────────────────────────────────
+        // La CLAVE va primero: es lo que permite encontrar este movimiento en
+        // el sistema y lo que se busca antes de reintentar una línea cortada,
+        // para no moverla dos veces.
+        //
+        // Después, sólo lo que el sistema NO sabe (ver `erp-traslado.ts`): por
+        // qué vuelve, y las DOS personas —quien lo pidió desde la sala y quien
+        // lo autorizó en bodega—, porque nada se mueve sin que las dos partes
+        // coincidan y el sistema no guarda ni una ni la otra. El producto, el
+        // origen y el destino ya están en su propia pantalla.
         const concepto = soloAscii(
-          `${d.clave} Devuelve ${mapaSala?.nombre ?? erpSala} a Bodega - ${d.motivo} - ${it.nombre}`,
+          `${d.clave} ${MOTIVO_CONCEPTO[d.motivo] ?? d.motivo} pide ${quienPidio.get(d.id) ?? "-"} ok ${yo}`,
         ).slice(0, CONCEPTO_MAX);
 
         const total = renglones.reduce((s, r) => s + Number(pres.costo || 0) * r.cantidad, 0);

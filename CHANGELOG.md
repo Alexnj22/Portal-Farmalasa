@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.1 — El concepto del asiento: sólo lo que el sistema no sabe
+
+Antes de estrenar la devolución había que definir qué queda escrito en el
+asiento, porque **el concepto no se borra**: el rollback devuelve las unidades,
+no el rastro.
+
+Primero se midió dónde se lee. El detalle del traslado **no muestra el
+concepto**; el reporte imprimible contesta **500 en todos** los traslados,
+también en los de 2025 (roto de antes); y la columna «usuario» del listado
+muestra **siempre la misma cuenta**, la del portal. O sea que el concepto es el
+único lugar donde aparece la persona real.
+
+De ahí la regla: **no repetir nada que el sistema ya muestre.** Queda
+`<clave> <qué pasó> <quién>`, en ASCII.
+
+| Momento | Concepto |
+|---|---|
+| El pedido sale de bodega | `P102-S7-H1-I71445 env DOLORES TEJADA` |
+| El pedido entra a la sala | `P102-S7-H1-I71445 rec Adriana Ramirez` |
+| La devolución sale de la sala | `DEV-P102-S7-I71445 no llego pide Adriana Ramirez ok DOLORES TEJADA` |
+| La devolución entra a bodega | `DEV-P102-S7-I71445 rec DOLORES TEJADA` |
+| Traslado entre salas | `pide Adriana Ramirez env DOLORES TEJADA` |
+
+El del pedido pasó de **75 a 36 caracteres**: decía «Pedido 102 Salud 5 hoja 1
+\<producto\>», y el destino ya está en la pantalla, el producto en el detalle, y
+el pedido y la hoja **van dentro de la clave**. Se repetían 45 de 75.
+
+La devolución nombra a las **dos** personas —quien la pidió en la sala y quien la
+autorizó en bodega—, porque nada se mueve sin que las dos coincidan y el sistema
+no guarda ninguna. El nombre corto sale de la misma regla que usa el portal en
+pantalla.
+
+**Trampa esquivada al desplegar:** `trasladar-pedido-erp` estaba con
+`verify_jwt=false` y **no figura en la lista de CLAUDE.md** (esa lista es del
+circuito de fichas). Redesplegarla sin `--no-verify-jwt` la habría dejado
+devolviendo 401 antes de ejecutar una línea, con su cron corriendo cada minuto.
+`supabase functions list` no muestra esa columna; se comprueba con un POST sin
+cabecera de autorización, que es de sólo lectura.
+
 ## v2.571.0 — Devolución del pedido a bodega, con su entrada del otro lado
 
 Lo primero de `docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md`: la única pieza que hoy

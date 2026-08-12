@@ -56,6 +56,7 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   CONCEPTO_MAX,
   contenidoDeTraslado,
+  nombreCorto,
   direccionesPorSucursal,
   hoySV,
   norm,
@@ -99,7 +100,7 @@ Deno.serve(async (req) => {
     // Módulos distintos a propósito: `requests` es permisos, vacaciones e
     // incapacidades, y confirmar un traslado no debe arrastrar eso.
     const { data: emp } = await admin
-      .from("employees").select("role_id, secondary_role_id, branch_id, system_role")
+      .from("employees").select("role_id, secondary_role_id, branch_id, system_role, first_names, last_names")
       .eq("id", quien.id).maybeSingle();
     const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
     const { data: permisos } = await admin
@@ -250,12 +251,13 @@ Deno.serve(async (req) => {
       if (partes.length === 0)
         return json({ ok: false, error: `No se pudo leer ni una línea del traslado ${idTraslado}.` }, 502);
 
-      // El concepto de esta mitad nombra a las TRES personas, porque ninguna se
-      // deduce de las otras: quien pidió está en destino, quien despachó en
-      // origen, y quien recibe puede no ser el que pidió.
-      const despacho = String(meta.erp_traslado?.by_name ?? "-");
+      // Nombra a las DOS personas que el sistema no guarda —quien despachó y
+      // quien recibe—, y nada más: el origen es una columna de su propio
+      // listado. Misma gramática que el pedido y la devolución (ver
+      // `erp-traslado.ts`): lo que el sistema ya muestra no se repite acá.
+      const despacho = nombreCorto({ name: String(meta.erp_traslado?.by_name ?? "-") });
       const concepto = soloAscii(
-        `Recibe: ${quien.name} - envia: ${despacho} - origen: ${mapaOrigen?.nombre ?? erpOrigen}`,
+        `rec ${nombreCorto({ ...emp, name: quien.name })} env ${despacho}`,
       ).slice(0, CONCEPTO_MAX);
 
       const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
@@ -316,14 +318,14 @@ Deno.serve(async (req) => {
       }, 403);
 
     const { data: solicitante } = await admin
-      .from("employees").select("name").eq("id", sol.employee_id).maybeSingle();
+      .from("employees").select("name, first_names, last_names").eq("id", sol.employee_id).maybeSingle();
 
-    // El concepto es lo único que viaja al asiento, así que lleva la
-    // trazabilidad entera — y en ASCII, porque el sistema relee los bytes como
-    // Latin-1 y un acento sale partido en dos caracteres.
+    // Las dos personas del acuerdo: quien pidió el producto y quien lo soltó.
+    // El origen sale del listado del propio sistema, así que no se repite.
+    // Todo en ASCII, porque relee los bytes como Latin-1 y un acento sale
+    // partido en dos caracteres.
     const concepto = soloAscii(
-      `Solicita: ${solicitante?.name ?? "-"} - envia: ${quien.name}`
-      + ` - origen: ${mapaOrigen?.nombre ?? erpOrigen}`,
+      `pide ${nombreCorto(solicitante)} env ${nombreCorto({ ...emp, name: quien.name })}`,
     );
     const conceptoRecortado = concepto.length > CONCEPTO_MAX;
 

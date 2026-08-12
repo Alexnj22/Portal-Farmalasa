@@ -187,6 +187,45 @@ lo que se busca antes de reintentar una línea cortada, para no moverla dos vece
 El renglón del pedido se cierra **cuando el producto entró en bodega**, no cuando
 la sala lo pide ni cuando bodega acepta. Antes de eso está en tránsito.
 
+### El concepto: qué se escribe en el asiento
+
+Definido el 2026-08-12, después de **medir dónde se lee** en el sistema:
+
+- El detalle del traslado (`ver_traslado.php`) muestra producto, presentación,
+  unidad, cantidad y destino. **No muestra el concepto.**
+- El reporte imprimible (`reporte_traslado.php`) contesta **500 en todos** los
+  traslados, también en los de 2025. Roto de antes, no por nosotros.
+- El listado trae fecha, hora, origen, destino, usuario y estado.
+- La columna «usuario» es **siempre la misma cuenta** —la del portal—, así que
+  **el concepto es el único lugar donde aparece la persona real**.
+
+De ahí la regla: **el concepto no repite nada que el sistema ya muestre.** Queda
+`<clave> <qué pasó> <quién>`, en ASCII (el sistema relee los bytes como Latin-1 y
+un acento sale partido en dos).
+
+| Momento | Concepto | Largo |
+|---|---|---|
+| El pedido sale de bodega | `P102-S7-H1-I71445 env DOLORES TEJADA` | 36 |
+| El pedido entra a la sala | `P102-S7-H1-I71445 rec Adriana Ramirez` | 37 |
+| La devolución sale de la sala | `DEV-P102-S7-I71445 no llego pide Adriana Ramirez ok DOLORES TEJADA` | 66 |
+| La devolución entra a bodega | `DEV-P102-S7-I71445 rec DOLORES TEJADA` | 37 |
+| Traslado entre salas, sale | `pide Adriana Ramirez env DOLORES TEJADA` | 39 |
+| Traslado entre salas, entra | `rec Adriana Ramirez env DOLORES TEJADA` | 38 |
+
+Tres decisiones adentro:
+
+1. **El pedido pasó de 75 a 36 caracteres.** Decía «Pedido 102 Salud 5 hoja 1
+   \<producto\>»: el destino está en la pantalla, el producto en el detalle, y el
+   pedido y la hoja **van dentro de la clave**. Se repetían 45 de 75 caracteres.
+2. **La devolución nombra a las DOS personas** —quien la pidió en la sala y quien
+   la autorizó en bodega— porque nada se mueve sin que las dos coincidan y el
+   sistema no guarda ninguna de las dos.
+3. **El nombre es el mismo que muestra el portal** (primer nombre + primer
+   apellido, la regla de `shortEmployeeName`). Recortarlo a la inicial ahorra 8
+   caracteres por persona y se puede hacer en una línea (`nombreCorto` en
+   `_shared/erp-traslado.ts`), pero con dos «DOLORES» en la misma sala habría que
+   abrir el portal para saber quién fue.
+
 ### Lo que ya se comprobó (2026-08-12, sin tocar inventario)
 
 - La función está desplegada y exige sesión.

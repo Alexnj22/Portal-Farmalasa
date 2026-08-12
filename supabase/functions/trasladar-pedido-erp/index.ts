@@ -4,6 +4,7 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   CONCEPTO_MAX,
   hoySV,
+  nombreCorto,
   norm,
   pendientesDeOrigen,
   resolverPresentacion,
@@ -183,6 +184,9 @@ Deno.serve(async (req) => {
     const interno = requireInvokeSecret(req);
     let quien: { id: string; name: string } | null = null;
     let alcanceTodo = false;
+    // El nombre que va al concepto. Es el único lugar del sistema donde aparece
+    // la persona real: su columna «usuario» muestra siempre la cuenta del portal.
+    let yo = "-";
 
     if (interno) {
       const runId = String(cuerpo.run_id ?? "");
@@ -199,8 +203,12 @@ Deno.serve(async (req) => {
       pedidoId = String(run.pedido_id);
       sucId = Number(run.erp_sucursal_id);
       const { data: autor } = await admin
-        .from("employees").select("id, name").eq("id", run.creado_por).maybeSingle();
+        .from("employees").select("id, name, first_names, last_names")
+        .eq("id", run.creado_por).maybeSingle();
       quien = autor ?? { id: String(run.creado_por ?? ""), name: "Continuacion automatica" };
+      // La corrida que retoma el cron sigue firmando con quien FINALIZÓ el
+      // pedido, no con la máquina: el asiento es de esa persona.
+      yo = nombreCorto(autor ?? { name: "Continuacion automatica" });
       alcanceTodo = true;
       accion = "enviar";
       simulacro = false;
@@ -251,8 +259,9 @@ Deno.serve(async (req) => {
       // Se repite acá porque esta función usa la llave de servicio y el RLS no
       // la frena. Es el mismo que exige `confirm_pedido`.
       const { data: emp } = await admin
-        .from("employees").select("role_id, secondary_role_id, system_role, branch_id")
+        .from("employees").select("role_id, secondary_role_id, system_role, branch_id, first_names, last_names")
         .eq("id", usuario.id).maybeSingle();
+      yo = nombreCorto({ ...emp, name: usuario.name });
       const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
       const { data: permisos } = await admin
         .from("role_permissions").select("can_edit, scope")
@@ -403,7 +412,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const concepto = soloAscii(`${ln.clave} recibe: ${quien.name}`).slice(0, CONCEPTO_MAX);
+        const concepto = soloAscii(`${ln.clave} rec ${yo}`).slice(0, CONCEPTO_MAX);
         const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
           process: "insert",
           datos: partes.join("#") + "#",
@@ -574,8 +583,8 @@ Deno.serve(async (req) => {
         .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId).eq("estado", "enviando");
 
       const porItem = new Map(items.map((i) => [i.id, i]));
-      const { data: ped } = await admin.from("pedidos").select("numero").eq("id", pedidoId).maybeSingle();
-      const numero = ped?.numero ?? "-";
+      // El número del pedido ya no se lee: viaja DENTRO de la clave (`P102-…`),
+      // así que traerlo era una consulta por corrida para repetir un dato.
 
       // La foto de los pendientes: el traslado nuevo es el que no estaba. El
       // `insert` no devuelve el id y el listado ignora el orden que se le pide.
@@ -721,9 +730,13 @@ Deno.serve(async (req) => {
           // La CLAVE va primero en el concepto: es lo que permite encontrar este
           // traslado entre los ~900 del pedido, y lo que se busca al retomar
           // para no duplicarlo.
-          const concepto = soloAscii(
-            `${ln.clave} Pedido ${numero} ${mapaDestino.nombre} hoja ${ln.hoja ?? "-"} ${it.nombre}`,
-          ).slice(0, CONCEPTO_MAX);
+          //
+          // Y nada más que la clave y la persona. Lo que decía antes —«Pedido
+          // 102 Salud 5 hoja 1 <producto>»— es todo dato que el sistema ya
+          // muestra en la misma pantalla (destino) o en el detalle del traslado
+          // (producto), o que va DENTRO de la clave (pedido y hoja). Medido el
+          // 2026-08-12: se repetían 45 de los 75 caracteres.
+          const concepto = soloAscii(`${ln.clave} env ${yo}`).slice(0, CONCEPTO_MAX);
 
           const total = renglones.reduce((s, r) => s + Number(pres.costo || 0) * r.cantidad, 0);
           const datos = renglones.map((r) => [

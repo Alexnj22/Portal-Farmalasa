@@ -33,6 +33,54 @@ export const VER = `${BASE}/ver_traslado.php`;
 // tope callado se lee como que entró completo.
 export const CONCEPTO_MAX = 200;
 
+/**
+ * El concepto dice SOLO lo que el sistema no sabe.
+ *
+ * Medido el 2026-08-12 sobre el sistema real:
+ *
+ * - El detalle del traslado (`ver_traslado.php`) muestra producto,
+ *   presentación, unidad, cantidad y destino. **No muestra el concepto.**
+ * - El reporte imprimible (`reporte_traslado.php`) contesta **500 en todos** los
+ *   traslados, también en los de 2025. Roto de antes.
+ * - El listado trae fecha, hora, origen, destino, usuario y estado.
+ * - La columna «usuario» es **siempre la misma cuenta** —la del portal—, así que
+ *   el concepto es el ÚNICO lugar donde aparece la persona de verdad.
+ *
+ * De ahí la regla: repetir el destino, la fecha o el producto es gastar el campo
+ * en algo que ya está en la pantalla de al lado. Queda:
+ *
+ *     <clave> <qué pasó> <quién>
+ *
+ * La clave va primero porque es lo que se busca. Todo en ASCII, porque el
+ * sistema relee los bytes como Latin-1 y un acento sale partido en dos.
+ *
+ *   P102-S7-H1-I71445 env Ana Gomez           (el pedido sale de bodega)
+ *   P102-S7-H1-I71445 rec Jose Martinez       (el pedido entra a la sala)
+ *   DEV-P102-S7-I71445 falto pide Jose Martinez ok Ana Gomez
+ *   DEV-P102-S7-I71445 rec Ana Gomez          (la devolución entra a bodega)
+ */
+
+/**
+ * El nombre corto, con la MISMA regla que el portal (`shortEmployeeName`):
+ * primer nombre + primer apellido. Se le pasan las columnas estructuradas
+ * porque el nombre concatenado no distingue el segundo nombre del apellido —
+ * «MARIA JOSE HERNANDEZ» partido a ciegas da «MARIA JOSE», que no identifica a
+ * nadie.
+ */
+export function nombreCorto(
+  emp: { first_names?: string | null; last_names?: string | null; name?: string | null } | null,
+): string {
+  const primero = (s?: string | null) => String(s ?? "").trim().split(/\s+/)[0] ?? "";
+  const nom = primero(emp?.first_names);
+  const ape = primero(emp?.last_names);
+  if (nom || ape) return soloAscii(`${nom} ${ape}`.trim());
+  // Sin las columnas estructuradas: el mismo respaldo que el portal.
+  const partes = String(emp?.name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "-";
+  if (partes.length <= 2) return soloAscii(partes.join(" "));
+  return soloAscii(`${partes[0]} ${partes[2]}`);
+}
+
 export const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toUpperCase();
 
 /**

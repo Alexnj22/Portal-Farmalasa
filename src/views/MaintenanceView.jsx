@@ -38,6 +38,38 @@ const HORAS = [1, 2, 4, 8, 12, 24].map(h => ({ value: String(h), label: h === 1 
 
 const info = (key) => MODULE_INFO[key] || { label: key, desc: '', group: 'Otros' };
 
+// Los cuatro interruptores de movimiento de mercadería, con su nombre en
+// palabras del negocio. Es un mapa y no un ternario porque ya son cuatro: el
+// ternario que había pintaba «Recibir en la sala» sobre cualquier acción que no
+// fuera `enviar`, así que los dos de devolución habrían salido con el rótulo del
+// otro proceso — y quien lea la pantalla no tiene cómo saber que está mintiendo.
+const INTERRUPTOR = {
+    enviar: {
+        titulo:  'Sacar mercadería de bodega',
+        detalle: 'Al finalizar un pedido, la mercadería sale sola.',
+        pausa:   'No va a salir mercadería hasta que lo reanudes.',
+        reanuda: 'La mercadería vuelve a salir al finalizar un pedido.',
+    },
+    recibir: {
+        titulo:  'Recibir en la sala',
+        detalle: 'Al confirmar una caja, la mercadería entra sola.',
+        pausa:   'No se va a poder recibir hasta que lo reanudes.',
+        reanuda: 'Las salas ya pueden recibir.',
+    },
+    devolver_enviar: {
+        titulo:  'Sacar una devolución de la sala',
+        detalle: 'Cuando bodega acepta una devolución, el producto sale de la sala.',
+        pausa:   'Las devoluciones aceptadas no van a salir de la sala.',
+        reanuda: 'Las devoluciones aceptadas vuelven a salir.',
+    },
+    devolver_recibir: {
+        titulo:  'Recibir una devolución en bodega',
+        detalle: 'Bodega confirma la entrada de lo que la sala devolvió.',
+        pausa:   'Lo devuelto no va a poder entrar a bodega: queda en el camino.',
+        reanuda: 'Bodega ya puede confirmar lo devuelto.',
+    },
+};
+
 const hora = (iso) => {
     try { return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: false }); }
     catch { return ''; }
@@ -105,12 +137,8 @@ export default function MaintenanceView() {
         if (error) useToastStore.getState().showToast('Traslados', mensajeAmigable(error), 'error');
         else {
             useToastStore.getState().showToast(
-                pausar ? 'Traslados en pausa' : 'Traslados reanudados',
-                accion === 'enviar'
-                    ? (pausar ? 'No va a salir mercadería hasta que lo reanudes.'
-                              : 'La mercadería vuelve a salir al finalizar un pedido.')
-                    : (pausar ? 'No se va a poder recibir hasta que lo reanudes.'
-                              : 'Las salas ya pueden recibir.'),
+                pausar ? 'Movimiento en pausa' : 'Movimiento reanudado',
+                (pausar ? INTERRUPTOR[accion]?.pausa : INTERRUPTOR[accion]?.reanuda) ?? '',
                 pausar ? 'warning' : 'success',
             );
             await recargarTraslado();
@@ -218,7 +246,7 @@ export default function MaintenanceView() {
                 detiene un proceso, así que va arriba y aparte del candado. */}
             <div className="flex flex-col gap-2.5 pt-1">
                 <span className="text-micro font-black uppercase tracking-widest text-content-2 px-1">
-                    Traslado de pedidos
+                    Movimiento de mercadería
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {traslado.map(t => (
@@ -226,12 +254,10 @@ export default function MaintenanceView() {
                             className="flex items-start justify-between gap-3 px-4 py-3">
                             <div className="min-w-0">
                                 <span className="text-label font-medium text-content-1 block">
-                                    {t.accion === 'enviar' ? 'Sacar mercadería de bodega' : 'Recibir en la sala'}
+                                    {INTERRUPTOR[t.accion]?.titulo ?? t.accion}
                                 </span>
                                 <span className="text-micro text-content-3 block mt-0.5">
-                                    {t.accion === 'enviar'
-                                        ? 'Al finalizar un pedido, la mercadería sale sola.'
-                                        : 'Al confirmar una caja, la mercadería entra sola.'}
+                                    {INTERRUPTOR[t.accion]?.detalle ?? ''}
                                 </span>
                                 {t.pausado && (
                                     <Badge variant="warning" size="sm" uppercase={false} className="mt-1.5">
@@ -243,7 +269,7 @@ export default function MaintenanceView() {
                                 checked={t.pausado}
                                 disabled={trasladoBusy === t.accion}
                                 onChange={v => alternarTraslado(t.accion, v)}
-                                aria-label={`Pausar ${t.accion === 'enviar' ? 'la salida de bodega' : 'la recepción en sala'}`}
+                                aria-label={`Pausar: ${INTERRUPTOR[t.accion]?.titulo ?? t.accion}`}
                             />
                         </div>
                     ))}

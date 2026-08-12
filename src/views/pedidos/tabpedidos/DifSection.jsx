@@ -1,6 +1,6 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C) — differences (dif) resolution
 // section shown inside an expanded pedido card.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, UserCircle2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect';
@@ -8,6 +8,7 @@ import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
 import PortalInput from '../../../components/common/PortalInput';
 import { shortEmployeeName } from '../../../utils/nameUtils';
+import DevolucionBloque from './DevolucionBloque';
 
 const ERROR_TIPO_LABEL = {
     faltante:     { label: 'Faltante',        variante: 'danger'           },
@@ -48,7 +49,7 @@ const EVENTO_LABEL = {
 
 const DIF_MAX = 3;
 
-export default function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, onCorregirBodega, onConfirmarCorreccion, readOnly = false, onNeedItems, itemsLoaded = true }) {
+export default function DifSection({ row, difItems = [], eventos = [], devoluciones = [], isBranch, busyAction, empMap = new Map(), onResolver, onCorregirBodega, onConfirmarCorreccion, onSolicitarDevolucion, onDecidirDevolucion, onMoverDevolucion, onRecibirDevolucion, readOnly = false, onNeedItems, itemsLoaded = true }) {
     const [tipoSel,    setTipoSel]    = useState({});
     const [notaSel,    setNotaSel]    = useState({});
     const [rejectOpen, setRejectOpen] = useState({});
@@ -60,6 +61,19 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
         if (!itemsLoaded && onNeedItems) onNeedItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemsLoaded]);
+
+    // La devolución de cada renglón. Puede haber varias por ítem —una rechazada
+    // no impide volver a pedir— pero VIVA hay una sola: lo garantiza el índice
+    // único de la base. Se prefiere la viva; si no hay, se muestra la última
+    // rechazada, que es la que explica por qué no se devolvió.
+    const devPorItem = useMemo(() => {
+        const m = new Map();
+        for (const d of devoluciones) {
+            const previa = m.get(d.pedido_item_id);
+            if (!previa || previa.estado === 'rechazada') m.set(d.pedido_item_id, d);
+        }
+        return m;
+    }, [devoluciones]);
 
     const allConfirmed  = difItems.length > 0 && difItems.every(r => r.resolucion_status === 'confirmada');
     const visibleItems  = showAll ? difItems : difItems.slice(0, DIF_MAX);
@@ -88,6 +102,8 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                 const et      = ERROR_TIPO_LABEL[item.error_tipo];
                 const res     = item.resolucion_status;
                 const qtyDiff = item.cantidad_recibida !== null && item.cantidad_recibida !== item.cantidad_asignada;
+                const dev     = devPorItem.get(item.id) ?? null;
+                const devViva = !!dev && dev.estado !== 'rechazada';
 
                 const resueltoEmp   = item.resuelto_por       ? empMap.get(item.resuelto_por)       : null;
                 const confirmadoEmp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por)  : null;
@@ -122,8 +138,22 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
 
                         <div className="px-3 pb-3 space-y-2">
 
+                            {/* ── La devolución a bodega ──
+                                Mientras hay una viva, las opciones de resolución
+                                de abajo se esconden: son dos conversaciones sobre
+                                el mismo renglón, y tenerlas a la vez es la forma
+                                de que una diga que sí y la otra que no. */}
+                            <DevolucionBloque
+                                dev={dev} item={item} isBranch={isBranch} busyAction={busyAction}
+                                empMap={empMap} readOnly={readOnly}
+                                onSolicitar={onSolicitarDevolucion}
+                                onDecidir={onDecidirDevolucion}
+                                onMover={onMoverDevolucion}
+                                onRecibir={onRecibirDevolucion}
+                            />
+
                             {/* ── Estado: null o rechazada — BODEGA propone ── */}
-                            {(!res || res === 'rechazada') && !isBranch && !readOnly && (
+                            {!devViva && (!res || res === 'rechazada') && !isBranch && !readOnly && (
                                 <>
                                     {res === 'rechazada' && (
                                         <div className="flex items-start gap-1.5 text-caption bg-danger/10 rounded-lg px-2.5 py-1.5 border border-danger/30">
@@ -154,7 +184,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                             )}
 
                             {/* ── Estado: null — SUCURSAL espera ── */}
-                            {!res && isBranch && !readOnly && (
+                            {!devViva && !res && isBranch && !readOnly && (
                                 <p className="text-caption text-content-3 italic">Esperando resolución de bodega…</p>
                             )}
 

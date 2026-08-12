@@ -23,6 +23,10 @@ import {
     confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho,
     fetchTrasladosDePedidos,
 } from '../../../data/pedidos';
+import {
+    fetchDevolucionesDePedido, solicitarDevolucion, decidirDevolucion,
+    subirEvidencia, moverDevoluciones, recibirDevoluciones,
+} from '../../../data/devoluciones';
 import { registerPlugin } from '@capacitor/core';
 
 import { mensajeAmigable } from '../../../utils/errorMessages';
@@ -66,6 +70,10 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const [items,         setItems]         = useState({});
     const [eventosMap,    setEventosMap]    = useState({});
+    // Las devoluciones del pedido, por tarjeta. Viven al lado de los ítems
+    // porque se pintan pegadas a su renglón: una diferencia y lo que se decidió
+    // hacer con ella son la misma conversación.
+    const [devolucionesMap, setDevolucionesMap] = useState({});
     const [loadingItems,  setLoadingItems]  = useState(false);
     const [llegadaStatus, setLlegadaStatus] = useState({});
     const [erpStatus,     setErpStatus]     = useState({});
@@ -372,9 +380,16 @@ export function usePedidosData({ searchTerm = '' }) {
         // Paginated eventos fetch (cap-safe)
         const allEvRows = await fetchPedidoItemEventosAll(pedidoId, sucFilter) ?? [];
 
-        const [{ data: lcRow, error: lcErr }, { data: apoyoRows, error: apoyoErr }] = await Promise.all([lcPromise, apoyoQ]);
+        // Las devoluciones van en el mismo viaje que el resto: son pocas filas y
+        // se pintan pegadas a su renglón, así que pedirlas aparte sería un
+        // segundo tirón para ver la mitad de la misma tarjeta.
+        const devsQ = fetchDevolucionesDePedido(pedidoId, sucFilter);
+
+        const [{ data: lcRow, error: lcErr }, { data: apoyoRows, error: apoyoErr }, devs] =
+            await Promise.all([lcPromise, apoyoQ, devsQ]);
         if (lcErr) throw lcErr;
         if (apoyoErr) throw apoyoErr;
+        setDevolucionesMap(prev => ({ ...prev, [key]: devs }));
         await signPhotosDeep(apoyoRows || []);
         const resolved = allItemRows.map(row => ({
             ...row,
@@ -1101,6 +1116,129 @@ export function usePedidosData({ searchTerm = '' }) {
         } catch (e) { console.error('resolverItem:', e); } finally { setBusyAction(null); }
     }, [user, loadActive, fetchItems]);
 
+    // ── Devolución a bodega ───────────────────────────────────────────────────
+    //
+    // Tres pasos y ninguno se saltea: la sala pide, bodega decide —y al aceptar
+    // el producto sale—, y bodega confirma la entrada. Ese último es el que
+    // faltaba en todas las versiones anteriores de esta idea: sin él el producto
+    // queda en tránsito, fuera de la sala y todavía no en bodega.
+
+    const recargarTarjeta = useCallback(async (pedidoId, sucId) => {
+        const key = `act_${pedidoId}_${sucId}`;
+        await Promise.all([loadActive(), fetchItems(key, pedidoId, sucId)]);
+    }, [loadActive, fetchItems]);
+
+    const handleSolicitarDevolucion = useCallback(async (pedidoId, sucId, datos) => {
+        const { itemId, motivo, cantidad, nota, fotos = [] } = datos;
+        setBusyAction(`dev_${itemId}`);
+        try {
+            // La evidencia va PRIMERO: si la foto no sube, la devolución no se
+            // crea. Una por daño sin foto es justo la que bodega no puede
+            // decidir, y dejarla entrar la vuelve una fila que hay que rechazar.
+            const evidencia = fotos.length
+                ? await subirEvidencia(fotos, { salaId: sucId, userId: user?.id })
+                : [];
+            const { error } = await solicitarDevolucion({ itemId, motivo, cantidad, nota, evidencia });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('PEDIDO_DEVOLUCION_SOLICITADA', pedidoId, {
+                sucursal_id: sucId, item_id: itemId, motivo, cantidad, fotos: evidencia.length,
+            });
+            useToastStore.getState().showToast(
+                'Devolución pedida',
+                motivo === 'faltante'
+                    ? 'Bodega la confirma y se corrige en el momento — no viaja nada.'
+                    : 'Bodega la revisa y te contesta.',
+                'success',
+            );
+            await recargarTarjeta(pedidoId, sucId);
+        } catch (e) {
+            useToastStore.getState().showToast('Devolución', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
+    }, [user, recargarTarjeta]);
+
+    // Aceptar y mover son UN gesto para quien aprieta, pero dos escrituras
+    // distintas: la decisión es del portal y siempre entra; el movimiento habla
+    // con el sistema y puede fallar, tardar o estar pausado. Por eso el fallo del
+    // segundo no borra el primero — la devolución queda aceptada y se reintenta.
+    const handleDecidirDevolucion = useCallback(async (pedidoId, sucId, id, accion, nota) => {
+        setBusyAction(`devdec_${id}`);
+        try {
+            const { error } = await decidirDevolucion(id, accion, nota);
+            if (error) throw error;
+
+            if (accion === 'aceptar') {
+                const r = await moverDevoluciones([id], { simulacro: false });
+                if (!r.ok) {
+                    useToastStore.getState().showToast(
+                        'Quedó aceptada, pero no salió',
+                        r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.',
+                        'warning',
+                    );
+                } else {
+                    useToastStore.getState().showToast(
+                        'Salió de la sala',
+                        'Falta confirmar la entrada en bodega.',
+                        'success',
+                    );
+                }
+            }
+            useStaff.getState().appendAuditLog(`PEDIDO_DEVOLUCION_${accion.toUpperCase()}`, pedidoId, {
+                sucursal_id: sucId, devolucion_id: id, nota,
+            });
+            await recargarTarjeta(pedidoId, sucId);
+        } catch (e) {
+            useToastStore.getState().showToast('Devolución', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
+    }, [recargarTarjeta]);
+
+    // El reintento de la salida. Existe porque aceptar y mover son dos
+    // escrituras: la primera siempre entra, la segunda habla con el sistema y
+    // puede rebotar —sin existencia, presentación cambiada, movimientos
+    // pausados—. Sin este botón, un acuerdo ya tomado se quedaría sin brazos.
+    const handleMoverDevolucion = useCallback(async (pedidoId, sucId, id) => {
+        setBusyAction(`devmov_${id}`);
+        try {
+            const r = await moverDevoluciones([id], { simulacro: false });
+            useToastStore.getState().showToast(
+                r.ok ? 'Salió de la sala' : 'No salió',
+                r.ok ? 'Falta confirmar la entrada en bodega.'
+                     : (r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.'),
+                r.ok ? 'success' : 'error',
+            );
+            useStaff.getState().appendAuditLog('PEDIDO_DEVOLUCION_MOVIDA', pedidoId, {
+                sucursal_id: sucId, devolucion_id: id, ok: r.ok === true,
+            });
+            await recargarTarjeta(pedidoId, sucId);
+        } catch (e) {
+            useToastStore.getState().showToast('Devolución', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
+    }, [recargarTarjeta]);
+
+    // El botón que cierra el círculo. Mientras nadie lo apriete, el producto
+    // está en tránsito — y esa es la razón de que esta pieza se construyera
+    // primero.
+    const handleRecibirDevolucion = useCallback(async (pedidoId, sucId, id) => {
+        setBusyAction(`devrec_${id}`);
+        try {
+            const r = await recibirDevoluciones([id], { simulacro: false });
+            if (!r.ok) {
+                useToastStore.getState().showToast(
+                    'No se pudo ingresar',
+                    r.fallos?.[0]?.error ?? r.error ?? 'Se puede reintentar.',
+                    'error',
+                );
+            } else {
+                useToastStore.getState().showToast('Entró en bodega', 'La diferencia queda cerrada.', 'success');
+            }
+            useStaff.getState().appendAuditLog('PEDIDO_DEVOLUCION_RECIBIDA', pedidoId, {
+                sucursal_id: sucId, devolucion_id: id, ok: r.ok === true,
+            });
+            await recargarTarjeta(pedidoId, sucId);
+        } catch (e) {
+            useToastStore.getState().showToast('Devolución', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
+    }, [recargarTarjeta]);
+
     // ── Derived ───────────────────────────────────────────────────────────────
 
     const filterOptions = useMemo(() => ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` })), []);
@@ -1228,6 +1366,7 @@ export function usePedidosData({ searchTerm = '' }) {
         expanded,
         items,
         eventosMap,
+        devolucionesMap,
         loadingItems,
         llegadaStatus,
         erpStatus,
@@ -1283,6 +1422,10 @@ export function usePedidosData({ searchTerm = '' }) {
         handleCorregirBodega,
         handleConfirmarCorreccion,
         handleResolverItem,
+        handleSolicitarDevolucion,
+        handleDecidirDevolucion,
+        handleMoverDevolucion,
+        handleRecibirDevolucion,
         filterOptions,
         hasObservacion,
         pedidoStageMap,

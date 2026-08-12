@@ -73,25 +73,41 @@ hace— o rechaza con motivo. No se cierra hasta que las dos partes coincidan.
 
 ---
 
-## Recomendaciones — PROPUESTAS, el usuario aún no las confirmó
-
-**No construir sobre esto sin que las apruebe.**
+## Recomendaciones
 
 1. **Desempate → cerrar sin acuerdo a la segunda vuelta.** El inventario queda
    como está (opción segura) y el desacuerdo queda con los dos motivos, visible
-   para quien supervise.
+   para quien supervise. — **PROPUESTA, sin confirmar.**
 2. **Presentación distinta → no agregar una cuarta decisión.** Es *faltante* de
    lo pedido y *sobrante* de lo llegado a la vez; la pantalla lo parte en esas dos.
-3. **Dañado y vencido → devolver a bodega.** Argumento concreto: **bodega ya
-   tiene ubicación de vencidos** (`inv_ubicaciones` de Bodega incluye
-   `{"id":2,"isVencidos":true}`), y el movimiento es el traslado ya probado. Dar
-   de baja en la sala necesitaría un motivo de ajuste que no existe, y el reclamo
-   al laboratorio se hace desde bodega, que es donde entran las compras.
+   — **PROPUESTA, sin confirmar.**
+3. **Dañado y vencido → devolver a bodega. APROBADA el 2026-08-12, con un
+   agregado del usuario: el daño exige FOTO.** No es burocracia y el motivo es
+   operativo — bodega decide con la foto si el daño amerita la devolución o si el
+   producto todavía se puede vender, así que la foto es la única forma de que esa
+   decisión no sea a ciegas. Implementado: `danado` sin foto no entra (lo frena la
+   RPC con mensaje propio y lo garantiza un CHECK).
 4. **Ventana del producto físico → pendiente visible con fecha; a los 7 días se
    convierte en PROPUESTA de devolución** (propuesta, no movimiento).
+   — **PROPUESTA, sin confirmar.**
 5. **Lote → el aviso se muestra siempre; la confirmación se pide sólo en
    controlados.** No hace falta lista a mano: la pantalla de traslado marca
    `data-regulado='1'`, así que la regla se apoya en ese dato.
+   — **PROPUESTA, sin confirmar.** (La devolución ya vuelve con el mismo lote con
+   el que llegó, y avisa cuando no puede.)
+
+### Las otras dos decisiones del 2026-08-12
+
+- **La recepción en bodega la confirma SIEMPRE una persona.** Nunca automática.
+  Pero la solicitud tiene que **decir si el producto viaja**: si está en la sala,
+  bodega confirma cuando lo tenga en la mano; si es sólo un arreglo en el sistema
+  —el faltante que nunca salió de bodega—, lo confirma en el momento, sin esperar
+  nada. Por eso `pedido_devolucion.viaja` existe y se pinta en la pantalla: sin
+  ese dato, bodega espera una caja que no viene, o da por recibida una que
+  todavía va en el camión.
+- **Todo entra a la ubicación de trabajo de bodega**, también lo dañado y lo
+  vencido. Bodega mueve después lo que no sirva. Es además la única entrada
+  probada de verdad contra el sistema (el regreso del 2026-08-11 entró ahí).
 
 ---
 
@@ -129,7 +145,8 @@ entre sala y bodega, y que la devolución dispare su recepción en bodega.
 ## Orden sugerido
 
 1. **La devolución con su recepción en bodega** — es lo único que hoy dejaría
-   mercadería varada.
+   mercadería varada. **CONSTRUIDO el 2026-08-12; falta su prueba controlada.**
+   Ver abajo.
 2. El registro de la decisión + el lazo de acuerdo (sobre el molde de MIN·MAX).
 3. La pantalla final del conteo.
 4. Los tableros de los dos lados.
@@ -140,3 +157,68 @@ Igual que el traslado el 2026-08-11: **provocar cada rama contra inventario real
 y comparar contra una foto previa** (existencia, costo, precio y lotes en las dos
 salas). Guion en `docs/PRUEBA-TRASLADO-2026-08-11.md`; el regreso en
 `scripts/qa/rollback-traslado.mjs`. Nada de esto se da por bueno leyendo código.
+
+---
+
+## Bloque 1 — la devolución (construido el 2026-08-12)
+
+**Nace PAUSADA.** Los interruptores `devolver_enviar` y `devolver_recibir` están
+en pausa con motivo «Sin estrenar», y la propia función los lee antes de tocar
+nada. El freno vive ahí y no en una constante del navegador porque una pantalla
+vieja en la pestaña de alguien seguiría llamando igual. Se levantan desde
+Sistema › Mantenimiento cuando la prueba esté hecha.
+
+### Las piezas
+
+| Pieza | Dónde |
+|---|---|
+| Tabla, una fila por producto | `pedido_devolucion` (migración `20260812031736`) |
+| Pedir / decidir | `solicitar_devolucion_pedido`, `decidir_devolucion_pedido` |
+| Cerrar el renglón al entrar | `cerrar_item_por_devolucion` (sólo `service_role`) |
+| El movimiento y su entrada | `devolver-pedido-erp` (`accion: enviar` / `recibir`) |
+| Pantalla de la sala | `DevolverModal` |
+| Pantalla de las dos partes | `DevolucionBloque`, dentro de las diferencias |
+| Freno | `traslado_interruptor`: `devolver_enviar`, `devolver_recibir` |
+
+Un movimiento **por producto**, con su clave `DEV-P<pedido>-S<sala>-I<renglón>`
+primero en el concepto: es lo que permite encontrarlo entre los ~900 del pedido y
+lo que se busca antes de reintentar una línea cortada, para no moverla dos veces.
+
+El renglón del pedido se cierra **cuando el producto entró en bodega**, no cuando
+la sala lo pide ni cuando bodega acepta. Antes de eso está en tránsito.
+
+### Lo que ya se comprobó (2026-08-12, sin tocar inventario)
+
+- La función está desplegada y exige sesión.
+- **El freno frena**: con `simulacro:false` contesta `DEVOLUCIONES_PAUSADAS`
+  antes de mirar nada.
+- Las guardas de las RPC disparan: `ITEM_NO_EXISTE`, `MOTIVO_INVALIDO`,
+  `DEVOLUCION_NO_EXISTE`, y `cerrar_item_por_devolucion` da *permission denied*
+  para `authenticated`.
+- Advisor de seguridad: **0 errores**.
+
+### Lo que NO se comprobó y hay que provocar
+
+1. **Un movimiento real de punta a punta**, contra una foto previa de existencia,
+   costo y lotes en las dos salas. Ninguna escritura contra el sistema se
+   ejercitó todavía.
+2. **La rama «sólo bodega»**: la cuenta de QA tiene alcance TODOS, así que pasó
+   el filtro por derecho propio y esa guarda quedó sin ejercitar. Se prueba
+   acotando un rol un momento, como se hizo con el control de sala del traslado
+   el 2026-08-11.
+3. **La foto**: que se suba, que se firme y que se vea del lado de bodega.
+4. **El lote**: que vuelva con el mismo con el que llegó, y que avise cuando no.
+
+### Guion propuesto
+
+Sobre **Salud 5** y **un solo producto**, igual que el 2026-08-11:
+
+1. Foto previa: existencia por lote y costo promedio en Salud 5 y en Bodega.
+2. Provocar la diferencia al recibir (contar de menos en un renglón).
+3. La sala pide la devolución por «No llegó» → **no viaja nada**.
+4. Levantar los dos interruptores.
+5. Bodega acepta → el producto sale de la sala. Mirar el movimiento y su clave.
+6. Bodega confirma la entrada → comparar contra la foto previa.
+7. Repetir con «Dañado» (con foto) para ejercitar la rama que **sí** viaja.
+8. Si algo sale mal: pausar `devolver_enviar` y dejar abierta la entrada, para
+   poder cerrar lo que ya salió.

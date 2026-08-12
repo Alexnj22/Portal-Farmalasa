@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.0 — Devolución del pedido a bodega, con su entrada del otro lado
+
+Lo primero de `docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md`: la única pieza que hoy
+dejaría mercadería varada.
+
+El traslado del pedido es todo o nada —la recepción ingresa la cantidad completa
+que salió de bodega, aunque la sala haya contado menos—, así que la diferencia se
+anotaba en el portal y **no tocaba las existencias nunca**. Si la sala contaba 28
+de 30, el sistema seguía diciendo 30. Y esos 2 casi siempre están en bodega: un
+faltante suele ser que se empacó de menos.
+
+Ahora la sala pide devolver, **bodega decide**, y al aceptar el producto sale de
+la sala. La tercera parte es la que faltaba en todas las versiones anteriores de
+esta idea: **bodega confirma la entrada**. Sin eso el producto queda en tránsito
+—fuera de la sala y todavía no en bodega—, que es peor que estar en cualquiera de
+los dos lados. Es el mismo error que tuvo el guion de rollback hasta que se le
+agregó la recepción.
+
+Decisiones del usuario que le dan la forma:
+
+- **Dañado y vencido también se devuelven, y el daño exige FOTO.** Es lo que deja
+  a bodega decidir si amerita la devolución o si el producto todavía se puede
+  vender; sin la foto esa decisión sería a ciegas.
+- **La entrada la confirma siempre una persona**, nunca sola. Pero la solicitud
+  dice **si el producto viaja**: si está en la sala, bodega confirma cuando lo
+  tenga en la mano; si es sólo un arreglo en el sistema —el faltante que nunca
+  salió de bodega—, lo confirma en el momento. Sin ese dato, bodega espera una
+  caja que no viene, o da por recibida una que va en el camión.
+- **Todo entra a la ubicación de trabajo**, también lo dañado y lo vencido.
+
+Un movimiento **por producto**, con su clave `DEV-P…-S…-I…` primero en el
+concepto, y el renglón del pedido se cierra recién cuando el producto entró.
+
+**Nace pausada.** Dos interruptores nuevos (`devolver_enviar`,
+`devolver_recibir`) en Sistema › Mantenimiento, en pausa con motivo «Sin
+estrenar»: ninguna escritura contra existencias se ejercitó todavía y la primera
+va a ser una prueba controlada, no el primer pedido que aparezca. El freno lo lee
+la propia función, no el navegador — una pantalla vieja en la pestaña de alguien
+llamaría igual.
+
+De paso: el cierre del pedido dejó de estar duplicado (`resolve_pedido_item` y la
+devolución llaman a `cerrar_pedido_si_todo_resuelto`), y los interruptores de
+Mantenimiento sacan su rótulo de un mapa — el ternario que había le habría puesto
+«Recibir en la sala» a los dos nuevos.
+
 ## v2.570.1 — El diseño de la resolución de diferencias
 
 Auditoría completa del módulo recorriendo cada rama, y el diseño de lo que falta:

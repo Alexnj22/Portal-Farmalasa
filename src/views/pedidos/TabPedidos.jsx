@@ -31,6 +31,7 @@ import FinalizarCajasModal from './FinalizarCajasModal';
 import CrearRutaModal    from './CrearRutaModal';
 import RutaMapModal      from './RutaMapModal';
 import ProgramarEntregaModal from './ProgramarEntregaModal';
+import DevolverModal from './DevolverModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -112,6 +113,8 @@ export default function TabPedidos({ searchTerm = '' }) {
     // —el papel con el que se arman las cajas— y bloquearla dejaría el pedido
     // hecho y sin hoja. El permiso se llama "Reimprimir el pedido" por eso.
     const canDownload = hasPermission('pedidos_descargar');
+    // { pedidoId, sucId, item } — el renglón que la sala quiere devolver.
+    const [devolverModal, setDevolverModal] = React.useState(null);
     const {
         user, isBranch, canEdit,
         erpSucursalId, branchName,
@@ -123,6 +126,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         expanded,
         items,
         eventosMap,
+        devolucionesMap,
         loadingItems,
         llegadaStatus,
         erpStatus,
@@ -177,6 +181,10 @@ export default function TabPedidos({ searchTerm = '' }) {
         handleReportarDiferencias,
         handleCorregirBodega,
         handleConfirmarCorreccion,
+        handleSolicitarDevolucion,
+        handleDecidirDevolucion,
+        handleMoverDevolucion,
+        handleRecibirDevolucion,
         handleResolverItem,
         filterOptions,
         hasObservacion,
@@ -541,6 +549,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 row={row}
                                                 difItems={(items[cardKey] ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
                                                 eventos={eventosMap[cardKey] ?? []}
+                                                devoluciones={devolucionesMap[cardKey] ?? []}
                                                 isBranch={isBranch}
                                                 busyAction={busyAction}
                                                 empMap={empMap}
@@ -555,6 +564,22 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 }
                                                 onConfirmarCorreccion={() =>
                                                     handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)
+                                                }
+                                                onSolicitarDevolucion={(item) =>
+                                                    setDevolverModal({
+                                                        pedidoId: row.pedido_id,
+                                                        sucId: erpSucursalId ?? row.erp_sucursal_id,
+                                                        item,
+                                                    })
+                                                }
+                                                onDecidirDevolucion={(id, accion, nota) =>
+                                                    handleDecidirDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id, accion, nota)
+                                                }
+                                                onMoverDevolucion={(id) =>
+                                                    handleMoverDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
+                                                }
+                                                onRecibirDevolucion={(id) =>
+                                                    handleRecibirDevolucion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, id)
                                                 }
                                             />
                                         </div>
@@ -799,6 +824,23 @@ export default function TabPedidos({ searchTerm = '' }) {
                     open={!!rutaMapOpen}
                     onClose={() => setRutaMapOpen(null)}
                     currentUserId={user?.id}
+                />
+            )}
+
+            {/* ── Devolver a bodega ───────────────────────────────────────────
+                El estado vive acá y no en el hook porque es puro formulario: se
+                abre desde la fila de una diferencia y muere al enviarlo. */}
+            {devolverModal && (
+                <DevolverModal
+                    open
+                    onClose={() => setDevolverModal(null)}
+                    item={devolverModal.item}
+                    saving={busyAction === `dev_${devolverModal.item?.id}`}
+                    onConfirm={async (datos) => {
+                        const m = devolverModal;
+                        setDevolverModal(null);
+                        await handleSolicitarDevolucion(m.pedidoId, m.sucId, { itemId: m.item.id, ...datos });
+                    }}
                 />
             )}
 

@@ -173,6 +173,13 @@ aplican por ahora.
 - Los libros de ventas y los cortes Z **no tocan ninguna tabla de compras**
   (verificado sobre los 7 RPC). Lo de compras no los afecta; se encuentran recién
   en la declaración.
+- **La cuota del mes ya está medida** (2026-08-11): de los $12,331.29 de junio, el
+  IVA se reproduce a $5.38 de lo declarado y el 59% depende de la planilla, que
+  sigue en cero filas. Y el residuo del IVA apunta al crédito fiscal de compras —
+  389 documentos nuestros contra 489 recibidos, más 58 notas de crédito que no
+  entran a ningún libro. Está en `CONTABILIDAD-ALCANCE-2026-08-01.md` §5, y la
+  conciliación de los anexos contra los archivos del contador en
+  `ANEXOS-HACIENDA-2026-08-11.md` §8.
 
 ---
 

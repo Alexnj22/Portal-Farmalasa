@@ -8,6 +8,11 @@ La respuesta es **no**, y el motivo no es que falten datos: es que **documentos,
 libros fiscales y contabilidad son tres cosas distintas**. El portal cubre la
 primera, ahora cubre la segunda, y no toca la tercera.
 
+> **Actualizado el 2026-08-11 con una medición, no con una opinión.** El §5
+> nuevo cuenta cuánto de **la cuota que se paga cada mes** sale de lo que el
+> portal ya tiene: el IVA se reproduce a $5.38 de lo declarado, el pago a cuenta
+> no cuadra, y el 59% depende de la planilla, que sigue en cero filas.
+
 ---
 
 ## 1. Los tres niveles
@@ -176,7 +181,98 @@ datos completos: el dato se perdió en el momento de la venta.
 
 ---
 
-## 5. Qué significa esto en la práctica
+## 5. La cuota del mes: cuánto de ella sale de lo que ya tenemos (2026-08-11)
+
+Todo lo anterior es un mapa. Esto es la medición: el contador manda cada mes una
+hoja con **lo que hay que pagar**, y se cotejó línea por línea contra la base.
+
+Junio 2026, «FARMACIA LA SALUD»:
+
+| Línea | Monto | ¿Sale del portal? |
+|---|---|---|
+| IVA | $1,077.16 | ✅ **sí**, con residuo de $5.38 |
+| Pago a cuenta | $3,991.48 | ⚠️ la fórmula sí, **la base no cuadra** |
+| Planilla ISSS | $2,526.05 | ❌ no |
+| Planillas AFP | $3,555.74 | ❌ no |
+| Cuota ISR | $930.86 | ❌ no |
+| Honorarios | $250.00 | ❌ no |
+| **Total** | **$12,331.29** | **41% derivable** |
+
+Más un bloque sin montos que es su lista de pendientes: **informe de
+inventarios** y **balances de alcaldías** por las seis municipalidades.
+
+### El IVA se reproduce casi clavado
+
+| Concepto | Junio 2026 |
+|---|---|
+| Débito de consumidor final (suma del IVA de ~22 mil facturas) | $25,644.83 |
+| Débito de contribuyentes (49 CCF) | $248.69 |
+| **Débito total** | **$25,893.52** |
+| − Crédito fiscal de compras (389 documentos) | −$23,286.48 |
+| − Percepción que le hicieron los proveedores (casilla 163) | −$1,531.44 |
+| − Retención sobre ventas (casilla 162) | −$3.82 |
+| **= IVA a pagar** | **$1,071.78** |
+
+Él declara **$1,077.16**: quedamos a **$5.38**, un 0.5%.
+
+**El residuo no se redondea, y el sospechoso tiene nombre.** En junio hay **389
+compras** en `purchase_receipts` contra **489 comprobantes de crédito fiscal**
+recibidos por correo en `purchase_dte_documents`, y las **58 notas de crédito de
+compras** de ese mes —$992.14 de IVA— no entran a ningún libro. El crédito
+fiscal es el número menos firme de la cuenta, y es el mismo hallazgo abierto del
+§4.2 de `LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md`, ahora con consecuencia
+medida: **hasta que se cierre, el IVA que el portal calcule es aproximado**.
+
+### El pago a cuenta no cuadra, y no se sabe por qué
+
+Es el 1.75% de los ingresos brutos, pero según qué base:
+
+| Base | 1.75% |
+|---|---|
+| Base gravada neta de IVA — $199,138.93 | $3,484.93 |
+| Ingresos con IVA — $225,026.42 | $3,937.96 |
+| **Lo que él declara** | **$3,991.48** |
+
+Su cifra implica una base de **$228,084.57**, unos **$3,058 por encima** de
+nuestro bruto. Hay que pedirle el papel de trabajo antes de programar nada: puede
+que la base incluya algo que no estamos viendo.
+
+### Lo que no se puede calcular, y por qué no es un problema de fórmula
+
+ISSS, AFP y cuota ISR salen de la **planilla**. `payroll_entries` y
+`payroll_periods` siguen en **cero filas** con 50 empleados cargados, y
+`branch_expenses` —donde iría el honorario— también. No falta un cálculo: falta
+el dato. Son **$7,262.65 de los $12,331.29, el 59%**.
+
+Es exactamente lo que anuncia el §4: *que la tabla exista y esté vacía es peor
+que no tenerla*. Acá se ve el costo concreto.
+
+### Una confirmación que llegó de rebote
+
+Su lista de pendientes incluye **«INFORME DE INVENTARIOS»**. Es el **F-983** del
+Art. 142 CT, que se presenta en los dos primeros meses del año cuando los
+ingresos superan 2,753 salarios mínimos — el umbral que se calculó por separado
+en `ANEXOS-HACIENDA-2026-08-11.md` §5 y que da que sí aplica. Dos caminos
+distintos llegando a lo mismo.
+
+### El orden si algún día se quiere esta hoja en el portal
+
+1. **Cerrar el crédito fiscal de compras** (las notas de crédito y los ~100
+   documentos de diferencia). Sin eso el IVA queda aproximado, y una cuota
+   aproximada no sirve para pagar.
+2. **Preguntarle la base del pago a cuenta.** Es una pregunta, no un desarrollo.
+3. **Cargar planilla.** Es el 59% de la hoja y es un módulo, no un cálculo.
+
+Con 1 y 2 el portal mostraría solo la mitad de la cuota del mes, que es justo la
+parte que se deriva de lo que ya sincroniza.
+
+> Los archivos que mandó el contador (`libros/`) **no están en el repo y no deben
+> estarlo**: llevan nombres de clientes. La conciliación documento por documento
+> de los tres anexos está en `ANEXOS-HACIENDA-2026-08-11.md` §8.
+
+---
+
+## 6. Qué significa esto en la práctica
 
 **El portal es un excelente sistema de información y el soporte documental de la
 contabilidad — no es el sistema contable.** Hoy alguien tiene que tomar estos

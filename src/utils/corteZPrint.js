@@ -77,6 +77,13 @@ function bloqueSucursal(fila, { conSalto }) {
     // que solo muestra el cotejo cuando falla no deja constancia de que se hizo.
     const dif = Number(fila.dif_total) || 0;
     const cuadra = Math.abs(dif) < 0.005;
+    // El ticket resta la retención dos veces: su línea GRAVADAS ya viene neta y
+    // su TOTAL se la vuelve a restar. Por eso el cotejo va contra `z_*` —las
+    // gravadas— y no contra los totales del ticket. Cuando hay retención se
+    // imprime su línea y la explicación: este PDF es el que se presenta, así
+    // que no puede decir menos que la pantalla.
+    const conRetencion = Math.abs(Number(fila.retencion) || 0) >= 0.005
+                      || Math.abs(Number(fila.portal_retencion) || 0) >= 0.005;
 
     return [
         ...(conSalto ? [{ text: '', pageBreak: 'before' }] : []),
@@ -107,7 +114,7 @@ function bloqueSucursal(fila, { conSalto }) {
                 widths: ['*', 110],
                 body: [[
                     { text: 'TOTAL GENERAL', style: 'totalRot' },
-                    { text: dinero(fila.total_general), style: 'totalVal' },
+                    { text: dinero(fila.z_total), style: 'totalVal' },
                 ]],
             },
             layout: 'noBorders',
@@ -123,11 +130,15 @@ function bloqueSucursal(fila, { conSalto }) {
                         { text: '', style: 'th' }, { text: 'Corte Z', style: 'th' },
                         { text: 'Libro', style: 'th' }, { text: 'Diferencia', style: 'th' },
                     ],
-                    ['Ventas con factura', dinero(fila.factura_total), dinero(fila.portal_factura), dinero(fila.dif_factura)],
-                    ['Ventas con crédito fiscal', dinero(fila.ccf_total), dinero(fila.portal_ccf), dinero(fila.dif_ccf)],
+                    ['Ventas con factura', dinero(fila.z_factura), dinero(fila.portal_factura), dinero(fila.dif_factura)],
+                    ['Ventas con crédito fiscal', dinero(fila.z_ccf), dinero(fila.portal_ccf), dinero(fila.dif_ccf)],
+                    ...(conRetencion
+                        ? [['Retención de IVA', dinero(fila.retencion),
+                            dinero(fila.portal_retencion), dinero(fila.dif_retencion)]]
+                        : []),
                     [
                         { text: 'Total general', bold: true },
-                        { text: dinero(fila.total_general), bold: true },
+                        { text: dinero(fila.z_total), bold: true },
                         { text: dinero(fila.portal_total), bold: true },
                         { text: dinero(fila.dif_total), bold: true },
                     ],
@@ -142,6 +153,16 @@ function bloqueSucursal(fila, { conSalto }) {
                 : `Diferencia de ${dinero(Math.abs(dif))} contra el libro. Revisar antes de presentar.`,
             style: cuadra ? 'ok' : 'alerta',
         },
+        ...(conRetencion ? [{
+            text: `El Corte Z resta la retención dos veces: sus ventas gravadas `
+                + `(${dinero(fila.z_total)}) ya vienen netas de los ${dinero(fila.retencion)} `
+                + `retenidos, y su línea de total se los vuelve a restar hasta `
+                + `${dinero(fila.total_general)} — una cifra que no corresponde a ninguna venta. `
+                + `La que vale es la de ventas gravadas, que es la que coincide con el libro. La `
+                + `retención es el 1% que el cliente retiene y entera él mismo (Art. 162 del `
+                + `Código Tributario): no es una venta menos, es un anticipo ya pagado.`,
+            style: 'nota',
+        }] : []),
     ];
 }
 
@@ -177,6 +198,7 @@ export async function descargarCorteZPdf(filas, nombreArchivo) {
             totalVal:  { fontSize: 12, bold: true, alignment: 'right' },
             ok:        { fontSize: 9, color: '#1a7f37' },
             alerta:    { fontSize: 9, color: '#b42318', bold: true },
+            nota:      { fontSize: 8, color: '#555', margin: [0, 6, 0, 0], lineHeight: 1.25 },
         },
         defaultStyle: { fontSize: 9 },
     };

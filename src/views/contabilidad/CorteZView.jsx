@@ -30,11 +30,15 @@ import { EMPRESA } from '../../constants/empresa';
 // lo que se presenta son los números en una tarjeta por sucursal. Replicar el
 // ticket sería copiar una limitación de la impresora, no un requisito del dato.
 //
-// Dos hallazgos del cotejo que la vista tiene que dejar ver (2026-08-03):
-//   · La línea GRAVADAS y la línea TOTAL del ticket difieren en Salud 3 por la
-//     RETENCIÓN, que el ticket imprime al lado y resta. Desde el 2026-08-04 el
-//     libro la tiene documento por documento, así que la resta se verifica de
-//     los dos lados en vez de aceptarse del ticket.
+// Dos hallazgos del cotejo que la vista tiene que dejar ver:
+//   · **El ticket resta la retención DOS veces** (2026-08-12). Su línea GRAVADAS
+//     no es una base gravada: ya es la suma de lo cobrado, con IVA y neta de
+//     retención. Su línea TOTAL se la vuelve a restar, así que ese TOTAL no
+//     corresponde a ninguna cantidad real. Por eso el cotejo se ancla en
+//     GRAVADAS — medido: coincide con el libro al centavo en los 12
+//     meses-sucursal cargados, en las dos secciones. Lo levantó el contador, no
+//     el cuadre: la tarjeta decía CUADRA mostrando $976.73 contra $980.33, y la
+//     nota de abajo justificaba la diferencia como si el neteo fuera legítimo.
 //   · El origen puede omitir una venta sellada: Salud 1 julio, $9.00.
 // Por eso el cotejo se muestra SIEMPRE, cuadre o no.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,10 +108,11 @@ const LineaCotejo = ({ rotulo, z, portal, dif }) => {
 // están las cinco, y esconder una porque vale cero es decidir por quien lo lee
 // que ese cero no importa.
 //
-// `TOTAL = GRAVADAS − RETENCIÓN`, y se cumple en las 12 filas cargadas con
-// desviación cero. Una versión anterior marcaba `gravadas ≠ total` como si el
-// ticket se contradijera; lo corrigió el usuario mirando la tarjeta —la resta
-// estaba a la vista— y la marca se retiró: no había nada que marcar.
+// `TOTAL = GRAVADAS − RETENCIÓN` se cumple en las 12 filas cargadas con
+// desviación cero — pero esa resta es un DEFECTO del ticket, no un neteo:
+// GRAVADAS ya viene neta de retención. Acá se imprime igual, tal cual salió,
+// porque esto REPRODUCE el documento. La cifra que se coteja es GRAVADAS, y la
+// nota debajo del cotejo explica por qué las dos no dicen lo mismo.
 const SeccionTicket = ({ titulo, datos = {} }) => (
     <div className="min-w-0">
         <h4 className="text-caption font-semibold text-content-2 mb-1 truncate">{titulo}</h4>
@@ -135,11 +140,10 @@ const SeccionTicket = ({ titulo, datos = {} }) => (
 //
 // «Difiere $9.00» no sirve de nada si no dice de dónde sale.
 //
-// Antes de llegar acá ya se descontó la RETENCIÓN: el Corte Z declara el total
-// NETO (`TOTAL = GRAVADAS − RETENCIÓN`) y `sales_invoices.total` es el BRUTO,
-// así que compararlos de frente inventaba una diferencia que no existía —
-// Salud 3 aparecía con $42.92 y en realidad cuadraba. Lo que llega hasta este
-// panel es el residuo REAL: documentos que un lado tiene y el otro no.
+// El residuo se mide contra la línea GRAVADAS del ticket, que es el mismo
+// concepto que el total del libro —lo cobrado, con IVA y neto de retención—,
+// así que NO hay ningún ajuste de por medio. Lo que llega hasta este panel es
+// el residuo REAL: documentos que un lado tiene y el otro no.
 // Qué significa cada causa que encontró el cuadre diario, y qué hacer con ella.
 // El texto es de negocio: quien lee esto está armando una declaración, no
 // depurando un sync.
@@ -229,9 +233,10 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
                 </div>
             ) : (
                 <p className="text-micro leading-relaxed">
-                    El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z, y ya está
-                    descontada la retención. Todavía no hay un diagnóstico de este período — se
-                    genera con el cuadre diario, que corre cada mañana.
+                    El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z, y no es
+                    por la retención: esa se coteja en su propia línea. Todavía no hay un
+                    diagnóstico de este período — se genera con el cuadre diario, que corre cada
+                    mañana.
                     {!cuadra(fila.dif_ccf) && (
                         <> Parte de la diferencia está en los créditos fiscales
                         ({formatMoney(fila.dif_ccf)}), y esos se persiguen en el libro de
@@ -309,10 +314,15 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 </Badge>
             </header>
 
+            {/* El total REAL del período —la suma de las líneas de ventas
+                gravadas— y no el que imprime el ticket, que trae la retención
+                restada de más. La cifra más grande de la tarjeta no puede ser
+                la que la nota de abajo declara irreal; el número del ticket
+                sigue a la vista en las secciones y en «Ver el original». */}
             <div className="flex items-baseline justify-between gap-3 rounded-card bg-surface-card-hover border border-divider px-4 py-3">
                 <span className="text-caption font-semibold text-content-2">TOTAL GENERAL</span>
                 <span className="font-mono text-title tabular-nums font-black">
-                    {formatMoney(fila.total_general)}
+                    {formatMoney(fila.z_total)}
                 </span>
             </div>
 
@@ -334,9 +344,15 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                     <span className="text-micro text-content-3 text-right">Libro</span>
                     <span className="text-micro text-content-3 text-right">Dif.</span>
                 </div>
-                <LineaCotejo rotulo="Ventas con factura" z={fila.factura_total}
+                {/* `z_*` es la línea GRAVADAS del ticket, no su TOTAL: son el
+                    mismo concepto que el libro —lo cobrado, con IVA y neto de
+                    retención— así que las dos columnas tienen que dar el MISMO
+                    número cuando cuadra. Enfrentarlas contra el TOTAL del
+                    ticket pintaba dos cifras distintas con un guión al lado, y
+                    eso es lo que hizo desconfiar del cuadro. */}
+                <LineaCotejo rotulo="Ventas con factura" z={fila.z_factura}
                     portal={fila.portal_factura} dif={fila.dif_factura} />
-                <LineaCotejo rotulo="Ventas con crédito fiscal" z={fila.ccf_total}
+                <LineaCotejo rotulo="Ventas con crédito fiscal" z={fila.z_ccf}
                     portal={fila.portal_ccf} dif={fila.dif_ccf} />
                 {/* La retención ya no se acepta del ticket: el libro la tiene
                     documento por documento, así que va como una línea más y con
@@ -347,19 +363,24 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                     <LineaCotejo rotulo="Retención de IVA" z={fila.retencion}
                         portal={fila.portal_retencion} dif={fila.dif_retencion} />
                 )}
-                <LineaCotejo rotulo="Total general" z={fila.total_general}
+                <LineaCotejo rotulo="Total general" z={fila.z_total}
                     portal={fila.portal_total} dif={fila.dif_total} />
             </div>
 
-            {/* Por qué las dos columnas de arriba muestran números distintos con
-                un guión en la diferencia: es la resta que el propio ticket hace
-                —TOTAL = GRAVADAS − RETENCIÓN— y no un error de la tabla. */}
+            {/* Por qué el ticket imprime un total menor que el del cotejo. La
+                versión anterior de esta nota decía que «descontada la retención
+                los dos coinciden», que legitimaba justo el defecto: la resta no
+                netea nada, duplica. */}
             {!cuadra(fila.retencion) && (
                 <p className="text-micro text-content-3 leading-relaxed">
-                    El Corte Z declara <b>{formatMoney(fila.retencion)}</b> de retención de IVA y
-                    la resta de su total, por eso su cifra es menor que la del libro. Descontada,
-                    los dos coinciden. Es el 1% que el cliente retiene y entera él mismo (Art. 162
-                    del Código Tributario): no es una venta menos, es un anticipo ya pagado.
+                    El Corte Z resta la retención <b>dos veces</b>: sus ventas gravadas
+                    ({formatMoney(fila.z_total)}) ya vienen netas de
+                    los <b>{formatMoney(fila.retencion)}</b> retenidos, y su línea de total se los
+                    vuelve a restar hasta {formatMoney(fila.total_general)} — una cifra que no
+                    corresponde a ninguna venta. La que vale es la de ventas gravadas, que es la
+                    que coincide con el libro. La retención es el 1% que el cliente retiene y
+                    entera él mismo (Art. 162 del Código Tributario): no es una venta menos, es un
+                    anticipo ya pagado.
                 </p>
             )}
 
@@ -444,10 +465,12 @@ export default function CorteZView() {
 
     const totales = useMemo(() => {
         let total = 0, factura = 0, ccf = 0, difieren = 0;
+        // Las de ventas gravadas, igual que las tarjetas: sumar los totales del
+        // ticket dejaría el encabezado corto por la retención duplicada.
         for (const f of filas) {
-            total   += Number(f.total_general) || 0;
-            factura += Number(f.factura_total) || 0;
-            ccf     += Number(f.ccf_total) || 0;
+            total   += Number(f.z_total) || 0;
+            factura += Number(f.z_factura) || 0;
+            ccf     += Number(f.z_ccf) || 0;
             if (!cuadra(f.dif_total)) difieren++;
         }
         return { total, factura, ccf, difieren, sucursales: filas.length };

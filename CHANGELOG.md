@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.7 — El cotejo del Corte Z se ancla en las ventas gravadas
+
+Lo levantó el contador, no el cuadre: «no me cuadra la venta de contribuyentes
+de Salud 3 con el Corte Z». La tarjeta decía **CUADRA CON EL LIBRO** mostrando
+$976.73 en una columna y $980.33 en la de al lado, con un guión en la diferencia.
+
+**El Corte Z resta la retención dos veces.** Su línea VENTAS GRAVADAS no es una
+base gravada: ya es la suma de lo cobrado, con IVA y **neta de retención**. Y su
+línea TOTAL se la vuelve a restar, así que ese TOTAL no corresponde a ninguna
+cantidad real. Salud 3, julio, crédito fiscal: la operación vale $983.93 (870.74
+gravada + 113.19 débito), la retención es $3.60, lo cobrado $980.33 —que es
+exactamente lo que imprime GRAVADAS— y el ticket titula $976.73. El DTE sellado
+de la única venta con retención del mes confirma al portal: `montoTotalOperacion`
+406.56, `totalPagar` 402.96.
+
+**El portal siempre tuvo la cifra correcta**; lo que estaba mal era contra qué
+línea del ticket se cotejaba y cómo se explicaba. La nota al pie decía
+«descontada la retención, los dos coinciden», que legitimaba justo el defecto.
+
+- El cotejo se ancla en GRAVADAS (`z_factura`/`z_ccf`/`z_total`, nuevos en
+  `get_cortes_z`). Medido: **diferencia 0.00 en los 12 meses-sucursal cargados**,
+  en las dos secciones — y ahora las dos columnas muestran el **mismo número**
+  cuando cuadran, en vez de dos distintos con un guión.
+- El TOTAL GENERAL de la tarjeta y las tarjetas del encabezado pasan a la cifra
+  real. Las secciones y «Ver el original» siguen reproduciendo el ticket tal
+  cual: es el documento.
+- La nota explica la resta duplicada y cuál es la cifra que vale.
+- El PDF —que es el que se presenta— imprimía el cotejo **sin la línea de
+  retención** y con el total defectuoso. Ahora lleva las dos cosas y la nota.
+- El ajuste viejo (`p_ccf − r_ccf − ccf_total`) era algebraicamente
+  `p_ccf − gravadas`: daba bien por dos errores que se anulaban, y como la
+  retención se cancelaba, esa línea **no podía detectar nunca** una discrepancia
+  en la retención. Anclada en GRAVADAS sí la detecta.
+
+Migración `20260812145127_cotejo_corte_z_ancla_gravadas`.
+
 ## v2.571.6 — Un nombre por pantalla: sentence case en los cinco registros
 
 §26.4 dice sentence case en todo, y los nombres de módulo eran la excepción que

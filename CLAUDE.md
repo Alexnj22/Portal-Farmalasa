@@ -408,12 +408,24 @@ sus CCF pueden trabarse y está aceptado. 77 fichas sin distrito quedan fuera.
 siempre que se transmite hoy una factura emitida antes, y cambiarla sería
 alterar un dato fiscal. Solo las observaciones `receptor.*` son accionables.
 
-**Las cinco funciones del circuito van con `--no-verify-jwt`**
+**Las CUATRO funciones que invoca un cron van con `--no-verify-jwt`**
 (`regularizar-dte`, `sincronizar-fichas-clientes`, `push-cliente-erp`,
-`sync-dte-sales`, `aplicar-solicitud-facturacion`). Un redeploy sin el flag las
-resetea y el cron empieza a fallar con 401 **antes de ejecutar una línea** — ya
-pasó tres veces. Y el CLI se traga el `.env` del repo: `mv .env .env.bak`
-primero (ver memoria `reference_edge_function_deploy_workaround`).
+`sync-dte-sales`). Un redeploy sin el flag las resetea y el cron empieza a
+fallar con 401 **antes de ejecutar una línea** — ya pasó tres veces. Y el CLI se
+traga el `.env` del repo: `mv .env .env.bak` primero (ver memoria
+`reference_edge_function_deploy_workaround`).
+
+**`aplicar-solicitud-facturacion` NO está en esa lista, aunque hasta el
+2026-08-12 esta regla la incluía.** La llama el navegador con la sesión de quien
+aprueba, no un cron: en producción está con `verify_jwt: true` y así funciona.
+Desplegarla con el flag habría *abierto* una función que anula facturas.
+
+La lección general: **el flag depende de QUIÉN la llama, no de a qué circuito
+pertenece.** Cron o Postgres → `--no-verify-jwt` (no hay sesión que presentar, y
+la función valida por su cuenta). Navegador → JWT. Y antes de cualquier
+redeploy, leer el valor VIVO en vez de confiar en la lista — `list_edge_functions`
+lo trae en `verify_jwt`, y ahí se vio que cuatro de las cinco coincidían y una
+no.
 
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)
 

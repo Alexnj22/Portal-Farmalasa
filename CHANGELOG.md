@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.570.1 — El diseño de la resolución de diferencias
+
+Auditoría completa del módulo recorriendo cada rama, y el diseño de lo que falta:
+qué pasa cuando no llega una caja, cuando no llega un producto, cuando llega de
+más. Queda en `docs/RESOLUCION-DIFERENCIAS-PEDIDOS.md`.
+
+**El hallazgo de fondo:** la diferencia se anota en el portal y **nunca toca el
+inventario**. Si la sala contó 28 de 30, el sistema sigue diciendo 30. Y casi
+siempre esos 2 están en bodega —un faltante suele ser que se empacó menos de lo
+que decía el papel—, así que la salida no es recibir menos (eso los haría
+desaparecer de los dos lados) sino decidir producto por producto qué se hace.
+
+Seis flujos faltaban. Dos hacen daño: **una devolución que nadie recibe deja la
+mercadería en tránsito** —el mismo error que tuvo el guion de rollback hasta que
+se le agregó la recepción—, y **sin desempate el pedido no cierra nunca**. Los
+otros cuatro son decisiones pendientes del usuario: presentación distinta,
+dañado/vencido, la ventana del producto pedido en físico, y el lote sustituido.
+
+Nada de esto está construido. Lo que sí quedó verificado es que las piezas de las
+que depende funcionan, y que el molde del mecanismo de aprobación ya existe:
+`minmax_change_requests` tiene la forma exacta —quién pidió, por qué, quién
+decidió y con qué nota—, y sólo le falta la segunda vuelta.
+
 ## v2.570.0 — Interruptor para pausar el traslado
 
 El freno para cuando algo salga mal, pedido por el usuario antes de salir a

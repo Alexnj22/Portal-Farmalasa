@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.575.1 — El control de lote de cada producto llega desde el sistema
+
+El listado de productos ya publica **`es_regulado`**, el campo que se había
+pedido: dice si el producto lleva control de lote. Con eso el portal deja de
+depender de lo que pudo deducir de sus propias existencias.
+
+**Verificado antes de confiarle la columna.** El campo se enfrentó a las 160
+mediciones que se le habían hecho a las pantallas del sistema una por una el
+mismo día: **160 de 160 coinciden**. Y resuelve los 3 que allá no se habían
+podido leer. Cubre los 5,202 productos —2,212 llevan lote— incluidos los 998 que
+el portal no tenía forma de clasificar porque nunca tuvieron existencia.
+
+**Un cambio de este campo ahora sí se escribe.** `sync-products` sólo reescribe
+las filas cuyo nombre, laboratorio o estado cambiaron. Sin agregarlo a esa
+comparación, ponerle o quitarle el control de lote a un producto no habría
+movido ninguno de esos tres campos y la fila habría quedado fuera del guardado —
+el dato nuevo no habría llegado nunca.
+
+Y si el campo dejara de venir, el producto queda en «no se sabe» y no en «no
+lleva»: con lo segundo el portal dejaría de pedir el lote y volvería el defecto
+de v2.575.0. Un dato ausente no es un dato negativo.
+
 ## v2.575.0 — Las cargas de inventario vuelven a entrar, y se cargan productos que la sala no tiene
 
 Reportado el 2026-08-12 sobre una solicitud de Salud 4: al aprobarla, «No se

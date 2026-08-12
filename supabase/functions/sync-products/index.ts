@@ -122,6 +122,19 @@ Deno.serve(async (req) => {
         es_antibiotico: p.es_antibiotico ?? false,
         activo,
         perecedero:     p.perecedero ?? false,
+        // Si el producto lleva control de lote. Sin este dato el portal no puede
+        // exigir el número de lote al cargar, y una carga sin lote la rechaza el
+        // sistema — recién al aprobarla, cuando ya nadie la corrige.
+        //
+        // Se pidió al proveedor y llegó el 2026-08-12 como `es_regulado`.
+        // Verificado antes de confiarle la columna: coincide con las 160
+        // mediciones que se le habían hecho a las pantallas del sistema una por
+        // una, 160 de 160, y resuelve además los 3 que allá no se pudieron leer.
+        //
+        // `?? null` y no `?? false`: si el campo dejara de venir, «no se sabe»
+        // es la respuesta honesta. Con `false` el portal dejaría de pedir el
+        // lote y volveríamos al bug — un dato ausente no es un dato negativo.
+        regulado:       typeof p.es_regulado === 'boolean' ? p.es_regulado : null,
         updated_at:     now,
       };
     });
@@ -134,7 +147,7 @@ Deno.serve(async (req) => {
     while (true) {
       const { data: batch, error: epErr } = await supabase
         .from('products')
-        .select('id, nombre, laboratorio_id, activo')
+        .select('id, nombre, laboratorio_id, activo, regulado')
         .order('id')
         .range(epFrom, epFrom + CHUNK - 1);
       if (epErr) throw new Error(`Load products: ${epErr.message}`);
@@ -161,6 +174,15 @@ Deno.serve(async (req) => {
       }
       // activo change — trigger upsert without logging to changelog
       if ((ep.activo ?? true) !== (np.activo ?? true)) {
+        productChangelogs.push({ product_id: np.id, _activoOnly: true });
+      }
+      // Lo mismo para el control de lote: sólo se escriben las filas marcadas
+      // como cambiadas, así que sin esta comparación un producto al que le
+      // ponen o le quitan el control de lote NO se actualizaría nunca —
+      // cambiaría `es_regulado` y ninguno de los otros tres campos, y la fila
+      // quedaría fuera del upsert. `!==` sobre `null|true|false` distingue los
+      // tres estados, que es justo lo que hace falta acá.
+      if ((ep.regulado ?? null) !== (np.regulado ?? null)) {
         productChangelogs.push({ product_id: np.id, _activoOnly: true });
       }
     }

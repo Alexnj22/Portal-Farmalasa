@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.577.0 — El jefe inmediato hereda el permiso mientras el titular no está
+
+El portal ya sabía las tres cosas que hacen falta, pero no las había juntado:
+`empleado_no_disponible()` sabe quién está de vacaciones o incapacitado,
+`roles.parent_role_id` sabe quién es el jefe inmediato, y `resolveApprover` ya
+subía por esa jerarquía saltando a quien no estaba.
+
+Lo que faltaba: eso **elige a quién se le asigna** la solicitud, pero no le
+**da el permiso** para resolverla. Medido el 2026-08-12, el Supervisor de Ventas
+era el único empleado activo con «Solicitudes → Aprobar»; su jefe inmediato no
+lo tenía, ni los seis Jefes de Sala. Así que al irse de vacaciones el enrutador
+designaba correctamente a un sustituto que después no podía ni abrir la
+bandeja, y las solicitudes se acumulaban.
+
+**La regla.** Heredo un permiso si soy el jefe inmediato de un cargo que lo
+tiene, ese cargo tiene al menos una persona activa, y **todas** están no
+disponibles. Se enciende y se apaga solo, sin que nadie toque nada.
+
+- «Todas» y no «alguna»: si el cargo tiene dos personas y una está, no hay
+  vacío que cubrir.
+- «Al menos una activa» no es redundante: sin esa condición un cargo **vacío**
+  le regalaría el permiso al de arriba para siempre, porque `NOT EXISTS
+  (disponible)` es verdadero de forma trivial sobre el conjunto vacío.
+
+**Una ausencia no es una promoción.** La herencia vale sólo para una lista
+corta y explícita —`requests`, `requests_facturacion`, `requests_inventario`,
+`traslados`, `minmax`— y sólo para ver y aprobar; `can_edit` no se hereda
+nunca. `requests_personales` queda **fuera**: sus solicitudes hablan de la
+persona —vacaciones, incapacidad, anticipo— y verlas es abrir el expediente.
+Sin esa lista, cuando Talento Humano se fuera de vacaciones su jefe heredaría
+también los salarios.
+
+Verificado en el entorno de pruebas, impersonando a `authenticated`, con
+control y casos límite: subordinado presente → no hereda; de vacaciones →
+hereda aprobar **y** ver la bandeja; vacaciones terminadas → se apaga solo;
+cargo sin gente activa → no hereda. Y la lista aguanta: personales, salarios y
+`can_edit` dieron `false` en los tres casos.
+
+El término va **último** en la cadena de OR de `auth_has_module_permission` y
+arranca con la comparación de la lista, así que para cualquier otro módulo se
+descarta con un test de texto. Medido en producción: sigue siendo un
+**One-Time Filter** —una evaluación por consulta, no una por fila—, ~7 ms.
+
+Migración `20260812222924_herencia_de_permiso_por_ausencia_del_titular`.
+
 ## v2.576.0 — Aprobar solicitudes se separa por familia
 
 Hasta ahora **aprobar solicitudes era un solo interruptor**: quien podía anular

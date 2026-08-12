@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.573.2 — El PDF del Corte Z vuelve a una hoja por sucursal
+
+La nota de la retención (v2.571.7) y las comprobaciones (v2.572.0) empujaban una
+**segunda hoja** con puro texto. Decisión del usuario: el PDF lleva las cifras,
+la pantalla lleva la explicación.
+
+Salen del PDF los dos bloques y sus estilos. **Se quedan** las cifras, que son
+lo que se presenta: las tres secciones del ticket, el TOTAL GENERAL, «Para la
+declaración», el cotejo completo y su línea de retención — esa es una fila, cabe
+en la hoja, y sin ella el cuadro tendría un número que no se puede seguir.
+
+En el portal no cambia nada: la nota y las seis comprobaciones siguen ahí.
+
+Queda escrito en el encabezado de `corteZPrint.js` que **una hoja por sucursal
+es un requisito, no una casualidad**, para que el próximo bloque que se quiera
+agregar se mida contra eso primero.
+
+**Consecuencia asumida:** sin la nota, la hoja muestra los totales de sección
+del ticket (que suman $49,501.94 en Salud 3 de julio) junto a un TOTAL GENERAL
+de $49,544.86, sin decir por qué difieren. La explicación está en pantalla y el
+cotejo de la misma hoja muestra las dos columnas cuadrando en cero.
+
 ## v2.573.1 — Las reglas que salieron del barrido, escritas
 
 Sin cambios de código. Tres reglas que este trabajo destapó y que hasta ahora
@@ -92,28 +114,6 @@ antes de que alguien escriba una contraseña creyendo estar en otro lado.
 También: `migration-gate` contaba las filas pre-baseline con una constante fija
 (731) y la imprimía sin medirla. Al quedar el registro en cero, el gate pasaba
 en verde anunciando algo falso. Ahora las cuenta en vivo.
-
-## v2.572.2 — El PDF del Corte Z vuelve a una hoja por sucursal
-
-La nota de la retención (v2.571.7) y las comprobaciones (v2.572.0) empujaban una
-**segunda hoja** con puro texto. Decisión del usuario: el PDF lleva las cifras,
-la pantalla lleva la explicación.
-
-Salen del PDF los dos bloques y sus estilos. **Se quedan** las cifras, que son
-lo que se presenta: las tres secciones del ticket, el TOTAL GENERAL, «Para la
-declaración», el cotejo completo y su línea de retención — esa es una fila, cabe
-en la hoja, y sin ella el cuadro tendría un número que no se puede seguir.
-
-En el portal no cambia nada: la nota y las seis comprobaciones siguen ahí.
-
-Queda escrito en el encabezado de `corteZPrint.js` que **una hoja por sucursal
-es un requisito, no una casualidad**, para que el próximo bloque que se quiera
-agregar se mida contra eso primero.
-
-**Consecuencia asumida:** sin la nota, la hoja muestra los totales de sección
-del ticket (que suman $49,501.94 en Salud 3 de julio) junto a un TOTAL GENERAL
-de $49,544.86, sin decir por qué difieren. La explicación está en pantalla y el
-cotejo de la misma hoja muestra las dos columnas cuadrando en cero.
 
 ## v2.572.1 — El cargo se resuelve contra la tabla, y si no resuelve no se escribe
 

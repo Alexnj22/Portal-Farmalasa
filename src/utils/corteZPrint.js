@@ -3,6 +3,13 @@ import { EMPRESA } from '../constants/empresa';
 
 // PDF del Corte Z — uno o todas las sucursales en un solo archivo.
 //
+// UNA HOJA POR SUCURSAL, y es un requisito, no una casualidad (decisión del
+// usuario, 2026-08-12). El PDF lleva las cifras: las tres secciones del ticket,
+// el total, las cifras para declarar y el cotejo. Lo que EXPLICA —la nota de la
+// retención duplicada y las seis comprobaciones— vive en la pantalla y se sacó
+// de acá porque empujaba una segunda hoja. Antes de agregar cualquier bloque
+// nuevo: si no cabe en la hoja, no va.
+//
 // pdfmake va por `await import()`: son ~809 kB gzip que solo hacen falta al
 // apretar el botón, no al entrar a la vista (regla de librerías pesadas de
 // CLAUDE.md, la vigila `npm run gate:bundle`). Mismo patrón que `pedidoPrint.js`.
@@ -71,11 +78,6 @@ function bloqueSucursal(fila, { conSalto }) {
     // sin esto el PDF obligaba a abrir además el libro de IVA para llenar la
     // declaración.
     const decl = fila.declaracion || {};
-    // Las comprobaciones se IMPRIMEN, pasen o no. El PDF es lo que se archiva:
-    // si sólo apareciera cuando algo falla, el archivo del mes bueno no dejaría
-    // constancia de que se verificó nada. Sin glifos fuera de Latin-1 (Roboto no
-    // trae ✓ ni ⚠: saldrían en blanco), así que el estado va en palabras.
-    const chks = Array.isArray(fila.comprobaciones) ? fila.comprobaciones : [];
     const direccion = direccionDe(fila);
     const secciones = [
         ['Ventas con tiquete',        sec.tiquete],
@@ -89,9 +91,9 @@ function bloqueSucursal(fila, { conSalto }) {
     const cuadra = Math.abs(dif) < 0.005;
     // El ticket resta la retención dos veces: su línea GRAVADAS ya viene neta y
     // su TOTAL se la vuelve a restar. Por eso el cotejo va contra `z_*` —las
-    // gravadas— y no contra los totales del ticket. Cuando hay retención se
-    // imprime su línea y la explicación: este PDF es el que se presenta, así
-    // que no puede decir menos que la pantalla.
+    // gravadas— y no contra los totales del ticket. Cuando hay retención, el
+    // cotejo suma su propia línea: es una fila, cabe en la hoja, y sin ella el
+    // cuadro tendría un número que no se puede seguir.
     const conRetencion = Math.abs(Number(fila.retencion) || 0) >= 0.005
                       || Math.abs(Number(fila.portal_retencion) || 0) >= 0.005;
 
@@ -188,27 +190,6 @@ function bloqueSucursal(fila, { conSalto }) {
                 : `Diferencia de ${dinero(Math.abs(dif))} contra el libro. Revisar antes de presentar.`,
             style: cuadra ? 'ok' : 'alerta',
         },
-        ...(conRetencion ? [{
-            text: `El Corte Z resta la retención dos veces: sus ventas gravadas `
-                + `(${dinero(fila.z_total)}) ya vienen netas de los ${dinero(fila.retencion)} `
-                + `retenidos, y su línea de total se los vuelve a restar hasta `
-                + `${dinero(fila.total_general)} — una cifra que no corresponde a ninguna venta. `
-                + `La que vale es la de ventas gravadas, que es la que coincide con el libro. La `
-                + `retención es el 1% que el cliente retiene y entera él mismo (Art. 162 del `
-                + `Código Tributario): no es una venta menos, es un anticipo ya pagado.`,
-            style: 'nota',
-        }] : []),
-
-        ...(chks.length ? [
-            { text: 'Comprobaciones', style: 'secTitulo' },
-            {
-                stack: chks.map(c => ({
-                    text: `${c.estado === 'ok' ? 'CUMPLE' : 'REVISAR'}  ·  ${c.rotulo}. ${c.detalle}`,
-                    style: c.estado === 'ok' ? 'chkOk' : 'chkAlerta',
-                    margin: [0, 0, 0, 3],
-                })),
-            },
-        ] : []),
     ];
 }
 
@@ -244,9 +225,6 @@ export async function descargarCorteZPdf(filas, nombreArchivo) {
             totalVal:  { fontSize: 12, bold: true, alignment: 'right' },
             ok:        { fontSize: 9, color: '#1a7f37' },
             alerta:    { fontSize: 9, color: '#b42318', bold: true },
-            nota:      { fontSize: 8, color: '#555', margin: [0, 6, 0, 0], lineHeight: 1.25 },
-            chkOk:     { fontSize: 8, color: '#1a7f37', lineHeight: 1.2 },
-            chkAlerta: { fontSize: 8, color: '#b42318', bold: true, lineHeight: 1.2 },
         },
         defaultStyle: { fontSize: 9 },
     };

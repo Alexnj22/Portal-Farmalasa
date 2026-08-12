@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.569.6 — La prueba real del traslado
+
+**Se movió inventario de verdad por primera vez, y volvió exacto.** Pedido #102
+a Salud 5, 4 productos: 3 salieron y 1 se marcó «no sale». Salieron **tres
+traslados, uno por producto** (28480, 28481, 28482), cada uno con su clave en el
+concepto y su lote correcto —`32600` y `260155`—, a unos 500 ms cada uno.
+
+Se recibió **uno solo** primero: llegó a Salud 5 con su lote y los otros dos
+quedaron en tránsito —fuera de Bodega y todavía no en la sala—, que es
+exactamente lo que la recepción parcial tenía que permitir. Después se recibió
+la hoja completa y tomó las 2 que faltaban, sin reintentar la ya recibida.
+
+El regreso a Bodega dejó las **8 combinaciones idénticas** a la foto inicial:
+existencia, costo, precio y lotes. Con eso se responde la pregunta que estaba
+abierta: **el sistema NO recalcula el costo promedio al recibir un traslado**
+—2.1762, 6.4220 y 4.7583 no se movieron en ninguna de las dos salas—, así que
+un traslado de ida y vuelta no deja daño contable.
+
+El guion queda en `tests/e2e/prueba-traslado.spec.js`: va por la pantalla de
+verdad porque la captura de hojas y el disparo viven en el navegador, y un
+script contra la base los saltearía justo donde hay que mirar.
+
 ## v2.569.5 — El anexo de contribuyentes sale con sus 20 columnas
 
 **El mismo defecto que el de consumidor, y con un remate peor.** El archivo de

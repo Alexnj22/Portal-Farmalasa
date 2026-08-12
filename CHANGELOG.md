@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.569.4 — Guion de la prueba real del traslado
+
+El traslado automático quedó completo el 2026-08-11, pero **nunca se escribió de
+verdad en el sistema de origen**: todo lo verificado fue con guardas que cortan
+antes o con transacciones revertidas. Falta esa prueba, y es la única que
+importa, porque es la primera vez que se mueve inventario real.
+
+Se deja escrito el guion —`docs/PRUEBA-TRASLADO-2026-08-11.md`— y sobre todo el
+**camino de vuelta**, `scripts/qa/rollback-traslado.mjs`, escrito *antes* de
+mover nada a propósito: si la ida se corta a la mitad, el regreso ya existe y no
+hay que improvisarlo con producto repartido entre dos salas. Lee las líneas
+reales que salieron —presentación, lote y cantidad—, arma el traslado inverso y
+lo recibe en Bodega; sin esa segunda mitad el producto queda en tránsito, que es
+peor que en cualquiera de los dos lados.
+
+Tres cosas que el rollback **no** deshace, dichas antes y no después: el rastro
+queda en el libro de movimientos y el kardex para siempre; no está confirmado si
+el sistema recalcula el costo promedio al recibir un traslado (por eso el guion
+exige anotar costos, no sólo existencias); y una vuelta cortada a la mitad deja
+el producto repartido.
+
 ## v2.569.3 — El anexo de consumidor sale con sus 23 columnas
 
 **Una columna de más corría toda la fila, y las ventas se declaraban como

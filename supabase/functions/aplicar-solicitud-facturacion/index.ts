@@ -105,17 +105,28 @@ Deno.serve(async (req) => {
     const aprobador = await requireActiveEmployeeUser(req, admin);
     if (!aprobador) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
 
-    // ── Y si puede aprobar. El cliente no opina sobre esto. ───────────────
-    const { data: emp } = await admin
-      .from("employees").select("role_id").eq("id", aprobador.id).maybeSingle();
-    const { data: permiso } = await admin
-      .from("role_permissions")
-      .select("can_approve")
-      .eq("role_id", emp?.role_id ?? -1)
-      .eq("module_key", "requests")
-      .maybeSingle();
-    if (!permiso?.can_approve)
-      return json({ ok: false, error: "No tenés permiso para aprobar solicitudes." }, 403);
+    // ── Y si puede decidir ESTA familia. El cliente no opina sobre esto. ──
+    //
+    // `puede_aprobar_modulo` es la MISMA regla que aplica la policy: el cargo,
+    // el secundario, y la delegación por ausencia del titular. Se llama en vez
+    // de rearmarla acá porque una copia de una regla de permisos es una copia
+    // que se queda vieja — y la que se queda vieja es siempre la que abre de
+    // más.
+    //
+    // Y el módulo es `requests_facturacion`, no `requests`: desde v2.576.0
+    // aprobar se reparte por familia, y pedir el permiso viejo dejaría entrar a
+    // quien la base va a rechazar dos líneas después.
+    const { data: puedeDecidir, error: permErr } = await admin
+      .rpc("puede_aprobar_modulo", {
+        p_employee_id: aprobador.id,
+        p_module_key: "requests_facturacion",
+      });
+    if (permErr) throw permErr;   // un error acá NO es un «no puede»
+    if (!puedeDecidir)
+      return json({
+        ok: false,
+        error: "No tenés permiso para decidir solicitudes de facturación.",
+      }, 403);
 
     // ── La solicitud se relee de la BD, no se recibe ──────────────────────
     const { data: sol, error: solErr } = await admin

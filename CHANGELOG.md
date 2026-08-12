@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.580.1 — Las funciones del servidor piden el permiso de la familia
+
+Las dos funciones que aplican una solicitud en el sistema de origen seguían
+pidiendo `requests.can_approve`: el permiso viejo, el que dejó de gobernar
+nada en v2.576.0. No rompía —quien lo tenía tenía también los nuevos— pero
+dejaba entrar a quien la base iba a rechazar unas líneas después, con un error
+que no explica nada.
+
+Ahora piden `requests_facturacion` y `requests_inventario`, y lo hacen
+llamando a `puede_aprobar_modulo()`: la MISMA regla que aplica la policy,
+incluidos el cargo secundario y la delegación por ausencia. Se llama en vez de
+rearmarla en TypeScript porque una copia de una regla de permisos es una copia
+que se queda vieja — y la que se queda vieja es siempre la que abre de más.
+Antes ninguna de las dos miraba el cargo secundario.
+
+De paso se corrige algo que la regla del proyecto prohíbe y estaba ahí: las dos
+leían `role_permissions` con `const { data } = await …`, sin mirar el
+`error`. Un fallo de red se veía igual que un «no tiene permiso». Ahora un
+error se propaga como error.
+
+Desplegadas conservando `verify_jwt: true` (v11 y v9). Verificado que
+arrancan: contestan su propio 400, no un fallo de arranque.
+
 ## v2.580.0 — Los interruptores de aprobar y de delegar, en la pantalla
 
 Las tres versiones anteriores dejaron la base lista y la pantalla ciega: los

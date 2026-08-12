@@ -1,0 +1,151 @@
+# Plan — los catálogos cuyo rótulo ES el dato
+
+> **Estado:** ABIERTO · abierto el 2026-08-12 al cerrar el barrido de §26.4
+> (v2.571.8 y v2.571.9). No se ejecutó nada de este documento todavía.
+
+## Por qué existe
+
+Al unificar el portal a sentence case quedaron 343 etiquetas candidatas. La
+mayoría se resolvió cambiando una línea, porque el rótulo es texto de pantalla y
+lo que se guarda es un código:
+
+```js
+{ value: 'ABC', label: 'Polvo químico seco (ABC)' }   // se guarda 'ABC'
+{ value: '44',  label: 'Tiempo completo 44h' }        // se guarda '44'
+DISABILITY: { label: 'Incapacidad médica' }           // se guarda 'DISABILITY'
+```
+
+Quedan **tres grupos donde eso no vale**, y cada uno rompe de una forma
+distinta. Este documento los separa para que nadie los trate como un problema de
+mayúsculas.
+
+---
+
+## Grupo 1 — el rótulo se cruza contra otra tabla, y no coincidir NO falla
+
+**El más peligroso, y el único que ya es un bug hoy, independiente de las
+mayúsculas.**
+
+Cuatro cargos están escritos a mano en `src/components/forms/FormLeadership.jsx`:
+
+```js
+{ value: 'Dependiente de Farmacia', label: 'Dependiente de Farmacia' },
+{ value: 'Subjefe/a de Sala',       label: 'Subjefe/a de Sala' },
+{ value: 'Jefe/a de Sala',          label: 'Jefe/a de Sala' },
+{ value: 'Regente de Enfermería',   label: 'Regente de Enfermería' },
+```
+
+y `src/components/UnifiedModal.jsx` los cruza contra la tabla `roles`:
+
+```js
+// UnifiedModal.jsx:514
+const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
+await updateEmployee(formData.currentAssignee, {
+    role_id: outRoleObj ? outRoleObj.id : null,   // ← sin coincidencia: null, sin error
+    role:    formData.outgoingRole,
+});
+```
+
+Si el string del formulario deja de coincidir con `roles.name`, `find` devuelve
+`undefined` y **el empleado se guarda con `role_id: null`**. No lanza, no avisa,
+no queda en el log. Es la misma familia que
+`feedback_sin_policy_de_update_el_write_devuelve_cero`: la escritura "funciona" y
+no hace lo que dice.
+
+`roles` es una tabla real, sembrada en
+`supabase/migrations/20260729223031_seed_catalogo_minimo_para_branches.sql`
+(`(30, 'Dependiente de Farmacia', …)`). O sea que la lista del formulario es una
+**copia a mano de un registro que ya existe** — exactamente
+`feedback_lista_a_mano_se_desincroniza_del_registro`.
+
+### Qué hacer, y en qué orden
+
+**El renombre NO es el arreglo.** El arreglo es quitar la copia:
+
+1. **Medir primero.** Traer `select id, name from roles order by id` y compararlo
+   con la lista escrita a mano. No asumir que coinciden hoy: si ya divergen, hay
+   empleados con `role_id` nulo y eso se arregla antes que ninguna mayúscula.
+2. **Leer `roles` de la base** en `FormLeadership`, como ya hace el resto del
+   portal, y borrar el arreglo literal. Con eso desaparece la posibilidad de
+   divergencia y el `role_id: null` silencioso.
+3. **Recién entonces** la ortografía del cargo es una decisión de un solo lugar:
+   se cambia `roles.name` con una migración y la pantalla sigue.
+4. Mientras tanto, el `? :` que produce el null merece un freno explícito: si no
+   hay `outRoleObj`, no escribir — avisar.
+
+**No tocar los payloads históricos.** `audit_logs` y los eventos de empleado
+guardan `new_role: 'Dependiente de Farmacia'` como registro de lo que pasó ese
+día. Eso es historia y no se reescribe
+(`feedback_el_estado_actual_no_conserva_el_evento`). Los registros viejos se
+quedan con la ortografía vieja, y está bien.
+
+**Relacionado, mismo archivo:** `UnifiedModal.jsx:536` y `:544` escriben el
+literal `'Sin Asignar'` en `employees.role`. Es otro rótulo que es dato, y entra
+en el mismo trabajo.
+
+---
+
+## Grupo 2 — el rótulo lo genera Postgres, no el navegador
+
+Cuatro etiquetas viven **también** dentro de funciones de la base, así que
+cambiar sólo el frontend deja las dos mitades diciendo cosas distintas:
+
+| etiqueta | dónde vive en la base |
+|---|---|
+| `Permiso / Licencia` | 5 migraciones — títulos de aviso de solicitudes |
+| `Anticipo Salarial` | las mismas 5 |
+| `Traslado entre Salas` | 3 migraciones de avisos de traslado |
+| `Facturas de mi Sala` | 7 migraciones de Facturas de Sala (RPC, cron, storage) |
+
+Son títulos de notificación construidos server-side. El cambio es una migración
+que reemplaza el literal en cada función, en el mismo commit que el cambio del
+frontend, y **con su archivo local nombrado con la versión de 14 dígitos que
+devuelva `apply_migration`** (CLAUDE.md). Con `SET lock_timeout = '5s'`.
+
+Prioridad baja: hoy las dos mitades coinciden, así que no hay defecto — sólo
+queda pendiente el sentence case.
+
+---
+
+## Grupo 3 — texto libre guardado como texto
+
+| etiqueta | dónde | forma |
+|---|---|---|
+| `Renuncia Voluntaria` | `FormNovedad.jsx` | motivo de baja, `value === label` |
+| `Permisos y Licencias`, `Documentos Legales`, `Fiscal y Financiero`, `Operativo y Logística`, `Recursos Humanos` | `FormAddCustomDocument.jsx` | categoría de documento, `value === label` |
+
+Acá sí es un `UPDATE` corriente: cambiar el literal en el formulario y las filas
+ya guardadas, en el mismo commit. Antes hay que **contar cuántas filas hay con
+cada valor** — si son pocas, es trivial; si son miles, va con `lock_timeout` y
+fuera del horario de los crons.
+
+`Recursos Humanos` probablemente se queda como está: es el nombre de un
+departamento, no una etiqueta común.
+
+---
+
+## Lo que NO entra en ningún grupo, y por qué
+
+Se revisaron y se dejan como están:
+
+- **Nombres propios:** bancos (`Banco Cuscatlán`) y AFP (`AFP Confía`).
+- **Documentos con nombre oficial:** `CCF — Crédito Fiscal`,
+  `COF — Consumidor Final`, `Carné JVPQF — Regente / Químico Farmacéutico`,
+  `Solvencia Municipal`, `Partida de Nacimiento`, `Constancia Laboral`.
+- **Términos ya decididos del portal:** `Sistema de Ventas` y `Sis. Ventas` (así
+  se nombra al origen en pantalla — nunca «ERP»), `Bajo Receta`, `Min / Max`,
+  `Libros IVA`, `Corte Z`.
+- **Mayúsculas por diseño:** los encabezados de columna y las versalitas, que el
+  tema pinta en caps; §26.4 los exceptúa explícitamente.
+- **Ejemplos de marcador de posición** (`Ej: Juan Perez`), donde la mayúscula es
+  contenido y no formato.
+
+---
+
+## Orden sugerido
+
+1. **Grupo 1, paso 2** — leer `roles` de la base y borrar la lista a mano. Es el
+   único que arregla un defecto real y no depende de ninguna decisión de
+   redacción.
+2. **Grupo 3** — un `UPDATE` chico, si el conteo de filas lo permite.
+3. **Grupo 2** — cosmético, cuando toque tocar esas funciones por otra cosa.

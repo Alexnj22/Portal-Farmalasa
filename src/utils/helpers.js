@@ -102,7 +102,7 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
             isOffDay: false,
             shift: { 
                 id: 'CUSTOM', 
-                name: 'Turno Especial', 
+                name: 'Turno especial', 
                 start: exception.customStart || exception.start, 
                 end: exception.customEnd || exception.end 
             },

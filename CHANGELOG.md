@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.10 — Los catálogos cuyo rótulo no es el dato
+
+v2.571.8 dejó 236 etiquetas fuera del sentence case con el motivo «catálogos que
+viajan a la base». **Ese motivo era demasiado grueso y metía tres cosas
+distintas en la misma bolsa.** Medido: de los catálogos, el rótulo es dato en
+sólo unos diez casos.
+
+**Lo que en realidad pasa: el rótulo casi siempre está separado del dato.**
+
+```js
+{ value: 'ABC', label: 'Polvo químico seco (ABC)' }   // se guarda 'ABC'
+{ value: '44',  label: 'Tiempo completo 44h' }        // se guarda '44'
+{ id: 'water',  label: 'Agua potable' }               // se guarda 'water'
+DISABILITY: { label: 'Incapacidad médica' }           // se guarda 'DISABILITY'
+```
+
+El filtro automático de v2.571.8 marcaba «tiene `value:`» como riesgo sin mirar
+si ese `value` era el mismo texto que el `label`. Al distinguirlo aparecen **74
+etiquetas de catálogo que se pueden escribir bien sin tocar una sola fila**:
+grados escolares, tipos de contrato, clases de extintor, tipos de ausencia,
+motivos de marcación, categorías de servicio y de gasto, tipos de cuenta.
+122 apariciones en 31 archivos.
+
+**Cuatro se cayeron del lote por una razón que sólo aparece mirando el SQL.**
+`Permiso / Licencia`, `Anticipo Salarial`, `Traslado entre Salas` y
+`Facturas de mi Sala` viven **también dentro de funciones de Postgres** —son
+títulos de aviso construidos server-side, en 5, 5, 3 y 7 migraciones
+respectivamente—. Cambiar sólo el frontend habría dejado las dos mitades
+diciendo cosas distintas. El control de riesgo se amplió a `supabase/` para
+cazarlo; antes sólo miraba `src/`.
+
+**Y queda anotado un defecto que no es de mayúsculas.**
+`docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md` recoge los tres grupos que sí
+necesitan migración. El primero ya es un bug hoy: cuatro cargos están escritos a
+mano en `FormLeadership.jsx` y `UnifiedModal.jsx` los cruza contra la tabla
+`roles` con `roles.find(r => r.name === …)`. Si no coinciden, `find` devuelve
+`undefined` y el empleado se guarda con **`role_id: null`, sin error y sin log**.
+La lista a mano es una copia de una tabla que ya existe, así que el arreglo no es
+renombrar: es leer `roles` de la base y borrar la copia.
+
 ## v2.571.9 — El Corte Z muestra las cifras con las que se declara
 
 Continuación de v2.571.7. Corregido el cotejo, quedaba la pregunta práctica:

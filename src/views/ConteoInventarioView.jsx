@@ -31,7 +31,7 @@ import { formatMoney, formatQty } from '../utils/formatNumber';
 // lo que consume Badge.
 const ESTADO_CFG = {
     BORRADOR:    { icon: Clock,        label: 'Borrador',    variante: 'neutral' },
-    EN_PROGRESO: { icon: Clock,        label: 'En Progreso', variante: 'warning' },
+    EN_PROGRESO: { icon: Clock,        label: 'En progreso', variante: 'warning' },
     FINALIZADO:  { icon: FileCheck2,   label: 'Finalizado',  variante: 'chart-1' },
     CERRADO:     { icon: CheckCircle2, label: 'Cerrado',     variante: 'success' },
 };

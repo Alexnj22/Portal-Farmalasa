@@ -52,7 +52,7 @@ const KANBAN_COLUMNS = [
   },
   {
     id: "pause",
-    label: "En Pausa",
+    label: "En pausa",
     match: (status) => status === "LUNCH" || status === "LACTATION" || status === "BUSINESS_OUT",
     tint: "bg-chart-4/10 border-chart-4/30",
     dot: "bg-chart-4",
@@ -66,7 +66,7 @@ const KANBAN_COLUMNS = [
   },
   {
     id: "finished",
-    label: "Finalizado / Libre",
+    label: "Finalizado / libre",
     match: (status) => status === "FINISHED" || status === "EARLY_EXIT" || status === "OFF_DAY",
     tint: "bg-surface-card/60 border-border-card",
     dot: "bg-content-3",
@@ -343,9 +343,9 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
   const statCards = [
     { id: "ALL", label: "Total", count: stats.total, color: "text-content", border: "border-border-card", bg: "bg-surface-card" },
-    { id: "WORKING", label: "En Turno", count: stats.working, color: "text-success-text", border: "border-success/30", bg: "bg-success/10" },
+    { id: "WORKING", label: "En turno", count: stats.working, color: "text-success-text", border: "border-success/30", bg: "bg-success/10" },
     { id: "EXTRA", label: "Horas extra", count: stats.extra, color: "text-chart-3-text", border: "border-chart-3/30", bg: "bg-chart-3/10" },
-    { id: "PAUSE", label: "En Pausa", count: stats.pause, color: "text-chart-4-text", border: "border-chart-4/30", bg: "bg-chart-4/10" },
+    { id: "PAUSE", label: "En pausa", count: stats.pause, color: "text-chart-4-text", border: "border-chart-4/30", bg: "bg-chart-4/10" },
     { id: "LATE", label: "Con atraso", count: stats.late, color: "text-danger-text", border: "border-danger/30", bg: "bg-danger/10", icon: AlertTriangle },
     { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-divider", bg: "bg-surface-card-hover/40" },
   ];
@@ -359,7 +359,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     switch (status) {
       case "WORKING":
         return (
-          <Badge variant="success" icon={CheckCircle2}>En Turno</Badge>
+          <Badge variant="success" icon={CheckCircle2}>En turno</Badge>
         );
       case "EXTRA_WORKING":
         return (

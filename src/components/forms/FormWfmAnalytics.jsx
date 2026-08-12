@@ -300,10 +300,10 @@ const FormWfmAnalytics = ({ branches }) => {
                         onChange={setTimeRange}
                         options={[
                             { value: '0',   label: 'Hoy' },
-                            { value: '30',  label: '30 Días' },
-                            { value: '90',  label: '3 Meses' },
-                            { value: '180', label: '6 Meses' },
-                            { value: '365', label: '1 Año' },
+                            { value: '30',  label: '30 días' },
+                            { value: '90',  label: '3 meses' },
+                            { value: '180', label: '6 meses' },
+                            { value: '365', label: '1 año' },
                         ]}
                     />
                 </div>

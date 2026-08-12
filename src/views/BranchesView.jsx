@@ -671,7 +671,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
     const handleDeleteClick = useCallback((branch, count) => {
         if (!branch) return;
         if (count > 0) {
-            setAlertDialog({ isOpen: true, title: 'Operación Bloqueada', message: `No se puede eliminar "${branch.name}" porque tiene ${count} empleado(s) asignado(s). Reasígnalos o dalos de baja primero.`, type: 'error' });
+            setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: `No se puede eliminar "${branch.name}" porque tiene ${count} empleado(s) asignado(s). Reasígnalos o dalos de baja primero.`, type: 'error' });
             return;
         }
         setConfirmDialog({ isOpen: true, branch });

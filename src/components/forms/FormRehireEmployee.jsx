@@ -10,9 +10,9 @@ import { shortEmployeeName } from '../../utils/nameUtils';
 
 const CONTRACT_TYPE_OPTIONS = [
     { value: 'INDEFINIDO',   label: 'Indefinido (Fijo)' },
-    { value: 'TEMPORAL',     label: 'Temporal / Plazo Fijo' },
-    { value: 'MEDIO_TIEMPO', label: 'Medio Tiempo (Part-Time)' },
-    { value: 'SERVICIOS',    label: 'Servicios Profesionales' },
+    { value: 'TEMPORAL',     label: 'Temporal / plazo fijo' },
+    { value: 'MEDIO_TIEMPO', label: 'Medio tiempo (part-time)' },
+    { value: 'SERVICIOS',    label: 'Servicios profesionales' },
 ];
 
 const TYPE_ORDER = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];

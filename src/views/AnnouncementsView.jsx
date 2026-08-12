@@ -287,7 +287,7 @@ const AnnouncementsView = ({ openModal }) => {
     if (ann.readIds?.length > 0) {
       setAlertDialog({
         isOpen: true,
-        title: 'Operación Bloqueada',
+        title: 'Operación bloqueada',
         message: 'No puedes editar un aviso que ya fue leído. Por temas de auditoría, debes archivarlo y crear uno nuevo.'
       });
       return;
@@ -423,7 +423,7 @@ const AnnouncementsView = ({ openModal }) => {
   const handleDeleteCallback = useCallback((ann) => {
     setError('');
     if (ann.readIds?.length > 0) {
-      setAlertDialog({ isOpen: true, title: 'Operación Bloqueada', message: 'Alguien ya leyó este aviso. Por seguridad no puedes eliminarlo, archívalo.' });
+      setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: 'Alguien ya leyó este aviso. Por seguridad no puedes eliminarlo, archívalo.' });
       return;
     }
     setConfirmDialog({ isOpen: true, annId: ann.id });

@@ -16,7 +16,7 @@ import { PackageMinus, Receipt, TrendingUp } from 'lucide-react';
 export const FAMILIAS = [
     {
         key: 'inventario', icon: PackageMinus,
-        label: 'Ajuste de Inventario',
+        label: 'Ajuste de inventario',
         desc: 'Cargar o descargar producto de la sala',
         permiso: 'dash_inv_movement',
         color: 'text-danger-text', bg: 'bg-danger/5 border-danger/20 hover:border-danger/40',

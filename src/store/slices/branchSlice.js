@@ -257,7 +257,7 @@ export const createBranchSlice = (set, get) => ({
 
             if (oldLegal.regentEmployeeId !== legalNow.regentEmployeeId) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
-                    timeline_title: 'Asignación de Regente Farmacéutico',
+                    timeline_title: 'Asignación de regente farmacéutico',
                     dimension: 'LEGAL',
                     branch_id: id,
                     new_value: legalNow.regentEmployeeId ? 'Regente Actualizado' : 'Regente Removido'
@@ -267,7 +267,7 @@ export const createBranchSlice = (set, get) => ({
 
             if (oldLegal.farmacovigilanciaId !== legalNow.farmacovigilanciaId) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
-                    timeline_title: 'Asignación de Farmacovigilancia',
+                    timeline_title: 'Asignación de farmacovigilancia',
                     dimension: 'LEGAL',
                     branch_id: id,
                     new_value: legalNow.farmacovigilanciaId ? 'Referente Actualizado' : 'Referente Removido'
@@ -280,7 +280,7 @@ export const createBranchSlice = (set, get) => ({
 
             if (oldNurses !== newNurses) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
-                    timeline_title: 'Actualización de Equipo de Enfermería',
+                    timeline_title: 'Actualización de equipo de enfermería',
                     dimension: 'LEGAL',
                     branch_id: id,
                     new_value: `${newNurses} Profesional(es) Asignado(s)`
@@ -334,7 +334,7 @@ export const createBranchSlice = (set, get) => ({
                 dimension: 'OPERATIVE',
                 branch_id: id,
                 old_value: 'Activa',
-                new_value: 'Cerrada / Eliminada'
+                new_value: 'Cerrada / eliminada'
             });
             set((state) => {
                 const next = state.branches.filter((b) => String(b.id) !== String(id));
@@ -386,7 +386,7 @@ export const createBranchSlice = (set, get) => ({
                 timeline_title: `Kiosco Desvinculado`,
                 dimension: 'OPERATIVE',
                 old_value: deviceName,
-                new_value: 'Acceso Revocado'
+                new_value: 'Acceso revocado'
             }); 
             return true;
         } catch (err) {
@@ -517,7 +517,7 @@ export const createBranchSlice = (set, get) => ({
                     return { branches: persistBranches(next) };
                 });
 
-                const serviceMap = { rent: 'Alquiler', light: 'Energía Eléctrica', water: 'Agua Potable', internet: 'Internet', phone: 'Plan Celular', taxes: 'Impuestos' };
+                const serviceMap = { rent: 'Alquiler', light: 'Energía eléctrica', water: 'Agua potable', internet: 'Internet', phone: 'Plan celular', taxes: 'Impuestos' };
                 const srvName = serviceMap[expenseData.expense_type] || expenseData.expense_type;
 
                 // 🔴 LÓGICA DE AUDITORÍA INTELIGENTE

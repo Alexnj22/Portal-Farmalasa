@@ -915,8 +915,8 @@ export const createSystemSlice = (set, get) => ({
             await get().appendAuditLog('ELIMINAR_CARGO', roleId, {
                 timeline_title: `Eliminación de Cargo: ${roleName}`,
                 dimension: 'HR',
-                old_value: 'Cargo Activo',
-                new_value: 'Eliminado del Sistema'
+                old_value: 'Cargo activo',
+                new_value: 'Eliminado del sistema'
             });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
@@ -1032,7 +1032,7 @@ export const createSystemSlice = (set, get) => ({
             await get().appendAuditLog('ELIMINAR_AVISO', id, {
                 timeline_title: `Eliminación de Aviso ID: ${id}`,
                 dimension: 'OPERATIVE',
-                new_value: 'Eliminado Permanentemente'
+                new_value: 'Eliminado permanentemente'
             });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
@@ -1130,7 +1130,7 @@ export const createSystemSlice = (set, get) => ({
             await get().appendAuditLog('ELIMINAR_TURNO', id, {
                 timeline_title: `Turno Eliminado ID: ${id}`,
                 dimension: 'OPERATIVE',
-                new_value: 'Eliminado Permanentemente'
+                new_value: 'Eliminado permanentemente'
             });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));

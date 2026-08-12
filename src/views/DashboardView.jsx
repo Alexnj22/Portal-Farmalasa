@@ -156,7 +156,7 @@ const WIDGET_SIZES = {
   inv_search:    { minCols: 1, minRows: 1, label: 'Inventario'   },
   annulment_req: { minCols: 1, minRows: 1, label: 'Anulaciones'  },
   minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
-  inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste Inventario' },
+  inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste inventario' },
   facturas_sala: { minCols: 1, minRows: 1, label: 'Facturas Sala' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
   // `vendedores` y `traslados` no tenían entrada, así que caían al mínimo de
@@ -519,7 +519,7 @@ const WIDGET_DEFS = [
   { id: 'inv_search',   label: 'Consulta de inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
   { id: 'annulment_req',label: 'Solicitud de anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
-  { id: 'inv_movement', label: 'Ajuste de Inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
+  { id: 'inv_movement', label: 'Ajuste de inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
   { id: 'facturas_sala',label: 'Facturas de mi Sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },

@@ -41,8 +41,8 @@ const optionToPercibe = (v) => v === 'auto' ? null : v === 'si';
 // proveedor (corregido 2026-07-22, ver regimen_fiscal abajo para el tipo real).
 const CLASE_LABELS = {
     costo: 'Costo (Inventario)',
-    gasto_operativo: 'Gasto Operativo',
-    gasto_admin: 'Gasto Administrativo',
+    gasto_operativo: 'Gasto operativo',
+    gasto_admin: 'Gasto administrativo',
     otro: 'Otro',
 };
 

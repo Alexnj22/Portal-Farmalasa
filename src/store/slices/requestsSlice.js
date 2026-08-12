@@ -36,7 +36,7 @@ export const REQUEST_TYPES = {
     ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-success/10 text-success-text', border: 'border-success/30', variante: 'success' },
     CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
     DISABILITY:             { label: 'Incapacidad',             color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
-    SHIFT_EXCEPTION:        { label: 'Excepción Turno (Kiosk)', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    SHIFT_EXCEPTION:        { label: 'Excepción turno (kiosk)', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     ANNULMENT_REQUEST:      { label: 'Anulación de factura',    color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     PAYMENT_CHANGE_REQUEST: { label: 'Cambio de forma de pago', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
     VENDOR_CHANGE_REQUEST:  { label: 'Cambio de vendedor',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },

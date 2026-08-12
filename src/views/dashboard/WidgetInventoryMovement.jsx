@@ -1247,7 +1247,7 @@ export default function WidgetInventoryMovement(props) {
     return (
         <LanzadorSolicitud
             icon={PackageMinus}
-            label="Ajuste de Inventario"
+            label="Ajuste de inventario"
             pendientes={plazo === null ? null : plazo.vencidas}
             etiquetaPendientes="línea vencida"
             etiquetaPendientesPlural="líneas vencidas"

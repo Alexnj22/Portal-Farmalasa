@@ -240,7 +240,7 @@ const RolesView = ({ openModal }) => {
         if (roleEmps.length > 0) {
             setAlertDialog({
                 isOpen: true,
-                title: 'Operación Prohibida',
+                title: 'Operación prohibida',
                 message: `No puedes eliminar el cargo "${role.name}" porque tiene ${roleEmps.length} empleado(es) asignado(s). Reasígnalos primero.`
             });
             return;
@@ -250,7 +250,7 @@ const RolesView = ({ openModal }) => {
         if (hasChildren) {
             setAlertDialog({
                 isOpen: true,
-                title: 'Operación Bloqueada',
+                title: 'Operación bloqueada',
                 message: `El cargo "${role.name}" tiene otros puestos que dependen de él en el organigrama. Mueve los cargos dependientes antes de eliminarlo.`
             });
             return;

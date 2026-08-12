@@ -348,8 +348,8 @@ export default function ProveedoresView({ openModal }) {
     ];
     const claseOptions = [
         { value: 'costo', label: 'Costo' },
-        { value: 'gasto_operativo', label: 'Gasto Operativo' },
-        { value: 'gasto_admin', label: 'Gasto Admin' },
+        { value: 'gasto_operativo', label: 'Gasto operativo' },
+        { value: 'gasto_admin', label: 'Gasto admin' },
         { value: 'otro', label: 'Otro' },
     ];
 

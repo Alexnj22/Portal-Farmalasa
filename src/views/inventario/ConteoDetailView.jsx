@@ -54,7 +54,7 @@ const PAGE_SIZE = 25;
 // 'APROBADO' no está porque nunca existió: aprobar escribe 'CERRADO'.
 const ESTADO_CFG = {
     BORRADOR:    { label: 'Borrador',    variante: 'neutral' },
-    EN_PROGRESO: { label: 'En Progreso', variante: 'warning' },
+    EN_PROGRESO: { label: 'En progreso', variante: 'warning' },
     FINALIZADO:  { label: 'Finalizado',  variante: 'chart-1' },
     CERRADO:     { label: 'Cerrado',     variante: 'success' },
 };

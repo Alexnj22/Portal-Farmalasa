@@ -265,7 +265,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     };
 
     const shiftOptions = useMemo(() => {
-        const baseOptions = [{ value: 'OFF', label: 'Libre / Descanso' }];
+        const baseOptions = [{ value: 'OFF', label: 'Libre / descanso' }];
 
         if (!branchLimits.hasValidHours) {
             return [...baseOptions, { value: 'NO_SHIFTS', label: '⚠️ Sin Horario Operativo' }];

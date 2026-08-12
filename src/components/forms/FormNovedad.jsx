@@ -230,16 +230,16 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         .sort((a, b) => a.label.localeCompare(b.label));
 
     const disabilityTypes = [
-        { value: 'Enfermedad Común', label: 'Enfermedad Común (Padecimiento o embarazo)' },
-        { value: 'Riesgo Profesional', label: 'Riesgo Profesional (Accidente laboral)' },
-        { value: 'Maternidad', label: 'Maternidad (16 Semanas por Ley)' }
+        { value: 'Enfermedad Común', label: 'Enfermedad común (padecimiento o embarazo)' },
+        { value: 'Riesgo Profesional', label: 'Riesgo profesional (accidente laboral)' },
+        { value: 'Maternidad', label: 'Maternidad (16 semanas por ley)' }
     ];
 
     const terminationReasons = [
         { value: 'Renuncia Voluntaria', label: 'Renuncia Voluntaria' },
-        { value: 'Despido sin Responsabilidad', label: 'Despido SIN Responsabilidad' },
-        { value: 'Despido con Responsabilidad', label: 'Despido CON Responsabilidad' },
-        { value: 'Abandono', label: 'Abandono de Trabajo' }
+        { value: 'Despido sin Responsabilidad', label: 'Despido SIN responsabilidad' },
+        { value: 'Despido con Responsabilidad', label: 'Despido CON responsabilidad' },
+        { value: 'Abandono', label: 'Abandono de trabajo' }
     ];
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
@@ -284,7 +284,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <div className="bg-chart-4/10 border border-chart-4/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <Info className="text-chart-4-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
-                        <p className="text-label font-black uppercase tracking-widest text-chart-4-text">Apoyo Temporal</p>
+                        <p className="text-label font-black uppercase tracking-widest text-chart-4-text">Apoyo temporal</p>
                         <p className="text-body-sm text-chart-4-text/80 font-medium leading-tight mt-1">El empleado apoyará en otra sucursal temporalmente. Seguirá apareciendo en la planilla actual.</p>
                     </div>
                 </div>

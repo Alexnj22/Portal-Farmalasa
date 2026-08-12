@@ -26,11 +26,11 @@ const BranchTabInmueble = ({
     const inputHoverClass = "transition-[box-shadow,border-color] duration-[var(--dur-slow)] hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const extinguisherOptions = useMemo(() => [
-        { value: 'ABC', label: 'Polvo Químico Seco (ABC)' },
-        { value: 'CO2', label: 'Dióxido de Carbono (CO2)' },
-        { value: 'AGUA', label: 'Agua Presurizada' },
+        { value: 'ABC', label: 'Polvo químico seco (ABC)' },
+        { value: 'CO2', label: 'Dióxido de carbono (CO2)' },
+        { value: 'AGUA', label: 'Agua presurizada' },
         { value: 'ESPUMA', label: 'Espuma (AFFF)' },
-        { value: 'K', label: 'Acetato de Potasio (Clase K)' },
+        { value: 'K', label: 'Acetato de potasio (clase K)' },
         { value: 'MIXTO', label: 'Múltiples tipos' },
     ], []);
 

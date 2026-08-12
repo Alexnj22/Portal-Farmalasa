@@ -8,10 +8,10 @@ import PortalInput from '../common/PortalInput';
 
 const SERVICE_LABELS = {
     rent: 'Arrendamiento',
-    light: 'Energía Eléctrica',
-    water: 'Agua Potable',
-    internet: 'Internet Fijo',
-    phone: 'Plan Celular',
+    light: 'Energía eléctrica',
+    water: 'Agua potable',
+    internet: 'Internet fijo',
+    phone: 'Plan celular',
     taxes: 'Impuestos / Alcaldía'
 };
 

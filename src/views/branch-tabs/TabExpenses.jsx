@@ -19,7 +19,7 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     if (isReceiptPending) {
         return {
             state: 'pending_receipt',
-            label: 'Recibo Pendiente',
+            label: 'Recibo pendiente',
             colorClass: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[var(--shadow-glow-chart-6-md)] ring-1 ring-chart-6/30'
         };
     }
@@ -237,10 +237,10 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             if (val > maxVal) { maxVal = val; maxServiceStr = name; }
         };
 
-        checkService('light', 'Energía Eléctrica');
-        checkService('water', 'Agua Potable');
-        checkService('internet', 'Internet Fijo');
-        checkService('phone', 'Plan Celular');
+        checkService('light', 'Energía eléctrica');
+        checkService('water', 'Agua potable');
+        checkService('internet', 'Internet fijo');
+        checkService('phone', 'Plan celular');
         checkService('taxes', 'Impuestos');
 
         return {
@@ -389,7 +389,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     />
                 )}
                 {hasServices && <ServiceExpenseCard
-                    title="Energía Eléctrica"
+                    title="Energía eléctrica"
                     provider={svcData.light?.provider}
                     amount={svcData.light?.amount}
                     dueDay={svcData.light?.dueDay}
@@ -402,7 +402,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     onUploadReceipt={() => handleUploadReceiptAction('light')}
                 />}
                 {hasServices && <ServiceExpenseCard
-                    title="Agua Potable"
+                    title="Agua potable"
                     provider={svcData.water?.provider}
                     amount={svcData.water?.amount}
                     dueDay={svcData.water?.dueDay}
@@ -415,7 +415,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     onUploadReceipt={() => handleUploadReceiptAction('water')}
                 />}
                 {hasServices && <ServiceExpenseCard
-                    title="Internet Fijo"
+                    title="Internet fijo"
                     provider={svcData.internet?.provider}
                     amount={svcData.internet?.amount}
                     dueDay={svcData.internet?.dueDay}
@@ -428,7 +428,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     onUploadReceipt={() => handleUploadReceiptAction('internet')}
                 />}
                 <ServiceExpenseCard
-                    title="Plan Celular"
+                    title="Plan celular"
                     provider={svcData.phone?.provider}
                     amount={svcData.phone?.amount}
                     dueDay={svcData.phone?.dueDay}

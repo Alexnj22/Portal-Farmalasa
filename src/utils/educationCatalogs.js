@@ -10,15 +10,15 @@
 // es especialidad técnica o profesión universitaria/maestría.
 
 export const GRADO_BASICA_OPTIONS = [
-    { value: '1', label: '1° Grado' },
-    { value: '2', label: '2° Grado' },
-    { value: '3', label: '3° Grado' },
-    { value: '4', label: '4° Grado' },
-    { value: '5', label: '5° Grado' },
-    { value: '6', label: '6° Grado' },
-    { value: '7', label: '7° Grado' },
-    { value: '8', label: '8° Grado' },
-    { value: '9', label: '9° Grado (Noveno)' },
+    { value: '1', label: '1° grado' },
+    { value: '2', label: '2° grado' },
+    { value: '3', label: '3° grado' },
+    { value: '4', label: '4° grado' },
+    { value: '5', label: '5° grado' },
+    { value: '6', label: '6° grado' },
+    { value: '7', label: '7° grado' },
+    { value: '8', label: '8° grado' },
+    { value: '9', label: '9° grado (noveno)' },
 ];
 
 export const OTRA_ESPECIALIDAD = '__OTRA__';

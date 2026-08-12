@@ -87,7 +87,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     isSynthetic: true,
                     sortDate: new Date(safeDateStr),
                     action: 'APERTURA_OFICIAL',
-                    name: 'Inauguración de la Sucursal',
+                    name: 'Inauguración de la sucursal',
                     actor_name: 'SISTEMA'
                 });
             }

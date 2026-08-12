@@ -34,7 +34,7 @@ const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'emerg
 const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
-const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'PRACTICAS', label: 'Prácticas / Aprendizaje' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'PRACTICAS', label: 'Prácticas / aprendizaje' }, { value: 'SERVICIOS', label: 'Servicios profesionales' }];
 // "Prácticas" = Contrato de Aprendizaje (Art. 61-70 CT): igual que Temporal
 // tiene fecha de fin obligatoria, pero su base legal no es el Art. 25 (plazo
 // fijo) sino el régimen especial de aprendices — por eso NO usa
@@ -45,19 +45,19 @@ const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)'
 // "Medio Tiempo" ya no es un tipo de contrato — es una configuración de horas
 // semanales (ver HOURS_OPTIONS), independiente del tipo de contrato.
 const HOURS_OPTIONS = [
-    { value: '44', label: 'Tiempo Completo 44h' },
-    { value: '22', label: 'Medio Tiempo 22h' },
+    { value: '44', label: 'Tiempo completo 44h' },
+    { value: '22', label: 'Medio tiempo 22h' },
     { value: 'OTRO', label: 'Otro' },
 ];
 const CATALOG_CATEGORIES = ['BACHILLERATO_TECNICO_ESPECIALIDAD', 'TECNICO_SUPERIOR_ESPECIALIDAD', 'PROFESION_UNIVERSITARIA', 'MAESTRIA_POSTGRADO', 'CURSO_HABILIDAD', 'INSTITUCION_CAPACITACION', 'ENFERMEDAD_CRONICA', 'TIPO_DISCAPACIDAD'];
 // weekly_contracted_hours llega como number desde Postgres (integer) pero como
 // string mientras se edita en el input — comparar siempre vía String() para
-// que "Tiempo Completo 44h"/"Medio Tiempo 22h" se detecten sin importar el tipo.
+// que "Tiempo completo 44h"/"Medio tiempo 22h" se detecten sin importar el tipo.
 const isCustomHours = (h) => h !== '' && h !== null && h !== undefined && String(h) !== '44' && String(h) !== '22';
 // Sentinel para "Otro" recién elegido, antes de teclear un número — igual
 // patrón que OTRA_ESPECIALIDAD: si usáramos '' aquí, isCustomHours('') sería
 // false (por diseño, para no confundir "vacío" con "personalizado") y el
-// select rebotaría de vuelta a "Tiempo Completo 44h" apenas se eligiera Otro.
+// select rebotaría de vuelta a "Tiempo completo 44h" apenas se eligiera Otro.
 const OTRO_HOURS_SENTINEL = '__OTRO_HORAS__';
 // Tope legal: jornada ordinaria semanal diurna, Art. 161 Código de Trabajo
 // (44h; la nocturna es 39h pero no distinguimos turno aquí). Sin mínimo legal
@@ -109,7 +109,7 @@ const ALT_ID_DOCUMENT_TYPE_OPTIONS = [
 ];
 // Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
 const PARENTESCO_OPTIONS = [
-    { value: 'CONYUGE', label: 'Cónyuge / Pareja' },
+    { value: 'CONYUGE', label: 'Cónyuge / pareja' },
     { value: 'HIJO_A', label: 'Hijo/a' },
     { value: 'PADRE', label: 'Padre' },
     { value: 'MADRE', label: 'Madre' },
@@ -136,10 +136,10 @@ const DISABILITY_GRADE_OPTIONS = [
 // así que es un complemento ("¿Tiene Maestría / Postgrado?") que solo aparece
 // dentro de Universitario, no un Nivel Académico independiente.
 const EDUCATION_OPTIONS = [
-    { value: 'BASICA', label: 'Educación Básica' },
-    { value: 'BACHILLERATO_GENERAL', label: 'Bachillerato General' },
-    { value: 'BACHILLERATO_TECNICO', label: 'Bachillerato Técnico' },
-    { value: 'TECNICO_SUPERIOR', label: 'Técnico Superior' },
+    { value: 'BASICA', label: 'Educación básica' },
+    { value: 'BACHILLERATO_GENERAL', label: 'Bachillerato general' },
+    { value: 'BACHILLERATO_TECNICO', label: 'Bachillerato técnico' },
+    { value: 'TECNICO_SUPERIOR', label: 'Técnico superior' },
     { value: 'UNIVERSITARIO', label: 'Universitario' },
 ];
 // Niveles donde el select de Especialidad aplica
@@ -184,9 +184,9 @@ const AFP_OPTIONS = [
     { value: 'CONFIA', label: 'AFP Confía' },
 ];
 const ACCOUNT_TYPE_OPTIONS = [
-    { value: 'AHORRO',     label: 'Cuenta de Ahorro' },
-    { value: 'CORRIENTE',  label: 'Cuenta Corriente' },
-    { value: 'ELECTRONICA',label: 'Cuenta Electrónica' },
+    { value: 'AHORRO',     label: 'Cuenta de ahorro' },
+    { value: 'CORRIENTE',  label: 'Cuenta corriente' },
+    { value: 'ELECTRONICA',label: 'Cuenta electrónica' },
 ];
 
 const BANKS_OPTIONS = [
@@ -1902,7 +1902,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="bg-danger/10 border border-danger/30 rounded-2xl p-3.5 flex items-start gap-3">
                                 <ShieldAlert size={18} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <p className="text-label text-danger-text font-medium leading-tight">
-                                    <span className="font-black">Riesgo legal — "Servicios Profesionales" con subordinación.</span> El Art. 20 del Código de Trabajo presume un contrato laboral real (con derecho a aguinaldo, vacaciones, ISSS e indemnización) cuando hay subordinación — horario, cargo y sucursal asignados, como en este expediente. Un juez laboral puede reclasificarlo sin importar la etiqueta del contrato. Usa este tipo solo para relaciones genuinamente independientes, sin horario ni supervisión directa.
+                                    <span className="font-black">Riesgo legal — "Servicios profesionales" con subordinación.</span> El Art. 20 del Código de Trabajo presume un contrato laboral real (con derecho a aguinaldo, vacaciones, ISSS e indemnización) cuando hay subordinación — horario, cargo y sucursal asignados, como en este expediente. Un juez laboral puede reclasificarlo sin importar la etiqueta del contrato. Usa este tipo solo para relaciones genuinamente independientes, sin horario ni supervisión directa.
                                 </p>
                             </div>
                         )}

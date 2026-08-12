@@ -40,19 +40,19 @@ const EMPTY_ARRAY = [];
 const PUNCH_TYPE_LABELS = {
   IN: 'Entrada', IN_EARLY: 'Entrada Anticipada', IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
   IN_EXTRA: 'Entrada Extra', IN_RETURN: 'Regreso de Permiso',
-  IN_LUNCH: 'Regreso Almuerzo', IN_LACTATION: 'Regreso Lactancia',
-  OUT: 'Salida', OUT_LATE: 'Salida con Overtime', OUT_EARLY: 'Salida Anticipada',
-  OUT_LUNCH: 'Salida Almuerzo', OUT_LACTATION: 'Salida Lactancia',
+  IN_LUNCH: 'Regreso almuerzo', IN_LACTATION: 'Regreso lactancia',
+  OUT: 'Salida', OUT_LATE: 'Salida con Overtime', OUT_EARLY: 'Salida anticipada',
+  OUT_LUNCH: 'Salida almuerzo', OUT_LACTATION: 'Salida lactancia',
   OUT_BUSINESS: 'Gestión externa', OUT_EXTRA: 'Salida Extra',
 };
 const PUNCH_TYPE_OPTIONS = [
   { value: 'IN',            label: 'Entrada' },
   { value: 'OUT',           label: 'Salida' },
-  { value: 'OUT_LUNCH',     label: 'Salida Almuerzo' },
-  { value: 'IN_LUNCH',      label: 'Regreso Almuerzo' },
-  { value: 'OUT_LACTATION', label: 'Salida Lactancia' },
-  { value: 'IN_LACTATION',  label: 'Regreso Lactancia' },
-  { value: 'OUT_EARLY',     label: 'Salida Anticipada' },
+  { value: 'OUT_LUNCH',     label: 'Salida almuerzo' },
+  { value: 'IN_LUNCH',      label: 'Regreso almuerzo' },
+  { value: 'OUT_LACTATION', label: 'Salida lactancia' },
+  { value: 'IN_LACTATION',  label: 'Regreso lactancia' },
+  { value: 'OUT_EARLY',     label: 'Salida anticipada' },
   { value: 'OUT_BUSINESS',  label: 'Gestión externa' },
 ];
 const IN_TYPES  = new Set(['IN','IN_EARLY','IN_AFTER_SHIFT','IN_EXTRA','IN_RETURN','PUNCH_IN']);
@@ -233,8 +233,8 @@ function getExpectedPunches(dateStr, shift, dayConfig) {
   const lunchEnd   = lunchStart ? new Date(lunchStart.getTime() + 3600000) : null;
   const result = [{ type:'IN', label:'Entrada', expected: shiftStart }];
   if (lunchStart) {
-    result.push({ type:'OUT_LUNCH', label:'Salida Almuerzo', expected: lunchStart });
-    result.push({ type:'IN_LUNCH',  label:'Regreso Almuerzo', expected: lunchEnd });
+    result.push({ type:'OUT_LUNCH', label:'Salida almuerzo', expected: lunchStart });
+    result.push({ type:'IN_LUNCH',  label:'Regreso almuerzo', expected: lunchEnd });
   }
   result.push({ type:'OUT', label:'Salida', expected: shiftEnd });
   return result;
@@ -254,19 +254,19 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
     const base = [
       { value: 'IN',           label: 'Entrada' },
       { value: 'OUT',          label: 'Salida' },
-      { value: 'OUT_EARLY',    label: 'Salida Anticipada' },
+      { value: 'OUT_EARLY',    label: 'Salida anticipada' },
       { value: 'OUT_BUSINESS', label: 'Gestión externa' },
     ];
     if (dayConfig?.hasLunch || dayConfig?.lunchStart) {
       base.splice(2, 0,
-        { value: 'OUT_LUNCH', label: 'Salida Almuerzo' },
-        { value: 'IN_LUNCH',  label: 'Regreso Almuerzo' },
+        { value: 'OUT_LUNCH', label: 'Salida almuerzo' },
+        { value: 'IN_LUNCH',  label: 'Regreso almuerzo' },
       );
     }
     if (dayConfig?.hasLactation || dayConfig?.lactationStart) {
       base.push(
-        { value: 'OUT_LACTATION', label: 'Salida Lactancia' },
-        { value: 'IN_LACTATION',  label: 'Regreso Lactancia' },
+        { value: 'OUT_LACTATION', label: 'Salida lactancia' },
+        { value: 'IN_LACTATION',  label: 'Regreso lactancia' },
       );
     }
     return base;

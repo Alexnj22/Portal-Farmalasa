@@ -908,7 +908,7 @@ const submitEarlyExit = useCallback((e) => {
         // A VACATION_RECALL for today is already handled by the RPC clearing active_event_type
         const EVENT_LABELS = {
             VACATION: 'Período Vacacional',
-            DISABILITY: 'Incapacidad Médica',
+            DISABILITY: 'Incapacidad médica',
             PERMIT: 'Permiso Especial',
         };
         if (employee.active_event_type && EVENT_LABELS[employee.active_event_type]) {

@@ -5,10 +5,10 @@ import PortalInput from '../common/PortalInput';
 
 const SERVICE_CONFIG = {
  rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },
- light: { title: 'Energía Eléctrica', icon: Zap, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', ring: 'focus:border-chart-4', providerLabel: 'Compañía Eléctrica' },
- water: { title: 'Agua Potable', icon: Droplet, color: 'text-chart-9-text bg-chart-9/10 border-chart-9/30', ring: 'focus:border-chart-9', providerLabel: 'Servicio de Agua' },
- internet: { title: 'Internet Fijo', icon: Wifi, color: 'text-chart-1-text bg-chart-1/10 border-chart-1/30', ring: 'focus:border-chart-1', providerLabel: 'Proveedor ISP' },
- phone: { title: 'Plan Celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-success', providerLabel: 'Telefonía Móvil' },
+ light: { title: 'Energía eléctrica', icon: Zap, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', ring: 'focus:border-chart-4', providerLabel: 'Compañía Eléctrica' },
+ water: { title: 'Agua potable', icon: Droplet, color: 'text-chart-9-text bg-chart-9/10 border-chart-9/30', ring: 'focus:border-chart-9', providerLabel: 'Servicio de Agua' },
+ internet: { title: 'Internet fijo', icon: Wifi, color: 'text-chart-1-text bg-chart-1/10 border-chart-1/30', ring: 'focus:border-chart-1', providerLabel: 'Proveedor ISP' },
+ phone: { title: 'Plan celular', icon: Smartphone, color: 'text-success bg-success/10 border-success/30', ring: 'focus:border-success', providerLabel: 'Telefonía Móvil' },
  taxes: { title: 'Impuestos / Alcaldía', icon: Receipt, color: 'text-content-2 bg-surface-card-hover border-divider', ring: 'focus:border-content-3', providerLabel: 'Alcaldía / Entidad' }
 };
 

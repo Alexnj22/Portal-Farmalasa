@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.579.0 — El aviso de una solicitud llega a todos los que pueden aprobarla
+
+El aviso era **dirigido** y la facultad **compartida**, y esa asimetría no
+estaba escrita en ningún lado. `notificar_solicitud_creada` mandaba la
+notificación y el push a `approver_id` y a nadie más; pero cualquiera con
+`can_approve` ve la bandeja completa —la policy de lectura se la da entera, el
+filtro por aprobador designado es sólo de pantalla— y la policy de escritura
+pide el permiso, no ser el designado. Resultado: quien podía ayudar no se
+enteraba.
+
+Ahora la lista de destinatarios es **el designado más todos los que pueden
+aprobar ese módulo hoy**, sin repetidos y sin quien hizo la solicitud. «Hoy»
+incluye a quien lo tiene por cargo secundario y a quien lo hereda por la
+ausencia del titular — que es justamente la persona a la que este mecanismo
+existe para alcanzar, y que con el aviso viejo nunca se habría enterado.
+
+Para eso la regla de delegación tuvo que poder evaluarse sobre **otra** persona
+y no sólo sobre quien consulta: se mudó a `hereda_por_ausencia_rol(cargo, …)` y
+`auth_hereda_por_ausencia` pasó a llamarla con el cargo propio. Una definición,
+dos usos; copiarla sería garantizar que en un mes digan cosas distintas.
+
+**Los traslados quedan fuera, y por una razón medida.** `traslados.can_approve`
+lo tienen 44 de los 46 empleados activos, y está bien que así sea: ahí aprobar
+es «confirmar el envío que me piden», y como son envíos entre salas la facultad
+es de la sala involucrada, acotada por su alcance. Pero eso lo vuelve un pésimo
+criterio para avisar. Un traslado ya notifica a algo más preciso —su lista de
+destinatarios—, así que en el camino normal no se notaba; el riesgo era el día
+que llegara una solicitud sin esa lista, con el aviso y el push saliendo a toda
+la plantilla. Con `modulo_de_notificacion` devolviendo NULL para traslados, ese
+caso degrada al comportamiento de siempre en vez de a un envío masivo.
+
+Medido en producción tras aplicar: anulación → 2 personas, descarte → 2,
+vacaciones y anticipo → 4, traslado → por su propia lista.
+
+Nota de método: el cuerpo de la función se reemplazó **leyéndolo de
+`pg_proc.prosrc`**, no transcribiéndolo. Son 150 líneas de textos de
+notificación, y mientras se escribía esto otra sesión aplicó
+`20260812224217_personas_de_solicitudes_tambien_por_correo`: transcribir habría
+revertido su trabajo sin avisar. El `RAISE` cuando el bloque buscado no aparece
+tampoco es decorativo — un `replace()` que no encuentra nada devuelve el texto
+intacto y la migración diría «listo» sin haber hecho nada.
+
+Migraciones `20260812224601_avisar_a_todos_los_que_pueden_aprobar` y
+`20260812224637_el_traslado_no_avisa_a_toda_la_plantilla`.
+
 ## v2.578.1 — Solicitudes: vuelve a verse quién aprobó
 
 En una solicitud ya resuelta, la ficha **«Aprobó»** salía en «Sin registro»:

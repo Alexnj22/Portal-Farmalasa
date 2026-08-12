@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
+import { likePattern } from '../utils/searchUtils';
 
 // Datos del widget de cargas y descartes de inventario.
 //
@@ -44,6 +45,74 @@ export async function fetchLotesPorVencer({ erpSucursalId, dias = 0 }) {
     if (error) return { filas: [], hayMas: false, error };
     const filas = (data ?? []).slice(0, TOPE_LISTA);
     return { filas, hayMas: (data ?? []).length > TOPE_LISTA, error: null };
+}
+
+/**
+ * Busca en el catálogo activo, para CARGAR.
+ *
+ * Lo que se carga es justamente lo que la sala no tiene registrado, así que
+ * buscar sobre su inventario deja afuera el caso normal: reportado el
+ * 2026-08-12 con AVAMYS, que no aparecía porque Salud 4 lo tenía en cero.
+ * Descargar sigue buscando sobre la existencia —no se puede sacar lo que no
+ * está— y por eso son dos funciones y no una con bandera.
+ *
+ * Trae `regulado` porque de eso depende que la pantalla exija el número de
+ * lote, y `perecedero` porque de eso depende que exija la fecha. Los dos viajan
+ * en la misma consulta: pedirlos después es otro viaje por producto.
+ *
+ * La existencia se busca aparte y es SOLO informativa —«había 5»—: en una carga
+ * no topa nada. Un producto que la sala no tiene sale igual, con existencia 0.
+ */
+export async function buscarEnCatalogo({ erpSucursalId, texto }) {
+    const q = String(texto ?? '').trim();
+    if (q.length < 2) return { filas: [], error: null };
+
+    const { data, error } = await supabase
+        .from('products')
+        .select('id, nombre, regulado, perecedero')
+        .eq('activo', true)
+        .ilike('nombre_norm', likePattern(q))
+        .order('nombre')
+        .range(0, 60);
+
+    if (error) return { filas: [], error };
+    const productos = data ?? [];
+    if (!productos.length) return { filas: [], error: null };
+
+    // La existencia de esos productos en la sala. Va sobre los ids que ya se
+    // encontraron —nunca sobre todo el inventario— y son 61 como mucho, así que
+    // entra de sobra bajo el corte de 1000 filas.
+    //
+    // Si esta consulta falla NO se cae la búsqueda: la existencia es un dato al
+    // margen —en una carga no topa nada— y perderla no puede costar el listado
+    // entero. Pero se mira el error igual, porque descartarlo sin leerlo deja
+    // todas las existencias en cero y eso se ve idéntico a que no haya nada.
+    const { data: exis, error: exisErr } = await supabase
+        .from('inventory')
+        .select('erp_product_id, cantidad')
+        .eq('erp_sucursal_id', Number(erpSucursalId))
+        .eq('is_vencidos', false)
+        .gt('cantidad', 0)
+        .in('erp_product_id', productos.map(p => p.id))
+        .range(0, 999);
+
+    const porProducto = new Map();
+    for (const r of exisErr ? [] : (exis ?? [])) {
+        porProducto.set(r.erp_product_id, (porProducto.get(r.erp_product_id) ?? 0) + Number(r.cantidad || 0));
+    }
+
+    return {
+        filas: productos.map(p => ({
+            erp_product_id: p.id,
+            descripcion: p.nombre,
+            // `null` cuando la existencia no se pudo leer: distinto de 0, que
+            // afirma que la sala no tiene ninguna.
+            cantidad: exisErr ? null : (porProducto.get(p.id) ?? 0),
+            regulado: p.regulado,
+            perecedero: p.perecedero,
+        })),
+        error: null,
+    };
 }
 
 /** Busca por nombre dentro de lo que esa sucursal tiene con existencia. */

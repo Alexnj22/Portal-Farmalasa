@@ -17,7 +17,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import {
-    buscarConExistencia, fetchPresentaciones, fetchLotesDeProducto,
+    buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
     fetchPerecederos, insertMovimientoInventario, contarPorVencer,
 } from '../../data/inventoryMovements';
 
@@ -182,10 +182,28 @@ function problemasDeLinea(l, { llevaLote, esCarga, esPerecedero }) {
     if (!(Number(l.cantidad) > 0)) problemas.push('cantidad');
     if (!esCarga && l.existencia != null && Number(l.cantidad) > Number(l.existencia))
         problemas.push('sin existencia');
-    if (llevaLote && !String(l.lote).trim()) problemas.push('lote');
-    if (esCarga && llevaLote && !String(l.vence).trim()) problemas.push('vence');
-    if (esCarga && !llevaLote && esPerecedero && !String(l.vence).trim()) problemas.push('vence');
+    // `llevaLote` tiene TRES valores en una carga y el tercero no es un detalle:
+    // `null` es «todavía no se sabe». Escribirlo como `if (llevaLote)` lo
+    // convertiría en «no lleva» y volvería a dejar pasar cargas sin lote — que
+    // es exactamente el bug que se corrigió el 2026-08-12.
+    if (llevaLote === true && !String(l.lote).trim()) problemas.push('lote');
+    if (esCarga && (llevaLote === true || esPerecedero) && !String(l.vence).trim())
+        problemas.push('vence');
     return problemas;
+}
+
+/**
+ * Si el producto lleva control de lote. `null` = no se sabe todavía.
+ *
+ * Son dos preguntas distintas según lo que se esté haciendo, y confundirlas fue
+ * el bug: al DESCARGAR se elige entre los lotes que la sala tiene, así que la
+ * respuesta es si hay alguno. Al CARGAR no hay lotes que mirar —lo que se carga
+ * es lo que no está— y la respuesta es una propiedad del producto, que el
+ * portal guarda en `products.regulado`.
+ */
+function llevaControlDeLote(linea, { esCarga, lotes }) {
+    if (!esCarga) return (lotes ?? []).length > 0;
+    return linea?.regulado ?? null;
 }
 
 /* ─── Paso 1 · qué se va a hacer ──────────────────────────────────────────── */
@@ -320,14 +338,20 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     // Hasta el 2026-08-07 «Descargar por vencimiento» no tenía buscador: armaba
     // sola la lista de lo que vencía en la sala, con un plazo para acotarla.
     // Se quitó a pedido del usuario — ver la nota de `OPERACIONES`.
+    //
+    // CARGAR y DESCARGAR no buscan sobre lo mismo, y confundirlos escondía
+    // productos: cargar ofrece el catálogo activo —lo que se carga es lo que la
+    // sala NO tiene— y descargar sólo lo que hay, porque no se puede sacar lo
+    // que no está. Reportado el 2026-08-12: AVAMYS no aparecía para cargar.
     useEffect(() => {
         if (!op) return;
         const q = busqueda.trim();
         if (q.length < 2) { setCandidatos([]); return; }
         let cancelado = false;
         setCargando(true);
+        const buscar = esCarga ? buscarEnCatalogo : buscarConExistencia;
         const t = setTimeout(() => {
-            buscarConExistencia({ erpSucursalId, texto: q }).then(r => {
+            buscar({ erpSucursalId, texto: q }).then(r => {
                 if (cancelado) return;
                 // Un producto por fila: el lote se elige después, y verlo
                 // repetido en el buscador confunde.
@@ -341,7 +365,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             });
         }, 300);
         return () => { cancelado = true; clearTimeout(t); };
-    }, [busqueda, erpSucursalId, op]);
+    }, [busqueda, erpSucursalId, op, esCarga]);
 
     useEffect(() => {
         const ids = candidatos.map(f => f.erp_product_id);
@@ -381,6 +405,11 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             lote: '',
             vence: '',
             loteNuevo: false,
+            // Viaja EN la línea y no en un Map aparte: la línea sobrevive a que
+            // se limpie la búsqueda, y es la que después se valida al enviar.
+            // `undefined` (una fila del inventario, o sea un descargo) queda
+            // como `null` — ahí el control de lote lo dicen los lotes.
+            regulado: fila.regulado ?? null,
         });
 
         const token = ++pedidoLotes.current;
@@ -428,7 +457,9 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const faltantes = useMemo(() => lineas.map(l => ({
         id: l.id,
         problemas: problemasDeLinea(l, {
-            llevaLote: (lotesPorProducto.get(l.erp_product_id) ?? []).length > 0,
+            llevaLote: llevaControlDeLote(l, {
+                esCarga, lotes: lotesPorProducto.get(l.erp_product_id),
+            }),
             esCarga,
             esPerecedero: perecederos.has(l.erp_product_id),
         }),
@@ -441,10 +472,16 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const loteRepetido = Boolean(borrador) && lineas.some(l =>
         l.erp_product_id === borrador.erp_product_id
         && String(l.lote).trim() === String(borrador.lote).trim());
+    // Si el producto del borrador lleva control de lote. `null` = no se sabe, y
+    // se usa tanto para validar como para decidir qué campos se dibujan.
+    const loteBorrador = borrador
+        ? llevaControlDeLote(borrador, { esCarga, lotes: lotesBorrador })
+        : null;
+
     const faltaBorrador = useMemo(() => {
         if (!borrador || lotesBorrador === null) return ['cargando'];
         return problemasDeLinea(borrador, {
-            llevaLote: lotesBorrador.length > 0,
+            llevaLote: llevaControlDeLote(borrador, { esCarga, lotes: lotesBorrador }),
             esCarga,
             esPerecedero: perecederos.has(borrador.erp_product_id),
         });
@@ -719,7 +756,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     {lotesBorrador !== null && lotesBorrador.length > 0 && (
                         <div>
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
-                                Lote
+                                Lote{loteBorrador === true && <span className="text-danger-text"> *</span>}
                             </p>
                             <div className="flex flex-wrap items-center gap-2">
                                 {/* `clearable={false}`: sin esto `LiquidSelect`
@@ -775,10 +812,52 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         </div>
                     )}
 
+                    {/* ── Cargar algo que la sala no tiene ──────────────────
+                        Acá no hay lotes que elegir, y hasta el 2026-08-12 eso
+                        significaba que NO SE DIBUJABA NINGÚN CAMPO: el producto
+                        salía sin lote y el movimiento se rechazaba recién al
+                        aprobarlo, cuando ya nadie podía corregirlo. Es el mismo
+                        agujero por el que se colaba la solicitud del TYLEX.
+
+                        Ahora se escribe a mano, y quién lo exige lo decide el
+                        producto: obligatorio si lleva control de lote, ofrecido
+                        si todavía no se sabe, y ausente si no lo lleva —
+                        ponerle un número ahí le inventa un lote que no debería
+                        existir. */}
+                    {esCarga && lotesBorrador?.length === 0 && loteBorrador !== false && (
+                        <div className="flex flex-wrap items-end gap-2">
+                            <PortalInput
+                                label={loteBorrador === true ? 'N.º de lote *' : 'N.º de lote'}
+                                name="borrador-lote-nuevo"
+                                value={borrador.lote}
+                                onChange={e => editarBorrador({ lote: e.target.value })}
+                                placeholder="N.º de lote" className="w-40"
+                            />
+                            <PortalInput
+                                label="Vence" name="borrador-vence-lote"
+                                type="date" value={borrador.vence ?? ''}
+                                onChange={e => editarBorrador({ vence: e.target.value })}
+                                className="w-40"
+                            />
+                        </div>
+                    )}
+
+                    {/* No se sabe si el producto maneja lote. Se dice, en vez de
+                        marcarlo como si no lo llevara: sin el número, si resulta
+                        que lo lleva, la carga no entra. */}
+                    {esCarga && lotesBorrador?.length === 0 && loteBorrador === null
+                        && !String(borrador.lote).trim() && (
+                        <p className="flex items-center gap-1 text-micro text-warning-text font-semibold px-1">
+                            <AlertTriangle size={11} strokeWidth={2.5} />
+                            Si la caja trae número de lote, escribilo — sin él la carga puede no entrar.
+                        </p>
+                    )}
+
                     {/* Perecedero sin control de lote: la fecha no tiene de dónde
                         salir, así que se pide. El número de lote NO — ponerle uno
                         le inventa un lote que no debería existir. */}
-                    {esCarga && lotesBorrador?.length === 0 && perecederos.has(borrador.erp_product_id) && (
+                    {esCarga && lotesBorrador?.length === 0 && loteBorrador === false
+                        && perecederos.has(borrador.erp_product_id) && (
                         <PortalInput
                             label="Vence" name="borrador-vence"
                             type="date" value={borrador.vence ?? ''}
@@ -831,7 +910,13 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     {lineas.map(l => {
                         const pres = presPorProducto.get(l.erp_product_id) ?? [];
                         const lotes = lotesPorProducto.get(l.erp_product_id) ?? [];
-                        const llevaLote = lotes.length > 0;
+                        // Con lotes a la vista se elige entre ellos; en una carga
+                        // sin lotes en la sala, el control de lote lo dice el
+                        // producto y el número se escribe. `hayLotes` es lo que
+                        // decide QUÉ control se dibuja, `llevaLote` si es
+                        // obligatorio: son dos preguntas distintas.
+                        const hayLotes = lotes.length > 0;
+                        const llevaLote = llevaControlDeLote(l, { esCarga, lotes });
                         const pide = faltantes.find(f => f.id === l.id)?.problemas ?? [];
                         // ── La línea nace CERRADA (2026-08-07) ──────────────
                         // Pedido del usuario: «que solo aparezcan cards
@@ -895,9 +980,15 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
 
                                 {abierta && (
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
+                                    {/* `min="1"`: mover cero no es mover nada, y una
+                                        línea en cero llegaba hasta la validación en
+                                        vez de frenarse en el control. El `max` sólo
+                                        al descargar — una carga no tiene tope. */}
                                     <PortalInput
-                                        type="number" min="0" value={l.cantidad}
+                                        type="number" min="1" value={l.cantidad}
+                                        max={!esCarga && l.existencia != null ? l.existencia : undefined}
                                         onChange={e => editar(l.id, { cantidad: e.target.value })}
+                                        aria-label="Cantidad"
                                         className="w-20"
                                     />
                                     {pres.length > 1 && (
@@ -914,7 +1005,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         />
                                     )}
 
-                                    {llevaLote && (
+                                    {hayLotes && (
                                         // `clearable={false}`: sin esto `LiquidSelect`
                                         // agrega su opción de limpiar, que se rotula
                                         // «Todos» — y un lote «Todos» no existe. La
@@ -939,11 +1030,17 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         />
                                     )}
 
-                                    {llevaLote && esCarga && l.loteNuevo && (
+                                    {/* El número se escribe cuando es nuevo, y también
+                                        cuando la sala no tiene ni un lote de ese
+                                        producto: sin este campo, una carga que necesita
+                                        lote no tenía dónde ponerlo. */}
+                                    {esCarga && (l.loteNuevo || (!hayLotes && llevaLote !== false)) && (
                                         <PortalInput
                                             value={l.lote}
                                             onChange={e => editar(l.id, { lote: e.target.value })}
-                                            placeholder="N.º de lote" className="w-32"
+                                            aria-label="Número de lote"
+                                            placeholder={llevaLote === true ? 'N.º de lote *' : 'N.º de lote'}
+                                            className="w-32"
                                         />
                                     )}
 
@@ -958,10 +1055,12 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         Queda para lote nuevo (ahí la fecha es dato
                                         nuevo) y para el perecedero sin control de
                                         lote, que no tiene de dónde sacarla. */}
-                                    {esCarga && (l.loteNuevo || (!llevaLote && perecederos.has(l.erp_product_id))) && (
+                                    {esCarga && (l.loteNuevo || (!hayLotes
+                                        && (llevaLote !== false || perecederos.has(l.erp_product_id)))) && (
                                         <PortalInput
                                             type="date" value={l.vence ?? ''}
                                             onChange={e => editar(l.id, { vence: e.target.value })}
+                                            aria-label="Vencimiento"
                                             className="w-36"
                                         />
                                     )}
@@ -1036,6 +1135,10 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                     f.lote && f.lote !== 'GENERICO' ? `Lote ${f.lote}` : null,
                                     f.fecha_vencimiento ? `Vence ${fmtFecha(f.fecha_vencimiento)}` : null,
                                     dias !== null && dias < 0 ? `hace ${Math.abs(dias)} días` : null,
+                                    // El catálogo ofrece productos que la sala no tiene,
+                                    // así que el 0 de la derecha necesita decir de qué
+                                    // es: sin esto se lee como un dato faltante.
+                                    esCarga && f.cantidad === 0 ? 'no hay en la sala' : null,
                                     yaEsta ? 'ya agregado' : null,
                                 ].filter(Boolean).join(' · ')}
                             </span>

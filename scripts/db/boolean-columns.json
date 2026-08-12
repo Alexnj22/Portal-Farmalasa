@@ -24,7 +24,7 @@
     "pedido_sucursal_status": ["electrolit_ok"],
     "product_precios": ["activo"],
     "product_stock_params": ["is_hidden"],
-    "products": ["activo", "devolutivo", "es_antibiotico", "oculto_en_ventas", "perecedero", "requiere_receta", "sin_principio_activo"],
+    "products": ["activo", "devolutivo", "es_antibiotico", "oculto_en_ventas", "perecedero", "regulado", "requiere_receta", "sin_principio_activo"],
     "products_sync_log": ["success"],
     "proveedores": ["devolutivo"],
     "proveedores_maestro": ["activo", "percibe_1", "percibe_1_override", "retiene_renta"],

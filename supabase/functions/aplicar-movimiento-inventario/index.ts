@@ -87,6 +87,11 @@ interface Consulta {
   // opcional, es que no existe. Medido en 52 productos — y NO se puede deducir
   // del portal: `es_antibiotico` acertó 49 y la señal de "tiene lote real" 50.
   // Glimepirida, prednisona y ciprofibrato son regulados sin ser antibióticos.
+  //
+  // ⚠️ SÓLO LO CONTESTA LA PANTALLA DE DESCARGOS, y sólo si el producto tiene
+  // existencia en esa ubicación. En una CARGA este campo vale siempre `false`
+  // porque `ingreso_inventario.php` no devuelve `lotes_select` — ver el
+  // comentario de `esRegulado()`. No usarlo para decidir nada de una carga.
   regulado: boolean;
   lotes: { id: string; numero: string; vence: string; stock: number }[];
 }
@@ -368,6 +373,34 @@ Deno.serve(async (req) => {
         error: `No se pudo abrir la sucursal ${erpSucursal}: ${rSesion.slice(0, 120)}`,
       }, 502);
 
+    // ── Quién lleva control de lote, en una CARGA ─────────────────────────
+    //
+    // En un descargo lo contesta el propio sistema (`data-regulado` del selector
+    // de lotes). En una carga NO HAY A QUIÉN PREGUNTARLE: medido el 2026-08-12,
+    // `ingreso_inventario.php` no devuelve `lotes_select` para ningún producto,
+    // y la pantalla de descargos sólo lo publica si el producto tiene existencia
+    // en esa ubicación — que es justo lo que un producto por cargar no tiene.
+    //
+    // Ese hueco es el bug que esto corrige: la señal salía siempre `false`, así
+    // que el lote viajaba vacío y el sistema rechazaba TODA carga de un producto
+    // con control de lote. Ninguna llegó a aplicarse nunca; la única que entró
+    // (IMIDALYN GEL, 11-ago) era de un producto sin lote y por eso pasó.
+    //
+    // Ahora sale de `products.regulado`, que el portal mantiene. Tres valores y
+    // los tres significan algo distinto:
+    //   true  → el lote es obligatorio y viaja
+    //   false → va vacío A PROPÓSITO: mandarle un número le inventa un lote
+    //   null  → no se sabe; se manda lo que la solicitud traiga y decide el
+    //           sistema, que para eso es el que manda
+    const reguladoPorProducto = new Map<number, boolean | null>();
+    if (esCarga) {
+      const ids = [...new Set(lineas.map((l) => Number(l.erp_product_id)))];
+      const { data: prods, error: prodErr } = await admin
+        .from("products").select("id, regulado").in("id", ids);
+      if (prodErr) throw prodErr;
+      for (const p of prods ?? []) reguladoPorProducto.set(Number(p.id), p.regulado);
+    }
+
     // ── Cada línea se confirma contra el ERP antes de armar el envío ──────
     const pagina = esCarga ? INGRESO : DESCARGO;
     const partes: string[] = [];
@@ -415,9 +448,17 @@ Deno.serve(async (req) => {
           error: `${l.descripcion ?? l.erp_product_id} necesita fecha de vencimiento.`,
         }, 422);
 
+      // En una carga el control de lote lo dice el portal; en un descargo, el
+      // sistema. Nunca al revés: ver `reguladoPorProducto` arriba.
+      const llevaLote = esCarga
+        ? reguladoPorProducto.get(Number(l.erp_product_id)) ?? null
+        : c.regulado;
+
       // Un regulado cargado sin lote entra al inventario sin poder rastrearse,
-      // que es exactamente lo contrario de por qué se lo regula.
-      if (esCarga && c.regulado && !String(l.numero_lote ?? "").trim())
+      // que es exactamente lo contrario de por qué se lo regula. Se corta acá y
+      // no en el envío para que el aviso nombre el producto: el sistema también
+      // lo rechazaría, pero recién después de aceptar las otras líneas.
+      if (esCarga && llevaLote === true && !String(l.numero_lote ?? "").trim())
         return json({
           ok: false, codigo: "FALTA_LOTE",
           error: `${l.descripcion ?? l.erp_product_id} lleva control de lote y necesita su número.`,
@@ -524,8 +565,13 @@ Deno.serve(async (req) => {
       //
       // Y si el producto NO es regulado va vacío a propósito: mandarle un
       // número le inventa un lote que no debería existir. Pasó en esa prueba.
+      //
+      // `null` —no se sabe si lleva lote— manda lo que la solicitud traiga: si
+      // el producto lo lleva, es lo único que lo hace entrar; si no lo lleva, la
+      // solicitud tampoco tendrá lote que mandar, porque el widget sólo lo pide
+      // donde corresponde.
       const cola = esCarga
-        ? (c.regulado ? String(l.numero_lote ?? "") : "")
+        ? (llevaLote === false ? "" : String(l.numero_lote ?? ""))
         : idLote;
       partes.push([
         l.erp_product_id, costo, precio, l.cantidad, unidad, vence, elegida.id, cola,
@@ -539,7 +585,7 @@ Deno.serve(async (req) => {
         id_presentacion_erp: elegida.id,       // el que se usó, para poder auditarlo
         cantidad: l.cantidad, unidad,
         costo, precio, stock_previo: c.stock,
-        regulado: c.regulado,
+        regulado: llevaLote,
         lote: l.numero_lote ?? null, vence: l.vence ?? null,
         id_lote_erp: idLote !== "0" ? idLote : null,
       });
@@ -574,11 +620,22 @@ Deno.serve(async (req) => {
     const resp = leerRespuesta(
       await pedir(cookie, pagina, new URLSearchParams(campos), { extra: { Referer: pagina } }),
     );
-    if (!resp.ok)
+    if (!resp.ok) {
+      // Un rechazo por falta de lote ES el dato que le falta al portal: el
+      // sistema nombra el producto que lo exige. Se anota, así el próximo
+      // intento lo pide en la pantalla en vez de volver a fallar acá. Es el
+      // único camino para los productos que nunca tuvieron existencia, que son
+      // los que ninguna consulta puede clasificar.
+      const idFaltante = Number(/lote[\s\S]{0,120}?ID\s+(\d+)/i.exec(resp.msg)?.[1]);
+      if (esCarga && idFaltante) {
+        await admin.from("products").update({ regulado: true }).eq("id", idFaltante)
+          .then(({ error }) => { if (error) console.error("marcar regulado:", error.message); });
+      }
       return json({
         ok: false,
         error: `El sistema no aceptó el movimiento: ${resp.msg || "sin detalle"}`,
       }, 502);
+    }
 
     // ── Recién ahora la solicitud es APPROVED ────────────────────────────
     const aplicado = {

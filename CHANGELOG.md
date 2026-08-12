@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.575.0 — Las cargas de inventario vuelven a entrar, y se cargan productos que la sala no tiene
+
+Reportado el 2026-08-12 sobre una solicitud de Salud 4: al aprobarla, «No se
+proporciono el número de lote para el producto TYLEX 750 X 20 CAPSULAS» — y la
+solicitud **sí** traía el lote `AW7293`, guardado en su metadata.
+
+**El lote se perdía al armar el envío.** Para saber si un producto lleva control
+de lote, la función leía `data-regulado` de la respuesta del sistema. Medido: la
+pantalla de cargas **no devuelve ese campo para ningún producto** (sus claves son
+`select, descrip, id_p, costop, preciop, unidadp, perecedero, categoria,
+typeinfo`), así que la señal salía `false` siempre y el lote viajaba vacío.
+
+**El alcance era mayor que esa solicitud: ninguna carga de un producto con
+control de lote pudo aplicarse nunca.** La única que había entrado —IMIDALYN
+GEL, 11-ago— era de un producto sin lote, y por eso pasó. Cuatro de los cinco
+productos de la solicitud reportada habrían fallado igual.
+
+**Y no alcanzaba con preguntarle al sistema.** La pantalla de descargos sí
+publica el flag, pero sólo si el producto tiene existencia en esa sala — que es
+justo lo que un producto por cargar no tiene (verificado en 5 productos: la
+consulta vuelve sin `stock` y sin lotes). Tampoco lo trae el listado de
+productos, y `es_antibiotico` no equivale: TYLEX lleva lote y no es antibiótico.
+
+**Ahora el portal lo sabe.** Columna `products.regulado`, con tres valores donde
+`null` significa «no se sabe» y no se confunde con «no lleva». Sembrada midiendo,
+no suponiendo: 3,215 productos se clasificaron por sus propias existencias
+—todas con lote real, o todas sin— y esa inferencia se enfrentó al sistema en 10
+casos con 10 aciertos. Los 163 que mezclan las dos formas **no** se infirieron
+(de 6 probados, la inferencia fallaba en 3): se le preguntó al sistema uno por
+uno y contestó por 160.
+
+Además, un rechazo por falta de lote ya no se desperdicia: nombra al producto que
+lo exige, así que queda anotado y el próximo intento lo pide en la pantalla.
+
+**Cargar ya no se limita a lo que la sala tiene.** También reportado: buscar
+«avamy» para cargar no daba resultados. El buscador miraba el inventario de la
+sala, o sea que ofrecía justo lo contrario de lo que se carga. Ahora cargar busca
+sobre el catálogo activo y descargar sigue sobre la existencia — no se puede
+sacar lo que no está.
+
+**Las reglas de cantidad, parejas en todo el widget.** Ninguna línea sale en
+cero (el control ya no acepta 0, no sólo la validación), un descargo no puede
+pasar de la existencia —ahora también como tope del propio campo— y una carga
+que necesita lote no se puede enviar sin él. Cuando no se sabe si el producto lo
+lleva, el campo se ofrece igual y se avisa, en vez de darlo por descartado.
+
 ## v2.574.0 — El libro de consumidor deja de restar la retención
 
 Lo destapó la contadora: su total de julio ($241,839.73) no cuadraba con el del

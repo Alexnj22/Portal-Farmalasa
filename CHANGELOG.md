@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.572.1 — El cargo se resuelve contra la tabla, y si no resuelve no se escribe
+
+Paso 1 de `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`. **El bug estaba
+vivo, no era hipotético.**
+
+Cuatro cargos estaban escritos a mano en `FormLeadership.jsx` y `UnifiedModal`
+los cruzaba por igualdad exacta de cadena contra la tabla `roles`:
+
+```js
+const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
+role_id: outRoleObj ? outRoleObj.id : null,   // ← sin coincidencia: null, sin error
+```
+
+Medido contra las 24 filas reales: la tabla dice **`Regente de Enfermeria`**
+(id 23, **sin tilde**) y el formulario ofrecía **`Regente de Enfermería`** (con
+tilde). O sea que relevar a un regente de enfermería guardaba el empleado con
+`role_id: null` — sin lanzar, sin avisar y sin quedar en el log. Los otros tres
+cargos sí coincidían, que es justo por qué nadie lo vio: fallaba uno de cuatro.
+
+**El arreglo no es corregir la tilde.** La lista del formulario era una copia a
+mano de una tabla que ya existe y que el store ya carga y cachea
+(`systemSlice`), así que la copia sobra:
+
+- **`src/utils/roles.js`** (nuevo) — `buscarCargo` intenta la coincidencia
+  exacta primero y sólo después la normalizada (sin tildes, sin espacios de
+  sobra). Ese orden importa: si algún día hubiera dos cargos que se distinguen
+  por un acento, gana el exacto. `opcionesDeCargo` arma el desplegable **desde
+  la tabla**, así que lo que se guarda coincide con la base por construcción.
+- **`FormLeadership.jsx`** — fuera el arreglo literal. La lista curada sigue
+  siendo curada (son 4 cargos de los 24, a propósito), pero ahora es una lista
+  de *intenciones* que se resuelve contra las filas reales. El valor por
+  defecto, también: estaba escrito a mano y era la misma apuesta, sólo que sin
+  que nadie la eligiera.
+- **`UnifiedModal.jsx`** — el `? :` se reemplaza por un **freno**: si el cargo
+  no resuelve, no se escribe y se dice por qué. Y `employees.role` y la bitácora
+  guardan `outRoleObj.name`, o sea el nombre que de verdad quedó, no el que
+  traía el formulario.
+- **`FormNovedad.jsx`** — la guarda de cupo por cargo usaba el mismo `find`
+  exacto. Si no calzaba, `config` era `undefined` y la función **retornaba
+  `null`**: el aviso de «cargo lleno» se saltaba entero, en silencio.
+- **`systemSlice.js`** — éste ya hacía lo correcto (lanza un error en vez de
+  escribir nulo) y sirvió de modelo para el freno de arriba. Sólo se le dio la
+  misma tolerancia al acento, porque sin ella daba un «no existe en el catálogo»
+  que era falso.
+
+Verificado con los datos reales de las 24 filas: `Regente de Enfermería` pasó de
+`NULL` a `id 23`, guardando `«Regente de Enfermeria»`. Los otros tres siguen en
+30, 20 y 19. Cero errores de consola.
+
+De paso quedó anotado que la tabla tiene dos nombres con espacio al final
+(`Referente de Farmacovigilancia `, id 9; `Supervisor del Departamento Medico y
+Enfermería `, id 22). Con la normalización ya no rompen nada, pero son datos
+sucios y valdría limpiarlos.
+
 ## v2.572.0 — El módulo contable comprueba sus propios números
 
 Cierra la serie que abrió el contador (v2.571.7 y .9). La lección del hallazgo

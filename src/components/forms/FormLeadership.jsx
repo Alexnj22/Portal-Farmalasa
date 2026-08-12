@@ -11,6 +11,16 @@ import Button from '../common/Button';
 import SearchInput from '../common/SearchInput';
 import { clickable } from '../../utils/clickable';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
+import { opcionesDeCargo, buscarCargo } from '../../utils/roles';
+
+// A dónde va quien es relevado de una jefatura. Es una lista CURADA a
+// propósito —no son los 24 cargos de la tabla—, pero los nombres se resuelven
+// contra `roles` y el texto que se muestra sale de la fila real. Antes estaban
+// escritos a mano acá y `UnifiedModal` los cruzaba por igualdad de cadena: la
+// tabla dice «Regente de Enfermeria» y esta lista decía «Regente de Enfermería»,
+// así que ese caso guardaba `role_id: null` en silencio.
+const CARGOS_DE_SALIDA = ['Dependiente de Farmacia', 'Subjefe/a de Sala', 'Jefe/a de Sala'];
+const CARGO_DE_SALIDA_ENFERMERIA = 'Regente de Enfermería';
 
 const getTenure = (dateString) => {
     if (!dateString) return 'N/A';
@@ -28,6 +38,9 @@ const hideScrollbarClass = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:no
 const FormLeadership = ({ formData, setFormData }) => {
     const employees = useStaff(state => state.employees);
     const branches = useStaff(state => state.branches);
+    // `roles` ya lo carga el store desde la base (systemSlice) y lo cachea: no
+    // hace falta un fetch nuevo, sólo dejar de duplicar la lista.
+    const roles = useStaff(state => state.roles);
 
     // 1. Detección del Ocupante Actual
     const currentAssigneeObj = useMemo(() => 
@@ -41,14 +54,17 @@ const FormLeadership = ({ formData, setFormData }) => {
         }
         // Inicializar acción de salida por defecto
         if (currentAssigneeObj && !formData.outgoingAction) {
-            setFormData(prev => ({ 
-                ...prev, 
-                outgoingAction: 'REASSIGN', 
-                outgoingRole: 'Dependiente de Farmacia',
+            // El valor por defecto también sale de la tabla: escrito a mano era
+            // la misma apuesta que la lista, sólo que sin que nadie lo eligiera.
+            const porDefecto = buscarCargo(roles, CARGOS_DE_SALIDA[0]);
+            setFormData(prev => ({
+                ...prev,
+                outgoingAction: 'REASSIGN',
+                outgoingRole: porDefecto?.name ?? '',
                 outgoingBranch: prev.branch?.id || ''
             }));
         }
-    }, [currentAssigneeObj, formData.currentAssignee, formData.selectedEmpId, setFormData, formData.outgoingAction]);
+    }, [currentAssigneeObj, formData.currentAssignee, formData.selectedEmpId, setFormData, formData.outgoingAction, roles]);
 
     // 3. Buscador
     const filteredEmployees = useMemo(() => {
@@ -79,6 +95,17 @@ const FormLeadership = ({ formData, setFormData }) => {
     const isReplacing = currentAssigneeObj && selectedEmp && selectedEmp.id !== currentAssigneeObj.id;
     const isCurrentJefeSelected = currentAssigneeObj && selectedEmp && selectedEmp.id === currentAssigneeObj.id;
     const isNurse = (currentAssigneeObj?.role || '').toLowerCase().includes('enfermer');
+
+    // El texto de cada opción sale de la fila real de `roles`, así que lo que se
+    // guarda coincide con la tabla por construcción. Si un cargo de la lista
+    // curada no existe en la tabla, no se ofrece: mejor una opción de menos que
+    // una que al guardarse deja el cargo en nulo.
+    const opcionesSalida = useMemo(
+        () => opcionesDeCargo(roles, isNurse
+            ? [...CARGOS_DE_SALIDA, CARGO_DE_SALIDA_ENFERMERIA]
+            : CARGOS_DE_SALIDA),
+        [roles, isNurse],
+    );
 
     return (
         <div className="flex flex-col md:flex-row h-[70vh] min-h-[550px] w-auto overflow-hidden -mx-6 md:-mx-10 -my-6 bg-surface-card-hover/20"> 
@@ -243,13 +270,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                                 <div className="space-y-1.5">
                                                                     <label className="text-micro font-bold text-content-3 uppercase tracking-widest">Nuevo Rol</label>
                                                                     <div className="rounded-2xl transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
-                                                                        <LiquidSelect 
-                                                                            options={[
-                                                                                { value: 'Dependiente de Farmacia', label: 'Dependiente de Farmacia' },
-                                                                                { value: 'Subjefe/a de Sala', label: 'Subjefe/a de Sala' },
-                                                                                { value: 'Jefe/a de Sala', label: 'Jefe/a de Sala' },
-                                                                                ...(isNurse ? [{ value: 'Regente de Enfermería', label: 'Regente de Enfermería' }] : [])
-                                                                            ]}
+                                                                        <LiquidSelect
+                                                                            options={opcionesSalida}
                                                                             value={formData.outgoingRole || ''}
                                                                             onChange={(val) => setFormData({...formData, outgoingRole: val?.target ? val.target.value : val})}
                                                                             placeholder="Selecciona el rol..."

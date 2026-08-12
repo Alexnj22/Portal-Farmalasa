@@ -12,6 +12,7 @@ import { supabase } from '../supabaseClient';
 import useMontadoParaSalida from '../hooks/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
+import { buscarCargo } from '../utils/roles';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -504,19 +505,41 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const actualBranchId = formData.branch?.id || formData.branchId || formData.id;
                 const actualBranchName = formData.branch?.name || formData.name || 'Sucursal';
 
-                const targetRoleObj = roles.find(r => r.name === formData.targetRole);
+                // ── El cargo se resuelve contra la tabla, y si no resuelve NO se
+                // escribe ────────────────────────────────────────────────────
+                // Acá había dos `roles.find(r => r.name === …)` por igualdad
+                // exacta de cadena contra listas escritas a mano, y el `? :` de
+                // abajo convertía «no encontré el cargo» en `role_id: null`.
+                // Medido el 2026-08-12: la tabla dice «Regente de Enfermeria» y
+                // el formulario ofrecía «Regente de Enfermería», así que relevar
+                // a un regente de enfermería dejaba a la persona sin cargo, sin
+                // error y sin log. Un fallo que no falla es el que sobrevive.
+                const targetRoleObj = buscarCargo(roles, formData.targetRole);
+                if (formData.targetRole && !targetRoleObj) {
+                    setValidationError(`El cargo «${formData.targetRole}» ya no existe en el catálogo. Actualiza la página e intenta de nuevo.`);
+                    setIsSaving(false);
+                    return;
+                }
                 const targetRoleId = targetRoleObj ? targetRoleObj.id : null;
 
                 const { updateEmployee: _ue, appendAuditLog } = useStaff.getState();
 
                 if (formData.currentAssignee && formData.currentAssignee !== formData.selectedEmpId) {
                     if (formData.outgoingAction === 'REASSIGN') {
-                        const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
+                        const outRoleObj = buscarCargo(roles, formData.outgoingRole);
+                        if (!outRoleObj) {
+                            setValidationError(`El cargo de salida «${formData.outgoingRole || '—'}» no existe en el catálogo. Elige otro para continuar.`);
+                            setIsSaving(false);
+                            return;
+                        }
 
                         await updateEmployee(formData.currentAssignee, {
                             branchId: formData.outgoingBranch,
-                            role_id: outRoleObj ? outRoleObj.id : null,
-                            role: formData.outgoingRole
+                            role_id: outRoleObj.id,
+                            // El nombre sale de la FILA, no de lo que traía el
+                            // formulario: así `employees.role` y `role_id`
+                            // cuentan siempre la misma historia.
+                            role: outRoleObj.name
                         });
 
                         await appendAuditLog('EMPLEADO_RELEVADO', formData.currentAssignee, {
@@ -525,7 +548,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             previous_branch_name: actualBranchName,
                             target_branch_id: formData.outgoingBranch,
                             previous_role: formData.targetRole,
-                            new_role: formData.outgoingRole,
+                            // Igual que arriba: lo que queda en la bitácora es
+                            // el nombre que de verdad se guardó.
+                            new_role: outRoleObj.name,
                             note: `Relevado de jefatura en ${actualBranchName}`,
                         });
 
@@ -550,7 +575,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 await updateEmployee(formData.selectedEmpId, {
                     branchId: actualBranchId,
                     role_id: targetRoleId,
-                    role: formData.targetRole
+                    role: targetRoleObj?.name ?? formData.targetRole
                 });
 
                 await appendAuditLog(formData.moveType || 'EMPLEADO_ASIGNADO', formData.selectedEmpId, {

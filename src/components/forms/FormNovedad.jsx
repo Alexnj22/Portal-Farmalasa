@@ -11,6 +11,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
 import { EVENT_TYPES } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
+import { buscarCargo } from '../../utils/roles';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNowTick } from '../../hooks/useNowTick';
@@ -48,7 +49,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const headcountWarning = useMemo(() => {
         if (!targetRoleToEval || (!isPromotion && !isTransfer)) return null;
 
-        const config = roles.find(r => r.name === targetRoleToEval);
+        // `buscarCargo` y no `find(r => r.name === …)`: si el nombre no calza
+        // por un acento, este `find` devolvía `undefined` y la guarda de cupo
+        // se saltaba entera — el aviso de «cargo lleno» dejaba de aparecer sin
+        // que nada lo dijera.
+        const config = buscarCargo(roles, targetRoleToEval);
         if (!config || config.max_limit >= 99) return null; // Si no tiene límite duro, pasa limpio
 
         // Buscamos quiénes ocupan el cargo actualmente

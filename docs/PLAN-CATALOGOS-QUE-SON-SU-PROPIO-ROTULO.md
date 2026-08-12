@@ -1,7 +1,7 @@
 # Plan — los catálogos cuyo rótulo ES el dato
 
-> **Estado:** ABIERTO · abierto el 2026-08-12 al cerrar el barrido de §26.4
-> (v2.571.8 y v2.571.9). No se ejecutó nada de este documento todavía.
+> **Estado:** grupo 1 **CERRADO** (v2.571.11) · grupos 2 y 3 abiertos.
+> Abierto el 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y v2.571.10).
 
 ## Por qué existe
 
@@ -23,7 +23,37 @@ mayúsculas.
 
 ## Grupo 1 — el rótulo se cruza contra otra tabla, y no coincidir NO falla
 
-**El más peligroso, y el único que ya es un bug hoy, independiente de las
+> ### ✅ CERRADO el 2026-08-12 (v2.571.11)
+>
+> **El bug era real y estaba vivo.** Medido contra las 24 filas de `roles`: la
+> tabla dice **`Regente de Enfermeria`** (id 23, sin tilde) y el formulario
+> ofrecía **`Regente de Enfermería`** (con tilde). Relevar a un regente de
+> enfermería guardaba `role_id: null`, sin error y sin log. Los otros tres
+> cargos sí coincidían.
+>
+> Lo aplicado:
+> - `src/utils/roles.js` — `buscarCargo` (exacta primero, normalizada después) y
+>   `opcionesDeCargo`, que arma el desplegable **desde la tabla**.
+> - `FormLeadership.jsx` — se borró el arreglo literal de cuatro cargos; ahora
+>   lee `roles` del store (que ya los traía de la base) y el texto que se
+>   muestra sale de la fila real. El valor por defecto, también.
+> - `UnifiedModal.jsx` — el `? :` que convertía "no encontré el cargo" en
+>   `role_id: null` se reemplazó por un **freno**: si no resuelve, no escribe y
+>   lo dice. Y `employees.role` y la bitácora guardan `outRoleObj.name`, o sea
+>   el nombre que de verdad quedó.
+> - `FormNovedad.jsx` — la guarda de cupo usaba el mismo `find` exacto: si no
+>   calzaba, el aviso de "cargo lleno" se saltaba entero.
+> - `systemSlice.js` — ya lanzaba en vez de escribir nulo (era el patrón
+>   correcto y sirvió de modelo); sólo se le dio la misma tolerancia al acento.
+>
+> Verificado con los datos reales: `Regente de Enfermería` pasó de `NULL` a
+> `id 23`, guardando `«Regente de Enfermeria»`. Cero errores de consola.
+>
+> **Queda pendiente de este grupo:** el literal `'Sin Asignar'` que
+> `UnifiedModal.jsx` escribe en `employees.role` (dos sitios). Es otro rótulo
+> que es dato y no se tocó en esta pasada.
+
+**El más peligroso, y el único que ya era un bug, independiente de las
 mayúsculas.**
 
 Cuatro cargos están escritos a mano en `src/components/forms/FormLeadership.jsx`:

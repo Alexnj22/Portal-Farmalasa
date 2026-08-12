@@ -6,6 +6,7 @@ import { signStorageUrls } from '../../utils/storageFiles';
 import { fetchAllRows } from '../../utils/supabaseUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { fireBrowserNotif } from '../../utils/browserNotif';
+import { buscarCargo } from '../../utils/roles';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
@@ -556,7 +557,12 @@ export const createSystemSlice = (set, get) => ({
                 empUpdates.branch_id = targetBranch;
                 Object.assign(localPatch, { branch_id: targetBranch, branchId: targetBranch });
             } else if (eventData.type === 'PROMOTION' && eventData.newRole) {
-                const roleObj = stateNow.roles.find(r => r.name === eventData.newRole);
+                // Éste ya hacía lo correcto —lanza en vez de escribir nulo— y es
+                // el patrón que se replicó en UnifiedModal. Pasa por
+                // `buscarCargo` sólo por la tolerancia al acento: sin ella, un
+                // nombre con tilde que la tabla guarda sin tilde daba un error
+                // de "no existe en el catálogo" que era falso.
+                const roleObj = buscarCargo(stateNow.roles, eventData.newRole);
                 if (!roleObj) {
                     const e = new Error(`El cargo "${eventData.newRole}" no existe en el catálogo de roles.`);
                     e.userFacing = true;

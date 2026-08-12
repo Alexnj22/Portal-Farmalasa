@@ -5541,3 +5541,58 @@ Lo que **no** puede ver: si el texto es *correcto*. Que un vacío diga
 `Sin productos` cuando había un filtro activo pasa el gate y es un error de
 26.2 — eso lo agarra una persona leyendo, no un regex. Por eso `EXCEPTIONS` acá
 se usa sin culpa cuando el texto está bien y el patrón se confunde.
+
+### 26.10 Un nombre por pantalla, y de dónde se copia (2026-08-12)
+
+El nombre de un módulo vive en **cinco registros**, y nada los cruza:
+
+| registro | qué es |
+|---|---|
+| `title=` de la vista | el encabezado que confirma que llegaste |
+| `constants/moduleMap.js` | la etiqueta del menú lateral |
+| `constants/permissionModules.js` | el nombre en la pantalla de Permisos |
+| `components/layout/AppLayout.jsx` | los grupos del menú |
+| `ROUTE_TITLES` en `App.jsx` | el título del navegador |
+
+Cambiar uno solo deja los otros cuatro contradiciéndolo. Medido antes de
+unificarlos: **13 rutas se llamaban distinto según el registro**, y tres decían
+el nombre de OTRA pantalla — `/dashboard` decía «Dashboard» (resto de cuando el
+tablero se llamaba así, y encima esa ruta es el listado de personal),
+`/payroll` decía «Planilla» con el menú diciendo «Nómina», y `/monitor` decía
+«Asistencia», que es un grupo del menú.
+
+**La regla: la pestaña del navegador se copia del ENCABEZADO de la vista, no del
+menú.** El menú puede abreviar porque se lee dentro de su grupo («Listado» bajo
+Personal); la pestaña se lee sola, entre otras veinte abiertas. Y una ruta sin
+entrada en `ROUTE_TITLES` cae al genérico «Portal FarmaSalud»: al agregar una
+vista, agregarle su título.
+
+**Sentence case (26.4) vale también para estos nombres**, con las excepciones de
+siempre: siglas (`IVA`, `MH`, `iOS`), nombres propios (`Corte Z`, `Min / Max`,
+`Portal FarmaSalud`) y los términos ya decididos del portal (`Sistema de
+Ventas` —nunca «ERP»—, `Bajo Receta`).
+
+**Antes de renombrar una etiqueta, preguntarse si ese texto ES el dato.** Si es
+el `value` de un catálogo, cambiarlo lo desincroniza de lo guardado; si el
+`value` es un código, el rótulo es libre. Ver la regla «un rótulo no es una
+clave» en `CLAUDE.md` y `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`.
+
+### 26.11 El gate de diseño no ve el estilo guardado en una constante
+
+`gate:design` escanea atributos `className`. Un estilo sacado a una constante
+—que además parece buena práctica, porque des-duplica— **sale de su alcance sin
+que nada avise**:
+
+```js
+const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[…]';
+```
+
+Eso es exactamente lo que `vidrio-a-mano` prohíbe (§5.bis) y estuvo en verde en
+tres pestañas de Pedidos a la vez. **Un gate verde no cierra una auditoría de
+estilo**: antes de darla por buena, grepear las constantes de clases
+(`const [A-Z_]* = '.*(rounded-|bg-surface|backdrop-blur|shadow-)`).
+
+Ojo con el corolario falso: `shadow-sm` y `shadow-lg` sueltos tampoco los ve el
+gate (sólo caza `shadow-[literal]`), pero ahí **no hay deuda** — 322 usos de
+`shadow-sm` dicen que la utilidad es el idioma aceptado. La diferencia es que el
+vidrio tiene canónico (`data-surface`) y la sombra no.

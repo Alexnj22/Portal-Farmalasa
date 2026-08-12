@@ -70,6 +70,51 @@ cambiar una columna booleana** (el SQL está en su encabezado).
 
 ---
 
+## REGLA CRÍTICA: un rótulo no es una clave (2026-08-12)
+
+La otra cara de la regla de arriba. `UnifiedModal` resolvía el cargo de un
+empleado cruzando el texto del formulario contra la tabla:
+
+```js
+const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
+role_id: outRoleObj ? outRoleObj.id : null,   // ← sin coincidencia: null, sin error
+```
+
+Y la lista del formulario estaba **escrita a mano**. Medido contra las 24 filas
+reales: la tabla dice `Regente de Enfermeria` (id 23, **sin tilde**) y el
+formulario ofrecía `Regente de Enfermería`. O sea que relevar a un regente de
+enfermería guardaba al empleado con `role_id: null` — sin lanzar, sin avisar y
+sin quedar en el log. Fallaba **uno de cuatro** cargos, que es exactamente por
+qué sobrevivió.
+
+Tres reglas, y las tres se rompen solas si no se conocen:
+
+1. **Una lista de opciones que existe como tabla NO se escribe a mano.** Sale de
+   la tabla, y el texto que se muestra es el de la fila. Así el valor elegido
+   coincide con la base *por construcción* y no por suerte. Es
+   `feedback_lista_a_mano_se_desincroniza_del_registro` aplicado a catálogos.
+2. **`? :` sobre un `find` que puede fallar es un bug, no un default.**
+   Convertir "no encontré" en `null` y seguir escribiendo es la familia de
+   `feedback_sin_policy_de_update_el_write_devuelve_cero`: la escritura
+   "funciona" y no hace lo que dice. O se resuelve, o no se escribe y se avisa.
+   El modelo correcto ya estaba en `systemSlice.js` (lanza un error), y es el
+   que se replicó.
+3. **Cruzar por texto exige normalizar.** `src/utils/roles.js` (`buscarCargo`)
+   prueba la coincidencia exacta primero y sólo después la normalizada —sin
+   tildes, sin espacios de sobra—. Ese orden importa: con dos cargos que se
+   distinguen por un acento, gana el exacto. La tolerancia es una red, no un
+   permiso para seguir escribiendo listas a mano.
+
+**Antes de cambiar el rótulo de un catálogo, averiguar si ese rótulo ES el
+dato.** Si `value === label`, cambiarlo exige migración; si el `value` es un
+código, el rótulo es libre. Un filtro que sólo mira "¿tiene `value:`?" clasifica
+mal por construcción — y el chequeo tiene que incluir `supabase/`, porque hay
+rótulos que también viven dentro de funciones de Postgres.
+`docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md` tiene el mapa de los tres
+grupos y qué queda abierto.
+
+---
+
 ## REGLA: librerías pesadas SOLO por `await import()`
 
 Una librería que sólo hace falta al apretar un botón no puede viajar en el chunk

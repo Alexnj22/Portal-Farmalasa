@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.573.1 — Las reglas que salieron del barrido, escritas
+
+Sin cambios de código. Tres reglas que este trabajo destapó y que hasta ahora
+sólo vivían en el changelog — o sea, donde nadie las busca antes de escribir.
+
+**`CLAUDE.md` · «un rótulo no es una clave».** La otra cara de «el tipo de la
+columna manda». Cruzar un catálogo por el texto que se muestra
+(`roles.find(r => r.name === …)`) y convertir el fallo en `null` con un `? :`
+produce una escritura que pasa y no hace nada. Con las tres reglas que se rompen
+solas: la lista que existe como tabla no se escribe a mano, un `? :` sobre un
+`find` que puede fallar es un bug y no un default, y cruzar por texto exige
+normalizar (exacta primero, normalizada después).
+
+**`DESIGN.md` §26.10 · un nombre por pantalla.** Los cinco registros donde vive
+el nombre de un módulo, y la regla que evita que vuelvan a contradecirse: la
+pestaña del navegador se copia del **encabezado de la vista**, no del menú —el
+menú puede abreviar porque se lee dentro de su grupo, la pestaña se lee sola.
+Más el recordatorio de que una ruta sin entrada en `ROUTE_TITLES` cae al
+genérico.
+
+**`DESIGN.md` §26.11 · el gate no ve el estilo guardado en una constante.**
+`gate:design` escanea `className`, así que sacar las clases a un `const` —que
+parece buena práctica— las saca de su alcance sin avisar. Estuvo en verde con
+vidrio a mano en tres pestañas a la vez. Con el corolario que NO se sigue:
+`shadow-sm` suelto tampoco lo ve el gate y ahí no hay deuda, porque 322 usos
+dicen que la utilidad es el idioma aceptado. La diferencia es que el vidrio
+tiene canónico y la sombra no.
+
+`gate:doc` en verde: el documento no enseña nada que el gate prohíba.
+
 ## v2.573.0 — Entorno de pruebas: los branches se construyen solos
 
 `create_branch` no producía un staging usable: moría en la primera migración de

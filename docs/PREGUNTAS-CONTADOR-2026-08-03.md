@@ -145,6 +145,25 @@ Una vez marcados, el portal arma el anexo solo: la pantalla ya existe (Libros IV
 
 ## B. Retención de IVA sobre nuestras ventas
 
+> ### ⚠️ Esta sección quedó DESACTUALIZADA el 2026-08-12
+>
+> Sus cuatro preguntas están respondidas y el encuadre cambió. Ver
+> **`RETENCION-EN-LOS-LIBROS-2026-08-12.md`**, que además documenta dos defectos
+> que aparecieron persiguiendo esto.
+>
+> - **Sí nos retienen**: BANCO PROMERICA por CCF (Art. 162 inciso 1) e **ISSS,
+>   Fondo Circulante UM Chalatenango** por factura de consumidor (inciso 3:
+>   las instituciones oficiales autónomas retienen «aunque no sean
+>   contribuyentes»).
+> - **El portal ya tiene dónde guardarla**: `sales_invoices.retencion` existe
+>   desde v2.355.0 y el sync la trae.
+> - **El anexo vacío no se contradice con el Corte Z**: ese anexo lista lo que
+>   la empresa retiene **como agente**, no lo que le retienen a ella. Que salga
+>   vacío es correcto.
+> - **Aparecieron dos defectos**: el libro de consumidor restaba la retención de
+>   sus ventas (**$41.53 declarados de menos**, ya corregido) y el Corte Z la
+>   resta **dos veces** (es del sistema de origen, no se puede corregir acá).
+
 El Corte Z de **Salud 3** declara retención: **$6.03 en junio** y **$42.92 en
 julio** (y por eso su total es menor que el del libro; descontada, cuadra al
 centavo). Pero el **anexo de retención del Art. 162 sale vacío del sistema de

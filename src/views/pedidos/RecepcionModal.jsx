@@ -743,10 +743,13 @@ export default function RecepcionModal({
                                         {pageHint && (
                                             <p className="text-micro font-semibold text-chart-3-text mt-0.5 leading-none">{pageHint}</p>
                                         )}
-                                        <p className={`text-micro font-medium mt-0.5 ${
+                                        <p className={`inline-flex items-center gap-0.5 text-micro font-medium mt-0.5 ${
                                             isRecibida ? 'text-success' : isFalta ? 'text-content-3' : isDanada ? 'text-warning' : 'text-content-3'
                                         }`}>
-                                            {isRecibida ? '✓ Recibida' : isFalta ? 'En reenvío' : isDanada ? `${itemCount} prod. ⚠` : `${itemCount} prod.`}
+                                            {isRecibida ? <><Check size={9} aria-hidden="true" />Recibida</>
+                                                : isFalta ? 'En reenvío'
+                                                : isDanada ? <>{itemCount} prod.<AlertTriangle size={9} aria-hidden="true" /></>
+                                                : `${itemCount} prod.`}
                                         </p>
                                     </div>
                                 </button>
@@ -823,10 +826,13 @@ export default function RecepcionModal({
                                                 <p className="text-micro text-content-3 mt-0.5 leading-tight max-w-[90px] truncate">
                                                     {item.products?.nombre ?? ''}
                                                 </p>
-                                                <p className={`text-micro font-medium mt-0.5 ${
+                                                <p className={`inline-flex items-center gap-0.5 text-micro font-medium mt-0.5 ${
                                                     isConfirmed ? 'text-success' : isFaltante ? 'text-content-3' : isDamaged ? 'text-warning' : 'text-chart-3-text'
                                                 }`}>
-                                                    {isConfirmed ? '✓ Confirmado' : isFaltante ? 'En reenvío' : isDamaged ? '⚠ Dañada' : `${item.cantidad_asignada} unid.`}
+                                                    {isConfirmed ? <><Check size={9} aria-hidden="true" />Confirmado</>
+                                                        : isFaltante ? 'En reenvío'
+                                                        : isDamaged ? <><AlertTriangle size={9} aria-hidden="true" />Dañada</>
+                                                        : `${item.cantidad_asignada} unid.`}
                                                 </p>
                                             </div>
                                         </button>
@@ -1077,7 +1083,7 @@ export default function RecepcionModal({
                                     <>
                                         <h3 className="text-subtitle font-bold text-content leading-snug">
                                             {selectedEspecial.label} — Caja especial
-                                            {isDanadaEspecial && <span className="ml-2 text-label font-semibold text-warning">⚠ Dañada</span>}
+                                            {isDanadaEspecial && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Dañada</span>}
                                         </h3>
                                         <p className="text-label text-content-3 mt-0.5">
                                             {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
@@ -1087,7 +1093,7 @@ export default function RecepcionModal({
                                     <>
                                         <h3 className="text-subtitle font-bold text-content leading-snug">
                                             Caja {selectedCaja}
-                                            {isDanadaBox && <span className="ml-2 text-label font-semibold text-warning">⚠ Dañada</span>}
+                                            {isDanadaBox && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Dañada</span>}
                                         </h3>
                                         <p className="text-label text-content-3 mt-0.5">
                                             {selectedCajaRows.length} productos · {sucursalNombre}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package } from 'lucide-react';
+import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package, Check } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -147,13 +147,14 @@ export default function ReenvioLlegadaModal({
                             )}
                         </div>
                         <div className="flex gap-2">
-                            <Button size="sm" tone="success" className="flex-1" onClick={() => setElectrolitOk(true)}>✓ Sí llegaron</Button>
+                            <Button size="sm" tone="success" icon={Check} className="flex-1" onClick={() => setElectrolitOk(true)}>Sí llegaron</Button>
                             <Button
                                 size="sm"
                                 variant="destructive"
+                                icon={PackageX}
                                 className="flex-1"
                                 onClick={() => setElectrolitOk(false)}
-                            >✗ Aún faltan</Button>
+                            >Aún faltan</Button>
                         </div>
                     </div>
                 )}
@@ -182,8 +183,8 @@ export default function ReenvioLlegadaModal({
                                                 value={est}
                                                 onChange={v => setEspEstados(p => ({ ...p, [label]: v }))}
                                                 options={[
-                                                    { value: 'ok',       label: '✓ OK' },
-                                                    { value: 'faltante', label: '✗ Falta' },
+                                                    { value: 'ok',       label: 'OK',    icon: Check },
+                                                    { value: 'faltante', label: 'Falta', icon: PackageX },
                                                 ]}
                                             />
                                         </div>
@@ -213,16 +214,16 @@ export default function ReenvioLlegadaModal({
                 {hayProblemas && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <Badge variant="warning" uppercase={false}>⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}</Badge>
+                            <Badge variant="warning" uppercase={false} icon={AlertTriangle}>Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}</Badge>
                         )}
                         {cajasFaltantes.length > 0 && (
-                            <Badge variant="danger" uppercase={false}>✗ Aún falta{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')} — se solicitará otro reenvío</Badge>
+                            <Badge variant="danger" uppercase={false} icon={PackageX}>Aún falta{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')} — se solicitará otro reenvío</Badge>
                         )}
                         {electrolitOk === false && (
-                            <Badge variant="warning" uppercase={false}>⚡ Electrolit aún pendiente</Badge>
+                            <Badge variant="warning" uppercase={false} icon={Zap}>Electrolit aún pendiente</Badge>
                         )}
                         {espFaltantes.length > 0 && (
-                            <Badge variant="danger" uppercase={false}>✗ Esp. aún falta{espFaltantes.length > 1 ? 'n' : ''}: {espFaltantes.join(', ')}</Badge>
+                            <Badge variant="danger" uppercase={false} icon={PackageX}>Esp. aún falta{espFaltantes.length > 1 ? 'n' : ''}: {espFaltantes.join(', ')}</Badge>
                         )}
                     </div>
                 )}

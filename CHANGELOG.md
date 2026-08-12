@@ -21,6 +21,89 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.5 — Pedidos a sucursales: el vidrio sale del canónico y la línea de tiempo deja de encimarse
+
+Pasada sobre las cinco pestañas de la vista. El gate de diseño estaba en verde
+antes y después, así que lo que sigue es todo lo que **el gate no puede ver**.
+
+**El vidrio a mano que el gate no veía.** `TabPedidos`, `TabGenerar` y
+`TabMetricas` declaraban cada una la misma constante:
+
+```js
+const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
+```
+
+Es exactamente lo que la categoría `vidrio-a-mano` prohíbe, y pasaba porque el
+detector mira `className`, no el cuerpo de una constante de string. Las tres a
+`data-surface="card"`.
+
+**Un `transform` permanente apagaba el vidrio de la tarjeta elegida.** El
+keyframe `suc-pop` vivía en un `<style>` inline dentro de `TabGenerar` y
+terminaba en `both`. Su último fotograma es `scale(1)` —la identidad—, y con
+`both` queda aplicado para siempre: la sucursal seleccionada se volvía
+*backdrop root* y apagaba el `backdrop-filter` de todo lo que tenía adentro. Es
+el caso que §5.ter documenta. El keyframe se mudó a `index.css` con
+`backwards`, y 0.28s bajó a `--dur-slow`.
+
+**Tres defectos que no se veían porque nada fallaba.**
+
+| dónde | qué pasaba |
+|---|---|
+| `TabRutas` | la guarda decía `stop.dist_m` y la línea pintaba `distancia_desde_anterior_m`. El select nunca trae el primero, así que la distancia entre paradas **no se mostró nunca**. Ahora se lee «42.1 km desde bodega». |
+| `RutaMapModal` | `title="conductorBtnLabel"` — el nombre de la variable entre comillas, o sea el tooltip decía literalmente eso. |
+| `TabRutas` | «Completadas hoy» era falso: la consulta trae las últimas 50 por fecha de creación, sin recortar por día. |
+
+**La línea de tiempo se encimaba en el teléfono.** Cada paso mide 48px fijos,
+pero «Confirmado» mide ~52 y «10:22 a. m.» ~62: el texto se salía de su columna
+por los dos lados y aterrizaba encima del paso vecino. Y el tiempo entre pasos
+va `absolute` centrado sobre un conector que en el teléfono colapsa a 8px, así
+que un «4m» se desbordaba 15px por lado. Tres cambios: el paso pasa a 68px, los
+rótulos llevan `w-full` para envolver dentro de su columna —que es la garantía,
+no el ancho—, y el conector reserva 38px cuando lleva etiqueta. La hora se
+junta a «10:22 a.m.».
+
+**Canónicos que estaban importados y no adoptados.** `ConfirmModal` se
+importaba en `TabPedidos` y no lo usaba nadie: la confirmación de reenvío era un
+diálogo armado a mano dentro de un `LiquidModal`, sin salida por Escape y sin la
+hoja inferior que el canónico da en táctil. Además: `Badge` en vez de la tabla
+`PEDIDO_PILL`, `Notice` en vez de tres avisos con su propio par bg/borde,
+`EmptyState` en vez del vacío escrito a mano de `TabRutas`, y `icon`/`loading`
+de `Button` en vez de armar el intercambio ícono-spinner en once botones.
+
+**Glifos de texto → íconos.** `✓ ✗ ⏸ 🟢 ⚠ ↻` estaban escritos como texto en
+badges, botones y rieles de `TabGenerar`, `TabPedidos`, `LlegadaModal`,
+`ReenvioLlegadaModal`, `RecepcionModal`, `DifSection`, `LifecycleTimeline` y
+`PostCompletionSection`. No escalan con el tipo, no los anuncia un lector de
+pantalla, el emoji cambia de dibujo por sistema y no toma el color del badge.
+
+**Accesibilidad.** La cabecera de una ruta y la tarjeta de un pedido eran `div`
+con `onClick`: sin foco, sin teclado y sin decir que despliegan algo. Las dos
+por `clickable()` + `aria-expanded`. Y el aviso «esperando vuelta conductor»
+era un `div` con `role="img"` —que le promete una imagen a un lector de
+pantalla— con el motivo escondido en `title`: ahora es un `Notice`.
+
+**Voz (§26).** «Nueva Ruta»/«Crear Ruta» → `Crear ruta`. «En Ruta» → `En ruta`.
+La exclamación del aviso de pedido nuevo se va: la lista de los tres sitios
+donde el portal sí exclama es cerrada y este no está en ella. Y **la búsqueda
+sin resultados dejó de contarse como vacío** en `TabPedidos`, `TabRutas` y
+`TabMetricas`: los dos estados se arreglan de forma distinta.
+
+`Historial Rutas` pasa a **`Rutas de entrega`**: no es un historial —la pestaña
+muestra también las rutas activas— y el catálogo de permisos ya nombraba así a
+esa misma superficie.
+
+**Código muerto.** La extracción del bloque 6.C dejó en `TabPedidos` 23 imports
+y 5 constantes sin usar, entre ellas un `STAGE_CONFIG` completo que nadie lee
+—de esos que alguien actualiza más tarde creyendo que cambia algo—. Y se retira
+`?filas=N` de Reglas de despacho: su propio comentario decía que se quitaba al
+cerrar el caso, y el caso cerró el 2026-08-08 con el reporte de jetsam; el
+arreglo real (`content-visibility`) entró en v2.520.1, en el canónico.
+
+Verificado en el navegador, no por grep: las cinco pestañas en escritorio
+(1440) y en teléfono (WebKit, iPhone 13), barriendo el DOM pintado más
+`title`/`aria-label`/`placeholder`. Ninguna pestaña desborda horizontalmente y
+no hay errores de consola.
+
 ## v2.571.4 — Los codigos de sala dejan de estar cuatro veces
 
 Al definir la clave del traslado casi se inventa un cuarto código de sala sin

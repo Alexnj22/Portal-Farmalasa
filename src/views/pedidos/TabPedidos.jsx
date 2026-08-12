@@ -4,27 +4,23 @@ import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
+import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Loader2, ChevronDown, ChevronRight, CheckCircle2,
+    ChevronDown, ChevronRight, CheckCircle2,
     Package, Building2, AlertTriangle,
-    Truck, Pause, PackageCheck, PackageX, Play, Home,
-    Database, Activity, TrendingDown,
-    X, Send, Check, RotateCcw, Flag, ShieldAlert, UserCircle2,
-    Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban, Star, Search,
+    Truck, Pause, Play, Home,
+    X, Send, Check, RotateCcw, Flag, UserCircle2,
+    ClipboardList, UserPlus, Inbox, FileDown, Box, Zap, Map as MapIcon,
+    CalendarClock, Ban, Star, Search, Radio,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { notifyBranch } from '../../utils/notify';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import TablePagination from '../../components/common/TablePagination';
 import RecepcionModal from './RecepcionModal';
-import PedidoModal from './PedidoModal';
 import LlegadaModal from './LlegadaModal';
 import ReenvioLlegadaModal from './ReenvioLlegadaModal';
 import FinalizarCajasModal from './FinalizarCajasModal';
@@ -32,12 +28,7 @@ import CrearRutaModal    from './CrearRutaModal';
 import RutaMapModal      from './RutaMapModal';
 import ProgramarEntregaModal from './ProgramarEntregaModal';
 import DevolverModal from './DevolverModal';
-import LiquidSelect from '../../components/common/LiquidSelect';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import PeriodPicker from '../../components/common/PeriodPicker';
-import { StageAnim } from './tabpedidos/StageAnims';
-import EmpChip from './tabpedidos/EmpChip';
-import StagePill from './tabpedidos/StagePill';
 import SucPill from './tabpedidos/SucPill';
 import PauseModal from './tabpedidos/PauseModal';
 import AnularModal from './tabpedidos/AnularModal';
@@ -51,42 +42,30 @@ import ReceptionActions from './tabpedidos/ReceptionActions';
 import FilterPill from './tabpedidos/FilterPill';
 import { fetchBodegaBranchId, updateRutaStatus } from '../../data/pedidos';
 import { usePedidosData } from './tabpedidos/usePedidosData';
+import { clickable } from '../../utils/clickable';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
-const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
-const PAGE_SIZE = 30;
-const MINI_PAGE = 15;
-const DONE_STATUSES = ['completado', 'parcial', 'anulado'];
 
 // La tabla de color por sucursal vivía duplicada acá y en
 // `tabpedidos/constants.js`. Se queda la de constants (la usa `SucPill`, que
 // es quien pinta el chip); ésta no la usaba nadie. (2026-07-28, D3.5)
+//
+// Con el estado y el fetch ya extraídos al hook (bloque 6.C) quedaron acá,
+// sin usar, `PAGE_SIZE`, `MINI_PAGE`, `DONE_STATUSES`, `STAGE_CONFIG` y
+// `COLOR_CLS` — más 23 imports. Se van: una tabla de estados que nadie lee es
+// la que después alguien actualiza creyendo que cambia algo.
 
-// Mismo lifecycle de despacho por sucursal que TabEnCurso.jsx — mismo
-// criterio: pausado/erp son severidad real (excepción/completado), el
-// resto es categórico puro.
-const STAGE_CONFIG = {
-    sin_iniciar: { label: 'Sin iniciar',     color: 'neutral', icon: Package      },
-    preparando:  { label: 'En preparación',  color: 'chart-1', icon: Activity     },
-    pausado:     { label: 'Pausado',         color: 'warning', icon: Pause        },
-    preparado:   { label: 'Listo p/ envío',  color: 'chart-3', icon: CheckCircle2 },
-    transito:    { label: 'En tránsito',     color: 'chart-9', icon: Truck        },
-    contando:    { label: 'Cajas recibidas', color: 'warning', icon: PackageCheck },
-    erp:         { label: 'Sis. Ventas',      color: 'success', icon: Database     },
+// El estado del pedido, como variante del canónico `Badge`. Era un par
+// bg/texto/borde escrito a mano por estado y pintado en un `<span>` con
+// `rounded-full` fijo: o sea un badge que no seguía al tema (en Solid la forma
+// es tensa, no redonda) y que se saltaba el contraste que `Badge` ya resuelve.
+const PEDIDO_BADGE = {
+    confirmado: { label: 'Por despachar',   variant: 'chart-1' },
+    enviado:    { label: 'En ruta',         variant: 'chart-3' },
+    parcial:    { label: 'Con diferencias', variant: 'warning' },
+    completado: { label: 'Completado',      variant: 'success' },
+    anulado:    { label: 'Anulado',         variant: 'danger'  },
 };
-
-const COLOR_CLS = {
-    neutral: { bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-border-card'   },
-    warning: { bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30'   },
-    success: { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' },
-    'chart-1': { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' },
-    'chart-3': { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
-    'chart-9': { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30' },
-};
-
-const PEDIDO_PILL  = { confirmado: 'bg-chart-1/10 text-chart-1-text border-chart-1/30', enviado: 'bg-chart-3/10 text-chart-3-text border-chart-3/30', parcial: 'bg-warning/10 text-warning-text border-warning/30', completado: 'bg-success/10 text-success-text border-success/30', anulado: 'bg-danger/10 text-danger-text border-danger/30' };
-const PEDIDO_LABEL = { confirmado: 'Por despachar', enviado: 'En ruta', parcial: 'Con diferencias', completado: 'Completado', anulado: 'Anulado' };
 
 // PAUSE_REASONS: extraído a ./tabpedidos/constants.js (Bloque 6.C) —
 // importado arriba.
@@ -205,11 +184,21 @@ export default function TabPedidos({ searchTerm = '' }) {
     return (
         <div className="space-y-4 p-4">
 
+            {/* `Notice` y no una caja con su propio par bg/borde/texto: es el
+                canónico del aviso inline (§15.6), y el botón de descarte va en
+                su ranura `action`. La exclamación se va por §26.7 — el portal no
+                festeja en el feedback del sistema; la lista de los tres sitios
+                donde sí va es cerrada y esto no está en ella. */}
             <AnimatePresence>
                 {newAlert && (
-                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-body-sm font-semibold shadow-sm">
-                        <Send size={13} />¡Nuevo pedido #{newAlert.numero} en camino a {branchName}!
-                        <Button variant="ghost" icon={X} iconOnly onClick={() => setNewAlert(null)} />
+                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+                        <Notice
+                            variant="info"
+                            icon={Send}
+                            action={<Button variant="ghost" icon={X} iconOnly aria-label="Descartar aviso" onClick={() => setNewAlert(null)} />}
+                        >
+                            Pedido #{newAlert.numero} en camino a {branchName}
+                        </Notice>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -249,14 +238,30 @@ export default function TabPedidos({ searchTerm = '' }) {
                     </div>
                 </div>
 
+                {/* §26.2 — «Sin pedidos activos» también salía cuando el
+                    buscador o un filtro no encontraban nada, que es otro estado
+                    y se arregla de otra forma: borrando el filtro, no
+                    despachando un pedido. */}
                 {filteredRows.length === 0 ? (
-                    <EmptyState
-                        compact
-                        icon={Inbox}
-                        iconClass="text-chart-1-text"
-                        glowClass="bg-chart-1/30"
-                        title="Sin pedidos activos"
-                    />
+                    searchTerm.trim() ? (
+                        <EmptyState
+                            compact
+                            icon={Search}
+                            title="Sin resultados"
+                            subtitle={`Ningún pedido coincide con "${searchTerm}".`}
+                        />
+                    ) : (
+                        <EmptyState
+                            compact
+                            icon={Inbox}
+                            iconClass="text-chart-1-text"
+                            glowClass="bg-chart-1/30"
+                            title="Sin pedidos activos"
+                            subtitle={filterSuc || filterStatus
+                                ? 'Ningún pedido cumple con los filtros aplicados.'
+                                : undefined}
+                        />
+                    )
                 ) : (
                     <div className="space-y-3">
                     {renderGroups.map((group) => {
@@ -325,7 +330,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                    className={`${GLASS} cursor-pointer select-none ${
+                                    /* La superficie sale del canónico. Estaba escrita a
+                                       mano en la const `GLASS` —repetida en tres
+                                       pestañas—, y por vivir en una constante de string
+                                       el gate `vidrio-a-mano` no la veía. */
+                                    data-surface="card"
+                                    className={`select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-warning-lg)]'
                                             : hasObservacion(row) && row.pedido_status !== 'completado'
@@ -335,20 +345,31 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     : ''
                                     }`}
                                     style={{ overflow: 'visible' }}
-                                    onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                                    /* Desplegar el pedido es la acción de la tarjeta:
+                                       por `clickable()` gana foco, teclado y el gel del
+                                       material, que un `onClick` suelto no da. */
+                                    {...clickable(
+                                        () => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id),
+                                        { label: `Pedido ${row.codigo ?? row.numero}` },
+                                    )}
+                                    aria-expanded={isExp}
                                 >
                                     {/* Header */}
                                     <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
                                         {stage === 'pausado' && (
-                                            <Badge variant="warning" tone="solid" uppercase={false}>⏸ Pausado</Badge>
+                                            <Badge variant="warning" tone="solid" uppercase={false} icon={Pause}>Pausado</Badge>
                                         )}
                                         <span className="text-body font-black text-content tabular-nums shrink-0">
                                             {row.codigo ?? `#${row.numero}`}
                                         </span>
                                         <SucPill sucId={row.erp_sucursal_id} />
-                                        <span className={`text-caption font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-surface-card-hover text-content-2 border-divider'}`}>
-                                            {PEDIDO_LABEL[row.pedido_status] ?? row.pedido_status}
-                                        </span>
+                                        <Badge
+                                            variant={PEDIDO_BADGE[row.pedido_status]?.variant ?? 'neutral'}
+                                            uppercase={false}
+                                            className="shrink-0"
+                                        >
+                                            {PEDIDO_BADGE[row.pedido_status]?.label ?? row.pedido_status}
+                                        </Badge>
                                         <span className="ml-auto text-caption text-content-3 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
                                         {isExp ? <ChevronDown size={13} className="text-content-3 shrink-0" /> : <ChevronRight size={13} className="text-content-3 shrink-0" />}
                                     </div>
@@ -454,8 +475,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canApoyo && !isApoyoBodega && (
                                                 <Button variant="secondary" icon={UserPlus} disabled={isLCBusy} onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}>Apoyo</Button>
                                             )}
+                                            {/* `icon` + `loading` del canónico, en vez de armar
+                                                el intercambio ícono/spinner a mano en cada
+                                                botón: `Button` ya lo hace, y además apaga el
+                                                click y marca `aria-busy` mientras corre. */}
                                             {canActuar && canDownload && (
-                                                <Button variant="secondary" disabled={printingPdf === row.pedido_id} onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}>{printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF</Button>
+                                                <Button variant="secondary" icon={FileDown} loading={printingPdf === row.pedido_id} onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}>PDF</Button>
                                             )}
                                             {canActuar && !isBranch && stage === 'preparado' && (
                                                 <Button
@@ -476,14 +501,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     <Button tone="success" icon={CheckCircle2} onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}>Entregué</Button>
                                                 );
                                             })()}
-                                            {canIniciar      && <Button tone="chart-1" disabled={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</Button>}
-                                            {canPausar       && <Button tone="warning" disabled={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</Button>}
-                                            {canFinalizar    && <Button tone="chart-6" disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</Button>}
-                                            {canReanudar     && <Button tone="success" disabled={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</Button>}
+                                            {canIniciar      && <Button tone="chart-1" icon={Play}      loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}>Iniciar</Button>}
+                                            {canPausar       && <Button tone="warning" icon={Pause}     loading={isLCBusy} onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}>Pausar</Button>}
+                                            {canFinalizar    && <Button tone="chart-6" icon={Flag}      loading={isLCBusy || busyAction === `finalizar_load_${cardKey}`} onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)}>Finalizar</Button>}
+                                            {canReanudar     && <Button tone="success" icon={RotateCcw} loading={isLCBusy} onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}>Reanudar</Button>}
                                             {canAnular && (
                                                 <Button variant="destructive" icon={Ban} onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
                                             )}
-                                            {canMarcarEnRuta && <Button tone="chart-3" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear Ruta</Button>}
+                                            {canMarcarEnRuta && <Button tone="chart-3" icon={Truck} onClick={() => setCrearRutaOpen([])}>Crear ruta</Button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
@@ -492,14 +517,19 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const rutaActiva       = pedidoRutaMap.get(row.pedido_id)?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
+                                                /* Era un `div` con `role="img"` —que le promete
+                                                   a un lector de pantalla una imagen— y con el
+                                                   motivo escondido en `title`, o sea sólo para
+                                                   quien tiene puntero. Es un aviso inline: eso
+                                                   es `Notice` (§15.6), y el motivo se lee. */
                                                 if (conductorEnRuta) return (
-                                                    <div className="flex items-center gap-1 text-caption font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" role="img" title="El conductor aún está en ruta. Espera a que marque vuelta a base.">
-                                                        <Truck size={10} className="text-content-3" />Esperando vuelta conductor
-                                                    </div>
+                                                    <Notice variant="neutral" icon={Truck} compact>
+                                                        Esperando que el conductor vuelva a base
+                                                    </Notice>
                                                 );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <Button variant="destructive" disabled={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })}>{busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}</Button>
+                                                    <Button variant="destructive" icon={Truck} loading={busyAction === 'reenvio'} onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })}>Reenviar caja</Button>
                                                 );
                                             })()}
                                         </div>
@@ -636,9 +666,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <span className={`text-body font-black ${isCompletada ? 'text-content-2' : 'text-chart-3-text'}`}>Ruta #{ruta.numero}</span>
+                                                {/* Eran un ✓ y un emoji 🟢 escritos como texto: el
+                                                    emoji además cambia de dibujo según el sistema
+                                                    y no toma el color del badge. */}
                                                 {isCompletada
-                                                    ? <Badge variant="success" size="sm" uppercase={false}>✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}</Badge>
-                                                    : dl && <Badge variant="success" size="sm" uppercase={false}>🟢 En vivo</Badge>
+                                                    ? <Badge variant="success" size="sm" uppercase={false} icon={Check}>Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}</Badge>
+                                                    : dl && <Badge variant="success" size="sm" uppercase={false} icon={Radio}>En vivo</Badge>
                                                 }
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
@@ -855,15 +888,26 @@ export default function TabPedidos({ searchTerm = '' }) {
                 saving={savingProgramar}
             />
 
-            {/* ── Confirmación Reenviar Caja ─────────────────────────────────────── */}
+            {/* ── Confirmación Reenviar Caja ───────────────────────────────────────
+                Era un diálogo de confirmación armado a mano dentro de un
+                `LiquidModal`: encabezado, cuerpo y pie propios, sin salida por
+                Escape y sin la hoja inferior que el canónico da en táctil.
+                `ConfirmModal` ya estaba importado en este archivo y no lo usaba
+                nadie — importarlo no es adoptarlo. */}
             {reenviarConfirmModal && (
-                <PedidoModal open onClose={() => setReenviarConfirmModal(null)} maxWidth="max-w-xs">
-                    <div className="px-5 pt-5 pb-4 border-b border-border-card">
-                        <h3 className="text-subtitle font-black text-content">¿Confirmar reenvío?</h3>
-                        <p className="text-label text-content-3 mt-0.5">Pedido #{reenviarConfirmModal.numero}</p>
-                    </div>
-                    <div className="px-5 py-4 space-y-2">
-                        <p className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1">Pendiente de enviar:</p>
+            <ConfirmModal
+                isOpen
+                onClose={() => setReenviarConfirmModal(null)}
+                title={`¿Reenviar lo que falta del pedido #${reenviarConfirmModal.numero}?`}
+                confirmText="Reenviar"
+                /* Reenviar una caja no destruye nada: es pedirle a bodega que
+                   mande de nuevo lo que no llegó. Con `isDestructive` el
+                   canónico rotula el botón «Eliminando…» mientras corre. */
+                isDestructive={false}
+                isProcessing={busyAction === 'reenvio'}
+                message={(
+                    <div className="space-y-2 text-left">
+                        <p className="text-label font-semibold text-content-2 uppercase tracking-wide">Pendiente de enviar</p>
                         {reenviarConfirmModal.cajas.length > 0 && (
                             <div className="flex items-center gap-2 text-body-sm text-content-2">
                                 <Box size={13} className="text-danger shrink-0" />
@@ -883,15 +927,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                             </div>
                         )}
                     </div>
-                    <div className="px-5 pb-5 pt-2 flex gap-2 justify-end border-t border-border-card">
-                        <Button variant="secondary" onClick={() => setReenviarConfirmModal(null)}>Cancelar</Button>
-                        <Button variant="destructive" disabled={busyAction === 'reenvio'} onClick={() => {
-                                const { pedidoId, sucId, numero, cajas, electrolits, especiales } = reenviarConfirmModal;
-                                setReenviarConfirmModal(null);
-                                handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
-                            }}>{busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}</Button>
-                    </div>
-                </PedidoModal>
+                )}
+                onConfirm={() => {
+                    const { pedidoId, sucId, numero, cajas, electrolits, especiales } = reenviarConfirmModal;
+                    setReenviarConfirmModal(null);
+                    handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
+                }}
+            />
             )}
         </div>
     );

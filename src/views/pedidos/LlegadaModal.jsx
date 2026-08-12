@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
-import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw } from 'lucide-react';
+import { PackageCheck, PackageX, PackagePlus, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw, Check } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { getPageGroups } from '../../utils/pedidoPrint';
@@ -234,9 +234,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             <Button
                                 size="sm"
                                 tone="success"
+                                icon={Check}
                                 className="flex-1"
                                 onClick={() => setElectrolitFaltantes(0)}
-                            >✓ Todas llegaron</Button>
+                            >Todas llegaron</Button>
                             <div className="flex items-center gap-1 shrink-0">
                                 <Button variant="secondary" size="xs" disabled={(electrolitFaltantes ?? 0) <= 0} onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}>−</Button>
                                 <span className={`w-8 text-center text-subtitle font-black tabular-nums ${
@@ -249,8 +250,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             </div>
                         </div>
                         {(electrolitFaltantes ?? 0) > 0 && (
-                            <p className="text-caption text-danger-text px-0.5">
-                                ⚠ Se notificará a bodega sobre las {electrolitFaltantes} caja{electrolitFaltantes > 1 ? 's' : ''} faltantes.
+                            <p className="inline-flex items-start gap-1 text-caption text-danger-text px-0.5">
+                                <AlertTriangle size={11} className="shrink-0 mt-px" aria-hidden="true" />
+                                Se notificará a bodega sobre las {electrolitFaltantes} caja{electrolitFaltantes > 1 ? 's' : ''} faltantes.
                             </p>
                         )}
                     </div>
@@ -283,8 +285,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                             value={est}
                                             onChange={v => setEspEstados(p => ({ ...p, [e.label]: v }))}
                                             options={[
-                                                { value: 'ok',       label: '✓ OK' },
-                                                { value: 'faltante', label: '✗ Falta' },
+                                                { value: 'ok',       label: 'OK',    icon: Check },
+                                                { value: 'faltante', label: 'Falta', icon: PackageX },
                                             ]}
                                         />
                                     </div>
@@ -292,7 +294,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             })}
                         </div>
                         {espFaltantes.length > 0 && (
-                            <p className="text-caption text-danger-text px-0.5">⚠ Faltante{espFaltantes.length > 1 ? 's' : ''}: {espFaltantes.join(', ')}</p>
+                            <p className="inline-flex items-start gap-1 text-caption text-danger-text px-0.5">
+                                <AlertTriangle size={11} className="shrink-0 mt-px" aria-hidden="true" />
+                                Faltante{espFaltantes.length > 1 ? 's' : ''}: {espFaltantes.join(', ')}
+                            </p>
                         )}
                     </div>
                 )}
@@ -358,19 +363,19 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 {(hayProblemas || cajasExtra > 0) && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <Badge variant="warning" uppercase={false}>⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}</Badge>
+                            <Badge variant="warning" uppercase={false} icon={AlertTriangle}>Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}</Badge>
                         )}
                         {cajasFaltantes.length > 0 && (
-                            <Badge variant="danger" uppercase={false}>✗ No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}</Badge>
+                            <Badge variant="danger" uppercase={false} icon={PackageX}>No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}</Badge>
                         )}
                         {cajasExtra > 0 && (
-                            <Badge variant="warning" uppercase={false}>+ {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}</Badge>
+                            <Badge variant="warning" uppercase={false} icon={PackagePlus}>{cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}</Badge>
                         )}
                     </div>
                 )}
                 {extraError && (
                     <p className="text-caption text-danger-text font-medium flex items-center gap-1">
-                        <span>⚠</span> {extraError}
+                        <AlertTriangle size={11} className="shrink-0" aria-hidden="true" /> {extraError}
                     </p>
                 )}
                 {Object.keys(estados).length === 0 && cajas.length > 0 && (
@@ -380,9 +385,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 )}
                 <div className="flex items-center justify-between gap-2">
                     <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
-                    <Button disabled={submitting} onClick={handleConfirm}>{submitting && <Loader2 size={11} className="animate-spin" />}
+                    <Button loading={submitting} onClick={handleConfirm}>
                         {Object.keys(estados).length === 0 && cajas.length > 0
-                            ? '✓ Todas llegaron OK'
+                            ? 'Confirmar que todas llegaron'
                             : 'Confirmar llegada'}</Button>
                 </div>
             </div>

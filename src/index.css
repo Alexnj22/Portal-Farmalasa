@@ -3486,6 +3486,22 @@ a:focus-visible,
 .glow-warning { animation: glow-warning-anim 3.2s ease-in-out infinite; }
 .badge-pulse  { animation: badge-pulse-anim  1.8s ease-in-out infinite; }
 
+/* El acuse del toque al elegir una sucursal en Pedidos › Generar. Vivía en un
+   `<style>` inline dentro de `TabGenerar`, o sea una regla global reinyectada
+   en cada render de la vista; §11 dice que los keyframes viven acá.
+   Llevaba `both`, que es justo lo que §5.ter prohíbe: el último fotograma es
+   `scale(1)`, o sea la identidad, y `both` la deja aplicada para siempre — un
+   `transform` permanente sobre la tarjeta elegida, que la vuelve backdrop root
+   y apaga el vidrio de todo lo que tiene adentro. 0.28s baja a `--dur-slow`
+   por «el escalón más cercano». */
+@keyframes suc-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.09); }
+  70%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.suc-pop { animation: suc-pop var(--dur-slow) var(--ease-spring) backwards; }
+
 
 /* ═══════════════════════════════════════════════════════════════
    REDUCED MOTION

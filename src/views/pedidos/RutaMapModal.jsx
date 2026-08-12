@@ -515,7 +515,9 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           <div ref={mapRef} className="w-full h-full" />
 
           {/* Botón centrar */}
-          <Button variant="secondary" disabled={conductorBtnDisabled} title="conductorBtnLabel" onClick={conductorBtnClick}>{isConductor
+          {/* Era `title="conductorBtnLabel"`: el nombre de la variable en
+              comillas, o sea el tooltip decía literalmente eso. */}
+          <Button variant="secondary" disabled={conductorBtnDisabled} title={conductorBtnLabel} onClick={conductorBtnClick}>{isConductor
               ? <Crosshair size={11} className={gpsIconColor} />
               : <Truck size={11} className={gpsIconColor} />
             }

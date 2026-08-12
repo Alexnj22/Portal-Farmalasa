@@ -2,14 +2,25 @@
 // timeline (Confirmado → Inicio → Listo → En Ruta → ... → Finalizado) with
 // its pause badge, shown inside each expanded pedido card.
 import React from 'react';
-import { UserCircle2 } from 'lucide-react';
+import { UserCircle2, Pause } from 'lucide-react';
 import { fmtMin, elapsed } from './helpers';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
+// `es-SV` devuelve «10:22 a. m.» —con espacio dentro de la abreviatura— y eso
+// son ~62px, más ancho que el nodo que lo contiene. Se junta a «10:22 a.m.».
 function fmtHM(iso) {
     if (!iso) return '';
-    return new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return new Date(iso)
+        .toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true })
+        .replace(/\s*([ap])\.\s*m\./i, ' $1.m.');
 }
+
+// El ancho de cada paso del carril. Eran 48px y ninguno de los rótulos entraba
+// —«Confirmado» mide ~52px y la hora ~55px—, así que el texto se salía de su
+// columna por los dos lados y se encimaba con el paso vecino: en un iPhone se
+// leía «Confirmado» pisado por «4m» y las dos horas pegadas sin separación.
+// Como el carril ya se desliza, ensancharlo sólo cuesta recorrido.
+const ANCHO_PASO = 68;
 
 // Todos los nodos activos/completados en un solo color indigo
 const tlDot    = () => 'bg-chart-3';
@@ -38,7 +49,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
                     isActive ? 'bg-warning-solid text-white anim-tl-blink' : 'bg-surface-card text-warning border border-warning/40'
                 }`}
             >
-                ⏸ {fmtMin(mins) ?? '—'}
+                <Pause size={9} aria-hidden="true" /> {fmtMin(mins) ?? '—'}
             </span>
             {pause && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-bell-desktop hidden group-hover/pb:block pointer-events-none">
@@ -83,7 +94,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
         { key: 'confirmado',     label: 'Confirmado', time: row.created_at,           emp: creatorEmp    },
         { key: 'iniciado',       label: 'Inicio',     time: row.iniciado_at,          emp: iniciadorEmp  },
         { key: 'preparado',      label: 'Listo',      time: row.finalizado_at,        emp: finalizadorEmp },
-        { key: 'enviado',        label: 'En Ruta',    time: row.enviado_at,           emp: enviadorEmp    },
+        { key: 'enviado',        label: 'En ruta',    time: row.enviado_at,           emp: enviadorEmp    },
         { key: 'ruta_entregado', label: 'Entregado',  time: rutaStop?.entregado_at ?? null, emp: entregadorEmp, isRutaNode: true },
         { key: 'llegada',        label: 'Llegada',    time: row.llegada_fisica_at,    emp: llegadaEmp,    apoyo: receptionApoyo },
         { key: 'erp',            label: 'Finalizado', time: row.recibido_erp_at,      emp: erpEmp,        apoyo: receptionApoyo },
@@ -155,6 +166,15 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                     ? fmtMin(elapsed(node.time, nextNode.time))
                     : null;
 
+                // Se decide ACÁ y no dentro del conector porque el conector
+                // tiene que reservar ancho cuando lleva esta etiqueta: va
+                // `absolute` centrada sobre él, y en el teléfono el conector
+                // colapsa a 8px — o sea que un «4m» se desbordaba 15px por lado
+                // y aterrizaba encima de los rótulos de los pasos vecinos.
+                const isBodegaSrc    = ['confirmado','iniciado','preparado'].includes(node.key);
+                const isSucursalSrc  = node.key === 'llegada' || node.key.startsWith('seg_llegada');
+                const mostrarElapsed = !!segElapsed && (isBranch ? !isBodegaSrc : !isSucursalSrc);
+
                 // Glow animation for active dot — uses box-shadow (no overflow)
                 const glowColor = tlGlow(idx);
                 // El halo late con `@keyframes tlHalo`; el color de cada etapa
@@ -164,7 +184,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                 return (
                     <React.Fragment key={node.key}>
                         {/* Node */}
-                        <div className="flex flex-col items-center shrink-0" style={{ width: 48 }}>
+                        <div className="flex flex-col items-center shrink-0" style={{ width: ANCHO_PASO }}>
                             {/* Dot */}
                             <div className="flex items-center justify-center w-6 h-6">
                                 <div
@@ -194,8 +214,10 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                 </div>
                             </div>
 
-                            {/* Label */}
-                            <span className={`text-micro font-semibold text-center leading-tight ${isFuture ? 'text-content-3' : 'text-content-2'}`}>
+                            {/* Label — `w-full` para que un rótulo largo envuelva DENTRO
+                                de su paso en vez de desbordarlo hacia el vecino. El
+                                ancho es la garantía; los 68px son la holgura. */}
+                            <span className={`w-full text-micro font-semibold text-center leading-tight ${isFuture ? 'text-content-3' : 'text-content-2'}`}>
                                 {isPausedDot ? 'Pausado' : node.label}
                             </span>
 
@@ -207,7 +229,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     ? t.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' })
                                     : null;
                                 return (
-                                    <span className="tabular-nums leading-tight text-center mt-px flex flex-col items-center">
+                                    <span className="w-full tabular-nums leading-tight text-center mt-px flex flex-col items-center">
                                         {dateLabel && <span className="text-micro text-content font-bold leading-none mb-0.5">{dateLabel}</span>}
                                         <span className="text-caption text-content-2 whitespace-nowrap">{fmtHM(node.time) || <span className="text-content-3">——</span>}</span>
                                     </span>
@@ -221,7 +243,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-surface-card shadow-md shrink-0" alt="" />
                                         : <span className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-content-3" /></span>
                                     }
-                                    <span className="text-micro text-content-2 leading-tight font-medium text-center">{shortEmployeeName(node.emp)}</span>
+                                    <span className="w-full text-micro text-content-2 leading-tight font-medium text-center">{shortEmployeeName(node.emp)}</span>
                                 </div>
                             )}
                             {/* Apoyo avatar stack */}
@@ -238,7 +260,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
 
                         {/* Connector */}
                         {idx < nodes.length - 1 && (
-                            <div className="relative flex-1 min-w-[8px] self-start" style={{ marginTop: 15 }}>
+                            <div className={`relative flex-1 self-start ${mostrarElapsed ? 'min-w-[38px]' : 'min-w-[8px]'}`} style={{ marginTop: 15 }}>
                                 {/* Track */}
                                 <div className="h-0.5 w-full bg-surface-card-hover rounded-full" />
                                 {/* Fill */}
@@ -263,16 +285,11 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     </div>
                                 )}
                                 {/* Elapsed time — below the line; hidden for the other side's steps */}
-                                {segElapsed && (() => {
-                                    const isBodegaSrc   = ['confirmado','iniciado','preparado'].includes(node.key);
-                                    const isSucursalSrc = node.key === 'llegada' || node.key.startsWith('seg_llegada');
-                                    const show = isBranch ? !isBodegaSrc : !isSucursalSrc;
-                                    return show ? (
-                                        <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
-                                            <span className="text-micro font-semibold text-content-2 tabular-nums">{segElapsed}</span>
-                                        </div>
-                                    ) : null;
-                                })()}
+                                {mostrarElapsed && (
+                                    <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
+                                        <span className="text-micro font-semibold text-content-2 tabular-nums">{segElapsed}</span>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </React.Fragment>

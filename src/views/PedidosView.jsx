@@ -13,7 +13,10 @@ import { useAuth }     from '../context/AuthContext';
 const TABS = [
     { key: 'generar',  label: 'Generar',           icon: ClipboardList, permKey: 'pedidos_tab_generar'   },
     { key: 'pedidos',  label: 'Pedidos',            icon: Package,       permKey: 'pedidos_tab_historial' },
-    { key: 'rutas',    label: 'Historial Rutas',    icon: Truck,         permKey: 'pedidos_tab_rutas'     },
+    // «Historial Rutas» decía dos cosas mal: la pestaña muestra también las
+    // rutas ACTIVAS —no es un historial— y el catálogo de permisos ya nombra
+    // esta misma superficie «Rutas de entrega». Un nombre por cosa.
+    { key: 'rutas',    label: 'Rutas de entrega',   icon: Truck,         permKey: 'pedidos_tab_rutas'     },
     { key: 'metricas', label: 'Métricas',           icon: BarChart2,     permKey: 'pedidos_tab_metricas'  },
     { key: 'reglas',   label: 'Reglas de despacho', icon: Settings2,     permKey: 'pedidos_tab_reglas'    },
 ];

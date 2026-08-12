@@ -1,13 +1,17 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { useRef, useEffect } from 'react';
 import Badge from '../../../components/common/Badge';
-import { UserCircle2, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { UserCircle2, Truck, CheckCircle2, AlertCircle, Check, AlertTriangle, PackageX } from 'lucide-react';
 
+// El tipo de llegada, como variante del canónico `Badge`. Era un par
+// bg/borde/texto escrito a mano y un glifo de texto por caso ('✓', '⚠', '!'),
+// pintados en un `<span>` con `rounded-full` fijo: la forma no seguía al tema
+// y el «!» no es un ícono, es un signo de admiración suelto.
 const LLEGADA_TIPO_INFO = {
-    completa:   { cls: 'bg-success/10 border-success/30 text-success-text', icon: '✓', label: 'Recibido sin novedad' },
-    caja_danada:{ cls: 'bg-warning/10 border-warning/30 text-warning-text',       icon: '⚠', label: 'Caja dañada' },
-    falta_caja: { cls: 'bg-danger/10 border-danger/30 text-danger-text',          icon: '!', label: 'Caja faltante' },
-    mixto:      { cls: 'bg-chart-4/10 border-chart-4/30 text-chart-4-text',    icon: '!', label: 'Daños + faltantes' },
+    completa:    { variant: 'success', icon: Check,         label: 'Recibido sin novedad' },
+    caja_danada: { variant: 'warning', icon: AlertTriangle, label: 'Caja dañada' },
+    falta_caja:  { variant: 'danger',  icon: PackageX,      label: 'Caja faltante' },
+    mixto:       { variant: 'chart-4', icon: AlertCircle,   label: 'Daños y faltantes' },
 };
 
 export default function PostCompletionSection({ row, difItems = [], empMap = new Map(), onNeedItems, itemsLoaded }) {
@@ -42,12 +46,10 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
             </div>
             <div className="flex flex-wrap gap-1.5">
                 {tipoInfo && (
-                    <span className={`inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border ${tipoInfo.cls}`}>
-                        <span>{tipoInfo.icon}</span>{tipoInfo.label}
-                    </span>
+                    <Badge variant={tipoInfo.variant} icon={tipoInfo.icon} uppercase={false}>{tipoInfo.label}</Badge>
                 )}
                 {hasCajasDanadas && (
-                    <Badge variant="warning" uppercase={false}>⚠ Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}</Badge>
+                    <Badge variant="warning" uppercase={false} icon={AlertTriangle}>Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}</Badge>
                 )}
                 {reenvios.length > 0 && (
                     <Badge variant="chart-3" icon={Truck} uppercase={false}>{reenvios.length} reenvío{reenvios.length > 1 ? 's' : ''}</Badge>

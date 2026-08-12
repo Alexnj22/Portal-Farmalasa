@@ -6,9 +6,9 @@ import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
 import {
     Building2, ClipboardList, CheckCircle2,
-    Package, AlertTriangle, Info,
+    Package, Info,
     TriangleAlert, TrendingUp,
-    Check, X, Search,
+    Check, Search, PackageX, Repeat,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -55,18 +55,6 @@ const SIN_BODEGA_COLS = [
     { key: 'total_necesidad', label: 'Total',       align: 'center', sortable: true, hideBelow: 'sm' },
     { key: 'total_ventas_6m', label: 'Ventas 6m',  align: 'center', sortable: true, hideBelow: 'sm' },
 ];
-
-const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
-
-const SUC_ANIM_CSS = `
-@keyframes suc-pop {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.09); }
-  70%  { transform: scale(0.96); }
-  100% { transform: scale(1); }
-}
-.suc-pop { animation: suc-pop 0.28s var(--ease-spring) both; }
-`;
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function TabGenerar({ searchTerm = '' }) {
@@ -292,10 +280,14 @@ export default function TabGenerar({ searchTerm = '' }) {
         return !s || ((s.con_bodega_productos ?? 0) + (s.sin_bodega_productos ?? 0)) === 0;
     };
 
+    // Las que se pueden elegir de verdad: una sucursal sin MIN/MAX publicado
+    // se pinta inactiva y no entra ni en la acción ni en el rótulo del botón.
+    const sucursalesElegibles = visibleSucursales.filter(id => !isSucPending(id));
+    const todasElegiblesSeleccionadas = sucursalesElegibles.length > 0
+        && sucursalesElegibles.every(id => selected.has(id));
+
     const toggleAll = () => {
-        const activeSucs = visibleSucursales.filter(id => !isSucPending(id));
-        const allSel = activeSucs.length > 0 && activeSucs.every(id => selected.has(id));
-        setSelected(allSel ? new Set() : new Set(activeSucs));
+        setSelected(todasElegiblesSeleccionadas ? new Set() : new Set(sucursalesElegibles));
     };
 
     // Ranking de urgencia — mayor avg_urgencia_pct primero
@@ -353,10 +345,16 @@ export default function TabGenerar({ searchTerm = '' }) {
 
 
             {/* ── Sucursal selector ──────────────────────────── */}
-            <div className={GLASS + ' p-4'}>
-                <div className="flex items-center justify-between mb-1">
+            <div data-surface="card" className="p-4">
+                {/* `gap-2` + `flex-wrap`: a 390px el título y el botón no entran
+                    en un renglón, y sin envolver el botón se salía de la caja. */}
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                     <h3 className="font-semibold text-content-2 text-subtitle">Selecciona las sucursales a reponer</h3>
-                    <Button variant="ghost" onClick={toggleAll}>{visibleSucursales.every(id => selected.has(id)) && visibleSucursales.length > 0 ? 'Deseleccionar todas' : 'Seleccionar todas'}</Button>
+                    {/* El rótulo se calculaba sobre TODAS las sucursales y la acción
+                        sólo sobre las seleccionables: con una pendiente de MIN/MAX
+                        el botón decía «Seleccionar todas» aunque ya estuvieran todas
+                        las elegibles marcadas, y volver a apretarlo no hacía nada. */}
+                    <Button variant="ghost" onClick={toggleAll}>{todasElegiblesSeleccionadas ? 'Quitar la selección' : 'Seleccionar todas'}</Button>
                 </div>
                 <p className="text-label text-content-3 mb-2 flex items-center gap-1">
                     <Info size={11} />
@@ -389,7 +387,6 @@ export default function TabGenerar({ searchTerm = '' }) {
                 )}
 
                 {/* ── Sucursal cards — liquid glass ──────────── */}
-                <style>{SUC_ANIM_CSS}</style>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {visibleSucursales.map((id) => {
                         const stat      = statMap[id];
@@ -482,12 +479,18 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                                 {stat && !dashLoading ? (
                                     <>
+                                        {/* Los glifos ✓/✗ eran texto: no escalan con
+                                            el tipo, no los lee un lector de pantalla
+                                            y el ✗ no existe en toda fuente. El
+                                            canónico ya trae ranura de ícono. */}
                                         <div className="flex items-center gap-1.5 mt-0.5 relative z-base">
-                                            <Badge variant="success" size="sm" uppercase={false}>
-                                                ✓ {(stat.con_bodega_productos ?? 0)}
+                                            <Badge variant="success" size="sm" uppercase={false} icon={Check}
+                                                title={`${stat.con_bodega_productos ?? 0} con stock en Bodega`}>
+                                                {(stat.con_bodega_productos ?? 0)}
                                             </Badge>
-                                            <Badge variant="danger" size="sm" uppercase={false}>
-                                                ✗ {(stat.sin_bodega_productos ?? 0)}
+                                            <Badge variant="danger" size="sm" uppercase={false} icon={PackageX}
+                                                title={`${stat.sin_bodega_productos ?? 0} sin stock en Bodega`}>
+                                                {(stat.sin_bodega_productos ?? 0)}
                                             </Badge>
                                         </div>
                                         {/* Último pedido */}
@@ -525,17 +528,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                             ? 'Confirmando…'
                             : `Generar y confirmar${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
                     </Button>
-                    {error && (
-                        <span className="text-body text-danger-text flex items-center gap-1">
-                            <AlertTriangle size={14} /> {error}
-                        </span>
-                    )}
+                    {/* `Notice` y no un span con su ícono a mano: es el canónico
+                        del aviso inline (§15.6), y ya estaba importado en este
+                        archivo para el aviso de búsqueda difusa. */}
+                    {error && <Notice variant="danger" className="w-full">{error}</Notice>}
                 </div>
             </div>
 
             {/* ── Productos sin stock en Bodega ──────────────── */}
-            <div className={GLASS + ' px-4 py-3 flex items-center gap-2'}>
-                <TriangleAlert size={15} className="text-danger" />
+            <div data-surface="card" className="px-4 py-3 flex items-center gap-2 flex-wrap">
+                <TriangleAlert size={15} className="text-danger shrink-0" />
                 <span className="font-semibold text-content-2 text-body-lg">Productos sin stock en Bodega</span>
                 {sinBodega.length > 0 && (
                     <Badge variant="danger" uppercase={false}>{sinBodega.length.toLocaleString()} productos</Badge>
@@ -580,8 +582,9 @@ export default function TabGenerar({ searchTerm = '' }) {
                                             <span className="font-medium text-content-2">{ERP_NAMES[s.erp_sucursal_id]}</span>
                                             <span className="text-danger font-semibold">{s.reponer}</span>
                                             {s.ventas_6m > 0 && (
-                                                <span className="text-content-3 flex items-center gap-0.5">
-                                                    ↻<span className="text-micro font-semibold">{Math.round(s.ventas_6m)}</span>
+                                                <span className="text-content-3 inline-flex items-center gap-0.5">
+                                                    <Repeat size={9} aria-hidden="true" />
+                                                    <span className="text-micro font-semibold">{Math.round(s.ventas_6m)}</span>
                                                 </span>
                                             )}
                                         </span>

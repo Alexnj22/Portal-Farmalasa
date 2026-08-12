@@ -6,8 +6,8 @@ import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
 import {
-    Loader2, BarChart2, Clock, Truck, PackageCheck,
-    Pause, TrendingUp, Building2, RefreshCw,
+    BarChart2, Clock, Truck, PackageCheck,
+    Pause, TrendingUp, Building2, RefreshCw, Search,
 } from 'lucide-react';
 import { ERP_NAMES } from '../../constants/erp';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -23,12 +23,13 @@ const COLS_SUCURSAL = [
     { key: 'pausas',    label: 'Pausas',     align: 'center' },
 ];
 
-const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
-
+// Los rótulos eran «Últimos NN días»: tres veces la misma palabra para decir
+// lo que el rótulo del control («Rango») ya dice, y 270px de riel que no
+// entran en un teléfono de 390px. El número y la unidad alcanzan.
 const RANGES = [
-    { key: '7d',  label: 'Últimos 7 días',  days: 7  },
-    { key: '30d', label: 'Últimos 30 días', days: 30 },
-    { key: '90d', label: 'Últimos 90 días', days: 90 },
+    { key: '7d',  label: '7 días',  days: 7  },
+    { key: '30d', label: '30 días', days: 30 },
+    { key: '90d', label: '90 días', days: 90 },
 ];
 
 function toDateStr(date) {
@@ -148,11 +149,11 @@ export default function TabMetricas({ searchTerm = '' }) {
             </div>
 
             {kpis.length === 0 ? (
-                <div className={GLASS}>
+                <div data-surface="card">
                     <EmptyState
                         compact
                         icon={BarChart2}
-                        title="Sin datos para el período"
+                        title="Sin tiempos registrados"
                         subtitle="Los tiempos se registran al despachar y recibir pedidos."
                     />
                 </div>
@@ -168,7 +169,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                     </CarrilCards>
 
                     {/* Tabla por sucursal */}
-                    <div className={GLASS}>
+                    <div data-surface="card">
                         <div className="px-4 py-3 border-b border-divider">
                             <p className="text-body-sm font-semibold text-content-2 flex items-center gap-2">
                                 <Building2 size={13} className="text-content-3" />
@@ -184,9 +185,16 @@ export default function TabMetricas({ searchTerm = '' }) {
                             derecha, y sin eso la inferencia tomaría la última,
                             que es el conteo de pausas. `plano` porque la sección
                             ya vive dentro de su propia tarjeta con encabezado. */}
+                        {/* §26.2 — el vacío por búsqueda se arregla borrando el
+                            término; el vacío de verdad, despachando pedidos. La
+                            tabla no distinguía los dos y con un término que no
+                            coincidía se quedaba en blanco, sin decir nada. */}
                         <DataTable
                             columns={COLS_SUCURSAL}
                             plano dense minWidth="640px"
+                            empty={searchTerm.trim()
+                                ? { icon: Search, message: `Ninguna sucursal coincide con "${searchTerm}"` }
+                                : { icon: Building2, message: 'Sin sucursales con tiempos' }}
                             movil={{ identidad: 'sucursal', ancla: 'pedidos', chips: ['prep', 'transito'] }}
                         >
                             {filteredSucs.map((s, i) => (
@@ -214,7 +222,7 @@ export default function TabMetricas({ searchTerm = '' }) {
 
                     {/* Razones de pausa */}
                     {razones.length > 0 && (
-                        <div className={GLASS}>
+                        <div data-surface="card">
                             <div className="px-4 py-3 border-b border-divider">
                                 <p className="text-body-sm font-semibold text-content-2 flex items-center gap-2">
                                     <Pause size={13} className="text-warning" />
@@ -224,10 +232,16 @@ export default function TabMetricas({ searchTerm = '' }) {
                             <div className="px-4 py-3 space-y-2">
                                 {razones.map(r => (
                                     <div key={r.razon} className="flex items-center gap-3">
-                                        <span className="text-body-sm text-content-2 font-medium flex-1">{r.razon}</span>
+                                        {/* `min-w-0`: sin él un flex-item no baja de su
+                                            contenido y una razón larga empuja la barra
+                                            y el promedio fuera del renglón. */}
+                                        <span className="text-body-sm text-content-2 font-medium flex-1 min-w-0">{r.razon}</span>
                                         <div className="flex items-center gap-2 shrink-0">
                                             <span className="text-label font-bold text-warning tabular-nums w-6 text-right">{r.conteo}</span>
-                                            <div className="w-24 h-2 bg-surface-card-hover rounded-full overflow-hidden">
+                                            {/* 96px de barra + el conteo + el promedio dejaban
+                                                menos de la mitad del renglón para la razón, que
+                                                es lo único que hay que leer acá. */}
+                                            <div className="w-14 sm:w-24 h-2 bg-surface-card-hover rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-warning rounded-full"
                                                     style={{ width: `${Math.min(100, (r.conteo / razones[0].conteo) * 100)}%` }}

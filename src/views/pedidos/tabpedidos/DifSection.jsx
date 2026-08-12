@@ -2,7 +2,7 @@
 // section shown inside an expanded pedido card.
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
-import { AlertCircle, CheckCircle2, X, Loader2, UserCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X, Loader2, UserCircle2, Check } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
@@ -88,10 +88,14 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 
     return (
         <div className="border-t border-warning/30 bg-gradient-to-b from-warning/10 to-surface-card px-4 py-3 space-y-3">
+            {/* El ícono ya dice el estado: llevaba además un ✓ de texto pegado
+                al final del rótulo, que en versalitas queda a otra altura. */}
             <div className="flex items-center gap-1.5">
-                <AlertCircle size={12} className="text-warning shrink-0" />
-                <span className="text-caption font-semibold text-warning-text uppercase tracking-wide">
-                    {allConfirmed ? 'Diferencias resueltas ✓' : `Diferencias — pendiente resolución${difItems.length > 1 ? ` (${difItems.length})` : ''}`}
+                {allConfirmed
+                    ? <CheckCircle2 size={12} className="text-success shrink-0" />
+                    : <AlertCircle size={12} className="text-warning shrink-0" />}
+                <span className={`text-caption font-semibold uppercase tracking-wide ${allConfirmed ? 'text-success-text' : 'text-warning-text'}`}>
+                    {allConfirmed ? 'Diferencias resueltas' : `Diferencias — pendiente resolución${difItems.length > 1 ? ` (${difItems.length})` : ''}`}
                 </span>
             </div>
 
@@ -219,7 +223,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                                             </div>
                                         ) : (
                                             <div className="flex gap-2">
-                                                <Button tone="success" disabled={isBusy} onClick={() => onResolver(item.id, 'confirmar', null, null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}</Button>
+                                                <Button tone="success" icon={Check} loading={isBusy} onClick={() => onResolver(item.id, 'confirmar', null, null)}>Confirmar</Button>
                                                 <Button variant="destructive" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: true }))}>Rechazar</Button>
                                             </div>
                                         )
@@ -286,7 +290,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                                         {row.corregido_bodega_nota && <p className="text-success italic">{row.corregido_bodega_nota}</p>}
                                     </div>
                                 </div>
-                                <Button tone="success" disabled={busyAction === 'confirmar_corr'} onClick={() => onConfirmarCorreccion?.()}>{busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar corrección recibida'}</Button>
+                                <Button tone="success" icon={Check} loading={busyAction === 'confirmar_corr'} onClick={() => onConfirmarCorreccion?.()}>Confirmar corrección recibida</Button>
                             </div>
                         ) : (
                             <p className="text-caption text-content-3 italic">Esperando confirmación de sucursal…</p>

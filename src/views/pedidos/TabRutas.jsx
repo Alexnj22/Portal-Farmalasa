@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
-import { SkeletonText } from '../../components/common/StateViews';
-import { Truck, MapPin, CheckCircle2, Clock, AlertTriangle, Home, Play, Plus, Loader2, ChevronDown, ChevronUp, Navigation, Map } from 'lucide-react';
+import { SkeletonText, EmptyState } from '../../components/common/StateViews';
+import { Truck, CheckCircle2, Home, Play, Plus, ChevronDown, ChevronUp, Navigation, Map, Search } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { tokenMatch } from '../../utils/searchUtils';
+import { clickable } from '../../utils/clickable';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { notifyBranch } from '../../utils/notify';
@@ -26,9 +27,13 @@ function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
 }
+// `es-SV` separa la abreviatura («03:08 p. m.»). Se junta, igual que en la
+// línea de tiempo del pedido, para que la hora se lea como una sola pieza.
 function fmtTime(iso) {
   if (!iso) return null;
-  return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return new Date(iso)
+    .toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })
+    .replace(/\s*([ap])\.\s*m\./i, ' $1.m.');
 }
 
 // ── Individual ruta card ────────────────────────────────────────────────────
@@ -39,7 +44,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const [mapOpen,   setMapOpen]   = useState(false);
 
   const paradas = [...(ruta.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
-  const isCondcutor = ruta.conductor_id === currentUserId;
+  const isConductor = ruta.conductor_id === currentUserId;
   const entregadas  = paradas.filter(p => p.entregado_at).length;
   const total       = paradas.length;
   const badge       = STATUS_BADGE[ruta.status] ?? STATUS_BADGE.pendiente;
@@ -91,46 +96,54 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
   return (
     <div data-surface="card" className="overflow-hidden">
-      {/* Header */}
+      {/* Header — plegar la ruta es la acción de esta franja, así que va por
+          `clickable()` y no por un `onClick` suelto en un div: era una
+          superficie que sólo respondía al puntero, sin foco ni teclado, y sin
+          decirle a nadie que despliega algo (DESIGN.md §25.8). */}
       <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-surface-card transition-colors"
-        onClick={() => setExpanded(e => !e)}
+        {...clickable(() => setExpanded(e => !e), { label: `Ruta ${ruta.numero}` })}
+        aria-expanded={expanded}
+        className="flex items-center justify-between gap-2 px-4 py-3 hover:bg-surface-card transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-chart-3/10 rounded-xl border border-chart-3/30">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2 bg-chart-3/10 rounded-xl border border-chart-3/30 shrink-0">
             <Truck size={15} className="text-chart-3-text" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          {/* `min-w-0` + `flex-wrap`: a 390px el número, el estado y la hora de
+              salida no entran en un renglón, y sin poder envolver empujaban el
+              mapa y el chevrón fuera de la tarjeta. */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-x-2 gap-y-1 flex-wrap">
               <span className="text-body font-black text-content">Ruta #{ruta.numero}</span>
               <Badge variant={badge.variante} size="sm" uppercase={false}>
                 {badge.label}
               </Badge>
               {ruta.salida_at && (
-                <span className="text-caption text-content-3">· Salida {fmtTime(ruta.salida_at)}</span>
+                <span className="text-caption text-content-3">Salida {fmtTime(ruta.salida_at)}</span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-x-2 gap-y-0.5 mt-0.5 flex-wrap">
               <span className="text-label text-content-3 font-medium">{ruta.conductor_nombre}</span>
               {total > 0 && (
                 <span className="text-caption text-content-3">
-                  · {entregadas}/{total} parada{total !== 1 ? 's' : ''} entregada{entregadas !== 1 ? 's' : ''}
+                  {entregadas}/{total} parada{total !== 1 ? 's' : ''} entregada{entregadas !== 1 ? 's' : ''}
                 </span>
               )}
               {ruta.distancia_total_m > 0 && (
                 <span className="text-caption text-content-3">
-                  · {fmtDist(ruta.distancia_total_m)}
+                  {fmtDist(ruta.distancia_total_m)}
                 </span>
               )}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Progress bar */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* La barra de avance repite lo que el renglón ya dice en números y es
+              lo primero que sobra cuando el ancho aprieta. */}
           {total > 0 && (
-            <div className="w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
+            <div className="hidden sm:block w-16 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
               <div
-                className="h-full rounded-full bg-chart-3 transition-all"
+                className="h-full rounded-full bg-chart-3 transition-all duration-[var(--dur-base)]"
                 style={{ width: `${(entregadas / total) * 100}%` }}
               />
             </div>
@@ -168,23 +181,28 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                           Pedido{stop.numeros.length > 1 ? 's' : ''} {stop.numeros.map(n => `#${n}`).join(', ')}
                         </span>
                       )}
-                      {stop.dist_m != null && (
+                      {/* La guarda miraba `stop.dist_m`, un campo que
+                          `fetchRutasConParadas` no trae: el select devuelve
+                          `distancia_desde_anterior_m`, que es lo que la línea
+                          pinta. O sea que la condición era falsa siempre y la
+                          distancia entre paradas no se mostró nunca. */}
+                      {stop.distancia_desde_anterior_m != null && (
                         <span className="text-caption text-content-3">
-                          · {fmtDist(stop.distancia_desde_anterior_m)} desde {idx === 0 ? 'bodega' : `parada ${idx}`}
+                          {fmtDist(stop.distancia_desde_anterior_m)} desde {idx === 0 ? 'bodega' : `parada ${idx}`}
                         </span>
                       )}
                       {isEntregado && (
-                        <span className="text-caption text-success-text font-semibold">
-                          ✓ Entregado {fmtTime(stop.entregado_at)}
+                        <span className="inline-flex items-center gap-1 text-caption text-success-text font-semibold">
+                          <CheckCircle2 size={11} aria-hidden="true" />
+                          Entregado {fmtTime(stop.entregado_at)}
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Conductor action */}
-                  {isCondcutor && !isBranch && !isEntregado && ruta.status === 'en_ruta' && (
-                    <Button tone="success" disabled={isBusy} onClick={() => handleEntregarStop(stop)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
-                      Entregué</Button>
+                  {isConductor && !isBranch && !isEntregado && ruta.status === 'en_ruta' && (
+                    <Button tone="success" icon={CheckCircle2} loading={isBusy} onClick={() => handleEntregarStop(stop)}>Entregué</Button>
                   )}
                   {isEntregado && (
                     <CheckCircle2 size={16} className="text-success shrink-0" />
@@ -197,13 +215,11 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           {/* Conductor actions */}
           {!isBranch && (
             <div className="flex gap-2 pt-1">
-              {ruta.status === 'pendiente' && isCondcutor && (
-                <Button tone="chart-3" disabled={busyRuta === 'iniciar'} onClick={handleIniciarRuta}>{busyRuta === 'iniciar' ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
-                  Iniciar ruta</Button>
+              {ruta.status === 'pendiente' && isConductor && (
+                <Button tone="chart-3" icon={Play} loading={busyRuta === 'iniciar'} onClick={handleIniciarRuta}>Iniciar ruta</Button>
               )}
-              {ruta.status === 'en_ruta' && (isCondcutor || canEdit) && entregadas === total && total > 0 && (
-                <Button tone="chart-8" disabled={busyRuta === 'vuelta'} onClick={handleVueltaBase}>{busyRuta === 'vuelta' ? <Loader2 size={12} className="animate-spin" /> : <Home size={12} />}
-                  Vuelta en base</Button>
+              {ruta.status === 'en_ruta' && (isConductor || canEdit) && entregadas === total && total > 0 && (
+                <Button tone="chart-8" icon={Home} loading={busyRuta === 'vuelta'} onClick={handleVueltaBase}>Volver a base</Button>
               )}
               {ruta.vuelta_base_at && (
                 <span className="text-caption text-content-3 flex items-center gap-1 px-2">
@@ -288,31 +304,43 @@ export default function TabRutas({ searchTerm = '' }) {
   const completed = filtered.filter(r => r.status === 'completada');
 
   return (
-    <div className="space-y-5">
+    /* El resto de las pestañas de la vista envuelve su contenido en `p-4`;
+       ésta no lo hacía, así que sus tarjetas quedaban pegadas al borde de la
+       pantalla en el teléfono —el cuerpo de `GlassViewLayout` va sin relleno
+       lateral bajo `md`— y desalineadas respecto de las otras cuatro. */
+    <div className="space-y-4 p-4">
       {/* Header actions */}
-      {canEdit && !isBranch && (
+      {canEdit && !isBranch && rutas.length > 0 && (
         <div className="flex justify-end">
-          <Button tone="chart-3" icon={Plus} onClick={() => setCrearOpen(true)}>Nueva Ruta</Button>
+          <Button tone="chart-3" icon={Plus} onClick={() => setCrearOpen(true)}>Crear ruta</Button>
         </div>
       )}
 
       {loading ? (
         <div className="flex items-center justify-center py-16"><SkeletonText lines={4} className="w-full max-w-md" /></div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-surface-card-hover border border-divider flex items-center justify-center">
-            <Navigation size={28} className="text-content-3" />
-          </div>
-          <div className="text-center">
-            <p className="text-subtitle font-bold text-content-2">Sin rutas activas</p>
-            <p className="text-body-sm text-content-3 mt-1">
-              {canEdit && !isBranch ? 'Crea una ruta para gestionar las entregas.' : 'No hay rutas en curso.'}
-            </p>
-          </div>
-          {canEdit && !isBranch && (
-            <Button tone="chart-3" icon={Plus} onClick={() => setCrearOpen(true)}>Nueva Ruta</Button>
-          )}
-        </div>
+        /* §18.1 · §26.2 — el canónico, y los dos vacíos separados. Estaba
+           escrito a mano y decía «Sin rutas activas» también cuando el
+           buscador no encontraba nada: dos estados que se arreglan de forma
+           distinta contados como uno solo. */
+        searchTerm.trim() ? (
+          <EmptyState
+            icon={Search}
+            title="Sin resultados"
+            subtitle={`Ninguna ruta coincide con "${searchTerm}".`}
+          />
+        ) : (
+          <EmptyState
+            icon={Navigation}
+            title="Sin rutas"
+            subtitle={canEdit && !isBranch
+              ? 'Crea una ruta para agrupar las entregas del día.'
+              : 'Acá aparecen las entregas cuando bodega arma una ruta.'}
+            action={canEdit && !isBranch
+              ? <Button tone="chart-3" icon={Plus} onClick={() => setCrearOpen(true)}>Crear ruta</Button>
+              : undefined}
+          />
+        )
       ) : (
         <>
           {/* Active routes */}
@@ -337,8 +365,10 @@ export default function TabRutas({ searchTerm = '' }) {
           {/* Completed routes */}
           {completed.length > 0 && (
             <div className="space-y-3">
+              {/* «Completadas hoy» era falso: `fetchRutasConParadas` trae las
+                  últimas 50 por fecha de creación, sin recortar por día. */}
               <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
-                <CheckCircle2 size={10} /> Completadas hoy
+                <CheckCircle2 size={10} /> Completadas
               </p>
               {completed.map(ruta => (
                 <RutaCard

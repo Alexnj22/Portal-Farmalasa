@@ -130,11 +130,26 @@ async function bajarDelPortal() {
         // tal como aparece en el desplegable (`--sucursal Bodega`) además del
         // branch_id, justamente para no mantener acá una tabla de nombres que
         // se desincronice el día que se renombre una.
+        // El disparador es un `LiquidSelect`, que es un `<div role="combobox">`
+        // y NO un `<button>` — está escrito en su propio archivo y hay un
+        // comentario que lo explica. Este script lo buscaba como botón, así que
+        // `--nombre` **nunca funcionó**: fallaba siempre y encima el mensaje
+        // echaba la culpa al alcance de la cuenta de QA, que es lo primero que
+        // uno va a mirar y no tiene nada que ver. Corregido el 2026-08-11 tras
+        // perder un rato justo en esa pista falsa.
         if (NOMBRE_SUC) {
-            const sel = page.getByRole('button', { name: /sucursal|todas/i }).first();
-            if (!await sel.isVisible({ timeout: 5_000 }).catch(() => false)) {
-                throw new Error('no encontré el filtro de sucursal — ¿la cuenta tiene scope de una sola?');
-            }
+            const sel = page.getByRole('combobox', { name: /sucursal/i }).first();
+            // `waitFor` y NO `isVisible()`: `isVisible()` es un chequeo
+            // INSTANTÁNEO —su `timeout` no hace esperar— así que corría antes de
+            // que el filtro existiera. El filtro sólo se pinta cuando ya hay
+            // sucursales cargadas, o sea después de la primera consulta, así
+            // que perdía la carrera siempre.
+            await sel.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => {
+                throw new Error(
+                    'no encontré el filtro de sucursal. Puede ser que la cuenta tenga alcance ' +
+                    'de una sola sucursal (entonces no se pinta) o que el control haya cambiado ' +
+                    'de forma. Verificá las dos cosas antes de concluir cuál.');
+            });
             await sel.click();
             await page.getByRole('option', { name: new RegExp(NOMBRE_SUC, 'i') })
                 .first().click({ timeout: 5_000 });
@@ -357,12 +372,38 @@ console.log(`    Fin de línea .... ${fmt.crlf ? 'CRLF' : 'LF'}  ${gris('(CRLF =
 console.log(`    Salto final ..... ${fmt.saltoFinal ? 'sí' : 'no'}`);
 console.log(`    Líneas .......... ${fmt.lineas.length}\n`);
 
+// ── la FORMA del anexo ──────────────────────────────────────────────────────
+// Va acá arriba, ANTES del archivo del origen, y no es un detalle de orden: la
+// forma **no depende del origen**. Es más, el origen tiene otra forma —la
+// vieja— así que compararse con él nunca la pudo ver. Por eso los dos anexos
+// que salieron mal el 2026-08-11 pasaron meses sin que nadie lo notara.
+//
+// Estaba metida más abajo, dentro de la comparación contra el ERP, así que sin
+// las llaves del ERP no se ejecutaba: la única prueba que no necesita al origen
+// era la única que se saltaba cuando el origen no estaba disponible.
+let formaMal = 0;
+if (ESPEC) {
+    formaMal = fmt.lineas.filter(l => l.split(';').length !== ESPEC.columnas_hoy).length;
+    console.log('  Forma del anexo');
+    console.log(`    columnas que pide Hacienda ... ${ESPEC.columnas}`);
+    console.log(`    columnas que emitimos ........ ${ESPEC.columnas_hoy}`);
+    console.log(`    líneas con la forma mal ...... ${formaMal === 0 ? verde('0') : rojo(String(formaMal))}`);
+    if (formaMal) {
+        const mala = fmt.lineas.find(l => l.split(';').length !== ESPEC.columnas_hoy);
+        console.log(gris(`    ejemplo (${mala.split(';').length} columnas): ${mala.slice(0, 120)}`));
+    }
+    if (ESPEC.deuda) console.log(gris(`    deuda escrita: ${ESPEC.deuda.slice(0, 160)}…`));
+    console.log('');
+}
+
 const erp = await bajarDelErp();
 if (!erp) {
     console.log(rojo('  No se pudo bajar el archivo del ERP') +
         gris('  (falta SUPABASE_SERVICE_ROLE_KEY o ADMIN_INVOKE_SECRET).'));
-    console.log(gris('  Se verificó el FORMATO. El CONTENIDO queda sin verificar — no se declara nada sobre él.\n'));
-    process.exit(1);
+    console.log(gris('  Se verificaron el FORMATO y la FORMA. El CONTENIDO queda sin verificar —'));
+    console.log(gris('  no se declara nada sobre él.\n'));
+    console.log(`  ${formaMal === 0 ? verde('FORMA OK') : rojo('FORMA MAL')}  ${gris('contenido sin verificar')}\n`);
+    process.exit(formaMal === 0 ? 1 : 3);
 }
 
 const r = comparar(fmt.lineas, erp);
@@ -372,18 +413,6 @@ console.log(`    líneas portal ... ${fmt.lineas.length}`);
 console.log(`    coinciden ....... ${r.iguales}`);
 console.log(`    solo en el ERP .. ${r.faltan.length}`);
 console.log(`    solo en el portal ${r.sobran.length}\n`);
-
-// La FORMA va primero y aparte: es lo que falló dos veces y lo que la
-// comparación contra el origen no puede ver, porque el origen tiene otra.
-if (ESPEC) {
-    const bien = r.formaMal === 0;
-    console.log('  Forma del anexo');
-    console.log(`    columnas que pide Hacienda ... ${ESPEC.columnas}`);
-    console.log(`    columnas que emitimos ........ ${r.columnasEsperadas}`);
-    console.log(`    líneas con la forma mal ...... ${bien ? verde('0') : rojo(String(r.formaMal))}`);
-    if (ESPEC.deuda) console.log(gris(`    deuda escrita: ${ESPEC.deuda.slice(0, 150)}…`));
-    console.log('');
-}
 
 if (r.porColumna.size) {
     console.log('  Diferencias por columna (número de columna NUESTRA)');
@@ -401,6 +430,6 @@ if (ESPEC?.origen?.valor_diverge?.length) {
 for (const l of r.faltan.slice(0, 3)) console.log(gris(`    solo ERP:    ${l.slice(0, 110)}`));
 for (const l of r.sobran.slice(0, 3)) console.log(gris(`    solo portal: ${l.slice(0, 110)}`));
 
-const ok = r.faltan.length === 0 && r.sobran.length === 0 && r.formaMal === 0;
+const ok = r.faltan.length === 0 && r.sobran.length === 0 && formaMal === 0;
 console.log(`\n  ${ok ? verde('IDENTICO') : rojo('DIFIERE')}  ${gris(`${((Date.now() - t0) / 1000).toFixed(1)}s`)}\n`);
 process.exit(ok ? 0 : 1);

@@ -47,183 +47,29 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 // de ahí — mismo patrón que el token del Ministerio, que tampoco se fabrica: se
 // lee de la pantalla que lo cachea.
 
-const TRASLADO = `${BASE}/traslado_producto.php`;
-const RECIBIR  = `${BASE}/recibir_traslado.php`;
-const SESION   = `${BASE}/cambio_sesion.php`;
-const LISTADO  = `${BASE}/admin_traslados_dt.php`;
-const VER      = `${BASE}/ver_traslado.php`;
+// ⚠️ Los parsers de estas pantallas VIVEN EN `_shared/erp-traslado.ts`.
+// Estaban duplicados acá desde que se creó `trasladar-pedido-erp`, con una nota
+// que decía que había que consolidarlos: son parsers de HTML y dos copias que
+// se toquen por separado leen la misma pantalla distinto. Consolidado el
+// 2026-08-11. El módulo se armó copiando de este archivo, así que la extracción
+// es literal — no cambia una coma de comportamiento.
+import {
+  CONCEPTO_MAX,
+  contenidoDeTraslado,
+  direccionesPorSucursal,
+  hoySV,
+  norm,
+  pendientesDeOrigen,
+  RECIBIR,
+  sesionEn as abrirSesionEn,
+  soloAscii,
+  TRASLADO,
+  leerFila,
+} from "../_shared/erp-traslado.ts";
 
-// Una Edge Function vive 150 s. El presupuesto se corta ANTES de empezar otra
-// línea para que siempre alcance a contestar.
-const PRESUPUESTO_MS = 110_000;
-
-// El sistema no declara cuánto aguanta el `concepto` y no hay forma de leerlo
-// sin escribir. Se recorta a un largo conservador y se AVISA cuando pasa: un
-// tope callado se lee como que entró completo.
-const CONCEPTO_MAX = 200;
-
-interface Linea {
-  erp_product_id: number;
-  presentacion_tipo: string;   // "UNIDAD", "CAJA", "BLISTER X 10"…
-  factor: number;              // cuántas unidades trae
-  cantidad: number;
-  numero_lote?: string;
-  vence?: string;
-  descripcion?: string;
-}
-
-/** Lo que `traerdatos` contesta, ya sin el HTML. */
-interface Fila {
-  encontrado: boolean;
-  presentaciones: { id: string; tipo: string }[];
-  existencia: number;          // en unidades base
-  vence: string;
-  regulado: boolean;
-  lotes: { id: string; numero: string; vence: string; stock: number }[];
-}
-
-const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toUpperCase();
-
-/**
- * El concepto, en ASCII puro.
- *
- * El sistema sirve sus páginas en UTF-8 pero vuelve a leer los bytes como
- * Latin-1 al guardarlos y al imprimir el kardex. Se transcribe en vez de
- * borrarse: «Nuñez» queda «Nunez» y no «Nuez».
- */
-function soloAscii(s: string): string {
-  return String(s ?? "")
-    .normalize("NFD").replace(/[̀-ͯ]/g, "")
-    .replace(/[·•]/g, "-")
-    .replace(/[—–]/g, "-")
-    .replace(/[«»“”„]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/…/g, "...")
-    .replace(/[^\x20-\x7E]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** Los lotes que el sistema ofrece, con su número y su fecha. */
-function leerLotes(html: string) {
-  return [...html.matchAll(/<option([^>]*)>([^<]*)</g)].map((m) => {
-    const attrs = m[1];
-    const etiqueta = m[2].trim();
-    return {
-      id: attrs.match(/value=['"](\d+)['"]/)?.[1] ?? "",
-      numero: etiqueta.split(" - ")[0].trim(),
-      vence: attrs.match(/data-vencimiento=['"]([^'"]*)['"]/)?.[1] ?? "",
-      stock: Number(attrs.match(/data-stock=['"]([^'"]*)['"]/)?.[1] ?? 0),
-    };
-  }).filter((l) => l.id);
-}
-
-/**
- * La fila HTML que devuelve `traerdatos`.
- *
- * Un producto que no está en esa ubicación NO da error: da la misma fila con
- * «TOTAL STOCK: 0» y el <select> de presentaciones vacío. Por eso el criterio de
- * «encontrado» es que haya al menos una presentación, y no el status.
- */
-function leerFila(html: string): Fila {
-  const loteSel = html.match(/<select[^>]*class=['"][^'"]*lote-select[^'"]*['"][^>]*>([\s\S]*?)<\/select>/)?.[0] ?? "";
-  const presSel = html.match(/<select[^>]*class=["'][^"']*\bsel\b[^"']*["'][^>]*>([\s\S]*?)<\/select>/)?.[1] ?? "";
-  const presentaciones = [...presSel.matchAll(/<option[^>]*value=["'](\d+)["'][^>]*>([^<]*)</g)]
-    .map((m) => ({ id: m[1], tipo: norm(m[2]) }));
-  return {
-    encontrado: presentaciones.length > 0,
-    presentaciones,
-    // `.exis` viene en unidades base: el propio JS del sistema lo compara contra
-    // `cantidad × unidad`, así que es la referencia correcta para el tope.
-    existencia: Number(html.match(/class=['"][^'"]*\bexis\b[^'"]*['"][^>]*>([\d.]+)/)?.[1] ?? 0),
-    vence: html.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "",
-    regulado: /data-regulado=['"]1['"]/.test(loteSel),
-    lotes: leerLotes(loteSel),
-  };
-}
-
-/** La fecha de El Salvador (UTC-6 todo el año), en yyyy-mm-dd. */
-function hoySV(): string {
-  return new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-
-/** Abre la sesión del sistema en una sucursal. Devuelve la cookie o lanza. */
-async function sesionEn(erpSucursal: number): Promise<string> {
-  const cookie = await login();
-  const r = await pedir(cookie, SESION, new URLSearchParams({
-    process: "set_sucursal", id_sucursal: String(erpSucursal),
-  }), { extra: { Referer: `${BASE}/dashboard.php` } });
-  let ok = false;
-  try { ok = Boolean(JSON.parse(r)?.success); } catch { ok = false; }
-  if (!ok) throw new Error(`No se pudo abrir la sucursal ${erpSucursal}: ${r.slice(0, 120)}`);
-  return cookie;
-}
-
-/**
- * Los traslados de esta ubicación despachados y todavía sin recibir.
- *
- * ⚠️ **El listado ignora el orden que se le pide.** Se le manda
- * `order[0][dir]=desc` y contesta ascendente igual — medido el 2026-08-06. Por
- * eso esta función devuelve el CONJUNTO de ids y no «el primero»: pedirle el
- * más nuevo y quedarse con `data[0]` devuelve el más VIEJO, que en la primera
- * prueba real fue el traslado de otra persona, de otro día y a otra sucursal.
- * El sistema lo habría aceptado sin protestar.
- *
- * Y los filtros con un valor que no entiende no fallan: devuelven las 27,000
- * filas con cara de éxito. `recordsFiltered === recordsTotal` es la señal de
- * que el filtro no se aplicó.
- */
-async function pendientesDeOrigen(
-  cookie: string, ubicacionOrigen: number,
-): Promise<Map<string, string>> {
-  try {
-    const cuerpo = await pedir(cookie, LISTADO, new URLSearchParams({
-      draw: "0", start: "0", length: "200",
-      origen: String(ubicacionOrigen), pro: "env", estado: "pe",
-    }), { extra: { Referer: `${BASE}/admin_traslados.php` } });
-    const j = JSON.parse(cuerpo);
-    if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return new Map();
-    // id → destino. El destino es la quinta columna y viene como la dirección
-    // completa de la sucursal, que es lo que después permite desempatar.
-    return new Map(
-      (j.data as unknown[][])
-        .map((f) => [String(f?.[0] ?? ""), String(f?.[4] ?? "")] as [string, string])
-        .filter(([id]) => id),
-    );
-  } catch { return new Map(); }
-}
-
-/**
- * La dirección de cada sucursal, según el propio sistema.
- *
- * El `<select id="id_sucursal">` de la pantalla de traslado es el único lugar
- * que liga el id de sucursal con la dirección larga que después muestra el
- * listado — y sin esa liga, dos traslados despachados a la vez desde la misma
- * sala no se pueden distinguir. Los `value` vienen con un espacio adelante
- * (`value=' 1'`), así que hay que recortarlos.
- */
-/**
- * El contenido de un traslado, para desempatar cuando el destino no alcanza.
- *
- * `ver_traslado.php` da descripción, presentación, unidad y cantidad por línea.
- * Es el último recurso: dos traslados de la misma sala a la misma sala, en el
- * mismo instante, se distinguen por lo que llevan adentro.
- */
-async function contenidoDeTraslado(cookie: string, id: string): Promise<string> {
-  try {
-    const h = await pedir(cookie, `${VER}?id_traslado=${encodeURIComponent(id)}`,
-      undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
-    return norm(h.replace(/<[^>]+>/g, " "));
-  } catch { return ""; }
-}
-
-function direccionesPorSucursal(html: string): Map<string, string> {
-  const sel = html.match(/<select[^>]*id="id_sucursal"[\s\S]*?<\/select>/)?.[0] ?? "";
-  return new Map(
-    [...sel.matchAll(/<option value=['"]\s*(\d+)\s*['"][^>]*>([^<]*)</g)]
-      .map((m) => [m[1], norm(m[2])] as [string, string]),
-  );
-}
+// `sesionEn` compartida recibe el `login` para no acoplar el módulo a un
+// proveedor de credenciales. Acá se fija el del ERP y queda igual que antes.
+const sesionEn = (erpSucursal: number) => abrirSesionEn(erpSucursal, login);
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);

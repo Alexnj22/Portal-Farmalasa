@@ -5,14 +5,15 @@
 // Son parsers de HTML: el día que el sistema cambie un `<select>`, dos copias
 // que se toquen por separado leen la misma pantalla distinto.
 //
-// ⚠️ **HOY HAY DOS COPIAS, a propósito y por un rato.** Este módulo es el que
-// manda de acá en adelante, pero `aplicar-traslado-inventario` sigue con las
-// suyas adentro: es una función que mueve inventario real y está en uso, y
-// refactorizarla en el mismo cambio que estrena `trasladar-pedido-erp` —que
-// justamente salió en modo simulacro para no escribir todavía— es meter riesgo
-// donde se acordó no meterlo. **Pendiente: pasarla a importar de acá**, y ahí
-// desaparece la copia. Mientras tanto, un arreglo a cualquiera de estos parsers
-// va a los DOS archivos.
+// **Una sola copia, desde el 2026-08-11.** Nacieron dentro de
+// `aplicar-traslado-inventario`; al estrenar `trasladar-pedido-erp` se copiaron
+// acá y quedaron duplicadas un rato a propósito —no se refactoriza una función
+// que mueve inventario real en el mismo cambio que estrena otra—. Ya se
+// consolidó: `aplicar-traslado-inventario` importa de acá y borró las suyas.
+//
+// Si se toca un parser, se toca para las dos funciones. Es el punto: el día que
+// el sistema cambie un `<select>`, no hay una versión que se arregle y otra que
+// no.
 //
 // Todo lo que vive acá es puro o depende solo de la cookie de sesión. Lo que
 // decide QUÉ trasladar —permisos, cantidades, candados— se queda en cada

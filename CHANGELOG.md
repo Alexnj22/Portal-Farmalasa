@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.569.2 — un solo parser de las pantallas de traslado
+
+Se cierra la última deuda declarada del traslado. Los parsers de las pantallas
+del sistema —leer una fila de existencias, los lotes, la lista de pendientes,
+la sesión por sucursal— vivían **duplicados** en `aplicar-traslado-inventario` y
+en `_shared/erp-traslado.ts`.
+
+Se dejaron así a propósito y por un rato: no se refactoriza una función que
+mueve inventario real en el mismo cambio que estrena otra. Pero son parsers de
+HTML, y dos copias que se toquen por separado leen la misma pantalla distinto —
+el día que el sistema cambie un `<select>`, una se arregla y la otra no.
+
+Ahora `aplicar-traslado-inventario` importa del módulo compartido y borró las
+suyas. La extracción es literal: el módulo se armó copiando de ese archivo.
+
+Verificado después de desplegar las dos funciones: la vieja contesta 401 sin
+sesión y 404 ante una solicitud inexistente —o sea que el módulo carga, la
+autenticación corre y llega a leer la base—, y la nueva sigue negándose por
+hojas no confiables. Ninguna cambió de comportamiento.
+
+_(pendiente de redactar)_
+
+## v2.569.1 — El anexo de consumidor sale con sus 23 columnas
+
+**Una columna de más corría toda la fila, y las ventas se declaraban como
+exportaciones.** El archivo de ventas a consumidor final salía con 22 columnas
+donde Hacienda pide 23, y el faltante no estaba al final: sobraba un `0.0000`
+entre «ventas no sujetas» y «ventas gravadas locales» que empujaba **todo el
+resto un lugar a la izquierda**. En un día con $1,164.98 de ventas, la casilla
+de gravadas quedaba en cero, el monto caía en **exportaciones dentro del área
+centroamericana**, el total caía en «cuenta de terceros» y la casilla de total
+quedaba en cero.
+
+Venía de replicar el archivo del sistema de origen tal cual. Los cuatro
+decimales de esa columna eran la pista —en este anexo Hacienda toma dos en
+todas—, pero hasta ahora no había contra qué cotejar: se cotejó contra el
+archivo real de junio que presenta el contador y contra el manual oficial del
+F-07 v14.
+
+**Y se agregaron las dos columnas que Hacienda pide desde enero 2025**: tipo de
+operación (gravada) y tipo de ingreso (actividades comerciales). Para una
+farmacia son constantes.
+
+**Lo que NO se copió del archivo de referencia.** Ese archivo trae, en las dos
+columnas del código de generación del primer y último documento del día, el
+**mínimo y el máximo alfabéticos** del día — no el primero ni el último. Se
+verificó: `min()` y `max()` del texto de los códigos de ese día dan exactamente
+los dos que trae, y los ids internos que el propio archivo declara dos columnas
+antes apuntan a otros dos documentos. Un código de generación no tiene orden
+temporal, así que cuál cae de cada lado es azar. Acá siguen saliendo los
+correctos, ordenados por correlativo.
+
+El libro de ventas a contribuyentes tiene sus propios hallazgos y no se tocó
+todavía: están en `docs/AUDITORIA-LIBRO-CONTRIBUYENTES-2026-08-11.md`.
+
 ## v2.569.0 — recibir un producto suelto, y ver el traslado en la tarjeta
 
 **Recibir un producto sin contar el resto de la caja.** El caso real que pidió

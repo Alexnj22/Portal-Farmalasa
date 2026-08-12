@@ -186,8 +186,19 @@ function problemasDeLinea(l, { llevaLote, esCarga, esPerecedero }) {
     // `null` es «todavía no se sabe». Escribirlo como `if (llevaLote)` lo
     // convertiría en «no lleva» y volvería a dejar pasar cargas sin lote — que
     // es exactamente el bug que se corrigió el 2026-08-12.
-    if (llevaLote === true && !String(l.lote).trim()) problemas.push('lote');
-    if (esCarga && (llevaLote === true || esPerecedero) && !String(l.vence).trim())
+    //
+    // Y en una carga «no se sabe» EXIGE el lote igual (`!== false`), no lo
+    // sugiere. Primero porque la regla es que una carga no salga sin lote salvo
+    // que conste que el producto no lo lleva; y segundo porque el costo de los
+    // dos errores no se parece: pedirlo de más cuesta un campo escrito al pedo,
+    // y no pedirlo cuesta una solicitud que recorre todo el circuito, la aprueba
+    // el supervisor y recién ahí la rechaza el sistema — con el producto ya
+    // contado y nadie a quién preguntarle el número. Pasó el 2026-08-12 con
+    // AVAMYS. En un DESCARGO no cambia nada: ahí el lote se elige de los que la
+    // sala tiene, y si no hay ninguno `llevaLote` ya es `false`.
+    const loteObligatorio = esCarga ? llevaLote !== false : llevaLote === true;
+    if (loteObligatorio && !String(l.lote).trim()) problemas.push('lote');
+    if (esCarga && (loteObligatorio || esPerecedero) && !String(l.vence).trim())
         problemas.push('vence');
     return problemas;
 }
@@ -756,7 +767,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     {lotesBorrador !== null && lotesBorrador.length > 0 && (
                         <div>
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
-                                Lote{loteBorrador === true && <span className="text-danger-text"> *</span>}
+                                Lote{(esCarga ? loteBorrador !== false : loteBorrador === true)
+                                    && <span className="text-danger-text"> *</span>}
                             </p>
                             <div className="flex flex-wrap items-center gap-2">
                                 {/* `clearable={false}`: sin esto `LiquidSelect`
@@ -827,30 +839,18 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     {esCarga && lotesBorrador?.length === 0 && loteBorrador !== false && (
                         <div className="flex flex-wrap items-end gap-2">
                             <PortalInput
-                                label={loteBorrador === true ? 'N.º de lote *' : 'N.º de lote'}
-                                name="borrador-lote-nuevo"
+                                label="N.º de lote *" name="borrador-lote-nuevo"
                                 value={borrador.lote}
                                 onChange={e => editarBorrador({ lote: e.target.value })}
                                 placeholder="N.º de lote" className="w-40"
                             />
                             <PortalInput
-                                label="Vence" name="borrador-vence-lote"
+                                label="Vence *" name="borrador-vence-lote"
                                 type="date" value={borrador.vence ?? ''}
                                 onChange={e => editarBorrador({ vence: e.target.value })}
                                 className="w-40"
                             />
                         </div>
-                    )}
-
-                    {/* No se sabe si el producto maneja lote. Se dice, en vez de
-                        marcarlo como si no lo llevara: sin el número, si resulta
-                        que lo lleva, la carga no entra. */}
-                    {esCarga && lotesBorrador?.length === 0 && loteBorrador === null
-                        && !String(borrador.lote).trim() && (
-                        <p className="flex items-center gap-1 text-micro text-warning-text font-semibold px-1">
-                            <AlertTriangle size={11} strokeWidth={2.5} />
-                            Si la caja trae número de lote, escribilo — sin él la carga puede no entrar.
-                        </p>
                     )}
 
                     {/* Perecedero sin control de lote: la fecha no tiene de dónde
@@ -1039,7 +1039,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                             value={l.lote}
                                             onChange={e => editar(l.id, { lote: e.target.value })}
                                             aria-label="Número de lote"
-                                            placeholder={llevaLote === true ? 'N.º de lote *' : 'N.º de lote'}
+                                            placeholder={esCarga && llevaLote !== false ? 'N.º de lote *' : 'N.º de lote'}
                                             className="w-32"
                                         />
                                     )}

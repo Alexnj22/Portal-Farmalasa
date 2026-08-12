@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.575.2 — Una carga sin lote no sale, salvo que conste que el producto no lo lleva
+
+Con `es_regulado` poblado, el portal sabe de casi todos los productos si llevan
+control de lote. Para los que no —los que el listado del sistema ya no incluye—
+la pantalla **pedía el lote pero dejaba enviar sin él**, avisando. Eso alcanzaba
+para que una carga saliera incompleta.
+
+Ahora en una carga el lote es obligatorio salvo que conste que el producto NO lo
+lleva. El motivo es que los dos errores no cuestan lo mismo: pedir el lote de más
+cuesta un campo escrito al pedo, y no pedirlo cuesta una solicitud que recorre
+todo el circuito —se arma, se notifica, la abre el supervisor— y recién ahí la
+rechaza el sistema, con el producto ya contado y nadie a quién preguntarle el
+número.
+
+Pasó el 2026-08-12 con una carga de AVAMYS: salió sin lote y no se pudo aplicar.
+
+En un descargo no cambia nada: ahí el lote se elige entre los que la sala tiene,
+y si no hay ninguno el producto no lleva control de lote.
+
 ## v2.575.1 — El control de lote de cada producto llega desde el sistema
 
 El listado de productos ya publica **`es_regulado`**, el campo que se había

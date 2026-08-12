@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.9 — El Corte Z muestra las cifras con las que se declara
+
+Continuación de v2.571.7. Corregido el cotejo, quedaba la pregunta práctica:
+«¿cuáles son entonces los datos correctos, y los podés mostrar para que el
+contador sepa?».
+
+**El ticket no trae lo que se declara.** Su línea VENTAS GRAVADAS es la suma de
+lo cobrado **con IVA** —no una base gravada— y de débito fiscal no dice nada por
+ningún lado. Para llenar la declaración había que salir del Corte Z e ir al
+libro de IVA.
+
+Nuevo bloque **«Para la declaración»** en la tarjeta y en el PDF, con las cuatro
+cifras del libro partidas en consumidor / contribuyente. Julio 2026, Salud 3:
+
+| | Consumidor | Contribuyente |
+|---|---|---|
+| Ventas exentas | $0.00 | $0.00 |
+| Ventas gravadas | $43,011.33 | $870.74 |
+| Débito fiscal | $5,592.52 | $113.19 |
+| IVA retenido | $39.32 | $3.60 |
+| **Total** | **$48,564.53** | **$980.33** |
+
+- Se calculan en `get_cortes_z` con la **misma lógica** que
+  `get_libro_ventas_contribuyente`/`_consumidor` —incluida la regla de exentas
+  (`iva = 0` → el total va a exentas; `iva > 0` → el subtotal va a gravadas)— y
+  el mismo filtro de sello. Recalcularlas «parecido» habría dejado que la
+  pantalla y el libro discreparan sin que nada avisara, que es exactamente el
+  defecto que se acaba de corregir.
+- Va **antes** del cotejo: es lo que alguien viene a buscar. El cotejo de abajo
+  es la verificación de que se puede confiar en estos números.
+- El IVA retenido lleva su nota: no es una columna del libro (el Art. 85 no la
+  tiene), va en la declaración respaldado con el comprobante de retención.
+
+Confirmado de paso que el Corte Z **sí se trae del sistema donde se emite** —
+`POST reportez.php` con `process=imprimir_gz`, previo `cambio_sesion.php`— y que
+el ticket se guarda crudo, carácter por carácter. La resta duplicada es del
+documento original, no de nuestra lectura.
+
+Migración `20260812151215_corte_z_expone_cifras_para_declarar`.
+
 ## v2.571.8 — La pestaña del navegador nombra su pantalla, y el resto del sentence case
 
 Cierra lo que v2.571.6 dejó anotado.

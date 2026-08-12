@@ -136,6 +136,72 @@ const SeccionTicket = ({ titulo, datos = {} }) => (
     </div>
 );
 
+// ── Las cifras con las que SE DECLARA ────────────────────────────────────────
+//
+// El ticket no las trae. Su línea GRAVADAS es lo cobrado CON IVA —no una base
+// gravada— y de débito fiscal no dice nada, así que para llenar la declaración
+// había que salir a buscarlas al libro de IVA. Son las mismas cuatro columnas
+// del libro, y el RPC las arma con la lógica de `get_libro_ventas_*`: si acá se
+// recalcularan «parecido», la pantalla y el libro podrían discrepar sin que
+// nada avise.
+//
+// Dos columnas y no tres: el tiquete no existe en este negocio (sus cinco
+// líneas van en cero en las 12 filas cargadas) y el libro se parte justo en
+// consumidor / contribuyente, que es como se declara.
+const GRILLA_DECL = 'grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_7rem_7rem] '
+                  + 'gap-x-3 gap-y-0.5 items-baseline';
+
+const FILAS_DECL = [
+    ['Ventas exentas',  'exentas'],
+    ['Ventas gravadas', 'gravadas'],
+    ['Débito fiscal',   'debito'],
+    ['IVA retenido',    'retenido'],
+];
+
+const ParaDeclarar = ({ declaracion }) => {
+    const cof = declaracion?.factura || {};
+    const ccf = declaracion?.ccf || {};
+    const conRetencion = !cuadra(cof.retenido) || !cuadra(ccf.retenido);
+
+    return (
+        <div>
+            <div className={`${GRILLA_DECL} pb-1 border-b border-divider`}>
+                <span className="col-span-2 md:col-span-1 text-micro font-semibold text-content-3 uppercase tracking-wide">
+                    Para la declaración
+                </span>
+                <span className="text-micro text-content-3 text-right">Consumidor</span>
+                <span className="text-micro text-content-3 text-right">Contribuyente</span>
+            </div>
+
+            {FILAS_DECL.map(([rotulo, clave]) => (
+                <div key={clave} className={`${GRILLA_DECL} py-1.5 border-b border-divider`}>
+                    <span className="col-span-2 md:col-span-1 min-w-0 text-caption text-content-2 truncate">
+                        {rotulo}
+                    </span>
+                    <span className="font-mono text-caption tabular-nums text-right">{formatMoney(cof[clave])}</span>
+                    <span className="font-mono text-caption tabular-nums text-right">{formatMoney(ccf[clave])}</span>
+                </div>
+            ))}
+
+            <div className={`${GRILLA_DECL} py-1.5`}>
+                <span className="col-span-2 md:col-span-1 text-caption font-semibold">Total</span>
+                <span className="font-mono text-caption tabular-nums text-right font-bold">{formatMoney(cof.total)}</span>
+                <span className="font-mono text-caption tabular-nums text-right font-bold">{formatMoney(ccf.total)}</span>
+            </div>
+
+            {conRetencion && (
+                // El IVA retenido no es una columna del libro —el Art. 85 no la
+                // tiene— pero sí entra en la declaración, así que se dice dónde
+                // va en vez de dejarlo en una fila sin destino.
+                <p className="text-micro text-content-3 leading-relaxed pt-1">
+                    El IVA retenido no es una columna del libro: va en la declaración como
+                    anticipo ya pagado, respaldado con el comprobante de retención.
+                </p>
+            )}
+        </div>
+    );
+};
+
 // ── Por qué difiere ─────────────────────────────────────────────────────────
 //
 // «Difiere $9.00» no sirve de nada si no dice de dónde sale.
@@ -331,6 +397,11 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 <SeccionTicket titulo="Con factura"        datos={sec.factura} />
                 <SeccionTicket titulo="Con crédito fiscal" datos={sec.ccf} />
             </div>
+
+            {/* Va ANTES del cotejo a propósito: esto es lo que alguien viene a
+                buscar para llenar la declaración; el cotejo de abajo es la
+                verificación de que se puede confiar en estos números. */}
+            <ParaDeclarar declaracion={fila.declaracion} />
 
             <div>
                 {/* La misma grilla que `LineaCotejo`: los tres rótulos de

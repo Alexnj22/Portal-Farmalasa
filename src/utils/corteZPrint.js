@@ -66,6 +66,11 @@ export const direccionDe = (fila) =>
 
 function bloqueSucursal(fila, { conSalto }) {
     const sec = fila.detalle?.secciones || {};
+    // Las cifras con las que se declara. El ticket no las trae —su línea
+    // GRAVADAS es lo cobrado CON IVA y de débito fiscal no dice nada— así que
+    // sin esto el PDF obligaba a abrir además el libro de IVA para llenar la
+    // declaración.
+    const decl = fila.declaracion || {};
     const direccion = direccionDe(fila);
     const secciones = [
         ['Ventas con tiquete',        sec.tiquete],
@@ -119,6 +124,31 @@ function bloqueSucursal(fila, { conSalto }) {
             },
             layout: 'noBorders',
             margin: [0, 6, 0, 14],
+        },
+
+        { text: 'Para la declaración', style: 'secTitulo' },
+        {
+            table: {
+                widths: ['*', 90, 90],
+                body: [
+                    [
+                        { text: '', style: 'th' },
+                        { text: 'Consumidor', style: 'th' },
+                        { text: 'Contribuyente', style: 'th' },
+                    ],
+                    ['Ventas exentas',  dinero(decl.factura?.exentas),  dinero(decl.ccf?.exentas)],
+                    ['Ventas gravadas', dinero(decl.factura?.gravadas), dinero(decl.ccf?.gravadas)],
+                    ['Débito fiscal',   dinero(decl.factura?.debito),   dinero(decl.ccf?.debito)],
+                    ['IVA retenido',    dinero(decl.factura?.retenido), dinero(decl.ccf?.retenido)],
+                    [
+                        { text: 'Total', bold: true },
+                        { text: dinero(decl.factura?.total), bold: true },
+                        { text: dinero(decl.ccf?.total), bold: true },
+                    ],
+                ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 12],
         },
 
         { text: 'Cotejo contra el libro de IVA del portal', style: 'secTitulo' },

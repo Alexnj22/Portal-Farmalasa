@@ -881,14 +881,24 @@ const construirLibro = (tab, d, tot) => {
         // no está verificado cuál de las dos consigna el reporte en esa
         // columna. Mientras la duda exista, el archivo lleva las dos —
         // sobra un dato, no falta.
-        // Réplica del archivo real (19 columnas, sin encabezado), verificada
-        // contra junio 2026. Clase 4 = documento tributario electrónico;
-        // tipo 03 = comprobante de crédito fiscal — códigos del catálogo de
-        // Hacienda, no una numeración nuestra.
+        // **20 columnas**, sin encabezado. Eran 19 hasta el 2026-08-11: se
+        // cotejó documento por documento contra `JUNIO 2026 VCT`, el archivo
+        // que el contador presenta. Los 49 CCF de junio son los mismos de los
+        // dos lados —mismo sello, mismo código de generación, mismo NRC, mismas
+        // gravadas al centavo—; lo que no coincidía era la estructura: sobraba
+        // un '0' entre "no sujetas" y "gravadas locales" que corría todo un
+        // lugar, y con $15.53 de gravadas el archivo declaraba cero gravadas,
+        // las gravadas como débito, el débito como venta a cuenta de terceros y
+        // **el total dentro de la casilla del DUI**.
         //
-        // El NRC va en la columna 8 y el NIT en la 18, los dos SIN guión.
-        // Las columnas 11 y 12 quedan en cero: están en cero en toda la
-        // muestra y no se pudo determinar cuál es cuál.
+        // El TOTAL es ahora la BASE (exentas + gravadas), no el cobrado: el
+        // débito ya tiene su columna, y el Art. 85 literal l) pide el «total de
+        // ventas por documento», la suma de las anteriores. Eso además cierra
+        // el hueco de la retención — no forma parte de la base.
+        //
+        // Clase 4 = documento tributario electrónico; tipo 03 = comprobante de
+        // crédito fiscal — códigos del catálogo de Hacienda, no una numeración
+        // nuestra.
         //
         // La RETENCIÓN de IVA no va en este archivo, y quedó zanjado leyendo el
         // reglamento (2026-08-04). El **Art. 85 RCT** enumera las doce columnas
@@ -913,21 +923,30 @@ const construirLibro = (tab, d, tot) => {
         // sello y código de generación coinciden con el documento de la
         // fila—, a diferencia del de consumidor.
         return { base: 'libro-contribuyentes', headers: null, rows:
-            d.contribuyente.map(r => [
-                fmtFecha(r.fecha), '4', '03',
-                ncPelado(r.numero_control),
-                r.sello_recepcion || '',
-                cgPelado(r.codigo_generacion),
-                r.erp_invoice_id || '',
-                docId(r.nrc),
-                r.cliente || '',
-                num(r.ventas_exentas), '0.00', '0',
-                num(r.ventas_gravadas), num(r.debito_fiscal),
-                '0.00', '0.00',
-                num(r.total),
-                docId(r.nit),
-                '1',
-            ]) };
+            d.contribuyente.map(r => {
+                // H es NIT **o** NRC, y es excluyente con Q (el DUI).
+                const h = docId(r.nrc) || docId(r.nit);
+                return [
+                    fmtFecha(r.fecha), '4', '03',
+                    ncPelado(r.numero_control),
+                    r.sello_recepcion || '',
+                    cgPelado(r.codigo_generacion),
+                    r.erp_invoice_id || '',
+                    h,
+                    r.cliente || '',
+                    // J exentas · K no sujetas · L gravadas · M débito
+                    num(r.ventas_exentas), '0.00',
+                    num(r.ventas_gravadas), num(r.debito_fiscal),
+                    // N cuenta de terceros · O su débito
+                    '0.00', '0.00',
+                    // P total de ventas = la BASE, no el cobrado
+                    num(Number(r.ventas_exentas || 0) + Number(r.ventas_gravadas || 0)),
+                    // Q DUI, sólo si H quedó vacía
+                    h ? '' : docId(r.dui),
+                    // R gravada · S comerciales · T número de anexo
+                    '1', '3', '1',
+                ];
+            }) };
     }
     if (tab === 'anulados') {
         // El sello y el ID del ERP se agregaron el 2026-08-01: el anexo del

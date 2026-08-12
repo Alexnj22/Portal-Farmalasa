@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.569.5 — El anexo de contribuyentes sale con sus 20 columnas
+
+**El mismo defecto que el de consumidor, y con un remate peor.** El archivo de
+ventas a contribuyentes salía con 19 columnas donde Hacienda pide 20, y otra vez
+la que sobraba estaba en el medio: un `0` entre «ventas no sujetas» y «ventas
+gravadas locales» corría todo un lugar. Con una fila de $15.53 de gravadas y
+$2.02 de débito, el archivo declaraba **cero ventas gravadas**, las gravadas
+dentro del débito fiscal, el débito como venta a cuenta de terceros, cero de
+total, y **el total metido en la casilla del DUI del cliente**.
+
+Se cotejó contra el archivo que el contador presenta, documento por documento:
+los 49 CCF de junio son **los mismos de los dos lados**, con el mismo sello, el
+mismo código de generación, el mismo NRC y las mismas ventas gravadas al
+centavo. Lo único que no coincidía era la estructura.
+
+**El total de ventas es ahora la base, no el cobrado.** El débito fiscal ya tiene
+su columna, y el Art. 85 literal l) del Reglamento pide el «total de ventas por
+documento», que es la suma de las anteriores. Efecto lateral que cierra un
+pendiente viejo: la retención dejaba el total sin cuadrar contra
+gravadas + débito en 21 documentos, $87.82 desde mayo 2025 — como no forma parte
+de la base, el hueco desaparece.
+
+**La casilla del DUI vuelve a ser el DUI.** Antes llevaba el NIT siempre, y en
+personas naturales resultaba ser un DUI de 9 dígitos disfrazado. Hacienda las
+hace excluyentes: ahora va el NRC —o el NIT si no hay NRC— en su columna, y el
+DUI sólo cuando la otra quedó vacía.
+
+Más las dos columnas de enero 2025: tipo de operación (gravada) y tipo de ingreso
+(actividades comerciales).
+
+**Lo que no se copió: el débito fiscal.** El archivo de referencia lo recalcula
+como 13% de las gravadas y redondea; en 2 de los 49 documentos eso da un centavo
+más. Se consultaron los dos DTE sellados por Hacienda y dicen $2.02 y $5.88 —los
+nuestros—, no $2.03 y $5.89. El libro refleja el documento, no lo recalcula.
+
 ## v2.569.4 — Guion de la prueba real del traslado
 
 El traslado automático quedó completo el 2026-08-11, pero **nunca se escribió de

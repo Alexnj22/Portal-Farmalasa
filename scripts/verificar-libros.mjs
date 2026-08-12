@@ -52,6 +52,29 @@ const SUCURSAL = Number(arg('sucursal', '30'));
 const NOMBRE_SUC = arg('nombre', null);
 const LIBRO    = arg('libro', 'compras');
 const IGNORAR  = new Set((arg('ignorar', '') || '').split(',').filter(Boolean).map(Number));
+
+// ── la forma del anexo, y cómo se alinea con el archivo del origen ──────────
+// Desde el 2026-08-11 las dos formas ya NO coinciden columna a columna: el
+// portal sigue lo que pide Hacienda (23 y 20 columnas en los libros de ventas)
+// y el archivo del origen se quedó en el suyo (22 y 19). Comparar por índice
+// haría que TODO saliera distinto y este verificador quedaría rojo para
+// siempre — o sea, inútil justo cuando más se lo necesita.
+//
+// El mapa y los motivos viven en un solo lugar, compartidos con la edge
+// function: `supabase/functions/_shared/anexo-spec.json`.
+const SPEC = JSON.parse(
+    readFileSync(new URL('../supabase/functions/_shared/anexo-spec.json', import.meta.url), 'utf8'));
+const ESPEC = SPEC.reportes[LIBRO] ?? null;
+
+// Pares (columna nuestra → columna del origen) que sí se comparan: las que
+// existen de los dos lados y no divergen a propósito.
+const PARES = ESPEC
+    ? ESPEC.origen.mapa
+        .map((destino, i) => [i, destino])
+        .filter(([i, destino]) => destino !== null
+            && !ESPEC.origen.valor_diverge.includes(i)
+            && !IGNORAR.has(i))
+    : [];
 const BASE_URL = arg('url', process.env.E2E_BASE_URL || 'http://localhost:4174');
 const NO_SERVER = process.argv.includes('--no-server');
 
@@ -211,32 +234,48 @@ const norm = c => {
 };
 
 function comparar(portal, erp) {
-    const clave = l => l.split(';').filter((_, i) => !IGNORAR.has(i)).map(norm).join(';');
+    // Las dos claves salen del mapa: la nuestra toma nuestras columnas, la del
+    // origen toma las suyas, y las dos quedan en el mismo orden. Sin mapa
+    // (reporte desconocido) se cae al modo viejo, por índice.
+    const clavePortal = PARES.length
+        ? l => { const c = l.split(';'); return PARES.map(([i]) => norm(c[i] ?? '')).join(';'); }
+        : l => l.split(';').filter((_, i) => !IGNORAR.has(i)).map(norm).join(';');
+    const claveErp = PARES.length
+        ? l => { const c = l.split(';'); return PARES.map(([, j]) => norm(c[j] ?? '')).join(';'); }
+        : clavePortal;
+
     const bolsa = new Map();
     for (const l of portal) {
-        const k = clave(l);
+        const k = clavePortal(l);
         (bolsa.get(k) ?? bolsa.set(k, []).get(k)).push(l);
     }
     let iguales = 0;
     const faltan = [];
     for (const l of erp) {
-        const arr = bolsa.get(clave(l));
+        const arr = bolsa.get(claveErp(l));
         if (arr?.length) { arr.pop(); iguales++; } else faltan.push(l);
     }
     const sobran = [...bolsa.values()].flat();
     // Por columna: dónde se concentran las diferencias. Es la lección de
     // `feedback_verificar_todas_las_columnas_no_los_totales` — cuatro columnas
-    // cuadraban y el error vivía en la quinta.
+    // cuadraban y el error vivía en la quinta. El número que se reporta es
+    // **la columna nuestra**, que es la que uno va a ir a mirar.
     const porColumna = new Map();
-    const nCols = Math.max(...[...portal, ...erp].map(l => l.split(';').length), 0);
     for (let i = 0; i < Math.min(portal.length, erp.length); i++) {
         const a = erp[i].split(';'), b = portal[i].split(';');
-        for (let c = 0; c < nCols; c++) {
-            if (IGNORAR.has(c)) continue;
-            if (norm(a[c] ?? '') !== norm(b[c] ?? '')) porColumna.set(c, (porColumna.get(c) ?? 0) + 1);
+        for (const [nuestra, suya] of PARES) {
+            if (norm(a[suya] ?? '') !== norm(b[nuestra] ?? '')) {
+                porColumna.set(nuestra, (porColumna.get(nuestra) ?? 0) + 1);
+            }
         }
     }
-    return { iguales, faltan, sobran, porColumna };
+    // La FORMA, que es lo que fallaba y nadie miraba: cuántas líneas nuestras
+    // no tienen el número de columnas que el anexo pide.
+    const formaMal = ESPEC
+        ? portal.filter(l => l.split(';').length !== ESPEC.columnas_hoy).length
+        : 0;
+    return { iguales, faltan, sobran, porColumna, formaMal,
+             columnasEsperadas: ESPEC?.columnas_hoy ?? null };
 }
 
 // ── el servidor de preview, si hace falta ───────────────────────────────────
@@ -334,16 +373,34 @@ console.log(`    coinciden ....... ${r.iguales}`);
 console.log(`    solo en el ERP .. ${r.faltan.length}`);
 console.log(`    solo en el portal ${r.sobran.length}\n`);
 
+// La FORMA va primero y aparte: es lo que falló dos veces y lo que la
+// comparación contra el origen no puede ver, porque el origen tiene otra.
+if (ESPEC) {
+    const bien = r.formaMal === 0;
+    console.log('  Forma del anexo');
+    console.log(`    columnas que pide Hacienda ... ${ESPEC.columnas}`);
+    console.log(`    columnas que emitimos ........ ${r.columnasEsperadas}`);
+    console.log(`    líneas con la forma mal ...... ${bien ? verde('0') : rojo(String(r.formaMal))}`);
+    if (ESPEC.deuda) console.log(gris(`    deuda escrita: ${ESPEC.deuda.slice(0, 150)}…`));
+    console.log('');
+}
+
 if (r.porColumna.size) {
-    console.log('  Diferencias por columna');
+    console.log('  Diferencias por columna (número de columna NUESTRA)');
     for (const [c, n] of [...r.porColumna].sort((a, b) => b[1] - a[1])) {
-        console.log(`    columna ${String(c).padStart(2)} .... ${n}`);
+        const etq = ESPEC?.etiquetas?.[c] ?? '';
+        console.log(`    columna ${String(c).padStart(2)} .... ${String(n).padStart(4)}  ${gris(etq)}`);
     }
     console.log('');
+}
+if (ESPEC?.origen?.valor_diverge?.length) {
+    console.log(gris(`  No se comparan contra el origen, a propósito: ${
+        ESPEC.origen.valor_diverge.map(i => `${i} (${ESPEC.etiquetas[i]})`).join(', ')}`));
+    console.log(gris(`  Motivo: ${ESPEC.origen.motivo}\n`));
 }
 for (const l of r.faltan.slice(0, 3)) console.log(gris(`    solo ERP:    ${l.slice(0, 110)}`));
 for (const l of r.sobran.slice(0, 3)) console.log(gris(`    solo portal: ${l.slice(0, 110)}`));
 
-const ok = r.faltan.length === 0 && r.sobran.length === 0;
+const ok = r.faltan.length === 0 && r.sobran.length === 0 && r.formaMal === 0;
 console.log(`\n  ${ok ? verde('IDENTICO') : rojo('DIFIERE')}  ${gris(`${((Date.now() - t0) / 1000).toFixed(1)}s`)}\n`);
 process.exit(ok ? 0 : 1);

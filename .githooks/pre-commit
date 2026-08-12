@@ -106,6 +106,22 @@ if git diff --cached --name-only | grep -qE '^src/(views|components)/'; then
   node scripts/mobile-gate.mjs --hook || exit 1
 fi
 
+# La FORMA de los anexos que se presentan a Hacienda: sólo si el commit toca lo
+# que los produce. Corre en ~1s y sin red.
+#
+# Existe porque el 2026-08-11 se descubrió, con un día de diferencia, que DOS de
+# los anexos salían con una columna de menos, y en los dos la que sobraba estaba
+# en el medio: corría toda la fila y los montos caían en casillas equivocadas
+# —las ventas gravadas se declaraban como exportaciones, y el total terminaba
+# dentro de la casilla del DUI del cliente—. Ninguna prueba contaba las
+# columnas, y el verificador contra el archivo del origen no podía verlo porque
+# ese archivo tiene la misma forma vieja.
+ANEXOS=$(git diff --cached --name-only | grep -E \
+  'src/views/contabilidad/LibrosIvaView.jsx|supabase/functions/_shared/anexo-spec.json|tests/unit/anexoColumnas.test.js' || true)
+if [ -n "$ANEXOS" ]; then
+  npx vitest run tests/unit/anexoColumnas.test.js --reporter=dot || exit 1
+fi
+
 # bundle-gate NO va acá a propósito: necesita `npm run build` (~6 s) y un dist/
 # fresco, y un hook que obliga a buildear en cada commit se termina saltando con
 # --no-verify. Va antes de cerrar un trabajo, junto a gate:design.

@@ -5,7 +5,13 @@ import { getCorsHeaders, requireInvokeSecret, getErpBranchMap } from "../_shared
 // tests/unit/compararLibros.test.js arma el caso de 503 líneas contra 389 —el
 // que ya no se puede reproducir en prod, porque el índice único de A1 lo
 // impide— y exige que el veredicto sea DIFIERE.
-import { compararPorConjunto, normalizar, crudo } from "../_shared/compararLibros.ts";
+import { compararPorConjunto, clavesPorMapa, normalizar, crudo } from "../_shared/compararLibros.ts";
+// La forma de cada anexo y su alineación contra el archivo del origen. Desde el
+// 2026-08-11 las dos formas ya NO coinciden columna a columna —el portal sigue
+// lo que pide Hacienda y el origen se quedó en su formato viejo—, así que
+// comparar por índice haría que todo saliera distinto y este verificador
+// quedaría rojo para siempre. Ver el encabezado de `anexo-spec.json`.
+import anexoSpec from "../_shared/anexo-spec.json" with { type: "json" };
 
 // Compara, línea por línea, el CSV que produce el portal contra el archivo real
 // del ERP — por reporte y por sucursal.
@@ -152,16 +158,29 @@ Deno.serve(async (req) => {
             typeof f === 'string' ? f : (f.generar_csv_libro ?? String(f)));
 
           const omitidas = new Set(ignorar[rep] ?? []);
-          // Compara una línea columna a columna, salteando las omitidas.
-          const igualSalvoOmitidas = (a: string, b: string) => {
-            const ca = a.split(';'), cb = b.split(';');
-            const n = Math.max(ca.length, cb.length);
-            for (let c = 0; c < n; c++) {
-              if (omitidas.has(c)) continue;
-              if (normalizar(ca[c] ?? '') !== normalizar(cb[c] ?? '')) return false;
-            }
-            return true;
-          };
+
+          // Alineación contra el archivo del origen. `omitidas` (índices
+          // NUESTROS, los que pide quien llama) se suma a las que divergen a
+          // propósito y están escritas en la spec.
+          const espec = (anexoSpec as any).reportes[rep];
+          const divergentes = new Set<number>([
+            ...(espec?.origen?.valor_diverge ?? []), ...omitidas,
+          ]);
+          const claves = espec
+            ? clavesPorMapa(espec.origen.mapa, divergentes)
+            : undefined;
+
+          // La forma del archivo del portal se verifica acá y no sólo en el
+          // test unitario: si alguien cambia el CSV y no la spec, el
+          // verificador lo dice antes de que el archivo se presente.
+          const formaMal = espec
+            ? lineasPortal.filter(l => l.split(';').length !== espec.columnas_hoy).length
+            : 0;
+
+          // Compara una línea contra la del origen, ya alineada.
+          const igualSalvoOmitidas = (origen: string, portal: string) =>
+            claves ? claves.origen(origen) === claves.portal(portal)
+                   : normalizar(origen) === normalizar(portal);
 
           // Modo CONJUNTO: las líneas tienen que coincidir sin importar en qué
           // posición. Aísla las diferencias de CONTENIDO de las de orden.
@@ -179,7 +198,10 @@ Deno.serve(async (req) => {
           if (body.porConjunto) {
             out.push({
               branchId, reporte: rep, modo: 'conjunto',
-              ...compararPorConjunto(lineasErp, lineasPortal, omitidas, maxDif),
+              columnas_esperadas: espec?.columnas_hoy ?? null,
+              lineas_con_forma_mal: formaMal,
+              columnas_comparadas: claves?.comparadas ?? null,
+              ...compararPorConjunto(lineasErp, lineasPortal, omitidas, maxDif, claves),
             });
             continue;
           }
@@ -193,25 +215,34 @@ Deno.serve(async (req) => {
           // tampoco son "iguales": se cuentan aparte para que se vean.
           let formatoDecimal = 0;
           const difs: any[] = [];
+          // Pares (columna nuestra → columna del origen) que sí se comparan.
+          // Antes esto era un `for` sobre el índice crudo, que sólo es correcto
+          // mientras las dos formas coincidan — y desde el 2026-08-11 no
+          // coinciden.
+          const pares: [number, number][] = espec
+            ? (espec.origen.mapa as (number | null)[])
+                .map((destino, i) => [i, destino] as [number, number | null])
+                .filter(([i, destino]) => destino !== null && !divergentes.has(i)) as [number, number][]
+            : [];
           for (let i = 0; i < n; i++) {
             const a = lineasErp[i] ?? null;
             const b = lineasPortal[i] ?? null;
             if (a !== null && b !== null && igualSalvoOmitidas(a, b)) {
               iguales++;
               const ca = a.split(';'), cb = b.split(';');
-              for (let c = 0; c < Math.max(ca.length, cb.length); c++) {
-                if (omitidas.has(c)) continue;
-                if (crudo(ca[c] ?? '') !== crudo(cb[c] ?? '')) { formatoDecimal++; break; }
+              for (const [nuestra, suya] of pares) {
+                if (crudo(ca[suya] ?? '') !== crudo(cb[nuestra] ?? '')) { formatoDecimal++; break; }
               }
               continue;
             }
             if (difs.length < maxDif) {
               // Qué columnas difieren, para no leer dos líneas enteras a ojo.
+              // El número que se reporta es **la columna nuestra**, que es la
+              // que se va a ir a mirar.
               const ca = (a ?? '').split(';'), cb = (b ?? '').split(';');
               const cols: number[] = [];
-              for (let c = 0; c < Math.max(ca.length, cb.length); c++) {
-                if (omitidas.has(c)) continue;
-                if (normalizar(ca[c] ?? '') !== normalizar(cb[c] ?? '')) cols.push(c);
+              for (const [nuestra, suya] of pares) {
+                if (normalizar(ca[suya] ?? '') !== normalizar(cb[nuestra] ?? '')) cols.push(nuestra);
               }
               difs.push({ linea: i + 1, columnas: cols, erp: a, portal: b });
             }

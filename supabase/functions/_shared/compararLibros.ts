@@ -34,6 +34,46 @@ export function crudo(linea: string): string {
   return linea.split(';').map(c => c.trim()).join(';');
 }
 
+/**
+ * Las dos claves para comparar contra el archivo del origen cuando las formas
+ * ya NO coinciden.
+ *
+ * Desde el 2026-08-11 los anexos de ventas del portal siguen el formato que
+ * pide Hacienda (23 y 20 columnas) y el archivo del origen se quedó en el suyo
+ * (22 y 19). Si se comparan por índice, la columna 13 de uno es "gravadas" y la
+ * del otro es un relleno, así que **todo** sale distinto y el verificador queda
+ * rojo para siempre — o sea, deja de servir justo cuando más se lo necesita.
+ *
+ * `mapa[i]` dice en qué columna del origen vive nuestra columna `i`, o `null`
+ * si allá no existe. `divergentes` son las que existen en los dos lados con un
+ * valor distinto **a propósito**, con su motivo escrito en `anexo-spec.json`.
+ *
+ * Lo que queda comparado es todo lo demás, que es donde vive el error de verdad:
+ * los montos y la identidad del documento. Las columnas del origen que no
+ * aparecen en el mapa no se comparan porque no tienen contraparte — y eso se
+ * dice, no se esconde.
+ */
+export function clavesPorMapa(
+  mapa: (number | null)[],
+  divergentes: Set<number>,
+): { portal: (l: string) => string; origen: (l: string) => string; comparadas: number } {
+  const nuestras = mapa
+    .map((destino, i) => ({ destino, i }))
+    .filter(({ destino, i }) => destino !== null && !divergentes.has(i));
+
+  return {
+    portal: (l: string) => {
+      const c = l.split(';');
+      return nuestras.map(({ i }) => normalizar(c[i] ?? '')).join(';');
+    },
+    origen: (l: string) => {
+      const c = l.split(';');
+      return nuestras.map(({ destino }) => normalizar(c[destino as number] ?? '')).join(';');
+    },
+    comparadas: nuestras.length,
+  };
+}
+
 export interface ResultadoConjunto {
   lineas_erp: number;
   lineas_portal: number;
@@ -55,20 +95,27 @@ export interface ResultadoConjunto {
  *                 escrito por quien llama. No es para tapar diferencias: es para
  *                 poder responder "¿y el resto coincide?" sin que el ruido
  *                 conocido lo oculte.
+ * @param claves   Cuando las dos formas ya no coinciden columna a columna, las
+ *                 dos funciones que devuelve `clavesPorMapa`. Sin esto se
+ *                 compara por índice, que es lo correcto sólo mientras las
+ *                 formas sean iguales.
  */
 export function compararPorConjunto(
   lineasErp: string[],
   lineasPortal: string[],
   omitidas: Set<number>,
   maxDif = 3,
+  claves?: { portal: (l: string) => string; origen: (l: string) => string },
 ): ResultadoConjunto {
-  const clave = (l: string) => l.split(';')
+  const porIndice = (l: string) => l.split(';')
     .filter((_, i) => !omitidas.has(i))
     .map(c => normalizar(c)).join(';');
+  const clavePortal = claves?.portal ?? porIndice;
+  const claveOrigen = claves?.origen ?? porIndice;
 
   const bolsa = new Map<string, string[]>();
   for (const l of lineasPortal) {
-    const k = clave(l);
+    const k = clavePortal(l);
     const arr = bolsa.get(k);
     if (arr) arr.push(l); else bolsa.set(k, [l]);
   }
@@ -76,7 +123,7 @@ export function compararPorConjunto(
   let iguales = 0;
   const faltantes: string[] = [];
   for (const l of lineasErp) {
-    const arr = bolsa.get(clave(l));
+    const arr = bolsa.get(claveOrigen(l));
     if (arr && arr.length > 0) { arr.pop(); iguales++; }
     else if (faltantes.length < maxDif) faltantes.push(l);
   }

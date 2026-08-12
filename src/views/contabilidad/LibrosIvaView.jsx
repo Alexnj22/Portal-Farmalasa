@@ -814,7 +814,11 @@ const calcularTotales = (d) => {
     };
 };
 
-const construirLibro = (tab, d, tot) => {
+// Exportada para `tests/unit/anexoColumnas.test.js`: es el único camino que
+// produce el archivo que se presenta, así que el candado tiene que apretarse
+// sobre ella y no sobre una copia. Dos veces seguidas —el 2026-08-11— salió un
+// anexo con una columna de menos y nadie las contaba.
+export const construirLibro = (tab, d, tot) => {
     if (tab === 'consumidor') {
         // Art. 83: fecha · del→al · máquina/establecimiento · exentas ·
         // gravadas locales · exportaciones · total diario · cuenta de terceros.

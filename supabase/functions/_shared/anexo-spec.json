@@ -1,0 +1,128 @@
+{
+  "_lee_esto": [
+    "La forma de cada anexo del F-07, en un solo lugar. Transcrita del Manual de",
+    "usuario para carga de archivo de los anexos F-07 v14 (Ministerio de Hacienda,",
+    "enero 2025) y cotejada contra el archivo real que presenta el contador.",
+    "",
+    "POR QUE EXISTE. Dos veces seguidas -el 2026-08-11- se descubrio que un archivo",
+    "salia con una columna de menos, y en las dos la columna que sobraba estaba EN",
+    "EL MEDIO, asi que corria toda la fila y los montos caian en casillas",
+    "equivocadas: las ventas gravadas se declaraban como exportaciones, y el total",
+    "terminaba dentro de la casilla del DUI del cliente. Nadie contaba las columnas.",
+    "Ahora las cuenta `tests/unit/anexoColumnas.test.js` y falla el commit.",
+    "",
+    "`columnas` es lo que pide Hacienda. `columnas_hoy` es lo que emitimos. Cuando",
+    "no coinciden hay una `deuda` escrita: es deuda conocida, no un descuido, y el",
+    "test la sostiene para que no crezca en silencio.",
+    "",
+    "`origen.mapa` alinea NUESTRA columna con la del archivo del sistema de origen,",
+    "que sigue en el formato viejo. Sin esto los dos verificadores comparan",
+    "columnas que ya no se corresponden y dicen DIFIERE para siempre.",
+    "`null` = esa columna nuestra no existe alla. `origen.valor_diverge` son las",
+    "que existen en los dos pero llevan un valor distinto a proposito."
+  ],
+  "reportes": {
+    "consumidor": {
+      "anexo": 2,
+      "columnas": 23,
+      "columnas_hoy": 23,
+      "etiquetas": [
+        "FECHA DE EMISION", "CLASE DE DOCUMENTO", "TIPO DE DOCUMENTO",
+        "NUMERO DE RESOLUCION", "SERIE DE DOCUMENTO",
+        "NUMERO DE CONTROL INTERNO (DEL)", "NUMERO DE CONTROL INTERNO (AL)",
+        "NUMERO DE DOCUMENTO (DEL)", "NUMERO DE DOCUMENTO (AL)",
+        "N DE MAQUINA REGISTRADORA",
+        "VENTAS EXENTAS", "VENTAS INTERNAS EXENTAS NO SUJETAS A PROPORCIONALIDAD",
+        "VENTAS NO SUJETAS", "VENTAS GRAVADAS LOCALES",
+        "EXPORTACIONES DENTRO DEL AREA CENTROAMERICANA",
+        "EXPORTACIONES FUERA DEL AREA CENTROAMERICANA", "EXPORTACIONES DE SERVICIOS",
+        "VENTAS A ZONAS FRANCAS Y DPA", "VENTAS A CUENTA DE TERCEROS NO DOMICILIADOS",
+        "TOTAL VENTAS", "TIPO DE OPERACION (RENTA)", "TIPO DE INGRESO (RENTA)",
+        "NUMERO DE ANEXO"
+      ],
+      "origen": {
+        "columnas": 22,
+        "mapa": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, null, null, 21],
+        "valor_diverge": [],
+        "motivo": "El origen trae un '0.0000' de mas en su columna 13, que el anexo no tiene, y no trae las dos de Renta de enero 2025. Todo lo demas se compara alineado."
+      }
+    },
+    "contribuyente": {
+      "anexo": 1,
+      "columnas": 20,
+      "columnas_hoy": 20,
+      "etiquetas": [
+        "FECHA DE EMISION", "CLASE DE DOCUMENTO", "TIPO DE DOCUMENTO",
+        "NUMERO DE RESOLUCION", "NUMERO DE SERIE DE DOCUMENTO", "NUMERO DE DOCUMENTO",
+        "NUMERO DE CONTROL INTERNO", "NIT O NRC DEL CLIENTE",
+        "NOMBRE RAZON SOCIAL O DENOMINACION",
+        "VENTAS EXENTAS", "VENTAS NO SUJETAS", "VENTAS GRAVADAS LOCALES",
+        "DEBITO FISCAL", "VENTAS A CUENTA DE TERCEROS NO DOMICILIADOS",
+        "DEBITO FISCAL POR VENTA A CUENTA DE TERCEROS", "TOTAL VENTAS",
+        "DUI DEL CLIENTE", "TIPO DE OPERACION (RENTA)", "TIPO DE INGRESO (RENTA)",
+        "NUMERO DE ANEXO"
+      ],
+      "origen": {
+        "columnas": 19,
+        "mapa": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, null, null, 18],
+        "valor_diverge": [15, 16],
+        "motivo": "El origen trae un '0' de mas en su columna 11 y no trae las dos de Renta. Ademas dos columnas existen en los dos lados con valor distinto A PROPOSITO: el TOTAL (15) es la base y alla es el cobrado -Art. 85 literal l-, y el DUI (16) va vacio cuando hay NRC, mientras alla esa posicion lleva el NIT. Comparar esas dos daria una diferencia que no es un error."
+      }
+    },
+    "anulados": {
+      "anexo": null,
+      "columnas": 10,
+      "columnas_hoy": 10,
+      "etiquetas": [
+        "NUMERO DE RESOLUCION", "CLASE DE DOCUMENTO", "DESDE (PREIMPRESO)",
+        "HASTA (PREIMPRESO)", "TIPO DE DOCUMENTO", "TIPO DE DETALLE", "SERIE",
+        "DESDE", "HASTA", "CODIGO DE GENERACION"
+      ],
+      "origen": {
+        "columnas": 10,
+        "mapa": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        "valor_diverge": [],
+        "motivo": "Coincide columna por columna con el origen."
+      }
+    },
+    "compras": {
+      "anexo": 3,
+      "columnas": 21,
+      "columnas_hoy": 23,
+      "deuda": "Sobran las dos ultimas -percepcion con 4 decimales y sello-, que son del libro y no del anexo. Ademas la columna 3 (TIPO DE DOCUMENTO) sale vacia siendo obligatoria, y la 4 trae el codigo de generacion cortado a 20 caracteres porque asi lo manda el origen. Ver docs/ANEXOS-HACIENDA-2026-08-11.md seccion 6, grupo B.",
+      "etiquetas": [
+        "FECHA DE EMISION", "CLASE DE DOCUMENTO", "TIPO DE DOCUMENTO",
+        "NUMERO DE DOCUMENTO", "NIT O NRC DEL PROVEEDOR", "NOMBRE DEL PROVEEDOR",
+        "COMPRAS INTERNAS EXENTAS Y/O NO SUJETAS", "INTERNACIONES EXENTAS Y/O NO SUJETAS",
+        "IMPORTACIONES EXENTAS Y/O NO SUJETAS", "COMPRAS INTERNAS GRAVADAS",
+        "INTERNACIONES GRAVADAS DE BIENES", "IMPORTACIONES GRAVADAS DE BIENES",
+        "IMPORTACIONES GRAVADAS DE SERVICIOS", "CREDITO FISCAL", "TOTAL DE COMPRAS",
+        "DUI DEL PROVEEDOR", "TIPO DE OPERACION", "CLASIFICACION", "SECTOR",
+        "TIPO DE COSTO / GASTO", "NUMERO DE ANEXO"
+      ],
+      "origen": {
+        "columnas": 23,
+        "mapa": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+        "valor_diverge": [],
+        "motivo": "Todavia replica el archivo del origen columna por columna, incluidas las dos que sobran para el anexo."
+      }
+    },
+    "percepcion": {
+      "anexo": 8,
+      "columnas": 9,
+      "columnas_hoy": 9,
+      "deuda": "Son 9 de los dos lados pero NO son las mismas: hoy replica el libro del origen -correlativo y nombre del proveedor, que el anexo no pide- y le faltan el DUI del agente y el numero de anexo. Ademas el sello sale vacio y los montos van con 4 decimales donde Hacienda toma 2. Hay que rehacerlo entero contra el anexo 8.",
+      "etiquetas": [
+        "NIT AGENTE", "FECHA DE EMISION", "TIPO DE DOCUMENTO", "SERIE DE DOCUMENTO",
+        "NUMERO DE DOCUMENTO", "MONTO SUJETO", "MONTO DE LA PERCEPCION",
+        "DUI AGENTE", "NUMERO DE ANEXO"
+      ],
+      "origen": {
+        "columnas": 9,
+        "mapa": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        "valor_diverge": [6],
+        "motivo": "Replica el libro del origen. La columna 6 (monto sujeto) difiere en la tercera y cuarta decimal porque el sync redondea a 2 al guardar: el origen dice 571.9915 y aca sale 571.9900."
+      }
+    }
+  }
+}

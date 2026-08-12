@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.569.7 — Las verificaciones vuelven a servir: la forma de los anexos tiene candado
+
+**El problema.** Al corregir los dos anexos de ventas para que tuvieran las
+columnas que pide Hacienda, los dos verificadores del portal quedaron rotos: los
+dos comparan contra el archivo del sistema de origen, que se quedó en el formato
+viejo de 22 y 19 columnas. Comparados por índice, la columna 13 de uno es
+«ventas gravadas» y la del otro es un relleno, así que **todo** salía distinto y
+el veredicto era «difiere» para siempre. Una red que siempre está roja es una
+red que se deja de mirar.
+
+**La forma de cada anexo ahora vive en un solo lugar**
+(`supabase/functions/_shared/anexo-spec.json`): cuántas columnas pide Hacienda,
+cuántas emitimos, cómo se llama cada una, y **cómo se alinea la nuestra con la
+del origen**. Las columnas que existen de los dos lados con valor distinto a
+propósito —el total de contribuyentes, que acá es la base y allá el cobrado— se
+marcan con su motivo escrito y se excluyen de la comparación. El resto, que es
+donde vive el error de verdad, se sigue comparando.
+
+**Y ahora alguien cuenta las columnas.** Es lo que faltaba: dos anexos salieron
+mal el mismo día y ninguna prueba miraba el número de columnas —el verificador
+contra el origen no podía verlo, porque ese archivo tiene la misma forma vieja—.
+`tests/unit/anexoColumnas.test.js` arma una fila de cada anexo con la función
+real que produce el archivo y exige la forma, incluidas las dos cosas concretas
+que fallaron: que las ventas gravadas del día caigan en su casilla y no en
+«exportaciones dentro del área centroamericana», y que la casilla del DUI no
+lleve un monto. Corre en el pre-commit cuando el commit toca los anexos.
+
+Cuando un anexo todavía no cumple —compras y percepción—, la diferencia va con
+su **deuda escrita** y el test la sostiene para que no crezca en silencio. La
+primera versión de esa regla estaba al revés, y la falla del propio test lo
+destapó: percepción tiene 9 columnas de los dos lados y **no son las mismas
+nueve**, así que la cantidad igual no prueba nada.
+
+De paso, los tests podían importar una vista: Node 25 trae su propio
+`localStorage` global que tapa al de jsdom y revienta al cargar el store.
+Queda resuelto en `tests/setup.js`.
+
 ## v2.569.6 — La prueba real del traslado
 
 **Se movió inventario de verdad por primera vez, y volvió exacto.** Pedido #102

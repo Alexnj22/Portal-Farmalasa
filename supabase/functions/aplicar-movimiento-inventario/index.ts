@@ -194,6 +194,10 @@ Deno.serve(async (req) => {
 
   const arranque = Date.now();
 
+  // El arriendo tomado, para poder soltarlo pase lo que pase. Vive afuera del
+  // `try` porque el `finally` tiene que verlo.
+  let reclamadaId: string | null = null;
+
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
     // aprueba sale del JWT y no se recibe nunca por parámetro.
@@ -232,6 +236,22 @@ Deno.serve(async (req) => {
       }, 422);
     if (sol.status !== "PENDING")
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);
+
+    // ── El arriendo: de acá hasta el final, esta solicitud es de esta corrida ─
+    // La comprobación de arriba mira el estado en un instante, y entre ese
+    // instante y el movimiento de existencias pasan SEGUNDOS. Dos clics a la vez
+    // —dos pestañas, o dos personas— pasaban los dos por ahí y las existencias
+    // se movían dos veces; el `.eq(status,'PENDING')` del final frena la segunda
+    // escritura del estado, no el segundo movimiento.
+    const { data: tomada, error: reclamoErr } = await admin
+      .rpc("reclamar_solicitud", { p_request_id: sol.id });
+    if (reclamoErr) throw reclamoErr;
+    if (!tomada)
+      return json({
+        ok: false,
+        error: "Esta solicitud se está aplicando en este momento. Esperá a que termine.",
+      }, 409);
+    reclamadaId = String(sol.id);
 
     const meta = (typeof sol.metadata === "string" ? JSON.parse(sol.metadata) : sol.metadata) ?? {};
     const todas: Linea[] = Array.isArray(meta.items) ? meta.items : [];
@@ -616,5 +636,16 @@ Deno.serve(async (req) => {
 
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+  } finally {
+    /* Soltar el arriendo salga como salga.
+     *
+     * No hace falta preguntar si el movimiento entró: `liberar_solicitud` sólo
+     * toca lo que sigue en PENDING, así que sobre una solicitud ya aprobada es
+     * un no-op. Y si esta corrida muere sin llegar hasta acá, el arriendo vence
+     * solo a los 3 minutos. */
+    if (reclamadaId) {
+      await admin.rpc("liberar_solicitud", { p_request_id: reclamadaId })
+        .then(({ error }) => { if (error) console.error("liberar_solicitud:", error.message); });
+    }
   }
 });

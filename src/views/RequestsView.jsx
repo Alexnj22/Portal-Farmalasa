@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
 import { useNowTick } from '../hooks/useNowTick';
+import { useRecargarAlVolver } from '../hooks/useRecargarAlVolver';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, esOperativa, adaptarMinMax, YA_AVISADO } from '../store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests, decidirMinMax } from '../data/minmaxRequests';
@@ -284,6 +285,14 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         window.addEventListener('requests-updated', handler);
         return () => window.removeEventListener('requests-updated', handler);
     }, [criterios, fetchRequests]);
+
+    /* `requests-updated` es un evento de ESTA pestaña: la lista no se entera de
+     * lo que se decidió en otra —`approval_requests` no viaja por realtime— y se
+     * queda ofreciendo «Aprobar» sobre algo ya resuelto. Que el servidor lo
+     * frene (el UPDATE va condicionado a PENDING) evita el daño, pero no evita
+     * el viaje en falso; releer al volver a la pestaña sí. */
+    const recargarSolicitudes = useCallback(() => fetchRequests(criterios), [criterios, fetchRequests]);
+    useRecargarAlVolver(recargarSolicitudes);
 
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape

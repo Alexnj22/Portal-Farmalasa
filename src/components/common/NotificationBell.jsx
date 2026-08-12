@@ -370,7 +370,15 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         PERMISO_POR_TIPO[n.type] === true
         && !!n.metadata?.request_id && !n.metadata?.resuelta;
 
-    const RESUELTA_LABEL = { APPROVED: 'Aprobada', REJECTED: 'Rechazada', CANCELLED: 'Cancelada' };
+    /* `ADVANCED` es la solicitud que uno aprobó y pasó al siguiente nivel: sigue
+     * pendiente para otra persona, pero para quien mira este aviso ya está
+     * hecha. Dice «Aprobada» porque describe SU decisión, y es transitorio — al
+     * cerrarse la solicitud el trigger lo pisa con el estado final, así que este
+     * mismo aviso termina diciendo en qué terminó todo. */
+    const RESUELTA_LABEL = {
+        APPROVED: 'Aprobada', REJECTED: 'Rechazada', CANCELLED: 'Cancelada',
+        ADVANCED: 'Aprobada',
+    };
 
     const irADecidir = (n, accion) => {
         if (!n.read_at) markNotificationRead(n.id);

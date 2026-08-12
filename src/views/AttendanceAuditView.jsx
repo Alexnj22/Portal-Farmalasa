@@ -29,7 +29,7 @@ import {
     closeQuincenaTimesheets, fetchEmployeeExceptions,
 } from '../data/attendanceAudit';
 import { updateAttendancePunch, updateEmployee } from '../data/employees';
-import { updateApprovalRequest } from '../data/requests';
+import { resolverApprovalRequest } from '../data/requests';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { mensajeAmigable } from '../utils/errorMessages';
@@ -1142,6 +1142,26 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       const meta = req.metadata || {};
       const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
 
+      /* Se decide PRIMERO, y sólo si la decisión entra se toca al empleado.
+       *
+       * Con dos pestañas abiertas esta lista sigue mostrando el turno extra por
+       * confirmar aunque ya se haya resuelto en la otra, y el orden viejo
+       * —escribir la excepción y después marcar la solicitud— dejaba pasar la
+       * segunda confirmación entera: horario reescrito, bitácora duplicada y un
+       * «Confirmado» que no era cierto. El UPDATE condicionado a PENDING es el
+       * candado de todo lo que sigue. */
+      const { error: reqErr, count } = await resolverApprovalRequest(req.id, {
+        status: newStatus, approver_id: user?.id, updated_at: new Date().toISOString(),
+      });
+      if (reqErr) throw reqErr;
+      if (count === 0) {
+        showToast('Ya estaba resuelta',
+          'Alguien la decidió antes, así que no se volvió a aplicar.', 'error');
+        setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
+        setEditingExId(null);
+        return;
+      }
+
       if (action === 'APPROVE' && confirmedStart && confirmedEnd) {
         // Write exception to employee record so consolidate-timesheets uses declared hours
         const { data: empRow } = await fetchEmployeeExceptions(req.employee_id);
@@ -1159,8 +1179,6 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
           await updateEmployee(req.employee_id, { exceptions: [...filtered, newEx], updated_at: new Date().toISOString() });
         }
       }
-
-      await updateApprovalRequest(req.id, { status: newStatus, approver_id: user?.id, updated_at: new Date().toISOString() });
 
       setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
       setEditingExId(null);

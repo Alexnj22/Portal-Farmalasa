@@ -6,7 +6,7 @@ import {
     updateVacationPlan, fetchVacationPlans as fetchVacationPlansData, fetchOverlappingVacationPlans,
     insertVacationPlan,
 } from '../../data/vacationPlans';
-import { updateApprovalRequest } from '../../data/requests';
+import { resolverApprovalRequest, updateApprovalRequest } from '../../data/requests';
 
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
@@ -97,6 +97,22 @@ export const createVacationPlanSlice = (set, get) => ({
 
     processChangeRequest: async (requestId, action, vacationPlanId, newStart, newEnd) => {
         // action: 'APPROVED' | 'REJECTED'
+
+        /* La solicitud se decide ANTES de tocar el plan, y no al revés.
+         *
+         * Con el orden viejo, una pantalla vieja —otra pestaña, otra persona—
+         * podía rechazar un cambio que ya se había aprobado: el plan volvía a
+         * PRE_APPROVED y perdía las fechas nuevas, y recién entonces el UPDATE
+         * de la solicitud no hacía nada. Decidir primero convierte esto en el
+         * candado de todo lo que sigue.
+         */
+        const { error: reqErr, count } = await resolverApprovalRequest(requestId, {
+            status: action,
+            updated_at: new Date().toISOString(),
+        });
+        if (reqErr) { console.error('processChangeRequest request:', reqErr); return false; }
+        if (count === 0) return false;   // ya la decidieron; el plan no se toca
+
         if (action === 'APPROVED' && vacationPlanId && newStart && newEnd) {
             const days = Math.round((new Date(newEnd + 'T12:00:00') - new Date(newStart + 'T12:00:00')) / 86400000) + 1;
             const { error: planErr } = await updateVacationPlan(vacationPlanId, {
@@ -108,7 +124,14 @@ export const createVacationPlanSlice = (set, get) => ({
                 change_requested_end: null,
                 updated_at: new Date().toISOString(),
             });
-            if (planErr) { console.error('processChangeRequest plan:', planErr); return false; }
+            if (planErr) {
+                console.error('processChangeRequest plan:', planErr);
+                /* La solicitud ya quedó decidida y el plan no se movió: hay que
+                 * devolverla a pendiente o queda cerrada sin haber hecho nada, y
+                 * nadie vuelve a mirarla. */
+                await updateApprovalRequest(requestId, { status: 'PENDING', updated_at: new Date().toISOString() });
+                return false;
+            }
             set(state => ({
                 vacationPlans: state.vacationPlans.map(vp =>
                     vp.id === vacationPlanId
@@ -127,9 +150,6 @@ export const createVacationPlanSlice = (set, get) => ({
                 ),
             }));
         }
-        // Update approval_request status
-        const { error } = await updateApprovalRequest(requestId, { status: action, updated_at: new Date().toISOString() });
-        if (error) { console.error('processChangeRequest request:', error); return false; }
         set(state => ({
             vacationChangeRequests: state.vacationChangeRequests.filter(r => r.id !== requestId),
         }));

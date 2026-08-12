@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.573.3 — Una solicitud se decide una sola vez, aunque haya dos pestañas
+
+Con el portal abierto en varias pestañas, la campana sí se ponía al día sola
+—los avisos viajan por realtime— pero la pantalla de Solicitudes no: seguía
+mostrando PENDIENTE con el botón vivo aunque ya se hubiera decidido en otra.
+Apretarlo otra vez volvía a hacer **todo** lo que cuelga de aprobar: segundo
+evento en el legajo, segundo aviso al empleado, segundo aviso al siguiente
+nivel. El UPDATE iba por id a secas, sin mirar el estado.
+
+**Ahora la decisión va condicionada a que la solicitud siga donde el aprobador
+la vio** — mismo estado y mismo nivel. Si llega tarde no se aplica nada y la
+pantalla lo dice, en vez de fingir que funcionó. Vale para aprobar, rechazar,
+cancelar, el turno extra de Auditoría de asistencia y el cambio de fecha de
+vacaciones — este último, además, decide **antes** de tocar el plan: con el
+orden viejo, un rechazo tardío revertía un cambio ya aprobado y le borraba las
+fechas nuevas.
+
+**Lo que se aplica afuera lleva además un arriendo.** Anular una factura o mover
+existencias tarda segundos, y en esa ventana dos clics simultáneos pasaban los
+dos la verificación y escribían los dos. Ahora la primera corrida toma la
+solicitud y la segunda encuentra la puerta cerrada; el arriendo vence solo a los
+3 minutos, así que una corrida que se muera no deja nada trabado.
+
+**El aviso de quien aprueba un nivel intermedio ya se apaga.** Una solicitud que
+pasa al siguiente nivel sigue pendiente, así que el trigger —que sólo miraba el
+estado— nunca la marcaba: la campana seguía ofreciendo Aprobar sobre algo ya
+hecho, y volver a apretarlo la empujaba un nivel más.
+
+**Y las pantallas vuelven a leer al recuperar el foco.** Lo que pasa mientras el
+socket está caído —una pestaña dormida, un corte de red— no lo recupera nadie:
+se volvía mostrando la foto vieja, sin nada que lo delatara. La campana y la
+lista de Solicitudes ahora releen al volver, y la campana también al reconectar.
+
 ## v2.573.2 — El PDF del Corte Z vuelve a una hoja por sucursal
 
 La nota de la retención (v2.571.7) y las comprobaciones (v2.572.0) empujaban una

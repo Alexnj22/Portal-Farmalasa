@@ -6,7 +6,7 @@ import {
     fetchApprovalRolePermissions, fetchActiveEmployeesInRoles, fetchActiveEmployeesBySystemRoleConditional,
     fetchActiveEmployeesByRoleIdConditional, fetchActiveBranchEmployeesExcluding, fetchRostersForWeekByEmployees,
     fetchBranchActiveEmployeeIds, fetchApprovalRequestsList, fetchEmployeesByIds, fetchEmployeeApprovalInfo,
-    fetchEmployeeName, insertApprovalRequest, updateApprovalRequest, fetchApprovalRequestById,
+    fetchEmployeeName, insertApprovalRequest, resolverApprovalRequest, fetchApprovalRequestById,
     fetchEmployeeSystemRole, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
     aplicarSolicitudEnErp,
     aplicarMovimientoInventarioEnErp,
@@ -277,6 +277,29 @@ const selloDeQuienDecidio = (get, approverId) => ({
  */
 const apagarAviso = (get, requestId, estado) =>
     get().marcarAvisoDeSolicitudResuelto?.(requestId, estado);
+
+/**
+ * El candado no dejó pasar la decisión: la solicitud ya no está donde esta
+ * pestaña la vio.
+ *
+ * Pasa con dos pestañas abiertas —la lista de Solicitudes no viaja por realtime,
+ * así que la segunda sigue mostrándola pendiente— y también con dos personas
+ * mirando la misma bandeja. Además de avisar hay que RESINCRONIZAR: dejar la
+ * pantalla mostrando un estado que ya no existe invita a volver a apretar, que
+ * es exactamente lo que se acaba de frenar.
+ *
+ * Devuelve `YA_AVISADO` porque el motivo ya se explicó acá y el aviso genérico
+ * de `RequestsView` lo borraría — el store de toasts tiene una sola ranura.
+ */
+const avisarYaDecidida = (get) => {
+    useToastStore.getState().showToast(
+        'Ya estaba resuelta',
+        'Alguien la decidió antes —desde otra pestaña o desde otra cuenta—, así que no se volvió a aplicar. Se actualizó la pantalla.',
+        'error');
+    get().fetchNotifications?.();
+    window.dispatchEvent(new CustomEvent('requests-updated'));
+    return YA_AVISADO;
+};
 
 /**
  * Verifica si un empleado está actualmente en vacaciones o incapacidad.
@@ -944,8 +967,17 @@ export const createRequestsSlice = (set, get) => ({
     },
 
     _runFinalApproval: async (requestId, req, approverId, approverNote, newApprovals, toastMsg) => {
-        const { error } = await updateApprovalRequest(requestId, { status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() });
+        /* El candado. Todo lo que sigue —el evento en el legajo, el aviso al
+         * empleado, el parche de los rosters— se dispara UNA vez porque este
+         * UPDATE entra una sola vez. Sin él, la segunda aprobación desde una
+         * pestaña vieja lo repetía entero. `count === 0` estricto: si el
+         * servidor no devolviera el conteo, esto se comporta como antes en vez
+         * de negarse a aprobar nada. */
+        const { error, count } = await resolverApprovalRequest(requestId,
+            { status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() },
+            req.current_level ?? null);
         if (error) throw error;
+        if (count === 0) return avisarYaDecidida(get);
 
         set(state => ({
             requests: state.requests.map(r =>
@@ -1092,6 +1124,14 @@ export const createRequestsSlice = (set, get) => ({
             const req = _reqOverride || get().requests.find(r => r.id === requestId);
             if (!req) return false;
 
+            /* Si esta pestaña YA sabe que se resolvió, se corta antes de tocar
+             * nada de afuera. Con `_reqOverride` la fila viene recién leída de
+             * la base, así que acá el corte es exacto; sin él es una copia que
+             * puede estar vieja y el candado de verdad está más abajo, en el
+             * UPDATE condicionado. Las dos capas hacen falta: esta ahorra el
+             * viaje al sistema de origen, la otra es la que garantiza. */
+            if (req.status && req.status !== 'PENDING') return avisarYaDecidida(get);
+
             // Un traslado NO se aprueba desde acá. Su confirmación relee la
             // existencia de la sala de origen y despacha; el camino genérico lo
             // marcaba APPROVED **sin mover nada**, y con eso desaparecía de las
@@ -1139,8 +1179,14 @@ export const createRequestsSlice = (set, get) => ({
                 }
 
                 // Avanzar a nivel 2 → jefe de sucursal
-                const { error: adv } = await updateApprovalRequest(requestId, { current_level: 2, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() });
+                // El nivel va en el candado además del estado: una solicitud que
+                // ya avanzó sigue PENDING, así que sin comparar el nivel la
+                // pestaña vieja la empujaba otra vez y el jefe recibía dos avisos.
+                const { error: adv, count: filasAdv } = await resolverApprovalRequest(requestId,
+                    { current_level: 2, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() },
+                    currentLevel);
                 if (adv) throw adv;
+                if (filasAdv === 0) return avisarYaDecidida(get);
 
                 set(state => ({
                     requests: state.requests.map(r =>
@@ -1173,8 +1219,11 @@ export const createRequestsSlice = (set, get) => ({
                         'Solicitud aprobada (sin aprobador disponible en nivel siguiente).');
                 }
 
-                const { error } = await updateApprovalRequest(requestId, { current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() });
+                const { error, count } = await resolverApprovalRequest(requestId,
+                    { current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() },
+                    currentLevel);
                 if (error) throw error;
+                if (count === 0) return avisarYaDecidida(get);
 
                 set(state => ({
                     requests: state.requests.map(r =>
@@ -1211,14 +1260,19 @@ export const createRequestsSlice = (set, get) => ({
         try {
             const req = get().requests.find(r => r.id === requestId);
 
-            const { error } = await updateApprovalRequest(requestId, {
+            /* Mismo candado que al aprobar, y por el mismo motivo: rechazar dos
+             * veces manda dos avisos al empleado. El nivel también entra —si la
+             * solicitud ya avanzó, quien la tenía antes ya dijo lo suyo y no le
+             * toca rechazarla desde una pantalla vieja. */
+            const { error, count } = await resolverApprovalRequest(requestId, {
                 status: 'REJECTED',
                 approver_id: approverId,
                 approver_note: approverNote,
                 updated_at: new Date().toISOString(),
-            });
+            }, req?.current_level ?? null);
 
             if (error) throw error;
+            if (count === 0) return avisarYaDecidida(get);
 
             set((state) => ({
                 requests: state.requests.map(r =>
@@ -1284,12 +1338,18 @@ export const createRequestsSlice = (set, get) => ({
     // ── Cancel (by employee) ───────────────────────────────────────────────
     cancelRequest: async (requestId) => {
         try {
-            const { error } = await updateApprovalRequest(requestId, {
+            /* Cancelar una ya decidida no tiene sentido, y la RLS ya lo impedía
+             * —su policy exige `status = 'PENDING'`—, pero lo hacía en silencio:
+             * el UPDATE devolvía cero filas, nadie las contaba y la pantalla
+             * decía que se canceló. El candado explícito es el que permite
+             * avisarlo. */
+            const { error, count } = await resolverApprovalRequest(requestId, {
                 status: 'CANCELLED',
                 updated_at: new Date().toISOString(),
             });
 
             if (error) throw error;
+            if (count === 0) return avisarYaDecidida(get);
 
             set((state) => ({
                 requests: state.requests.map(r =>

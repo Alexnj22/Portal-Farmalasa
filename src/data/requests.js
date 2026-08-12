@@ -259,6 +259,35 @@ export function updateApprovalRequest(requestId, patch) {
     return supabase.from('approval_requests').update(patch).eq('id', requestId);
 }
 
+/**
+ * Decidir o avanzar una solicitud, pero SÓLO si sigue donde el aprobador la vio.
+ *
+ * `updateApprovalRequest` es un UPDATE por id a secas. La campana se sincroniza
+ * sola entre pestañas —`notifications` viaja por realtime—, pero la lista de
+ * Solicitudes no: `approval_requests` no está publicada, así que una pestaña
+ * parada ahí sigue mostrando PENDIENTE con el botón vivo aunque la solicitud ya
+ * se haya decidido en otra. Apretarlo otra vez volvía a disparar todo lo que
+ * cuelga de aprobar: el evento en el legajo, el aviso al empleado, el aviso al
+ * siguiente nivel.
+ *
+ * `desdeNivel` cierra el mismo hueco un escalón más abajo: una solicitud que ya
+ * avanzó SIGUE siendo PENDING, así que el estado solo no alcanza — sin comparar
+ * el nivel, la pestaña vieja la empuja de nuevo.
+ *
+ * Cuenta con `count: 'exact'` y NO con `.select()`: la representación de vuelta
+ * pasa por la policy de LECTURA, y quien puede escribir no siempre puede releer
+ * —el compañero de un cambio de turno es el caso—. Ahí `.select()` devolvería
+ * cero filas y esto leería «ya resuelta» sobre algo que sí acaba de escribir.
+ */
+export function resolverApprovalRequest(requestId, patch, desdeNivel = null) {
+    let q = supabase.from('approval_requests')
+        .update(patch, { count: 'exact' })
+        .eq('id', requestId)
+        .eq('status', 'PENDING');
+    if (desdeNivel != null) q = q.eq('current_level', desdeNivel);
+    return q;
+}
+
 export function fetchApprovalRequestById(requestId) {
     return supabase.from('approval_requests').select(REQUEST_SIMPLE_SELECT).eq('id', requestId).single();
 }

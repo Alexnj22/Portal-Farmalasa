@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.576.0 — Aprobar solicitudes se separa por familia
+
+Hasta ahora **aprobar solicitudes era un solo interruptor**: quien podía anular
+una factura podía también cargar inventario, descartarlo y confirmar traslados.
+No había forma de delegar una parte —el caso concreto: el supervisor se va de
+vacaciones y quiere dejar habilitada sólo una porción.
+
+El permiso se reparte en cuatro, y cada uno tiene su interruptor:
+
+| familia | módulo | tipos |
+|---|---|---|
+| Facturación | `requests_facturacion` *(nuevo)* | anulación, forma de pago, vendedor, cliente |
+| Inventario | `requests_inventario` *(nuevo)* | cargas y descartes |
+| Traslados | `traslados` | confirmación entre salas |
+| Min/Max | `minmax` | ajustes de parámetros |
+
+Los dos últimos **ya existían con su propio «Aprobar»** y por eso no se
+duplican: el mismo permiso escrito en dos módulos se contradice en cuanto
+alguien toca uno solo. La pantalla de Permisos los mostrará juntos; la base los
+guarda una vez.
+
+**Nadie gana ni pierde nada con este cambio.** Los dos cargos que tenían
+`requests.can_approve` reciben los dos módulos nuevos con su mismo alcance, y
+los dos tenían ya `traslados` en alcance ALL, así que sacar los traslados de la
+rama operativa no les quita nada.
+
+Notas de implementación, por si alguien vuelve acá:
+
+- **Ver la bandeja sigue siendo un solo interruptor** (`requests.can_view`). Lo
+  que se reparte es decidir, no mirar.
+- **La rama de traslados de la policy no se tocó.** Tiene condiciones propias
+  —ser destinatario, ser JEFE de la sala de origen, estar en turno en la de
+  destino— que una rama genérica habría dejado de adorno.
+- **El módulo va escrito como literal en cada rama, no resuelto con una
+  función sobre `type`.** Un argumento que depende de la fila no se puede
+  envolver en `(SELECT …)`, y sin ese initplan Postgres evalúa el permiso una
+  vez por fila: es exactamente lo que tumbó el portal el 2026-07-08.
+- Verificado en el entorno de pruebas impersonando a `authenticated`: con el
+  permiso encendido la aprobación entra; apagado, **RLS la rechaza aunque
+  `requests.can_approve` siga en `true`** — o sea que manda el interruptor
+  nuevo, no el viejo.
+
+Migración `20260812222426_aprobar_solicitudes_por_familia`.
+
 ## v2.575.3 — El login ya no muestra el código del carné
 
 Al pasar el carné por el lector, la pantalla de login imprimía **Código: 123**

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Receipt, Download, AlertTriangle, FileText, Percent, Archive } from 'lucide-react';
+import { Receipt, Download, AlertTriangle, FileText, Percent, Archive, CircleCheck } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -198,6 +198,53 @@ const ParaDeclarar = ({ declaracion }) => {
                     anticipo ya pagado, respaldado con el comprobante de retención.
                 </p>
             )}
+        </div>
+    );
+};
+
+// ── Las comprobaciones ───────────────────────────────────────────────────────
+//
+// Seis invariantes que el RPC verifica y nombra. Se muestran SIEMPRE, pasen o
+// no — una comprobación que sólo aparece cuando falla no deja constancia de que
+// se hizo, y era justamente lo que faltaba: el cotejo decía CUADRA sin que
+// nadie pudiera ver qué se había mirado para decirlo.
+//
+// El estado no viaja sólo en el color y el ícono: el detalle de cada línea lo
+// dice con palabras («cuadran al centavo» / «Diferencia de $X»), así que se
+// entiende sin distinguir verde de ámbar.
+const Comprobaciones = ({ items }) => {
+    if (!Array.isArray(items) || items.length === 0) return null;
+    const alertas = items.filter(c => c?.estado !== 'ok').length;
+
+    return (
+        <div>
+            <div className="flex items-baseline justify-between gap-2 pb-1 border-b border-divider">
+                <span className="text-micro font-semibold text-content-3 uppercase tracking-wide">
+                    Comprobaciones
+                </span>
+                <span className="text-micro text-content-3">
+                    {alertas > 0
+                        ? `${alertas} con observación`
+                        : `Las ${items.length} pasan`}
+                </span>
+            </div>
+
+            <ul className="space-y-1.5 pt-2">
+                {items.map(c => {
+                    const ok = c?.estado === 'ok';
+                    const Icono = ok ? CircleCheck : AlertTriangle;
+                    return (
+                        <li key={c.clave} className="flex items-start gap-2">
+                            <Icono size={13} aria-hidden="true"
+                                className={`shrink-0 mt-0.5 ${ok ? 'text-success-text' : 'text-warning-text'}`} />
+                            <div className="min-w-0">
+                                <p className="text-caption text-content-2">{c.rotulo}</p>
+                                <p className="text-micro text-content-3 leading-relaxed">{c.detalle}</p>
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
         </div>
     );
 };
@@ -454,6 +501,8 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                     anticipo ya pagado.
                 </p>
             )}
+
+            <Comprobaciones items={fila.comprobaciones} />
 
             {!ok && (
                 <PorQueDifiere fila={fila} dias={dias}

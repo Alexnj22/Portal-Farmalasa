@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.572.0 — El módulo contable comprueba sus propios números
+
+Cierra la serie que abrió el contador (v2.571.7 y .9). La lección del hallazgo
+no fue «faltaba un número»: el cotejo decía **CUADRA** y era cierto, pero nadie
+podía ver **qué se había mirado** para decirlo, y la única explicación escrita
+era falsa. Una guarda sirve cuando **nombra** lo que verifica y falla sola si
+deja de cumplirse.
+
+Seis comprobaciones, calculadas en `get_cortes_z` y mostradas en la tarjeta y en
+el PDF **pasen o no** — una comprobación que sólo aparece cuando falla no deja
+constancia de que se hizo:
+
+| | Qué verifica |
+|---|---|
+| Cotejo | El libro coincide con el Corte Z, anclado en ventas gravadas |
+| Retención | La retención del Corte Z es la que el libro suma documento por documento |
+| Coherencia | gravadas + débito − retenido = total, en las dos secciones |
+| IVA | El débito fiscal es el 13% de la base, **documento por documento** |
+| Sello | Ninguna venta quedó fuera del libro sin querer |
+| Ticket | El total del Corte Z se explica **exactamente** por su retención |
+
+Las seis pasan hoy en las 12 filas cargadas. Ese es el punto: lo que se guarda
+es la regresión.
+
+**La del ticket es la que habría atrapado el defecto.** No marca «el Corte Z
+resta de más» como alerta —eso ya se sabe y se explica— sino que verifica que el
+desfase sea *exactamente* la retención que el propio ticket declara. Si un mes
+se desvía por otra cosa, eso sí es nuevo.
+
+**La del sello nace de un bug real**: 182 facturas de la historia tienen estado
+FINALIZADA y `recibido_mh` inválido, así que figuran vendidas y **no** entran al
+libro, en silencio. En junio y julio 2026 son cero; los 155 documentos excluidos
+del período son anulaciones legítimas y ahora se informan con su monto, para que
+se vea que se excluyeron a propósito.
+
+**La del IVA se mide por documento, no sobre el total.** El precio al consumidor
+lleva el IVA adentro y se redondea, así que el agregado deriva por acumulación
+de centavos ($1.05 sobre 3,878 documentos en julio de Salud 3) y un umbral sobre
+la suma daría falsos positivos.
+
+De paso, verificado el caso de Banco Promerica contra el **DTE sellado de
+Hacienda** (`dteqr_json.php`), columna por columna: número de control, código de
+generación, fecha, receptor, NRC, NIT, `totalGravada` 359.79, tributo 46.77,
+`montoTotalOperacion` 406.56, `ivaRete1` 3.60 y `totalPagar` 402.96 — **las once
+coinciden** con el libro del portal. El único número que no corresponde a ningún
+campo del documento legal es el total del Corte Z.
+
+Migración `20260812152215_corte_z_comprobaciones`.
+
 ## v2.571.10 — Los catálogos cuyo rótulo no es el dato
 
 v2.571.8 dejó 236 etiquetas fuera del sentence case con el motivo «catálogos que

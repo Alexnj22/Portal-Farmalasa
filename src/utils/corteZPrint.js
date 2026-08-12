@@ -71,6 +71,11 @@ function bloqueSucursal(fila, { conSalto }) {
     // sin esto el PDF obligaba a abrir además el libro de IVA para llenar la
     // declaración.
     const decl = fila.declaracion || {};
+    // Las comprobaciones se IMPRIMEN, pasen o no. El PDF es lo que se archiva:
+    // si sólo apareciera cuando algo falla, el archivo del mes bueno no dejaría
+    // constancia de que se verificó nada. Sin glifos fuera de Latin-1 (Roboto no
+    // trae ✓ ni ⚠: saldrían en blanco), así que el estado va en palabras.
+    const chks = Array.isArray(fila.comprobaciones) ? fila.comprobaciones : [];
     const direccion = direccionDe(fila);
     const secciones = [
         ['Ventas con tiquete',        sec.tiquete],
@@ -193,6 +198,17 @@ function bloqueSucursal(fila, { conSalto }) {
                 + `Código Tributario): no es una venta menos, es un anticipo ya pagado.`,
             style: 'nota',
         }] : []),
+
+        ...(chks.length ? [
+            { text: 'Comprobaciones', style: 'secTitulo' },
+            {
+                stack: chks.map(c => ({
+                    text: `${c.estado === 'ok' ? 'CUMPLE' : 'REVISAR'}  ·  ${c.rotulo}. ${c.detalle}`,
+                    style: c.estado === 'ok' ? 'chkOk' : 'chkAlerta',
+                    margin: [0, 0, 0, 3],
+                })),
+            },
+        ] : []),
     ];
 }
 
@@ -229,6 +245,8 @@ export async function descargarCorteZPdf(filas, nombreArchivo) {
             ok:        { fontSize: 9, color: '#1a7f37' },
             alerta:    { fontSize: 9, color: '#b42318', bold: true },
             nota:      { fontSize: 8, color: '#555', margin: [0, 6, 0, 0], lineHeight: 1.25 },
+            chkOk:     { fontSize: 8, color: '#1a7f37', lineHeight: 1.2 },
+            chkAlerta: { fontSize: 8, color: '#b42318', bold: true, lineHeight: 1.2 },
         },
         defaultStyle: { fontSize: 9 },
     };

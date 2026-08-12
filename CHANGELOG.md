@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.574.0 — El libro de consumidor deja de restar la retención
+
+Lo destapó la contadora: su total de julio ($241,839.73) no cuadraba con el del
+portal ($241,836.14). Persiguiendo esos **$3.59** apareció un defecto real en lo
+que se declara.
+
+**La regla.** El Art. 162 CT hace de la retención del 1% un **anticipo** que el
+cliente entera por nosotros — no una venta menor. Y ni el Art. 83 (libro de
+consumidor) ni el Art. 85 (contribuyentes) del Reglamento tienen columna de
+impuesto retenido: **no existe**. Va sola en el F-07 como crédito, con su
+comprobante.
+
+**Qué estaba mal.** `sales_invoices.total` es lo COBRADO (`totalPagar` del DTE),
+ya neto de retención. El libro de contribuyentes usa `subtotal` e `iva`, que la
+retención no toca, así que salió bien; el de consumidor usaba `total` en sus tres
+columnas de dinero y arrastraba la resta.
+
+Verificado en el CSV que se exporta, Salud 3 del 06/07: la fila declaraba
+**$1,950.87** cuando ese día se vendieron **$1,951.93** — faltaba el $1.06 que
+retuvo el ISSS (Art. 162 inciso 3: las instituciones oficiales autónomas retienen
+aunque reciban factura de consumidor).
+
+**Alcance: $41.53 declarados de menos**, sólo Salud 3 — junio $2.21, julio
+$39.32. Las otras cinco sucursales no se movieron ni un centavo (verificado
+sucursal por sucursal, antes y después).
+
+- `total` → `subtotal + iva` (el valor de la operación) en las tres columnas de
+  dinero, **en la vista y en el CSV**, que tienen que decir lo mismo.
+- El bloque «Para la declaración» del Corte Z pasa al mismo criterio: si el libro
+  dice $48,603.85 y la tarjeta dice $48,564.53 bajo ese título, el portal
+  contradice a su propio libro.
+- La comprobación de coherencia cambia de identidad con él: ahora verifica
+  `exentas + gravadas + débito = total`, sin restar la retención. Dejarla como
+  estaba la habría hecho fallar justo cuando hay retención.
+- **El cotejo NO se toca** y sigue en «lo cobrado»: su trabajo es cuadrar contra
+  el Corte Z, que reporta lo cobrado. Son dos preguntas distintas y la retención
+  es la distancia entre las dos.
+
+El libro de **contribuyentes no se tocó**: se verificó fila por fila contra el
+DTE sellado de BANCO PROMERICA (`dteqr_json.php`) y sus columnas ya eran
+correctas — gravadas $359.79 y débito $46.77, idénticas al documento legal.
+
+Total de julio, legalmente correcto: **$241,879.06**. Ni el del portal
+($241,836.14) ni el de la contadora ($241,839.73) lo eran.
+
+Migraciones `20260812172655_libro_consumidor_no_resta_la_retencion` y
+`20260812172845_corte_z_declaracion_al_valor_de_la_operacion`.
+
 ## v2.573.5 — El PDF del Corte Z entra en una hoja, y ahora se mide
 
 Tercera vez en el día que la hoja se pasa de largo, y las tres las encontró el

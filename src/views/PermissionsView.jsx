@@ -82,6 +82,17 @@ const PERMISSION_TYPES = [
     { key: 'can_view',    label: 'Ver',                          icon: Eye,          activeColor: 'bg-chart-1'    },
     { key: 'can_edit',    label: 'Gestionar',                    icon: Pencil,       activeColor: 'bg-chart-3'  },
     { key: 'can_approve', label: 'Aprobar',                      icon: CheckCircle2, activeColor: 'bg-success' },
+    // ── El cuarto NO es un permiso: es qué pasa con los otros tres cuando
+    // quien tiene este cargo no está (v2.578.0). Por eso `esDelegacion`, que lo
+    // exime de la regla «sin Ver no hay nada» —delegar Aprobar en un módulo que
+    // no se mira es perfectamente sensato— y de la cascada de apagado.
+    //
+    // La fila que manda es la del cargo AUSENTE: «cuando no esté quien tiene
+    // este cargo, su jefe inmediato se hace cargo de este módulo». Lo enciende
+    // quien reparte los permisos, no quien los recibe, y se apaga solo al
+    // volver. Pedido del usuario: «estos permisos deben ir en todos los
+    // módulos, para activarlos según el rol».
+    { key: 'delega_en_ausencia', label: 'Delegar si no está', icon: Palmtree, activeColor: 'bg-chart-4', esDelegacion: true },
 ];
 
 // El tono por opción NO es adorno: distingue "Todos" de "Mi sucursal" de un
@@ -107,6 +118,9 @@ const PERM_DESC = {
     can_view:    'Puede ver y consultar este módulo',
     can_edit:    'Puede crear, editar y eliminar registros en este módulo',
     can_approve: 'Puede aprobar o rechazar solicitudes',
+    delega_en_ausencia:
+        'Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe '
+        + 'inmediato se hace cargo de este módulo mientras dure la ausencia. Se apaga solo al volver',
 };
 
 // ─── Toggle — alias del canónico (A14, 2026-07-27) ─────────────────────────
@@ -177,9 +191,19 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 }`}>
                     {PERMISSION_TYPES.map(pt => {
                         if (pt.key === 'can_approve' && !module.hasApprove) return null;
+                        /* Los módulos que SÓLO son un permiso de decisión no
+                         * abren pantalla: dibujarles Ver y Gestionar sería
+                         * ofrecer dos interruptores que no gobiernan nada. */
+                        if (module.soloAprobar && (pt.key === 'can_view' || pt.key === 'can_edit')) return null;
                         const PtIcon = pt.icon;
                         const val = !!perms[pt.key];
-                        const needsView = (pt.key === 'can_edit' || pt.key === 'can_approve') && !perms.can_view;
+                        /* «Sin Ver no hay Gestionar ni Aprobar» — salvo en los
+                         * módulos que no tienen Ver, donde la regla dejaría
+                         * Aprobar apagado para siempre. Y la delegación queda
+                         * fuera: no es un permiso, es qué pasa con los otros
+                         * cuando el titular no está. */
+                        const needsView = !module.soloAprobar && !pt.esDelegacion
+                            && (pt.key === 'can_edit' || pt.key === 'can_approve') && !perms.can_view;
                         const isFlashing = flashedPerm === pt.key;
                         return (
                             <div
@@ -351,12 +375,13 @@ const PermissionsView = () => {
                     can_edit: p.can_edit,
                     can_approve: p.can_approve,
                     scope: p.scope || 'ALL',
+                    delega_en_ausencia: !!p.delega_en_ausencia,
                 };
             });
             // Inicializar vacíos
             loadedRoles.forEach(r => MODULES.forEach(m => {
                 const k = `${r.id}:${m.key}`;
-                if (!map[k]) map[k] = { can_view: false, can_edit: false, can_approve: false, scope: 'ALL' };
+                if (!map[k]) map[k] = { can_view: false, can_edit: false, can_approve: false, scope: 'ALL', delega_en_ausencia: false };
             }));
             setPermissions(map);
             setLoading(false);
@@ -423,6 +448,7 @@ const PermissionsView = () => {
             can_edit: next.can_edit ?? false,
             can_approve: next.can_approve ?? false,
             scope: next.scope || 'ALL',
+            delega_en_ausencia: next.delega_en_ausencia ?? false,
             updated_at: new Date().toISOString(),
         });
 
@@ -539,6 +565,10 @@ const PermissionsView = () => {
                 can_edit: src.can_edit ?? false,
                 can_approve: src.can_approve ?? false,
                 scope: src.scope || 'ALL',
+                // Copiar un cargo sin su delegación dejaría dos cargos que se
+                // ven iguales en la pantalla y se comportan distinto el día que
+                // alguien se va de vacaciones.
+                delega_en_ausencia: src.delega_en_ausencia ?? false,
                 updated_at: new Date().toISOString(),
             };
         });
@@ -557,6 +587,7 @@ const PermissionsView = () => {
                         can_edit: src.can_edit ?? false,
                         can_approve: src.can_approve ?? false,
                         scope: src.scope || 'ALL',
+                        delega_en_ausencia: src.delega_en_ausencia ?? false,
                     };
                 });
                 return next;

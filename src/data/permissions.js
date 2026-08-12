@@ -22,7 +22,7 @@ export function fetchRolesForPermissions() {
 // quien la llama.
 export async function fetchRolePermissions() {
     const data = await fetchAllRows(() => supabase.from('role_permissions')
-        .select('role_id, module_key, can_view, can_edit, can_approve, scope')
+        .select('role_id, module_key, can_view, can_edit, can_approve, scope, delega_en_ausencia')
         .not('role_id', 'is', null)
         .order('role_id')
         .order('module_key'));
@@ -59,6 +59,20 @@ export function fetchRolePermissionsForRoles(roleIds) {
 
 export function fetchRolePriceLevelAndSU(roleId) {
     return supabase.from('roles').select('max_price_level, is_su').eq('id', roleId).single();
+}
+
+/* Lo que se hereda HOY por la ausencia de un cargo que depende del mío.
+ *
+ * No sale de `role_permissions` como los otros dos: depende de quién esté de
+ * vacaciones en este momento, así que sólo lo sabe el servidor. La base ya lo
+ * respeta —`auth_has_module_permission` incluye la herencia—, pero sin esta
+ * llamada el navegador no se entera y le esconde al suplente lo que la base sí
+ * le permitiría: los botones no se dibujan y las rutas se bloquean antes de
+ * llegar a consultar nada.
+ *
+ * El merge lo hace el caller, con el mismo criterio que el cargo secundario. */
+export function fetchPermisosHeredados() {
+    return supabase.rpc('mis_permisos_heredados');
 }
 
 // ── NoAccessView.jsx / AccessDeniedView.jsx (nombre de cargo a mostrar) ─────

@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.580.0 — Los interruptores de aprobar y de delegar, en la pantalla
+
+Las tres versiones anteriores dejaron la base lista y la pantalla ciega: los
+permisos por familia existían y la delegación por ausencia funcionaba, pero
+sólo se podían encender **por SQL**. Esto los pone donde se usan.
+
+**En Permisos, tres módulos nuevos** — «Decidir: facturación», «Decidir:
+inventario» y «Decidir: Min/Max». No abren ninguna pantalla, así que llevan
+`soloAprobar` y su tarjeta dibuja un único interruptor. Eso destapó una regla
+que los habría dejado muertos: «sin Ver no hay Gestionar ni Aprobar» apagaba
+Aprobar en un módulo que **no tiene** Ver, y el interruptor habría quedado gris
+para siempre.
+
+**Y un cuarto interruptor en TODOS los módulos: «Delegar si no está».** Es lo
+que el usuario pidió — «estos permisos deben ir en todos los módulos, para
+activarlos según el rol». No es un permiso, sino qué pasa con los otros tres
+cuando quien tiene ese cargo no está, así que queda exento de la regla de «Ver»
+y de la cascada de apagado. La fila que manda es la del cargo **ausente**.
+
+**Copiar de otro cargo ahora se lleva la delegación.** Sin eso quedaban dos
+cargos que se ven iguales en la pantalla y se comportan distinto el día que
+alguien se va de vacaciones.
+
+**La herencia ya llega al navegador.** El mapa de permisos se armaba leyendo
+`role_permissions` de los dos cargos, y ahí la herencia no aparece — depende de
+quién esté hoy de vacaciones, así que sólo lo sabe el servidor. Sin la RPC nueva
+(`mis_permisos_heredados`) el suplente entraba y la pantalla le escondía todo
+aunque la base se lo permitiera. Entra por el mismo camino que el cargo
+secundario: otra fuente que suma, nunca una que reemplaza. Si la llamada falla,
+se sigue sin ella — un permiso de menos, nunca uno de más.
+
+**La bandeja y la campana deciden por familia.** `MODULO_QUE_DECIDE` es el
+espejo de `modulo_de_aprobacion()` en Postgres y vive en un archivo propio, por
+dos razones: lo consultan dos pantallas, y `gate:permisos` no lee el registro a
+sí mismo — un módulo cuya única mención viviera ahí figuraría como interruptor
+muerto. La campana además resuelve **por aviso** y no con una bandera calculada
+una vez: el tipo viaja en `metadata.request_type`, y quien puede anular una
+factura no necesariamente puede aprobar un descarte.
+
+Al gate de permisos se le enseñó un sexto camino de gateo —un mapa TIPO →
+módulo consumido con `hasPermission(variable)`—, reconocido por el nombre del
+mapa y no por la ruta del archivo, para que sirva para el próximo.
+
 ## v2.579.0 — El aviso de una solicitud llega a todos los que pueden aprobarla
 
 El aviso era **dirigido** y la facultad **compartida**, y esa asimetría no

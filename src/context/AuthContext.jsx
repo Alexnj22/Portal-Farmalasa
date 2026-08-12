@@ -3,7 +3,7 @@ import { supabase, AUTH_STORAGE_KEY } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
-import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU } from "../data/permissions";
+import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
 import { soltarPushDelEquipoSiEsCompartido } from "../utils/pushEquipo";
@@ -196,8 +196,17 @@ export const AuthProvider = ({ children }) => {
       ? fetchRolePriceLevelAndSU(roleId)
       : Promise.resolve({ data: null });
 
-    Promise.all([permsQuery, priceLevelQuery])
-      .then(([{ data, error }, { data: roleData }]) => {
+    /* Lo heredado por ausencia (v2.578.0) NO sale de `role_permissions`:
+     * depende de quién esté hoy de vacaciones, así que sólo lo sabe el
+     * servidor. Si esta llamada falla, se sigue sin ella —la base decide
+     * igual— y lo único que se pierde es que la pantalla lo refleje: un
+     * permiso de menos, nunca uno de más. */
+    const heredadosQuery = roleId
+      ? fetchPermisosHeredados().catch(() => ({ data: [] }))
+      : Promise.resolve({ data: [] });
+
+    Promise.all([permsQuery, priceLevelQuery, heredadosQuery])
+      .then(([{ data, error }, { data: roleData }, heredados]) => {
         // No sobreescribir en error de red — conservar permisos previos
         if (error || !data) { setPermsLoading(false); return; }
         // Bloque 8 — modelo de unión: el permiso efectivo por module_key es el OR
@@ -205,7 +214,11 @@ export const AuthProvider = ({ children }) => {
         // el secundario rellena lo que le falta al primario, nunca lo reemplaza.
         // Empate de scope: gana el más permisivo ('ALL').
         const map = {};
-        data.forEach(p => {
+        // Lo heredado entra por el MISMO camino que el cargo secundario: es otra
+        // fuente que suma, no una que reemplaza. Va después para que se lea el
+        // orden de precedencia, aunque con OR el orden no cambie el resultado.
+        const filas = [...data, ...(heredados?.data ?? [])];
+        filas.forEach(p => {
           const prev = map[p.module_key];
           if (!prev) {
             map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' };

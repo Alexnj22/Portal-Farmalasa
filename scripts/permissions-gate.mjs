@@ -125,6 +125,16 @@ for (const [f, txt] of fuentes) {
   // MODULE_MAP / grupos de menú: modules: ['a', 'b', …]
   for (const bloque of txt.matchAll(/modules:\s*\[([^\]]*)\]/g))
     for (const m of bloque[1].matchAll(/'([a-z0-9_]+)'/g)) literales.add(m[1]);
+  // Sexto camino (2026-08-12): un mapa TIPO → módulo que después se consume con
+  // `hasPermission(variable)`. Lo estrenó `MODULO_QUE_DECIDE`, cuando aprobar
+  // solicitudes se separó por familia y la bandeja dejó de tener UN permiso.
+  //
+  // Se reconoce por el nombre del mapa, no por el archivo: así el gate no se
+  // ata a una ruta y el patrón sirve para el próximo. Sin esta regla, los tres
+  // módulos nuevos figuraban como «declarados y que nadie consulta» — o sea
+  // como interruptores muertos— cuando son justo los que gatean la bandeja.
+  for (const bloque of txt.matchAll(/MODULO_QUE_DECIDE\s*=\s*\{([\s\S]*?)\n\};/g))
+    for (const m of bloque[1].matchAll(/:\s*'([a-z0-9_]+)'/g)) porVariable.add(m[1]);
 }
 const consultada = (k) =>
   literales.has(k) || porVariable.has(k) || [...prefijos].some(p => k.startsWith(p));

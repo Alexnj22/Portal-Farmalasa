@@ -22,6 +22,7 @@ import { fetchAllMinMaxChangeRequests, decidirMinMax } from '../data/minmaxReque
 import { notifyEmployees } from '../utils/notify';
 import { ERP_NAMES } from '../constants/erp';
 import { ICONO_POR_TIPO } from '../constants/tipoIconos';
+import { MODULO_QUE_DECIDE } from '../constants/solicitudModulos';
 import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 /* Los dos formularios se cargan tarde. No es una optimización de gusto: es la
  * regla del proyecto —lo que sólo hace falta al apretar un botón no viaja en el
@@ -347,12 +348,13 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * nivel lo contesta el compañero, no una jefatura, y no es asunto de nadie
      * más. */
     /* Quién puede decidir ESTA solicitud. No alcanza un `canApprove` único: en
-     * el centro conviven tres familias con tres dueños distintos, y confundirlos
+     * el centro conviven varias familias con dueños distintos, y confundirlos
      * sería repartir poder sin querer.
      *
-     *   · Min/Max  → `minmax.can_approve` (su RPC lo cobra igual del lado del
-     *                servidor; acá sólo se evita ofrecer un botón que va a
-     *                rebotar).
+     *   · Facturación, inventario y Min/Max → cada una su módulo, vía
+     *                `MODULO_QUE_DECIDE`. Desde v2.576.0 aprobar dejó de ser un
+     *                solo interruptor: la base lo cobra por familia y esto es su
+     *                espejo, para no ofrecer un botón que va a rebotar.
      *   · Traslado → NADIE desde acá: se confirma en Traslados, que relee la
      *                existencia de la sala antes de despachar.
      *   · Cambio de turno → el COMPAÑERO al que se le pide, y sin permiso de
@@ -366,10 +368,14 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
 
     const puedeDecidir = (req) => {
         if (!req) return false;
-        if (req.type === 'MINMAX_CHANGE_REQUEST')      return hasPermission('minmax', 'can_approve');
         if (req.type === 'INVENTORY_TRANSFER_REQUEST') return false;
         if (req.type === 'SHIFT_CHANGE' && req.status === 'PENDING'
             && paraQuien(req) === miId && deQuienEs(req) !== miId) return true;
+        const modulo = MODULO_QUE_DECIDE[req.type];
+        /* `!soloMio` va también acá: con alcance «sólo míos» la policy contesta
+         * false pase lo que pase, así que ofrecer el botón sería prometer algo
+         * que la base rechaza. Mismo motivo que en `canApprove`. */
+        if (modulo) return hasPermission(modulo, 'can_approve') && !soloMio;
         return canApprove;
     };
 

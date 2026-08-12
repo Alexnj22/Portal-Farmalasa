@@ -92,6 +92,20 @@ const GRUPOS_CRUDOS = [
             // qué lado caiga el tipo. Un tipo nuevo sin clasificar cae en
             // PERSONAL, que es el lado cerrado.
             { key: 'requests',     label: 'Solicitudes de sucursal', desc: 'El centro de solicitudes de la sala: descartes y cargas de inventario, traslados, Min/Max y cambios a facturación. Ver = estar al día de lo que pidió la sala y cómo se resolvió; Aprobar = decidirlas', icon: ClipboardList, hasApprove: true,  hasScope: true },
+            // ── Las cuatro familias de «decidir» de la bandeja de sucursal ──
+            // Aprobar dejó de ser un solo interruptor en v2.576.0: «Ver» sigue
+            // siendo uno —abrir la bandeja, arriba— pero DECIDIR se reparte,
+            // para poder delegar una parte sin entregar el resto.
+            //
+            // Estos dos son sólo un permiso de decisión: no abren ninguna
+            // pantalla propia, por eso llevan `soloAprobar` y la tarjeta no
+            // dibuja Ver ni Editar. Traslados y Min/Max completan el cuadro
+            // desde sus propios módulos —no se duplican acá a propósito: el
+            // mismo permiso escrito dos veces se contradice en cuanto alguien
+            // toca uno solo.
+            { key: 'requests_facturacion', label: 'Decidir: facturación', desc: 'Resolver las solicitudes que tocan una factura ya emitida: anularla, cambiarle la forma de pago, el vendedor o el cliente', icon: Receipt, hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests' },
+            { key: 'requests_inventario',  label: 'Decidir: inventario',  desc: 'Resolver las solicitudes de carga y de descarte de existencia: son las que mueven el inventario de la sala', icon: PackageMinus, hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests' },
+            { key: 'requests_minmax',      label: 'Decidir: Min/Max',     desc: 'Resolver las solicitudes de ajuste de stock mínimo y máximo. Distinto de publicar cambios de Min/Max, que vive en su propio módulo', icon: BarChart2, hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests' },
             { key: 'requests_personales', label: 'Solicitudes personales', desc: 'Las que hablan de una persona y no de la sala: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver acá es ver datos sensibles del expediente ajeno', icon: Palmtree, hasApprove: true, hasScope: true },
             // Módulo aparte de `requests` a propósito: acá `can_approve` habilita
             // confirmar un traslado de la propia sala y NADA más. Metido dentro de

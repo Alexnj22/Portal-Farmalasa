@@ -11,6 +11,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { iconoDeTipo } from '../../constants/tipoIconos';
+import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import Contador from './Contador';
 import LiquidAvatar from './LiquidAvatar';
@@ -148,8 +149,6 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const deleteTimersRef = useRef(new Map());
 
     const canSeeAnnouncements = hasPermission('emp_announcements', 'can_view');
-    const canApprove          = hasPermission('requests', 'can_approve');
-    const canApproveMinMax    = hasPermission('minmax', 'can_approve');
 
     /* Lo ya decidido se va de la campana.
      *
@@ -358,17 +357,27 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     // seguía ofreciendo Aprobar/Rechazar sobre algo ya decidido —la notificación
     // es una fila aparte de la solicitud y aprobar no la tocaba—, y el botón
     // llevaba a un diálogo que el servidor rechaza con 409.
-    // Cada tipo con SU permiso: quien aprueba solicitudes de personal no es
-    // necesariamente quien aprueba un ajuste de Min/Max. Usar `requests` para
-    // los dos habría mostrado botones que el servidor rechaza.
-    const PERMISO_POR_TIPO = {
-        REQUEST_PENDING: canApprove,
-        MINMAX_PENDING:  canApproveMinMax,
+    /* Cada solicitud con SU permiso, y desde v2.576.0 eso ya no es «uno por
+     * pantalla» sino uno por FAMILIA: quien puede anular una factura no
+     * necesariamente puede aprobar un descarte de inventario. El aviso trae el
+     * tipo en `metadata.request_type`, así que se resuelve por solicitud y no
+     * por una bandera calculada una vez para todas.
+     *
+     * `MODULO_QUE_DECIDE` es el mismo mapa que usa la bandeja y el espejo de
+     * `modulo_de_aprobacion()` en Postgres. Lo que no figura ahí cae en el
+     * módulo del ámbito, igual que en la policy: `MINMAX_PENDING` siempre es de
+     * Min/Max, y un `REQUEST_PENDING` sin tipo reconocido es de la sala. */
+    const moduloDelAviso = (n) => {
+        if (n.type === 'MINMAX_PENDING') return 'requests_minmax';
+        if (n.type !== 'REQUEST_PENDING') return null;
+        return MODULO_QUE_DECIDE[n.metadata?.request_type] ?? 'requests';
     };
 
-    const puedeDecidir = (n) =>
-        PERMISO_POR_TIPO[n.type] === true
-        && !!n.metadata?.request_id && !n.metadata?.resuelta;
+    const puedeDecidir = (n) => {
+        const modulo = moduloDelAviso(n);
+        return !!modulo && hasPermission(modulo, 'can_approve')
+            && !!n.metadata?.request_id && !n.metadata?.resuelta;
+    };
 
     /* `ADVANCED` es la solicitud que uno aprobó y pasó al siguiente nivel: sigue
      * pendiente para otra persona, pero para quien mira este aviso ya está

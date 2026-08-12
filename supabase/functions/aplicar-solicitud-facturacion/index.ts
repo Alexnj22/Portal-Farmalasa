@@ -37,6 +37,7 @@ import {
 // OTRA factura existente, no daría error. La traducción es obligatoria.
 
 const REIMPRIMIR = `${BASE}/reimprimir_factura.php`;
+const SESION     = `${BASE}/cambio_sesion.php`;
 
 const TIPOS_SOPORTADOS = new Set([
   "PAYMENT_CHANGE_REQUEST",
@@ -75,7 +76,7 @@ async function leerFicha(cookie: string, erpId: string): Promise<Ficha> {
   const html = await pedir(cookie, `${REIMPRIMIR}?id_factura=${encodeURIComponent(erpId)}`);
   const ficha = parsearFicha(html);
   if (ficha.cliente === null && ficha.credito === null && ficha.vendedor === null)
-    throw new Error(`El ERP no devolvió la ficha de la factura ${erpId}.`);
+    throw new Error(`No se pudieron leer los datos de la factura ${erpId}.`);
   return ficha;
 }
 
@@ -89,6 +90,10 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
+
+  // El arriendo tomado, para poder soltarlo pase lo que pase. Vive afuera del
+  // `try` porque el `finally` tiene que verlo.
+  let reclamadaId: string | null = null;
 
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
@@ -133,6 +138,25 @@ Deno.serve(async (req) => {
     if (sol.status !== "PENDING")
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);
 
+    // ── El arriendo: de acá hasta el final, esta solicitud es de esta corrida ─
+    // La comprobación de arriba mira el estado en un instante, y entre ese
+    // instante y la escritura al sistema de origen pasan SEGUNDOS. Dos clics a
+    // la vez —dos pestañas, o dos personas— pasaban los dos por ahí y los dos
+    // anulaban; el `.eq(status,'PENDING')` del final frena la segunda escritura
+    // del estado, no la segunda anulación.
+    //
+    // El reclamo es un compare-and-set en una sola sentencia, que es lo único
+    // atómico disponible desde acá.
+    const { data: tomada, error: reclamoErr } = await admin
+      .rpc("reclamar_solicitud", { p_request_id: sol.id });
+    if (reclamoErr) throw reclamoErr;
+    if (!tomada)
+      return json({
+        ok: false,
+        error: "Esta solicitud se está aplicando en este momento. Esperá a que termine.",
+      }, 409);
+    reclamadaId = String(sol.id);
+
     const meta = (typeof sol.metadata === "string" ? JSON.parse(sol.metadata) : sol.metadata) ?? {};
 
     // ── id del portal → id del ERP ───────────────────────────────────────
@@ -154,7 +178,46 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: "La factura ya está anulada." }, 409);
 
     const erpId = String(factura.erp_invoice_id);
+
+    // ── La sucursal de la SESIÓN, antes de tocar nada ─────────────────────
+    // `anular_factura.php` está en la familia de facturación pero NO es un
+    // endpoint de DTE: revierte la venta —existencias y caja de esa sala—, así
+    // que sigue a la sucursal de la sesión y no al `id_factura` que recibe.
+    //
+    // La cuenta con la que entra el portal aterriza siempre en Salud 1. Por eso
+    // la única anulación que había funcionado (2026-08-06) era de Salud 1 —la
+    // sucursal por defecto— y la primera de otra sala falló: 0000068132_COF de
+    // Salud 4, el 2026-08-11. Lo que estaba verificado entre sucursales eran
+    // las LECTURAS; esto es una escritura y no lo es.
+    //
+    // Mismo paso que ya daban `aplicar-movimiento-inventario` y las otras ocho
+    // funciones que escriben: esta era la única que lo salteaba.
+    const { data: mapa, error: mapaErr } = await admin
+      .from("erp_sucursal_map")
+      .select("erp_sucursal_id, nombre")
+      .eq("branch_id", factura.branch_id)
+      .maybeSingle();
+    if (mapaErr) throw mapaErr;
+    if (!mapa?.erp_sucursal_id)
+      return json({
+        ok: false,
+        error: "No se pudo ubicar la sucursal de la factura, así que no se toca.",
+      }, 422);
+
     const cookie = await login();
+
+    // Se falla antes de escribir, no después: sin esta sucursal abierta la
+    // operación se pediría contra la sala equivocada.
+    const rSesion = await pedir(cookie, SESION, new URLSearchParams({
+      process: "set_sucursal", id_sucursal: String(mapa.erp_sucursal_id),
+    }), { extra: { Referer: `${BASE}/dashboard.php` } });
+    let sesionOk = false;
+    try { sesionOk = Boolean(JSON.parse(rSesion)?.success); } catch { sesionOk = false; }
+    if (!sesionOk)
+      return json({
+        ok: false,
+        error: `No se pudo abrir la sucursal ${mapa.nombre ?? factura.branch_id} para aplicar el cambio.`,
+      }, 502);
 
     // ── Anulación: ERP y después Hacienda ────────────────────────────────
     if (esAnulacion) {
@@ -186,7 +249,7 @@ Deno.serve(async (req) => {
         const r = leerRespuesta(await pedir(cookie, ANULAR, new URLSearchParams({
           process: "deleted", id_factura: erpId,
         })));
-        if (!r.ok) return json({ ok: false, error: `El ERP no anuló la factura: ${r.msg}` }, 502);
+        if (!r.ok) return json({ ok: false, error: `No se pudo anular la factura: ${r.msg}` }, 502);
         anuladaAhora = true;
       }
 
@@ -272,7 +335,7 @@ Deno.serve(async (req) => {
     }
 
     const resp = leerRespuesta(cuerpo);
-    if (!resp.ok) return json({ ok: false, error: `El ERP rechazó el cambio: ${resp.msg}` }, 502);
+    if (!resp.ok) return json({ ok: false, error: `No se pudo aplicar el cambio: ${resp.msg}` }, 502);
 
     // El mensaje del ERP no distingue qué cambió — se comprueba releyendo.
     const despues = await leerFicha(cookie, erpId);
@@ -282,7 +345,7 @@ Deno.serve(async (req) => {
     if (String(quedo) !== String(a))
       return json({
         ok: false,
-        error: `El ERP contestó «${resp.msg}» pero la factura quedó en «${quedo}», no en «${a}».`,
+        error: `Se pidió el cambio pero la factura quedó en «${quedo}», no en «${a}».`,
       }, 502);
 
     // ── Recién ahora la solicitud es APPROVED ────────────────────────────
@@ -314,5 +377,17 @@ Deno.serve(async (req) => {
 
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
+  } finally {
+    /* Soltar el arriendo salga como salga.
+     *
+     * No hace falta preguntar si la aplicación entró: `liberar_solicitud` sólo
+     * toca lo que sigue en PENDING, así que sobre una solicitud ya aprobada es
+     * un no-op. Y si esta corrida muere sin llegar hasta acá —una Edge Function
+     * se corta a los 150s—, el arriendo vence solo a los 3 minutos: nadie queda
+     * trabado esperando a alguien que ya no existe. */
+    if (reclamadaId) {
+      await admin.rpc("liberar_solicitud", { p_request_id: reclamadaId })
+        .then(({ error }) => { if (error) console.error("liberar_solicitud:", error.message); });
+    }
   }
 });

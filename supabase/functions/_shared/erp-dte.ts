@@ -26,10 +26,21 @@
 // anota. Esa divergencia es justo lo que el módulo de Facturación existe para
 // detectar.
 //
-// ── Una sesión sirve para todas las sucursales ───────────────────────────
+// ── Una sesión sirve para LEER todas las sucursales. Para escribir, no ───
 // Verificado el 2026-08-06: la misma cookie leyó facturas de Salud 1, 3, 4, 5
-// y La Popular sin pasar por `cambio_sesion.php`. Los endpoints resuelven por
-// `id_factura`, no por el contexto de sucursal de la sesión.
+// y La Popular sin pasar por `cambio_sesion.php`. Los endpoints de DTE
+// resuelven por `id_factura`, no por el contexto de sucursal de la sesión.
+//
+// PERO ESO VALE SÓLO PARA LEER, y la frase anterior —que no lo decía— hizo que
+// `aplicar-solicitud-facturacion` se saltara el cambio de sucursal. La cuenta
+// del portal aterriza siempre en Salud 1: la única anulación que funcionó era
+// justamente de Salud 1, y la primera de otra sala fue rechazada (Salud 4,
+// 0000068132_COF, 2026-08-11).
+//
+// `anular_factura.php` no es un endpoint de DTE aunque viva en la misma
+// familia: revierte la venta —existencias y caja de esa sala— y sigue a la
+// sucursal de la SESIÓN. Toda escritura abre antes su sucursal con
+// `cambio_sesion.php`, como ya hacían las otras nueve funciones.
 
 const BASE        = "https://clientesdte3.oss.com.sv/farma_salud";
 const LOGIN_URL   = `${BASE}/login.php`;

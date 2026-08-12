@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.571.4 — Los codigos de sala dejan de estar cuatro veces
+
+Al definir la clave del traslado casi se inventa un cuarto código de sala sin
+saber que ya existía: `pedidoPrint.js` tenía `SUCURSAL_CODES` —`S1`…`S5`, `PO`,
+`BO`— y es el que imprime el código del pedido en la hoja de despacho
+(`03-120826-2-S5`). Idéntico, carácter por carácter, al que se acababa de crear
+en la base.
+
+Mirando ese archivo aparecieron **dos copias más** que la consolidación del
+2026-08-11 dejó atrás: `ERP_NAMES_DEFAULT` y `SUCURSALES_ORDER`, también
+idénticas a `ERP_NAMES` y `SUCURSALES` de `constants/erp.js`. Es exactamente el
+caso que aquella mudanza documentó —`MM_ERP_NAMES` era «carácter por carácter una
+segunda copia»— y que se dio por cerrado sin revisar este módulo.
+
+Las tres se mudaron a `constants/erp.js`, que ya es el espejo del registro.
+`ERP_CODIGOS` se suma ahí con la autoridad anotada: manda
+`erp_sucursal_map.codigo`, que es de donde lo lee `planificar_traslado_pedido`.
+Verificado que el espejo y el registro coinciden hoy.
+
+Queda una deuda dicha en voz alta: `constants/erp.js` es un espejo **a mano** de
+la base —igual que `ERP_NAMES`, `BRANCH_A_ERP` y `ERP_UBICACION_POR_SUCURSAL`,
+que ya lo eran— y nada verifica que no se separen. El patrón para arreglarlo
+existe en el repo (`scripts/db/boolean-columns.json` + `gate:data`: un snapshot
+en el repo contra el que el gate compara), pero es trabajo aparte.
+
 ## v2.571.3 — La caja especial se llama CE en la clave, y manda sobre la hoja
 
 El segmento del medio decía `HA` —«hoja A»— para los productos que no viajan en

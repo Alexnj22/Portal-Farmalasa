@@ -4,6 +4,7 @@
 // qty siempre en PACKS (cajas/blisters/frascos), no en unidades.
 
 import { fetchErpSucursalAddressMap } from '../data/pedidos';
+import { ERP_NAMES, SUCURSALES, ERP_CODIGOS } from '../constants/erp';
 
 // pdfmake se carga BAJO DEMANDA. Estático costaba 809 kB gzip en el chunk de
 // PedidosView (vfs_fonts son las fuentes embebidas en base64): se bajaban al
@@ -30,12 +31,14 @@ function getPdfMake() {
     return pdfMakePromise;
 }
 
-const ERP_NAMES_DEFAULT = {
-    1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
-    4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
-};
-const SUCURSALES_ORDER = [5, 1, 2, 3, 4, 7];
-const SUCURSAL_CODES  = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 7: 'S5' };
+// Los nombres, el orden y los códigos de sala viven en `constants/erp.js`, que
+// es el espejo del registro (`erp_sucursal_map`). Este módulo tenía sus propias
+// copias —idénticas, carácter por carácter— hasta el 2026-08-12; se descubrió al
+// definir la clave del traslado, cuando se estaba por inventar un cuarto código
+// de sala sin saber que la hoja de despacho ya imprimía el suyo.
+const ERP_NAMES_DEFAULT = ERP_NAMES;
+const SUCURSALES_ORDER  = SUCURSALES;
+const SUCURSAL_CODES    = ERP_CODIGOS;
 const TOTAL_NON_BODEGA = 6;
 const CUSTOM_LABELS    = ['CAJA', 'ESTUCHE', 'BOLSA'];
 

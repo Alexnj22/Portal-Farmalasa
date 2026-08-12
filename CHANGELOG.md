@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.578.0 — La delegación por ausencia se activa por cargo y módulo
+
+Corrige el criterio de v2.577.0, que traía una **lista fija en el código**:
+sólo se heredaban los cinco módulos de solicitudes y sólo ver y aprobar. El
+razonamiento era «una ausencia no es una promoción».
+
+El usuario lo corrigió y tiene razón. Heredar no es ascender, es **cargar con
+el trabajo**: que alguien se haya ido no significa que lo suyo quede en pausa.
+Y cuál de sus tareas puede seguir sin él es una decisión del negocio, cargo por
+cargo — no algo que deba estar escrito en una función de Postgres. Una lista en
+el código obliga a una migración cada vez que se cambia de opinión, que es la
+manera larga de decir que nunca se cambia.
+
+Ahora **cada módulo lleva su propio interruptor de delegación**, activable por
+cargo: la columna `role_permissions.delega_en_ausencia`. La fila que manda es
+la del cargo **ausente** — «cuando no esté quien tiene este cargo, su jefe
+inmediato se hace cargo de este módulo»— y la enciende quien reparte los
+permisos, no quien los recibe.
+
+- Arranca **apagado** en todos lados: sin encenderlo, el comportamiento es el
+  de siempre. Se sembraron en `true` sólo los cinco que ya estaban vivos, para
+  no cambiar por debajo lo desplegado hace un rato (28 filas de 1.353).
+- **Ahora también se hereda `can_edit`.** Por lo mismo: si el interruptor está
+  encendido es porque alguien decidió que ese trabajo sigue; recortarlo a
+  ver/aprobar sería volver a decidir por él.
+- Índice parcial `role_permissions_delega_en_ausencia_idx`. Sin él, cada
+  consulta de permisos —y hay una en las policies de 35 tablas— recorrería la
+  tabla buscando delegaciones que casi nunca existen; con él, «no hay nada
+  delegado» se contesta sin tocarla.
+
+Verificado en el entorno de pruebas: con el interruptor encendido,
+`requests_personales` se hereda —aprobar **y** editar—; con él apagado,
+`staff_salary` no. Manda el interruptor, no una lista.
+
+Migración `20260812223551_delegacion_por_ausencia_configurable_por_cargo`.
+
 ## v2.577.0 — El jefe inmediato hereda el permiso mientras el titular no está
 
 El portal ya sabía las tres cosas que hacen falta, pero no las había juntado:

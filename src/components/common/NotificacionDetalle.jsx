@@ -36,6 +36,8 @@ const DetalleSolicitud = lazy(() => import('../../views/solicitudes/DetalleSolic
  */
 export default function NotificacionDetalle({ notif }) {
     const employees = useStaff(s => s.employees);
+    const personasDeSolicitudes = useStaff(s => s.personasDeSolicitudes);
+    const resolverPersonas      = useStaff(s => s.resolverPersonasDeSolicitudes);
 
     const [fila,  setFila]  = useState(null);
     const [error, setError] = useState('');
@@ -70,11 +72,28 @@ export default function NotificacionDetalle({ notif }) {
         return () => { vivo = false; };
     }, [id, esMinMax]);
 
+    /* Las dos personas de la solicitud pueden no estar en el maestro de
+     * personal: `employees_select` esconde a los cargos `is_su`, y el aprobador
+     * real del portal tiene uno. Sin este respaldo, el detalle dentro de la
+     * campana muestra «Sin registro» donde va quien aprobó. Se pide al llegar la
+     * fila, y sólo lo que falte. */
+    useEffect(() => {
+        if (!fila) return;
+        // Min/Max guarda a quien decidió como el CORREO con el que entró, no
+        // como un uuid: va por la otra entrada, con la misma clave que después
+        // usa `buscarPersona` para encontrarlo.
+        if (esMinMax) resolverPersonas([fila.requested_by_id], [fila.decided_by]);
+        else          resolverPersonas([fila.employee_id, fila.approver_id]);
+    }, [fila, esMinMax, resolverPersonas]);
+
     const employeesById = useMemo(() => {
         const m = new Map();
         (employees ?? []).forEach(e => m.set(String(e.id), e));
+        Object.entries(personasDeSolicitudes || {}).forEach(([id, p]) => {
+            if (!m.has(id)) m.set(id, p);
+        });
         return m;
-    }, [employees]);
+    }, [employees, personasDeSolicitudes]);
 
     // El empleado se resuelve al PINTAR y no dentro de la carga: el maestro de
     // personal puede llegar después que la solicitud —son dos fuentes—, y
@@ -84,15 +103,20 @@ export default function NotificacionDetalle({ notif }) {
         if (!fila) return null;
         // El tercer parámetro le pone cara a las dos personas del ajuste: su
         // tabla las guarda como texto —un uuid y el correo de quien decidió— y
-        // sin el buscador la ficha muestra la dirección de correo pelada.
-        if (esMinMax) return adaptarMinMax(fila, sucursalId => ERP_NAMES[sucursalId],
-            buscadorDePersonas(employees));
+        // sin el buscador la ficha muestra la dirección de correo pelada. El
+        // respaldo va después del maestro y con la misma clave: quien decide un
+        // Min/Max suele ser un cargo que el maestro esconde.
+        if (esMinMax) {
+            const enElMaestro = buscadorDePersonas(employees);
+            return adaptarMinMax(fila, sucursalId => ERP_NAMES[sucursalId],
+                (k) => enElMaestro(k) ?? (k ? (personasDeSolicitudes?.[String(k)] ?? null) : null));
+        }
         return {
             ...fila,
             employee: employeesById.get(String(fila.employee_id)) ?? null,
             approver: employeesById.get(String(fila.approver_id)) ?? null,
         };
-    }, [fila, esMinMax, employees, employeesById]);
+    }, [fila, esMinMax, employees, employeesById, personasDeSolicitudes]);
 
     if (error) {
         return <p className="text-label font-semibold text-danger-text px-1 py-2">{error}</p>;

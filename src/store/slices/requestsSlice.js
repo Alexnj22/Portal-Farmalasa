@@ -10,6 +10,7 @@ import {
     fetchEmployeeSystemRole, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
     aplicarSolicitudEnErp,
     aplicarMovimientoInventarioEnErp,
+    fetchPersonasDeSolicitudes,
 } from '../../data/requests';
 import { fetchEmployeeRosterSchedule } from '../../data/employees';
 import { upsertWeeklyRoster } from '../../data/system';
@@ -676,6 +677,56 @@ export const createRequestsSlice = (set, get) => ({
     requests: [],
     isLoadingRequests: false,
 
+    /* Quienes participan de una solicitud pero el maestro de personal esconde.
+     *
+     * NO es un segundo directorio: `employees_select` oculta a los cargos
+     * `is_su` a propósito, y meterlos en `employees` los devolvería a la lista
+     * de personal. Acá viven aparte, con lo justo para pintarlos donde ya se los
+     * nombra —dentro de su solicitud—, y las vistas los consultan como respaldo
+     * del maestro. Se llena solo: `fetchRequests` y `resolverPersonasDeSolicitudes`.
+     */
+    personasDeSolicitudes: {},
+
+    /**
+     * El mismo relleno, para quien abre UNA solicitud suelta.
+     *
+     * La campana no pasa por `fetchRequests`: lee la fila por id y resuelve a
+     * las dos personas contra el maestro de personal. Sin esto, el detalle
+     * dentro de la campana repite el hueco que `fetchRequests` ya tapó.
+     *
+     * Sólo pide lo que falta —lo que ya está en el maestro o ya se resolvió
+     * antes no se vuelve a consultar—, así que abrir cinco avisos de la misma
+     * persona cuesta una sola llamada.
+     */
+    resolverPersonasDeSolicitudes: async (ids, claves = []) => {
+        const yaEstan = new Set((get().employees ?? []).map(e => String(e.id)));
+        const cache   = get().personasDeSolicitudes ?? {};
+        const pendiente = (v) => !yaEstan.has(v) && !cache[v];
+
+        const faltanIds    = [...new Set((ids || []).filter(Boolean).map(String))].filter(pendiente);
+        // El correo NUNCA está en `yaEstan` (ese set son uuids), pero sí puede
+        // estar ya resuelto en la caché, y el maestro puede tener a la persona
+        // aunque no bajo esta llave — eso lo resuelve `buscadorDePersonas` sin
+        // consultar. Acá sólo se pide lo que ninguno de los dos alcanzó.
+        const faltanClaves = [...new Set((claves || []).filter(Boolean).map(String))]
+            .filter(c => !cache[c]);
+        if (!faltanIds.length && !faltanClaves.length) return cache;
+
+        const { data, error } = await fetchPersonasDeSolicitudes(faltanIds, faltanClaves);
+        if (error) {
+            console.error('resolverPersonasDeSolicitudes falló:', error.message);
+            return cache;
+        }
+        const filas = data || [];
+        if (!filas.length) return cache;
+
+        await ponerleCara(filas, get);
+        const merged = { ...get().personasDeSolicitudes,
+                         ...Object.fromEntries(filas.map(p => [String(p.clave), p])) };
+        set({ personasDeSolicitudes: merged });
+        return merged;
+    },
+
     // ── Fetch ──────────────────────────────────────────────────────────────
     /**
      * Pasó de tres parámetros posicionales a un objeto el 2026-08-11, al
@@ -731,7 +782,41 @@ export const createRequestsSlice = (set, get) => ({
                 (extra || []).forEach(e => { empMap[e.id] = e; });
             }
 
+            // 4c. Los que el RLS esconde. `employees_select` no deja ver a quien
+            // tenga un cargo `is_su`, y el aprobador real del portal tiene uno:
+            // sin esto, las dos consultas de arriba vuelven sin él y la ficha
+            // «Aprobó» queda en «Sin registro», sin cara y sin nombre. La RPC
+            // devuelve sólo lo que se pinta, y sólo de quien participa de alguna
+            // solicitud. Ver `fetchPersonasDeSolicitudes`.
+            const ocultos = [...new Set(
+                (requests || [])
+                    .flatMap(r => [r.employee_id, r.approver_id])
+                    .filter(id => id && !empMap[id])
+            )];
+            let dePantalla = [];
+            if (ocultos.length > 0) {
+                const { data, error: ocultosErr } = await fetchPersonasDeSolicitudes(ocultos, []);
+                if (ocultosErr) console.error('fetchRequests: resolver personas escondidas falló:', ocultosErr.message);
+                dePantalla = data || [];
+                dePantalla.forEach(e => { empMap[e.id] = e; });
+            }
+
             await ponerleCara(Object.values(empMap), get);
+
+            // El mismo hueco lo tienen las pantallas que resuelven a la persona
+            // contra el maestro de personal —el historial por nivel del detalle,
+            // el detalle dentro de la campana—, porque ese maestro sale de
+            // `employees_safe` y lo esconde igual. Se publican acá, aparte, para
+            // que esas vistas caigan a este mapa sin que los escondidos entren
+            // al directorio de personal (que es lo que la policy quiso evitar).
+            if (dePantalla.length > 0) {
+                set(state => ({
+                    personasDeSolicitudes: {
+                        ...state.personasDeSolicitudes,
+                        ...Object.fromEntries(dePantalla.map(p => [String(p.clave), p])),
+                    },
+                }));
+            }
 
             const enriched = (requests || []).map(r => ({
                 ...r,

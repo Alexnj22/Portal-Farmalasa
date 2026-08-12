@@ -142,6 +142,34 @@ export function fetchEmployeesByIds(ids, columns) {
     return supabase.from('employees').select(columns).in('id', ids);
 }
 
+/**
+ * Los que `employees` esconde.
+ *
+ * `employees_select` no deja ver a quien tenga un cargo con `roles.is_su`, salvo
+ * a sí mismo. Es lo que se quiso —un superusuario no figura en el directorio de
+ * personal— pero el aprobador real del portal tiene uno de esos cargos, así que
+ * la consulta de arriba devolvía la solicitud SIN su aprobador y la ficha
+ * «Aprobó» quedaba en «Sin registro»: ni cara ni nombre. Medido el 2026-08-12
+ * con la sesión de una vendedora: 8 de 8 solicitudes resueltas.
+ *
+ * La RPC es SECURITY DEFINER y devuelve sólo lo que se pinta —nombre, foto,
+ * cargo y sala—, y sólo de quien participa de alguna solicitud. No trae `code`
+ * a propósito: ese código es hoy la contraseña del carné.
+ *
+ * Es un COMPLEMENTO, no un reemplazo: `fetchEmployeesByIds` sigue trayendo las
+ * columnas completas de todos los que sí se ven (el detalle muestra el código
+ * de quien pide), y esto rellena únicamente los huecos.
+ *
+ * Dos entradas porque hay dos formas de nombrar a la misma persona: las
+ * solicitudes de aprobación guardan un uuid, y Min/Max guarda el CORREO con el
+ * que decidió. Cada fila vuelve con la `clave` que hizo juego, así el llamador
+ * la guarda bajo la misma llave con la que la buscó.
+ */
+export function fetchPersonasDeSolicitudes(ids = [], claves = []) {
+    return supabase.rpc('get_personas_de_solicitudes',
+        { p_ids: ids, p_claves: claves });
+}
+
 // ── createRequest ────────────────────────────────────────────────────────────
 
 export function fetchEmployeeApprovalInfo(employeeId) {

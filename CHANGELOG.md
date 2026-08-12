@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.578.1 — Solicitudes: vuelve a verse quién aprobó
+
+En una solicitud ya resuelta, la ficha **«Aprobó»** salía en «Sin registro»:
+sin foto y sin nombre. No era intermitente — le pasaba a **todo el mundo menos
+a quien la había aprobado**, que es justamente por qué tardó en verse.
+
+**Qué pasaba.** Desde el 2026-08-04 la regla de lectura de personal esconde a
+los cargos marcados como superusuario, para que no figuren en el directorio.
+Esa parte está bien y se queda. Lo que nadie midió es la otra mitad: el cargo
+que resuelve casi todas las solicitudes del portal —Supervisor/a de Ventas— es
+uno de esos, así que al recargar la lista el aprobador volvía **vacío** y la
+pantalla no tenía a quién mostrar. Medido con la sesión de una vendedora:
+**8 de 8** solicitudes resueltas, ninguna con aprobador a la vista. Las 12 de
+las 14 que hay resueltas en el portal tienen a ese cargo de aprobador.
+
+**Qué se hizo.** No se tocó la regla de personal. Se abrió una ventana del
+tamaño exacto del agujero: quien **participa** de una solicitud se puede
+nombrar y mostrar **dentro de esa solicitud**. Devuelve sólo lo que se pinta
+—nombre, foto, cargo y sala— y nada más: en particular **no** devuelve el
+código de empleado, que hoy es la contraseña del carné.
+
+Alcanza a las tres pantallas que muestran a las dos personas: la tarjeta de la
+bandeja, el detalle de la solicitud y el detalle dentro de la campana. Los
+escondidos **no** entran al directorio de personal — viven aparte, y las
+pantallas los consultan sólo como respaldo.
+
+**El mismo problema tenía un segundo disfraz.** Los ajustes de Min/Max no
+guardan un id de quien decidió: guardan el correo con el que entró. Como el
+maestro de personal tampoco lo tenía, esas fichas mostraban la **dirección de
+correo pelada** —`edwin.nunez@farmalasa.app`— donde va el nombre, y sin foto.
+Se veía tan distinto que no parecía el mismo problema, pero la causa es una
+sola. Las 4 solicitudes de Min/Max del portal estaban así. Ahora la persona se
+puede buscar también por ese correo, y las dos fichas quedan iguales al resto.
+
 ## v2.578.0 — La delegación por ausencia se activa por cargo y módulo
 
 Corrige el criterio de v2.577.0, que traía una **lista fija en el código**:

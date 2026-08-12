@@ -126,11 +126,23 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const appendAuditLog = useStaff(s => s.appendAuditLog);
     const marcarAvisoResuelto = useStaff(s => s.marcarAvisoDeSolicitudResuelto);
 
+    /* El maestro de personal, más los que ese maestro esconde.
+     *
+     * `employees_select` oculta a los cargos `is_su` de todo el mundo salvo de
+     * sí mismos, y el aprobador real del portal tiene uno de esos cargos: el
+     * mapa a secas dejaba sin cara ni nombre a quien resolvió la solicitud.
+     * `personasDeSolicitudes` los trae aparte —sólo los que participan de
+     * alguna— y se aplica DESPUÉS para que nunca pise al maestro, que tiene más
+     * columnas. Ver `resolverPersonasDeSolicitudes`. */
+    const personasDeSolicitudes = useStaff(s => s.personasDeSolicitudes);
     const employeesById = useMemo(() => {
         const m = new Map();
         (employees || []).forEach(e => m.set(String(e.id), e));
+        Object.entries(personasDeSolicitudes || {}).forEach(([id, p]) => {
+            if (!m.has(id)) m.set(id, p);
+        });
         return m;
-    }, [employees]);
+    }, [employees, personasDeSolicitudes]);
 
     /* Un solo reloj para toda la bandeja. La espera de cada tarjeta («hace 3 h»)
      * se congelaría en el valor del último render sin algo que lata, y un
@@ -142,8 +154,17 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * quien decidió como el CORREO con el que entró, y ese correo se ARMA con el
      * usuario: buscar por la columna `email` no encontraba a casi nadie —está
      * vacía en 49 de 50— y la ficha terminaba mostrando la dirección en vez de
-     * la persona. El detalle, en `buscadorDePersonas`. */
-    const buscarPersona = useMemo(() => buscadorDePersonas(employees), [employees]);
+     * la persona. El detalle, en `buscadorDePersonas`.
+     *
+     * Y si el maestro no la tiene —esconde a los cargos `is_su`, que son los que
+     * de hecho deciden los Min/Max— se cae al mapa de respaldo, buscado por la
+     * MISMA clave con la que se pidió. Sin eso, la ficha volvía a mostrar la
+     * dirección de correo pelada donde va el nombre. */
+    const buscarPersona = useMemo(() => {
+        const enElMaestro = buscadorDePersonas(employees);
+        return (idOCorreo) => enElMaestro(idOCorreo)
+            ?? (idOCorreo ? (personasDeSolicitudes?.[String(idOCorreo)] ?? null) : null);
+    }, [employees, personasDeSolicitudes]);
 
     /* Min/Max vive en OTRA tabla, con otras columnas y otro ciclo — pero para
      * quien mira la sala es una solicitud más, y tenerla en otra pantalla era
@@ -172,6 +193,19 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
             .catch(e => console.error('RequestsView: fetch min/max failed:', e?.message ?? e));
         return () => { vivo = false; };
     }, [esSucursal]);
+
+    /* Quien decidió un Min/Max casi siempre es un cargo que el maestro de
+     * personal esconde, así que hay que ir a buscarlo aparte. Se pide por la
+     * clave tal como la guardó la tabla —el correo—, que es la misma con la que
+     * `buscarPersona` lo va a buscar después. */
+    const resolverPersonas = useStaff(s => s.resolverPersonasDeSolicitudes);
+    useEffect(() => {
+        if (!minmaxFilas.length) return;
+        resolverPersonas(
+            minmaxFilas.map(f => f.requested_by_id),
+            minmaxFilas.map(f => f.decided_by),
+        );
+    }, [minmaxFilas, resolverPersonas]);
 
     /* Las personas se resuelven al PINTAR, no dentro de la carga: el maestro de
      * personal es otra fuente y puede llegar después que estas filas. Sellarlas

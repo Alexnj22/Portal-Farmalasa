@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.570.0 — Interruptor para pausar el traslado
+
+El freno para cuando algo salga mal, pedido por el usuario antes de salir a
+producción. Vive en **Sistema › Mantenimiento**, arriba del candado de módulos.
+
+**No se pudo reusar el candado de mantenimiento**, y la razón está escrita en la
+propia pantalla: *el candado detiene personas, no procesos*. Frena las policies
+de RLS, y el traslado corre con `service_role` y desde una tarea programada —
+pasaría igual. Este lo consulta la función antes de tocar nada, así que alcanza
+también a la continuación automática: pausar detiene lo que ya venía corriendo.
+
+**Son dos interruptores, y separarlos no es un lujo.** Pausar el envío y la
+recepción a la vez deja varado lo que ya salió de bodega y todavía no llegó:
+fuera de una sala y sin poder entrar en la otra. Por eso la pantalla lo dice en
+el momento en que se pausa el envío, no en un manual.
+
+**Falla cerrado**: si no se puede leer el interruptor, no se despacha y se
+contesta 503. Un producto que no se movió se mueve después; uno que se movió de
+más hay que ir a buscarlo. El simulacro sigue permitido —no escribe— para poder
+mirar en qué estado quedó todo mientras está pausado.
+
+Verificado con la misma llamada sobre el mismo pedido: pausado contesta
+`TRASLADOS_PAUSADOS`, despausado avanza hasta el guardián siguiente
+(`SIN_FINALIZAR`). O sea que el interruptor era lo único que lo frenaba, que es
+lo que un before/after tiene que demostrar.
+
+De paso quedó anotado que `employees.user_id` no existe: la autoría sale de
+`auth_employee_id()`, que contempla las dos identidades del portal. La primera
+versión de la RPC fallaba siempre por eso.
+
 ## v2.569.7 — Las verificaciones vuelven a servir: la forma de los anexos tiene candado
 
 **El problema.** Al corregir los dos anexos de ventas para que tuvieran las

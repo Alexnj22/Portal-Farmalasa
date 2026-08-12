@@ -16,6 +16,7 @@ import { useToastStore } from '../store/toastStore';
 import { MODULE_INFO } from '../constants/permissionModules';
 import { smartFilter } from '../utils/searchUtils';
 import { fetchLockableModules, lockModule, unlockModule } from '../data/moduleLocks';
+import { fetchTrasladoSwitch, setTrasladoSwitch } from '../data/trasladoSwitch';
 import { mensajeAmigable } from '../utils/errorMessages';
 
 /**
@@ -83,6 +84,41 @@ export default function MaintenanceView() {
         });
         return () => { vivo = false; };
     }, []);
+
+    // ── Pausa del traslado de pedidos ────────────────────────────────────────
+    // Va acá y no en el candado de módulos porque frena OTRA cosa: el candado
+    // detiene personas, esto detiene el movimiento automático de mercadería.
+    const [traslado,     setTraslado]     = useState([]);
+    const [trasladoBusy, setTrasladoBusy] = useState(null);
+
+    const recargarTraslado = useCallback(() => (
+        fetchTrasladoSwitch().then(({ data, error }) => {
+            if (error) useToastStore.getState().showToast('Traslados', mensajeAmigable(error), 'error');
+            else setTraslado(data || []);
+        })
+    ), []);
+    useEffect(() => { recargarTraslado(); }, [recargarTraslado]);
+
+    const alternarTraslado = useCallback(async (accion, pausar) => {
+        setTrasladoBusy(accion);
+        const { error } = await setTrasladoSwitch(accion, pausar, null);
+        if (error) useToastStore.getState().showToast('Traslados', mensajeAmigable(error), 'error');
+        else {
+            useToastStore.getState().showToast(
+                pausar ? 'Traslados en pausa' : 'Traslados reanudados',
+                accion === 'enviar'
+                    ? (pausar ? 'No va a salir mercadería hasta que lo reanudes.'
+                              : 'La mercadería vuelve a salir al finalizar un pedido.')
+                    : (pausar ? 'No se va a poder recibir hasta que lo reanudes.'
+                              : 'Las salas ya pueden recibir.'),
+                pausar ? 'warning' : 'success',
+            );
+            await recargarTraslado();
+        }
+        setTrasladoBusy(null);
+    }, [recargarTraslado]);
+
+    const envioPausado = traslado.find(t => t.accion === 'enviar')?.pausado ?? false;
 
     const activos = useMemo(() => {
         const ahora = new Date();
@@ -177,6 +213,51 @@ export default function MaintenanceView() {
                 su job de cron aparte. La única excepción es el recálculo mensual de MIN·MAX, que sí
                 lo respeta.
             </Notice>
+
+            {/* Pausa del traslado de pedidos. Es lo único de esta pantalla que
+                detiene un proceso, así que va arriba y aparte del candado. */}
+            <div className="flex flex-col gap-2.5 pt-1">
+                <span className="text-micro font-black uppercase tracking-widest text-content-2 px-1">
+                    Traslado de pedidos
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {traslado.map(t => (
+                        <div key={t.accion} data-surface="card"
+                            className="flex items-start justify-between gap-3 px-4 py-3">
+                            <div className="min-w-0">
+                                <span className="text-label font-medium text-content-1 block">
+                                    {t.accion === 'enviar' ? 'Sacar mercadería de bodega' : 'Recibir en la sala'}
+                                </span>
+                                <span className="text-micro text-content-3 block mt-0.5">
+                                    {t.accion === 'enviar'
+                                        ? 'Al finalizar un pedido, la mercadería sale sola.'
+                                        : 'Al confirmar una caja, la mercadería entra sola.'}
+                                </span>
+                                {t.pausado && (
+                                    <Badge variant="warning" size="sm" uppercase={false} className="mt-1.5">
+                                        En pausa desde {hora(t.cambiado_at)}
+                                    </Badge>
+                                )}
+                            </div>
+                            <Switch
+                                checked={t.pausado}
+                                disabled={trasladoBusy === t.accion}
+                                onChange={v => alternarTraslado(t.accion, v)}
+                                aria-label={`Pausar ${t.accion === 'enviar' ? 'la salida de bodega' : 'la recepción en sala'}`}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* El orden importa y por eso se dice acá, no en un manual. */}
+                {envioPausado && (
+                    <Notice variant="warning" icon={Clock}>
+                        <strong>Lo que ya salió sigue en camino.</strong> Está fuera de bodega y
+                        todavía no en la sala. Dejá la recepción abierta para poder cerrarlo; si
+                        también la pausás, esa mercadería queda sin poder entrar a ningún lado.
+                    </Notice>
+                )}
+            </div>
 
             {cargando ? (
                 <LoadingState variant="content" label="Cargando módulos…" />

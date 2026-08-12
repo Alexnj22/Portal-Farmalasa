@@ -210,6 +210,37 @@ Deno.serve(async (req) => {
     if (!pedidoId || !sucId)
       return json({ ok: false, error: "Faltan pedido_id o erp_sucursal_id." }, 400);
 
+    // ── Interruptor de pausa ──────────────────────────────────────────────
+    // El freno para cuando algo sale mal. Se consulta acá, antes de tocar
+    // nada, y alcanza también al cron: la continuación automática entra por
+    // este mismo punto, así que pausar detiene lo que ya venía corriendo.
+    //
+    // FALLA CERRADO. Si no se puede leer el interruptor no se despacha: un
+    // producto que no se movió se mueve después, uno que se movió de más hay
+    // que ir a buscarlo. El simulacro sigue permitido —no escribe— para poder
+    // mirar en qué estado quedó todo mientras está pausado.
+    if (!simulacro) {
+      const { data: sw, error: swErr } = await admin
+        .from("traslado_interruptor")
+        .select("pausado, motivo")
+        .eq("accion", accion)
+        .maybeSingle();
+      if (swErr || !sw) {
+        return json({
+          ok: false, codigo: "INTERRUPTOR_ILEGIBLE",
+          error: "No se pudo comprobar si los traslados están pausados. No se movió nada.",
+        }, 503);
+      }
+      if (sw.pausado) {
+        return json({
+          ok: false, codigo: "TRASLADOS_PAUSADOS",
+          error: accion === "recibir"
+            ? `La recepción de pedidos está pausada${sw.motivo ? `: ${sw.motivo}` : "."}`
+            : `El envío de pedidos está pausado${sw.motivo ? `: ${sw.motivo}` : "."}`,
+        }, 409);
+      }
+    }
+
     if (!interno) {
       // ── Quién llama. Nunca del payload: del JWT. ────────────────────────
       const usuario = await requireActiveEmployeeUser(req, admin);

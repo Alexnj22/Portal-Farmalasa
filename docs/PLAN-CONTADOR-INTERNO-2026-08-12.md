@@ -112,6 +112,90 @@ correr `npm run gate:migrations` y `-- --remote`.
 
 ---
 
+## Paso 1.bis — La pantalla está mal planteada · **PARA MAÑANA**
+
+Feedback de Alex el 2026-08-12, con la vista ya desplegada:
+
+> «visualmente no me gusta como está para confirmar, la sugerencia además que no
+> sale aquí para ver»
+
+**Tiene razón y el error es de diseño, no de detalle.** Decidí no agregar columna
+a la tabla porque ya le habían quitado dos por ancho (Giro en v2.27.4, Tipo el
+2026-07-29) — la restricción era real, pero la conclusión estuvo mal: dejé la
+confirmación a ciegas. Hoy en la lista **no se ve ni el estado ni la propuesta**,
+así que el botón «Confirmar deducibilidad (67)» pide confirmar algo que no está
+en pantalla. **No se puede confirmar lo que no se ve.**
+
+Y hay una incoherencia que lo delata: la columna Categoría **sí** muestra
+«Sugerida: …» debajo del valor. La deducibilidad no tiene su equivalente,
+teniendo exactamente la misma forma de dato.
+
+### La medición que cambia la solución
+
+Antes de rediseñar la tabla, conviene mirar de dónde salen las propuestas:
+
+| estado | grupos | proveedores |
+|---|---|---|
+| `propuesta` | **7 reglas** | 67 |
+| `pendiente` | **5 reglas** + 1 sin regla | 36 + 59 |
+
+Y el reparto no es parejo:
+
+| proveedores | docs | regla |
+|---|---|---|
+| **52** | 848 | Art. 65 nº1 — mercadería |
+| 5 | 38 | Art. 65 nº4 — teléfono |
+| 4 | 189 | Art. 65 nº3 — servicios financieros |
+| 2 | 6 | Art. 65 nº3 — arrendamiento |
+| 2 | 2 | Art. 65 nº3 — otros servicios del giro |
+| 1 | 6 | Art. 65 nº4 — energía eléctrica |
+| 1 | 2 | Art. 65 nº4 — agua |
+
+| proveedores | docs | condición legal |
+|---|---|---|
+| 12 | 108 | Art. 65-A a) — alimentos y bebidas |
+| 9 | 20 | Art. 65 nº3 exclusión — ferretería y pinturas |
+| 8 | 39 | Art. 65-A c) — combustible y repuestos |
+| 6 | 34 | Art. 65 nº3 — actividad genérica |
+| 1 | 2 | Art. 65 nº2 — cómputo |
+| **59** | **1** | **sin código de actividad** |
+
+**El contador toma 12 decisiones, no 162.** Y los 59 sin código de actividad
+tienen **un documento entre todos**: son ruido, no trabajo — hoy ocupan el 62%
+de la lista de pendientes y esconden las 36 que sí importan.
+
+### Lo que hay que construir mañana
+
+**A · Una pantalla de revisión POR REGLA, no por proveedor.** Una tarjeta por
+regla, con el artículo, cuántos proveedores y cuántos documentos cubre, la
+propuesta concreta (deducible · costo/gasto · sector · tipo) y la lista de
+proveedores desplegable. Dos acciones: «Confirmar los N» y «Revisar uno por uno».
+
+Para las condicionadas, la tarjeta lleva **la pregunta legal en texto llano** y
+las dos respuestas aplicables al grupo — que es como decide un contador: no mira
+ocho gasolineras, decide si el reparto es indispensable para el giro.
+
+Los 59 sin actividad van a una sección aparte y callada, con su conteo. No entran
+al flujo principal.
+
+**B · Que el estado se vea en la lista.** El ancho sigue siendo real, así que la
+salida no es una columna ancha: una **columna angosta «IVA»** (~64px) con una
+marca de color y su `title`, o la marca dentro de la celda de Proveedor. El
+rótulo de una columna de 60px es una palabra.
+
+**C · Revisar la jerarquía visual del modal.** La sección quedó abajo del todo,
+después de Contacto y de Estado y Notas, cuando es la decisión de mayor
+consecuencia de esa ficha.
+
+### La lección, para que no se repita
+
+Una restricción real —la tabla no aguanta otra columna— **no autoriza a entregar
+la función sin su información**. Si el ancho no da, la respuesta es cambiarle la
+forma a la función, no publicarla ciega. Acá la forma correcta ni siquiera
+necesitaba la columna: agrupar por regla convierte 67 filas en 7 tarjetas.
+
+---
+
 ## Paso 2 — El libro de compras unificado
 
 **Qué cambia:** hoy `get_libro_compras` lee sólo `purchase_receipts` (lo que

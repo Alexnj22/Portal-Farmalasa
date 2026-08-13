@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.591.1 — El plan de catálogos pasa a cerrados
+
+Sin cambios de comportamiento. `PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md` se
+mueve a `docs/planes-cerrados/` con sus tres grupos cerrados (v2.571.11,
+v2.590.2, v2.590.5 y v2.590.6) más el hallazgo del tipo de incapacidad.
+
+Lo que se actualiza son las referencias **vivas**: `CLAUDE.md`, `DESIGN.md`
+§26.10 y los dos comentarios de código que lo citan (`src/data/constants.js`,
+`src/utils/roles.js`). Una ruta que ya no existe en un comentario es la deuda
+que el propio documento enseña a evitar.
+
+Las cuatro menciones del `CHANGELOG` se quedan con la ruta vieja a propósito:
+son el registro de lo que se dijo ese día, no un índice — es el mismo criterio
+con el que quedó `PLAN-MATERIALES-2026-08-02` al cerrarse.
+
 ## v2.591.0 — Cierre de período: la cadena del remanente tiene pantalla
 
 Vista nueva bajo **Datos contables**. El motor estaba desde hoy y nadie podía

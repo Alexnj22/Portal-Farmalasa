@@ -23,7 +23,7 @@
 //     por accidente.
 //
 // La tolerancia es una red, no una excusa: lo correcto sigue siendo que la
-// lista salga de la tabla. Ver `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`.
+// lista salga de la tabla. Ver `docs/planes-cerrados/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`.
 
 export function normalizarCargo(nombre) {
     return String(nombre ?? '')

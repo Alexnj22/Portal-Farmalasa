@@ -110,7 +110,7 @@ dato.** Si `value === label`, cambiarlo exige migración; si el `value` es un
 código, el rótulo es libre. Un filtro que sólo mira "¿tiene `value:`?" clasifica
 mal por construcción — y el chequeo tiene que incluir `supabase/`, porque hay
 rótulos que también viven dentro de funciones de Postgres.
-`docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md` tiene el mapa de los tres
+`docs/planes-cerrados/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md` tiene el mapa de los tres
 grupos y qué queda abierto.
 
 ---

@@ -5575,7 +5575,7 @@ Ventas` —nunca «ERP»—, `Bajo Receta`).
 **Antes de renombrar una etiqueta, preguntarse si ese texto ES el dato.** Si es
 el `value` de un catálogo, cambiarlo lo desincroniza de lo guardado; si el
 `value` es un código, el rótulo es libre. Ver la regla «un rótulo no es una
-clave» en `CLAUDE.md` y `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`.
+clave» en `CLAUDE.md` y `docs/planes-cerrados/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`.
 
 ### 26.11 El gate de diseño no ve el estilo guardado en una constante
 

@@ -33,7 +33,7 @@ export const EVENT_TYPES = {
 // tocar una sola fila. Antes estos dos catálogos guardaban el rótulo —
 // `value === label`—, o sea que corregir una mayúscula desincronizaba lo
 // guardado de lo que el código busca. Ver «un rótulo no es una clave» en
-// `CLAUDE.md` y `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`.
+// `CLAUDE.md` y `docs/planes-cerrados/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`.
 // ════════════════════════════════════════════════════════════════════════════
 
 // Motivo legal de baja → `employee_events.metadata.terminationReason`.

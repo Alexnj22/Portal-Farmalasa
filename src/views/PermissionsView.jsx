@@ -37,6 +37,31 @@ import {
 const MODULES = MODULE_GROUPS.flatMap(g =>
     g.modules.flatMap(m => [m, ...(m.sub || []).map(s => ({ key: s.key, hasApprove: false, isTab: true }))])
 );
+/* ─── El orden de las tarjetas dentro de un grupo ───────────────────────────
+ *
+ * Por lo ALTO QUE PUEDEN LLEGAR A SER, no por si están encendidas hoy.
+ *
+ * Apagadas se ven todas parejas; el desorden aparece al encenderlas, porque
+ * unas crecen muchísimo —alcance, pestañas, capacidades— y otras no crecen
+ * nada. Mezcladas, una alta al lado de una corta deja un hueco debajo de la
+ * corta, y la grilla queda con dientes.
+ *
+ * Ordenar por «activa» no alcanzaba y era peor: el orden cambiaba con cada
+ * clic. Esto es una propiedad FIJA del módulo, se saca del registro, y por eso
+ * las tarjetas no se mueven nunca — se enciendan o se apaguen.
+ *
+ * Los pesos son los bloques que la tarjeta agrega, no píxeles medidos: lo único
+ * que importa es el ORDEN relativo, y a esa escala un bloque es un bloque. */
+const pesoDe = (m) => (m.hasScope ? 2 : 0)
+                    + (m.hasApprove ? 1 : 0)
+                    + (m.sub || []).length;
+
+/* Estable: dentro del mismo peso se conserva el orden del registro, que es el
+ * que alguien pensó. `sort` muta, así que se copia — `g.modules` es compartido
+ * por toda la pantalla. */
+const ordenar = (mods) =>
+    [...mods].sort((a, b) => pesoDe(b) - pesoDe(a));
+
 // Solo módulos principales (sin sub-permisos) para estadísticas y conteos
 const MAIN_MODULES = MODULES.filter(m => !m.isTab);
 
@@ -743,27 +768,7 @@ const PermissionsView = () => {
      *
      * `permissions` se lee de una ref a propósito, para que cambiarlo NO
      * dispare el recálculo — que es justo lo que se quiere evitar. */
-    const [ordenPorClave, setOrdenPorClave] = useState({});
-    useEffect(() => {
-        if (loading || !selectedRoleId) return;
-        const mapa = {};
-        MODULES.forEach(m => {
-            const v = permissions[`${selectedRoleId}:${m.key}`];
-            mapa[m.key] = v && (v.can_view || v.can_edit || v.can_approve) ? 0 : 1;
-        });
-        setOrdenPorClave(mapa);
-        // `permissions` NO va en las dependencias, y no es un descuido: si fuera,
-        // cada clic recalcularía el orden y la tarjeta saltaría de lugar. Se
-        // congela al abrir el cargo y se recalcula al cambiar de cargo.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedRoleId, loading]);
-
-    /* `sort` muta, así que se copia antes: `g.modules` viene del registro y es
-     * compartido por toda la pantalla. Orden estable — dentro de cada mitad se
-     * conserva el del registro, que es el que alguien pensó. */
-    const ordenar = useCallback((mods) =>
-        [...mods].sort((a, b) => (ordenPorClave[a.key] ?? 1) - (ordenPorClave[b.key] ?? 1)),
-    [ordenPorClave]);
+    // (el orden de las tarjetas se calcula del registro, ver `ordenar` arriba)
 
     // ── Activar todos los permisos (como SUPERADMIN) ─────────────────────────
     const handleActivateAll = useCallback(async () => {

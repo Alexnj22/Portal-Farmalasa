@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.582.4 — Las tarjetas se ordenan por lo alto que pueden llegar a ser
+
+Corrige el criterio de v2.582.3, que ordenaba por «activa o no» y no era eso.
+
+Apagadas, todas las tarjetas se ven parejas. **El desorden aparece al
+encenderlas**: unas crecen muchísimo —alcance, pestañas, capacidades— y otras no
+crecen nada. Una alta al lado de una corta deja un hueco debajo de la corta y la
+grilla queda con dientes.
+
+Así que el orden ya no mira el estado sino **lo alto que la tarjeta puede llegar
+a ser**, que es una propiedad fija del módulo: cuántos sub-permisos tiene, si
+lleva alcance, si lleva Aprobar. Sale del registro.
+
+Dos ventajas sobre el intento anterior, y la segunda es la que importa:
+
+1. Las altas quedan juntas y las filas cierran parejo **una vez encendidas**,
+   que es cuando se notaba el problema.
+2. **Las tarjetas no se mueven nunca.** El orden no depende del estado, así que
+   encender o apagar no reacomoda nada. Desaparece el efecto que congelaba el
+   orden por cargo, la ref y el estado que hacían falta para evitar el salto:
+   el problema se disuelve en vez de taparse.
+
+En Operaciones queda: Horarios y turnos (5 bloques) → Nómina (4) → las tres de
+Solicitudes (3) → Plan de vacaciones (2). Verificado en el navegador.
+
 ## v2.582.3 — Mismo alto en la banda, y las tarjetas activas primero
 
 **Mismo alto.** Los tres ajustes del cargo tenían la altura de su contenido y

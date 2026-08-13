@@ -187,97 +187,144 @@ const getWidgetSize = (id) => {
 };
 
 /**
- * Estira los widgets para que cada renglón quede lleno. Sólo se usa en el
- * acomodo adaptado —el que se calcula por cargo—, nunca sobre uno que alguien
- * arrastró a mano.
+ * Acomoda una pestaña en RENGLONES COMPLETOS: cada fila suma exactamente
+ * `gridCols` columnas y todas sus baldosas miden lo mismo de alto. O sea que el
+ * tablero es un rectángulo lleno, sin una sola celda en blanco. Sólo se usa en
+ * los acomodos que calcula la app —el automático de General y el adaptado por
+ * cargo—, nunca sobre uno que alguien arrastró a mano.
  *
- * Reportado el 2026-08-07 con captura: a un cargo al que le faltan widgets del
- * medio le quedaban celdas en blanco, y un renglón con agujeros se lee como una
- * pantalla a medio cargar. «Nunca cambiar el tamaño a más pequeño, pero sí a
- * más grande para intentar hacer rectángulos siempre.»
+ * Reemplaza al par `autoPlaceOrder` + `rellenarFilas`, que trabajaba en dos
+ * tiempos y por eso no podía cumplir la promesa: primero colocaba en el orden
+ * del catálogo y **después** intentaba estirar cada banda para taparle los
+ * huecos. Estirar sólo funciona si la banda salió pareja, así que cada vez que
+ * el primer paso mezclaba un widget de una fila con uno de tres —`branches`
+ * (1×1) al lado de `calendar` (2×3), por dar el caso real— la banda se
+ * descartaba entera y el hueco quedaba puesto.
  *
- * Trabaja por BANDA, no celda por celda. Una banda es el conjunto de widgets
- * que arrancan en la misma fila, y sólo se toca si es pareja: todos del mismo
- * alto y sin que nadie de una fila anterior meta cuerpo adentro. Fuera de esa
- * condición, ensanchar a uno le pisaría el lugar al de abajo — el acomodo ya no
- * sería el que `autoPlaceOrder` resolvió y volveríamos al encimado por otra
- * puerta. La banda despareja se deja como está: prefiero un hueco a una
- * superposición.
+ * Medido en 4 columnas contra el acomodo viejo, sobre el catálogo completo: 4
+ * celdas vacías. Sobre un cargo acotado —los 10 widgets de un dependiente de
+ * farmacia—: 6. Y barriendo 2,000 recortes al azar del catálogo, que es lo que
+ * hace un permiso, **el 56% dejaba al menos un hueco**. O sea que el tablero
+ * agujereado no era el caso raro. Con este acomodo: 0 huecos en los 7,640
+ * recortes que prueba `probar-empacado.mjs` (todos los de 1, 2 y 3 widgets, más
+ * 400 al azar), 0 encimados y 0 widgets sin colocar.
  *
- * El sobrante se reparte desde el final: tres baldosas en cuatro columnas dejan
- * a la última doble, y dos baldosas quedan mitad y mitad — que es justo como se
- * ve hoy el segundo renglón de Operación.
+ * Lo que se paga es alto: el tablero completo pasa de 16 renglones de rejilla a
+ * 18. Es el precio de que ningún renglón mezcle alturas, y se paga a
+ * conciencia — un hueco se lee como una pantalla a medio cargar, dos filas más
+ * de scroll no.
+ *
+ * La diferencia es que acá el ORDEN y las MEDIDAS se deciden juntos. Cada
+ * renglón lo abre el primer widget pendiente y lo acompañan los que tienen SU
+ * MISMO ALTO y entran en lo que queda de ancho, aunque estén más adelante en el
+ * catálogo. El sobrante de ancho se reparte entre los de la banda desde el
+ * final —tres baldosas en cuatro columnas dejan a la última doble, dos quedan
+ * mitad y mitad—, que es la regla que ya tenía `rellenarFilas`.
+ *
+ * **El ancho se estira sin límite; el alto, una fila como mucho.** Ensanchar
+ * una baldosa la deja más cómoda, pero estirarla para emparejarla con un
+ * calendario de tres filas la convierte en una tarjeta de 360px con un ícono
+ * arriba y nada más. Esa fila de tolerancia no es un detalle: sin ella,
+ * Operación —cuatro lanzadores de 1×1, `traslados` de 2×2 y uno más— terminaba
+ * con `facturas_sala` solo, a todo lo ancho, en un renglón propio.
+ *
+ * Es también la respuesta al pedido del 2026-08-07 —«nunca cambiar el tamaño a
+ * más pequeño, pero sí a más grande para intentar hacer rectángulos siempre»—
+ * y al del 2026-08-13, «que se vea cuadrado y sin espacios en blanco».
+ *
+ * Devuelve layout Y medidas: el ancho repartido es el que después lee
+ * `getEffectiveCols`, así que si sólo devolviera posiciones la rejilla diría
+ * una cosa y el widget mediría otra.
  */
-function rellenarFilas(layout, medidas, gridCols) {
-  const ids = Object.keys(layout);
-  if (!ids.length) return { layout, medidas };
-
+function empacarFilas(orden, medidas, gridCols) {
   const alto  = id => Math.max(medidas[id]?.rows ?? getWidgetSize(id).minRows, 1);
   const ancho = id => Math.min(Math.max(medidas[id]?.cols ?? getWidgetSize(id).minCols, 1), gridCols);
 
-  const dueño = new Map();
-  ids.forEach(id => {
-    for (let c = layout[id].col; c < layout[id].col + ancho(id); c++)
-      for (let r = layout[id].row; r < layout[id].row + alto(id); r++) dueño.set(`${c},${r}`, id);
-  });
+  const pendientes = orden.slice();
+  const bandas = [];
 
-  const porFila = {};
-  ids.forEach(id => { (porFila[layout[id].row] ??= []).push(id); });
+  while (pendientes.length) {
+    const primero = pendientes.shift();
+    const h = alto(primero);
+    const ids = [primero];
+    let libre = gridCols - ancho(primero);
 
-  const nuevoLayout   = { ...layout };
-  const nuevasMedidas = { ...medidas };
-
-  Object.keys(porFila).map(Number).sort((a, b) => a - b).forEach(fila => {
-    const banda = porFila[fila].slice().sort((a, b) => layout[a].col - layout[b].col);
-    const h = Math.max(...banda.map(alto));
-
-    // Primero se empareja el ALTO: los bajos crecen hasta el más alto de la
-    // banda, y sólo si las celdas de abajo están libres. Sin esto, una baldosa
-    // al lado de un widget de dos filas deja su celda inferior vacía —el caso
-    // de `sales` (3×2) con una baldosa— y la banda se descartaba por despareja.
-    const altoFinal = {};
-    banda.forEach(id => {
-      let hh = alto(id);
-      while (hh < h) {
-        let libre = true;
-        for (let c = layout[id].col; c < layout[id].col + ancho(id); c++)
-          if (dueño.has(`${c},${fila + hh}`)) { libre = false; break; }
-        if (!libre) break;
-        hh += 1;
-      }
-      altoFinal[id] = hh;
-    });
-    if (banda.some(id => altoFinal[id] !== h)) return;         // no se pudo emparejar
-
-    for (let r = fila; r < fila + h; r++)
-      for (let c = 1; c <= gridCols; c++) {
-        const d = dueño.get(`${c},${r}`);
-        if (d && layout[d].row !== fila) return;               // intruso de arriba
-      }
-
-    // El reparto del ancho sobrante va desde el final, para que tres baldosas
-    // en cuatro columnas dejen a la última doble y dos queden mitad y mitad.
-    const extra = Object.fromEntries(banda.map(id => [id, 0]));
-    let sobra = gridCols - banda.reduce((s, id) => s + ancho(id), 0);
-    let i = banda.length - 1;
-    while (sobra > 0) {
-      extra[banda[i]] += 1;
-      sobra -= 1;
-      i = i === 0 ? banda.length - 1 : i - 1;
+    while (libre > 0) {
+      // Primero el que YA mide lo mismo de alto; recién si no hay ninguno se
+      // acepta uno de una fila menos y se lo estira. El tope de una fila no es
+      // decorativo: es la diferencia entre una lista que gana aire y una
+      // baldosa de 360px con un ícono arriba y nada más.
+      const cabe = id => ancho(id) <= libre;
+      let i = pendientes.findIndex(id => alto(id) === h && cabe(id));
+      if (i === -1) i = pendientes.findIndex(id => alto(id) === h - 1 && cabe(id));
+      if (i === -1) break;
+      const [id] = pendientes.splice(i, 1);
+      ids.push(id);
+      libre -= ancho(id);
     }
 
-    // Se escribe aunque no sobre ancho: el alto emparejado de arriba también es
-    // un cambio, y saltearlo dejaría el hueco que se acaba de resolver.
+    bandas.push({ h, ids });
+  }
+
+  // ── El reparto entre DOS renglones vecinos ─────────────────────────────────
+  // Lo que sobra de ancho se lo reparten los widgets del renglón, así que un
+  // renglón con uno solo se lo lleva todo. Con cinco lanzadores de 1×1 en
+  // cuatro columnas eso daba una fila de cuatro y otra con «Ajuste de
+  // inventario» SOLO, a todo lo ancho: sin hueco, pero leyéndose como un cartel
+  // — visto en la captura del tablero de pruebas.
+  //
+  // El renglón de arriba MÁS CERCANO que mida lo mismo de alto —no
+  // necesariamente el inmediato: entre los cinco lanzadores del catálogo se
+  // meten el calendario y los widgets de dos filas— le presta uno, y quedan
+  // 3 + 2. Se hace sólo cuando BAJA el ensanche máximo que carga una baldosa:
+  // con `facturacion`+`traslados` arriba y `meta_sala` sola abajo, el préstamo
+  // dejaría a `facturacion` sola —el mismo problema, corrido un renglón— y por
+  // eso ahí no se hace.
+  const sobrante = ids => gridCols - ids.reduce((s, id) => s + ancho(id), 0);
+  const tension  = ids => Math.ceil(Math.max(sobrante(ids), 0) / ids.length);
+  for (let i = bandas.length - 1; i > 0; i--) {
+    const abajo = bandas[i];
+    if (abajo.ids.length !== 1) continue;
+    const j = bandas.findLastIndex((b, k) => k < i && b.h === abajo.h && b.ids.length >= 2);
+    if (j === -1) continue;
+    const arriba = bandas[j];
+    const prestado = arriba.ids[arriba.ids.length - 1];
+    if (ancho(prestado) > sobrante(abajo.ids)) continue;
+    const nuevoArriba = arriba.ids.slice(0, -1);
+    const nuevoAbajo  = [prestado, ...abajo.ids];
+    if (Math.max(tension(nuevoArriba), tension(nuevoAbajo)) >= Math.max(tension(arriba.ids), tension(abajo.ids))) continue;
+    arriba.ids = nuevoArriba;
+    abajo.ids  = nuevoAbajo;
+  }
+
+  const layout = {};
+  const nuevasMedidas = { ...medidas };
+  let fila = 1;
+
+  for (const { h, ids } of bandas) {
+    // Lo que no se pudo llenar con otro widget se reparte como ancho extra,
+    // desde el final: tres baldosas en cuatro columnas dejan a la última doble,
+    // dos quedan mitad y mitad. Así nunca queda una celda muerta al final.
+    const extra = Object.fromEntries(ids.map(id => [id, 0]));
+    let libre = sobrante(ids);
+    let i = ids.length - 1;
+    while (libre > 0) {
+      extra[ids[i]] += 1;
+      libre -= 1;
+      i = i === 0 ? ids.length - 1 : i - 1;
+    }
+
     let col = 1;
-    banda.forEach(id => {
+    ids.forEach(id => {
       const w = ancho(id) + extra[id];
-      nuevoLayout[id]   = { col, row: fila };
+      layout[id]        = { col, row: fila };
       nuevasMedidas[id] = { cols: w, rows: h };
       col += w;
     });
-  });
+    fila += h;
+  }
 
-  return { layout: nuevoLayout, medidas: nuevasMedidas };
+  return { layout, medidas: nuevasMedidas };
 }
 
 // Coloca widgets nuevos en el primer hueco REAL del acomodo guardado.
@@ -784,6 +831,38 @@ const initTabLayouts = (userId) => {
 // existencia no prueba que nadie haya movido nada. Ver `tabsAcomodadas`.
 const claveAcomodada = (userId, tabId) => `portal_dash_acomodada_${userId || 'guest'}_${tabId}`;
 
+// ─── El reinicio de General ───────────────────────────────────────────────────
+//
+// Devuelve el tablero de General al acomodo automático para TODO el mundo, una
+// vez. Se pidió el 2026-08-13, junto con el acomodo por renglones completos:
+// los tableros acomodados a mano se armaron contra el catálogo de otro momento
+// y con el acomodo viejo, así que quedarse con ellos es quedarse justo con los
+// huecos que este cambio viene a cerrar.
+//
+// **Sube la fecha para volver a reiniciar a todos.** Cada navegador lo aplica
+// una sola vez por valor —queda anotado en `localStorage`— así que no le pisa
+// el tablero a nadie que acomode el suyo después.
+//
+// Lo local es la mitad del trabajo: la marca de «acomodada» y el acomodo viven
+// también en `user_dashboard_prefs`, y esa copia la limpió una migración de
+// datos el mismo día (`20260813..._reinicio_dashboard_general`). Hacían falta
+// las dos: la base no puede tocar el `localStorage` de siete navegadores, y el
+// navegador no puede tocar la fila de otro (RLS por `user_id`).
+const REINICIO_GENERAL = '2026-08-13';
+const claveReinicio = (userId) => `portal_dash_reinicio_general_${userId || 'guest'}`;
+// El único que conserva su acomodo, por pedido expreso. Va por id y no por
+// cargo: «menos a edwin» es una persona, no un permiso — y el otro superusuario
+// (la cuenta de sistema) sí entra en el reinicio.
+const EXENTO_DEL_REINICIO = new Set(['bbc796d7-7435-495b-9306-a2115f44a18f']); // EDWIN NUÑEZ
+const tocaReiniciarGeneral = (userId) => {
+  if (!userId || EXENTO_DEL_REINICIO.has(userId)) return false;
+  try { return localStorage.getItem(claveReinicio(userId)) !== REINICIO_GENERAL; }
+  catch { return false; }   // sin localStorage no hay dónde anotarlo: se reiniciaría en cada carga
+};
+const sinGeneral = (obj) => (obj && typeof obj === 'object'
+  ? Object.fromEntries(Object.entries(obj).filter(([tabId]) => tabId !== 'general'))
+  : obj);
+
 const initTabSizes = (userId) => {
   const result = {};
   TABS.forEach(tab => {
@@ -810,9 +889,16 @@ const DashboardView = ({ openModal }) => {
   const loadAttendance   = useStaff(s => s.loadAttendanceLastDays);
 
   // ── Config & order ─────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState(() => {
-    try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch { /* localStorage no disponible o valor corrupto — se usa el default */ } return 'general';
-  });
+  // ── Entrar al tablero es entrar a General (2026-08-13) ─────────────────────
+  // La pestaña abierta se recordaba en `portal_dash_tab_*`, así que quien miró
+  // Operación una vez volvía a encontrarse ahí semanas después, sin haberlo
+  // pedido y sin recordar por qué. General es el resumen —es la única que
+  // muestra TODO lo que la persona ve y la única que puede acomodar—, así que
+  // es la que corresponde al abrir. Las temáticas se eligen cuando se quiere
+  // mirar una cosa puntual, que es una decisión del momento, no una
+  // preferencia. La clave vieja queda huérfana a propósito: borrarla obligaría
+  // a leerla, y no vale un `try` en el arranque de la vista.
+  const [activeTab, setActiveTab] = useState('general');
   // `configTab` ya no existe: el panel configura SIEMPRE la pestaña abierta.
   // Tenía su propia barra de pestañas adentro —una segunda, debajo de la de la
   // vista— y cambiarla no cambiaba el tablero de atrás, así que se podía estar
@@ -820,7 +906,7 @@ const DashboardView = ({ openModal }) => {
   // aparecen todas las pestañas ahí, si estoy en operación?». Dos controles
   // para la misma idea, y el de adentro no movía nada.
   const [tabDir, setTabDir] = useState('right');
-  const prevTabIndexRef = useRef(TABS.findIndex(t => t.id === ((() => { try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch { /* localStorage no disponible o valor corrupto — se usa el default */ } return 'general'; })())));
+  const prevTabIndexRef = useRef(TABS.findIndex(t => t.id === 'general'));
   const activeTabRef = useRef(activeTab);
   useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
 
@@ -866,6 +952,17 @@ const DashboardView = ({ openModal }) => {
   const marcarAcomodada = useCallback((tabId) => {
     try { localStorage.setItem(claveAcomodada(user?.id, tabId), '1'); } catch { /* localStorage no disponible */ }
     setTabsAcomodadas(prev => (prev.has(tabId) ? prev : new Set(prev).add(tabId)));
+  }, [user?.id]);
+  // Devolver la pestaña al acomodo automático. Es la mitad que le faltaba a
+  // «Restablecer»: sin quitar la marca, la pestaña seguía siendo «acomodada por
+  // la persona» y el tablero se volvía a pintar con las posiciones guardadas,
+  // que es justo de lo que uno quiere salir al restablecer.
+  const desmarcarAcomodada = useCallback((tabId) => {
+    try { localStorage.removeItem(claveAcomodada(user?.id, tabId)); } catch { /* localStorage no disponible */ }
+    setTabsAcomodadas(prev => {
+      if (!prev.has(tabId)) return prev;
+      const n = new Set(prev); n.delete(tabId); return n;
+    });
   }, [user?.id]);
 
   // ── Widget layout: per-tab { [tabId]: { [widgetId]: { col, row } } } ────────
@@ -1025,21 +1122,21 @@ const DashboardView = ({ openModal }) => {
   // encimado —cinco correcciones entre v2.483.2 y v2.508.1, todas por mezclar
   // una foto vieja con el catálogo nuevo— acá no tiene dónde ocurrir.
   //
-  // Devuelve layout Y medidas porque `rellenarFilas` cambia las dos: para que
-  // el renglón quede lleno tiene que ensanchar widgets, y ese ancho es el que
+  // Devuelve layout Y medidas porque `empacarFilas` decide las dos: para que el
+  // renglón quede lleno tiene que ensanchar widgets, y ese ancho es el que
   // después lee `getEffectiveCols`. Si sólo devolviera posiciones, la rejilla
   // diría una cosa y el widget mediría otra.
   const acomodoAdaptado = useMemo(() => {
     if (acomodoLibre) return null;
     const orden   = ordenDeLaPestana(activeTab, canon?.[activeTab]?.orden, id => showWidget(id, PERMISO_DE[id]));
     const medidas = canon?.[activeTab]?.medidas || EMPTY_OBJ;
-    // En el teléfono NO se rellena: el ancho de cada baldosa lo decide
+    // En el teléfono NO se empaca: el ancho de cada baldosa lo decide
     // `anchoEnTelefono` y `getEffectiveCols` lo impone por encima de las
     // medidas, así que ensanchar acá dejaría la rejilla y el widget diciendo
     // cosas distintas. Con 2 columnas y la regla de baldosa tampoco hay mucho
     // hueco que rellenar.
     if (esTelefono) return { layout: autoPlaceOrder(orden, medidas, MOBILE_COLS, anchoEnTelefono), medidas };
-    return rellenarFilas(autoPlaceOrder(orden, medidas, activeCols), medidas, activeCols);
+    return empacarFilas(orden, medidas, activeCols);
   }, [acomodoLibre, activeTab, canon, esTelefono, anchoEnTelefono, activeCols, verComoRol, permisosPorCargo, hasPermission, widgetConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lo que esta persona PUEDE ver en la pestaña abierta, en el orden del
@@ -1058,15 +1155,19 @@ const DashboardView = ({ openModal }) => {
 
   // El tablero que se arma solo, para quien todavía no movió nada.
   //
+  // Sale de `catalogoVisible`, o sea de los widgets que esta persona tiene
+  // ENCENDIDOS y su cargo le deja ver: el acomodo se recalcula al prender o
+  // apagar uno, no se hereda de un catálogo que ya no es el suyo.
+  //
   // Devuelve layout Y medidas por el mismo motivo que `acomodoAdaptado`:
-  // `rellenarFilas` ensancha widgets para dejar el renglón lleno —«siempre
-  // cuadrado», pedido del usuario— y ese ancho es el que después lee
-  // `getEffectiveCols`. Si sólo devolviera posiciones, la rejilla diría una
-  // cosa y el widget mediría otra.
+  // `empacarFilas` ensancha widgets para dejar el renglón lleno —«que se vea
+  // cuadrado y sin espacios en blanco», pedido del usuario— y ese ancho es el
+  // que después lee `getEffectiveCols`. Si sólo devolviera posiciones, la
+  // rejilla diría una cosa y el widget mediría otra.
   const acomodoAutomatico = useMemo(() => {
     if (!acomodoLibre || isMobile || tabsAcomodadas.has(activeTab)) return null;
     const medidas = widgetSizes[activeTab] || EMPTY_OBJ;
-    return rellenarFilas(autoPlaceOrder(catalogoVisible, medidas, GRID_COLS), medidas, GRID_COLS);
+    return empacarFilas(catalogoVisible, medidas, GRID_COLS);
   }, [acomodoLibre, isMobile, tabsAcomodadas, activeTab, widgetSizes, catalogoVisible]);
 
   // Los `sales_branch_*` entran al catálogo tomándolos del acomodo de
@@ -1135,12 +1236,12 @@ const DashboardView = ({ openModal }) => {
 
   // Las medidas salen del acomodo adaptado —no del canon crudo— cuando la
   // pestaña no es de quien la mira: son las del canon YA ensanchadas por
-  // `rellenarFilas`. Leer las del usuario acá pisaría el ancho publicado con el
+  // `empacarFilas`. Leer las del usuario acá pisaría el ancho publicado con el
   // que esa persona hubiera dejado guardado antes de que la pestaña dejara de
   // ser personal.
   const activeSizes = !acomodoLibre
     ? acomodoAdaptado.medidas
-    // Con acomodo automático mandan SUS medidas: `rellenarFilas` ensanchó
+    // Con acomodo automático mandan SUS medidas: `empacarFilas` ensanchó
     // widgets para dejar el renglón lleno y `getEffectiveCols` tiene que leer
     // ese ancho, no el que el usuario nunca eligió.
     : (acomodoAutomatico ? acomodoAutomatico.medidas
@@ -1214,9 +1315,38 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     if (!user?.id) return;
     setPrefsReady(false); // reset while loading so save effect won't fire mid-fetch
+
+    // ── El reinicio de General (ver `REINICIO_GENERAL`) ──────────────────────
+    // Borra lo local ANTES de pedir la fila y descarta lo que venga de General
+    // en ESTA carga. Las dos mitades hacen falta: borrando sólo lo local,
+    // `arranged.general` de la base volvería a marcar la pestaña como acomodada
+    // un instante después y el reinicio no se vería nunca. De la próxima carga
+    // en adelante la fila ya viene limpia —la limpió la migración de datos— y
+    // esta rama no se vuelve a ejecutar en este navegador.
+    const reinicia = tocaReiniciarGeneral(user.id);
+    if (reinicia) {
+      desmarcarAcomodada('general');
+      setWidgetLayout(prev => ({ ...prev, general: {} }));
+      setWidgetSizes(prev  => ({ ...prev, general: {} }));
+      setMobileLayout(prev => ({ ...prev, general: {} }));
+      setMobileSizes(prev  => ({ ...prev, general: {} }));
+      ['layout', 'sizes', 'mobile_layout', 'mobile_sizes'].forEach(clave => {
+        try { localStorage.removeItem(`portal_dash_${clave}_${user.id}_general`); } catch { /* localStorage no disponible */ }
+      });
+      try { localStorage.setItem(claveReinicio(user.id), REINICIO_GENERAL); } catch { /* localStorage no disponible */ }
+    }
+
     fetchUserDashboardPrefs(user.id)
-      .then(({ data, error }) => {
+      .then(({ data: fila, error }) => {
         if (error) console.error('[dash prefs load]', error);
+        const data = reinicia && fila ? {
+          ...fila,
+          layout:        sinGeneral(fila.layout),
+          sizes:         sinGeneral(fila.sizes),
+          mobile_layout: sinGeneral(fila.mobile_layout),
+          mobile_sizes:  sinGeneral(fila.mobile_sizes),
+          arranged:      sinGeneral(fila.arranged),
+        } : fila;
         if (data) {
           if (data.layout && typeof data.layout === 'object') {
             const isNewFormat = TABS.some(t => t.id in data.layout);
@@ -1307,7 +1437,7 @@ const DashboardView = ({ openModal }) => {
         }
         setPrefsReady(true); // flip → habilita el effect de guardado (que toma la foto, no escribe)
       });
-  }, [user?.id, marcarAcomodada]);
+  }, [user?.id, marcarAcomodada, desmarcarAcomodada]);
 
   // Debounced save: fires 1.5 s after any prefs change.
   //
@@ -1868,7 +1998,6 @@ const DashboardView = ({ openModal }) => {
     setTabDir(nextIdx > prevTabIndexRef.current ? 'right' : 'left');
     prevTabIndexRef.current = nextIdx;
     setActiveTab(tabId);
-    try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
   };
 
   // Restablece UNA pestaña, la que se está configurando — antes barría las
@@ -1876,9 +2005,23 @@ const DashboardView = ({ openModal }) => {
   // personal es apenas el borrador del SU, y a los demás no les pertenece nada
   // que restablecer. Un botón que dice «todo» y sólo puede tocar una parte
   // miente sobre lo que hace.
+  //
+  // Restablecer = volver EXACTAMENTE al tablero que ve quien nunca movió nada
+  // (pedido del usuario, 2026-08-13). Por eso lo primero que borra es la marca
+  // de «acomodada»: hasta el 2026-08-13 no lo hacía, así que el botón dejaba el
+  // acomodo guardado —recalculado sobre el catálogo COMPLETO, con el hueco de
+  // cada widget que este cargo no ve— y el tablero salía agujereado. El botón
+  // decía restablecer y devolvía otra cosa.
+  //
+  // El acomodo que se guarda sale del catálogo VISIBLE y empacado, no del
+  // catálogo entero: es el mismo que va a pintar `acomodoAutomatico`, y así el
+  // teléfono —que hereda el ORDEN del acomodo de escritorio— también arranca
+  // limpio. `catalogoVisible` es el de la pestaña abierta, que es la única que
+  // este botón puede restablecer (el panel configura siempre la abierta).
   const resetTab = (tabId) => {
-    const order = (TAB_WIDGETS[tabId] || []).filter(id => id !== 'kpi');
-    setWidgetLayout(prev => ({ ...prev, [tabId]: autoPlaceOrder(order, {}) }));
+    desmarcarAcomodada(tabId);
+    const { layout } = empacarFilas(catalogoVisible, EMPTY_OBJ, GRID_COLS);
+    setWidgetLayout(prev => ({ ...prev, [tabId]: layout }));
     setWidgetSizes(prev  => ({ ...prev, [tabId]: {} }));
     setMobileLayout(prev => ({ ...prev, [tabId]: {} }));
     setMobileSizes(prev  => ({ ...prev, [tabId]: {} }));

@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.589.0 — Inicio: la pestaña General se arma en renglones completos
+
+Cuatro cosas pedidas el 2026-08-13, y las cuatro son la misma: que el tablero de
+Inicio sea el mismo para todos y se vea entero.
+
+**Entrar al tablero es entrar a General.** La pestaña abierta se recordaba entre
+sesiones, así que quien miró Operación una vez volvía a encontrarse ahí semanas
+después sin haberlo pedido. Las temáticas se eligen cuando uno quiere mirar algo
+puntual; eso es una decisión del momento, no una preferencia.
+
+**El acomodo se calcula en renglones completos.** Antes trabajaba en dos tiempos
+—colocar en el orden del catálogo, después estirar cada banda para taparle los
+huecos— y estirar sólo funciona si la banda salió pareja: cada vez que un widget
+de una fila caía al lado de uno de tres, la banda se descartaba entera y el
+agujero quedaba puesto. Ahora el orden y las medidas se deciden juntos: cada
+renglón lo abre el primer widget pendiente y lo acompañan los que miden lo mismo
+de alto y entran en lo que queda de ancho; el sobrante se reparte entre ellos. Y
+si un renglón quedaría con uno solo, el renglón de arriba de su misma altura le
+presta uno, para que no quede una baldosa suelta a todo lo ancho.
+
+Medido contra el acomodo viejo, en 4 columnas: 4 celdas vacías en el catálogo
+completo, 6 en el de un dependiente de farmacia, y **el 56% de 2,000 recortes
+del catálogo al azar** —que es lo que hace un permiso— dejaba al menos un hueco.
+Ahora: 0 huecos en los 7,640 recortes que prueba el arnés, y 0 en el tablero
+pintado de verdad. Se paga con dos renglones más de alto en el tablero completo,
+porque ningún renglón mezcla alturas.
+
+**«Restablecer» devuelve exactamente ese tablero.** Borraba el acomodo pero no
+la marca de «esta pestaña la acomodó la persona», así que la pestaña seguía
+pintándose con posiciones guardadas —calculadas sobre el catálogo completo— y
+volvía agujereada. Un botón que dice restablecer y devuelve otra cosa.
+
+**Y se reinició el General de todos, menos el de Edwin.** Los tableros
+acomodados a mano se compusieron contra el catálogo de otro momento: conservarlos
+es conservar justo los huecos que esto cierra. Va en dos mitades porque el dato
+vive en dos lados: una migración limpió las 34 filas de `user_dashboard_prefs`
+(la de Edwin quedó intacta, verificado después de aplicarla) y el portal borra la
+copia del navegador una sola vez, en la primera carga tras el despliegue.
+
+Verificado en el navegador, no sólo en el código: cinco pruebas en
+`tests/e2e/tablero-orden-general.spec.js` —incluido el CONTROL que fabrica un
+agujero para probar que el instrumento sabe verlo— más la captura del tablero
+completo.
+
 ## v2.587.1 — El interruptor «Todas» ya no dice que sí cuando faltan familias
 
 Salió de probar la cascada de «Decidir solicitudes» con un clic real, cosa que

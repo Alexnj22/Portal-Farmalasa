@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2 } from 'lucide-react';
+import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier } from '../../data/proveedores';
+import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier, setProveedorClasificacionFiscal } from '../../data/proveedores';
 import { departamentoLabel } from '../../utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
@@ -63,6 +63,43 @@ const REGIMEN_HINT = {
     sujeto_excluido: 'Sin NRC — no da crédito fiscal (Art. 119 CT); si es persona natural por un servicio, aplica retención de Renta 10% (Art. 156 CT)',
 };
 
+// ── Clasificación fiscal — Art. 65 LIVA + catálogos del manual del F-07 v14 ──
+// Los tres estados NO son cosmética. El libro de compras sólo usa 'confirmada':
+// una propuesta es lo que dedujo el sistema del código de actividad, y que el
+// sistema proponga no es que el sistema decida.
+const ESTADO_CLASIF = {
+    pendiente:  { label: 'Sin clasificar', tone: 'text-warning-text bg-warning/10 border-warning/25' },
+    propuesta:  { label: 'Propuesta — falta confirmar', tone: 'text-brand-text bg-brand/10 border-brand/25' },
+    confirmada: { label: 'Confirmada', tone: 'text-success-text bg-success/10 border-success/25' },
+};
+
+const DEDUCIBLE_OPTIONS = [
+    { value: 'si', label: 'Sí, da crédito fiscal' },
+    { value: 'no', label: 'No es deducible' },
+];
+// Manual del F-07 v14 §3. La matriz de su página 21 —Costo admite 4-7, Gasto
+// admite 1-3— la hace cumplir un CHECK en la base; acá se refleja filtrando las
+// opciones, para que no se pueda elegir una combinación que el servidor rechaza.
+const CLASIFICACION_OPTIONS = [
+    { value: '1', label: 'Costo' },
+    { value: '2', label: 'Gasto' },
+];
+const SECTOR_OPTIONS = [
+    { value: '1', label: 'Industria' },
+    { value: '2', label: 'Comercio' },
+    { value: '3', label: 'Agropecuaria' },
+    { value: '4', label: 'Servicios, profesiones, artes y oficios' },
+];
+const TIPO_CG_TODOS = [
+    { value: '1', label: 'Gastos de venta', clase: 2 },
+    { value: '2', label: 'Gastos de administración', clase: 2 },
+    { value: '3', label: 'Gastos financieros', clase: 2 },
+    { value: '4', label: 'Costo de artículos importados', clase: 1 },
+    { value: '5', label: 'Costo de artículos comprados en el país', clase: 1 },
+    { value: '6', label: 'Costos indirectos de fabricación', clase: 1 },
+    { value: '7', label: 'Mano de obra', clase: 1 },
+];
+
 const fmtDate = (d) => {
     if (!d) return '—';
     const s = String(d).slice(0, 10);
@@ -108,6 +145,49 @@ const FormProveedorDetail = ({ formData, onClose }) => {
     const [supplierId, setSupplierId] = useState(formData?.supplier_id || '');
     const [savingSupplier, setSavingSupplier] = useState(false);
     const [clasifError, setClasifError] = useState('');
+
+    // Clasificación fiscal. Estado local propio y botón propio: confirmarla es un
+    // acto con autor y fecha, no un campo más del formulario.
+    const [fiscal, setFiscal] = useState({
+        estado: formData?.clasificacion_estado || 'pendiente',
+        // `null` = todavía no se decidió. NUNCA leerlo como `false`: la columna es
+        // booleana anulable justamente para distinguir "no es deducible" de
+        // "nadie lo miró", y el libro necesita esa diferencia.
+        iva_deducible: formData?.iva_deducible ?? null,
+        f07_clasificacion: formData?.f07_clasificacion != null ? String(formData.f07_clasificacion) : '',
+        f07_sector: formData?.f07_sector != null ? String(formData.f07_sector) : '',
+        f07_tipo_costo_gasto: formData?.f07_tipo_costo_gasto != null ? String(formData.f07_tipo_costo_gasto) : '',
+    });
+    const [savingFiscal, setSavingFiscal] = useState(false);
+    const [fiscalError, setFiscalError] = useState('');
+
+    const tiposCG = TIPO_CG_TODOS.filter(t => !fiscal.f07_clasificacion || t.clase === Number(fiscal.f07_clasificacion));
+
+    const guardarFiscal = async () => {
+        setSavingFiscal(true);
+        setFiscalError('');
+        try {
+            await setProveedorClasificacionFiscal(formData.id, {
+                iva_deducible: fiscal.iva_deducible,
+                f07_clasificacion: fiscal.f07_clasificacion ? Number(fiscal.f07_clasificacion) : null,
+                f07_sector: fiscal.f07_sector ? Number(fiscal.f07_sector) : null,
+                f07_tipo_costo_gasto: fiscal.f07_tipo_costo_gasto ? Number(fiscal.f07_tipo_costo_gasto) : null,
+                // Tipo de operación: gravada si da crédito fiscal. Si no es
+                // deducible no hay operación gravada que declarar por esta vía.
+                f07_tipo_operacion: fiscal.iva_deducible ? 1 : null,
+            });
+            useStaffStore.getState().appendAuditLog('PROVEEDORES_SET_CLASIFICACION_FISCAL', String(formData.id), {
+                nombre: formData.nombre, ...fiscal,
+            });
+            setFiscal(p => ({ ...p, estado: 'confirmada' }));
+            useToastStore.getState().showToast('Clasificación confirmada', `${formData.nombre} queda ${fiscal.iva_deducible ? 'como deducible' : 'como no deducible'}.`, 'success');
+            formData?.onSaved?.();
+        } catch (e) {
+            setFiscalError(mensajeAmigable(e, 'No se pudo guardar la clasificación'));
+        } finally {
+            setSavingFiscal(false);
+        }
+    };
 
     const categorias = formData?.categorias || [];
     const suppliers = formData?.suppliers || [];
@@ -275,6 +355,117 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     {clasifError && <div className="sm:col-span-2 text-label text-danger-text px-1">{clasifError}</div>}
+                </div>
+            </div>
+
+            {/* Deducibilidad del IVA — Art. 65 LIVA.
+                Es lo que decide si el crédito fiscal de este proveedor entra al
+                libro de compras. Se decide UNA VEZ por proveedor y vale para
+                todos sus documentos, presentes y futuros. */}
+            <div className="space-y-3">
+                <SectionHeader icon={Scale}>Deducibilidad del IVA</SectionHeader>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-body-sm font-bold px-3 py-1.5 rounded-full border ${ESTADO_CLASIF[fiscal.estado]?.tone || ESTADO_CLASIF.pendiente.tone}`}>
+                        {ESTADO_CLASIF[fiscal.estado]?.label || 'Sin clasificar'}
+                    </span>
+                    {fiscal.estado === 'confirmada' && formData?.clasificado_por_nombre && (
+                        <span className="text-caption text-content-3">
+                            por {formData.clasificado_por_nombre} · {fmtDate(formData?.clasificado_at)}
+                        </span>
+                    )}
+                </div>
+
+                {/* El artículo que respalda la propuesta, y —cuando la ley
+                    condiciona el caso— la pregunta concreta que hay que responder.
+                    Va arriba de los controles a propósito: se decide leyendo esto. */}
+                {formData?.clasificacion_base_legal && (
+                    <p className="text-caption text-content-3 leading-relaxed">
+                        <span className="font-black text-content-2">{formData.clasificacion_base_legal}</span>
+                        {formData?.desc_actividad ? ` — derivado del giro «${formData.desc_actividad}»` : ''}
+                    </p>
+                )}
+                {formData?.clasificacion_nota && (
+                    <div data-surface="card" data-tono="warning" className="px-3 py-2.5">
+                        <p className="text-body-sm text-content-2 leading-relaxed">{formData.clasificacion_nota}</p>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block"
+                            title="Art. 65 Ley de IVA — sólo es deducible el crédito fiscal de compras indispensables para el giro">
+                            ¿Da crédito fiscal?
+                        </label>
+                        <LiquidSelect
+                            value={fiscal.iva_deducible === null ? '' : (fiscal.iva_deducible ? 'si' : 'no')}
+                            onChange={(v) => setFiscal(p => ({ ...p, iva_deducible: v === '' ? null : v === 'si' }))}
+                            options={DEDUCIBLE_OPTIONS}
+                            placeholder="Sin decidir"
+                            disabled={!canEdit}
+                            clearable={false}
+                        />
+                    </div>
+                    {fiscal.iva_deducible === true && (<>
+                        <div>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Costo o gasto</label>
+                            <LiquidSelect
+                                value={fiscal.f07_clasificacion}
+                                onChange={(v) => setFiscal(p => ({
+                                    ...p, f07_clasificacion: v,
+                                    // Cambiar de Costo a Gasto invalida el tipo elegido: la
+                                    // matriz del manual no admite los mismos en ambos.
+                                    f07_tipo_costo_gasto: '',
+                                }))}
+                                options={CLASIFICACION_OPTIONS}
+                                placeholder="Sin definir"
+                                disabled={!canEdit}
+                                clearable={false}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Sector</label>
+                            <LiquidSelect
+                                value={fiscal.f07_sector}
+                                onChange={(v) => setFiscal(p => ({ ...p, f07_sector: v }))}
+                                options={SECTOR_OPTIONS}
+                                placeholder="Sin definir"
+                                disabled={!canEdit}
+                                clearable={false}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block"
+                                title="Se filtra según Costo o Gasto: el manual del F-07 no admite las mismas opciones para los dos">
+                                Tipo de costo o gasto
+                            </label>
+                            <LiquidSelect
+                                value={fiscal.f07_tipo_costo_gasto}
+                                onChange={(v) => setFiscal(p => ({ ...p, f07_tipo_costo_gasto: v }))}
+                                options={tiposCG}
+                                placeholder={fiscal.f07_clasificacion ? 'Sin definir' : 'Elige antes costo o gasto'}
+                                disabled={!canEdit || !fiscal.f07_clasificacion}
+                                clearable={false}
+                            />
+                        </div>
+                    </>)}
+                    {fiscalError && <div className="sm:col-span-2 text-label text-danger-text px-1">{fiscalError}</div>}
+                    {canEdit && (
+                        <div className="sm:col-span-2">
+                            <Button
+                                variant="secondary"
+                                disabled={savingFiscal || fiscal.iva_deducible === null}
+                                title={fiscal.iva_deducible === null
+                                    ? 'Primero decide si da crédito fiscal'
+                                    : 'Queda confirmada con tu nombre y la fecha'}
+                                onClick={guardarFiscal}
+                            >
+                                {savingFiscal
+                                    ? <><Loader2 size={16} className="animate-spin" /> Guardando…</>
+                                    : <><Check size={15} strokeWidth={2.5} /> Confirmar clasificación</>}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -44,6 +44,38 @@ export async function setProveedorSupplier(id, supplierId) {
     if (error) throw error;
 }
 
+// ── Clasificación fiscal (Art. 65 LIVA + catálogos del anexo F-07 v14) ───────
+// RPC propio y no un parámetro más de `updateProveedorManual`, por dos motivos:
+// ya hay DOS sobrecargas de esa función con DEFAULT —una tercera vuelve ambigua
+// la llamada— y esto es un acto distinto, que lleva autor y fecha. Mismo criterio
+// que `setProveedorCategoria` y `setProveedorSupplier`, que ya viven aparte.
+//
+// El autor NO viaja: lo resuelve el servidor desde la sesión.
+export async function setProveedorClasificacionFiscal(id, c) {
+    const { error } = await supabase.rpc('set_proveedor_clasificacion_fiscal', {
+        p_id: id,
+        p_iva_deducible: c.iva_deducible,
+        p_clasificacion: c.f07_clasificacion ?? null,
+        p_sector: c.f07_sector ?? null,
+        p_tipo_costo_gasto: c.f07_tipo_costo_gasto ?? null,
+        p_tipo_operacion: c.f07_tipo_operacion ?? null,
+        p_nota: c.clasificacion_nota ?? null,
+    });
+    if (error) throw error;
+}
+
+// Confirma en tanda, y SOLO las que están en 'propuesta'. Las 'pendiente' son
+// las que la ley condiciona (combustible, ferretería, alimentos, cómputo): ésas
+// nadie las puede confirmar en masa sin mirarlas, y por eso el RPC las ignora.
+//
+// Devuelve cuántas cambiaron DE VERDAD, no cuántas se seleccionaron — mismo
+// criterio que `applyProveedoresCategoriaSugerida`, para que el aviso no mienta.
+export async function confirmarClasificacionPropuesta(ids) {
+    const { data, error } = await supabase.rpc('confirmar_clasificacion_propuesta', { p_ids: ids });
+    if (error) throw error;
+    return data ?? 0;
+}
+
 // H2 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): `percibe_1` ya NO se manda —
 // el RPC lo deriva. Lo que viaja es el override tri-estado:
 //   null  = automático (lo deciden los DTE del proveedor, Art. 163 CT)

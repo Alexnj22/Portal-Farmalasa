@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.584.0 — La pantalla donde se confirma la deducibilidad
+
+La versión anterior dejó las columnas y la propuesta derivada del CIIU, y nada
+más: **67 propuestas y 36 pendientes invisibles**, sin un solo lugar en el portal
+donde mirarlas. Una clasificación que nadie puede confirmar no sirve para nada.
+
+**Tres RPC.** `get_proveedores_maestro` devuelve los campos nuevos —conservando
+sus atributos, que sigue siendo INVOKER: pasarla a DEFINER cambiaría a quién le
+contesta—. `set_proveedor_clasificacion_fiscal` y
+`confirmar_clasificacion_propuesta` son DEFINER con `anon` revocado, y **el autor
+sale de la sesión, nunca de un parámetro del cliente**.
+
+RPC propios y no un parámetro más de `update_proveedor_manual` por dos motivos:
+ya hay **dos sobrecargas** de esa función con DEFAULT y una tercera vuelve
+ambigua la llamada, y confirmar una clasificación es un acto distinto —lleva
+autor y fecha— igual que `set_proveedor_categoria` y `set_proveedor_supplier`,
+que ya viven aparte.
+
+**En la ficha del proveedor**, una sección nueva: el estado, el artículo que
+respalda la propuesta, y —cuando la ley condiciona el caso— la pregunta concreta
+en un aviso, arriba de los controles, porque se decide leyendo eso. Si da crédito
+fiscal aparecen costo/gasto, sector y tipo; **el tipo se filtra según costo o
+gasto**, que es la matriz de la página 21 del manual del F-07 reflejada en la UI
+para que no se pueda elegir una combinación que el CHECK de la base rechaza.
+
+**En la lista**, filtro por deducibilidad —«Falta confirmar» junta propuestas y
+sin clasificar, que son las dos que el libro no puede usar— y confirmación en
+tanda desde la barra de selección. **El botón cuenta sólo las propuestas**: las
+que la ley condiciona el servidor las ignora aunque entren en la selección, y que
+el número no suba es la explicación.
+
+No se agregó columna a la tabla a propósito: ya le quitaron dos por ancho
+(Giro en v2.27.4 y Tipo el 2026-07-29), y el filtro resuelve lo mismo sin
+volver a empujarla fuera del viewport.
+
+El gate de diseño atrapó voseo en dos textos («Elegí», «decidí»): el portal usa
+tuteo (§26.7).
+
 ## v2.583.0 — Clasificación fiscal del proveedor (Art. 65 LIVA)
 
 El libro de compras mandaba `1;1;2;5` fijo en **todas** las filas del anexo

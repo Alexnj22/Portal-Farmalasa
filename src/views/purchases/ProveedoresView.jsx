@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
-import { Truck, Tag, Layers, AlertTriangle, X, CheckCircle2, Building2 } from 'lucide-react';
+import { Truck, Tag, Layers, AlertTriangle, X, CheckCircle2, Building2, Scale } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -14,6 +14,7 @@ import Checkbox from '../../components/common/Checkbox';
 import {
     fetchProveedoresMaestro, fetchProveedorCategorias,
     setProveedoresCategoriaBulk, applyProveedoresCategoriaSugerida,
+    confirmarClasificacionPropuesta,
 } from '../../data/proveedores';
 import FilterBar from '../../components/common/FilterBar';
 import { useToastStore } from '../../store/toastStore';
@@ -102,7 +103,7 @@ function CategoriaCell({ row }) {
 // da a cada proveedor LA SUYA; el select le da a todos LA MISMA. El contador
 // del botón cuenta solo los seleccionados que tienen sugerencia, así que si
 // entra un ambiguo el número no sube y se ve por qué.
-function BulkBar({ count, conSugerencia, categorias, busy, onAceptarSugerencia, onAsignar, onCancelar }) {
+function BulkBar({ count, conSugerencia, conPropuesta, categorias, busy, onAceptarSugerencia, onConfirmarFiscal, onAsignar, onCancelar }) {
     return (
         <div
             data-surface="card"
@@ -123,6 +124,20 @@ function BulkBar({ count, conSugerencia, categorias, busy, onAceptarSugerencia, 
                 onClick={onAceptarSugerencia}
             >
                 Aceptar sugerencia ({conSugerencia})
+            </Button>
+            {/* El contador cuenta SOLO las propuestas: las «sin clasificar» son
+                las que la ley condiciona y el servidor las ignora aunque entren
+                en la selección. Que el número no suba es la explicación. */}
+            <Button
+                size="sm"
+                icon={Scale}
+                disabled={busy || conPropuesta === 0}
+                title={conPropuesta === 0
+                    ? 'Ninguno de los seleccionados tiene una clasificación propuesta — las que faltan hay que abrirlas y decidirlas una por una'
+                    : 'Confirma la deducibilidad propuesta (Art. 65 LIVA). Sólo desde ahí el libro de compras la usa'}
+                onClick={onConfirmarFiscal}
+            >
+                Confirmar deducibilidad ({conPropuesta})
             </Button>
             <div className="w-[210px]">
                 <LiquidSelect
@@ -164,6 +179,8 @@ export default function ProveedoresView({ openModal }) {
     const [claseFilter, setClaseFilter] = useState('');
     const [activoFilter, setActivoFilter] = useState('activos');
     const [matchErpFilter, setMatchErpFilter] = useState(''); // '' | 'con' | 'sin' (H15)
+    // '' | 'sin_confirmar' | 'pendiente' | 'propuesta' | 'confirmada'
+    const [fiscalFilter, setFiscalFilter] = useState('');
     const [sortCol, setSortCol] = useState('proveedor');
     const [sortDir, setSortDir] = useState('asc');
 
@@ -228,12 +245,17 @@ export default function ProveedoresView({ openModal }) {
             if (categoriaId === SIN_CATEGORIA) { if (r.categoria_id) return false; }
             else if (categoriaId) { if (String(r.categoria_id) !== String(categoriaId)) return false; }
             if (claseFilter) { if (r.categoria_clase !== claseFilter) return false; }
+            // 'sin_confirmar' junta propuestas y pendientes a propósito: son las
+            // dos que el libro de compras NO puede usar todavía, que es la
+            // pregunta que se hace quien viene a esta pantalla.
+            if (fiscalFilter === 'sin_confirmar' && r.clasificacion_estado === 'confirmada') return false;
+            if (fiscalFilter && fiscalFilter !== 'sin_confirmar' && r.clasificacion_estado !== fiscalFilter) return false;
             if (search && !tokenMatch(search, r.nombre, r.nombre_comercial, r.alias, r.nit, r.dui, r.nrc, r.desc_actividad)) return false;
             return true;
         });
-    }, [rows, activoFilter, matchErpFilter, categoriaId, claseFilter, search]);
+    }, [rows, activoFilter, matchErpFilter, categoriaId, claseFilter, fiscalFilter, search]);
 
-    useEffect(() => { setPage(1); }, [search, categoriaId, claseFilter, activoFilter, matchErpFilter]);  
+    useEffect(() => { setPage(1); }, [search, categoriaId, claseFilter, activoFilter, matchErpFilter, fiscalFilter]);
 
     // H16: la tabla no ordenaba por ninguna columna — orden alfabético fijo,
     // contra el estándar del proyecto (DataTable soporta sort desde siempre) y
@@ -289,6 +311,15 @@ export default function ProveedoresView({ openModal }) {
     // cambio de página.
     const seleccionConSugerencia = useMemo(
         () => rows.filter(r => selectedIds.has(r.id) && r.categoria_sugerida_id).length,
+        [rows, selectedIds],
+    );
+
+    // Sólo las 'propuesta' se pueden confirmar en tanda. Las 'pendiente' son las
+    // que la ley condiciona —combustible, ferretería, alimentos, cómputo— y hay
+    // que abrirlas una por una: el RPC las ignora aunque entren en la selección,
+    // y este contador lo dice antes de apretar.
+    const seleccionPropuesta = useMemo(
+        () => rows.filter(r => selectedIds.has(r.id) && r.clasificacion_estado === 'propuesta').length,
         [rows, selectedIds],
     );
 
@@ -372,7 +403,7 @@ export default function ProveedoresView({ openModal }) {
                 <div className="flex items-start justify-end gap-3 flex-wrap">
                     <FilterBar
                         onClear={() => { setCategoriaId(''); setClaseFilter(''); setActivoFilter('activos'); setMatchErpFilter(''); }}
-                        activeCount={[categoriaId, claseFilter, activoFilter !== 'activos', matchErpFilter].filter(Boolean).length}
+                        activeCount={[categoriaId, claseFilter, activoFilter !== 'activos', matchErpFilter, fiscalFilter].filter(Boolean).length}
                     >
                         <FilterBar.Section active={!!categoriaId} onClear={() => setCategoriaId('')} label="categoría">
                             <div style={{ width: '190px' }}>
@@ -395,6 +426,22 @@ export default function ProveedoresView({ openModal }) {
                             <div style={{ width: '165px' }}>
                                 <LiquidSelect value={matchErpFilter} onChange={setMatchErpFilter}
                                     options={matchErpOptions} placeholder="Vínculo" icon={Building2} compact bare />
+                            </div>
+                        </FilterBar.Section>
+
+                        {/* Deducibilidad del IVA (Art. 65). «Falta confirmar»
+                            junta propuestas y sin clasificar porque son las dos
+                            que el libro de compras todavía no puede usar. */}
+                        <FilterBar.Section active={!!fiscalFilter} onClear={() => setFiscalFilter('')} label="IVA">
+                            <div style={{ width: '178px' }}>
+                                <LiquidSelect value={fiscalFilter} onChange={setFiscalFilter}
+                                    options={[
+                                        { value: 'sin_confirmar', label: 'Falta confirmar' },
+                                        { value: 'propuesta', label: 'Propuestas' },
+                                        { value: 'pendiente', label: 'Sin clasificar' },
+                                        { value: 'confirmada', label: 'Confirmadas' },
+                                    ]}
+                                    placeholder="Deducibilidad" icon={Scale} compact bare />
                             </div>
                         </FilterBar.Section>
 
@@ -461,6 +508,8 @@ export default function ProveedoresView({ openModal }) {
                     <BulkBar
                         count={selectedIds.size}
                         conSugerencia={seleccionConSugerencia}
+                        conPropuesta={seleccionPropuesta}
+                        onConfirmarFiscal={() => runBulk(confirmarClasificacionPropuesta, 'PROVEEDORES_CLASIFICACION_FISCAL_BULK')}
                         categorias={categorias}
                         busy={bulkBusy}
                         onAceptarSugerencia={() => runBulk(applyProveedoresCategoriaSugerida, 'PROVEEDORES_CATEGORIA_SUGERIDA_BULK')}

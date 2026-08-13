@@ -230,19 +230,12 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           />
         </div>
 
-        {/* Retirar el producto. Va como botón y no como instrucción («poné 0 y
-            0») porque el 0 · 0 no se parece a escribir un número: es la única
-            propuesta que APAGA la reposición, y merece un control con nombre.
-            Queda deshabilitado cuando ya está en cero —el estado se lee en el
-            aviso de abajo, no en el botón— y para deshacerlo se escribe encima
-            de los campos, que están justo arriba. */}
-        <div className="flex justify-end -mt-1">
-          <Button variant="secondary" size="xs" icon={CircleSlash} disabled={esCero}
-              onClick={() => { setMn('0'); setMx('0'); setErr(''); }}>
-            Dejar en cero
-          </Button>
-        </div>
-
+        {/* Acá vivía un botón «Dejar en cero» que escribía 0 y 0 en los dos
+            campos de arriba. Se quitó el 2026-08-13 por redundante: los campos
+            aceptan el 0 y están a un centímetro, así que el botón era un
+            segundo camino al mismo estado. Lo que sí hacía falta —decir qué
+            significa el 0 · 0— no era el botón sino el aviso de abajo, que se
+            queda: aparece solo, en cuanto los dos campos llegan a cero. */}
         {esCero && (
           <div className="flex items-start gap-2 rounded-xl bg-warning/10 border border-warning/30 px-3 py-2">
             <CircleSlash size={13} className="text-warning-text mt-0.5 shrink-0" />

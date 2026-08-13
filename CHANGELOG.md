@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.589.1 — El widget de Min/Max pierde el botón «Dejar en cero»
+
+Pedido del usuario: «se puede poner 0 y 0, es redundante». Y es exacto — el
+botón escribía `0` en los dos campos que están un centímetro más arriba, o sea
+un segundo camino al mismo estado, con la ambigüedad de siempre: dos controles
+para una idea hacen dudar de si hacen lo mismo.
+
+Lo que el botón cargaba de verdad —decir qué significa 0 · 0— no era el botón
+sino el aviso, y ese se queda: aparece solo en cuanto los dos campos llegan a
+cero, escritos a mano, y con él sigue el motivo obligatorio. Verificado en el
+navegador: con `0` y `0` tecleados, el aviso «deja de reponerse» sale y el campo
+de motivo marca REQUERIDO.
+
 ## v2.589.0 — Inicio: la pestaña General se arma en renglones completos
 
 Cuatro cosas pedidas el 2026-08-13, y las cuatro son la misma: que el tablero de

@@ -50,6 +50,23 @@ const MAIN_MODULES = MODULES.filter(m => !m.isTab);
 // pero el mecanismo no distingue: `purchase_receipts_select` mira
 // `minmax_ver_costos` SIN consultar al módulo padre, así que apagar Min/Max no
 // le quitaba el costo de compra a nadie.
+/* ─── El cuadro de «decidir» de la bandeja de sucursal ──────────────────────
+ *
+ * «Solicitudes de sucursal → Aprobar» es el MAESTRO de las cuatro familias que
+ * se decidieron por separado en v2.576.0. Pedido del usuario: «que si se activa
+ * desde el interruptor general se active allá y al revés».
+ *
+ * Semántica, copiada tal cual del vínculo widgets↔«Inicio» (2026-08-07) para no
+ * inventar un concepto nuevo: el maestro está encendido si hay AL MENOS UNA
+ * familia encendida. Encenderlo las enciende todas, apagarlo las apaga todas, y
+ * encender o apagar una sola arrastra al maestro cuando corresponde.
+ *
+ * `traslados` y `minmax` entran aunque vivan en su propio módulo: en la
+ * pantalla el usuario ve un cuadro de cuatro, y que el maestro gobierne sólo
+ * dos de ellas sería peor que no gobernar ninguna. */
+const HIJOS_DE_APROBAR = ['requests_facturacion', 'requests_inventario',
+                          'requests_minmax', 'traslados'];
+
 const SUBS_DE = Object.fromEntries(
     MODULE_GROUPS.flatMap(g => g.modules.map(m => [m.key, (m.sub || []).map(s => s.key)])),
 );
@@ -418,6 +435,25 @@ const PermissionsView = () => {
             }
         }
 
+        // ── Las cuatro familias y su maestro, en los dos sentidos ───────────
+        // Mismo criterio que los widgets de arriba, y por el mismo motivo: se
+        // calcula sobre el estado que VA A QUEDAR, no sobre el actual — el que
+        // se está apagando todavía figura encendido en `permissions`.
+        const kMaestro   = `${roleId}:requests`;
+        const esMaestro  = moduleKey === 'requests' && permType === 'can_approve';
+        const esFamilia  = HIJOS_DE_APROBAR.includes(moduleKey) && permType === 'can_approve';
+        const familiasPasanA = esMaestro ? value : null;
+        let   maestroPasaA   = null;
+        if (esFamilia) {
+            if (value) {
+                if (!permissions[kMaestro]?.can_approve) maestroPasaA = true;
+            } else {
+                const quedaAlguna = HIJOS_DE_APROBAR.some(h =>
+                    h !== moduleKey && permissions[`${roleId}:${h}`]?.can_approve);
+                if (!quedaAlguna && permissions[kMaestro]?.can_approve) maestroPasaA = false;
+            }
+        }
+
         setPermissions(prev => {
             const next = { ...prev };
             const cur = { ...prev[k] };
@@ -431,6 +467,16 @@ const PermissionsView = () => {
                 const ini = { ...(prev[kInicio] || {}), can_view: inicioPasaA };
                 if (!inicioPasaA) { ini.can_edit = false; ini.can_approve = false; }
                 next[kInicio] = ini;
+            }
+            if (familiasPasanA !== null) {
+                for (const h of HIJOS_DE_APROBAR) {
+                    const kh = `${roleId}:${h}`;
+                    next[kh] = { ...(prev[kh] || { can_view: false, can_edit: false, scope: 'ALL' }),
+                                 can_approve: familiasPasanA };
+                }
+            }
+            if (maestroPasaA !== null) {
+                next[kMaestro] = { ...(prev[kMaestro] || {}), can_approve: maestroPasaA };
             }
             return next;
         });
@@ -451,6 +497,42 @@ const PermissionsView = () => {
             delega_en_ausencia: next.delega_en_ausencia ?? false,
             updated_at: new Date().toISOString(),
         });
+
+        /* Persistir la cascada. Va aparte del upsert de arriba y no dentro,
+         * porque son filas de OTROS módulos: `upsertRolePermission` escribe una
+         * sola. Y se manda sólo si la principal entró — si esa falló, propagar
+         * el cambio a cuatro filas más dejaría el cuadro diciendo una cosa y el
+         * módulo que se tocó diciendo otra. */
+        if (!error && (familiasPasanA !== null || maestroPasaA !== null)) {
+            const filas = [];
+            if (familiasPasanA !== null) {
+                for (const h of HIJOS_DE_APROBAR) {
+                    const pv = permissions[`${roleId}:${h}`] || {};
+                    filas.push({
+                        role_id: roleId, module_key: h,
+                        can_view: pv.can_view ?? false,
+                        can_edit: pv.can_edit ?? false,
+                        can_approve: familiasPasanA,
+                        scope: pv.scope || 'ALL',
+                        delega_en_ausencia: pv.delega_en_ausencia ?? false,
+                        updated_at: new Date().toISOString(),
+                    });
+                }
+            }
+            if (maestroPasaA !== null) {
+                const pv = permissions[kMaestro] || {};
+                filas.push({
+                    role_id: roleId, module_key: 'requests',
+                    can_view: pv.can_view ?? false,
+                    can_edit: pv.can_edit ?? false,
+                    can_approve: maestroPasaA,
+                    scope: pv.scope || 'ALL',
+                    delega_en_ausencia: pv.delega_en_ausencia ?? false,
+                    updated_at: new Date().toISOString(),
+                });
+            }
+            await upsertRolePermissionsBulk(filas);
+        }
 
         if (!error && arrastra.length > 0) {
             await upsertRolePermissionsBulk(arrastra.map(sk => ({

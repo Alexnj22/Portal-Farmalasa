@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.581.0 — El interruptor maestro de aprobar, en cascada
+
+«Solicitudes de sucursal → Aprobar» pasa a ser el **maestro** de las cuatro
+familias que se separaron en v2.576.0. Pedido del usuario: «que si se activa
+desde el interruptor general se active allá y al revés».
+
+La semántica está copiada tal cual del vínculo widgets↔«Inicio» (2026-08-07)
+para no inventar un concepto nuevo: **el maestro está encendido si hay al menos
+una familia encendida.** Encenderlo las enciende todas, apagarlo las apaga
+todas, y encender o apagar una sola arrastra al maestro cuando corresponde. Se
+calcula sobre el estado que VA A QUEDAR, no sobre el actual — el que se está
+apagando todavía figura encendido.
+
+`traslados` y `minmax` entran en la cascada aunque vivan en su propio módulo: en
+la pantalla se ve un cuadro de cuatro, y que el maestro gobernara sólo dos sería
+peor que no gobernar ninguna.
+
+La cascada se **persiste** con un upsert aparte —son filas de otros módulos— y
+sólo si la escritura principal entró: si esa falla, propagar el cambio a cuatro
+filas más dejaría el cuadro diciendo una cosa y el módulo que se tocó diciendo
+otra.
+
+Verificado en el navegador contra el entorno de pruebas: las tres tarjetas
+«Decidir: …» se dibujan, y «Delegar si no está» aparece en los 77 módulos.
+**Lo que NO está verificado con un clic es la cascada misma** — el selector del
+interruptor no lo encontré y preferí decirlo antes que darlo por bueno.
+
 ## v2.580.2 — Arreglo: el login volvía a fallar por un .catch sobre un builder
 
 **Arreglo urgente de algo que rompí en v2.580.0.** El login fallaba con

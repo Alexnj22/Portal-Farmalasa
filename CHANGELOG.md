@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.582.5 — Las familias usan el control canónico, no botones a mano
+
+Las cuatro familias de «Decidir solicitudes» estaban escritas como `<button>`
+a mano con su propia forma, su propio color y su propio estado activo.
+Reportado por el usuario: «¿por qué tienen distintos tipos de botones? ¿por qué
+no son canónicos?».
+
+Tenía razón: era **un tercer lenguaje** en una pantalla que ya tenía dos
+—`SegmentedControl` para el nivel de precio, y fila-con-`Toggle` para los
+sub-permisos de cada módulo— y ninguno de los dos era ése.
+
+Pasan al segundo, que es el que corresponde: fila con rótulo y `Toggle`, en una
+caja que se tiñe al encender, exactamente igual que las pestañas y capacidades
+de cualquier tarjeta de módulo. Mismo componente, mismos tamaños, mismo
+indicador de guardado.
+
+**No se usa `SegmentedControl`** aunque sea el que usa Precio justo al lado: su
+propia documentación dice «elegir UNA opción de un grupo», y acá se encienden
+las que sean. Es otro control, no otro estilo — y forzarlo habría sido el error
+opuesto, adoptar un canónico que no aplica con tal de que se vea parecido.
+
+Los tres siguen midiendo 218 px, y no queda ningún botón a mano en la tarjeta.
+
 ## v2.582.4 — Las tarjetas se ordenan por lo alto que pueden llegar a ser
 
 Corrige el criterio de v2.582.3, que ordenaba por «activa o no» y no era eso.

@@ -238,28 +238,29 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                 </LiquidTooltip>
             </div>
 
-            {/* Las cuatro como píldoras, con el mismo peso visual que los
-                niveles de precio. No es un SegmentedControl porque ahí se elige
-                UNA opción y acá se encienden las que sean. Envuelven en vez de
-                scrollear: en una de tres columnas entran dos por fila y se ven
-                las cuatro sin desplazar. */}
-            <div className="flex flex-wrap gap-1.5">
+            {/* Las cuatro, con el MISMO control que los sub-permisos de cada
+                tarjeta: fila con rótulo y `Toggle`, en una caja que se tiñe al
+                encender. Antes eran píldoras escritas a mano acá — un tercer
+                lenguaje en una pantalla que ya tenía dos, y ninguno de los dos
+                era ése. Reportado por el usuario: «¿por qué no son canónicos?».
+                No se usa `SegmentedControl` porque ahí se elige UNA de N y acá
+                se encienden las que sean: es otro control, no otro estilo. */}
+            <div className="space-y-1.5">
                 {FAMILIAS_DECIDIR.map(f => {
                     const on = !!perm(f.key).can_approve;
                     return (
                         <LiquidTooltip key={f.key} content={f.desc}>
-                            <button
-                                type="button"
-                                disabled={locked || !!saving[`${roleId}:${f.key}`]}
-                                onClick={() => onChange(f.key, 'can_approve', !on)}
-                                aria-pressed={on}
-                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border whitespace-nowrap transition-all duration-[var(--dur-slow)] disabled:opacity-40 ${
-                                    on ? 'bg-success/15 border-success/40 text-content-1'
-                                       : 'bg-surface-card border-border-card text-content-3 hover:text-content-2'}`}
-                            >
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors duration-[var(--dur-slow)] ${on ? 'bg-success' : 'bg-content-3/40'}`} />
-                                <span className="text-caption font-black uppercase tracking-widest">{f.label}</span>
-                            </button>
+                            <div data-surface={on ? undefined : 'card'}
+                                className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-[var(--dur-slow)] ${on ? 'bg-success/10 border-success/30' : ''}`}>
+                                <span className={`text-caption font-bold transition-colors duration-[var(--dur-slow)] ${on ? 'text-content-2' : 'text-content-3'}`}>
+                                    {f.label}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    {saving[`${roleId}:${f.key}`] && <Loader2 size={9} className="text-content-3 animate-spin" />}
+                                    <Toggle value={on} color="bg-success" disabled={locked}
+                                        onChange={(v) => onChange(f.key, 'can_approve', v)} />
+                                </div>
+                            </div>
                         </LiquidTooltip>
                     );
                 })}

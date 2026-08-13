@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.582.2 — Los tres ajustes del cargo, en una sola fila
+
+Super Usuario, Nivel de Precio Máximo y Decidir solicitudes pasan a **tres
+columnas lado a lado** en una sola fila. Antes ocupaban dos filas y ~400 px de
+alto para lo que son un interruptor, una elección de ocho y seis controles;
+ahora son ~190 px. Elegido por el usuario sobre tres bocetos.
+
+Los tres contestan la misma clase de pregunta —cómo es este cargo— y verlos
+juntos y del mismo tamaño lo dice sin escribirlo. Antes «Precio» ocupaba dos
+columnas y «Decidir» una fila entera aparte, y parecían tres cosas sueltas de
+distinta importancia.
+
+Ajustes que pidió la columna angosta:
+
+- Los mandos «Todas» y «Delegar» bajan del encabezado a su propio renglón: ya no
+  caben junto al título, pero siguen separados de las píldoras porque no son una
+  familia más.
+- Las píldoras de las familias **envuelven** en vez de scrollear — en un tercio
+  de ancho entran dos por fila y se ven las cuatro sin desplazar. Las de precio
+  conservan su scroll: son ocho y no hay forma de que entren.
+- El resumen del estado se trunca en vez de empujar el ancho.
+
+Medido en el navegador contra pruebas: los tres arrancan a la misma altura y la
+banda mide ~190 px.
+
 ## v2.582.1 — La tarjeta de decidir sube al encabezado y sus botones funcionan
 
 «Decidir solicitudes» sube a la **banda del encabezado**, junto a Super Usuario

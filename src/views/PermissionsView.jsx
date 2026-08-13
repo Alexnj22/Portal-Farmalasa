@@ -182,43 +182,43 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                   : `Decide ${encendidas} de ${total}`;
 
     return (
-        <div data-surface="card" className="rounded-2xl border border-border-card p-4 md:col-span-3">
-            <div className="flex items-center gap-3 mb-4">
+        <div data-surface="card" className="rounded-2xl border border-border-card p-4">
+            <div className="flex items-center gap-3 mb-3">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-success to-chart-1 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
                     <CheckCircle2 size={18} className="text-white" strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="text-body font-black text-content leading-tight">Decidir solicitudes</p>
-                    <p className="text-caption text-content-3 font-medium mt-0.5">
+                    <p className="text-caption text-content-3 font-medium mt-0.5 truncate">
                         Activo: <span className="font-black text-content-2">{resumen}</span>
-                        {delegando && ' · se delega al jefe si no está'}
                     </p>
-                </div>
-                {/* Los dos mandos que gobiernan la fila entera, a la derecha del
-                    encabezado: no son una familia más, así que no van entre las
-                    píldoras. */}
-                <div className="flex items-center gap-4 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                        <span className="text-caption font-black uppercase tracking-widest text-content-3">Todas</span>
-                        <Toggle value={encendidas > 0} color="success" disabled={locked}
-                            onChange={(v) => onChange('requests', 'can_approve', v)} />
-                    </div>
-                    <LiquidTooltip content="Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe inmediato se hace cargo de estas decisiones mientras dure la ausencia. Se apaga solo al volver.">
-                        <div className="flex items-center gap-2">
-                            <span className="text-caption font-black uppercase tracking-widest text-content-3">Delegar</span>
-                            <Toggle value={delegando} color="chart-4" disabled={locked}
-                                onChange={(v) => onDelegar(roleId, v)} />
-                        </div>
-                    </LiquidTooltip>
                 </div>
             </div>
 
-            {/* Las cuatro como píldoras, igual que los niveles de precio. No es
-                un SegmentedControl porque ahí se elige UNA opción y acá se
-                encienden las que sean — pero el peso visual es el mismo, que es
-                lo que pidió el usuario. Scroll propio si no entran: el cuerpo de
-                la página nunca se desborda (DESIGN.md). */}
-            <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+            {/* Los dos mandos que gobiernan la fila entera. En una columna
+                angosta ya no caben junto al título, así que bajan acá; siguen
+                aparte de las píldoras porque no son una familia más. */}
+            <div className="flex items-center justify-between gap-3 mb-2.5">
+                <div className="flex items-center gap-2">
+                    <span className="text-caption font-black uppercase tracking-widest text-content-3">Todas</span>
+                    <Toggle value={encendidas > 0} color="success" disabled={locked}
+                        onChange={(v) => onChange('requests', 'can_approve', v)} />
+                </div>
+                <LiquidTooltip content="Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe inmediato se hace cargo de estas decisiones mientras dure la ausencia. Se apaga solo al volver.">
+                    <div className="flex items-center gap-2">
+                        <span className="text-caption font-black uppercase tracking-widest text-content-3">Delegar</span>
+                        <Toggle value={delegando} color="chart-4" disabled={locked}
+                            onChange={(v) => onDelegar(roleId, v)} />
+                    </div>
+                </LiquidTooltip>
+            </div>
+
+            {/* Las cuatro como píldoras, con el mismo peso visual que los
+                niveles de precio. No es un SegmentedControl porque ahí se elige
+                UNA opción y acá se encienden las que sean. Envuelven en vez de
+                scrollear: en una de tres columnas entran dos por fila y se ven
+                las cuatro sin desplazar. */}
+            <div className="flex flex-wrap gap-1.5">
                 {FAMILIAS_DECIDIR.map(f => {
                     const on = !!perm(f.key).can_approve;
                     return (
@@ -1196,7 +1196,7 @@ const PermissionsView = () => {
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                                <div data-surface="card" className="p-4 md:col-span-2">
+                                <div data-surface="card" className="rounded-2xl border border-border-card p-4">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-[var(--dur-slow)]`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={2} />

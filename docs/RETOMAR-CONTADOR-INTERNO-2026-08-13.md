@@ -11,74 +11,75 @@ Estado al cierre del **2026-08-13**. **Empezar por acá.** El plan completo est�
 ```
 Seguimos con el contador interno. Leé docs/RETOMAR-CONTADOR-INTERNO-2026-08-13.md.
 
-El paso 1 está cerrado: la revisión de deducibilidad por regla está desplegada
-(v2.586.0) y el Contador Externo ya tiene acceso. Falta que alguien confirme las
-12 decisiones.
+Los pasos 1, 2 y 3 del plan están construidos y desplegados. Lo que falta se
+divide en dos: decisiones de la contadora (método de costeo, 26 clasificaciones,
+Art. 156) y los pasos 4-6, que están bloqueados por el costo de venta histórico.
 
-Lo que sigue es el paso 2 —el libro de compras unificado, +$5,900 entre junio y
-julio— y las 6,436 líneas de venta sin costo del 1 al 4 de agosto, que tienen
-reloj.
+Empezá preguntando cuál de las decisiones ya se tomó.
 ```
 
 ---
 
-## Lo que quedó hecho y desplegado
+## El estado del plan, medido el 2026-08-13 al cierre
 
-| versión | qué | estado |
+| paso | estado | qué falta |
 |---|---|---|
-| v2.583.0 | Columnas de clasificación fiscal + la propuesta derivada del CIIU | en prod |
-| v2.584.0 | Los 3 RPC + sección en la ficha + filtro + confirmación en tanda | en prod |
-| **v2.586.0** | **La revisión POR REGLA** — pestaña nueva, columna «IVA», y fuera el botón a ciegas | **en prod** |
+| **1 · Clasificación fiscal** | ✅ construido | **77 confirmadas**, faltan **26** ($594 + $734 trabados) |
+| **2 · Libro declarable** | ✅ construido, con pestaña | nada de sistema |
+| **3 · Cierre de período** | ✅ construido, con pantalla | **0 períodos cerrados** — lo hace el contador |
+| **4 · Registro Art. 142-A** | ⚠️ ~80% | correlativo, encabezado, saldo corrido y **costo de salida** |
+| **5 · Planilla y gastos** | ❌ | `payroll_entries`, `payroll_periods`, `branch_expenses` en **0 filas** |
+| **6 · Contabilidad formal** | ❌ | **0 tablas**. No arranca sin el 4 y el 5 |
 
-Migraciones aplicadas y registradas: `20260813041109`, `20260813042113`,
-**`20260813160047`**. Los dos gates de migraciones en verde, incluido `--remote`.
-Pusheado a `main` (`d8f8de74`) y desplegado.
+### Todo lo de abajo converge en UNA decisión
 
-**Verificado en el navegador** con la cuenta QA, no sólo compilado: los montos en
-pantalla coinciden con la consulta SQL al centavo, el flujo Sí/No revela los tres
-campos del anexo, «Revisar uno por uno» abre la lista, y cero errores de página.
+**585,044 líneas de venta sin costo** y **0 reconstruidas**. La herramienta está
+lista y es reversible (`costo_origen`), pero el método —última compra, promedio
+ponderado o PEPS— lo elige la contadora, y sobre quince meses mueve el Estado de
+Resultados entero.
 
----
+Sin costo de venta no hay paso 4 completo (el Art. 142-A exige el «importe de las
+que salen») ni paso 6 (no hay Estado de Resultados que emitir). O sea que **una
+sola firma destraba los tres pasos que faltan.**
 
-## El paso 1 quedó cerrado, y así se rehizo
+### Lo desplegado hoy
 
-La pantalla de la v2.584.0 pedía confirmar 67 propuestas que no estaban en
-pantalla. **El error era de encuadre, no de detalle.** Medido contra producción,
-las 162 fichas sin confirmar caen en **12 reglas**:
+| versión | qué |
+|---|---|
+| v2.586.0 | Revisión de deducibilidad **por regla** |
+| v2.590.0 | Libro **declarable** + su pestaña |
+| v2.590.1 | Abrir el documento desde el libro |
+| v2.590.3/4 | El IVA del CCF sale del documento, regla en un solo lugar |
+| v2.591.0 | **Cierre de período** con pantalla |
+| — | El historial de precios y su changelog volvieron a escribirse |
+| — | `costo_origen` + `reconstruir_costo_de_venta` (sin correr) |
 
-| | reglas | proveedores | crédito fiscal |
-|---|---|---|---|
-| Propuestas del sistema | 7 | 67 | **$56,504.16** |
-| Las que la ley condiciona | 5 | 36 | **$3,220.83** |
-| Sin giro registrado | — | 59 | $7.94 |
+Migraciones: `20260813160047`, `164142`, `164845`, `165542`, `170912`, `172355`,
+`174131`, `175718`, `180115`. Todas registradas, los dos gates en verde.
 
-Una sola regla —mercadería, Art. 65 nº1— cubre 52 proveedores y el **93%** de la
-plata. Los 59 sin giro tienen **un documento entre todos**.
+**El portal lleva la contabilidad desde julio 2026** (`contabilidad_config`).
+Mayo y junio se declararon por fuera y el cierre los rechaza.
 
-Tres decisiones de diseño que conviene no deshacer:
+### Decisiones abiertas, ninguna de sistema
 
-1. **Las tarjetas se ordenan por crédito fiscal, no por documentos.** Ordenar por
-   conteo engaña: comisiones bancarias tiene **190 documentos y $81.82** (a $0.43
-   cada una) mientras el alquiler tiene **7 documentos y $341.30**.
-2. **Cada condicionada nombra a su peso pesado.** En alimentos, STEINER es
-   $1,932.72 de los $2,626.15 — el **74%**. Quien decide el grupo está decidiendo
-   sobre todo a ese proveedor y tiene que saberlo antes de apretar.
-3. **«Giro demasiado genérico» no ofrece Sí/No.** Junta hospitales, televisión y
-   «servicios n.c.p.»: seis casos distintos no comparten una respuesta. Manda a
-   revisarlos uno por uno. Fingir lo contrario sería el error de la v2.584.0 en
-   chico.
+1. **El método de costeo.** Destraba los pasos 4, 5 y 6.
+2. **Las 26 clasificaciones** que la ley condiciona — $594, más $734 trabados que
+   la pantalla ya muestra con precio puesto.
+3. **Los $262.52 del Art. 156.** 0 marcados de 99. El Contador Externo ya tiene
+   permiso para hacerlo desde la ficha.
+4. **Con qué libro se cierra julio**: $112.55 de remanente con el de hoy,
+   $1,302.31 con el declarable.
+5. Las cinco preguntas de más abajo.
 
-### La trampa que casi se repite, y cómo quedó cerrada
+### Cabos sueltos anotados y no cerrados
 
-El crédito fiscal cruza `purchase_dte_documents`, que exige el módulo
-**`facturas_compra`**; la pantalla vive en **`proveedores`**. **`Administrador`
-tiene uno y no el otro.** Con un RPC INVOKER, el LEFT JOIN contra una tabla que la
-policy le esconde **no falla**: devuelve NULL, el `coalesce` lo vuelve 0, y las
-doce tarjetas mostrarían **$0.00 sin un solo error**.
-
-Por eso `get_clasificacion_fiscal_pendiente` es **DEFINER con una guarda explícita
-de `proveedores.can_view`**. Un cero de permiso y un cero de dato se ven igual, y
-acá el cero es justo lo que decide si alguien confirma.
+- **`generar_csv_libro` con sucursal NULL devuelve cero filas en silencio** —
+  hallazgo 3.9, abierto desde el 12-08. Mismo patrón que apareció tres veces hoy.
+- **La maqueta de «Aceptar sugerencia» por tarjeta** — 4 proveedores en 3
+  categorías; hay que mostrarla antes de tocar código.
+- **Tres columnas muertas**: `conteo_inventario_items.fisico_cantidad`,
+  `sales_invoice_items.id_presentacion` (con un índice de un solo uso en su vida)
+  y `audit_logs.device_name`. Nadie las lee — limpieza, no urgencia.
 
 ---
 

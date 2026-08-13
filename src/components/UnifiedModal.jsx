@@ -286,6 +286,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 if (finalData.branch_id === "") finalData.branch_id = null;
                 if (finalData.role_id === "") finalData.role_id = null;
                 if (finalData.secondary_role_id === "") finalData.secondary_role_id = null;
+                if (finalData.suplente_id === "") finalData.suplente_id = null;
                 if (finalData.birth_date === "") finalData.birth_date = null;
                 if (finalData.contract_end_date === "") finalData.contract_end_date = null;
                 if (finalData.base_salary === "") finalData.base_salary = null;

@@ -511,6 +511,7 @@ export const createEmployeeSlice = (set, get) => ({
                 
                 role_id: formData.role_id ? parseInt(formData.role_id, 10) : null,
                 secondary_role_id: formData.secondary_role_id ? parseInt(formData.secondary_role_id, 10) : null,
+                suplente_id: formData.suplente_id || null,
                 branch_id: formData.branch_id ? parseInt(formData.branch_id, 10) : null,
                 
                 gender: formData.gender || null,
@@ -729,6 +730,9 @@ export const createEmployeeSlice = (set, get) => ({
 
             if (updatedData.role_id !== undefined) dbPayload.role_id = updatedData.role_id ? parseInt(updatedData.role_id, 10) : null;
             if (updatedData.secondary_role_id !== undefined) dbPayload.secondary_role_id = updatedData.secondary_role_id ? parseInt(updatedData.secondary_role_id, 10) : null;
+            // Quitar el suplente llega como '' desde el select: '' no es un uuid y
+            // rompería el insert, así que se guarda NULL («sin nadie elegido»).
+            if (updatedData.suplente_id !== undefined) dbPayload.suplente_id = updatedData.suplente_id || null;
             
             if (updatedData.username) dbPayload.username = updatedData.username.trim().toLowerCase();
             if (updatedData.first_names) dbPayload.first_names = updatedData.first_names.trim().toUpperCase();
@@ -861,6 +865,29 @@ export const createEmployeeSlice = (set, get) => ({
                 branch_id: updated.branch_id,
                 new_value: 'Expediente modificado'
             });
+
+            // Nombrar a quien te cubre reparte permisos mientras no estás, así que
+            // deja su propio asiento en la bitácora en vez de quedar enterrado en
+            // «Expediente modificado». El estado local todavía no se actualizó acá
+            // abajo, así que `get().employees` conserva el valor anterior.
+            if (updatedData.suplente_id !== undefined) {
+                const antes = get().employees.find(e => String(e.id) === String(id))?.suplente_id ?? null;
+                const ahora = dbPayload.suplente_id ?? null;
+                if (String(antes ?? '') !== String(ahora ?? '')) {
+                    const nombreDe = (empId) => (empId
+                        ? get().employees.find(e => String(e.id) === String(empId))?.name || 'otra persona'
+                        : null);
+                    await get().appendAuditLog('EDITAR_EMPLEADO', id, {
+                        timeline_title: ahora
+                            ? `Cobertura por ausencia: a ${updated.name} lo cubre ${nombreDe(ahora)}`
+                            : `Cobertura por ausencia: ${updated.name} queda sin nadie elegido`,
+                        dimension: 'HR',
+                        branch_id: updated.branch_id,
+                        old_value: nombreDe(antes) || 'Sin nadie elegido',
+                        new_value: nombreDe(ahora) || 'Sin nadie elegido'
+                    });
+                }
+            }
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 

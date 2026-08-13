@@ -196,7 +196,7 @@ const FAMILIAS_DECIDIR = [
     { key: 'traslados',            label: 'Traslados',   desc: 'Confirmar el envío de producto que otra sala pide' },
 ];
 
-const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, locked, saving }) => {
+const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, locked, saving, roles = [], employees = [] }) => {
     const perm = (k) => permissions[`${roleId}:${k}`] || {};
     const encendidas = FAMILIAS_DECIDIR.filter(f => perm(f.key).can_approve).length;
     const total = FAMILIAS_DECIDIR.length;
@@ -205,6 +205,23 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
     const resumen = encendidas === 0 ? 'No decide ninguna'
                   : encendidas === total ? 'Decide todas'
                   : `Decide ${encendidas} de ${total}`;
+
+    // A quién le llegan estos permisos cuando el interruptor está encendido.
+    // Sin esto, «Delegar» reparte facultades a alguien que no se nombra en
+    // ningún lado de la pantalla, y una delegación anónima no se puede auditar.
+    const nombresDe = (lista) => lista.map(e => e.name).filter(Boolean);
+    const cargoPadreId = roles.find(r => String(r.id) === String(roleId))?.parent_role_id ?? null;
+    const activos = employees.filter(e => e.status === 'ACTIVO');
+    const porOrganigrama = nombresDe(activos.filter(e => String(e.role_id) === String(cargoPadreId)));
+    const conSuplente = activos
+        .filter(e => String(e.role_id) === String(roleId) && e.suplente_id)
+        .map(e => ({
+            titular: e.name,
+            suplente: activos.find(s => String(s.id) === String(e.suplente_id))?.name,
+        }))
+        .filter(p => p.suplente);
+    const listar = (arr) => arr.length <= 1 ? (arr[0] || '')
+        : `${arr.slice(0, -1).join(', ')} y ${arr[arr.length - 1]}`;
 
     return (
         <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
@@ -229,7 +246,7 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                     <Toggle value={encendidas > 0} color="success" disabled={locked}
                         onChange={(v) => onChange('requests', 'can_approve', v)} />
                 </div>
-                <LiquidTooltip content="Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe inmediato se hace cargo de estas decisiones mientras dure la ausencia. Se apaga solo al volver.">
+                <LiquidTooltip content="Mientras alguien de este cargo esté de vacaciones o incapacitado, sus decisiones las resuelve el suplente que haya elegido en su ficha; si no eligió a nadie —o el cargo entero está ausente— se hace cargo quien esté arriba en el organigrama. Se apaga solo al volver.">
                     <div className="flex items-center gap-2">
                         <span className="text-caption font-black uppercase tracking-widest text-content-3">Delegar</span>
                         <Toggle value={delegando} color="chart-4" disabled={locked}
@@ -237,6 +254,33 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                     </div>
                 </LiquidTooltip>
             </div>
+
+            {/* Con el interruptor encendido hay que decir A QUIÉN le llegan estas
+                decisiones. Es la corrección de fondo: la delegación se decide en
+                esta tarjeta pero se cobra en la cuenta de otra persona, que hasta
+                acá no aparecía escrita en ninguna parte de la pantalla. */}
+            {delegando && (
+                <div className="mb-2.5 space-y-1">
+                    {conSuplente.map(p => (
+                        <p key={p.titular} className="flex items-start gap-1 text-caption text-content-3 font-medium leading-snug">
+                            <ChevronRight size={12} className="text-chart-4-text mt-0.5 flex-shrink-0" strokeWidth={3} />
+                            <span>A <span className="font-black text-content-2">{p.titular}</span> lo cubre <span className="font-black text-content-2">{p.suplente}</span></span>
+                        </p>
+                    ))}
+                    {porOrganigrama.length > 0 ? (
+                        <p className="flex items-start gap-1 text-caption text-content-3 font-medium leading-snug">
+                            <ChevronRight size={12} className="text-chart-4-text mt-0.5 flex-shrink-0" strokeWidth={3} />
+                            <span>{conSuplente.length > 0 ? 'Del resto se hace cargo' : 'Se hace cargo'} <span className="font-black text-content-2">{listar(porOrganigrama)}</span></span>
+                        </p>
+                    ) : (
+                        <p className="flex items-start gap-1 text-caption text-warning-text font-medium leading-snug">
+                            <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" strokeWidth={3} />
+                            <span>{conSuplente.length > 0 ? 'Del resto no se hace cargo nadie: ' : 'No se hace cargo nadie: '}
+                                arriba de este cargo no hay ninguna persona activa. Elige un suplente en la ficha de cada quien.</span>
+                        </p>
+                    )}
+                </div>
+            )}
 
             {/* Las cuatro, con el MISMO control que los sub-permisos de cada
                 tarjeta: fila con rótulo y `Toggle`, en una caja que se tiñe al
@@ -446,6 +490,9 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
 const PermissionsView = () => {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('permissions', 'can_edit');
+    // Para poder nombrar a quién se le delega: quién tiene el cargo de arriba y
+    // quién nombró un suplente propio. Salen de la tabla, no de una lista fija.
+    const empleados = useStaff(s => s.employees);
 
     const [selectedRoleId, setSelectedRoleId] = useState(null); // integer (roles.id)
     const [orgRoles, setOrgRoles] = useState([]);               // [{ id, name, parent_role_id }] sorted hierarchically
@@ -1282,6 +1329,8 @@ const PermissionsView = () => {
                                 onDelegar={handleDelegar}
                                 locked={!canEdit}
                                 saving={saving}
+                                roles={orgRoles}
+                                employees={empleados}
                             />
 
                             </div>{/* end 2-col grid */}

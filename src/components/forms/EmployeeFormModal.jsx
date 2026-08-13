@@ -1007,7 +1007,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const isExterna = selectedBranch?.type === 'EXTERNA';
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
-    const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
+    // Quién lo cubre mientras no está. Sale de la tabla —nunca de una lista
+    // escrita a mano— y excluye a la propia persona (la BD también lo prohíbe).
+    const suplenteOpts = useMemo(() => (employees || [])
+        .filter(e => e.status === 'ACTIVO' && String(e.id) !== String(formData?.id))
+        .map(e => ({
+            value: String(e.id),
+            label: e.name || `${e.first_names || ''} ${e.last_names || ''}`.trim(),
+            sublabel: e.role || undefined,
+            avatar: e.photo || undefined,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es')),
+        [employees, formData?.id]);
+
+    const islandClass ="bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
     const islandHoverClass = "transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
 
     // 🚨 Propiedades base para que los selects floten libres del Modal
@@ -1895,6 +1908,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                     </>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Quién se hace cargo mientras no está. A diferencia del cargo,
+                            esto SÍ se edita en cualquier momento: no es un cambio de puesto,
+                            es una instrucción de cobertura. */}
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                <div className="relative z-content">
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Si no está, lo cubre</label>
+                                    <LiquidSelect value={formData.suplente_id || ''} onChange={(val) => handleSelectChange('suplente_id', val || null)} options={suplenteOpts} placeholder="Nadie en particular..." icon={Users} {...portalSelectProps} />
+                                </div>
+                                <p className="text-caption text-content-3 font-medium leading-snug md:pt-6">
+                                    Mientras esté de vacaciones o incapacidad, esta persona resuelve lo que le corresponde
+                                    —solo lo que su cargo tenga marcado para delegar—. Al volver, la cobertura se apaga sola.
+                                    {' '}Sin nadie elegido, sigue cubriendo quien esté arriba en el organigrama.
+                                </p>
                             </div>
                         </div>
 

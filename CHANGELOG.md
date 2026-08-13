@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.585.0 — Cuando alguien no está, lo cubre quien haya nombrado
+
+La delegación por ausencia se había construido sobre el **organigrama**: heredaba
+quien tuviera el cargo de arriba. Eso no dejaba elegir a quién te cubre, y dejaba
+tres cosas raras que eran la misma:
+
+1. No se podía nombrar a nadie. A Edwin, el organigrama le asigna a Carlos
+   Renderos, no a la persona que él quería habilitar.
+2. El interruptor repartía permisos a alguien que **no se nombraba en pantalla**.
+3. Un cargo compartido casi nunca queda «vacío»: la regla pide que TODAS las
+   personas del cargo estén ausentes, así que bastaba un colega presente para que
+   la delegación no se activara nunca.
+
+Ahora hay **suplente por persona** —«si no estoy, me cubre esta persona»— que se
+elige en la ficha del empleado, y el organigrama queda de respaldo automático
+debajo: si nadie fue nombrado, o el cargo entero está ausente, se hace cargo
+quien está arriba. La regla nueva se dispara porque **esa** persona no está, sin
+importar si un colega del mismo cargo sí está, que es lo que resuelve el punto 3.
+
+Y la tarjeta «Decidir solicitudes» ahora **dice a quién**: «A Celina la cubre
+Edwin», «Se hace cargo Carlos Renderos», o el aviso de que arriba no hay nadie
+activo. Una delegación anónima no se puede auditar.
+
+Medido en el entorno de pruebas, seis casos: nadie ausente (nadie hereda), titular
+ausente con colega presente (hereda el suplente, el jefe no), cargo entero ausente
+(heredan los dos), sin suplente nombrado (el comportamiento viejo intacto), la
+sesión del suplente en el navegador, y la vacación vencida (se apaga sola).
+
+De paso: se eliminó `qa.e2e.test`, una cuenta de prueba abandonada desde el 15 de
+julio que ocupaba el cargo de Jefe/a de Talento Humano y bloqueaba esa delegación
+por existir. La cuenta que usan las pruebas automatizadas es otra y no se tocó.
+
 ## v2.584.0 — La pantalla donde se confirma la deducibilidad
 
 La versión anterior dejó las columnas y la propuesta derivada del CIIU, y nada

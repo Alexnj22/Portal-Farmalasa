@@ -31,7 +31,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone, ShieldOff,
-    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText
+    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
 
@@ -398,6 +398,10 @@ const GRUPOS_CRUDOS = [
             { key: 'maintenance',  label: 'Mantenimiento',          desc: 'Poner un módulo en solo lectura para el resto del personal, con motivo y duración: se sigue viendo todo, no se puede editar ni aprobar', icon: Wrench, hasApprove: false },
             { key: 'auditview',    label: 'Auditoría general',      desc: 'Registro completo de cambios y acciones en el sistema',     icon: Activity,      hasApprove: false },
             { key: 'ios_test',     label: 'Prueba iOS',             desc: 'Vista de prueba para verificar safe areas y layout en iOS', icon: Smartphone,    hasApprove: false },
+            // La prueba de impresión en rollo: imprime una hoja con la regla de
+            // columnas, un nombre largo y una barra de control del cabezal, para
+            // saber qué ancho tiene la ticketera y si imprime parejo.
+            { key: 'impresion',    label: 'Prueba de impresión',    desc: 'Imprime una hoja de prueba en la ticketera para medir el ancho del rollo y verificar la alineación de las columnas', icon: Printer, hasApprove: false },
             { key: 'sync_health',  label: 'Salud de syncs',         desc: 'Historial de corridas de sync por dominio (productos/minmax/compras/backup) y alertas de fallo', icon: RadioTower, hasApprove: false },
             { key: 'orphan_objects', label: 'Objetos huérfanos',   desc: 'Tablero de seguimiento de candidatos a código muerto (componentes, funciones, edge functions sin caller)', icon: Ghost, hasApprove: false },
             // Ver a qué hora y desde dónde se conecta cada persona es dato

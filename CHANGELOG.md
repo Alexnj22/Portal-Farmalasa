@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.592.0 — El portal imprime en ticketera
+
+El portal sólo sabía imprimir en hoja carta —los tres PDF de pdfmake y la
+cotización— y en la sala no hay impresora de hoja: hay una ticketera. Ahora hay
+un motor de tickets (`src/utils/ticketPrint.js`) y una pantalla para probar el
+papel antes de enganchar cualquier documento: **Sistema → Prueba de impresión**.
+
+**Cómo lo hace el sistema de facturación, medido.** Su pantalla de venta no usa
+el diálogo del navegador: le pide al servidor el texto ya armado —diez campos
+separados por `|`, con el cuerpo rellenado con espacios a un ancho fijo— y lo
+manda por HTTP a un programa que corre **en la misma computadora de la caja**
+(`localhost/impresion_dte/`), con la ticketera registrada como impresora
+compartida. Por eso el cajero no ve ninguna ventana. El ancho no está declarado
+en ninguna configuración: se midió contra un Corte Z real del origen, de los que
+el portal ya guarda crudos — **40 columnas**.
+
+Ese camino tiene dos problemas: sólo funciona donde ese programa está instalado,
+y la respuesta llega opaca, así que una impresión que falla se ve igual que una
+que salió (en su propio código el aviso de error está comentado). El portal usa
+el navegador: el ticket es HTML con el ancho del rollo declarado en `@page`, y se
+imprime **el iframe de la vista previa** — o sea que lo que se ve es literalmente
+lo que sale, y no hay dos maquetadores que mantener parecidos. Las columnas las
+alinea el CSS, así que un nombre de 49 caracteres se parte dentro de su columna
+en vez de correr la del precio. `enviarAImpresoraDeLaComputadora()` conserva el
+camino sin diálogo para las computadoras de sala.
+
+**Tres defectos que aparecieron midiendo, no leyendo:**
+
+- **`@page { size: 80mm auto }` no es CSS válido** —la regla acepta `auto` o dos
+  longitudes, nunca una mezcla— y el navegador descarta la declaración entera:
+  el PDF salía de **216 × 279 mm, carta**. Ahora el alto se mide sobre el
+  documento ya pintado y se inyecta. Verificado: 1 hoja de 80.1 × 186.9 mm.
+- **`documentElement.scrollHeight` no mide un ticket**: nunca baja del alto de la
+  ventana. El mismo ticket daba 691 px en un marco de 620 px y 900 px en una
+  ventana de 900 px. Se mide el cuerpo, con 4 mm de holgura porque el trazado de
+  impresión sale un pelo más alto y ese pelo manda el margen de corte a una
+  segunda hoja.
+- En la vista previa, el **borde de 1 px del iframe** hacía desbordar el ticket de
+  lado (el cuerpo mide exactamente el ancho del rollo), y **`rounded-btn` lo
+  recortaba en forma de óvalo** comiéndose el encabezado: ese token vale 9999 px
+  en el tema de vidrio.
+
+La hoja de prueba está armada para que el papel conteste lo que la pantalla no
+puede: tres reglas de 32, 40 y 48 caracteres (el renglón más largo que no se
+parte es el ancho real), un nombre largo, los totales y una barra maciza para ver
+si el cabezal imprime parejo. En pantalla dice además cuánto papel gasta.
+
+Migración `20260813223553_impresion_permisos_del_modulo` (permisos copiados de
+`ios_test`). Detalle, evidencia y lo que queda abierto —el ancho real de las
+ticketeras y el camino sin diálogo, los dos pendientes de una prueba en sala— en
+`docs/IMPRESION-EN-TICKETERA-2026-08-13.md`.
+
 ## v2.591.1 — El plan de catálogos pasa a cerrados
 
 Sin cambios de comportamiento. `PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md` se

@@ -21,6 +21,62 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.590.2 — Los catálogos de baja y de documentos guardan la clave, no el rótulo
+
+Grupo 3 de `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`, el último que
+faltaba de los dos abiertos. Son los catálogos donde el rótulo **era** el dato
+guardado (`{ value: 'Renuncia Voluntaria', label: 'Renuncia Voluntaria' }`), o
+sea que corregirle una mayúscula desincronizaba lo guardado de lo que el código
+busca. El plan preveía un `UPDATE` de las filas ya escritas.
+
+**Medido primero: no había filas.** `employee_events` tiene 4 eventos en total
+—3 traslados y un cambio de cargo— y **cero** de tipo baja; los 47 empleados
+están activos, así que `terminationReason` nunca llegó a escribirse. Y las 8
+sucursales tienen `settings` con sus cuatro llaves de siempre y **cero**
+documentos personalizados. Ese cero se comprobó contra el instrumento antes de
+creerlo: la cuenta que hizo la consulta ve eventos de cuatro empleados
+distintos, ninguno de ellos el suyo, así que ve la tabla entera y no sólo lo
+propio — un cero por permisos se habría visto igual que un cero de verdad.
+
+Sin filas que migrar, se hizo lo que valía la pena hacer justo ahora, mientras
+es gratis: **separar la clave del rótulo**, que es la forma que ya tenía
+`EVENT_TYPES` y la que deja el texto de pantalla libre para siempre.
+
+- **`src/data/constants.js`** — `TERMINATION_REASONS` (`RENUNCIA`,
+  `DESPIDO_SIN_RESPONSABILIDAD`, `DESPIDO_CON_RESPONSABILIDAD`, `ABANDONO`) y
+  `CATEGORIAS_DOCUMENTO` (`PERMISOS`, `RRHH`, `OPERATIVO`, `LEGALES`, `FISCAL`,
+  `OTRO`), más `opcionesDeCatalogo` para armar el desplegable y
+  `categoriaDeDocumento` para resolver lo guardado.
+- **`categoriaDeDocumento` es el puente, no un adorno.** Acepta la clave y
+  también el rótulo viejo, con o sin tildes y con cualquier mayúscula — la misma
+  tolerancia que `buscarCargo` y por el mismo motivo. Lo que no reconoce cae en
+  `OTRO`, que es una sección que **sí** se pinta: preferimos ver un documento
+  mal clasificado antes que no verlo. Sin ese puente, un documento guardado con
+  el formato viejo no entraría en ninguna sección y desaparecería de la pantalla
+  sin dar error.
+- **`FormNovedad.jsx`, `FormAddCustomDocument.jsx`, `TabExpediente.jsx`,
+  `UnifiedModal.jsx`** — las listas salen del catálogo, las cuatro secciones del
+  expediente agrupan por clave y el encabezado dinámico pinta el rótulo. En la
+  bitácora se sigue anotando el **rótulo**: la lee una persona, no el código.
+- **`employeeSlice.js`** — `deleteEmployee` recibía texto libre con
+  `'Baja general'` por omisión, un valor que no existe en ningún catálogo y que
+  dejaba el evento fuera de cualquier conteo por causa sin fallar. Ahora exige
+  la clave y, si no resuelve, no escribe y avisa — el mismo freno que ya tenía
+  el cambio de cargo. Hoy no la llama nadie, y era justamente la vía por la que
+  volvía el defecto.
+
+De paso, el sentence case que originó todo: `Permisos y licencias`,
+`Documentos legales`, `Fiscal y financiero`, `Operativo y logística`,
+`Renuncia voluntaria`. `Recursos Humanos` conserva las mayúsculas porque es el
+nombre del departamento, y `Despido SIN/CON responsabilidad` las suyas porque
+son dos opciones que se distinguen por esa única palabra.
+
+`tests/unit/catalogos.test.js` fija el puente: los seis rótulos exactos con los
+que se guardaba antes, la tolerancia al acento y al espacio, el `OTRO` de
+respaldo, y que ninguna clave vuelva a ser igual a su rótulo. Verificado además
+en el entorno de pruebas con el portal abierto: los dos desplegables pintan las
+opciones nuevas y el expediente no tira un solo error de consola.
+
 ## v2.590.1 — Abrir el documento desde el libro de compras
 
 Hacer clic en una fila del libro de compras abre el documento, con **el mismo

@@ -9,6 +9,7 @@ import {
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
 import { insertEmployeeBranches, deleteEmployeeBranches, upsertWeeklyRoster } from '../../data/system';
+import { TERMINATION_REASONS } from '../../data/constants';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -1075,13 +1076,24 @@ export const createEmployeeSlice = (set, get) => ({
 
     // 🚨 SOFT DELETE: delega en registerEmployeeEvent(TERMINATION) para que exista
     // una sola vía de baja (evento + update de expediente + revocación de accesos).
-    deleteEmployee: async (id, reason = 'Baja general', exitDate = null) => {
+    // `motivo` es la CLAVE del catálogo (`RENUNCIA`, `ABANDONO`…), que es lo que
+    // se guarda en `metadata.terminationReason`. Antes era texto libre con
+    // `'Baja general'` por omisión: un valor que no existe en el catálogo y que
+    // dejaba el evento fuera de cualquier conteo por causa, sin fallar. Si no
+    // resuelve, no se escribe y se avisa — mismo freno que PROMOTION.
+    deleteEmployee: async (id, motivo, exitDate = null) => {
+        const causa = TERMINATION_REASONS[motivo];
+        if (!causa) {
+            const e = new Error(`El motivo de baja "${motivo}" no existe en el catálogo.`);
+            e.userFacing = true;
+            throw e;
+        }
         const fechaBaja = exitDate || new Date().toISOString().split('T')[0];
         const eventId = await get().registerEmployeeEvent(id, {
             type: 'TERMINATION',
             date: fechaBaja,
-            terminationReason: reason,
-            note: `Motivo de salida: ${reason}`,
+            terminationReason: motivo,
+            note: `Motivo de salida: ${causa.label}`,
         });
         return !!eventId;
     },

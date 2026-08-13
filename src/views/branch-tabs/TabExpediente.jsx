@@ -10,6 +10,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
 import SearchInput from '../../components/common/SearchInput';
 import { EmptyState } from '../../components/common/StateViews';
+import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento } from '../../data/constants';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
@@ -256,7 +257,11 @@ const TabExpediente = ({ liveBranch, openModal }) => {
         expDate: doc.hasExpiration ? doc.expDate : null,
         hasIssueDate: doc.hasIssueDate,
         issueDate: doc.hasIssueDate ? doc.issueDate : null,
-        category: doc.category,
+        // Las secciones de abajo agrupan por la CLAVE de la categoría. Lo
+        // guardado antes de v2.590.2 es el rótulo, así que se resuelve acá:
+        // sin esto un documento viejo no caería en ninguna sección y
+        // desaparecería de la pantalla sin dar error.
+        category: categoriaDeDocumento(doc.category),
         modal: 'editCustomDocument',
         aiSummary: doc.aiSummary,
         isCustom: true
@@ -406,53 +411,53 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             ))}
 
             {/* SECCIÓN 1: LICENCIAS Y PERMISOS */}
-            {(permisosDocs.length > 0 || customDocsByCategory['Permisos y Licencias']?.length > 0) && (
+            {(permisosDocs.length > 0 || customDocsByCategory['PERMISOS']?.length > 0) && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] delay-100">
                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <ShieldCheck size={12} className="text-success" strokeWidth={3} /> Licencias y Permisos
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {permisosDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
-                        {customDocsByCategory['Permisos y Licencias']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
+                        {customDocsByCategory['PERMISOS']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
                     </div>
                 </div>
             )}
 
             {/* SECCIÓN 2: CREDENCIALES DE PERSONAL */}
-            {(personalDocs.length > 0 || customDocsByCategory['Recursos Humanos']?.length > 0) && (
+            {(personalDocs.length > 0 || customDocsByCategory['RRHH']?.length > 0) && (
                 <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] delay-150">
                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <Users size={12} className="text-chart-3-text" strokeWidth={3} /> Credenciales de Personal
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {personalDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
-                        {customDocsByCategory['Recursos Humanos']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
+                        {customDocsByCategory['RRHH']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
                     </div>
                 </div>
             )}
 
             {/* SECCIÓN 3: INFRAESTRUCTURA Y OPERATIVOS */}
-            {(infraDocs.length > 0 || customDocsByCategory['Operativo y Logística']?.length > 0) && (
+            {(infraDocs.length > 0 || customDocsByCategory['OPERATIVO']?.length > 0) && (
                 <div className="space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)] delay-200">
                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <Building2 size={12} className="text-warning" strokeWidth={3} /> Infraestructura y Locales
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {infraDocs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
-                        {customDocsByCategory['Operativo y Logística']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
+                        {customDocsByCategory['OPERATIVO']?.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}
                     </div>
                 </div>
             )}
 
             {/* SECCIÓN 4: LEGALES, FISCALES Y OTROS (Dinámico) */}
-            {['Documentos Legales', 'Fiscal y Financiero', 'Otro'].map((category, index) => {
+            {['LEGALES', 'FISCAL', 'OTRO'].map((category, index) => {
                 const docs = customDocsByCategory[category];
                 if (!docs || docs.length === 0) return null;
 
                 return (
                     <div key={category} className={`space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-lento)]`} style={{ animationDelay: `${(index + 3) * 50}ms` }}>
                         <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
-                            <Tags size={12} className="text-brand-text" strokeWidth={3} /> {category}
+                            <Tags size={12} className="text-brand-text" strokeWidth={3} /> {CATEGORIAS_DOCUMENTO[category].label}
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {docs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}

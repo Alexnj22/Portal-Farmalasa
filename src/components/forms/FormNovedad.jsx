@@ -9,7 +9,7 @@ import {
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
-import { EVENT_TYPES } from '../../data/constants';
+import { EVENT_TYPES, TERMINATION_REASONS, opcionesDeCatalogo } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
 import { buscarCargo } from '../../utils/roles';
 import { useStaffStore } from '../../store/staffStore';
@@ -240,12 +240,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Maternidad', label: 'Maternidad (16 semanas por ley)' }
     ];
 
-    const terminationReasons = [
-        { value: 'Renuncia Voluntaria', label: 'Renuncia Voluntaria' },
-        { value: 'Despido sin Responsabilidad', label: 'Despido SIN responsabilidad' },
-        { value: 'Despido con Responsabilidad', label: 'Despido CON responsabilidad' },
-        { value: 'Abandono', label: 'Abandono de trabajo' }
-    ];
+    // El motivo se guarda por CLAVE (`RENUNCIA`, `ABANDONO`…), no por rótulo:
+    // así el texto de pantalla se puede reescribir sin desincronizarlo de lo
+    // guardado. Antes `value === label` en la primera opción.
+    const terminationReasons = opcionesDeCatalogo(TERMINATION_REASONS);
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (

@@ -13,6 +13,7 @@ import useMontadoParaSalida from '../hooks/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { buscarCargo } from '../utils/roles';
+import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento } from '../data/constants';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -393,7 +394,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const documentObject = {
                     id: docId,
                     title: docData.title.trim(),
-                    category: docData.category,
+                    // Se guarda la CLAVE, siempre resuelta: si algún día llega
+                    // un rótulo viejo por otra vía, entra normalizado y no como
+                    // una séptima categoría que ninguna sección pinta.
+                    category: categoriaDeDocumento(docData.category),
                     hasIssueDate: docData.hasIssueDate,
                     issueDate: docData.hasIssueDate ? docData.issueDate : null,
                     hasExpiration: docData.hasExpiration,
@@ -421,7 +425,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     await appendAuditLog('DOC_AGREGADO', targetBranchId, {
                         timeline_title: type === "addCustomDocument" ? `Nuevo Documento: ${documentObject.title}` : `Documento Actualizado: ${documentObject.title}`,
                         dimension: 'LEGAL',
-                        new_value: documentObject.category
+                        // La bitácora la lee una persona: va el rótulo, no la
+                        // clave con la que se guarda.
+                        new_value: CATEGORIAS_DOCUMENTO[documentObject.category].label
                     });
                 }
 

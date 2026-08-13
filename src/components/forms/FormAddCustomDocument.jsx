@@ -6,15 +6,13 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
 import { clickable } from '../../utils/clickable';
+import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, opcionesDeCatalogo } from '../../data/constants';
 
-const CATEGORIES = [
-    { value: 'Permisos y Licencias', label: 'Permisos y Licencias' },
-    { value: 'Documentos Legales', label: 'Documentos Legales' },
-    { value: 'Fiscal y Financiero', label: 'Fiscal y Financiero' },
-    { value: 'Operativo y Logística', label: 'Operativo y Logística' },
-    { value: 'Recursos Humanos', label: 'Recursos Humanos' },
-    { value: 'Otro', label: 'Otro' }
-];
+// La categoría se guarda por CLAVE (`PERMISOS`, `LEGALES`…). Antes se guardaba
+// el rótulo, así que corregirle una mayúscula desincronizaba lo guardado de las
+// secciones de `TabExpediente`, que agrupan por ese mismo valor.
+const CATEGORIES = opcionesDeCatalogo(CATEGORIAS_DOCUMENTO);
+const CATEGORIA_POR_OMISION = Object.keys(CATEGORIAS_DOCUMENTO)[0];
 
 const FormAddCustomDocument = ({ formData, setFormData, type }) => {
     const [isInitialized, setIsInitialized] = useState(false);
@@ -30,7 +28,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
         
         let initialDocData = {
             title: '',
-            category: CATEGORIES[0].value,
+            category: CATEGORIA_POR_OMISION,
             hasIssueDate: false,
             issueDate: '',
             hasExpiration: false,
@@ -46,7 +44,10 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                 // Si encontramos el documento, precargamos el formulario con sus datos
                 initialDocData = {
                     title: existingDoc.title || '',
-                    category: existingDoc.category || CATEGORIES[0].value,
+                    // Un documento guardado antes trae el rótulo, no la clave:
+                    // `categoriaDeDocumento` lo resuelve para que el selector
+                    // abra en la categoría que ya tenía y no en la primera.
+                    category: categoriaDeDocumento(existingDoc.category),
                     hasIssueDate: !!existingDoc.hasIssueDate, // Convertir a booleano estricto
                     issueDate: existingDoc.issueDate || '',
                     hasExpiration: !!existingDoc.hasExpiration, // Convertir a booleano estricto

@@ -1,7 +1,9 @@
 # Plan — los catálogos cuyo rótulo ES el dato
 
-> **Estado:** grupo 1 **CERRADO** (v2.571.11) · grupos 2 y 3 abiertos.
-> Abierto el 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y v2.571.10).
+> **Estado:** grupos 1 (v2.571.11) y 3 (v2.590.2) **CERRADOS** · queda el grupo
+> 2, que es cosmético, y un hallazgo nuevo del 13-08 (el tipo de incapacidad,
+> abajo). Abierto el 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y
+> v2.571.10).
 
 ## Por qué existe
 
@@ -152,6 +154,73 @@ fuera del horario de los crons.
 `Recursos Humanos` probablemente se queda como está: es el nombre de un
 departamento, no una etiqueta común.
 
+> ### ✅ CERRADO el 2026-08-13 (v2.590.2)
+>
+> **El conteo dio cero, y por eso salió más barato de lo previsto.** Medido
+> contra producción antes de tocar nada:
+>
+> | qué | cuánto |
+> |---|---|
+> | `employee_events` en total | 4 (3 traslados, 1 cambio de cargo) |
+> | de tipo baja (`TERMINATION`) | **0** — `terminationReason` nunca se escribió |
+> | empleados `INACTIVO` | 0 de 47, consistente con lo anterior |
+> | `branches` con `settings` | 8 de 8, con `rent\|legal\|location\|services` |
+> | documentos en `customDocs` | **0** en las 8 |
+>
+> Ese cero se comprobó contra el instrumento antes de creerlo: la cuenta que
+> consultó ve eventos de **cuatro empleados distintos, ninguno el suyo**, o sea
+> que la policy le abre la tabla entera. Un cero por permisos se habría visto
+> igual que un cero de verdad — ver
+> [[feedback_cero_hallazgos_y_cero_datos_se_ven_igual]].
+>
+> **Sin `UPDATE` que hacer, se hizo lo que sólo es gratis ahora: separar la
+> clave del rótulo**, en vez de corregir la mayúscula y dejar el defecto para la
+> próxima. `src/data/constants.js` gana `TERMINATION_REASONS` y
+> `CATEGORIAS_DOCUMENTO` con la forma de `EVENT_TYPES` (clave → `{ label }`),
+> más `opcionesDeCatalogo` y `categoriaDeDocumento`.
+>
+> Dos decisiones que conviene no revertir sin pensarlo:
+>
+> 1. **`categoriaDeDocumento` acepta el rótulo viejo**, con o sin tildes y con
+>    cualquier mayúscula. No sobra por más que hoy no haya filas: un respaldo,
+>    otro entorno o una copia vieja en el navegador lo pueden traer. Lo que no
+>    reconoce cae en `OTRO`, que es una sección que **sí** se pinta —un
+>    documento mal clasificado se ve; uno sin sección desaparece de la pantalla
+>    sin dar error—. `tests/unit/catalogos.test.js` fija los seis rótulos
+>    exactos.
+> 2. **`deleteEmployee` dejó de aceptar texto libre.** Tenía `'Baja general'`
+>    por omisión: un valor fuera de todo catálogo que dejaba el evento sin
+>    causa contable y no fallaba. Hoy exige la clave, y si no resuelve no
+>    escribe y avisa. No la llama nadie, y era justo la vía por la que volvía
+>    el defecto.
+>
+> `Recursos Humanos` quedó como estaba —es el departamento— y ahora eso no
+> cuesta nada, porque el rótulo dejó de ser el dato.
+
+---
+
+## Hallazgo nuevo (2026-08-13) — el rótulo que además es la CONDICIÓN
+
+No estaba en ningún grupo porque el filtro del plan buscaba `value === label`, y
+acá **no coinciden**: `FormNovedad.jsx` ofrece
+`{ value: 'Enfermedad Común', label: 'Enfermedad común (padecimiento o embarazo)' }`
+y dos más. Pero el `value` sigue siendo un rótulo en Title Case guardado como
+dato, y encima se compara por igualdad **en seis lugares** del mismo archivo:
+
+```js
+formData?.disabilityType === 'Maternidad'      // ← decide los 112 días del Art. 309
+```
+
+O sea que reescribir ese texto no desincroniza una lista: **apaga la regla de
+las 16 semanas de maternidad**, en silencio. Es el mismo defecto de grupo 1
+—cruzar por texto— pero contra un literal en vez de contra una tabla, que es por
+qué ningún filtro por `value:` lo iba a encontrar.
+
+Medido igual que el grupo 3: **cero eventos de incapacidad guardados**, así que
+convertirlo a claves (`ENFERMEDAD_COMUN`, `RIESGO_PROFESIONAL`, `MATERNIDAD`)
+también es gratis hoy. Queda **abierto**: es un cambio de comportamiento en una
+regla legal y merece decidirse aparte, no colarse en el cierre del grupo 3.
+
 ---
 
 ## Lo que NO entra en ningún grupo, y por qué
@@ -173,6 +242,10 @@ Se revisaron y se dejan como están:
 ---
 
 ## Orden sugerido
+
+> Al 2026-08-13 quedan abiertos: el **grupo 2**, el **hallazgo del tipo de
+> incapacidad** y el literal `'Sin Asignar'` de `UnifiedModal` (resto del grupo
+> 1). Los pasos 1 y 2 de abajo ya están hechos y se dejan como registro.
 
 1. **Grupo 1, paso 2** — leer `roles` de la base y borrar la lista a mano. Es el
    único que arregla un defecto real y no depende de ninguna decisión de

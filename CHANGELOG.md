@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.582.0 — La tarjeta «Decidir solicitudes»
+
+Los cuatro selectores de quién resuelve cada clase de solicitud, juntos en
+**una tarjeta**, con su maestro y su delegación. Es el diseño que pidió el
+usuario y que costó dos intentos llegar a él.
+
+```
+┌─ DECIDIR SOLICITUDES ────────────────────┐
+│  APROBAR TODO              [─●]  ← maestro
+│  ├─ Facturación            [─●]          │
+│  ├─ Inventario             [─●]          │
+│  ├─ Min/Max                [─●] → tarjeta Min/Max
+│  └─ Traslados              [─●] → tarjeta Traslados
+│  DELEGAR SI NO ESTÁ        [●─]          │
+└──────────────────────────────────────────┘
+```
+
+**Por qué juntos y no repartidos**: las cuatro contestan la misma pregunta
+—«¿qué puede decidir este cargo?»— y separados obligan a recorrer la pantalla
+para responderla. Además el maestro necesitaba dónde vivir.
+
+Traslados y Min/Max se muestran acá **y siguen teniendo su propia tarjeta** con
+sus otros permisos: su «Aprobar» es el mismo dato visto desde dos lados, no dos
+datos. Encenderlo en cualquiera de los dos lo enciende en el otro, y en la base
+sigue siendo una sola fila.
+
+El maestro se pinta encendido si hay al menos una familia encendida, y cuando
+son algunas rotula «3 de 4»: un interruptor a medias sin explicación se lee como
+un error de la pantalla.
+
+«Delegar si no está» aparece **una sola vez** y enciende las cinco filas a la
+vez —las cuatro familias más `requests`—, porque delegar decidir sin delegar ver
+dejaría al suplente con permiso para resolver algo que no puede abrir.
+
+Verificado en el navegador contra el entorno de pruebas: la tarjeta se dibuja
+completa, encabezando Operaciones, y «Delegar si no está» aparece exactamente
+una vez en toda la pantalla. **La cascada no está probada con un clic**: el
+interruptor no expone un rol accesible y no di con el localizador.
+
 ## v2.581.1 — Se quita el interruptor de delegar de las 77 tarjetas
 
 Corrige lo que salió mal de v2.580.0. «Delegar si no está» se dibujaba en las

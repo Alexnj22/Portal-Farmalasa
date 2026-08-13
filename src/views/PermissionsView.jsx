@@ -146,6 +146,98 @@ const Toggle = ({ value, onChange, color = 'chart-1', disabled = false, size = '
         disabled={disabled} size={size === 'lg' ? 'md' : 'sm'} />
 );
 
+/* ─── Tarjeta «Decidir solicitudes» ─────────────────────────────────────────
+ *
+ * Los cuatro selectores de quién resuelve cada clase de solicitud, juntos en UNA
+ * tarjeta. Diseño pedido y aprobado por el usuario el 2026-08-12, después de dos
+ * intentos que no eran: tres tarjetas sueltas primero, y un interruptor de
+ * delegación repetido en las 77 tarjetas después.
+ *
+ * Por qué una tarjeta aparte y no cuatro repartidas: las cuatro contestan LA
+ * MISMA pregunta —«¿qué puede decidir este cargo?»— y separadas obligan a
+ * recorrer la pantalla para responderla. Juntas se lee de un vistazo, y el
+ * maestro tiene dónde vivir.
+ *
+ * Traslados y Min/Max se muestran acá **y siguen teniendo su propia tarjeta**
+ * con sus otros permisos: su «Aprobar» es el mismo dato visto desde dos lados,
+ * no dos datos. Encenderlo en cualquiera de los dos lo enciende en el otro —de
+ * eso se encarga la cascada de `handleToggle`—, y por eso no se duplica en la
+ * base: es una sola fila.
+ */
+const FAMILIAS_DECIDIR = [
+    { key: 'requests_facturacion', label: 'Facturación', desc: 'Anular una factura, o cambiarle el pago, el vendedor o el cliente' },
+    { key: 'requests_inventario',  label: 'Inventario',  desc: 'Cargas y descartes de existencia' },
+    { key: 'requests_minmax',      label: 'Min / Max',   desc: 'Ajustes de stock mínimo y máximo' },
+    { key: 'traslados',            label: 'Traslados',   desc: 'Confirmar el envío de producto que otra sala pide' },
+];
+
+const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, locked, saving }) => {
+    const perm = (k) => permissions[`${roleId}:${k}`] || {};
+    const encendidas = FAMILIAS_DECIDIR.filter(f => perm(f.key).can_approve).length;
+    const maestro = encendidas > 0;
+    /* El maestro es tri-estado a la vista aunque el switch sea binario: con
+     * algunas encendidas se pinta encendido y se rotula «3 de 4», porque un
+     * switch a medias sin explicación se lee como un error de la pantalla. */
+    const parcial = encendidas > 0 && encendidas < FAMILIAS_DECIDIR.length;
+    const delegando = FAMILIAS_DECIDIR.some(f => perm(f.key).delega_en_ausencia)
+                   || perm('requests').delega_en_ausencia;
+
+    return (
+        <div data-surface="card" className="rounded-2xl border border-border-card p-4 space-y-3">
+            <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-success/15 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 size={18} className="text-success" strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0">
+                    <h3 className="text-body font-black text-content-1">Decidir solicitudes</h3>
+                    <p className="text-caption text-content-3">Quién resuelve cada clase de solicitud de la sala</p>
+                </div>
+            </div>
+
+            {/* El maestro */}
+            <div className="rounded-xl border border-border-card bg-surface-card p-2.5 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <span className="text-caption font-black uppercase tracking-widest text-content-2">Aprobar todo</span>
+                    {parcial && (
+                        <span className="ml-2 text-caption text-content-3">
+                            {encendidas} de {FAMILIAS_DECIDIR.length}
+                        </span>
+                    )}
+                </div>
+                <Toggle value={maestro} color="success" disabled={locked}
+                    onChange={(v) => onChange(roleId, 'requests', 'can_approve', v)} />
+            </div>
+
+            {/* Las cuatro */}
+            <div className="rounded-xl border border-border-card bg-surface-card p-2.5 space-y-1.5">
+                {FAMILIAS_DECIDIR.map(f => (
+                    <div key={f.key} className="flex items-center justify-between gap-3 px-1.5 py-1">
+                        <LiquidTooltip content={f.desc}>
+                            <span className="text-caption font-black uppercase tracking-widest text-content-2 truncate">
+                                {f.label}
+                            </span>
+                        </LiquidTooltip>
+                        <Toggle value={!!perm(f.key).can_approve} color="success"
+                            disabled={locked || !!saving[`${roleId}:${f.key}`]}
+                            onChange={(v) => onChange(roleId, f.key, 'can_approve', v)} />
+                    </div>
+                ))}
+            </div>
+
+            {/* La delegación, UNA vez y acá */}
+            <div className="rounded-xl border border-chart-4/30 bg-chart-4/5 p-2.5 flex items-center justify-between gap-3">
+                <LiquidTooltip content="Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe inmediato se hace cargo de estas decisiones mientras dure la ausencia. Se apaga solo al volver.">
+                    <span className="text-caption font-black uppercase tracking-widest text-content-2">
+                        Delegar si no está
+                    </span>
+                </LiquidTooltip>
+                <Toggle value={delegando} color="chart-4" disabled={locked}
+                    onChange={(v) => onDelegar(roleId, v)} />
+            </div>
+        </div>
+    );
+};
+
 // ─── Módulo card ────────────────────────────────────────────────────────────
 const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabPerms, tabSaving, onTabChange }) => {
     const ModIcon = module.icon;
@@ -592,6 +684,43 @@ const PermissionsView = () => {
             cargo: orgRoles.find(r => r.id === selectedRoleId)?.name, valor: value,
         });
     }, [selectedRoleId, orgRoles]);
+
+    /* Delegar (o dejar de delegar) las decisiones de solicitudes.
+     *
+     * Enciende `delega_en_ausencia` en las CINCO filas de una vez —las cuatro
+     * familias más `requests`, que es la que abre la bandeja— porque en la
+     * pantalla es un solo interruptor y en la base son cinco filas. Delegar
+     * decidir sin delegar ver dejaría al suplente con permiso para resolver algo
+     * que no puede abrir. */
+    const handleDelegar = useCallback(async (roleId, value) => {
+        const claves = [...FAMILIAS_DECIDIR.map(f => f.key), 'requests'];
+        setPermissions(prev => {
+            const next = { ...prev };
+            for (const k of claves) {
+                const kk = `${roleId}:${k}`;
+                next[kk] = { ...(prev[kk] || { can_view: false, can_edit: false, can_approve: false, scope: 'ALL' }),
+                             delega_en_ausencia: value };
+            }
+            return next;
+        });
+        const { error } = await upsertRolePermissionsBulk(claves.map(k => {
+            const pv = permissions[`${roleId}:${k}`] || {};
+            return {
+                role_id: roleId, module_key: k,
+                can_view: pv.can_view ?? false,
+                can_edit: pv.can_edit ?? false,
+                can_approve: pv.can_approve ?? false,
+                scope: pv.scope || 'ALL',
+                delega_en_ausencia: value,
+                updated_at: new Date().toISOString(),
+            };
+        }));
+        if (!error) {
+            useStaff.getState().appendAuditLog('PERMISOS_DELEGAR_AUSENCIA', String(roleId), {
+                cargo: orgRoles.find(r => r.id === roleId)?.name, valor: value,
+            });
+        }
+    }, [permissions, orgRoles]);
 
     // ── Activar todos los permisos (como SUPERADMIN) ─────────────────────────
     const handleActivateAll = useCallback(async () => {
@@ -1165,6 +1294,18 @@ const PermissionsView = () => {
                                         módulos en N listas desde JS —determinista, sin
                                         fragmentación— y no con `columns`. */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+                                        {g.group === 'Operaciones' && (
+                                            <div className="animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both">
+                                                <TarjetaDecidirSolicitudes
+                                                    roleId={selectedRoleId}
+                                                    permissions={permissions}
+                                                    onChange={handleToggle}
+                                                    onDelegar={handleDelegar}
+                                                    locked={!canEdit}
+                                                    saving={saving}
+                                                />
+                                            </div>
+                                        )}
                                         {g.modules.filter(m => !m.enTarjetaAparte).map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
                                             const tabPerms = m.sub

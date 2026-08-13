@@ -243,7 +243,13 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
             <div className="flex items-center justify-between gap-3 mb-2.5">
                 <div className="flex items-center gap-2">
                     <span className="text-caption font-black uppercase tracking-widest text-content-3">Todas</span>
-                    <Toggle value={encendidas > 0} color="success" disabled={locked}
+                    {/* Encendido SÓLO cuando están las cuatro. Con «algunas» decía
+                        que sí, y entonces un clic las apagaba todas: para completar
+                        el juego había que apretarlo dos veces. Medido con un clic
+                        real el 2026-08-13 partiendo de «Decide 1 de 4». El estado
+                        intermedio lo cuenta el renglón de arriba («Decide 1 de 4»),
+                        que es donde se lee, no en un interruptor de dos posiciones. */}
+                    <Toggle value={encendidas === total} color="success" disabled={locked}
                         onChange={(v) => onChange('requests', 'can_approve', v)} />
                 </div>
                 <LiquidTooltip content="Mientras alguien de este cargo esté de vacaciones o incapacitado, sus decisiones las resuelve el suplente que haya elegido en su ficha; si no eligió a nadie —o el cargo entero está ausente— se hace cargo quien esté arriba en el organigrama. Se apaga solo al volver.">

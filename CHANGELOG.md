@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.587.1 — El interruptor «Todas» ya no dice que sí cuando faltan familias
+
+Salió de probar la cascada de «Decidir solicitudes» con un clic real, cosa que
+nunca se había hecho. Los dos sentidos funcionan: encender «Todas» enciende las
+cuatro familias y apagarlo las apaga, y la base lo refleja al instante.
+
+Pero desde un estado intermedio no. Con «Decide 1 de 4» el interruptor se veía
+**encendido**, así que un clic apagaba las cuatro: para completar el juego había
+que apretarlo dos veces, y la primera hacía lo contrario de lo que uno quiere.
+
+Ahora se enciende **sólo cuando están las cuatro**. Desde «1 de 4» se ve apagado
+y un clic las enciende todas; desde «todas», un clic las apaga. El estado
+intermedio lo cuenta el renglón de arriba —«Decide 1 de 4»—, que es donde se
+lee, en vez de pedirle un tercer estado a un interruptor de dos posiciones.
+
+Medido en el entorno de pruebas, con el cargo QA / Testing y leyendo la base
+entre clic y clic: apagar desde todas → las cinco filas en no; encender sólo
+Facturación → «Decide 1 de 4»; un clic en el maestro → las cinco en sí.
+
+## v2.587.0 — Min/Max: dejar un producto en cero, y el motivo obligatorio cuando el número no se explica solo
+
+**No se podía proponer 0 · 0.** El widget exigía `MAX > MIN`, que es más
+estricto que la base: `mmcr_pair_valid` acepta el 0 · 0 desde siempre. O sea que
+la única propuesta que APAGA la reposición de un producto era imposible de
+escribir, y quien la necesitaba terminaba pidiendo 0 · 1 — que no es lo mismo:
+manda a comprar una unidad. Ahora la pantalla valida el par exactamente como lo
+valida la tabla, y el 0 · 0 tiene su propio botón, **«Dejar en cero»**, porque no
+se parece a teclear un número: apaga el producto y merece un control con nombre.
+Al activarlo aparece el aviso de qué implica —no vuelve a entrar en los pedidos
+de esa sala hasta que alguien le fije un MIN y un MAX—, y quien aprueba lee la
+misma frase en el detalle de la solicitud, en vez de deducirla de dos ceros.
+
+**El motivo dejó de ser opcional en tres casos**, los tres «el número no se
+explica mirándolo»: dejar en cero, triplicar el MIN o el MAX, y estrenar un
+MIN·MAX donde hoy no hay ninguno. Bajar un número sigue sin exigir texto — media
+razón de esta pantalla es corregir un máximo inflado, y cobrarle un motivo a eso
+es cobrarle a lo que uno quiere que pase. La pantalla dice **por qué** lo pide
+(«El MAX propuesto (72) es 3× el de hoy (24)») antes de marcar el campo como
+requerido, para que el pedido no parezca un capricho.
+
+La regla no vive sólo en el navegador: la misma condición es el CHECK
+`mmcr_reason_required` (migración `20260813163152`), verificado con 11 casos
+contra la tabla real dentro de una transacción revertida — 11 de 11. Esos mismos
+11 casos corren ahora en `tests/unit/minmaxSolicitud.test.js` contra la mitad de
+la regla que vive en JavaScript, que es lo que impide que las dos se separen.
+
+**Y la baldosa contaba mal.** `fetchMinMaxEstados` preguntaba por `PENDING` /
+`APPROVED` / `REJECTED`; la columna sólo acepta minúsculas —lo fija
+`mmcr_status_chk`—, así que las tres comparaciones daban falso siempre: el
+tablero decía «Sin propuestas» y dibujaba el riel vacío **con cuatro solicitudes
+en la tabla**, y el filtro ni siquiera traía las pendientes viejas, que son justo
+las que hay que ver. Las mayúsculas son del centro de solicitudes, donde
+conviven con las de `approval_requests` y `adaptarMinMax` las traduce; acá se
+normaliza igual en vez de copiar el literal de la otra pantalla.
+
 ## v2.586.0 — La deducibilidad del IVA se revisa por regla, no proveedor por proveedor
 
 La v2.584.0 puso el botón «Confirmar deducibilidad (67)» en el listado de

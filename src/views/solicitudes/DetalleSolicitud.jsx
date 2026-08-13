@@ -426,6 +426,16 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         </p>
                     </Caja>
                 </div>
+                {/* El 0 · 0 no es «un número más chico»: apaga la reposición.
+                    Quien aprueba lo tiene que leer, no deducirlo de dos ceros. */}
+                {Number(meta.min_pedido) === 0 && Number(meta.max_pedido) === 0 && (
+                    <div className="px-3 py-2.5 rounded-2xl border border-warning/30 bg-warning/10">
+                        <p className="text-caption text-warning-text font-semibold leading-snug">
+                            Deja de reponerse: aprobado esto, el producto no vuelve a entrar en los
+                            pedidos de {meta.branch_name || 'la sucursal'} hasta que alguien le fije un MIN y un MAX.
+                        </p>
+                    </div>
+                )}
                 {Number.isFinite(Number(meta.ventas_6m)) && (
                     <Caja>
                         <Rotulo>Vendidas en 6 meses</Rotulo>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
-import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
@@ -15,6 +15,7 @@ import {
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '../../data/stockParams';
+import { parMinMaxValido, motivosQueExigenExplicacion } from '../../utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
@@ -74,14 +75,42 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
     return () => { cancelled = true; };
   }, [erp, product.id]);
 
+  // Lo propuesto, ya en números. `null` = el campo está vacío.
+  const nMin = mn.trim() === '' ? null : Number.parseInt(mn, 10);
+  const nMax = mx.trim() === '' ? null : Number.parseInt(mx, 10);
+  const esCero = nMin === 0 && nMax === 0;
+
+  // Las razones que se MUESTRAN mientras se escribe. Se callan hasta que el
+  // MIN·MAX de hoy terminó de cargar: con `current` todavía en null, la regla
+  // «no tiene parámetros» se dispararía sola y diría una falsedad por medio
+  // segundo. La del envío NO se calla — ver `submit`.
+  const motivosVisibles = useMemo(
+    () => (!erp || loadingCur || esCero ? [] : motivosQueExigenExplicacion(current, nMin, nMax)),
+    [erp, loadingCur, esCero, current, nMin, nMax]);
+  // El 0 · 0 exige motivo igual, pero lo explica su propio aviso —con la
+  // consecuencia adentro—, no una viñeta que repita la misma frase.
+  const motivoObligatorio = esCero || motivosVisibles.length > 0;
+
   const submit = async () => {
     setErr('');
     if (!erp) { setErr('Elige una sucursal'); return; }
-    const newMin = mn === '' ? null : parseInt(mn, 10);
-    const newMax = mx === '' ? null : parseInt(mx, 10);
-    if (newMin === null || newMax === null) { setErr('Completá MIN y MAX'); return; }
+    const newMin = nMin;
+    const newMax = nMax;
+    if (newMin === null || newMax === null || Number.isNaN(newMin) || Number.isNaN(newMax)) { setErr('Completá MIN y MAX'); return; }
     if (newMin < 0 || newMax < 0) { setErr('Los valores no pueden ser negativos'); return; }
-    if (newMax <= newMin) { setErr('MAX debe ser mayor al MIN'); return; }
+    if (!parMinMaxValido(newMin, newMax)) {
+      setErr(newMin === 0
+        ? 'Con el MIN en 0, el MAX sólo puede ser 0 (deja de reponerse) o 1'
+        : 'MAX debe ser mayor al MIN');
+      return;
+    }
+    // Acá SÍ se evalúa con lo que haya: si el MIN·MAX de hoy no llegó, `current`
+    // es null y eso ya es una razón («todavía no tiene»). Callarse cuando no se
+    // sabe sería justo al revés.
+    if (motivosQueExigenExplicacion(current, newMin, newMax).length && !reason.trim()) {
+      setErr('Este ajuste necesita un motivo.');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -114,9 +143,15 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 
       onSuccess();
     } catch (e) {
-      setErr(e.message?.includes('row-level security')
-        ? 'No tienes permiso para crear solicitudes (widget Ajuste de Min/Max).'
-        : (e.message || 'Error al enviar'));
+      // Las dos reglas que también vive la base tienen su propia frase: sin
+      // esto llegan como «new row violates check constraint "mmcr_…"», que no
+      // le dice nada a quien está proponiendo un máximo.
+      const msg = e.message ?? '';
+      setErr(
+        msg.includes('row-level security') ? 'No tienes permiso para crear solicitudes (widget Ajuste de Min/Max).'
+        : msg.includes('mmcr_reason_required') ? 'Este ajuste necesita un motivo.'
+        : msg.includes('mmcr_pair_valid') ? 'Ese par de MIN y MAX no es válido.'
+        : (msg || 'Error al enviar'));
       setSubmitting(false);
     }
   };
@@ -195,15 +230,45 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           />
         </div>
 
+        {/* Retirar el producto. Va como botón y no como instrucción («poné 0 y
+            0») porque el 0 · 0 no se parece a escribir un número: es la única
+            propuesta que APAGA la reposición, y merece un control con nombre.
+            Queda deshabilitado cuando ya está en cero —el estado se lee en el
+            aviso de abajo, no en el botón— y para deshacerlo se escribe encima
+            de los campos, que están justo arriba. */}
+        <div className="flex justify-end -mt-1">
+          <Button variant="secondary" size="xs" icon={CircleSlash} disabled={esCero}
+              onClick={() => { setMn('0'); setMx('0'); setErr(''); }}>
+            Dejar en cero
+          </Button>
+        </div>
+
+        {esCero && (
+          <div className="flex items-start gap-2 rounded-xl bg-warning/10 border border-warning/30 px-3 py-2">
+            <CircleSlash size={13} className="text-warning-text mt-0.5 shrink-0" />
+            <div className="text-caption text-warning-text font-medium leading-snug">
+              En cero el producto <b>deja de reponerse</b>: no vuelve a entrar en los pedidos
+              de {ERP_NAMES[Number(erp)] || 'la sucursal'} hasta que alguien le fije un MIN y un MAX.
+              Por eso el motivo es obligatorio.
+            </div>
+          </div>
+        )}
+
         {/* Motivo */}
         <div className="flex flex-col gap-1.5">
           <PortalTextarea
-              label="Motivo"
+              label="Motivo" name="minmax-motivo"
+              required={motivoObligatorio}
               value={reason}
-              onChange={e => setReason(e.target.value)}
+              onChange={e => { setReason(e.target.value); setErr(''); }}
               rows={2}
-              placeholder="¿Por qué este ajuste? (opcional)"
+              placeholder={motivoObligatorio ? 'Contá por qué este ajuste' : '¿Por qué este ajuste? (opcional)'}
           />
+          {/* Por qué se lo estamos pidiendo. Sin esto, el badge «Requerido»
+              aparece de golpe al teclear un número y parece un capricho. */}
+          {motivosVisibles.map(m => (
+            <p key={m} className="text-caption text-warning-text font-semibold leading-snug px-1">{m}</p>
+          ))}
         </div>
 
         {err && <p className="text-label text-danger-text font-semibold px-1">{err}</p>}

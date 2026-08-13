@@ -40,7 +40,7 @@ Medido en el entorno de pruebas, con el cargo QA / Testing y leyendo la base
 entre clic y clic: apagar desde todas → las cinco filas en no; encender sólo
 Facturación → «Decide 1 de 4»; un clic en el maestro → las cinco en sí.
 
-## v2.587.0 — Min/Max: dejar un producto en cero, y el motivo obligatorio cuando el número no se explica solo
+## v2.588.0 — Min/Max: dejar un producto en cero, y el motivo obligatorio cuando el número no se explica solo
 
 **No se podía proponer 0 · 0.** El widget exigía `MAX > MIN`, que es más
 estricto que la base: `mmcr_pair_valid` acepta el 0 · 0 desde siempre. O sea que

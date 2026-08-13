@@ -126,21 +126,34 @@ export function fetchActiveProductsChunk(rangeFrom, rangeTo) {
 // La ventana de 90 días es para que lo decidido hace medio año no siga pesando
 // en la proporción; las pendientes no se filtran por fecha, porque una
 // solicitud vieja sin responder es justamente lo que hay que ver.
+//
+// ── El estado se guarda en MINÚSCULAS (2026-08-13) ────────────────────────
+// Esta función preguntaba por `PENDING`/`APPROVED`/`REJECTED`. La columna sólo
+// acepta `pending`/`approved`/`rejected` —lo fija el CHECK `mmcr_status_chk`—,
+// así que las tres comparaciones daban falso SIEMPRE: la baldosa decía «Sin
+// propuestas» y dibujaba el riel vacío con cuatro solicitudes en la tabla, y el
+// `.or()` ni siquiera traía las pendientes viejas, que son justo las que hay que
+// ver. Cero y cero-porque-no-coincide se ven idénticos.
+//
+// Las mayúsculas son del CENTRO de solicitudes, no de la base: ahí conviven con
+// las de `approval_requests` y `adaptarMinMax` las traduce con
+// `.toLowerCase()`. Ese adaptador es el que estaba bien, y por eso acá se
+// normaliza igual en vez de escribir el literal de la otra pantalla.
 export async function fetchMinMaxEstados(erpSucursalId = null) {
     const desde = new Date(Date.now() - 90 * 86400000).toISOString();
     let q = supabase
         .from('minmax_change_requests')
         .select('id, status, requested_at')
-        .or(`status.eq.PENDING,requested_at.gte.${desde}`);
+        .or(`status.eq.pending,requested_at.gte.${desde}`);
     if (erpSucursalId) q = q.eq('erp_sucursal_id', Number(erpSucursalId));
     const { data, error } = await q;
 
     const filas = data ?? [];
-    const cuenta = (s) => filas.filter(f => f.status === s).length;
+    const cuenta = (s) => filas.filter(f => String(f.status ?? '').toLowerCase() === s).length;
     return {
-        pendientes: cuenta('PENDING'),
-        aplicadas:  cuenta('APPROVED'),
-        rechazadas: cuenta('REJECTED'),
+        pendientes: cuenta('pending'),
+        aplicadas:  cuenta('approved'),
+        rechazadas: cuenta('rejected'),
         error,
     };
 }

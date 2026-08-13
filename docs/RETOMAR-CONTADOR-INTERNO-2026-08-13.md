@@ -148,17 +148,9 @@ crédito fiscal aunque tenga `facturas_compra_ver_montos = false`. Es consistent
 
 ## Lo que sigue
 
-**Paso 2 — el libro de compras unificado.** Es el que vale la plata: junio
-+$1,575.71 y julio +$4,351.22 de crédito fiscal que hoy no se declara. Necesita
-clasificaciones **confirmadas** — o sea que ahora sí puede arrancar, apenas
-alguien confirme las 12 decisiones.
-
-Detalle en el plan §2. Lo esencial: la clave del cruce es el **código de
-generación** (16 hexadecimales bastan), **no el sello** — el correo sólo trae
-sello en el 31% y hay sellos repetidos entre proveedores distintos.
-
-**Paso 3 — cierre de período.** Julio cerró con remanente a favor y nadie lo
-arrastra. Sin esto la declaración de agosto ya nace mal.
+Los pasos 2 y 3 quedaron construidos el 2026-08-13 — lo que decía esta sección
+antes (que estaban pendientes) ya no vale. El estado real está arriba, en «El
+estado del plan».
 
 ### Costo de venta — la cifra del plan estaba mal encuadrada (medido 2026-08-13)
 

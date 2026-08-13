@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.582.3 — Mismo alto en la banda, y las tarjetas activas primero
+
+**Mismo alto.** Los tres ajustes del cargo tenían la altura de su contenido y
+quedaban desparejos —Super Usuario corto, Decidir largo—. La grilla pasa a
+`items-stretch` y los tres llevan `h-full`: medido en el navegador, **218 px los
+tres**.
+
+**Las tarjetas activas primero, dentro de cada grupo.** Una tarjeta encendida es
+más alta —muestra alcance, pestañas y capacidades— y una apagada son dos
+interruptores. Mezcladas, la grilla queda con dientes: una alta al lado de una
+corta y un hueco debajo. Agrupando las altas, las filas cierran parejo.
+
+El detalle que importa: **el orden se congela al abrir el cargo, no se recalcula
+al vuelo.** Si dependiera del estado actual, apagar un módulo lo mandaría al
+final en el mismo clic — la tarjeta salta bajo el cursor y el siguiente clic cae
+sobre otra cosa. Se calcula una vez y se sostiene mientras se edita ese cargo;
+al cambiar de cargo, se recalcula. `permissions` queda deliberadamente fuera de
+las dependencias del efecto, con el motivo escrito al lado para que nadie lo
+"corrija".
+
+Primero se intentó con una `ref` leída en render y el compilador de React lo
+rechazó —«Cannot access refs during render»—, que es la regla que ya conocíamos.
+Quedó como estado calculado en un efecto.
+
 ## v2.582.2 — Los tres ajustes del cargo, en una sola fila
 
 Super Usuario, Nivel de Precio Máximo y Decidir solicitudes pasan a **tres

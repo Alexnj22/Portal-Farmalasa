@@ -182,7 +182,7 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                   : `Decide ${encendidas} de ${total}`;
 
     return (
-        <div data-surface="card" className="rounded-2xl border border-border-card p-4">
+        <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
             <div className="flex items-center gap-3 mb-3">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-success to-chart-1 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
                     <CheckCircle2 size={18} className="text-white" strokeWidth={2} />
@@ -727,6 +727,44 @@ const PermissionsView = () => {
         }
     }, [permissions, orgRoles]);
 
+    /* Las tarjetas ACTIVAS primero, dentro de cada grupo.
+     *
+     * Una tarjeta encendida es más alta —muestra alcance, pestañas y
+     * capacidades— y una apagada es apenas dos interruptores. Mezcladas, la
+     * grilla queda con dientes: una alta al lado de una corta y un hueco
+     * debajo. Agrupando las altas, las filas cierran parejo.
+     *
+     * ── Por qué se congela por cargo y no se recalcula al vuelo ────────────
+     * Si el orden dependiera del estado actual, apagar un módulo lo mandaría
+     * al final EN EL MISMO CLIC: la tarjeta salta de lugar debajo del cursor y
+     * el siguiente clic cae sobre otra cosa. Se calcula una vez al abrir el
+     * cargo y se sostiene mientras se lo edita; al cambiar de cargo, se
+     * recalcula.
+     *
+     * `permissions` se lee de una ref a propósito, para que cambiarlo NO
+     * dispare el recálculo — que es justo lo que se quiere evitar. */
+    const [ordenPorClave, setOrdenPorClave] = useState({});
+    useEffect(() => {
+        if (loading || !selectedRoleId) return;
+        const mapa = {};
+        MODULES.forEach(m => {
+            const v = permissions[`${selectedRoleId}:${m.key}`];
+            mapa[m.key] = v && (v.can_view || v.can_edit || v.can_approve) ? 0 : 1;
+        });
+        setOrdenPorClave(mapa);
+        // `permissions` NO va en las dependencias, y no es un descuido: si fuera,
+        // cada clic recalcularía el orden y la tarjeta saltaría de lugar. Se
+        // congela al abrir el cargo y se recalcula al cambiar de cargo.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedRoleId, loading]);
+
+    /* `sort` muta, así que se copia antes: `g.modules` viene del registro y es
+     * compartido por toda la pantalla. Orden estable — dentro de cada mitad se
+     * conserva el del registro, que es el que alguien pensó. */
+    const ordenar = useCallback((mods) =>
+        [...mods].sort((a, b) => (ordenPorClave[a.key] ?? 1) - (ordenPorClave[b.key] ?? 1)),
+    [ordenPorClave]);
+
     // ── Activar todos los permisos (como SUPERADMIN) ─────────────────────────
     const handleActivateAll = useCallback(async () => {
         if (!selectedRoleId) return;
@@ -1128,13 +1166,13 @@ const PermissionsView = () => {
                             )}
 
                             {/* ── Cards: Super Usuario (1/3) + Nivel de Precio (2/3) ── */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
 
                             {/* SU Card — columna pequeña */}
                             {(() => {
                                 const isRoleSU = !!roleIsSU[selectedRoleId];
                                 return (
-                                <div data-surface={isRoleSU ? undefined : 'card'} className={`relative overflow-hidden rounded-2xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu md:col-span-1 ${isRoleSU ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]' : ''}`}>
+                                <div data-surface={isRoleSU ? undefined : 'card'} className={`relative overflow-hidden rounded-2xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu md:col-span-1 h-full ${isRoleSU ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]' : ''}`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-warning/30 blur-xl pointer-events-none" />}
                                     <div className="relative p-3.5 flex flex-col gap-3">
                                         {/* Icon + toggle row */}
@@ -1196,7 +1234,7 @@ const PermissionsView = () => {
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                                <div data-surface="card" className="rounded-2xl border border-border-card p-4">
+                                <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-[var(--dur-slow)]`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={2} />
@@ -1313,7 +1351,7 @@ const PermissionsView = () => {
                                         módulos en N listas desde JS —determinista, sin
                                         fragmentación— y no con `columns`. */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-                                        {g.modules.filter(m => !m.enTarjetaAparte).map((m, i) => {
+                                        {ordenar(g.modules.filter(m => !m.enTarjetaAparte)).map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
                                             const tabPerms = m.sub
                                                 ? Object.fromEntries(m.sub.map(t => [t.key, permissions[`${selectedRoleId}:${t.key}`] || { can_view: false }]))

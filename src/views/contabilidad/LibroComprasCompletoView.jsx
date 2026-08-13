@@ -134,7 +134,7 @@ const COLS_DECL = [
     { key: 'computa',   label: 'Cuenta',     align: 'center', className: 'w-[92px]' },
 ];
 
-export default function LibroComprasCompletoView() {
+export default function LibroComprasCompletoView({ openModal }) {
     const { getScope, hasPermission } = useAuth();
     // Canon de permisos 2026-08-03.
     const canDownload  = hasPermission('libro_compras_completo_descargar');
@@ -180,6 +180,35 @@ export default function LibroComprasCompletoView() {
     }, [mes, filterBranch, esDecl]);
 
     useEffect(() => { cargar(); }, [cargar]);
+
+    // Abrir el documento desde la fila, con el MISMO visor que Facturas de
+    // compra (`viewPurchaseDte`) — no una vista nueva: el que existe ya sabe
+    // leer el JSON del DTE, mostrar el PDF y armar el ZIP.
+    //
+    // Sólo cuando hay documento. Medido en julio 2026: de 467 compras
+    // registradas, 87 no tienen DTE —el sistema registró la compra y el
+    // documento nunca llegó por correo—, y esas filas quedan quietas. Un clic
+    // que no abre nada es peor que una fila que no invita a hacer clic.
+    const abrirDocumento = useCallback((r) => {
+        if (!r?.json_path) return;
+        openModal?.('viewPurchaseDte', {
+            document: {
+                id: r.dte_id,
+                json_path: r.json_path,
+                pdf_path: r.pdf_path,
+                tipo_dte: r.tipo_dte,
+                numero_control: r.numero_control,
+                codigo_generacion: r.documento_completo,
+                // El visor busca `supplier_nombre || emisor_nombre`; el libro
+                // ya trae el nombre resuelto en `proveedor`.
+                emisor_nombre: r.proveedor,
+                invalidado: false,
+            },
+        });
+        useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_VER_DOCUMENTO', String(r.dte_id ?? ''), {
+            documento: r.documento_completo, tipo: r.documento_tipo,
+        });
+    }, [openModal]);
 
     const nombreSucursal = useCallback(
         (id) => branches.find(b => b.id === id)?.name ?? (id ? `Suc. ${id}` : 'Sin sucursal'),
@@ -482,7 +511,8 @@ export default function LibroComprasCompletoView() {
                 <DataTable columns={COLS_DECL} dense loading={loading} empty={vacio}
                     movil={{ identidad: 'proveedor', chips: ['fecha', 'tipo', 'computa'] }}>
                     {paginadas.map((r, i) => (
-                        <DataRow key={`d-${r.documento_completo}-${i}`}>
+                        <DataRow key={`d-${r.documento_completo}-${i}`}
+                            onClick={r.json_path ? () => abrirDocumento(r) : undefined}>
                             <DataCell>{fmtFecha(r.fecha)}</DataCell>
                             <DataCell>
                                 {/* La nota de crédito se marca: es la fila que
@@ -525,7 +555,8 @@ export default function LibroComprasCompletoView() {
                 <DataTable columns={COLS} dense loading={loading} empty={vacio}
                     movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'] }}>
                     {paginadas.map((r, i) => (
-                        <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}>
+                        <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}
+                            onClick={r.json_path ? () => abrirDocumento(r) : undefined}>
                             <DataCell>{fmtFecha(r.fecha)}</DataCell>
                             <DataCell>
                                 <Badge variant={r.origen === 'registrada' ? 'neutral' : 'warning'} size="sm">
@@ -536,6 +567,12 @@ export default function LibroComprasCompletoView() {
                                 <span className="font-mono text-micro break-all">
                                     {r.documento_completo || '—'}
                                 </span>
+                                {/* Sin archivo no hay nada que abrir, y la fila
+                                    no reacciona. Decirlo evita que se lea como
+                                    un clic que falla. */}
+                                {!r.json_path && (
+                                    <span className="block text-micro text-content-3 mt-0.5">Sin documento</span>
+                                )}
                             </DataCell>
                             <DataCell className="max-w-[16rem]">
                                 <span className="line-clamp-2 break-words leading-tight">

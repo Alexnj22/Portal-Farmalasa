@@ -675,7 +675,7 @@ function MainApp() {
                                     <Route path="facturas-sala" element={<PermissionGuard moduleKey="facturas_sala"><FacturasSalaView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView openModal={openModal} /></PermissionGuard>} />
-                                    <Route path="libro-compras-completo" element={<PermissionGuard moduleKey="libro_compras_completo"><LibroComprasCompletoView /></PermissionGuard>} />
+                                    <Route path="libro-compras-completo" element={<PermissionGuard moduleKey="libro_compras_completo"><LibroComprasCompletoView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="resumen-fiscal" element={<PermissionGuard moduleKey="resumen_fiscal"><ResumenFiscalView /></PermissionGuard>} />
                                     <Route path="corte-z" element={<PermissionGuard moduleKey="corte_z"><CorteZView /></PermissionGuard>} />
                                     <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />

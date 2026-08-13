@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.590.1 — Abrir el documento desde el libro de compras
+
+Hacer clic en una fila del libro de compras abre el documento, con **el mismo
+visor que Facturas de compra** (`viewPurchaseDte`): el detalle del DTE leído de
+su JSON, el PDF original, y la descarga en ZIP. No una vista nueva — la que
+existe ya sabe hacerlo.
+
+Los dos libros —«Completo» y «Declarable»— ahora devuelven `json_path` y
+`pdf_path`. Cambia sólo lo que devuelven: verificado que el crédito declarable de
+julio sigue en $27,429.07, exactamente el mismo número que antes del cambio.
+
+**No todas las filas abren, y eso se dice.** Medido en julio 2026: de 467 compras
+registradas, **87 no tienen documento** — el sistema registró la compra y el DTE
+nunca llegó por correo. Esas filas no reaccionan al clic y muestran «Sin
+documento» debajo del número. Un clic que no abre nada se lee como un error de la
+pantalla, no como un dato que falta.
+
+Las dos funciones se recrearon con DROP + CREATE porque `CREATE OR REPLACE` no
+puede cambiar el tipo de retorno; va en una transacción, así que quien leyera
+durante la migración vio la versión vieja o la nueva, nunca un hueco.
+
 ## v2.590.0 — El libro declarable tiene pestaña propia
 
 La función `get_libro_compras_declarable` existía desde hoy y nadie podía verla.

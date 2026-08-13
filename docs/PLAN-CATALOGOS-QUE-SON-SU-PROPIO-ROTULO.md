@@ -5,9 +5,12 @@
 > (v2.590.6, con sus migraciones `20260813175945` y `20260813180317`). Abierto
 > el 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y v2.571.10).
 >
-> Lo único que queda anotado y sin decidir: la redacción de
-> `Excepción turno (kiosk)` ya se resolvió, pero conviene revisar si el resto de
-> `REQUEST_TYPES` usa jerga del sistema en algún otro rótulo.
+> **No queda nada abierto**, y se comprobó en vez de suponerlo: cruzados los 29
+> rótulos de `REQUEST_TYPES` + `EVENT_TYPES` + `SIN_ASIGNAR` contra `prosrc` de
+> todas las funciones de `public`, sólo aparecen dentro de las **dos** que este
+> trabajo ya corrigió. Ninguna tercera función del proyecto duplica un rótulo
+> del frontend. Y ninguno de los 29 nombra un sistema de origen ni jerga de la
+> tubería — el «(kiosk)» era el único, y se fue.
 
 ## Por qué existe
 

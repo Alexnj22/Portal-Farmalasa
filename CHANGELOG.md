@@ -21,6 +21,54 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.590.6 — Los avisos nombran la solicitud igual que la pantalla
+
+Grupo 2 de `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`, el último que
+quedaba. Y el plan lo tenía mal clasificado: decía «hoy las dos mitades
+coinciden, así que no hay defecto — sólo queda el sentence case».
+
+**Ya no coincidían.** El barrido de §26.4 (v2.571.8/.10) pasó por el frontend y
+dejó la base atrás, así que **nueve** tipos de solicitud se llamaban distinto
+según quién escribiera el texto: la Bandeja decía «Cambio de forma de pago» y la
+notificación del mismo hecho «Cambio de Forma de Pago». Anulación de factura,
+cambio de vendedor, cambio de cliente, carga y descarte de inventario, cambio de
+turno y horas extra, todos igual. O sea que esto no era deuda cosmética
+pendiente: era la deriva que el plan quería evitar, ya ocurrida — y la mitad que
+se quedó vieja es la que la gente lee en el teléfono.
+
+Los rótulos viven en dos funciones (`notificar_solicitud_creada` y
+`avisar_facturas_de_sala`), no en las quince migraciones que el plan contaba: lo
+que el plan medía era cuántas veces se había reescrito la función, no cuántas
+hay. Ahora la base dice lo mismo que la pantalla, incluidos los seis títulos con
+emoji («⚠️ Anulación de factura», «📦 Carga de inventario», …).
+
+Los otros cuatro rótulos —`Permiso / Licencia`, `Anticipo Salarial`,
+`Traslado entre Salas` y `Facturas de mi Sala`— sí coincidían todavía, y bajan a
+sentence case en las **dos** mitades a la vez. `Constancia Laboral` se queda: es
+el nombre oficial del documento y está en la lista de exclusiones del plan.
+
+`SHIFT_EXCEPTION` era el único donde las dos mitades decían cosas distintas de
+verdad y no sólo con otras mayúsculas: la base «Excepción de Turno», la pantalla
+«Excepción turno (kiosk)». Decisión del usuario: gana la base, y el frontend
+suelta el «(kiosk)» — que además es jerga del sistema, no del negocio.
+
+**Cómo se verificó que no se coló nada más.** El cuerpo de una función lo tiene
+el catálogo, no el archivo del repo, así que salió de `pg_get_functiondef` sobre
+producción. Antes de aplicar: partido en renglones, apartados los 33 que
+contienen rótulos, y comparado el md5 del resto contra el de producción —
+idéntico en las dos funciones y con la misma cantidad de líneas. Después de
+aplicar, la consulta que busca Title Case sobrante devuelve cero.
+
+**De paso, `roles` quedó limpia.** Dos filas traían un espacio al final desde la
+carga inicial (`Referente de Farmacovigilancia `, id 9; `Supervisor del
+Departamento Medico y Enfermería `, id 22). No rompían nada —`buscarCargo`
+normaliza, y cero empleados tienen esos cargos—, pero un rótulo que termina en
+espacio es lo que costó el bug del regente de enfermería esperando a que alguien
+lo cruce por igualdad exacta.
+
+Migraciones `20260813175945` y `20260813180317`, probadas primero en el entorno
+de pruebas.
+
 ## v2.590.5 — El tipo de incapacidad deja de ser un rótulo, y «Sin asignar» deja de fingir que se guarda
 
 Los dos hallazgos que dejó abiertos el cierre del grupo 3 (v2.590.2). Ninguno

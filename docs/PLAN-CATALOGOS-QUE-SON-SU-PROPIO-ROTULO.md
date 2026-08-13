@@ -1,9 +1,13 @@
 # Plan — los catálogos cuyo rótulo ES el dato
 
-> **Estado:** grupos 1 (v2.571.11 y v2.590.5) y 3 (v2.590.2) **CERRADOS**, más
-> el hallazgo del tipo de incapacidad (v2.590.5). **Queda sólo el grupo 2**, que
-> vive dentro de funciones de Postgres y necesita migración. Abierto el
-> 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y v2.571.10).
+> **Estado: CERRADO el 2026-08-13.** Grupo 1 (v2.571.11 y v2.590.5), grupo 3
+> (v2.590.2), el hallazgo del tipo de incapacidad (v2.590.5) y el grupo 2
+> (v2.590.6, con sus migraciones `20260813175945` y `20260813180317`). Abierto
+> el 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y v2.571.10).
+>
+> Lo único que queda anotado y sin decidir: la redacción de
+> `Excepción turno (kiosk)` ya se resolvió, pero conviene revisar si el resto de
+> `REQUEST_TYPES` usa jerga del sistema en algún otro rótulo.
 
 ## Por qué existe
 
@@ -155,6 +159,46 @@ devuelva `apply_migration`** (CLAUDE.md). Con `SET lock_timeout = '5s'`.
 Prioridad baja: hoy las dos mitades coinciden, así que no hay defecto — sólo
 queda pendiente el sentence case.
 
+> ### ✅ CERRADO el 2026-08-13 (v2.590.6) — y «prioridad baja» estaba mal
+>
+> **Las dos mitades ya NO coincidían.** El barrido de §26.4 (v2.571.8/.10) pasó
+> por el frontend y dejó la base atrás, así que **nueve** tipos de solicitud se
+> llamaban distinto según quién escribiera el texto:
+>
+> | tipo | Bandeja | Notificación |
+> |---|---|---|
+> | ANNULMENT_REQUEST | Anulación de factura | Anulación de **F**actura |
+> | PAYMENT_CHANGE_REQUEST | Cambio de forma de pago | Cambio de **F**orma de **P**ago |
+> | VENDOR_CHANGE_REQUEST | Cambio de vendedor | Cambio de **V**endedor |
+> | CLIENT_CHANGE_REQUEST | Cambio de cliente | Cambio de **C**liente |
+> | INVENTORY_LOAD_REQUEST | Carga de inventario | Carga de **I**nventario |
+> | INVENTORY_DISCARD_REQUEST | Descarte de inventario | Descarte de **I**nventario |
+> | SHIFT_CHANGE | Cambio de turno | Cambio de **T**urno |
+> | OVERTIME | Horas extra | Horas **E**xtra |
+> | SHIFT_EXCEPTION | Excepción turno (kiosk) | Excepción de Turno |
+>
+> O sea que no era deuda cosmética pendiente: era **esta misma deriva, ya
+> ocurrida**, y en la mitad que la gente lee en el teléfono. La lección para el
+> próximo plan: «las dos mitades coinciden» es una MEDICIÓN, no un supuesto —
+> este documento lo dio por hecho el 12-08 y llevaba días sin ser cierto.
+>
+> **La tabla de arriba también estaba mal contada.** Los rótulos viven en DOS
+> funciones (`notificar_solicitud_creada`, `avisar_facturas_de_sala`), no en las
+> 5/5/3/7 migraciones que decía: eso era cuántas veces se reescribió la función,
+> no cuántas hay. Salió de `pg_proc`, que es donde vive la respuesta.
+>
+> `SHIFT_EXCEPTION` era el único con dos redacciones distintas de verdad.
+> Decisión del usuario: gana la base («Excepción de turno») y el frontend suelta
+> el «(kiosk)», que es jerga del sistema.
+>
+> Verificación: los cuerpos salieron de `pg_get_functiondef` sobre producción
+> —el catálogo, no el repo—; partidos en renglones y apartados los 33 con
+> rótulos, el md5 del resto quedó idéntico al de prod en ambas funciones.
+> Migración `20260813180317`, probada antes en el entorno de pruebas.
+>
+> **Y `roles` quedó limpia** (`20260813175945`): los ids 9 y 22 ya no terminan
+> en espacio.
+
 ---
 
 ## Grupo 3 — texto libre guardado como texto
@@ -272,9 +316,8 @@ Se revisaron y se dejan como están:
 
 ## Orden sugerido
 
-> Al 2026-08-13 queda abierto **sólo el grupo 2** (paso 3), más la limpieza de
-> los dos nombres con espacio al final en `roles` (ids 9 y 22) — las dos cosas
-> necesitan migración. Los pasos 1 y 2 ya están hechos y se dejan como registro.
+> Los tres pasos están hechos (2026-08-13). Se dejan como registro de en qué
+> orden convino atacarlos y por qué.
 
 1. **Grupo 1, paso 2** — leer `roles` de la base y borrar la lista a mano. Es el
    único que arregla un defecto real y no depende de ninguna decisión de

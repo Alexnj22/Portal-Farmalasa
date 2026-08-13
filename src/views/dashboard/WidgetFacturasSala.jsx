@@ -331,7 +331,7 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
     return (
         <LanzadorSolicitud
             icon={ReceiptText}
-            label="Facturas de mi Sala"
+            label="Facturas de mi sala"
             pendientes={pendientes}
             etiquetaPendientes="factura esperando"
             etiquetaPendientesPlural="facturas esperando"

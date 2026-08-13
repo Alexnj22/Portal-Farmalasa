@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.586.0 — La deducibilidad del IVA se revisa por regla, no proveedor por proveedor
+
+La v2.584.0 puso el botón «Confirmar deducibilidad (67)» en el listado de
+proveedores, sobre filas donde ni el estado ni la propuesta se veían. Rechazado
+por el usuario: **no se puede confirmar lo que no está en pantalla.**
+
+El error era de encuadre. Medido contra producción, las 162 fichas sin confirmar
+caen en 12 reglas, no en 162 casos:
+
+| | reglas | proveedores | crédito fiscal |
+|---|---|---|---|
+| Propuestas del sistema | 7 | 67 | $56,504.16 |
+| Las que la ley condiciona | 5 | 36 | $3,220.83 |
+| Sin giro registrado | — | 59 | $7.94 |
+
+Una sola regla —mercadería, Art. 65 nº1— cubre 52 proveedores y el 93% de la
+plata. Los 59 sin giro tienen **un documento entre todos**: ocupaban el 62% de la
+lista de pendientes y escondían las 36 que sí hay que decidir.
+
+**Pestaña nueva, una tarjeta por regla.** Cada una con el artículo, a cuántos
+alcanza, la propuesta deletreada (deducible · costo/gasto · sector · tipo) y la
+lista desplegable, donde se puede destildar a uno y confirmar el resto.
+
+**Las condicionadas no se confirman: se responden.** Llevan la pregunta legal en
+texto llano —«¿la farmacia revende estos alimentos?»— y sólo después de
+contestarla aparecen los campos del anexo. Y una de ellas no ofrece Sí/No: «giro
+demasiado genérico» junta hospitales, televisión y «servicios n.c.p.», donde el
+giro no dice qué se compró, así que manda a revisarlos uno por uno en vez de
+fingir que una respuesta alcanza.
+
+**Las tarjetas se ordenan por plata, no por documentos.** Ordenar por conteo
+engaña: comisiones bancarias tiene 190 documentos y $81.82 (a $0.43 cada una)
+mientras el alquiler tiene 7 documentos y $341.30. Y cada tarjeta condicionada
+nombra a su peso pesado — en alimentos, STEINER es $1,932.72 de los $2,626, o sea
+que quien decide el grupo está decidiendo sobre todo a ese proveedor.
+
+**En el listado, una columna «IVA» de 64px** con los cuatro estados, distinguidos
+por forma además de color. El botón de tanda salió de la barra de selección: esa
+decisión ya no se toma a ciegas desde ahí.
+
+**El RPC de lectura es DEFINER a propósito.** El crédito fiscal cruza
+`purchase_dte_documents`, que exige el módulo `facturas_compra`, mientras la
+pantalla vive en `proveedores` — y hay roles con uno y sin el otro
+(`Administrador`). Con INVOKER, el LEFT JOIN contra una tabla que la policy
+esconde no falla: devuelve NULL, el coalesce lo vuelve 0, y las doce tarjetas
+mostrarían **$0.00 sin un solo error**. Un cero de permiso y un cero de dato se
+ven igual.
+
+De paso: la ficha decía «Match ERP» y «Buscar proveedor ERP…» — la lista ya decía
+«Registrado como» desde el barrido del 2026-08-02 y el modal se había quedado
+atrás. El grep no lo encontró porque vivía en un rótulo y en un placeholder.
+
 ## v2.585.0 — Cuando alguien no está, lo cubre quien haya nombrado
 
 La delegación por ausencia se había construido sobre el **organigrama**: heredaba

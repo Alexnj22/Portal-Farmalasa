@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
-import { Truck, Tag, Layers, AlertTriangle, X, CheckCircle2, Building2, Scale } from 'lucide-react';
+import { Truck, Tag, Layers, AlertTriangle, X, CheckCircle2, Building2, Scale, List, Minus } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -14,13 +14,20 @@ import Checkbox from '../../components/common/Checkbox';
 import {
     fetchProveedoresMaestro, fetchProveedorCategorias,
     setProveedoresCategoriaBulk, applyProveedoresCategoriaSugerida,
-    confirmarClasificacionPropuesta,
+    confirmarClasificacionPropuesta, fetchClasificacionFiscalPendiente,
+    resolverClasificacionPendiente,
 } from '../../data/proveedores';
+import PanelDeducibilidad from './PanelDeducibilidad';
 import FilterBar from '../../components/common/FilterBar';
 import { useToastStore } from '../../store/toastStore';
 import { mensajeAmigable } from '../../utils/errorMessages';
 
 const SIN_CATEGORIA = '__sin_categoria__';
+
+const TABS = [
+    { key: 'listado',       label: 'Listado',              icon: List },
+    { key: 'deducibilidad', label: 'Deducibilidad del IVA', icon: Scale },
+];
 
 // Proveedor con ancho acotado (className hint al <th>) — sin esto, el nombre
 // largo estira la columna a su ancho natural y empuja el resto de la tabla
@@ -31,6 +38,15 @@ const SIN_CATEGORIA = '__sin_categoria__';
 // "seleccionar todo"), por eso COLS deja de ser una constante suelta.
 const BASE_COLS = [
     { key: 'proveedor',  label: 'Proveedor',  align: 'left', className: 'w-[260px]', sortable: true },
+    // Deducibilidad del IVA. 64px y una palabra de rótulo — el ancho de esta
+    // tabla es una restricción real (ya perdió Giro en v2.27.4 y Tipo el
+    // 2026-07-29), así que la columna que faltaba no podía ser ancha.
+    //
+    // Existe porque la v2.584.0 puso el botón de confirmar sin poner el estado:
+    // se pedía confirmar algo que no estaba en pantalla. La decisión en tanda se
+    // mudó al panel por regla; acá queda lo que la lista sí necesita, que es
+    // saber en qué anda cada ficha.
+    { key: 'iva',        label: 'IVA',        align: 'center', className: 'w-[64px]' },
     // `2xl`: a 1280 las seis columnas piden 1,015px contra los 884 del marco y
     // **Última compra se sale 131px**. NIT y NRC son identificadores fiscales
     // —contexto de la ficha, no de la lista— y viven completos en el detalle;
@@ -98,12 +114,64 @@ function CategoriaCell({ row }) {
     );
 }
 
+// ── IvaCell — el estado de la clasificación fiscal, en 64px ──────────────────
+// Se distingue por FORMA además de color: cuatro marcas de color distinto que
+// además son cuatro íconos distintos, para que no dependa de ver el color. El
+// texto completo —el artículo, la condición legal, o quién y cuándo la
+// confirmó— va en el `title`, que es lo único que cabe a este ancho.
+const IVA_MARCAS = {
+    confirmada: { Icono: CheckCircle2,  clase: 'text-success-text bg-success/15' },
+    propuesta:  { Icono: Scale,         clase: 'text-brand-text bg-brand/15' },
+    condicion:  { Icono: AlertTriangle, clase: 'text-warning-text bg-warning/15' },
+    sinGiro:    { Icono: Minus,         clase: 'text-content-3 bg-content-3/12' },
+};
+
+function IvaCell({ row }) {
+    const estado = row.clasificacion_estado;
+    // `iva_deducible` es booleano ANULABLE a propósito: NULL es "nadie lo
+    // miró", no "no es deducible". Leerlo como false borraría la diferencia
+    // que el libro necesita.
+    const deducible = row.iva_deducible;
+
+    let clave, titulo;
+    if (estado === 'confirmada') {
+        clave = 'confirmada';
+        titulo = `Confirmada: ${deducible ? 'sí da' : 'no da'} crédito fiscal`
+            + (row.clasificado_por_nombre ? ` — por ${row.clasificado_por_nombre}` : '')
+            + (row.clasificado_at ? ` el ${fmtDate(row.clasificado_at)}` : '');
+    } else if (estado === 'propuesta') {
+        clave = 'propuesta';
+        titulo = `Propuesta: sí da crédito fiscal — ${row.clasificacion_base_legal || 'derivada del giro'}. Falta confirmarla.`;
+    } else if (row.clasificacion_base_legal) {
+        clave = 'condicion';
+        titulo = `La ley lo condiciona — ${row.clasificacion_base_legal}`
+            + (row.clasificacion_nota ? `. ${row.clasificacion_nota}` : '');
+    } else {
+        clave = 'sinGiro';
+        titulo = 'Sin giro registrado en la ficha — no se puede derivar la regla';
+    }
+
+    const { Icono, clase } = IVA_MARCAS[clave];
+    return (
+        <span role="img" aria-label={titulo} title={titulo}
+            className={`inline-grid place-items-center w-6 h-6 rounded-lg ${clase}`}>
+            <Icono size={14} strokeWidth={2.5} />
+        </span>
+    );
+}
+
 // ── BulkBar — aparece solo con filas seleccionadas ────────────────────────────
 // Dos acciones separadas porque hacen cosas distintas: "Aceptar sugerencia" le
 // da a cada proveedor LA SUYA; el select le da a todos LA MISMA. El contador
 // del botón cuenta solo los seleccionados que tienen sugerencia, así que si
 // entra un ambiguo el número no sube y se ve por qué.
-function BulkBar({ count, conSugerencia, conPropuesta, categorias, busy, onAceptarSugerencia, onConfirmarFiscal, onAsignar, onCancelar }) {
+//
+// ── El botón «Confirmar deducibilidad» se fue de acá (2026-08-13) ───────────
+// Lo agregó la v2.584.0 y era el camino a ciegas: contaba 67 propuestas que la
+// lista no mostraba. Hoy esa decisión vive en la pestaña «Deducibilidad del
+// IVA», agrupada por regla y con la propuesta a la vista. La selección de filas
+// queda para lo que se construyó (H5): asignar categoría.
+function BulkBar({ count, conSugerencia, categorias, busy, onAceptarSugerencia, onAsignar, onCancelar }) {
     return (
         <div
             data-surface="card"
@@ -124,20 +192,6 @@ function BulkBar({ count, conSugerencia, conPropuesta, categorias, busy, onAcept
                 onClick={onAceptarSugerencia}
             >
                 Aceptar sugerencia ({conSugerencia})
-            </Button>
-            {/* El contador cuenta SOLO las propuestas: las «sin clasificar» son
-                las que la ley condiciona y el servidor las ignora aunque entren
-                en la selección. Que el número no suba es la explicación. */}
-            <Button
-                size="sm"
-                icon={Scale}
-                disabled={busy || conPropuesta === 0}
-                title={conPropuesta === 0
-                    ? 'Ninguno de los seleccionados tiene una clasificación propuesta — las que faltan hay que abrirlas y decidirlas una por una'
-                    : 'Confirma la deducibilidad propuesta (Art. 65 LIVA). Sólo desde ahí el libro de compras la usa'}
-                onClick={onConfirmarFiscal}
-            >
-                Confirmar deducibilidad ({conPropuesta})
             </Button>
             <div className="w-[210px]">
                 <LiquidSelect
@@ -174,6 +228,7 @@ export default function ProveedoresView({ openModal }) {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('proveedores', 'can_edit');
 
+    const [activeTab, setActiveTab] = useState('listado');
     const [search, setSearch] = useState('');
     const [categoriaId, setCategoriaId] = useState('');
     const [claseFilter, setClaseFilter] = useState('');
@@ -218,7 +273,27 @@ export default function ProveedoresView({ openModal }) {
         }
     }, []);
 
-    useEffect(() => { load(); }, [load]);  
+    useEffect(() => { load(); }, [load]);
+
+    // ── El panel por regla trae SUS PROPIOS datos ────────────────────────────
+    // No es una vista distinta de `rows`: necesita el crédito fiscal de cada
+    // ficha, que cruza `purchase_dte_documents` y cuesta ~200ms. El listado no
+    // tiene por qué pagarlos en cada carga, así que se piden al abrir la
+    // pestaña y no antes.
+    const [fiscalRows, setFiscalRows] = useState([]);
+    const [fiscalLoading, setFiscalLoading] = useState(false);
+    const loadFiscal = useCallback(async () => {
+        setFiscalLoading(true);
+        try {
+            setFiscalRows(await fetchClasificacionFiscalPendiente());
+        } catch (e) {
+            console.error('ProveedoresView.jsx: clasificación fiscal', e);
+            useToastStore.getState().showToast('No se pudo cargar la clasificación', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setFiscalLoading(false);
+        }
+    }, []);
+    useEffect(() => { if (activeTab === 'deducibilidad') loadFiscal(); }, [activeTab, loadFiscal]);
 
     useEffect(() => {
         fetchProveedorCategorias().then(({ data, error }) => {
@@ -314,15 +389,6 @@ export default function ProveedoresView({ openModal }) {
         [rows, selectedIds],
     );
 
-    // Sólo las 'propuesta' se pueden confirmar en tanda. Las 'pendiente' son las
-    // que la ley condiciona —combustible, ferretería, alimentos, cómputo— y hay
-    // que abrirlas una por una: el RPC las ignora aunque entren en la selección,
-    // y este contador lo dice antes de apretar.
-    const seleccionPropuesta = useMemo(
-        () => rows.filter(r => selectedIds.has(r.id) && r.clasificacion_estado === 'propuesta').length,
-        [rows, selectedIds],
-    );
-
     const COLS = useMemo(() => [
         {
             key: 'sel',
@@ -369,6 +435,39 @@ export default function ProveedoresView({ openModal }) {
         useStaff.getState().appendAuditLog('PROVEEDORES_VER_DETALLE', String(row.id), { nombre: row.nombre });
     };
 
+    // ── Las dos escrituras del panel por regla ──────────────────────────────
+    // Las dos recargan las DOS fuentes: `load()` porque el listado muestra el
+    // estado en su columna, y `loadFiscal()` porque una regla confirmada tiene
+    // que desaparecer del panel. Recargar sólo una dejaría la pantalla
+    // contradiciéndose a sí misma.
+    const runFiscal = useCallback(async (fn, accion, extra) => {
+        setBulkBusy(true);
+        try {
+            const cambiados = await fn();
+            useStaff.getState().appendAuditLog(accion, null, { cambiados, ...extra });
+            useToastStore.getState().showToast(
+                'Clasificación confirmada',
+                cambiados === 0
+                    ? 'Ninguna cambió — ya estaban confirmadas.'
+                    : `${cambiados} proveedor${cambiados !== 1 ? 'es' : ''} ${cambiados !== 1 ? 'quedan' : 'queda'} con su deducibilidad confirmada.`,
+                cambiados === 0 ? 'info' : 'success',
+            );
+            await Promise.all([load(), loadFiscal()]);
+        } catch (e) {
+            console.error('ProveedoresView.jsx: clasificación fiscal', e);
+            useToastStore.getState().showToast('No se pudo guardar', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setBulkBusy(false);
+        }
+    }, [load, loadFiscal]);
+
+    // El panel trae sus propias filas (sin `categorias`/`suppliers`, que el
+    // modal necesita), así que la ficha se abre con la del listado.
+    const abrirFichaDesdePanel = useCallback((fila) => {
+        const row = rows.find(r => r.id === fila.id);
+        if (row) openDetail(row);
+    }, [rows, categorias, suppliers, canEdit]); // eslint-disable-line react-hooks/exhaustive-deps -- openDetail se redefine en cada render
+
     const categoriaFilterOptions = [
         { value: SIN_CATEGORIA, label: '(sin categoría)' },
         ...categorias.map(c => ({ value: c.id, label: c.nombre })),
@@ -384,21 +483,44 @@ export default function ProveedoresView({ openModal }) {
         { value: 'otro', label: 'Otro' },
     ];
 
+    // `showSearch` sólo en el listado: el buscador filtra filas, y en el panel
+    // por regla no hay filas que filtrar —son 12 tarjetas—. Una lupa que no
+    // filtra nada es peor que ninguna (es el mismo caso que ViewTabBar ya
+    // resuelve cuando no hay `onSearchChange`).
     const filtersContent = (
         <ViewTabBar
-            tabs={[]}
-            activeTab=""
-            onTabChange={() => {}}
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             searchValue={search}
             onSearchChange={setSearch}
             placeholder="Buscar por nombre, alias, NIT, NRC…"
-            showSearch
+            showSearch={activeTab === 'listado'}
         />
     );
 
     return (
         <GlassViewLayout icon={Truck} title="Proveedores" filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
+                {activeTab === 'deducibilidad' ? (
+                    <PanelDeducibilidad
+                        rows={fiscalRows}
+                        loading={fiscalLoading}
+                        canEdit={canEdit}
+                        busy={bulkBusy}
+                        onConfirmarPropuesta={(ids) => runFiscal(
+                            () => confirmarClasificacionPropuesta(ids),
+                            'PROVEEDORES_CLASIFICACION_FISCAL_BULK',
+                            { seleccionados: ids.length },
+                        )}
+                        onResolver={(ids, c) => runFiscal(
+                            () => resolverClasificacionPendiente(ids, c),
+                            'PROVEEDORES_RESOLVER_CLASIFICACION',
+                            { seleccionados: ids.length, ...c },
+                        )}
+                        onAbrirFicha={abrirFichaDesdePanel}
+                    />
+                ) : (<>
                 {/* Filter pill — vive en el body (regla §17 DESIGN.md) */}
                 <div className="flex items-start justify-end gap-3 flex-wrap">
                     <FilterBar
@@ -485,6 +607,9 @@ export default function ProveedoresView({ openModal }) {
                                     </div>
                                 </div>
                             </DataCell>
+                            <DataCell align="center">
+                                <IvaCell row={row} />
+                            </DataCell>
                             <DataCell hideBelow="2xl">
                                 <p className="font-mono text-caption text-content-2">{row.nit || row.dui || '—'}</p>
                                 {row.nrc && <p className="font-mono text-caption text-content-3">NRC {row.nrc}</p>}
@@ -508,8 +633,6 @@ export default function ProveedoresView({ openModal }) {
                     <BulkBar
                         count={selectedIds.size}
                         conSugerencia={seleccionConSugerencia}
-                        conPropuesta={seleccionPropuesta}
-                        onConfirmarFiscal={() => runBulk(confirmarClasificacionPropuesta, 'PROVEEDORES_CLASIFICACION_FISCAL_BULK')}
                         categorias={categorias}
                         busy={bulkBusy}
                         onAceptarSugerencia={() => runBulk(applyProveedoresCategoriaSugerida, 'PROVEEDORES_CATEGORIA_SUGERIDA_BULK')}
@@ -532,6 +655,7 @@ export default function ProveedoresView({ openModal }) {
                         unit="proveedores"
                     />
                 )}
+                </>)}
             </div>
         </GlassViewLayout>
     );

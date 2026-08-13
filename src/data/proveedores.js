@@ -76,6 +76,37 @@ export async function confirmarClasificacionPropuesta(ids) {
     return data ?? 0;
 }
 
+// Las fichas que todavía no tienen clasificación confirmada, con el crédito
+// fiscal que cada una tiene en juego. Lo pide sólo el panel de revisión, y por
+// eso es un RPC aparte y no una columna más de `fetchProveedoresMaestro`: el
+// monto cruza `purchase_dte_documents` y cuesta ~200ms que el listado no tiene
+// por qué pagar en cada carga.
+export async function fetchClasificacionFiscalPendiente() {
+    const { data, error } = await supabase.rpc('get_clasificacion_fiscal_pendiente');
+    if (error) throw error;
+    return data || [];
+}
+
+// Resuelve en tanda una regla que la ley CONDICIONA. No es lo mismo que
+// confirmar una propuesta: aquéllas ya traen los valores del anexo derivados del
+// giro, y éstas nacen en blanco a propósito —la ley no permite derivarlas— así
+// que acá se escribe la decisión, no se acepta una.
+//
+// El servidor sólo toca las que están en 'pendiente' y devuelve cuántas cambiaron
+// de verdad, igual que las otras dos de tanda.
+export async function resolverClasificacionPendiente(ids, c) {
+    const { data, error } = await supabase.rpc('resolver_clasificacion_pendiente', {
+        p_ids: ids,
+        p_iva_deducible: c.iva_deducible,
+        p_clasificacion: c.f07_clasificacion ?? null,
+        p_sector: c.f07_sector ?? null,
+        p_tipo_costo_gasto: c.f07_tipo_costo_gasto ?? null,
+        p_tipo_operacion: c.f07_tipo_operacion ?? null,
+    });
+    if (error) throw error;
+    return data ?? 0;
+}
+
 // H2 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): `percibe_1` ya NO se manda —
 // el RPC lo deriva. Lo que viaja es el override tri-estado:
 //   null  = automático (lo deciden los DTE del proveedor, Art. 163 CT)

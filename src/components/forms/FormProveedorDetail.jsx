@@ -10,6 +10,9 @@ import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
 import { mensajeAmigable, mensajeConPrefijo } from '../../utils/errorMessages';
+import {
+    ESTADO_CLASIF, DEDUCIBLE_OPTIONS, CLASIFICACION_OPTIONS, SECTOR_OPTIONS, tiposCostoGasto,
+} from '../../utils/f07Catalogos';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -63,42 +66,10 @@ const REGIMEN_HINT = {
     sujeto_excluido: 'Sin NRC — no da crédito fiscal (Art. 119 CT); si es persona natural por un servicio, aplica retención de Renta 10% (Art. 156 CT)',
 };
 
-// ── Clasificación fiscal — Art. 65 LIVA + catálogos del manual del F-07 v14 ──
-// Los tres estados NO son cosmética. El libro de compras sólo usa 'confirmada':
-// una propuesta es lo que dedujo el sistema del código de actividad, y que el
-// sistema proponga no es que el sistema decida.
-const ESTADO_CLASIF = {
-    pendiente:  { label: 'Sin clasificar', tone: 'text-warning-text bg-warning/10 border-warning/25' },
-    propuesta:  { label: 'Propuesta — falta confirmar', tone: 'text-brand-text bg-brand/10 border-brand/25' },
-    confirmada: { label: 'Confirmada', tone: 'text-success-text bg-success/10 border-success/25' },
-};
-
-const DEDUCIBLE_OPTIONS = [
-    { value: 'si', label: 'Sí, da crédito fiscal' },
-    { value: 'no', label: 'No es deducible' },
-];
-// Manual del F-07 v14 §3. La matriz de su página 21 —Costo admite 4-7, Gasto
-// admite 1-3— la hace cumplir un CHECK en la base; acá se refleja filtrando las
-// opciones, para que no se pueda elegir una combinación que el servidor rechaza.
-const CLASIFICACION_OPTIONS = [
-    { value: '1', label: 'Costo' },
-    { value: '2', label: 'Gasto' },
-];
-const SECTOR_OPTIONS = [
-    { value: '1', label: 'Industria' },
-    { value: '2', label: 'Comercio' },
-    { value: '3', label: 'Agropecuaria' },
-    { value: '4', label: 'Servicios, profesiones, artes y oficios' },
-];
-const TIPO_CG_TODOS = [
-    { value: '1', label: 'Gastos de venta', clase: 2 },
-    { value: '2', label: 'Gastos de administración', clase: 2 },
-    { value: '3', label: 'Gastos financieros', clase: 2 },
-    { value: '4', label: 'Costo de artículos importados', clase: 1 },
-    { value: '5', label: 'Costo de artículos comprados en el país', clase: 1 },
-    { value: '6', label: 'Costos indirectos de fabricación', clase: 1 },
-    { value: '7', label: 'Mano de obra', clase: 1 },
-];
+// Los catálogos del F-07 y los tres estados se mudaron a `utils/f07Catalogos`
+// el 2026-08-13: los usa también el panel de revisión por regla, y dos copias
+// de la misma lista escrita a mano es la forma más barata de que se
+// desincronicen.
 
 const fmtDate = (d) => {
     if (!d) return '—';
@@ -161,7 +132,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
     const [savingFiscal, setSavingFiscal] = useState(false);
     const [fiscalError, setFiscalError] = useState('');
 
-    const tiposCG = TIPO_CG_TODOS.filter(t => !fiscal.f07_clasificacion || t.clase === Number(fiscal.f07_clasificacion));
+    const tiposCG = tiposCostoGasto(fiscal.f07_clasificacion);
 
     const guardarFiscal = async () => {
         setSavingFiscal(true);
@@ -343,13 +314,19 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Match ERP</label>
+                        {/* «Match ERP» / «Buscar proveedor ERP…» hasta el
+                            2026-08-13. La lista ya decía «Registrado como»
+                            desde el barrido del 2026-08-02 y la ficha se quedó
+                            atrás: la pantalla no nombra el sistema de origen,
+                            y el grep no lo encontró porque vivía en un rótulo
+                            y en un placeholder. */}
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Registrado como</label>
                         <LiquidSelect
                             icon={Building2}
                             value={supplierId}
                             onChange={onSupplierChange}
                             options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
-                            placeholder={savingSupplier ? 'Guardando…' : 'Buscar proveedor ERP…'}
+                            placeholder={savingSupplier ? 'Guardando…' : 'Buscar proveedor registrado…'}
                             disabled={!canEdit}
                             clearable
                         />

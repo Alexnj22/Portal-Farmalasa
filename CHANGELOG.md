@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.592.1 — La regla de impresión en rollo entra a CLAUDE.md
+
+Sin cambios de comportamiento. La entrada de v2.592.0 dejó el motor de tickets y
+su pantalla, pero la regla vivía sólo en los comentarios del archivo y en su
+documento: quien vaya a imprimir un pedido en rollo dentro de un mes no los
+abriría, y escribiría un segundo maquetador o usaría los tokens del tema sobre
+papel térmico. Queda anotada en los estándares del proyecto —el motor es
+`ticketPrint.js`, se imprime el iframe de la vista previa, el papel no tiene tema,
+a 80 mm entran 40 caracteres— porque
+[[feedback_la_regla_que_solo_vive_en_prosa_se_rompe]].
+
 ## v2.592.0 — El portal imprime en ticketera
 
 El portal sólo sabía imprimir en hoja carta —los tres PDF de pdfmake y la

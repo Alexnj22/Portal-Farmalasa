@@ -159,11 +159,57 @@ sello en el 31% y hay sellos repetidos entre proveedores distintos.
 **Paso 3 — cierre de período.** Julio cerró con remanente a favor y nadie lo
 arrastra. Sin esto la declaración de agosto ya nace mal.
 
-**Con reloj:** las 6,436 líneas de venta del 1 al 4 de agosto sin costo. El costo
-de venta arrancó el 2026-08-05 y esas líneas todavía se pueden rellenar desde
-`product_precios` (7,856 de 8,188 tienen precio) con cuatro días de deriva. Cada
-día que pasa la aproximación empeora, y sin costo de venta no hay Estado de
-Resultados.
+### Costo de venta — la cifra del plan estaba mal encuadrada (medido 2026-08-13)
+
+El plan del 12-08 dice «las 6,436 líneas del 1 al 4 de agosto sin costo», y ese
+recorte es arbitrario. Medido por día:
+
+```
+  2026-07-31   1,390 líneas   1,390 sin costo
+  2026-08-04   1,354          1,354
+  2026-08-05   1,229          1,043   ← empieza a registrarse
+  2026-08-06   1,052             26
+```
+
+El costo arrancó el **2026-08-05**; todo lo anterior está igual de vacío. El
+hueco real es **585,040 líneas, del 2025-05-01 al 2026-08-04** — quince meses,
+no cuatro días.
+
+**Y `product_precios` NO es la fuente.** Hay una decisión escrita el 2026-08-06
+(`20260806004055_e1_no_estampar_costo_sobre_ventas_viejas`): el trigger se niega
+a estampar costo en ventas de más de 15 días porque *«un dato inventado que se
+lee como medido es peor que un NULL»*. Rellenar quince meses con la lista de hoy
+es exactamente lo que esa migración prohíbe.
+
+`product_precios_history` tampoco sirve: **`costo` está NULL en sus 26,739
+filas** y la tabla dejó de recibir versiones el 2026-06-03.
+
+**La fuente que sí sirve son las compras reales.** `purchase_receipt_items` +
+`purchase_receipts.fecha` cubren **2025-05-01 → 2026-08-13**, el mismo rango que
+las ventas sin costo, y comparten `erp_product_id`. Medido:
+
+| | líneas | con compra previa | ≤30 días | mediana |
+|---|---|---|---|---|
+| **total sin costo** | 585,040 | **545,865 (93.3%)** | — | — |
+| muestra 2025-06 | 36,777 | 31,179 (84.8%) | 29,979 | **9 días** |
+| muestra 2026-07 | 40,046 | 39,904 (99.6%) | 34,755 | **9 días** |
+
+O sea que el costo reconstruido sería **el precio de una compra real hecha en
+promedio 9 días antes de la venta**, no una estimación. 2025-06 es más flojo
+porque las compras empiezan el 2025-05-01 y sólo había un mes acumulado.
+
+Lo que queda fuera: **5,434 líneas** de productos sin ninguna compra registrada,
+y **33,741** vendidas antes de la primera compra de ese producto.
+
+**Antes de implementarlo hay que decidir dos cosas**, y ninguna es técnica:
+
+1. **Un costo reconstruido y uno capturado no pueden verse iguales.** Hoy
+   `costo_unitario` no dice de dónde salió. Hace falta una columna de procedencia
+   (`lista` / `compras` / NULL) o se repite el problema que la migración del 06-08
+   evitó — sólo que ahora con 545,865 filas.
+2. **Qué método contable.** Costo de la última compra anterior es lo que se midió
+   acá; promedio ponderado y PEPS dan otro número. Es decisión de la contadora, y
+   cambia el Estado de Resultados de quince meses.
 
 **Pendiente de diseño, con maqueta antes de tocar código:** mover «Aceptar
 sugerencia» del listado a tarjetas por categoría sugerida. Son **4 proveedores en

@@ -174,65 +174,70 @@ const FAMILIAS_DECIDIR = [
 const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, locked, saving }) => {
     const perm = (k) => permissions[`${roleId}:${k}`] || {};
     const encendidas = FAMILIAS_DECIDIR.filter(f => perm(f.key).can_approve).length;
-    const maestro = encendidas > 0;
-    /* El maestro es tri-estado a la vista aunque el switch sea binario: con
-     * algunas encendidas se pinta encendido y se rotula «3 de 4», porque un
-     * switch a medias sin explicación se lee como un error de la pantalla. */
-    const parcial = encendidas > 0 && encendidas < FAMILIAS_DECIDIR.length;
+    const total = FAMILIAS_DECIDIR.length;
     const delegando = FAMILIAS_DECIDIR.some(f => perm(f.key).delega_en_ausencia)
                    || perm('requests').delega_en_ausencia;
+    const resumen = encendidas === 0 ? 'No decide ninguna'
+                  : encendidas === total ? 'Decide todas'
+                  : `Decide ${encendidas} de ${total}`;
 
     return (
-        <div data-surface="card" className="rounded-2xl border border-border-card p-4 space-y-3">
-            <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-success/15 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 size={18} className="text-success" strokeWidth={2.5} />
+        <div data-surface="card" className="rounded-2xl border border-border-card p-4 md:col-span-3">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-success to-chart-1 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
+                    <CheckCircle2 size={18} className="text-white" strokeWidth={2} />
                 </div>
-                <div className="min-w-0">
-                    <h3 className="text-body font-black text-content-1">Decidir solicitudes</h3>
-                    <p className="text-caption text-content-3">Quién resuelve cada clase de solicitud de la sala</p>
+                <div className="flex-1 min-w-0">
+                    <p className="text-body font-black text-content leading-tight">Decidir solicitudes</p>
+                    <p className="text-caption text-content-3 font-medium mt-0.5">
+                        Activo: <span className="font-black text-content-2">{resumen}</span>
+                        {delegando && ' · se delega al jefe si no está'}
+                    </p>
                 </div>
-            </div>
-
-            {/* El maestro */}
-            <div className="rounded-xl border border-border-card bg-surface-card p-2.5 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                    <span className="text-caption font-black uppercase tracking-widest text-content-2">Aprobar todo</span>
-                    {parcial && (
-                        <span className="ml-2 text-caption text-content-3">
-                            {encendidas} de {FAMILIAS_DECIDIR.length}
-                        </span>
-                    )}
-                </div>
-                <Toggle value={maestro} color="success" disabled={locked}
-                    onChange={(v) => onChange(roleId, 'requests', 'can_approve', v)} />
-            </div>
-
-            {/* Las cuatro */}
-            <div className="rounded-xl border border-border-card bg-surface-card p-2.5 space-y-1.5">
-                {FAMILIAS_DECIDIR.map(f => (
-                    <div key={f.key} className="flex items-center justify-between gap-3 px-1.5 py-1">
-                        <LiquidTooltip content={f.desc}>
-                            <span className="text-caption font-black uppercase tracking-widest text-content-2 truncate">
-                                {f.label}
-                            </span>
-                        </LiquidTooltip>
-                        <Toggle value={!!perm(f.key).can_approve} color="success"
-                            disabled={locked || !!saving[`${roleId}:${f.key}`]}
-                            onChange={(v) => onChange(roleId, f.key, 'can_approve', v)} />
+                {/* Los dos mandos que gobiernan la fila entera, a la derecha del
+                    encabezado: no son una familia más, así que no van entre las
+                    píldoras. */}
+                <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-caption font-black uppercase tracking-widest text-content-3">Todas</span>
+                        <Toggle value={encendidas > 0} color="success" disabled={locked}
+                            onChange={(v) => onChange('requests', 'can_approve', v)} />
                     </div>
-                ))}
+                    <LiquidTooltip content="Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe inmediato se hace cargo de estas decisiones mientras dure la ausencia. Se apaga solo al volver.">
+                        <div className="flex items-center gap-2">
+                            <span className="text-caption font-black uppercase tracking-widest text-content-3">Delegar</span>
+                            <Toggle value={delegando} color="chart-4" disabled={locked}
+                                onChange={(v) => onDelegar(roleId, v)} />
+                        </div>
+                    </LiquidTooltip>
+                </div>
             </div>
 
-            {/* La delegación, UNA vez y acá */}
-            <div className="rounded-xl border border-chart-4/30 bg-chart-4/5 p-2.5 flex items-center justify-between gap-3">
-                <LiquidTooltip content="Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe inmediato se hace cargo de estas decisiones mientras dure la ausencia. Se apaga solo al volver.">
-                    <span className="text-caption font-black uppercase tracking-widest text-content-2">
-                        Delegar si no está
-                    </span>
-                </LiquidTooltip>
-                <Toggle value={delegando} color="chart-4" disabled={locked}
-                    onChange={(v) => onDelegar(roleId, v)} />
+            {/* Las cuatro como píldoras, igual que los niveles de precio. No es
+                un SegmentedControl porque ahí se elige UNA opción y acá se
+                encienden las que sean — pero el peso visual es el mismo, que es
+                lo que pidió el usuario. Scroll propio si no entran: el cuerpo de
+                la página nunca se desborda (DESIGN.md). */}
+            <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                {FAMILIAS_DECIDIR.map(f => {
+                    const on = !!perm(f.key).can_approve;
+                    return (
+                        <LiquidTooltip key={f.key} content={f.desc}>
+                            <button
+                                type="button"
+                                disabled={locked || !!saving[`${roleId}:${f.key}`]}
+                                onClick={() => onChange(f.key, 'can_approve', !on)}
+                                aria-pressed={on}
+                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border whitespace-nowrap transition-all duration-[var(--dur-slow)] disabled:opacity-40 ${
+                                    on ? 'bg-success/15 border-success/40 text-content-1'
+                                       : 'bg-surface-card border-border-card text-content-3 hover:text-content-2'}`}
+                            >
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors duration-[var(--dur-slow)] ${on ? 'bg-success' : 'bg-content-3/40'}`} />
+                                <span className="text-caption font-black uppercase tracking-widest">{f.label}</span>
+                            </button>
+                        </LiquidTooltip>
+                    );
+                })}
             </div>
         </div>
     );
@@ -1221,6 +1226,20 @@ const PermissionsView = () => {
                                 );
                             })()}
 
+                            {/* Decidir solicitudes va ACÁ y no entre los módulos —pedido
+                                del usuario— porque contesta una pregunta del CARGO, como
+                                Super Usuario y el nivel de precio, no del módulo que se
+                                esté mirando. A lo ancho de las tres columnas: son cuatro
+                                píldoras y dos mandos, y apretados no se leen. */}
+                            <TarjetaDecidirSolicitudes
+                                roleId={selectedRoleId}
+                                permissions={permissions}
+                                onChange={handleToggle}
+                                onDelegar={handleDelegar}
+                                locked={!canEdit}
+                                saving={saving}
+                            />
+
                             </div>{/* end 2-col grid */}
 
                             {/* "No hay resultados" es un estado vacío, no una línea de
@@ -1294,18 +1313,6 @@ const PermissionsView = () => {
                                         módulos en N listas desde JS —determinista, sin
                                         fragmentación— y no con `columns`. */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-                                        {g.group === 'Operaciones' && (
-                                            <div className="animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both">
-                                                <TarjetaDecidirSolicitudes
-                                                    roleId={selectedRoleId}
-                                                    permissions={permissions}
-                                                    onChange={handleToggle}
-                                                    onDelegar={handleDelegar}
-                                                    locked={!canEdit}
-                                                    saving={saving}
-                                                />
-                                            </div>
-                                        )}
                                         {g.modules.filter(m => !m.enTarjetaAparte).map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
                                             const tabPerms = m.sub

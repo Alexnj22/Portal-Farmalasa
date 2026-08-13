@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.582.1 — La tarjeta de decidir sube al encabezado y sus botones funcionan
+
+«Decidir solicitudes» sube a la **banda del encabezado**, junto a Super Usuario
+y Nivel de Precio Máximo, y adopta su mismo lenguaje visual: icono, título con
+el estado en vivo («Decide 3 de 4»), y las cuatro familias como **píldoras
+horizontales** en vez de una lista de interruptores. Los dos mandos que
+gobiernan la fila —«Todas» y «Delegar»— van a la derecha del encabezado, porque
+no son una familia más. Pedido del usuario: «ponelo arriba, así como está
+precio».
+
+Va ahí y no entre los módulos porque contesta una pregunta del **cargo**, igual
+que las otras dos tarjetas de esa banda, no del módulo que se esté mirando.
+
+**Y los botones ahora hacen algo.** La versión anterior llamaba a
+`handleToggle(roleId, moduleKey, permType, value)` con cuatro argumentos cuando
+la función toma tres —el cargo lo saca de `selectedRoleId`—, así que el primer
+argumento se leía como el módulo y la escritura iba a un `module_key` que no
+existe. La tarjeta se veía perfecta y no guardaba nada. Se detectó comparando
+`updated_at` en la base después de hacer clic: seguía siendo el de antes.
+
+Verificado de punta a punta contra el entorno de pruebas, mirando la BASE y no
+sólo la pantalla:
+
+- Apagar una píldora apaga **sólo** esa familia (Facturación `true`→`false`,
+  Min/Max intacto).
+- Apagar el maestro apaga las cuatro **y** la bandeja: las cinco filas quedaron
+  en `false`, incluidas las de Traslados y Min/Max, que viven en sus propias
+  tarjetas.
+
 ## v2.582.0 — La tarjeta «Decidir solicitudes»
 
 Los cuatro selectores de quién resuelve cada clase de solicitud, juntos en

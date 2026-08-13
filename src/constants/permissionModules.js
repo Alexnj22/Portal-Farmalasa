@@ -24,7 +24,7 @@
 // ambiguas fuera de su grupo: ahí `staff_list` es "Listado" y acá es "Listado de
 // Personal"; `staff_detail` no está en el menú y acá es "Expediente completo".
 import {
-    ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
+    CalendarCheck, ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
@@ -302,6 +302,8 @@ const GRUPOS_CRUDOS = [
                 { key: 'libro_compras_completo_descargar',  label: 'Exportar el libro (CSV)', tipo: 'cap' },
                 { key: 'libro_compras_completo_ver_montos', label: 'Ver montos',              tipo: 'cap' },
             ]},
+
+            { key: 'cierre_periodo', label: 'Cierre de período', desc: 'Congela lo declarado de cada mes y arrastra el remanente a favor al siguiente (Art. 67 LIVA). Sirve además para ver la deriva: cuánto se movió el libro DESPUÉS de presentarlo, que hoy ocurre sin que nadie se entere. Editar = cerrar y reabrir períodos', icon: CalendarCheck, hasApprove: false },
 
             { key: 'resumen_fiscal', label: 'Resumen fiscal', desc: 'El movimiento fiscal del mes en un número por concepto: débito por ventas, crédito por compras (incluidas las que llegaron como documento y no se registraron), notas de crédito y débito, percepción, retención, y el pago a cuenta del 1.75% sobre ventas (Art. 151). Es un indicador: NO incluye el saldo a favor del mes anterior, así que no reemplaza a la declaración', icon: Calculator, hasApprove: false, hasScope: true },
         ],

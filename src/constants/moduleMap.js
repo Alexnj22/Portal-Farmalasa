@@ -4,7 +4,7 @@
 // ModuleLockBanner necesita resolver "¿qué módulo es esta ruta?" para poder
 // montarse una sola vez en GlassViewLayout en lugar de a mano en cada vista —
 // y un componente de `common/` no puede importar el layout entero.
-import {
+import { CalendarCheck,
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
@@ -69,6 +69,7 @@ export const MODULE_MAP = {
     facturas_compra:   { path: '/facturas-compra',    label: 'Facturas de compra',       icon: Mail          },
     libros_iva:        { path: '/libros-iva',         label: 'Libros IVA',               icon: BookOpen      },
     libro_compras_completo: { path: '/libro-compras-completo', label: 'Compras completo',  icon: BookOpen      },
+    cierre_periodo:    { path: '/cierre-periodo',    label: 'Cierre de período',        icon: CalendarCheck },
     resumen_fiscal:    { path: '/resumen-fiscal',      label: 'Resumen fiscal',           icon: Calculator    },
     corte_z:           { path: '/corte-z',              label: 'Corte Z',                  icon: Receipt       },
     proveedores:       { path: '/proveedores',        label: 'Proveedores',              icon: Truck         },

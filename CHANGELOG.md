@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.591.0 — Cierre de período: la cadena del remanente tiene pantalla
+
+Vista nueva bajo **Datos contables**. El motor estaba desde hoy y nadie podía
+verlo.
+
+**La cadena, arriba de todo.** Un eslabón por mes con lo que sale de cada uno y
+adónde va: julio con $112.55 a favor → pasa a agosto, que está en curso. Debajo
+dice lo que hoy pasa de verdad: *«ese arrastre no ocurre — el mes siguiente se
+declara como si el anterior no hubiera existido»*.
+
+**El interruptor es la decisión de la pantalla.** «El que se declara hoy» vs «El
+declarable» recalcula todo. Verificado en el navegador: julio pasa de $112.55 a
+**$1,302.31** de remanente, y cada tarjeta muestra cuánto suma el declarable.
+Elegir cuál se presenta es de la contadora — la pantalla muestra las dos y no
+decide.
+
+**Los frenos los decide el servidor.** `puede_cerrarse` y su motivo vienen del
+RPC, no de la vista: las cuatro condiciones viven en `cerrar_periodo_fiscal`, y
+re-deducirlas en el frontend sería la misma regla escrita dos veces. Agosto sale
+con el botón apagado y el motivo escrito: *«todavía está en curso»*.
+
+**Un mes cerrado conserva sus cifras congeladas** aunque se mueva el interruptor:
+es lo que se declaró, no una vista. Y si el libro se movió después, aparece el
+aviso de deriva con la diferencia.
+
+Julio lleva su propio aviso: es el primer mes que lleva el portal, así que su
+remanente que entra es **cero por definición, no un resultado**.
+
+El diálogo de reabrir usa `PromptModal` y no `prompt()`: el nativo bloquea la
+pestaña entera, no se lee en táctil, y el gate lo prohíbe.
+
 ## v2.590.6 — Los avisos nombran la solicitud igual que la pantalla
 
 Grupo 2 de `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`, el último que

@@ -60,6 +60,7 @@ const FacturasSalaView = lazy(IMPORTADORES.FacturasSalaView);
 const FacturasCompraView = lazy(IMPORTADORES.FacturasCompraView);
 const LibrosIvaView = lazy(IMPORTADORES.LibrosIvaView);
 const LibroComprasCompletoView = lazy(IMPORTADORES.LibroComprasCompletoView);
+const CierrePeriodoView = lazy(IMPORTADORES.CierrePeriodoView);
 const ResumenFiscalView = lazy(IMPORTADORES.ResumenFiscalView);
 const CorteZView = lazy(IMPORTADORES.CorteZView);
 const MetasView = lazy(IMPORTADORES.MetasView);
@@ -676,6 +677,7 @@ function MainApp() {
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libro-compras-completo" element={<PermissionGuard moduleKey="libro_compras_completo"><LibroComprasCompletoView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="cierre-periodo" element={<PermissionGuard moduleKey="cierre_periodo"><CierrePeriodoView /></PermissionGuard>} />
                                     <Route path="resumen-fiscal" element={<PermissionGuard moduleKey="resumen_fiscal"><ResumenFiscalView /></PermissionGuard>} />
                                     <Route path="corte-z" element={<PermissionGuard moduleKey="corte_z"><CorteZView /></PermissionGuard>} />
                                     <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />
@@ -801,6 +803,7 @@ const ROUTE_TITLES = {
     '/proveedores':       'Proveedores',
     '/libros-iva':        'Libros IVA',
     '/libro-compras-completo': 'Compras completo',
+    '/cierre-periodo':    'Cierre de período',
     '/resumen-fiscal':    'Resumen fiscal',
     '/corte-z':           'Corte Z',
     '/conteo-inventario': 'Conteo de inventario',

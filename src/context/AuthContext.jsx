@@ -201,8 +201,14 @@ export const AuthProvider = ({ children }) => {
      * servidor. Si esta llamada falla, se sigue sin ella —la base decide
      * igual— y lo único que se pierde es que la pantalla lo refleje: un
      * permiso de menos, nunca uno de más. */
+    /* `Promise.resolve(...)` NO es decorativo: `supabase.rpc()` devuelve un
+     * PostgrestFilterBuilder, que es *thenable* pero NO es una Promise — tiene
+     * `.then` y no tiene `.catch`. Encadenarle `.catch` directo lanza
+     * «SP().catch is not a function» ANTES de pedir nada, y como esto corre en
+     * el arranque de la sesión, se lleva puesto el login entero. Pasó en
+     * producción el 2026-08-12. */
     const heredadosQuery = roleId
-      ? fetchPermisosHeredados().catch(() => ({ data: [] }))
+      ? Promise.resolve(fetchPermisosHeredados()).catch(() => ({ data: [] }))
       : Promise.resolve({ data: [] });
 
     Promise.all([permsQuery, priceLevelQuery, heredadosQuery])

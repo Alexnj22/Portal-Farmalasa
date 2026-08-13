@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.580.2 — Arreglo: el login volvía a fallar por un .catch sobre un builder
+
+**Arreglo urgente de algo que rompí en v2.580.0.** El login fallaba con
+`TypeError: SP().catch is not a function` y la sesión no arrancaba.
+
+`supabase.rpc()` **no devuelve una Promise**: devuelve un
+`PostgrestFilterBuilder`, que es *thenable* —tiene `.then`, y por eso funciona
+con `await` y dentro de `Promise.all`— pero **no tiene `.catch`**. Encadenarle
+un `.catch` directo lanza antes de pedir nada, y como la llamada corre en el
+arranque de la sesión se llevaba puesto el login entero.
+
+`Promise.resolve(builder).catch(...)` lo resuelve: adopta el thenable y a
+partir de ahí sí es una Promise de verdad.
+
+La lección incómoda es de método, no de sintaxis: compilar, pasar los gates y
+que el bundle se arme **no prueba nada sobre lo que pasa al abrir la pantalla**.
+Este cambio pasó lint, build y cuatro gates, y estaba roto en el primer render.
+Revisado el resto del repo: no hay otro `.catch` encadenado a un builder de
+Supabase.
+
 ## v2.580.1 — Las funciones del servidor piden el permiso de la familia
 
 Las dos funciones que aplican una solicitud en el sistema de origen seguían

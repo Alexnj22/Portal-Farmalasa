@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookOpen, Download, AlertTriangle, SearchX, Mail, Percent } from 'lucide-react';
+import { BookOpen, Download, AlertTriangle, SearchX, Mail, Percent, Scale, Lock } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -17,7 +17,7 @@ import { formatearNit, formatearNrc } from '../../utils/nitUtils';
 import { normalizeText } from '../../utils/helpers';
 import { exportCsv } from '../../utils/csvExport';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchLibroComprasCompleto } from '../../data/libroComprasCompleto';
+import { fetchLibroComprasCompleto, fetchLibroComprasDeclarable } from '../../data/libroComprasCompleto';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.
@@ -36,9 +36,10 @@ import { fetchLibroComprasCompleto } from '../../data/libroComprasCompleto';
 //     identifica sus propios documentos);
 //   · cada fila dice de dónde salió, para que la diferencia sea auditable.
 //
-// Lo que NO hace: restar las notas de crédito. El ajuste del Art. 62 está
-// pendiente de confirmación con el contador, y meterlo sin esa confirmación
-// sería inventar una tercera verdad.
+// Lo que las dos primeras pestañas NO hacen: restar las notas de crédito. Eso
+// vive en la tercera —«Declarable», agregada el 2026-08-13— y sale de su propia
+// consulta, porque la pregunta es otra: no qué se compró, sino qué de eso puede
+// reclamarse. Las dos verdades conviven a propósito y su diferencia se mide.
 //
 // NOTA DE ESTRUCTURA: los componentes se llaman con la MISMA firma que
 // `LibrosIvaView`, que es la vista hermana y la que está probada. La primera
@@ -92,6 +93,13 @@ const numOpcional = (n) => (n == null ? '' : num(n));
 const TABS = [
     { key: 'todos',      label: 'Todos'          },
     { key: 'sin_compra', label: 'Sin registrar'  },
+    // «Declarable» es otra PREGUNTA, no otro filtro de la misma lista: las dos
+    // primeras dicen qué se compró, ésta dice qué de eso puede reclamarse como
+    // crédito fiscal. Sale de su propia consulta porque aplica tres reglas que
+    // el libro completo no mira — notas de crédito y débito (Art. 62), la
+    // deducibilidad confirmada del proveedor (Art. 65), y que una factura no da
+    // crédito por más IVA que traiga.
+    { key: 'declarable', label: 'Declarable'     },
 ];
 
 const COLS = [
@@ -108,6 +116,22 @@ const COLS = [
     { key: 'gravadas',  label: 'Gravadas',   align: 'right' },
     { key: 'credito',   label: 'Crédito',    align: 'right', hideBelow: 'md' },
     { key: 'total',     label: 'Total',      align: 'right' },
+];
+
+// El libro declarable tiene otra forma: no hay sucursal (el libro es por NRC) y
+// aparece el TIPO, porque una nota de crédito resta y una factura no da crédito
+// — dos cosas que en el libro completo no existían como distinción.
+const COLS_DECL = [
+    { key: 'fecha',     label: 'Fecha',      align: 'left'  },
+    { key: 'tipo',      label: 'Tipo',       align: 'left'  },
+    { key: 'documento', label: 'Documento',  align: 'left',  hideBelow: 'lg' },
+    { key: 'proveedor', label: 'Proveedor',  align: 'left'  },
+    { key: 'gravadas',  label: 'Gravadas',   align: 'right', hideBelow: 'md' },
+    { key: 'credito',   label: 'Crédito',    align: 'right' },
+    { key: 'total',     label: 'Total',      align: 'right', hideBelow: 'md' },
+    // 92px y un rótulo de una palabra. El motivo completo va en el `title` y,
+    // agregado, en el aviso de arriba de la tabla: nada se descarta en silencio.
+    { key: 'computa',   label: 'Cuenta',     align: 'center', className: 'w-[92px]' },
 ];
 
 export default function LibroComprasCompletoView() {
@@ -127,24 +151,33 @@ export default function LibroComprasCompletoView() {
     const [pagina, setPagina]         = useState(1);
     const [tamPagina, setTamPagina]   = useState(50);
 
+    // El declarable sale de OTRA consulta, así que vive en su propio estado. No
+    // se deriva del completo filtrando: aquél no trae notas de crédito ni de
+    // débito, así que no hay nada que filtrar — habría que inventarlo.
+    const esDecl = activeTab === 'declarable';
+
     const cargar = useCallback(async () => {
         setLoading(true);
         setError('');
         const [desde, hasta] = rangoDelMes(mes);
         try {
-            const data = await fetchLibroComprasCompleto(desde, hasta, filterBranch);
+            const data = esDecl
+                ? await fetchLibroComprasDeclarable(desde, hasta)
+                : await fetchLibroComprasCompleto(desde, hasta, filterBranch);
             // `fetchAllRows` devuelve null si el PRIMER trozo falló. Tratarlo como
             // lista vacía convertiría una consulta rota en "no hay compras", que es
             // exactamente cómo un error vive semanas sin que nadie lo note.
-            if (data === null) throw new Error('No se pudo leer el libro completo.');
+            if (data === null) throw new Error('No se pudo leer el libro.');
             setFilas(data);
         } catch (e) {
-            setError(mensajeAmigable(e, 'No se pudo cargar el libro de compras completo'));
+            setError(mensajeAmigable(e, esDecl
+                ? 'No se pudo cargar el libro declarable'
+                : 'No se pudo cargar el libro de compras completo'));
             setFilas([]);
         } finally {
             setLoading(false);
         }
-    }, [mes, filterBranch]);
+    }, [mes, filterBranch, esDecl]);
 
     useEffect(() => { cargar(); }, [cargar]);
 
@@ -155,6 +188,30 @@ export default function LibroComprasCompletoView() {
     const delTab = useMemo(
         () => (activeTab === 'sin_compra' ? filas.filter(r => r.origen !== 'registrada') : filas),
         [filas, activeTab]);
+
+    // Totales del declarable. `credito_fiscal` ya viene con su signo del
+    // servidor —la nota de crédito llega en negativo— así que sumar alcanza.
+    // `trabado` es el que acciona: lo que se destrabaría al confirmar la
+    // clasificación de esos proveedores.
+    const totDecl = useMemo(() => {
+        const acc = { docs: 0, credito: 0, sinCuenta: 0, trabado: 0, motivos: new Map() };
+        if (!esDecl) return acc;
+        for (const r of filas) {
+            acc.docs++;
+            acc.credito += Number(r.credito_fiscal || 0);
+            if (r.computa_credito) continue;
+            acc.sinCuenta++;
+            acc.motivos.set(r.motivo, (acc.motivos.get(r.motivo) || 0) + 1);
+            // El IVA que NO se contó: el servidor lo puso en cero, así que se
+            // estima desde el total. Es una referencia de cuánto está en juego,
+            // no una cifra para declarar — por eso el rótulo dice «aprox.».
+            if (String(r.motivo || '').startsWith('Falta confirmar')) {
+                const t = Math.abs(Number(r.total || 0));
+                acc.trabado += t - t / 1.13;
+            }
+        }
+        return acc;
+    }, [filas, esDecl]);
 
     const filasVistas = useMemo(() => {
         const q = normalizeText(busqueda.trim());
@@ -189,6 +246,34 @@ export default function LibroComprasCompletoView() {
 
     const exportar = useCallback(() => {
         const [desde] = rangoDelMes(mes);
+
+        // El declarable exporta SUS columnas, no las del completo. Reusar las
+        // otras dejaría afuera el motivo —lo único que explica por qué una fila
+        // suma cero— y escribiría una sucursal que este libro no tiene.
+        if (esDecl) {
+            exportCsv(
+                ['FECHA', 'TIPO', 'DOCUMENTO', 'NRC', 'NIT', 'PROVEEDOR',
+                 'GRAVADAS', 'CREDITO FISCAL', 'TOTAL', 'CUENTA', 'MOTIVO', 'CLASIFICACION'],
+                [
+                    ...filas.map(r => [
+                        fmtFecha(r.fecha), r.documento_tipo || '', r.documento_completo || '',
+                        r.nrc || '', r.nit || '', r.proveedor || '',
+                        num(r.compras_gravadas), num(r.credito_fiscal), num(r.total),
+                        r.computa_credito ? 'SI' : 'NO',
+                        r.motivo || '', r.clasificacion || '',
+                    ]),
+                    ['TOTALES', '', '', '', '', '', '',
+                     num(totDecl.credito), '', '', '', ''],
+                ],
+                `libro-compras-declarable_${desde.slice(0, 7)}.csv`,
+            );
+            useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_DECLARABLE_EXPORT', mes, {
+                documentos: totDecl.docs, credito_fiscal: totDecl.credito,
+                sin_contar: totDecl.sinCuenta,
+            });
+            return;
+        }
+
         // El orden es `(headers, rows, filename)`. Estaba llamado
         // `(filename, headers, rows)`, así que `buildCsvText` recibía el nombre
         // del archivo como fila de encabezado y hacía `"…".map(...)` sobre una
@@ -224,7 +309,7 @@ export default function LibroComprasCompletoView() {
             documentos: totales.docs, credito_fiscal: totales.credito,
             sin_registrar: totales.sinCompra,
         });
-    }, [filas, mes, totales, nombreSucursal]);
+    }, [filas, mes, totales, nombreSucursal, esDecl, totDecl]);
 
     const branchOptions = useMemo(
         () => branches.map(b => ({ value: String(b.id), label: b.name })), [branches]);
@@ -250,11 +335,16 @@ export default function LibroComprasCompletoView() {
                 icon: Download,
                 label: 'Exportar',
                 soloIcono: true,
-                title: `Exportar el libro de compras completo en CSV — ${filas.length} filas, con el número de documento completo`,
+                title: esDecl
+                    ? `Exportar el libro declarable en CSV — ${filas.length} filas, con el motivo de cada una que no cuenta`
+                    : `Exportar el libro de compras completo en CSV — ${filas.length} filas, con el número de documento completo`,
                 onClick: exportar,
                 disabled: loading || filas.length === 0,
             }]}>
-            {puedeElegirSucursal && branchOptions.length > 0 && (
+            {/* La sucursal no se ofrece en «Declarable»: ese libro es por NRC y
+                los documentos que sólo llegaron por correo no tienen sucursal,
+                así que filtrar por una omitiría cientos de CCF sin avisar. */}
+            {!esDecl && puedeElegirSucursal && branchOptions.length > 0 && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFB('')} label="sucursal">
                     <FilterBar.Sucursal value={filterBranch}
                         onChange={val => setFB(val || '')} options={branchOptions} />
@@ -290,7 +380,9 @@ export default function LibroComprasCompletoView() {
                 message: `Sin compras en ${etiquetaMes(mes)}`,
                 subtext: activeTab === 'sin_compra'
                     ? 'Todos los documentos del mes ya están registrados como compra.'
-                    : undefined };
+                    : esDecl
+                        ? 'No hay documentos de compra en el período.'
+                        : undefined };
 
     return (
         <GlassViewLayout
@@ -301,19 +393,35 @@ export default function LibroComprasCompletoView() {
         >
             <div className="p-5 md:p-6 space-y-5">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    <CarrilCards className="flex-1" ariaLabel="Resumen del libro completo">
-                        <StatCard icon={BookOpen} label="Documentos" value={totales.docs} loading={loading}
-                            sub={`${totales.docs - totales.sinCompra} registradas · ${totales.sinCompra} sin registrar`} />
-                        {/* Documentos queda siempre: es lo que dice si el libro está
-                            completo (cuántas sin registrar), y no revela cifras. */}
-                        {canVerMontos && (
-                            <>
-                                <StatCard icon={Mail} label="Compras" value={formatMoney(totales.total)}
-                                    sub="Del período" loading={loading} />
-                                <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.credito)}
-                                    sub="Documentado" loading={loading} />
-                            </>
-                        )}
+                    <CarrilCards className="flex-1" ariaLabel="Resumen del libro">
+                        {esDecl ? (<>
+                            <StatCard icon={BookOpen} label="Documentos" value={totDecl.docs} loading={loading}
+                                sub={`${totDecl.docs - totDecl.sinCuenta} cuentan · ${totDecl.sinCuenta} no`} />
+                            {canVerMontos && (
+                                <StatCard icon={Scale} label="Crédito declarable" value={formatMoney(totDecl.credito)}
+                                    sub="Ya con las notas de crédito restadas" loading={loading} />
+                            )}
+                            {/* La tarjeta que acciona: lo que se destrabaría al
+                                confirmar la deducibilidad de esos proveedores. */}
+                            {canVerMontos && totDecl.trabado > 0 && (
+                                <StatCard icon={Lock} label="Trabado por clasificar"
+                                    value={`≈ ${formatMoney(totDecl.trabado)}`}
+                                    sub="Se libera al confirmar el proveedor" loading={loading} />
+                            )}
+                        </>) : (<>
+                            <StatCard icon={BookOpen} label="Documentos" value={totales.docs} loading={loading}
+                                sub={`${totales.docs - totales.sinCompra} registradas · ${totales.sinCompra} sin registrar`} />
+                            {/* Documentos queda siempre: es lo que dice si el libro está
+                                completo (cuántas sin registrar), y no revela cifras. */}
+                            {canVerMontos && (
+                                <>
+                                    <StatCard icon={Mail} label="Compras" value={formatMoney(totales.total)}
+                                        sub="Del período" loading={loading} />
+                                    <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.credito)}
+                                        sub="Documentado" loading={loading} />
+                                </>
+                            )}
+                        </>)}
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">{barraFiltros}</div>
                 </div>
@@ -322,13 +430,41 @@ export default function LibroComprasCompletoView() {
                     <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>
                 )}
 
-                <Notice variant="info" icon={BookOpen} compact>
-                    Todas las compras del período, incluidas las que llegaron como documento
-                    del proveedor y todavía no se registraron. El número de documento va
-                    completo. Para presentar, el libro del Art. 86 sigue siendo el de <b>Libros IVA</b>.
-                </Notice>
+                {esDecl ? (
+                    <Notice variant="info" icon={Scale} compact>
+                        Lo que de estas compras puede reclamarse como crédito fiscal: las notas
+                        de crédito <b>restan</b> y las de débito <b>suman</b> (Art. 62), una factura
+                        no da crédito por más IVA que traiga (Art. 65), y sólo cuenta el proveedor
+                        con su deducibilidad <b>confirmada</b>. Lo que no cuenta <b>igual aparece</b>,
+                        con su motivo.
+                    </Notice>
+                ) : (
+                    <Notice variant="info" icon={BookOpen} compact>
+                        Todas las compras del período, incluidas las que llegaron como documento
+                        del proveedor y todavía no se registraron. El número de documento va
+                        completo. Para presentar, el libro del Art. 86 sigue siendo el de <b>Libros IVA</b>.
+                    </Notice>
+                )}
 
-                {!loading && totales.sinCompra > 0 && (
+                {/* Los motivos, agregados. Un `title` por fila no alcanza: sin
+                    esto habría que pasar el mouse por 300 filas para saber qué
+                    quedó afuera y por qué. */}
+                {esDecl && !loading && totDecl.sinCuenta > 0 && (
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        <b>{totDecl.sinCuenta}</b> de {totDecl.docs} documento(s) no suman crédito fiscal:
+                        <ul className="mt-1.5 space-y-0.5">
+                            {[...totDecl.motivos.entries()]
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([motivo, n]) => (
+                                    <li key={motivo} className="text-body-sm">
+                                        <b className="tabular-nums">{n}</b> — {motivo}
+                                    </li>
+                                ))}
+                        </ul>
+                    </Notice>
+                )}
+
+                {!esDecl && !loading && totales.sinCompra > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
                         <b>{totales.sinCompra}</b> documento(s) del proveedor todavía no están
                         registrados como compra — <b>{formatMoney(totales.creditoSinCompra)}</b> de
@@ -342,6 +478,50 @@ export default function LibroComprasCompletoView() {
                     título. De una compra, lo que la identifica es el PROVEEDOR;
                     la fecha y el estado son contexto. El número de documento va
                     a la hoja, donde entra completo y con su rótulo. */}
+                {esDecl ? (
+                <DataTable columns={COLS_DECL} dense loading={loading} empty={vacio}
+                    movil={{ identidad: 'proveedor', chips: ['fecha', 'tipo', 'computa'] }}>
+                    {paginadas.map((r, i) => (
+                        <DataRow key={`d-${r.documento_completo}-${i}`}>
+                            <DataCell>{fmtFecha(r.fecha)}</DataCell>
+                            <DataCell>
+                                {/* La nota de crédito se marca: es la fila que
+                                    RESTA, y leerla como una compra más es
+                                    exactamente el error que este libro corrige. */}
+                                <Badge size="sm"
+                                    variant={r.documento_tipo === 'NOTA DE CRÉDITO' ? 'danger'
+                                        : r.documento_tipo === 'CCF' ? 'neutral' : 'warning'}>
+                                    {r.documento_tipo === 'NOTA DE CRÉDITO' ? 'N. crédito'
+                                        : r.documento_tipo === 'NOTA DE DÉBITO' ? 'N. débito'
+                                        : r.documento_tipo}
+                                </Badge>
+                            </DataCell>
+                            <DataCell className="max-w-[15rem]" hideBelow="lg">
+                                <span className="font-mono text-micro break-all">{r.documento_completo || '—'}</span>
+                            </DataCell>
+                            <DataCell className="max-w-[16rem]">
+                                <span className="line-clamp-2 break-words leading-tight">{r.proveedor || '—'}</span>
+                            </DataCell>
+                            <DataCell align="right" hideBelow="md">
+                                <span className="whitespace-nowrap">{formatMoney(r.compras_gravadas)}</span>
+                            </DataCell>
+                            <DataCell align="right">
+                                <span className={`whitespace-nowrap ${Number(r.credito_fiscal) < 0 ? 'text-danger-text font-bold' : ''}`}>
+                                    {formatMoney(r.credito_fiscal)}
+                                </span>
+                            </DataCell>
+                            <DataCell align="right" hideBelow="md">
+                                <span className="font-black whitespace-nowrap">{formatMoney(r.total)}</span>
+                            </DataCell>
+                            <DataCell align="center">
+                                {r.computa_credito
+                                    ? <Badge variant="success" size="sm">Sí</Badge>
+                                    : <Badge variant="warning" size="sm" title={r.motivo || ''}>No</Badge>}
+                            </DataCell>
+                        </DataRow>
+                    ))}
+                </DataTable>
+                ) : (
                 <DataTable columns={COLS} dense loading={loading} empty={vacio}
                     movil={{ identidad: 'proveedor', chips: ['fecha', 'origen'] }}>
                     {paginadas.map((r, i) => (
@@ -384,6 +564,7 @@ export default function LibroComprasCompletoView() {
                         </DataRow>
                     ))}
                 </DataTable>
+                )}
 
                 {filasVistas.length > 0 && (
                     <TablePagination

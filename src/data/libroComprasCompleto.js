@@ -25,3 +25,21 @@ export function fetchLibroComprasCompleto(desde, hasta, branchId) {
             p_branch_id: branchId ? Number(branchId) : null,
         }));
 }
+
+// El libro DECLARABLE — el de arriba dice qué se compró; éste, qué de eso puede
+// reclamarse como crédito fiscal. Son tres reglas que el completo no aplica:
+// las notas de crédito restan y las de débito suman (Art. 62 LIVA), sólo cuenta
+// el CCF de un proveedor con deducibilidad confirmada (Art. 65), y una factura
+// no da crédito por más IVA que traiga.
+//
+// **No recibe sucursal, y no es un olvido.** El libro se presenta por NRC —la
+// empresa— y los documentos que sólo llegaron por correo no tienen sucursal
+// guardada. Aceptar el parámetro haría que pedir una sala omitiera cientos de
+// CCF sin avisar.
+//
+// `fetchAllRows` por lo mismo que su hermana: junio-julio dan ~1,450 filas y
+// PostgREST corta en 1000 sin decir nada.
+export function fetchLibroComprasDeclarable(desde, hasta) {
+    return fetchAllRows(() =>
+        supabase.rpc('get_libro_compras_declarable', { p_desde: desde, p_hasta: hasta }));
+}

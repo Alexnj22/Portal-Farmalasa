@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.590.0 — El libro declarable tiene pestaña propia
+
+La función `get_libro_compras_declarable` existía desde hoy y nadie podía verla.
+Ahora es la tercera pestaña de **Compras completo**, junto a «Todos» y «Sin
+registrar» — no un cuarto libro suelto.
+
+Va ahí y no en Libros IVA porque comparte el módulo de permiso y **el mismo
+cruce de deduplicación**: dos pantallas que dedujeran distinto qué documento es
+cuál serían peores que una sola.
+
+**Es otra pregunta, no otro filtro.** Las dos primeras pestañas dicen qué se
+compró; ésta dice qué de eso puede reclamarse. Por eso sale de su propia
+consulta: el libro completo no trae notas de crédito ni de débito, así que no
+había nada que filtrar — habría que inventarlo.
+
+Medido en julio 2026 con la pantalla abierta: 873 documentos, **697 cuentan y
+176 no**, $27,429.07 de crédito declarable. Una nota de crédito se ve con sus
+tres cifras en negativo y contando: −$31.96 gravadas, −$4.16 de crédito,
+−$36.12 de total.
+
+**Lo que no cuenta igual aparece.** Cada fila lleva una marca «Sí/No» con su
+motivo en el `title`, y arriba de la tabla van los motivos **agregados** —110 por
+tipo de documento, 66 por proveedor sin confirmar—, porque un `title` por fila
+obligaría a pasar el mouse por 300 filas para saber qué quedó afuera.
+
+**La tarjeta que acciona**: «Trabado por clasificar», ≈$405.68 en julio. Es lo
+que se libera al confirmar la deducibilidad de esos proveedores, o sea que
+terminar las clasificaciones tiene precio puesto en pantalla.
+
+**Sin filtro de sucursal en esa pestaña, y a propósito.** El libro se presenta
+por NRC y los documentos que sólo llegaron por correo no tienen sucursal
+guardada: ofrecer el filtro haría que elegir una sala omitiera cientos de CCF
+sin avisar. El CSV exporta sus propias columnas —con el motivo y la
+clasificación— en vez de reusar las del completo, que dejarían fuera lo único
+que explica por qué una fila suma cero.
+
 ## v2.589.1 — El widget de Min/Max pierde el botón «Dejar en cero»
 
 Pedido del usuario: «se puede poner 0 y 0, es redundante». Y es exacto — el

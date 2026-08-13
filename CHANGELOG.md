@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.590.4 — La regla del IVA queda en un solo lugar
+
+El visor de ventas sumaba `resumen.tributos` entero para sacar el IVA. Ahora usa
+el mismo helper que el de compras, o sea la regla del sync: sólo el **código 20**.
+
+Hoy no cambia ningún número —las ventas de la farmacia no llevan FOVIAL ni
+COTRANS, que son los tributos que la suma cruda incluiría de más— y por eso mismo
+es el momento de cerrarlo: cuesta una línea ahora y sería un error de crédito
+fiscal el día que exista el primer documento que los traiga.
+
+Con esto la regla vive en un solo archivo en vez de tres copias (el sync, el
+visor de compras y el de ventas), que era la forma más barata de que se
+desincronicen.
+
 ## v2.590.3 — El IVA del CCF sale del documento, no de una columna
 
 Al abrir un CCF desde el libro de compras, el visor mostraba **IVA $0.00** con

@@ -8,6 +8,7 @@ import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { descargarPaqueteDteVenta } from '../../data/librosIva';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { ivaDelDte } from '../../utils/dteIva';
 
 const fmt$ = (n) => formatMoney(n || 0);
 
@@ -76,7 +77,13 @@ const FormSalesDteViewer = ({ formData }) => {
     const esCCF   = (ident.tipoDte || (document?.tipo_documento === 'CCF' ? '03' : '01')) === '03';
     // El IVA sale de `tributos` en el CCF; en la factura de consumidor no viene
     // desglosado y lo que el portal guardó es la parte de IVA del monto.
-    const iva = (resumen.tributos || []).reduce((s, t) => s + (Number(t.valor) || 0), 0);
+    //
+    // Pasa por el helper compartido (2026-08-13) en vez de sumar `tributos`
+    // entero: la suma cruda incluiría FOVIAL y COTRANS, que no son IVA. Hoy no
+    // cambia ningún número —las ventas de la farmacia no llevan esos impuestos—
+    // y por eso mismo es el momento de cerrarlo, antes de que exista el primer
+    // documento que los traiga. La regla es la del sync, en un solo lugar.
+    const iva = ivaDelDte(dte, 0) ?? 0;
     const codigo = String(dte?.identificacion?.codigoGeneracion || document?.codigo_generacion || '').toUpperCase();
 
     return (

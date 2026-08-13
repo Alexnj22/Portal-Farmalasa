@@ -46,6 +46,20 @@ export const TERMINATION_REASONS = {
   ABANDONO: { label: 'Abandono de trabajo' },
 };
 
+// Tipo de incapacidad → `employee_events.metadata.disabilityType`.
+//
+// Éste es el caso más traicionero de los tres: su `value` NO era igual al
+// `label` (el label agrega la aclaración entre paréntesis), así que un filtro
+// que busque `value === label` no lo encuentra — y sin embargo el valor era un
+// rótulo en Title Case que además se compara por igualdad para decidir los
+// **112 días del Art. 309**. Reescribir ese texto no desincronizaba una lista:
+// apagaba la regla de maternidad, en silencio.
+export const DISABILITY_TYPES = {
+  ENFERMEDAD_COMUN: { label: 'Enfermedad común (padecimiento o embarazo)' },
+  RIESGO_PROFESIONAL: { label: 'Riesgo profesional (accidente laboral)' },
+  MATERNIDAD: { label: 'Maternidad (16 semanas por ley)' },
+};
+
 // Categoría de un documento del expediente de sucursal →
 // `branches.settings.customDocs[].category`. El orden es el de las secciones de
 // `TabExpediente`, y el primero es el valor por omisión del formulario.
@@ -86,6 +100,41 @@ export function categoriaDeDocumento(valor) {
     .find(([, { label }]) => normalizarRotulo(label) === buscado);
   return porRotulo ? porRotulo[0] : 'OTRO';
 }
+
+// Los rótulos con los que se guardaba el tipo de incapacidad antes de v2.590.5.
+// Van escritos, no derivados de `label`: el label de hoy trae la aclaración
+// entre paréntesis y nunca fue igual al valor guardado, así que no hay de dónde
+// deducirlos. Es el puente de vuelta y por eso es una lista cerrada.
+const TIPO_INCAPACIDAD_LEGADO = {
+  'enfermedad comun': 'ENFERMEDAD_COMUN',
+  'riesgo profesional': 'RIESGO_PROFESIONAL',
+  'maternidad': 'MATERNIDAD',
+};
+
+/**
+ * Resuelve el tipo de incapacidad guardado a su clave, o `null`.
+ *
+ * A diferencia de `categoriaDeDocumento` acá NO hay valor de respaldo: el tipo
+ * decide los 112 días del Art. 309, y adivinarlo mal es peor que no saberlo.
+ * Quien la llama decide qué hacer con el `null` — el formulario deja el
+ * selector vacío y obliga a elegir.
+ */
+export function tipoDeIncapacidad(valor) {
+  if (DISABILITY_TYPES[valor]) return valor;
+  const buscado = normalizarRotulo(valor);
+  if (!buscado) return null;
+  if (TIPO_INCAPACIDAD_LEGADO[buscado]) return TIPO_INCAPACIDAD_LEGADO[buscado];
+  const porRotulo = Object.entries(DISABILITY_TYPES)
+    .find(([, { label }]) => normalizarRotulo(label) === buscado);
+  return porRotulo ? porRotulo[0] : null;
+}
+
+// El estado de quien no tiene cargo ni sucursal. Es texto de PANTALLA, no un
+// dato: `employees` no tiene columna `role` —el store la deriva de `role_id` y
+// `updateEmployee` la borra del payload antes de escribir—, así que este rótulo
+// no viaja a ninguna tabla salvo la bitácora, que es para leerse. Vivía escrito
+// a mano en once lugares, que es exactamente como se desincroniza.
+export const SIN_ASIGNAR = 'Sin asignar';
 
 
 export const WEEK_DAYS = [

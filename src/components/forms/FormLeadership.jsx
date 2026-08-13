@@ -12,6 +12,7 @@ import SearchInput from '../common/SearchInput';
 import { clickable } from '../../utils/clickable';
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 import { opcionesDeCargo, buscarCargo } from '../../utils/roles';
+import { SIN_ASIGNAR } from '../../data/constants';
 
 // A dónde va quien es relevado de una jefatura. Es una lista CURADA a
 // propósito —no son los 24 cargos de la tabla—, pero los nombres se resuelven
@@ -289,7 +290,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                 <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-warning accent-warning" checked={formData.outgoingAction === 'UNASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'UNASSIGN'})} />
                                                 <div className="flex flex-col">
                                                     <span className="text-label font-black text-content uppercase tracking-widest leading-none">Quitar Asignación (Flotante)</span>
-                                                    <span className="text-caption font-bold text-content-3 mt-1.5 leading-tight">Quedará temporalmente "Sin Asignar" a disposición de RRHH.</span>
+                                                    <span className="text-caption font-bold text-content-3 mt-1.5 leading-tight">Quedará temporalmente «{SIN_ASIGNAR}» a disposición de RRHH.</span>
                                                 </div>
                                             </label>
                                         </div>

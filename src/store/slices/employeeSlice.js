@@ -9,7 +9,7 @@ import {
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
 import { insertEmployeeBranches, deleteEmployeeBranches, upsertWeeklyRoster } from '../../data/system';
-import { TERMINATION_REASONS } from '../../data/constants';
+import { TERMINATION_REASONS, SIN_ASIGNAR } from '../../data/constants';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -914,7 +914,7 @@ export const createEmployeeSlice = (set, get) => ({
                         photo: signedPhoto ?? emp.photo,
                         birthDate: updated.birth_date ?? emp.birthDate,
                         hireDate: updated.hire_date ?? emp.hireDate,
-                        role: updated.role_id ? (mainRoleName || emp.role) : 'Sin Asignar',
+                        role: updated.role_id ? (mainRoleName || emp.role) : SIN_ASIGNAR,
                         secondary_role: updated.secondary_role_id ? (secRoleName !== null ? secRoleName : emp.secondary_role) : null
                     };
                 });

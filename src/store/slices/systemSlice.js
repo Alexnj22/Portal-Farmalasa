@@ -7,6 +7,7 @@ import { fetchAllRows } from '../../utils/supabaseUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { fireBrowserNotif } from '../../utils/browserNotif';
 import { buscarCargo } from '../../utils/roles';
+import { SIN_ASIGNAR } from '../../data/constants';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
@@ -546,7 +547,7 @@ export const createSystemSlice = (set, get) => ({
                 Object.assign(localPatch, {
                     ...empUpdates,
                     branchId: null,
-                    role: 'Sin Asignar',
+                    role: SIN_ASIGNAR,
                     secondary_role: null,
                     effectiveStatus: 'Inactivo',
                     assigned_branch_ids: [],
@@ -767,7 +768,7 @@ export const createSystemSlice = (set, get) => ({
                     if ('role_id' in revertPayload) {
                         localRevert.role = revertPayload.role_id
                             ? (get().roles.find(r => String(r.id) === String(revertPayload.role_id))?.name || null)
-                            : 'Sin Asignar';
+                            : SIN_ASIGNAR;
                     }
                     if ('status' in revertPayload) {
                         localRevert.effectiveStatus = revertPayload.status === 'ACTIVO' ? 'Activo' : 'Inactivo';

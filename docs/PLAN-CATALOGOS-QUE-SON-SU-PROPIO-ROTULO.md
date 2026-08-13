@@ -1,9 +1,9 @@
 # Plan — los catálogos cuyo rótulo ES el dato
 
-> **Estado:** grupos 1 (v2.571.11) y 3 (v2.590.2) **CERRADOS** · queda el grupo
-> 2, que es cosmético, y un hallazgo nuevo del 13-08 (el tipo de incapacidad,
-> abajo). Abierto el 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y
-> v2.571.10).
+> **Estado:** grupos 1 (v2.571.11 y v2.590.5) y 3 (v2.590.2) **CERRADOS**, más
+> el hallazgo del tipo de incapacidad (v2.590.5). **Queda sólo el grupo 2**, que
+> vive dentro de funciones de Postgres y necesita migración. Abierto el
+> 2026-08-12 al cerrar el barrido de §26.4 (v2.571.8 y v2.571.10).
 
 ## Por qué existe
 
@@ -115,6 +115,24 @@ quedan con la ortografía vieja, y está bien.
 literal `'Sin Asignar'` en `employees.role`. Es otro rótulo que es dato, y entra
 en el mismo trabajo.
 
+> ### ✅ CERRADO el 2026-08-13 (v2.590.5) — y la premisa era falsa
+>
+> **`employees` no tiene columna `role`.** Sus columnas de cargo son `role_id`,
+> `secondary_role_id` y `system_role`. El store deriva `role` de `role_id`, y
+> `updateEmployee` hace `delete dbPayload.role` antes de escribir y lo vuelve a
+> calcular después del UPDATE. O sea que los `role: …` del payload eran inertes
+> **en las dos puntas**: no llegaban a la base y no sobrevivían en memoria.
+>
+> El comentario que dejó v2.572.1 —«así `employees.role` y `role_id` cuentan
+> siempre la misma historia»— describía una columna inexistente. Es el mismo
+> error que esta regla persigue, en su forma más barata: creerle al nombre en
+> vez de mirar el esquema ([[feedback_nombre_de_columna_no_es_su_tipo]]).
+>
+> Lo aplicado: fuera los tres `role:` de los payloads y el comentario; el
+> rótulo pasa a la constante `SIN_ASIGNAR` en vez de estar escrito a mano en
+> **once** lugares, en sentence case; y la bitácora anota `targetRoleObj.name`
+> —el cargo que de verdad quedó— en lugar del texto del formulario.
+
 ---
 
 ## Grupo 2 — el rótulo lo genera Postgres, no el navegador
@@ -218,8 +236,19 @@ qué ningún filtro por `value:` lo iba a encontrar.
 
 Medido igual que el grupo 3: **cero eventos de incapacidad guardados**, así que
 convertirlo a claves (`ENFERMEDAD_COMUN`, `RIESGO_PROFESIONAL`, `MATERNIDAD`)
-también es gratis hoy. Queda **abierto**: es un cambio de comportamiento en una
-regla legal y merece decidirse aparte, no colarse en el cierre del grupo 3.
+también es gratis hoy.
+
+> ### ✅ CERRADO el 2026-08-13 (v2.590.5)
+>
+> `DISABILITY_TYPES` en `src/data/constants.js`, las seis comparaciones contra
+> la clave, y `tipoDeIncapacidad` como puente con lo guardado antes — **sin
+> valor de respaldo**, a diferencia de `categoriaDeDocumento`: devuelve `null`
+> y el formulario obliga a elegir. Un documento mal clasificado se ve y se
+> corrige; un tipo de incapacidad adivinado decide mal los 112 días.
+>
+> Verificado en el navegador contra el entorno de pruebas: con maternidad
+> elegida y primer día 01/09/2026, la fecha de retorno se calcula sola en
+> 21/12/2026 y el panel dice «Días calculados: 112».
 
 ---
 
@@ -243,9 +272,9 @@ Se revisaron y se dejan como están:
 
 ## Orden sugerido
 
-> Al 2026-08-13 quedan abiertos: el **grupo 2**, el **hallazgo del tipo de
-> incapacidad** y el literal `'Sin Asignar'` de `UnifiedModal` (resto del grupo
-> 1). Los pasos 1 y 2 de abajo ya están hechos y se dejan como registro.
+> Al 2026-08-13 queda abierto **sólo el grupo 2** (paso 3), más la limpieza de
+> los dos nombres con espacio al final en `roles` (ids 9 y 22) — las dos cosas
+> necesitan migración. Los pasos 1 y 2 ya están hechos y se dejan como registro.
 
 1. **Grupo 1, paso 2** — leer `roles` de la base y borrar la lista a mano. Es el
    único que arregla un defecto real y no depende de ninguna decisión de

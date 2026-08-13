@@ -16,7 +16,7 @@ import {
     Copy
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
-import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
+import { EVENT_TYPES, WEEK_DAYS, SIN_ASIGNAR } from '../data/constants';
 import { formatDate, formatTime12h, getEffectiveStatus } from '../utils/helpers';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -528,7 +528,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
-                                                <p className="text-body-sm font-bold text-content-2 truncate">{branch ? branch.name : 'Sin Asignar'}</p>
+                                                <p className="text-body-sm font-bold text-content-2 truncate">{branch ? branch.name : SIN_ASIGNAR}</p>
                                             </div>
                                         </div>
                                     </div>

@@ -13,7 +13,7 @@ import useMontadoParaSalida from '../hooks/useMontadoParaSalida';
 import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { buscarCargo } from '../utils/roles';
-import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento } from '../data/constants';
+import { CATEGORIAS_DOCUMENTO, categoriaDeDocumento, SIN_ASIGNAR } from '../data/constants';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -543,10 +543,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         await updateEmployee(formData.currentAssignee, {
                             branchId: formData.outgoingBranch,
                             role_id: outRoleObj.id,
-                            // El nombre sale de la FILA, no de lo que traía el
-                            // formulario: así `employees.role` y `role_id`
-                            // cuentan siempre la misma historia.
-                            role: outRoleObj.name
                         });
 
                         await appendAuditLog('EMPLEADO_RELEVADO', formData.currentAssignee, {
@@ -562,10 +558,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         });
 
                     } else {
+                        // Sin `role:` en el payload. `employees` NO tiene esa
+                        // columna —`updateEmployee` la borra antes de escribir y
+                        // el store la deriva de `role_id` después— así que
+                        // mandarla sólo hacía creer que se guardaba un rótulo.
                         await updateEmployee(formData.currentAssignee, {
                             branchId: null,
                             role_id: null,
-                            role: 'Sin Asignar'
                         });
 
                         await appendAuditLog('EMPLEADO_DESVINCULADO_SUCURSAL', formData.currentAssignee, {
@@ -573,7 +572,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             previous_branch_id: actualBranchId,
                             previous_branch_name: actualBranchName,
                             previous_role: formData.targetRole,
-                            new_role: 'Sin Asignar',
+                            new_role: SIN_ASIGNAR,
                             note: `Removido de la sucursal ${actualBranchName} a la bolsa de trabajo flotante.`,
                         });
                     }
@@ -582,7 +581,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 await updateEmployee(formData.selectedEmpId, {
                     branchId: actualBranchId,
                     role_id: targetRoleId,
-                    role: targetRoleObj?.name ?? formData.targetRole
                 });
 
                 await appendAuditLog(formData.moveType || 'EMPLEADO_ASIGNADO', formData.selectedEmpId, {
@@ -591,7 +589,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     target_branch_id: actualBranchId,
                     target_branch_name: actualBranchName,
                     previous_role: selectedEmp?.role || null,
-                    new_role: formData.targetRole,
+                    // El nombre de la FILA, no el texto del formulario: lo que
+                    // queda en la bitácora es el cargo que de verdad se guardó.
+                    new_role: targetRoleObj?.name ?? SIN_ASIGNAR,
                     note: formData.notes || 'Asignación realizada desde el Panel de Sucursales',
                     isInterim: formData.isPermanent === false,
                     interimEndDate: formData.interimEndDate || null,

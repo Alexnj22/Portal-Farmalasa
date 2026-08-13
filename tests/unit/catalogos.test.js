@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-    CATEGORIAS_DOCUMENTO, TERMINATION_REASONS, categoriaDeDocumento, opcionesDeCatalogo,
+    CATEGORIAS_DOCUMENTO, TERMINATION_REASONS, DISABILITY_TYPES,
+    categoriaDeDocumento, tipoDeIncapacidad, opcionesDeCatalogo, SIN_ASIGNAR,
 } from '../../src/data/constants';
 
 // Estos dos catálogos guardaban el RÓTULO como valor (`value === label`), así
@@ -46,6 +47,39 @@ describe('categoriaDeDocumento — el puente entre el rótulo viejo y la clave',
     });
 });
 
+// El tipo de incapacidad no era `value === label` —el label trae la aclaración
+// entre paréntesis— y por eso ningún filtro del plan lo encontró. Pero su valor
+// era un rótulo en Title Case comparado por igualdad para decidir los 112 días
+// del Art. 309: reescribir ese texto apagaba la regla, en silencio.
+describe('tipoDeIncapacidad — el rótulo que además era la condición', () => {
+    it('deja pasar la clave', () => {
+        for (const clave of Object.keys(DISABILITY_TYPES)) {
+            expect(tipoDeIncapacidad(clave)).toBe(clave);
+        }
+    });
+
+    it('resuelve los tres valores con los que se guardaba antes', () => {
+        expect(tipoDeIncapacidad('Enfermedad Común')).toBe('ENFERMEDAD_COMUN');
+        expect(tipoDeIncapacidad('Riesgo Profesional')).toBe('RIESGO_PROFESIONAL');
+        expect(tipoDeIncapacidad('Maternidad')).toBe('MATERNIDAD');
+    });
+
+    it('reconoce la maternidad escrita de cualquier forma — es la que decide los 112 días', () => {
+        expect(tipoDeIncapacidad('maternidad')).toBe('MATERNIDAD');
+        expect(tipoDeIncapacidad('  MATERNIDAD  ')).toBe('MATERNIDAD');
+        expect(tipoDeIncapacidad('Maternidad (16 semanas por ley)')).toBe('MATERNIDAD');
+    });
+
+    // A diferencia de la categoría de documento, acá NO hay valor de respaldo:
+    // adivinar el tipo decide mal una regla legal.
+    it('devuelve null en vez de adivinar', () => {
+        expect(tipoDeIncapacidad('Inventada')).toBeNull();
+        expect(tipoDeIncapacidad('')).toBeNull();
+        expect(tipoDeIncapacidad(null)).toBeNull();
+        expect(tipoDeIncapacidad(undefined)).toBeNull();
+    });
+});
+
 describe('las claves son el contrato con las pantallas que agrupan por ellas', () => {
     // `TabExpediente` nombra estas claves a mano en sus cuatro secciones y
     // `FormAddCustomDocument` toma la primera como valor por omisión. Renombrar
@@ -63,13 +97,26 @@ describe('las claves son el contrato con las pantallas que agrupan por ellas', (
         ]);
     });
 
+    // `FormNovedad` compara `disabilityType === 'MATERNIDAD'` en seis lugares.
+    // Renombrar la clave sin tocar esas seis apaga los 112 días sin fallar.
+    it('DISABILITY_TYPES tiene las tres claves esperadas', () => {
+        expect(Object.keys(DISABILITY_TYPES)).toEqual([
+            'ENFERMEDAD_COMUN', 'RIESGO_PROFESIONAL', 'MATERNIDAD',
+        ]);
+    });
+
     it('ninguna clave se parece a su rótulo: si vuelven a coincidir, volvió el defecto', () => {
-        for (const [clave, { label }] of Object.entries(CATEGORIAS_DOCUMENTO)) {
-            expect(clave).not.toBe(label);
+        for (const catalogo of [CATEGORIAS_DOCUMENTO, TERMINATION_REASONS, DISABILITY_TYPES]) {
+            for (const [clave, { label }] of Object.entries(catalogo)) {
+                expect(clave).not.toBe(label);
+            }
         }
-        for (const [clave, { label }] of Object.entries(TERMINATION_REASONS)) {
-            expect(clave).not.toBe(label);
-        }
+    });
+
+    // No es una clave: `employees` no tiene columna `role`. Es texto de
+    // pantalla, y por eso va en sentence case como cualquier otro rótulo.
+    it('SIN_ASIGNAR es un rótulo, y va en sentence case', () => {
+        expect(SIN_ASIGNAR).toBe('Sin asignar');
     });
 });
 

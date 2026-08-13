@@ -56,6 +56,7 @@ import StatCard from '../components/common/StatCard';
 import CarrilCards from '../components/common/CarrilCards';
 
 import { mensajeAmigable } from '../utils/errorMessages';
+import { SIN_ASIGNAR } from '../data/constants';
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las sucursales' }];
 
 // Las mismas cinco vistas que ofrecen las tarjetas de arriba. Existen también acá
@@ -400,7 +401,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       <DataCell>
         <div className="flex items-center gap-1.5 text-content-2 text-caption md:text-label font-bold uppercase tracking-widest">
           <MapPin size={12} className="text-content-3 shrink-0" />
-          <span className="truncate">{branchName || 'Sin Asignar'}</span>
+          <span className="truncate">{branchName || SIN_ASIGNAR}</span>
         </div>
       </DataCell>
 
@@ -476,7 +477,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       <DataCell>
         <div className="flex items-center gap-1.5 text-content-2 text-caption md:text-label font-bold uppercase tracking-widest">
           <MapPin size={12} className="text-content-3 shrink-0" />
-          <span className="truncate">{branchName || 'Sin Asignar'}</span>
+          <span className="truncate">{branchName || SIN_ASIGNAR}</span>
         </div>
       </DataCell>
 
@@ -814,7 +815,7 @@ const StaffManagementView = ({
     const headers = ['Código', 'Nombre Completo', 'Sucursal', 'Cargo Principal', 'Cargo Secundario', 'Estado operativo', 'Teléfono', 'DUI', 'Fecha Ingreso', 'Fecha Nacimiento'];
 
     const rows = sortedEmployees.map(emp => {
-      const branch = branchMap.get(Number(emp.branchId || emp.branch_id)) || 'Sin Asignar';
+      const branch = branchMap.get(Number(emp.branchId || emp.branch_id)) || SIN_ASIGNAR;
       const status = getEffectiveStatus(emp);
 
       return [

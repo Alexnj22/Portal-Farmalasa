@@ -3,6 +3,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle, Building2, Globe, CalendarDays, MapPin } from 'lucide-react';
 import { clickable } from '../../utils/clickable';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { SIN_ASIGNAR } from '../../data/constants';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
@@ -201,7 +202,7 @@ const hasInjections = legal.injections === true;
                                     </div>
                                     <div className="flex flex-col flex-1">
                                         <h4 className="text-caption font-bold text-content-3 leading-tight whitespace-normal">{slot.roleName}</h4>
-                                        <p className="text-micro font-black text-danger uppercase tracking-widest mt-0.5">Sin Asignar</p>
+                                        <p className="text-micro font-black text-danger uppercase tracking-widest mt-0.5">{SIN_ASIGNAR}</p>
                                     </div>
                                 </div>
                             );

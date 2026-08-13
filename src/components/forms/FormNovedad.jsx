@@ -9,7 +9,7 @@ import {
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
-import { EVENT_TYPES, TERMINATION_REASONS, opcionesDeCatalogo } from '../../data/constants';
+import { EVENT_TYPES, TERMINATION_REASONS, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
 import { buscarCargo } from '../../utils/roles';
 import { useStaffStore } from '../../store/staffStore';
@@ -101,14 +101,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         let daysToAdd = 0;
 
         if (isVacation) daysToAdd = 14; // 15 días continuos (1 + 14)
-        else if (isDisability && formData?.disabilityType === 'Maternidad') daysToAdd = 111; // 112 días (16 sem)
+        else if (isDisability && formData?.disabilityType === 'MATERNIDAD') daysToAdd = 111; // 112 días (16 sem)
 
         if (daysToAdd > 0) {
             const end = new Date(start);
             end.setDate(start.getDate() + daysToAdd);
             const endStr = end.toISOString().split('T')[0];
             if (formData.endDate !== endStr) setFormData(prev => ({ ...prev, endDate: endStr }));
-        } else if (isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') {
+        } else if (isDisability && formData?.disabilityType && formData?.disabilityType !== 'MATERNIDAD') {
             // Solo limpiar si no hay días de incapacidad definidos (si hay, onChange ya calculó endDate)
             if (formData.endDate && !formData?.disabilityDays) setFormData(prev => ({ ...prev, endDate: null }));
         }
@@ -134,8 +134,19 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     }, [formData?.newCode, setFormData]);
 
     useEffect(() => {
-        if (type === 'DISABILITY' && !formData?.disabilityType) {
-            setFormData(prev => ({ ...prev, disabilityType: 'Enfermedad Común' }));
+        if (type !== 'DISABILITY') return;
+        if (!formData?.disabilityType) {
+            setFormData(prev => ({ ...prev, disabilityType: 'ENFERMEDAD_COMUN' }));
+            return;
+        }
+        // Un evento guardado antes de v2.590.5 trae el rótulo, no la clave: se
+        // resuelve para que el selector no abra vacío y —sobre todo— para que
+        // la comparación con `MATERNIDAD` vuelva a dar verdadera. Si no se
+        // reconoce se deja como está: el selector queda en su placeholder y la
+        // validación obliga a elegir. Adivinarlo decidiría mal los 112 días.
+        const clave = tipoDeIncapacidad(formData.disabilityType);
+        if (clave && clave !== formData.disabilityType) {
+            setFormData(prev => ({ ...prev, disabilityType: clave }));
         }
     }, [type, formData?.disabilityType, setFormData]);
 
@@ -234,11 +245,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         .map(r => ({ value: r.name, label: r.name }))
         .sort((a, b) => a.label.localeCompare(b.label));
 
-    const disabilityTypes = [
-        { value: 'Enfermedad Común', label: 'Enfermedad común (padecimiento o embarazo)' },
-        { value: 'Riesgo Profesional', label: 'Riesgo profesional (accidente laboral)' },
-        { value: 'Maternidad', label: 'Maternidad (16 semanas por ley)' }
-    ];
+    // Igual que el motivo de baja: se guarda la CLAVE. Acá importa el doble,
+    // porque `MATERNIDAD` no es sólo una etiqueta — es la condición de los 112
+    // días del Art. 309, comparada por igualdad más abajo.
+    const disabilityTypes = opcionesDeCatalogo(DISABILITY_TYPES);
 
     // El motivo se guarda por CLAVE (`RENUNCIA`, `ABANDONO`…), no por rótulo:
     // así el texto de pantalla se puede reescribir sin desincronizarlo de lo
@@ -330,7 +340,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 </div>
             )}
 
-            {(isVacation || (isDisability && formData?.disabilityType === 'Maternidad')) && (
+            {(isVacation || (isDisability && formData?.disabilityType === 'MATERNIDAD')) && (
                 <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-[var(--dur-slow)] ${getHolidayInfo ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-glow-danger)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4)]' : 'bg-success/10 border-success/30'}`}>
                     {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-chart-4-text shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle2 className="text-success shrink-0 mt-0.5" size={18}/>}
                     <div>
@@ -339,7 +349,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             {getHolidayInfo ? <b>¡Día Inhábile: {getHolidayInfo.name}!</b> : <b>Días calculados: {periodDaysCount}.</b>}
                             {getHolidayInfo ? " La ley prohíbe iniciar este tipo de licencia en asueto." : 
                              isVacation && periodDaysCount !== 15 && formData?.endDate ? " Precaución: El código de trabajo dicta 15 días continuos." : 
-                             isDisability && formData?.disabilityType === 'Maternidad' && periodDaysCount !== 112 && formData?.endDate ? " Precaución: El Art. 309 dicta 112 días (16 semanas) para maternidad." :
+                             isDisability && formData?.disabilityType === 'MATERNIDAD' && periodDaysCount !== 112 && formData?.endDate ? " Precaución: El Art. 309 dicta 112 días (16 semanas) para maternidad." :
                              " Cálculo verificado según normativa vigente."}
                         </p>
                     </div>
@@ -441,7 +451,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
                         </div>
 
-                        {isTemporalRange && !isVacation && !(isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') && (
+                        {isTemporalRange && !isVacation && !(isDisability && formData?.disabilityType && formData?.disabilityType !== 'MATERNIDAD') && (
                             <div className="relative z-header animate-in fade-in">
                                 <label className={labelClasses}>Fecha de Retorno / Fin</label>
                                 <div className="h-[40px]">
@@ -464,7 +474,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
                         )}
 
-                        {isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad' && (
+                        {isDisability && formData?.disabilityType && formData?.disabilityType !== 'MATERNIDAD' && (
                             <div className="animate-in fade-in">
                                 <PortalInput
                                     label="Días de Incapacidad" name="nov-dias-incapacidad"

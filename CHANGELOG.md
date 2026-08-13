@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.590.5 — El tipo de incapacidad deja de ser un rótulo, y «Sin asignar» deja de fingir que se guarda
+
+Los dos hallazgos que dejó abiertos el cierre del grupo 3 (v2.590.2). Ninguno
+de los dos estaba en el plan, y por motivos distintos: uno se escapaba del
+filtro, el otro descansaba sobre una premisa falsa.
+
+**El tipo de incapacidad: un rótulo que además era la CONDICIÓN.** El filtro del
+plan buscaba `value === label`, y acá no coincidían —el label agrega la
+aclaración entre paréntesis—, así que pasó de largo. Pero el `value` era
+`'Enfermedad Común'` en Title Case, guardado como dato **y comparado por
+igualdad en seis lugares**, uno de ellos:
+
+```js
+formData?.disabilityType === 'Maternidad'   // ← decide los 112 días del Art. 309
+```
+
+O sea que reescribir ese texto no desincronizaba una lista: **apagaba la regla
+de las 16 semanas de maternidad**, sin lanzar y sin log. Ahora es
+`DISABILITY_TYPES` con claves (`ENFERMEDAD_COMUN`, `RIESGO_PROFESIONAL`,
+`MATERNIDAD`) y las seis comparaciones apuntan a la clave.
+
+`tipoDeIncapacidad` hace de puente con lo guardado antes, con una diferencia
+deliberada frente a `categoriaDeDocumento`: **acá no hay valor de respaldo**.
+Devuelve `null` cuando no reconoce, y el formulario deja el selector en su
+placeholder para que alguien elija. Un documento mal clasificado se ve y se
+corrige; un tipo de incapacidad adivinado decide mal una regla legal.
+
+Verificado con el portal abierto contra el entorno de pruebas: elegida
+maternidad con primer día 01/09/2026, la fecha de retorno se calcula sola en
+21/12/2026 y el panel de auditoría legal dice **«Días calculados: 112»**.
+
+**«Sin Asignar»: la premisa era falsa.** El plan lo anotaba como «otro rótulo
+que es dato, escrito en `employees.role`». Medido: **`employees` no tiene
+columna `role`**. Sus columnas de cargo son `role_id`, `secondary_role_id` y
+`system_role`; el store deriva `role` de `role_id`, y `updateEmployee` hace
+`delete dbPayload.role` antes de escribir y vuelve a calcularlo después. O sea
+que los `role: …` que `UnifiedModal` mandaba en el payload eran **inertes en las
+dos puntas** — y el comentario que dejó v2.572.1 («así `employees.role` y
+`role_id` cuentan la misma historia») describía una columna que no existe.
+
+Lo hecho, entonces, no es migrar un dato sino dejar de aparentar que se guarda
+uno: fuera los tres `role:` de los payloads, fuera el comentario, y el rótulo
+—que sí es texto de pantalla— pasa a la constante `SIN_ASIGNAR` en vez de vivir
+escrito a mano en **once** lugares. De paso queda en sentence case (§26.4) y en
+la bitácora se anota el nombre de la fila (`targetRoleObj.name`), no el texto
+que traía el formulario.
+
+`tests/unit/catalogos.test.js` suma el puente del tipo de incapacidad —incluida
+la maternidad escrita de cualquier forma, que es la que decide los días— y que
+`SIN_ASIGNAR` siga siendo un rótulo y no una clave.
+
 ## v2.590.4 — La regla del IVA queda en un solo lugar
 
 El visor de ventas sumaba `resumen.tributos` entero para sacar el IVA. Ahora usa

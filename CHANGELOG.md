@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.583.0 — Clasificación fiscal del proveedor (Art. 65 LIVA)
+
+El libro de compras mandaba `1;1;2;5` fijo en **todas** las filas del anexo
+—gravada, costo, comercio, costo de artículos comprados—. Es correcto para la
+mercadería y falso para el teléfono, el banco y el alquiler, que son *gasto* y no
+costo. Y la deducibilidad del Art. 65 tampoco se puede decidir documento por
+documento.
+
+Se decide **una vez por proveedor**: 1,291 CCF desde junio salen de 99
+proveedores distintos.
+
+`proveedores_maestro` gana la clasificación (deducible, costo/gasto, sector, tipo
+de costo/gasto, tipo de operación) más el artículo que la respalda, el estado y
+la firma de quien la confirma. **La propuesta se deriva del código de actividad
+CIIU**, que está poblado en los 104 proveedores con documentos — no es una lista
+escrita a mano. Quedaron 67 proveedores propuestos como deducibles y 95
+pendientes, **36 de ellos con el motivo legal escrito**: combustible y repuestos
+(Art. 65-A c, sólo si el vehículo es estrictamente indispensable), ferretería y
+pinturas (el nº3 excluye obra sobre inmuebles), alimentos y bebidas (Art. 65-A a,
+víveres), y cómputo (nº2, activo fijo).
+
+Tres decisiones de diseño que valen más que las columnas:
+
+- **`iva_deducible` nace NULL y el estado nace `pendiente`.** Un proveedor sin
+  clasificar no entra al libro ni como deducible ni como no deducible: entra a
+  pendientes, visible. Es la regla del `? :` que convierte «no encontré» en un
+  default silencioso.
+- **La matriz de la página 21 del manual del F-07 la hace cumplir un CHECK** —con
+  *Costo* sólo los tipos 4-7, con *Gasto* sólo 1-3—. Antes vivía en prosa.
+- **No se puede confirmar sin decidir**: `estado = 'confirmada'` exige
+  `iva_deducible IS NOT NULL`.
+
+La prueba de ROLLBACK atrapó que `clasificado_por` estaba escrito `bigint` y
+`employees.id` es `uuid`: la migración entera fallaba al crear la FK.
+
+Plan completo en `docs/PLAN-CONTADOR-INTERNO-2026-08-12.md`; el porqué, en
+`docs/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md`.
+
 ## v2.582.5 — Las familias usan el control canónico, no botones a mano
 
 Las cuatro familias de «Decidir solicitudes» estaban escritas como `<button>`

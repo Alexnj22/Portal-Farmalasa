@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.581.1 — Se quita el interruptor de delegar de las 77 tarjetas
+
+Corrige lo que salió mal de v2.580.0. «Delegar si no está» se dibujaba en las
+**77 tarjetas** de Permisos, incluidas «Mi perfil», «Mis avisos» y «Mis
+documentos», donde delegar no significa nada: eso es de cada persona, no trabajo
+que siga sin ella. Reportado por el usuario: «no tiene sentido y no es lo que
+había pedido».
+
+El malentendido fue mío y de fondo: el pedido era **una tarjeta aparte** con los
+selectores, desde la cual bajara la cascada a las tarjetas originales. Yo leí
+«en todos los módulos» literalmente y puse un interruptor en cada una, más tres
+tarjetas «Decidir: …» sueltas en el grupo de Operaciones.
+
+Se quita todo eso: el interruptor de las 77 tarjetas, y las tres tarjetas
+sueltas (los módulos siguen declarados y las policies siguen usándolos — sólo
+dejan de dibujarse por su cuenta, marcados con `enTarjetaAparte`).
+
+**Nada de la base cambia.** `role_permissions.delega_en_ausencia`, la herencia
+por ausencia y los permisos por familia siguen vivos, probados y en producción;
+lo único que falta es la tarjeta que los agrupe, ya dibujada y aprobada con el
+usuario. Está en la memoria del proyecto.
+
+Verificado en el navegador contra el entorno de pruebas: cero apariciones de
+«Delegar si no está», cero tarjetas «Decidir: …» sueltas, y las de Solicitudes
+de sucursal y Traslados intactas.
+
 ## v2.581.0 — El interruptor maestro de aprobar, en cascada
 
 «Solicitudes de sucursal → Aprobar» pasa a ser el **maestro** de las cuatro

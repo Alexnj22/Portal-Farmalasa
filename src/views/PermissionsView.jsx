@@ -99,17 +99,14 @@ const PERMISSION_TYPES = [
     { key: 'can_view',    label: 'Ver',                          icon: Eye,          activeColor: 'bg-chart-1'    },
     { key: 'can_edit',    label: 'Gestionar',                    icon: Pencil,       activeColor: 'bg-chart-3'  },
     { key: 'can_approve', label: 'Aprobar',                      icon: CheckCircle2, activeColor: 'bg-success' },
-    // ── El cuarto NO es un permiso: es qué pasa con los otros tres cuando
-    // quien tiene este cargo no está (v2.578.0). Por eso `esDelegacion`, que lo
-    // exime de la regla «sin Ver no hay nada» —delegar Aprobar en un módulo que
-    // no se mira es perfectamente sensato— y de la cascada de apagado.
+    // Acá vivía «Delegar si no está», y estaba mal puesto: se dibujaba en las
+    // 77 tarjetas, incluidas «Mi perfil» y «Mis documentos», donde delegar no
+    // significa nada — eso es de cada persona, no trabajo que siga sin ella.
+    // Reportado por el usuario: «no tiene sentido y no es lo que había pedido».
     //
-    // La fila que manda es la del cargo AUSENTE: «cuando no esté quien tiene
-    // este cargo, su jefe inmediato se hace cargo de este módulo». Lo enciende
-    // quien reparte los permisos, no quien los recibe, y se apaga solo al
-    // volver. Pedido del usuario: «estos permisos deben ir en todos los
-    // módulos, para activarlos según el rol».
-    { key: 'delega_en_ausencia', label: 'Delegar si no está', icon: Palmtree, activeColor: 'bg-chart-4', esDelegacion: true },
+    // Va en la tarjeta aparte de «Decidir solicitudes», junto a los cuatro
+    // selectores que gobierna. La columna `role_permissions.delega_en_ausencia`
+    // y toda la lógica de Postgres siguen vivas y probadas: falta esa tarjeta.
 ];
 
 // El tono por opción NO es adorno: distingue "Todos" de "Mi sucursal" de un
@@ -1168,7 +1165,7 @@ const PermissionsView = () => {
                                         módulos en N listas desde JS —determinista, sin
                                         fragmentación— y no con `columns`. */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-                                        {g.modules.map((m, i) => {
+                                        {g.modules.filter(m => !m.enTarjetaAparte).map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
                                             const tabPerms = m.sub
                                                 ? Object.fromEntries(m.sub.map(t => [t.key, permissions[`${selectedRoleId}:${t.key}`] || { can_view: false }]))

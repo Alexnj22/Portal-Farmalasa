@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.590.3 — El IVA del CCF sale del documento, no de una columna
+
+Al abrir un CCF desde el libro de compras, el visor mostraba **IVA $0.00** con
+subtotal $269.10 y total $304.08 — o sea $34.98 que no aparecían. Verificado
+contra el JSON real del documento, capturado de la red con la sesión del portal.
+
+La causa tiene dos capas y la de arriba la introduje yo en la v2.590.1: al armar
+el objeto del modal a mano, no le pasé `total_iva`. Desde Facturas de compra
+nunca se vio porque ahí se pasa la fila entera de la base.
+
+La de abajo es la que importa. El visor leía `resumen.totalIva ?? document.total_iva`,
+y **`totalIva` no existe en el esquema del Ministerio de Hacienda**: en un CCF el
+IVA vive en `resumen.tributos[]` como `{codigo: "20", valor: N}`. O sea que el
+primer término era siempre `undefined` y el número dependía por completo de que
+el llamador se acordara de pasar una columna de la base. El sync ya había
+tropezado con esto el 2026-07-23 —513 de 516 documentos de julio con el IVA en
+NULL— y lo dejó documentado en `extractTotalIva`.
+
+Ahora la regla vive en `src/utils/dteIva.js`, portada del sync y con su mismo
+criterio: `totalIva` si viniera, si no la suma de los tributos **código 20**, y
+sólo al final la columna de la base. Sumar todos los tributos parecería más
+general y no lo es — un documento de combustible trae FOVIAL y COTRANS, que no
+son crédito fiscal.
+
+Verificado contra el documento real: la regla da $34.98, la base dice $34.98, y
+en pantalla $269.10 + $34.98 = $304.08.
+
+Queda anotado que `FormSalesDteViewer` suma todos los tributos (línea 79). Hoy no
+cambia su número, porque las ventas de la farmacia no llevan esos impuestos.
+
 ## v2.590.2 — Los catálogos de baja y de documentos guardan la clave, no el rótulo
 
 Grupo 3 de `docs/PLAN-CATALOGOS-QUE-SON-SU-PROPIO-ROTULO.md`, el último que

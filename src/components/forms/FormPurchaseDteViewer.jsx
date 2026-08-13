@@ -11,6 +11,7 @@ import { useToastStore } from '../../store/toastStore';
 import { LoadingState } from '../common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { ivaDelDte } from '../../utils/dteIva';
 
 const fmt$ = (n) => formatMoney(n || 0);
 
@@ -232,7 +233,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
 
                         <div className="flex flex-col items-end gap-1 text-body-sm pt-3 border-t border-divider">
                             <div className="flex justify-between w-56"><span className="text-content-3">Subtotal</span><span className="tabular-nums">{fmt$(resumen.subTotal ?? resumen.totalGravada)}</span></div>
-                            <div className="flex justify-between w-56"><span className="text-content-3">IVA</span><span className="tabular-nums">{fmt$(resumen.totalIva ?? document?.total_iva)}</span></div>
+                            <div className="flex justify-between w-56"><span className="text-content-3">IVA</span><span className="tabular-nums">{fmt$(ivaDelDte(dte, document?.total_iva))}</span></div>
                             <div className="flex justify-between w-56 font-black text-content text-body"><span>Total</span><span className="tabular-nums">{fmt$(resumen.totalPagar ?? resumen.montoTotalOperacion ?? document?.monto_total)}</span></div>
                         </div>
                     </div>

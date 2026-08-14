@@ -24,6 +24,7 @@ import {
 } from '../../data/recepcion';
 import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasEspeciales';
@@ -58,6 +59,78 @@ function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
 }
 
 /**
+ * Las presentaciones que se le pueden poner a un renglón, con la del despacho
+ * primero. Vive acá porque la usan los dos sitios donde se cuenta —la tabla de
+ * la hoja y la búsqueda rápida— y dos copias de esta lista terminarían
+ * ofreciendo opciones distintas para el mismo producto.
+ */
+function opcionesDePresentacion(r, presMap) {
+    const erpFactor  = Number(r.factor) || 1;
+    const dispFactor = Number(r.dispatch_factor) || erpFactor;
+    const dispOpt    = { factor: dispFactor, label: fmtDispatchLabel(r.dispatch_tipo, dispFactor) };
+    const vistos = new Set();
+    const opts = [];
+    if (r.dispatch_tipo && dispFactor !== erpFactor) { opts.push(dispOpt); vistos.add(dispFactor); }
+    (presMap[r.erp_product_id] ?? []).forEach(o => {
+        if (!vistos.has(o.factor)) { opts.push(o); vistos.add(o.factor); }
+    });
+    if (!opts.length) opts.push(dispOpt);
+    return opts;
+}
+
+/**
+ * «Vino mal» — tipo de problema, cuántos y la nota. Uno solo para los dos
+ * sitios que cuentan.
+ */
+function PanelProblema({ id, fQty, campos, onListo }) {
+    const { errorVals, setErrorVals, cantProblemaVals, setCantProblemaVals, notaVals, setNotaVals } = campos;
+    const tipo = errorVals[id] || '';
+    return (
+        <div className="flex items-center gap-2 flex-wrap">
+            <SegmentedControl
+                size="sm" tone="chart-4"
+                options={ERROR_TIPOS.map(t => ({ value: t.value, label: t.label }))}
+                value={tipo}
+                onChange={v => setErrorVals(p => ({ ...p, [id]: ((p[id] || '') === v ? '' : v) }))}
+                label="Tipo de error" />
+            {(tipo === 'danado' || tipo === 'vencido') && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-caption text-content-3">¿Cuántos?</span>
+                    <PortalInput
+                        aria-label="Cantidad con problema"
+                        type="number"
+                        value={cantProblemaVals[id] ?? 1}
+                        onChange={e => setCantProblemaVals(p => ({
+                            ...p, [id]: Math.max(1, Math.min(fQty, parseInt(e.target.value) || 1))
+                        }))}
+                        min={1}
+                        max={fQty}
+                        tono="chart-4"
+                        compact
+                        inputClassName="text-center text-body-xl font-bold text-chart-4-text"
+                        className="w-12"
+                    />
+                    <span className="text-caption text-content-3">de {fQty}</span>
+                </div>
+            )}
+            <PortalInput
+                aria-label="Nota del renglón"
+                type="text"
+                value={notaVals[id] ?? ''}
+                onChange={e => setNotaVals(p => ({ ...p, [id]: e.target.value }))}
+                placeholder="Nota…"
+                onKeyDown={e => e.key === 'Enter' && onListo()}
+                tono="chart-4"
+                compact
+                inputClassName="text-body-xl"
+                className="flex-1 min-w-0"
+            />
+            <Button tone="chart-4" icon={Check} onClick={onListo}>Listo</Button>
+        </div>
+    );
+}
+
+/**
  * «Necesito ESE producto ya» — buscarlo en todo el despacho y recibirlo solo,
  * sin contar la hoja entera.
  *
@@ -65,9 +138,15 @@ function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
  * que había que estar ADENTRO de la hoja correcta para verlo — y quien lo
  * necesita justamente no sabe en cuál cayó. Por eso vive en la primera pantalla
  * y dice en qué hoja está: la búsqueda contesta la pregunta que impedía usarlo.
+ *
+ * Y trae los MISMOS controles que la tabla de la hoja —presentación, cantidad y
+ * «vino mal»—, sobre el mismo estado: recibir un producto suelto es contarlo,
+ * no dar por bueno lo que decía el papel. Con sólo un botón «Recibir» no había
+ * forma de decir que llegó uno menos o que venía dañado.
  */
-function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir }) {
+function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir, campos }) {
     const [q, setQ] = useState('');
+    const { presMap, fQtyVals, setFQtyVals, fPresVals, setFPresVals, tieneProblema, setTieneProblema } = campos;
     const term = q.trim();
     const hits = term.length < 2 ? [] : rows
         .filter(r => !sueltosOk.has(r.id) && r.status !== 'recibido')
@@ -86,16 +165,72 @@ function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir }) {
                 <p className="text-label text-content-3 mt-2 px-1">Sin resultados entre lo que llegó.</p>
             )}
             {hits.map(r => {
-                const hoja = hojaDe(r.id);
+                const hoja       = hojaDe(r.id);
+                const erpFactor  = Number(r.factor) || 1;
+                const dispFactor = Number(r.dispatch_factor) || erpFactor;
+                const enviado    = enviadoDe(r);
+                const presOpts   = opcionesDePresentacion(r, presMap);
+                const fQty  = fQtyVals[r.id]  ?? toDispatch(enviado, erpFactor, dispFactor);
+                const fPres = fPresVals[r.id] ?? dispFactor;
+                const fRaw  = Math.round(fQty * fPres / erpFactor);
+                const delta = fRaw - enviado;
+                const panelOpen = tieneProblema[r.id] === true;
+                const hasProb   = !!tieneProblema[r.id];
+                const etiquetaEnviado = presOpts.find(o => o.factor === dispFactor)?.label ?? '';
+
                 return (
-                    <div key={r.id} className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-surface-card">
-                        <div className="flex-1 min-w-0">
-                            <p className="text-body-sm font-semibold text-content-2 leading-tight truncate">{r.products?.nombre}</p>
-                            <p className="text-micro text-content-3 mt-0.5">
-                                {hoja ? `Hoja ${hoja} · ` : ''}{enviadoDe(r)} enviad{enviadoDe(r) === 1 ? 'a' : 'as'}
-                            </p>
+                    <div key={r.id} className={`mt-1.5 px-3 py-2.5 rounded-xl border ${delta !== 0 ? 'border-warning/40 bg-warning/10' : hasProb ? 'border-chart-4/40 bg-chart-4/10' : 'border-divider bg-surface-card'}`}>
+                        <p className="text-body-sm font-semibold text-content-2 leading-tight">{r.products?.nombre}</p>
+                        <p className="text-micro text-content-3 mt-0.5">
+                            {hoja ? `Hoja ${hoja} · ` : ''}
+                            Enviado: {toDispatch(enviado, erpFactor, dispFactor)}{etiquetaEnviado ? ` × ${etiquetaEnviado}` : ''}
+                        </p>
+
+                        <div className="flex items-center gap-1.5 mt-2">
+                            <div className="w-36 shrink-0">
+                                <LiquidSelect
+                                    value={String(fPres)}
+                                    onChange={v => setFPresVals(p => ({ ...p, [r.id]: Number(v) }))}
+                                    options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                    compact
+                                    clearable={false}
+                                />
+                            </div>
+                            <div className="relative w-14 shrink-0">
+                                <PortalInput
+                                    aria-label="Cuántos llegaron" compact
+                                    tono={delta !== 0 ? 'warning' : 'chart-9'}
+                                    type="number" min={0} value={fQty}
+                                    onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                    inputClassName="text-center font-bold tabular-nums"
+                                />
+                                {delta !== 0 && (
+                                    <Badge variant={delta < 0 ? 'danger' : 'success'} tone="solid" size="sm" uppercase={false}
+                                        className="absolute -top-1.5 -right-1.5">{delta > 0 ? '+' : ''}{delta}</Badge>
+                                )}
+                            </div>
+                            <Button
+                                icon={AlertTriangle} iconOnly size="sm" tone="chart-4" soft
+                                onClick={() => setTieneProblema(p => {
+                                    const cur = p[r.id];
+                                    if (!cur) return { ...p, [r.id]: true };
+                                    if (cur === true) return { ...p, [r.id]: false };
+                                    return { ...p, [r.id]: true };
+                                })}
+                                title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : 'Vino mal'}
+                            />
+                            <div className="flex-1" />
+                            <Button tone="success" size="sm" icon={PackageCheck} disabled={saving} onClick={() => onRecibir(r)}>Recibir</Button>
                         </div>
-                        <Button tone="success" size="sm" icon={PackageCheck} disabled={saving} onClick={() => onRecibir(r)}>Recibir</Button>
+
+                        {panelOpen && (
+                            <div className="mt-2">
+                                <PanelProblema
+                                    id={r.id} fQty={fQty} campos={campos}
+                                    onListo={() => setTieneProblema(p => ({ ...p, [r.id]: 'done' }))}
+                                />
+                            </div>
+                        )}
                     </div>
                 );
             })}
@@ -193,6 +328,7 @@ export default function RecepcionModal({
     const [confirmedEspecialIds,setConfirmedEspecialIds] = useState(new Set());
     const [localRec,     setLocalRec]     = useState([]);   // confirmed this session
     const [anyHasDiff,   setAnyHasDiff]   = useState(false);
+    const [confirmarTodoOpen, setConfirmarTodoOpen] = useState(false);
 
     // ── Per-item input state ────────────────────────────────────────────────────
     const [fQtyVals,  setFQtyVals]  = useState({});
@@ -296,6 +432,20 @@ export default function RecepcionModal({
         (paginas ?? []).forEach((p, i) => { m[i + 1] = p?.firstLab || p?.firstItem || ''; });
         return m;
     }, [paginas]);
+
+    // Los campos que se editan al contar, en un solo bulto. Los comparten la
+    // tabla de la hoja y la búsqueda rápida A PROPÓSITO: lo que se escribe en
+    // cualquiera de las dos es lo que se guarda, porque `buildPItems` lee este
+    // mismo estado. Dos juegos de campos serían dos números para el mismo
+    // renglón.
+    const campos = {
+        presMap,
+        fQtyVals, setFQtyVals, fPresVals, setFPresVals,
+        tieneProblema, setTieneProblema,
+        errorVals, setErrorVals,
+        cantProblemaVals, setCantProblemaVals,
+        notaVals, setNotaVals,
+    };
 
     // En qué hoja cayó un renglón — para que el buscador de «lo necesito ya»
     // pueda decirlo, que es lo que uno no sabe cuando lo busca.
@@ -864,6 +1014,7 @@ export default function RecepcionModal({
                         sueltosOk={sueltosOk}
                         saving={saving}
                         onRecibir={handleRecibirSolo}
+                        campos={campos}
                     />
 
                     <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2 mt-4">Hojas del despacho</p>
@@ -955,7 +1106,7 @@ export default function RecepcionModal({
                             <AlertTriangle size={12} className="text-warning shrink-0 mt-0.5" />
                             <p className="text-label text-warning-text">
                                 Hoja{hojasAlertadas.size > 1 ? 's' : ''} {[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')} venían en una caja
-                                con problema — hay que revisarlas producto por producto, sin «Todo OK».
+                                con problema — hay que revisarlas producto por producto, sin confirmarlas de una.
                             </p>
                         </div>
                     )}
@@ -1028,8 +1179,11 @@ export default function RecepcionModal({
                         producto por producto. */}
                     {!allAccessibleDone && (accessibleHojaNums.length > 0 || accessibleEspeciales.length > 0) && (
                         <div className="mt-4">
-                            <Button tone="success" disabled={saving} onClick={handleConfirmarTodo}>{saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                                Confirmar todo OK
+                            {/* Pregunta antes: esto da por bueno TODO sin contar nada, y
+                                además ingresa el pedido entero al sistema. Es la acción
+                                más cara de la pantalla y estaba a un solo clic. */}
+                            <Button tone="success" disabled={saving} onClick={() => setConfirmarTodoOpen(true)}>{saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                Confirmar todo
                                 {(faltaCajas.length > 0 || hojasAlertadas.size > 0) && (
                                     <span className="text-caption font-medium text-success">
                                         {hojasAlertadas.size > 0 ? '(omite las hojas por revisar)' : '(omite lo que está en reenvío)'}
@@ -1058,6 +1212,23 @@ export default function RecepcionModal({
                         </div>
                     </PedidoModal.Footer>
                 )}
+
+                <ConfirmModal
+                    isOpen={confirmarTodoOpen}
+                    onClose={() => setConfirmarTodoOpen(false)}
+                    onConfirm={() => { setConfirmarTodoOpen(false); handleConfirmarTodo(); }}
+                    title="¿Dar por bueno todo el pedido?"
+                    message={
+                        'Se van a confirmar todas las hojas y cajas especiales tal como se enviaron, sin contarlas, '
+                        + 'y el pedido completo se cargará automáticamente en el sistema.'
+                        + (hojasAlertadas.size > 0
+                            ? ` Quedan fuera las hojas ${[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')}, que venían en una caja con problema y hay que revisar.`
+                            : '')
+                    }
+                    confirmText="Sí, confirmar todo"
+                    isDestructive={false}
+                    isProcessing={saving}
+                />
             </PedidoModal>
         );
     }
@@ -1357,15 +1528,7 @@ export default function RecepcionModal({
                         const hasDiff = fRaw !== enviado;
                         const delta   = fRaw - enviado;
 
-                        const rawOpts  = presMap[r.erp_product_id] ?? [];
-                        const dispLabel = fmtDispatchLabel(r.dispatch_tipo, dispFactor);
-                        const dispOpt  = { factor: dispFactor, label: dispLabel };
-                        const hasDispRule = r.dispatch_tipo && dispFactor !== erpFactor;
-                        const _seen = new Set();
-                        const presOpts = [];
-                        if (hasDispRule) { presOpts.push(dispOpt); _seen.add(dispFactor); }
-                        rawOpts.forEach(o => { if (!_seen.has(o.factor)) { presOpts.push(o); _seen.add(o.factor); } });
-                        if (!presOpts.length) presOpts.push(dispOpt);
+                        const presOpts = opcionesDePresentacion(r, presMap);
 
                         const toggleProblema = () => {
                             setTieneProblema(p => {
@@ -1449,46 +1612,8 @@ export default function RecepcionModal({
                                 </div>
 
                                 {panelOpen && (
-                                    <div className="px-5 pb-2.5 flex items-center gap-2 flex-wrap">
-                                        <SegmentedControl
-                                            size="sm" tone="chart-4"
-                                            options={ERROR_TIPOS.map(t => ({ value: t.value, label: t.label }))}
-                                            value={errorVals[r.id] || ''}
-                                            onChange={v => setErrorVals(p => ({ ...p, [r.id]: ((p[r.id] || '') === v ? '' : v) }))}
-                                            label="Tipo de error" />
-                                        {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="text-caption text-content-3">¿Cuántos?</span>
-                                                <PortalInput
-                                                    aria-label="Cantidad con problema"
-                                                    type="number"
-                                                    value={cantProblemaVals[r.id] ?? 1}
-                                                    onChange={e => setCantProblemaVals(p => ({
-                                                        ...p, [r.id]: Math.max(1, Math.min(fQty, parseInt(e.target.value) || 1))
-                                                    }))}
-                                                    min={1}
-                                                    max={fQty}
-                                                    tono="chart-4"
-                                                    compact
-                                                    inputClassName="text-center text-body-xl font-bold text-chart-4-text"
-                                                    className="w-12"
-                                                />
-                                                <span className="text-caption text-content-3">de {fQty}</span>
-                                            </div>
-                                        )}
-                                        <PortalInput
-                                            aria-label="Nota del renglón"
-                                            type="text"
-                                            value={notaVals[r.id] ?? ''}
-                                            onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
-                                            placeholder="Nota…"
-                                            onKeyDown={e => e.key === 'Enter' && confirmProblema()}
-                                            tono="chart-4"
-                                            compact
-                                            inputClassName="text-body-xl"
-                                            className="flex-1 min-w-0"
-                                        />
-                                        <Button tone="chart-4" icon={Check} onClick={confirmProblema}>Listo</Button>
+                                    <div className="px-5 pb-2.5">
+                                        <PanelProblema id={r.id} fQty={fQty} campos={campos} onListo={confirmProblema} />
                                     </div>
                                 )}
                             </div>

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.609.0 — Recibir un producto suelto se cuenta, y confirmar todo pregunta
+
+**Recibir un producto suelto era un botón y nada más.** Decía el nombre y en qué
+hoja estaba, y al apretarlo lo daba por recibido exactamente como se había
+enviado. Si llegaba uno menos, o venía dañado, no había dónde decirlo — y ese
+renglón entraba al sistema con el número equivocado.
+
+Ahora el resultado de la búsqueda trae **lo mismo que la tabla de la hoja**:
+cuántos se enviaron y en qué presentación, la presentación y la cantidad que
+llegaron —con su marca de diferencia—, y el botón «vino mal» con su tipo,
+cuántos y la nota. Sobre el **mismo estado** que la tabla, así que lo que se
+escriba en cualquiera de las dos es lo que se guarda: recibir un producto suelto
+es contarlo, no dar por bueno lo que decía el papel.
+
+De paso, los dos sitios que cuentan dejan de tener copias: la lista de
+presentaciones y el panel de «vino mal» son uno solo (`opcionesDePresentacion` y
+`PanelProblema`).
+
+**«Confirmar todo OK» pasa a llamarse «Confirmar todo» y pregunta antes.** Es la
+acción más cara de la pantalla —da por buenas todas las hojas y cajas especiales
+sin contar nada, y carga el pedido completo en el sistema— y estaba a un solo
+clic. El aviso lo dice con esas palabras, y nombra las hojas que quedan fuera
+por venir en una caja con problema.
+
 ## v2.608.2 — El cierre no se traga una transferencia
 
 **Corrección de algo que salió mal ayer mismo.** El desglose del cierre (v2.607.1)

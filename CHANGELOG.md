@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.601.2 — El rollo no lee tildes, y la prosa se parte en palabras
+
+Dos defectos del **primer ticket que salió del portal** (Salud 3, 2026-08-14).
+Los dos son invisibles en pantalla: la vista previa en HTML acentúa bien y parte
+por palabras, y el que no hace ninguna de las dos cosas es el papel.
+
+**El rollo no lee UTF-8.** «IMPRESIÓN» salió `IMPRESIŁN`, «NUÑEZ» salió `NUÆEZ` y
+el `·` de los separadores salió `™`. La ticketera interpreta un codepage de un
+byte y el portal manda dos por carácter acentuado, así que **todo lo que no es
+ASCII sale mal, y sale mal en silencio**. Ahora el envío directo transcribe a
+ASCII (`soloASCII()`): las tildes se caen y la letra queda, `·` pasa a `-`, y lo
+que no tenga equivalente sale como `?` — visible, en vez de una letra ajena que
+parece intencional.
+
+Se transcribe en vez de negociar un codepage porque **es lo que hace el propio
+sistema de facturación**: sus encabezados y pies configurados no tienen un solo
+acento («COMO LE ATENDIMOS HOY?», «DESPUES DE 3 DIAS»). O sea que es la solución
+ya probada en este hardware. Si algún día hace falta la ñ de verdad, el camino es
+`ESC t n` + escribir el cuerpo en ese codepage, y se decide con papel en la mano.
+
+**La prosa se parte acá, en palabras.** El texto de un bloque se mandaba entero y
+lo partía la impresora donde se le acababa el ancho: en el ticket real salió
+`…ES EL ANCHO DE EST` / `A IMPRESORA.`. El aparato no sabe qué es una palabra.
+
+Las dos quedan ancladas en `tests/unit/ticketPrint.test.js` (8 pruebas), contra
+lo que efectivamente salió impreso.
+
+**Medido en ese papel, sin cambiar nada:** las tres reglas de 32, 40 y 48
+caracteres entran completas, y el corte de la prosa ubica el ancho real de esa
+ticketera cerca de las 62 columnas. Las **54** que usa el portal —contadas sobre
+un ticket real del origen— caben con margen, así que la geometría no se toca.
+Nota: la barra de prueba del cabezal es un bloque de CSS y **no viaja por el
+envío directo**; ese control existe sólo en el camino del diálogo.
+
 ## v2.601.1 — El portal ya puede hablarle a la ticketera de la caja
 
 La impresión directa nunca falló en la caja: **el portal se lo prohibía a sí

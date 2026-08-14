@@ -420,6 +420,35 @@ function dosColumnas(izq, der, ancho = COLUMNAS_TICKET.chica) {
     return `${i}${' '.repeat(hueco)}${d}`.slice(0, ancho);
 }
 
+/**
+ * El rollo no lee UTF-8. Medido en la caja de Salud 3 (2026-08-14, primer ticket
+ * que salió del portal): «IMPRESIÓN» imprimió `IMPRESIŁN`, «NUÑEZ» imprimió
+ * `NUÆEZ` y el `·` de los separadores imprimió `™`. La ticketera interpreta un
+ * codepage de un byte y el portal manda dos bytes por carácter acentuado, así que
+ * **todo lo que no sea ASCII sale mal** — y sale mal en silencio, porque el papel
+ * no puede quejarse.
+ *
+ * Se transcribe a ASCII en vez de negociar un codepage porque es exactamente lo
+ * que hace el sistema de facturación: sus encabezados y pies configurados no
+ * tienen un solo acento («COMO LE ATENDIMOS HOY?», «DESPUES DE 3 DIAS»). O sea
+ * que es la solución ya probada en este hardware, no una que haya que verificar.
+ * Si algún día hace falta la ñ de verdad, el camino es `ESC t n` + escribir el
+ * cuerpo en ese codepage, y **se decide con papel en la mano**, no leyendo.
+ */
+function soloASCII(texto) {
+    return String(texto ?? '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')   // saca las tildes, deja la letra
+        .replace(/[·•]/g, '-')
+        .replace(/[—–]/g, '-')
+        .replace(/[“”«»]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/[°º]/g, 'o').replace(/ª/g, 'a')
+        .replace(/€/g, 'EUR')
+        // Lo que quede fuera de ASCII se ve, en vez de salir como una letra ajena
+        // que parece intencional. Los códigos ESC/POS son todos < 0x7F.
+        .replace(/[^\x00-\x7E]/g, '?');
+}
+
 /** Parte un nombre en renglones de a lo sumo `ancho`, sin cortar palabras. */
 function enRenglones(texto, ancho) {
     const palabras = String(texto ?? '').trim().split(/\s+/).filter(Boolean);
@@ -483,7 +512,13 @@ export function seccionesParaElPrograma(ticket) {
         ...datos.map(([r, v]) => `${r}: ${v}`),
         regla(),
         ...bloques.flatMap(b => [
-            b.titulo ?? '', b.texto ?? '', b.monoespaciado ?? '',
+            b.titulo ?? '',
+            // La prosa se parte ACÁ, en palabras. Si se manda entera, la parte la
+            // impresora en la columna donde se le acaba el papel y corta a mitad
+            // de palabra: en el primer ticket real salió «…ES EL ANCHO DE EST /
+            // A IMPRESORA.». El aparato no sabe qué es una palabra.
+            ...(b.texto ? enRenglones(b.texto, COLUMNAS_TICKET.chica) : []),
+            b.monoespaciado ?? '',
             ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
         ].filter(Boolean)),
         ...(items ? [
@@ -501,14 +536,14 @@ export function seccionesParaElPrograma(ticket) {
     ].join('\n') + '\n';
 
     return {
-        encabezado: cabeza,
-        cuerpo: medio,
+        encabezado: soloASCII(cabeza),
+        cuerpo: soloASCII(medio),
         // El origen manda acá sólo los códigos y pone las cifras en el cuerpo.
         totales: DOBLE_ALTO + LETRA_NORMAL,
         total_letras: CENTRO,
         // Los saltos del final son el margen de corte: la cuchilla queda arriba
         // del punto donde deja de salir papel.
-        pie: LETRA_CHICA + CENTRO + pie.join('\n') + '\n\n\n\n\n',
+        pie: soloASCII(LETRA_CHICA + CENTRO + pie.join('\n')) + '\n\n\n\n\n',
         img: '', qr: '', qr_farmalasa: '',
     };
 }

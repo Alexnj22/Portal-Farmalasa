@@ -333,19 +333,46 @@ En ese papel **un renglón de 58 caracteres no se partió** — la letra por def
 de esa ticketera da ≥58 columnas, coherente con las 54 del ticket del origen en
 letra chica. El 40 del portal es un límite de su propio HTML, no del papel.
 
+## 4 quater. El primer ticket impreso, y los dos defectos que trajo (2026-08-14)
+
+Salió papel desde el portal en la caja de Salud 3, con la maqueta de 54 columnas
+y los códigos ESC/POS. Lo que el papel corrigió:
+
+**Las tildes salen mal.** «IMPRESIÓN» → `IMPRESIŁN`, «NUÑEZ» → `NUÆEZ`, y el `·`
+de los separadores → `™`. El rollo interpreta un codepage de un byte y el portal
+manda dos por carácter acentuado. Corregido en v2.601.2 transcribiendo a ASCII
+(`soloASCII()`) — que es lo que hace el propio sistema de facturación: sus
+encabezados y pies no tienen un solo acento. Para conservar la ñ habría que
+mandar `ESC t n` y escribir el cuerpo en ese codepage; se decide con papel.
+
+**La prosa la partía la impresora.** Salió `…ES EL ANCHO DE EST` / `A IMPRESORA.`
+El texto de un bloque viajaba entero y el aparato lo cortaba donde se le acababa
+el ancho, sin saber qué es una palabra. Ahora se parte en `seccionesParaElPrograma`.
+
+**Lo que el papel confirmó sin tocar nada:** las tres reglas (32, 40 y 48) entran
+completas, y el punto donde la impresora cortó la prosa ubica su ancho real cerca
+de las **62 columnas**. Las 54 del portal caben con margen — la geometría contada
+sobre el ticket real del origen queda como está.
+
+**La barra de prueba del cabezal no viaja por el envío directo**: es un bloque de
+CSS, y ese control existe sólo en el camino del diálogo. La hoja de §4 promete un
+test que el rollo, por ese camino, no imprime.
+
 ## 5. Lo que queda abierto
 
-1. **El ancho del rollo para el camino del navegador.** El ticket del origen usa
-   54 columnas en letra chica; el HTML del portal hoy entra 40 con la letra que
-   tiene. Falta igualar los dos o decidir a propósito que el del portal sea más
-   grande.
-2. **La impresión directa sigue sin una impresión exitosa que la confirme.** El
-   contrato ya no es una suposición —sale de su propio código y la geometría está
-   anclada en un test contra un ticket real—, pero de una sala todavía no salió
-   papel del portal.
+1. ~~**El ancho del rollo para el camino del navegador.**~~ Medido el 2026-08-14
+   (ver §4 quater): la ticketera da ~62 columnas y las 54 del envío directo caben.
+   Queda sólo la mitad de la pregunta: **el HTML del portal sigue en 40** con la
+   letra que tiene, y falta decidir si se iguala a 54 o se deja más grande a
+   propósito. Los dos caminos imprimen bien hoy.
+2. ~~**La impresión directa sin una impresión exitosa que la confirme.**~~
+   **CERRADO el 2026-08-14**: imprime desde el portal en la caja de Salud 3. Lo
+   bloqueaba la CSP del propio portal (§4 ter), no la sala.
 3. **Las imágenes van vacías.** El origen manda logo y dos QR por URL; el portal
    no manda ninguna hasta comprobar que el programa las omite sin romperse cuando
-   llegan vacías. Es lo único del contrato que no salió de leer su código.
+   llegan vacías. Es lo único del contrato que no salió de leer su código — y el
+   ticket del 14-08 salió bien con las tres vacías, así que **omitirlas no rompe
+   nada**; falta sólo saber si las dibuja cuando llegan.
 3. **Qué documento va al rollo.** El motor está listo y no está enganchado a
    ninguna vista todavía. Los candidatos, en orden de uso probable: una
    cotización (hoy sale en hoja carta), el resumen de un pedido recibido, el

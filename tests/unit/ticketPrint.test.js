@@ -73,6 +73,36 @@ describe('el ticket que se manda al programa de impresión', () => {
         expect(s.pie.endsWith('\n\n\n\n\n')).toBe(true);
     });
 
+    // Los dos que siguen salieron del PRIMER ticket impreso desde el portal
+    // (Salud 3, 2026-08-14). Los dos defectos son invisibles en pantalla: la
+    // vista previa en HTML acentúa bien y parte por palabras, y el que no hace
+    // ninguna de las dos cosas es el rollo.
+    it('transcribe a ASCII: el rollo imprimió NUÑEZ como NU?EZ', () => {
+        const t = ticket();
+        t.encabezado.titulo = 'FARMACIAS LA POPULAR Y LA SALUD';
+        t.datos = [['Hecha por', 'Edwin Núñez'], ['NIT', '0401-210685-101-0  ·  NRC 213237-5']];
+        t.pie = ['Impresión de prueba · no es un comprobante'];
+        const s = seccionesParaElPrograma(t);
+        const todo = s.encabezado + s.cuerpo + s.pie;
+
+        expect(todo).toContain('Edwin Nunez');
+        expect(todo).toContain('Impresion de prueba - no es un comprobante');
+        // Ni un byte fuera de ASCII: es lo único que el aparato garantiza leer.
+        expect(/[^\x00-\x7E]/.test(todo)).toBe(false);
+    });
+
+    it('parte la prosa en palabras: el rollo cortó «DE EST / A IMPRESORA»', () => {
+        const t = ticket();
+        t.bloques = [{
+            texto: 'El renglón más largo que NO se parta en dos es el ancho de esta impresora.',
+        }];
+        const ls = renglones(t).map(sinCodigos);
+
+        for (const l of ls) expect(l.length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
+        // La palabra sobrevive entera en algún renglón; no queda «EST» + «A».
+        expect(ls.some(l => l.includes('impresora.'))).toBe(true);
+    });
+
     it('no se rompe con una tabla que no tiene las cuatro columnas del ticket', () => {
         const t = ticket();
         t.items = { columnas: [{ label: 'Concepto' }, { label: 'Monto' }], filas: [['Efectivo', '$ 20.00']] };

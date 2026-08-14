@@ -18,9 +18,19 @@ export function fetchProductPreciosForMinMax(productId) {
 // publicado y `approve_minmax_request` se niega a aprobarle nada
 // (PRODUCT_HIDDEN), así que el formulario tiene que saberlo ANTES de dejar
 // escribir una propuesta que nace muerta.
+// `draft_units_sold` viaja desde el 2026-08-14 como reserva de `units_sold_6m`.
+// Las dos son el MISMO conteo —unidades vendidas en `analysis_days`, hoy 180— y
+// se escriben en la misma pasada de `calculate_stock_params`: la del borrador al
+// insertar la fila, la otra sólo en el ON CONFLICT. Una fila que nunca volvió a
+// pasar por ahí se queda con la primera y la segunda en null.
+//
+// Medido: **654 de 759** filas sin `units_sold_6m` en Salud 1 SÍ tienen el
+// borrador (656 de 774 en Salud 2). O sea que a uno de cada cuatro productos la
+// pantalla le decía «Sin ventas» teniendo el número al lado, en otra columna.
+// La reserva sólo agrega donde no había nada; nunca cambia un número existente.
 export function fetchCurrentStockParams(erpProductId, erpSucursalId) {
     return supabase.from('product_stock_params')
-        .select('manual_min, manual_max, min_units, max_units, units_sold_6m, is_hidden')
+        .select('manual_min, manual_max, min_units, max_units, units_sold_6m, draft_units_sold, is_hidden')
         .eq('erp_product_id', erpProductId)
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .maybeSingle();

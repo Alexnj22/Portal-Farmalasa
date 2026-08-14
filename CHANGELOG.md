@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.1 — Las ventas de 6 meses dejan de faltar en uno de cada cuatro productos
+
+Lo encontró la verificación en el navegador, no el código: en el formulario de
+ajuste, un producto de Salud 1 mostraba **«6 meses —»** al lado de **«última
+venta hace 1 mes»**. Las dos cosas no podían ser ciertas.
+
+El número existía — en otra columna. El cálculo mensual escribe
+`draft_units_sold` al crear la fila y copia a `units_sold_6m` sólo al
+actualizarla, así que una fila que nunca volvió a pasar por ahí se queda con la
+primera y la segunda en blanco. Son el mismo conteo y la misma ventana de 180
+días. Medido: **654 de 759** filas sin el dato en Salud 1 sí tienen el del
+borrador, y 656 de 774 en Salud 2 — o sea que a uno de cada cuatro productos la
+pantalla venía diciendo «Sin ventas» teniendo la cifra al lado.
+
+La reserva sólo agrega donde no había nada; nunca cambia un número existente.
+
 ## v2.604.0 — Las notificaciones deciden, y en el teléfono se puede llegar al fondo
 
 Cinco cosas pedidas por el usuario sobre la campana, más un defecto de base que

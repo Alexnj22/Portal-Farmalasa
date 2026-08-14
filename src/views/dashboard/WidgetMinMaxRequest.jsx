@@ -74,7 +74,10 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         setCurrent({
           min: ef.min,
           max: ef.max,
-          sales6m: data?.units_sold_6m ?? null,
+          // La reserva del borrador: mismo conteo, misma ventana de 180 días,
+          // y es lo único que tienen 654 de las 759 filas sin `units_sold_6m`
+          // en Salud 1. Ver el comentario de `fetchCurrentStockParams`.
+          sales6m: data?.units_sold_6m ?? data?.draft_units_sold ?? null,
           oculto: data?.is_hidden === true,
         });
         setLoadingCur(false);
@@ -219,7 +222,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-3 flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Actual + contexto de ventas */}
         {erp && (
           <div className="rounded-2xl border border-divider bg-surface-card-hover/60 px-3.5 py-2.5 flex flex-col gap-1.5">
@@ -511,7 +514,7 @@ export function FormularioMinMax({ selectedErp = null }) {
           placeholder="Buscar producto para ajustar Min/Max…" />
       </HerramientasModal>
 
-      <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 overflow-y-auto overscroll-contain space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
 
         {!loading && search.trim().length >= 2 && results.length === 0 && (

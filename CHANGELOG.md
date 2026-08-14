@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.606.3 — Registrar en el sistema las diferencias resueltas
+
+_(pendiente de redactar)_
+
+## v2.606.2 — El incidente de la recepción, documentado
+
+`docs/INCIDENTE-RECEPCION-2026-08-14.md`: qué pasó con la recepción de La
+Popular, cómo se diagnosticó y qué quedó cambiado — el permiso apagado, los dos
+arreglos de código (v2.605.7 y v2.606.1), lo que queda abierto y las tres
+lecciones. Sin código.
+
 ## v2.606.1 — Una caja especial abre su caja, no la lista entera
 
 Visto recibiendo en La Popular: al entrar a «E3 — Caja especial

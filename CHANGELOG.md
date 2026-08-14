@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.609.1 — El corte avisa de las formas que no pasan por la caja
+
+El comprobante del corte imprime dos secciones y sólo dos: pagos con tarjeta y
+ventas al crédito. Verificado en los 42 capturados. **Una transferencia, un
+cheque o un bitcoin cobran, entran al total del día y no salen en ningún
+renglón del papel** — así que quien busca un descuadre desde el comprobante no
+puede saber siquiera que ese dinero existió.
+
+Y no es raro: **469 transferencias por $19,685 en 15 meses**, con $206.41 en un
+solo día en Salud 3.
+
+Ahora el detalle del corte lo dice: *«Este día se cobraron $206.41 por
+transferencia. Ese dinero no pasa por la caja y el comprobante no lo nombra.»*
+
+Y cuando el **sobrante coincide con una de esas formas**, aparece como primera
+pista en «Qué revisar» — primera porque es la única que no se puede encontrar
+mirando el papel. Sólo ante un sobrante, y eso es deliberado: estas formas no
+entran a la caja, así que confundirlas con efectivo hace que SOBRE lo declarado,
+nunca que falte. Ofrecerla ante un faltante mandaría a buscar donde no es.
+
+**El caso que vale la pena tener presente es el cheque.** El formulario del corte
+tiene su casilla y la diferencia se calcula como
+`(efectivo + tarjeta + cheque) − esperado`, pero la venta con cheque no está en
+`VENTA`: anotarlo ahí produce un sobrante igual al cheque. En los 30 cortes
+capturados esas casillas van en cero —el declarado nunca incluye la tarjeta— pero
+no hay ningún cheque en la ventana para comprobarlo. Los 3 de la historia son
+anteriores a la captura.
+
 ## v2.609.0 — Recibir un producto suelto se cuenta, y confirmar todo pregunta
 
 **Recibir un producto suelto era un botón y nada más.** Decía el nombre y en qué

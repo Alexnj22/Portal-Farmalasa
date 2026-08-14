@@ -14,7 +14,9 @@ import {
 } from '../../data/cortes';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
-import { desgloseDelCierre, notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
+import {
+    desgloseDelCierre, formasFueraDelComprobante, notaDeCifra, severidad, sugerenciasDeCorte,
+} from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useResolverCorte from '../../hooks/useResolverCorte';
@@ -110,10 +112,6 @@ export default function CorteDetalleModal({
     const branchId = corte?.branch_id ?? null;
     const fecha = corte?.fecha ?? null;
     const resueltoPor = corte?.resuelto_por ?? null;
-    // Se deriva del corte VIVO y no de `visible`: lo que se pide es para el que
-    // está abierto, no para el que se está yendo. (`visible` existe para que lo
-    // PINTADO sobreviva a la animación de cierre; una carga no debe seguirlo.)
-    const esCierre = corte?.tipo === 'Z';
 
     // Al abrir OTRO corte —o el mismo con otro botón— se reinicia el
     // formulario. El ajuste va en RENDER y no en un efecto: es el patrón que
@@ -147,17 +145,18 @@ export default function CorteDetalleModal({
         return () => { vivo = false; };
     }, [abierto, corteId, fecha, recarga]);
 
-    // La venta por forma de pago: SÓLO para el cierre del día, que es el único
-    // que la muestra. Pedirla para cada corte de caja sería traer las facturas
-    // del día para pintar una diferencia que no las usa.
+    // La venta por forma de pago. Hace falta para TODO corte, no sólo para el
+    // cierre: el comprobante no imprime transferencias ni cheques, así que es la
+    // única pista de un sobrante que no se puede encontrar mirando el papel. Son
+    // ~4 filas agrupadas por sala y día, no las facturas.
     useEffect(() => {
-        if (!abierto || !esCierre || branchId == null || !fecha) return;
+        if (!abierto || branchId == null || !fecha) return;
         let vivo = true;
         fetchVentasPorPago({ desde: fecha, hasta: fecha }).then((filas) => {
             if (vivo) setVentas((filas || []).filter((v) => String(v.branch_id) === String(branchId)));
         });
         return () => { vivo = false; };
-    }, [abierto, esCierre, branchId, fecha]);
+    }, [abierto, branchId, fecha]);
 
     // Los movimientos del día: sólo hacen falta para explicar una diferencia,
     // así que se piden al abrir un corte y no junto con la lista.
@@ -191,9 +190,12 @@ export default function CorteDetalleModal({
         if (modo) tope.current?.scrollIntoView({ block: 'start' });
     }, [modo]);
 
+    // Las formas que el comprobante no nombra: transferencia, cheque, bitcoin.
+    const invisibles = useMemo(() => formasFueraDelComprobante(ventas), [ventas]);
+
     const sugerencias = useMemo(
-        () => (visible ? sugerenciasDeCorte(visible, movs) : []),
-        [visible, movs],
+        () => (visible ? sugerenciasDeCorte(visible, movs, invisibles) : []),
+        [visible, movs, invisibles],
     );
     const explicacion = useMemo(() => (visible ? notaDeCifra(visible) : null), [visible]);
 
@@ -548,6 +550,22 @@ export default function CorteDetalleModal({
                             `sugerenciasDeCorte` (el múltiplo exacto primero). El
                             número delante lo dice sin gastar un color: se lee
                             «empezá por la 1». */}
+                        {/* Las formas que el comprobante no nombra. Va como
+                            nota y no como aviso —no cambia lo que hay que
+                            hacer—, pero tiene que estar: sin ella, ese dinero es
+                            invisible desde el papel y quien busca el descuadre
+                            no sabe siquiera que existió. El cierre no la lleva
+                            porque su desglose ya las lista una por una. */}
+                        {!esZ && invisibles.length > 0 && (
+                            <p className="text-caption text-content-2 px-1">
+                                <span className="font-bold text-content">
+                                    Este día se cobraron{' '}
+                                    {invisibles.map((f) => `${formatMoney(Math.abs(f.total))} por ${f.tipo}`).join(' y ')}.
+                                </span>{' '}
+                                Ese dinero no pasa por la caja y el comprobante no lo nombra.
+                            </p>
+                        )}
+
                         {sugerencias.length > 0 && (
                             <div data-surface="card" className="p-3">
                                 <div className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">

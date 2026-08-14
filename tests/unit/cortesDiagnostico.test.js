@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-    conTramo, desgloseDelCierre, diferenciaDelCorte, repartirEnPartes,
+    conTramo, desgloseDelCierre, diferenciaDelCorte, formasFueraDelComprobante,
+    repartirEnPartes, sugerenciasDeCorte,
 } from '../../src/utils/cortesDiagnostico';
 
 // Los casos son cortes REALES capturados el 13 y 14 de agosto de 2026. No son
@@ -165,5 +166,62 @@ describe('el desglose del cierre del día', () => {
         expect(d.efectivo).toBe(500);
         expect(d.formas).toEqual([]);
         expect(d.derivado).toBe(true);
+    });
+});
+
+// ── Las formas de pago que el comprobante no nombra ────────────────────────
+// El tiquete imprime dos secciones y sólo dos: tarjeta y crédito. Verificado en
+// los 42 capturados. Una transferencia (469 documentos y $19,685 en 15 meses),
+// un cheque o un bitcoin cobran, entran al total del cierre y no salen en
+// ningún renglón del papel.
+
+describe('las formas que el comprobante no nombra', () => {
+    const facturas = (o) => Object.entries(o).map(([tipo_pago, total]) => ({ tipo_pago, total }));
+
+    it('deja fuera lo que el papel SÍ imprime', () => {
+        const f = formasFueraDelComprobante(
+            facturas({ efectivo: 1409.05, tarjeta: 362.25, credito: 0.65, transferencia: 2.20 }),
+        );
+        expect(f).toEqual([{ tipo: 'transferencia', total: 2.20 }]);
+    });
+
+    it('las ordena de mayor a menor y descarta los centavos sueltos', () => {
+        const f = formasFueraDelComprobante(
+            facturas({ efectivo: 100, transferencia: 206.41, cheque: 80, bitcoin: 0 }),
+        );
+        expect(f.map((x) => x.tipo)).toEqual(['transferencia', 'cheque']);
+    });
+
+    it('sin facturas no inventa nada', () => {
+        expect(formasFueraDelComprobante(null)).toEqual([]);
+        expect(formasFueraDelComprobante(facturas({ efectivo: 500 }))).toEqual([]);
+    });
+});
+
+describe('la pista de una forma que no pasa por la caja', () => {
+    const conTramoDe = (n) => ({ tipo: 'C', estado: 'PENDIENTE', tramo: n });
+
+    it('avisa cuando el sobrante es igual a una transferencia del día', () => {
+        const s = sugerenciasDeCorte(conTramoDe(2.20), [], [{ tipo: 'transferencia', total: 2.20 }]);
+        expect(s[0].titulo).toContain('transferencia');
+        expect(s[0].titulo).toContain('2.20');
+    });
+
+    it('NO la ofrece ante un faltante', () => {
+        // Estas formas no entran a la caja: confundirlas con efectivo hace que
+        // SOBRE lo declarado, nunca que falte. Mandaría a buscar donde no es.
+        const s = sugerenciasDeCorte(conTramoDe(-2.20), [], [{ tipo: 'transferencia', total: 2.20 }]);
+        expect(s.some((x) => x.titulo.includes('transferencia'))).toBe(false);
+    });
+
+    it('no dice nada cuando el monto no coincide', () => {
+        const s = sugerenciasDeCorte(conTramoDe(5.00), [], [{ tipo: 'cheque', total: 80 }]);
+        expect(s.some((x) => x.titulo.includes('cheque'))).toBe(false);
+    });
+
+    it('va PRIMERA: es la única pista que no se puede ver en el papel', () => {
+        const movimientos = [{ tipo: 'ENTRADA', concepto: 'algo', monto: 2.20 }];
+        const s = sugerenciasDeCorte(conTramoDe(2.20), movimientos, [{ tipo: 'cheque', total: 2.20 }]);
+        expect(s[0].titulo).toContain('cheque');
     });
 });

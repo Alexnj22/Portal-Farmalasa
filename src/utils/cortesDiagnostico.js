@@ -370,6 +370,34 @@ export function desgloseDelCierre(corte, ventas = null) {
 }
 
 /**
+ * Las formas de pago del día que el comprobante NO nombra.
+ *
+ * El tiquete imprime dos secciones y sólo dos —«PAGOS CON TARJETA» y «VENTAS AL
+ * CREDITO»—, verificado en los 42 capturados. Todo lo demás cobra, entra al
+ * total del cierre y **no aparece en ningún renglón del papel**.
+ *
+ * No es teórico: `transferencia` lleva 469 documentos y $19,685 en 15 meses, y
+ * Salud 3 cobró $206.41 así en un solo día. `cheque` (3) y `bitcoin` (2) son
+ * anecdóticos pero existen.
+ *
+ * Importa por dos cosas. Una, que quien busca el descuadre desde el papel no
+ * puede saber que ese dinero existió. Y dos, el cheque: el formulario del corte
+ * tiene su casilla y la diferencia se calcula como
+ * `(efectivo + tarjeta + cheque) − esperado`, pero la venta con cheque NO está
+ * en `VENTA` — así que anotarlo ahí produce un **sobrante igual al cheque**.
+ * En los 30 cortes capturados esas casillas van en cero (el declarado nunca
+ * incluye la tarjeta), pero no hay ningún cheque en la ventana para comprobarlo.
+ */
+export function formasFueraDelComprobante(ventas) {
+    const ENELPAPEL = new Set(['efectivo', 'tarjeta', 'credito', 'crédito']);
+    return (ventas || [])
+        .filter((v) => !ENELPAPEL.has(String(v.tipo_pago).toLowerCase()))
+        .map((v) => ({ tipo: String(v.tipo_pago), total: redondear(num(v.total) ?? 0) }))
+        .filter((f) => Math.abs(f.total) >= 0.01)
+        .sort((a, b) => b.total - a.total);
+}
+
+/**
  * Reparte un total entre `n` personas sin perder ni inventar centavos: el resto
  * se lo llevan las primeras.
  *
@@ -425,8 +453,9 @@ export const seConfirmaDeUnClic = (corte) => severidad(corte?.tramo) === 'ok';
  *
  * @param {object} corte      corte ya pasado por `conTramo`
  * @param {Array}  movimientos movimientos de caja de ESA sala en ese día
+ * @param {Array}  invisibles  formas de pago que el comprobante no nombra
  */
-export function sugerenciasDeCorte(corte, movimientos = []) {
+export function sugerenciasDeCorte(corte, movimientos = [], invisibles = []) {
     const out = [];
 
     // Antes que cualquier pista: si las dos fórmulas del origen no coinciden,
@@ -437,6 +466,24 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
 
     const objetivo = Math.abs(tramo);
     const falta = tramo < 0;
+
+    // ── 0. Una forma de pago que el comprobante no nombra ───────────────────
+    // Va PRIMERO porque es la única pista que no se puede encontrar mirando el
+    // papel: el tiquete no imprime transferencias ni cheques, así que quien
+    // busca el descuadre no sabe siquiera que ese cobro existió.
+    //
+    // Sólo para sobrantes, y eso es deliberado. Estas formas no entran a la
+    // caja, así que confundirlas con efectivo hace que SOBRE dinero declarado,
+    // nunca que falte. Ofrecerla ante un faltante mandaría a buscar donde no es.
+    if (!falta) {
+        for (const f of invisibles) {
+            if (Math.abs(Math.abs(f.total) - objetivo) > CENTAVO) continue;
+            out.push({
+                titulo: `El sobrante es igual a ${formatMoney(Math.abs(f.total))} de ${f.tipo}`,
+                detalle: `Ese cobro no pasa por la caja y el comprobante no lo nombra. Si se contó como efectivo al hacer el corte, ahí está el sobrante.`,
+            });
+        }
+    }
 
     // ── 1. ¿La diferencia es N veces un movimiento conocido? ────────────────
     const porMonto = new Map();

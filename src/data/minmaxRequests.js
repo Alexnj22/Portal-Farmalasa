@@ -27,23 +27,33 @@ export function fetchCurrentStockParams(erpProductId, erpSucursalId) {
 }
 
 /**
- * Lo del mes en curso y la fecha de la última venta, para UN producto en UNA
- * sala.
+ * Lo que hace falta para proponer un MIN·MAX de UN producto en UNA sala: lo
+ * vendido este mes, la fecha de la última venta y lo que hay en el estante.
  *
- * No sale de `product_stock_params` porque ahí no está: `units_sold_6m` es un
- * total de seis meses y no distingue «vende poco» de «dejó de venderse». Ni de
- * `product_sales_monthly_agg` a secas, que sólo guarda meses CERRADOS — el mes
- * en curso hay que leerlo de las facturas. El RPC hace las dos cosas y mide las
- * unidades igual que el cálculo de MIN·MAX, para que las dos cifras de la
- * pantalla se puedan comparar entre sí.
+ * Ninguna de las tres sale de `product_stock_params`: `units_sold_6m` es un
+ * total de seis meses y no distingue «vende poco» de «dejó de venderse», y la
+ * existencia no vive ahí. Tampoco de `product_sales_monthly_agg` a secas, que
+ * sólo guarda meses CERRADOS — el mes en curso hay que leerlo de las facturas.
+ * El RPC junta las tres en un viaje y mide las unidades igual que el cálculo de
+ * MIN·MAX y que el pedido, para que las cifras de la pantalla se puedan
+ * comparar entre sí y contra lo que después se repone.
+ *
+ * Ante un error devuelve nulls, no ceros: un 0 se lee como «no hay» y sería
+ * afirmar algo que no se sabe.
  */
 export async function fetchMinMaxContextoVenta(erpProductId, erpSucursalId) {
+    const vacio = { unidadesMes: null, ultimaVenta: null, existencia: null, existenciaVencida: null };
     const { data, error } = await supabase.rpc('get_minmax_contexto_producto', {
         p_erp_product_id:  Number(erpProductId),
         p_erp_sucursal_id: Number(erpSucursalId),
     });
-    if (error) { console.error('fetchMinMaxContextoVenta:', error.message); return { unidadesMes: null, ultimaVenta: null }; }
-    return { unidadesMes: data?.unidades_mes ?? null, ultimaVenta: data?.ultima_venta ?? null };
+    if (error) { console.error('fetchMinMaxContextoVenta:', error.message); return vacio; }
+    return {
+        unidadesMes:       data?.unidades_mes ?? null,
+        ultimaVenta:       data?.ultima_venta ?? null,
+        existencia:        data?.existencia ?? null,
+        existenciaVencida: data?.existencia_vencida ?? null,
+    };
 }
 
 export function insertMinMaxChangeRequest(payload) {

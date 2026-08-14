@@ -481,12 +481,21 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         </p>
                     </Caja>
                 </div>
-                <Caja>
-                    <Rotulo>Última venta</Rotulo>
-                    <p className={`text-body-sm font-black ${meta.ultima_venta ? 'text-content-2' : 'text-content-3'}`}>
-                        {meta.ultima_venta ? fmtUltimaVenta(meta.ultima_venta) : '—'}
-                    </p>
-                </Caja>
+                <div className="grid grid-cols-2 gap-2">
+                    <Caja>
+                        <Rotulo>En sala</Rotulo>
+                        <p className="text-body font-black text-content-2 tabular-nums">
+                            {Number.isFinite(Number(meta.existencia)) && meta.existencia != null
+                                ? `${Number(meta.existencia).toLocaleString()} und` : '—'}
+                        </p>
+                    </Caja>
+                    <Caja>
+                        <Rotulo>Última venta</Rotulo>
+                        <p className={`text-body-sm font-black leading-tight ${meta.ultima_venta ? 'text-content-2' : 'text-content-3'}`}>
+                            {meta.ultima_venta ? fmtUltimaVenta(meta.ultima_venta) : '—'}
+                        </p>
+                    </Caja>
+                </div>
             </div>
         );
     }

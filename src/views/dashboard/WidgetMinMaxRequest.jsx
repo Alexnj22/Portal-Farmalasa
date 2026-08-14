@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
-import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff, CalendarClock } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff, CalendarClock, Boxes } from 'lucide-react';
 import Notice from '../../components/common/Notice';
 import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
@@ -161,6 +161,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         // vendió».
         current_sales_mes:   ventas?.unidadesMes ?? null,
         current_ultima_venta: ventas?.ultimaVenta ?? null,
+        current_existencia:  ventas?.existencia ?? null,
         requested_min:     newMin,
         requested_max:     newMax,
         reason:            reason.trim() || null,
@@ -270,6 +271,40 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
                     </span>
                   </div>
                 </div>
+              </div>
+            )}
+            {/* Lo que hay en el estante, al lado de lo que se vende: «no se
+                venden» con 200 unidades paradas y «no se venden» con 2 son dos
+                decisiones distintas, y hasta hoy sólo se veía la mitad.
+
+                Se cuenta igual que en el pedido (`_inv_agg` de
+                `get_pedido_preview`), así que el número de acá es el mismo que
+                después decide qué se repone. Los vencidos van aparte, no
+                restados: están físicamente ahí y no se pueden vender —sumarlos
+                mentiría sobre lo disponible, esconderlos mentiría sobre por qué
+                el estante se ve lleno—, y sólo aparecen si los hay. */}
+            {!loadingCur && (
+              <div className="flex items-center justify-between gap-2 border-t border-divider pt-1.5">
+                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                  <Boxes size={11} className="text-chart-1-text" /> En sala
+                </span>
+                {ventas === null
+                  ? <Loader2 size={11} className="animate-spin text-content-3" />
+                  : (
+                    <div className="text-right">
+                      <span className="text-label font-bold text-content-2 tabular-nums">
+                        {ventas.existencia != null ? `${Number(ventas.existencia).toLocaleString()} und` : '—'}
+                      </span>
+                      {fmtEquiv(ventas.existencia, pres) && (
+                        <div className="text-micro text-content-3 font-semibold">{fmtEquiv(ventas.existencia, pres)}</div>
+                      )}
+                      {Number(ventas.existenciaVencida) > 0 && (
+                        <div className="text-micro text-danger-text font-semibold">
+                          + {Number(ventas.existenciaVencida).toLocaleString()} vencidas
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             )}
             {!loadingCur && (

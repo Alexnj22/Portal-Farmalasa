@@ -191,6 +191,7 @@ export function adaptarMinMax(fila, nombreDeSucursal, buscarPersona) {
             // Son el retrato del momento en que se propuso, como `ventas_6m`.
             ventas_mes: fila.current_sales_mes,
             ultima_venta: fila.current_ultima_venta,
+            existencia: fila.current_existencia,
         },
         _minmax: fila,
     };

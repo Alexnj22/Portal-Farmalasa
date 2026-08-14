@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.603.1 — El ajuste de MIN·MAX muestra lo que hay en sala
+
+Faltaba la otra mitad de la decisión. «No se venden» con 200 unidades paradas
+en el estante y «no se venden» con 2 piden cosas distintas, y la pantalla sólo
+mostraba la venta. Ahora el formulario y la solicitud traen **En sala**, en
+unidades y con su equivalente en cajas.
+
+Se cuenta **igual que en el pedido** —el mismo factor por presentación, con el
+«x N» del detalle de reserva—, así que el número que se ve acá es el mismo que
+después decide qué se repone. Dos cifras del mismo estante que no se midieran
+igual serían peor que ninguna.
+
+Los vencidos van **aparte, no restados**, y sólo aparecen si los hay: están
+físicamente ahí y no se pueden vender. Sumarlos mentiría sobre lo disponible;
+esconderlos mentiría sobre por qué el estante se ve lleno.
+
+Ejemplo real de Salud 2, ahora visible de un vistazo: CHIP DIGICEL tiene **5
+unidades** y **nunca** se vendió en esa sala.
+
 ## v2.603.0 — Una sola llamada para imprimir, y el instructivo para usarla
 
 Preparación para engancharle la impresión a varias pantallas. Lo que había

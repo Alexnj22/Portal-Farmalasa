@@ -58,6 +58,61 @@ export function estadoDelDia(cortesDeLaSala) {
     };
 }
 
+/**
+ * El sistema de origen produce DOS diferencias por corte, con dos fórmulas
+ * distintas, y no siempre coinciden:
+ *
+ *   1. La que guarda      → `total_declarado − esperado`, donde `esperado` lo
+ *      calcula el servidor al abrir el formulario del corte.
+ *   2. La del ticket      → `total_declarado − TOTAL CAJA`, que el ticket
+ *      recalcula con los movimientos del día.
+ *
+ * Medido el 13-ago en Salud 3: la guardada dijo −$729.78 y la del ticket
+ * −$511.18. **$218.60 de brecha, a la misma hora** — el aviso de Telegram salió
+ * un minuto después del corte con la cifra del ticket, así que no es que el
+ * ticket haya derivado: las dos fórmulas ya discrepaban en ese instante. Y la
+ * del ticket reconcilia al centavo con los movimientos del día (ingresos
+ * 1,041.39, abonos 54.65, vales 704.09); del `esperado` guardado quedan $218.60
+ * que no explica ningún movimiento.
+ *
+ * Regla: **cuando discrepan, el portal NO elige.** Muestra las dos y lo marca.
+ * Cobrarle a alguien sobre una cifra que el propio origen contradice es
+ * exactamente el daño que este módulo existe para evitar.
+ *
+ * El desfase cambia lo que se puede AFIRMAR, no si se muestra. El ticket se
+ * recalcula, así que leído horas después parte de la brecha puede venir de
+ * movimientos posteriores al corte. Pero esconder la brecha por eso fue un
+ * error que cometí y que la propia prueba destapó: el caso de Salud 3 tenía
+ * 1h23m de desfase —era del primer relleno, no del cron— y con un umbral de 15
+ * minutos quedaba callado justo el corte de $218.60 que hay que mirar.
+ *
+ * Entonces: la brecha se muestra SIEMPRE, y `comparable` sólo decide si se dice
+ * «no coinciden» o «puede que parte sea de después». Un número que no se ve no
+ * se puede revisar.
+ */
+const DESFASE_COMPARABLE_SEG = 15 * 60;
+
+export function contraste(corte) {
+    const declarado = num(corte?.total_declarado);
+    const totalCaja = num(corte?.tk_total_caja);
+    const difErp = num(corte?.diferencia_erp);
+    if (declarado == null || totalCaja == null || difErp == null) return null;
+
+    const difTicket = redondear(declarado - totalCaja);
+    const brecha = redondear(difErp - difTicket);
+    const desfase = num(corte?.desfase_seg);
+    const comparable = desfase != null && desfase <= DESFASE_COMPARABLE_SEG;
+
+    return {
+        difErp,
+        difTicket,
+        brecha,
+        comparable,
+        desfase,
+        enDisputa: Math.abs(brecha) >= 0.01,
+    };
+}
+
 /** 'ok' | 'sobra' | 'falta' — la forma, no sólo el color. */
 export function severidad(monto) {
     const n = num(monto) ?? 0;
@@ -78,12 +133,27 @@ export function severidad(monto) {
  * @param {Array}  movimientos movimientos de caja de ESA sala en ese día
  */
 export function sugerenciasDeCorte(corte, movimientos = []) {
+    const out = [];
+
+    // Antes que cualquier pista: si las dos fórmulas del origen no coinciden,
+    // ninguna cifra de este corte sirve para señalar a nadie. Va primero
+    // porque es la única sugerencia que cambia lo que se debe HACER.
+    const c = contraste(corte);
+    if (c?.enDisputa) {
+        out.push({
+            tono: 'danger',
+            titulo: `Dos cifras distintas para este corte: ${formatMoney(c.difErp)} y ${formatMoney(c.difTicket)}`,
+            detalle: c.comparable
+                ? `El sistema guardó una y su propio ticket calcula otra — ${formatMoney(Math.abs(c.brecha))} de brecha, medidas casi a la misma hora. No confirmes un faltante con esto sin revisar primero los movimientos del día.`
+                : `El sistema guardó una y su propio ticket calcula otra — ${formatMoney(Math.abs(c.brecha))} de brecha. El ticket se leyó un rato después del corte, así que parte podría ser de movimientos posteriores; el resto no. No confirmes un faltante con esto sin revisar los movimientos del día.`,
+        });
+    }
+
     const tramo = corte?.tramo;
-    if (tramo == null || Math.abs(tramo) < 0.01) return [];
+    if (tramo == null || Math.abs(tramo) < 0.01) return out;
 
     const objetivo = Math.abs(tramo);
     const falta = tramo < 0;
-    const out = [];
 
     // ── 1. ¿La diferencia es N veces un movimiento conocido? ────────────────
     const porMonto = new Map();

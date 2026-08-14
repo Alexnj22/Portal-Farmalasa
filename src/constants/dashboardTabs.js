@@ -11,7 +11,7 @@
 // aparte arriba de todo—, y por eso `tematicaDe` lo trata como si no tuviera
 // pestaña propia: no puede "pertenecer" a una sola.
 export const PESTANAS_TEMATICAS = {
-    comercial: ['kpi', 'meta_sala', 'cotizaciones', 'facturacion', 'top_productos', 'sales', 'vendedores'],
+    comercial: ['kpi', 'meta_sala', 'cortes_sala', 'cotizaciones', 'facturacion', 'top_productos', 'sales', 'vendedores'],
     rrhh:      ['kpi', 'trend', 'shifts', 'absences', 'requests', 'calendar', 'announcements', 'birthdays'],
     operacion: ['inv_search', 'annulment_req', 'minmax_req', 'inv_movement', 'traslados', 'facturas_sala'],
 };

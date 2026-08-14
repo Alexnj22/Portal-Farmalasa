@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.597.0 — Widget de cortes y las dos cifras del origen
+
+**El sistema de origen produce DOS diferencias por corte y no siempre
+coinciden.** Lo destapó el usuario comparando el portal con el aviso viejo de
+Telegram, en Salud 3 del 13-ago:
+
+| corte | lo que el origen guardó | lo que calcula su propio ticket |
+|---|---|---|
+| 21:03 | −$729.78 | −$511.18 |
+| 21:21 | −$240.98 | −$22.38 |
+
+$218.60 de brecha en los dos. **No es deriva del ticket**: el aviso de Telegram
+salió un minuto después del corte con la cifra del ticket, así que las dos
+fórmulas ya discrepaban en ese instante.
+
+Y hay una que reconcilia y otra que no. Contra los movimientos del día, medido:
+ingresos $1,041.39, abonos a crédito $54.65, vales $704.09 — los tres al centavo
+contra el ticket, y su TOTAL CAJA de $1,538.35 sale de ahí. Del `esperado` que
+guardó el origen quedan **$218.60 que no explica ningún movimiento**.
+
+En 17 de los 24 cortes del día las dos coinciden exactamente, así que no es que
+el origen esté roto: son dos rutas de cálculo distintas que a veces se separan.
+
+**Entonces el portal no elige.** Cuando discrepan, muestra las dos, lo marca con
+«Dos cifras» y lo pone como primera cosa a revisar. Cobrarle un faltante a
+alguien sobre una cifra que el propio sistema contradice es exactamente el daño
+que este módulo existe para evitar.
+
+Un error propio en el camino, que la prueba destapó: había puesto un umbral de
+15 minutos de desfase para decidir si la brecha «contaba», y con eso el caso de
+Salud 3 —1h23m, porque venía del primer relleno y no del cron— quedaba callado.
+Justo el corte que hay que mirar. Ahora la brecha se muestra siempre y el
+desfase sólo cambia lo que se afirma sobre ella.
+
+**Widget «Cortes de caja» en el Inicio** (`dash_cortes_sala`): los cortes de hoy
+de la sala, con la diferencia de cada tramo, para confirmar o descartar sin
+entrar al módulo. Usa el mismo `conTramo` que la vista — dos pantallas que
+calculan por su cuenta terminan diciendo cosas distintas del mismo corte, y acá
+eso significaría cobrar por una resta que la otra no hace.
+
+
+_(pendiente de redactar)_
+
 ## v2.596.1 — Los cortes los confirma la sala
 
 Decisión del usuario: **las salas confirman sus propios cortes.** Dependiente de

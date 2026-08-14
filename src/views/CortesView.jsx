@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Wallet, CheckCircle2, Ban, Clock, ChevronRight, Search, ShieldCheck } from 'lucide-react';
+import { Wallet, CheckCircle2, Ban, Clock, ChevronRight, Search, ShieldCheck, AlertTriangle } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import PeriodStepper from '../components/common/PeriodStepper';
 import Badge from '../components/common/Badge';
@@ -12,7 +12,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import { fetchCortesDelDia, fetchMovimientosDelDia, resolverCorte } from '../data/cortes';
-import { conTramo, estadoDelDia, severidad, sugerenciasDeCorte } from '../utils/cortesDiagnostico';
+import { conTramo, contraste, estadoDelDia, severidad, sugerenciasDeCorte } from '../utils/cortesDiagnostico';
 import { formatMoney } from '../utils/formatNumber';
 
 const VACIO = [];
@@ -271,6 +271,9 @@ const CortesView = () => {
                                                         <span className="text-caption text-content-3 tabular-nums">
                                                             acumulado {conSigno(Number(c.diferencia_erp) || 0)}
                                                         </span>
+                                                        {contraste(c)?.enDisputa && (
+                                                            <Badge variant="danger" size="sm" icon={AlertTriangle}>Dos cifras</Badge>
+                                                        )}
                                                         {c.estado === 'CONFIRMADO'
                                                             ? <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>
                                                             : <Badge variant="neutral" size="sm" icon={Clock}>Sin confirmar</Badge>}
@@ -349,6 +352,24 @@ const CortesView = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Las dos fórmulas del origen, cuando no coinciden. */}
+                            {contraste(detalle)?.enDisputa && (
+                                <Notice variant="danger" icon={AlertTriangle}>
+                                    <span className="font-bold">Este corte tiene dos cifras y no coinciden.</span>
+                                    <span className="block mt-1 text-content-2">
+                                        Lo que el sistema guardó: <b className="tabular-nums">{conSigno(contraste(detalle).difErp)}</b>.
+                                        Lo que calcula su propio ticket: <b className="tabular-nums">{conSigno(contraste(detalle).difTicket)}</b>.
+                                        Son <b className="tabular-nums">{formatMoney(Math.abs(contraste(detalle).brecha))}</b> de brecha.
+                                        {contraste(detalle).comparable
+                                            ? ' Las dos se midieron casi a la misma hora, así que no es que una esté vieja.'
+                                            : ' El ticket se leyó un rato después del corte, así que parte podría ser de movimientos posteriores.'}
+                                    </span>
+                                    <span className="block mt-1 text-content-2">
+                                        Revisa los movimientos del día antes de dar por bueno un faltante con este corte.
+                                    </span>
+                                </Notice>
+                            )}
 
                             {/* El desglose, con su advertencia */}
                             <div>

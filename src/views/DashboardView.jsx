@@ -24,7 +24,8 @@ import {
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
-  ReceiptText, Upload, Eye, Lock
+  ReceiptText, Upload, Eye, Lock,
+  Wallet
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 // Los mapas del sistema de origen se mudaron a `constants/erp` el 2026-08-11:
@@ -49,6 +50,7 @@ import WidgetInventoryMovement from './dashboard/WidgetInventoryMovement';
 import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
+import WidgetCortesSala from './dashboard/WidgetCortesSala';
 // Estaba USADO y sin importar: el componente existe, su rama de render está
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
@@ -159,6 +161,9 @@ const WIDGET_SIZES = {
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste inventario' },
   facturas_sala: { minCols: 1, minRows: 1, label: 'Facturas Sala' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
+  // Lista con botones: sin alto no entra ni un corte (mismo motivo que
+  // `vendedores` y `traslados`, abajo).
+  cortes_sala:   { minCols: 2, minRows: 2, label: 'Cortes de caja' },
   // `vendedores` y `traslados` no tenían entrada, así que caían al mínimo de
   // 1×1 — una baldosa de 312×120 donde entran el título y una línea, y ni una
   // sola fila de la lista. Quien no las agrandara a mano veía dos widgets que
@@ -571,6 +576,7 @@ const WIDGET_DEFS = [
   { id: 'facturas_sala',label: 'Facturas de mi sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
+  { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
 ];
 
 // El permiso de cada widget, indexado. Lo necesitan la barra de pestañas, el
@@ -3186,6 +3192,24 @@ const DashboardView = ({ openModal }) => {
     }
 
     /* ── META DE LA SALA ── */
+    /* ── CORTES DE CAJA DE MI SALA ── */
+    // La sala confirma acá lo que acaba de cortar, sin ir al módulo. La cifra
+    // es el TRAMO y sale del mismo `conTramo` que usa CortesView: dos pantallas
+    // que calculan por su cuenta terminan diciendo cosas distintas del mismo
+    // corte, y acá eso significaría cobrarle a alguien por una resta que la
+    // otra pantalla no hace.
+    if (wid === 'cortes_sala') {
+      if (!showWidget('cortes_sala', 'dash_cortes_sala')) return null;
+      // Sin selector de sala a propósito: el widget se llama «de mi sala» y
+      // filtra por la de quien mira. Quien necesite comparar salas tiene el
+      // módulo, que para eso existe.
+      return wrapWidget('cortes_sala',
+        <WidgetCard title="Cortes de caja" icon={Wallet} category="ventas">
+          <WidgetCortesSala />
+        </WidgetCard>
+      , staggerIdx);
+    }
+
     if (wid === 'meta_sala') {
       if (!showWidget('meta_sala', 'dash_meta_sala')) return null;
       // Con scope BRANCH el RPC ignora el parámetro y devuelve su propia sala:

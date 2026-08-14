@@ -6,6 +6,7 @@ import FilterBar from '../components/common/FilterBar';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
 import PeriodPicker from '../components/common/PeriodPicker';
+import PeriodStepper from '../components/common/PeriodStepper';
 import StatCard from '../components/common/StatCard';
 import TablePagination from '../components/common/TablePagination';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
@@ -16,6 +17,7 @@ import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import { fetchCortes, fetchPersonas, resolverCorte } from '../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
+import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { tokenMatch } from '../utils/searchUtils';
 
@@ -88,8 +90,11 @@ const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
     const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const showToast = useToastStore((s) => s.showToast);
-    const { user, hasPermission } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+    // Quien ve una sola sala no elige sala: la policy de `cortes_caja` ya se lo
+    // resolvió, y ofrecerle el filtro sería un control que no recorta nada.
+    const alcanceTodas = getScope('cortes_caja') === 'ALL';
 
     // Arranca en HOY (regla del usuario, 2026-08-14). El período es
     // `PeriodPicker` y no tres chips de «7 · 30 · 90 días»: los chips contestan
@@ -263,6 +268,13 @@ const CortesView = () => {
     const verPeriodo = useCallback((v) => { setPeriodo(v || HOY); setPagina(1); }, [HOY]);
     const esHoy = periodo === HOY;
 
+    // Las flechas corren el período por SU propia unidad: un día pasa al día
+    // siguiente, un mes al mes siguiente, un año al año siguiente. La cuenta
+    // vive en `PeriodPicker` —es quien define el formato `inicio|fin`— para que
+    // quien lo escribe y quien lo corre no puedan discrepar.
+    const { unidad } = granularidadDePeriodo(periodo);
+    const correr = useCallback((dir) => verPeriodo(correrPeriodo(periodo, dir)), [periodo, verPeriodo]);
+
     // Las tarjetas del carril son el ATAJO de su ranura: apretar «Faltante»
     // aplica el mismo filtro que elegirlo en la píldora, y volver a apretarla lo
     // quita. Sin el segundo clic, una tarjeta que ya está aplicada es un botón
@@ -316,12 +328,33 @@ const CortesView = () => {
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             activeCount={[sala, !esHoy, estado !== 'TODOS', diferencia !== 'TODAS'].filter(Boolean).length}>
-                            <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
-                                <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
-                            </FilterBar.Section>
+                            {/* La ranura de sucursal SÓLO con alcance ALL. Con
+                                BRANCH la policy de `cortes_caja` ya devuelve
+                                únicamente la sala propia, así que el selector
+                                ofrecería elegir entre una — y prometería un
+                                alcance que no existe. Es el mismo criterio que
+                                `facturas_sala`, `meta_sala` y el widget de
+                                cortes en el Inicio. */}
+                            {alcanceTodas && (
+                                <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
+                                    <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
+                                </FilterBar.Section>
+                            )}
 
+                            {/* `PeriodStepper` con el `PeriodPicker` de rótulo:
+                                es la ranura `children` del canónico, que existe
+                                justamente para cuando el centro no es texto sino
+                                un control que se abre. Tocar «Hoy» abre el panel;
+                                las flechas corren el período por su unidad. */}
                             <FilterBar.Section active={!esHoy} onClear={() => verPeriodo(HOY)} label="fecha">
-                                <PeriodPicker value={periodo} onChange={verPeriodo} placeholder="Período…" />
+                                <PeriodStepper
+                                    unit={unidad}
+                                    onPrev={() => correr(-1)}
+                                    onNext={() => correr(1)}
+                                    nextDisabled={periodoAlcanzaHoy(periodo)}
+                                >
+                                    <PeriodPicker value={periodo} onChange={verPeriodo} placeholder="Período…" />
+                                </PeriodStepper>
                             </FilterBar.Section>
 
                             <FilterBar.Section active={estado !== 'TODOS'} onClear={() => setEstado('TODOS')} label="estado">

@@ -21,6 +21,112 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.7 — Cortes: la fecha se corre por su unidad, y la sucursal sólo si hay más de una
+
+**El control de fecha es «‹ etiqueta ›», y la etiqueta abre el calendario.** Es
+la ranura `children` de `PeriodStepper`, que existe exactamente para esto —«el
+centro NO es texto sino un control»— con `PeriodPicker` adentro. Tocar «Hoy»
+abre el panel; las flechas corren el período sin abrir nada.
+
+**Y corren por SU propia unidad** (pedido del usuario: *«que ese elemento sea
+inteligente, y se adapte según el contexto: si es por mes, pasa el mes; si el
+día, el día»*). Un paso fijo se equivoca en los dos sentidos — un día de a un mes
+salta treinta días, un mes de a un día deja de ser un mes. La unidad se **deduce
+del rango**, que es el único sitio donde está dicha:
+
+| lo que hay | ‹ › mueve |
+|---|---|
+| `14/08 → 14/08` | ±1 día |
+| `01/08 → 31/08` (mes entero) | ±1 mes |
+| `01/01 → 31/12` | ±1 año |
+| `01/06 → 31/08` | ±3 meses |
+| `08/08 → 14/08` | ±7 días |
+
+Por meses el fin se **recalcula**: enero entero + 1 da febrero **entero** —28
+días—, no «del 1 al 31 de febrero». Verificado en los bordes: enero→febrero,
+marzo←febrero y diciembre→enero del año siguiente.
+
+La cuenta vive en `src/utils/periodo.js` y no dentro del componente: el formato
+`inicio|fin` lo define `PeriodPicker`, pero **correrlo** lo necesita quien
+compone ese picker con el stepper, y un archivo de componente no puede exportar
+funciones sueltas sin romper el refresco rápido de Vite. Sigue habiendo una sola
+definición, que era lo único que importaba.
+
+**El panel abre en el modo del período que ya está puesto.** Arrancaba siempre en
+POR MES, así que quien venía de «Hoy» tenía que cambiar de modo antes de poder
+mover un día: el control mostraba la escala equivocada para lo que se estaba
+mirando.
+
+---
+
+**El filtro de sucursal desaparece para quien sólo ve la suya.** Preguntado por
+el usuario —*«¿por qué aparece el filtro de sucursal si sólo es la de él?»*—, y
+la regla ya estaba escrita tres veces en el tablero: con alcance `BRANCH` el
+selector **no se ofrece**, porque la base rechaza cualquier otra sala y
+prometería un alcance que no existe. Es el mismo criterio que `facturas_sala`,
+`meta_sala` y el widget de cortes del Inicio.
+
+Verificado contra la policy —`cortes_caja_select` ya filtra por
+`auth_employee_branch_id()` cuando el alcance no es `ALL`— y en el navegador con
+las dos configuraciones: con `ALL` la ranura está, con `BRANCH` no.
+
+## v2.604.6 — El modal deja de quedarse 400ms de más al cerrar, y los botones no se mueven de sitio
+
+**Cerrar cualquier modal del portal tenía ~410ms de rato muerto.** Y no era la
+animación: era lo de después.
+
+`ModalShell` desmonta el nodo cuando la salida termina, y ese aviso lo daba el
+`onfinish` de la **gota**. Pero la gota es un gesto táctil y está apagada a
+propósito en escritorio (`activo: sinHover && …`), así que ahí no lo avisaba
+nadie y el desmontaje caía al temporizador de respaldo: `--gota-salida + 400ms`.
+En Solid son **540ms**, contra los **130ms** que dura de verdad la animación —
+`[data-theme="solid"] .animate-out` la fija en 130 y gana por especificidad a
+`duration-[var(--dur-fast)]`.
+
+Esos ~410ms sobrantes no se veían vacíos: la salida lleva `fill-mode-forwards`,
+así que el panel **sostenía su último fotograma** y el velo seguía montado
+tapando la vista. De ahí «se siente lento al cerrarlo».
+
+El comentario de `TECHO_SALIDA` ya decía que el respaldo era «para lo que NO
+anima —reduced-motion, escritorio…—, y por eso el margen puede ser generoso sin
+costar nada». Esa es la mitad que fallaba: en escritorio **sí** hay animación,
+la de clases; lo que no hay es gota. Ahora, cuando no hay gota, el aviso lo da
+`animationend` sobre el velo y el panel —que es a la animación de clases lo que
+`onfinish` a la gota—. Con gota queda exactamente como estaba, para no cortarle
+el recorrido. Alcanza a los tres modos: escritorio, `prefers-reduced-motion`
+(120ms) y táctil (sin cambio).
+
+**Y el bloqueo de scroll dejó de cobrarse en escritorio.** Para congelar la
+página, `ModalShell` sacaba el `<body>` del flujo con `position: fixed` — el
+truco que iOS Safari obliga a usar, porque ahí `overflow: hidden` no bloquea
+nada. Sacar el body del flujo obliga a recalcular el layout del árbol entero, y
+otra vez al restaurarlo: **dos re-layouts completos por apertura y dos por
+cierre**, y los del cierre caen encima de la animación de salida.
+
+En escritorio eso no compraba nada, porque ahí el documento no scrollea: el
+reset global deja `html, body, #root` en `height: 100%; overflow: hidden` y
+quien scrollea es un contenedor interno. `window.scrollY` valía siempre 0 y el
+body ya estaba bloqueado por CSS. Ahora el truco corre sólo bajo 1024px, que es
+donde el reset lo levanta y el documento scrollea de verdad.
+
+De paso, el bloqueo salió del efecto del teclado, que tenía `onClose` en su
+array de dependencias: con un llamador que lo pasa como flecha en línea, el
+bloqueo se soltaba y se reponía en **cada render del padre** mientras el diálogo
+estaba abierto — dos re-layouts más cada vez, por nada. La baldosa de Cortes era
+uno de esos llamadores y se re-renderiza sola cada minuto; ahora pasa una
+función estable.
+
+**Los botones de la tarjeta de corte ya no cambian de sitio.** En la baldosa,
+un corte que cuadra al centavo no lleva píldora de severidad, así que las
+acciones quedaban de hijo único y `justify-between` las mandaba a la izquierda:
+las tarjetas de la misma lista tenían los botones en dos sitios distintos según
+si había etiqueta o no. Van con `ml-auto`, que las ancla a la derecha siempre.
+
+**Y en el teléfono la píldora ya no se aplasta.** La etiqueta y los dos botones
+no entran juntos en los ~320px de una baldosa, y como las acciones son
+`shrink-0`, lo que cedía era la etiqueta. El renglón ahora envuelve: las
+acciones bajan a su propia línea, igual de alineadas a la derecha.
+
 ## v2.604.5 — Cortes: el alcance por sucursal vuelve a valer, y la baldosa muestra más
 
 **El alcance «Mi sucursal» no filtraba nada, y la puerta estaba más abierta de

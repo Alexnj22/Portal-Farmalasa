@@ -229,6 +229,26 @@ export default function ModalShell({
   // gota), que si no capturaría el del render en que se instaló.
   const abiertoRef = useRef(open);
   useEffect(() => { abiertoRef.current = open; }, [open]);
+  const veloRef = useRef(null);
+
+  // ── Quién avisa que la salida terminó ───────────────────────────────────
+  // La gota es un gesto TÁCTIL y está apagada a propósito en escritorio (ver la
+  // nota de `useGotaApertura` abajo). Como el desmontaje colgaba de SU
+  // `onfinish`, en escritorio no lo avisaba nadie y el nodo se quedaba hasta el
+  // temporizador de respaldo: `--gota-salida` + 400ms, o sea **540ms en Solid**
+  // cuando la animación CSS ya había terminado a los ~130.
+  //
+  // Y como la salida lleva `fill-mode-forwards`, esos ~400ms sobrantes no se
+  // ven vacíos: el panel SOSTIENE su último fotograma y el velo sigue montado
+  // tapando la vista. Eso es lo que se reportó dos veces como «el modal está
+  // lento al cerrarlo» — no es la animación, es el rato muerto de después.
+  //
+  // El comentario de `TECHO_SALIDA` decía que el respaldo era «para lo que NO
+  // anima —reduced-motion, escritorio…—, y por eso el margen puede ser generoso
+  // sin costar nada». La primera mitad es la que falla: en escritorio SÍ hay
+  // animación, la de clases (`panelAnim`/`veloAnim`); lo que no hay es gota. Así
+  // que el margen generoso se paga en cada cierre.
+  const gotaActiva = sinHover && !animacionPropia && !sinMovimiento;
 
   // Mientras esté abierto, el clúster flotante se apaga: es cromo de la vista y
   // no tiene nada que hacer debajo de una hoja —transparentándose a través del
@@ -275,12 +295,35 @@ export default function ModalShell({
       setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- monta en respuesta a `open`; el estado ES la animación de entrada
       return undefined;
     }
-    // El techo, no la cita: lo normal es que desmonte el `onfinish` de la gota
-    // (ver `alTerminarSalida` más abajo). Esto sólo cubre el caso en que no hubo
-    // animación ninguna, y por eso puede ser holgado.
+    // Sin gota —escritorio, o `prefers-reduced-motion`— el aviso lo da la
+    // animación de clases: `animationend` es a `veloAnim`/`panelAnim` lo que
+    // `onfinish` es a la gota. Se escucha en los DOS elementos porque cuál anima
+    // depende del modo (en táctil el panel no lleva animación de clases), y sólo
+    // en ellos —nada de dejar que burbujee— para que la animación de entrada de
+    // cualquier hijo del cuerpo no desmonte el diálogo antes de tiempo.
+    //
+    // Con gota se deja como estaba: ella avisa por `onfinish`, y colgar el
+    // desmontaje de `animationend` cortaría su recorrido a mitad si el velo
+    // —que sí anima siempre— terminase antes que ella.
+    const alTerminar = gotaActiva ? null : () => setMounted(false);
+    const velo = veloRef.current;
+    const panel = panelRef.current;
+    if (alTerminar) {
+      velo?.addEventListener("animationend", alTerminar);
+      panel?.addEventListener("animationend", alTerminar);
+    }
+
+    // El techo. Deja de ser el camino normal y vuelve a ser lo que su nombre
+    // dice: el respaldo para cuando de verdad no anima nada.
     const t = setTimeout(() => setMounted(false), tiemposGota().salida + TECHO_SALIDA);
-    return () => clearTimeout(t);
-  }, [open]);
+    return () => {
+      clearTimeout(t);
+      if (alTerminar) {
+        velo?.removeEventListener("animationend", alTerminar);
+        panel?.removeEventListener("animationend", alTerminar);
+      }
+    };
+  }, [open, gotaActiva]);
 
   useEffect(() => {
     // `esTope`: el teclado le pertenece al que se ve. Sin esto, un diálogo
@@ -309,18 +352,43 @@ export default function ModalShell({
     };
 
     window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, esTope, onClose, closeOnEsc]);
 
-    // ── El bloqueo de scroll, a la manera que iOS respeta ────────────────
-    // `overflow: hidden` en `body` **no bloquea nada en Safari de iOS**. Es un
-    // comportamiento viejo y conocido: el documento sigue desplazándose con el
-    // dedo. Se reportó exactamente así — con la hoja de filtros abierta, el
-    // contenido de atrás se movía.
-    //
-    // Lo que sí funciona es sacar el documento del flujo: `position: fixed` con
-    // el desplazamiento actual como `top` negativo. La página queda congelada
-    // donde estaba, y al soltar se restaura la posición — sin eso, cerrar el
-    // diálogo devolvería al usuario al principio de la lista, que es peor que el
-    // problema original.
+  // ── El bloqueo de scroll, SÓLO donde el documento scrollea ──────────────
+  // `overflow: hidden` en `body` **no bloquea nada en Safari de iOS**. Es un
+  // comportamiento viejo y conocido: el documento sigue desplazándose con el
+  // dedo. Se reportó exactamente así — con la hoja de filtros abierta, el
+  // contenido de atrás se movía.
+  //
+  // Lo que sí funciona es sacar el documento del flujo: `position: fixed` con
+  // el desplazamiento actual como `top` negativo. La página queda congelada
+  // donde estaba, y al soltar se restaura la posición — sin eso, cerrar el
+  // diálogo devolvería al usuario al principio de la lista.
+  //
+  // ── Por qué se condiciona al ancho (2026-08-14) ────────────────────────
+  // Ese truco es CARO: sacar el `<body>` del flujo obliga a recalcular el
+  // layout del árbol entero, y hacerlo otra vez al restaurarlo. Dos re-layouts
+  // completos por cada apertura y cierre.
+  //
+  // Y en ESCRITORIO no compra nada, porque ahí el documento no scrollea: el
+  // reset global (index.css §GLOBAL RESET) deja `html, body, #root` en
+  // `height: 100%; overflow: hidden` y quien scrollea es un contenedor de
+  // adentro. O sea que `window.scrollY` vale siempre 0, el `body` ya estaba
+  // bloqueado por CSS, y lo único que aportaba el truco era el costo. Con la
+  // vista de Cortes —hasta 50 tarjetas— eso es justo lo que se reportó: «se
+  // siente lento al abrir, y al cerrar igual». Al cerrar se nota más porque el
+  // re-layout cae ENCIMA de la animación de salida y se la come.
+  //
+  // El `overflow: hidden` del reset se levanta bajo 1024px, que es donde el
+  // documento pasa a scrollear de verdad (móvil) y donde el truco hace falta.
+  // Por eso la consulta es exactamente la misma que la del reset: si una se
+  // mueve, hay que mover la otra.
+  const documentoScrollea = useMediaQuery("(max-width: 1023.98px)");
+
+  useEffect(() => {
+    if (!open || !esTope || !lockScroll || !documentoScrollea) return undefined;
+
     const yPrevio = window.scrollY;
     const previo = {
       position: document.body.style.position,
@@ -329,24 +397,24 @@ export default function ModalShell({
       overflow: document.body.style.overflow,
     };
 
-    if (lockScroll) {
-        document.body.style.position = "fixed";
-        document.body.style.top = `-${yPrevio}px`;
-        document.body.style.width = "100%";
-        document.body.style.overflow = "hidden";
-    }
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${yPrevio}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
 
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      if (lockScroll) {
-          document.body.style.position = previo.position;
-          document.body.style.top = previo.top;
-          document.body.style.width = previo.width;
-          document.body.style.overflow = previo.overflow;
-          window.scrollTo(0, yPrevio);
-      }
+      document.body.style.position = previo.position;
+      document.body.style.top = previo.top;
+      document.body.style.width = previo.width;
+      document.body.style.overflow = previo.overflow;
+      window.scrollTo(0, yPrevio);
     };
-  }, [open, esTope, onClose, closeOnEsc, lockScroll]);
+    // `onClose` NO va acá. Estaba en el array del efecto combinado, y como hay
+    // llamadores que lo pasan como flecha en línea —`onClose={() => …}`, o sea
+    // identidad nueva en cada render—, el bloqueo se soltaba y se volvía a
+    // poner en CADA render del padre mientras el diálogo estaba abierto: dos
+    // re-layouts más cada vez, por nada. Lo necesita el teclado, no el scroll.
+  }, [open, esTope, lockScroll, documentoScrollea]);
 
   // Foco: entrar al abrir, y VOLVER al disparador al cerrar.
   // Lo segundo es lo que más se olvida y lo que más se nota: sin eso, cerrar un
@@ -451,7 +519,7 @@ export default function ModalShell({
     // que ya está donde apunta, así que la premisa del gesto no existe. Entró
     // sin esta compuerta en v2.279.0 ("la gota para TODO diálogo") y se coló al
     // escritorio, donde la gramática es la otra: un panel que aparece.
-    activo: sinHover && !animacionPropia && !sinMovimiento,
+    activo: gotaActiva,
     cerrando: !open,
     // El nodo se va cuando la salida TERMINÓ, no cuando un temporizador cree que
     // debería haber terminado. `abiertoRef` porque el aviso llega de forma
@@ -558,6 +626,7 @@ export default function ModalShell({
           abajo, que va después y por tanto encima. */}
       {conVelo && (
         <div
+          ref={veloRef}
           data-velo="si"
           aria-hidden="true"
           className={`absolute inset-0 pointer-events-none ${veloAnim}`}

@@ -175,6 +175,11 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
         setAbierto(corte.id);
     }, []);
 
+    // Estable a propósito, no una flecha en línea: `ModalShell` la recibe y una
+    // identidad nueva en cada render le reinicia efectos mientras el diálogo
+    // está abierto. Y esta baldosa se re-renderiza sola cada minuto.
+    const cerrarDetalle = useCallback(() => { setAbierto(null); setModoInicial(null); }, []);
+
     // El camino de un clic: sólo para los que cuadran al centavo. Cuál es cuál
     // lo decide `TarjetaCorte`, para que el Inicio y el módulo no discrepen.
     const confirmarRapido = useCallback(async (corte) => {
@@ -267,7 +272,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                 corte={corteAbierto}
                 nombreSala={nombreSala}
                 modoInicial={modoInicial}
-                onClose={() => { setAbierto(null); setModoInicial(null); }}
+                onClose={cerrarDetalle}
                 onResuelto={recargar}
                 origen="inicio"
             />

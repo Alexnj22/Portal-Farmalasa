@@ -6,6 +6,7 @@ import SegmentedControl from './SegmentedControl';
 import Button from './Button';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { granularidadDePeriodo } from '../../utils/periodo';
 
 const MONTHS_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MONTHS_SH   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -219,6 +220,11 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
         const m = fini ? parseInt(fini.split('-')[1]) - 1 : curM;
         setViewYear(y);
         setViewMonth(m);
+        // El panel abre en el modo del período que ya está puesto: mirando un
+        // día, en POR DÍAS. Arrancaba siempre en POR MES, así que quien venía de
+        // «Hoy» tenía que cambiar de modo antes de poder mover un día — el
+        // control mostraba la escala equivocada para lo que estaba mirando.
+        setSelMode(granularidadDePeriodo(value).paso === 'dia' ? 'day' : 'month');
         setMonthHovering(null);
         setDayPhase('idle');
         setDayHover(null);

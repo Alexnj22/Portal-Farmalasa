@@ -115,8 +115,16 @@ const TarjetaCorte = memo(function TarjetaCorte({
     // Alineados a la derecha y del ancho de su texto: estirados a todo lo
     // ancho, el botón azul pesaba más que la cifra, que es lo único que hay que
     // leer antes de decidir.
+    //
+    // `ml-auto` y NO `justify-between` en el renglón: un corte que cuadra al
+    // centavo no lleva píldora de severidad, así que las acciones quedaban de
+    // hijo único y `justify-between` las mandaba a la IZQUIERDA. O sea que los
+    // botones cambiaban de sitio según si la tarjeta tenía etiqueta o no —
+    // reportado sobre la baldosa, donde las tres tarjetas se ven juntas y el
+    // salto canta. Empujándolas con `ml-auto` el sitio es el mismo siempre,
+    // haya etiqueta o no.
     const acciones = hayAcciones ? (
-        <div className="flex items-center justify-end gap-1.5 shrink-0">
+        <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
             <Button variant="secondary" size="sm" icon={Ban} onClick={descartar}>
                 Descartar
             </Button>
@@ -158,9 +166,16 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 arriba. `mt-auto` SÓLO cuando hay acciones: es lo que alinea los
                 botones al pie en una rejilla de alturas iguales, pero en un
                 corte ya resuelto abajo va el bloque de quién firmó, y empujar
-                las etiquetas al fondo las metería debajo de él. */}
+                las etiquetas al fondo las metería debajo de él.
+
+                `flex-wrap` es lo que salva al TELÉFONO: ahí la baldosa mide
+                ~320px y la píldora más los dos botones no entran juntos. Sin
+                envolver, los tres se aprietan en el mismo renglón y los botones
+                le comen el ancho a la etiqueta —reportado—. Envolviendo, las
+                acciones bajan a su propio renglón y `ml-auto` las deja igual de
+                alineadas a la derecha que cuando entran al lado. */}
             {compacta && (etiquetas || acciones) ? (
-                <div className={`flex items-center justify-between gap-2 ${acciones ? 'mt-auto' : ''}`}>
+                <div className={`flex items-center gap-x-2 gap-y-1.5 flex-wrap ${acciones ? 'mt-auto' : ''}`}>
                     {etiquetas}
                     {acciones}
                 </div>

@@ -112,14 +112,45 @@ export function fetchRutaLocationSingle(rutaId) {
     return supabase.from('ruta_locations').select('lat, lng, updated_at').eq('ruta_id', rutaId).maybeSingle();
 }
 
+// ── Escrituras de ruta: "no pasó nada" tiene que doler ──────────────────────
+// Un UPDATE que RLS frena NO falla. PostgREST responde 204 sin filas y
+// supabase-js entrega `{ data: null, error: null }` — byte por byte lo mismo que
+// el éxito. Las dos policies (`rutas_update`, `ruta_pedidos_update`) exigen
+// `can_edit` sobre `pedidos_tab_rutas`, así que a quien sólo tenía «ver» el
+// botón le giraba, se apagaba, la ruta seguía igual… y encima quedaba una
+// entrada en la bitácora afirmando que había arrancado, porque el
+// `appendAuditLog` viene después del `if (error)` que nunca se cumplía.
+//
+// Pidiendo el `RETURNING` (`.select('id')`) se puede contar lo que de veras
+// cambió, y "cero filas" pasa a ser un error de verdad. El arreglo va acá y no
+// en cada pantalla a propósito: los cinco llamadores ya miraban `error`, así que
+// lo heredan sin tocar una línea — y el que se escriba mañana también.
+//
+// Compromiso conocido: el `RETURNING` pasa por la policy de SELECT, que además
+// de `can_view` pide scope `ALL` o una parada en la sucursal propia. Si alguien
+// pudiera escribir una ruta que no puede leer, diríamos "no se pudo" sobre una
+// escritura que sí ocurrió. Falla del lado seguro —y hoy no alcanza a nadie: no
+// se ve la ruta, no se ve el botón— mientras que el silencio de antes era del
+// lado caro.
+const MSG_RUTA_SIN_EFECTO = 'No se pudo guardar el cambio en la ruta. Puede que ya no tengas permiso para gestionar rutas: vuelve a iniciar sesión y, si sigue igual, consulta con tu jefatura.';
+
+async function escrituraDeRuta(builder) {
+    const { data, error } = await builder.select('id');
+    if (error) return { data: null, error };
+    if (!data?.length) return { data: null, error: new Error(MSG_RUTA_SIN_EFECTO) };
+    return { data, error: null };
+}
+
 export function updateRutaStatus(rutaId, patch) {
-    return supabase.from('rutas').update(patch).eq('id', rutaId);
+    return escrituraDeRuta(supabase.from('rutas').update(patch).eq('id', rutaId));
 }
 
 export function updateRutaPedidoEntregado(stopId, userId) {
-    return supabase.from('ruta_pedidos')
-        .update({ entregado_at: new Date().toISOString(), entregado_por: userId })
-        .eq('id', stopId);
+    return escrituraDeRuta(
+        supabase.from('ruta_pedidos')
+            .update({ entregado_at: new Date().toISOString(), entregado_por: userId })
+            .eq('id', stopId)
+    );
 }
 
 // Extraído de TabRutas.jsx (5 de sus 7 sitios reutilizan funciones ya

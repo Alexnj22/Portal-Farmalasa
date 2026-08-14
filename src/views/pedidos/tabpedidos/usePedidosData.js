@@ -1016,7 +1016,9 @@ export function usePedidosData({ searchTerm = '' }) {
                 notifyBranch(mapa.branch_id, { type: 'PEDIDO_LLEGADA', title: 'Conductor llegó a tu sucursal', body: 'Confirma la recepción de tu pedido.', link: '/pedidos', push: true });
             }
             loadActiveRutas();
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            useToastStore.getState().showToast('No se pudo marcar la entrega', mensajeAmigable(e), 'error');
+        }
     }, [user, loadActiveRutas]);
 
     const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {

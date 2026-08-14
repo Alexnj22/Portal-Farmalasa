@@ -7,6 +7,8 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { clickable } from '../../utils/clickable';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
+import { mensajeAmigable } from '../../utils/errorMessages';
 import { notifyBranch } from '../../utils/notify';
 import CrearRutaModal from './CrearRutaModal';
 import RutaMapModal   from './RutaMapModal';
@@ -42,6 +44,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const [busyStop,  setBusyStop]  = useState(null);
   const [busyRuta,  setBusyRuta]  = useState(null);
   const [mapOpen,   setMapOpen]   = useState(false);
+  const showToast = useToastStore(s => s.showToast);
 
   const paradas = [...(ruta.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
   const isConductor = ruta.conductor_id === currentUserId;
@@ -56,7 +59,10 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
       onRefresh();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      // `mensajeAmigable` ya manda el error crudo a la consola.
+      showToast('No se pudo iniciar la ruta', mensajeAmigable(e), 'error');
+    }
     finally { setBusyRuta(null); }
   };
 
@@ -79,7 +85,9 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
         });
       }
       onRefresh();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      showToast('No se pudo marcar la entrega', mensajeAmigable(e), 'error');
+    }
     finally { setBusyStop(null); }
   };
 
@@ -90,7 +98,9 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
       onRefresh();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      showToast('No se pudo cerrar la ruta', mensajeAmigable(e), 'error');
+    }
     finally { setBusyRuta(null); }
   };
 
@@ -237,9 +247,17 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
 // ── Main TabRutas ───────────────────────────────────────────────────────────
 export default function TabRutas({ searchTerm = '' }) {
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, getScope } = useAuth();
   const canEdit  = hasPermission('pedidos_tab_rutas', 'can_edit');
-  const isBranch = user?.scope === 'sucursal';
+  // `user.scope === 'sucursal'` era una guarda muerta: el objeto `user` no tiene
+  // campo `scope` —los scopes viven por módulo, dentro de `rolePerms`— y su
+  // vocabulario es `ALL`/`BRANCH`/`MINE` (lo fija el CHECK de
+  // `role_permissions.scope`), así que 'sucursal' no existe en ninguna parte.
+  // O sea que `isBranch` era `false` siempre y las tres ramas que dependen de él
+  // —las acciones del conductor y el botón de crear— nunca escondieron nada.
+  // Hoy no cambia lo que ve nadie: las 6 filas del módulo están en `ALL`. Lo que
+  // cambia es que ahora la guarda funciona el día que alguien ponga `BRANCH`.
+  const isBranch = getScope('pedidos_tab_rutas') === 'BRANCH';
 
   const [rutas,         setRutas]         = useState([]);
   const [loading,       setLoading]       = useState(true);

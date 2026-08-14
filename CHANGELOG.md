@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.605.2 — una ruta que no se pudo guardar ahora lo dice
+
+Salió de una pregunta concreta: por qué Fernando no podía iniciar su ruta. La
+respuesta era un permiso —«Gestionar» apagado en Rutas para Auxiliar de Bodega,
+ya corregido en la base— pero el camino hasta ahí destapó que el portal no tenía
+forma de decirlo.
+
+**Un cambio de ruta que la base rechaza ya no pasa por bueno.** Las dos policies
+de ruta exigen «Gestionar»; sin ese permiso el `UPDATE` no falla, devuelve cero
+filas —PostgREST responde 204 y supabase-js entrega lo mismo que el éxito—. Así
+que el botón giraba, se apagaba, la ruta seguía igual y **quedaba una entrada en
+la bitácora afirmando que había arrancado**, porque el registro va después del
+`if (error)` que nunca se cumplía. Ahora las dos escrituras piden el `RETURNING`
+y convierten "cero filas" en un error de verdad. Va en `src/data/pedidos.js` y
+no en cada pantalla a propósito: los cinco sitios que las llaman ya miraban
+`error`, así que lo heredan sin tocarse, y el que se escriba mañana también.
+
+**Y el aviso se ve.** Las tres acciones del conductor en la pestaña de Rutas
+—iniciar, marcar la entrega, volver a base— sólo escribían el fallo en la
+consola del navegador; ahora sale en pantalla. Lo mismo la entrega desde la
+pestaña de Pedidos, que era el mismo hueco en otra vista.
+
+**`isBranch` era una guarda muerta.** Comparaba `user.scope === 'sucursal'`,
+pero el objeto del usuario no tiene ese campo —los alcances viven por módulo— y
+su vocabulario es `ALL`/`BRANCH`/`MINE`, así que `'sucursal'` no existe en
+ninguna parte: la condición era falsa siempre y las tres ramas que dependen de
+ella nunca escondieron nada. Hoy no cambia lo que ve nadie (las 6 filas del
+módulo están en `ALL`); cambia que ahora funciona el día que alguien ponga
+`BRANCH`.
+
+Compromiso conocido y anotado en el código: el `RETURNING` pasa por la policy de
+lectura, así que en el caso teórico de poder escribir una ruta que no se puede
+leer, diríamos "no se pudo" sobre algo que sí ocurrió. Falla del lado seguro, y
+hoy no alcanza a nadie —sin ver la ruta no hay botón—; el silencio de antes
+fallaba del lado caro.
+
 ## v2.605.1 — fix(cortes): la diferencia de un corte sin confirmar no le corre la base al siguiente
 
 Salud 5 lo destapó. A las 12:36 el corte sobraba $1.25 porque el cobro de

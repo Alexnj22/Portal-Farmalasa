@@ -103,42 +103,67 @@ describe('repartir una reposición entre quienes aportan', () => {
 // Los casos son los seis cierres reales del 13-ago.
 
 describe('el desglose del cierre del día', () => {
-    it('saca el efectivo restando lo que no pasa por la caja', () => {
-        // La Popular, 13-ago — el que levantó el usuario en pantalla.
-        const d = desgloseDelCierre({ total_declarado: 1678.83, tk_tarjeta: 57.55, tk_credito: 18.40 });
+    // La fuente buena son las facturas: traen TODAS las formas de pago. El
+    // tiquete Z sólo lista tarjeta y crédito, y ahí se escondió una
+    // transferencia dentro del efectivo.
+    const facturas = (o) => Object.entries(o).map(([tipo_pago, total]) => ({ tipo_pago, total }));
+
+    it('saca el efectivo de las facturas, no restando del total', () => {
+        // La Popular, 13-ago — el cierre que el usuario abrió en pantalla.
+        const d = desgloseDelCierre(
+            { total_declarado: 1678.83 },
+            facturas({ efectivo: 1602.88, tarjeta: 57.55, credito: 18.40 }),
+        );
         expect(d.total).toBe(1678.83);
         expect(d.efectivo).toBe(1602.88);
+        expect(d.derivado).toBe(false);
+    });
+
+    it('NO se traga una transferencia dentro del efectivo', () => {
+        // Salud 2, 13-ago. El desglose derivado del tiquete daba $1,411.25 de
+        // efectivo —$2.20 de más— porque el tiquete no imprime transferencias.
+        const conFacturas = desgloseDelCierre(
+            { total_declarado: 1774.15, tk_tarjeta: 362.25, tk_credito: 0.65 },
+            facturas({ efectivo: 1409.05, tarjeta: 362.25, credito: 0.65, transferencia: 2.20 }),
+        );
+        expect(conFacturas.efectivo).toBe(1409.05);
+        expect(conFacturas.formas.map((f) => f.tipo)).toContain('transferencia');
+
+        // Y el caso viejo, para que quede escrito por qué no alcanzaba.
+        const soloTiquete = desgloseDelCierre({
+            total_declarado: 1774.15, tk_tarjeta: 362.25, tk_credito: 0.65,
+        });
+        expect(soloTiquete.efectivo).toBe(1411.25);
+        expect(soloTiquete.derivado).toBe(true);
     });
 
     it('coincide con la venta del último corte de caja del mismo día', () => {
-        // La comprobación que hace confiable la derivación: el efectivo del
-        // cierre TIENE que ser el `VENTA` que contó el último corte.
+        // Lo que hace confiable la cifra: el efectivo del cierre TIENE que ser
+        // el `VENTA` que contó el último corte. Las 6 salas del 13-ago.
         const casos = [
-            { total: 1678.83, tarjeta: 57.55,  credito: 18.40, ventaDelUltimoCorte: 1602.88 }, // La Popular
-            { total: 1628.75, tarjeta: 202.55, credito: 13.00, ventaDelUltimoCorte: 1413.20 }, // Salud 1
-            { total: 1184.65, tarjeta: 33.60,  credito: 4.65,  ventaDelUltimoCorte: 1146.40 }, // Salud 3
-            { total: 1306.16, tarjeta: 135.45, credito: 64.56, ventaDelUltimoCorte: 1106.15 }, // Salud 4
-            { total: 347.55,  tarjeta: 35.15,  credito: null,  ventaDelUltimoCorte: 312.40 },  // Salud 5
+            { pagos: { efectivo: 1602.88, tarjeta: 57.55,  credito: 18.40 },                       ultimoCorte: 1602.88 },
+            { pagos: { efectivo: 1413.20, tarjeta: 202.55, credito: 13.00 },                       ultimoCorte: 1413.20 },
+            { pagos: { efectivo: 1409.05, tarjeta: 362.25, credito: 0.65, transferencia: 2.20 },   ultimoCorte: 1409.05 },
+            { pagos: { efectivo: 1146.40, tarjeta: 33.60,  credito: 4.65 },                        ultimoCorte: 1146.40 },
+            { pagos: { efectivo: 1106.15, tarjeta: 135.45, credito: 64.56 },                       ultimoCorte: 1106.15 },
+            { pagos: { efectivo: 312.40,  tarjeta: 35.15 },                                        ultimoCorte: 312.40 },
         ];
         for (const c of casos) {
-            const d = desgloseDelCierre({
-                total_declarado: c.total, tk_tarjeta: c.tarjeta, tk_credito: c.credito,
-            });
-            expect(d.efectivo).toBeCloseTo(c.ventaDelUltimoCorte, 2);
+            expect(desgloseDelCierre({}, facturas(c.pagos)).efectivo).toBeCloseTo(c.ultimoCorte, 2);
         }
     });
 
-    it('aguanta un cierre sin tarjeta ni crédito', () => {
-        const d = desgloseDelCierre({ total_declarado: 500 });
-        expect(d.tarjeta).toBe(0);
-        expect(d.credito).toBe(0);
-        expect(d.efectivo).toBe(500);
+    it('lista una forma que nunca vio antes, en vez de esconderla', () => {
+        // El día que el origen agregue una forma nueva tiene que aparecer sola.
+        const d = desgloseDelCierre({}, facturas({ efectivo: 100, cheque: 25 }));
+        expect(d.formas).toEqual([{ tipo: 'cheque', total: 25 }]);
+        expect(d.efectivo).toBe(100);
     });
 
-    it('no inventa formas de pago que el origen no manda', () => {
-        // `otras` existe para que el día que aparezca una forma nueva —una
-        // transferencia— el desglose deje de cerrar y se vea. Hoy es cero en los
-        // 42 tiquetes capturados.
-        expect(desgloseDelCierre({ total_declarado: 100, tk_tarjeta: 10 }).otras).toBe(0);
+    it('sin facturas cae al tiquete y lo dice', () => {
+        const d = desgloseDelCierre({ total_declarado: 500 });
+        expect(d.efectivo).toBe(500);
+        expect(d.formas).toEqual([]);
+        expect(d.derivado).toBe(true);
     });
 });

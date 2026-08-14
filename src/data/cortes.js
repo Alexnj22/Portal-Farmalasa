@@ -195,6 +195,21 @@ export async function fetchDiferencias({ desde, hasta }) {
     return data || [];
 }
 
+/**
+ * La venta del período abierta por forma de pago.
+ *
+ * Es la fuente INDEPENDIENTE del tiquete: el Z lista al pie sólo tarjeta y
+ * crédito, así que una transferencia quedaba sumada dentro del «efectivo».
+ * `sales_invoices.tipo_pago` las trae todas.
+ */
+export async function fetchVentasPorPago({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('get_ventas_por_forma_de_pago', {
+        p_desde: desde, p_hasta: hasta,
+    });
+    if (error) { console.error('cortes: fetchVentasPorPago failed:', error.message); return []; }
+    return data || [];
+}
+
 /** La bitácora de un corte: cada firma, reapertura y resolución. */
 export async function fetchEventosDelCorte(corteId) {
     const { data, error } = await supabase.rpc('get_corte_eventos', { p_corte_id: corteId });

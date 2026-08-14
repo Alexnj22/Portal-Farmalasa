@@ -302,33 +302,70 @@ export function notaDeCifra(corte) {
  * Popular del 13-ago decía que se contaron $1,678.83 cuando en la caja hubo
  * $1,602.88. Lo levantó el usuario mirando la pantalla.
  *
- * El efectivo se DERIVA, y la derivación está verificada contra los cortes de
- * caja del mismo día: `total − tarjeta − crédito` da exactamente el `VENTA` del
- * último corte en 5 de las 6 salas (la sexta difiere $2.20 porque siguió
- * vendiendo después de su último conteo, que es lo esperado).
+ * ── EL DESGLOSE SALE DE LAS FACTURAS, NO DEL TIQUETE ───────────────────────
+ * El tiquete Z lista al pie los pagos con tarjeta y las ventas al crédito, y
+ * nada más. Derivar el efectivo como `total − tarjeta − crédito` funciona…
+ * hasta que aparece una forma de pago que el tiquete no imprime.
  *
- * Ni la tarjeta ni el crédito entran a la caja: la tarjeta se cobra por el
- * POS y el crédito recién entra cuando el cliente paga, y ahí aparece como
- * cobro de crédito en un corte posterior.
+ * Y aparece. **Salud 2 del 13-ago cobró $2.20 por transferencia**: el desglose
+ * derivado del tiquete decía $1,411.25 de efectivo cuando entraron $1,409.05.
+ * Esos mismos $2.20 los había visto antes como «descuadre contra el último
+ * corte» y los expliqué como ventas posteriores al conteo. No lo eran, y la
+ * explicación cómoda tapó el dato — ver
+ * `feedback_el_residuo_sin_explicar_delata_el_diagnostico`.
  *
- * No hay transferencias: de los 42 tiquetes capturados al 2026-08-14, 36
- * nombran tarjeta y 33 crédito; **ninguno** nombra transferencia, cheque ni
- * depósito. Si algún día aparecen, este desglose deja de cerrar y hay que
- * agregarlas — por eso devuelve también `otras`, que hoy es siempre cero.
+ * Por eso el desglose sale de `sales_invoices.tipo_pago`, que es una fuente
+ * INDEPENDIENTE del tiquete y trae TODAS las formas, incluidas las que el
+ * tiquete no nombra. Verificado sobre el 13-ago en las 6 salas: el `efectivo`
+ * coincide al centavo con el `VENTA` del último corte de cada sala, y la suma
+ * de todas las formas con el total del Z.
+ *
+ * Ni la tarjeta ni el crédito entran a la caja: la tarjeta se cobra por el POS
+ * y el crédito recién entra cuando el cliente paga, y ahí aparece como cobro de
+ * crédito en un corte posterior. La transferencia tampoco.
+ *
+ * @param corte  el cierre (para el total y el respaldo del tiquete)
+ * @param ventas filas de `get_ventas_por_forma_de_pago` de ESA sala y ese día
  */
-export function desgloseDelCierre(corte) {
+export function desgloseDelCierre(corte, ventas = null) {
     const total = num(corte?.total_declarado) ?? 0;
-    const tarjeta = num(corte?.tk_tarjeta) ?? 0;
-    const credito = num(corte?.tk_credito) ?? 0;
+
+    // Sin las facturas se cae al tiquete, que es lo único que había antes. Da
+    // el mismo número salvo que ese día haya una forma que el tiquete no lista
+    // —y entonces el efectivo sale de más—, así que el llamador avisa con
+    // `derivado` que la cifra es la mejor disponible y no la medida.
+    if (!ventas?.length) {
+        const tarjeta = num(corte?.tk_tarjeta) ?? 0;
+        const credito = num(corte?.tk_credito) ?? 0;
+        return {
+            total,
+            efectivo: redondear(total - tarjeta - credito),
+            formas: [
+                { tipo: 'tarjeta', total: tarjeta },
+                { tipo: 'credito', total: credito },
+            ].filter((f) => Math.abs(f.total) >= 0.01),
+            derivado: true,
+        };
+    }
+
+    const suma = (t) => ventas
+        .filter((v) => String(v.tipo_pago).toLowerCase() === t)
+        .reduce((a, v) => a + (num(v.total) ?? 0), 0);
+
+    // Todo lo que NO es efectivo, tal como venga: si mañana el origen agrega
+    // una forma nueva, aparece sola en la lista en vez de desaparecer dentro
+    // del efectivo. Es exactamente lo que falló con la transferencia.
+    const formas = ventas
+        .filter((v) => String(v.tipo_pago).toLowerCase() !== 'efectivo')
+        .map((v) => ({ tipo: String(v.tipo_pago), total: redondear(num(v.total) ?? 0) }))
+        .filter((f) => Math.abs(f.total) >= 0.01)
+        .sort((a, b) => b.total - a.total);
+
     return {
-        total,
-        tarjeta,
-        credito,
-        efectivo: redondear(total - tarjeta - credito),
-        // Un resto distinto de cero significaría una forma de pago que este
-        // desglose no conoce. Hoy es imposible por construcción, y justamente
-        // por eso conviene que exista: el día que el origen agregue una, se ve.
-        otras: 0,
+        total: redondear(ventas.reduce((a, v) => a + (num(v.total) ?? 0), 0)) || total,
+        efectivo: redondear(suma('efectivo')),
+        formas,
+        derivado: false,
     };
 }
 

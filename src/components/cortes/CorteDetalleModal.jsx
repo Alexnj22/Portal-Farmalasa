@@ -9,7 +9,9 @@ import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import ResolverDiferencia from './ResolverDiferencia';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
-import { fetchDiferencias, fetchMovimientos, fetchPersonas, reabrirCorte } from '../../data/cortes';
+import {
+    fetchDiferencias, fetchMovimientos, fetchPersonas, fetchVentasPorPago, reabrirCorte,
+} from '../../data/cortes';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
 import { desgloseDelCierre, notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
@@ -101,12 +103,17 @@ export default function CorteDetalleModal({
     const [diferencia, setDiferencia] = useState(null);
     const [recarga, setRecarga] = useState(0);
     const [reabriendo, setReabriendo] = useState(false);
+    const [ventas, setVentas] = useState(null);
 
     const abierto = !!corte;
     const corteId = corte?.id ?? null;
     const branchId = corte?.branch_id ?? null;
     const fecha = corte?.fecha ?? null;
     const resueltoPor = corte?.resuelto_por ?? null;
+    // Se deriva del corte VIVO y no de `visible`: lo que se pide es para el que
+    // está abierto, no para el que se está yendo. (`visible` existe para que lo
+    // PINTADO sobreviva a la animación de cierre; una carga no debe seguirlo.)
+    const esCierre = corte?.tipo === 'Z';
 
     // Al abrir OTRO corte —o el mismo con otro botón— se reinicia el
     // formulario. El ajuste va en RENDER y no en un efecto: es el patrón que
@@ -123,6 +130,7 @@ export default function CorteDetalleModal({
         setNota('');
         setMovs([]);
         setDiferencia(null);
+        setVentas(null);
     }
 
     // Cómo se resolvió su diferencia, si ya se resolvió. Se pide por fecha
@@ -138,6 +146,18 @@ export default function CorteDetalleModal({
         });
         return () => { vivo = false; };
     }, [abierto, corteId, fecha, recarga]);
+
+    // La venta por forma de pago: SÓLO para el cierre del día, que es el único
+    // que la muestra. Pedirla para cada corte de caja sería traer las facturas
+    // del día para pintar una diferencia que no las usa.
+    useEffect(() => {
+        if (!abierto || !esCierre || branchId == null || !fecha) return;
+        let vivo = true;
+        fetchVentasPorPago({ desde: fecha, hasta: fecha }).then((filas) => {
+            if (vivo) setVentas((filas || []).filter((v) => String(v.branch_id) === String(branchId)));
+        });
+        return () => { vivo = false; };
+    }, [abierto, esCierre, branchId, fecha]);
 
     // Los movimientos del día: sólo hacen falta para explicar una diferencia,
     // así que se piden al abrir un corte y no junto con la lista.
@@ -185,7 +205,7 @@ export default function CorteDetalleModal({
     const esZ = visible?.tipo === 'Z';
     // El desglose del cierre: su monto es venta, no efectivo. Ver el bloque de
     // `desgloseDelCierre`, que es donde vive el porqué.
-    const cierre = useMemo(() => desgloseDelCierre(visible), [visible]);
+    const cierre = useMemo(() => desgloseDelCierre(visible, ventas), [visible, ventas]);
     const pendiente = visible?.estado === 'PENDIENTE';
     const puedeFirmar = pendiente && !esZ && puedeResolver;
     // Reabrir es de la propia sala (decisión del usuario, 2026-08-14): la misma
@@ -282,15 +302,19 @@ export default function CorteDetalleModal({
                                         {formatMoney(cierre.total)}
                                     </span>
                                 </div>
+                                {/* Las formas se PINTAN COMO VENGAN, no dos fijas.
+                                    Con «tarjeta» y «crédito» escritos a mano, una
+                                    transferencia no desaparecía de la pantalla:
+                                    desaparecía DENTRO del efectivo, que es peor
+                                    —el número seguía cuadrando y decía de más—.
+                                    Pasó con los $2.20 de Salud 2 del 13-ago. */}
                                 <div className="mt-3 space-y-1 text-caption">
-                                    <div className="flex justify-between gap-3 text-content-3">
-                                        <span>Con tarjeta</span>
-                                        <span className="tabular-nums">{formatMoney(cierre.tarjeta)}</span>
-                                    </div>
-                                    <div className="flex justify-between gap-3 text-content-3">
-                                        <span>Al crédito</span>
-                                        <span className="tabular-nums">{formatMoney(cierre.credito)}</span>
-                                    </div>
+                                    {cierre.formas.map((f) => (
+                                        <div key={f.tipo} className="flex justify-between gap-3 text-content-3">
+                                            <span className="capitalize">{f.tipo}</span>
+                                            <span className="tabular-nums">{formatMoney(f.total)}</span>
+                                        </div>
+                                    ))}
                                     {/* El efectivo va destacado: es el único que
                                         pasó por la caja, y por lo tanto el único
                                         que los cortes del día cuentan. */}

@@ -137,10 +137,10 @@ Los descartados nunca corren la base.
 → **NO suma a `VENTA`.** Aparece sólo listada al pie del tiquete, como
 información.
 
-Verificado: en el cierre del día, `venta total − tarjeta − crédito` da
-exactamente el `VENTA` del último corte de caja. Si el crédito estuviera adentro
-de `VENTA`, toda sala con ventas al crédito mostraría un faltante por ese monto
-todos los días.
+Verificado contra las facturas: la suma de las ventas **en efectivo** de un día
+da exactamente el `VENTA` del último corte de caja, en las 6 salas. Si el crédito
+estuviera adentro de `VENTA`, toda sala con ventas al crédito mostraría un
+faltante por ese monto todos los días.
 
 **Momento 2 — el cliente paga.** Entra dinero sin venta asociada.
 
@@ -155,9 +155,9 @@ anotar se ve exactamente igual que un sobrante.**
 
 ## 6. El cierre del día (Z) da VENTAS, no efectivo
 
-Su monto es **todo lo vendido**, sumando las tres formas de pago. Se desglosa por
-tipo de documento (tiquetes / facturas / fiscales), no por cómo pagaron — pero al
-pie sí trae los totales de tarjeta y de crédito.
+Su monto es **todo lo vendido**, sumando todas las formas de pago. Se desglosa
+por tipo de documento (tiquetes / facturas / fiscales), no por cómo pagaron — al
+pie trae sólo los totales de tarjeta y de crédito, que no son todas (ver abajo).
 
 Salud 1, 13-ago:
 
@@ -169,19 +169,29 @@ Salud 1, 13-ago:
 | **Efectivo que debió entrar** | **$1,413.20** |
 
 Y ese $1,413.20 es exactamente el `VENTA` del último corte de caja de esa sala.
-**Verificado en las 6 salas: 5 cuadran al centavo.** La sexta (Salud 2) difiere
-$2.20 porque siguió vendiendo después de su último conteo — eso es lo esperado,
-no un descuadre.
+**Verificado contra las facturas en las 6 salas: las 6 cuadran al centavo.**
 
 **Ni la tarjeta ni el crédito pasan por la caja**: la tarjeta se cobra por el POS
 y el crédito entra recién cuando el cliente paga. Los cortes del día sólo cuentan
 el efectivo.
 
-**No hay transferencias.** De los 42 tiquetes capturados al 2026-08-14, 36
-nombran tarjeta y 33 crédito; **ninguno** nombra transferencia, cheque ni
-depósito. `desgloseDelCierre` devuelve un campo `otras` que hoy es siempre cero,
-para que el día que el origen agregue una forma de pago la cuenta deje de cerrar
-y se vea.
+### Sí hay transferencias, y el tiquete no las nombra
+
+Lo primero que escribí acá fue que no existían: de los 42 tiquetes capturados,
+ninguno nombra transferencia, cheque ni depósito. **Era cierto del tiquete y
+falso del negocio.**
+
+`sales_invoices.tipo_pago` sí las trae. **Salud 2, 13-ago: una transferencia de
+$2.20.** Y esos mismos $2.20 los había visto antes como «descuadre contra el
+último corte» y los expliqué como ventas posteriores al conteo — la hipótesis
+cómoda, que además encajaba. No lo eran.
+
+Por eso el desglose **sale de las facturas y no del tiquete**, y pinta las formas
+que vengan en vez de dos escritas a mano: una forma nueva tiene que aparecer
+sola, no esconderse dentro del efectivo. Cuando desaparece dentro del efectivo es
+peor que un error visible — el número sigue cuadrando y dice de más.
+
+Ver `feedback_el_residuo_sin_explicar_delata_el_diagnostico`.
 
 ---
 

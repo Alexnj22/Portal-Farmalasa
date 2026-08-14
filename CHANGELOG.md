@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.608.2 — El cierre no se traga una transferencia
+
+**Corrección de algo que salió mal ayer mismo.** El desglose del cierre (v2.607.1)
+derivaba el efectivo del tiquete: `total − tarjeta − crédito`. Y el tiquete Z
+lista al pie **sólo** esas dos formas.
+
+Salud 2, 13-ago: una **transferencia de $2.20**. El desglose decía $1,411.25 de
+efectivo cuando entraron $1,409.05. La transferencia no desaparecía de la
+pantalla — desaparecía *dentro del efectivo*, que es peor: el número seguía
+cuadrando y decía de más.
+
+Y esos mismos $2.20 los había mirado antes, en la verificación que declaró «5 de
+6 salas cuadran». Los llamé descuadre y los expliqué como ventas posteriores al
+último conteo — la hipótesis cómoda, que además encajaba. Eran la transferencia.
+
+El desglose ahora sale de **`sales_invoices.tipo_pago`**, que es una fuente
+independiente del tiquete y trae todas las formas con su hora. Y la pantalla
+**pinta las que vengan** en vez de dos escritas a mano, así una forma nueva
+aparece sola. Verificado en las 6 salas del 13-ago: el efectivo coincide al
+centavo con el `VENTA` del último corte, y la suma de todas las formas con el
+total del cierre.
+
+Cuando no hay facturas se cae al tiquete y la función lo marca (`derivado`), para
+no presentar como medida una cifra que es la mejor disponible.
+
+Corregido también el documento de cortes, que afirmaba que no había
+transferencias: era cierto del tiquete y falso del negocio.
+
 ## v2.608.1 — Menos color en el detalle del corte
 
 «Siento que hay demasiados colores» (usuario, sobre el detalle de un corte). Y

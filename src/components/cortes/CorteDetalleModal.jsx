@@ -6,6 +6,7 @@ import LiquidAvatar from '../common/LiquidAvatar';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
+import SegmentedControl from '../common/SegmentedControl';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 import { fetchMovimientos, fetchPersonas, resolverCorte } from '../../data/cortes';
 import { contraste, notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
@@ -330,19 +331,23 @@ export default function CorteDetalleModal({
 
                         {puedeFirmar && modo && (
                             <div className="space-y-3">
+                                {/* Una de N opciones es `SegmentedControl`, no
+                                    tres botones cuyo `variant` mira `=== motivo`
+                                    (§15.3). Además de verse igual en todo el
+                                    portal, trae el `radiogroup` que hace que un
+                                    lector anuncie «2 de 3». */}
                                 {modo === 'descartar' && (
                                     <div>
-                                        <div className="text-caption font-bold uppercase tracking-wide text-content-3 mb-1.5">
+                                        <div className="text-caption font-black uppercase tracking-widest text-content-3 mb-1.5">
                                             Motivo del descarte
                                         </div>
-                                        <div className="flex gap-2 flex-wrap">
-                                            {MOTIVOS.map((m) => (
-                                                <Button key={m} variant={motivo === m ? 'danger' : 'secondary'} size="sm"
-                                                    onClick={() => setMotivo(m)}>
-                                                    {m}
-                                                </Button>
-                                            ))}
-                                        </div>
+                                        <SegmentedControl
+                                            label="Motivo del descarte"
+                                            tone="danger"
+                                            value={motivo}
+                                            onChange={setMotivo}
+                                            options={MOTIVOS.map((m) => ({ value: m, label: m }))}
+                                        />
                                     </div>
                                 )}
                                 <PortalTextarea

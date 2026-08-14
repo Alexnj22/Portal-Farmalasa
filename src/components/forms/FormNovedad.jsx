@@ -403,7 +403,6 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         key={permPickerKey}
                                         value=""
                                         onChange={(val) => handleAddPermissionDate(val)}
-                                        placeholder="Seleccione el día..."
                                         icon={CalendarDays}
                                         holidays={holidays}
                                         selectedDates={formData?.permissionDates || []}
@@ -442,7 +441,6 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                             : (isDisability ? null : (val && prev.endDate && val > prev.endDate ? null : prev.endDate));
                                         return { ...prev, date: val || null, endDate: newEnd, manualEndDateOverride: false };
                                     })}
-                                    placeholder="DD/MM/AAAA"
                                     icon={CalendarDays}
                                     highlightRangeStart={formData?.date}
                                     highlightRangeEnd={formData?.endDate}
@@ -464,7 +462,6 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                             }
                                             setFormData(prev => ({ ...prev, endDate: val || null, manualEndDateOverride: true }));
                                         }}
-                                        placeholder="DD/MM/AAAA"
                                         icon={CalendarClock}
                                         highlightRangeStart={formData?.date}
                                         highlightRangeEnd={formData?.endDate}

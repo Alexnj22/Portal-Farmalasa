@@ -28,8 +28,16 @@ import { formatMoney } from '../../utils/formatNumber';
  * verlo.
  */
 
-const TONO_TEXTO  = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
-const TONO_FRANJA = { ok: 'bg-success/40',     sobra: 'bg-warning',        falta: 'bg-danger' };
+// El color va en el NÚMERO, que es donde el color ES el dato (§17.0), y la
+// severidad se dice además con una palabra: un `Badge`, que es la etiqueta de
+// estado canónica (§16.1). Antes iba una franja vertical dibujada a mano
+// —`absolute left-0 inset-y-0 w-1`—, o sea un elemento de color inventado para
+// esta pantalla que nadie más tenía y que sólo comunicaba por tono.
+const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
+const SEVERIDAD_BADGE = {
+    sobra: { variant: 'warning', label: 'Sobrante' },
+    falta: { variant: 'danger',  label: 'Faltante' },
+};
 
 const hhmm = (hora) => String(hora || '').slice(0, 5);
 const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
@@ -80,12 +88,8 @@ const TarjetaCorte = memo(function TarjetaCorte({
         <div
             data-surface="card"
             {...clickable(abrir, { label: `Revisar el corte de las ${hhmm(corte.hora)}${sala ? ` de ${sala}` : ''}` })}
-            className={`relative overflow-hidden flex flex-col gap-2 ${compacta ? 'p-2.5 pl-3.5' : 'p-3 pl-4'}`}
+            className={`flex flex-col gap-2 ${compacta ? 'p-2.5' : 'p-3'}`}
         >
-            {/* La franja es FORMA, no sólo color: se lee sin distinguir tonos. */}
-            <span aria-hidden="true"
-                className={`absolute left-0 inset-y-0 w-1 ${esZ || desc ? 'bg-transparent' : TONO_FRANJA[sev]}`} />
-
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
@@ -107,9 +111,14 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 </div>
             </div>
 
-            {(esZ || !pendiente || revisar) && (
+            {(esZ || !pendiente || revisar || (!cuadra && !desc)) && (
                 <div className="flex items-center gap-1.5 flex-wrap">
                     {esZ && <Badge variant="info" size="sm">Cierre del día</Badge>}
+                    {!esZ && !desc && !cuadra && (
+                        <Badge variant={SEVERIDAD_BADGE[sev].variant} size="sm" dot>
+                            {SEVERIDAD_BADGE[sev].label}
+                        </Badge>
+                    )}
                     {corte.estado === 'CONFIRMADO' && <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>}
                     {desc && <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>}
                     {revisar && <Badge variant="danger" size="sm" icon={AlertTriangle}>Revisar cifras</Badge>}
@@ -132,7 +141,10 @@ const TarjetaCorte = memo(function TarjetaCorte({
                         <div className="text-caption font-semibold text-content-2 truncate">
                             {persona?.name || 'Sin registrar quién'}
                         </div>
-                        <div className="text-micro text-content-3 tabular-nums truncate">
+                        {/* `text-caption`, no `text-micro`: 9px es para
+                            contadores y superíndices (§7), y esto es un dato
+                            que alguien tiene que poder leer. */}
+                        <div className="text-caption text-content-3 tabular-nums truncate">
                             {selloDeTiempo(corte.resuelto_at) || 'Sin hora registrada'}
                             {desc && corte.motivo_descarte ? ` · ${corte.motivo_descarte}` : ''}
                         </div>
@@ -144,7 +156,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 lo ancho, el botón azul pesaba más que la cifra, que es lo único
                 que hay que leer antes de decidir. */}
             {pendiente && !esZ && puedeResolver && (
-                <div className="flex items-center justify-end gap-1.5 pt-0.5">
+                <div className="mt-auto flex items-center justify-end gap-1.5 pt-0.5">
                     <Button variant="secondary" size="sm" icon={Ban} onClick={descartar}>
                         Descartar
                     </Button>

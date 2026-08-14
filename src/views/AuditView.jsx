@@ -331,9 +331,9 @@ const filtrosCuerpo = (
         <FilterBar.Section active={!!startDate || !!endDate}
             onClear={() => { setStartDate(''); setEndDate(''); }} label="fecha">
             <div className="flex items-center gap-1">
-                <LiquidDatePicker compact shortcuts value={startDate} onChange={setStartDate} placeholder="Inicio" />
+                <LiquidDatePicker compact shortcuts value={startDate} onChange={setStartDate} />
                 <span className="text-content-3 font-bold mx-0.5">-</span>
-                <LiquidDatePicker compact shortcuts value={endDate} onChange={setEndDate} placeholder="Fin" />
+                <LiquidDatePicker compact shortcuts value={endDate} onChange={setEndDate} />
             </div>
         </FilterBar.Section>
     </FilterBar>

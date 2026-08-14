@@ -491,8 +491,7 @@ export default function ModalNuevaPersonal({
                             {dias.length > 0 && <span className="text-content-3 normal-case tracking-normal font-bold">· {dias.length}</span>}
                         </label>
                         <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                            <LiquidDatePicker key={permPickerKey} value="" onChange={agregarDiaPermiso}
-                                placeholder="Agregar fecha..." holidays={holidays} />
+                            <LiquidDatePicker key={permPickerKey} value="" onChange={agregarDiaPermiso} holidays={holidays} />
                         </div>
                     </div>
                     {dias.length > 0 && (
@@ -538,8 +537,7 @@ export default function ModalNuevaPersonal({
                         </label>
                         <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                             <LiquidDatePicker value={payload.date || ''}
-                                onChange={v => setPayload(p => ({ ...p, date: v }))}
-                                placeholder="Seleccionar fecha" holidays={holidays} />
+                                onChange={v => setPayload(p => ({ ...p, date: v }))} holidays={holidays} />
                         </div>
                     </div>
 
@@ -625,8 +623,7 @@ export default function ModalNuevaPersonal({
                         </label>
                         <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                             <LiquidDatePicker value={payload.date || ''}
-                                onChange={v => setPayload(p => ({ ...p, date: v }))}
-                                placeholder="Seleccionar fecha" holidays={holidays} />
+                                onChange={v => setPayload(p => ({ ...p, date: v }))} holidays={holidays} />
                         </div>
                     </div>
                     <PortalInput

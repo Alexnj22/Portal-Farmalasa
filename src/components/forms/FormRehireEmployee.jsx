@@ -80,7 +80,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                             Nueva Fecha de Ingreso {reqBadge}
                         </label>
                         <div className={`bg-surface-card rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${inputHover} ${!formData.rehire_hire_date ? 'border-danger bg-danger/10' : 'border-divider'}`}>
-                            <LiquidDatePicker value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} placeholder="DD / MM / AAAA" />
+                            <LiquidDatePicker value={formData.rehire_hire_date || ''} onChange={v => set('rehire_hire_date', v)} />
                         </div>
                     </div>
 

@@ -107,7 +107,6 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                                 <LiquidDatePicker 
                                     value={legalData.regentCredentialExp || ""} 
                                     onChange={(val) => updateLegalField('regentCredentialExp', val)} 
-                                    placeholder="Seleccionar..." 
                                 />
                             </div>
                         </div>

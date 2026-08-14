@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Wallet } from 'lucide-react';
+import { ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import CarrilCards from '../../components/common/CarrilCards';
+import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import CorteDetalleModal from '../../components/cortes/CorteDetalleModal';
 import TarjetaCorte from '../../components/cortes/TarjetaCorte';
@@ -52,21 +54,16 @@ const rotularDia = (fecha) => {
     });
 };
 
-const TONO_MINI = {
-    ok:    'text-success-text',
-    sobra: 'text-warning-text',
-    falta: 'text-danger-text',
-};
-
-/** Un número del mes con su rótulo. Tres caben en el ancho de la baldosa. */
-function Mini({ n, label, tono }) {
-    return (
-        <div data-surface="card" className="px-1.5 py-1 text-center min-w-0">
-            <div className={`text-label font-black tabular-nums leading-tight ${TONO_MINI[tono]}`}>{n}</div>
-            <div className="text-micro text-content-3 leading-tight truncate">{label}</div>
-        </div>
-    );
-}
+// Las tres del mes. Son `StatCard` dentro de `CarrilCards` —el canónico de la
+// fila de métricas (§17.0)— y no tres cajas escritas a mano: el número, el
+// rótulo, el squircle del ícono, el encogido de la cifra y el deslizar cuando
+// no entran ya están resueltos ahí. Escritas a mano eran la misma anatomía con
+// otras medidas, que es exactamente como se acumula deuda visual.
+const METRICAS_MES = [
+    { clave: 'cuadrados', icon: ShieldCheck,   label: 'Cuadraron', iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    { clave: 'exceso',    icon: TrendingUp,    label: 'Exceso',    iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
+    { clave: 'faltante',  icon: TrendingDown,  label: 'Faltante',  iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
+];
 
 export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null }) {
     const { user, hasPermission } = useAuth();
@@ -201,20 +198,21 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     return (
         <div className="h-full flex flex-col min-h-0">
             {/* ── Cómo va el mes ──────────────────────────────────────────── */}
-            <div className="shrink-0 px-2 pt-2 pb-2 border-b border-divider">
-                <div className="flex items-baseline justify-between gap-2 mb-1.5 px-0.5">
-                    <span className="text-micro font-black uppercase tracking-widest text-content-3">
+            <div className="shrink-0 px-2 pt-2 pb-1 border-b border-divider">
+                <div className="flex items-baseline justify-between gap-2 mb-1 px-0.5">
+                    <span className="text-caption font-black uppercase tracking-widest text-content-3">
                         Este mes
                     </span>
-                    <span className="text-micro text-content-3 tabular-nums truncate">
+                    <span className="text-caption text-content-3 tabular-nums truncate">
                         {resumen.pendientes} sin confirmar · {resumen.confirmados} {resumen.confirmados === 1 ? 'confirmado' : 'confirmados'}
                     </span>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                    <Mini n={resumen.cuadrados} label="Cuadraron" tono="ok" />
-                    <Mini n={resumen.exceso}    label="Exceso"    tono="sobra" />
-                    <Mini n={resumen.faltante}  label="Faltante"  tono="falta" />
-                </div>
+                <CarrilCards ariaLabel="Cortes del mes">
+                    {METRICAS_MES.map((m) => (
+                        <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                            label={m.label} value={resumen[m.clave]} valueCls={m.valueCls} />
+                    ))}
+                </CarrilCards>
             </div>
 
             {/* ── Lo que falta confirmar ──────────────────────────────────── */}
@@ -223,12 +221,16 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                     <EmptyState linea icon={Wallet} title="No se pudieron cargar" subtitle={error} />
                 )}
 
+                {/* Vacío FELIZ (§26.3): acá no hay nada porque no quedó nada
+                    pendiente, y eso es la buena noticia. Forzar «Sin cortes
+                    pendientes» tiraría al piso justo lo que la sala quiere leer. */}
                 {!error && !pendientes.length && (
                     <EmptyState
                         linea
-                        icon={CheckCircle2}
-                        title="Sin cortes por confirmar"
-                        subtitle={`Al día en los últimos ${DIAS_PENDIENTES} días.`}
+                        icon={ShieldCheck}
+                        iconClass="text-success-text"
+                        title="Todo confirmado"
+                        subtitle={`Sin pendientes en los últimos ${DIAS_PENDIENTES} días.`}
                     />
                 )}
 
@@ -237,7 +239,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                     lista más corta que su propio número se lee como «ya está
                     todo», que es justo lo contrario. */}
                 {!error && resumen.pendientes > pendientes.length && (
-                    <p className="text-micro text-content-3 text-center px-2 pt-1">
+                    <p className="text-caption text-content-3 text-center px-2 pt-1">
                         Hay {resumen.pendientes - pendientes.length} sin confirmar de antes de
                         {' '}{DIAS_PENDIENTES} días. Están en Cortes de caja.
                     </p>

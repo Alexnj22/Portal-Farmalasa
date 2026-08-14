@@ -103,6 +103,55 @@ Las tres bloqueantes agregadas en D3/D4 — `button-name`, `paleta-cerrada`,
 `input-sin-nombre` — no van al baseline: una categoría que no figura en el
 JSON arranca bloqueante sola (`baseline[c] ?? 0`).
 
+## `prop-inexistente` y `segmentado-a-mano` (2026-08-14)
+
+Dos categorías nuevas, las dos **bloqueantes en cero** desde el día uno porque
+se limpió toda la deuda que encontraron en la misma sesión. Las pidió el usuario
+después de que el gate diera verde sobre una pantalla que sí violaba el
+estándar: *«mejorá el gate para que compruebe todo lo de diseño y no tengamos de
+nuevo este fallo»*.
+
+### `prop-inexistente` — el prop que el canónico NO acepta
+
+**React no valida props: uno con el nombre equivocado se ignora en silencio.**
+El disparador fue `EmptyState` recibiendo `message`/`subtext` donde espera
+`title`/`subtitle`: pintaba el ícono con 400px de alto y **cero texto**, en dos
+pantallas de Cortes de caja, sin un error y sin que ningún gate lo viera. Se
+reportó como «el estado vacío se ve cortado».
+
+**La firma sale del componente, no de una tabla escrita a mano**
+(`firmaDeComponente` lee los nombres destructurados de la firma real). Un
+componente con `...rest` queda fuera: acepta cualquier cosa a propósito.
+
+El barrido inicial encontró **29**, y los otros dos no se estaban buscando:
+
+| hallazgo | qué pasaba de verdad |
+|---|---|
+| `LiquidDatePicker placeholder` × 28 | prop muerto en 28 sitios — el campo trae su DD/MM/AAAA escrito adentro |
+| `ConfirmModal hideCancel` en `TabStaff` | el diálogo que dice «Entendido» mostraba además un «Cancelar» que nadie quiso; se pasó a `AlertModal`, que es el canónico de un solo botón (§14) |
+
+Dos trampas del detector, y las dos costaron una vuelta:
+1. **Los atributos se leen al NIVEL 0 del tag.** `action={<Button onClick=…/>}`
+   mete props de OTRO componente en el mismo texto — contarlos acusa al inocente
+   (150 «hallazgos» que eran 31).
+2. **El archivo se lee sin comentarios.** La firma de `EmptyState` tiene párrafos
+   enteros de prosa entre los props; parsearla con los comentarios adentro
+   devuelve nombres inventados.
+
+### `segmentado-a-mano` — una-de-N escrita con botones (§15.3)
+
+*«Si el estilo depende de `X === valor`, no es un botón con estado: es
+`SegmentedControl`.»* El detector busca la forma exacta de la regla — un `.map()`
+sobre las opciones cuyo `<Button>` decide `variant`/`tone` comparando contra el
+**parámetro del map**.
+
+Mirar sólo `variant={… === …}` no alcanza **y acusa al inocente**: un botón
+suelto que se pone rojo cuando la acción es destructiva
+(`tone={modo === 'approve' ? 'success' : 'danger'}`) es correcto, y hay tres en
+el portal (`TarjetaSolicitud`, `AnnouncementsView`, `TabShifts`). Lo que delata
+al selector es la comparación contra la variable que el map va repartiendo: ahí
+hay N botones y uno está «activo».
+
 ## Regenerar el baseline
 
 Al BAJAR deuda (cada fase del plan baja la suya), regenerar con

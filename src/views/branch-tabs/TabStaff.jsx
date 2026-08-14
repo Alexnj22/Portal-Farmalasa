@@ -10,6 +10,7 @@ import {
     CircleUserRound, BarChart3, TrendingUp, Clock, Hourglass, Sparkles, ArrowLeft, Activity, X
 } from 'lucide-react';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import AlertModal from '../../components/common/AlertModal';
 import Notice from '../../components/common/Notice';
 import { calculateMinimumStaff } from '../../utils/staffHelpers';
 
@@ -797,16 +798,19 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 </div>
             </div>
 
-            {/* MODAL INFORMATIVO */}
+            {/* Aviso de un solo botón — `AlertModal`, no `ConfirmModal` (§14).
+                Era un `ConfirmModal` con `hideCancel={true}`, un prop que ese
+                componente no acepta: React lo ignoraba, así que el diálogo que
+                dice «Entendido» venía además con un «Cancelar» que nadie quiso.
+                Lo destapó la categoría `prop-inexistente` del gate. */}
             {infoAlert.isOpen && (
-                <ConfirmModal
+                <AlertModal
                     isOpen={infoAlert.isOpen}
                     title={infoAlert.title}
                     message={infoAlert.message}
                     onClose={() => setInfoAlert({ isOpen: false, title: '', message: '' })}
-                    onConfirm={() => setInfoAlert({ isOpen: false, title: '', message: '' })}
-                    confirmText="Entendido"
-                    hideCancel={true}
+                    type="info"
+                    buttonText="Entendido"
                 />
             )}
         </div>

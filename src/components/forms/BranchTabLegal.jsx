@@ -62,7 +62,6 @@ const BranchTabLegal = ({
                                 <LiquidDatePicker
                                     value={legal.srsExpiration || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'srsExpiration', val)}
-                                    placeholder="DD/MM/AAAA"
                                 />
                             </div>
                         </div>
@@ -107,7 +106,6 @@ const BranchTabLegal = ({
                                 <LiquidDatePicker
                                     value={legal.regentCredentialExp || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'regentCredentialExp', val)}
-                                    placeholder="DD/MM/AAAA"
                                 />
                             </div>
                         </div>
@@ -151,7 +149,6 @@ const BranchTabLegal = ({
                                 <LiquidDatePicker
                                     value={legal.pharmacovigilanceExp || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceExp', val)}
-                                    placeholder="DD/MM/AAAA"
                                 />
                             </div>
                         </div>

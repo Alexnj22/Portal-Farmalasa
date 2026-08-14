@@ -172,7 +172,6 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 mode="month"
                                 value={paymentData.billing_month}
                                 onChange={(val) => handleUpdate('billing_month', val)}
-                                placeholder="Selecciona el mes"
                                 required
                             />
                         </div>

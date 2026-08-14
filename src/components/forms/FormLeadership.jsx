@@ -327,7 +327,6 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                 <LiquidDatePicker 
                                                     value={formData.interimEndDate || ''}
                                                     onChange={(date) => setFormData({...formData, interimEndDate: date})}
-                                                    placeholder="Selecciona la fecha límite"
                                                 />
                                             </div>
                                         </div>

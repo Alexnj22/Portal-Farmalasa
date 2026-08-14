@@ -79,8 +79,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                                 <LiquidDatePicker
                                     mode="month" 
                                     value={services[srv.id]?.paidThrough || ""} 
-                                    onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)} 
-                                    placeholder="Seleccionar mes"
+                                    onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)}
                                 />
                             </div>
                         </div>

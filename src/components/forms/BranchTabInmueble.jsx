@@ -124,7 +124,6 @@ const BranchTabInmueble = ({
                                 <LiquidDatePicker
                                     value={rentContract.startDate ?? ""}
                                     onChange={(val) => handleContractChange('startDate', val || null)}
-                                    placeholder="DD/MM/AAAA"
                                 />
                             </div>
                         </div>
@@ -208,7 +207,6 @@ const BranchTabInmueble = ({
                                 <LiquidDatePicker
                                     value={legal.municipalExpiration || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'municipalExpiration', val)}
-                                    placeholder="DD/MM/AAAA"
                                 />
                             </div>
                         </div>
@@ -261,7 +259,6 @@ const BranchTabInmueble = ({
                                     <LiquidDatePicker
                                         value={legal.wasteExpiration || ""}
                                         onChange={(val) => updateNestedSetting('legal', 'wasteExpiration', val)}
-                                        placeholder="DD/MM/AAAA"
                                     />
                                 </div>
                             </div>
@@ -331,7 +328,6 @@ const BranchTabInmueble = ({
                                 <LiquidDatePicker
                                     value={legal.extinguisherExpiration || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'extinguisherExpiration', val)}
-                                    placeholder="DD/MM/AAAA"
                                 />
                             </div>
                         </div>
@@ -365,7 +361,6 @@ const BranchTabInmueble = ({
                                 <LiquidDatePicker
                                     value={legal.lastFumigationDate || ""}
                                     onChange={(val) => updateNestedSetting('legal', 'lastFumigationDate', val)}
-                                    placeholder="DD/MM/AAAA"
                                 />
                             </div>
                         </div>

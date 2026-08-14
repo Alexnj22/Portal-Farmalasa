@@ -21,6 +21,72 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.603.2 — Cortes: los canónicos que faltaban, y el gate que los vigila
+
+Reportado por el usuario sobre v2.601.0: *«no seguiste canónicos, no seguiste
+design, ahí estás fallando en muchas cosas del estándar del portal»*. Tenía
+razón, y el gate estaba en verde — que es el problema de fondo: **un gate verde
+prueba su detector, no el diseño.**
+
+**Lo que estaba a mano y tenía canónico.**
+
+* Tres botones con `variant={motivo === m ? …}` para elegir el motivo del
+  descarte → `SegmentedControl` (§15.3). De paso trae el `radiogroup` que hace
+  que un lector anuncie «2 de 3» en vez de leer tres botones sin relación.
+* Tres cajas con un número y un rótulo en el widget del Inicio → `StatCard`
+  dentro de `CarrilCards` (§17.0), que ya resuelven el squircle, el encogido de
+  la cifra y el deslizar cuando no entran.
+* Una franja de color vertical dibujada con `absolute left-0 w-1` para marcar la
+  severidad → el color va en el **número**, que es donde el color ES el dato, y
+  la palabra la dice un `Badge` (`Sobrante` · `Faltante`). Un elemento inventado
+  para una sola pantalla menos.
+* El sello de tiempo de quien firmó, en `text-micro` (9 px, que §7 reserva para
+  contadores y superíndices) → `text-caption`.
+
+**La vista tenía las dos píldoras en el header.** `ViewTabBar` y `FilterBar`
+iban las dos en `filtersContent`, o sea filtrando desde el encabezado, que es
+justo lo que §17 dice que no hace. Ahora el header lleva pestañas y buscador, y
+el cuerpo lleva el carril de métricas **en la misma fila** que la píldora de
+filtros (§17.0: las dos mitades —`lg:flex-row` y `flex-1`— son obligatorias
+porque `useMedidaFila` le descuenta 314 px a la píldora tenga el carril al lado
+o no). Verificado a 1280 —el carril desliza— y a 1600 —entran las cuatro—.
+
+El carril son las **mismas cuatro cifras** que la baldosa del Inicio, del mismo
+`resumenDeCortes`: dos pantallas que cuentan por su cuenta terminan dando
+números distintos del mismo mes.
+
+**Los vacíos, según §26.** Eran uno solo con texto libre; ahora son tres, porque
+son tres cosas distintas: búsqueda sin resultados (`Sin resultados` + el término
+entre comillas, §26.2), el vacío feliz de «Sin confirmar» sin nada pendiente
+(`Todo confirmado`, §26.3) y el vacío real del período. Los tres con su salida
+(§18.1) — sin eso son pantallas muertas.
+
+---
+
+**Y el gate ahora lo comprueba** (pedido del usuario en la misma vuelta). Dos
+categorías nuevas, las dos bloqueantes en cero:
+
+**`prop-inexistente`** — compara los props que recibe cada canónico de
+`components/common/` contra los que su firma destructura de verdad. **React no
+valida props: uno con el nombre equivocado se ignora en silencio.** El
+disparador fue `EmptyState` con `message`/`subtext` (espera `title`/`subtitle`),
+que pintaba el ícono y **cero texto** en dos pantallas sin que nada fallara.
+
+El primer barrido encontró 29 más, y ninguno se estaba buscando:
+`LiquidDatePicker` recibía `placeholder` en **28 sitios** sin aceptarlo (el
+campo trae su DD/MM/AAAA escrito adentro) y un `ConfirmModal` de `TabStaff`
+pasaba `hideCancel`, así que el diálogo que dice «Entendido» venía con un
+«Cancelar» que nadie quiso — ese pasó a `AlertModal`, que es el canónico de un
+solo botón. Los 29 quedaron en cero.
+
+La firma se lee **del componente**, nunca de una tabla a mano, y un componente
+con `...rest` queda fuera: acepta cualquier cosa a propósito.
+
+**`segmentado-a-mano`** — un `.map()` de opciones cuyo `<Button>` decide su
+`variant`/`tone` comparando contra el **parámetro del map**. Mirar sólo
+`variant={… === …}` no alcanza y acusa al inocente: un botón suelto que se pone
+rojo cuando la acción es destructiva es correcto, y hay tres en el portal.
+
 ## v2.603.1 — El ajuste de MIN·MAX muestra lo que hay en sala
 
 Faltaba la otra mitad de la decisión. «No se venden» con 200 unidades paradas

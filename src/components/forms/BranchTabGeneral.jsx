@@ -60,7 +60,6 @@ const BranchTabGeneral = ({
                             <LiquidDatePicker
                                 value={openingDate}
                                 onChange={(val) => setFormData(prev => ({ ...prev, openingDate: val, opening_date: val }))}
-                                placeholder="DD/MM/AAAA"
                             />
                         </div>
                     </div>

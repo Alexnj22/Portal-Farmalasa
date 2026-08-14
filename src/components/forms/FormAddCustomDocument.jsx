@@ -140,7 +140,6 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <LiquidDatePicker
                                 value={data.issueDate}
                                 onChange={(date) => updateField('issueDate', date)}
-                                placeholder="Seleccionar expedición"
                             />
                         </div>
                     )}
@@ -164,7 +163,6 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <LiquidDatePicker
                                 value={data.expDate}
                                 onChange={(date) => updateField('expDate', date)}
-                                placeholder="Seleccionar vencimiento"
                             />
                         </div>
                     )}

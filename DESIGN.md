@@ -402,6 +402,23 @@ tema/estandarización visual, correr este comando.** Si aparece un
 hallazgo nuevo: o se corrige, o se agrega a `EXCEPTIONS` en el script Y a
 esta lista (nunca solo uno de los dos lugares).
 
+**El gate también vigila que el canónico se use con SU firma (2026-08-14).**
+La categoría `prop-inexistente` compara los props que recibe cada componente de
+`components/common/` contra los que su firma destructura de verdad. Existe
+porque **React no valida props: uno con el nombre equivocado se ignora en
+silencio** — `EmptyState` con `message`/`subtext` (espera `title`/`subtitle`)
+pintaba el ícono y cero texto, en dos pantallas, sin error y sin que nada lo
+viera. El barrido del día que se agregó encontró otros 29: `LiquidDatePicker`
+recibía `placeholder` en 28 sitios sin aceptarlo, y un `ConfirmModal` pasaba
+`hideCancel`, o sea que el diálogo de «Entendido» venía con un «Cancelar» de
+regalo. La firma se lee del componente, nunca de una tabla a mano; un
+componente con `...rest` queda fuera del chequeo.
+
+Su hermana `segmentado-a-mano` cubre §15.3: un `.map()` de opciones cuyo
+`<Button>` decide su `variant`/`tone` comparando contra el parámetro del map es
+un `SegmentedControl` escrito a mano. Un botón suelto que cambia de tono según
+la acción **no** lo es, y por eso el detector mira el parámetro y no el `===`.
+
 **Semáforo de riesgo de stock (7 estados)** — el real de `src/views/productos/tabminmax/constants.js` (`STAT_CFGS`), no el que se mencionaba antes en este documento:
 ```
 --stock-out: #ef4444          --stock-below-min: #f97316

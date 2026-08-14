@@ -74,7 +74,6 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                     value={formData?.recall_date || ''}
                     onChange={val => set('recall_date', val)}
                     icon={Calendar}
-                    placeholder="Seleccionar fecha..."
                 />
                 {vacStart && vacEnd && formData?.recall_date &&
                     (formData.recall_date < vacStart || formData.recall_date > vacEnd) && (

@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Wallet } from 'lucide-react';
+import { Clock, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
+import Button from '../components/common/Button';
+import CarrilCards from '../components/common/CarrilCards';
+import StatCard from '../components/common/StatCard';
 import TablePagination from '../components/common/TablePagination';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
@@ -11,7 +14,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import { fetchCortes, fetchPersonas, resolverCorte } from '../data/cortes';
-import { conTramoPorSalaYDia, severidad } from '../utils/cortesDiagnostico';
+import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { tokenMatch } from '../utils/searchUtils';
 
@@ -48,6 +51,18 @@ const RANGOS = [
     { key: 7,  label: '7 días' },
     { key: 30, label: '30 días' },
     { key: 90, label: '90 días' },
+];
+
+// El carril de la vista: cuatro números fijos, no un desglose de largo variable
+// (§17.0 — «cuántas tarjetas hay lo fija la vista, nunca el dato»). Son las
+// MISMAS cuatro que muestra la baldosa del Inicio, y salen del mismo
+// `resumenDeCortes`: dos pantallas que cuentan por su cuenta terminan dando
+// números distintos del mismo mes.
+const METRICAS = [
+    { clave: 'pendientes', icon: Clock,        label: 'Sin confirmar', iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+    { clave: 'cuadrados',  icon: ShieldCheck,  label: 'Cuadraron',     iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    { clave: 'exceso',     icon: TrendingUp,   label: 'Exceso',        iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
+    { clave: 'faltante',   icon: TrendingDown, label: 'Faltante',      iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
 ];
 
 const CortesView = () => {
@@ -104,6 +119,17 @@ const CortesView = () => {
             || String(b.hora).localeCompare(String(a.hora)));
         return out;
     }, [cortes]);
+
+    // El carril describe el PERÍODO y la sucursal elegida, no la pestaña ni la
+    // búsqueda: las pestañas son recortes de este mismo conjunto, así que si el
+    // carril las siguiera, «Sin confirmar» diría 23 y al entrar en ella diría 23
+    // otra vez, y las otras tres se irían a cero.
+    const resumen = useMemo(
+        () => resumenDeCortes(sala
+            ? conTramoTodos.filter((c) => String(c.branch_id) === String(sala))
+            : conTramoTodos),
+        [conTramoTodos, sala],
+    );
 
     const filtrados = useMemo(() => conTramoTodos.filter((c) => {
         if (sala && String(c.branch_id) !== String(sala)) return false;
@@ -203,47 +229,82 @@ const CortesView = () => {
 
     const limpiar = () => { setSala(''); setDias(7); setBusqueda(''); setPagina(1); };
 
+    // La píldora del HEADER lleva pestañas y buscador; la del CUERPO, los
+    // filtros (§16.9). Las dos venían en `filtersContent`, o sea las dos en el
+    // header — que además es donde §17 dice que no se filtra.
     const filtersContent = (
-        <>
-            <ViewTabBar
-                tabs={TABS}
-                activeTab={tab}
-                onTabChange={(t) => { setTab(t); setPagina(1); }}
-                searchValue={busqueda}
-                onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
-                placeholder="Buscar por sala, persona, hora o monto…"
-            />
-            <FilterBar onClear={limpiar} activeCount={[sala, dias !== 7].filter(Boolean).length}>
-                <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
-                    <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
-                </FilterBar.Section>
-                <FilterBar.Section label="período">
-                    {RANGOS.map((r) => (
-                        <FilterBar.Chip key={r.key} tone="brand" active={dias === r.key}
-                            onToggle={() => { setDias(r.key); setPagina(1); }}>
-                            {r.label}
-                        </FilterBar.Chip>
-                    ))}
-                </FilterBar.Section>
-            </FilterBar>
-        </>
+        <ViewTabBar
+            tabs={TABS}
+            activeTab={tab}
+            onTabChange={(t) => { setTab(t); setPagina(1); }}
+            searchValue={busqueda}
+            onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
+            placeholder="Buscar por sala, persona, hora o monto…"
+        />
     );
 
     return (
         <GlassViewLayout icon={Wallet} title="Cortes de caja" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-6">
 
+                {/* El carril y la píldora comparten UNA fila (§17.0): las dos
+                    mitades —`lg:flex-row` acá y `flex-1` en el carril— son
+                    obligatorias, porque `useMedidaFila` busca el carril en el
+                    abuelo de la píldora y le descuenta 314px lo tenga al lado o
+                    no. En renglones separados no falla: roba ancho en silencio. */}
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    <CarrilCards className="flex-1" ariaLabel="Resumen de los cortes del período">
+                        {METRICAS.map((m) => (
+                            <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                label={m.label} value={resumen[m.clave]} valueCls={m.valueCls}
+                                loading={cargando} />
+                        ))}
+                    </CarrilCards>
+
+                    <div className="flex justify-end min-w-0">
+                        <FilterBar onClear={limpiar} activeCount={[sala, dias !== 7].filter(Boolean).length}>
+                            <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
+                                <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
+                            </FilterBar.Section>
+                            <FilterBar.Section label="período">
+                                {RANGOS.map((r) => (
+                                    <FilterBar.Chip key={r.key} tone="brand" active={dias === r.key}
+                                        onToggle={() => { setDias(r.key); setPagina(1); }}>
+                                        {r.label}
+                                    </FilterBar.Chip>
+                                ))}
+                            </FilterBar.Section>
+                        </FilterBar>
+                    </div>
+                </div>
+
                 {cargando && <LoadingState label="Buscando los cortes" />}
 
+                {/* Dos vacíos distintos (§26.2): el del filtro se arregla
+                    borrándolo y el de verdad no. Y el de «Sin confirmar» vacío
+                    es un vacío FELIZ (§26.3) — la sala quería que no hubiera
+                    nada. Los tres llevan su salida (§18.1). */}
                 {!cargando && filtrados.length === 0 && (
-                    <EmptyState
-                        compact
-                        icon={Wallet}
-                        title={busqueda ? 'Nada con esa búsqueda' : 'Nada pendiente acá'}
-                        subtitle={busqueda
-                            ? 'Prueba con el nombre de la sala, la persona o el monto.'
-                            : 'Cambia de pestaña o amplía el período para ver más.'}
-                    />
+                    busqueda ? (
+                        <EmptyState
+                            compact icon={Search} title="Sin resultados"
+                            subtitle={`Ningún corte coincide con «${busqueda}».`}
+                            action={<Button variant="secondary" onClick={() => { setBusqueda(''); setPagina(1); }}>Limpiar la búsqueda</Button>}
+                        />
+                    ) : tab === 'pendientes' ? (
+                        <EmptyState
+                            compact icon={ShieldCheck} iconClass="text-success-text"
+                            title="Todo confirmado"
+                            subtitle="No queda ningún corte por revisar en este período."
+                            action={<Button variant="secondary" onClick={() => setTab('todos')}>Ver todos</Button>}
+                        />
+                    ) : (
+                        <EmptyState
+                            compact icon={Wallet} title="Sin cortes en el período"
+                            subtitle="Amplía el período o quita el filtro de sucursal."
+                            action={<Button variant="secondary" onClick={limpiar}>Quitar los filtros</Button>}
+                        />
+                    )
                 )}
 
                 {!cargando && porDia.map((g) => (

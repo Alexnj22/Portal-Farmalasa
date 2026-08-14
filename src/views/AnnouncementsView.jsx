@@ -695,7 +695,6 @@ const AnnouncementsView = ({ openModal }) => {
                           <LiquidDatePicker 
                             value={scheduledDate} 
                             onChange={setScheduledDate} 
-                            placeholder="Selecciona la fecha..." 
                           />
                        </div>
                    </div>

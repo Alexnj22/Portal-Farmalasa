@@ -82,7 +82,6 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                 <LiquidDatePicker 
                                     value={legalData.nursingServicePermitExp || ""} 
                                     onChange={(val) => updateLegalField('nursingServicePermitExp', val)} 
-                                    placeholder="Seleccionar..." 
                                 />
                             </div>
                         </div>
@@ -181,7 +180,6 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                                     <LiquidDatePicker 
                                                         value={nurse.anualidadExp || ""} 
                                                         onChange={(val) => updateNurse(index, 'anualidadExp', val)} 
-                                                        placeholder="Seleccionar..." 
                                                     />
                                                 </div>
                                             </div>

@@ -579,13 +579,13 @@ export default function EncuestaAdminView() {
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
                                             <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-[var(--dur-slow)]">
-                                                <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
+                                                <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} />
                                             </div>
                                         </div>
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
                                             <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-[var(--dur-slow)]">
-                                                <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
+                                                <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} />
                                             </div>
                                         </div>
                                     </div>

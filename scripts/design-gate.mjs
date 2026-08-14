@@ -562,6 +562,110 @@ function tagsJsx(txt, nombre) {
   return fuera;
 }
 
+// ── Categoría `prop-inexistente` (2026-08-14) ───────────────────────────────
+//
+// **Un prop con el nombre equivocado no falla: se ignora.** React no valida
+// nada, así que pasarle `message`/`subtext` a `EmptyState` —que espera
+// `title`/`subtitle`— pinta el ícono y CERO texto, sin un error, sin un aviso
+// y sin que ningún gate lo viera. Estuvo así en dos pantallas de Cortes de caja
+// hasta que el usuario lo reportó como «el estado vacío se ve cortado».
+//
+// El barrido del día que se agregó encontró otros dos, y ninguno se estaba
+// buscando: `LiquidDatePicker` recibe `placeholder` en 30 sitios y no lo acepta
+// (los campos DD/MM/AAAA traen el suyo escrito), y un `ConfirmModal` de
+// TabStaff pasa `hideCancel` — o sea que el diálogo que dice «Entendido»
+// muestra además un «Cancelar» que nadie quiso.
+//
+// ── La firma sale del COMPONENTE, no de una lista ──────────────────────────
+// Una tabla de props escrita a mano se desincroniza del registro el día que
+// alguien agrega un prop (misma lección que los catálogos: el rótulo sale de la
+// fila). Acá se leen los nombres destructurados de la firma real, y un
+// componente con `...rest` queda fuera del chequeo: acepta cualquier cosa a
+// propósito.
+const RESERVADAS_JSX = new Set(['key', 'ref', 'children', 'dangerouslySetInnerHTML']);
+
+/** Los props destructurados de `nombre` en `txt`. `null` = no se puede saber. */
+function firmaDeComponente(txtRaw, nombre) {
+  const txt = sinComentarios(txtRaw);
+  const pats = [
+    new RegExp(`(?:export\\s+)?(?:const|let)\\s+${nombre}\\s*=\\s*(?:React\\.)?(?:memo\\(|forwardRef\\(|)+\\s*\\(\\{`),
+    new RegExp(`(?:export\\s+)?(?:default\\s+)?function\\s+${nombre}\\s*\\(\\{`),
+  ];
+  for (const re of pats) {
+    const m = re.exec(txt);
+    if (!m) continue;
+    const ini = txt.indexOf('{', m.index + m[0].length - 1);
+    if (ini < 0) continue;
+    let prof = 0, j = ini;
+    for (; j < txt.length; j++) {
+      const c = txt[j];
+      if (c === '{') prof++;
+      else if (c === '}') { prof--; if (prof === 0) break; }
+    }
+    const cuerpo = txt.slice(ini + 1, j);
+    if (/\.\.\./.test(cuerpo)) return null;   // `...rest`: acepta todo
+    // Los nombres al nivel 0: lo que va antes de `:`, `=` o `,`.
+    const props = new Set();
+    let nivel = 0, buf = '', str = null, saltando = false;
+    for (const c of cuerpo) {
+      if (str) { if (c === str) str = null; continue; }
+      if (c === '"' || c === "'" || c === '`') { str = c; continue; }
+      if ('{(['.includes(c)) { nivel++; continue; }
+      if ('})]'.includes(c)) { nivel--; continue; }
+      if (nivel > 0) continue;
+      if (c === ',') { if (!saltando && buf.trim()) props.add(buf.trim()); buf = ''; saltando = false; continue; }
+      if (c === '=' || c === ':') { if (buf.trim()) props.add(buf.trim()); buf = ''; saltando = true; continue; }
+      if (!saltando) buf += c;
+    }
+    if (!saltando && buf.trim()) props.add(buf.trim());
+    const limpio = new Set([...props].map(p => p.trim()).filter(p => /^[A-Za-z_$][\w$]*$/.test(p)));
+    return limpio.size ? limpio : null;
+  }
+  return null;
+}
+
+/** `{ Nombre → Set(props) }` de todo `components/common/`. Se calcula una vez. */
+let _firmas = null;
+function firmasCanonicas() {
+  if (_firmas) return _firmas;
+  _firmas = {};
+  for (const f of (existsSync('src/components/common') ? readdirSync('src/components/common') : [])) {
+    if (!f.endsWith('.jsx')) continue;
+    const ruta = `src/components/common/${f}`;
+    const txt = readFileSync(ruta, 'utf8');
+    const nombres = new Set();
+    for (const m of txt.matchAll(/export\s+const\s+([A-Z]\w*)\s*=/g)) nombres.add(m[1]);
+    for (const m of txt.matchAll(/export\s+default\s+function\s+([A-Z]\w*)/g)) nombres.add(m[1]);
+    const def = /export\s+default\s+([A-Z]\w*)\s*;/.exec(txt);
+    if (def) nombres.add(def[1]);
+    for (const n of nombres) {
+      const props = firmaDeComponente(txt, n);
+      if (props) _firmas[n] = { props, origen: ruta };
+    }
+  }
+  return _firmas;
+}
+
+/** Los atributos escritos al NIVEL 0 de un tag — `action={<Button onClick=…/>}`
+ *  mete adentro props de OTRO componente, y contarlos acusaría al inocente. */
+function atributosDelTag(tag, nombre) {
+  const fuera = [];
+  let k = nombre.length + 1, prof = 0, str = null;
+  while (k < tag.length) {
+    const c = tag[k];
+    if (str) { if (c === str) str = null; k++; continue; }
+    if (c === '"' || c === "'" || c === '`') { str = c; k++; continue; }
+    if (c === '{') { prof++; k++; continue; }
+    if (c === '}') { prof--; k++; continue; }
+    if (prof === 0 && /\s/.test(tag[k - 1] || '')) {
+      const mm = /^([a-zA-Z][\w-]*)\s*=/.exec(tag.slice(k));
+      if (mm) { fuera.push(mm[1]); k += mm[0].length; continue; }
+    }
+    k++;
+  }
+  return fuera;
+}
+
 function nearestOpenTag(lines, lineIdx) {
   for (let i = lineIdx; i >= 0 && i >= lineIdx - 20; i--) {
     const matches = [...lines[i].matchAll(TAG_OPEN_RE)];
@@ -2317,6 +2421,77 @@ function scanFile(path) {
           category: 'error-crudo', text: line.trim().slice(0, 120) });
       }
     });
+  }
+
+  // ── `prop-inexistente`: el prop que el canónico NO acepta ────────────────
+  // Ver la nota larga junto a `firmaDeComponente`. Se mira el texto SIN
+  // comentarios: un ejemplo de uso escrito en un bloque de documentación no es
+  // código vivo, y contarlo movería el ratchet al editar prosa.
+  if (!hasException(path, 'prop-inexistente')) {
+    const limpio = sinComentarios(text);
+    for (const [nombre, { props }] of Object.entries(firmasCanonicas())) {
+      // El propio archivo del canónico define el componente, no lo consume.
+      if (path.endsWith(`/${nombre}.jsx`)) continue;
+      for (const [ini, fin] of tagsJsx(limpio, nombre)) {
+        const tag = limpio.slice(ini, fin);
+        if (/\{\s*\.\.\./.test(tag)) continue;   // spread: no se sabe qué entra
+        for (const p of atributosDelTag(tag, nombre)) {
+          if (RESERVADAS_JSX.has(p) || p.includes('-')) continue;
+          if (p.startsWith('aria') || p.startsWith('data') || p.startsWith('on') && !/^on[A-Z]/.test(p)) continue;
+          if (props.has(p)) continue;
+          findings.push({
+            line: limpio.slice(0, ini).split('\n').length,
+            label: `<${nombre}> no acepta \`${p}\` — React ignora el prop en silencio, así que el efecto que se espera no ocurre`,
+            category: 'prop-inexistente', text: tag.replace(/\s+/g, ' ').slice(0, 120),
+          });
+        }
+      }
+    }
+  }
+
+  // ── `segmentado-a-mano`: una-de-N escrita con botones (§15.3) ────────────
+  // «Si el estilo depende de `X === valor`, no es un botón con estado: es
+  // `SegmentedControl`.» El detector busca la forma exacta que describe la
+  // regla — un `.map()` sobre las opciones cuyo `<Button>` decide su
+  // `variant`/`tone` comparando contra el PARÁMETRO del map:
+  //
+  //     {MOTIVOS.map((m) => <Button variant={motivo === m ? 'danger' : …} …
+  //
+  // Mirar sólo `variant={… === …}` no alcanza y además acusa al inocente: un
+  // botón suelto que se pone rojo cuando la acción es destructiva
+  // (`tone={modo === 'approve' ? 'success' : 'danger'}`) es correcto y hay tres
+  // en el portal. Lo que delata al selector es la comparación contra la
+  // variable que el map va repartiendo, o sea que hay N botones y uno está
+  // «activo».
+  if (!hasException(path, 'segmentado-a-mano')) {
+    const limpio = sinComentarios(text);
+    const MAP_RE = /\.map\(\s*\(?\s*([A-Za-z_$][\w$]*)\s*[,)]/g;
+    let m;
+    while ((m = MAP_RE.exec(limpio))) {
+      const param = m[1];
+      // El cuerpo del map: desde el `(` de `.map(` hasta su cierre.
+      const abre = limpio.indexOf('(', m.index + 4);
+      let prof = 0, j = abre;
+      for (; j < limpio.length; j++) {
+        const c = limpio[j];
+        if (c === '(') prof++;
+        else if (c === ')') { prof--; if (prof === 0) break; }
+      }
+      const cuerpo = limpio.slice(abre, j + 1);
+      for (const [bi, bf] of tagsJsx(cuerpo, 'Button')) {
+        const tag = cuerpo.slice(bi, bf);
+        const est = /\b(?:variant|tone)=\{([^]*?)\}/.exec(tag);
+        if (!est) continue;
+        const cmp = new RegExp(`===\\s*${param}\\b|\\b${param}\\s*===`);
+        if (!cmp.test(est[1])) continue;
+        findings.push({
+          line: limpio.slice(0, m.index).split('\n').length,
+          label: 'una-de-N con botones — el estilo depende de `=== valor`, o sea que es `SegmentedControl` (§15.3)',
+          category: 'segmentado-a-mano', text: tag.replace(/\s+/g, ' ').slice(0, 120),
+        });
+        break;
+      }
+    }
   }
 
   return findings;

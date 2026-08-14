@@ -155,7 +155,11 @@ const ImpresionView = () => {
         setEnviando(true);
         setResultado(null);
         const r = await enviarAImpresoraDeLaComputadora(ticket, { sistema });
-        setResultado({ ok: r.ok, texto: r.detalle });
+        // La dirección y el error crudo van a la pantalla, no al `console`: sin
+        // ellos «no hay programa» y «el navegador lo bloqueó» se leen idénticos, y
+        // el segundo pasa DENTRO de una sala con todo bien instalado. Quien está
+        // frente a la caja necesita poder distinguirlos sin abrir el inspector.
+        setResultado({ ok: r.ok, texto: r.detalle, direccion: r.direccion, motivo: r.motivo });
         setEnviando(false);
     };
 
@@ -171,35 +175,20 @@ const ImpresionView = () => {
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
                     <div className="space-y-4">
-                        <Tarjeta titulo="Ancho del rollo">
-                            <LiquidSelect
-                                value={String(ancho)}
-                                onChange={(v) => setAncho(Number(v))}
-                                options={opcionesAncho}
-                                clearable={false}
-                                ariaLabel="Ancho del rollo"
-                                icon={Ruler}
-                            />
-                            <p className="text-caption text-content-3 mt-2 leading-snug">
-                                Define el ancho de la hoja que se manda a imprimir. Si el papel sale
-                                con los bordes cortados, prueba el siguiente ancho hacia abajo.
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <Button icon={Printer} onClick={imprimir}>Imprimir la prueba</Button>
-                            </div>
-                        </Tarjeta>
-
-                        <Tarjeta titulo="Sin ventana de impresión">
+                        {/* La impresión directa va PRIMERO y es la principal: es
+                            la única que garantiza que el papel salga como ticket.
+                            El diálogo del navegador deja elegir el papel, y si
+                            ahí se elige una hoja, sale en hoja. */}
+                        <Tarjeta titulo="Imprimir el ticket">
                             <p className="text-body text-content-2 leading-snug">
-                                Las computadoras de las salas pueden imprimir sin abrir ninguna
-                                ventana, usando la ticketera que ya tienen configurada. En una
-                                computadora de escritorio o en el teléfono esto no funciona — ahí va
-                                el botón de arriba.
+                                Sale directo por la ticketera de esta computadora, sin abrir ninguna
+                                ventana y sin preguntar el papel. Funciona en las computadoras de las
+                                salas, que son las que tienen la ticketera conectada.
                             </p>
                             <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                                 <div>
                                     <label className="text-label font-bold text-content-2 mb-1 block">
-                                        Sistema de esa computadora
+                                        Sistema de esta computadora
                                     </label>
                                     <LiquidSelect
                                         value={sistema}
@@ -209,18 +198,20 @@ const ImpresionView = () => {
                                             { value: 'windows', label: 'Windows' },
                                         ]}
                                         clearable={false}
-                                        ariaLabel="Sistema de esa computadora"
+                                        ariaLabel="Sistema de esta computadora"
                                         icon={Laptop}
                                     />
                                 </div>
-                                <Button icon={Send} variant="secondary" onClick={enviarDirecto} disabled={enviando}>
-                                    {enviando ? 'Enviando…' : 'Enviar directo'}
+                                <Button icon={Send} onClick={enviarDirecto} disabled={enviando}>
+                                    {enviando ? 'Enviando…' : 'Imprimir el ticket'}
                                 </Button>
                             </div>
                             <p className="text-caption text-content-3 mt-2 leading-snug">
-                                Por este camino el papel sale sin preguntar nada, pero la computadora
-                                no devuelve si la impresión salió bien: sólo se sabe si recibió el
-                                pedido. La prueba real es el papel.
+                                Ábrelo en el <strong>mismo navegador</strong> donde ya se imprimen los
+                                tickets en esa computadora: el permiso para hablarle a la impresora se
+                                da por navegador y por sitio, así que uno distinto empieza sin él.
+                                Y la computadora no devuelve si la impresión salió bien — sólo si
+                                recibió el pedido. La prueba de verdad es el papel.
                             </p>
                         </Tarjeta>
 
@@ -228,8 +219,55 @@ const ImpresionView = () => {
                             <Notice variant={resultado.ok ? 'success' : 'warning'}
                                 icon={resultado.ok ? CheckCircle2 : AlertCircle}>
                                 {resultado.texto}
+                                {resultado.direccion && (
+                                    <span className="block mt-1.5 font-normal">
+                                        Dirección:{' '}
+                                        <a href={resultado.direccion} target="_blank" rel="noreferrer"
+                                            className="underline font-bold">
+                                            {resultado.direccion}
+                                        </a>
+                                        {' '}— ábrela en una pestaña de esta misma computadora para ver
+                                        si el programa responde.
+                                    </span>
+                                )}
+                                {resultado.motivo && (
+                                    <span className="block mt-1 text-micro font-normal opacity-80">
+                                        El navegador dijo: {resultado.motivo}
+                                    </span>
+                                )}
                             </Notice>
                         )}
+
+                        <Tarjeta titulo="Si no hay impresión directa">
+                            <p className="text-body text-content-2 leading-snug">
+                                Este camino abre el diálogo del navegador, así que sirve desde
+                                cualquier computadora o desde el teléfono. Ojo: ahí <strong>hay que
+                                elegir la ticketera y su papel</strong> — si queda seleccionada una
+                                impresora de hoja, el ticket sale en hoja.
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-end gap-2">
+                                <div className="min-w-[220px] flex-1">
+                                    <label className="text-label font-bold text-content-2 mb-1 block">
+                                        Ancho del rollo
+                                    </label>
+                                    <LiquidSelect
+                                        value={String(ancho)}
+                                        onChange={(v) => setAncho(Number(v))}
+                                        options={opcionesAncho}
+                                        clearable={false}
+                                        ariaLabel="Ancho del rollo"
+                                        icon={Ruler}
+                                    />
+                                </div>
+                                <Button icon={Printer} variant="secondary" onClick={imprimir}>
+                                    Abrir el diálogo
+                                </Button>
+                            </div>
+                            <p className="text-caption text-content-3 mt-2 leading-snug">
+                                Si el papel sale con los bordes cortados, prueba el siguiente ancho
+                                hacia abajo.
+                            </p>
+                        </Tarjeta>
                     </div>
 
                     {/* La vista previa ES el documento que se imprime: `imprimir`

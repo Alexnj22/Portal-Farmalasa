@@ -7,22 +7,34 @@
 //
 // ── Cómo lo hace el sistema de facturación (medido el 2026-08-13) ────────────
 //
-// Su pantalla de venta NO usa el diálogo de impresión del navegador. Pide al
-// servidor el texto ya armado y lo manda por HTTP a un **programa que corre en
-// la misma computadora de la caja** (`http://localhost/…`, con la ticketera
+// NO usa el diálogo de impresión del navegador. Pide al servidor el ticket ya
+// maquetado y lo manda por HTTP a un **programa que corre en la misma
+// computadora de la caja** (`http://localhost/impresion_dte/`, con la ticketera
 // registrada como impresora compartida). Ese programa es el que le habla a la
 // impresora, así que el cajero nunca ve una ventana: aprieta Enter y sale el
 // papel.
 //
-// Lo que devuelve el servidor son diez campos separados por `|` —sucursal,
-// cliente, dos líneas de dirección, NIT, NRC, uno vacío, el cuerpo con los
-// totales, el total en letras y el vendedor— más dos cadenas de encabezado y
-// pie configurables. El cuerpo viene **rellenado con espacios** a un ancho
-// fijo: el que imprime no acomoda nada, sólo saca los caracteres tal cual.
-// Medido contra un Corte Z real del origen (`corte_z.ticket`): **40 columnas**.
+// **Hay DOS caminos, y el que importa es el segundo:**
 //
-// Ese camino tiene dos virtudes —no hay diálogo, y el papel sale al instante—
-// y dos defectos: sólo funciona en las computadoras donde ese programa está
+//   pantalla de venta vieja → `venta.php` (`process=imprimir_fact`) → los diez
+//   campos separados por `|` en un solo `datosventa` → `printpos1.php`. La
+//   opción TICKET de esa pantalla está comentada en su propio HTML.
+//
+//   **ticket con datos fiscales** → `_helper_ticket_dte.php`
+//   (`process=print_ticket_dte`) → secciones separadas —`encabezado`, `cuerpo`,
+//   `pie`, `totales`, `total_letras`, `img`, `qr`, `qr_farmalasa`— →
+//   **`printik_pista.php`** en Linux, `printposwin1.php` en Windows. Es el que
+//   sale de la ticketera en las salas hoy.
+//
+// Las secciones del segundo vienen **con códigos de impresora adentro** (ESC/POS:
+// centrado, letra chica, doble alto) y las imágenes por URL, que el programa
+// descarga. O sea que **ese programa no maqueta: es un caño**. Medido sobre un
+// ticket real (factura 351275): **54 columnas** en la letra chica y 40 en la
+// normal. El Corte Z del origen sale a 40 porque lo imprime otro reporte, en la
+// letra normal — no es el ancho del ticket.
+//
+// Ese camino tiene dos virtudes —no hay diálogo, y el papel sale al instante— y
+// dos defectos: sólo funciona en las computadoras donde ese programa está
 // instalado, y **la respuesta no se puede leer** (el navegador la entrega
 // opaca), así que un fallo de impresión es indistinguible de un éxito. En su
 // propio código el aviso de error está comentado.
@@ -333,67 +345,218 @@ export function imprimirTicket(ticket) {
 
 // ── El camino sin diálogo: la impresora de esta computadora ──────────────────
 //
-// Reproduce lo que hace la pantalla de venta del sistema de facturación: un
-// POST al programa de impresión que corre en la misma computadora. Sirve sólo
-// donde ese programa está instalado — las computadoras de sala.
+// Reproduce lo que hace el sistema de facturación al imprimir un ticket: un POST
+// al programa de impresión que corre en la misma computadora. Sirve sólo donde
+// ese programa está instalado — las computadoras de sala.
 //
-// TRES cosas que hay que saber antes de tocar esto:
+// **El contrato es el de `print_ticket_dte` (leído de su `js/funciones/util.js`,
+// 2026-08-13), no el de la pantalla de venta vieja.** Son dos caminos distintos y
+// el primer intento usó el equivocado:
+//
+//   ticket con datos fiscales →  printik_pista.php   (Linux, las salas)
+//                                printposwin1.php    (Windows)
+//     parámetros: encabezado · cuerpo · pie · totales · total_letras ·
+//                 efectivo · cambio · img · qr · qr_farmalasa
+//
+//   ticket viejo de la venta  →  printpos1.php, con los diez campos separados
+//                                por `|` en un solo `datosventa`
+//
+// El primero manda **secciones ya maquetadas con códigos de impresora adentro**
+// (ESC/POS: centrado, letra chica, doble alto) y las imágenes por URL, que el
+// programa descarga. O sea que ese programa **no maqueta nada: es un caño**. Por
+// eso el ancho y la posición de cada columna hay que respetarlos acá.
+//
+// Medido sobre un ticket real (captura del usuario, factura 351275): **54
+// columnas** en la letra chica y **40** en la normal; el nombre del producto
+// ocupa las columnas 1 a 31 y los importes terminan en 36, 44 y 54.
+//
+// TRES cosas más que hay que saber antes de tocar esto:
 //
 // 1. **`http://localhost` desde una página `https` no es contenido mixto.** La
-//    especificación considera confiable a localhost, así que el navegador no lo
-//    bloquea. Es lo que permite que esto funcione desde el portal, que vive en
-//    https. Los navegadores nuevos pueden PEDIR PERMISO para alcanzar la red
-//    local la primera vez: hay que concederlo.
+//    especificación considera confiable a localhost. Pero los navegadores nuevos
+//    piden **permiso de red local**, y ese permiso es **por sitio**: que el otro
+//    sistema imprima desde esa misma computadora no significa que el portal
+//    tenga el permiso. Es el primer sospechoso cuando falla en una sala.
 // 2. **La respuesta llega opaca.** Es una petición sin CORS: se sabe si el
 //    programa contestó algo, no QUÉ contestó. Un 404 y un 200 se ven igual.
 //    Por eso hay que elegir el sistema de la computadora en vez de probar los
 //    dos: probar los dos imprimiría dos veces donde ambos existan.
-// 3. **No está verificado desde una computadora de escritorio.** El programa no
-//    corre en una Mac. Lo que se puede afirmar hoy es la forma del pedido,
-//    copiada de la que usa el origen; que imprima se comprueba en una sala.
+// 3. **Las imágenes van vacías.** El origen manda su logo y dos códigos QR por
+//    URL; acá no se manda ninguna hasta comprobar que el programa las omite sin
+//    romperse cuando llegan vacías. Es lo único de este contrato que no salió de
+//    leer su código.
 const RUTA_PROGRAMA = 'http://localhost/impresion_dte/';
 
-/** El cuerpo del ticket en la forma que espera ese programa: diez campos con `|`. */
-function comoCamposDelPrograma(ticket) {
-    const cuerpo = [
-        ...(ticket.datos ?? []).map(([r, v]) => `${r}: ${v}`),
-        ...(ticket.bloques ?? []).flatMap(b => [
-            b.titulo ?? '',
-            b.monoespaciado ?? '',
-            b.texto ?? '',
-            ...(b.filas ?? []).map(([r, v]) => `${r}: ${v}`),
-        ].filter(Boolean)),
-        ...(ticket.totales ?? []).map(([r, v]) => `${r}: ${v}`),
-    ].join('\n');
+// Códigos de la impresora, tal como aparecen en el ticket del origen.
+const ESC = '\x1b';
+const CENTRO = `${ESC}a\x01`, IZQUIERDA = `${ESC}a\x00`, DERECHA = `${ESC}a\x02`;
+const LETRA_CHICA = `${ESC}!\x01`, LETRA_NORMAL = `${ESC}!\x00`, DOBLE_ALTO = `${ESC}!\x10`;
+const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
-    return [
-        ticket.encabezado?.titulo ?? '',      // sucursal
-        ticket.titulo ?? '',                  // dónde va el cliente
-        ...(ticket.encabezado?.lineas ?? ['', '']).slice(0, 2),
-        '', '', '',                           // NIT, NRC y un campo que el origen manda vacío
-        cuerpo,
-        '',                                   // el total en letras
-        '',
-    ].join('|');
+/**
+ * Columnas del ticket del origen, contadas sobre un ticket real.
+ *
+ * `FIN_*` es la columna donde TERMINA cada importe, medida en la línea
+ * `FLUCONAZOL 150MG X 2 CAPS. MK   2.00    8.05   16.10  `: la cantidad cierra
+ * en 36, el precio en 44 y el importe en 52 — con dos columnas de margen a la
+ * derecha, que es por qué el renglón mide 54 y el último número no llega al
+ * borde.
+ *
+ * Con UNA sola línea de muestra no se puede saber si el origen alinea ese último
+ * importe a la derecha en 52 o a la izquierda en un campo de 7; acá se eligió a
+ * la derecha, que es lo correcto para una columna de dinero y deja el margen
+ * igual. Es la única decisión de este bloque que no salió de medir.
+ */
+export const COLUMNAS_TICKET = { chica: 54, normal: 40 };
+const FIN_NOMBRE = 31, FIN_CANT = 36, FIN_PU = 44, FIN_TOTAL = 52;
+
+const aDerecha = (texto, hasta) => String(texto).padStart(hasta).slice(-hasta);
+const regla = (n = COLUMNAS_TICKET.chica) => '_'.repeat(n);
+
+/** Un renglón con el rótulo a la izquierda y el valor pegado a la derecha. */
+function dosColumnas(izq, der, ancho = COLUMNAS_TICKET.chica) {
+    const i = String(izq ?? ''), d = String(der ?? '');
+    const hueco = Math.max(1, ancho - i.length - d.length);
+    return `${i}${' '.repeat(hueco)}${d}`.slice(0, ancho);
+}
+
+/** Parte un nombre en renglones de a lo sumo `ancho`, sin cortar palabras. */
+function enRenglones(texto, ancho) {
+    const palabras = String(texto ?? '').trim().split(/\s+/).filter(Boolean);
+    const renglones = [];
+    let actual = '';
+    for (const p of palabras) {
+        if (!actual) actual = p.slice(0, ancho);
+        else if (actual.length + 1 + p.length <= ancho) actual += ` ${p}`;
+        else { renglones.push(actual); actual = p.slice(0, ancho); }
+    }
+    if (actual) renglones.push(actual);
+    return renglones.length ? renglones : [''];
 }
 
 /**
- * @returns {Promise<{ok: boolean, detalle: string}>} — `ok` significa que el
- * programa recibió el pedido, NO que el papel salió: eso no se puede saber.
+ * Una línea de producto en las columnas del origen. El nombre que no entra en 31
+ * caracteres **sigue en el renglón de abajo** —así lo hace el origen: su
+ * «FLUCONAZOL 150MG X 2 CAPS. MK» continuaba con «CAJA»—, nunca se recorta.
+ *
+ * Con cuatro columnas usa la geometría medida del origen. Con cualquier otra
+ * cantidad cae a rótulo-izquierda / valor-derecha, que es lo único que se puede
+ * alinear sin inventar posiciones.
+ */
+function filaDeItem(celdas) {
+    if (celdas.length !== 4) return [dosColumnas(celdas[0], celdas[celdas.length - 1])];
+    const [nombre, cant, pu, total] = celdas;
+    const [primera, ...resto] = enRenglones(nombre, FIN_NOMBRE);
+    const linea = primera.padEnd(FIN_NOMBRE)
+        + aDerecha(cant, FIN_CANT - FIN_NOMBRE)
+        + aDerecha(pu, FIN_PU - FIN_CANT)
+        + aDerecha(total, FIN_TOTAL - FIN_PU);
+    return [linea, ...resto];
+}
+
+/** El encabezado de la tabla, en las mismas posiciones que sus datos. */
+function encabezadoDeItems(columnas) {
+    if (columnas.length !== 4) return dosColumnas(columnas[0]?.label, columnas[columnas.length - 1]?.label);
+    const [c1, c2, c3, c4] = columnas.map(c => c.label ?? '');
+    return c1.padEnd(FIN_NOMBRE)
+        + aDerecha(c2, FIN_CANT - FIN_NOMBRE)
+        + aDerecha(c3, FIN_PU - FIN_CANT)
+        + aDerecha(c4, FIN_TOTAL - FIN_PU);
+}
+
+/**
+ * El ticket en las secciones que espera el programa de impresión, con sus
+ * códigos. Devuelve exactamente las claves que manda el origen.
+ */
+export function seccionesParaElPrograma(ticket) {
+    const { encabezado = {}, datos = [], bloques = [], items, totales = [], pie = [] } = ticket;
+
+    const cabeza = [
+        JUEGO_DE_CARACTERES + CENTRO + DOBLE_ALTO + (encabezado.titulo ?? ''),
+        LETRA_CHICA + (encabezado.lineas ?? []).join('\n'),
+        regla(),
+        (ticket.titulo ?? '').toUpperCase(),
+    ].filter(Boolean).join('\n') + '\n';
+
+    const medio = [
+        CENTRO + LETRA_CHICA,
+        ...datos.map(([r, v]) => `${r}: ${v}`),
+        regla(),
+        ...bloques.flatMap(b => [
+            b.titulo ?? '', b.texto ?? '', b.monoespaciado ?? '',
+            ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
+        ].filter(Boolean)),
+        ...(items ? [
+            IZQUIERDA,
+            encabezadoDeItems(items.columnas),
+            regla(),
+            ...items.filas.flatMap(filaDeItem),
+            regla(),
+        ] : []),
+        ...(totales.length ? [
+            DERECHA + LETRA_NORMAL,
+            ...totales.map(([r, v]) => `${r}   ${v}`),
+            LETRA_CHICA + CENTRO,
+        ] : []),
+    ].join('\n') + '\n';
+
+    return {
+        encabezado: cabeza,
+        cuerpo: medio,
+        // El origen manda acá sólo los códigos y pone las cifras en el cuerpo.
+        totales: DOBLE_ALTO + LETRA_NORMAL,
+        total_letras: CENTRO,
+        // Los saltos del final son el margen de corte: la cuchilla queda arriba
+        // del punto donde deja de salir papel.
+        pie: LETRA_CHICA + CENTRO + pie.join('\n') + '\n\n\n\n\n',
+        img: '', qr: '', qr_farmalasa: '',
+    };
+}
+
+/**
+ * ¿El navegador tiene prohibido alcanzar la red local de esta computadora?
+ *
+ * Existe porque sin esto **«no hay programa» y «el navegador me bloqueó» se ven
+ * exactamente iguales**: una petición sin CORS que no llega rechaza con el mismo
+ * `TypeError` en los dos casos. El primero es lo normal fuera de una sala; el
+ * segundo puede pasar DENTRO de una sala, con el programa andando, y mandaría a
+ * buscar el problema al lugar equivocado.
+ *
+ * `permissions.query` lanza con un nombre que el navegador no conoce, así que el
+ * `catch` es el camino normal en cualquier navegador que no implemente el
+ * permiso, no un error.
+ *
+ * @returns {Promise<'granted'|'denied'|'prompt'|null>} null = no se sabe.
+ */
+async function permisoDeRedLocal() {
+    try {
+        const p = await navigator.permissions.query({ name: 'local-network-access' });
+        return p.state;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * @returns {Promise<{ok: boolean, detalle: string, direccion: string, motivo?: string}>}
+ * `ok` significa que el programa recibió el pedido, NO que el papel salió: eso no
+ * se puede saber.
  */
 export async function enviarAImpresoraDeLaComputadora(ticket, { sistema = 'linux', impresora = '//localhost/ticket' } = {}) {
-    const archivo = sistema === 'windows' ? 'printposwin1.php' : 'printpos1.php';
+    const archivo = sistema === 'windows' ? 'printposwin1.php' : 'printik_pista.php';
     const cuerpo = new URLSearchParams({
-        datosventa: comoCamposDelPrograma(ticket),
+        ...seccionesParaElPrograma(ticket),
         efectivo: '0',
         cambio: '0',
-        headers: (ticket.encabezado?.lineas ?? []).join('|'),
-        footers: (ticket.pie ?? []).join('|'),
+        // El origen sólo manda el nombre de la impresora en Windows: en Linux el
+        // programa ya sabe a cuál escribir.
         ...(sistema === 'windows' ? { shared_printer_pos: impresora } : {}),
     });
 
+    const direccion = `${RUTA_PROGRAMA}${archivo}`;
+
     try {
-        await fetch(`${RUTA_PROGRAMA}${archivo}`, {
+        await fetch(direccion, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -402,17 +565,38 @@ export async function enviarAImpresoraDeLaComputadora(ticket, { sistema = 'linux
         });
         return {
             ok: true,
-            detalle: 'La computadora recibió el pedido de impresión. Si no salió papel, '
-                + 'la impresora no está registrada con el nombre esperado.',
+            direccion,
+            detalle: 'La computadora recibió el pedido. Si no salió papel, la impresora no está '
+                + 'registrada con el nombre esperado — la prueba de verdad es el papel, no este aviso.',
         };
     } catch (err) {
-        const seCorto = err?.name === 'TimeoutError' || err?.name === 'AbortError';
+        // El aviso dice lo que PASÓ y ofrece las causas posibles, en vez de
+        // elegir una: el navegador rechaza igual cuando no hay nada escuchando y
+        // cuando él mismo bloqueó la salida a la red local. Dar por sentada la
+        // primera manda a buscar el problema al lugar equivocado justo en el caso
+        // que importa — una sala con el programa andando.
+        const motivo = `${err?.name ?? 'Error'}: ${err?.message ?? 'sin detalle'}`;
+
+        if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+            return {
+                ok: false, direccion, motivo,
+                detalle: 'La computadora no contestó en 8 segundos. Si es una computadora de sala, '
+                    + 'el programa de impresión está detenido o colgado.',
+            };
+        }
+        if (await permisoDeRedLocal() === 'denied') {
+            return {
+                ok: false, direccion, motivo,
+                detalle: 'El navegador tiene bloqueado el acceso a la red local de esta computadora. '
+                    + 'Hay que permitirlo en el candado de la barra de direcciones y volver a intentar.',
+            };
+        }
         return {
-            ok: false,
-            detalle: seCorto
-                ? 'La computadora no contestó en 8 segundos.'
-                : 'Esta computadora no tiene el programa de impresión directa. '
-                  + 'Es lo normal fuera de las salas: usa el botón de arriba.',
+            ok: false, direccion, motivo,
+            detalle: 'Nadie contestó en esa dirección. En una computadora que no es de sala es lo '
+                + 'esperado: no tiene el programa de impresión directa, y el papel sale con el botón '
+                + 'de arriba. Si ES una de sala, abre esa dirección en una pestaña de esa misma '
+                + 'computadora: si tampoco responde ahí, el programa no está corriendo.',
         };
     }
 }

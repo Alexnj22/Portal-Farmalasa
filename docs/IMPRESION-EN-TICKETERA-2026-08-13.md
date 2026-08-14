@@ -56,6 +56,54 @@ Hay cuatro destinos, elegidos por el `tipo_impresion` del formulario de venta:
 gemelo `…win1.php` para Windows. La opción `TIK` está **comentada** en el
 `<select>` de la pantalla de venta, así que hoy en las salas se imprime `COF`.
 
+### El camino que de verdad usa la ticketera es OTRO (corregido 2026-08-13)
+
+Todo lo de arriba es la pantalla de venta **vieja**. El ticket que sale hoy de la
+ticketera lo arma `print_ticket_dte` (`js/funciones/util.js`), que es otro
+circuito completo:
+
+```
+navegador ──POST _helper_ticket_dte.php {process:'print_ticket_dte', id_factura}──▶ servidor
+navegador ◀── JSON: encabezado · cuerpo · pie · totales · total_letras
+              + img · qr · qr_farmalasa + la config de impresión ──────────────
+navegador ──POST http://localhost/impresion_dte/printik_pista.php ────────────▶ programa local
+             (printposwin1.php si sist_ope == 'win')                            └─▶ ticketera
+```
+
+Las diferencias que importan:
+
+| | pantalla de venta vieja | ticket con datos fiscales |
+|---|---|---|
+| archivo local | `printpos1.php` | **`printik_pista.php`** (Linux) |
+| forma | un `datosventa` con 10 campos y `\|` | **secciones separadas** |
+| maqueta | rellenada con espacios | espacios **+ códigos ESC/POS** |
+| imágenes | ninguna | logo + QR de Hacienda + QR de puntos, por URL |
+
+Las secciones vienen con los códigos de la impresora adentro: `ESC a 1` centrar,
+`ESC a 0` izquierda, `ESC a 2` derecha, `ESC ! 0` letra normal, `ESC ! 1` letra
+chica, `ESC ! 0x10` doble alto, y `ESC R \f` el juego de caracteres latino. O sea
+que **ese programa no maqueta nada: es un caño** que saca los bytes a la
+impresora y descarga las imágenes que le pasan por URL.
+
+**El ancho real del ticket son 54 columnas**, no 40. Contado sobre un ticket real
+(factura 351275):
+
+```
+         DESCRIPCION           CANT.    P.U   SUBTOTAL      ← 54
+FLUCONAZOL 150MG X 2 CAPS. MK   2.00    8.05   16.10        ← 54
+```
+
+El nombre ocupa las columnas 1–31 y **el que no entra sigue en el renglón de
+abajo** (su `…CAPS. MK` continuaba con `CAJA`). La cantidad cierra en la columna
+36, el precio en 44 y el importe en 52 — con dos columnas de margen, que es por
+qué el último número no llega al borde. Las líneas en letra normal (el TOTAL)
+miden 40, que es de dónde venía la confusión: el Corte Z sale a 40 porque lo
+imprime otro reporte en la letra normal, y **eso no es el ancho del ticket**.
+
+Esa geometría está anclada en `tests/unit/ticketPrint.test.js`, que compara
+columna por columna contra la línea real: si alguien la cambia «para que se vea
+mejor», el ticket sale desalineado en la sala y desde acá no se ve.
+
 **El ancho es 40 columnas.** No lo dice ninguna configuración: se midió contra un
 ticket real del origen, el Corte Z que el portal ya guarda crudo en
 `corte_z.ticket`. Todos sus renglones cierran en 40 caracteres
@@ -204,21 +252,52 @@ la pena mandar al rollo.
 
 ---
 
+## 4 bis. Cuando la impresión directa falla en una sala
+
+Pasó en el primer intento (2026-08-13, caja de una sala): el aviso decía «esta
+computadora no tiene el programa de impresión directa». **El aviso mentía por
+construcción** — con una petición sin CORS, «no hay nada escuchando» y «el
+navegador me bloqueó» rechazan igual, con el mismo `TypeError: Failed to fetch`,
+y el primero es lo normal fuera de una sala mientras el segundo pasa DENTRO de
+una sala con todo bien instalado. Elegir una de las dos manda a buscar el
+problema al lugar equivocado. Corregido: el aviso ahora dice qué pasó, muestra la
+dirección que intentó y lo que contestó el navegador.
+
+Y había un defecto real detrás: el envío usaba **`printpos1.php` con el formato
+viejo**, no `printik_pista.php` con las secciones. Corregido.
+
+Para diagnosticarlo, en orden:
+
+1. **Abrir `http://localhost/impresion_dte/printik_pista.php` en una pestaña de
+   esa misma computadora.** Si responde algo (aunque sea un error de PHP), el
+   programa está ahí y el problema es del navegador o del portal. Si dice que no
+   se puede conectar, el programa no está corriendo.
+2. **Usar el mismo navegador donde ya se imprimen los tickets.** El permiso para
+   alcanzar la red local se da **por navegador y por sitio**: que el otro sistema
+   imprima desde esa computadora no le da el permiso al portal. Si el navegador
+   lo pide, hay que concederlo; si lo bloqueó, se destraba en el candado de la
+   barra de direcciones.
+3. **Si la computadora es Windows**, elegir Windows en la pantalla: el archivo y
+   los parámetros son otros. No se prueban los dos automáticamente a propósito —
+   donde existieran ambos, imprimiría dos veces.
+
+`http://localhost` desde una página `https` **no** es contenido mixto (la
+especificación considera confiable a localhost), así que eso no es lo que lo
+bloquea.
+
 ## 5. Lo que queda abierto
 
-1. **El ancho real de las ticketeras no se sabe todavía.** 40 columnas es lo que
-   entra a 80 mm en la letra elegida, y coincide con el origen — pero eso es
-   aritmética, no papel. Lo dice la primera prueba impresa en una sala.
-2. **El camino sin diálogo está escrito y no probado.** Ese programa no corre en
-   una Mac: lo que se afirma es la forma del pedido, copiada de la que usa el
-   origen. Que imprima se comprueba en una sala, y el resultado hay que anotarlo
-   acá. Ojo con dos cosas al probarlo:
-   - `http://localhost` desde una página `https` **no** es contenido mixto (la
-     especificación considera confiable a localhost), pero los navegadores nuevos
-     pueden **pedir permiso** para alcanzar la red local la primera vez.
-   - Si la computadora es Windows hay que elegir Windows en la pantalla: el
-     archivo y los parámetros son otros. No se prueban los dos automáticamente a
-     propósito — donde existieran ambos, imprimiría dos veces.
+1. **El ancho del rollo para el camino del navegador.** El ticket del origen usa
+   54 columnas en letra chica; el HTML del portal hoy entra 40 con la letra que
+   tiene. Falta igualar los dos o decidir a propósito que el del portal sea más
+   grande.
+2. **La impresión directa sigue sin una impresión exitosa que la confirme.** El
+   contrato ya no es una suposición —sale de su propio código y la geometría está
+   anclada en un test contra un ticket real—, pero de una sala todavía no salió
+   papel del portal.
+3. **Las imágenes van vacías.** El origen manda logo y dos QR por URL; el portal
+   no manda ninguna hasta comprobar que el programa las omite sin romperse cuando
+   llegan vacías. Es lo único del contrato que no salió de leer su código.
 3. **Qué documento va al rollo.** El motor está listo y no está enganchado a
    ninguna vista todavía. Los candidatos, en orden de uso probable: una
    cotización (hoy sale en hoja carta), el resumen de un pedido recibido, el

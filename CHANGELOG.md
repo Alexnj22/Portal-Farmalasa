@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.593.0 — El canal de impresión directa, con el contrato real
+
+Lo que hacía falta era **la forma de imprimir directo**, para después mandarle
+cualquier ticket —de una venta, de un pedido, de lo que sea—. Eso es lo que queda
+resuelto acá, y en el camino se corrigieron dos cosas que estaban mal.
+
+**El envío directo apuntaba al circuito equivocado.** El origen tiene dos, y el
+primer intento copió el viejo: la pantalla de venta manda a `printpos1.php` un
+solo campo con diez valores separados por `|`. Pero el ticket que hoy sale de la
+ticketera lo arma `print_ticket_dte`, que manda **secciones separadas**
+—`encabezado`, `cuerpo`, `pie`, `totales`, `total_letras`, `img`, `qr`,
+`qr_farmalasa`— a **`printik_pista.php`** (Linux) o `printposwin1.php` (Windows).
+Y esas secciones llevan **códigos de impresora adentro** (centrar, letra chica,
+doble alto): ese programa no maqueta nada, es un caño. Ahora el portal manda
+exactamente eso.
+
+**El ancho del ticket son 54 columnas, no 40.** Contado sobre un ticket real: el
+nombre del producto ocupa las columnas 1–31 y el que no entra sigue en el renglón
+de abajo; la cantidad cierra en 36, el precio en 44 y el importe en 52. Las líneas
+en letra normal miden 40, y de ahí venía la confusión — el Corte Z sale a 40
+porque lo imprime otro reporte, y eso no es el ancho del ticket. La geometría
+quedó anclada en `tests/unit/ticketPrint.test.js`, que compara columna por columna
+contra la línea real: si alguien la cambia para que se vea mejor, el ticket sale
+desalineado en la sala y desde acá no se ve.
+
+**Y el aviso de error mentía por construcción.** Decía «esta computadora no tiene
+el programa de impresión directa», pero una petición sin CORS rechaza igual
+cuando no hay nada escuchando y cuando el navegador bloqueó la salida a la red
+local — el primero es lo normal fuera de una sala, el segundo pasa DENTRO de una
+sala con todo bien instalado. Elegir una de las dos manda a buscar el problema al
+lugar equivocado. Ahora el aviso dice qué pasó, muestra la dirección que intentó
+—como enlace, para abrirla en una pestaña y ver si el programa responde— y lo que
+contestó el navegador. Además avisa que el permiso de red local se da **por
+navegador y por sitio**: que el otro sistema imprima desde esa computadora no se
+lo da al portal.
+
+En la pantalla, la impresión directa pasó a ser la acción principal y el diálogo
+del navegador quedó como el camino de respaldo, diciendo lo que antes no decía: si
+ahí se elige una impresora de hoja, el ticket sale en hoja.
+
+Detalle y cómo diagnosticar un fallo en una sala, en
+`docs/IMPRESION-EN-TICKETERA-2026-08-13.md`.
+
 ## v2.592.1 — La regla de impresión en rollo entra a CLAUDE.md
 
 Sin cambios de comportamiento. La entrada de v2.592.0 dejó el motor de tickets y

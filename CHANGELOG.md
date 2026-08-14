@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.595.0 — Los cortes de caja empiezan a guardarse
+
+Primera pieza del control de cortes: las tablas y la corrida que los trae. Sin
+pantalla todavía — lo urgente era dejar de perder los cortes de cada día, que
+no se pueden reconstruir después.
+
+**Por qué no se le puede creer a la diferencia del origen.** La calcula el
+navegador del dependiente (`funciones_corte_caja.js`):
+`diferencia = (efectivo + tarjeta + cheque) - total_sistema`, y la manda como
+un parámetro más. Nada la recalcula del otro lado, así que vale lo que valga lo
+tecleado: inflar `tarjeta` deja la diferencia en cero y el efectivo se va. Por
+eso el control vive en el portal.
+
+**Por qué tampoco sirve recalcularla del ticket.** El ticket reimpreso mezcla
+líneas del corte (INGRESOS, VENTA) con líneas del día EN VIVO (VALES, COBROS
+CREDITO, TARJETA), así que se recalcula solo cada vez que se pide. Medido en el
+corte 13734: el origen guardó `1155.18 / 0.10` y el ticket de hoy da `-20.45`,
+corrido `20.55` por movimientos posteriores. El método viejo de Sheets acertaba
+sólo porque leía el corte al minuto de nacer.
+
+**Lo que sí es firme.** `esperado = total_declarado - diferencia_erp`, columna
+GENERATED sobre los dos únicos valores que el origen guarda. Verificado contra
+el corte 13783: `1593.68 - 3.39 = 1590.29`, idéntico al TOTAL CAJA de ese
+momento.
+
+- Tablas `cortes_caja` y `cortes_caja_movimientos`, con RLS y con el descarte
+  obligado a llevar motivo y responsable por CHECK, no sólo por pantalla.
+- `sync-cortes-caja`: listado por sala, ticket de cada corte nuevo y los
+  movimientos de caja del día (de ahí salen los vales, que el portal no tenía).
+  INSERT-ONLY sobre los cortes: un corte ya guardado lleva estado puesto por
+  una persona y una corrida no lo pisa.
+- Los endpoints quedaron anotados en la función: no están en el HTML de la
+  pantalla, viven en los JS de `js/funciones/`.
+
+
+_(pendiente de redactar)_
+
 ## v2.594.0 — La caja se comprueba antes de gastar papel
 
 Decisión del usuario: alcanza con que el ticket salga **en la computadora que

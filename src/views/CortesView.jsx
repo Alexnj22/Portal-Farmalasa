@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Clock, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { CalendarDays, Clock, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
+import RangeDatePicker from '../components/common/RangeDatePicker';
 import StatCard from '../components/common/StatCard';
 import TablePagination from '../components/common/TablePagination';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
@@ -40,17 +41,15 @@ const rotularDia = (fecha) => {
     });
 };
 
+// «Resueltos» juntaba dos decisiones opuestas —dar por bueno y descartar— bajo
+// un rótulo que no dice cuál. Se parten: quien quiere ver lo aprobado no tiene
+// que filtrar dos veces.
 const TABS = [
-    { key: 'pendientes', label: 'Sin confirmar' },
-    { key: 'diferencia', label: 'Con diferencia' },
-    { key: 'resueltos',  label: 'Resueltos' },
-    { key: 'todos',      label: 'Todos' },
-];
-
-const RANGOS = [
-    { key: 7,  label: '7 días' },
-    { key: 30, label: '30 días' },
-    { key: 90, label: '90 días' },
+    { key: 'pendientes',  label: 'Sin confirmar' },
+    { key: 'diferencia',  label: 'Con diferencia' },
+    { key: 'confirmados', label: 'Confirmados' },
+    { key: 'descartados', label: 'Descartados' },
+    { key: 'todos',       label: 'Todos' },
 ];
 
 // El carril de la vista: cuatro números fijos, no un desglose de largo variable
@@ -72,7 +71,11 @@ const CortesView = () => {
     const { user, hasPermission } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
 
-    const [dias, setDias] = useState(7);
+    // Arranca en HOY (regla del usuario, 2026-08-14). El rango es un
+    // `RangeDatePicker` y no tres chips de «7 · 30 · 90 días»: los chips
+    // contestan tres preguntas y la pregunta real —«¿qué pasó el martes?»— no
+    // era ninguna de las tres.
+    const [rango, setRango] = useState(() => ({ desde: hoySV(), hasta: hoySV() }));
     const [tab, setTab] = useState('pendientes');
     const [busqueda, setBusqueda] = useState('');
     const [sala, setSala] = useState('');
@@ -92,8 +95,7 @@ const CortesView = () => {
 
     const cargar = useCallback(async () => {
         setCargando(true);
-        const hasta = hoySV();
-        const filas = await fetchCortes({ desde: correrDia(hasta, -(dias - 1)), hasta });
+        const filas = await fetchCortes({ desde: rango.desde, hasta: rango.hasta });
         setCortes(filas || VACIO);
         setCargando(false);
         // Quién firmó cada decisión. Se pide aparte y después: la tarjeta se
@@ -101,7 +103,7 @@ const CortesView = () => {
         // cortes retrasaría lo único que la pantalla tiene que hacer.
         const autores = await fetchPersonas((filas || []).map((c) => c.resuelto_por));
         setPersonas(new Map(autores.map((p) => [p.id, p])));
-    }, [dias]);
+    }, [rango.desde, rango.hasta]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar el rango
 
@@ -139,9 +141,10 @@ const CortesView = () => {
         // hacía ahí — porque un cierre bajo «Sin confirmar» no significa nada.
         if (c.tipo === 'Z' && tab !== 'todos') return false;
 
-        if (tab === 'pendientes' && c.estado !== 'PENDIENTE') return false;
-        if (tab === 'resueltos'  && c.estado === 'PENDIENTE') return false;
-        if (tab === 'diferencia' && (c.tipo !== 'C' || severidad(c.tramo) === 'ok')) return false;
+        if (tab === 'pendientes'  && c.estado !== 'PENDIENTE') return false;
+        if (tab === 'confirmados' && c.estado !== 'CONFIRMADO') return false;
+        if (tab === 'descartados' && c.estado !== 'DESCARTADO') return false;
+        if (tab === 'diferencia'  && (c.tipo !== 'C' || severidad(c.tramo) === 'ok')) return false;
 
         if (!busqueda.trim()) return true;
         return tokenMatch(busqueda,
@@ -227,7 +230,13 @@ const CortesView = () => {
         [branches, cortes],
     );
 
-    const limpiar = () => { setSala(''); setDias(7); setBusqueda(''); setPagina(1); };
+    const verRango = useCallback((desde, hasta) => {
+        setRango({ desde: desde || hoySV(), hasta: hasta || desde || hoySV() });
+        setPagina(1);
+    }, []);
+
+    const esHoy = rango.desde === hoySV() && rango.hasta === hoySV();
+    const limpiar = () => { setSala(''); verRango(hoySV(), hoySV()); setBusqueda(''); };
 
     // La píldora del HEADER lleva pestañas y buscador; la del CUERPO, los
     // filtros (§16.9). Las dos venían en `filtersContent`, o sea las dos en el
@@ -262,17 +271,28 @@ const CortesView = () => {
                     </CarrilCards>
 
                     <div className="flex justify-end min-w-0">
-                        <FilterBar onClear={limpiar} activeCount={[sala, dias !== 7].filter(Boolean).length}>
+                        <FilterBar onClear={limpiar} activeCount={[sala, !esHoy].filter(Boolean).length}>
                             <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                                 <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
                             </FilterBar.Section>
-                            <FilterBar.Section label="período">
-                                {RANGOS.map((r) => (
-                                    <FilterBar.Chip key={r.key} tone="brand" active={dias === r.key}
-                                        onToggle={() => { setDias(r.key); setPagina(1); }}>
-                                        {r.label}
-                                    </FilterBar.Chip>
-                                ))}
+                            {/* `months={1}`: el panel de dos meses son 596px y es
+                                el de pedir vacaciones, no el de filtrar (§14). */}
+                            <FilterBar.Section active={!esHoy} onClear={() => verRango(hoySV(), hoySV())} label="fecha">
+                                {/* 240 y no 200: dos fechas completas más la
+                                    píldora de días miden 232px medidos, y a 200
+                                    el rango salía «08/08/2026 →…». */}
+                                <div className="w-[240px]">
+                                    <RangeDatePicker
+                                        startDate={rango.desde}
+                                        endDate={rango.hasta}
+                                        onRangeChange={verRango}
+                                        months={1}
+                                        compact
+                                        shortcuts
+                                        placeholder="Elegir fechas"
+                                        label="cortes"
+                                    />
+                                </div>
                             </FilterBar.Section>
                         </FilterBar>
                     </div>
@@ -291,18 +311,22 @@ const CortesView = () => {
                             subtitle={`Ningún corte coincide con «${busqueda}».`}
                             action={<Button variant="secondary" onClick={() => { setBusqueda(''); setPagina(1); }}>Limpiar la búsqueda</Button>}
                         />
-                    ) : tab === 'pendientes' ? (
+                    ) : tab === 'pendientes' && cortes.length ? (
                         <EmptyState
                             compact icon={ShieldCheck} iconClass="text-success-text"
                             title="Todo confirmado"
-                            subtitle="No queda ningún corte por revisar en este período."
+                            subtitle="No queda ningún corte por revisar en estas fechas."
                             action={<Button variant="secondary" onClick={() => setTab('todos')}>Ver todos</Button>}
                         />
                     ) : (
                         <EmptyState
-                            compact icon={Wallet} title="Sin cortes en el período"
-                            subtitle="Amplía el período o quita el filtro de sucursal."
-                            action={<Button variant="secondary" onClick={limpiar}>Quitar los filtros</Button>}
+                            compact icon={Wallet}
+                            title={esHoy ? 'Sin cortes hoy' : 'Sin cortes en estas fechas'}
+                            subtitle="La vista arranca en el día de hoy. Amplía las fechas para ver más atrás."
+                            action={<Button variant="secondary" icon={CalendarDays}
+                                onClick={() => verRango(correrDia(hoySV(), -6), hoySV())}>
+                                Ver los últimos 7 días
+                            </Button>}
                         />
                     )
                 )}

@@ -2449,6 +2449,40 @@ function scanFile(path) {
     }
   }
 
+  // ── `scroll-encadenado`: la baldosa que empuja el tablero ────────────────
+  //
+  // Reportado por el usuario (2026-08-14): «hay un problema con el scroll en el
+  // widget (es general del dashboard), si scroleo y se acaba el scroll interno,
+  // hace scroll externo, así que se mueve». Es el encadenamiento por defecto del
+  // navegador: al llegar al final de un scroller anidado, la rueda sigue en el
+  // de atrás. En el Inicio eso significa que revisar la lista de una baldosa
+  // **mueve el tablero entero** debajo del puntero.
+  //
+  // La regla se acota al tablero a propósito: ahí TODO scroller vive dentro de
+  // la rejilla, que a su vez scrollea, así que encadenar siempre está mal. En el
+  // resto del portal hay scrollers que SON la página y contenerlos sería peor.
+  //
+  // Van los dos sitios porque el tablero está partido en dos: los widgets con
+  // archivo propio en `views/dashboard/` y **diez más escritos dentro de
+  // `DashboardView.jsx`** (turnos, ausencias, solicitudes, sucursales,
+  // calendario, avisos, cumpleaños, cotizaciones, top productos, vendedores).
+  // Arreglar sólo la carpeta dejaba sin tocar a **cuatro de los cinco** widgets
+  // que de verdad scrolleaban — medido en el navegador, no leído: los que
+  // scrollean dependen de cuántos datos traen, así que la lista no se puede
+  // sacar del código. Estaba resuelto en `WidgetInventorySearch` y en ningún
+  // otro: el patrón existía y no había nada que lo propagara.
+  const enTablero = path.startsWith('src/views/dashboard/') || path === 'src/views/DashboardView.jsx';
+  if (enTablero && !hasException(path, 'scroll-encadenado')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      if (!/\boverflow-(?:y-)?auto\b/.test(line)) return;
+      if (/\boverscroll-(?:contain|none)\b/.test(line)) return;
+      findings.push({ line: i + 1,
+        label: 'scroller de widget sin `overscroll-contain` — al terminar su lista la rueda sigue moviendo el tablero de atrás',
+        category: 'scroll-encadenado', text: line.trim().slice(0, 120) });
+    });
+  }
+
   // ── `segmentado-a-mano`: una-de-N escrita con botones (§15.3) ────────────
   // «Si el estilo depende de `X === valor`, no es un botón con estado: es
   // `SegmentedControl`.» El detector busca la forma exacta que describe la

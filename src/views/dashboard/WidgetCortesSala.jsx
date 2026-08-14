@@ -216,7 +216,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
             </div>
 
             {/* ── Lo que falta confirmar ──────────────────────────────────── */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-1.5">
                 {error && (
                     <EmptyState linea icon={Wallet} title="No se pudieron cargar" subtitle={error} />
                 )}

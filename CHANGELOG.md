@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.2 — Cortes: filtro por fecha, aprobados aparte y el scroll que no se escapa
+
+Cinco cosas que reportó el usuario mirando la vista. Tres tocan canónicos, así
+que el arreglo sale del componente y no de la pantalla.
+
+**El período se elige con el calendario, y arranca en HOY.** Eran tres chips
+—7 · 30 · 90 días— que contestan tres preguntas; la pregunta real, «¿qué pasó el
+martes?», no era ninguna de las tres. Ahora es `RangeDatePicker` con sus atajos,
+y la vista abre en el día de hoy. Cuando no hay nada, el vacío lo dice y ofrece
+la salida: **Ver los últimos 7 días**.
+
+**«Resueltos» se parte en dos.** Juntaba dar por bueno y descartar bajo un
+rótulo que no dice cuál, así que ver sólo lo aprobado no se podía. Son
+`Confirmados` y `Descartados`.
+
+**El formulario del descarte sube.** Iba al final del modal: en una pantalla
+baja, al apretar «Descartar» el cuerpo abría mostrando el campo de texto y la
+cifra quedaba arriba del pliegue — o sea que se firmaba sin haber visto cuánto.
+Ahora el monto, el aviso y lo que hay que escribir entran juntos en el primer
+pantallazo (medido a **700px de alto**: los tres visibles sin scrollear), y el
+diagnóstico largo queda abajo, que es donde se lo busca a propósito. Además, al
+pasar a firmar el cuerpo vuelve arriba: quien venía leyendo «Qué revisar» y
+aprieta el botón del pie ya no se queda mirando la mitad de la pantalla.
+
+---
+
+**Tres defectos del `RangeDatePicker`, que eran de todos sus usos:**
+
+* **Un solo día se decía con dos fechas.** Con inicio y fin iguales el rótulo
+  medía el doble y salía truncado —«14/08/2026 → …»—, que encima parece un rango
+  sin terminar. La rama de multi-rango ya lo resolvía; a ésta le faltaba.
+* **`defaultDays` valía 15 por defecto**, que es el mínimo legal de vacaciones, y
+  se le colaba a cualquiera que no lo declarara: un clic simple estiraba la
+  selección a quince días solo, y el pie avisaba «⚠ Faltan 14 días (mínimo 15)»
+  sobre un filtro perfectamente elegido. Pasa a `null`; los cuatro sitios que sí
+  tienen esa regla ya la declaraban a mano, así que ninguno pierde nada.
+* **Escape no cerraba.** El panel se monta en un portal sobre toda la pantalla y
+  sólo se salía con el mouse. `LiquidDatePicker` sí lo tenía; su hermano de
+  rango, no (§24, §25.11).
+
+---
+
+**El scroll del tablero ya no se escapa.** Reportado: «si scroleo y se acaba el
+scroll interno, hace scroll externo, así que se mueve». Es el encadenamiento por
+defecto del navegador — al llegar al final de un scroller anidado, la rueda
+sigue en el de atrás. Revisar la lista de una baldosa movía el tablero entero
+debajo del puntero.
+
+Estaba resuelto en `WidgetInventorySearch` **y en ningún otro**: el patrón
+existía y no había nada que lo propagara. Son 24 scrollers, y la mitad del
+tablero no está en `views/dashboard/` sino escrita dentro de `DashboardView.jsx`
+— **cuatro de los cinco widgets que de verdad scrollean** estaban ahí. Eso se
+midió en el navegador, no se leyó: cuáles scrollean depende de cuántos datos
+traen, así que la lista no sale del código.
+
+Lo vigila la categoría **`scroll-encadenado`** del gate de diseño, acotada al
+tablero: ahí todo scroller vive dentro de la rejilla, que también scrollea, así
+que encadenar siempre está mal. En el resto del portal hay scrollers que **son**
+la página y contenerlos sería peor.
+
 ## v2.604.1 — Las ventas de 6 meses dejan de faltar en uno de cada cuatro productos
 
 Lo encontró la verificación en el navegador, no el código: en el formulario de

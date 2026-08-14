@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, ShieldCheck } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
@@ -142,6 +142,11 @@ export default function CorteDetalleModal({
     // mismo tick y la cara desaparecería antes que el panel.
     const persona = visible?.resuelto_por ? personas.get(visible.resuelto_por) || null : null;
 
+    const tope = useRef(null);
+    useEffect(() => {
+        if (modo) tope.current?.scrollIntoView({ block: 'start' });
+    }, [modo]);
+
     const sugerencias = useMemo(
         () => (visible ? sugerenciasDeCorte(visible, movs) : []),
         [visible, movs],
@@ -207,6 +212,12 @@ export default function CorteDetalleModal({
             <LiquidModal.Body className="space-y-4">
                 {visible && (
                     <>
+                        {/* Al pasar a firmar, el cuerpo vuelve arriba. Sin esto,
+                            quien venía leyendo «Qué revisar» y aprieta el botón
+                            del pie se queda mirando la mitad de la pantalla:
+                            aparece el formulario arriba y él no lo ve. */}
+                        <span ref={tope} aria-hidden="true" className="block h-0" />
+
                         <div data-surface="card"
                             data-tono={sev === 'ok' ? undefined : sev === 'falta' ? 'danger' : 'warning'}
                             className="p-4">
@@ -254,6 +265,54 @@ export default function CorteDetalleModal({
                                         : 'Descartar lo saca de la cuenta del día: los cortes que vengan después ya no lo toman como referencia. Es para un conteo mal hecho, no para una diferencia que no cuadra.'}
                                 </span>
                             </Notice>
+                        )}
+
+                        {/* ── El formulario va ACÁ ARRIBA, no al final ─────────
+                            Reportado por el usuario (2026-08-14): «al dar
+                            descartar se va de un solo a escribir, pero hay
+                            computadoras que son menos altas, por lo que se salta
+                            toda la información de arriba». Con el motivo y la
+                            nota al final, en una pantalla baja el cuerpo abre
+                            mostrando el formulario y la cifra queda arriba del
+                            pliegue — o sea que se firma sin haber visto cuánto.
+
+                            Acá, los tres bloques que importan para decidir —el
+                            monto, el aviso y lo que hay que escribir— entran
+                            juntos en el primer pantallazo a cualquier alto, y
+                            el diagnóstico largo («Qué revisar») queda abajo,
+                            que es donde se lo busca a propósito. */}
+                        {puedeFirmar && modo && (
+                            <div className="space-y-3">
+                                {/* Una de N opciones es `SegmentedControl`, no
+                                    tres botones cuyo `variant` mira `=== motivo`
+                                    (§15.3). Además de verse igual en todo el
+                                    portal, trae el `radiogroup` que hace que un
+                                    lector anuncie «2 de 3». */}
+                                {modo === 'descartar' && (
+                                    <div>
+                                        <div className="text-caption font-black uppercase tracking-widest text-content-3 mb-1.5">
+                                            Motivo del descarte
+                                        </div>
+                                        <SegmentedControl
+                                            label="Motivo del descarte"
+                                            tone="danger"
+                                            value={motivo}
+                                            onChange={setMotivo}
+                                            options={MOTIVOS.map((m) => ({ value: m, label: m }))}
+                                        />
+                                    </div>
+                                )}
+                                <PortalTextarea
+                                    label={modo === 'confirmar' ? 'Observación (opcional)' : 'Detalle (opcional)'}
+                                    name="nota"
+                                    value={nota}
+                                    onChange={(e) => setNota(e.target.value)}
+                                    rows={2}
+                                    placeholder={modo === 'confirmar'
+                                        ? 'Qué se encontró, o por qué se acepta la diferencia'
+                                        : 'Algo que ayude a entender el descarte'}
+                                />
+                            </div>
                         )}
 
                         {explicacion && (
@@ -329,39 +388,6 @@ export default function CorteDetalleModal({
                             </Notice>
                         )}
 
-                        {puedeFirmar && modo && (
-                            <div className="space-y-3">
-                                {/* Una de N opciones es `SegmentedControl`, no
-                                    tres botones cuyo `variant` mira `=== motivo`
-                                    (§15.3). Además de verse igual en todo el
-                                    portal, trae el `radiogroup` que hace que un
-                                    lector anuncie «2 de 3». */}
-                                {modo === 'descartar' && (
-                                    <div>
-                                        <div className="text-caption font-black uppercase tracking-widest text-content-3 mb-1.5">
-                                            Motivo del descarte
-                                        </div>
-                                        <SegmentedControl
-                                            label="Motivo del descarte"
-                                            tone="danger"
-                                            value={motivo}
-                                            onChange={setMotivo}
-                                            options={MOTIVOS.map((m) => ({ value: m, label: m }))}
-                                        />
-                                    </div>
-                                )}
-                                <PortalTextarea
-                                    label={modo === 'confirmar' ? 'Observación (opcional)' : 'Detalle (opcional)'}
-                                    name="nota"
-                                    value={nota}
-                                    onChange={(e) => setNota(e.target.value)}
-                                    rows={2}
-                                    placeholder={modo === 'confirmar'
-                                        ? 'Qué se encontró, o por qué se acepta la diferencia'
-                                        : 'Algo que ayude a entender el descarte'}
-                                />
-                            </div>
-                        )}
                     </>
                 )}
             </LiquidModal.Body>

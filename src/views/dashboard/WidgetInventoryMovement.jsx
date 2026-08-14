@@ -224,7 +224,7 @@ function SelectorOperacion({ onSelect }) {
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 shrink-0">
                 Tipo de movimiento
             </p>
-            <div className="flex flex-col gap-2 flex-1 overflow-y-auto -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex flex-col gap-2 flex-1 overflow-y-auto overscroll-contain -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {OPERACIONES.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
                     <button
                         key={key}
@@ -702,7 +702,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                 el estado: antes entraba a medio llenar con la existencia de la
                 sala como cantidad, y se terminaba en la otra pestaña. */}
             {pestana === 'agregar' && borrador && (
-              <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <div data-surface="card" className="p-3 flex flex-col gap-3">
                     <div className="flex items-start gap-2">
                         <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly
@@ -900,7 +900,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
 
             {/* El banco: lo que ya va en la solicitud */}
             {pestana === 'banco' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {lineas.length === 0 && (
                     <EmptyState linea icon={op.icon} title="Todavía no agregas ningún producto"
                         action={<Button variant="secondary" size="sm" onClick={() => setPestana('agregar')}>Ir a agregar</Button>} />
@@ -1095,7 +1095,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
 
             {/* De dónde se agrega */}
             {pestana === 'agregar' && !borrador && (
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-1.5 -mx-1 px-1 py-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {cargando && <div className="flex justify-center py-6"><SkeletonText lines={3} className="w-full max-w-md" /></div>}
 
                 {!cargando && candidatos.length === 0 && (

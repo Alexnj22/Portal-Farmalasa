@@ -210,7 +210,18 @@ const RangeDatePicker = ({
     endDate,
     onRangeChange,
     holidays = [],
-    defaultDays = 15,
+    // `defaultDays` es la regla de UN formulario, no del control (2026-08-14).
+    // Valía 15 por defecto —el mínimo legal de vacaciones— y eso se le colaba a
+    // todo el que no lo declarara: un clic simple estiraba la selección a quince
+    // días solo, y el pie avisaba «⚠ Faltan 14 días (mínimo 15)» sobre un filtro
+    // que estaba perfectamente elegido. Se vio al estrenarlo en Cortes de caja,
+    // donde el rango normal es UN día, y le pasaba igual al filtro del historial
+    // de sucursal desde siempre.
+    //
+    // Nace en `null` y los cuatro sitios que sí tienen la regla —las dos formas
+    // de vacaciones, la novedad y la solicitud personal— ya la declaraban a mano,
+    // así que ninguno pierde nada.
+    defaultDays = null,
     placeholder = 'Seleccionar período',
     label = 'período',
     multiRange = false,
@@ -349,12 +360,16 @@ const RangeDatePicker = ({
             setDraftEnd(null);
         } else {
             let finalEnd = end;
-            if (start === end) {
-                // Click simple — auto-calcular defaultDays
+            if (start === end && defaultDays) {
+                // Click simple — auto-calcular defaultDays. Sólo donde el
+                // formulario declara un largo típico; en un filtro, un clic en
+                // un día significa ESE día.
                 const d = new Date(start + 'T12:00:00');
                 d.setDate(d.getDate() + (defaultDays - 1));
                 finalEnd = d.toISOString().split('T')[0];
                 onRangeChange(start, finalEnd);
+            } else if (start === end) {
+                onRangeChange(start, end);
             }
             setDraftStart(start);
             setDraftEnd(finalEnd);
@@ -402,6 +417,21 @@ const RangeDatePicker = ({
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
+    }, [isOpen]);
+
+    // Escape cierra. **No estaba**, y el panel se monta en un portal sobre toda
+    // la pantalla: una capa que tapa la vista y de la que sólo se sale con el
+    // mouse (§24 y §25.11, que pide tratar como diálogo a toda capa que se monta
+    // encima). `LiquidDatePicker` sí lo tenía; su hermano de rango, no.
+    useEffect(() => {
+        if (!isOpen) return;
+        const alTeclear = (e) => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            setIsOpen(false);
+        };
+        document.addEventListener('keydown', alTeclear);
+        return () => document.removeEventListener('keydown', alTeclear);
     }, [isOpen]);
 
     useEffect(() => {
@@ -567,6 +597,11 @@ const RangeDatePicker = ({
                         } else if (daysCount === 0) {
                             cls += 'bg-surface-card-hover text-content-3 border border-divider';
                             badgeText = 'Sin período seleccionado';
+                        } else if (!defaultDays) {
+                            // Sin largo declarado no hay nada que reclamar: se
+                            // dice cuánto se eligió y ya.
+                            cls += 'bg-success/10 text-success border border-success/30';
+                            badgeText = `✓ ${daysCount} ${daysCount === 1 ? 'día' : 'días'}`;
                         } else if (daysCount === defaultDays) {
                             cls += 'bg-success/10 text-success border border-success/30';
                             badgeText = `✓ ${daysCount} días de ${label}`;
@@ -611,8 +646,17 @@ const RangeDatePicker = ({
                 ) : (
                     <div data-surface="input" className={`flex items-center ${compact ? 'gap-2 h-11 px-3 rounded-full' : 'gap-3 h-[48px] px-4'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={startDate ? 'text-brand-text' : 'text-content-3'} strokeWidth={2.5} />
+                        {/* Un solo día se dice con una sola fecha. Con
+                            `inicio → fin` idénticos el rótulo mide el doble y en
+                            una ranura de filtro sale truncado —«14/08/2026 → …»,
+                            que además parece un rango sin terminar—. La rama de
+                            `multiRange` ya lo resolvía así desde siempre; a ésta
+                            le faltaba, y se vio al estrenar el filtro de Cortes
+                            de caja, que arranca en HOY. */}
                         <span className={`flex-1 text-body font-bold truncate ${startDate && endDate ? 'text-content-2' : 'text-content-3'}`}>
-                            {startDate && endDate
+                            {startDate && endDate && startDate === endDate
+                                ? formatDisplay(startDate)
+                                : startDate && endDate
                                 ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
                                 : startDate
                                 ? `${formatDisplay(startDate)} → selecciona fin`

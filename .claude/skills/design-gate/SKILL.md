@@ -152,6 +152,31 @@ el portal (`TarjetaSolicitud`, `AnnouncementsView`, `TabShifts`). Lo que delata
 al selector es la comparación contra la variable que el map va repartiendo: ahí
 hay N botones y uno está «activo».
 
+## `scroll-encadenado` (2026-08-14)
+
+Tercera categoría bloqueante en cero de la misma tanda. Reportada por el
+usuario: *«hay un problema con el scroll en el widget (es general del
+dashboard), si scroleo y se acaba el scroll interno, hace scroll externo, así
+que se mueve»*. Es `overscroll-behavior` en su valor por defecto: al terminar un
+scroller anidado, la rueda sigue en el de atrás — o sea que revisar la lista de
+una baldosa mueve el tablero entero debajo del puntero.
+
+**Acotada al tablero a propósito**: ahí todo scroller vive dentro de la rejilla,
+que también scrollea, así que encadenar siempre está mal. En el resto del portal
+hay scrollers que **son** la página y contenerlos sería peor.
+
+Dos cosas que costaron una vuelta:
+
+1. **El tablero está partido en dos.** Los widgets con archivo propio en
+   `views/dashboard/` (14 scrollers) y **diez más escritos dentro de
+   `DashboardView.jsx`**. Arreglar sólo la carpeta dejó sin tocar a **cuatro de
+   los cinco** widgets que de verdad scrolleaban.
+2. **Cuáles scrollean se MIDE en el navegador, no se lee.** Un `overflow-y-auto`
+   sólo scrollea si su contenido no entra, y eso depende de cuántos datos trae:
+   de los 24 scrollers del tablero, en una sesión real scrolleaban 5. La
+   comprobación fue `getComputedStyle(el).overscrollBehaviorY` sobre los
+   elementos que efectivamente tenían `scrollHeight > clientHeight`.
+
 ## Regenerar el baseline
 
 Al BAJAR deuda (cada fase del plan baja la suya), regenerar con

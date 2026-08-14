@@ -245,7 +245,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Info 2 columnas compacta */}
         <div data-surface="card" className="overflow-hidden shrink-0">
           <div className="grid grid-cols-2 divide-x divide-divider">
@@ -441,7 +441,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {isCreditPay && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-chart-3/10 border border-chart-3/30">
             <Info size={12} className="text-chart-3-text mt-0.5 shrink-0" strokeWidth={2.5} />
@@ -566,7 +566,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div data-surface="card" className="px-3 py-2 flex items-center gap-2">
           <CreditCard size={13} className="text-content-3 shrink-0" strokeWidth={2.5} />
           <div>
@@ -668,7 +668,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={currentVendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Vendedor actual */}
         <div data-surface="card" className="px-3 py-2">
           <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Vendedor actual</p>
@@ -809,7 +809,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
-      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Cliente actual */}
         <div data-surface="card" className="px-3 py-2">
           <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
@@ -855,7 +855,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
             <p className="text-label text-content-3 text-center py-2">Sin coincidencias en el listado de clientes</p>
           )}
           {!newClient && results.length > 0 && (
-            <div className="space-y-1 max-h-[180px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="space-y-1 max-h-[180px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {results.map(c => (
                 <ListRow
                     key={c.id}
@@ -1121,7 +1121,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
         </div>
       </HerramientasModal>
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
 
         {!loading && invoices.length === 0 && (

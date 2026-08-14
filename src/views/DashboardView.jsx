@@ -2334,7 +2334,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('shifts',
         <WidgetCard title="Estado de turnos" icon={Clock} category="personal"
           action={getScope('dash_shifts') !== 'BRANCH' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
-          <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
+          <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
             {employees.length === 0 ? (
               <div className="px-4 py-3 space-y-5">
                 {[0,1,2].map(i => (
@@ -2566,7 +2566,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('absences',
         <WidgetCard title="Ausencias activas" icon={UserX} category="personal"
           action={puedeAbrir('/requests')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/requests')}>Ver <ChevronRight size={11}/></Button>}>
-          <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
+          <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <Skel className="w-7 h-7 rounded-lg flex-shrink-0" />
@@ -2607,7 +2607,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes pendientes" icon={ClipboardList} category="personal"
           action={puedeAbrir('/requests')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/requests')}>Ver todas <ChevronRight size={11}/></Button>}>
-          <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
+          <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <Skel className="w-7 h-7 rounded-lg flex-shrink-0" />
@@ -2652,7 +2652,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
           action={puedeAbrir('/branches')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/branches')}>Ver <ChevronRight size={11}/></Button>}>
-          <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
                 <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-divider bg-surface-card-hover/50">
@@ -2720,7 +2720,7 @@ const DashboardView = ({ openModal }) => {
               {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-micro font-black text-content-3 uppercase py-1">{d}</div>)}
             </div>
             {/* Day grid — scrolls internally if widget is too small */}
-            <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
+            <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
               {employees.length === 0 ? (
                 <div className="grid grid-cols-7 h-full" style={{ gridAutoRows: 'minmax(28px,1fr)' }}>
                   {Array.from({ length: 35 }).map((_, i) => (
@@ -2758,7 +2758,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('announcements',
         <WidgetCard title="Avisos recientes" icon={Megaphone} category="general"
           action={puedeAbrir('/announcements')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/announcements')}>Ver todos <ChevronRight size={11}/></Button>}>
-          <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
+          <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
                 <Skel className="w-7 h-7 rounded-lg flex-shrink-0 mt-0.5" />
@@ -2816,7 +2816,7 @@ const DashboardView = ({ openModal }) => {
             </div>
           </div>
           {/* Content */}
-          <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 pb-3 pt-2">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 pb-3 pt-2">
             {employees.length === 0 ? (
               <div className="space-y-1.5">
                 {[0,1,2,3].map(i => (
@@ -2930,7 +2930,7 @@ const DashboardView = ({ openModal }) => {
                 <p className="text-micro font-bold text-content-2 uppercase tracking-wide">monto total</p>
               </div>
             </div>
-            <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
+            <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
               {cotizStats.recent.length === 0 ? (
                 <EmptyState linea icon={Receipt} title="Sin cotizaciones activas" />
               ) : cotizStats.recent.map(c => (
@@ -3024,7 +3024,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('top_productos',
         <WidgetCard title="Top productos · mes actual" icon={Package} category="productos"
           action={puedeAbrir('/ventas')&&<Button variant="ghost" size="xs" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>}>
-          <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
+          <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
               <div className="space-y-0.5 py-1">
                 {[0,1,2,3,4,5,6].map(i => (
@@ -3300,7 +3300,7 @@ const DashboardView = ({ openModal }) => {
             />
           )}
         >
-          <div className="px-4 pb-4 pt-2 h-full overflow-y-auto">
+          <div className="px-4 pb-4 pt-2 h-full overflow-y-auto overscroll-contain">
             <WidgetVendedores
               key={metaBranch}
               selectedBranchId={isVendAllScope ? Number(metaBranch) : null}

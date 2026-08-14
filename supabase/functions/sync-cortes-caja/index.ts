@@ -33,6 +33,16 @@ import { getCorsHeaders, requireInvokeSecret, getErpBranchMap } from "../_shared
 // INSERT-ONLY sobre `cortes_caja`: un corte ya guardado NO se vuelve a tocar.
 // La tabla lleva el estado que puso una persona (CONFIRMADO / DESCARTADO) y
 // una corrida que "refresque" lo pisaría sin dejar rastro.
+//
+// CORRE CADA MINUTO, y es a propósito: apenas cortan, lo primero que hacen en
+// la sala es verificar que todo esté bien, así que el corte tiene que estar en
+// el portal enseguida. De paso mantiene `desfase_seg` chico, que es lo único
+// que vuelve creíbles los campos `tk_*` del ticket.
+//
+// Dos corridas encimadas no hacen daño: cada una hace su propio login (sesión
+// propia, sin cruce de sucursal) y el INSERT va con `ignoreDuplicates`. Por eso
+// no lleva candado — el del Apps Script existía por los límites de Apps Script,
+// no por el origen.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const BASE       = "https://clientesdte3.oss.com.sv/farma_salud/";
@@ -291,56 +301,69 @@ Deno.serve(async (req) => {
         }
 
         // ── Movimientos de caja (vales e ingresos) ──────────────────────────
+        // Sólo cuando apareció un corte nuevo. La corrida es de cada minuto
+        // —el dependiente verifica apenas corta— y en la enorme mayoría no hay
+        // nada nuevo: pedir los movimientos igual sería traer hasta 1000 filas
+        // por sala, 1440 veces al día, para nada. Cuando hay corte nuevo es
+        // justo cuando hacen falta, y el último corte del día se lleva el
+        // estado final. `movimientos: true` los fuerza para un repaso.
         let movsGuardados = 0;
-        const resMov = await fetch(
-          `${MOV_URL}?fechai=${fecha1}&fechaf=${fecha2}&draw=1&start=0&length=1000`,
-          {
-            headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" },
-            signal: AbortSignal.timeout(60_000),
-          },
-        );
-        const jsonMov = await resMov.json().catch(() => null);
-        const dataMov: string[][] = jsonMov?.data ?? [];
+        let movs: {
+          branch_id: number; erp_movimiento_id: number;
+          concepto: string | null; fecha: string | null;
+          monto: number | null; tipo: string;
+        }[] = [];
+        if (aInsertar.length || body.movimientos === true) {
+          const resMov = await fetch(
+            `${MOV_URL}?fechai=${fecha1}&fechaf=${fecha2}&draw=1&start=0&length=1000`,
+            {
+              headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" },
+              signal: AbortSignal.timeout(60_000),
+            },
+          );
+          const jsonMov = await resMov.json().catch(() => null);
+          const dataMov: string[][] = jsonMov?.data ?? [];
 
-        const movs = dataMov.map((r) => ({
-          branch_id: branchId,
-          erp_movimiento_id: Number(r[0]),
-          concepto: texto(String(r[1] ?? "")) || null,
-          fecha: fechaISO(texto(String(r[2] ?? ""))),
-          monto: money(r[3]),
-          tipo: texto(String(r[4] ?? "")).toUpperCase(),
-        })).filter((m) =>
-          Number.isFinite(m.erp_movimiento_id) && m.fecha &&
-          m.monto !== null && (m.tipo === "ENTRADA" || m.tipo === "SALIDA")
-        );
+          movs = dataMov.map((r) => ({
+            branch_id: branchId,
+            erp_movimiento_id: Number(r[0]),
+            concepto: texto(String(r[1] ?? "")) || null,
+            fecha: fechaISO(texto(String(r[2] ?? ""))),
+            monto: money(r[3]),
+            tipo: texto(String(r[4] ?? "")).toUpperCase(),
+          })).filter((m) =>
+            Number.isFinite(m.erp_movimiento_id) && m.fecha &&
+            m.monto !== null && (m.tipo === "ENTRADA" || m.tipo === "SALIDA")
+          );
 
-        if (movs.length) {
-          // Los movimientos SÍ se pueden editar y borrar en el origen, así que
-          // acá sí corresponde actualizar. Pero sólo lo que cambió: reescribir
-          // 280 filas cada 5 minutos es el churn de WAL que ya costó caro en
-          // `inventory`.
-          const { data: previos, error: errPrev } = await supabase
-            .from("cortes_caja_movimientos")
-            .select("erp_movimiento_id, concepto, monto, tipo")
-            .eq("branch_id", branchId)
-            .gte("fecha", fecha1).lte("fecha", fecha2);
-          if (errPrev) throw new Error(`leyendo movimientos: ${errPrev.message}`);
+          if (movs.length) {
+            // Los movimientos SÍ se pueden editar y borrar en el origen, así
+            // que acá sí corresponde actualizar. Pero sólo lo que cambió:
+            // reescribir las filas del día en cada corte es el churn de WAL
+            // que ya costó caro en `inventory`.
+            const { data: previos, error: errPrev } = await supabase
+              .from("cortes_caja_movimientos")
+              .select("erp_movimiento_id, concepto, monto, tipo")
+              .eq("branch_id", branchId)
+              .gte("fecha", fecha1).lte("fecha", fecha2);
+            if (errPrev) throw new Error(`leyendo movimientos: ${errPrev.message}`);
 
-          const antes = new Map((previos ?? []).map((p) => [p.erp_movimiento_id, p]));
-          const cambiados = movs.filter((m) => {
-            const p = antes.get(m.erp_movimiento_id);
-            if (!p) return true;
-            return p.concepto !== m.concepto || Number(p.monto) !== m.monto || p.tipo !== m.tipo;
-          });
+            const antes = new Map((previos ?? []).map((p) => [p.erp_movimiento_id, p]));
+            const cambiados = movs.filter((m) => {
+              const p = antes.get(m.erp_movimiento_id);
+              if (!p) return true;
+              return p.concepto !== m.concepto || Number(p.monto) !== m.monto || p.tipo !== m.tipo;
+            });
 
-          if (cambiados.length) {
-            const { error } = await supabase.from("cortes_caja_movimientos")
-              .upsert(
-                cambiados.map((m) => ({ ...m, updated_at: new Date().toISOString() })),
-                { onConflict: "branch_id,erp_movimiento_id" },
-              );
-            if (error) throw new Error(`guardando movimientos: ${error.message}`);
-            movsGuardados = cambiados.length;
+            if (cambiados.length) {
+              const { error } = await supabase.from("cortes_caja_movimientos")
+                .upsert(
+                  cambiados.map((m) => ({ ...m, updated_at: new Date().toISOString() })),
+                  { onConflict: "branch_id,erp_movimiento_id" },
+                );
+              if (error) throw new Error(`guardando movimientos: ${error.message}`);
+              movsGuardados = cambiados.length;
+            }
           }
         }
 

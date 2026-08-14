@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.595.1 — La captura de cortes corre cada minuto
+
+En producción: `cortes-caja-1min` (cada minuto, 6:00–23:59 SV) y
+`cortes-caja-repaso-diario` (23:40 SV). Cada minuto y no cada cinco porque
+apenas cortan, lo primero que hacen en la sala es verificar que todo esté bien:
+el corte tiene que estar en el portal enseguida. De paso mantiene chico el
+`desfase_seg`, que es lo único que vuelve creíbles los campos `tk_*`.
+
+Los movimientos de caja ahora se piden **sólo cuando apareció un corte nuevo**
+—que es justo cuando hacen falta— en vez de en cada corrida: traer hasta 1000
+filas por sala 1440 veces al día para nada era el churn que ya costó caro en
+`inventory`. El repaso de las 23:40 los fuerza una vez, por si editaron o
+borraron alguno después del último corte.
+
+**Primera corrida, 6 sucursales: 24 cortes C y 6 Z, todos con ticket.** Y el
+dato de producción confirma por qué el `esperado` no se calcula del ticket:
+coincide con el `TOTAL CAJA` impreso en sólo **14 de los 24**. En La Popular y
+Salud 3 no coincide en ninguno — hubo movimientos después del corte y el ticket
+reimpreso ya los trae adentro.
+
+Decisión del usuario en esta misma sesión: **el portal no escribe en el sistema
+de origen.** Se evaluó crear los movimientos de caja desde el portal y se
+descartó; queda como control, verificación y apoyo. Efecto lateral bueno: el
+cobro al dependiente se registra allá como movimiento de caja y el portal lo ve
+solo, porque ya los captura.
+
+
+_(pendiente de redactar)_
+
 ## v2.595.0 — Los cortes de caja empiezan a guardarse
 
 Primera pieza del control de cortes: las tablas y la corrida que los trae. Sin

@@ -91,6 +91,7 @@ const ACTION_LABEL = {
     PEDIDO_LLEGADA:  'Confirmar recepción',
     PEDIDO_REENVIO:  'Confirmar llegada',
     PEDIDO_PROBLEMA: 'Ver detalle',
+    CORTE_NUEVO:     'Revisar el corte',
 };
 
 /* Los dos avisos que existen para PEDIR una decisión — y que por eso se van de

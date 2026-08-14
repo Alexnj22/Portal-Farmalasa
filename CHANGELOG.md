@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.10 — Al hacerse un corte, la sala se entera
+
+**Hasta hoy, un corte de caja aparecía en el portal y no lo sabía nadie.** El
+portal lo captura cada minuto —el corte entra segundos después de firmarse en la
+sala— pero el aviso no existía: había que entrar a mirar. Y como el corte lo
+confirma la propia sala, el que tenía que enterarse era justamente el que no se
+enteraba.
+
+Ahora, apenas entra un corte, le llega a **la gente de esa sala que tiene el
+módulo** (dependientes, jefe/a y subjefe/a de sala, regente): «Corte de caja de
+las 14:35 — Salud 3, revisalo y confirmalo», y toca para ir a la pantalla. Va a
+la campana y también como aviso al teléfono, porque exige ir a hacer algo.
+
+Tres cosas que el aviso hace a propósito:
+
+- **No sale por el cierre del día.** El cierre (el corte Z) no se confirma ni se
+  descarta, así que anunciarlo sería pedir una acción que no existe.
+- **No dice el monto de la diferencia.** La cifra de la tarjeta es la del
+  *tramo* —la resta contra el último corte confirmado del día— y cambia cuando
+  alguien confirma el corte anterior; encima, cuando las dos cuentas del origen
+  no coinciden, el portal muestra las dos y no elige. Un número en el aviso sería
+  una tercera cifra, provisional y calculada en otro lado. El aviso anuncia; la
+  pantalla dice cuánto.
+- **No avisa de cortes viejos.** Una recarga manual de días pasados no despierta
+  a nadie: la ventana son dos días, y así el corte de las 23:59 —que se captura
+  recién a las 6 de la mañana— sigue avisando.
+
+Sólo llega a quien tiene el módulo de cortes en esa sala, no a toda la sucursal:
+un aviso que lleva a una pantalla que no se puede abrir es peor que no avisar.
+
 ## v2.604.9 — El tope de existencia sale de los lotes, no del primero
 
 **Al preparar un pedido, un producto que sí estaba en bodega podía salir como

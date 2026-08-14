@@ -2,7 +2,7 @@ import {
     Palmtree, FileText, RefreshCw, Coffee, DollarSign, FileCheck, Stethoscope,
     Ban, CreditCard, UserCog, Contact,
     Package, BarChart2, ClipboardList, Info, Bell,
-    PackagePlus, Trash2, ArrowLeftRight,
+    PackagePlus, Trash2, ArrowLeftRight, Wallet,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,6 +57,9 @@ export const ICONO_POR_TIPO = {
     MINMAX_DECIDED:   BarChart2,
     REQUEST_PENDING:  ClipboardList,
     REQUEST_DECIDED:  ClipboardList,
+    // El mismo `Wallet` del módulo (`moduleMap`/`permissionModules`): el aviso
+    // lleva a esa pantalla y tiene que verse como ella.
+    CORTE_NUEVO:      Wallet,
     SYSTEM:           Info,       // mensaje del portal, no de una persona
 };
 

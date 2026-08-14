@@ -30,6 +30,7 @@ import {
 import { registerPlugin } from '@capacitor/core';
 
 import { mensajeAmigable } from '../../../utils/errorMessages';
+import { cajasDeRenglon, construirCajasEspeciales } from '../../../utils/cajasEspeciales';
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
 // @capacitor-community/background-geolocation es un plugin 100% nativo sin
@@ -578,24 +579,20 @@ export function usePedidosData({ searchTerm = '' }) {
         if (!finalizarModal) return;
         const { pedidoId, sucId } = finalizarModal;
         const allRows = finalizarModal.rows ?? [];
-        // Contar cajas Electrolit: solo los que despachan por CAJA (625ml)
+        // Contar cajas Electrolit: solo los que despachan por CAJA (625ml).
+        // Cuenta CAJAS con la misma fórmula que las especiales — antes tenía su
+        // propio `Math.round(...)` copiado, y dos fórmulas para "cuántas cajas
+        // son estas unidades" es una discrepancia esperando su parcial.
         const cajasElectrolit = allRows
             .filter(r =>
                 (r.products?.nombre ?? '').toLowerCase().includes('electrolit') &&
                 (r.dispatch_tipo ?? '').toUpperCase() === 'CAJA'
             )
-            .reduce((sum, r) => sum + Math.round((r.cantidad_asignada ?? 0) / (Number(r.dispatch_factor) || 1)), 0);
+            .reduce((sum, r) => sum + cajasDeRenglon(r), 0);
 
-        // Cajas especiales: E1, E2… por unidad
-        let eCounter = 1;
-        const cajasEspeciales = allRows
-            .filter(r => r.caja_especial === true && (r.cantidad_asignada ?? 0) > 0)
-            .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
-            .flatMap(r => Array.from({ length: r.cantidad_asignada }, () => ({
-                label: `E${eCounter++}`,
-                erp_product_id: r.erp_product_id,
-                product_name:   r.products?.nombre ?? '',
-            })));
+        // Cajas especiales: E1, E2… una por CAJA. Un Electrolit ×12 es una caja
+        // especial, no doce.
+        const cajasEspeciales = construirCajasEspeciales(allRows);
 
         setFinalizarModal(null);
         setBusyAction('finalizar');
@@ -707,7 +704,8 @@ export function usePedidosData({ searchTerm = '' }) {
                     const pageGroups = await getExactPageGroups(sucId, rows);
                     const recomputed = {};
                     pageGroups.forEach((pg, idx) => { recomputed[String(idx + 1)] = pg.ids; });
-                    await updatePedidoSucursalStatus(pedidoId, sucId, { pagina_items: recomputed });
+                    const { error: pagErr } = await updatePedidoSucursalStatus(pedidoId, sucId, { pagina_items: recomputed });
+                    if (pagErr) throw pagErr;
                     const missingPages = cajasFaltantes.flatMap(n => cajaMapDb[String(n)] ?? []);
                     missingIds = missingPages.flatMap(p => recomputed[String(p)] ?? []);
                 } else {
@@ -717,7 +715,8 @@ export function usePedidosData({ searchTerm = '' }) {
                     missingIds = (allPending || []).map(r => r.id);
                 }
                 if (missingIds.length > 0) {
-                    await updatePedidoItemsFaltaCaja(missingIds, true);
+                    const { error: faltaErr } = await updatePedidoItemsFaltaCaja(missingIds, true);
+                    if (faltaErr) throw faltaErr;
                 }
             }
 
@@ -727,7 +726,8 @@ export function usePedidosData({ searchTerm = '' }) {
                     .filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit') && !r.falta_caja && r.status !== 'recibido')
                     .slice(0, electrolitFaltantes);
                 if (faltaElecItems.length > 0) {
-                    await updatePedidoItemsFaltaCaja(faltaElecItems.map(r => r.id), true);
+                    const { error: elecErr } = await updatePedidoItemsFaltaCaja(faltaElecItems.map(r => r.id), true);
+                    if (elecErr) throw elecErr;
                 }
             }
 
@@ -746,7 +746,8 @@ export function usePedidosData({ searchTerm = '' }) {
                         }
                     });
                 if (faltaIds.size > 0) {
-                    await updatePedidoItemsFaltaCaja([...faltaIds], true);
+                    const { error: espErr } = await updatePedidoItemsFaltaCaja([...faltaIds], true);
+                    if (espErr) throw espErr;
                 }
             }
 

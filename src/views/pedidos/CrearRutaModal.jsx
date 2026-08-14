@@ -124,7 +124,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
           suc_name:         snm[pss.erp_sucursal_id] ?? `Suc. ${pss.erp_sucursal_id}`,
           total_cajas:      pss.total_cajas      ?? 0,
           cajas_electrolit: pss.cajas_electrolit  ?? 0,
-          cajas_especiales: pss.cajas_especiales  ?? 0,
+          cajas_especiales: pss.cajas_especiales  ?? [],
         });
       }
       setPedidosDisp(items);
@@ -163,7 +163,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     return paradas.map(stop => {
       const cajas      = stop.items?.reduce((s, it) => s + (it.total_cajas      ?? 0), 0) ?? 0;
       const electrolit = stop.items?.reduce((s, it) => s + (it.cajas_electrolit ?? 0), 0) ?? 0;
-      const especiales = stop.items?.reduce((s, it) => s + (it.cajas_especiales ?? 0), 0) ?? 0;
+      // `cajas_especiales` es la LISTA de cajas, no un número: `0 + [{…}]` daba
+      // la cadena «0[object Object]», y `"0[object Object]" > 0` es NaN > 0, o
+      // sea falso. Por eso el badge «⭐ N especiales» no apareció nunca — ni
+      // cuando había cajas especiales ni cuando no.
+      const especiales = stop.items?.reduce((s, it) => s + (it.cajas_especiales?.length ?? 0), 0) ?? 0;
       const drive = stop.dur_min ?? 0;
       const svc   = svcMin(cajas);
       cumul += drive;

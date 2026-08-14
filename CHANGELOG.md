@@ -21,7 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.605.5 — una caja especial es la caja, no la botella
+## v2.605.5 — número vacío
+
+El bump y esta entrada quedaron preparados en otra sesión y un commit
+concurrente se los llevó adentro (`b686a5db`, rotulado v2.605.4) antes de que
+existiera el código que describían. El contenido está abajo, en v2.605.6, que es
+la versión donde el código sí entra. Es el riesgo del árbol compartido: quedan
+dos números para un solo cambio y ninguno de los dos se puede reescribir sin
+mentir sobre lo que ya se pusheó.
+
+## v2.605.6 — una caja especial es la caja, no la botella
 
 Regla del usuario: **una caja especial es una caja completa, no una unidad.** Un
 Electrolit ×12 marcado como caja especial viaja como una caja, y al sistema se le

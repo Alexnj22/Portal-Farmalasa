@@ -26,6 +26,7 @@ import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pe
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { construirCajasEspeciales } from '../../utils/cajasEspeciales';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
@@ -171,12 +172,28 @@ export default function RecepcionModal({
         return la.localeCompare(lb, 'es') || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es');
     }), [rows]);
 
-    // Cajas especiales: items with caja_especial=true, labelled E1, E2...
-    const especialItems = useMemo(() =>
-        sortedRows
-            .filter(r => r.caja_especial && (r.cantidad_asignada ?? 0) > 0)
-            .map((r, i) => ({ label: `E${i + 1}`, item: r }))
-    , [sortedRows]);
+    // Cajas especiales: E1, E2… una por CAJA, con la numeración compartida (así
+    // marcar «E2 dañada» en el aviso de llegada señala la misma caja acá).
+    //
+    // Pero la BALDOSA es por renglón, no por caja: la recepción confirma la
+    // cantidad de un renglón de una sola vez —`receive_pedido_sucursal` recibe un
+    // número por `pedido_item`— así que dos baldosas del mismo producto serían
+    // dos veces la misma confirmación, y tocar una desactivaría la otra. La
+    // baldosa dice entonces qué cajas cubre: «E1–E2».
+    const especialItems = useMemo(() => {
+        const porRenglon = new Map();
+        for (const caja of construirCajasEspeciales(rows)) {
+            const previo = porRenglon.get(caja.pedido_item_id);
+            if (previo) { previo.labels.push(caja.label); continue; }
+            const item = rows.find(r => r.id === caja.pedido_item_id);
+            if (item) porRenglon.set(caja.pedido_item_id, { labels: [caja.label], item });
+        }
+        return [...porRenglon.values()].map(({ labels, item }) => ({
+            label: labels.length > 1 ? `${labels[0]}–${labels[labels.length - 1]}` : labels[0],
+            labels,
+            item,
+        }));
+    }, [rows]);
 
     // ── Per-box derived data ────────────────────────────────────────────────────
     const itemIdsByCaja = useMemo(() => {
@@ -793,8 +810,10 @@ export default function RecepcionModal({
                         <div className="mt-4">
                             <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2">Cajas especiales</p>
                             <div className={`grid gap-2 ${especialItems.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                                {especialItems.map(({ label, item }) => {
-                                    const isDamaged   = especialesLlegadas[label] === 'danada';
+                                {especialItems.map(({ label, labels, item }) => {
+                                    // La baldosa cubre varias cajas: alcanza con que UNA venga
+                                    // dañada para que haya que mirarla.
+                                    const isDamaged   = labels.some(l => especialesLlegadas[l] === 'danada');
                                     const isFaltante  = !!item.falta_caja;
                                     const isConfirmed = confirmedEspecialIds.has(item.id) || item.status === 'recibido';
                                     // Igual que las cajas: navega, no alterna.
@@ -832,7 +851,12 @@ export default function RecepcionModal({
                                                     {isConfirmed ? <><Check size={9} aria-hidden="true" />Confirmado</>
                                                         : isFaltante ? 'En reenvío'
                                                         : isDamaged ? <><AlertTriangle size={9} aria-hidden="true" />Dañada</>
-                                                        : `${item.cantidad_asignada} unid.`}
+                                                        /* Cuántas cajas hay que buscar, además de cuántas unidades
+                                                           trae: con un Electrolit ×12, «24 unid.» solo no dice si
+                                                           son una caja o dos. */
+                                                        : labels.length > 1
+                                                            ? `${labels.length} cajas · ${item.cantidad_asignada} unid.`
+                                                            : `${item.cantidad_asignada} unid.`}
                                                 </p>
                                             </div>
                                         </button>

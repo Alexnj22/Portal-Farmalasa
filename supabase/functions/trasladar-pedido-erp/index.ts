@@ -3,6 +3,7 @@ import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
+  disponibleEnBodega,
   hoySV,
   nombreCorto,
   norm,
@@ -636,9 +637,16 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          const enUnidades = Number(ln.cantidad) * Number(pres.unidad);
-          if (enUnidades > f.existencia) {
-            await fallar(`Quedan ${f.existencia} unidades en bodega y hacen falta ${enUnidades}.`);
+          // El tope sale de los LOTES, no de la casilla de existencia — que
+          // trae la del primer lote y no la del producto. Ver
+          // `disponibleEnBodega`.
+          const hay = disponibleEnBodega(f, Number(pres.unidad));
+          if (Number(ln.cantidad) > hay.paquetes) {
+            await fallar(
+              `Bodega tiene ${hay.unidades} unidades`
+              + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
+              + `: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
+            );
             continue;
           }
 
@@ -888,12 +896,19 @@ Deno.serve(async (req) => {
 
         // El tope se relee ACÁ y no al generar el pedido: entre que se armó y
         // se despacha, bodega vendió, trasladó o descartó.
-        const enUnidades = it.cantidad * Number(pres.unidad);
-        if (enUnidades > f.existencia) {
+        //
+        // Y sale de los LOTES, no de la casilla de existencia — que trae la del
+        // primer lote y no la del producto (ver `disponibleEnBodega`). Tiene que
+        // ser la MISMA cuenta que hace el despacho: si esta pantalla pone en
+        // cero algo que el despacho sí podía mandar, Bodega deja de enviar
+        // mercadería que está en el estante.
+        const hay = disponibleEnBodega(f, Number(pres.unidad));
+        if (it.cantidad > hay.paquetes) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",
-            detalle: `Quedan ${f.existencia} unidades en bodega y el pedido lleva `
-              + `${it.cantidad} × ${pres.unidad} = ${enUnidades}.`,
+            detalle: `Bodega tiene ${hay.unidades} unidades`
+              + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
+              + `: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,
           });
           continue;
         }

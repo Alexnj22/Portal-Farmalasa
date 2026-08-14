@@ -3,6 +3,7 @@ import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.t
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
+  disponibleEnBodega,
   hoySV,
   nombreCorto,
   norm,
@@ -484,10 +485,15 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const enUnidades = Number(d.cantidad) * Number(pres.unidad);
-        if (enUnidades > f.existencia) {
-          await fallar(`En la sala quedan ${f.existencia} unidades de ${it.nombre} y la devolución `
-            + `son ${d.cantidad} × ${pres.unidad} = ${enUnidades}.`);
+        // El tope sale de los LOTES: la casilla de existencia trae la del primer
+        // lote, no la del producto (ver `disponibleEnBodega`). Acá el reparto de
+        // abajo también sabe cubrir con varios, así que un tope por un solo lote
+        // frenaría producto que sí está en la sala.
+        const hay = disponibleEnBodega(f, Number(pres.unidad));
+        if (Number(d.cantidad) > hay.paquetes) {
+          await fallar(`En la sala hay ${hay.unidades} unidades de ${it.nombre}`
+            + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
+            + `: alcanzan para ${hay.paquetes} y la devolución son ${d.cantidad}.`);
           continue;
         }
 

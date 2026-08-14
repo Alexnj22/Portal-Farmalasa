@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.9 — El tope de existencia sale de los lotes, no del primero
+
+**Al preparar un pedido, un producto que sí estaba en bodega podía salir como
+«no hay existencia», y Bodega lo ponía en cero.** Pasó hoy en el primer pedido
+completo despachado desde el portal (#114, La Popular): el BETALOC ZOK avisó
+«quedan 2 y el pedido lleva 3» teniendo **5** en bodega.
+
+La casilla de existencia que devuelve la pantalla de traslados **no es la del
+producto: es la del primer lote de la lista**. Leído en vivo el 2026-08-14:
+
+```
+BETALOC ZOK 100MG → casilla: 2    lotes: 80931 (2), 81411 (3)     → hay 5
+GAMMACORT JARABE  → casilla: 42   lotes: F26031 (42), F26030 (4)  → hay 46
+NERVIFLORA        → casilla: 150  sin control de lote             → hay 150
+```
+
+Y no es sólo parcial, es **inestable**: los dos lotes del GAMMACORT vencen el
+mismo día, así que el orden no está determinado — la misma pantalla contestó 5
+a las 18:24 y 42 a las 19:10 del mismo día. Un tope que cambia solo no es un
+tope.
+
+Ahora el tope se cuenta **por lote**, que es exactamente lo que puede entregar
+el reparto: `floor(existencia_del_lote ÷ unidad)` sumado sobre todos los lotes.
+No sobre la suma cruda: con presentación ×30 y dos lotes de 20, la suma diría
+«alcanza para 1» y ningún lote completa una caja. La casilla se sigue usando
+—y es correcta— cuando el producto no maneja lotes.
+
+La cuenta vive en un solo lugar (`disponibleEnBodega`, en el módulo compartido)
+y la usan las tres funciones que la tenían mal: la verificación y el despacho
+del pedido —que tienen que dar siempre el mismo resultado, o la verificación
+pone en cero mercadería que el despacho sí sabía armar—, el traslado entre
+salas y la devolución a bodega.
+
+**Comprobado**: la verificación del #114 dejó de marcar el BETALOC, y sus 3
+unidades salieron en el traslado 28786 repartidas como corresponde —2 del lote
+80931 y 1 del 81411— dentro del mismo vale.
+
 ## v2.604.8 — El envío al sistema deja de decir «sesión inválida» a quien entra con su usuario
 
 **Al confirmar lo que sale de bodega, la revisión de existencias fallaba

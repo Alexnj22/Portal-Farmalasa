@@ -58,6 +58,7 @@ import {
   conSala,
   contenidoDeTraslado,
   direccionesPorSucursal,
+  disponibleEnBodega,
   hoySV,
   norm,
   pendientesDeOrigen,
@@ -432,12 +433,20 @@ Deno.serve(async (req) => {
       // despacharla se vendió, se trasladó o alguien la descartó. Y las dos
       // cifras están en unidades distintas — el sistema informa el stock en
       // unidades base y la cantidad viene en la presentación elegida.
+      //
+      // Y la cifra sale de los LOTES, no de la casilla de existencia — que trae
+      // la del primer lote y no la del producto (ver `disponibleEnBodega`). Acá
+      // el traslado va con UN lote, así que el filtro de abajo sigue exigiendo
+      // que uno solo cubra todo; lo que cambia es que dejó de frenarse un pedido
+      // que un lote posterior sí podía cubrir.
       const pedidoEnUnidades = Number(l.cantidad) * Number(unidad);
-      if (pedidoEnUnidades > f.existencia)
+      const hay = disponibleEnBodega(f, Number(unidad));
+      if (Number(l.cantidad) > hay.paquetes)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
-          error: `De ${nombre} quedan ${f.existencia} unidades en la sala de origen, `
-               + `y se pidieron ${l.cantidad} × ${unidad} = ${pedidoEnUnidades}.`,
+          error: `De ${nombre} hay ${hay.unidades} unidades en la sala de origen`
+               + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
+               + `: alcanzan para ${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);
 
       // ── El lote ──────────────────────────────────────────────────────────

@@ -220,6 +220,46 @@ export function leerFila(html: string): Fila {
 }
 
 /**
+ * Cuánto puede cubrir bodega HOY para ese producto, en paquetes de `unidad`.
+ *
+ * **`existencia` NO es la existencia del producto: es la del PRIMER lote de la
+ * lista.** Medido contra el sistema el 2026-08-14, leyendo `traerdatos` de
+ * bodega:
+ *
+ *   BETALOC ZOK 100MG → casilla: 2   ·   lotes: 80931 (2), 81411 (3)   → hay 5
+ *   GAMMACORT JARABE  → casilla: 42  ·   lotes: F26031 (42), F26030 (4) → hay 46
+ *   NERVIFLORA (sin control de lote) → casilla: 150 = todo. Ahí sí es el total.
+ *
+ * Y no es sólo parcial: es INESTABLE. Los dos lotes del GAMMACORT vencen el
+ * mismo día, así que el orden de la lista no está determinado — la misma
+ * pantalla contestó 5 a las 18:24 y 42 a las 19:10 del mismo día, según cuál
+ * lote saliera primero. Un tope que cambia solo no es un tope.
+ *
+ * El costo real de leerlo mal: el 2026-08-14 el pedido #114 marcó «no hay
+ * existencia» para 3 BETALOC que sí estaban —2 de un lote y 1 del otro— y
+ * Bodega los puso en cero. La mercadería viajó en la caja igual.
+ *
+ * Se cuenta por lote y NO sobre la suma cruda: con presentación ×30 y dos lotes
+ * de 20, la suma diría «alcanza para 1» y ningún lote completa una caja. Es
+ * exactamente lo que puede entregar el reparto, que toma `floor(stock/unidad)`
+ * de cada lote — el tope y el reparto tienen que decir lo mismo o el tope frena
+ * mercadería que el reparto sí sabía armar.
+ */
+export function disponibleEnBodega(
+  f: Fila, unidad: number,
+): { paquetes: number; unidades: number; lotes: number } {
+  const u = Number(unidad) || 1;
+  if (f.regulado && f.lotes.length) {
+    return {
+      paquetes: f.lotes.reduce((n, l) => n + Math.floor(l.stock / u), 0),
+      unidades: f.lotes.reduce((n, l) => n + l.stock, 0),
+      lotes: f.lotes.length,
+    };
+  }
+  return { paquetes: Math.floor(f.existencia / u), unidades: f.existencia, lotes: 0 };
+}
+
+/**
  * Abre la sesión del sistema en una sucursal. Devuelve la cookie o lanza.
  *
  * La sucursal es estado GLOBAL de la sesión: `traslado_producto.php` y

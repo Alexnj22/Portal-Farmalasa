@@ -445,7 +445,10 @@ function soloASCII(texto) {
         .replace(/[°º]/g, 'o').replace(/ª/g, 'a')
         .replace(/€/g, 'EUR')
         // Lo que quede fuera de ASCII se ve, en vez de salir como una letra ajena
-        // que parece intencional. Los códigos ESC/POS son todos < 0x7F.
+        // que parece intencional. El rango ARRANCA en \x00 a propósito y por eso
+        // la regla va apagada acá: los códigos ESC/POS son caracteres de control
+        // —`\x1b`, `\f`, `\x01`— y son justo lo que NO hay que tocar.
+        // eslint-disable-next-line no-control-regex
         .replace(/[^\x00-\x7E]/g, '?');
 }
 
@@ -683,4 +686,64 @@ export async function enviarAImpresoraDeLaComputadora(ticket, { sistema = 'linux
                 + 'computadora: si tampoco responde ahí, el programa no está corriendo.',
         };
     }
+}
+
+// ── Los ajustes de ESTA computadora ─────────────────────────────────────────
+//
+// El ancho del rollo y el sistema son de la MÁQUINA, no de la cuenta ni de la
+// sucursal: la ticketera está conectada a un equipo concreto y la de la sala de
+// al lado puede ser otra. Por eso viven en el navegador de ese equipo y no en la
+// base — guardarlos en los dos lados es la forma segura de que se desincronicen.
+//
+// Y viven ACÁ, no en la pantalla de prueba, porque **toda** pantalla que imprima
+// los necesita: una segunda copia del `localStorage.getItem` sería una segunda
+// definición de cuál es el ancho por defecto, y sólo se notaría en el papel.
+const LS_AJUSTES = 'portal-impresion';
+
+export function leerAjustesDeImpresion() {
+    try {
+        const g = JSON.parse(localStorage.getItem(LS_AJUSTES) || '{}');
+        return {
+            ancho: ANCHOS_ROLLO.some(a => a.mm === g.ancho) ? g.ancho : ANCHO_POR_DEFECTO,
+            sistema: g.sistema === 'windows' ? 'windows' : 'linux',
+        };
+    } catch {
+        return { ancho: ANCHO_POR_DEFECTO, sistema: 'linux' };
+    }
+}
+
+export function guardarAjustesDeImpresion(ajustes) {
+    try { localStorage.setItem(LS_AJUSTES, JSON.stringify(ajustes)); } catch { /* modo privado o sin cuota */ }
+    return ajustes;
+}
+
+/**
+ * **Este es el que llama una pantalla.** Los otros dos son las mitades.
+ *
+ * Intenta primero el camino sin diálogo —el papel sale solo, como en la caja— y
+ * si esta computadora no lo tiene, abre el diálogo del navegador. El respaldo es
+ * seguro: sólo cae al diálogo cuando el envío directo **fue rechazado**, o sea
+ * cuando nadie lo recibió, así que no puede imprimir dos veces.
+ *
+ * El ancho y el sistema salen de los ajustes de esta computadora; `ticket.ancho`
+ * los pisa si la pantalla tiene un motivo para elegirlo.
+ *
+ * Lo que NO puede prometer es que el papel haya salido: la respuesta del programa
+ * de la caja es opaca por construcción (ver `enviarAImpresoraDeLaComputadora`).
+ *
+ * @returns {Promise<{via: 'directa'|'dialogo', ok: boolean, detalle: string}>}
+ */
+export async function imprimirDocumento(ticket, { forzarDialogo = false } = {}) {
+    const { ancho, sistema } = leerAjustesDeImpresion();
+    const doc = { ancho, ...ticket };
+
+    if (!forzarDialogo) {
+        const r = await enviarAImpresoraDeLaComputadora(doc, { sistema });
+        if (r.ok) return { via: 'directa', ok: true, detalle: r.detalle };
+    }
+
+    const error = await imprimirTicket(doc);
+    return error
+        ? { via: 'dialogo', ok: false, detalle: error }
+        : { via: 'dialogo', ok: true, detalle: 'Se abrió el diálogo de impresión.' };
 }

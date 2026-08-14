@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.603.0 — Una sola llamada para imprimir, y el instructivo para usarla
+
+Preparación para engancharle la impresión a varias pantallas. Lo que había
+documentado era **cómo funciona** el motor —la forensia del sistema de origen, las
+mediciones, las reglas del rollo— pero no **cómo usarlo desde una vista nueva**, y
+dos piezas que todo consumidor necesita estaban atrapadas dentro de la pantalla de
+prueba.
+
+**`imprimirDocumento(ticket)` es ahora la única llamada que hace una pantalla.**
+Intenta el envío sin diálogo y cae al diálogo del navegador si esa computadora no
+tiene el programa. El respaldo es seguro porque sólo se dispara cuando el envío
+directo **fue rechazado** —o sea, cuando nadie lo recibió—, así que no puede
+imprimir dos veces. Antes, cada vista habría tenido que elegir el camino a mano.
+
+**Los ajustes de la computadora salieron de la vista** (`leerAjustesDeImpresion` /
+`guardarAjustesDeImpresion`). El ancho del rollo y el sistema son de la máquina,
+no de la cuenta: vivían en `ImpresionView` porque era la única pantalla que
+imprimía, y la segunda copia de ese `localStorage.getItem` habría sido una segunda
+definición de cuál es el ancho por defecto — con el síntoma visible sólo en papel,
+un ticket más angosto en una vista que en otra.
+
+**§5 del documento es el instructivo**: la llamada completa con un ejemplo real,
+las cinco reglas que se rompen solas (sólo ASCII, 54/40 columnas, alinear
+rellenando, el papel sin tema, un solo maquetador) y la tabla de piezas para
+cuando haga falta bajar un nivel. El resumen operativo quedó en `CLAUDE.md`.
+
+De paso, un `eslint-disable` que faltaba: el rango `[^\x00-\x7E]` de `soloASCII()`
+arranca en `\x00` **a propósito** —los códigos ESC/POS son caracteres de control y
+son justo lo que no hay que tocar—, así que la regla `no-control-regex` va apagada
+ahí, con el motivo escrito.
+
 ## v2.602.0 — El ajuste de MIN·MAX muestra si el producto sigue vivo
 
 **«Vendidas en 6 meses» sola no alcanza para decidir.** 26 unidades pueden ser

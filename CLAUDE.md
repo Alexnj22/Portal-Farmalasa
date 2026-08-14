@@ -523,13 +523,21 @@ emergencia real, no para silenciar un hallazgo.
 - Siempre usar `LiquidSelect` en lugar de `<select>` nativo
 - Badges `es_antibiotico=true` → "Bajo Receta" (NUNCA "Abx")
 - Toda acción de usuario → `appendAuditLog` (staffStore → `audit_logs`)
-- **Impresión en ticketera: el motor es `src/utils/ticketPrint.js`** — no escribir
-  un segundo maquetador. Se imprime el iframe de la vista previa, así que el papel
-  no puede diferir de lo que se vio. Y **el papel no tiene tema**: sólo negro, sin
-  fondos rellenos y sin tokens del tema (un gris elegante en pantalla es una
-  mancha en térmico). A 80 mm entran 40 caracteres. Prueba de papel en
-  Sistema → Prueba de impresión; detalle en
-  `docs/IMPRESION-EN-TICKETERA-2026-08-13.md`.
+- **Impresión en ticketera: `await imprimirDocumento(ticket)` de
+  `src/utils/ticketPrint.js`**, y nada más — intenta el envío sin diálogo y cae al
+  diálogo del navegador si esta computadora no lo tiene. **No elegir el camino a
+  mano ni escribir un segundo maquetador.** El ancho del rollo NO se pasa: es un
+  ajuste de la computadora (`leerAjustesDeImpresion`), porque la ticketera está
+  enchufada a un equipo concreto. `ok: true` significa *recibido*, nunca *salió
+  papel*: la respuesta del programa de la caja es opaca y no se puede prometer en
+  pantalla lo que no se sabe. Cuatro cosas que se rompen solas: **sólo ASCII** (el
+  rollo no lee UTF-8 — «NUÑEZ» salió `NUÆEZ`), **54 columnas** en letra chica y 40
+  en normal, **alinear rellenando y nunca con `ESC a`** (sus códigos no mandan en
+  esa impresora), y **el papel no tiene tema** — sólo negro, sin fondos rellenos,
+  sin tokens ni `rounded-*`. La receta completa, campo por campo, en la §5 de
+  `docs/IMPRESION-EN-TICKETERA-2026-08-13.md`; la geometría está anclada en
+  `tests/unit/ticketPrint.test.js` contra un ticket real. Prueba de papel en
+  Sistema → Prueba de impresión.
 - Bumpar la versión en cada commit con `npm run version:bump` (la entrada del
   changelog va en `CHANGELOG.md`, nunca en `src/version.js`)
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores

@@ -9,9 +9,10 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { EMPRESA } from '../constants/empresa';
 import { APP_VERSION } from '../version';
 import {
-    ANCHOS_ROLLO, ANCHO_POR_DEFECTO, construirTicketHtml,
+    ANCHOS_ROLLO, construirTicketHtml,
     imprimirMarco, ajustarAltoDePagina, enviarAImpresoraDeLaComputadora,
     comprobarLaConexion, permisoDeRedLocal,
+    leerAjustesDeImpresion, guardarAjustesDeImpresion,
 } from '../utils/ticketPrint';
 
 const EMPTY_ARRAY = [];
@@ -21,23 +22,10 @@ const EMPTY_ARRAY = [];
 // puede ser distinta. Por eso vive en el navegador de ese equipo y no en la base
 // — guardarla en los dos lados es la forma segura de que se desincronice
 // (memoria `una preferencia guardada en dos copias se reinicia en las dos`).
-const LS_AJUSTES = 'portal-impresion';
-
-const leerAjustes = () => {
-    try {
-        const guardado = JSON.parse(localStorage.getItem(LS_AJUSTES) || '{}');
-        return {
-            ancho: ANCHOS_ROLLO.some(a => a.mm === guardado.ancho) ? guardado.ancho : ANCHO_POR_DEFECTO,
-            sistema: guardado.sistema === 'windows' ? 'windows' : 'linux',
-        };
-    } catch {
-        return { ancho: ANCHO_POR_DEFECTO, sistema: 'linux' };
-    }
-};
-
-const guardarAjustes = (ajustes) => {
-    try { localStorage.setItem(LS_AJUSTES, JSON.stringify(ajustes)); } catch { /* modo privado o sin cuota */ }
-};
+// Leerlos y guardarlos vive en `ticketPrint.js`: esta pantalla es la que los
+// EDITA, pero toda pantalla que imprima los lee, y dos copias del mismo default
+// se desincronizan sin avisar — el síntoma sería un ticket más angosto en una
+// vista que en otra, visible sólo en papel.
 
 // La regla de columnas: un renglón de EXACTAMENTE n caracteres, con un dígito
 // cada 10. Se imprimen tres —32, 40 y 48— y el papel contesta cuál es el ancho
@@ -87,12 +75,8 @@ const ImpresionView = () => {
     const branches = useStaff(state => state.branches) || EMPTY_ARRAY;
     const sucursal = branches.find(b => b.id === user?.branchId);
 
-    const [{ ancho, sistema }, setAjustes] = useState(leerAjustes);
-    const cambiarAjuste = (cambio) => setAjustes(prev => {
-        const nuevos = { ...prev, ...cambio };
-        guardarAjustes(nuevos);
-        return nuevos;
-    });
+    const [{ ancho, sistema }, setAjustes] = useState(leerAjustesDeImpresion);
+    const cambiarAjuste = (cambio) => setAjustes(prev => guardarAjustesDeImpresion({ ...prev, ...cambio }));
 
     const [chequeo, setChequeo] = useState(null);
     const [chequeando, setChequeando] = useState(false);

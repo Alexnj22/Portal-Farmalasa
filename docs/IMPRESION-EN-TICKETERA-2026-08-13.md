@@ -378,7 +378,77 @@ misma regla:
 
 Aplicado a los totales en v2.601.3. Falta el papel que lo confirme.
 
-## 5. Lo que queda abierto
+## 5. Cómo agregar impresión a una pantalla
+
+Una sola llamada. **No elijas el camino a mano**: `imprimirDocumento()` intenta
+primero el envío sin diálogo —el papel sale solo, como en la caja— y cae al
+diálogo del navegador si esta computadora no tiene el programa. El respaldo es
+seguro porque sólo se dispara cuando el envío directo **fue rechazado**, o sea
+cuando nadie lo recibió: no puede imprimir dos veces.
+
+```js
+import { imprimirDocumento } from '../utils/ticketPrint';
+
+const r = await imprimirDocumento({
+    titulo: 'COTIZACIÓN',                       // qué es este papel
+    encabezado: { titulo: EMPRESA.nombre, lineas: [sucursal.name, `Tel. ${tel}`] },
+    datos: [['Fecha', fecha], ['Atiende', empleado]],   // los pares de arriba
+    items: {
+        columnas: [{ label: 'PRODUCTO' }, { label: 'CANT' }, { label: 'P. UNIT' }, { label: 'TOTAL' }],
+        filas: productos.map(p => [p.nombre, String(p.cant), money(p.pu), money(p.total)]),
+    },
+    totales: [['GRAVADO', money(g)], ['TOTAL', money(t), true]],   // true = destacado
+    pie: ['Precios sujetos a cambio sin previo aviso'],
+});
+if (!r.ok) toast.error(r.detalle);
+```
+
+`ancho` y `sistema` NO se pasan: salen de los ajustes de esa computadora
+(`leerAjustesDeImpresion()`), que se configuran una vez en **Sistema → Prueba de
+impresión** y quedan. Pasá `ticket.ancho` sólo si la pantalla tiene un motivo
+para elegirlo. Y `imprimirDocumento(doc, { forzarDialogo: true })` si querés que
+el usuario elija impresora sí o sí (por ejemplo, para guardar en PDF).
+
+**`ok: true` significa que el pedido fue recibido, NO que salió papel.** La
+respuesta del programa de la caja es opaca por construcción. La prueba es el
+papel; no prometas en pantalla lo que no podés saber.
+
+### Cinco reglas que se rompen solas
+
+1. **Sólo ASCII.** El rollo no lee UTF-8 (§4 quater). `soloASCII()` lo resuelve en
+   el envío directo, pero si escribís un rótulo con tilde, en papel sale sin ella:
+   tenelo en cuenta al redactar, no lo descubras impreso.
+2. **54 columnas en letra chica, 40 en normal** (`COLUMNAS_TICKET`). Un renglón más
+   largo lo parte la impresora donde se le acabe el ancho.
+3. **Alinear rellenando, nunca con `ESC a`** — ver la subsección de §4 quater.
+   `dosColumnas()` y `filaDeItem()` ya lo hacen; no agregues códigos de alineación.
+4. **El papel no tiene tema.** Sólo negro, sin fondos rellenos, sin tokens del
+   tema y sin `rounded-*`: un gris elegante en pantalla es una mancha en térmico,
+   y `rounded-btn` vale 9999 px en el tema de vidrio (§3.4).
+5. **La vista previa y el papel son el mismo documento.** Si necesitás mostrar el
+   ticket antes de imprimir, usá `construirTicketHtml()` en un iframe y mandá ESE
+   iframe con `imprimirMarco()`. No escribas un segundo maquetador — es la regla
+   que ya está en `CLAUDE.md`.
+
+### Las piezas, si hace falta bajar un nivel
+
+| Función | Para qué |
+|---|---|
+| `imprimirDocumento(ticket, opts)` | **La que llama una pantalla.** Directo con respaldo al diálogo |
+| `construirTicketHtml(ticket)` | El HTML del ticket, para una vista previa |
+| `imprimirMarco(marco)` · `ajustarAltoDePagina(marco)` | Imprimir un iframe ya pintado, con el alto medido |
+| `imprimirTicket(ticket)` | Sólo el diálogo, sin vista previa |
+| `enviarAImpresoraDeLaComputadora(ticket, {sistema})` | Sólo el envío directo |
+| `comprobarLaConexion()` · `permisoDeRedLocal()` | Diagnóstico, sin gastar papel |
+| `leerAjustesDeImpresion()` · `guardarAjustesDeImpresion()` | El ancho y el sistema **de esa computadora** |
+| `seccionesParaElPrograma(ticket)` | El contrato de nueve campos (lo usan los tests) |
+
+La forma del objeto `ticket`, campo por campo, está en el JSDoc de
+`construirTicketHtml()`. La geometría está anclada en
+`tests/unit/ticketPrint.test.js` contra un ticket real: si alguien la cambia «para
+que se vea mejor», la prueba falla acá en vez de salir torcido en la sala.
+
+## 6. Lo que queda abierto
 
 1. ~~**El ancho del rollo para el camino del navegador.**~~ Medido el 2026-08-14
    (ver §4 quater): la ticketera da ~62 columnas y las 54 del envío directo caben.

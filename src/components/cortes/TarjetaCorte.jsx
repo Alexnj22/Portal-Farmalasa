@@ -84,11 +84,54 @@ const TarjetaCorte = memo(function TarjetaCorte({
         onAbrir?.(corte, 'descartar');
     };
 
+    // ── En `compacta` las etiquetas y los botones COMPARTEN renglón ─────────
+    // La baldosa del Inicio tiene alto fijo: cada renglón que se lleva una
+    // tarjeta es una tarjeta menos a la vista. Con la píldora de severidad
+    // arriba y los dos botones abajo entraban dos cortes de los cuatro que
+    // había sin confirmar — o sea que la baldosa escondía justo la mitad del
+    // trabajo que existe para anunciar.
+    //
+    // Se pueden juntar porque NUNCA compiten: los botones sólo salen mientras
+    // el corte está pendiente, y el bloque de quién firmó sólo cuando ya no lo
+    // está. En la vista completa siguen en renglones separados — ahí sobra
+    // ancho y la fila de acciones alineada a la derecha es la forma del portal.
+    const hayEtiquetas = esZ || !pendiente || revisar || (!cuadra && !desc);
+    const hayAcciones = pendiente && !esZ && puedeResolver;
+
+    const etiquetas = hayEtiquetas ? (
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+            {esZ && <Badge variant="info" size="sm">Cierre del día</Badge>}
+            {!esZ && !desc && !cuadra && (
+                <Badge variant={SEVERIDAD_BADGE[sev].variant} size="sm" dot>
+                    {SEVERIDAD_BADGE[sev].label}
+                </Badge>
+            )}
+            {corte.estado === 'CONFIRMADO' && <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>}
+            {desc && <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>}
+            {revisar && <Badge variant="danger" size="sm" icon={AlertTriangle}>Revisar cifras</Badge>}
+        </div>
+    ) : null;
+
+    // Alineados a la derecha y del ancho de su texto: estirados a todo lo
+    // ancho, el botón azul pesaba más que la cifra, que es lo único que hay que
+    // leer antes de decidir.
+    const acciones = hayAcciones ? (
+        <div className="flex items-center justify-end gap-1.5 shrink-0">
+            <Button variant="secondary" size="sm" icon={Ban} onClick={descartar}>
+                Descartar
+            </Button>
+            <Button variant="primary" size="sm" icon={CheckCircle2} loading={ocupado}
+                onClick={confirmar}>
+                Confirmar
+            </Button>
+        </div>
+    ) : null;
+
     return (
         <div
             data-surface="card"
             {...clickable(abrir, { label: `Revisar el corte de las ${hhmm(corte.hora)}${sala ? ` de ${sala}` : ''}` })}
-            className={`flex flex-col gap-2 ${compacta ? 'p-2.5' : 'p-3'}`}
+            className={`flex flex-col ${compacta ? 'gap-1.5 p-2' : 'gap-2 p-3'}`}
         >
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -111,19 +154,17 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 </div>
             </div>
 
-            {(esZ || !pendiente || revisar || (!cuadra && !desc)) && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    {esZ && <Badge variant="info" size="sm">Cierre del día</Badge>}
-                    {!esZ && !desc && !cuadra && (
-                        <Badge variant={SEVERIDAD_BADGE[sev].variant} size="sm" dot>
-                            {SEVERIDAD_BADGE[sev].label}
-                        </Badge>
-                    )}
-                    {corte.estado === 'CONFIRMADO' && <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>}
-                    {desc && <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>}
-                    {revisar && <Badge variant="danger" size="sm" icon={AlertTriangle}>Revisar cifras</Badge>}
+            {/* Compacta: etiquetas y acciones en UN renglón. Ver la nota de
+                arriba. `mt-auto` SÓLO cuando hay acciones: es lo que alinea los
+                botones al pie en una rejilla de alturas iguales, pero en un
+                corte ya resuelto abajo va el bloque de quién firmó, y empujar
+                las etiquetas al fondo las metería debajo de él. */}
+            {compacta && (etiquetas || acciones) ? (
+                <div className={`flex items-center justify-between gap-2 ${acciones ? 'mt-auto' : ''}`}>
+                    {etiquetas}
+                    {acciones}
                 </div>
-            )}
+            ) : etiquetas}
 
             {/* Quién firmó la decisión, con su cara y la hora. Pedido del
                 usuario: al confirmar o rechazar se ve SIEMPRE el nombre, la
@@ -152,19 +193,9 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 </div>
             )}
 
-            {/* Alineados a la derecha y del ancho de su texto: estirados a todo
-                lo ancho, el botón azul pesaba más que la cifra, que es lo único
-                que hay que leer antes de decidir. */}
-            {pendiente && !esZ && puedeResolver && (
-                <div className="mt-auto flex items-center justify-end gap-1.5 pt-0.5">
-                    <Button variant="secondary" size="sm" icon={Ban} onClick={descartar}>
-                        Descartar
-                    </Button>
-                    <Button variant="primary" size="sm" icon={CheckCircle2} loading={ocupado}
-                        onClick={confirmar}>
-                        Confirmar
-                    </Button>
-                </div>
+            {/* En la vista completa las acciones van en su propio renglón. */}
+            {!compacta && acciones && (
+                <div className="mt-auto pt-0.5">{acciones}</div>
             )}
         </div>
     );

@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.5 — Cortes: el alcance por sucursal vuelve a valer, y la baldosa muestra más
+
+**El alcance «Mi sucursal» no filtraba nada, y la puerta estaba más abierta de
+lo que se reportó.** Se configuró Jefe/a de Sala con alcance `BRANCH` y aun así
+veían las 6 salas. La causa no estaba en el permiso ni en la policy que lo
+consulta: estaba en el freno de al lado.
+
+`20260814041419_cortes_de_caja_captura.sql` creó el `bloqueo_global` de las dos
+tablas de cortes copiando el **nombre** de la policy canónica pero no su forma —
+le faltaban `AS RESTRICTIVE` y `TO authenticated`. Postgres combina las policies
+permisivas con **OR**, así que la buena quedaba de adorno:
+
+```
+cortes_caja_select  OR  auth_no_bloqueado()
+```
+
+y lo segundo es cierto para toda persona que no esté bloqueada. Medido en
+producción contra una Jefa de Sala real (alcance BRANCH, sala 25): veía las 6.
+De las 137 tablas con `bloqueo_global`, **éstas dos eran las únicas permisivas**;
+las otras 135 estaban bien.
+
+Y el agujero era más grande que el alcance:
+
+- **Lectura sin permiso.** El OR también saltaba el `can_view`, así que leían
+  los cortes los roles que tienen el módulo apagado.
+- **Escritura.** Las únicas policies de estas tablas son de SELECT, así que para
+  INSERT/UPDATE/DELETE la única que aplicaba era ésta, `FOR ALL` y permisiva:
+  cualquier sesión autenticada podía insertar, reescribir o **borrar** cualquier
+  corte, incluido el sello de quién lo confirmó.
+
+Contra `anon` no llegó a haber fuga — `auth_no_bloqueado()` le está revocada y
+la consulta muere con «permission denied» —, pero eso fue suerte, no un control.
+
+Verificado en producción con sesiones simuladas, antes y después: Jefa de Sala
+6 salas → 1; Regente de Enfermería → sólo la suya, en cortes **y** movimientos;
+Gerente General sin cambio; `DELETE` directo → 0 filas.
+
+**La baldosa del Inicio muestra el doble de cortes.** Con las tres cifras del
+mes a medida de vista y la píldora de severidad y los botones en renglones
+separados, entraban 2 de los 4 cortes sin confirmar — o sea que la baldosa
+escondía la mitad del trabajo que existe para anunciar. Ahora `StatCard` tiene
+medida de baldosa (`densa`) y, en `compacta`, las etiquetas y los botones de
+`TarjetaCorte` comparten renglón. Se pueden juntar porque nunca compiten: los
+botones sólo salen mientras el corte está pendiente y el bloque de quién firmó
+sólo cuando ya no lo está. La vista completa queda igual.
+
 ## v2.604.4 — Cortes: la fecha dice Hoy y los estados dejan de ser pestañas
 
 Dos correcciones del usuario, y las dos las contesta el canon.

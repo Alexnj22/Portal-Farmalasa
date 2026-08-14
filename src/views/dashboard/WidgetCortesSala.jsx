@@ -209,7 +209,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                 </div>
                 <CarrilCards ariaLabel="Cortes del mes">
                     {METRICAS_MES.map((m) => (
-                        <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                        <StatCard key={m.clave} densa icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                             label={m.label} value={resumen[m.clave]} valueCls={m.valueCls} />
                     ))}
                 </CarrilCards>

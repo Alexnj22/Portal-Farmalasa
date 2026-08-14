@@ -53,6 +53,22 @@ import { Loader2, X } from 'lucide-react';
  *   onClick    (fn, opcional)           -- si se pasa: card clickable con hover lift
  *   tono       ('brand'|'success'|'warning'|'danger') -- ver la regla de abajo
  *   loading    (boolean)               -- muestra skeleton en numero y label
+ *   densa      (boolean)               -- la medida de BALDOSA (ver abajo)
+ *
+ * ── `densa`: la misma tarjeta dentro de una baldosa del Inicio ─────────────
+ * Las medidas canónicas de arriba son las de una VISTA, donde la fila de
+ * métricas manda y tiene la pantalla entera. Dentro de una baldosa del tablero
+ * el presupuesto es otro: el alto es fijo y todo lo que se lleve la franja de
+ * arriba se lo quita a la lista de abajo, que es a lo que la persona entró.
+ *
+ * Medido en la baldosa de Cortes: las tres tarjetas se llevaban 88px de un
+ * tablero donde sólo entraban dos cortes. Y 13 de esos px eran la línea de
+ * `sub` RESERVADA — la baldosa nunca pasa `sub`, así que reservaba altura para
+ * un dato que no existe.
+ *
+ * `densa` no es otro diseño: es la misma anatomía —squircle, valor arriba,
+ * etiqueta debajo— con el squircle y los aires de una baldosa, y sin la línea
+ * terciaria. Implica `compacta`.
  *
  * ── CUÁNDO se le pone color a una tarjeta (2026-07-30) ────────────────────
  * **Por defecto NO se le pone.** Todas las tarjetas del portal comparten el
@@ -95,10 +111,14 @@ export default function StatCard({
     className  = '',
     // Sin la linea de detalle. Lo decide el carril a partir del ancho real.
     compacta = false,
+    // La medida de baldosa. Ver la nota del encabezado.
+    densa = false,
     style,
 }) {
     const isClickable = !!onClick;
     const Tag = isClickable ? 'button' : 'div';
+    // Una baldosa nunca pasa `sub`, y reservarle la línea es alto regalado.
+    const sinDetalle = compacta || densa;
 
     // Hover solo en clickable. Nota: el scope @media (hover:hover) es
     // trabajo transversal pendiente (B2); las clases hover: de Tailwind
@@ -142,8 +162,15 @@ export default function StatCard({
             // exactas (191px) le dan 111 y entra entero. El carril sigue
             // deslizando para las que siguen.
             className={`
-                basis-[148px] max-sm:basis-[calc(50%-0.25rem)] grow shrink-0 min-w-0 max-w-[200px] h-full
-                flex items-center gap-3 pl-3 pr-4 py-3 rounded-card border
+                ${densa
+                    // 104px: tres entran en los ~330px que mide una baldosa del
+                    // tablero sin que el carril tenga que deslizar. El máximo
+                    // sigue siendo el que mata a la tarjeta huérfana.
+                    ? 'basis-[104px] max-w-[160px]'
+                    : 'basis-[148px] max-sm:basis-[calc(50%-0.25rem)] max-w-[200px]'}
+                grow shrink-0 min-w-0 h-full
+                flex items-center rounded-card border
+                ${densa ? 'gap-2 pl-2 pr-2.5 py-2' : 'gap-3 pl-3 pr-4 py-3'}
                 transition-[box-shadow,border-color,background-color,transform] duration-[var(--dur-base)]
                 ${isClickable ? 'cursor-pointer active:scale-[0.97]' : 'cursor-default select-none'}
                 ${isClickable && loading ? 'disabled:opacity-60 disabled:cursor-wait' : ''}
@@ -154,10 +181,11 @@ export default function StatCard({
             style={style}
         >
             {/* Squircle de icono */}
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+            <div className={`${densa ? 'w-7 h-7 rounded-lg' : 'w-9 h-9 rounded-xl'}
+                flex items-center justify-center shrink-0 ${iconBg}`}>
                 {loading
-                    ? <Loader2 size={14} strokeWidth={2} className="animate-spin text-content-3" />
-                    : <Icon size={15} strokeWidth={1.5} className={iconCls} />
+                    ? <Loader2 size={densa ? 12 : 14} strokeWidth={2} className="animate-spin text-content-3" />
+                    : <Icon size={densa ? 13 : 15} strokeWidth={1.5} className={iconCls} />
                 }
             </div>
 
@@ -194,10 +222,14 @@ export default function StatCard({
                     // truncado queda `$249,4…`, que no dice nada. Encoger la
                     // tipografía lo deja LEGIBLE y entero sin tocar el ancho de
                     // la tarjeta, que es lo que mantiene la fila pareja.
+                    // En `densa` el techo baja un escalón: el número sigue
+                    // siendo lo primero que se lee, pero en una baldosa no
+                    // compite con nada más y a `text-title-sm` empujaba el alto
+                    // de la franja entera.
                     : <span className={`block truncate tabular-nums font-black leading-none ${
                         String(value ?? '').length > 9 ? 'text-body'
                         : String(value ?? '').length > 6 ? 'text-body-lg'
-                        : 'text-title-sm'} ${valueCls}`}>
+                        : densa ? 'text-body-lg' : 'text-title-sm'} ${valueCls}`}>
                         {value ?? 0}
                       </span>
                 }
@@ -228,7 +260,7 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                {!compacta && (
+                {!sinDetalle && (
                     <span className="block truncate text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px]">
                         {!loading ? sub : ''}
                     </span>

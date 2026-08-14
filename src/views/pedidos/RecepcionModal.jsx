@@ -57,16 +57,33 @@ function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
     return f > 1 ? `${label} ×${f}` : label;
 }
 
+/**
+ * Lo que salió de bodega para ese renglón — que es contra lo que se cuenta.
+ *
+ * `cantidad_enviada` sólo se escribe si al finalizar el despacho se ajustó la
+ * cantidad; en casi todos los renglones es idéntica a la asignada, y justo en
+ * los que no, la asignada es el número equivocado. La base compara contra esto
+ * mismo (`COALESCE(cantidad_enviada, cantidad_asignada)` dentro de
+ * `receive_pedido_sucursal`), así que la pantalla y la base miran lo mismo.
+ */
+const enviadoDe = (r) => r?.cantidad_enviada ?? r?.cantidad_asignada ?? 0;
+
 const ERROR_TIPOS = [
     { value: 'danado',  label: 'Dañado'  },
     { value: 'vencido', label: 'Vencido' },
     { value: 'otro',    label: 'Otro'    },
 ];
 
-// Items screen: producto | asig | presF | qtyF | presS | qtyS | acción
-const GRID = 'grid-cols-[minmax(0,1fr)_2.5rem_9rem_3rem_9rem_3rem_1.75rem]';
-// Extras screen: sin columna "asig" → más espacio para el nombre
-const EXTRAS_GRID = 'grid-cols-[minmax(0,1fr)_9rem_3rem_9rem_3rem_1.75rem]';
+// Items screen: producto | enviado | presentación | cantidad | acción
+//
+// Eran siete columnas: las dos de «Físico» que se ven acá y otras dos de
+// «Sistema» al lado. «Sistema» pedía escribir a mano lo que el portal ya sabe
+// —lo que despachó— y arrancaba con el mismo número, así que sólo cambiaba si
+// alguien la tocaba. Desde que el traslado sale solo del portal, contar es
+// decir qué llegó y compararlo con lo enviado.
+const GRID = 'grid-cols-[minmax(0,1fr)_3.5rem_9rem_3rem_4.25rem]';
+// Extras screen: sin columna "enviado" → no hay envío contra el cual comparar
+const EXTRAS_GRID = 'grid-cols-[minmax(0,1fr)_9rem_3rem_1.75rem]';
 
 async function fetchPresOpts(productId) {
     const { data, error } = await fetchProductPreciosOpts(productId);
@@ -122,8 +139,6 @@ export default function RecepcionModal({
     // ── Per-item input state ────────────────────────────────────────────────────
     const [fQtyVals,  setFQtyVals]  = useState({});
     const [fPresVals, setFPresVals] = useState({});
-    const [sQtyVals,  setSQtyVals]  = useState({});
-    const [sPresVals, setSPresVals] = useState({});
     const [notaVals,  setNotaVals]  = useState({});
     const [errorVals, setErrorVals] = useState({});
     const [tieneProblema,    setTieneProblema]    = useState({});
@@ -253,16 +268,14 @@ export default function RecepcionModal({
         setExtras([]); setExtraSearch(''); setExtraResults([]);
         setProdSearch(''); setShowSearch(false); setPrevScreen(null);
 
-        const fQ = {}, fP = {}, sQ = {}, sP = {}, notas = {}, errs = {};
+        const fQ = {}, fP = {}, notas = {}, errs = {};
         for (const r of rows) {
             const erpF  = Number(r.factor) || 1;
             const dispF = Number(r.dispatch_factor) || erpF;
-            const dispQty = toDispatch(r.cantidad_asignada, erpF, dispF);
-            fQ[r.id] = dispQty; fP[r.id] = dispF;
-            sQ[r.id] = dispQty; sP[r.id] = dispF;
+            fQ[r.id] = toDispatch(enviadoDe(r), erpF, dispF); fP[r.id] = dispF;
             notas[r.id] = ''; errs[r.id] = '';
         }
-        setFQtyVals(fQ); setFPresVals(fP); setSQtyVals(sQ); setSPresVals(sP);
+        setFQtyVals(fQ); setFPresVals(fP);
         setNotaVals(notas); setErrorVals(errs); setTieneProblema({}); setCantProblemaVals({});
 
         (async () => {
@@ -326,7 +339,7 @@ export default function RecepcionModal({
         const defF = opts[0]?.factor ?? 1;
         setExtras(prev => [...prev, {
             erp_product_id: prod.id, nombre: prod.nombre,
-            fPres: defF, fQty: 1, sPres: defF, sQty: 1, nota: '',
+            fPres: defF, fQty: 1, nota: '',
         }]);
         setTimeout(() => extrasEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80);
     }, [extras, presMap]);
@@ -336,39 +349,33 @@ export default function RecepcionModal({
         return rowsToProcess.map(r => {
             const erpFactor  = Number(r.factor) || 1;
             const dispFactor = Number(r.dispatch_factor) || erpFactor;
-            const defDispQty = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
-            const fQty  = fQtyVals[r.id]  ?? defDispQty;
-            const sQty  = sQtyVals[r.id]  ?? defDispQty;
+            const enviado    = enviadoDe(r);
+            const fQty  = fQtyVals[r.id]  ?? toDispatch(enviado, erpFactor, dispFactor);
             const fPres = fPresVals[r.id] ?? dispFactor;
-            const sPres = sPresVals[r.id] ?? dispFactor;
             const tp = tieneProblema[r.id];
             const hasProb = !!tp;
             const fRaw = Math.round(fQty * fPres / erpFactor);
-            const sRaw = Math.round(sQty * sPres / erpFactor);
-            const isDiff = fRaw !== sRaw || fPres !== sPres || hasProb;
+            // Contra lo ENVIADO, no contra una segunda casilla que había que
+            // llenar a mano. Cambiar la presentación sin cambiar el total ya no
+            // es una diferencia: son las mismas unidades en otro empaque, y eso
+            // es justo lo que la sala hace cuando le llega en caja lo que se
+            // pidió por unidad. (El tipo `presentacion` deja de generarse; se
+            // conserva su etiqueta en «Diferencias» por los renglones viejos.)
+            const isDiff = fRaw !== enviado || hasProb;
 
-            let nota = notaVals[r.id] || null;
+            const nota = notaVals[r.id] || null;
             let error_tipo = null;
             if (isDiff) {
-                if (hasProb && errorVals[r.id]) {
-                    error_tipo = errorVals[r.id];
-                } else if (fRaw < sRaw)      error_tipo = 'faltante';
-                else if (fRaw > sRaw)         error_tipo = 'sobrante';
-                else if (fPres !== sPres)     error_tipo = 'presentacion';
-                else                          error_tipo = 'otro';
-
-                if (fPres !== sPres && !nota) {
-                    const opts = presMap[r.erp_product_id] ?? [];
-                    const lf = opts.find(o => o.factor === fPres)?.label || `×${fPres}`;
-                    const ls = opts.find(o => o.factor === sPres)?.label || `×${sPres}`;
-                    nota = `Físico: ${lf} — Sistema: ${ls}`;
-                }
+                if (hasProb && errorVals[r.id]) error_tipo = errorVals[r.id];
+                else if (fRaw < enviado)        error_tipo = 'faltante';
+                else if (fRaw > enviado)        error_tipo = 'sobrante';
+                else                            error_tipo = 'otro';
             }
             const cantProb = (error_tipo === 'danado' || error_tipo === 'vencido')
                 ? (cantProblemaVals[r.id] ?? 1) : null;
             return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo, cantidad_problema: cantProb };
         });
-    }, [fQtyVals, fPresVals, sQtyVals, sPresVals, notaVals, errorVals, tieneProblema, cantProblemaVals, presMap]);
+    }, [fQtyVals, fPresVals, notaVals, errorVals, tieneProblema, cantProblemaVals]);
 
     const saveExtras = useCallback(async () => {
         if (!extras.length) return;
@@ -384,15 +391,15 @@ export default function RecepcionModal({
                     pedido_id: pedido.id, erp_sucursal_id: sucursalId,
                     erp_product_id: e.erp_product_id,
                     cantidad: Math.round(e.fQty * e.fPres / ef),
-                    nota: e.nota || (e.fPres !== e.sPres || e.fQty !== e.sQty
-                        ? `Sistema: ${e.sQty} × ${presMap[e.erp_product_id]?.find(x => x.factor === e.sPres)?.label ?? `×${e.sPres}`}`
-                        : null),
+                    // Un producto de más no tiene contra qué compararse: nadie
+                    // lo despachó. La nota es la que escriba quien recibe.
+                    nota: e.nota || null,
                     reported_by: user?.id ?? null,
                 };
             })
         );
         if (error) throw error;
-    }, [extras, rows, pedido?.id, sucursalId, presMap, user]);
+    }, [extras, rows, pedido?.id, sucursalId, user]);
 
     // ── Recibir UN producto, sin contar el resto de la caja ─────────────────────
     // El caso real: llegó la caja, todavía no se cuenta, y hace falta ese
@@ -495,9 +502,9 @@ export default function RecepcionModal({
         // se escribiera distinta en cada sitio. Y así se escribió.
         const rowsToSave = selectedCajaRows;
 
-        const invalidExtra = extras.find(e => e.fQty === 0 && e.sQty === 0);
+        const invalidExtra = extras.find(e => e.fQty === 0);
         if (invalidExtra) {
-            setSaveError(`"${invalidExtra.nombre}": al menos uno de físico o sistema debe ser mayor a 0.`);
+            setSaveError(`"${invalidExtra.nombre}": escribe cuántos llegaron.`);
             return;
         }
 
@@ -578,7 +585,7 @@ export default function RecepcionModal({
         const p_items = rowsToSave.map(r => {
             const erpFactor  = Number(r.factor) || 1;
             const dispFactor = Number(r.dispatch_factor) || erpFactor;
-            const dispQty    = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
+            const dispQty    = toDispatch(enviadoDe(r), erpFactor, dispFactor);
             const rawQty     = Math.round(dispQty * dispFactor / erpFactor);
             return { pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null };
         });
@@ -622,7 +629,7 @@ export default function RecepcionModal({
                 const p_items = boxRows.map(r => {
                     const erpFactor  = Number(r.factor) || 1;
                     const dispFactor = Number(r.dispatch_factor) || erpFactor;
-                    const rawQty     = Math.round(toDispatch(r.cantidad_asignada, erpFactor, dispFactor) * dispFactor / erpFactor);
+                    const rawQty     = Math.round(toDispatch(enviadoDe(r), erpFactor, dispFactor) * dispFactor / erpFactor);
                     return { pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null };
                 });
                 const { error } = await supabase.rpc('receive_pedido_sucursal', {
@@ -646,7 +653,7 @@ export default function RecepcionModal({
                 if (confirmedEspecialIds.has(item.id) || item.status === 'recibido') continue;
                 const erpF  = Number(item.factor) || 1;
                 const dispF = Number(item.dispatch_factor) || erpF;
-                const rawQty = Math.round(toDispatch(item.cantidad_asignada, erpF, dispF) * dispF / erpF);
+                const rawQty = Math.round(toDispatch(enviadoDe(item), erpF, dispF) * dispF / erpF);
                 const { error } = await supabase.rpc('receive_pedido_sucursal', {
                     p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
                     p_items: [{ pedido_item_id: item.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null }],
@@ -876,8 +883,8 @@ export default function RecepcionModal({
                                                            trae: con un Electrolit ×12, «24 unid.» solo no dice si
                                                            son una caja o dos. */
                                                         : labels.length > 1
-                                                            ? `${labels.length} cajas · ${item.cantidad_asignada} unid.`
-                                                            : `${item.cantidad_asignada} unid.`}
+                                                            ? `${labels.length} cajas · ${enviadoDe(item)} unid.`
+                                                            : `${enviadoDe(item)} unid.`}
                                                 </p>
                                             </div>
                                         </button>
@@ -944,16 +951,13 @@ export default function RecepcionModal({
                         <div data-pegajoso className="sticky top-0 z-base border-b-2 border-divider shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />
-                                <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
-                                <span className="col-span-2 text-center text-caption font-bold text-chart-3-text uppercase tracking-widest border-b-2 border-chart-3 pb-1">Sistema</span>
+                                <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Lo que llegó</span>
                                 <span />
                             </div>
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                 <span className="text-caption font-bold text-content-2 uppercase tracking-wide">Producto</span>
                                 <span className="text-caption font-bold text-chart-9-text uppercase text-center">Pres.</span>
-                                <span className="text-caption font-bold text-chart-9-text uppercase text-center">Qty</span>
-                                <span className="text-caption font-bold text-chart-3-text uppercase text-center">Pres.</span>
-                                <span className="text-caption font-bold text-chart-3-text uppercase text-center">Qty</span>
+                                <span className="text-caption font-bold text-chart-9-text uppercase text-center">Cant.</span>
                                 <span />
                             </div>
                         </div>
@@ -969,21 +973,20 @@ export default function RecepcionModal({
                         <div className="divide-y divide-divider">
                             {extras.map((e, ei) => {
                                 const eOpts     = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
-                                const fRaw      = e.fQty * e.fPres;
-                                const sRaw      = e.sQty * e.sPres;
-                                const eDiff     = fRaw !== sRaw;
-                                const eBothZero = e.fQty === 0 && e.sQty === 0;
-                                const delta     = fRaw - sRaw;
+                                // Un extra no tiene envío contra el cual diferir:
+                                // nadie lo despachó. Lo único inválido es que no
+                                // diga cuántos llegaron.
+                                const eSinCant  = e.fQty === 0;
                                 return (
-                                    <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-danger/10' : eDiff ? 'bg-warning/10' : 'bg-surface-card hover:bg-surface-card-hover/50'}`}>
+                                    <div key={e.erp_product_id} className={`transition-colors ${eSinCant ? 'bg-danger/10' : 'bg-surface-card hover:bg-surface-card-hover/50'}`}>
                                         <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                             <div className="min-w-0">
                                                 <Badge variant="info" size="sm" icon={Plus}>Extra</Badge>
-                                                <p className={`text-body-sm font-semibold leading-snug ${eBothZero ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
-                                                {eBothZero && <p className="text-caption text-danger-text font-medium">Al menos uno &gt; 0</p>}
+                                                <p className={`text-body-sm font-semibold leading-snug ${eSinCant ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
+                                                {eSinCant && <p className="text-caption text-danger-text font-medium">¿Cuántos llegaron?</p>}
                                             </div>
 
-                                            <div className={eDiff ? 'ring-2 ring-warning/45 ring-offset-0 rounded-2xl' : ''}>
+                                            <div>
                                                 <LiquidSelect
                                                     value={String(e.fPres)}
                                                     onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(v) } : x))}
@@ -993,41 +996,17 @@ export default function RecepcionModal({
                                                 />
                                             </div>
 
-                                            <div className="relative">
-                                                <PortalInput
-                                                    aria-label="Cantidad facturada" compact
-                                                    tono={eDiff ? 'warning' : 'chart-9'}
-                                                    type="number" min={0} value={e.fQty}
-                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                    inputClassName="text-center font-bold tabular-nums"
-                                                />
-                                                {eDiff && delta !== 0 && (
-                                                    <Badge variant={delta < 0 ? 'danger' : 'success'} tone="solid" size="sm" uppercase={false}
-                                                        className="absolute -top-1.5 -right-1.5">{delta > 0 ? '+' : ''}{delta}</Badge>
-                                                )}
-                                            </div>
-
-                                            <div className={eDiff ? 'ring-2 ring-warning/45 ring-offset-0 rounded-2xl' : ''}>
-                                                <LiquidSelect
-                                                    value={String(e.sPres)}
-                                                    onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(v) } : x))}
-                                                    options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
-                                                    compact
-                                                    clearable={false}
-                                                />
-                                            </div>
-
                                             <PortalInput
                                                 aria-label="Cantidad recibida" compact
-                                                tono={eDiff ? 'warning' : 'chart-9'}
-                                                type="number" min={0} value={e.sQty}
-                                                onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
+                                                tono={eSinCant ? 'danger' : 'chart-9'}
+                                                type="number" min={0} value={e.fQty}
+                                                onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
                                                 inputClassName="text-center font-bold tabular-nums"
                                             />
 
                                             <Button variant="ghost" icon={Trash2} iconOnly onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))} />
                                         </div>
-                                        {(eDiff || e.nota) && (
+                                        {(eSinCant || e.nota) && (
                                             <div className="px-5 pb-2">
                                                 <PortalInput
                                                     aria-label="Nota del renglón"
@@ -1200,17 +1179,14 @@ export default function RecepcionModal({
                 <div data-pegajoso className="sticky top-0 z-base border-b-2 border-divider shadow-sm">
                     <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                         <span /><span />
-                        <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
-                        <span className="col-span-2 text-center text-caption font-bold text-chart-3-text uppercase tracking-widest border-b-2 border-chart-3 pb-1">Sistema</span>
+                        <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Lo que llegó</span>
                         <span />
                     </div>
                     <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
                         <span className="text-caption font-bold text-content-2 uppercase tracking-wide">Producto</span>
-                        <span className="text-caption font-bold text-content-2 uppercase text-center">Asig.</span>
+                        <span className="text-caption font-bold text-content-2 uppercase text-center">Enviado</span>
                         <span className="text-caption font-bold text-chart-9-text uppercase text-center">Pres.</span>
-                        <span className="text-caption font-bold text-chart-9-text uppercase text-center">Qty</span>
-                        <span className="text-caption font-bold text-chart-3-text uppercase text-center">Pres.</span>
-                        <span className="text-caption font-bold text-chart-3-text uppercase text-center">Qty</span>
+                        <span className="text-caption font-bold text-chart-9-text uppercase text-center">Cant.</span>
                         <span />
                     </div>
                 </div>
@@ -1223,18 +1199,16 @@ export default function RecepcionModal({
                     {visibleRows.map((r, rowIdx) => {
                         const erpFactor  = Number(r.factor) || 1;
                         const dispFactor = Number(r.dispatch_factor) || erpFactor;
-                        const defDispQty = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
+                        const enviado    = enviadoDe(r);
+                        const defDispQty = toDispatch(enviado, erpFactor, dispFactor);
                         const fQty  = fQtyVals[r.id]  ?? defDispQty;
-                        const sQty  = sQtyVals[r.id]  ?? defDispQty;
                         const fPres = fPresVals[r.id] ?? dispFactor;
-                        const sPres = sPresVals[r.id] ?? dispFactor;
                         const tp = tieneProblema[r.id];
                         const hasProb   = !!tp;
                         const panelOpen = tp === true;
                         const fRaw = Math.round(fQty * fPres / erpFactor);
-                        const sRaw = Math.round(sQty * sPres / erpFactor);
-                        const hasDiff = fRaw !== sRaw || fPres !== sPres;
-                        const delta   = fRaw - sRaw;
+                        const hasDiff = fRaw !== enviado;
+                        const delta   = fRaw - enviado;
 
                         const rawOpts  = presMap[r.erp_product_id] ?? [];
                         const dispLabel = fmtDispatchLabel(r.dispatch_tipo, dispFactor);
@@ -1267,15 +1241,13 @@ export default function RecepcionModal({
                                     </span>
                                     <span className="text-body-sm font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
 
-                                    <div className={fPres !== sPres ? 'ring-2 ring-warning/45 ring-offset-0 rounded-2xl' : ''}>
-                                        <LiquidSelect
-                                            value={String(fPres)}
-                                            onChange={v => setFPresVals(p => ({ ...p, [r.id]: Number(v) }))}
-                                            options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
-                                            compact
-                                            clearable={false}
-                                        />
-                                    </div>
+                                    <LiquidSelect
+                                        value={String(fPres)}
+                                        onChange={v => setFPresVals(p => ({ ...p, [r.id]: Number(v) }))}
+                                        options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                        compact
+                                        clearable={false}
+                                    />
 
                                     <div className="relative">
                                         <PortalInput
@@ -1293,52 +1265,40 @@ export default function RecepcionModal({
                                         )}
                                     </div>
 
-                                    <div className={fPres !== sPres ? 'ring-2 ring-warning/45 ring-offset-0 rounded-2xl' : ''}>
-                                        <LiquidSelect
-                                            value={String(sPres)}
-                                            onChange={v => setSPresVals(p => ({ ...p, [r.id]: Number(v) }))}
-                                            options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
-                                            compact
-                                            clearable={false}
-                                        />
-                                    </div>
-
-                                    <PortalInput
-                                        aria-label="Cantidad recibida" compact
-                                        tono={hasDiff ? 'warning' : 'chart-9'}
-                                        type="number" min={0} value={sQty}
-                                        onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
-                                        data-qty-row={rowIdx} data-qty-col="sqty"
-                                        onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
-                                        inputClassName="text-center font-bold tabular-nums"
-                                    />
-
-                                    <Button
-                                        icon={AlertTriangle}
-                                        iconOnly
-                                        size="sm"
-                                        tone="chart-4"
-                                        soft
-                                        onClick={toggleProblema}
-                                        title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
-                                    />
-
-                                    {/* Recibir SOLO este, para poder venderlo antes de
-                                        contar el resto de la caja. */}
-                                    {sueltosOk.has(r.id) || r.status === 'recibido' ? (
-                                        <Badge variant="success" size="sm" uppercase={false}>listo</Badge>
-                                    ) : (
+                                    {/* Las dos acciones del renglón viven en UNA celda.
+                                        Eran dos hijos sueltos de una rejilla que sólo
+                                        tenía una columna para ellos, así que el de
+                                        recibir suelto se iba a la línea de abajo y
+                                        aparecía como un ícono verde huérfano debajo del
+                                        nombre del producto. */}
+                                    <div className="flex items-center justify-end gap-1">
                                         <Button
-                                            icon={PackageCheck}
+                                            icon={AlertTriangle}
                                             iconOnly
                                             size="sm"
-                                            tone="success"
+                                            tone="chart-4"
                                             soft
-                                            disabled={saving}
-                                            onClick={() => handleRecibirSolo(r)}
-                                            title="Recibir solo este producto e ingresarlo al sistema ahora"
+                                            onClick={toggleProblema}
+                                            title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
                                         />
-                                    )}
+
+                                        {/* Recibir SOLO este, para poder venderlo antes de
+                                            contar el resto de la hoja. */}
+                                        {sueltosOk.has(r.id) || r.status === 'recibido' ? (
+                                            <Badge variant="success" size="sm" uppercase={false}>listo</Badge>
+                                        ) : (
+                                            <Button
+                                                icon={PackageCheck}
+                                                iconOnly
+                                                size="sm"
+                                                tone="success"
+                                                soft
+                                                disabled={saving}
+                                                onClick={() => handleRecibirSolo(r)}
+                                                title="Recibir solo este producto e ingresarlo al sistema ahora"
+                                            />
+                                        )}
+                                    </div>
                                 </div>
 
                                 {panelOpen && (

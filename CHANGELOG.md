@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.607.0 — La recepción cuenta lo físico contra lo enviado
+
+La tabla de recepción tenía dos mitades: «Físico» y «Sistema», cada una con su
+presentación y su cantidad. «Sistema» pedía escribir a mano un número que el
+portal ya sabe —lo que despachó— y arrancaba con ese mismo valor, así que sólo
+cambiaba si alguien la tocaba. Desde que el traslado sale solo del portal, esa
+mitad no tiene para qué existir: contar es decir **qué llegó**.
+
+- La tabla pasa de **7 columnas a 5**. Queda `Producto · Enviado · Pres. ·
+  Cant. · acciones`, y lo que se cuenta se compara contra lo enviado.
+- **«Enviado» ahora es de verdad lo enviado.** Mostraba `cantidad_asignada`,
+  que es lo que se planificó; si bodega ajustó el despacho al finalizar, lo que
+  salió está en `cantidad_enviada`. Son distintas en pocos renglones —4 de
+  10,991 en los últimos diez días— pero en esos cuatro la sala estaba contando
+  contra el número equivocado. Es contra lo que compara la base desde siempre.
+- **Cambiar la presentación ya no es una diferencia.** Recibir en caja lo que se
+  pidió por unidad, con el mismo total, es lo normal. El tipo `presentacion`
+  deja de generarse; su etiqueta se conserva en «Diferencias» para los renglones
+  viejos.
+- **El botón de recibir un producto suelto deja de estar huérfano.** Los dos
+  botones del renglón eran dos hijos sueltos de una rejilla con una sola columna
+  para ellos, así que el verde se caía a la línea de abajo y aparecía debajo del
+  nombre del producto, sin explicación. Ahora comparten su celda.
+- Los productos extra pierden también su mitad «Sistema»: un producto que nadie
+  despachó no tiene contra qué diferir.
+
 ## v2.606.7 — El movimiento acumulado también sale en papel
 
 Faltaba la mitad del respaldo. Al resolver un faltante salía su comprobante,

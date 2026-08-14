@@ -204,7 +204,7 @@ export function fetchPedidoNumerosByIds(pedidoIds) {
 // ── pedido_items ─────────────────────────────────────────────────────────────
 
 const ITEMS_SELECT = `
-    id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
+    id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_enviada, cantidad_recibida,
     status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados, agotamiento,
     sin_stock, revision_minmax, falta_caja, caja_especial,
     factor, dispatch_tipo, dispatch_factor, dispatch_multiplo,

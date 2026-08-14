@@ -370,7 +370,10 @@ export default function RecepcionModal({
         if (!extras.length) return;
         const erpFactorMap = {};
         rows.forEach(r => { erpFactorMap[r.erp_product_id] = Number(r.factor) || 1; });
-        await insertPedidoRecepcionExtras(
+        // Un producto de más que no queda escrito es un producto que nadie va a
+        // buscar: el `error` se miraba en ningún lado y el modal se cerraba
+        // igual. Lanza, y quien recibe se entera en la misma pantalla.
+        const { error } = await insertPedidoRecepcionExtras(
             extras.map(e => {
                 const ef = erpFactorMap[e.erp_product_id] ?? 1;
                 return {
@@ -384,6 +387,7 @@ export default function RecepcionModal({
                 };
             })
         );
+        if (error) throw error;
     }, [extras, rows, pedido?.id, sucursalId, presMap, user]);
 
     // ── Recibir UN producto, sin contar el resto de la caja ─────────────────────
@@ -495,7 +499,11 @@ export default function RecepcionModal({
             } else if (hasCajaMap && selectedCaja !== null) {
                 // Mark this box as received
                 const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
-                await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+                // Sin este chequeo la caja se pintaba recibida en pantalla y
+                // reaparecía pendiente al recargar: el UPDATE lo frenaba RLS y
+                // no devolvía error. Es lo que pasó el 2026-08-14 en La Popular.
+                const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+                if (recErr) throw recErr;
                 setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
 
                 const nowRegDone = accessibleBoxNums.every(n => newRec.includes(n));
@@ -564,7 +572,8 @@ export default function RecepcionModal({
 
             if (hasCajaMap && selectedCaja !== null) {
                 const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
-                await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+                const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+                if (recErr) throw recErr;
                 setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
 
                 const nowAllDone = accessibleBoxNums.every(n => newRec.includes(n));
@@ -621,7 +630,8 @@ export default function RecepcionModal({
                     sucursal_id: sucursalId, caja: boxNum, items_count: p_items.length, todo_ok: true,
                 });
             }
-            await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+            const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+            if (recErr) throw recErr;
             setLocalRec(newRec.filter(n => !initCajasRecibidas.includes(n)));
 
             // También confirmar cajas especiales accesibles (no faltantes)

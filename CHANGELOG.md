@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.605.7 — Una recepción que la base rechaza ya no pasa por buena
+
+En La Popular se recibió el pedido #114 contra una pantalla que decía que sí y
+una base donde no quedaba nada. A los cargos de sala se les había apagado
+«Gestionar» en Pedidos ese mismo día, así que la base rechazaba cada escritura
+de la recepción — y un `UPDATE` que RLS frena responde igual que uno que
+funciona: sin filas y **sin error**. La llegada se dio por confirmada, se
+escribió en la bitácora y se le avisó a bodega; `llegada_fisica_at` seguía
+vacío y las cajas confirmadas reaparecían pendientes al recargar.
+
+- **La escritura de la recepción ahora pide el `RETURNING`** y trata "cero
+  filas" como el fallo que es (`pedido_sucursal_status` y el `falta_caja` de
+  `pedido_items`). Es la misma red que las rutas estrenaron en v2.605.2; lo que
+  faltaba era llevarla al camino de al lado, así que el mecanismo quedó
+  compartido en vez de duplicado.
+- **Siete escrituras que se hacían a ciegas ahora miran el resultado**: la
+  llegada, el paso 2, el reenvío y su llegada, el reporte de diferencias, el
+  cierre de bodega y la confirmación de la sala. Ninguna firma la bitácora ni
+  manda avisos si no pasó nada, y todas lo dicen en pantalla.
+- **Los botones de recepción desaparecen para quien no puede usarlos.** Se
+  pintaban siempre, y apretarlos no podía funcionar. Los avisos de estado se
+  quedan —ver qué pasó con el pedido sí se puede— con una píldora de sólo
+  lectura.
+- **El gate de datos estrena `escritura-a-ciegas`**, que ve la forma que el
+  detector viejo no veía: `await supabase…` sin recoger el resultado. En `src/`
+  quedó en **cero** y bloqueante; los 26 restantes son inserts de bitácora de
+  los crons y quedan anotados como deuda, no escondidos.
+
 ## v2.605.5 — número vacío
 
 El bump y esta entrada quedaron preparados en otra sesión y un commit

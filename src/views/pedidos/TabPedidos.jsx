@@ -549,6 +549,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {isBranch && erpSucursalId && (row.pedido_status === 'enviado' || (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at)) && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
+                                                canEdit={canEdit}
                                                 llegadaOk={!!llegadaStatus[cardKey] || !!row.llegada_fisica_at}
                                                 erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
                                                 llegadaEmp={llegadaEmp}

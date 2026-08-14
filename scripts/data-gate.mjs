@@ -17,6 +17,10 @@
  *   error-ignorado  `const { data } = await supabase...` sin mirar `error`.
  *                   Un select que falla en silencio deja Maps vacíos (pasó con
  *                   presentaciones.descripcion: un mes sin detectarse).
+ *   escritura-a-ciegas  `await supabase...` a secas, sin recoger el resultado.
+ *                   Es el hermano ciego del anterior y el que costó la
+ *                   recepción del 2026-08-14: RLS frenó cada escritura y la
+ *                   pantalla dio la llegada por confirmada igual.
  *
  * Ratchet, igual que design-gate: falla si una categoría SUBE respecto a
  * scripts/data-gate-baseline.json. Cuando una llega a 0 queda bloqueante para
@@ -24,6 +28,14 @@
  *
  * Al BAJAR deuda: npm run gate:data -- --update-baseline y commitear el JSON.
  * NUNCA regenerar para tapar un hallazgo nuevo.
+ *
+ * `escritura-a-ciegas` nació con tope 26 y eso NO es una excepción disfrazada:
+ * es deuda vieja que recién ahora alguien mira. Los 26 viven todos en
+ * `supabase/functions/` —son inserts de bitácora de los crons, que corren con
+ * la llave de servicio— y bajarlos obliga a redesplegar nueve funciones, con
+ * el riesgo de `--no-verify-jwt` que describe CLAUDE.md; no se hace de paso.
+ * En `src/` la categoría arrancó y quedó en CERO, así que cualquier escritura
+ * a ciegas nueva del portal falla el gate el mismo día. El tope sólo baja.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -151,7 +163,7 @@ const leerFuente = (archivo) => (soloIndexado
   ? (desdeIndice.get(archivo) ?? '')
   : readFileSync(join(RAIZ, archivo), 'utf8'));
 
-const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'error-ignorado': [] };
+const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'error-ignorado': [], 'escritura-a-ciegas': [] };
 const push = (cat, archivo, linea, detalle) => {
   if (exento(archivo, cat)) return;
   hallazgos[cat].push({ archivo, linea, detalle });
@@ -227,6 +239,24 @@ for (const archivo of archivos) {
   for (const m of src.matchAll(/const\s*\{\s*data(?:\s*:\s*\w+)?\s*\}\s*=\s*await\s+supabase/g)) {
     push('error-ignorado', archivo, lineaDe(src, m.index),
       'destructurar solo `data`: el error del query se descarta');
+  }
+
+  // 5. escritura-a-ciegas — `await supabase…` cuyo resultado no se recoge.
+  //    El detector de arriba mira `const { data } = await`, o sea que sólo ve a
+  //    quien AL MENOS pidió el dato. La forma que costó la recepción del
+  //    2026-08-14 en La Popular no destructura nada: `await supabase.rpc(…)` a
+  //    secas, y a la línea siguiente la pantalla se da por guardada. Un UPDATE
+  //    que RLS frena responde 204 sin filas y `error: null` — byte por byte lo
+  //    mismo que el éxito—, así que esa línea es indistinguible de haber
+  //    funcionado. La regla ya estaba escrita en CLAUDE.md desde el incidente
+  //    de `presentaciones.descripcion`; lo que faltaba era que algo la mirara.
+  for (const m of src.matchAll(/await\s+supabase\s*\./g)) {
+    const antes  = src.slice(0, m.index).trimEnd();
+    const ultimo = antes.at(-1) ?? '';
+    if ('=(,[?:&|'.includes(ultimo)) continue;   // se asigna, se pasa como argumento o se compone
+    if (/\breturn$/.test(antes)) continue;       // lo devuelve: el error lo mira el llamador
+    push('escritura-a-ciegas', archivo, lineaDe(src, m.index),
+      'el resultado se descarta: la escritura puede fallar sin lanzar nada');
   }
 }
 

@@ -36,7 +36,12 @@ const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newF
                 const pathParts = oldPath.split('/');
                 const fileName = pathParts.pop();
                 const archivePath = `${pathParts.join('/')}/old/${fileName}`;
-                await supabase.storage.from('documents').move(oldPath, archivePath);
+                // El `catch` de abajo NO alcanzaba: `move` devuelve `{ error }`,
+                // no lanza, así que un archivado fallido no dejaba ni el aviso.
+                // Sigue siendo tolerante —el documento nuevo se sube igual— pero
+                // ahora se entera alguien.
+                const { error: moveErr } = await supabase.storage.from('documents').move(oldPath, archivePath);
+                if (moveErr) console.warn('No se pudo archivar el documento anterior en Storage:', moveErr.message);
             }
         } catch (e) {
             console.warn("No se pudo archivar el documento anterior en Storage:", e);

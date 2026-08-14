@@ -134,11 +134,36 @@ export function fetchRutaLocationSingle(rutaId) {
 // lado caro.
 const MSG_RUTA_SIN_EFECTO = 'No se pudo guardar el cambio en la ruta. Puede que ya no tengas permiso para gestionar rutas: vuelve a iniciar sesión y, si sigue igual, consulta con tu jefatura.';
 
-async function escrituraDeRuta(builder) {
+// El mecanismo, ya sin nombre de ruta: pide el `RETURNING` y trata "cero
+// filas" como el fallo que es. Lo comparten las rutas y la recepción — ver
+// `escrituraDeRecepcion` más abajo, que nació del mismo silencio.
+async function escrituraQueDebeTocarFilas(builder, mensaje) {
     const { data, error } = await builder.select('id');
     if (error) return { data: null, error };
-    if (!data?.length) return { data: null, error: new Error(MSG_RUTA_SIN_EFECTO) };
+    if (!data?.length) return { data: null, error: new Error(mensaje) };
     return { data, error: null };
+}
+
+function escrituraDeRuta(builder) {
+    return escrituraQueDebeTocarFilas(builder, MSG_RUTA_SIN_EFECTO);
+}
+
+// ── Y lo mismo en la recepción, que costó un pedido entero ──────────────────
+// El 2026-08-14 en La Popular: a los cargos de sala se les había apagado
+// «Gestionar» en Pedidos, así que RLS frenaba cada UPDATE de la recepción y
+// devolvía exactamente lo que devuelve el éxito. La pantalla dio la llegada
+// por confirmada, escribió en la bitácora y le avisó a bodega; en la base no
+// quedó ni la llegada ni una sola caja. Quien recibía volvía a contar las
+// mismas cajas sin entender por qué reaparecían.
+//
+// La lección es que la red de las rutas se escribió para las rutas y nadie la
+// llevó al camino de al lado. Por eso ahora el mecanismo está aparte y las dos
+// puertas lo usan: `pedido_sucursal_status` (llegada, cajas recibidas,
+// reenvíos) y `pedido_items` (qué caja no llegó).
+const MSG_RECEPCION_SIN_EFECTO = 'No se pudo guardar el avance de la recepción. Puede que ya no tengas permiso para gestionar pedidos: vuelve a iniciar sesión y, si sigue igual, consulta con tu jefatura.';
+
+function escrituraDeRecepcion(builder) {
+    return escrituraQueDebeTocarFilas(builder, MSG_RECEPCION_SIN_EFECTO);
 }
 
 export function updateRutaStatus(rutaId, patch) {
@@ -231,7 +256,9 @@ export function fetchPedidoItemsFaltaEspeciales(pedidoId, sucId) {
 }
 
 export function updatePedidoItemsFaltaCaja(ids, value) {
-    return supabase.from('pedido_items').update({ falta_caja: value }).in('id', ids);
+    return escrituraDeRecepcion(
+        supabase.from('pedido_items').update({ falta_caja: value }).in('id', ids)
+    );
 }
 
 /**
@@ -390,8 +417,10 @@ export function fetchPedidoSucursalStatus(pedidoId, sucId, columns) {
 }
 
 export function updatePedidoSucursalStatus(pedidoId, sucId, patch) {
-    return supabase.from('pedido_sucursal_status').update(patch)
-        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+    return escrituraDeRecepcion(
+        supabase.from('pedido_sucursal_status').update(patch)
+            .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
+    );
 }
 
 // ── Pausas / asistencia ──────────────────────────────────────────────────────

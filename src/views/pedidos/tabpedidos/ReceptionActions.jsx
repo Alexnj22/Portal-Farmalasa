@@ -14,7 +14,13 @@ const LLEGADA_TIPO_LABEL = {
     mixto:       'daños + faltantes',
 };
 
-export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null }) {
+export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null, canEdit = true }) {
+    // Sin permiso para gestionar pedidos NO se pinta ningún botón. Antes se
+    // pintaban todos y ninguno podía funcionar: la base rechaza la escritura y
+    // el 2026-08-14 eso costó una recepción entera, contada dos veces contra
+    // una pantalla que decía que sí. Los avisos de estado se quedan —ver qué
+    // pasó con el pedido es lo que sí puede hacer— pero sin nada que apretar.
+    const accion = (btn) => canEdit ? btn : null;
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-caption text-content-3">
             {emp.photo_url
@@ -55,14 +61,19 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
     return (
         <div className="border-t border-divider px-4 py-3 space-y-2">
-            <div className="text-caption font-semibold text-content-3 uppercase tracking-wide mb-2">Recepción</div>
+            <div className="flex items-center gap-2 mb-2">
+                <span className="text-caption font-semibold text-content-3 uppercase tracking-wide">Recepción</span>
+                {!canEdit && (
+                    <Badge variant="neutral" size="sm" uppercase={false}>Solo lectura — tu cargo no recibe pedidos</Badge>
+                )}
+            </div>
 
             {/* Paso 1: Llegada — solo visible cuando aún no confirmada */}
             {!llegadaOk && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-brand/10 border-brand/20 text-label">
                     <PackageCheck size={13} className="text-brand-text" />
                     <span className="text-brand-text">Paso 1 — Confirmar llegada de cajas</span>
-                    <Button disabled={busy === 'llegada'} onClick={onMarkLlegada}>{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</Button>
+                    {accion(<Button disabled={busy === 'llegada'} onClick={onMarkLlegada}>{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</Button>)}
                 </div>
             )}
 
@@ -101,7 +112,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                         {(cicloEnCamino.electrolits ?? 0) > 0 && ` · ${cicloEnCamino.electrolits} Electrolit`}
                         {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.join(', ')}`}
                     </span>
-                    <Button tone="chart-3" disabled={!!busy} onClick={onSegundaLlegada}>{busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}</Button>
+                    {accion(<Button tone="chart-3" disabled={!!busy} onClick={onSegundaLlegada}>{busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}</Button>)}
                 </div>
             )}
 
@@ -110,7 +121,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-label">
                     <Database size={13} className="text-chart-3-text" />
                     <span className="text-chart-3-text">Revisar caja del reenvío en Sistema de Ventas</span>
-                    <Button tone="chart-3" disabled={!!busy} onClick={onOpenReenvioModal}>Revisar</Button>
+                    {accion(<Button tone="chart-3" disabled={!!busy} onClick={onOpenReenvioModal}>Revisar</Button>)}
                 </div>
             )}
 
@@ -123,8 +134,8 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     </span>
                     <div className="ml-auto flex items-center gap-1.5">
                         {apoyoChips}
-                        {apoyoBtn}
-                        <Button tone="chart-3" disabled={!!busy} onClick={onOpenRecibir}>Confirmar</Button>
+                        {accion(apoyoBtn)}
+                        {accion(<Button tone="chart-3" disabled={!!busy} onClick={onOpenRecibir}>Confirmar</Button>)}
                     </div>
                 </div>
             )}

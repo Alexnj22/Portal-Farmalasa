@@ -752,13 +752,21 @@ export function usePedidosData({ searchTerm = '' }) {
             }
 
             // 3. Confirmar llegada física
-            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            //
+            //    El `error` de acá NO se miraba, y por eso el 2026-08-14 una
+            //    sala sin permiso de gestionar pedidos vio la llegada
+            //    confirmada, con su entrada en la bitácora y su aviso a bodega,
+            //    sobre una base donde `llegada_fisica_at` seguía vacío. Si esta
+            //    línea falla no hay llegada, y todo lo que viene abajo estaría
+            //    contando algo que no pasó.
+            const { error: llegadaErr } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'confirmar_llegada', p_user_id: user?.id ?? null,
             });
+            if (llegadaErr) throw llegadaErr;
 
             // 4. Guardar metadata de llegada
-            await updatePedidoSucursalStatus(pedidoId, sucId, {
+            const { error: metaErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
                 llegada_tipo:  tipo,
                 llegada_nota:  nota || null,
                 falta_cajas:   cajasFaltantes,
@@ -770,6 +778,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 } : {}),
                 ...(especialesLlegadas !== null ? { cajas_especiales_llegadas: especialesLlegadas } : {}),
             });
+            if (metaErr) throw metaErr;
 
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas, cajasExtra, cajasExtraNotas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
@@ -824,7 +833,12 @@ export function usePedidosData({ searchTerm = '' }) {
 
             await loadActive();
             await fetchItems(key, pedidoId, sucId);
-        } catch (e) { console.error('llegada confirm:', e); } finally { setBusyAction(null); }
+        } catch (e) {
+            // Y se dice. Un `console.error` a secas dejaba a quien recibe
+            // creyendo que la llegada quedó registrada.
+            console.error('llegada confirm:', e);
+            useToastStore.getState().showToast('No se pudo confirmar la llegada', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
     }, [llegadaModal, user, branchName, loadActive, fetchItems]);
 
     const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, cajasFaltantes, electrolitsFaltantes = 0, especialesFaltantes = []) => {
@@ -838,11 +852,12 @@ export function usePedidosData({ searchTerm = '' }) {
             const ciclo     = historial.length + 1;
             const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
 
-            await updatePedidoSucursalStatus(pedidoId, sucId, {
+            const { error: reenvioErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
                 reenvio_bodega_at:  now,
                 reenvio_por:        user?.id ?? null,
                 reenvios_historial: [...historial, nuevoCiclo],
             });
+            if (reenvioErr) throw reenvioErr;
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes });
 
@@ -854,7 +869,10 @@ export function usePedidosData({ searchTerm = '' }) {
             }).catch(() => {});
             await loadActive();
             setCrearRutaOpen([`${pedidoId}__${sucId}`]);
-        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+        } catch (e) {
+            console.error(e);
+            useToastStore.getState().showToast('No se pudo registrar el reenvío', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
     // Abre el modal de confirmación de llegada de reenvío (sustituye el botón ciego anterior)
@@ -901,13 +919,14 @@ export function usePedidosData({ searchTerm = '' }) {
                     : c
             );
 
-            await updatePedidoSucursalStatus(pedidoId, sucId, {
+            const { error: segundaErr } = await updatePedidoSucursalStatus(pedidoId, sucId, {
                 segunda_llegada_at: now,
                 reenvios_historial: nuevoHistorial,
                 falta_cajas: hasFalta ? cajasFaltantes : [],
                 // Escribir estado electrolit al DB cuando estaban en este ciclo de reenvío
                 ...(electrolitCount > 0 ? { electrolit_ok: electrolitOk === true, electrolit_faltantes: electrolitOk ? 0 : electrolitCount } : {}),
             });
+            if (segundaErr) throw segundaErr;
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
 
@@ -928,14 +947,18 @@ export function usePedidosData({ searchTerm = '' }) {
             if (cajasLlegaron.length > 0) {
                 const llegadaIds = getItemIds(cajasLlegaron);
                 if (llegadaIds.length > 0) {
-                    await updatePedidoItemsFaltaCaja(llegadaIds, false);
+                    const { error: okErr } = await updatePedidoItemsFaltaCaja(llegadaIds, false);
+                    if (okErr) throw okErr;
                 }
             }
 
             // Mantener falta_caja: true solo en cajas que AÚN no llegaron
             if (hasFalta) {
                 const mIds = getItemIds(cajasFaltantes);
-                if (mIds.length > 0) await updatePedidoItemsFaltaCaja(mIds, true);
+                if (mIds.length > 0) {
+                    const { error: aunErr } = await updatePedidoItemsFaltaCaja(mIds, true);
+                    if (aunErr) throw aunErr;
+                }
             }
 
             // Limpiar falta_caja en electrolits si llegaron en este reenvío
@@ -943,7 +966,10 @@ export function usePedidosData({ searchTerm = '' }) {
                 const { data: faltaElec, error: faltaElecErr } = await fetchPedidoItemsFaltaElectrolit(pedidoId, sucId);
                 if (faltaElecErr) throw faltaElecErr;
                 const elecIds = (faltaElec || []).filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map(r => r.id);
-                if (elecIds.length > 0) await updatePedidoItemsFaltaCaja(elecIds, false);
+                if (elecIds.length > 0) {
+                    const { error: elecOkErr } = await updatePedidoItemsFaltaCaja(elecIds, false);
+                    if (elecOkErr) throw elecOkErr;
+                }
             }
 
             // Especiales: actualizar cajas_especiales_llegadas en DB + limpiar falta_caja en items
@@ -953,7 +979,8 @@ export function usePedidosData({ searchTerm = '' }) {
                 const mergedEsp = { ...(pss?.cajas_especiales_llegadas ?? {}) };
                 for (const label of espLlegaron)  mergedEsp[label] = 'ok';
                 for (const label of especialesAun) mergedEsp[label] = 'faltante';
-                await updatePedidoSucursalStatus(pedidoId, sucId, { cajas_especiales_llegadas: mergedEsp });
+                const { error: mergedErr } = await updatePedidoSucursalStatus(pedidoId, sucId, { cajas_especiales_llegadas: mergedEsp });
+                if (mergedErr) throw mergedErr;
 
                 // Limpiar falta_caja en items de especiales que sí llegaron
                 if (espLlegaron.length > 0) {
@@ -964,7 +991,10 @@ export function usePedidosData({ searchTerm = '' }) {
                         const idsToClean = especialesAun.length === 0
                             ? faltaEsp.map(r => r.id)
                             : faltaEsp.slice(0, Math.round(faltaEsp.length * espLlegaron.length / (especialesList ?? []).length)).map(r => r.id);
-                        if (idsToClean.length > 0) await updatePedidoItemsFaltaCaja(idsToClean, false);
+                        if (idsToClean.length > 0) {
+                            const { error: cleanErr } = await updatePedidoItemsFaltaCaja(idsToClean, false);
+                            if (cleanErr) throw cleanErr;
+                        }
                     }
                 }
             }
@@ -1002,7 +1032,10 @@ export function usePedidosData({ searchTerm = '' }) {
                     hasFaltaItems:  hasFaltaItemsNow,
                 });
             }
-        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+        } catch (e) {
+            console.error(e);
+            useToastStore.getState().showToast('No se pudo confirmar la llegada del reenvío', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
     }, [reenvioLlegadaModal, user, branchName, loadActive, fetchItems, activeRows]);
 
     const handleEntregarStop = useCallback(async (stopId, rutaId, sucId) => {
@@ -1026,11 +1059,18 @@ export function usePedidosData({ searchTerm = '' }) {
         if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         setBusyAction('erp');
         try {
-            await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });
+            // Mismo silencio que la llegada: sin mirar el `error`, la tarjeta
+            // pasaba a «Confirmado» y la bitácora lo daba por hecho sobre una
+            // fila que no se había tocado.
+            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });
+            if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: sucId });
             setErpStatus(prev => ({ ...prev, [key]: true }));
             await loadActive();
-        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+        } catch (e) {
+            console.error(e);
+            useToastStore.getState().showToast('No se pudo confirmar', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
@@ -1064,13 +1104,19 @@ export function usePedidosData({ searchTerm = '' }) {
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada: [] });
     }, [fetchItems]);
 
+    // No lanza: lo llama `onConfirmed` del modal de recepción, que ya cerró la
+    // pantalla. Pero tampoco firma lo que no ocurrió — si el reporte no entra,
+    // se avisa y la bitácora se queda callada.
     const handleReportarDiferencias = useCallback(async (pedidoId, sucId) => {
-        try {
-            await supabase.rpc('update_pedido_sucursal_lifecycle', {
-                p_pedido_id: pedidoId, p_sucursal_id: sucId,
-                p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
-            });
-        } catch (e) { console.error('lifecycle reportar_diferencias:', e); }
+        const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            p_pedido_id: pedidoId, p_sucursal_id: sucId,
+            p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
+        });
+        if (error) {
+            console.error('lifecycle reportar_diferencias:', error);
+            useToastStore.getState().showToast('No se pudo reportar las diferencias', mensajeAmigable(error), 'error');
+            return;
+        }
         useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
         // loadActive() lo llama el caller (onConfirmed) para no duplicar el fetch
     }, [user]);
@@ -1080,13 +1126,17 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
         setBusyAction('corr_bodega');
         try {
-            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'corregir_bodega', p_user_id: user?.id ?? null, p_nota: nota || null,
             });
+            if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_CORREGIDO_BODEGA', pedidoId, { sucursal_id: sucId, nota });
             await loadActive();
-        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+        } catch (e) {
+            console.error(e);
+            useToastStore.getState().showToast('No se pudo marcar como corregido', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
     // 7A.1: confirmación de sucursal tras el "Marcar corregido" de bodega —
@@ -1094,13 +1144,17 @@ export function usePedidosData({ searchTerm = '' }) {
     const handleConfirmarCorreccion = useCallback(async (pedidoId, sucId) => {
         setBusyAction('confirmar_corr');
         try {
-            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'confirmar_correccion', p_user_id: user?.id ?? null,
             });
+            if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_CORRECCION_CONFIRMADA', pedidoId, { sucursal_id: sucId });
             await loadActive();
-        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+        } catch (e) {
+            console.error(e);
+            useToastStore.getState().showToast('No se pudo confirmar la corrección', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
     const handleResolverItem = useCallback(async (pedidoId, sucId, itemId, action, tipo, nota) => {

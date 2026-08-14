@@ -4,7 +4,7 @@ import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidAvatar from '../common/LiquidAvatar';
 import { clickable } from '../../utils/clickable';
-import { contraste, diferenciaDelCorte, severidad } from '../../utils/cortesDiagnostico';
+import { contraste, diferenciaDelCorte, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 
 /**
@@ -16,7 +16,11 @@ import { formatMoney } from '../../utils/formatNumber';
  * el módulo, los dos tienen que estar mirando lo mismo.
  *
  * ── La regla de cuándo se abre el detalle ──────────────────────────────────
- * Vive ACÁ y no en cada llamador (2026-08-14, pedido del usuario):
+ * UNA sola definición, en `seConfirmaDeUnClic` (2026-08-14, pedido del
+ * usuario). Vivía dentro de esta tarjeta, y se movió a `cortesDiagnostico`
+ * —sin cambiarla— el día que la campana también empezó a ofrecer «Confirmar»:
+ * quedarse acá habría obligado a la campana a repetirla, que es justo lo que la
+ * regla evita. Los llamadores no la reimplementan; la aplican.
  *
  *   · cuadra al centavo  → «Confirmar» resuelve de un clic, no hay nada que leer
  *   · tiene diferencia   → «Confirmar» ABRE el detalle, con el monto, de dónde
@@ -68,7 +72,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
     const sev = severidad(corte.tramo);
     const ct = contraste(corte);
     const revisar = !!ct?.enDisputa && !ct.porCobrosCredito;
-    const cuadra = sev === 'ok';
+    const cuadra = seConfirmaDeUnClic(corte);
 
     const abrir = () => onAbrir?.(corte, null);
 

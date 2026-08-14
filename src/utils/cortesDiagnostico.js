@@ -271,6 +271,18 @@ export function severidad(monto) {
 }
 
 /**
+ * LA REGLA de cuándo alcanza un clic: un corte que cuadra al centavo se
+ * confirma de una; uno con diferencia abre el detalle y se firma después de
+ * ver cuánto es, de dónde sale la cifra y qué revisar.
+ *
+ * Vive acá —una sola línea, un solo sitio— porque la aplican `TarjetaCorte` (el
+ * módulo y la baldosa del Inicio) y la campana. Escrita en dos lados, el día
+ * que se desincronice va a significar que desde una pantalla se puede dar por
+ * bueno un faltante sin verlo.
+ */
+export const seConfirmaDeUnClic = (corte) => severidad(corte?.tramo) === 'ok';
+
+/**
  * Qué revisar cuando un tramo no cuadra.
  *
  * La primera pista es la más útil y la más barata: cuando la diferencia es un

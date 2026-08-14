@@ -13,12 +13,11 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';
-import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
-import { fetchCortes, fetchPersonas, resolverCorte } from '../data/cortes';
+import useResolverCorte from '../hooks/useResolverCorte';
+import { fetchCortes, fetchPersonas } from '../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
-import { mensajeAmigable } from '../utils/errorMessages';
 import { tokenMatch } from '../utils/searchUtils';
 
 const VACIO = [];
@@ -88,9 +87,7 @@ const METRICAS = [
 
 const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
-    const appendAuditLog = useStaff((s) => s.appendAuditLog);
-    const showToast = useToastStore((s) => s.showToast);
-    const { user, hasPermission, getScope } = useAuth();
+    const { hasPermission, getScope } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
     // Quien ve una sola sala no elige sala: la policy de `cortes_caja` ya se lo
     // resolvió, y ofrecerle el filtro sería un control que no recorta nada.
@@ -116,7 +113,6 @@ const CortesView = () => {
     const [cortes, setCortes] = useState(VACIO);
     const [personas, setPersonas] = useState(() => new Map());
     const [cargando, setCargando] = useState(true);
-    const [resolviendo, setResolviendo] = useState(null);   // id del corte en curso
 
     // El detalle: qué corte está abierto y con qué modo. Lo que se PINTA
     // mientras el panel sale lo resuelve el propio modal.
@@ -145,6 +141,10 @@ const CortesView = () => {
         for (const b of branches) m[b.id] = b.name;
         return m;
     }, [branches]);
+
+    // La escritura (bitácora y avisos incluidos) es la misma para las cuatro
+    // pantallas que resuelven un corte. Ver `useResolverCorte`.
+    const { resolver, ocupadoId } = useResolverCorte({ nombreSala, origen: 'modulo' });
 
     // El tramo se calcula POR SALA Y POR DÍA — el porqué está en
     // `conTramoPorSalaYDia`, que es el mismo cálculo que usa el Inicio.
@@ -240,22 +240,10 @@ const CortesView = () => {
 
     // El camino de un clic: sólo para los que cuadran al centavo. La decisión
     // de cuándo se usa vive en `TarjetaCorte`, para que el Inicio y el módulo
-    // no puedan discrepar.
+    // no puedan discrepar; la escritura, en `useResolverCorte`, por lo mismo.
     const confirmarRapido = useCallback(async (corte) => {
-        setResolviendo(corte.id);
-        const { error } = await resolverCorte(corte.id, 'CONFIRMADO');
-        setResolviendo(null);
-        if (error) {
-            showToast?.('No se pudo guardar', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
-            return;
-        }
-        appendAuditLog?.('CORTE_CAJA_CONFIRMADO', user?.id, {
-            corte_id: corte.id, sucursal: nombreSala[corte.branch_id],
-            fecha: corte.fecha, hora: corte.hora, diferencia: corte.tramo, origen: 'modulo',
-        });
-        showToast?.('Corte confirmado', `${nombreSala[corte.branch_id] || ''} · ${String(corte.hora).slice(0, 5)}`.trim(), 'success');
-        cargar();
-    }, [showToast, appendAuditLog, user, nombreSala, cargar]);
+        if (await resolver(corte, 'CONFIRMADO')) cargar();
+    }, [resolver, cargar]);
 
     const salaOptions = useMemo(
         () => branches
@@ -438,7 +426,7 @@ const CortesView = () => {
                                             corte={c}
                                             persona={personas.get(c.resuelto_por) || null}
                                             puedeResolver={puedeResolver}
-                                            ocupado={resolviendo === c.id}
+                                            ocupado={ocupadoId === c.id}
                                             onAbrir={abrirDetalle}
                                             onConfirmar={confirmarRapido}
                                         />

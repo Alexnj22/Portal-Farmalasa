@@ -5,11 +5,10 @@ import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import CorteDetalleModal from '../../components/cortes/CorteDetalleModal';
 import TarjetaCorte from '../../components/cortes/TarjetaCorte';
-import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchCortes, fetchCortesResumen, fetchPersonas, resolverCorte } from '../../data/cortes';
+import { fetchCortes, fetchCortesResumen, fetchPersonas } from '../../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes } from '../../utils/cortesDiagnostico';
 import { useAuth } from '../../context/AuthContext';
-import { useToastStore } from '../../store/toastStore';
+import useResolverCorte from '../../hooks/useResolverCorte';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 /**
@@ -67,8 +66,6 @@ const METRICAS_MES = [
 
 export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null }) {
     const { user, hasPermission } = useAuth();
-    const showToast = useToastStore((s) => s.showToast);
-    const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
 
     // La sala de quien mira, sólo si de verdad tiene una con cortes. Quien
@@ -84,12 +81,14 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
         return m;
     }, [branches]);
 
+    // La misma escritura que el módulo y el detalle — ver `useResolverCorte`.
+    const { resolver, ocupadoId } = useResolverCorte({ nombreSala, origen: 'inicio' });
+
     const [filas, setFilas] = useState([]);
     const [mes, setMes] = useState([]);
     const [personas, setPersonas] = useState(() => new Map());
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
-    const [ocupado, setOcupado] = useState(null);           // id en curso
     const [abierto, setAbierto] = useState(null);           // id del corte en el detalle
     const [modoInicial, setModoInicial] = useState(null);
 
@@ -183,20 +182,8 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     // El camino de un clic: sólo para los que cuadran al centavo. Cuál es cuál
     // lo decide `TarjetaCorte`, para que el Inicio y el módulo no discrepen.
     const confirmarRapido = useCallback(async (corte) => {
-        setOcupado(corte.id);
-        const { error: err } = await resolverCorte(corte.id, 'CONFIRMADO');
-        setOcupado(null);
-        if (err) {
-            showToast?.('No se pudo guardar', mensajeAmigable(err, 'Vuelve a intentar en un momento.'), 'error');
-            return;
-        }
-        appendAuditLog?.('CORTE_CAJA_CONFIRMADO', user?.id, {
-            corte_id: corte.id, sucursal: nombreSala[corte.branch_id],
-            fecha: corte.fecha, hora: corte.hora, diferencia: corte.tramo, origen: 'inicio',
-        });
-        showToast?.('Corte confirmado', `${nombreSala[corte.branch_id] || ''} · ${String(corte.hora).slice(0, 5)}`.trim(), 'success');
-        recargar();
-    }, [showToast, appendAuditLog, user, nombreSala, recargar]);
+        if (await resolver(corte, 'CONFIRMADO')) recargar();
+    }, [resolver, recargar]);
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 
@@ -261,7 +248,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                         ].filter(Boolean).join(' · ') || null}
                         persona={personas.get(c.resuelto_por) || null}
                         puedeResolver={puedeResolver}
-                        ocupado={ocupado === c.id}
+                        ocupado={ocupadoId === c.id}
                         onAbrir={abrirDetalle}
                         onConfirmar={confirmarRapido}
                     />

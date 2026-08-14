@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell, BellRing, Check, AlertTriangle, AlertCircle, CheckCircle2,
     Megaphone, ChevronRight, ChevronDown, Trash2, X, ArrowRight, Undo2,
-    ArrowLeftRight, Eye,
+    ArrowLeftRight, Ban, Eye,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -17,6 +17,9 @@ import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useDecidirSolicitud } from '../../hooks/useDecidirSolicitud';
+import useCortesDeAvisos from '../../hooks/useCortesDeAvisos';
+import useResolverCorte from '../../hooks/useResolverCorte';
+import { seConfirmaDeUnClic } from '../../utils/cortesDiagnostico';
 import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/solicitudDeAviso';
 import Contador from './Contador';
 import LiquidAvatar from './LiquidAvatar';
@@ -33,6 +36,12 @@ import NotificacionDetalle from './NotificacionDetalle';
  * diálogo sólo hace falta al apretar «Rechazar». */
 const ModalSolicitud = lazy(() =>
     import('../../views/solicitudes/TarjetaSolicitud').then(m => ({ default: m.ModalSolicitud })));
+
+/* El detalle del corte, por el mismo motivo y con el mismo trato: un corte con
+ * diferencia NO se confirma a ciegas, y descartar exige motivo. Las dos cosas
+ * ya viven en `CorteDetalleModal`, que es el único sitio donde se firma con la
+ * cifra, de dónde sale y qué revisar a la vista. */
+const CorteDetalleModal = lazy(() => import('../cortes/CorteDetalleModal'));
 
 // ── Apariencia por tipo de notificación ──────────────────────────────────────
 // El ícono sale del catálogo compartido (`constants/tipoIconos`). Antes se
@@ -442,6 +451,55 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const cerrarRechazo = useCallback(() => setRechazo(null), []);
     const { decidir, ocupado: decidiendo } = useDecidirSolicitud({ onAplicado: cerrarRechazo });
 
+    /* ── El corte de caja, resuelto desde el aviso ──────────────────────────
+     *
+     * Mismo trato que una solicitud, con una diferencia que NO se puede perder:
+     * un corte que cuadra al centavo se confirma de un clic, pero uno CON
+     * diferencia abre el detalle —hay que ver cuánto es, de dónde sale la cifra
+     * y qué revisar antes de firmar—. Esa regla no se reescribe acá: es
+     * `seConfirmaDeUnClic`, la misma que aplica la tarjeta.
+     *
+     * Y el corte NO sale del aviso: el aviso trae su id y el corte se relee.
+     * Una fila de `notifications` es la foto del momento en que se capturó, así
+     * que ofrecer «Confirmar» sobre ella dejaría el botón vivo después de que
+     * otra persona lo resolvió. */
+    const nombreSala = useMemo(() => {
+        const m = {};
+        for (const b of branches || []) m[b.id] = b.name;
+        return m;
+    }, [branches]);
+    const { porId: cortesPorId, recargar: recargarCortes } = useCortesDeAvisos(notifications, isOpen);
+    const { resolver: resolverElCorte, ocupadoId: corteOcupado } =
+        useResolverCorte({ nombreSala, origen: 'campana' });
+    const puedeResolverCortes = hasPermission('cortes_caja', 'can_edit');
+    const [corteAbierto, setCorteAbierto] = useState(null);   // { corte, modo }
+    const [montarDetalleCorte, setMontarDetalleCorte] = useState(false);
+
+    /* El corte del aviso, sólo si de verdad hay algo que resolver: el cierre
+     * del día (Z) no se confirma, y uno ya resuelto tampoco. */
+    const corteResoluble = (n) => {
+        if (n.type !== 'CORTE_NUEVO' || !puedeResolverCortes) return null;
+        const c = cortesPorId.get(String(n.metadata?.corte_id));
+        return c && c.tipo === 'C' && c.estado === 'PENDIENTE' ? c : null;
+    };
+
+    const abrirCorte = (n, corte, modo) => {
+        if (!n.read_at) markNotificationRead(n.id);
+        // El panel se cierra por lo mismo que con el rechazo: el detalle se
+        // dibuja por fuera de la campana y encimados quedan dos superficies
+        // peleando por el mismo toque.
+        setIsOpen(false);
+        setMontarDetalleCorte(true);
+        setCorteAbierto({ corte, modo });
+    };
+
+    const confirmarCorteDesdeElAviso = async (n, corte) => {
+        if (corteOcupado) return;
+        if (!seConfirmaDeUnClic(corte)) { abrirCorte(n, corte, 'confirmar'); return; }
+        if (!n.read_at) markNotificationRead(n.id);
+        if (await resolverElCorte(corte, 'CONFIRMADO')) recargarCortes();
+    };
+
     /* La solicitud no viaja en el aviso: el aviso trae su id. Se pide al
      * apretar y no al pintar la lista — prefetchear doce solicitudes para que
      * quizá se decida una es pagar doce viajes por adelantado. */
@@ -791,6 +849,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                 const interactiva = Boolean(n.link || n.metadata?.request_id);
                                                 const quien    = n.created_by ? empleadosPorId.get(String(n.created_by)) : null;
                                                 const sucursal = n.branch_id ? sucursalesPorId.get(String(n.branch_id)) : null;
+                                                const corte    = corteResoluble(n);
 
                                                 // Fila en ventana de deshacer (borrado individual)
                                                 if (pendingOne) {
@@ -1018,7 +1077,41 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             </div>
                                                         )}
 
-                                                        {/* Un traslado se resuelve en SU pantalla, que relee la
+                                                        {/* ── El corte, resuelto acá mismo ───────────────────
+                                            «Confirmar» cierra el corte que cuadra al centavo de
+                                            un toque; el que tiene diferencia abre el detalle con
+                                            la cifra delante, porque firmar un faltante sin verlo
+                                            no es un atajo, es otra cosa. «Descartar» siempre
+                                            abre: exige decir por qué. */}
+                                        {corte && (
+                                            <div className={`relative flex items-stretch gap-2 px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
+                                                <Button
+                                                    size="xs"
+                                                    tone="success"
+                                                    soft
+                                                    icon={Check}
+                                                    className="flex-1 min-w-0"
+                                                    loading={corteOcupado === corte.id}
+                                                    disabled={!!corteOcupado && corteOcupado !== corte.id}
+                                                    onClick={(e) => { e.stopPropagation(); confirmarCorteDesdeElAviso(n, corte); }}
+                                                >
+                                                    Confirmar
+                                                </Button>
+                                                <Button
+                                                    size="xs"
+                                                    tone="danger"
+                                                    soft
+                                                    icon={Ban}
+                                                    className="flex-1 min-w-0"
+                                                    disabled={!!corteOcupado}
+                                                    onClick={(e) => { e.stopPropagation(); abrirCorte(n, corte, 'descartar'); }}
+                                                >
+                                                    Descartar
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {/* Un traslado se resuelve en SU pantalla, que relee la
                                                             existencia de la sala de origen antes de despachar.
                                                             Acá se dice a dónde ir, en vez de ofrecer dos botones
                                                             que marcarían APROBADO sin mover producto. */}
@@ -1082,6 +1175,23 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         ocupado={decidiendo}
                         onCerrar={() => !decidiendo && setRechazo(null)}
                         onDecidir={decidir}
+                    />
+                </Suspense>
+            )}
+
+            {/* El detalle del corte, hermano del panel por el mismo motivo. Se
+                queda montado con `corte` en nulo —igual que en el módulo y en
+                el Inicio—: es lo que le deja hacer su salida en vez de
+                desaparecer de golpe. */}
+            {montarDetalleCorte && (
+                <Suspense fallback={null}>
+                    <CorteDetalleModal
+                        corte={corteAbierto?.corte ?? null}
+                        nombreSala={nombreSala}
+                        modoInicial={corteAbierto?.modo ?? null}
+                        origen="campana"
+                        onClose={() => setCorteAbierto(null)}
+                        onResuelto={recargarCortes}
                     />
                 </Suspense>
             )}

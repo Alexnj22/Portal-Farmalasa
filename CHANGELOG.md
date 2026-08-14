@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.605.0 — Confirmar el corte desde el aviso
+
+El aviso avisaba y nada más: había que entrar al módulo para resolverlo. Ahora
+trae **Confirmar** y **Descartar**, como los de solicitudes.
+
+**Y respeta la misma regla de siempre:** «Confirmar» cierra de un toque el corte
+que cuadra al centavo, pero el que tiene diferencia **abre el detalle** con el
+monto, de dónde sale la cifra y qué revisar — firmar un faltante sin verlo no es
+un atajo, es otra cosa. «Descartar» siempre abre, porque exige decir por qué.
+
+**El corte no sale del aviso: se vuelve a leer.** Una notificación es la foto
+del momento en que se capturó, así que ofrecer «Confirmar» sobre ella dejaría el
+botón vivo después de que otra persona lo resolvió — y sobre el cierre del día,
+que no se confirma. Al abrir la campana se leen los cortes que los avisos
+nombran (una sola consulta para todos) y los botones salen sólo sobre lo que de
+verdad está pendiente.
+
+**Por dentro se juntaron tres copias en una.** Confirmar un corte estaba escrito
+tres veces —el módulo, la baldosa del Inicio y el detalle—, iguales salvo de qué
+pantalla venía. Sumar la cuarta desde la campana sin unirlas primero era
+garantizar que alguna se quedara atrás el día que cambie qué se anota en la
+bitácora. Ahora es `useResolverCorte`, igual que `useDecidirSolicitud` para las
+solicitudes. Y la regla de cuándo alcanza un clic también es una sola línea
+(`seConfirmaDeUnClic`), que aplican la tarjeta y la campana sin reescribirla.
+
 ## v2.604.13 — Los avisos del corte dicen qué hacer
 
 Acortarlos (v2.604.12) no alcanzó: seguían **describiendo** en vez de **mandar**.

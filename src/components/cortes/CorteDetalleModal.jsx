@@ -8,13 +8,11 @@ import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
-import { fetchMovimientos, fetchPersonas, resolverCorte } from '../../data/cortes';
+import { fetchMovimientos, fetchPersonas } from '../../data/cortes';
 import { notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
-import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useToastStore } from '../../store/toastStore';
+import useResolverCorte from '../../hooks/useResolverCorte';
 
 /**
  * El detalle de un corte de caja, y el único sitio donde se confirma o descarta.
@@ -77,10 +75,10 @@ export default function CorteDetalleModal({
     onResuelto,
     origen = 'modulo',
 }) {
-    const { user, hasPermission } = useAuth();
-    const appendAuditLog = useStaff((s) => s.appendAuditLog);
-    const showToast = useToastStore((s) => s.showToast);
+    const { hasPermission } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+    // La escritura es la misma que la del módulo, el Inicio y la campana.
+    const { resolver, ocupadoId } = useResolverCorte({ nombreSala, origen });
 
     // Lo que se PINTA sobrevive al cierre: el panel sigue montado ~240ms
     // haciendo su salida, y leer `corte` directo lo vaciaría en el primer frame.
@@ -91,7 +89,6 @@ export default function CorteDetalleModal({
     const [modo, setModo] = useState(modoInicial);
     const [motivo, setMotivo] = useState(MOTIVOS[0]);
     const [nota, setNota] = useState('');
-    const [guardando, setGuardando] = useState(false);
 
     const abierto = !!corte;
     const corteId = corte?.id ?? null;
@@ -165,37 +162,19 @@ export default function CorteDetalleModal({
     const guardar = useCallback(async () => {
         if (!corte || !modo) return;
         const estado = modo === 'confirmar' ? 'CONFIRMADO' : 'DESCARTADO';
-        setGuardando(true);
-        const { error } = await resolverCorte(corte.id, estado, {
+        const ok = await resolver(corte, estado, {
             motivo: modo === 'descartar' ? motivo : null,
             observaciones: nota,
         });
-        setGuardando(false);
-        if (error) {
-            showToast?.('No se pudo guardar', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
-            return;
-        }
-        appendAuditLog?.(estado === 'CONFIRMADO' ? 'CORTE_CAJA_CONFIRMADO' : 'CORTE_CAJA_DESCARTADO', user?.id, {
-            corte_id: corte.id,
-            sucursal: nombreSala[corte.branch_id],
-            fecha: corte.fecha,
-            hora: corte.hora,
-            diferencia: corte.tramo,
-            motivo: modo === 'descartar' ? motivo : undefined,
-            origen,
-        });
-        showToast?.(
-            estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado',
-            `${nombreSala[corte.branch_id] || ''} · ${hhmm(corte.hora)}`.trim(), 'success',
-        );
+        if (!ok) return;
         onResuelto?.(corte, estado);
         onClose?.();
-    }, [corte, modo, motivo, nota, showToast, appendAuditLog, user, nombreSala, origen, onResuelto, onClose]);
+    }, [corte, modo, motivo, nota, resolver, onResuelto, onClose]);
 
     return (
         <LiquidModal
             open={abierto}
-            onClose={guardando ? undefined : onClose}
+            onClose={ocupadoId ? undefined : onClose}
             maxWidth="max-w-2xl"
             className="max-h-[88vh] h-fit"
             ariaLabel={`Corte de las ${hhmm(visible?.hora)}`}
@@ -387,9 +366,9 @@ export default function CorteDetalleModal({
                 {puedeFirmar ? (
                     modo ? (
                         <>
-                            <Button variant="ghost" onClick={() => setModo(null)} disabled={guardando}>Volver</Button>
+                            <Button variant="ghost" onClick={() => setModo(null)} disabled={!!ocupadoId}>Volver</Button>
                             <Button variant={modo === 'confirmar' ? 'primary' : 'destructive'}
-                                onClick={guardar} loading={guardando}>
+                                onClick={guardar} loading={!!ocupadoId}>
                                 {modo === 'confirmar' ? 'Confirmar corte' : 'Descartar corte'}
                             </Button>
                         </>

@@ -25,6 +25,34 @@ export function parMinMaxValido(min, max) {
     return min === 0 ? max >= 0 && max <= 1 : min >= 1 && max > min;
 }
 
+/**
+ * Para la reposición, «—» y «0» son el MISMO número.
+ *
+ * El pedido entra por `minmax_eff_max(...) > 0` (`get_pedido_preview`), y esa
+ * función coalesce los NULL a 0: un producto sin par publicado y uno publicado
+ * en 0 · 0 son indistinguibles ahí. La pantalla los dibuja distinto —«—» contra
+ * «0»— y eso hizo creer que pasar de uno al otro era un ajuste.
+ */
+const comoNumero = (v) => v ?? 0;
+
+/**
+ * ¿Este ajuste deja la sala exactamente como está?
+ *
+ * Reportado el 2026-08-14: de las 5 propuestas pendientes de Salud 2, CUATRO
+ * pedían 0 · 0 sobre un producto que ya no se reponía —tres de ellas desde
+ * «— · —»—. Ninguna cambiaba nada, todas gastaban la atención de quien aprueba,
+ * y la del producto oculto ni siquiera se podía aprobar.
+ *
+ * Es la mitad en el navegador de `mmcr_solicitud_con_efecto` (migración
+ * 20260814142852), con una diferencia deliberada: acá se compara contra el par
+ * que el formulario tiene a la vista, y allá contra el que está guardado. Si
+ * los dos no coinciden —formulario viejo—, manda el de la base.
+ */
+export function ajusteSinCambio(actual, pedidoMin, pedidoMax) {
+    if (!parMinMaxValido(pedidoMin, pedidoMax)) return false;
+    return comoNumero(actual?.min) === pedidoMin && comoNumero(actual?.max) === pedidoMax;
+}
+
 /** Cuántas veces más grande. Un decimal alcanza: «7.1×» ya dice todo. */
 const veces = (pedido, hoy) => (pedido / hoy).toLocaleString('es-SV', { maximumFractionDigits: 1 });
 

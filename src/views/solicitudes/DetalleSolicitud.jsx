@@ -14,6 +14,7 @@ import {
 import { CaraPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { ajusteSinCambio } from '../../utils/minmaxSolicitud';
 
 // El detalle de una solicitud, en UN solo lugar.
 //
@@ -398,6 +399,19 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
     /* Min/Max — vive en otra tabla y se muestra acá igual que el resto. */
     if (t === 'MINMAX_CHANGE_REQUEST') {
         const baja = Number(meta.min_pedido) < Number(meta.min_actual);
+        // «— · —» y «0 · 0» son el mismo número para la reposición: el pedido
+        // entra por MAX > 0, y ahí el «—» vale 0. Desde el 2026-08-14 el
+        // formulario y el disparador `trg_mmcr_solicitud_con_efecto` cortan las
+        // propuestas así, pero las que ya estaban pendientes siguen acá y no
+        // pueden decir «deja de reponerse»: hace rato que no se repone.
+        //
+        // El par de HOY sale de lo que la solicitud guardó al crearse, o sea el
+        // retrato del momento — es lo único que este detalle tiene a mano, y
+        // alcanza para no afirmar una consecuencia que no existe.
+        const nOnull = v => (v === null || v === undefined || v === '' ? null : Number(v));
+        const sinCambio = ajusteSinCambio(
+            { min: nOnull(meta.min_actual), max: nOnull(meta.max_actual) },
+            nOnull(meta.min_pedido), nOnull(meta.max_pedido));
         return (
             <div className="space-y-2">
                 <Caja tono="hover">
@@ -426,9 +440,18 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         </p>
                     </Caja>
                 </div>
+                {sinCambio && (
+                    <div className="px-3 py-2.5 rounded-2xl border border-warning/30 bg-warning/10">
+                        <p className="text-caption text-warning-text font-semibold leading-snug">
+                            Aprobarlo no cambia nada: {meta.branch_name || 'la sucursal'} ya está
+                            {nOnull(meta.min_actual) === null ? ' sin MIN ni MAX' : ` en MIN ${meta.min_actual} · MAX ${meta.max_actual}`},
+                            que es lo mismo que se pide.
+                        </p>
+                    </div>
+                )}
                 {/* El 0 · 0 no es «un número más chico»: apaga la reposición.
                     Quien aprueba lo tiene que leer, no deducirlo de dos ceros. */}
-                {Number(meta.min_pedido) === 0 && Number(meta.max_pedido) === 0 && (
+                {!sinCambio && Number(meta.min_pedido) === 0 && Number(meta.max_pedido) === 0 && (
                     <div className="px-3 py-2.5 rounded-2xl border border-warning/30 bg-warning/10">
                         <p className="text-caption text-warning-text font-semibold leading-snug">
                             Deja de reponerse: aprobado esto, el producto no vuelve a entrar en los

@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.600.0 — El ajuste de MIN·MAX tiene que cambiar algo
+
+**«— · —» y «0 · 0» son el mismo número.** Reportado sobre una solicitud de
+CHIP DIGICEL en Salud 2: pedía pasar de «MIN — · MAX —» a «MIN 0 · MAX 0», con
+el aviso «deja de reponerse: no vuelve a entrar en los pedidos». Las dos cosas
+eran falsas — el producto estaba **oculto**, o sea que hacía rato que no
+entraba en ningún pedido, y aprobar la solicitud ni siquiera era posible.
+
+El pedido decide qué reponer con `MAX > 0`, y ahí un producto sin par
+publicado y uno publicado en cero son indistinguibles. La pantalla los dibuja
+distinto y por eso pasar de uno al otro parecía un ajuste. Medido sobre las
+cinco propuestas pendientes de Salud 2: **cuatro no cambiaban nada** (CHIP
+DIGICEL, NORGESIC, CARBIMEN y LAMICTAL) y la única real era CIPRO DENK, que sí
+apagaba un «traelo por encargo» (0 · 1 → 0 · 0).
+
+Ahora una solicitud que no puede hacer nada no nace:
+
+- **Producto oculto** — el formulario lo dice con el producto ya elegido, y
+  nombra el camino de vuelta (mostrarlo de nuevo en Min/Max) en vez de dejar
+  una puerta cerrada sin llave.
+- **Sin cambio** — pedir el par que la sala ya tiene, con el «—» contando como
+  0. El aviso dice cuál es ese par.
+- **Bodega** — su MIN y su MAX salen de la suma de las salas; el selector la
+  ofrecía y aprobar habría fallado igual.
+
+La guarda está en los dos lados: la pantalla avisa antes de que se escriba el
+motivo, y el disparador `trg_mmcr_solicitud_con_efecto` la cobra en la base
+leyendo el par **guardado**, no el que manda el navegador — un formulario
+abierto hace media hora tiene un retrato viejo. Los nueve casos se corrieron
+contra la tabla de producción dentro de una transacción con `ROLLBACK`: 9 de 9.
+
+**El aviso del cero también deja de mentirle a quien aprueba.** En el detalle
+de la solicitud, «deja de reponerse … hasta que alguien le fije un MIN y un
+MAX» sólo aparece cuando eso es una consecuencia de verdad. Si el producto ya
+estaba apagado, lo que se lee es «aprobarlo no cambia nada».
+
 ## v2.599.0 — Cortes: lista por día y el widget con sala
 
 **La rejilla de tarjetas se va.** Veinticuatro tarjetas iguales, todas con su

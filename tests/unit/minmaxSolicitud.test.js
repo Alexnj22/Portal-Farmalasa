@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parMinMaxValido, motivosQueExigenExplicacion } from '../../src/utils/minmaxSolicitud';
+import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio } from '../../src/utils/minmaxSolicitud';
 
 /**
  * Los MISMOS casos que se corrieron contra `minmax_change_requests` en
@@ -66,5 +66,41 @@ describe('parMinMaxValido — copia de mmcr_pair_valid', () => {
         expect(parMinMaxValido(null, 4)).toBe(false);
         expect(parMinMaxValido(1, null)).toBe(false);
         expect(parMinMaxValido(Number.NaN, 4)).toBe(false);
+    });
+});
+
+/**
+ * Los MISMOS nueve casos que se corrieron contra `minmax_change_requests` en
+ * producción —dentro de una transacción con ROLLBACK— antes de dejar puesto el
+ * disparador `trg_mmcr_solicitud_con_efecto` (migración 20260814142852). Allá
+ * dieron 9 de 9; acá corren contra la mitad que vive en el navegador.
+ *
+ * Los dos casos de la BASE que no tienen espejo acá —producto oculto y Bodega—
+ * no son del par de números: el formulario los corta antes, con `current.oculto`
+ * y con la sucursal elegida.
+ */
+describe('ajusteSinCambio — «— · —» y «0 · 0» son el mismo número', () => {
+    const CASOS = [
+        // rótulo                              actual               min  max  espera
+        ['CHIP DIGICEL: — · — → 0 · 0',        { min: null, max: null }, 0,  0,  true ],
+        ['sin fila en la sala → 0 · 0',        null,                     0,  0,  true ],
+        ['NORGESIC: 0 · 0 → 0 · 0',            { min: 0,   max: 0    },  0,  0,  true ],
+        ['SERTAL: 200 · 400 → 200 · 400',      { min: 200, max: 400  }, 200, 400, true ],
+        ['CIPRO: 0 · 1 → 0 · 0 (sí apaga)',    { min: 0,   max: 1    },  0,  0,  false],
+        ['estrenar sobre — · —',               { min: null, max: null }, 2,  4,  false],
+        ['0 · 0 → 0 · 1 (traelo por encargo)', { min: 0,   max: 0    },  0,  1,  false],
+        ['bajar el par',                       { min: 200, max: 400  }, 150, 300, false],
+        ['sólo cambia el MAX',                 { min: 2,   max: 4    },  2,  6,  false],
+    ];
+
+    it.each(CASOS)('%s', (_rotulo, actual, min, max, espera) => {
+        expect(ajusteSinCambio(actual, min, max)).toBe(espera);
+    });
+
+    it('un par imposible no es «sin cambio»: primero falla el par', () => {
+        // Si no, un 0 · 2 sobre un producto en 0 · 2 se rechazaría con el
+        // mensaje equivocado — y el par nunca podría haber quedado así.
+        expect(ajusteSinCambio({ min: 0, max: 2 }, 0, 2)).toBe(false);
+        expect(ajusteSinCambio({ min: null, max: null }, null, null)).toBe(false);
     });
 });

@@ -14,9 +14,13 @@ export function fetchProductPreciosForMinMax(productId) {
         .eq('activo', true);
 }
 
+// `is_hidden` viaja desde el 2026-08-14: ocultar un producto lo deja en «— · —»
+// publicado y `approve_minmax_request` se niega a aprobarle nada
+// (PRODUCT_HIDDEN), así que el formulario tiene que saberlo ANTES de dejar
+// escribir una propuesta que nace muerta.
 export function fetchCurrentStockParams(erpProductId, erpSucursalId) {
     return supabase.from('product_stock_params')
-        .select('manual_min, manual_max, min_units, max_units, units_sold_6m')
+        .select('manual_min, manual_max, min_units, max_units, units_sold_6m, is_hidden')
         .eq('erp_product_id', erpProductId)
         .eq('erp_sucursal_id', Number(erpSucursalId))
         .maybeSingle();

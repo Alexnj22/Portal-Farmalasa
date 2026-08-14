@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
-import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff } from 'lucide-react';
+import Notice from '../../components/common/Notice';
 import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
@@ -15,7 +16,7 @@ import {
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '../../data/stockParams';
-import { parMinMaxValido, motivosQueExigenExplicacion } from '../../utils/minmaxSolicitud';
+import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio } from '../../utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
@@ -69,6 +70,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           min: ef.min,
           max: ef.max,
           sales6m: data?.units_sold_6m ?? null,
+          oculto: data?.is_hidden === true,
         });
         setLoadingCur(false);
       });
@@ -91,9 +93,29 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
   // consecuencia adentro—, no una viñeta que repita la misma frase.
   const motivoObligatorio = esCero || motivosVisibles.length > 0;
 
+  // ── Lo que esta propuesta NO puede hacer (2026-08-14) ────────────────────
+  // Dos callejones sin salida que el formulario dejaba entrar y que sólo se
+  // descubrían al intentar aprobar —o ni eso—:
+  //
+  //  · **Oculto.** Ocultar un producto lo deja en «— · —» y
+  //    `approve_minmax_request` se niega (PRODUCT_HIDDEN). La solicitud nacía
+  //    muerta y se quedaba pendiente para siempre.
+  //  · **Sin cambio.** Pedir el par que la sala ya tiene. El caso que lo
+  //    reportó: «— · —» → 0 · 0, que se ve distinto y es lo mismo — el pedido
+  //    entra por MAX > 0 y ahí «—» vale 0. Cuatro de las cinco propuestas
+  //    pendientes de Salud 2 eran exactamente eso.
+  //
+  // Se avisa acá, con el producto ya elegido, y no al apretar Enviar: escribir
+  // un motivo entero para que después te digan que no servía es peor que no
+  // poder empezar.
+  const productoOculto = !!current?.oculto;
+  const sinCambio      = !loadingCur && !productoOculto && ajusteSinCambio(current, nMin, nMax);
+  const bloqueado      = productoOculto || sinCambio;
+
   const submit = async () => {
     setErr('');
     if (!erp) { setErr('Elige una sucursal'); return; }
+    if (productoOculto) { setErr(`Este producto está oculto en ${ERP_NAMES[Number(erp)] || 'la sucursal'}: primero hay que mostrarlo de nuevo en Min/Max.`); return; }
     const newMin = nMin;
     const newMax = nMax;
     if (newMin === null || newMax === null || Number.isNaN(newMin) || Number.isNaN(newMax)) { setErr('Completá MIN y MAX'); return; }
@@ -102,6 +124,10 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       setErr(newMin === 0
         ? 'Con el MIN en 0, el MAX sólo puede ser 0 (deja de reponerse) o 1'
         : 'MAX debe ser mayor al MIN');
+      return;
+    }
+    if (ajusteSinCambio(current, newMin, newMax)) {
+      setErr(`${ERP_NAMES[Number(erp)] || 'La sucursal'} ya está en MIN ${newMin} · MAX ${newMax}: esta solicitud no cambiaría nada.`);
       return;
     }
     // Acá SÍ se evalúa con lo que haya: si el MIN·MAX de hoy no llegó, `current`
@@ -143,14 +169,18 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 
       onSuccess();
     } catch (e) {
-      // Las dos reglas que también vive la base tienen su propia frase: sin
-      // esto llegan como «new row violates check constraint "mmcr_…"», que no
-      // le dice nada a quien está proponiendo un máximo.
+      // Las reglas que también vive la base tienen su propia frase: sin esto
+      // llegan como «new row violates check constraint "mmcr_…"» —o con el
+      // rótulo crudo del disparador—, que no le dice nada a quien está
+      // proponiendo un máximo.
       const msg = e.message ?? '';
       setErr(
         msg.includes('row-level security') ? 'No tienes permiso para crear solicitudes (widget Ajuste de Min/Max).'
         : msg.includes('mmcr_reason_required') ? 'Este ajuste necesita un motivo.'
         : msg.includes('mmcr_pair_valid') ? 'Ese par de MIN y MAX no es válido.'
+        : msg.includes('MMCR_PRODUCTO_OCULTO') ? `Este producto está oculto en ${ERP_NAMES[Number(erp)] || 'la sucursal'}: primero hay que mostrarlo de nuevo en Min/Max.`
+        : msg.includes('MMCR_SIN_CAMBIO') ? `${ERP_NAMES[Number(erp)] || 'La sucursal'} ya está así: esta solicitud no cambiaría nada.`
+        : msg.includes('MMCR_BODEGA') ? 'Bodega no admite estas solicitudes: su MIN y su MAX salen de la suma de las salas.'
         : (msg || 'Error al enviar'));
       setSubmitting(false);
     }
@@ -206,6 +236,18 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           </div>
         )}
 
+        {/* Oculto: no hay ajuste posible, y decirlo acá evita escribir el resto
+            del formulario para nada. El camino de vuelta se nombra —«mostrarlo
+            de nuevo en Min/Max»— porque si no el aviso es una puerta cerrada
+            sin llave. */}
+        {productoOculto && (
+          <Notice variant="danger" icon={EyeOff}>
+            Este producto está <b>oculto</b> en {ERP_NAMES[Number(erp)] || 'la sucursal'}: hoy no
+            entra en sus pedidos y no hay MIN ni MAX que ajustar. Para volver a reponerlo hay que
+            mostrarlo de nuevo desde Min/Max.
+          </Notice>
+        )}
+
         {/* Aviso: valores en unidades + factor de presentación */}
         <div className="flex items-start gap-2 rounded-xl bg-chart-1/10 border border-chart-1/30 px-3 py-2">
           <Package size={13} className="text-chart-1-text mt-0.5 shrink-0" />
@@ -236,7 +278,26 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             segundo camino al mismo estado. Lo que sí hacía falta —decir qué
             significa el 0 · 0— no era el botón sino el aviso de abajo, que se
             queda: aparece solo, en cuanto los dos campos llegan a cero. */}
-        {esCero && (
+        {/* Pedir lo que ya está puesto. El caso que lo reportó: «— · —» → 0 · 0,
+            que en pantalla se ven distinto y para el pedido son el mismo número
+            —entra por MAX > 0, y ahí el «—» vale 0—. Se nombra el par de hoy
+            para que quede claro qué es lo que ya está, en vez de un «no se
+            puede» a secas. */}
+        {sinCambio && (
+          <Notice variant="warning" icon={CircleSlash}>
+            {ERP_NAMES[Number(erp)] || 'La sucursal'} ya está en <b>MIN {nMin} · MAX {nMax}</b>
+            {current?.min == null && nMin === 0 && nMax === 0
+              ? ' — el «—» de arriba y el 0 son el mismo número: el producto ya no se repone.'
+              : '.'} Esta solicitud no cambiaría nada.
+          </Notice>
+        )}
+
+        {/* El aviso del 0 · 0 se calla cuando el producto YA está apagado: ahí
+            «deja de reponerse … no vuelve a entrar en los pedidos» sería falso
+            —hace rato que no entra— y hacía pasar por consecuencia lo que era
+            el estado de siempre. Es justo lo que se vio en la solicitud de CHIP
+            DIGICEL del 2026-08-14. */}
+        {esCero && !bloqueado && (
           <div className="flex items-start gap-2 rounded-xl bg-warning/10 border border-warning/30 px-3 py-2">
             <CircleSlash size={13} className="text-warning-text mt-0.5 shrink-0" />
             <div className="text-caption text-warning-text font-medium leading-snug">
@@ -272,7 +333,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           teclado abierto en el teléfono quedaba fuera de la vista. */}
       <PieModal>
         <Button variant="secondary" onClick={onBack}>Volver</Button>
-        <Button disabled={submitting} onClick={submit}>{submitting && <Loader2 size={14} className="animate-spin" />}
+        <Button disabled={submitting || bloqueado} onClick={submit}>{submitting && <Loader2 size={14} className="animate-spin" />}
           {submitting ? 'Enviando…' : 'Enviar a aprobación'}</Button>
       </PieModal>
     </div>

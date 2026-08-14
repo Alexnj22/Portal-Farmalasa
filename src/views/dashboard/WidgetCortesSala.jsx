@@ -6,7 +6,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { fetchCortesDelDia, resolverCorte } from '../../data/cortes';
-import { conTramo, contraste, severidad } from '../../utils/cortesDiagnostico';
+import { conTramo, contraste, diferenciaDelCorte, severidad } from '../../utils/cortesDiagnostico';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -108,7 +108,7 @@ export default function WidgetCortesSala({ selectedBranchId = null }) {
                             <span className="text-caption font-semibold text-content-2 tabular-nums">{hhmm(c.hora)}</span>
                             {c.estado === 'DESCARTADO' ? (
                                 <span className="text-label font-semibold text-content-3 line-through tabular-nums">
-                                    {conSigno(Number(c.diferencia_erp) || 0)}
+                                    {conSigno(diferenciaDelCorte(c).valor)}
                                 </span>
                             ) : (
                                 <span className={`text-label font-bold tabular-nums ${TONO_TEXTO[sev]}`}>

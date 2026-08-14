@@ -12,7 +12,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import { fetchCortesDelDia, fetchMovimientosDelDia, resolverCorte } from '../data/cortes';
-import { conTramo, contraste, estadoDelDia, severidad, sugerenciasDeCorte } from '../utils/cortesDiagnostico';
+import { conTramo, contraste, diferenciaDelCorte, estadoDelDia, severidad, sugerenciasDeCorte } from '../utils/cortesDiagnostico';
 import { formatMoney } from '../utils/formatNumber';
 
 const VACIO = [];
@@ -259,7 +259,7 @@ const CortesView = () => {
                                                 ) : desc ? (
                                                     <>
                                                         <span className="text-label font-semibold text-content-3 line-through tabular-nums">
-                                                            {conSigno(Number(c.diferencia_erp) || 0)}
+                                                            {conSigno(diferenciaDelCorte(c).valor)}
                                                         </span>
                                                         <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>
                                                     </>
@@ -269,7 +269,7 @@ const CortesView = () => {
                                                             {conSigno(c.tramo ?? 0)}
                                                         </span>
                                                         <span className="text-caption text-content-3 tabular-nums">
-                                                            acumulado {conSigno(Number(c.diferencia_erp) || 0)}
+                                                            acumulado {conSigno(c.acumulado ?? 0)}
                                                         </span>
                                                         {contraste(c)?.enDisputa && (
                                                             <Badge variant="danger" size="sm" icon={AlertTriangle}>Dos cifras</Badge>
@@ -285,7 +285,7 @@ const CortesView = () => {
                                                     ? `Ventas del día ${formatMoney(c.total_declarado)}`
                                                     : desc
                                                         ? (c.motivo_descarte || 'Sin motivo registrado')
-                                                        : `Declaró ${formatMoney(c.total_declarado)} · debía haber ${formatMoney(c.esperado)}`}
+                                                        : `Declaró ${formatMoney(c.total_declarado)} · debía haber ${formatMoney(c.esperadoUsado ?? c.esperado)}`}
                                             </div>
                                         </div>
 
@@ -341,17 +341,26 @@ const CortesView = () => {
                                 </div>
                                 <div className="mt-2 space-y-1 text-caption text-content-3">
                                     <div className="flex justify-between gap-3">
-                                        <span>Debía haber</span><span className="tabular-nums">{formatMoney(detalle.esperado)}</span>
+                                        <span>Debía haber</span><span className="tabular-nums">{formatMoney(detalle.esperadoUsado ?? detalle.esperado)}</span>
                                     </div>
                                     <div className="flex justify-between gap-3">
                                         <span>Se declaró</span><span className="tabular-nums">{formatMoney(detalle.total_declarado)}</span>
                                     </div>
                                     <div className="flex justify-between gap-3">
                                         <span>Diferencia acumulada del día</span>
-                                        <span className="tabular-nums">{conSigno(Number(detalle.diferencia_erp) || 0)}</span>
+                                        <span className="tabular-nums">{conSigno(detalle.acumulado ?? 0)}</span>
                                     </div>
                                 </div>
                             </div>
+
+                            {detalle.fuente === 'guardada' && (
+                                <Notice variant="warning" icon={Clock}>
+                                    Esta cifra no sale del corte sino de lo que el sistema guardó aparte:
+                                    el corte se leyó un buen rato después de hacerse, así que su ticket ya
+                                    traía movimientos posteriores adentro. Desde que la captura corre cada
+                                    minuto esto no vuelve a pasar.
+                                </Notice>
+                            )}
 
                             {/* Las dos fórmulas del origen, cuando no coinciden. */}
                             {contraste(detalle)?.enDisputa && (

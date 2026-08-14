@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.597.1 — La cifra que manda es la del corte
+
+Regla del usuario: «el corte de caja trae toda la info; para lo que sirven los
+movimientos de caja es para validar ante una diferencia». Eso corrige de qué
+número cuelga todo: **manda la diferencia del corte** —la que reconcilia con sus
+propios movimientos, y la misma que la sala viene leyendo hace años en el aviso
+de Telegram— y no la que el sistema guarda por su cuenta.
+
+`diferenciaDelCorte()` la elige, y `conTramo` mide sobre ella. El único
+requisito es que el ticket se haya leído CERCA del corte, porque el origen lo
+recalcula: leído horas después ya trae movimientos posteriores adentro. Con la
+captura de cada minuto eso queda resuelto de acá en adelante.
+
+**Para un corte leído tarde se cae a la guardada y la pantalla lo dice** — no
+se muestra una cifra derivada como si fuera del corte. Es el caso de todo lo
+capturado el 13-ago, que vino del relleno inicial y no del cron.
+
+Verificado con los dos escenarios sobre Salud 3: con captura tardía el acumulado
+de la noche da −$729.78 (la guardada, marcada como tal); con captura al minuto
+da **−$511.18 y −$22.38**, que es exactamente lo que dijo Telegram. La marca de
+«Dos cifras» sigue saliendo en los dos casos, porque la brecha existe igual.
+
+_(pendiente de redactar)_
+
 ## v2.597.0 — Widget de cortes y las dos cifras del origen
 
 **El sistema de origen produce DOS diferencias por corte y no siempre

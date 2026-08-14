@@ -30,11 +30,16 @@ const num = (v) => (v == null ? null : Number(v));
 export function conTramo(cortesDeLaSala) {
     let previa = 0;
     return cortesDeLaSala.map((c) => {
-        if (c.tipo !== 'C' || c.estado === 'DESCARTADO') return { ...c, tramo: null };
-        const dif = num(c.diferencia_erp) ?? 0;
+        if (c.tipo !== 'C' || c.estado === 'DESCARTADO') {
+            return { ...c, tramo: null, acumulado: null, fuente: null };
+        }
+        // La acumulada sale de `diferenciaDelCorte`, no de `diferencia_erp`: el
+        // corte manda. Las dos son acumulativas del día, así que restarlas sigue
+        // dando el tramo.
+        const { valor: dif, fuente, esperado } = diferenciaDelCorte(c);
         const tramo = redondear(dif - previa);
         previa = dif;
-        return { ...c, tramo };
+        return { ...c, tramo, acumulado: dif, fuente, esperadoUsado: esperado };
     });
 }
 
@@ -51,7 +56,7 @@ export function estadoDelDia(cortesDeLaSala) {
     const vivos = cortesDeLaSala.filter((c) => c.tipo === 'C' && c.estado !== 'DESCARTADO');
     const ultimo = vivos[vivos.length - 1];
     return {
-        acumulado: ultimo ? (num(ultimo.diferencia_erp) ?? 0) : 0,
+        acumulado: ultimo ? (ultimo.acumulado ?? diferenciaDelCorte(ultimo).valor) : 0,
         cantidad: vivos.length,
         pendientes: vivos.filter((c) => c.estado === 'PENDIENTE').length,
         cierre: cortesDeLaSala.find((c) => c.tipo === 'Z') || null,
@@ -111,6 +116,29 @@ export function contraste(corte) {
         desfase,
         enDisputa: Math.abs(brecha) >= 0.01,
     };
+}
+
+/**
+ * La diferencia que MANDA, y de dónde salió.
+ *
+ * Regla del usuario (2026-08-14): «el corte de caja trae toda la info; para lo
+ * que sirven los movimientos de caja es para validar ante una diferencia».
+ * Entonces la cifra buena es la del corte —la que reconcilia con sus propios
+ * movimientos— y no la que el origen guarda por su cuenta. Es también la que la
+ * sala viene leyendo hace años en el aviso de Telegram, que se calculaba así.
+ *
+ * El único requisito es que el ticket se haya leído CERCA del corte, porque el
+ * origen lo recalcula: leído horas después ya trae movimientos posteriores
+ * adentro. Con la captura de cada minuto eso está resuelto de acá en adelante;
+ * para un corte que se leyó tarde —los del relleno inicial— se cae a la
+ * guardada, que no deriva, y se dice.
+ */
+export function diferenciaDelCorte(corte) {
+    const c = contraste(corte);
+    const guardada = num(corte?.diferencia_erp) ?? 0;
+    if (!c) return { valor: guardada, fuente: 'guardada', esperado: num(corte?.esperado) };
+    if (c.comparable) return { valor: c.difTicket, fuente: 'ticket', esperado: num(corte?.tk_total_caja) };
+    return { valor: c.difErp, fuente: 'guardada', esperado: num(corte?.esperado) };
 }
 
 /** 'ok' | 'sobra' | 'falta' — la forma, no sólo el color. */

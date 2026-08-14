@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.13 — Los avisos del corte dicen qué hacer
+
+Acortarlos (v2.604.12) no alcanzó: seguían **describiendo** en vez de **mandar**.
+El usuario eligió la voz entre tres opciones, y es la que arranca por la acción:
+
+| antes | ahora |
+|---|---|
+| ¿Cuadran los vouchers de tarjeta? | **Suma los vouchers de tarjeta** |
+| 2 vales por $704.09 | **Busca los 2 vales por $704.09** |
+| Cobros de crédito por $54.65 | **Revisa los $54.65 de cobros de crédito** |
+| La diferencia es 3 veces $4.60 | **Busca otro «POR ABONO A CREDITO» de $4.60 sin anotar** |
+| Hay dos cifras y no coinciden | **Revisa los movimientos del día** |
+
+El título dice qué hacer; el detalle, por qué. Así el panel «Qué revisar» se lee
+como una lista de tareas y no como un informe: quien está cuadrando la caja
+necesita saber **a qué papel ir**, no cómo funciona la resta.
+
+En el aviso del múltiplo el concepto del movimiento se recorta a 26 caracteres:
+hay conceptos largos («VALE DE CAJA POR COMPRA DE INSUMOS DE LIMPIEZA») y ahí el
+título se partía en tres renglones y tapaba justamente la acción.
+
 ## v2.604.12 — Los avisos del corte, más cortos
 
 **El detalle de un corte explicaba de más.** Reportado por el usuario sobre este

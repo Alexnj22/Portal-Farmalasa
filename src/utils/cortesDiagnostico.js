@@ -11,6 +11,8 @@ const redondear = (n) => Math.round(n * 100) / 100;
 const num = (v) => (v == null ? null : Number(v));
 /** El signo explícito importa: en caja, «3.39» y «+3.39» no dicen lo mismo. */
 const conSignoTxt = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
+/** Para meter el concepto de un movimiento en un título sin partirlo en tres. */
+const corto = (s, max = 26) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 
 /**
  * Los cortes de caja son ACUMULATIVOS dentro del día: el de la noche contiene
@@ -256,8 +258,8 @@ export function notaDeCifra(corte) {
     }
     return {
         tono: 'danger',
-        titulo: 'Hay dos cifras y no coinciden',
-        detalle: `Una da ${conSignoTxt(c.difErp)} y el comprobante ${conSignoTxt(c.difTicket)}: ${formatMoney(Math.abs(c.brecha))} sin explicación. Revisa los movimientos del día antes de dar por bueno un faltante.`,
+        titulo: 'Revisa los movimientos del día',
+        detalle: `Hay dos cifras (${conSignoTxt(c.difErp)} y ${conSignoTxt(c.difTicket)}) y ${formatMoney(Math.abs(c.brecha))} sin explicar. No conviene dar por bueno un faltante así.`,
     };
 }
 
@@ -317,14 +319,19 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     multiplos.sort((a, b) => a.entero - b.entero || b.monto - a.monto);
 
     for (const m of multiplos.slice(0, 2)) {
+        const concepto = m.concepto || 'sin concepto';
         out.push({
             tono: 'danger',
+            // El título dice qué HACER y el detalle por qué. En el múltiplo el
+            // concepto entra en el título —es lo que hay que ir a buscar— pero
+            // recortado: hay conceptos largos y ahí el título se parte en tres
+            // renglones y tapa la acción.
             titulo: m.entero === 1
-                ? `Hay un movimiento de exactamente ${formatMoney(m.monto)}`
-                : `La diferencia es ${m.entero} veces ${formatMoney(m.monto)}`,
+                ? `Revisa el movimiento de ${formatMoney(m.monto)}`
+                : `Busca otro «${corto(concepto)}» de ${formatMoney(m.monto)} sin anotar`,
             detalle: m.entero === 1
-                ? `«${m.concepto || 'sin concepto'}». Si está anotado de más o de menos, cuadra.`
-                : `Hoy hay ${m.veces === 1 ? 'uno' : m.veces} de «${m.concepto || 'sin concepto'}» por ${formatMoney(m.monto)}. Si falta anotar otro, cuadra.`,
+                ? `«${concepto}» es justo la diferencia. Si está anotado de más o de menos, cuadra.`
+                : `La diferencia es ${m.entero} × ${formatMoney(m.monto)}, y hoy hay ${m.veces === 1 ? 'uno' : m.veces}. Con uno más, cuadra.`,
         });
     }
 
@@ -333,8 +340,8 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     if (tarjeta != null && tarjeta > 0) {
         out.push({
             tono: 'warning',
-            titulo: `¿Cuadran los vouchers de tarjeta?`,
-            detalle: `Se anotaron ${formatMoney(tarjeta)}. Si el número está de más, tapa un faltante.`,
+            titulo: 'Suma los vouchers de tarjeta',
+            detalle: `Se anotaron ${formatMoney(tarjeta)}. Si los vouchers suman menos, ahí está el faltante.`,
         });
     }
 
@@ -345,9 +352,9 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
         out.push({
             tono: 'warning',
             titulo: salidas.length === 1
-                ? `Un vale por ${formatMoney(total)}`
-                : `${salidas.length} vales por ${formatMoney(total)}`,
-            detalle: 'Sin el papel en la caja, se ve igual que un faltante.',
+                ? `Busca el vale por ${formatMoney(total)}`
+                : `Busca los ${salidas.length} vales por ${formatMoney(total)}`,
+            detalle: 'Un vale sin su papel en la caja se ve igual que un faltante.',
         });
     }
 
@@ -356,8 +363,8 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     if (cobros != null && cobros > 0) {
         out.push({
             tono: 'info',
-            titulo: `Cobros de crédito por ${formatMoney(cobros)}`,
-            detalle: 'Es dinero que entra sin venta. Si no llegó a la caja, sale como faltante.',
+            titulo: `Revisa los ${formatMoney(cobros)} de cobros de crédito`,
+            detalle: 'Es dinero que entra sin venta. Si no llegó a la caja, falta.',
         });
     }
 
@@ -367,7 +374,7 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
         const total = entradas.reduce((a, m) => a + (num(m.monto) ?? 0), 0);
         out.push({
             tono: 'info',
-            titulo: `${entradas.length} ingresos de caja por ${formatMoney(total)}`,
+            titulo: `Revisa los ${entradas.length} ingresos de caja por ${formatMoney(total)}`,
             detalle: 'Un recibo cobrado y no anotado se ve igual que un faltante.',
         });
     }
@@ -377,8 +384,8 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     if (devol != null && devol > 0) {
         out.push({
             tono: 'info',
-            titulo: `Devoluciones por ${formatMoney(devol)}`,
-            detalle: 'Revisa que ese dinero salió de esta caja y quedó documentado.',
+            titulo: `Revisa las devoluciones por ${formatMoney(devol)}`,
+            detalle: 'Ese dinero tuvo que salir de esta caja y quedar documentado.',
         });
     }
 

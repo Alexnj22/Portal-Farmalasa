@@ -530,7 +530,14 @@ export function seccionesParaElPrograma(ticket) {
         ] : []),
         ...(totales.length ? [
             DERECHA + LETRA_NORMAL,
-            ...totales.map(([r, v]) => `${r}   ${v}`),
+            // Rellenados por nosotros, no alineados por el aparato. En el ticket
+            // del 14-08 los totales salieron centrados pese al `ESC a 2`, y el
+            // renglón sobrante de un nombre largo salió indentado pese al
+            // `ESC a 0`: lo único que se alineó bien fue la tabla de items, que
+            // es justo la que se rellena con espacios acá. Un `dosColumnas` sin
+            // espacios al final se ve igual esté centrado o alineado a la
+            // derecha, así que deja de depender de quién decida la alineación.
+            ...totales.map(([r, v]) => dosColumnas(r, v, COLUMNAS_TICKET.normal)),
             LETRA_CHICA + CENTRO,
         ] : []),
     ].join('\n') + '\n';

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.601.3 — Los totales se alinean rellenando, no pidiéndoselo a la impresora
+
+Tercera lectura del ticket del 14-08. **Los códigos de alineación no mandan.** Los
+totales salieron centrados pese al `ESC a 2`, y el renglón sobrante de un nombre
+largo salió indentado unas 17 columnas pese al `ESC a 0`. Lo único que quedó en su
+lugar fue la tabla de items — que es justo la que se rellena con espacios en
+`filaDeItem()` en vez de pedirle al aparato que alinee.
+
+Puede ser que el programa de la caja centre cada renglón por su cuenta, o que
+`ESC a` no sobreviva a su `strtoupper` (**es el único código que usamos con letra
+minúscula**, y `ESC A` es otro comando). No hace falta elegir: las dos llevan a la
+misma regla, y es la que ya estaba escrita para el camino del navegador —*las
+columnas las alinea el código, no el aparato*—, sólo que no se había aplicado acá.
+
+Los totales pasan a `dosColumnas(…, 40)`. Sin espacios al final, así que se ve
+igual centrado que alineado a la derecha: deja de depender de quién decida.
+
 ## v2.601.2 — El rollo no lee tildes, y la prosa se parte en palabras
 
 Dos defectos del **primer ticket que salió del portal** (Salud 3, 2026-08-14).

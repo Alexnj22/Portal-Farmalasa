@@ -358,6 +358,26 @@ sobre el ticket real del origen queda como está.
 CSS, y ese control existe sólo en el camino del diálogo. La hoja de §4 promete un
 test que el rollo, por ese camino, no imprime.
 
+### Los códigos de alineación no mandan; el relleno sí
+
+En ese mismo ticket, **los totales salieron centrados pese al `ESC a 2`** y el
+renglón sobrante de un nombre largo (`CAJA CON 100 UNIDADES`) salió indentado unas
+17 columnas pese al `ESC a 0`. Lo único que quedó en su lugar fue la tabla de
+items — que es justo la que **se rellena con espacios en `filaDeItem()`** en vez de
+pedirle al aparato que alinee.
+
+Dos explicaciones posibles y no hace falta elegir: que `printik_pista.php` centre
+cada renglón por su cuenta (uppercasea todo con `strtoupper`, así que toca el
+texto), o que `ESC a` no sobreviva ese mismo `strtoupper` — **es el único código
+que usamos con letra minúscula**, y `ESC A` es otro comando. Las dos llevan a la
+misma regla:
+
+> **Alinear rellenando, nunca con `ESC a`.** Un `dosColumnas` sin espacios al
+> final se ve igual centrado que alineado a la derecha, así que deja de depender
+> de quién decida la alineación.
+
+Aplicado a los totales en v2.601.3. Falta el papel que lo confirme.
+
 ## 5. Lo que queda abierto
 
 1. ~~**El ancho del rollo para el camino del navegador.**~~ Medido el 2026-08-14

@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.8 — El envío al sistema deja de decir «sesión inválida» a quien entra con su usuario
+
+**Al confirmar lo que sale de bodega, la revisión de existencias fallaba
+siempre.** El aviso decía «No se pudo revisar la existencia: Sesión inválida o
+empleado inactivo» — y la sesión estaba bien y el empleado activo. Medido en
+producción el 14-ago: las dos únicas llamadas del día terminaron en 401, y la
+del JWT que se pudo rastrear era la de una persona ACTIVA con su turno abierto.
+
+**La causa: cada persona tiene DOS identificadores.** El de su ficha
+(`employees.id`) y el de la cuenta con la que entra (`auth.users.id`). Para
+quien entra con su usuario —las cuentas ligadas que nacieron con el acceso por
+carné— **no son el mismo valor**, y la verificación buscaba la ficha por el id
+de la cuenta. Cero filas, y ese cero se traducía a «sesión inválida». Le tocaba
+a **33 de las 42** personas que usan el portal.
+
+**No se había visto porque la única cuenta con la que se probó es de las pocas
+donde los dos ids coinciden.** Todas las corridas exitosas guardadas son de esa
+cuenta; ninguna persona de sala llegó a completar una.
+
+**El alcance era mayor que el aviso amarillo.** El envío real al sistema entra
+por la misma puerta que la revisión, así que a esas 33 personas también les
+fallaba el despacho — no sólo el chequeo previo. Y la misma verificación la
+comparten otras dieciséis funciones: devolución de pedido, traslado y
+movimiento de inventario, aplicar solicitud de facturación, exportar compras,
+el mapa de rutas y Saly.
+
+Corregido en un solo lugar (`_shared/security.ts`): ahora resuelve la ficha por
+la cuenta ligada cuando el id no coincide, igual que `auth_employee_id()` en la
+base y con el mismo orden de preferencia. Las 17 funciones redesplegadas,
+cada una conservando su `verify_jwt` — verificado leyendo el valor vivo antes y
+después, porque un redespliegue sin el flag lo resetea en silencio.
+
 ## v2.604.7 — Cortes: la fecha se corre por su unidad, y la sucursal sólo si hay más de una
 
 **El control de fecha es «‹ etiqueta ›», y la etiqueta abre el calendario.** Es

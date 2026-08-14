@@ -78,17 +78,58 @@ export async function requireActiveEmployeeUser(
   const { data: { user }, error } = await admin.auth.getUser(token);
   if (error || !user) return null;
 
-  const { data: rows, error: empErr } = await admin
-    .from("employees")
-    .select("id, status, code, name")
-    .eq("id", user.id)
-    .limit(1);
-  if (empErr || !rows?.length) return null;
-
-  const employee = rows[0] as ActiveEmployee;
+  const employee = await resolverEmpleadoPorCuenta(admin, user.id);
+  if (!employee) return null;
   if (employee.status !== "ACTIVO") return null;
 
   return employee;
+}
+
+// ── Una persona, DOS identificadores (medido el 2026-08-14) ────────────────
+// `employees.id` es la ficha; `auth.users.id` es la cuenta con la que entra, y
+// para la mayoría del personal NO son el mismo valor: entran por una cuenta
+// ligada en `employee_auth_accounts` —las `*@staff.local` que nacieron con el
+// acceso por carné—. Buscar la ficha con `employees.id = auth.uid()` a secas
+// devolvía cero filas para 33 de las 42 personas que usan el portal, y cada
+// función traducía ese cero a «Sesión inválida o empleado inactivo»: un 401
+// que culpa a la sesión cuando la sesión está bien y el empleado activo.
+//
+// Le pasaba a TODA función que valida con `requireActiveEmployeeUser` —envío y
+// devolución de pedidos, traslados y movimientos de inventario, facturación,
+// exportar compras—, y no se vio antes porque la única cuenta con la que se
+// probó (QA Testing) es de las pocas donde los dos ids coinciden.
+//
+// Esto es lo mismo que hace `auth_employee_id()` en la base, incluido el orden:
+// gana la ficha cuyo id ES el de la cuenta, y sólo si no hay se resuelve por la
+// liga. Ver la regla «el portal tiene dos identidades por persona».
+async function resolverEmpleadoPorCuenta(
+  admin: ReturnType<typeof createClient>,
+  authUserId: string,
+): Promise<ActiveEmployee | null> {
+  const directo = await admin
+    .from("employees")
+    .select("id, status, code, name")
+    .eq("id", authUserId)
+    .limit(1);
+  if (directo.error) return null;
+  if (directo.data?.length) return directo.data[0] as ActiveEmployee;
+
+  const liga = await admin
+    .from("employee_auth_accounts")
+    .select("employee_id")
+    .eq("auth_user_id", authUserId)
+    .limit(1);
+  if (liga.error || !liga.data?.length) return null;
+
+  const empleadoId = (liga.data[0] as { employee_id: string }).employee_id;
+  const ligado = await admin
+    .from("employees")
+    .select("id, status, code, name")
+    .eq("id", empleadoId)
+    .limit(1);
+  if (ligado.error || !ligado.data?.length) return null;
+
+  return ligado.data[0] as ActiveEmployee;
 }
 
 // ── ERP Credentials (from Supabase Secrets, never hardcoded) ─────────────────

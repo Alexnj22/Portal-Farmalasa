@@ -242,22 +242,22 @@ export function notaDeCifra(corte) {
     if (c.porCobrosCredito && fuente === 'guardada') {
         return {
             tono: 'info',
-            titulo: 'Este corte se hizo antes de los cobros de crédito',
-            detalle: `Su comprobante suma los ${cobros} de cobros de crédito del día, pero a esta hora ese dinero todavía no había entrado a la caja. Por eso el portal toma la cifra del sistema (${conSignoTxt(c.difErp)}) y no la del comprobante (${conSignoTxt(c.difTicket)}).`,
+            titulo: 'Se cortó antes de los cobros de crédito',
+            detalle: `El comprobante suma ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSignoTxt(c.difErp)} y no ${conSignoTxt(c.difTicket)}.`,
         };
     }
     if (c.porCobrosCredito) {
         const veces = Math.abs(c.vecesElCobro);
         return {
             tono: 'info',
-            titulo: 'El sistema contó de más los cobros de crédito',
-            detalle: `Guardó ${conSignoTxt(c.difErp)} porque sumó los ${cobros} de cobros de crédito ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es un defecto conocido suyo al sumarlos, no algo que haya pasado en la caja. El portal usa ${conSignoTxt(valor)}, que es lo que dice el comprobante del corte y cierra contra los movimientos del día.`,
+            titulo: 'Los cobros de crédito se contaron de más',
+            detalle: `La otra cifra dice ${conSignoTxt(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es una falla al sumarlos, no algo que pasó en la caja. Vale ${conSignoTxt(valor)}, que es lo que dice el comprobante.`,
         };
     }
     return {
         tono: 'danger',
-        titulo: 'Dos cifras que no cuadran entre sí',
-        detalle: `El sistema guardó ${conSignoTxt(c.difErp)} y el comprobante del corte da ${conSignoTxt(c.difTicket)}: ${formatMoney(Math.abs(c.brecha))} de diferencia que NO se explica por los cobros de crédito. Revisa los movimientos del día antes de dar por bueno un faltante.`,
+        titulo: 'Hay dos cifras y no coinciden',
+        detalle: `Una da ${conSignoTxt(c.difErp)} y el comprobante ${conSignoTxt(c.difTicket)}: ${formatMoney(Math.abs(c.brecha))} sin explicación. Revisa los movimientos del día antes de dar por bueno un faltante.`,
     };
 }
 
@@ -321,10 +321,10 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
             tono: 'danger',
             titulo: m.entero === 1
                 ? `Hay un movimiento de exactamente ${formatMoney(m.monto)}`
-                : `${formatMoney(objetivo)} es exactamente ${m.entero} × ${formatMoney(m.monto)}`,
+                : `La diferencia es ${m.entero} veces ${formatMoney(m.monto)}`,
             detalle: m.entero === 1
-                ? `«${m.concepto || 'sin concepto'}». Si se registró de más o de menos, cuadra la diferencia al centavo.`
-                : `Hoy hay ${m.veces === 1 ? 'un movimiento' : `${m.veces} movimientos`} de ${formatMoney(m.monto)} («${m.concepto || 'sin concepto'}»). Si entró otro y no se registró, cuadra al centavo. Es una hipótesis para confirmar en la sala.`,
+                ? `«${m.concepto || 'sin concepto'}». Si está anotado de más o de menos, cuadra.`
+                : `Hoy hay ${m.veces === 1 ? 'uno' : m.veces} de «${m.concepto || 'sin concepto'}» por ${formatMoney(m.monto)}. Si falta anotar otro, cuadra.`,
         });
     }
 
@@ -334,7 +334,7 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
         out.push({
             tono: 'warning',
             titulo: `¿Cuadran los vouchers de tarjeta?`,
-            detalle: `El sistema registra ${formatMoney(tarjeta)}. Ese monto lo escribe quien corta, y si va de más la diferencia se esconde sola.`,
+            detalle: `Se anotaron ${formatMoney(tarjeta)}. Si el número está de más, tapa un faltante.`,
         });
     }
 
@@ -347,7 +347,7 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
             titulo: salidas.length === 1
                 ? `Un vale por ${formatMoney(total)}`
                 : `${salidas.length} vales por ${formatMoney(total)}`,
-            detalle: 'Un vale sin su comprobante en la caja se ve igual que un faltante.',
+            detalle: 'Sin el papel en la caja, se ve igual que un faltante.',
         });
     }
 
@@ -357,7 +357,7 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
         out.push({
             tono: 'info',
             titulo: `Cobros de crédito por ${formatMoney(cobros)}`,
-            detalle: 'Es dinero que entra sin venta detrás. Si no llegó a la caja, aparece como faltante.',
+            detalle: 'Es dinero que entra sin venta. Si no llegó a la caja, sale como faltante.',
         });
     }
 
@@ -368,7 +368,7 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
         out.push({
             tono: 'info',
             titulo: `${entradas.length} ingresos de caja por ${formatMoney(total)}`,
-            detalle: 'Un recibo cobrado y no registrado se ve igual que un faltante.',
+            detalle: 'Un recibo cobrado y no anotado se ve igual que un faltante.',
         });
     }
 
@@ -378,7 +378,7 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
         out.push({
             tono: 'info',
             titulo: `Devoluciones por ${formatMoney(devol)}`,
-            detalle: 'Verifica que el dinero devuelto salió de esta caja y quedó documentado.',
+            detalle: 'Revisa que ese dinero salió de esta caja y quedó documentado.',
         });
     }
 

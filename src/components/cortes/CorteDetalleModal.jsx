@@ -9,7 +9,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 import { fetchMovimientos, fetchPersonas, resolverCorte } from '../../data/cortes';
-import { contraste, notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
+import { notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
@@ -153,9 +153,11 @@ export default function CorteDetalleModal({
     );
     const explicacion = useMemo(() => (visible ? notaDeCifra(visible) : null), [visible]);
 
+    // No hay un segundo aviso de «revisa las cifras»: `notaDeCifra` ya devuelve
+    // el suyo —en tono `danger`— exactamente en el mismo caso (las dos cuentas
+    // en disputa y no por los cobros de crédito). Eran dos avisos con el mismo
+    // texto en la misma pantalla, uno arriba y otro al fondo.
     const sev = severidad(visible?.tramo);
-    const ct = visible ? contraste(visible) : null;
-    const revisar = !!ct?.enDisputa && !ct.porCobrosCredito;
     const esZ = visible?.tipo === 'Z';
     const pendiente = visible?.estado === 'PENDIENTE';
     const puedeFirmar = pendiente && !esZ && puedeResolver;
@@ -242,7 +244,7 @@ export default function CorteDetalleModal({
                                 </div>
                                 {visible.tramo !== visible.acumulado && (
                                     <div className="flex justify-between gap-3">
-                                        <span>Acumulado del día hasta esta hora</span>
+                                        <span>Acumulado hasta esta hora</span>
                                         <span className="tabular-nums">{conSigno(visible.acumulado ?? 0)}</span>
                                     </div>
                                 )}
@@ -261,8 +263,8 @@ export default function CorteDetalleModal({
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
                                     {modo === 'confirmar'
-                                        ? 'Queda firmado a tu nombre y con la hora. Lee lo de abajo antes de firmar y, si puedes, deja escrito qué se encontró.'
-                                        : 'Descartar lo saca de la cuenta del día: los cortes que vengan después ya no lo toman como referencia. Es para un conteo mal hecho, no para una diferencia que no cuadra.'}
+                                        ? 'Queda firmado a tu nombre y con la hora. Si sabes qué pasó, escríbelo abajo.'
+                                        : 'Sale de la cuenta del día y los cortes siguientes ya no lo toman en cuenta. Es para un conteo mal hecho, no para una diferencia que no cuadra.'}
                                 </span>
                             </Notice>
                         )}
@@ -309,8 +311,8 @@ export default function CorteDetalleModal({
                                     onChange={(e) => setNota(e.target.value)}
                                     rows={2}
                                     placeholder={modo === 'confirmar'
-                                        ? 'Qué se encontró, o por qué se acepta la diferencia'
-                                        : 'Algo que ayude a entender el descarte'}
+                                        ? 'Qué se encontró, o por qué se acepta'
+                                        : 'Por qué se descarta'}
                                 />
                             </div>
                         )}
@@ -375,17 +377,6 @@ export default function CorteDetalleModal({
                                     ))}
                                 </div>
                             </div>
-                        )}
-
-                        {revisar && (
-                            <Notice variant="danger" icon={AlertTriangle}>
-                                <span className="font-bold">Revisa las cifras antes de firmar</span>
-                                <span className="block mt-0.5 font-normal text-content-2">
-                                    Las dos cuentas de este corte no coinciden entre sí y la diferencia no
-                                    se explica por los cobros de crédito. No conviene dar por bueno un
-                                    faltante con esta información.
-                                </span>
-                            </Notice>
                         )}
 
                     </>

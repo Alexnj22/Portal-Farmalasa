@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.12 — Los avisos del corte, más cortos
+
+**El detalle de un corte explicaba de más.** Reportado por el usuario sobre este
+aviso: *«El sistema registra $91.10. Ese monto lo escribe quien corta, y si va de
+más la diferencia se esconde sola»* — tres oraciones para decir una cosa. Ahora:
+*«Se anotaron $91.10. Si el número está de más, tapa un faltante»*.
+
+Se recortaron los diez textos del detalle. Los más largos eran los que explican
+por qué la cifra que se muestra no es la que guardó el sistema:
+
+- *«El sistema guardó −$729.78 y el comprobante del corte da −$511.18: $218.60 de
+  diferencia que NO se explica por los cobros de crédito…»* → **«Hay dos cifras
+  y no coinciden»**, y debajo: *«Una da −$729.78 y el comprobante −$511.18:
+  $218.60 sin explicación. Revisa los movimientos del día antes de dar por bueno
+  un faltante.»*
+- *«…sumó los $54.65 de cobros de crédito 4 veces de más. Es un defecto conocido
+  suyo al sumarlos…»* → **«Los cobros de crédito se contaron de más»**, sin la
+  explicación de dónde vino el defecto: eso es del que arregló el portal, no del
+  que está cuadrando la caja.
+
+**Y se fue un aviso entero, que estaba repetido.** «Revisa las cifras antes de
+firmar» aparecía al fondo del detalle diciendo exactamente lo mismo que el aviso
+rojo de arriba —las dos salían en el mismo caso—, así que quien abría un corte
+en disputa leía dos veces el mismo párrafo. Queda uno solo, arriba, que es donde
+se lee antes de decidir.
+
 ## v2.604.11 — Los avisos de existencia dejan de decir «1 unidades»
 
 El aviso que estrenó v2.604.9 salía así: *«Bodega tiene 1 unidades en 1 lote(s):

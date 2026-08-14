@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarDays, CheckCircle2, Clock, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, Landmark, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -9,13 +9,15 @@ import PeriodPicker from '../components/common/PeriodPicker';
 import PeriodStepper from '../components/common/PeriodStepper';
 import StatCard from '../components/common/StatCard';
 import TablePagination from '../components/common/TablePagination';
+import Notice from '../components/common/Notice';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
+import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import useResolverCorte from '../hooks/useResolverCorte';
-import { fetchCortes, fetchPersonas } from '../data/cortes';
+import { fetchCortes, fetchDiferencias, fetchPersonas } from '../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes, severidad } from '../utils/cortesDiagnostico';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '../utils/periodo';
 import { tokenMatch } from '../utils/searchUtils';
@@ -113,6 +115,12 @@ const CortesView = () => {
     const [cortes, setCortes] = useState(VACIO);
     const [personas, setPersonas] = useState(() => new Map());
     const [cargando, setCargando] = useState(true);
+    // Las diferencias ya resueltas del período. Se piden con los cortes porque
+    // lo que hay que HACER con ellas —anotarlas en el sistema— es trabajo
+    // pendiente que la pantalla tiene que anunciar, no algo que se descubra
+    // abriendo corte por corte.
+    const [difs, setDifs] = useState(VACIO);
+    const [asentando, setAsentando] = useState(false);
 
     // El detalle: qué corte está abierto y con qué modo. Lo que se PINTA
     // mientras el panel sale lo resuelve el propio modal.
@@ -132,6 +140,7 @@ const CortesView = () => {
         // cortes retrasaría lo único que la pantalla tiene que hacer.
         const autores = await fetchPersonas((filas || []).map((c) => c.resuelto_por));
         setPersonas(new Map(autores.map((p) => [p.id, p])));
+        setDifs(await fetchDiferencias({ desde, hasta }) || VACIO);
     }, [desde, hasta]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar el rango
@@ -166,6 +175,15 @@ const CortesView = () => {
             : conTramoTodos),
         [conTramoTodos, sala],
     );
+
+    // Lo que falta anotar en el sistema. Sigue a la ranura de sala porque el
+    // movimiento se hace POR sala: al mirar una sola, el aviso tiene que hablar
+    // de esa y no del total de las seis. Las justificadas quedan fuera — no
+    // mueven dinero, así que no hay nada que anotar allá.
+    const sinAsentar = useMemo(() => (difs || []).filter((d) => (
+        !d.anulada_at && !d.asentado_at && d.via !== 'JUSTIFICA'
+        && (!sala || String(d.branch_id) === String(sala))
+    )), [difs, sala]);
 
     const filtrados = useMemo(() => conTramoTodos.filter((c) => {
         if (sala && String(c.branch_id) !== String(sala)) return false;
@@ -364,6 +382,31 @@ const CortesView = () => {
                     </div>
                 </div>
 
+                {/* El trabajo que queda después de resolver una diferencia: el
+                    movimiento en el sistema. Va como aviso y no como pestaña
+                    porque no es otra sección de la pantalla —son los mismos
+                    cortes— sino algo pendiente de hacer, y esconderlo detrás de
+                    un recorte sería no anunciarlo. */}
+                {!cargando && puedeResolver && sinAsentar.length > 0 && (
+                    <Notice variant="warning" icon={Landmark}>
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div className="min-w-0">
+                                <span className="font-bold">
+                                    {sinAsentar.length === 1
+                                        ? 'Hay una diferencia resuelta sin anotar en el sistema'
+                                        : `Hay ${sinAsentar.length} diferencias resueltas sin anotar en el sistema`}
+                                </span>
+                                <span className="block mt-0.5 font-normal text-content-2">
+                                    Un solo movimiento por sala las cubre a todas.
+                                </span>
+                            </div>
+                            <Button variant="secondary" size="sm" onClick={() => setAsentando(true)}>
+                                Registrar
+                            </Button>
+                        </div>
+                    </Notice>
+                )}
+
                 {cargando && <LoadingState label="Buscando los cortes" />}
 
                 {/* Dos vacíos distintos (§26.2): el del filtro se arregla
@@ -449,6 +492,14 @@ const CortesView = () => {
                     />
                 )}
             </div>
+
+            <AsentarDiferencias
+                abierto={asentando}
+                diferencias={sinAsentar}
+                nombreSala={nombreSala}
+                onClose={() => setAsentando(false)}
+                onHecho={cargar}
+            />
 
             <CorteDetalleModal
                 corte={corteAbierto}

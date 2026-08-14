@@ -21,9 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.606.3 — Registrar en el sistema las diferencias resueltas
+## v2.606.4 — Registrar en el sistema las diferencias resueltas
 
-_(pendiente de redactar)_
+Cierra el lazo que quedó abierto en v2.606.0: se podía resolver un faltante y
+guardar quién lo repuso, pero no había dónde marcar que ya se anotó el
+movimiento en el sistema — o sea que la lista de pendientes crecía y nadie la
+veía.
+
+Ahora Cortes de caja avisa arriba cuántas diferencias resueltas quedan sin
+anotar, y desde ahí se registran. **Se agrupan por sala y por dirección del
+dinero**: un faltante entra y un sobrante sale, que allá son un ingreso y un
+vale — dos documentos con dos números distintos, y mezclarlos haría imposible
+cuadrarlos después. Cada grupo muestra su total, se puede sacar alguna de la
+lista, y el número que se escribe queda anotado en todas las que cubre.
+
+Sigue siendo un solo movimiento allá y el detalle acá, sin que el portal escriba
+nada en el sistema de origen.
 
 ## v2.606.2 — El incidente de la recepción, documentado
 

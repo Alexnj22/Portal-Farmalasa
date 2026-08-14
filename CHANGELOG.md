@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.602.0 — El ajuste de MIN·MAX muestra si el producto sigue vivo
+
+**«Vendidas en 6 meses» sola no alcanza para decidir.** 26 unidades pueden ser
+26 el mes pasado o 26 repartidas con la última venta en enero, y esas dos cosas
+piden decisiones opuestas. Medido en Salud 2: NORGESIC tenía 26 en seis meses y
+su última venta era del **20 de enero** — siete meses atrás. Con esa fecha a la
+vista, «bajó su venta» se lee distinto.
+
+El formulario y la solicitud muestran ahora **vendidas este mes**, **vendidas en
+6 meses** y **última venta** (con hace cuánto: «20 ene 2026 · hace 7 meses», o
+«Nunca» si esa sala nunca lo vendió). Las dos cifras nuevas viajan guardadas en
+la solicitud, como ya lo hacía la de 6 meses: quien aprueba ve el mismo retrato
+que vio quien propuso.
+
+Un detalle que se cuidó: mientras la consulta viaja se muestra el girito de
+carga, no un «—». En esa misma tarjeta el guión ya significa «no vendió», y
+usarlo también para «todavía no sé» sería afirmar un hecho que no se sabe.
+
+**Preguntarle a la base cuándo vendió un producto costaba 1.230 ms.**
+`product_sales_monthly_agg` sólo se podía recorrer por su llave, que empieza por
+el mes, así que la consulta saltaba por todos los meses del índice. Con el
+índice nuevo son **1,5 ms** y sin tocar la tabla. También lo aprovecha la
+búsqueda de Ventas, que hace la misma pregunta para cada candidato.
+
+**El historial de MIN·MAX decía `MINMAX_REQUEST_APPROVED`.** El código crudo,
+dentro de la píldora, y al lado «MIN — MAX —» aunque el cambio hubiera sido
+0 · 1 → 0 · 0. Eran dos cosas: la acción no tenía rótulo escrito, y la bitácora
+guardaba los números con un nombre que el historial no lee. Ahora dice
+**SOLICITUD APROBADA**, muestra el «de → a» de verdad, y agrega **quién la
+solicitó, con su foto** — el ajuste no nació en quien lo aprobó, y sin ese
+renglón la propuesta de la sala quedaba sin autor. Las 11 aprobaciones que ya
+estaban en la bitácora se completaron con lo que la propia solicitud tenía
+anotado; nada se inventó.
+
 ## v2.601.3 — Los totales se alinean rellenando, no pidiéndoselo a la impresora
 
 Tercera lectura del ticket del 14-08. **Los códigos de alineación no mandan.** Los

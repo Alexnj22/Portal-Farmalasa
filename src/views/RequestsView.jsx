@@ -479,11 +479,26 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                  * el historial de Min/Max para buscar los cambios de un producto
                  * puntual. La solicitud queda en el detalle. */
                 const aprobo = modo === 'approve';
+                /* `old_min`/`old_max`/`new_min`/`new_max` y no `requested_*`: es
+                 * la forma que lee el historial de MIN·MAX del producto, y sin
+                 * ella pintaba «MIN — MAX —» en cada aprobación (visto el
+                 * 2026-08-14 en CIPRO DENK). El par ANTERIOR lo devuelve
+                 * `approve_minmax_request`, que lo capturó justo antes de
+                 * pisarlo — el `current_min` de la solicitud es de cuando se
+                 * creó y puede ser de hace días.
+                 *
+                 * Y va quién lo PIDIÓ: el historial ya nombra a quien lo
+                 * resolvió (es su acción en la bitácora), pero el ajuste no
+                 * nació ahí. */
                 appendAuditLog(aprobo ? 'MINMAX_REQUEST_APPROVED' : 'MINMAX_REQUEST_REJECTED',
                     String(fila.erp_product_id ?? ''), {
                         request_id: fila.id, product: fila.product_name,
                         sucursal_id: fila.erp_sucursal_id,
+                        old_min: r.data?.previous_min ?? null, old_max: r.data?.previous_max ?? null,
+                        new_min: fila.requested_min, new_max: fila.requested_max,
                         requested_min: fila.requested_min, requested_max: fila.requested_max,
+                        requested_by_id: fila.requested_by_id ?? null,
+                        requested_by_name: fila.requested_by_name ?? null,
                         note: nota || null,
                     }).catch(e => console.error('audit MINMAX:', e?.message ?? e));
 

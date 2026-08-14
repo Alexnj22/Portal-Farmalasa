@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
-import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff, CalendarClock } from 'lucide-react';
 import Notice from '../../components/common/Notice';
 import SearchInput from '../../components/common/SearchInput';
 import PortalInput from '../../components/common/PortalInput';
@@ -12,11 +12,11 @@ import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import { useAuth } from '../../context/AuthContext';
 import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
-    buscarProductosMinMax, fetchMinMaxEstados,
+    buscarProductosMinMax, fetchMinMaxEstados, fetchMinMaxContextoVenta,
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '../../data/stockParams';
-import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio } from '../../utils/minmaxSolicitud';
+import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
@@ -42,6 +42,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]           = useState('');
   const [pres, setPres]         = useState([]);   // presentaciones del producto (factor/tipo)
+  const [ventas, setVentas]     = useState(null); // { unidadesMes, ultimaVenta } — null = todavía no llegó
 
   // Presentaciones del producto (para mostrar el factor y el equivalente en cajas)
   useEffect(() => {
@@ -57,11 +58,15 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
   }, [product.id]);
   const domPres = dominantPres(pres);
 
-  // Carga el min/max efectivo actual (manual ?? calculado) al elegir sucursal
+  // Carga el min/max efectivo actual (manual ?? calculado) al elegir sucursal,
+  // junto con el contexto de venta. Las dos consultas van en paralelo y el
+  // formulario se destraba con la primera: el MIN·MAX de hoy es lo que decide
+  // si se puede proponer algo, y las ventas son para leer, no para bloquear.
   useEffect(() => {
-    if (!erp) { setCurrent(null); return; }
+    if (!erp) { setCurrent(null); setVentas(null); return; }
     let cancelled = false;
     setLoadingCur(true);
+    setVentas(null);
     fetchCurrentStockParams(product.id, erp)
       .then(({ data }) => {
         if (cancelled) return;
@@ -74,6 +79,8 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         });
         setLoadingCur(false);
       });
+    fetchMinMaxContextoVenta(product.id, erp)
+      .then(ctx => { if (!cancelled) setVentas(ctx); });
     return () => { cancelled = true; };
   }, [erp, product.id]);
 
@@ -147,6 +154,13 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         current_min:       current?.min ?? null,
         current_max:       current?.max ?? null,
         current_sales_6m:  current?.sales6m ?? null,
+        // El retrato de venta viaja CON la solicitud, igual que las 6 meses:
+        // quien aprueba tiene que ver lo mismo que vio quien propuso, y el
+        // centro de solicitudes pinta muchas filas sin poder consultar por cada
+        // una. Si la consulta falló, va null — no un 0 que se leería como «no
+        // vendió».
+        current_sales_mes:   ventas?.unidadesMes ?? null,
+        current_ultima_venta: ventas?.ultimaVenta ?? null,
         requested_min:     newMin,
         requested_max:     newMax,
         reason:            reason.trim() || null,
@@ -223,14 +237,51 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
                 </div>
               )}
             </div>
+            {/* ── Qué tan viva está la venta (2026-08-14) ────────────────────
+                «Vendidas en 6 meses» sola no distingue un producto que dejó de
+                venderse de uno que vende poco y constante: 26 unidades pueden
+                ser 26 el mes pasado o 26 repartidas y la última hace ocho
+                meses. Medido en Salud 2: NORGESIC tenía 26 en seis meses y su
+                última venta era del 20 de enero — siete meses atrás. Con esa
+                fecha a la vista, «bajó su venta» se lee distinto.
+
+                Mientras la consulta viaja va el mismo girito que usa el par de
+                arriba, no un «—»: un guión ya significa «no vendió» en esta
+                misma tarjeta, y usarlo también para «todavía no sé» sería
+                decir un hecho que no se sabe. Si la consulta falla, `unidadesMes`
+                llega en null y ahí sí va el guión — nunca un 0. */}
             {!loadingCur && (
-              <div className="flex items-center justify-between border-t border-divider pt-1.5">
-                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1">
-                  <TrendingUp size={11} className="text-success" /> Ventas 6 meses
+              <div className="flex items-center justify-between gap-2 border-t border-divider pt-1.5">
+                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                  <TrendingUp size={11} className="text-success" /> Vendidas
                 </span>
-                <span className="text-label font-bold text-content-2 tabular-nums">
-                  {current?.sales6m != null ? `${Number(current.sales6m).toLocaleString()} und` : 'Sin ventas'}
+                <div className="flex items-end gap-3">
+                  <div className="flex flex-col items-end leading-tight">
+                    <span className="text-micro text-content-3 font-semibold">este mes</span>
+                    <span className="text-label font-bold text-content-2 tabular-nums">
+                      {ventas === null ? <Loader2 size={11} className="animate-spin text-content-3" />
+                        : ventas.unidadesMes != null ? Number(ventas.unidadesMes).toLocaleString() : '—'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end leading-tight">
+                    <span className="text-micro text-content-3 font-semibold">6 meses</span>
+                    <span className="text-label font-bold text-content-2 tabular-nums">
+                      {current?.sales6m != null ? Number(current.sales6m).toLocaleString() : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {!loadingCur && (
+              <div className="flex items-center justify-between gap-2 border-t border-divider pt-1.5">
+                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                  <CalendarClock size={11} className="text-chart-4-text" /> Última venta
                 </span>
+                {ventas === null
+                  ? <Loader2 size={11} className="animate-spin text-content-3" />
+                  : <span className={`text-label font-bold text-right ${ventas.ultimaVenta ? 'text-content-2' : 'text-content-3'}`}>
+                      {fmtUltimaVenta(ventas.ultimaVenta)}
+                    </span>}
               </div>
             )}
           </div>

@@ -26,6 +26,26 @@ export function fetchCurrentStockParams(erpProductId, erpSucursalId) {
         .maybeSingle();
 }
 
+/**
+ * Lo del mes en curso y la fecha de la última venta, para UN producto en UNA
+ * sala.
+ *
+ * No sale de `product_stock_params` porque ahí no está: `units_sold_6m` es un
+ * total de seis meses y no distingue «vende poco» de «dejó de venderse». Ni de
+ * `product_sales_monthly_agg` a secas, que sólo guarda meses CERRADOS — el mes
+ * en curso hay que leerlo de las facturas. El RPC hace las dos cosas y mide las
+ * unidades igual que el cálculo de MIN·MAX, para que las dos cifras de la
+ * pantalla se puedan comparar entre sí.
+ */
+export async function fetchMinMaxContextoVenta(erpProductId, erpSucursalId) {
+    const { data, error } = await supabase.rpc('get_minmax_contexto_producto', {
+        p_erp_product_id:  Number(erpProductId),
+        p_erp_sucursal_id: Number(erpSucursalId),
+    });
+    if (error) { console.error('fetchMinMaxContextoVenta:', error.message); return { unidadesMes: null, ultimaVenta: null }; }
+    return { unidadesMes: data?.unidades_mes ?? null, ultimaVenta: data?.ultima_venta ?? null };
+}
+
 export function insertMinMaxChangeRequest(payload) {
     return supabase.from('minmax_change_requests').insert(payload);
 }
@@ -60,8 +80,13 @@ export function fetchMinMaxChangeRequestById(id) {
  */
 export async function decidirMinMax(requestId, aprobar, nota = '') {
     const fn = aprobar ? 'approve_minmax_request' : 'reject_minmax_request';
-    const { error } = await supabase.rpc(fn, { p_request_id: requestId, p_note: nota || null });
-    return { ok: !error, error: error?.message ?? null };
+    // `data` se devuelve desde el 2026-08-14: al aprobar, la función trae el par
+    // ANTERIOR (`previous_min`/`previous_max`) — el único momento en que alguien
+    // lo tiene sin volver a consultar es justo antes de pisarlo. Sin eso, el
+    // historial de MIN·MAX escribía la aprobación sin el «de → a» y la pintaba
+    // como «MIN — MAX —».
+    const { data, error } = await supabase.rpc(fn, { p_request_id: requestId, p_note: nota || null });
+    return { ok: !error, error: error?.message ?? null, data: data ?? null };
 }
 
 // ── TabMinMaxRequests.jsx (bandeja de aprobación — todas las solicitudes) ──

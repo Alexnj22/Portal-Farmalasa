@@ -53,6 +53,30 @@ export function ajusteSinCambio(actual, pedidoMin, pedidoMax) {
     return comoNumero(actual?.min) === pedidoMin && comoNumero(actual?.max) === pedidoMax;
 }
 
+/**
+ * La última venta, dicha de las dos formas que hacen falta a la vez: la fecha
+ * —para poder ir a buscarla— y hace cuánto —que es lo que uno decide leyendo—.
+ *
+ * «20 ene 2026» solo obliga a restar de cabeza; «hace 7 meses» solo no se puede
+ * verificar contra nada. Juntas: «20 ene 2026 · hace 7 meses».
+ *
+ * El `T12:00:00` no es decorativo: la columna es `date` y `new Date('2026-01-20')`
+ * se interpreta como medianoche UTC, que en El Salvador (UTC−6) es el 19 a las
+ * 18:00 — la pantalla mostraría el día anterior.
+ */
+export function fmtUltimaVenta(fechaISO) {
+    if (!fechaISO) return 'Nunca';
+    const d = new Date(`${String(fechaISO).slice(0, 10)}T12:00:00`);
+    if (Number.isNaN(d.getTime())) return 'Nunca';
+    const fecha = d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dias = Math.floor((Date.now() - d.getTime()) / 86400000);
+    const rel = dias <= 0 ? 'hoy'
+        : dias === 1 ? 'ayer'
+        : dias < 30 ? `hace ${dias} días`
+        : (() => { const m = Math.round(dias / 30.44); return `hace ${m} ${m === 1 ? 'mes' : 'meses'}`; })();
+    return `${fecha} · ${rel}`;
+}
+
 /** Cuántas veces más grande. Un decimal alcanza: «7.1×» ya dice todo. */
 const veces = (pedido, hoy) => (pedido / hoy).toLocaleString('es-SV', { maximumFractionDigits: 1 });
 

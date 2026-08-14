@@ -73,6 +73,11 @@ const MINMAX_HISTORY_ACTION_META = {
     MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    variante: 'danger' },
     MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    variante: 'danger' },
     MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODA LA RED', variante: 'danger' },
+    // Faltaba, así que el historial mostraba el código crudo
+    // `MINMAX_REQUEST_APPROVED` dentro de la píldora — reportado el 2026-08-14.
+    // Cada acción que se agrega al filtro de `openHistory` necesita su entrada
+    // acá: el `|| { label: log.action }` de más abajo no falla, publica.
+    MINMAX_REQUEST_APPROVED:        { label: 'SOLICITUD APROBADA', variante: 'success' },
 };
 
 // STAT_CFGS, VISIBLE_STAT_KEYS: extraídos a ./tabminmax/constants.js (Bloque
@@ -1356,7 +1361,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const d = log.details || {};
                                 const empPhoto = empPhotoMap[log.user_name];
                                 const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Toda la red' : (ERP_NAMES[d.sucursal_id] || '');
-                                const meta = MINMAX_HISTORY_ACTION_META[log.action] || { label: log.action, badge: 'bg-surface-card-hover text-content-3' };
+                                // El `badge:` del fallback viejo no lo leía nadie —`Badge` va
+                                // por `variante`— así que una acción sin entrada salía con el
+                                // código crudo Y sin color. Ahora al menos sale neutra.
+                                const meta = MINMAX_HISTORY_ACTION_META[log.action] || { label: log.action, variante: 'neutral' };
                                 const dt = new Date(log.created_at);
                                 const dateStr = dt.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
                                 const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -1388,6 +1396,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 </span>
                                                 {sucName && <span className="text-micro text-content-3 ml-auto shrink-0">{sucName}</span>}
                                             </div>
+                                            {/* Quién lo PIDIÓ. La fila nombra a quien hizo el
+                                                cambio —es su acción en la bitácora— pero un
+                                                ajuste aprobado no nació ahí, y sin esto la
+                                                propuesta de la sala quedaba sin autor: se leía
+                                                como si el aprobador lo hubiera decidido solo.
+                                                Con cara, igual que arriba: un nombre suelto en
+                                                un historial de caras se lee como texto, no como
+                                                persona. */}
+                                            {d.requested_by_name && (
+                                                <div className="flex items-center gap-1.5 mt-1.5">
+                                                    <span className="text-micro text-content-3 font-semibold">Solicitó</span>
+                                                    <span className="w-5 h-5 rounded-full bg-surface-card-hover border border-divider overflow-hidden shrink-0 flex items-center justify-center">
+                                                        {empPhotoMap[d.requested_by_name]
+                                                            ? <img src={empPhotoMap[d.requested_by_name]} alt="" className="w-full h-full object-cover" />
+                                                            : <span className="text-micro font-black text-content-3">{d.requested_by_name.charAt(0).toUpperCase()}</span>}
+                                                    </span>
+                                                    <span className="text-micro font-bold text-content-2 truncate">{d.requested_by_name}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 );

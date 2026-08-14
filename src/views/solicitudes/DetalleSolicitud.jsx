@@ -14,7 +14,7 @@ import {
 import { CaraPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
 import { shortEmployeeName } from '../../utils/nameUtils';
-import { ajusteSinCambio } from '../../utils/minmaxSolicitud';
+import { ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
 
 // El detalle de una solicitud, en UN solo lugar.
 //
@@ -459,12 +459,34 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         </p>
                     </div>
                 )}
-                {Number.isFinite(Number(meta.ventas_6m)) && (
+                {/* Las tres cifras que dicen si el producto está vivo. Sueltas
+                    no alcanzan: 26 en seis meses puede ser 26 el mes pasado o
+                    26 con la última venta en enero, y sólo la fecha lo separa.
+                    Se muestra el bloque aunque falte alguna —las solicitudes
+                    anteriores al 2026-08-14 no traen las dos nuevas— y lo que
+                    falta va como «—», nunca como 0. */}
+                <div className="grid grid-cols-2 gap-2">
+                    <Caja>
+                        <Rotulo>Vendidas este mes</Rotulo>
+                        <p className="text-body font-black text-content-2 tabular-nums">
+                            {Number.isFinite(Number(meta.ventas_mes)) && meta.ventas_mes != null
+                                ? Number(meta.ventas_mes).toLocaleString() : '—'}
+                        </p>
+                    </Caja>
                     <Caja>
                         <Rotulo>Vendidas en 6 meses</Rotulo>
-                        <p className="text-body font-black text-content-2">{meta.ventas_6m}</p>
+                        <p className="text-body font-black text-content-2 tabular-nums">
+                            {Number.isFinite(Number(meta.ventas_6m)) && meta.ventas_6m != null
+                                ? Number(meta.ventas_6m).toLocaleString() : '—'}
+                        </p>
                     </Caja>
-                )}
+                </div>
+                <Caja>
+                    <Rotulo>Última venta</Rotulo>
+                    <p className={`text-body-sm font-black ${meta.ultima_venta ? 'text-content-2' : 'text-content-3'}`}>
+                        {meta.ultima_venta ? fmtUltimaVenta(meta.ultima_venta) : '—'}
+                    </p>
+                </Caja>
             </div>
         );
     }

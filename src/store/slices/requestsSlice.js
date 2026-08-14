@@ -187,6 +187,10 @@ export function adaptarMinMax(fila, nombreDeSucursal, buscarPersona) {
             min_actual: fila.current_min, max_actual: fila.current_max,
             min_pedido: fila.requested_min, max_pedido: fila.requested_max,
             ventas_6m: fila.current_sales_6m,
+            // Las dos que separan «vende poco» de «dejó de venderse» (2026-08-14).
+            // Son el retrato del momento en que se propuso, como `ventas_6m`.
+            ventas_mes: fila.current_sales_mes,
+            ultima_venta: fila.current_ultima_venta,
         },
         _minmax: fila,
     };

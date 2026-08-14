@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.4 — Cortes: la fecha dice Hoy y los estados dejan de ser pestañas
+
+Dos correcciones del usuario, y las dos las contesta el canon.
+
+**«¿No dice hoy? verificá el canónico.»** Decía `14/08/2026` con una píldora
+`1d`. El canónico que corresponde acá no era `RangeDatePicker` sino
+**`PeriodPicker`**, que es el que **nombra sus presets** —§17.0.1: «un rango que
+coincide con "Este mes" o con un mes entero se muestra por su nombre, no por sus
+fechas»—. Con el rango de hoy la ranura dice **«Hoy»**, y un rango suelto se
+escribe compacto: `08/08 → 14/08`, sin repetir el año en curso. De yapa cuenta
+los días en hora de El Salvador, que es la que tiene la fecha de un corte.
+
+**«Las pestañas no deberían ser filtros? no son vistas diferentes, solo estados
+de los cortes.»** Exacto, y es §16.9: la píldora del **header** contesta «¿qué
+sección estoy viendo?» y la del **cuerpo** «¿qué recorte?». Cinco pestañas que
+muestran la misma lista recortada son cinco recortes. En el header queda sólo el
+buscador.
+
+Y se parten en **dos** ranuras, porque eran dos preguntas metidas en una fila:
+«Con diferencia» no es un estado, es una severidad. Separadas se pueden cruzar
+—los confirmados con faltante, que antes no se podían pedir— y cada una cae en
+su sitio del orden canónico (ámbito → entidad → tiempo → estado).
+
+| ranura | opciones |
+|---|---|
+| **estado** | Cualquier estado · Sin confirmar · Confirmados · Descartados |
+| **diferencia** | Cualquier cifra · Cuadraron · Con exceso · Con faltante |
+
+**Las cuatro tarjetas del carril pasan a ser el atajo de su ranura** — el patrón
+de Personal, «las tarjetas son el atajo visual, no el único acceso» (§17).
+Apretar «Faltante» aplica el filtro; volver a apretarla lo quita. Sin ese
+segundo clic, una tarjeta ya aplicada es un botón que no hace nada.
+
+**Y el carril trae a la vista la tarjeta aplicada** (`CarrilCards`, o sea para
+todas las vistas). Al aplicar un filtro la píldora crece —gana su rótulo y su
+X— y el carril cede el ancho, que es lo correcto; el efecto secundario era que
+la tarjeta recién aplicada quedaba a medias fuera del borde: un filtro activo
+cuyo espejo no se ve.
+
 ## v2.604.3 — «Se pide» pasa a «Nuevo», y el aviso deja de hablar en futuro
 
 **«Se pide» sólo era cierto mientras nadie contestaba.** Y una solicitud se

@@ -176,6 +176,25 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
         el.scrollBy({ left: dir * paso * 2, behavior: 'smooth' });
     };
 
+    // ── La tarjeta APLICADA se trae a la vista (2026-08-14) ────────────────
+    // Cuando las tarjetas son el atajo de una ranura, aplicar una hace crecer la
+    // píldora —gana su X y su rótulo— y el carril cede el ancho, que es lo
+    // correcto (§17.0). El efecto secundario es que la tarjeta recién aplicada
+    // se queda a medias fuera del borde: un filtro activo cuyo espejo no se ve.
+    // El índice sale de los props de las hijas, así que no hace falta que el
+    // llamador avise.
+    const iActiva = tarjetas.findIndex(t => t?.props?.active);
+    useLayoutEffect(() => {
+        const el = pistaRef.current;
+        if (!el || iActiva < 0) return;
+        const hija = el.children[iActiva];
+        if (!hija) return;
+        const p = el.getBoundingClientRect();
+        const h = hija.getBoundingClientRect();
+        if (h.left >= p.left - 1 && h.right <= p.right + 1) return;   // ya se ve entera
+        el.scrollBy({ left: h.left < p.left ? h.left - p.left : h.right - p.right, behavior: 'smooth' });
+    }, [iActiva]);
+
     // ── El que cede es el CARRIL, nunca la píldora ──────────────────────────
     //
     // Los llamadores lo ponen con `flex-1` al lado de los filtros de la vista, y

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarDays, Clock, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
-import RangeDatePicker from '../components/common/RangeDatePicker';
+import PeriodPicker from '../components/common/PeriodPicker';
 import StatCard from '../components/common/StatCard';
 import TablePagination from '../components/common/TablePagination';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
@@ -41,15 +41,31 @@ const rotularDia = (fecha) => {
     });
 };
 
-// «Resueltos» juntaba dos decisiones opuestas —dar por bueno y descartar— bajo
-// un rótulo que no dice cuál. Se parten: quien quiere ver lo aprobado no tiene
-// que filtrar dos veces.
-const TABS = [
-    { key: 'pendientes',  label: 'Sin confirmar' },
-    { key: 'diferencia',  label: 'Con diferencia' },
-    { key: 'confirmados', label: 'Confirmados' },
-    { key: 'descartados', label: 'Descartados' },
-    { key: 'todos',       label: 'Todos' },
+// ── Los estados NO son pestañas: son filtros (§16.9) ────────────────────────
+//
+// Reportado por el usuario (2026-08-14): «las pestañas no deberían ser filtros?
+// ya que no son vistas diferentes, solo estados de los cortes». Es exactamente
+// lo que dice §16.9 — la píldora del HEADER (`ViewTabBar`) contesta «¿qué
+// sección estoy viendo?» y la del CUERPO (`FilterBar`) contesta «¿qué recorte?».
+// Cinco pestañas que muestran la MISMA lista recortada son cinco recortes, no
+// cinco secciones. En el header queda sólo el buscador.
+//
+// Y se parten en DOS ranuras, porque eran dos preguntas metidas en una fila:
+// «Con diferencia» no es un estado, es una severidad. Separadas se pueden
+// cruzar —los confirmados con faltante, que antes no se podían pedir— y cada
+// una queda en su sitio del orden canónico (ámbito → entidad → tiempo → estado).
+const ESTADOS = [
+    { value: 'TODOS',      label: 'Cualquier estado' },
+    { value: 'PENDIENTE',  label: 'Sin confirmar' },
+    { value: 'CONFIRMADO', label: 'Confirmados' },
+    { value: 'DESCARTADO', label: 'Descartados' },
+];
+
+const DIFERENCIAS = [
+    { value: 'TODAS', label: 'Cualquier cifra' },
+    { value: 'ok',    label: 'Cuadraron' },
+    { value: 'sobra', label: 'Con exceso' },
+    { value: 'falta', label: 'Con faltante' },
 ];
 
 // El carril de la vista: cuatro números fijos, no un desglose de largo variable
@@ -57,11 +73,15 @@ const TABS = [
 // MISMAS cuatro que muestra la baldosa del Inicio, y salen del mismo
 // `resumenDeCortes`: dos pantallas que cuentan por su cuenta terminan dando
 // números distintos del mismo mes.
+//
+// Cada una es además el ATAJO de su filtro: es el patrón de `StaffManagementView`
+// —«las tarjetas son el atajo visual, no el único acceso» (§17)—, y es lo que
+// evita que el carril sea decoración al lado de una ranura que dice lo mismo.
 const METRICAS = [
-    { clave: 'pendientes', icon: Clock,        label: 'Sin confirmar', iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
-    { clave: 'cuadrados',  icon: ShieldCheck,  label: 'Cuadraron',     iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
-    { clave: 'exceso',     icon: TrendingUp,   label: 'Exceso',        iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
-    { clave: 'faltante',   icon: TrendingDown, label: 'Faltante',      iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
+    { clave: 'pendientes', filtro: 'estado',     valor: 'PENDIENTE', icon: Clock,        label: 'Sin confirmar', iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+    { clave: 'cuadrados',  filtro: 'diferencia', valor: 'ok',        icon: ShieldCheck,  label: 'Cuadraron',     iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
+    { clave: 'exceso',     filtro: 'diferencia', valor: 'sobra',     icon: TrendingUp,   label: 'Exceso',        iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
+    { clave: 'faltante',   filtro: 'diferencia', valor: 'falta',     icon: TrendingDown, label: 'Faltante',      iconBg: 'bg-danger/10',  iconCls: 'text-danger-text',  valueCls: 'text-danger-text' },
 ];
 
 const CortesView = () => {
@@ -71,12 +91,20 @@ const CortesView = () => {
     const { user, hasPermission } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
 
-    // Arranca en HOY (regla del usuario, 2026-08-14). El rango es un
-    // `RangeDatePicker` y no tres chips de «7 · 30 · 90 días»: los chips
-    // contestan tres preguntas y la pregunta real —«¿qué pasó el martes?»— no
-    // era ninguna de las tres.
-    const [rango, setRango] = useState(() => ({ desde: hoySV(), hasta: hoySV() }));
-    const [tab, setTab] = useState('pendientes');
+    // Arranca en HOY (regla del usuario, 2026-08-14). El período es
+    // `PeriodPicker` y no tres chips de «7 · 30 · 90 días»: los chips contestan
+    // tres preguntas y la pregunta real —«¿qué pasó el martes?»— no era ninguna
+    // de las tres. Y es `PeriodPicker` y no `RangeDatePicker` porque es el que
+    // nombra sus presets: con el rango de hoy la píldora dice **«Hoy»**, no
+    // «14/08/2026 · 1d». Además cuenta los días en hora de El Salvador, que es
+    // la que tiene la fecha de un corte.
+    //
+    // Su `value` es la cadena `inicio|fin` — el formato del canónico, el mismo
+    // que usa Ventas.
+    const [periodo, setPeriodo] = useState(() => `${hoySV()}|${hoySV()}`);
+    const [desde, hasta] = periodo.split('|');
+    const [estado, setEstado] = useState('TODOS');
+    const [diferencia, setDiferencia] = useState('TODAS');
     const [busqueda, setBusqueda] = useState('');
     const [sala, setSala] = useState('');
 
@@ -95,7 +123,7 @@ const CortesView = () => {
 
     const cargar = useCallback(async () => {
         setCargando(true);
-        const filas = await fetchCortes({ desde: rango.desde, hasta: rango.hasta });
+        const filas = await fetchCortes({ desde, hasta });
         setCortes(filas || VACIO);
         setCargando(false);
         // Quién firmó cada decisión. Se pide aparte y después: la tarjeta se
@@ -103,7 +131,7 @@ const CortesView = () => {
         // cortes retrasaría lo único que la pantalla tiene que hacer.
         const autores = await fetchPersonas((filas || []).map((c) => c.resuelto_por));
         setPersonas(new Map(autores.map((p) => [p.id, p])));
-    }, [rango.desde, rango.hasta]);
+    }, [desde, hasta]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar el rango
 
@@ -122,10 +150,11 @@ const CortesView = () => {
         return out;
     }, [cortes]);
 
-    // El carril describe el PERÍODO y la sucursal elegida, no la pestaña ni la
-    // búsqueda: las pestañas son recortes de este mismo conjunto, así que si el
-    // carril las siguiera, «Sin confirmar» diría 23 y al entrar en ella diría 23
-    // otra vez, y las otras tres se irían a cero.
+    // El carril describe el PERÍODO y la sucursal elegida, no lo que las otras
+    // ranuras recortan: son recortes de este mismo conjunto, así que si el
+    // carril los siguiera, «Sin confirmar» diría 23 y al aplicarlo diría 23 otra
+    // vez, con las otras tres en cero. Y como cada tarjeta ES el atajo de su
+    // filtro, un número que cambia al apretarlo no se podría volver a apretar.
     const resumen = useMemo(
         () => resumenDeCortes(sala
             ? conTramoTodos.filter((c) => String(c.branch_id) === String(sala))
@@ -136,22 +165,22 @@ const CortesView = () => {
     const filtrados = useMemo(() => conTramoTodos.filter((c) => {
         if (sala && String(c.branch_id) !== String(sala)) return false;
 
-        // El cierre del día (Z) no es un conteo y no se confirma: sólo aparece
-        // en «Todos», como contexto. Tuvo un chip propio y no se entendía qué
-        // hacía ahí — porque un cierre bajo «Sin confirmar» no significa nada.
-        if (c.tipo === 'Z' && tab !== 'todos') return false;
-
-        if (tab === 'pendientes'  && c.estado !== 'PENDIENTE') return false;
-        if (tab === 'confirmados' && c.estado !== 'CONFIRMADO') return false;
-        if (tab === 'descartados' && c.estado !== 'DESCARTADO') return false;
-        if (tab === 'diferencia'  && (c.tipo !== 'C' || severidad(c.tramo) === 'ok')) return false;
+        // El cierre del día (Z) no es un conteo, no se confirma y no tiene
+        // diferencia: sólo aparece como contexto, cuando no hay ningún recorte
+        // de estado ni de cifra. Bajo «Sin confirmar» no significaría nada.
+        if (c.tipo === 'Z') {
+            if (estado !== 'TODOS' || diferencia !== 'TODAS') return false;
+        } else {
+            if (estado !== 'TODOS' && c.estado !== estado) return false;
+            if (diferencia !== 'TODAS' && severidad(c.tramo) !== diferencia) return false;
+        }
 
         if (!busqueda.trim()) return true;
         return tokenMatch(busqueda,
             nombreSala[c.branch_id], c.empleado_texto, c.fecha, c.hora,
             String(c.total_declarado ?? ''), String(c.tramo ?? ''),
             String(c.erp_corte_id ?? ''), c.motivo_descarte);
-    }), [conTramoTodos, tab, busqueda, sala, nombreSala]);
+    }), [conTramoTodos, estado, diferencia, busqueda, sala, nombreSala]);
 
     const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
     const pagActual = Math.min(pagina, totalPaginas);
@@ -230,22 +259,30 @@ const CortesView = () => {
         [branches, cortes],
     );
 
-    const verRango = useCallback((desde, hasta) => {
-        setRango({ desde: desde || hoySV(), hasta: hasta || desde || hoySV() });
+    const HOY = `${hoySV()}|${hoySV()}`;
+    const verPeriodo = useCallback((v) => { setPeriodo(v || HOY); setPagina(1); }, [HOY]);
+    const esHoy = periodo === HOY;
+
+    // Las tarjetas del carril son el ATAJO de su ranura: apretar «Faltante»
+    // aplica el mismo filtro que elegirlo en la píldora, y volver a apretarla lo
+    // quita. Sin el segundo clic, una tarjeta que ya está aplicada es un botón
+    // que no hace nada.
+    const aplicarMetrica = useCallback((m) => {
         setPagina(1);
+        if (m.filtro === 'estado') setEstado((v) => (v === m.valor ? 'TODOS' : m.valor));
+        else setDiferencia((v) => (v === m.valor ? 'TODAS' : m.valor));
     }, []);
+    const metricaActiva = (m) => (m.filtro === 'estado' ? estado : diferencia) === m.valor;
 
-    const esHoy = rango.desde === hoySV() && rango.hasta === hoySV();
-    const limpiar = () => { setSala(''); verRango(hoySV(), hoySV()); setBusqueda(''); };
+    const limpiar = () => {
+        setSala(''); setPeriodo(HOY); setEstado('TODOS'); setDiferencia('TODAS');
+        setBusqueda(''); setPagina(1);
+    };
 
-    // La píldora del HEADER lleva pestañas y buscador; la del CUERPO, los
-    // filtros (§16.9). Las dos venían en `filtersContent`, o sea las dos en el
-    // header — que además es donde §17 dice que no se filtra.
+    // En el header queda SÓLO el buscador. Las cinco pestañas de estado se
+    // fueron a la píldora del cuerpo — ver la nota de `ESTADOS`.
     const filtersContent = (
         <ViewTabBar
-            tabs={TABS}
-            activeTab={tab}
-            onTabChange={(t) => { setTab(t); setPagina(1); }}
             searchValue={busqueda}
             onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
             placeholder="Buscar por sala, persona, hora o monto…"
@@ -266,33 +303,41 @@ const CortesView = () => {
                         {METRICAS.map((m) => (
                             <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                                 label={m.label} value={resumen[m.clave]} valueCls={m.valueCls}
+                                active={metricaActiva(m)} onClick={() => aplicarMetrica(m)}
                                 loading={cargando} />
                         ))}
                     </CarrilCards>
 
+                    {/* El orden de las ranuras es el de §17: ámbito → entidad →
+                        tiempo → estado. `MAX_RANURAS` son 3, así que la cuarta
+                        vive tras el `···` — y una ranura APLICADA nunca se
+                        esconde, que es lo que hace que el cupo no rompa la
+                        promesa de «el lugar único donde mirar qué se filtra». */}
                     <div className="flex justify-end min-w-0">
-                        <FilterBar onClear={limpiar} activeCount={[sala, !esHoy].filter(Boolean).length}>
+                        <FilterBar onClear={limpiar}
+                            activeCount={[sala, !esHoy, estado !== 'TODOS', diferencia !== 'TODAS'].filter(Boolean).length}>
                             <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                                 <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
                             </FilterBar.Section>
-                            {/* `months={1}`: el panel de dos meses son 596px y es
-                                el de pedir vacaciones, no el de filtrar (§14). */}
-                            <FilterBar.Section active={!esHoy} onClear={() => verRango(hoySV(), hoySV())} label="fecha">
-                                {/* 240 y no 200: dos fechas completas más la
-                                    píldora de días miden 232px medidos, y a 200
-                                    el rango salía «08/08/2026 →…». */}
-                                <div className="w-[240px]">
-                                    <RangeDatePicker
-                                        startDate={rango.desde}
-                                        endDate={rango.hasta}
-                                        onRangeChange={verRango}
-                                        months={1}
-                                        compact
-                                        shortcuts
-                                        placeholder="Elegir fechas"
-                                        label="cortes"
-                                    />
-                                </div>
+
+                            <FilterBar.Section active={!esHoy} onClear={() => verPeriodo(HOY)} label="fecha">
+                                <PeriodPicker value={periodo} onChange={verPeriodo} placeholder="Período…" />
+                            </FilterBar.Section>
+
+                            <FilterBar.Section active={estado !== 'TODOS'} onClear={() => setEstado('TODOS')} label="estado">
+                                <FilterBar.Opciones
+                                    label="Estado" icon={CheckCircle2}
+                                    value={estado} onChange={(v) => { setEstado(v || 'TODOS'); setPagina(1); }}
+                                    options={ESTADOS} ancho="165px"
+                                />
+                            </FilterBar.Section>
+
+                            <FilterBar.Section active={diferencia !== 'TODAS'} onClear={() => setDiferencia('TODAS')} label="diferencia">
+                                <FilterBar.Opciones
+                                    label="Diferencia" icon={Scale}
+                                    value={diferencia} onChange={(v) => { setDiferencia(v || 'TODAS'); setPagina(1); }}
+                                    options={DIFERENCIAS} ancho="165px"
+                                />
                             </FilterBar.Section>
                         </FilterBar>
                     </div>
@@ -311,12 +356,12 @@ const CortesView = () => {
                             subtitle={`Ningún corte coincide con «${busqueda}».`}
                             action={<Button variant="secondary" onClick={() => { setBusqueda(''); setPagina(1); }}>Limpiar la búsqueda</Button>}
                         />
-                    ) : tab === 'pendientes' && cortes.length ? (
+                    ) : estado === 'PENDIENTE' && cortes.length ? (
                         <EmptyState
                             compact icon={ShieldCheck} iconClass="text-success-text"
                             title="Todo confirmado"
                             subtitle="No queda ningún corte por revisar en estas fechas."
-                            action={<Button variant="secondary" onClick={() => setTab('todos')}>Ver todos</Button>}
+                            action={<Button variant="secondary" onClick={() => setEstado('TODOS')}>Ver todos</Button>}
                         />
                     ) : (
                         <EmptyState
@@ -324,7 +369,7 @@ const CortesView = () => {
                             title={esHoy ? 'Sin cortes hoy' : 'Sin cortes en estas fechas'}
                             subtitle="La vista arranca en el día de hoy. Amplía las fechas para ver más atrás."
                             action={<Button variant="secondary" icon={CalendarDays}
-                                onClick={() => verRango(correrDia(hoySV(), -6), hoySV())}>
+                                onClick={() => verPeriodo(`${correrDia(hoySV(), -6)}|${hoySV()}`)}>
                                 Ver los últimos 7 días
                             </Button>}
                         />

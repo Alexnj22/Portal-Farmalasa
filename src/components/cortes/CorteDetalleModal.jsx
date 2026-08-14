@@ -265,7 +265,15 @@ export default function CorteDetalleModal({
                             contaron $1,678.83 cuando en la caja hubo $1,602.88.
                             Lo levantó el usuario mirando la pantalla, que es la
                             única forma de ver un rótulo que miente sobre un
-                            número correcto. */}
+                            número correcto.
+
+                            Y el corte de caja va SIN `data-tono`: el marco de
+                            color repetía lo que ya dice la cifra —el número está
+                            en rojo o en ámbar, a cuerpo grande y arriba de
+                            todo—. Con el anillo además, el bloque más importante
+                            competía con los cuatro de «Qué revisar», y cuando
+                            todo resalta no resalta nada. El color se reserva
+                            para la cifra. */}
                         {esZ ? (
                             <div data-surface="card" className="p-4">
                                 <div className="flex items-baseline justify-between gap-3 flex-wrap">
@@ -293,9 +301,7 @@ export default function CorteDetalleModal({
                                 </div>
                             </div>
                         ) : (
-                        <div data-surface="card"
-                            data-tono={sev === 'ok' ? undefined : sev === 'falta' ? 'danger' : 'warning'}
-                            className="p-4">
+                        <div data-surface="card" className="p-4">
                             <div className="flex items-baseline justify-between gap-3 flex-wrap">
                                 <span className="text-caption text-content-2">
                                     {visible.tramo === visible.acumulado
@@ -325,15 +331,16 @@ export default function CorteDetalleModal({
                         </div>
                         )}
 
+                        {/* Nota al pie del desglose, no un aviso: explica los
+                            números de arriba y no cambia lo que hay que hacer.
+                            Mismo criterio que `notaDeCifra`. */}
                         {esZ && (
-                            <Notice variant="info">
-                                <span className="font-bold">La tarjeta y el crédito no pasan por la caja</span>
-                                <span className="block mt-0.5 font-normal text-content-2">
-                                    La tarjeta se cobra por el POS, y el crédito entra recién
-                                    cuando el cliente paga — ahí aparece como cobro de crédito en un
-                                    corte posterior. Los cortes del día sólo cuentan el efectivo.
-                                </span>
-                            </Notice>
+                            <p className="text-caption text-content-2 -mt-2 px-1">
+                                <span className="font-bold text-content">La tarjeta y el crédito no pasan por la caja.</span>{' '}
+                                La tarjeta se cobra por el POS, y el crédito entra recién cuando el
+                                cliente paga — ahí aparece como cobro de crédito en un corte
+                                posterior. Los cortes del día sólo cuentan el efectivo.
+                            </p>
                         )}
 
                         {/* El aviso de firma: sólo cuando hay algo que leer antes
@@ -402,13 +409,24 @@ export default function CorteDetalleModal({
                             </div>
                         )}
 
-                        {explicacion && (
-                            <Notice variant={explicacion.tono === 'danger' ? 'danger' : 'info'}
-                                icon={explicacion.tono === 'danger' ? AlertTriangle : undefined}>
+                        {/* Explicar de dónde sale la cifra NO es una alerta: es
+                            la nota al pie del número. Sólo cuando las dos cuentas
+                            del origen están en disputa —y hay plata sin explicar—
+                            cambia lo que se debe hacer, y ahí sí va como aviso.
+                            El caso informativo era una caja azul del mismo peso
+                            visual que un faltante, compitiendo con la cifra que
+                            venía a explicar. */}
+                        {explicacion && (explicacion.alerta ? (
+                            <Notice variant="danger" icon={AlertTriangle}>
                                 <span className="font-bold">{explicacion.titulo}</span>
                                 <span className="block mt-0.5 font-normal text-content-2">{explicacion.detalle}</span>
                             </Notice>
-                        )}
+                        ) : (
+                            <p className="text-caption text-content-2 -mt-2 px-1">
+                                <span className="font-bold text-content">{explicacion.titulo}.</span>{' '}
+                                {explicacion.detalle}
+                            </p>
+                        ))}
 
                         {sev === 'ok' && pendiente && !esZ && (
                             <Notice variant="success" icon={ShieldCheck}>
@@ -494,17 +512,36 @@ export default function CorteDetalleModal({
                             />
                         )}
 
+                        {/* ── Una LISTA, no cuatro alarmas ────────────────────
+                            Cada pista salía como su propio `Notice` de color, y
+                            eran hasta cuatro: rojo, ámbar, ámbar, azul. Pero
+                            ninguna es un veredicto —son hipótesis para ir a
+                            mirar, en orden de qué tan barato es descartarlas—, y
+                            pintadas así le disputaban la atención a la cifra y
+                            entre ellas.
+
+                            El orden ES la jerarquía y ya lo calcula
+                            `sugerenciasDeCorte` (el múltiplo exacto primero). El
+                            número delante lo dice sin gastar un color: se lee
+                            «empezá por la 1». */}
                         {sugerencias.length > 0 && (
-                            <div>
-                                <div className="text-caption font-bold uppercase tracking-wide text-content-3 mb-1.5">Qué revisar</div>
-                                <div className="space-y-2">
-                                    {sugerencias.map((s, i) => (
-                                        <Notice key={i} variant={s.tono === 'danger' ? 'danger' : s.tono === 'warning' ? 'warning' : 'info'}>
-                                            <span className="font-bold">{s.titulo}</span>
-                                            <span className="block mt-0.5 font-normal text-content-2">{s.detalle}</span>
-                                        </Notice>
-                                    ))}
+                            <div data-surface="card" className="p-3">
+                                <div className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">
+                                    Qué revisar
                                 </div>
+                                <ol className="space-y-2.5">
+                                    {sugerencias.map((s, i) => (
+                                        <li key={i} className="flex gap-2.5">
+                                            <span className="text-caption font-bold text-content-3 tabular-nums shrink-0 w-4 text-right mt-0.5">
+                                                {i + 1}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <div className="text-label font-bold text-content">{s.titulo}</div>
+                                                <div className="text-caption text-content-2">{s.detalle}</div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ol>
                             </div>
                         )}
 

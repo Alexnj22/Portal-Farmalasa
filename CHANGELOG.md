@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.608.1 — Menos color en el detalle del corte
+
+«Siento que hay demasiados colores» (usuario, sobre el detalle de un corte). Y
+tenía razón: la pantalla llegaba a tener **seis bloques de color compitiendo** —
+el marco de la cifra, el aviso de la explicación y hasta cuatro cajas en «Qué
+revisar», en rojo, ámbar, ámbar y azul. Cuando todo resalta, no resalta nada.
+
+La regla que quedó: **el color marca la cifra, y nada más.**
+
+- La tarjeta del monto pierde su anillo de color. El número ya está en rojo o
+  ámbar, a cuerpo grande y arriba de todo; el marco repetía lo mismo.
+- **«Qué revisar» pasa a ser una lista numerada, sin colores.** Ninguna de esas
+  pistas es un veredicto: son hipótesis para ir a mirar, ordenadas por cuán
+  barato es descartarlas. El orden ya era la jerarquía y el número lo dice sin
+  gastar un color.
+- Explicar de dónde sale una cifra **no es una alerta**: pasa a ser la nota al
+  pie del número. Sólo cuando las dos cuentas del origen están en disputa y hay
+  plata sin explicar —lo único que cambia lo que hay que hacer— sigue saliendo
+  como aviso.
+
+Por dentro, `sugerenciasDeCorte` deja de devolver un color y `notaDeCifra`
+devuelve `alerta: true|false`. La regla es que el cálculo entrega el HECHO y la
+vista elige cómo pintarlo — así el día que cambie la paleta no hay que tocar la
+aritmética.
+
+Y queda escrito **`docs/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md`**: de dónde
+sale cada número de un corte, por qué la línea «EFECTIVO» no es efectivo, cómo
+funciona la venta al crédito y por qué el cierre del día no es dinero contado.
+Hasta hoy vivía sólo en comentarios repartidos en cuatro archivos.
+
 ## v2.608.0 — La recepción se cuenta por hoja
 
 Quien recibe tiene la **hoja impresa** en la mano y va tachando renglones. La

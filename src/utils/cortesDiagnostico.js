@@ -255,7 +255,9 @@ export function diferenciaDelCorte(corte) {
  * daba por hecho que siempre se usaba la del ticket. Ahora se arma desde
  * `diferenciaDelCorte`, que es quien decide, así que no puede contradecirla.
  *
- * Devuelve `null` cuando no hay nada que explicar.
+ * Devuelve `null` cuando no hay nada que explicar, y `alerta` para distinguir
+ * la nota al pie del aviso de verdad. NO devuelve un color: la vista decide
+ * cómo pintarlo, y así el día que cambie la paleta no hay que tocar acá.
  */
 export function notaDeCifra(corte) {
     const c = contraste(corte);
@@ -269,7 +271,7 @@ export function notaDeCifra(corte) {
     // en la misma pantalla — el usuario lo leyó y no se entendía.
     if (c.porCobrosCredito && fuente === 'guardada') {
         return {
-            tono: 'info',
+            alerta: false,
             titulo: 'Se cortó antes de los cobros de crédito',
             detalle: `El comprobante suma ${cobros} de cobros que a esta hora todavía no entraban. Por eso vale ${conSignoTxt(c.difErp)} y no ${conSignoTxt(c.difTicket)}.`,
         };
@@ -277,13 +279,15 @@ export function notaDeCifra(corte) {
     if (c.porCobrosCredito) {
         const veces = Math.abs(c.vecesElCobro);
         return {
-            tono: 'info',
+            alerta: false,
             titulo: 'Los cobros de crédito se contaron de más',
             detalle: `La otra cifra dice ${conSignoTxt(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es una falla al sumarlos, no algo que pasó en la caja. Vale ${conSignoTxt(valor)}, que es lo que dice el comprobante.`,
         };
     }
     return {
-        tono: 'danger',
+        // La ÚNICA que cambia lo que hay que hacer: hay plata sin explicar y no
+        // conviene firmar. Por eso es la única que la vista pinta como aviso.
+        alerta: true,
         titulo: 'Revisa los movimientos del día',
         detalle: `Hay dos cifras (${conSignoTxt(c.difErp)} y ${conSignoTxt(c.difTicket)}) y ${formatMoney(Math.abs(c.brecha))} sin explicar. No conviene dar por bueno un faltante así.`,
     };
@@ -374,6 +378,14 @@ export const seConfirmaDeUnClic = (corte) => severidad(corte?.tramo) === 'ok';
  * —diferencia $13.80, con dos «POR ABONO A CREDITO» de $4.60 anotados: 3 × 4.60—
  * y es una hipótesis para confirmar en la sala, no un veredicto.
  *
+ * ── Sin `tono`: el ORDEN es la jerarquía ───────────────────────────────────
+ * Cada pista salía con su severidad y la pantalla la pintaba, así que un corte
+ * con cuatro pistas mostraba cuatro cajas de color —rojo, ámbar, ámbar, azul—
+ * que competían con la cifra y entre ellas. Ninguna es un veredicto: son
+ * hipótesis para ir a mirar. Se devuelven ORDENADAS por cuán barato es
+ * descartarlas y la vista las numera, que dice lo mismo sin gastar un color.
+ * Reportado por el usuario (2026-08-14): «siento que hay demasiados colores».
+ *
  * @param {object} corte      corte ya pasado por `conTramo`
  * @param {Array}  movimientos movimientos de caja de ESA sala en ese día
  */
@@ -416,7 +428,6 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     for (const m of multiplos.slice(0, 2)) {
         const concepto = m.concepto || 'sin concepto';
         out.push({
-            tono: 'danger',
             // El título dice qué HACER y el detalle por qué. En el múltiplo el
             // concepto entra en el título —es lo que hay que ir a buscar— pero
             // recortado: hay conceptos largos y ahí el título se parte en tres
@@ -434,7 +445,6 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     const tarjeta = num(corte.tk_tarjeta);
     if (tarjeta != null && tarjeta > 0) {
         out.push({
-            tono: 'warning',
             titulo: 'Suma los vouchers de tarjeta',
             detalle: `Se anotaron ${formatMoney(tarjeta)}. Si los vouchers suman menos, ahí está el faltante.`,
         });
@@ -445,7 +455,6 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     if (salidas.length) {
         const total = salidas.reduce((a, m) => a + (num(m.monto) ?? 0), 0);
         out.push({
-            tono: 'warning',
             titulo: salidas.length === 1
                 ? `Busca el vale por ${formatMoney(total)}`
                 : `Busca los ${salidas.length} vales por ${formatMoney(total)}`,
@@ -457,7 +466,6 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     const cobros = num(corte.tk_cobros_credito);
     if (cobros != null && cobros > 0) {
         out.push({
-            tono: 'info',
             titulo: `Revisa los ${formatMoney(cobros)} de cobros de crédito`,
             detalle: 'Es dinero que entra sin venta. Si no llegó a la caja, falta.',
         });
@@ -468,7 +476,6 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     if (falta && entradas.length >= 5) {
         const total = entradas.reduce((a, m) => a + (num(m.monto) ?? 0), 0);
         out.push({
-            tono: 'info',
             titulo: `Revisa los ${entradas.length} ingresos de caja por ${formatMoney(total)}`,
             detalle: 'Un recibo cobrado y no anotado se ve igual que un faltante.',
         });
@@ -478,7 +485,6 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     const devol = num(corte.tk_devoluciones);
     if (devol != null && devol > 0) {
         out.push({
-            tono: 'info',
             titulo: `Revisa las devoluciones por ${formatMoney(devol)}`,
             detalle: 'Ese dinero tuvo que salir de esta caja y quedar documentado.',
         });

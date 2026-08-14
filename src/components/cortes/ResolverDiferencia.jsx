@@ -340,7 +340,7 @@ export default function ResolverDiferencia({
             )}
 
             {via !== 'JUSTIFICA' && (
-                <Notice variant="warning" icon={AlertTriangle}>
+                <Notice variant="info">
                     <span className="font-bold">Al guardar sale el comprobante para firmar</span>
                     <span className="block mt-0.5 font-normal text-content-2">
                         Anexalo al corte. Después hay que registrar {falta ? 'el ingreso' : 'el vale'} en

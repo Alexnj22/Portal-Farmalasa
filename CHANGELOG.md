@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.607.2 — La tarjeta se cobra por el POS
+
+Cambio de palabra, pedido del usuario: donde el aviso del cierre decía
+«datáfono» ahora dice **POS**, que es como se le llama en la sala. Toca el texto
+en pantalla y los comentarios que lo repetían; no cambia ningún número.
+
 ## v2.607.1 — El cierre del día dice cómo se pagó
 
 Lo levantó el usuario abriendo el cierre de La Popular del 13-ago: **el detalle
@@ -45,7 +51,7 @@ después de su último conteo, que es lo esperado. Los cinco casos quedaron
 anclados en la prueba.
 
 Y explica por qué, que es lo que hacía falta entender: la tarjeta se cobra por
-el datáfono y el crédito entra recién cuando el cliente paga —ahí aparece como
+el POS y el crédito entra recién cuando el cliente paga —ahí aparece como
 cobro de crédito en un corte posterior—. Los cortes del día sólo cuentan el
 efectivo.
 

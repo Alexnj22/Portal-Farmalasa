@@ -329,7 +329,7 @@ export default function CorteDetalleModal({
                             <Notice variant="info">
                                 <span className="font-bold">La tarjeta y el crédito no pasan por la caja</span>
                                 <span className="block mt-0.5 font-normal text-content-2">
-                                    La tarjeta se cobra por el datáfono, y el crédito entra recién
+                                    La tarjeta se cobra por el POS, y el crédito entra recién
                                     cuando el cliente paga — ahí aparece como cobro de crédito en un
                                     corte posterior. Los cortes del día sólo cuentan el efectivo.
                                 </span>

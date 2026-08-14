@@ -304,7 +304,7 @@ export function notaDeCifra(corte) {
  * vendiendo después de su último conteo, que es lo esperado).
  *
  * Ni la tarjeta ni el crédito entran a la caja: la tarjeta se cobra por el
- * datáfono y el crédito recién entra cuando el cliente paga, y ahí aparece como
+ * POS y el crédito recién entra cuando el cliente paga, y ahí aparece como
  * cobro de crédito en un corte posterior.
  *
  * No hay transferencias: de los 42 tiquetes capturados al 2026-08-14, 36

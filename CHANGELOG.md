@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.608.0 — La recepción se cuenta por hoja
+
+Quien recibe tiene la **hoja impresa** en la mano y va tachando renglones. La
+pantalla, en cambio, pedía contar **por caja**, y las dos cosas no coinciden: en
+el pedido #114 de La Popular la caja 3 obliga a contar dos hojas a la vez, y la
+hoja 1 viene repartida entre las cajas 1, 2 y 3. Contando por hoja, cada tanda
+de conteo termina donde termina el papel.
+
+- **La lista es de hojas**, cada una con su primer laboratorio —«H1 · 1-NESTLE»—
+  que es como se reconoce de un vistazo, cuántos productos trae y en qué cajas
+  buscarla. Lo contado se guarda en `hojas_recibidas`, columna nueva: en
+  `cajas_recibidas` se anota qué cajas llegaron bien, que sigue siendo otra
+  pregunta.
+- **Una caja dañada o que no llegó pone en alerta a sus hojas**, y esas hojas
+  pierden el «Todo OK»: hay que abrirlas y revisar producto por producto, que
+  es justo lo que la caja con problema pone en duda. El «Confirmar todo OK»
+  general las saltea y lo dice.
+- **«Confirmar todo OK» se mudó al final**, después de las cajas especiales.
+  Confirmaba las dos cosas desde siempre, pero estando en medio parecía cubrir
+  sólo lo que tenía encima.
+- **Buscar un producto para recibirlo ya, desde la primera pantalla.** Se podía
+  desde v2.569.0, pero era un ícono verde al final del renglón: había que estar
+  adentro de la hoja correcta para verlo, y quien necesita un producto
+  justamente no sabe en cuál cayó. Ahora se busca por nombre, dice en qué hoja
+  está y se recibe de ahí — entra al sistema en el momento y se puede facturar.
+- **Guarda para los despachos con el mapa a medias**: si algún renglón no cae en
+  ninguna hoja, se cuenta el pedido entero como siempre. Antes que contar por
+  hoja y dejar un producto fuera de toda pantalla.
+
+Las cajas especiales no cambian: viajan aparte y se confirman una por una.
+
 ## v2.607.2 — La tarjeta se cobra por el POS
 
 Cambio de palabra, pedido del usuario: donde el aviso del cierre decía

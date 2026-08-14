@@ -9,7 +9,7 @@ import { signPhotosDeep } from '../../utils/storageFiles';
 import useCapaFlotante from '../../utils/capaFlotante';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
-    Plus, Trash2, PackagePlus, Check, ChevronLeft, Box, Truck, Star,
+    Plus, Trash2, PackagePlus, Check, ChevronLeft, FileText, Truck, Star,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -55,6 +55,52 @@ function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
     const LABELS = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Unidad', caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja', unidad: 'Unidad' };
     const label = LABELS[dispatch_tipo] ?? dispatch_tipo ?? 'Unidad';
     return f > 1 ? `${label} ×${f}` : label;
+}
+
+/**
+ * «Necesito ESE producto ya» — buscarlo en todo el despacho y recibirlo solo,
+ * sin contar la hoja entera.
+ *
+ * Existía desde v2.569.0 pero como un ícono verde al final del renglón, o sea
+ * que había que estar ADENTRO de la hoja correcta para verlo — y quien lo
+ * necesita justamente no sabe en cuál cayó. Por eso vive en la primera pantalla
+ * y dice en qué hoja está: la búsqueda contesta la pregunta que impedía usarlo.
+ */
+function SueltoRapido({ rows, hojaDe, sueltosOk, saving, onRecibir }) {
+    const [q, setQ] = useState('');
+    const term = q.trim();
+    const hits = term.length < 2 ? [] : rows
+        .filter(r => !sueltosOk.has(r.id) && r.status !== 'recibido')
+        .filter(r => tokenMatch(term, r.products?.nombre))
+        .slice(0, 4);
+
+    return (
+        <div>
+            <SearchInput
+                value={q}
+                onChange={setQ}
+                placeholder="¿Necesitas un producto ya? Búscalo…"
+                ariaLabel="Buscar un producto para recibirlo ahora"
+            />
+            {term.length >= 2 && hits.length === 0 && (
+                <p className="text-label text-content-3 mt-2 px-1">Sin resultados entre lo que llegó.</p>
+            )}
+            {hits.map(r => {
+                const hoja = hojaDe(r.id);
+                return (
+                    <div key={r.id} className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-surface-card">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-body-sm font-semibold text-content-2 leading-tight truncate">{r.products?.nombre}</p>
+                            <p className="text-micro text-content-3 mt-0.5">
+                                {hoja ? `Hoja ${hoja} · ` : ''}{enviadoDe(r)} enviad{enviadoDe(r) === 1 ? 'a' : 'as'}
+                            </p>
+                        </div>
+                        <Button tone="success" size="sm" icon={PackageCheck} disabled={saving} onClick={() => onRecibir(r)}>Recibir</Button>
+                    </div>
+                );
+            })}
+        </div>
+    );
 }
 
 /**
@@ -112,23 +158,35 @@ async function fetchPresOpts(productId) {
 
 export default function RecepcionModal({
     open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed,
-    cajaDanada   = [],   // box numbers that arrived damaged (items still present)
-    cajaMap      = {},   // {"1":[1,2],"2":[3,4]} → box → page numbers
-    paginaItems  = {},   // {"1":[itemId,...],...} → page → pedido_item IDs
-    cajasRecibidas: initCajasRecibidas = [], // already confirmed box numbers (from DB)
-    faltaCajas   = [],   // box numbers physically missing (items excluded)
+    cajaDanada   = [],   // cajas que llegaron dañadas (sus productos sí están)
+    cajaMap      = {},   // {"1":[1,2],"2":[3,4]} → caja → hojas que trae adentro
+    paginaItems  = {},   // {"1":[itemId,...],...} → hoja → pedido_item IDs
+    paginas      = [],   // [{ ids, firstLab, firstItem, itemCount }] → el rótulo de cada hoja
+    hojasRecibidas: initHojasRecibidas = [], // hojas ya contadas (de la base)
+    faltaCajas   = [],   // cajas que no llegaron (sus productos quedan excluidos)
     hasFaltaItems = false, // hay items falta_caja:true en otros grupos (electrolit/especial/caja pendiente)
     especialesLlegadas = {}, // { 'E1': 'ok'|'danada'|'faltante', ... }
 }) {
     const montadoParaSalida = useMontadoParaSalida(open);
     const { user } = useAuth();
 
-    // Whether we have enough data to do per-box reception
-    const hasCajaMap = Object.keys(cajaMap).length > 0 && Object.keys(paginaItems).length > 0;
+    // ¿Tenemos con qué contar por hoja? `pagina_items` es el mapa hoja→productos
+    // y lo escribe bodega al finalizar; los despachos viejos no lo tienen y se
+    // cuentan enteros, como siempre.
+    //
+    // Y no alcanza con que exista: tiene que cubrir TODO. Si un renglón no cae
+    // en ninguna hoja —pasa en los despachos con el mapa a medias— contar por
+    // hoja lo dejaría fuera de toda pantalla, sin que nadie lo note. Antes que
+    // perder un producto de vista, se cuenta el pedido entero como siempre.
+    const hayHojas = useMemo(() => {
+        if (Object.keys(paginaItems).length === 0) return false;
+        const enHojas = new Set(Object.values(paginaItems).flat());
+        return rows.every(r => enHojas.has(r.id) || r.caja_especial === true);
+    }, [paginaItems, rows]);
 
     // ── Screen ─────────────────────────────────────────────────────────────────
     const [screen,              setScreen]              = useState('cajas');
-    const [selectedCaja,        setSelectedCaja]        = useState(null);
+    const [selectedHoja,        setSelectedHoja]        = useState(null);
     // Los que se recibieron de a uno, para pintarlos sin recargar todo.
     const [sueltosOk,           setSueltosOk]           = useState(() => new Set());
     const [selectedEspecial,    setSelectedEspecial]    = useState(null); // { label, item }
@@ -210,55 +268,100 @@ export default function RecepcionModal({
         }));
     }, [rows]);
 
-    // ── Per-box derived data ────────────────────────────────────────────────────
-    const itemIdsByCaja = useMemo(() => {
-        if (!hasCajaMap) return {};
+    // ── Hojas: la unidad de conteo ──────────────────────────────────────────────
+    // `paginaItems` dice qué productos van en cada hoja, y es el mismo reparto
+    // que se imprimió en papel. Los renglones que no llegaron (`falta_caja`) ya
+    // vienen filtrados de `rows`, así que una hoja partida por una caja que no
+    // llegó aparece acá con los que sí se pueden contar.
+    const idsPresentes = useMemo(() => new Set(rows.map(r => r.id)), [rows]);
+
+    const itemIdsByHoja = useMemo(() => {
+        if (!hayHojas) return {};
         const result = {};
-        Object.entries(cajaMap).forEach(([boxStr, pages]) => {
-            result[boxStr] = new Set(pages.flatMap(p => paginaItems[String(p)] ?? []));
+        Object.entries(paginaItems).forEach(([hojaStr, ids]) => {
+            result[hojaStr] = new Set((ids ?? []).filter(id => idsPresentes.has(id)));
         });
         return result;
-    }, [cajaMap, paginaItems, hasCajaMap]);
+    }, [paginaItems, hayHojas, idsPresentes]);
 
-    const allBoxNums = useMemo(() =>
-        Object.keys(cajaMap).map(Number).sort((a, b) => a - b),
-    [cajaMap]);
+    const allHojaNums = useMemo(() =>
+        Object.keys(paginaItems).map(Number).sort((a, b) => a - b),
+    [paginaItems]);
 
-    // Combined received: DB init + locally confirmed this session
+    // El rótulo de cada hoja: su primer laboratorio, que es como quien recibe la
+    // reconoce en el papel. Sale de `paginas`, en el mismo orden en que se
+    // numeraron (índice + 1 = número de hoja).
+    const hojaLabel = useMemo(() => {
+        const m = {};
+        (paginas ?? []).forEach((p, i) => { m[i + 1] = p?.firstLab || p?.firstItem || ''; });
+        return m;
+    }, [paginas]);
+
+    // En qué hoja cayó un renglón — para que el buscador de «lo necesito ya»
+    // pueda decirlo, que es lo que uno no sabe cuando lo busca.
+    const hojaDeItem = useCallback((itemId) => {
+        for (const [hojaStr, ids] of Object.entries(itemIdsByHoja)) {
+            if (ids.has(itemId)) return Number(hojaStr);
+        }
+        return null;
+    }, [itemIdsByHoja]);
+
+    // Qué cajas trae cada hoja — el inverso de `cajaMap`. Sirve para dos cosas:
+    // decir en qué cajas buscarla, y saber si alguna de ésas llegó dañada o no
+    // llegó, que es lo que pone la hoja en alerta.
+    const cajasDeHoja = useMemo(() => {
+        const m = {};
+        Object.entries(cajaMap).forEach(([cajaStr, hojas]) => {
+            (hojas ?? []).forEach(h => { (m[h] ??= []).push(Number(cajaStr)); });
+        });
+        Object.values(m).forEach(v => v.sort((a, b) => a - b));
+        return m;
+    }, [cajaMap]);
+
+    // Regla del usuario: una caja dañada o faltante ALERTA a las hojas que traía
+    // y les prohíbe el «Todo OK». Esos renglones hay que mirarlos de a uno.
+    const hojasAlertadas = useMemo(() => {
+        const malas = new Set([...cajaDanada, ...faltaCajas]);
+        return new Set(allHojaNums.filter(h => (cajasDeHoja[h] ?? []).some(c => malas.has(c))));
+    }, [allHojaNums, cajasDeHoja, cajaDanada, faltaCajas]);
+
+    // Contadas: las de la base + las de esta sesión.
     const allRecibidas = useMemo(() => {
-        const s = new Set([...initCajasRecibidas, ...localRec]);
+        const s = new Set([...initHojasRecibidas, ...localRec]);
         return [...s].sort((a, b) => a - b);
-    }, [initCajasRecibidas, localRec]);
+    }, [initHojasRecibidas, localRec]);
 
-    const accessibleBoxNums = useMemo(() =>
-        allBoxNums.filter(n => !faltaCajas.includes(n)),
-    [allBoxNums, faltaCajas]);
+    // Una hoja sin ningún renglón presente no se puede contar: todos sus
+    // productos viajaban en una caja que no llegó.
+    const accessibleHojaNums = useMemo(() =>
+        allHojaNums.filter(n => (itemIdsByHoja[String(n)]?.size ?? 0) > 0),
+    [allHojaNums, itemIdsByHoja]);
 
     const accessibleEspeciales = especialItems.filter(e => !e.item.falta_caja);
     const allEspecialesDone = accessibleEspeciales.every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
-    const hasAnythingToReceive = accessibleBoxNums.length > 0 || accessibleEspeciales.length > 0;
+    const hasAnythingToReceive = accessibleHojaNums.length > 0 || accessibleEspeciales.length > 0;
     const allAccessibleDone = hasAnythingToReceive
-        && (accessibleBoxNums.length === 0 || accessibleBoxNums.every(n => allRecibidas.includes(n)))
+        && (accessibleHojaNums.length === 0 || accessibleHojaNums.every(n => allRecibidas.includes(n)))
         && allEspecialesDone;
 
-    // Qué hay abierto: una caja especial, una caja normal, o el pedido entero.
+    // Qué hay abierto: una caja especial, una hoja, o el pedido entero.
     // Una sola vez y en una función probada — ver `alcanceDeRecepcion`.
-    const alcance = alcanceDeRecepcion({ especial: selectedEspecial, caja: selectedCaja, hasCajaMap });
+    const alcance = alcanceDeRecepcion({ especial: selectedEspecial, hoja: selectedHoja, hayHojas });
 
-    // Rows for the currently selected box (or especial, or all if no caja map)
-    const selectedCajaRows = useMemo(() => {
+    // Los renglones de lo que esté abierto: la caja especial, la hoja, o todo.
+    const filasAbiertas = useMemo(() => {
         if (selectedEspecial !== null) return [selectedEspecial.item];
-        if (selectedCaja === null || !hasCajaMap) return sortedRows;
-        const ids = itemIdsByCaja[String(selectedCaja)];
+        if (selectedHoja === null || !hayHojas) return sortedRows;
+        const ids = itemIdsByHoja[String(selectedHoja)];
         if (!ids) return sortedRows;
         return sortedRows.filter(r => ids.has(r.id));
-    }, [selectedCaja, selectedEspecial, itemIdsByCaja, sortedRows, hasCajaMap]);
+    }, [selectedHoja, selectedEspecial, itemIdsByHoja, sortedRows, hayHojas]);
 
     // ── Init on open ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!open) return;
-        setScreen(hasCajaMap ? 'cajas' : 'items');
-        setSelectedCaja(null);
+        setScreen(hayHojas ? 'cajas' : 'items');
+        setSelectedHoja(null);
         setSelectedEspecial(null);
         setConfirmedEspecialIds(new Set());
         setLocalRec([]);
@@ -450,7 +553,7 @@ export default function RecepcionModal({
         setConfirmedEspecialIds(newConfirmedIds);
         const espDone = especialItems.filter(e => !e.item.falta_caja)
             .every(e => newConfirmedIds.has(e.item.id) || e.item.status === 'recibido');
-        const regDone = accessibleBoxNums.length === 0 || accessibleBoxNums.every(n => allRecibidas.includes(n));
+        const regDone = accessibleHojaNums.length === 0 || accessibleHojaNums.every(n => allRecibidas.includes(n));
         useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
             sucursal_id: sucursalId, especial: selectedEspecial.label, items_count: itemsCount,
             ...(todoOk ? { todo_ok: true } : {}),
@@ -462,23 +565,23 @@ export default function RecepcionModal({
         } else {
             setScreen('cajas'); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false);
         }
-    }, [confirmedEspecialIds, selectedEspecial, especialItems, accessibleBoxNums, allRecibidas,
+    }, [confirmedEspecialIds, selectedEspecial, especialItems, accessibleHojaNums, allRecibidas,
         pedido, sucursalId, saveExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems]);
 
-    const cerrarCaja = useCallback(async ({ itemsCount, hasDiff, todoOk = false }) => {
-        const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
-        // Sin este chequeo la caja se pintaba recibida en pantalla y reaparecía
+    const cerrarHoja = useCallback(async ({ itemsCount, hasDiff, todoOk = false }) => {
+        const newRec = [...new Set([...allRecibidas, selectedHoja])].sort((a, b) => a - b);
+        // Sin este chequeo la hoja se pintaba contada en pantalla y reaparecía
         // pendiente al recargar: el UPDATE lo frenaba RLS y no devolvía error.
         // Es lo que pasó el 2026-08-14 en La Popular.
-        const { error } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+        const { error } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { hojas_recibidas: newRec });
         if (error) throw error;
-        setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
+        setLocalRec(prev => [...new Set([...prev, selectedHoja])].sort((a, b) => a - b));
 
-        const regDone = accessibleBoxNums.every(n => newRec.includes(n));
+        const regDone = accessibleHojaNums.every(n => newRec.includes(n));
         const espDone = especialItems.filter(e => !e.item.falta_caja)
             .every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
-        useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
-            sucursal_id: sucursalId, caja: selectedCaja, items_count: itemsCount,
+        useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
+            sucursal_id: sucursalId, hoja: selectedHoja, items_count: itemsCount,
             ...(todoOk ? { todo_ok: true } : {}),
         });
         if (regDone && espDone) {
@@ -489,18 +592,18 @@ export default function RecepcionModal({
             onConfirmed?.({ hasDiff, allDone: true });
             onClose();
         } else {
-            // More boxes / especiales pending — back to picker
-            setScreen('cajas'); setSelectedCaja(null); setProdSearch(''); setShowSearch(false);
+            // Quedan hojas o especiales — de vuelta a la lista
+            setScreen('cajas'); setSelectedHoja(null); setProdSearch(''); setShowSearch(false);
         }
-    }, [allRecibidas, selectedCaja, pedido, sucursalId, accessibleBoxNums, especialItems,
+    }, [allRecibidas, selectedHoja, pedido, sucursalId, accessibleHojaNums, especialItems,
         confirmedEspecialIds, saveExtras, extras, onConfirmed, onClose]);
 
     // ── Confirm a single box (or all if no caja map) ────────────────────────────
     const handleConfirmarCaja = useCallback(async () => {
-        // `selectedCajaRows` YA resuelve los tres alcances (especial, caja,
+        // `filasAbiertas` YA resuelve los tres alcances (especial, caja,
         // pedido entero), así que repetir la condición acá sólo daba lugar a que
         // se escribiera distinta en cada sitio. Y así se escribió.
-        const rowsToSave = selectedCajaRows;
+        const rowsToSave = filasAbiertas;
 
         const invalidExtra = extras.find(e => e.fQty === 0);
         if (invalidExtra) {
@@ -549,8 +652,8 @@ export default function RecepcionModal({
 
             if (alcance === 'especial') {
                 await cerrarEspecial({ itemsCount: p_items.length, hasDiff: newAnyDiff });
-            } else if (alcance === 'caja') {
-                await cerrarCaja({ itemsCount: p_items.length, hasDiff: newAnyDiff });
+            } else if (alcance === 'hoja') {
+                await cerrarHoja({ itemsCount: p_items.length, hasDiff: newAnyDiff });
             } else {
                 // No caja map — single confirm, original behavior
                 await saveExtras();
@@ -566,7 +669,7 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [
-        alcance, selectedCajaRows, extras, buildPItems, cerrarEspecial, cerrarCaja,
+        alcance, filasAbiertas, extras, buildPItems, cerrarEspecial, cerrarHoja,
         pedido, sucursalId, user, anyHasDiff, saveExtras, onConfirmed, onClose,
     ]);
 
@@ -578,7 +681,7 @@ export default function RecepcionModal({
         // Acotado a lo que hay ABIERTO. Preguntaba sólo por el número de caja,
         // que dentro de una caja especial es `null`: desde una especial este
         // botón daba por recibido el pedido entero.
-        const rowsToSave = selectedCajaRows;
+        const rowsToSave = filasAbiertas;
         setSaving(true); setSaveError(null);
 
         // Payload con cantidades exactas asignadas, sin diferencias
@@ -599,8 +702,8 @@ export default function RecepcionModal({
 
             if (alcance === 'especial') {
                 await cerrarEspecial({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
-            } else if (alcance === 'caja') {
-                await cerrarCaja({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
+            } else if (alcance === 'hoja') {
+                await cerrarHoja({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
             } else {
                 await saveExtras();
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, { sucursal_id: sucursalId, items_count: p_items.length, todo_ok: true });
@@ -612,21 +715,26 @@ export default function RecepcionModal({
         } finally {
             setSaving(false);
         }
-    }, [alcance, selectedCajaRows, pedido, sucursalId, user, anyHasDiff,
-        cerrarEspecial, cerrarCaja, saveExtras, onConfirmed, onClose]);
+    }, [alcance, filasAbiertas, pedido, sucursalId, user, anyHasDiff,
+        cerrarEspecial, cerrarHoja, saveExtras, onConfirmed, onClose]);
 
-    // ── Confirmar TODAS las cajas accesibles de una vez (Todo OK) ──────────────
+    // ── Confirmar de una vez todo lo que se puede (Todo OK) ────────────────────
     const handleConfirmarTodo = useCallback(async () => {
         setSaving(true); setSaveError(null);
         try {
             let newRec = [...allRecibidas];
-            for (const boxNum of accessibleBoxNums) {
-                if (newRec.includes(boxNum)) continue;
-                const ids = itemIdsByCaja[String(boxNum)];
+            for (const hojaNum of accessibleHojaNums) {
+                if (newRec.includes(hojaNum)) continue;
+                // Regla del usuario: una hoja que venía en una caja dañada o que
+                // no llegó NO se confirma en bloque. Hay que abrirla y mirar sus
+                // renglones de a uno, que es justo lo que la caja con problema
+                // pone en duda.
+                if (hojasAlertadas.has(hojaNum)) continue;
+                const ids = itemIdsByHoja[String(hojaNum)];
                 if (!ids) continue;
-                const boxRows = sortedRows.filter(r => ids.has(r.id));
-                if (!boxRows.length) continue;
-                const p_items = boxRows.map(r => {
+                const hojaRows = sortedRows.filter(r => ids.has(r.id));
+                if (!hojaRows.length) continue;
+                const p_items = hojaRows.map(r => {
                     const erpFactor  = Number(r.factor) || 1;
                     const dispFactor = Number(r.dispatch_factor) || erpFactor;
                     const rawQty     = Math.round(toDispatch(enviadoDe(r), erpFactor, dispFactor) * dispFactor / erpFactor);
@@ -637,14 +745,14 @@ export default function RecepcionModal({
                     p_items, p_received_by: user?.id ?? null,
                 });
                 if (error) throw error;
-                newRec = [...new Set([...newRec, boxNum])].sort((a, b) => a - b);
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
-                    sucursal_id: sucursalId, caja: boxNum, items_count: p_items.length, todo_ok: true,
+                newRec = [...new Set([...newRec, hojaNum])].sort((a, b) => a - b);
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
+                    sucursal_id: sucursalId, hoja: hojaNum, items_count: p_items.length, todo_ok: true,
                 });
             }
-            const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+            const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { hojas_recibidas: newRec });
             if (recErr) throw recErr;
-            setLocalRec(newRec.filter(n => !initCajasRecibidas.includes(n)));
+            setLocalRec(newRec.filter(n => !initHojasRecibidas.includes(n)));
 
             // También confirmar cajas especiales accesibles (no faltantes)
             const newConfirmedEspIds = new Set([...confirmedEspecialIds]);
@@ -671,16 +779,17 @@ export default function RecepcionModal({
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                 sucursal_id: sucursalId, extras_count: extras.length, todo_ok: true, batch: true,
             });
-            // Solo marcar allDone si no hay cajas ni items pendientes de reenvío
-            onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
-            onClose();
+            // Sólo se da por terminado si no quedó nada por revisar ni en reenvío
+            const quedaPorRevisar = accessibleHojaNums.some(n => hojasAlertadas.has(n) && !newRec.includes(n));
+            onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems && !quedaPorRevisar });
+            if (!quedaPorRevisar) onClose();
         } catch (e) {
             setSaveError(mensajeAmigable(e));
         } finally {
             setSaving(false);
         }
-    }, [accessibleBoxNums, allRecibidas, itemIdsByCaja, sortedRows, pedido, sucursalId, user,
-        anyHasDiff, initCajasRecibidas, saveExtras, extras, onConfirmed, onClose,
+    }, [accessibleHojaNums, allRecibidas, itemIdsByHoja, sortedRows, pedido, sucursalId, user,
+        anyHasDiff, initHojasRecibidas, saveExtras, extras, onConfirmed, onClose, hojasAlertadas,
         especialItems, confirmedEspecialIds, faltaCajas.length, hasFaltaItems]);
 
     // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
@@ -709,12 +818,12 @@ export default function RecepcionModal({
 
     // Visible rows for the items grid
     //
-    // Era `selectedCaja !== null ? selectedCajaRows : sortedRows`, y adentro de
-    // una caja especial `selectedCaja` es null: la pantalla listaba los
+    // Era `selectedHoja !== null ? filasAbiertas : sortedRows`, y adentro de
+    // una caja especial `selectedHoja` es null: la pantalla listaba los
     // productos de las cajas NORMALES bajo el título de la especial. Visto en La
     // Popular el 2026-08-14 («E3 — Caja especial» con tres leches adentro).
-    // `selectedCajaRows` ya resuelve los tres alcances; no hay nada que decidir.
-    const gridRows = selectedCajaRows;
+    // `filasAbiertas` ya resuelve los tres alcances; no hay nada que decidir.
+    const gridRows = filasAbiertas;
     const visibleRows = prodSearch.trim()
         ? gridRows.filter(r => tokenMatch(prodSearch, r.products?.nombre))
         : gridRows;
@@ -722,8 +831,8 @@ export default function RecepcionModal({
     // ════════════════════════════════════════════════════════════════
     // SCREEN: CAJAS — box picker
     // ════════════════════════════════════════════════════════════════
-    if (screen === 'cajas' && hasCajaMap) {
-        const receivedAccessible = accessibleBoxNums.filter(n => allRecibidas.includes(n)).length;
+    if (screen === 'cajas' && hayHojas) {
+        const receivedAccessible = accessibleHojaNums.filter(n => allRecibidas.includes(n)).length;
 
         return (
             <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md" className="max-h-[90vh]">
@@ -732,12 +841,12 @@ export default function RecepcionModal({
                         <div className="flex-1 min-w-0">
                             <h3 className="text-subtitle font-bold text-content leading-snug">Confirmar recepción</h3>
                             <p className="text-label text-content-3 mt-0.5">
-                                {sucursalNombre} · {rows.length} prod. · {allBoxNums.length} caja{allBoxNums.length !== 1 ? 's' : ''}
+                                {sucursalNombre} · {rows.length} prod. · {allHojaNums.length} hoja{allHojaNums.length !== 1 ? 's' : ''}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                             <Badge variant={allAccessibleDone ? 'success' : 'warning'} uppercase={false}>
-                                {receivedAccessible}/{accessibleBoxNums.length} recibidas
+                                {receivedAccessible}/{accessibleHojaNums.length} contadas
                             </Badge>
                             <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={onClose} />
                         </div>
@@ -745,80 +854,88 @@ export default function RecepcionModal({
                 </PedidoModal.Header>
 
                 <PedidoModal.Body className="px-4 py-4 scrollbar-hide">
-                    <div className={`grid gap-2 ${allBoxNums.length <= 4 ? 'grid-cols-2' : allBoxNums.length <= 9 ? 'grid-cols-3' : 'grid-cols-4'}`}>
-                        {allBoxNums.map(boxNum => {
-                            const isRecibida = allRecibidas.includes(boxNum);
-                            const isFalta    = faltaCajas.includes(boxNum);
-                            const isDanada   = cajaDanada.includes(boxNum);
-                            const itemCount  = itemIdsByCaja[String(boxNum)]?.size ?? 0;
-                            const pages      = cajaMap[String(boxNum)] ?? [];
-                            const pageHint   = pages.length === 0 ? null
-                                : pages.length === 1 ? `pág. ${pages[0]}`
-                                : `págs. ${pages[0]}–${pages[pages.length - 1]}`;
+                    {/* Un producto YA, sin contar la hoja entera. Va acá arriba y no
+                        escondido adentro de una hoja, porque quien lo necesita no
+                        sabe en cuál cayó — que es justo lo que esta búsqueda le
+                        contesta. */}
+                    <SueltoRapido
+                        rows={sortedRows}
+                        hojaDe={hojaDeItem}
+                        sueltosOk={sueltosOk}
+                        saving={saving}
+                        onRecibir={handleRecibirSolo}
+                    />
+
+                    <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2 mt-4">Hojas del despacho</p>
+                    <div className="flex flex-col gap-1.5">
+                        {allHojaNums.map(hojaNum => {
+                            const isContada  = allRecibidas.includes(hojaNum);
+                            const itemCount  = itemIdsByHoja[String(hojaNum)]?.size ?? 0;
+                            const sinNada    = itemCount === 0;   // todo su contenido está en reenvío
+                            const isAlertada = hojasAlertadas.has(hojaNum);
+                            const cajas      = cajasDeHoja[hojaNum] ?? [];
+                            const cajaHint   = cajas.length === 0 ? null
+                                : cajas.length === 1 ? `caja ${cajas[0]}`
+                                : `cajas ${cajas[0]}–${cajas[cajas.length - 1]}`;
 
                             // SIN `aria-pressed` a propósito: no es un interruptor. Abre la
-                            // pantalla de ítems de esa caja (`setScreen`), o sea que es una
-                            // ACCIÓN de navegación. El estado recibida/faltante ya lo dice
-                            // `disabled` y el texto de la tarjeta.
+                            // pantalla de ítems de esa hoja (`setScreen`), o sea que es una
+                            // ACCIÓN de navegación. El estado ya lo dicen `disabled` y el
+                            // texto de la fila.
                             return (
-                                <button key={boxNum}
-                                    disabled={isRecibida || isFalta}
-                                    onClick={() => { setSelectedCaja(boxNum); setScreen('items'); }}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
-                                        isRecibida ? 'bg-success/10 border-success/30 cursor-default' :
-                                        isFalta    ? 'bg-surface-card-hover border-divider cursor-default opacity-50' :
-                                        isDanada   ? 'bg-warning/10 border-warning/40 hover:border-warning active:scale-[0.97] cursor-pointer' :
-                                                     'bg-surface-card border-divider hover:border-chart-3/40 hover:bg-chart-3/10 active:scale-[0.97] cursor-pointer'
+                                <button key={hojaNum}
+                                    disabled={isContada || sinNada}
+                                    onClick={() => { setSelectedHoja(hojaNum); setScreen('items'); }}
+                                    className={`flex items-center gap-2.5 p-2.5 rounded-2xl border-2 text-left transition-all ${
+                                        isContada  ? 'bg-success/10 border-success/30 cursor-default' :
+                                        sinNada    ? 'bg-surface-card-hover border-divider cursor-default opacity-50' :
+                                        isAlertada ? 'bg-warning/10 border-warning/40 hover:border-warning active:scale-[0.99] cursor-pointer' :
+                                                     'bg-surface-card border-divider hover:border-chart-3/40 hover:bg-chart-3/10 active:scale-[0.99] cursor-pointer'
                                     }`}>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
-                                        isRecibida ? 'bg-success' :
-                                        isFalta    ? 'bg-content-3' :
-                                        isDanada   ? 'bg-warning' :
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
+                                        isContada  ? 'bg-success' :
+                                        sinNada    ? 'bg-content-3' :
+                                        isAlertada ? 'bg-warning' :
                                                      'bg-chart-3 shadow-[var(--shadow-glow-chart-3)]'
                                     }`}>
-                                        {isRecibida ? <Check size={18} className="text-white" /> :
-                                         isFalta    ? <Truck size={16} className="text-white" /> :
-                                         isDanada   ? <AlertTriangle size={16} className="text-white" /> :
-                                                      <Box size={16} className="text-white" />}
+                                        {isContada  ? <Check size={16} className="text-white" /> :
+                                         sinNada    ? <Truck size={14} className="text-white" /> :
+                                         isAlertada ? <AlertTriangle size={14} className="text-white" /> :
+                                                      <FileText size={14} className="text-white" />}
                                     </div>
-                                    <div>
-                                        <p className={`text-body-sm font-black leading-none ${
-                                            isRecibida ? 'text-success-text' : isFalta ? 'text-content-3' : 'text-content-2'
-                                        }`}>Caja {boxNum}</p>
-                                        {pageHint && (
-                                            <p className="text-micro font-semibold text-chart-3-text mt-0.5 leading-none">{pageHint}</p>
-                                        )}
-                                        <p className={`inline-flex items-center gap-0.5 text-micro font-medium mt-0.5 ${
-                                            isRecibida ? 'text-success' : isFalta ? 'text-content-3' : isDanada ? 'text-warning' : 'text-content-3'
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-body-sm font-black leading-tight truncate ${
+                                            isContada ? 'text-success-text' : sinNada ? 'text-content-3' : 'text-content-2'
                                         }`}>
-                                            {isRecibida ? <><Check size={9} aria-hidden="true" />Recibida</>
-                                                : isFalta ? 'En reenvío'
-                                                : isDanada ? <>{itemCount} prod.<AlertTriangle size={9} aria-hidden="true" /></>
-                                                : `${itemCount} prod.`}
+                                            <span className="text-chart-3-text">H{hojaNum}</span>
+                                            {hojaLabel[hojaNum] ? ` · ${hojaLabel[hojaNum]}` : ''}
+                                        </p>
+                                        <p className={`text-micro font-medium mt-0.5 leading-none ${
+                                            isContada ? 'text-success' : sinNada ? 'text-content-3' : isAlertada ? 'text-warning' : 'text-content-3'
+                                        }`}>
+                                            {isContada ? 'Contada'
+                                                : sinNada ? 'En reenvío'
+                                                : isAlertada ? `${itemCount} prod. · revisar una por una`
+                                                : `${itemCount} prod.${cajaHint ? ` · ${cajaHint}` : ''}`}
                                         </p>
                                     </div>
+                                    {!isContada && !sinNada && (
+                                        <Badge variant={isAlertada ? 'warning' : 'chart-3'} size="sm" uppercase={false}>Contar</Badge>
+                                    )}
                                 </button>
                             );
                         })}
                     </div>
-
-                    {!allAccessibleDone && accessibleBoxNums.length > 0 && (
-                        <Button tone="success" disabled={saving} onClick={handleConfirmarTodo}>{saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                            Confirmar todo OK
-                            {faltaCajas.length > 0 && (
-                                <span className="text-caption font-medium text-success">(omite cajas en reenvío)</span>
-                            )}</Button>
-                    )}
 
                     {allAccessibleDone && (
                         <div className={`mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl border ${faltaCajas.length > 0 || hasFaltaItems ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30'}`}>
                             <PackageCheck size={15} className={`shrink-0 mt-0.5 ${faltaCajas.length > 0 || hasFaltaItems ? 'text-warning' : 'text-success'}`} />
                             <p className={`text-body-sm font-medium leading-snug ${faltaCajas.length > 0 || hasFaltaItems ? 'text-warning-text' : 'text-success-text'}`}>
                                 {faltaCajas.length > 0
-                                    ? `Cajas disponibles confirmadas. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
+                                    ? `Contado lo que llegó. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
                                     : hasFaltaItems
-                                        ? 'Cajas disponibles confirmadas. Aún hay electrolit o cajas especiales pendientes de reenvío. Finaliza cuando lleguen.'
-                                        : 'Todas las cajas recibidas'
+                                        ? 'Contado lo que llegó. Aún hay electrolit o cajas especiales pendientes de reenvío. Finaliza cuando lleguen.'
+                                        : 'Todo contado'
                                 }
                             </p>
                         </div>
@@ -829,6 +946,16 @@ export default function RecepcionModal({
                             <Truck size={12} className="text-content-3 shrink-0" />
                             <p className="text-label text-content-3">
                                 Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} en reenvío — se recibirá por separado.
+                            </p>
+                        </div>
+                    )}
+
+                    {hojasAlertadas.size > 0 && !allAccessibleDone && (
+                        <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30">
+                            <AlertTriangle size={12} className="text-warning shrink-0 mt-0.5" />
+                            <p className="text-label text-warning-text">
+                                Hoja{hojasAlertadas.size > 1 ? 's' : ''} {[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')} venían en una caja
+                                con problema — hay que revisarlas producto por producto, sin «Todo OK».
                             </p>
                         </div>
                     )}
@@ -893,6 +1020,23 @@ export default function RecepcionModal({
                             </div>
                         </div>
                     )}
+
+                    {/* «Todo OK» va DESPUÉS de las especiales, no en medio: confirma
+                        las dos cosas —hojas y cajas especiales— y estando arriba
+                        parecía cubrir sólo lo que tenía encima. Se salta las hojas
+                        que vinieron en una caja con problema: ésas se revisan
+                        producto por producto. */}
+                    {!allAccessibleDone && (accessibleHojaNums.length > 0 || accessibleEspeciales.length > 0) && (
+                        <div className="mt-4">
+                            <Button tone="success" disabled={saving} onClick={handleConfirmarTodo}>{saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                Confirmar todo OK
+                                {(faltaCajas.length > 0 || hojasAlertadas.size > 0) && (
+                                    <span className="text-caption font-medium text-success">
+                                        {hojasAlertadas.size > 0 ? '(omite las hojas por revisar)' : '(omite lo que está en reenvío)'}
+                                    </span>
+                                )}</Button>
+                        </div>
+                    )}
                 </PedidoModal.Body>
 
                 {/* Extras section on cajas screen */}
@@ -921,7 +1065,7 @@ export default function RecepcionModal({
     // ════════════════════════════════════════════════════════════════
     // SCREEN: EXTRAS — dedicated screen for extra products
     // ════════════════════════════════════════════════════════════════
-    const goBackFromExtras = () => setScreen(prevScreen ?? (hasCajaMap ? 'cajas' : 'items'));
+    const goBackFromExtras = () => setScreen(prevScreen ?? (hayHojas ? 'cajas' : 'items'));
 
     if (screen === 'extras') {
         return (
@@ -1085,17 +1229,18 @@ export default function RecepcionModal({
     // ════════════════════════════════════════════════════════════════
     // SCREEN: ITEMS — product grid for selected box (or all items)
     // ════════════════════════════════════════════════════════════════
-    const goBack = () => { setScreen('cajas'); setSelectedCaja(null); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false); };
-    const isDanadaBox = cajaDanada.includes(selectedCaja);
+    const goBack = () => { setScreen('cajas'); setSelectedHoja(null); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false); };
+    // La hoja abierta viene de una caja con problema: se cuenta, pero de a uno.
+    const hojaEnAlerta = alcance === 'hoja' && hojasAlertadas.has(selectedHoja);
     const isDanadaEspecial = selectedEspecial ? especialesLlegadas[selectedEspecial.label] === 'danada' : false;
 
     return (
-        <PedidoModal open={open} onClose={saving ? undefined : ((hasCajaMap || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl" className="max-h-[90vh]">
+        <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl" className="max-h-[90vh]">
 
             {/* Header */}
             <PedidoModal.Header className="px-5 py-4">
                 <div {...prodSearchContainerRef} className="flex items-center gap-2">
-                    {hasCajaMap && (
+                    {hayHojas && (
                         <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={goBack} />
                     )}
                     <AnimatePresence mode="popLayout" initial={false}>
@@ -1113,14 +1258,14 @@ export default function RecepcionModal({
                                             {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
                                         </p>
                                     </>
-                                ) : hasCajaMap ? (
+                                ) : hayHojas ? (
                                     <>
                                         <h3 className="text-subtitle font-bold text-content leading-snug">
-                                            Caja {selectedCaja}
-                                            {isDanadaBox && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Dañada</span>}
+                                            Hoja {selectedHoja}{hojaLabel[selectedHoja] ? ` — ${hojaLabel[selectedHoja]}` : ''}
+                                            {hojaEnAlerta && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Revisar</span>}
                                         </h3>
                                         <p className="text-label text-content-3 mt-0.5">
-                                            {selectedCajaRows.length} productos · {sucursalNombre}
+                                            {filasAbiertas.length} productos · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : (
@@ -1131,15 +1276,17 @@ export default function RecepcionModal({
                                         </p>
                                     </>
                                 )}
-                                {(isDanadaBox || isDanadaEspecial) && (
+                                {(hojaEnAlerta || isDanadaEspecial) && (
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-caption text-warning-text font-medium">
-                                            {isDanadaEspecial ? 'Esta caja especial llegó dañada — revisa el estado físico al contar' : 'Esta caja llegó dañada — revisa el estado físico al contar'}
+                                            {isDanadaEspecial
+                                                ? 'Esta caja especial llegó dañada — revisa el estado físico al contar'
+                                                : `Esta hoja venía en la caja ${(cajasDeHoja[selectedHoja] ?? []).map(n => `#${n}`).join(', ')} — revisa producto por producto`}
                                         </span>
                                     </div>
                                 )}
-                                {!hasCajaMap && !isDanadaBox && cajaDanada.length > 0 && (
+                                {!hayHojas && cajaDanada.length > 0 && (
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-caption text-warning-text font-medium">
@@ -1166,7 +1313,7 @@ export default function RecepcionModal({
                         >
                             <Search size={15} />
                         </motion.button>
-                        <Button variant="ghost" icon={X} disabled={!showSearch && saving} iconOnly onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hasCajaMap ? goBack : onClose)} />
+                        <Button variant="ghost" icon={X} disabled={!showSearch && saving} iconOnly onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hayHojas ? goBack : onClose)} />
                     </div>
                 </div>
             </PedidoModal.Header>
@@ -1235,7 +1382,7 @@ export default function RecepcionModal({
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
                                     <span className="text-body-sm text-content-2 font-semibold leading-snug">
                                         {r.products?.nombre}
-                                        {!hasCajaMap && r.caja_especial && (
+                                        {!hayHojas && r.caja_especial && (
                                             <Badge variant="chart-3" size="sm" icon={Star} uppercase={false}>Especial</Badge>
                                         )}
                                     </span>
@@ -1376,12 +1523,16 @@ export default function RecepcionModal({
                     </div>
                 )}
                 <div className="flex justify-between gap-2">
-                    <Button variant="secondary" disabled={saving} onClick={hasCajaMap ? goBack : onClose}>{hasCajaMap ? 'Volver' : 'Cancelar'}</Button>
+                    <Button variant="secondary" disabled={saving} onClick={hayHojas ? goBack : onClose}>{hayHojas ? 'Volver' : 'Cancelar'}</Button>
                     <div className="flex items-center gap-2">
-                        <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={handleTodoOk}>Todo OK</Button>
+                        {/* Sin «Todo OK» en una hoja que venía en una caja dañada o
+                            que no llegó: es justo la que hay que mirar de a uno. */}
+                        {!hojaEnAlerta && (
+                            <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={handleTodoOk}>Todo OK</Button>
+                        )}
                         <Button tone="success" disabled={saving} onClick={handleConfirmarCaja}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
                             {alcance === 'especial' ? `Confirmar ${selectedEspecial.label}`
-                                : alcance === 'caja'  ? `Confirmar Caja ${selectedCaja}`
+                                : alcance === 'hoja'  ? `Confirmar Hoja ${selectedHoja}`
                                 :                       'Confirmar recepción'}</Button>
                     </div>
                 </div>

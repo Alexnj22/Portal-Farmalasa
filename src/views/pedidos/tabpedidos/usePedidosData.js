@@ -992,7 +992,7 @@ export function usePedidosData({ searchTerm = '' }) {
 
             // Cargar mapa de páginas + estado actual de especiales para merge
             const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId,
-                'caja_map, pagina_items, cajas_recibidas, cajas_danadas, cajas_especiales_llegadas');
+                'caja_map, pagina_items, paginas, hojas_recibidas, cajas_danadas, cajas_especiales_llegadas');
             if (pssErr) throw pssErr;
             const cajaMapDb     = pss?.caja_map    ?? {};
             const paginaItemsDb = pss?.pagina_items ?? {};
@@ -1087,7 +1087,8 @@ export function usePedidosData({ searchTerm = '' }) {
                     cajaDanada:     cajasDanadas,
                     cajaMap:        cajaMapDb,
                     paginaItems:    paginaItemsDb,
-                    cajasRecibidas: pss?.cajas_recibidas ?? [],
+                    paginas:        pss?.paginas ?? [],
+                    hojasRecibidas: pss?.hojas_recibidas ?? [],
                     faltaCajas:     hasFalta ? cajasFaltantes : [],
                     hasFaltaItems:  hasFaltaItemsNow,
                 });
@@ -1144,17 +1145,20 @@ export function usePedidosData({ searchTerm = '' }) {
         const faltaCajas = activeRow?.falta_cajas   ?? [];
         const cajaMap    = activeRow?.caja_map       ?? {};
 
-        // Load pagina_items + cajas_recibidas only when caja_map is available
-        let paginaItems = {}, cajasRecibidas = [];
-        if (Object.keys(cajaMap).length > 0) {
-            const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'pagina_items, cajas_recibidas');
+        // El reparto por hoja y lo ya contado. `pagina_items` es lo que decide si
+        // se puede contar por hoja; `paginas` trae el rótulo de cada una (su
+        // primer laboratorio), que es como quien recibe la reconoce en el papel.
+        let paginaItems = {}, paginas = [], hojasRecibidas = [];
+        {
+            const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'pagina_items, paginas, hojas_recibidas');
             if (pssErr) console.error('openModal: fetch pedido_sucursal_status failed:', pssErr.message);
             paginaItems    = pss?.pagina_items    ?? {};
-            cajasRecibidas = pss?.cajas_recibidas ?? [];
+            paginas        = pss?.paginas         ?? [];
+            hojasRecibidas = pss?.hojas_recibidas ?? [];
         }
 
         const especialesLlegadas = activeRow?.cajas_especiales_llegadas ?? {};
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, cajasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas });
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas });
     }, [fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {

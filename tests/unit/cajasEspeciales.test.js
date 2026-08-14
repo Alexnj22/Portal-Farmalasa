@@ -93,26 +93,26 @@ describe('construirCajasEspeciales', () => {
 // ── Qué hay abierto en la pantalla de recepción ────────────────────────────
 // El ancla es lo que se vio en La Popular el 2026-08-14: adentro de «E3 — Caja
 // especial» (ELECTROLIT FRESA 625ML) la pantalla listaba LECHE NAN 2 OPTIPRO,
-// LECHE NAN AR y LECHE NIDO 1 —los productos de las cajas normales— y ofrecía
+// LECHE NAN AR y LECHE NIDO 1 —los productos de las otras unidades— y ofrecía
 // «Confirmar Caja null». La causa es esta pregunta contestada mirando sólo el
-// número de caja, que dentro de una especial vale null.
+// número de la unidad abierta, que dentro de una especial vale null.
 describe('alcanceDeRecepcion', () => {
-    it('una caja especial abierta es "especial", aunque no haya número de caja', () => {
-        expect(alcanceDeRecepcion({ especial: { label: 'E3' }, caja: null, hasCajaMap: true })).toBe('especial');
+    it('una caja especial abierta es "especial", aunque no haya número de hoja', () => {
+        expect(alcanceDeRecepcion({ especial: { label: 'E3' }, hoja: null, hayHojas: true })).toBe('especial');
     });
 
-    it('la especial gana aunque quede un número de caja de la pantalla anterior', () => {
-        expect(alcanceDeRecepcion({ especial: { label: 'E1' }, caja: 2, hasCajaMap: true })).toBe('especial');
+    it('la especial gana aunque quede un número de hoja de la pantalla anterior', () => {
+        expect(alcanceDeRecepcion({ especial: { label: 'E1' }, hoja: 2, hayHojas: true })).toBe('especial');
     });
 
-    it('una caja normal abierta es "caja" — incluida la caja 0, que es un número', () => {
-        expect(alcanceDeRecepcion({ especial: null, caja: 3, hasCajaMap: true })).toBe('caja');
-        expect(alcanceDeRecepcion({ especial: null, caja: 0, hasCajaMap: true })).toBe('caja');
+    it('una hoja abierta es "hoja" — incluida la hoja 0, que es un número', () => {
+        expect(alcanceDeRecepcion({ especial: null, hoja: 3, hayHojas: true })).toBe('hoja');
+        expect(alcanceDeRecepcion({ especial: null, hoja: 0, hayHojas: true })).toBe('hoja');
     });
 
-    it('sin nada abierto, o sin mapa de cajas, es el pedido entero', () => {
-        expect(alcanceDeRecepcion({ especial: null, caja: null, hasCajaMap: true })).toBe('pedido');
-        expect(alcanceDeRecepcion({ especial: null, caja: 4, hasCajaMap: false })).toBe('pedido');
+    it('sin nada abierto, o en un despacho sin hojas, es el pedido entero', () => {
+        expect(alcanceDeRecepcion({ especial: null, hoja: null, hayHojas: true })).toBe('pedido');
+        expect(alcanceDeRecepcion({ especial: null, hoja: 4, hayHojas: false })).toBe('pedido');
         expect(alcanceDeRecepcion()).toBe('pedido');
     });
 });

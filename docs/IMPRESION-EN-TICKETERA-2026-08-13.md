@@ -285,6 +285,54 @@ Para diagnosticarlo, en orden:
 especificación considera confiable a localhost), así que eso no es lo que lo
 bloquea.
 
+## 4 ter. Lo que de verdad lo bloqueaba: nuestra propia CSP (2026-08-14)
+
+Nada de lo de arriba era la causa. **La CSP que el portal se manda a sí mismo en
+`vercel.json` no incluía `http://localhost` en `connect-src`**, así que el
+navegador cortaba el pedido *antes de tocar la red*. El síntoma es idéntico al de
+«no hay nadie escuchando» —el mismo `TypeError`—, y la única pista está en la
+consola del navegador, no en la respuesta.
+
+Medido en la caja de Salud 3 (`salud3-ThinkCentre-M73`, Linux, Firefox). Las tres
+señales que lo delataron, ninguna concluyente sola:
+
+| Señal | Qué descartaba |
+|---|---|
+| `curl` alcanza las tres direcciones desde esa misma computadora | La máquina, la red y el programa |
+| La pestaña directa a `printik_pista.php` muestra el programa corriendo | Que el programa no estuviera instalado |
+| Bajar el bloqueo de contenido mixto de Firefox no cambia nada | Contenido mixto como mecanismo |
+
+Tres cosas que sólo cuadran juntas si **el pedido no sale nunca**.
+
+De la pestaña directa salieron además dos datos que no se podían leer desde acá:
+el programa escribe **directo a `/dev/usb/lp0`** (no pasa por CUPS ni por la cola
+`pos-80`), y los avisos de PHP nombran uno por uno los nueve campos que espera —
+`totales`, `total_letras`, `encabezado`, `cuerpo`, `pie`, `efectivo`, `cambio`,
+`qr`, `img`—, **exactamente los nueve que manda `seccionesParaElPrograma()`**. El
+contrato reconstruido leyendo su código estaba bien.
+
+**La lección de método**: `comprobarLaConexion()` atrapaba el error en un `catch`
+vacío, así que «no contesta» significaba tres cosas a la vez. Es el mismo defecto
+que §4 bis ya había corregido en el botón de imprimir, y que había quedado vivo en
+el de comprobar — corregir un instrumento no corrige a su gemelo. Hoy el motivo
+viaja en el resultado y la pantalla lo muestra bajo cada renglón que falla.
+
+### La caja de Salud 3, medida
+
+Tres colas en CUPS: `pos-80` (`usb://Printer/POS-80`, sana, es la ticketera),
+`80series2` y `l210`, las dos deshabilitadas. **La predeterminada del sistema es
+`l210`**, o sea que cualquier `lp` sin `-d` va a una impresora muerta.
+
+`lp -d pos-80 -o raw /etc/hosts` **sacó papel legible**: impresora, cola y modo
+crudo funcionan, y un agente local que tubee a ese comando tiene su capa de abajo
+ya probada. No reconfigurar `pos-80`: es por donde imprime hoy el sistema de
+facturación; si hiciera falta otra forma, se crea una cola nueva al mismo
+dispositivo.
+
+En ese papel **un renglón de 58 caracteres no se partió** — la letra por defecto
+de esa ticketera da ≥58 columnas, coherente con las 54 del ticket del origen en
+letra chica. El 40 del portal es un límite de su propio HTML, no del papel.
+
 ## 5. Lo que queda abierto
 
 1. **El ancho del rollo para el camino del navegador.** El ticket del origen usa

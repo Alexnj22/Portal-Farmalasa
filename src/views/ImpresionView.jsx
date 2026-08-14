@@ -231,8 +231,17 @@ const ImpresionView = () => {
                             {chequeo && (
                                 <div className="mt-3 space-y-1">
                                     {chequeo.destinos.map(d => (
-                                        <div key={d.url} className="flex items-center justify-between gap-2 py-1 border-b border-divider last:border-0">
-                                            <span className="text-body text-content-2 min-w-0">{d.que}</span>
+                                        <div key={d.url} className="flex items-start justify-between gap-2 py-1 border-b border-divider last:border-0">
+                                            <div className="min-w-0">
+                                                <span className="text-body text-content-2">{d.que}</span>
+                                                {/* El motivo es el dato que faltó el 2026-08-14: sin él,
+                                                    «no contesta» tapaba que el pedido ni siquiera salía. */}
+                                                {d.motivo && (
+                                                    <span className="block text-caption text-content-3 leading-snug">
+                                                        El navegador dijo: {d.motivo}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span className="shrink-0 inline-flex items-center gap-1 text-label font-bold">
                                                 {d.contesta
                                                     ? <><CheckCircle2 size={12} className="text-success" /> Contesta</>

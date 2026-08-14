@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.601.1 — El portal ya puede hablarle a la ticketera de la caja
+
+La impresión directa nunca falló en la caja: **el portal se lo prohibía a sí
+mismo**. La CSP de `vercel.json` no tenía `http://localhost` en `connect-src`, así
+que el navegador cortaba el pedido antes de tocar la red. Agregado
+`http://localhost:* http://127.0.0.1:*` a esa directiva —y sólo a esa: `default-src`
+sigue en `'self'`—.
+
+Diagnosticado en la caja de Salud 3 (Linux, `salud3-ThinkCentre-M73`), y las tres
+pistas que lo delataron valen más que el arreglo: `curl` alcanzaba las tres
+direcciones desde esa misma computadora; abrir
+`localhost/impresion_dte/printik_pista.php` en una pestaña mostraba el programa
+corriendo —y de paso reveló que escribe **directo a `/dev/usb/lp0`**, sin pasar
+por CUPS, y que espera exactamente los nueve campos que el portal manda—; y
+bajarle a Firefox el bloqueo de contenido mixto no cambió nada, porque era otro
+mecanismo. Tres señales que sólo cuadran si el pedido no sale nunca.
+
+**Y el instrumento tapaba justo eso.** `comprobarLaConexion()` atrapaba el error
+en un `catch` vacío, así que «no contesta» significaba a la vez «no hay nadie
+ahí», «me bloquearon» y «ni lo intenté». Ahora el motivo viaja en el resultado y
+la pantalla lo muestra bajo cada renglón que falla. Es el mismo defecto que ya se
+había corregido en el botón de imprimir y había quedado en el de comprobar.
+
+Verificado aparte, con papel: `lp -d pos-80 -o raw` saca texto legible en esa
+ticketera (`usb://Printer/POS-80`), y un renglón de 58 caracteres no se parte —la
+letra por defecto da ≥58 columnas, coherente con las 54 del ticket del sistema de
+facturación—. La predeterminada del sistema es `l210` y está deshabilitada, así
+que cualquier `lp` sin `-d` va a una impresora muerta.
+
 ## v2.601.0 — Cortes: tarjetas por sala, alerta al firmar y el widget con el mes
 
 Tres pedidos del usuario mirando la vista, más un defecto que salió al

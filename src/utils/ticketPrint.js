@@ -552,7 +552,16 @@ export async function permisoDeRedLocal() {
  * ahí», no «el programa existe». Por eso se prueba la CARPETA y no el archivo:
  * un GET al archivo podría hacerlo imprimir un ticket vacío.
  *
- * @returns {Promise<Array<{que: string, url: string, contesta: boolean}>>}
+ * Y tampoco distingue un tercer caso, que fue el que de verdad pasó (2026-08-14,
+ * caja de Salud 3): que el pedido **no haya salido nunca**. La CSP del portal no
+ * incluía `http://localhost` en `connect-src`, así que el navegador lo cortaba
+ * antes de tocar la red — con el mismo `TypeError` que «no hay nadie ahí». Se ve
+ * en la consola del navegador, no acá; por eso el motivo ahora viaja en el
+ * resultado en vez de morir en un `catch` vacío. Si alguna vez las tres vuelven
+ * a decir «no contesta» mientras `curl` entra desde esa misma computadora, mirar
+ * primero `vercel.json`.
+ *
+ * @returns {Promise<Array<{que: string, url: string, contesta: boolean, motivo?: string}>>}
  */
 export async function comprobarLaConexion() {
     const destinos = [
@@ -564,8 +573,8 @@ export async function comprobarLaConexion() {
         try {
             await fetch(d.url, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(4000) });
             return { ...d, contesta: true };
-        } catch {
-            return { ...d, contesta: false };
+        } catch (err) {
+            return { ...d, contesta: false, motivo: `${err?.name ?? 'Error'}: ${err?.message ?? 'sin detalle'}` };
         }
     }));
 }

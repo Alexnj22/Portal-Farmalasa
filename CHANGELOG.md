@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.11 — Los avisos de existencia dejan de decir «1 unidades»
+
+El aviso que estrenó v2.604.9 salía así: *«Bodega tiene 1 unidades en 1 lote(s):
+alcanzan para 1 y el pedido lleva 2»*. Lo lee Bodega en la pantalla de finalizar,
+y el `lote(s)` con paréntesis es de un formulario, no de una frase.
+
+Ahora la mitad común de la frase la arma un solo lugar (`hayEnTexto`): singular
+cuando es una, el reparto por lotes sólo cuando hay más de uno, y sin existencia
+se dice directamente que no la hay en vez de «alcanzan para 0». Queda:
+
+```
+Hoy en bodega hay 1 unidad: alcanzan para 1 y el pedido lleva 2.
+Hoy en bodega hay 46 unidades repartidas en 2 lotes: alcanzan para 46 y el pedido lleva 50.
+Ya no tiene existencia en bodega.
+```
+
+Lo usan los tres avisos que nacieron del mismo arreglo: el del pedido, el del
+traslado entre salas y el de la devolución a bodega.
+
 ## v2.604.10 — Al hacerse un corte, la sala se entera
 
 **Hasta hoy, un corte de caja aparecía en el portal y no lo sabía nadie.** El

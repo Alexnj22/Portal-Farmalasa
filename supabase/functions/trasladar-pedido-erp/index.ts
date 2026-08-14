@@ -4,6 +4,7 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
   disponibleEnBodega,
+  hayEnTexto,
   hoySV,
   nombreCorto,
   norm,
@@ -643,9 +644,7 @@ Deno.serve(async (req) => {
           const hay = disponibleEnBodega(f, Number(pres.unidad));
           if (Number(ln.cantidad) > hay.paquetes) {
             await fallar(
-              `Bodega tiene ${hay.unidades} unidades`
-              + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
-              + `: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
+              `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`,
             );
             continue;
           }
@@ -906,9 +905,9 @@ Deno.serve(async (req) => {
         if (it.cantidad > hay.paquetes) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",
-            detalle: `Bodega tiene ${hay.unidades} unidades`
-              + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
-              + `: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,
+            detalle: hay.unidades <= 0
+              ? "Ya no tiene existencia en bodega."
+              : `Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y el pedido lleva ${it.cantidad}.`,
           });
           continue;
         }

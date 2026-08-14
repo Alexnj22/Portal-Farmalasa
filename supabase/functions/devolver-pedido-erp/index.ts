@@ -4,6 +4,7 @@ import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   armarConcepto,
   disponibleEnBodega,
+  hayEnTexto,
   hoySV,
   nombreCorto,
   norm,
@@ -491,9 +492,8 @@ Deno.serve(async (req) => {
         // frenaría producto que sí está en la sala.
         const hay = disponibleEnBodega(f, Number(pres.unidad));
         if (Number(d.cantidad) > hay.paquetes) {
-          await fallar(`En la sala hay ${hay.unidades} unidades de ${it.nombre}`
-            + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
-            + `: alcanzan para ${hay.paquetes} y la devolución son ${d.cantidad}.`);
+          await fallar(`De ${it.nombre} ${hayEnTexto(hay, "la sala")}: alcanzan para `
+            + `${hay.paquetes} y la devolución son ${d.cantidad}.`);
           continue;
         }
 

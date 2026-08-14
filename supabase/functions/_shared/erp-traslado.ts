@@ -260,6 +260,21 @@ export function disponibleEnBodega(
 }
 
 /**
+ * «en bodega hay 5 unidades en 2 lotes» — la mitad de la frase que es igual en
+ * todos lados. La otra mitad (qué se pedía) la pone quien avisa, porque no es lo
+ * mismo un pedido que una devolución.
+ *
+ * Existe para no repetir el singular en tres archivos: la primera versión decía
+ * «1 unidades» y eso lo lee Bodega.
+ */
+export function hayEnTexto(
+  hay: { unidades: number; lotes: number }, lugar = "bodega",
+): string {
+  return `en ${lugar} hay ${hay.unidades} ${hay.unidades === 1 ? "unidad" : "unidades"}`
+    + (hay.lotes > 1 ? ` repartidas en ${hay.lotes} lotes` : "");
+}
+
+/**
  * Abre la sesión del sistema en una sucursal. Devuelve la cookie o lanza.
  *
  * La sucursal es estado GLOBAL de la sesión: `traslado_producto.php` y

@@ -59,6 +59,7 @@ import {
   contenidoDeTraslado,
   direccionesPorSucursal,
   disponibleEnBodega,
+  hayEnTexto,
   hoySV,
   norm,
   pendientesDeOrigen,
@@ -444,9 +445,8 @@ Deno.serve(async (req) => {
       if (Number(l.cantidad) > hay.paquetes)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
-          error: `De ${nombre} hay ${hay.unidades} unidades en la sala de origen`
-               + (hay.lotes ? ` en ${hay.lotes} lote(s)` : "")
-               + `: alcanzan para ${hay.paquetes} y se pidieron ${l.cantidad}.`,
+          error: `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
+               + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);
 
       // ── El lote ──────────────────────────────────────────────────────────

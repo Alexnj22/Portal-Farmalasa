@@ -1,0 +1,142 @@
+// El papel que respalda la resolución de una diferencia de caja.
+//
+// Qué pidió el usuario (2026-08-14): «al darle, imprime un ticket como ingreso
+// de dinero por faltante del día tal, para anexarlo en el corte o por si ya se
+// encontró causa. Quién, cuándo y a qué horas.»
+//
+// Es el PRIMER documento del portal que va al rollo — hasta hoy la ticketera
+// sólo tenía su prueba de impresión. Por eso las reglas de §5 de
+// `docs/IMPRESION-EN-TICKETERA-2026-08-13.md` se aplican acá por primera vez de
+// verdad, y son las que se rompen solas:
+//
+//   · **Sólo ASCII.** El rollo no lee UTF-8: «REPOSICIÓN» sale `REPOSICIÆN`. Por
+//     eso todos los rótulos de este archivo están escritos SIN TILDE a
+//     propósito. No es un descuido de ortografía: es el formato del papel.
+//   · **54 columnas** en letra chica. Los nombres largos se recortan acá y no en
+//     la impresora, que parte donde se le acaba el ancho.
+//   · **El papel no tiene tema**: ni colores, ni fondos, ni bordes.
+//   · **El ancho NO se pasa** — es un ajuste de la computadora que tiene la
+//     ticketera enchufada (`leerAjustesDeImpresion`).
+//
+// Y una que es de este documento: el comprobante NO lleva el saldo del día ni el
+// acumulado. Dice UNA cifra —la que se repone o se retira— porque es el papel
+// que alguien firma al entregar dinero. Dos números en un recibo es una
+// invitación a firmar el que no era.
+
+import { EMPRESA } from '../constants/empresa';
+import { formatMoney } from './formatNumber';
+
+/** El ancho útil del rollo en letra chica. Ver COLUMNAS_TICKET. */
+const COLUMNAS = 54;
+
+/**
+ * Sin tildes ni eñes: el rollo es ASCII. Se hace acá además de en el envío
+ * directo porque los nombres de las personas vienen de la base y nadie los
+ * escribió pensando en papel térmico — «NUÑEZ» salió `NUÆEZ` la primera vez.
+ */
+export const soloAscii = (s) => String(s ?? '')
+    // La eñe ANTES de descomponer: `NFD` la parte en `n` + tilde y el barrido de
+    // diacríticos la dejaría en `n` igual, pero así el paso es explícito y no
+    // depende del orden de dos reglas que parecen independientes.
+    .replace(/ñ/g, 'n').replace(/Ñ/g, 'N')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '');
+
+const recortar = (s, max) => {
+    const t = soloAscii(s).trim();
+    return t.length > max ? `${t.slice(0, max - 1)}.` : t;
+};
+
+const TITULO = {
+    REPONE:    'COMPROBANTE DE REPOSICION',
+    RETIRA:    'COMPROBANTE DE RETIRO',
+    JUSTIFICA: 'DIFERENCIA JUSTIFICADA',
+};
+
+// Qué dice la línea del monto. En un recibo importa la dirección del dinero, no
+// el signo: «ENTRA» y «SALE» no se leen al revés por descuido, un «-1.25» sí.
+const CONCEPTO = {
+    REPONE:    'ENTRA A CAJA',
+    RETIRA:    'SALE DE CAJA',
+    JUSTIFICA: 'NO MUEVE DINERO',
+};
+
+const hhmm = (hora) => String(hora || '').slice(0, 5);
+
+/** dd/mm/aaaa de una fecha `YYYY-MM-DD`, sin que el huso la corra un día. */
+const fechaCorta = (fecha) => {
+    if (!fecha) return '';
+    const [a, m, d] = String(fecha).split('-');
+    return `${d}/${m}/${a}`;
+};
+
+/** Cuándo se firmó, en hora de la sala. */
+const selloDeTiempo = (iso) => (iso
+    ? soloAscii(new Date(iso).toLocaleString('es-SV', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+        timeZone: 'America/El_Salvador',
+    }))
+    : '');
+
+/**
+ * El comprobante de una diferencia resuelta.
+ *
+ * @param {object}  corte        el corte al que pertenece (fecha, hora, caja)
+ * @param {string}  sala         nombre de la sucursal
+ * @param {object}  diferencia   la fila de `cortes_caja_diferencias`
+ * @param {Array}   personas     [{ nombre, monto }] — quiénes aportan
+ * @param {string}  registradoPor nombre de quien resolvió
+ * @returns el objeto `ticket` que espera `imprimirDocumento`
+ */
+export function construirComprobante({ corte, sala, diferencia, personas = [], registradoPor }) {
+    const via = diferencia?.via || 'JUSTIFICA';
+    const monto = Math.abs(Number(diferencia?.monto ?? 0));
+
+    // La fecha del CORTE y la de la firma son dos cosas distintas y las dos
+    // tienen que estar: el usuario pidió «por faltante del dia tal» (la del
+    // corte) y «quien, cuando y a que horas» (la de la firma). Un comprobante
+    // con una sola fecha no se puede anexar al corte que corresponde.
+    const datos = [
+        ['Sala', recortar(sala || '', 34)],
+        ['Corte del', `${fechaCorta(corte?.fecha)}  ${hhmm(corte?.hora)}`],
+        ['Caja', recortar(corte?.empleado_texto || '', 34)],
+    ];
+
+    const bloques = [{
+        titulo: 'MOTIVO',
+        texto: recortar(diferencia?.causa || '', 160),
+    }];
+
+    // Quiénes aportan, con su parte. Sólo en una reposición: un sobrante que se
+    // retira o que se justifica no lo pone nadie de su bolsillo.
+    const items = personas.length ? {
+        columnas: [{ label: 'QUIEN REPONE' }, { label: 'MONTO', alinear: 'der' }],
+        filas: personas.map((p) => [
+            recortar(p.nombre || 'Sin nombre', COLUMNAS - 14),
+            formatMoney(Math.abs(Number(p.monto ?? 0))),
+        ]),
+    } : undefined;
+
+    return {
+        titulo: TITULO[via] || TITULO.JUSTIFICA,
+        encabezado: {
+            titulo: soloAscii(EMPRESA.razonSocial),
+            lineas: [`NIT ${EMPRESA.nit}`],
+        },
+        datos,
+        bloques,
+        items,
+        totales: [[CONCEPTO[via] || '', formatMoney(monto), true]],
+        pie: [
+            `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
+            selloDeTiempo(diferencia?.registrado_at),
+            '',
+            'Entrega ____________________',
+            '',
+            'Recibe   ____________________',
+            '',
+            'Anexar este comprobante al corte.',
+        ],
+    };
+}

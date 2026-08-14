@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Ban, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Ban, CheckCircle2, RotateCcw, ShieldCheck } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidAvatar from '../common/LiquidAvatar';
@@ -7,8 +7,11 @@ import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
+import ResolverDiferencia from './ResolverDiferencia';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
-import { fetchMovimientos, fetchPersonas } from '../../data/cortes';
+import { fetchDiferencias, fetchMovimientos, fetchPersonas, reabrirCorte } from '../../data/cortes';
+import { mensajeAmigable } from '../../utils/errorMessages';
+import { useToastStore } from '../../store/toastStore';
 import { notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
@@ -38,6 +41,11 @@ import useResolverCorte from '../../hooks/useResolverCorte';
  */
 
 const MOTIVOS = ['Conteo de prueba', 'Se contó mal', 'Corte repetido'];
+
+// Por qué se reabre una firma. Salen de los casos reales del 13 y 14 de agosto:
+// un corte confirmado sobre un conteo malo (Salud 1, −$621.17), uno que había
+// que descartar porque la sala lo rehizo, y la diferencia que después apareció.
+const MOTIVOS_REABRIR = ['Se firmó por error', 'El corte se rehizo', 'Apareció la causa'];
 
 const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
 
@@ -84,11 +92,15 @@ export default function CorteDetalleModal({
     // haciendo su salida, y leer `corte` directo lo vaciaría en el primer frame.
     const visible = useSobreviveAlCierre(corte);
 
+    const showToast = useToastStore((s) => s.showToast);
     const [movs, setMovs] = useState([]);
     const [personas, setPersonas] = useState(() => new Map());
     const [modo, setModo] = useState(modoInicial);
     const [motivo, setMotivo] = useState(MOTIVOS[0]);
     const [nota, setNota] = useState('');
+    const [diferencia, setDiferencia] = useState(null);
+    const [recarga, setRecarga] = useState(0);
+    const [reabriendo, setReabriendo] = useState(false);
 
     const abierto = !!corte;
     const corteId = corte?.id ?? null;
@@ -110,7 +122,22 @@ export default function CorteDetalleModal({
         setMotivo(MOTIVOS[0]);
         setNota('');
         setMovs([]);
+        setDiferencia(null);
     }
+
+    // Cómo se resolvió su diferencia, si ya se resolvió. Se pide por fecha
+    // porque el RPC devuelve el rango con las personas anidadas — un corte
+    // suelto no tiene endpoint propio y no vale la pena inventarlo para una
+    // fila. `recarga` la vuelve a pedir después de resolver o anular.
+    useEffect(() => {
+        if (!abierto || !corteId || !fecha) return;
+        let vivo = true;
+        fetchDiferencias({ desde: fecha, hasta: fecha }).then((filas) => {
+            if (!vivo) return;
+            setDiferencia((filas || []).find((d) => d.corte_id === corteId && !d.anulada_at) || null);
+        });
+        return () => { vivo = false; };
+    }, [abierto, corteId, fecha, recarga]);
 
     // Los movimientos del día: sólo hacen falta para explicar una diferencia,
     // así que se piden al abrir un corte y no junto con la lista.
@@ -158,6 +185,14 @@ export default function CorteDetalleModal({
     const esZ = visible?.tipo === 'Z';
     const pendiente = visible?.estado === 'PENDIENTE';
     const puedeFirmar = pendiente && !esZ && puedeResolver;
+    // Reabrir es de la propia sala (decisión del usuario, 2026-08-14): la misma
+    // gente que firma puede corregir su firma, escribiendo por qué.
+    const puedeReabrir = !pendiente && !esZ && puedeResolver;
+
+    const abrirReapertura = useCallback(() => {
+        setMotivo(MOTIVOS_REABRIR[0]);
+        setModo('reabrir');
+    }, []);
 
     const guardar = useCallback(async () => {
         if (!corte || !modo) return;
@@ -170,6 +205,26 @@ export default function CorteDetalleModal({
         onResuelto?.(corte, estado);
         onClose?.();
     }, [corte, modo, motivo, nota, resolver, onResuelto, onClose]);
+
+    /**
+     * Volver a abrir una firma. El motivo es obligatorio y queda en la bitácora:
+     * `resuelto_por`/`resuelto_at` guardan sólo la última decisión, así que sin
+     * el registro la firma anterior desaparecería sin dejar rastro — y el caso
+     * que lo hizo falta es justamente uno donde alguien firmó por error.
+     */
+    const reabrir = useCallback(async () => {
+        if (!corte || reabriendo) return;
+        setReabriendo(true);
+        const { error } = await reabrirCorte(corte.id, motivo);
+        setReabriendo(false);
+        if (error) {
+            showToast?.('No se pudo reabrir', mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
+            return;
+        }
+        showToast?.('Corte reabierto', 'Vuelve a quedar pendiente de confirmar.', 'success');
+        onResuelto?.(corte, 'PENDIENTE');
+        onClose?.();
+    }, [corte, reabriendo, motivo, showToast, onResuelto, onClose]);
 
     return (
         <LiquidModal
@@ -344,6 +399,50 @@ export default function CorteDetalleModal({
                             </div>
                         )}
 
+                        {/* Reabrir una firma. El motivo es obligatorio: es lo que
+                            queda en la bitácora, y sin él la decisión anterior se
+                            perdería sin que nadie sepa por qué cambió. */}
+                        {modo === 'reabrir' && puedeReabrir && (
+                            <div className="space-y-3">
+                                <Notice variant="warning" icon={AlertTriangle}>
+                                    <span className="font-bold">
+                                        Vas a reabrir un corte que ya está {visible.estado === 'CONFIRMADO' ? 'confirmado' : 'descartado'}
+                                    </span>
+                                    <span className="block mt-0.5 font-normal text-content-2">
+                                        Vuelve a quedar pendiente y los cortes siguientes de la sala
+                                        se recalculan. Queda registrado quién lo reabrió y por qué.
+                                    </span>
+                                </Notice>
+                                <div>
+                                    <div className="text-caption font-black uppercase tracking-widest text-content-3 mb-1.5">
+                                        Por qué se reabre
+                                    </div>
+                                    <SegmentedControl
+                                        label="Por qué se reabre"
+                                        tone="warning"
+                                        value={motivo}
+                                        onChange={setMotivo}
+                                        options={MOTIVOS_REABRIR.map((m) => ({ value: m, label: m }))}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Qué se hizo con el faltante o el sobrante. Va después
+                            de la firma porque primero se decide si el corte vale
+                            y recién después qué se hace con su diferencia. */}
+                        {!esZ && modo !== 'reabrir' && (
+                            <ResolverDiferencia
+                                corte={visible}
+                                nombreSala={nombreSala}
+                                diferencia={diferencia}
+                                personasResueltas={diferencia?.personas || []}
+                                puedeResolver={puedeResolver}
+                                origen={origen}
+                                onCambio={() => setRecarga((n) => n + 1)}
+                            />
+                        )}
+
                         {sugerencias.length > 0 && (
                             <div>
                                 <div className="text-caption font-bold uppercase tracking-wide text-content-3 mb-1.5">Qué revisar</div>
@@ -378,8 +477,20 @@ export default function CorteDetalleModal({
                             <Button variant="primary" icon={CheckCircle2} onClick={() => setModo('confirmar')}>Confirmar</Button>
                         </>
                     )
+                ) : modo === 'reabrir' ? (
+                    <>
+                        <Button variant="ghost" onClick={() => setModo(null)} disabled={reabriendo}>Volver</Button>
+                        <Button variant="destructive" icon={RotateCcw} onClick={reabrir} loading={reabriendo}>
+                            Reabrir corte
+                        </Button>
+                    </>
                 ) : (
-                    <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+                    <>
+                        <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+                        {puedeReabrir && (
+                            <Button variant="ghost" icon={RotateCcw} onClick={abrirReapertura}>Reabrir</Button>
+                        )}
+                    </>
                 )}
             </LiquidModal.Footer>
         </LiquidModal>

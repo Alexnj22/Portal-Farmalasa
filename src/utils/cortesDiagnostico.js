@@ -289,6 +289,24 @@ export function notaDeCifra(corte) {
     };
 }
 
+/**
+ * Reparte un total entre `n` personas sin perder ni inventar centavos: el resto
+ * se lo llevan las primeras.
+ *
+ * Vive acá y no en el componente porque es aritmética de dinero y hay que poder
+ * probarla: dividir $1.25 entre dos da 0.63 y 0.62. Redondear cada parte por su
+ * cuenta da dos de 0.63 —que suman 1.26— o dos de 0.62 —que suman 1.24—, y el
+ * servidor rechaza el reparto que no cierra exacto. Un centavo de más es una
+ * persona pagando lo que no debe.
+ */
+export function repartirEnPartes(total, n) {
+    if (n <= 0) return [];
+    const c = Math.abs(Math.round(Number(total || 0) * 100));
+    const base = Math.floor(c / n);
+    const resto = c - base * n;
+    return Array.from({ length: n }, (_, i) => (base + (i < resto ? 1 : 0)) / 100);
+}
+
 /** 'ok' | 'sobra' | 'falta' — la forma, no sólo el color. */
 export function severidad(monto) {
     const n = num(monto) ?? 0;

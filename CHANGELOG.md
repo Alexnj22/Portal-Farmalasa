@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.606.0 — Resolver la diferencia de un corte, con su comprobante en papel
+
+Hasta hoy un corte se firmaba y ya: si faltaba dinero, el portal lo mostraba y
+no había dónde anotar qué se hizo con él. Y una firma era definitiva — Salud 1
+tiene confirmado desde el 13-ago un faltante de **−$621.17 que no existe**, sobre
+un conteo que la sala rehízo un minuto después, y no había forma de deshacerlo.
+
+**Reabrir.** Un corte firmado se puede volver a abrir escribiendo por qué, y lo
+puede hacer la propia sala. Cada firma, reapertura y resolución queda en una
+bitácora nueva: `resuelto_por`/`resuelto_at` guardan sólo la última decisión, así
+que sin ella reabrir habría borrado la anterior sin dejar rastro.
+
+**Resolver el faltante o el sobrante.** Tres caminos, y el signo decide cuáles se
+ofrecen: **se repone** el dinero (un faltante), **se retira** el sobrante, o
+**ya se encontró la causa** y no hay que mover nada. Una reposición la aportan
+varias personas — arranca marcada quien tiene la sesión, que es la responsable, y
+se agrega o se quita a quien corresponda. El reparto se hace en partes iguales
+sin perder centavos ($1.25 entre dos da 0.63 y 0.62) y se ve cuánto falta para
+llegar al total mientras se escribe.
+
+**El comprobante sale en papel.** Es el primer documento del portal que va a la
+ticketera: dice qué corte, cuánto, quién repone, quién lo registró y a qué hora,
+con dos líneas para firmar. Se anexa al corte. Se puede reimprimir.
+
+**El monto no lo elige el navegador.** Lo calcula el servidor, y si no coincide
+con el que se vio en pantalla la operación se rechaza en vez de guardar en
+silencio una cifra que nadie leyó — es la que se le cobra a alguien.
+
+Cada resolución nace «sin registrar en el sistema». Después se hace **un solo**
+ingreso o vale allá que cubre varias, y se marcan todas con ese número: acá queda
+el detalle una por una, allá un documento por el total. El portal sigue sin
+escribir en el sistema de origen.
+
+Pendiente: la pantalla que junta lo que falta registrar, y probar el papel en una
+sala. El módulo de turnos está construido pero apagado, así que la lista de quién
+aporta muestra la sala completa y lo dice; cuando se encienda, propone el turno
+real sin tocar código.
+
 ## v2.605.8 — la sala ve quién preparó su pedido y se entera cuando sale
 
 Dos pedidos del usuario: que las salas puedan ver quién inició, cuándo

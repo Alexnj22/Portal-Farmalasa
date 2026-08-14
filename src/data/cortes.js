@@ -115,3 +115,90 @@ export function resolverCorte(id, estado, { motivo = null, observaciones = null 
         p_observaciones: observaciones,
     });
 }
+
+/**
+ * Volver a abrir un corte ya firmado. Exige motivo y queda en la bitácora — sin
+ * eso, reabrir borraría la firma anterior, que es la única copia que hay de esa
+ * decisión en `cortes_caja`.
+ *
+ * Lo puede hacer la propia sala (decisión del usuario, 2026-08-14).
+ */
+export function reabrirCorte(id, motivo) {
+    return supabase.rpc('reabrir_corte_caja', { p_id: id, p_motivo: motivo });
+}
+
+/**
+ * Resolver el faltante o el sobrante de un corte.
+ *
+ * `montoVisto` es el tramo que se mostró en pantalla, y NO es el que se guarda:
+ * el servidor calcula el suyo y rechaza si no coinciden. Sin eso, el monto que
+ * se le cobra a alguien lo elegiría el navegador — ver el encabezado de la
+ * migración `20260814211953`.
+ *
+ * `personas`: [{ employee_id, monto, del_turno }] y sólo para `REPONE`.
+ */
+export function resolverDiferencia(corteId, { via, causa, montoVisto, personas = [] }) {
+    return supabase.rpc('resolver_diferencia_corte', {
+        p_corte_id: corteId,
+        p_via: via,
+        p_causa: causa,
+        p_monto_esperado: montoVisto,
+        p_personas: personas,
+    });
+}
+
+/** Se anula, nunca se borra: el comprobante ya salió y alguien lo firmó. */
+export function anularDiferencia(id, motivo) {
+    return supabase.rpc('anular_diferencia_corte', { p_id: id, p_motivo: motivo });
+}
+
+/**
+ * Deja constancia de que el comprobante se mandó a imprimir. No promete que
+ * salió papel — la respuesta de la ticketera es opaca — así que se puede volver
+ * a marcar tantas veces como se reimprima.
+ */
+export function marcarComprobanteImpreso(id) {
+    return supabase.rpc('marcar_comprobante_impreso', { p_id: id });
+}
+
+/**
+ * Marcar varias resoluciones como ya registradas en el sistema con UN solo
+ * número de ingreso o de vale. Es el «un solo ingreso» que pidió el usuario: acá
+ * queda el detalle fila por fila, allá un documento por el total.
+ */
+export function asentarDiferencias(ids, referencia) {
+    return supabase.rpc('asentar_diferencias_corte', { p_ids: ids, p_ref: referencia });
+}
+
+/**
+ * Quiénes pueden aportar a una reposición: los del turno primero.
+ *
+ * Hoy el módulo de turnos está construido pero no encendido, así que el RPC cae
+ * a los activos de la sala y devuelve `del_turno: false` en todos. Cuando se
+ * encienda empieza a marcarlos solo.
+ *
+ * Las fotos se firman acá: `photo_url` se guarda cruda y el bucket es privado.
+ */
+export async function fetchTurnoDelCorte(corteId) {
+    const { data, error } = await supabase.rpc('get_corte_turno', { p_corte_id: corteId });
+    if (error) { console.error('cortes: fetchTurnoDelCorte failed:', error.message); return []; }
+    await signPhotosDeep(data || []);
+    return data || [];
+}
+
+/** Las resoluciones de un rango, con sus personas y quién las firmó. */
+export async function fetchDiferencias({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('get_cortes_diferencias', {
+        p_desde: desde, p_hasta: hasta,
+    });
+    if (error) { console.error('cortes: fetchDiferencias failed:', error.message); return []; }
+    return data || [];
+}
+
+/** La bitácora de un corte: cada firma, reapertura y resolución. */
+export async function fetchEventosDelCorte(corteId) {
+    const { data, error } = await supabase.rpc('get_corte_eventos', { p_corte_id: corteId });
+    if (error) { console.error('cortes: fetchEventosDelCorte failed:', error.message); return []; }
+    await signPhotosDeep(data || []);
+    return data || [];
+}

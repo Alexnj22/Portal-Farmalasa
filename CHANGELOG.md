@@ -21,6 +21,60 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.605.5 — una caja especial es la caja, no la botella
+
+Regla del usuario: **una caja especial es una caja completa, no una unidad.** Un
+Electrolit ×12 marcado como caja especial viaja como una caja, y al sistema se le
+manda un traslado con las 12 unidades, no doce traslados de una.
+
+El sistema ya lo hacía bien —`planificar_traslado_pedido` emite una línea por
+renglón con la cantidad completa; el pedido #114 salió con 4 traslados de 24, 12,
+12 y 12 unidades, clave `CE`—. Lo que contaba mal era el portal.
+
+**El conteo se armaba por unidad.** `Array.from({ length: cantidad_asignada })`
+al finalizar: el pedido #114 (La Popular, 14-ago) quedó con **60 etiquetas
+E1…E60 para 5 cajas reales**, y la sala iba a ver «60 cajas especiales» en un
+pedido de 6 cajas. Ahora se cuenta por caja: `ceil(unidades / factor)`. Las
+andaderas, bastones y sillas —el resto del universo de caja especial— tienen
+factor 1, así que para ellas no cambia nada.
+
+**Eran tres números distintos para lo mismo.** La pantalla de recepción armaba
+su propia lista, una etiqueta por producto (4), con otro orden que el guardado
+(laboratorio primero, no nombre). Como la etiqueta es la clave con la que se
+marca una caja dañada, marcar «E2 dañada» en el aviso de llegada señalaba otra
+caja al recibir. La construcción vive ahora en `src/utils/cajasEspeciales.js` y
+la comparten los dos sitios; el contador de Electrolit usa la misma fórmula, que
+antes tenía copiada aparte.
+
+La **baldosa** de recepción sigue siendo una por renglón —`receive_pedido_sucursal`
+recibe una cantidad por `pedido_item`, así que dos baldosas del mismo producto
+serían dos veces la misma confirmación— pero ahora dice qué cajas cubre:
+«E1–E2 · 2 cajas · 24 unid.».
+
+**Y el badge «⭐ N especiales» del planificador de rutas no apareció nunca.**
+Sumaba la lista como si fuera un número: `0 + [{…}]` da la cadena
+«0[object Object]», y `"0[object Object]" > 0` es `NaN > 0`, o sea falso —tanto
+con cajas especiales como sin ellas—. Es el mismo defecto que `isBranch` de
+v2.605.2: una condición que no podía ser verdadera.
+
+Anclado en `tests/unit/cajasEspeciales.test.js` contra los renglones reales del
+#114.
+
+## v2.605.4 — La captura de cortes trabaja de 7 a 11
+
+La ventana pasa de **6:00–23:59** a **7:00–23:00**, pedido del usuario. La vieja
+venía heredada del primer cron y no cubría nada: de los 36 cortes capturados, el
+más temprano fue a las 12:27 y el más tarde a las 22:00. Eran 240 llamadas
+diarias al sistema para preguntar por cortes que no existen.
+
+Verificado hora por hora contra la condición que quedó escrita — trabaja de la 7
+a la 22 inclusive (o sea, el último intento sale 22:59:30) y no hace nada a las
+23 ni de medianoche a las 6.
+
+Un corte más tarde de las 11 no se pierde: el repaso de las 23:40 barre el día
+completo, y el aviso a la sala sigue saliendo porque acepta hasta 12 horas entre
+el corte y su captura.
+
 ## v2.605.3 — El corte aparece en la mitad de tiempo
 
 **La captura pasa de cada minuto a cada 30 segundos.** Medido sobre los 12

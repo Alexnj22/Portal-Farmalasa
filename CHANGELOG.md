@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.596.0 — La pantalla de cortes de caja
+
+Comercial → **Cortes de caja** (`/cortes`). El día por sala, la línea de cortes
+de cada una, y el detalle con qué revisar cuando no cuadra.
+
+**La cifra grande es el TRAMO, no el acumulado.** Los cortes son acumulativos
+—el de la noche contiene al de la mañana—, así que la diferencia que señala a un
+turno es cuánto se movió *desde el corte anterior*. Regla del usuario: si el
+primer corte tuvo +$0.25, el de la noche debe tener al menos +$0.25; si no,
+faltan $0.25 en ese tramo. Con la lógica vieja, el corte de las 15:52 de La
+Popular se leía «−$27.60» y parecía que la tarde perdió esa plata: perdió
+$13.80, el resto ya venía de la mañana.
+
+Los descartados no desplazan la referencia: un conteo mal hecho no puede correr
+la base de los que vienen después.
+
+**Qué revisar** (`utils/cortesDiagnostico.js`, fuera de la vista porque decide
+si a alguien se le señala un faltante). La pista más útil salió sola de los
+datos: cuando la diferencia es múltiplo exacto de un movimiento que ya existe en
+el día, casi siempre falta registrar otro igual. En La Popular el 13-ago la
+diferencia fue $13.80 con dos «POR ABONO A CREDITO» de $4.60 anotados — 3 × 4.60.
+Se publica como hipótesis a confirmar en la sala, no como veredicto. Después van
+la tarjeta (el monto que teclea quien corta, y por donde se esconde un faltante),
+los vales, los cobros de crédito y los ingresos del día.
+
+- `resolver_corte_caja`: RPC SECURITY DEFINER. Valida permiso, alcance de
+  sucursal, que sea un corte de caja —el cierre del día no se confirma— y que
+  siga pendiente. La autoría la pone el servidor.
+- El desglose lleva su advertencia en pantalla: **puede no sumar el «debía
+  haber»**, porque el origen lo recalcula al pedirlo. Quien lo mire se va a
+  hacer esa pregunta, y la respuesta tiene que estar ahí.
+- Permisos copiados de `ventas`: la sala VE sus cortes y no los resuelve;
+  confirman Gerencia, Administrador, Supervisión de Ventas y Talento Humano.
+  Ampliarlo es un clic en Permisos; deshacer una confirmación indebida, no.
+
+
+_(pendiente de redactar)_
+
 ## v2.595.1 — La captura de cortes corre cada minuto
 
 En producción: `cortes-caja-1min` (cada minuto, 6:00–23:59 SV) y

@@ -33,6 +33,7 @@ export const IMPORTADORES = {
     VacationPlanView: () => import("../views/VacationPlanView"),
     PayrollView: () => import("../views/PayrollView"),
     VentasView: () => import("../views/VentasView"),
+    CortesView: () => import("../views/CortesView"),
     ProductosView: () => import("../views/ProductosView"),
     LaboratoriosView: () => import("../views/LaboratoriosView"),
     PedidosView: () => import("../views/PedidosView"),
@@ -121,6 +122,7 @@ export const IMPORTADOR_POR_RUTA = {
     'sesiones': IMPORTADORES.SesionesView,
     'vacation-plan': IMPORTADORES.VacationPlanView,
     'ventas': IMPORTADORES.VentasView,
+    'cortes_caja': IMPORTADORES.CortesView,
     'ventas-perdidas': IMPORTADORES.VentasPperdidasView,
 };
 

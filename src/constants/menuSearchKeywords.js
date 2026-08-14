@@ -19,6 +19,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     permissions:        ['roles y permisos', 'accesos', 'configuracion de accesos'],
     auditview:          ['bitacora', 'logs', 'historial de acciones'],
     impresion:          ['ticketera', 'imprimir ticket', 'rollo', 'prueba de papel', 'impresora'],
+    cortes_caja:        ['corte de caja', 'cuadre', 'arqueo', 'faltante', 'sobrante', 'diferencia de caja', 'efectivo'],
     ios_test:           ['prueba de app movil'],
     sync_health:        ['estado de sincronizacion', 'cron', 'erp sync', 'salud del sistema'],
     orphan_objects:     ['archivos huerfanos', 'storage sin usar', 'limpieza'],

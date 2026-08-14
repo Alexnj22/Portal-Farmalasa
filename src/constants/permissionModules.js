@@ -31,7 +31,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone, ShieldOff,
-    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer
+    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
 
@@ -142,6 +142,10 @@ const GRUPOS_CRUDOS = [
                 { key: 'ventas_tab_productos',  label: 'Productos',  tipo: 'tab' },
                 { key: 'ventas_ver_cards',      label: 'Ver las tarjetas de resumen', tipo: 'cap' },
             ]},
+            // Cortes de caja va pegado a Ventas: es el dinero de esas mismas
+            // ventas. `hasScope` porque la sala mira la suya y la supervisión
+            // mira todas — el mismo alcance que ya tiene Ventas.
+            { key: 'cortes_caja',   label: 'Cortes de caja', desc: 'Confirmar o descartar los cortes de cada sala, con la diferencia de cada tramo y qué revisar cuando no cuadra', icon: Wallet, hasApprove: false, hasScope: true },
             { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, sub: [
                 { key: 'facturacion_tab_anuladas',      label: 'Anuladas',      tipo: 'tab' },
                 { key: 'facturacion_tab_pendiente_mh',  label: 'Pendiente MH',  tipo: 'tab' },

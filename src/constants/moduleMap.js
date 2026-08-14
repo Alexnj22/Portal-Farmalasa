@@ -11,7 +11,7 @@ import { CalendarCheck,
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, Wrench,
-    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText, MonitorSmartphone, Printer
+    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText, MonitorSmartphone, Printer, Wallet
 } from 'lucide-react';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -47,6 +47,7 @@ export const MODULE_MAP = {
     maintenance:       { path: '/mantenimiento',  label: 'Mantenimiento',            icon: Wrench        },
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
+    cortes_caja:       { path: '/cortes',           label: 'Cortes de caja',           icon: Wallet     },
     metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },

@@ -67,7 +67,7 @@ const MENU_GROUPS = [
     // `clientes` entra acá y no en un grupo propio: el receptor de la factura es
     // el mismo asunto que Facturación y Cotizaciones, y quien factura es quien
     // necesita su ficha fiscal correcta. Quedan 4 de los 6 que admite un grupo.
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'clientes'] },
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'cortes_caja', 'facturacion', 'cotizaciones', 'clientes'] },
     // Metas salió de Comercial a menú propio (2026-08-04, pedido del usuario).
     // Con un solo módulo el grupo se pinta plano (renderGroup → renderNavItem),
     // así que queda a un click desde cualquier pantalla en vez de detrás del

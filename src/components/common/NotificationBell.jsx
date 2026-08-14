@@ -1,21 +1,38 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import Button from './Button';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell, BellRing, Check, AlertTriangle, AlertCircle, CheckCircle2,
-    Megaphone, ChevronRight, ChevronDown, Trash2, X, ArrowRight, ArrowUpRight, Undo2,
+    Megaphone, ChevronRight, ChevronDown, Trash2, X, ArrowRight, Undo2,
+    ArrowLeftRight, Eye,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { iconoDeTipo } from '../../constants/tipoIconos';
 import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { mensajeAmigable } from '../../utils/errorMessages';
+import { useDecidirSolicitud } from '../../hooks/useDecidirSolicitud';
+import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/solicitudDeAviso';
 import Contador from './Contador';
 import LiquidAvatar from './LiquidAvatar';
 import NotificacionDetalle from './NotificacionDetalle';
+
+/* El diálogo canónico de la solicitud, para el rechazo.
+ *
+ * Rechazar EXIGE motivo, y el campo con su validación —y el detalle de lo que
+ * se está rechazando arriba— ya viven en `ModalSolicitud`. Escribir acá una
+ * ventanita con un textarea habría sido una segunda copia de esa regla, y la
+ * primera que se quedaría vieja: la de la campana, que nadie mira.
+ *
+ * Va por `lazy` porque la campana viaja en el chunk que se baja SIEMPRE y este
+ * diálogo sólo hace falta al apretar «Rechazar». */
+const ModalSolicitud = lazy(() =>
+    import('../../views/solicitudes/TarjetaSolicitud').then(m => ({ default: m.ModalSolicitud })));
 
 // ── Apariencia por tipo de notificación ──────────────────────────────────────
 // El ícono sale del catálogo compartido (`constants/tipoIconos`). Antes se
@@ -128,6 +145,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const employees = useStaff(s => s.employees || []);
     const branches = useStaff(s => s.branches || []);
     const markNotificationRead = useStaff(s => s.markNotificationRead);
+    const marcarAvisoResuelto = useStaff(s => s.marcarAvisoDeSolicitudResuelto);
     const markAllNotificationsRead = useStaff(s => s.markAllNotificationsRead);
     const deleteNotificationsByIds = useStaff(s => s.deleteNotificationsByIds);
     const deleteAllNotifications = useStaff(s => s.deleteAllNotifications);
@@ -311,16 +329,17 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
     useEffect(() => { if (!isOpen) setConfirmClear(false); }, [isOpen]);
 
-    /* Una notificación que tiene una solicitud detrás se DESPLIEGA en el sitio;
-       el resto sigue llevando a su pantalla como siempre.
+    /* Tocar la tarjeta LLEVA a Solicitudes; el detalle se abre con su propio
+       botón.
 
-       El aviso cuenta lo que pasó en tres renglones y ahí se acaba: qué producto
-       se descarta, de qué factura habla o de cuánto a cuánto va un Min/Max no
-       cabían. Desplegar es lo que convierte «avisame» en «mostrame», y sin salir
-       de la campana no se pierde el resto de la bandeja.
+       Antes el toque hacía las dos cosas según el aviso: los que tenían una
+       solicitud detrás se desplegaban y el resto navegaba. O sea que el gesto
+       más obvio de la pantalla significaba dos cosas distintas y ninguna se
+       podía predecir desde afuera — y la que más se quería, salir a la bandeja,
+       era la que NO pasaba justamente en los avisos que importan.
 
-       Salir sigue estando: el detalle desplegado trae su propio «Ver en
-       Solicitudes», que es donde la solicitud vive con su historial completo. */
+       Pedido del usuario (2026-08-14): «al clickear me debe llevar a
+       solicitudes; para ver el detalle sólo al clickear en ver detalle». */
     const puedeExpandir = (n) => Boolean(n.metadata?.request_id);
 
     const alternarExpansion = (id) => setExpandidas(prev => {
@@ -331,11 +350,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
     const handleNotifClick = (n) => {
         if (!n.read_at) markNotificationRead(n.id);
-        if (puedeExpandir(n)) { alternarExpansion(n.id); return; }
-        if (n.link) {
-            setIsOpen(false);
-            navigate(n.link);
-        }
+        if (n.link || n.metadata?.request_id) irASolicitudes(n);
     };
 
     // El enlace de salida del detalle. `n.link` ya trae la forma correcta para
@@ -373,11 +388,25 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         return MODULO_QUE_DECIDE[n.metadata?.request_type] ?? 'requests';
     };
 
+    /* Un traslado NO se decide desde acá, y desde que la campana aplica de
+       verdad eso dejó de ser un detalle de gusto: confirmarlo relee la
+       existencia de la sala de origen justo antes de despachar. Aprobarlo por
+       fuera lo marcaría APROBADO **sin mover nada** y lo haría desaparecer de
+       las tres pestañas de Traslados. Es la misma exclusión que ya hacía
+       `ModalSolicitud` (`decidible = … && !esTraslado`); acá faltaba, y no daba
+       daño sólo porque el botón llevaba a ese diálogo, que se negaba. */
+    const esTraslado = (n) => n.metadata?.request_type === 'INVENTORY_TRANSFER_REQUEST';
+
     const puedeDecidir = (n) => {
+        if (esTraslado(n)) return false;
         const modulo = moduloDelAviso(n);
         return !!modulo && hasPermission(modulo, 'can_approve')
             && !!n.metadata?.request_id && !n.metadata?.resuelta;
     };
+
+    const trasladoPorResolver = (n) =>
+        n.type === 'REQUEST_PENDING' && esTraslado(n) && !n.metadata?.resuelta
+        && hasPermission('traslados', 'can_approve');
 
     /* `ADVANCED` es la solicitud que uno aprobó y pasó al siguiente nivel: sigue
      * pendiente para otra persona, pero para quien mira este aviso ya está
@@ -389,11 +418,100 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         ADVANCED: 'Aprobada',
     };
 
-    const irADecidir = (n, accion) => {
+    /* ── Decidir DESDE la campana, no en otra pantalla ──────────────────────
+     *
+     * Hasta v2.601.x estos dos botones no decidían: navegaban a
+     * `/requests?solicitud=…&accion=aprobar`, que abría el diálogo con la
+     * decisión desplegada y ahí había que apretar otra vez. Tres toques y un
+     * cambio de pantalla para decir que sí. Pedido del usuario (2026-08-14):
+     * «al dar aprobar o rechazar debe aplicarse» y «si confirmo la solicitud
+     * debe confirmarse de un solo».
+     *
+     * La REGLA no se copia: `useDecidirSolicitud` es la misma que usa la
+     * bandeja —con la RPC propia de Min/Max, la bitácora, el aviso a quien
+     * pidió y el apagado del propio aviso—. Acá sólo se resuelve qué se decide
+     * y con qué gesto.
+     *
+     * Rechazar SÍ abre ventana: exige motivo, y el campo con su validación —y
+     * el detalle de lo que se rechaza arriba— ya existen en `ModalSolicitud`.
+     */
+    const [decidiendoId, setDecidiendoId] = useState(null);
+    const [rechazo, setRechazo] = useState(null);   // { req } — el diálogo de motivo
+
+    const cerrarRechazo = useCallback(() => setRechazo(null), []);
+    const { decidir, ocupado: decidiendo } = useDecidirSolicitud({ onAplicado: cerrarRechazo });
+
+    /* La solicitud no viaja en el aviso: el aviso trae su id. Se pide al
+     * apretar y no al pintar la lista — prefetchear doce solicitudes para que
+     * quizá se decida una es pagar doce viajes por adelantado. */
+    const traerSolicitud = async (n) => {
+        try {
+            const fila = await cargarFilaDeAviso(n);
+            if (!fila) {
+                useToastStore.getState().showToast('Ya no está',
+                    'Esta solicitud ya no está disponible.', 'error');
+                return null;
+            }
+            return paraDecidir(fila, esAvisoDeMinMax(n));
+        } catch (err) {
+            useToastStore.getState().showToast('No se pudo',
+                mensajeAmigable(err, 'No se pudo abrir la solicitud.'), 'error');
+            return null;
+        }
+    };
+
+    /* Y antes de aplicar, se mira el estado REAL.
+     *
+     * El aviso es una fila aparte de la solicitud: otra pestaña —u otra
+     * persona— pudo resolverla y esta campana seguiría ofreciendo los dos
+     * botones. La base lo frena igual (el UPDATE va condicionado a PENDING),
+     * pero rebotar sin decir por qué se lee como que el botón no hace nada. */
+    const yaResuelta = (n, req) => {
+        if (req.status === 'PENDING') return false;
+        useToastStore.getState().showToast('Ya estaba resuelta',
+            'Alguien más la decidió mientras tanto.', 'info');
+        marcarAvisoResuelto(n.metadata.request_id, req.status);
+        return true;
+    };
+
+    /* Sin `try { … } finally { setDecidiendoId(null) }`, y no es cuestión de
+     * gusto: medido con eslint el 2026-08-14, un `try/finally` acá hacía que el
+     * compilador de React ABANDONARA el componente entero —`react-hooks/purity`
+     * dejaba de reportar en todo el archivo, que es cómo se nota—. La campana
+     * vive en `AppLayout` y se redibuja con cada notificación de cada pantalla:
+     * no es el lugar donde regalar la memoización.
+     *
+     * Y tampoco hace falta: ni `traerSolicitud` ni `decidir` lanzan —la primera
+     * atrapa lo suyo, la segunda devuelve `false`—, que es el mismo contrato del
+     * que depende la bandeja desde hace meses. Un `finally` acá sería una red
+     * para una caída que no existe, a cambio de apagar la optimización. */
+    const aprobarDesdeElAviso = async (n) => {
+        if (decidiendoId) return;
         if (!n.read_at) markNotificationRead(n.id);
-        setIsOpen(false);
-        const base = (n.link || '/requests').split('?')[0];
-        navigate(`${base}?solicitud=${n.metadata.request_id}&accion=${accion}`);
+        setDecidiendoId(n.id);
+        const req = await traerSolicitud(n);
+        // Sin `aceptadas`: desde la campana se aprueba COMPLETO. Dejar líneas
+        // afuera es una edición y vive en el diálogo, que es donde se ven los
+        // renglones y se puede recortar la cantidad.
+        if (req && !yaResuelta(n, req)) {
+            await decidir({ req, modo: 'approve', nota: '', aceptadas: null });
+        }
+        setDecidiendoId(null);
+    };
+
+    const rechazarDesdeElAviso = async (n) => {
+        if (decidiendoId) return;
+        if (!n.read_at) markNotificationRead(n.id);
+        setDecidiendoId(n.id);
+        const req = await traerSolicitud(n);
+        if (req && !yaResuelta(n, req)) {
+            // El panel se cierra: el diálogo se dibuja por fuera de la campana
+            // —tiene que sobrevivir a que ésta se cierre— y dejarlos encimados
+            // deja dos superficies compitiendo por el mismo toque.
+            setIsOpen(false);
+            setRechazo({ req });
+        }
+        setDecidiendoId(null);
     };
 
     const handleClearAll = () => {
@@ -516,32 +634,44 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.97, y: -6 }}
                         transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                        // Móvil: `fixed` anclado a los bordes de la PANTALLA, no
-                        // al botón. Estaba `absolute right-0` con un ancho de
-                        // `100vw - 2rem`: como la campana no está pegada al borde
-                        // derecho, el panel se extendía hacia la izquierda y salía
-                        // de la pantalla. Medido en iPhone 13: x = -36px, o sea
-                        // que el título se leía "otificaciones". Es lo que el
-                        // usuario reportó como "al abrir las notificaciones se
-                        // corta".
-                        //
-                        // Y `max-h` + scroll propio: con varias notificaciones el
-                        // panel crecía hasta pasarse por abajo, donde tampoco hay
-                        // forma de alcanzarlo.
-                        className={`z-bell-dropdown origin-top-right
+                        /* Móvil: `fixed` anclado a los bordes de la PANTALLA, no
+                           al botón. Estaba `absolute right-0` con un ancho de
+                           `100vw - 2rem`: como la campana no está pegada al borde
+                           derecho, el panel se extendía hacia la izquierda y salía
+                           de la pantalla. Medido en iPhone 13: x = -36px, o sea
+                           que el título se leía "otificaciones".
+
+                           ── UN solo recorrido vertical (2026-08-14) ───────────
+                           Acá había un `overflow-y-auto overscroll-contain`, y la
+                           lista de adentro tenía otro, y el detalle desplegado un
+                           tercero. Medido en WebKit iPhone 13 con doce avisos y
+                           uno abierto: DOS contenedores anidados desbordando a la
+                           vez (la lista 1,617px, el detalle 199px), los dos con el
+                           encadenamiento cortado. El dedo caía sobre el detalle,
+                           lo llevaba hasta su fondo y ahí se quedaba: `contain`
+                           impide que el gesto siga en el padre, así que no había
+                           forma de pasar de largo el aviso abierto. Es lo que el
+                           usuario reportó como «me falla el scroll en móvil».
+
+                           Ahora el panel es una columna que NO hace scroll y la
+                           lista es el único que lo hace. `100dvh` y no `100vh`:
+                           en iOS Safari `vh` es el viewport GRANDE —con las
+                           barras retraídas—, así que un techo en `vh` deja el pie
+                           del panel debajo de la barra inferior. */
+                        className={`z-bell-dropdown origin-top-right flex
                             ${isDesktop
-                                ? 'absolute right-0 top-[3.25rem] w-[380px]'
+                                ? 'absolute right-0 top-[3.25rem] w-[380px] max-h-[min(72vh,560px)]'
                                 : `fixed left-2 right-2 top-[calc(3.5rem+var(--sa-top))] w-auto
-                                   max-h-[calc(100vh-5rem-var(--sa-top))] overflow-y-auto overscroll-contain`}`}
+                                   max-h-[calc(100dvh-4.5rem-var(--sa-top)-var(--sa-bottom))]`}`}
                     >
-                        <div data-surface="dropdown" className="overflow-hidden transform-gpu">
+                        <div data-surface="dropdown" className="overflow-hidden transform-gpu flex flex-col min-h-0 w-full">
                             {/* Shimmer superior */}
                             <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
                                 <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-brand/40 to-transparent animate-shimmer" style={{ animationDuration: '4s' }} />
                             </div>
 
                             {/* ── Header ── */}
-                            <div className={`flex items-center justify-between pl-5 pr-3 pt-4 pb-3 border-b ${cx.headerBorder}`}>
+                            <div className={`shrink-0 flex items-center justify-between pl-5 pr-3 pt-4 pb-3 border-b ${cx.headerBorder}`}>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-body-lg font-black tracking-tight ${cx.title}`}>Notificaciones</span>
                                     {unreadNotifs.length > 0 && (
@@ -578,7 +708,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
                             {/* ── Franja Deshacer (borrado masivo) ── */}
                             {pendingAll && (
-                                <div className={`relative flex items-center justify-between pl-5 pr-3 py-2.5 border-b ${cx.headerBorder} ${cx.undoStrip}`}>
+                                <div className={`shrink-0 relative flex items-center justify-between pl-5 pr-3 py-2.5 border-b ${cx.headerBorder} ${cx.undoStrip}`}>
                                     <span className={`text-body-sm font-semibold ${cx.undoText}`}>
                                         Borrando {pendingAll.ids.length} notificación{pendingAll.ids.length > 1 ? 'es' : ''}…
                                     </span>
@@ -591,7 +721,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                             {annUnread > 0 && (
                                 <button
                                     onClick={() => { setIsOpen(false); navigate('/my-announcements'); }}
-                                    className={`w-full flex items-center gap-3 px-5 py-3 text-left border-b transition-colors group/ann
+                                    className={`shrink-0 w-full flex items-center gap-3 px-5 py-3 text-left border-b transition-colors group/ann
                                         ${hasUrgentAnn
                                             ? (isDark ? 'bg-danger/[0.08] border-danger/40 hover:bg-danger/[0.14]' : 'bg-danger/10 border-danger/30 hover:bg-danger/10')
                                             : (isDark ? 'bg-chart-1/[0.06] border-chart-1/40 hover:bg-chart-1/[0.12]' : 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10')}`}
@@ -612,8 +742,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 </button>
                             )}
 
-                            {/* ── Lista ── */}
-                            <div className="max-h-[min(60vh,440px)] overflow-y-auto overscroll-contain scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                            {/* ── Lista — el ÚNICO contenedor que hace scroll ── */}
+                            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                 {notifications.length === 0 ? (
                                     <div className="relative flex flex-col items-center justify-center py-12 px-6 text-center">
                                         <div className="absolute w-28 h-28 rounded-full bg-brand/10 blur-2xl" />
@@ -653,10 +783,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
                                                 const expandible = puedeExpandir(n);
                                                 const abierta    = expandidas.has(n.id);
-                                                // Interactiva es la que hace ALGO al tocarla: desplegarse
-                                                // o llevar a su pantalla. De eso depende el realce, que
-                                                // es la promesa de que se puede tocar.
-                                                const interactiva = expandible || Boolean(n.link);
+                                                // Interactiva es la que hace ALGO al tocarla, y desde que
+                                                // el toque es uno solo eso significa «lleva a su
+                                                // pantalla». De eso depende el realce, que es la promesa
+                                                // de que se puede tocar.
+                                                const interactiva = Boolean(n.link || n.metadata?.request_id);
                                                 const quien    = n.created_by ? empleadosPorId.get(String(n.created_by)) : null;
                                                 const sucursal = n.branch_id ? sucursalesPorId.get(String(n.branch_id)) : null;
 
@@ -711,7 +842,6 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
                                                         <button
                                                             onClick={() => handleNotifClick(n)}
-                                                            aria-expanded={expandible ? abierta : undefined}
                                                             // Este botón no es una pieza de la tarjeta: es su
                                                             // cara. Sin ceder el filo, la animación al apuntar
                                                             // corre SU rectángulo y corta la tarjeta justo
@@ -770,18 +900,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                         tracking ancho competía de igual a igual con «VER»,
                                                                         y son cosas de peso distinto. */}
                                                                     <span className={`text-caption font-medium ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
-                                                                    {/* En una fila que se despliega, el verbo tiene que
-                                                                        decir QUÉ hace el toque. «Revisar solicitud →»
-                                                                        prometía irse a otra pantalla, y eso ahora lo
-                                                                        ofrece el enlace de abajo del detalle. */}
-                                                                    {expandible ? (
-                                                                        <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest
-                                                                            ${unread && !abierta ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}>
-                                                                            {abierta ? 'Ocultar' : 'Ver detalle'}
-                                                                            <ChevronDown size={11} strokeWidth={3}
-                                                                                className={`transition-transform duration-[var(--dur-base)] ${abierta ? 'rotate-180' : ''}`} />
-                                                                        </span>
-                                                                    ) : actionLabel && (
+                                                                    {/* El verbo del TOQUE, y ahora el toque es uno solo:
+                                                                        salir a Solicitudes. «Ver detalle» dejó de vivir
+                                                                        acá —era una palabra dentro del botón grande, o
+                                                                        sea que no se podía tocar por su cuenta— y bajó a
+                                                                        la fila de controles como botón de verdad. */}
+                                                                    {actionLabel && (
                                                                         <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest transition-transform
                                                                             ${resuelta ? cx.chipMuted : `group-hover:translate-x-0.5 ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}`}>
                                                                             {actionLabel}
@@ -791,17 +915,47 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                             {!resuelta && <ArrowRight size={10} strokeWidth={3} />}
                                                                         </span>
                                                                     )}
-                                                                    {/* El estado de una solicitud ya decidida se pierde
-                                                                        al cambiar el verbo por «Ver detalle»: sin esto,
-                                                                        una aprobada y una pendiente se leen igual. */}
-                                                                    {expandible && resuelta && (
-                                                                        <span className={`text-caption font-black uppercase tracking-widest ${cx.chipMuted}`}>
-                                                                            {RESUELTA_LABEL[resuelta] || 'Resuelta'}
-                                                                        </span>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </button>
+
+                                                        {/* ── «Ver detalle», ahora un control de verdad ──────
+                                                            Era una palabra DENTRO del botón grande de la
+                                                            tarjeta, así que no se podía tocar por su cuenta:
+                                                            el mismo toque servía para leer el detalle y para
+                                                            nada más. Acá es un botón, al ancho de la tarjeta
+                                                            y con la altura mínima de toque que garantiza
+                                                            `--tap-min` — que es lo que lo hace usable con el
+                                                            pulgar. */}
+                                                        {expandible && (
+                                                            <div className={`relative px-3.5 pb-2.5 ${resuelta ? '' : '-mt-1'} flex items-center gap-2`}>
+                                                                {/* `secondary` y no `ghost`: en `ghost` era texto con
+                                                                    un ícono al lado —medido en iPhone 13, se leía como
+                                                                    un rótulo centrado y no como algo que se toca— y el
+                                                                    pedido era justamente que el detalle tenga SU
+                                                                    control. Con relleno propio se distingue de la
+                                                                    tarjeta sin competirle a Aprobar/Rechazar, que son
+                                                                    los únicos con color. */}
+                                                                <Button
+                                                                    size="xs"
+                                                                    variant="secondary"
+                                                                    icon={abierta ? ChevronDown : Eye}
+                                                                    className="flex-1 min-w-0"
+                                                                    aria-expanded={abierta}
+                                                                    onClick={(e) => { e.stopPropagation(); alternarExpansion(n.id); }}
+                                                                >
+                                                                    {abierta ? 'Ocultar detalle' : 'Ver detalle'}
+                                                                </Button>
+                                                                {/* El estado de una solicitud ya decidida: sin
+                                                                    esto, una aprobada y una pendiente se leen
+                                                                    igual una vez que el verbo dejó de decirlo. */}
+                                                                {resuelta && (
+                                                                    <span className={`shrink-0 text-caption font-black uppercase tracking-widest ${cx.chipMuted}`}>
+                                                                        {RESUELTA_LABEL[resuelta] || 'Resuelta'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
 
                                                         {/* ── El detalle, desplegado ─────────────────────────
                                                             Lo que hay que ver para decidir: las líneas de
@@ -813,39 +967,23 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         {abierta && (
                                                             <div className={`relative px-3.5 pb-3 pt-2 border-t ${cx.headerBorder}`}>
                                                                 <NotificacionDetalle notif={n} />
-                                                                {/* La salida. La campana muestra la solicitud;
-                                                                    Solicitudes es donde vive, con su historial
-                                                                    y el resto de la bandeja al lado. */}
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); irASolicitudes(n); }}
-                                                                    className={`mt-2 inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1.5 -ml-2 rounded-xl transition-colors
-                                                                        ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
-                                                                >
-                                                                    Ver en Solicitudes
-                                                                    <ArrowUpRight size={11} strokeWidth={3} />
-                                                                </button>
                                                             </div>
                                                         )}
 
-                                                        {/* Decidir sin salir de la campana.
-                                                            No repiten el flujo de decisión: llevan AL diálogo
-                                                            de esa solicitud. Duplicarlo acá significaría dos
-                                                            copias de la misma regla —el rechazo exige motivo,
-                                                            la aprobación de facturación avisa que va al ERP—
-                                                            y tarde o temprano una se queda vieja.
-                                                            Además es lo que funciona en iPhone: iOS ignora
-                                                            los botones de acción de una notificación web. */}
+                                                        {/* ── Decidir acá mismo ──────────────────────────────
+                                                            Aprobar aplica de una: un toque y listo, sin pasar
+                                                            por otra pantalla ni por un segundo «confirmar».
+                                                            Rechazar abre el diálogo canónico, porque exige
+                                                            motivo — y ahí arriba se ve lo que se rechaza.
+
+                                                            La regla no está duplicada: las dos llaman a
+                                                            `useDecidirSolicitud`, la misma que usa la bandeja.
+                                                            Lo que cambia es el gesto, no lo que pasa. */}
                                                         {puedeDecidir(n) && (
-                                                            // El `-mt-1` recupera el aire que deja el renglón de
-                                                            // la hora; con el detalle abierto ese renglón no es
-                                                            // el vecino de arriba, así que subir los botones los
-                                                            // pegaría al enlace de salida.
-                                                            <div className={`relative flex items-stretch gap-2 px-3.5 pb-3 ${abierta ? '' : '-mt-1'}`}>
+                                                            <div className={`relative flex items-stretch gap-2 px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
                                                                 {/* `soft` y no relleno sólido: es el caso que
                                                                     nombra DESIGN.md §15.2 — dos acciones de
-                                                                    categoría juntas donde ninguna manda. Y
-                                                                    ninguna es destructiva acá: abren el
-                                                                    diálogo, no deciden.
+                                                                    categoría juntas donde ninguna manda.
 
                                                                     Van al ANCHO de la tarjeta, mitad y mitad.
                                                                     Antes se sangraban 68px para alinearse con
@@ -859,7 +997,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     soft
                                                                     icon={Check}
                                                                     className="flex-1 min-w-0"
-                                                                    onClick={(e) => { e.stopPropagation(); irADecidir(n, 'aprobar'); }}
+                                                                    loading={decidiendoId === n.id && decidiendo}
+                                                                    disabled={!!decidiendoId && decidiendoId !== n.id}
+                                                                    onClick={(e) => { e.stopPropagation(); aprobarDesdeElAviso(n); }}
                                                                 >
                                                                     Aprobar
                                                                 </Button>
@@ -869,9 +1009,33 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     soft
                                                                     icon={X}
                                                                     className="flex-1 min-w-0"
-                                                                    onClick={(e) => { e.stopPropagation(); irADecidir(n, 'rechazar'); }}
+                                                                    disabled={!!decidiendoId}
+                                                                    onClick={(e) => { e.stopPropagation(); rechazarDesdeElAviso(n); }}
                                                                 >
                                                                     Rechazar
+                                                                </Button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Un traslado se resuelve en SU pantalla, que relee la
+                                                            existencia de la sala de origen antes de despachar.
+                                                            Acá se dice a dónde ir, en vez de ofrecer dos botones
+                                                            que marcarían APROBADO sin mover producto. */}
+                                                        {trasladoPorResolver(n) && (
+                                                            <div className={`relative px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
+                                                                <Button
+                                                                    size="xs"
+                                                                    soft
+                                                                    icon={ArrowLeftRight}
+                                                                    className="w-full"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (!n.read_at) markNotificationRead(n.id);
+                                                                        setIsOpen(false);
+                                                                        navigate('/traslados');
+                                                                    }}
+                                                                >
+                                                                    Resolver en Traslados
                                                                 </Button>
                                                             </div>
                                                         )}
@@ -895,6 +1059,31 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ── El motivo del rechazo ──────────────────────────────────────
+                Va acá afuera, hermano del panel y no adentro: el diálogo cierra
+                la campana al abrirse, y montado dentro del `isOpen` se
+                desmontaría con ella —el modal que lee el estado que lo abre se
+                vacía al cerrarlo—.
+
+                Es el diálogo canónico de la solicitud, no una ventanita propia:
+                trae el detalle arriba, el campo de motivo con su obligatoriedad
+                y el mismo `onDecidir`. `canApprove` va en `true` porque para
+                llegar hasta acá ya se evaluó `puedeDecidir`. */}
+            {rechazo && (
+                <Suspense fallback={null}>
+                    <ModalSolicitud
+                        key={rechazo.req.id}
+                        req={rechazo.req}
+                        canApprove
+                        employeesById={empleadosPorId}
+                        accionInicial="reject"
+                        ocupado={decidiendo}
+                        onCerrar={() => !decidiendo && setRechazo(null)}
+                        onDecidir={decidir}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 };

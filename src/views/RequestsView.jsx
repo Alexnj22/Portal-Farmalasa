@@ -12,14 +12,13 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
-import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
 import { useNowTick } from '../hooks/useNowTick';
 import { useRecargarAlVolver } from '../hooks/useRecargarAlVolver';
+import { useDecidirSolicitud } from '../hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { REQUEST_TYPES, esOperativa, adaptarMinMax, YA_AVISADO } from '../store/slices/requestsSlice';
-import { fetchAllMinMaxChangeRequests, decidirMinMax } from '../data/minmaxRequests';
-import { notifyEmployees } from '../utils/notify';
+import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
+import { fetchAllMinMaxChangeRequests } from '../data/minmaxRequests';
 import { ERP_NAMES } from '../constants/erp';
 import { ICONO_POR_TIPO } from '../constants/tipoIconos';
 import { MODULO_QUE_DECIDE } from '../constants/solicitudModulos';
@@ -122,10 +121,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const holidays       = useStaff(s => s.holidays);
     const isLoadingReqs  = useStaff(s => s.isLoadingRequests);
     const fetchRequests  = useStaff(s => s.fetchRequests);
-    const approveRequest = useStaff(s => s.approveRequest);
-    const rejectRequest  = useStaff(s => s.rejectRequest);
-    const appendAuditLog = useStaff(s => s.appendAuditLog);
-    const marcarAvisoResuelto = useStaff(s => s.marcarAvisoDeSolicitudResuelto);
 
     /* El maestro de personal, más los que ese maestro esconde.
      *
@@ -232,7 +227,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     // adentro. Antes eran dos estados (`actionModal` + `actionNote`) para una
     // ventana que se abría SIN haber mostrado nunca qué se estaba decidiendo.
     const [abierta,           setAbierta]           = useState(null); // { req, accionInicial }
-    const [isActioning,       setIsActioning]       = useState(false);
 
     /* ── El filtro «Todas / Sólo mías» ────────────────────────────────────
      * Con alcance «sólo míos» no se ofrece: no hay una segunda cosa que ver, y
@@ -455,120 +449,30 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * algo afuera. Viaja hasta la Edge Function, que es la que valida los
      * índices contra las líneas guardadas y aplica nada más esas: si el
      * navegador mandara las líneas mismas, estaría eligiendo qué se mueve.
+     *
+     * El cuerpo se mudó a `useDecidirSolicitud` cuando la campana aprendió a
+     * decidir en el sitio: son dos entradas a la MISMA regla, y copiarla era
+     * garantizar que una se quedara vieja. Lo que queda acá es lo que sólo esta
+     * pantalla sabe hacer después — cerrar su ventana y parchar su lista.
      */
-    const handleDecidir = async ({ req, modo, nota, aceptadas }) => {
-        if (modo === 'reject' && !nota) return;
-        setIsActioning(true);
+    const alAplicar = useCallback(({ req, modo, nota, minmax }) => {
+        setAbierta(null);
+        if (!minmax) return;
+        /* El parche va sobre la fila CRUDA, que es de donde sale la adaptada. Y
+         * lleva quién y cuándo con la misma forma que escribe la base
+         * —`decided_by` es el correo, así lo guarda `approve_minmax_request`—
+         * para que la ficha muestre la cara de quien acaba de decidir y no
+         * espere a la próxima recarga. */
+        setMinmaxFilas(prev => prev.map(f => `minmax:${f.id}` === req.id
+            ? { ...f,
+                status: modo === 'approve' ? 'approved' : 'rejected',
+                decision_note: nota || null,
+                decided_by: user?.email ?? f.decided_by ?? null,
+                decided_at: new Date().toISOString() }
+            : f));
+    }, [user?.email]);
 
-        // Min/Max se resuelve por su propia RPC y con su propio permiso. No pasa
-        // por `approveRequest` porque no vive en `approval_requests`.
-        if (req.type === 'MINMAX_CHANGE_REQUEST') {
-            const fila = req._minmax ?? {};
-            const r = await decidirMinMax(fila.id ?? req.id, modo === 'approve', nota);
-            setIsActioning(false);
-            if (r.ok) {
-                /* La bitácora y el aviso a quien pidió vivían DENTRO de la
-                 * pestaña de Min/Max, que se quitó al unificar el centro. Sin
-                 * traerlos acá, decidir habría seguido funcionando y en silencio
-                 * habría dejado de avisarle a quien propuso el ajuste y de
-                 * quedar registrado — dos ausencias que no dan error y que sólo
-                 * se notan semanas después, cuando alguien pregunta por qué
-                 * nunca le contestaron.
-                 *
-                 * El `target_id` es el PRODUCTO y no la solicitud: es lo que usa
-                 * el historial de Min/Max para buscar los cambios de un producto
-                 * puntual. La solicitud queda en el detalle. */
-                const aprobo = modo === 'approve';
-                /* `old_min`/`old_max`/`new_min`/`new_max` y no `requested_*`: es
-                 * la forma que lee el historial de MIN·MAX del producto, y sin
-                 * ella pintaba «MIN — MAX —» en cada aprobación (visto el
-                 * 2026-08-14 en CIPRO DENK). El par ANTERIOR lo devuelve
-                 * `approve_minmax_request`, que lo capturó justo antes de
-                 * pisarlo — el `current_min` de la solicitud es de cuando se
-                 * creó y puede ser de hace días.
-                 *
-                 * Y va quién lo PIDIÓ: el historial ya nombra a quien lo
-                 * resolvió (es su acción en la bitácora), pero el ajuste no
-                 * nació ahí. */
-                appendAuditLog(aprobo ? 'MINMAX_REQUEST_APPROVED' : 'MINMAX_REQUEST_REJECTED',
-                    String(fila.erp_product_id ?? ''), {
-                        request_id: fila.id, product: fila.product_name,
-                        sucursal_id: fila.erp_sucursal_id,
-                        old_min: r.data?.previous_min ?? null, old_max: r.data?.previous_max ?? null,
-                        new_min: fila.requested_min, new_max: fila.requested_max,
-                        requested_min: fila.requested_min, requested_max: fila.requested_max,
-                        requested_by_id: fila.requested_by_id ?? null,
-                        requested_by_name: fila.requested_by_name ?? null,
-                        note: nota || null,
-                    }).catch(e => console.error('audit MINMAX:', e?.message ?? e));
-
-                if (fila.requested_by_id) {
-                    notifyEmployees([String(fila.requested_by_id)], {
-                        type: 'MINMAX_DECIDED',
-                        title: aprobo ? '✅ Ajuste Min/Max aprobado' : '❌ Ajuste Min/Max rechazado',
-                        body: aprobo
-                            ? `Tu propuesta para ${fila.product_name} (${ERP_NAMES[fila.erp_sucursal_id] ?? fila.erp_sucursal_id}) fue aplicada: MIN ${fila.requested_min} · MAX ${fila.requested_max}.`
-                            : `Tu propuesta para ${fila.product_name} fue rechazada.${nota ? ' Motivo: ' + nota : ''}`,
-                        link: '/requests',
-                        push: true,
-                        metadata: {
-                            status: aprobo ? 'APPROVED' : 'REJECTED',
-                            product_name: fila.product_name,
-                            erp_sucursal_id: fila.erp_sucursal_id,
-                            requested_min: fila.requested_min, requested_max: fila.requested_max,
-                            note: nota || null,
-                        },
-                    }).catch(e => console.error('notify MINMAX:', e?.message ?? e));
-                }
-
-                useToastStore.getState().showToast('Listo',
-                    modo === 'approve' ? 'Ajuste de Min/Max aplicado.' : 'Ajuste de Min/Max rechazado.', 'success');
-                setAbierta(null);
-                /* El parche va sobre la fila CRUDA, que es de donde sale la
-                 * adaptada. Y lleva quién y cuándo con la misma forma que
-                 * escribe la base —`decided_by` es el correo, así lo guarda
-                 * `approve_minmax_request`— para que la ficha muestre la cara de
-                 * quien acaba de decidir y no espere a la próxima recarga. */
-                setMinmaxFilas(prev => prev.map(f => `minmax:${f.id}` === req.id
-                    ? { ...f,
-                        status: aprobo ? 'approved' : 'rejected',
-                        decision_note: nota || null,
-                        decided_by: user?.email ?? f.decided_by ?? null,
-                        decided_at: new Date().toISOString() }
-                    : f));
-                /* Y se apaga el aviso que pedía esta decisión. En la base lo
-                 * hace un trigger; acá se refleja al instante para quien acaba
-                 * de decidir — si no, su propia campana le sigue ofreciendo
-                 * «Aprobar / Rechazar» sobre lo que ya resolvió. El id del aviso
-                 * es el de la FILA de Min/Max, sin el prefijo del adaptador. */
-                marcarAvisoResuelto(fila.id ?? String(req.id).replace('minmax:', ''),
-                    aprobo ? 'APPROVED' : 'REJECTED');
-            } else {
-                useToastStore.getState().showToast('No se pudo', r.error ?? 'Error al resolver el ajuste.', 'error');
-            }
-            return;
-        }
-
-        const resultado = modo === 'approve'
-            ? await approveRequest(req.id, user.id, nota, null, aceptadas)
-            : await rejectRequest(req.id, user.id, nota);
-        setIsActioning(false);
-        if (resultado === true) {
-            useToastStore.getState().showToast(
-                'Listo',
-                modo === 'approve'
-                    ? (aceptadas ? `Se aplicaron ${aceptadas.length} líneas; el resto quedó rechazado.` : 'Solicitud aprobada.')
-                    : 'Solicitud rechazada.',
-                'success');
-            setAbierta(null);
-        } else if (resultado !== YA_AVISADO) {
-            /* Sólo si nadie explicó ya el motivo. Las ramas que hablan con el
-             * sistema de facturación o mueven existencias devuelven el detalle
-             * de por qué no entró, y este aviso genérico lo borraba: el store de
-             * toasts tiene una sola ranura. */
-            useToastStore.getState().showToast('Error', 'No se pudo procesar la acción.', 'error');
-        }
-    };
+    const { decidir: handleDecidir, ocupado: isActioning } = useDecidirSolicitud({ onAplicado: alAplicar });
 
     const STATUS_TABS = [
         { key: 'PENDING',  label: 'Pendientes' },

@@ -127,11 +127,19 @@ export default function NotificacionDetalle({ notif }) {
     }
 
     return (
-        // Techo propio: el detalle de un descarte con seis líneas y sus fotos es
-        // más alto que la lista entera, y sin tope empuja las demás
-        // notificaciones fuera del alcance del scroll del panel.
-        <div className="max-h-[42vh] overflow-y-auto overscroll-contain pr-0.5
-                        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        /* SIN techo ni scroll propio (2026-08-14).
+         *
+         * Tenía `max-h-[42vh] overflow-y-auto overscroll-contain`, puesto para
+         * que un descarte de seis líneas con fotos no empujara las demás
+         * notificaciones fuera del alcance. Lo que hacía en el teléfono era lo
+         * contrario: medido en WebKit iPhone 13, con el detalle abierto había
+         * DOS contenedores anidados desbordando a la vez —éste y la lista—, los
+         * dos con `contain`. El dedo caía sobre el detalle, lo llevaba a su
+         * fondo y ahí quedaba trabado: el gesto no puede seguir en el padre.
+         *
+         * Con un solo recorrido —el de la lista— el detalle largo simplemente se
+         * sigue deslizando, que es lo que un teléfono espera. */
+        <div className="pr-0.5">
             <Suspense fallback={<div className="py-1"><SkeletonText lines={4} /></div>}>
                 <DetalleSolicitud req={req} employeesById={employeesById} />
             </Suspense>

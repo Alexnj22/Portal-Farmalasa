@@ -21,6 +21,78 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.0 — Las notificaciones deciden, y en el teléfono se puede llegar al fondo
+
+Cinco cosas pedidas por el usuario sobre la campana, más un defecto de base que
+apareció en el camino.
+
+**El aviso de Min/Max iba a un cargo escrito a mano.**
+`get_minmax_approver_ids()` armaba la lista de destinatarios con `role_id = 13`
+(Supervisor/a de Ventas) fijo en el cuerpo, sin leer `role_permissions` ni una
+vez. O sea que el interruptor «Min / Max» de la tarjeta «Decidir solicitudes» no
+gobernaba a quién se le avisa: encendido o apagado, el aviso iba al cargo 13.
+
+Medido: la solicitud de descarte `f5ca7417` avisó a Edwin, a Talento Humano y a
+QA —esa pasa por `approval_requests`, que el 2026-08-12 aprendió a avisarle a
+todo el que puede aprobar—, mientras que las de Min/Max #43 a #49 avisaron
+**sólo a Edwin**. El permiso estaba bien y la solicitud se podía decidir; nadie
+se lo decía. Son dos tablas con dos disparadores, y arreglar uno no arregló al
+otro. Ahora la lista sale de `puede_aprobar_modulo(…, 'requests_minmax')`, la
+misma regla que el resto, y el disparador excluye a quien la pidió.
+
+**El scroll del teléfono estaba trabado, y se midió.** WebKit iPhone 13, doce
+avisos y uno desplegado: **dos contenedores anidados desbordando a la vez** —la
+lista 1,617px y el detalle 199px—, los dos con `overscroll-contain`. El dedo
+caía sobre el detalle, lo llevaba hasta su fondo y ahí se quedaba: `contain`
+impide que el gesto siga en el padre, así que no había forma de pasar de largo
+el aviso abierto. Ahora hay **un solo recorrido** —el panel es una columna que
+no hace scroll, la lista es la única que lo hace, el detalle perdió su techo—.
+De paso el panel usa el alto real de la pantalla (`100dvh`, no `100vh`: en iOS
+Safari `vh` es el viewport con las barras retraídas), y pasó de 458px a 592px.
+
+**Tocar la tarjeta lleva a Solicitudes.** Antes el toque significaba dos cosas
+según el aviso: los que tenían una solicitud detrás se desplegaban y el resto
+navegaba. Justamente en los que importan, no salía nunca de la campana.
+
+**«Ver detalle» es un botón.** Era una palabra dentro del botón grande de la
+tarjeta, o sea que no se podía tocar por su cuenta. Ahora es un control con su
+propio alto de toque (`--tap-min`), al ancho de la tarjeta.
+
+**Aprobar aplica de una; rechazar pide el motivo.** Los dos botones no
+decidían: navegaban a `/requests?solicitud=…&accion=aprobar`, que abría el
+diálogo con la decisión desplegada y ahí había que apretar otra vez — tres
+toques y un cambio de pantalla para decir que sí. Ahora aprobar aplica en el
+sitio, y rechazar abre el diálogo canónico, que es donde vive la obligación del
+motivo.
+
+**La regla de decidir no se copió.** Salió de `RequestsView.handleDecidir` a
+`useDecidirSolicitud`, que usan las dos entradas: la RPC propia de Min/Max, la
+bitácora con las claves que lee el historial del producto, el aviso a quien lo
+propuso y el apagado del propio aviso. Copiarla era garantizar que la de la
+campana —la que nadie mira— se quedara vieja.
+
+**Dos frenos que hacían falta.** Un traslado ya no ofrece Aprobar/Rechazar sino
+«Resolver en Traslados»: confirmarlo relee la existencia de la sala antes de
+despachar, y aprobarlo por fuera lo marcaría APROBADO sin mover nada. Y antes de
+aplicar se relee el estado: si otro la decidió mientras tanto, el aviso lo dice
+y se apaga, en vez de rebotar contra la base sin explicar nada.
+
+**Un hallazgo de paso: `try/finally` sin `catch` apagaba el compilador.** Medido
+con eslint — un `try/finally` en un handler de la campana hacía que el
+compilador de React **abandonara el componente entero** (se nota porque
+`react-hooks/purity` deja de reportar en todo el archivo). La campana vive en
+`AppLayout` y se redibuja con cada notificación de cada pantalla: no es el lugar
+donde regalar la memoización. Se escribió sin `finally`, que además no hacía
+falta.
+
+**Probado, no supuesto.** `tests/e2e/campana-movil.spec.js` mide la cadena de
+scroll en WebKit iPhone 13 y comprueba que tocar la tarjeta navega y que la
+guarda avisa (sólo lee; fabrica la lista interceptando la lectura, con
+`serviceWorkers: 'block'` porque si no `page.route` nunca se dispara).
+`tests/e2e/campana-decidir-movil.spec.js` aprueba y rechaza de verdad **contra
+el entorno de pruebas** — verificado en la base: `approved` en una,
+`rejected` con su `decision_note` en la otra.
+
 ## v2.603.2 — Cortes: los canónicos que faltaban, y el gate que los vigila
 
 Reportado por el usuario sobre v2.601.0: *«no seguiste canónicos, no seguiste

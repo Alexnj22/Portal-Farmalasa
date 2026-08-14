@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.606.5 — Un superusuario puede recibir por cualquier sala
+
+El bloque de Recepción de la tarjeta estaba condicionado a tener alcance «su
+sucursal», así que a un superusuario —que tiene alcance TODOS— **no le existían
+los botones**: no podía confirmar la llegada, ni recibir, ni acompañar a una
+sala que lo necesitara. La base nunca lo estuvo rechazando; era la pantalla la
+que no los dibujaba.
+
+Ahora el bloque también aparece para quien es superusuario, y la sala sobre la
+que se recibe sale de **la tarjeta**, no de quien mira. Para quien tiene alcance
+«su sucursal» no cambia nada: su listado sólo trae la propia. Se abre a
+superusuario y no a cualquiera con «Gestionar» a propósito — eso le daría a
+bodega un poder que nadie pidió.
+
+_(pendiente de redactar)_
+
 ## v2.606.4 — Registrar en el sistema las diferencias resueltas
 
 Cierra el lazo que quedó abierto en v2.606.0: se podía resolver un faltante y

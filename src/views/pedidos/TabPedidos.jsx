@@ -87,7 +87,7 @@ const PEDIDO_BADGE = {
 // hook usePedidosData (./tabpedidos/usePedidosData.js) — mismos nombres,
 // misma lógica, extracción mecánica. Este archivo queda solo con el JSX.
 export default function TabPedidos({ searchTerm = '' }) {
-    const { hasPermission } = useAuth();
+    const { hasPermission, isSU } = useAuth();
     // `pedidos_descargar` gatea la REIMPRESIÓN de un pedido ya generado, no la
     // impresión que sale al generarlo: esa es el entregable del flujo de bodega
     // —el papel con el que se arman las cajas— y bloquearla dejaría el pedido
@@ -285,6 +285,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const isLCBusy   = busyLifecycle === lcKey;
 
                             const canActuar = canEdit && !isBranch; // GESTIONAR + Alcance TODOS
+                            // La sala de ESTA tarjeta — ver el bloque de Recepción más abajo.
+                            const sucDeLaTarjeta = row.erp_sucursal_id ?? erpSucursalId;
 
                             const canIniciar       = canActuar && !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
                             const canPausar        = canActuar && !isBranch && stage === 'preparando';
@@ -547,7 +549,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     )}
 
                                     {/* Recepción — enviado, o parcial con reenvío aún en camino */}
-                                    {isBranch && erpSucursalId && (row.pedido_status === 'enviado' || (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at)) && stage !== 'erp' && (
+                                    {/* La sucursal sobre la que se recibe es la de ESTA tarjeta, no la
+                                        de quien mira. Para quien tiene alcance «su sucursal» son la
+                                        misma —su listado no trae otras—, pero el bloque además estaba
+                                        condicionado a `isBranch`, así que un superusuario no podía
+                                        recibir por nadie: los botones no existían para él. Se abre a
+                                        `isSU`, que es la misma noción que reconoce la base
+                                        (`auth_is_su`), y no a cualquiera con «Gestionar»: eso le daría
+                                        a bodega un poder que nadie pidió. */}
+                                    {(isBranch || isSU) && (row.erp_sucursal_id ?? erpSucursalId) && (row.pedido_status === 'enviado' || (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at)) && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
                                                 canEdit={canEdit}
@@ -557,11 +567,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 erpEmp={erpEmp}
                                                 cardApoyo={recepApoyo}
                                                 pendientesCount={cardStats[cardKey]?.pendientes ?? 0}
-                                                onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
-                                                onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
-                                                onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
-                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [], row.caja_map ?? {})}
-                                                onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey, tipo: 'recepcion' })}
+                                                onMarkLlegada={() => handleLlegada(row.pedido_id, sucDeLaTarjeta, cardKey)}
+                                                onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey)}
+                                                onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey)}
+                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, sucDeLaTarjeta, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [], row.caja_map ?? {})}
+                                                onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: sucDeLaTarjeta, cardKey, tipo: 'recepcion' })}
                                                 busy={busyAction}
                                                 llegadaTipo={row.llegada_tipo}
                                                 reenviosHistorial={row.reenvios_historial ?? []}

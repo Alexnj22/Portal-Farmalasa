@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { conTramo, diferenciaDelCorte, repartirEnPartes } from '../../src/utils/cortesDiagnostico';
+import {
+    conTramo, desgloseDelCierre, diferenciaDelCorte, repartirEnPartes,
+} from '../../src/utils/cortesDiagnostico';
 
 // Los casos son cortes REALES capturados el 13 y 14 de agosto de 2026. No son
 // inventados a propósito: la regla que prueban —que sólo un corte confirmado
@@ -92,5 +94,51 @@ describe('repartir una reposición entre quienes aportan', () => {
 
     it('sin nadie que aporte no hay reparto', () => {
         expect(repartirEnPartes(-5, 0)).toEqual([]);
+    });
+});
+
+// ── El cierre del día (Z) ──────────────────────────────────────────────────
+// Su monto es VENTA, no efectivo, y el detalle lo mostraba con los rótulos del
+// corte de caja: decía «se contó $1,678.83» cuando en la caja hubo $1,602.88.
+// Los casos son los seis cierres reales del 13-ago.
+
+describe('el desglose del cierre del día', () => {
+    it('saca el efectivo restando lo que no pasa por la caja', () => {
+        // La Popular, 13-ago — el que levantó el usuario en pantalla.
+        const d = desgloseDelCierre({ total_declarado: 1678.83, tk_tarjeta: 57.55, tk_credito: 18.40 });
+        expect(d.total).toBe(1678.83);
+        expect(d.efectivo).toBe(1602.88);
+    });
+
+    it('coincide con la venta del último corte de caja del mismo día', () => {
+        // La comprobación que hace confiable la derivación: el efectivo del
+        // cierre TIENE que ser el `VENTA` que contó el último corte.
+        const casos = [
+            { total: 1678.83, tarjeta: 57.55,  credito: 18.40, ventaDelUltimoCorte: 1602.88 }, // La Popular
+            { total: 1628.75, tarjeta: 202.55, credito: 13.00, ventaDelUltimoCorte: 1413.20 }, // Salud 1
+            { total: 1184.65, tarjeta: 33.60,  credito: 4.65,  ventaDelUltimoCorte: 1146.40 }, // Salud 3
+            { total: 1306.16, tarjeta: 135.45, credito: 64.56, ventaDelUltimoCorte: 1106.15 }, // Salud 4
+            { total: 347.55,  tarjeta: 35.15,  credito: null,  ventaDelUltimoCorte: 312.40 },  // Salud 5
+        ];
+        for (const c of casos) {
+            const d = desgloseDelCierre({
+                total_declarado: c.total, tk_tarjeta: c.tarjeta, tk_credito: c.credito,
+            });
+            expect(d.efectivo).toBeCloseTo(c.ventaDelUltimoCorte, 2);
+        }
+    });
+
+    it('aguanta un cierre sin tarjeta ni crédito', () => {
+        const d = desgloseDelCierre({ total_declarado: 500 });
+        expect(d.tarjeta).toBe(0);
+        expect(d.credito).toBe(0);
+        expect(d.efectivo).toBe(500);
+    });
+
+    it('no inventa formas de pago que el origen no manda', () => {
+        // `otras` existe para que el día que aparezca una forma nueva —una
+        // transferencia— el desglose deje de cerrar y se vea. Hoy es cero en los
+        // 42 tiquetes capturados.
+        expect(desgloseDelCierre({ total_declarado: 100, tk_tarjeta: 10 }).otras).toBe(0);
     });
 });

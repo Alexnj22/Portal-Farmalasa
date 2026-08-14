@@ -12,7 +12,7 @@ import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 import { fetchDiferencias, fetchMovimientos, fetchPersonas, reabrirCorte } from '../../data/cortes';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useToastStore } from '../../store/toastStore';
-import { notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
+import { desgloseDelCierre, notaDeCifra, severidad, sugerenciasDeCorte } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useResolverCorte from '../../hooks/useResolverCorte';
@@ -183,6 +183,9 @@ export default function CorteDetalleModal({
     // texto en la misma pantalla, uno arriba y otro al fondo.
     const sev = severidad(visible?.tramo);
     const esZ = visible?.tipo === 'Z';
+    // El desglose del cierre: su monto es venta, no efectivo. Ver el bloque de
+    // `desgloseDelCierre`, que es donde vive el porqué.
+    const cierre = useMemo(() => desgloseDelCierre(visible), [visible]);
     const pendiente = visible?.estado === 'PENDIENTE';
     const puedeFirmar = pendiente && !esZ && puedeResolver;
     // Reabrir es de la propia sala (decisión del usuario, 2026-08-14): la misma
@@ -254,6 +257,42 @@ export default function CorteDetalleModal({
                             aparece el formulario arriba y él no lo ve. */}
                         <span ref={tope} aria-hidden="true" className="block h-0" />
 
+                        {/* ── El cierre del día NO es un conteo de caja ────────
+                            Su monto es todo lo VENDIDO, con la tarjeta y el
+                            crédito adentro. Mostrarlo con los rótulos del corte
+                            de caja —«Debía haber en caja», «Se contó»— decía
+                            algo falso: en La Popular del 13-ago afirmaba que se
+                            contaron $1,678.83 cuando en la caja hubo $1,602.88.
+                            Lo levantó el usuario mirando la pantalla, que es la
+                            única forma de ver un rótulo que miente sobre un
+                            número correcto. */}
+                        {esZ ? (
+                            <div data-surface="card" className="p-4">
+                                <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                                    <span className="text-caption text-content-2">Se vendió en el día</span>
+                                    <span className="text-2xl font-bold tabular-nums text-content">
+                                        {formatMoney(cierre.total)}
+                                    </span>
+                                </div>
+                                <div className="mt-3 space-y-1 text-caption">
+                                    <div className="flex justify-between gap-3 text-content-3">
+                                        <span>Con tarjeta</span>
+                                        <span className="tabular-nums">{formatMoney(cierre.tarjeta)}</span>
+                                    </div>
+                                    <div className="flex justify-between gap-3 text-content-3">
+                                        <span>Al crédito</span>
+                                        <span className="tabular-nums">{formatMoney(cierre.credito)}</span>
+                                    </div>
+                                    {/* El efectivo va destacado: es el único que
+                                        pasó por la caja, y por lo tanto el único
+                                        que los cortes del día cuentan. */}
+                                    <div className="flex justify-between gap-3 pt-1.5 mt-1.5 border-t border-divider text-content font-bold">
+                                        <span>Entró en efectivo</span>
+                                        <span className="tabular-nums">{formatMoney(cierre.efectivo)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
                         <div data-surface="card"
                             data-tono={sev === 'ok' ? undefined : sev === 'falta' ? 'danger' : 'warning'}
                             className="p-4">
@@ -284,6 +323,18 @@ export default function CorteDetalleModal({
                                 )}
                             </div>
                         </div>
+                        )}
+
+                        {esZ && (
+                            <Notice variant="info">
+                                <span className="font-bold">La tarjeta y el crédito no pasan por la caja</span>
+                                <span className="block mt-0.5 font-normal text-content-2">
+                                    La tarjeta se cobra por el datáfono, y el crédito entra recién
+                                    cuando el cliente paga — ahí aparece como cobro de crédito en un
+                                    corte posterior. Los cortes del día sólo cuentan el efectivo.
+                                </span>
+                            </Notice>
+                        )}
 
                         {/* El aviso de firma: sólo cuando hay algo que leer antes
                             de decidir. Va arriba de todo porque es lo que cambia

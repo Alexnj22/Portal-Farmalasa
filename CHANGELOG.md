@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.607.1 — El cierre del día dice cómo se pagó
+
+Lo levantó el usuario abriendo el cierre de La Popular del 13-ago: **el detalle
+decía algo falso.** El monto de un cierre es todo lo VENDIDO —con la tarjeta y
+el crédito adentro— pero la pantalla lo mostraba con los rótulos de un corte de
+caja: «Debía haber en caja $1,678.83 / Se contó $1,678.83». En esa caja hubo
+$1,602.88. El número era correcto; el rótulo mentía sobre él.
+
+Ahora el cierre tiene su propio cuadro, con el desglose que faltaba:
+
+```
+Se vendió en el día        $1,678.83
+  Con tarjeta                 $57.55
+  Al crédito                  $18.40
+  Entró en efectivo        $1,602.88
+```
+
+El efectivo se deriva, y la derivación está **verificada contra los cortes de
+caja del mismo día**: `total − tarjeta − crédito` da exactamente el `VENTA` del
+último corte en 5 de las 6 salas. La sexta difiere $2.20 porque siguió vendiendo
+después de su último conteo, que es lo esperado. Los cinco casos quedaron
+anclados en la prueba.
+
+Y explica por qué, que es lo que hacía falta entender: la tarjeta se cobra por
+el datáfono y el crédito entra recién cuando el cliente paga —ahí aparece como
+cobro de crédito en un corte posterior—. Los cortes del día sólo cuentan el
+efectivo.
+
+Nota de lo que NO hay: de los 42 tiquetes capturados, 36 nombran tarjeta y 33
+crédito; **ninguno** nombra transferencia, cheque ni depósito. El desglose
+devuelve un campo `otras` que hoy es siempre cero, para que el día que el origen
+agregue una forma de pago la cuenta deje de cerrar y se vea.
+
 ## v2.607.0 — La recepción cuenta lo físico contra lo enviado
 
 La tabla de recepción tenía dos mitades: «Físico» y «Sistema», cada una con su

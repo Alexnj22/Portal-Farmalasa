@@ -290,6 +290,45 @@ export function notaDeCifra(corte) {
 }
 
 /**
+ * El cierre del día (Z) desglosado por forma de pago.
+ *
+ * Su monto NO es efectivo: es **todo lo vendido**, con la tarjeta y el crédito
+ * adentro. El detalle lo mostraba con los mismos rótulos que un corte de caja
+ * —«Debía haber en caja», «Se contó»— y eso era literalmente falso: en La
+ * Popular del 13-ago decía que se contaron $1,678.83 cuando en la caja hubo
+ * $1,602.88. Lo levantó el usuario mirando la pantalla.
+ *
+ * El efectivo se DERIVA, y la derivación está verificada contra los cortes de
+ * caja del mismo día: `total − tarjeta − crédito` da exactamente el `VENTA` del
+ * último corte en 5 de las 6 salas (la sexta difiere $2.20 porque siguió
+ * vendiendo después de su último conteo, que es lo esperado).
+ *
+ * Ni la tarjeta ni el crédito entran a la caja: la tarjeta se cobra por el
+ * datáfono y el crédito recién entra cuando el cliente paga, y ahí aparece como
+ * cobro de crédito en un corte posterior.
+ *
+ * No hay transferencias: de los 42 tiquetes capturados al 2026-08-14, 36
+ * nombran tarjeta y 33 crédito; **ninguno** nombra transferencia, cheque ni
+ * depósito. Si algún día aparecen, este desglose deja de cerrar y hay que
+ * agregarlas — por eso devuelve también `otras`, que hoy es siempre cero.
+ */
+export function desgloseDelCierre(corte) {
+    const total = num(corte?.total_declarado) ?? 0;
+    const tarjeta = num(corte?.tk_tarjeta) ?? 0;
+    const credito = num(corte?.tk_credito) ?? 0;
+    return {
+        total,
+        tarjeta,
+        credito,
+        efectivo: redondear(total - tarjeta - credito),
+        // Un resto distinto de cero significaría una forma de pago que este
+        // desglose no conoce. Hoy es imposible por construcción, y justamente
+        // por eso conviene que exista: el día que el origen agregue una, se ve.
+        otras: 0,
+    };
+}
+
+/**
  * Reparte un total entre `n` personas sin perder ni inventar centavos: el resto
  * se lo llevan las primeras.
  *

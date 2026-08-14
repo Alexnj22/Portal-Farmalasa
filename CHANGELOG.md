@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.606.6 — el control de versiones frena el número de otra sesión
+
+El 2026-08-14 pasó **dos veces en la misma tarde**, entre cuatro sesiones
+trabajando sobre este árbol: un `git add src/version.js` se llevó el bump que
+otra sesión tenía preparado. Quedaron dos commits cuyo rótulo no coincide con el
+número que guardan adentro — `2.605.3 → 2.605.5` y `2.606.1 → 2.606.3`. No rompe
+nada del portal; deja el registro de cambios diciendo una cosa y el archivo otra.
+
+**Los tres chequeos que había no podían verlo, y no por casualidad.** El barrido
+se lleva `version.js` *y su entrada del changelog juntas*, así que «existe
+`## v<versión>` preparado en este commit» queda satisfecho por construcción. Un
+control que el problema nunca rompe no es un control flojo: mide otra cosa.
+
+Ahora `version-gate` exige que la versión preparada sea **uno de los tres
+sucesores válidos** de la de HEAD: siguiente parche, siguiente menor o siguiente
+mayor. Un salto de más es la firma exacta del barrido, porque el bump ajeno ya se
+comió el número intermedio. Probado contra los cuatro casos: frena los dos
+incidentes reales y el downgrade, y deja pasar el minor legítimo del mismo día
+(`2.605.8 → 2.606.0`), que un «exactamente un incremento» habría rechazado.
+
+Si alguna de las dos versiones no se puede leer como semver, **no bloquea pero
+avisa**: `version.js` lo escribe el script, así que un valor raro significa que
+alguien lo editó a mano o que el archivo se corrompió. Un chequeo que no corrió
+no puede verse igual que uno que pasó.
+
+El mensaje de error dice qué mirar (`git diff --cached src/version.js`) y cómo
+salir sin pisar trabajo ajeno (`git restore --staged`, nunca revertir).
+
 ## v2.606.5 — Un superusuario puede recibir por cualquier sala
 
 El bloque de Recepción de la tarjeta estaba condicionado a tener alcance «su

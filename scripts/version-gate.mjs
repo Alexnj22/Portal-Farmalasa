@@ -85,7 +85,61 @@ if (actual === anterior) {
   process.exit(1);
 }
 
-// ── 3. La entrada existe en CHANGELOG.md y va en este commit ────────────────
+// ── 3. Y sube UN paso legítimo, no el de otra sesión ────────────────────────
+// El 2026-08-14 pasó dos veces en la misma tarde, entre cuatro sesiones sobre
+// este árbol: un `git add src/version.js` se llevó el bump que otra sesión tenía
+// preparado. Quedaron dos commits cuyo rótulo no coincide con el número que
+// guardan adentro — `2.605.3 → 2.605.5` y `2.606.1 → 2.606.3`.
+//
+// Los tres chequeos de arriba NO podían verlo, y no por casualidad: el barrido
+// se lleva `version.js` **y su entrada del changelog juntas**, así que el
+// chequeo 4 («existe `## v<versión>` en este commit») queda satisfecho por
+// construcción. Un control que el problema nunca rompe no es un control flojo:
+// mide otra cosa.
+//
+// Un salto de más es la firma exacta del barrido, porque el bump ajeno ya se
+// había comido el número intermedio. Se exige que el destino sea uno de los tres
+// sucesores válidos — patch, minor o major. Nada de "exactamente un patch": un
+// minor legítimo (2.605.8 → 2.606.0) también tiene que pasar.
+const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
+const partes = (v) => (String(v ?? '').match(SEMVER) || []).slice(1).map(Number);
+
+const [maA, miA, paA] = partes(anterior);
+const [maN, miN, paN] = partes(actual);
+
+// Si alguno no parsea, no se bloquea —un formato inesperado no debería frenar un
+// commit— pero se DICE. Un chequeo que no corrió y uno que pasó no pueden verse
+// igual: `version.js` lo escribe `version-bump.mjs`, así que un valor que no es
+// semver significa que alguien lo editó a mano o que el archivo se corrompió, y
+// las dos cosas quieren un aviso.
+if (anterior && (maA === undefined || maN === undefined)) {
+  console.log(`\n  ⚠ No pude leer la versión como semver (HEAD: ${anterior ?? '—'}, preparada: ${actual ?? '—'}).`);
+  console.log('    El chequeo de salto NO corrió. `src/version.js` no se edita a mano:');
+  console.log('    sale de `npm run version:bump`.\n');
+}
+
+if (anterior && maA !== undefined && maN !== undefined) {
+  const sucesores = [
+    `${maA}.${miA}.${paA + 1}`,   // patch
+    `${maA}.${miA + 1}.0`,        // minor
+    `${maA + 1}.0.0`,             // major
+  ];
+  if (!sucesores.includes(actual)) {
+    console.log(`\n  ✗ APP_VERSION salta de ${anterior} a ${actual}.`);
+    console.log(`    Desde ${anterior} sólo se puede ir a: ${sucesores.join(', ')}.`);
+    console.log('    Un salto de más suele significar que este commit se llevó el');
+    console.log('    bump de OTRA sesión: `git add src/version.js` no distingue');
+    console.log('    tu número del que otra dejó preparado en el mismo archivo.');
+    console.log('\n    Mirá qué estás por commitear:');
+    console.log('      git diff --cached src/version.js');
+    console.log('    Si el número no es tuyo, sacalo del commit (no lo revuelvas ni');
+    console.log('    lo pises) y volvé a correr `npm run version:bump`:');
+    console.log('      git restore --staged src/version.js\n');
+    process.exit(1);
+  }
+}
+
+// ── 4. La entrada existe en CHANGELOG.md y va en este commit ────────────────
 let changelog = '';
 try { changelog = git('git show :CHANGELOG.md'); } catch { /* no preparado */ }
 const tieneEntrada = new RegExp(`^## v${actual.replace(/\./g, '\\.')}\\b`, 'm').test(changelog);

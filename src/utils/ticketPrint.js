@@ -528,13 +528,46 @@ export function seccionesParaElPrograma(ticket) {
  *
  * @returns {Promise<'granted'|'denied'|'prompt'|null>} null = no se sabe.
  */
-async function permisoDeRedLocal() {
+export async function permisoDeRedLocal() {
     try {
         const p = await navigator.permissions.query({ name: 'local-network-access' });
         return p.state;
     } catch {
         return null;
     }
+}
+
+/**
+ * Comprueba qué contesta esta computadora, antes de gastar papel.
+ *
+ * El truco es una asimetría del navegador que sí sirve para distinguir: una
+ * petición sin CORS **resuelve** cuando algo contestó —aunque conteste 404, el
+ * contenido es ilegible pero la conexión existió— y **rechaza** cuando no hay
+ * nadie escuchando. Con eso alcanza para separar las dos preguntas que hasta
+ * ahora se veían iguales: ¿hay un servidor en esta computadora?, ¿y me deja el
+ * navegador hablarle?
+ *
+ * Lo que NO puede decir: si el programa de impresión está bien instalado. Un 404
+ * y un 200 se ven idénticos, así que «contesta» significa «hay un servidor web
+ * ahí», no «el programa existe». Por eso se prueba la CARPETA y no el archivo:
+ * un GET al archivo podría hacerlo imprimir un ticket vacío.
+ *
+ * @returns {Promise<Array<{que: string, url: string, contesta: boolean}>>}
+ */
+export async function comprobarLaConexion() {
+    const destinos = [
+        { que: 'Servidor web de esta computadora', url: 'http://localhost/' },
+        { que: 'Carpeta del programa de impresión', url: `${RUTA_PROGRAMA}` },
+        { que: 'Sistema de impresión del equipo', url: 'http://localhost:631/' },
+    ];
+    return await Promise.all(destinos.map(async (d) => {
+        try {
+            await fetch(d.url, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(4000) });
+            return { ...d, contesta: true };
+        } catch {
+            return { ...d, contesta: false };
+        }
+    }));
 }
 
 /**

@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.594.0 — La caja se comprueba antes de gastar papel
+
+Decisión del usuario: alcanza con que el ticket salga **en la computadora que
+tiene la ticketera conectada**. Eso descarta la cola y el agente propio, y deja
+una sola cosa por resolver: confirmar el canal en esa computadora sin adivinar.
+
+**La comprobación usa una asimetría del navegador que sí distingue.** Una
+petición sin CORS **resuelve** cuando algo contestó —aunque conteste 404: el
+contenido es ilegible, pero la conexión existió— y **rechaza** cuando no hay
+nadie escuchando. Con eso se separan las dos preguntas que un fallo de impresión
+mezclaba: ¿hay un programa en esta computadora?, ¿y me deja el navegador
+hablarle? El botón prueba tres cosas —el servidor web del equipo, la carpeta del
+programa de impresión y el sistema de impresión— y dice cuál contesta, sin gastar
+papel. Se prueba la **carpeta** y no el archivo a propósito: un GET al archivo
+podría hacer salir un ticket vacío.
+
+El aviso dice lo que la prueba puede y lo que no: «contesta» significa que hay
+algo escuchando ahí, no que esté bien configurado. Y agrega el estado del permiso
+de red local, que es el sospechoso número uno cuando ninguna contesta.
+Verificado contra `curl` en las tres direcciones antes de creerle al instrumento.
+
+**El ancho del rollo y el sistema ahora se recuerdan en esa computadora**
+(`localStorage`), no en la base ni en la cuenta: la ticketera está conectada a un
+equipo concreto y la de al lado puede ser otra. Guardarlo en los dos lados es la
+forma segura de que se desincronice.
+
+Y la impresión directa quedó como acción principal de la pantalla, con el diálogo
+del navegador de respaldo diciendo lo que antes no decía: si ahí se elige una
+impresora de hoja, el ticket sale en hoja.
+
 ## v2.593.0 — El canal de impresión directa, con el contrato real
 
 Lo que hacía falta era **la forma de imprimir directo**, para después mandarle

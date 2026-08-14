@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Printer, Ruler, CheckCircle2, AlertCircle, Send, Eye, Laptop } from 'lucide-react';
+import { Printer, Ruler, CheckCircle2, AlertCircle, Send, Eye, Laptop, PlugZap } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import Button from '../components/common/Button';
 import Notice from '../components/common/Notice';
@@ -11,9 +11,33 @@ import { APP_VERSION } from '../version';
 import {
     ANCHOS_ROLLO, ANCHO_POR_DEFECTO, construirTicketHtml,
     imprimirMarco, ajustarAltoDePagina, enviarAImpresoraDeLaComputadora,
+    comprobarLaConexion, permisoDeRedLocal,
 } from '../utils/ticketPrint';
 
 const EMPTY_ARRAY = [];
+
+// La configuración de impresión es **de la computadora**, no de la persona ni de
+// la sucursal: la ticketera está conectada a un equipo concreto y la de al lado
+// puede ser distinta. Por eso vive en el navegador de ese equipo y no en la base
+// — guardarla en los dos lados es la forma segura de que se desincronice
+// (memoria `una preferencia guardada en dos copias se reinicia en las dos`).
+const LS_AJUSTES = 'portal-impresion';
+
+const leerAjustes = () => {
+    try {
+        const guardado = JSON.parse(localStorage.getItem(LS_AJUSTES) || '{}');
+        return {
+            ancho: ANCHOS_ROLLO.some(a => a.mm === guardado.ancho) ? guardado.ancho : ANCHO_POR_DEFECTO,
+            sistema: guardado.sistema === 'windows' ? 'windows' : 'linux',
+        };
+    } catch {
+        return { ancho: ANCHO_POR_DEFECTO, sistema: 'linux' };
+    }
+};
+
+const guardarAjustes = (ajustes) => {
+    try { localStorage.setItem(LS_AJUSTES, JSON.stringify(ajustes)); } catch { /* modo privado o sin cuota */ }
+};
 
 // La regla de columnas: un renglón de EXACTAMENTE n caracteres, con un dígito
 // cada 10. Se imprimen tres —32, 40 y 48— y el papel contesta cuál es el ancho
@@ -63,8 +87,15 @@ const ImpresionView = () => {
     const branches = useStaff(state => state.branches) || EMPTY_ARRAY;
     const sucursal = branches.find(b => b.id === user?.branchId);
 
-    const [ancho, setAncho] = useState(ANCHO_POR_DEFECTO);
-    const [sistema, setSistema] = useState('linux');
+    const [{ ancho, sistema }, setAjustes] = useState(leerAjustes);
+    const cambiarAjuste = (cambio) => setAjustes(prev => {
+        const nuevos = { ...prev, ...cambio };
+        guardarAjustes(nuevos);
+        return nuevos;
+    });
+
+    const [chequeo, setChequeo] = useState(null);
+    const [chequeando, setChequeando] = useState(false);
     const [resultado, setResultado] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const [largoPapel, setLargoPapel] = useState(null);
@@ -151,6 +182,14 @@ const ImpresionView = () => {
             : { ok: true, texto: 'Se abrió el diálogo de impresión. Elige la ticketera en la lista de impresoras.' });
     };
 
+    const comprobar = async () => {
+        setChequeando(true);
+        setChequeo(null);
+        const [destinos, permiso] = await Promise.all([comprobarLaConexion(), permisoDeRedLocal()]);
+        setChequeo({ destinos, permiso });
+        setChequeando(false);
+    };
+
     const enviarDirecto = async () => {
         setEnviando(true);
         setResultado(null);
@@ -175,8 +214,49 @@ const ImpresionView = () => {
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
                     <div className="space-y-4">
-                        {/* La impresión directa va PRIMERO y es la principal: es
-                            la única que garantiza que el papel salga como ticket.
+                        {/* La comprobación va antes que el botón de imprimir: dice
+                            si este equipo puede imprimir directo SIN gastar papel,
+                            y separa las dos preguntas que un fallo de impresión
+                            mezcla —¿hay un programa acá?, ¿me deja el navegador
+                            hablarle?—. */}
+                        <Tarjeta titulo="Comprobar esta computadora">
+                            <p className="text-body text-content-2 leading-snug">
+                                Revisa si este equipo puede imprimir directo, sin gastar papel.
+                            </p>
+                            <div className="mt-3">
+                                <Button icon={PlugZap} variant="secondary" onClick={comprobar} disabled={chequeando}>
+                                    {chequeando ? 'Comprobando…' : 'Comprobar'}
+                                </Button>
+                            </div>
+                            {chequeo && (
+                                <div className="mt-3 space-y-1">
+                                    {chequeo.destinos.map(d => (
+                                        <div key={d.url} className="flex items-center justify-between gap-2 py-1 border-b border-divider last:border-0">
+                                            <span className="text-body text-content-2 min-w-0">{d.que}</span>
+                                            <span className="shrink-0 inline-flex items-center gap-1 text-label font-bold">
+                                                {d.contesta
+                                                    ? <><CheckCircle2 size={12} className="text-success" /> Contesta</>
+                                                    : <><AlertCircle size={12} className="text-warning" /> No contesta</>}
+                                            </span>
+                                        </div>
+                                    ))}
+                                    <p className="text-caption text-content-3 pt-1 leading-snug">
+                                        «Contesta» significa que hay algo escuchando ahí, no que esté bien
+                                        configurado. Si <strong>ninguna</strong> contesta, o el navegador está
+                                        bloqueando la red local de este equipo, o no hay nada instalado.
+                                        {chequeo.permiso && (
+                                            <> Permiso de red local: <strong>{
+                                                { granted: 'concedido', denied: 'bloqueado', prompt: 'sin decidir' }[chequeo.permiso]
+                                                    ?? chequeo.permiso
+                                            }</strong>.</>
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+                        </Tarjeta>
+
+                        {/* La impresión directa va antes que el diálogo: es la
+                            única que garantiza que el papel salga como ticket.
                             El diálogo del navegador deja elegir el papel, y si
                             ahí se elige una hoja, sale en hoja. */}
                         <Tarjeta titulo="Imprimir el ticket">
@@ -192,7 +272,7 @@ const ImpresionView = () => {
                                     </label>
                                     <LiquidSelect
                                         value={sistema}
-                                        onChange={setSistema}
+                                        onChange={(v) => cambiarAjuste({ sistema: v })}
                                         options={[
                                             { value: 'linux', label: 'Linux (las salas)' },
                                             { value: 'windows', label: 'Windows' },
@@ -252,7 +332,7 @@ const ImpresionView = () => {
                                     </label>
                                     <LiquidSelect
                                         value={String(ancho)}
-                                        onChange={(v) => setAncho(Number(v))}
+                                        onChange={(v) => cambiarAjuste({ ancho: Number(v) })}
                                         options={opcionesAncho}
                                         clearable={false}
                                         ariaLabel="Ancho del rollo"

@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.604.3 — «Se pide» pasa a «Nuevo», y el aviso deja de hablar en futuro
+
+**«Se pide» sólo era cierto mientras nadie contestaba.** Y una solicitud se
+mira sobre todo *después* de resuelta —quedan en la bandeja—, así que el
+rótulo decía que se está pidiendo algo que ya se aplicó hace un día. Ahora dice
+**Nuevo**, que vale en los tres estados. Pedido del usuario.
+
+Su pareja cambia con el estado, por el mismo motivo: en una **aprobada** lo de
+la izquierda ya no es «Hoy» —hoy la sala está en el otro par— sino **Antes**.
+En una **rechazada** no cambió nada, así que ahí «Hoy» sigue siendo verdad.
+
+**Los dos avisos también dejan de anunciar como futuro lo que ya pasó.** «Deja
+de reponerse: aprobado esto, el producto no vuelve a entrar…» sobre algo
+aprobado ayer describe una consecuencia que ya ocurrió: en una aprobada se lee
+**«Dejó de reponerse: el producto ya no entra en los pedidos de…»**. Y sobre
+una **rechazada** no aparece ninguno de los dos — ahí no pasó nada de qué
+advertir.
+
+Verificado en el navegador contra las solicitudes reales: CIPRO DENK
+(aprobada) muestra `ANTES 0 · 1` → `NUEVO 0 · 0` con el aviso en pasado, y
+LAMICTAL (rechazada) muestra `HOY — · —` → `NUEVO 0 · 0` sin aviso.
+
 ## v2.604.2 — Cortes: filtro por fecha, aprobados aparte y el scroll que no se escapa
 
 Cinco cosas que reportó el usuario mirando la vista. Tres tocan canónicos, así

@@ -408,6 +408,8 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
         // El par de HOY sale de lo que la solicitud guardó al crearse, o sea el
         // retrato del momento — es lo único que este detalle tiene a mano, y
         // alcanza para no afirmar una consecuencia que no existe.
+        const aprobada  = req?.status === 'APPROVED';
+        const rechazada = req?.status === 'REJECTED';
         const nOnull = v => (v === null || v === undefined || v === '' ? null : Number(v));
         const sinCambio = ajusteSinCambio(
             { min: nOnull(meta.min_actual), max: nOnull(meta.max_actual) },
@@ -426,36 +428,55 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         </div>
                     </div>
                 </Caja>
+                {/* «Se pide» sólo es cierto mientras nadie contestó. Sobre una
+                    solicitud ya aprobada —que es como se la mira la mayor parte
+                    del tiempo, porque quedan en la bandeja— decía que se está
+                    pidiendo algo que ya se aplicó. **Nuevo** vale en los tres
+                    estados. Pedido del usuario, 2026-08-14.
+
+                    Y su pareja cambia con el estado: aprobada, lo de la
+                    izquierda ya no es «Hoy» —hoy la sala está en el otro par—
+                    sino lo que había ANTES. Rechazada no cambió nada, así que
+                    ahí «Hoy» sigue siendo verdad. */}
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
-                        <Rotulo>Hoy</Rotulo>
+                        <Rotulo>{aprobada ? 'Antes' : 'Hoy'}</Rotulo>
                         <p className="text-body-sm font-black text-content-2">
                             MIN {meta.min_actual ?? '—'} · MAX {meta.max_actual ?? '—'}
                         </p>
                     </Caja>
                     <Caja tono="hover">
-                        <Rotulo>Se pide</Rotulo>
+                        <Rotulo>Nuevo</Rotulo>
                         <p className={`text-body-sm font-black ${baja ? 'text-warning-text' : 'text-content-2'}`}>
                             MIN {meta.min_pedido ?? '—'} · MAX {meta.max_pedido ?? '—'}
                         </p>
                     </Caja>
                 </div>
-                {sinCambio && (
+                {/* Los dos avisos hablan de una CONSECUENCIA, así que no tienen
+                    nada que decir sobre una solicitud rechazada: ahí no pasó
+                    nada. Y sobre una aprobada hablan en pasado — «aprobado
+                    esto, el producto no vuelve a entrar» sobre algo aprobado
+                    ayer anuncia como futuro lo que ya ocurrió. */}
+                {sinCambio && !rechazada && (
                     <div className="px-3 py-2.5 rounded-2xl border border-warning/30 bg-warning/10">
                         <p className="text-caption text-warning-text font-semibold leading-snug">
-                            Aprobarlo no cambia nada: {meta.branch_name || 'la sucursal'} ya está
+                            {aprobada ? 'No cambió nada: ' : 'Aprobarlo no cambia nada: '}
+                            {meta.branch_name || 'la sucursal'} {aprobada ? 'ya estaba' : 'ya está'}
                             {nOnull(meta.min_actual) === null ? ' sin MIN ni MAX' : ` en MIN ${meta.min_actual} · MAX ${meta.max_actual}`},
-                            que es lo mismo que se pide.
+                            que es lo mismo que {aprobada ? 'se pidió' : 'se pide'}.
                         </p>
                     </div>
                 )}
                 {/* El 0 · 0 no es «un número más chico»: apaga la reposición.
                     Quien aprueba lo tiene que leer, no deducirlo de dos ceros. */}
-                {!sinCambio && Number(meta.min_pedido) === 0 && Number(meta.max_pedido) === 0 && (
+                {!sinCambio && !rechazada && Number(meta.min_pedido) === 0 && Number(meta.max_pedido) === 0 && (
                     <div className="px-3 py-2.5 rounded-2xl border border-warning/30 bg-warning/10">
                         <p className="text-caption text-warning-text font-semibold leading-snug">
-                            Deja de reponerse: aprobado esto, el producto no vuelve a entrar en los
-                            pedidos de {meta.branch_name || 'la sucursal'} hasta que alguien le fije un MIN y un MAX.
+                            {aprobada
+                                ? <>Dejó de reponerse: el producto ya no entra en los pedidos
+                                    de {meta.branch_name || 'la sucursal'} hasta que alguien le fije un MIN y un MAX.</>
+                                : <>Deja de reponerse: aprobado esto, el producto no vuelve a entrar en los
+                                    pedidos de {meta.branch_name || 'la sucursal'} hasta que alguien le fije un MIN y un MAX.</>}
                         </p>
                     </div>
                 )}

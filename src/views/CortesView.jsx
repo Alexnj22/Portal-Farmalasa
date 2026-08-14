@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Wallet, CheckCircle2, Ban, Clock, ChevronRight, Search, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Wallet, CheckCircle2, Ban, Clock, ShieldCheck, AlertTriangle } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
-import PeriodStepper from '../components/common/PeriodStepper';
+import ViewTabBar from '../components/common/ViewTabBar';
+import FilterBar from '../components/common/FilterBar';
+import TablePagination from '../components/common/TablePagination';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import Notice from '../components/common/Notice';
@@ -11,9 +13,12 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
-import { fetchCortesDelDia, fetchMovimientosDelDia, resolverCorte } from '../data/cortes';
-import { conTramo, contraste, diferenciaDelCorte, estadoDelDia, severidad, sugerenciasDeCorte } from '../utils/cortesDiagnostico';
+import { fetchCortes, fetchMovimientos, resolverCorte } from '../data/cortes';
+import {
+    conTramo, contraste, diferenciaDelCorte, notaDeCifra, severidad, sugerenciasDeCorte,
+} from '../utils/cortesDiagnostico';
 import { formatMoney } from '../utils/formatNumber';
+import { tokenMatch } from '../utils/searchUtils';
 
 const VACIO = [];
 
@@ -28,9 +33,9 @@ const correrDia = (fecha, dias) => {
     return d.toISOString().slice(0, 10);
 };
 
-const rotularDia = (fecha) =>
+const rotularFecha = (fecha) =>
     new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
+        weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
     });
 
 const hhmm = (hora) => String(hora || '').slice(0, 5);
@@ -38,10 +43,24 @@ const hhmm = (hora) => String(hora || '').slice(0, 5);
 const TONO_BADGE = { ok: 'success', sobra: 'warning', falta: 'danger' };
 const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
 const ROTULO_SEV = { ok: 'Cuadra', sobra: 'Sobra', falta: 'Falta' };
+const TONO_CARD = { ok: undefined, sobra: 'warning', falta: 'danger' };
 
 const MOTIVOS = ['Conteo de prueba', 'Se contó mal', 'Corte repetido'];
 
-/** El monto con su signo explícito: en un control de caja, «+3.39» y «3.39» no dicen lo mismo. */
+const TABS = [
+    { key: 'pendientes', label: 'Sin confirmar' },
+    { key: 'diferencia', label: 'Con diferencia' },
+    { key: 'resueltos',  label: 'Resueltos' },
+    { key: 'todos',      label: 'Todos' },
+];
+
+const RANGOS = [
+    { key: 7,  label: '7 días' },
+    { key: 30, label: '30 días' },
+    { key: 90, label: '90 días' },
+];
+
+/** El monto con su signo explícito: en un control de caja «+3.39» y «3.39» no dicen lo mismo. */
 const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 
 const CortesView = () => {
@@ -51,30 +70,41 @@ const CortesView = () => {
     const { user, hasPermission } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
 
-    const [fecha, setFecha] = useState(hoySV);
+    const [dias, setDias] = useState(7);
+    const [tab, setTab] = useState('pendientes');
+    const [busqueda, setBusqueda] = useState('');
+    const [sala, setSala] = useState('');
+    const [soloZ, setSoloZ] = useState(false);
+
     const [cortes, setCortes] = useState(VACIO);
-    const [movimientos, setMovimientos] = useState(VACIO);
     const [cargando, setCargando] = useState(true);
-    const [salaSel, setSalaSel] = useState(null);
+
+    // ── El detalle y su copia para el cierre ────────────────────────────────
+    // `detalle` manda si el modal está abierto; `detalleVisible` es lo que se
+    // PINTA. Se separan porque el modal se cierra con animación: si el cuerpo
+    // leyera `detalle`, al cerrar el contenido desaparecería ANTES que el modal
+    // y se vería un panel vacío por un instante. Al abrir se escriben los dos;
+    // al cerrar sólo `detalle`, así lo pintado sobrevive la salida.
     const [detalle, setDetalle] = useState(null);
+    const [detalleVisible, setDetalleVisible] = useState(null);
+    const [movsDetalle, setMovsDetalle] = useState(VACIO);
     const [modo, setModo] = useState(null);          // 'confirmar' | 'descartar'
     const [motivo, setMotivo] = useState(MOTIVOS[0]);
     const [nota, setNota] = useState('');
     const [guardando, setGuardando] = useState(false);
 
+    const [pagina, setPagina] = useState(1);
+    const [porPagina, setPorPagina] = useState(24);
+
     const cargar = useCallback(async () => {
         setCargando(true);
-        const [{ data, error }, movs] = await Promise.all([
-            fetchCortesDelDia(fecha),
-            fetchMovimientosDelDia(fecha),
-        ]);
-        if (error) console.error('CortesView: fetch cortes_caja falló:', error.message);
-        setCortes(data || VACIO);
-        setMovimientos(movs || VACIO);
+        const hasta = hoySV();
+        const filas = await fetchCortes({ desde: correrDia(hasta, -(dias - 1)), hasta });
+        setCortes(filas || VACIO);
         setCargando(false);
-    }, [fecha]);
+    }, [dias]);
 
-    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar de día
+    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + al cambiar el rango
 
     const nombreSala = useMemo(() => {
         const m = {};
@@ -82,56 +112,77 @@ const CortesView = () => {
         return m;
     }, [branches]);
 
-    // Un mapa sala → cortes con su tramo ya calculado. El tramo depende del
-    // orden y de qué está descartado, así que se calcula una vez acá y no en
-    // cada tarjeta: si se calculara dos veces con criterios distintos, la cifra
-    // del resumen y la de la fila dirían cosas diferentes sobre el mismo día.
-    const porSala = useMemo(() => {
-        const m = new Map();
+    // El tramo se calcula POR SALA Y POR DÍA, porque los cortes son
+    // acumulativos dentro del día y arrancan de cero cada mañana. Mezclar dos
+    // días en la misma serie restaría el cierre de ayer contra el primero de
+    // hoy y daría un tramo enorme e inventado.
+    const conTramoTodos = useMemo(() => {
+        const grupos = new Map();
         for (const c of cortes) {
-            if (!m.has(c.branch_id)) m.set(c.branch_id, []);
-            m.get(c.branch_id).push(c);
+            const k = `${c.branch_id}|${c.fecha}`;
+            if (!grupos.has(k)) grupos.set(k, []);
+            grupos.get(k).push(c);
         }
-        const salas = [];
-        for (const [branchId, lista] of m) {
-            const conjunto = conTramo(lista);
-            // El spread PRIMERO y las claves propias después: así lo explícito
-            // gana siempre. Al revés, `estadoDelDia` pisó `cortes` con su
-            // conteo y la lista dejó de ser una lista.
-            salas.push({
-                ...estadoDelDia(conjunto),
-                branchId,
-                nombre: nombreSala[branchId] || `Sucursal ${branchId}`,
-                cortes: conjunto,
-            });
+        const out = [];
+        for (const lista of grupos.values()) {
+            const enOrden = [...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+            out.push(...conTramo(enOrden));
         }
-        // Lo que necesita atención primero: mayor diferencia en valor absoluto.
-        salas.sort((a, b) => Math.abs(b.acumulado) - Math.abs(a.acumulado) || a.nombre.localeCompare(b.nombre));
-        return salas;
-    }, [cortes, nombreSala]);
+        out.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
+            || String(b.hora).localeCompare(String(a.hora)));
+        return out;
+    }, [cortes]);
 
-    const salaAbierta = useMemo(
-        () => porSala.find((s) => s.branchId === salaSel) || null,
-        [porSala, salaSel],
+    const filtrados = useMemo(() => conTramoTodos.filter((c) => {
+        if (sala && String(c.branch_id) !== String(sala)) return false;
+        if (soloZ ? c.tipo !== 'Z' : c.tipo !== 'C') return false;
+
+        if (tab === 'pendientes' && c.estado !== 'PENDIENTE') return false;
+        if (tab === 'resueltos'  && c.estado === 'PENDIENTE') return false;
+        if (tab === 'diferencia' && severidad(c.tramo) === 'ok') return false;
+
+        if (!busqueda.trim()) return true;
+        return tokenMatch(busqueda,
+            nombreSala[c.branch_id], c.empleado_texto, c.fecha, c.hora,
+            String(c.total_declarado ?? ''), String(c.tramo ?? ''),
+            String(c.erp_corte_id ?? ''), c.motivo_descarte);
+    }), [conTramoTodos, tab, busqueda, sala, soloZ, nombreSala]);
+
+    const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
+    const pagActual = Math.min(pagina, totalPaginas);
+    const enPagina = useMemo(
+        () => filtrados.slice((pagActual - 1) * porPagina, pagActual * porPagina),
+        [filtrados, pagActual, porPagina],
     );
 
-    const movsDeSala = useMemo(
-        () => (salaSel == null ? VACIO : movimientos.filter((m) => m.branch_id === salaSel)),
-        [movimientos, salaSel],
-    );
+    const abrirDetalle = useCallback(async (corte) => {
+        setDetalleVisible(corte);
+        setDetalle(corte);
+        setModo(null);
+        setMovsDetalle(VACIO);
+        const movs = await fetchMovimientos({ branchId: corte.branch_id, fecha: corte.fecha });
+        setMovsDetalle(movs || VACIO);
+    }, []);
+
+    const cerrarDetalle = useCallback(() => {
+        setDetalle(null);
+        setModo(null); setNota(''); setMotivo(MOTIVOS[0]);
+    }, []);
 
     const sugerencias = useMemo(
-        () => (detalle ? sugerenciasDeCorte(detalle, movsDeSala) : VACIO),
-        [detalle, movsDeSala],
+        () => (detalleVisible ? sugerenciasDeCorte(detalleVisible, movsDetalle) : VACIO),
+        [detalleVisible, movsDetalle],
+    );
+    const explicacion = useMemo(
+        () => (detalleVisible ? notaDeCifra(detalleVisible) : null),
+        [detalleVisible],
     );
 
-    const cerrarDetalle = useCallback(() => { setDetalle(null); setModo(null); setNota(''); setMotivo(MOTIVOS[0]); }, []);
-
     const resolver = useCallback(async () => {
-        if (!detalle || !modo) return;
+        if (!detalleVisible || !modo) return;
         setGuardando(true);
         const estado = modo === 'confirmar' ? 'CONFIRMADO' : 'DESCARTADO';
-        const { error } = await resolverCorte(detalle.id, estado, {
+        const { error } = await resolverCorte(detalleVisible.id, estado, {
             motivo: modo === 'descartar' ? motivo : null,
             observaciones: nota,
         });
@@ -141,78 +192,126 @@ const CortesView = () => {
             return;
         }
         appendAuditLog?.(estado === 'CONFIRMADO' ? 'CORTE_CAJA_CONFIRMADO' : 'CORTE_CAJA_DESCARTADO', user?.id, {
-            corte_id: detalle.id,
-            sucursal: nombreSala[detalle.branch_id],
-            hora: detalle.hora,
-            diferencia: detalle.diferencia_erp,
+            corte_id: detalleVisible.id,
+            sucursal: nombreSala[detalleVisible.branch_id],
+            fecha: detalleVisible.fecha, hora: detalleVisible.hora,
+            diferencia: detalleVisible.tramo,
             motivo: modo === 'descartar' ? motivo : undefined,
         });
         showToast?.(
             estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado',
-            `${nombreSala[detalle.branch_id]} · ${hhmm(detalle.hora)}`,
+            `${nombreSala[detalleVisible.branch_id]} · ${hhmm(detalleVisible.hora)}`,
             'success',
         );
         cerrarDetalle();
         cargar();
-    }, [detalle, modo, motivo, nota, showToast, appendAuditLog, user, nombreSala, cerrarDetalle, cargar]);
+    }, [detalleVisible, modo, motivo, nota, showToast, appendAuditLog, user, nombreSala, cerrarDetalle, cargar]);
+
+    const salaOptions = useMemo(
+        () => branches
+            .filter((b) => cortes.some((c) => String(c.branch_id) === String(b.id)))
+            .map((b) => ({ value: String(b.id), label: b.name })),
+        [branches, cortes],
+    );
+
+    const limpiar = () => { setSala(''); setSoloZ(false); setDias(7); setBusqueda(''); setPagina(1); };
 
     const filtersContent = (
-        <PeriodStepper
-            label={rotularDia(fecha)}
-            unit="día"
-            onPrev={() => { setFecha((f) => correrDia(f, -1)); setSalaSel(null); }}
-            onNext={() => { setFecha((f) => correrDia(f, 1)); setSalaSel(null); }}
-            onReset={() => { setFecha(hoySV()); setSalaSel(null); }}
-            isCurrent={fecha === hoySV()}
-            resetLabel="Ir a hoy"
-        />
+        <>
+            <ViewTabBar
+                tabs={TABS}
+                activeTab={tab}
+                onTabChange={(t) => { setTab(t); setPagina(1); }}
+                searchValue={busqueda}
+                onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
+                placeholder="Buscar por sala, persona, hora o monto…"
+            />
+            <FilterBar onClear={limpiar} activeCount={[sala, soloZ, dias !== 7].filter(Boolean).length}>
+                <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
+                    <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
+                </FilterBar.Section>
+
+                <FilterBar.Section label="período">
+                    {RANGOS.map((r) => (
+                        <FilterBar.Chip key={r.key} tone="brand" active={dias === r.key}
+                            onToggle={() => { setDias(r.key); setPagina(1); }}>
+                            {r.label}
+                        </FilterBar.Chip>
+                    ))}
+                </FilterBar.Section>
+
+                <FilterBar.Section>
+                    <FilterBar.Chip tone="brand" active={soloZ} onToggle={() => { setSoloZ((v) => !v); setPagina(1); }}>
+                        Cierres del día
+                    </FilterBar.Chip>
+                </FilterBar.Section>
+            </FilterBar>
+        </>
     );
 
     return (
         <GlassViewLayout icon={Wallet} title="Cortes de caja" filtersContent={filtersContent}>
-            <div className="p-4 md:p-6 space-y-5">
+            <div className="p-4 md:p-6 space-y-4">
 
-                {cargando && <LoadingState label="Buscando los cortes del día" />}
+                {cargando && <LoadingState label="Buscando los cortes" />}
 
-                {!cargando && porSala.length === 0 && (
+                {!cargando && filtrados.length === 0 && (
                     <EmptyState
                         icon={Wallet}
-                        message="Sin cortes este día"
-                        subtext="Todavía no hay ningún corte de caja registrado para esta fecha."
+                        message={busqueda ? 'Nada con esa búsqueda' : 'Sin cortes acá'}
+                        subtext={busqueda
+                            ? 'Prueba con el nombre de la sala, la persona o el monto.'
+                            : 'Cambia de pestaña o amplía el período para ver más.'}
                     />
                 )}
 
-                {/* ── El día: una tarjeta por sala ───────────────────────── */}
-                {!cargando && porSala.length > 0 && (
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {porSala.map((s) => {
-                            const sev = severidad(s.acumulado);
-                            const abierta = s.branchId === salaSel;
+                {!cargando && filtrados.length > 0 && (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {enPagina.map((c) => {
+                            const esZ = c.tipo === 'Z';
+                            const desc = c.estado === 'DESCARTADO';
+                            const sev = severidad(c.tramo);
+                            const ct = contraste(c);
+                            const revisarCifras = !!ct?.enDisputa && !ct.porCobrosCredito;
                             return (
                                 <button
-                                    key={s.branchId}
+                                    key={c.id}
                                     type="button"
                                     data-surface="card"
-                                    data-tono={abierta ? 'brand' : undefined}
+                                    data-tono={desc || esZ ? undefined : TONO_CARD[sev]}
                                     className="p-4 text-left w-full"
-                                    aria-pressed={abierta}
-                                    onClick={() => setSalaSel(abierta ? null : s.branchId)}
+                                    onClick={() => abrirDetalle(c)}
                                 >
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-label font-bold text-content">{s.nombre}</span>
-                                        <Badge variant={TONO_BADGE[sev]} size="sm">{ROTULO_SEV[sev]}</Badge>
-                                    </div>
-                                    <div className={`mt-2 text-2xl font-bold tabular-nums ${TONO_TEXTO[sev]}`}>
-                                        {conSigno(s.acumulado)}
-                                    </div>
-                                    <div className="mt-2 flex items-center justify-between gap-2 text-caption text-content-3">
-                                        <span>
-                                            {s.cantidad} {s.cantidad === 1 ? 'corte' : 'cortes'}
-                                            {s.cierre ? ` · cierre ${hhmm(s.cierre.hora)}` : ' · sin cierre'}
+                                        <span className="text-label font-bold text-content">
+                                            {nombreSala[c.branch_id] || `Sucursal ${c.branch_id}`}
                                         </span>
-                                        {s.pendientes > 0 && (
-                                            <Badge variant="neutral" size="sm">{s.pendientes} sin ver</Badge>
-                                        )}
+                                        {esZ
+                                            ? <Badge variant="info" size="sm">Cierre del día</Badge>
+                                            : <Badge variant={TONO_BADGE[sev]} size="sm">{ROTULO_SEV[sev]}</Badge>}
+                                    </div>
+
+                                    <div className="text-caption text-content-3 mt-0.5 truncate">
+                                        {rotularFecha(c.fecha)} · {hhmm(c.hora)}
+                                        {c.empleado_texto ? ` · ${c.empleado_texto}` : ''}
+                                    </div>
+
+                                    {esZ ? (
+                                        <div className="mt-2 text-body font-bold text-content-2 tabular-nums">
+                                            {formatMoney(c.total_declarado)}
+                                            <span className="text-caption font-normal text-content-3"> en ventas</span>
+                                        </div>
+                                    ) : (
+                                        <div className={`mt-2 text-2xl font-bold tabular-nums ${desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
+                                            {conSigno(desc ? diferenciaDelCorte(c).valor : (c.tramo ?? 0))}
+                                        </div>
+                                    )}
+
+                                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                                        {c.estado === 'CONFIRMADO' && <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>}
+                                        {desc && <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>}
+                                        {c.estado === 'PENDIENTE' && !esZ && <Badge variant="neutral" size="sm" icon={Clock}>Sin confirmar</Badge>}
+                                        {revisarCifras && <Badge variant="danger" size="sm" icon={AlertTriangle}>Revisar cifras</Badge>}
                                     </div>
                                 </button>
                             );
@@ -220,90 +319,16 @@ const CortesView = () => {
                     </div>
                 )}
 
-                {!cargando && porSala.length > 0 && !salaAbierta && (
-                    <Notice variant="info" icon={ChevronRight}>
-                        La cifra grande es la diferencia del último corte del día. Como los cortes son
-                        acumulativos, ya contiene a los anteriores. Abre una sala para ver qué tramo la
-                        produjo.
-                    </Notice>
-                )}
-
-                {/* ── La sala: la línea de cortes con su tramo ───────────── */}
-                {salaAbierta && (
-                    <div data-surface="card" className="p-4 md:p-5">
-                        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-                            <h3 className="text-body font-bold text-content">{salaAbierta.nombre}</h3>
-                            <span className="text-caption text-content-3">
-                                Cada cifra es lo que se movió desde el corte anterior
-                            </span>
-                        </div>
-
-                        <div className="divide-y divide-divider">
-                            {salaAbierta.cortes.map((c) => {
-                                const esZ = c.tipo === 'Z';
-                                const desc = c.estado === 'DESCARTADO';
-                                const sev = severidad(c.tramo);
-                                return (
-                                    <div key={c.id} className="py-3 flex items-center gap-3 flex-wrap">
-                                        <span className="text-label font-semibold text-content-2 tabular-nums w-12 shrink-0">
-                                            {hhmm(c.hora)}
-                                        </span>
-
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                {esZ ? (
-                                                    <>
-                                                        <span className="text-label font-semibold text-content-2">Cierre del día</span>
-                                                        <Badge variant="info" size="sm">Z</Badge>
-                                                    </>
-                                                ) : desc ? (
-                                                    <>
-                                                        <span className="text-label font-semibold text-content-3 line-through tabular-nums">
-                                                            {conSigno(diferenciaDelCorte(c).valor)}
-                                                        </span>
-                                                        <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <span className={`text-body font-bold tabular-nums ${TONO_TEXTO[sev]}`}>
-                                                            {conSigno(c.tramo ?? 0)}
-                                                        </span>
-                                                        <span className="text-caption text-content-3 tabular-nums">
-                                                            acumulado {conSigno(c.acumulado ?? 0)}
-                                                        </span>
-                                                        {contraste(c)?.enDisputa && (
-                                                            <Badge variant="danger" size="sm" icon={AlertTriangle}>Dos cifras</Badge>
-                                                        )}
-                                                        {c.estado === 'CONFIRMADO'
-                                                            ? <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>
-                                                            : <Badge variant="neutral" size="sm" icon={Clock}>Sin confirmar</Badge>}
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="text-caption text-content-3 mt-0.5">
-                                                {esZ
-                                                    ? `Ventas del día ${formatMoney(c.total_declarado)}`
-                                                    : desc
-                                                        ? (c.motivo_descarte || 'Sin motivo registrado')
-                                                        : `Declaró ${formatMoney(c.total_declarado)} · debía haber ${formatMoney(c.esperadoUsado ?? c.esperado)}`}
-                                            </div>
-                                        </div>
-
-                                        {!esZ && (
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                icon={Search}
-                                                onClick={() => { setDetalle(c); setModo(null); }}
-                                            >
-                                                Revisar
-                                            </Button>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                {!cargando && filtrados.length > porPagina && (
+                    <TablePagination
+                        page={pagActual}
+                        totalPages={totalPaginas}
+                        onPageChange={setPagina}
+                        pageSize={porPagina}
+                        onPageSizeChange={(v) => { setPorPagina(Number(v)); setPagina(1); }}
+                        total={filtrados.length}
+                        unit="cortes"
+                    />
                 )}
             </div>
 
@@ -313,60 +338,79 @@ const CortesView = () => {
                 onClose={cerrarDetalle}
                 maxWidth="max-w-2xl"
                 className="max-h-[88vh] h-fit"
-                ariaLabel={`Corte de las ${hhmm(detalle?.hora)}`}
+                ariaLabel={`Corte de las ${hhmm(detalleVisible?.hora)}`}
             >
                 <LiquidModal.Header>
                     <div className="min-w-0">
                         <h3 className="text-body font-bold text-content">
-                            Corte de las {hhmm(detalle?.hora)}
+                            Corte de las {hhmm(detalleVisible?.hora)}
                         </h3>
                         <p className="text-caption text-content-3 truncate">
-                            {nombreSala[detalle?.branch_id]}
-                            {detalle?.turno ? ` · turno ${detalle.turno}` : ''}
-                            {detalle?.empleado_texto ? ` · ${detalle.empleado_texto}` : ''}
+                            {nombreSala[detalleVisible?.branch_id]}
+                            {detalleVisible?.fecha ? ` · ${rotularFecha(detalleVisible.fecha)}` : ''}
+                            {detalleVisible?.empleado_texto ? ` · ${detalleVisible.empleado_texto}` : ''}
                         </p>
                     </div>
                 </LiquidModal.Header>
 
                 <LiquidModal.Body className="space-y-4">
-                    {detalle && (
+                    {detalleVisible && (
                         <>
-                            {/* Lo que decide */}
-                            <div data-surface="card" data-tono={severidad(detalle.tramo) === 'ok' ? undefined : severidad(detalle.tramo) === 'falta' ? 'danger' : 'warning'} className="p-4">
+                            <div data-surface="card"
+                                data-tono={severidad(detalleVisible.tramo) === 'ok' ? undefined
+                                    : severidad(detalleVisible.tramo) === 'falta' ? 'danger' : 'warning'}
+                                className="p-4">
                                 <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                                    <span className="text-caption text-content-2">Diferencia de este tramo</span>
-                                    <span className={`text-2xl font-bold tabular-nums ${TONO_TEXTO[severidad(detalle.tramo)]}`}>
-                                        {conSigno(detalle.tramo ?? 0)}
+                                    <span className="text-caption text-content-2">
+                                        {detalleVisible.tramo === detalleVisible.acumulado
+                                            ? 'Diferencia de este corte'
+                                            : 'Diferencia desde el corte anterior'}
+                                    </span>
+                                    <span className={`text-2xl font-bold tabular-nums ${TONO_TEXTO[severidad(detalleVisible.tramo)]}`}>
+                                        {conSigno(detalleVisible.tramo ?? 0)}
                                     </span>
                                 </div>
                                 <div className="mt-2 space-y-1 text-caption text-content-3">
                                     <div className="flex justify-between gap-3">
-                                        <span>Debía haber</span><span className="tabular-nums">{formatMoney(detalle.esperadoUsado ?? detalle.esperado)}</span>
+                                        <span>Debía haber en caja</span>
+                                        <span className="tabular-nums">{formatMoney(detalleVisible.esperadoUsado ?? detalleVisible.esperado)}</span>
                                     </div>
                                     <div className="flex justify-between gap-3">
-                                        <span>Se declaró</span><span className="tabular-nums">{formatMoney(detalle.total_declarado)}</span>
+                                        <span>Se contó</span>
+                                        <span className="tabular-nums">{formatMoney(detalleVisible.total_declarado)}</span>
                                     </div>
-                                    <div className="flex justify-between gap-3">
-                                        <span>Diferencia acumulada del día</span>
-                                        <span className="tabular-nums">{conSigno(detalle.acumulado ?? 0)}</span>
-                                    </div>
+                                    {detalleVisible.tramo !== detalleVisible.acumulado && (
+                                        <div className="flex justify-between gap-3">
+                                            <span>Acumulado del día hasta esta hora</span>
+                                            <span className="tabular-nums">{conSigno(detalleVisible.acumulado ?? 0)}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {contraste(detalle)?.enDisputa && (
-                                <Notice variant={contraste(detalle).porCobrosCredito ? 'info' : 'danger'} icon={AlertTriangle}>
-                                    <span className="font-bold">
-                                        El sistema dice {conSigno(contraste(detalle).difErp)}; acá se usa {conSigno(contraste(detalle).difTicket)}.
-                                    </span>
-                                    <span className="block mt-1 text-content-2">
-                                        {contraste(detalle).porCobrosCredito
-                                            ? `La diferencia entre las dos es exactamente ${Math.abs(contraste(detalle).vecesElCobro)} ${Math.abs(contraste(detalle).vecesElCobro) === 1 ? 'vez' : 'veces'} los cobros de crédito del día (${formatMoney(contraste(detalle).cobros)}). Es un defecto del sistema al contarlos, no algo que pasó en la caja: la cifra del corte cierra contra los movimientos del día y es la que vale.`
-                                            : `Son ${formatMoney(Math.abs(contraste(detalle).brecha))} de brecha y no se explican por los cobros de crédito. Revisa los movimientos del día antes de dar por bueno un faltante.`}
-                                    </span>
+                            {explicacion && (
+                                <Notice variant={explicacion.tono === 'danger' ? 'danger' : 'info'}
+                                    icon={explicacion.tono === 'danger' ? AlertTriangle : undefined}>
+                                    <span className="font-bold">{explicacion.titulo}</span>
+                                    <span className="block mt-0.5 font-normal text-content-2">{explicacion.detalle}</span>
                                 </Notice>
                             )}
 
-                            {/* Qué revisar */}
+                            {severidad(detalleVisible.tramo) === 'ok' && detalleVisible.estado === 'PENDIENTE' && detalleVisible.tipo === 'C' && (
+                                <Notice variant="success" icon={ShieldCheck}>
+                                    Este corte cuadra al centavo. No hay nada que investigar.
+                                </Notice>
+                            )}
+
+                            {detalleVisible.estado !== 'PENDIENTE' && (
+                                <Notice variant="info">
+                                    {detalleVisible.estado === 'CONFIRMADO'
+                                        ? 'Corte confirmado'
+                                        : `Descartado: ${detalleVisible.motivo_descarte}`}
+                                    {detalleVisible.observaciones ? ` · ${detalleVisible.observaciones}` : ''}
+                                </Notice>
+                            )}
+
                             {sugerencias.length > 0 && (
                                 <div>
                                     <div className="text-caption font-bold uppercase tracking-wide text-content-3 mb-1.5">Qué revisar</div>
@@ -374,28 +418,14 @@ const CortesView = () => {
                                         {sugerencias.map((s, i) => (
                                             <Notice key={i} variant={s.tono === 'danger' ? 'danger' : s.tono === 'warning' ? 'warning' : 'info'}>
                                                 <span className="font-bold">{s.titulo}</span>
-                                                <span className="block mt-0.5 text-content-2">{s.detalle}</span>
+                                                <span className="block mt-0.5 font-normal text-content-2">{s.detalle}</span>
                                             </Notice>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {severidad(detalle.tramo) === 'ok' && detalle.estado === 'PENDIENTE' && (
-                                <Notice variant="success" icon={ShieldCheck}>
-                                    Este tramo cuadra al centavo. No hay nada que investigar.
-                                </Notice>
-                            )}
-
-                            {detalle.estado !== 'PENDIENTE' && (
-                                <Notice variant="info">
-                                    {detalle.estado === 'CONFIRMADO' ? 'Corte confirmado' : `Descartado: ${detalle.motivo_descarte}`}
-                                    {detalle.observaciones ? ` · ${detalle.observaciones}` : ''}
-                                </Notice>
-                            )}
-
-                            {/* Resolver */}
-                            {detalle.estado === 'PENDIENTE' && puedeResolver && modo && (
+                            {detalleVisible.estado === 'PENDIENTE' && puedeResolver && modo && (
                                 <div className="space-y-3">
                                     {modo === 'descartar' && (
                                         <div>
@@ -404,12 +434,8 @@ const CortesView = () => {
                                             </div>
                                             <div className="flex gap-2 flex-wrap">
                                                 {MOTIVOS.map((m) => (
-                                                    <Button
-                                                        key={m}
-                                                        variant={motivo === m ? 'danger' : 'secondary'}
-                                                        size="sm"
-                                                        onClick={() => setMotivo(m)}
-                                                    >
+                                                    <Button key={m} variant={motivo === m ? 'danger' : 'secondary'} size="sm"
+                                                        onClick={() => setMotivo(m)}>
                                                         {m}
                                                     </Button>
                                                 ))}
@@ -433,15 +459,12 @@ const CortesView = () => {
                 </LiquidModal.Body>
 
                 <LiquidModal.Footer>
-                    {detalle?.estado === 'PENDIENTE' && puedeResolver ? (
+                    {detalleVisible?.estado === 'PENDIENTE' && detalleVisible?.tipo === 'C' && puedeResolver ? (
                         modo ? (
                             <>
                                 <Button variant="ghost" onClick={() => setModo(null)} disabled={guardando}>Volver</Button>
-                                <Button
-                                    variant={modo === 'confirmar' ? 'primary' : 'destructive'}
-                                    onClick={resolver}
-                                    loading={guardando}
-                                >
+                                <Button variant={modo === 'confirmar' ? 'primary' : 'destructive'}
+                                    onClick={resolver} loading={guardando}>
                                     {modo === 'confirmar' ? 'Confirmar corte' : 'Descartar corte'}
                                 </Button>
                             </>

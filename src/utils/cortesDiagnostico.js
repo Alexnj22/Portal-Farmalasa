@@ -9,6 +9,8 @@ import { formatMoney } from './formatNumber';
 const CENTAVO = 0.005;
 const redondear = (n) => Math.round(n * 100) / 100;
 const num = (v) => (v == null ? null : Number(v));
+/** El signo explícito importa: en caja, «3.39» y «+3.39» no dicen lo mismo. */
+const conSignoTxt = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 
 /**
  * Los cortes de caja son ACUMULATIVOS dentro del día: el de la noche contiene
@@ -159,6 +161,48 @@ export function diferenciaDelCorte(corte) {
     return { valor: c.difTicket, fuente: 'ticket', esperado: num(corte?.tk_total_caja) };
 }
 
+/**
+ * Por qué la cifra que se muestra no es la que guardó el sistema — en palabras.
+ *
+ * Antes esto salía como «El sistema dice +$0.75; acá se usa −$53.90», que además
+ * de incomprensible estaba al revés cuando la buena era la guardada: el texto
+ * daba por hecho que siempre se usaba la del ticket. Ahora se arma desde
+ * `diferenciaDelCorte`, que es quien decide, así que no puede contradecirla.
+ *
+ * Devuelve `null` cuando no hay nada que explicar.
+ */
+export function notaDeCifra(corte) {
+    const c = contraste(corte);
+    if (!c?.enDisputa) return null;
+    const { fuente, valor } = diferenciaDelCorte(corte);
+    const cobros = formatMoney(Math.abs(c.cobros ?? 0));
+
+    // Ojo con lo que se nombra: `valor` es el ACUMULADO del día hasta este
+    // corte, y el título del modal muestra el TRAMO. Llamar «la diferencia de
+    // este corte» al acumulado ponía dos números distintos con el mismo rótulo
+    // en la misma pantalla — el usuario lo leyó y no se entendía.
+    if (c.porCobrosCredito && fuente === 'guardada') {
+        return {
+            tono: 'info',
+            titulo: 'Este corte se hizo antes de los cobros de crédito',
+            detalle: `Su comprobante suma los ${cobros} de cobros de crédito del día, pero a esta hora ese dinero todavía no había entrado a la caja. Por eso el portal toma la cifra del sistema (${conSignoTxt(c.difErp)}) y no la del comprobante (${conSignoTxt(c.difTicket)}).`,
+        };
+    }
+    if (c.porCobrosCredito) {
+        const veces = Math.abs(c.vecesElCobro);
+        return {
+            tono: 'info',
+            titulo: 'El sistema contó de más los cobros de crédito',
+            detalle: `Guardó ${conSignoTxt(c.difErp)} porque sumó los ${cobros} de cobros de crédito ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es un defecto conocido suyo al sumarlos, no algo que haya pasado en la caja. El portal usa ${conSignoTxt(valor)}, que es lo que dice el comprobante del corte y cierra contra los movimientos del día.`,
+        };
+    }
+    return {
+        tono: 'danger',
+        titulo: 'Dos cifras que no cuadran entre sí',
+        detalle: `El sistema guardó ${conSignoTxt(c.difErp)} y el comprobante del corte da ${conSignoTxt(c.difTicket)}: ${formatMoney(Math.abs(c.brecha))} de diferencia que NO se explica por los cobros de crédito. Revisa los movimientos del día antes de dar por bueno un faltante.`,
+    };
+}
+
 /** 'ok' | 'sobra' | 'falta' — la forma, no sólo el color. */
 export function severidad(monto) {
     const n = num(monto) ?? 0;
@@ -184,19 +228,6 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     // Antes que cualquier pista: si las dos fórmulas del origen no coinciden,
     // ninguna cifra de este corte sirve para señalar a nadie. Va primero
     // porque es la única sugerencia que cambia lo que se debe HACER.
-    const c = contraste(corte);
-    if (c?.enDisputa) {
-        out.push({
-            tono: c.porCobrosCredito ? 'info' : 'danger',
-            titulo: c.porCobrosCredito
-                ? `El sistema dice ${formatMoney(c.difErp)}; la cifra buena es ${formatMoney(c.difTicket)}`
-                : `Dos cifras distintas: ${formatMoney(c.difErp)} y ${formatMoney(c.difTicket)}`,
-            detalle: c.porCobrosCredito
-                ? `La diferencia entre las dos es exactamente ${Math.abs(c.vecesElCobro)} ${Math.abs(c.vecesElCobro) === 1 ? 'vez' : 'veces'} los cobros de crédito del día (${formatMoney(c.cobros)}) — es un defecto conocido del sistema al contarlos, no algo que haya pasado en la caja. El portal usa la del corte, que cierra contra los movimientos.`
-                : `El sistema guardó una y su propio ticket calcula otra: ${formatMoney(Math.abs(c.brecha))} de brecha, y no se explica por los cobros de crédito. Revisa los movimientos del día antes de dar por bueno un faltante.`,
-        });
-    }
-
     const tramo = corte?.tramo;
     if (tramo == null || Math.abs(tramo) < 0.01) return out;
 

@@ -3205,7 +3205,7 @@ const DashboardView = ({ openModal }) => {
       // módulo, que para eso existe.
       return wrapWidget('cortes_sala',
         <WidgetCard title="Cortes de caja" icon={Wallet} category="ventas">
-          <WidgetCortesSala />
+          <WidgetCortesSala soloMiSala={getScope('dash_cortes_sala') !== 'ALL'} />
         </WidgetCard>
       , staggerIdx);
     }

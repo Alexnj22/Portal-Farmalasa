@@ -1,13 +1,12 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 
-// Cortes de caja — lectura para CortesView.
+// Cortes de caja — lectura para CortesView y el widget del Inicio.
 //
 // `esperado` es columna GENERATED (`total_declarado - diferencia_erp`): es lo
-// que el sistema de origen esperaba EN EL MOMENTO del corte. No se recalcula
-// desde los `tk_*`, porque esos los reimprime el origen mezclando la foto del
-// corte con el total del día en vivo y derivan con las horas. Ver el encabezado
-// de `20260814041419_cortes_de_caja_captura.sql`.
+// que el sistema de origen esperaba al abrir el formulario del corte. NO es
+// siempre la cifra buena — cuenta mal los cobros de crédito, ver
+// `utils/cortesDiagnostico.js`.
 
 const CAMPOS = `
     id, branch_id, erp_corte_id, tipo, fecha, hora, turno, empleado_texto,
@@ -18,26 +17,37 @@ const CAMPOS = `
     capturado_at, desfase_seg
 `;
 
-/** Todos los cortes de un día, de todas las salas que la sesión pueda ver. */
-export function fetchCortesDelDia(fecha) {
-    return supabase.from('cortes_caja')
+/**
+ * Cortes de un rango de fechas, de todas las salas que la sesión pueda ver.
+ *
+ * Va por `fetchAllRows`: son ~30 cortes por día y el tope de PostgREST son
+ * 1000, así que a partir de un mes de rango truncaría en silencio — y el
+ * síntoma sería un día que "no tiene cortes", que se lee como si la sala no
+ * hubiera cortado.
+ */
+export function fetchCortes({ desde, hasta }) {
+    return fetchAllRows(() => supabase.from('cortes_caja')
         .select(CAMPOS)
-        .eq('fecha', fecha)
+        .gte('fecha', desde)
+        .lte('fecha', hasta)
+        .order('fecha', { ascending: false })
         .order('branch_id', { ascending: true })
-        .order('hora', { ascending: true });
+        .order('hora', { ascending: true }));
 }
 
 /**
- * Movimientos de caja del día (vales e ingresos).
+ * Movimientos de caja de UNA sala en UN día — los vales y los ingresos.
  *
- * Va por `fetchAllRows` aunque un día ronde las 300 filas: el tope de PostgREST
- * son 1000 y trunca sin avisar. Una sala con muchos pagos de recibos y un día
- * de cruce de mes puede acercarse, y el síntoma sería una sugerencia que
- * "no encuentra" el movimiento que explica la diferencia — o sea, silencio.
+ * Se piden al abrir el detalle de un corte y no junto con la lista: son unas
+ * 300 filas por día y sólo hacen falta para explicar una diferencia, que es lo
+ * que dijo el usuario que son («los movimientos sirven para validar ante una
+ * diferencia»). Traerlos para un mes entero sería cargar miles de filas que
+ * nadie mira.
  */
-export function fetchMovimientosDelDia(fecha) {
+export function fetchMovimientos({ branchId, fecha }) {
     return fetchAllRows(() => supabase.from('cortes_caja_movimientos')
         .select('id, branch_id, erp_movimiento_id, concepto, monto, tipo')
+        .eq('branch_id', branchId)
         .eq('fecha', fecha)
         .order('monto', { ascending: false }));
 }

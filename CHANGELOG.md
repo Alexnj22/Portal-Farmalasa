@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.598.0 — Cortes: tarjetas de todos, buscador y modal claro
+
+Cinco correcciones sobre lo que reportó el usuario mirando la vista.
+
+**La vista deja de ser «un día».** Ahora es una tarjeta por CORTE, de todas las
+salas y todos los días del período, con `ViewTabBar` (Sin confirmar · Con
+diferencia · Resueltos · Todos), buscador —por sala, persona, hora o monto— y
+`FilterBar` con sucursal, período (7 · 30 · 90 días) y un chip para ver los
+cierres del día. Paginado con el canónico. El resumen por día sale del widget
+del Inicio, que es donde tiene sentido.
+
+El tramo se calcula **por sala y por día** aunque la lista mezcle fechas: los
+cortes arrancan de cero cada mañana, así que restar el cierre de ayer contra el
+primero de hoy daría un tramo enorme e inventado.
+
+**El modal decía cosas incomprensibles.** «El sistema dice +$0.75; acá se usa
+−$53.90» tenía dos defectos: el texto daba por hecho que siempre se usa la cifra
+del comprobante —así que se contradecía cuando la buena era la guardada— y
+llamaba «la diferencia de este corte» al ACUMULADO mientras el título mostraba
+el TRAMO, dos números distintos con el mismo rótulo en la misma pantalla. Ahora
+`notaDeCifra()` se arma desde `diferenciaDelCorte()`, que es quien decide, y
+explica en castellano: «Este corte se hizo antes de los cobros de crédito — su
+comprobante suma los $54.65 del día, pero a esta hora ese dinero todavía no
+había entrado a la caja». También estaba repetido dos veces; ahora va una.
+
+**El modal se vaciaba antes de cerrarse.** El cuerpo leía la misma variable que
+controla `open`, así que al cerrar el contenido desaparecía en el primer frame y
+el panel seguía saliendo, vacío. Se separa en `detalle` (abre) y `detalleVisible`
+(pinta). `SesionesView` ya tenía el patrón — quedó anotado en la memoria
+`feedback_un_modal_que_lee_el_estado_que_lo_abre_se_vacia_al_cerrar` porque es
+la segunda vez que aparece.
+
+**El widget salía vacío.** Filtraba por la sucursal de quien mira, y quien
+trabaja desde Administración no tiene caja propia: la baldosa quedaba en blanco
+para siempre. Ahora, si la sala propia no tiene cortes hoy, muestra las que la
+sesión alcance a ver, con el nombre de la sala en cada fila.
+
+**Los movimientos ya no viajan con la lista.** Se piden al abrir un corte, que
+es cuando sirven — «los movimientos sirven para validar ante una diferencia».
+Traerlos para 90 días serían miles de filas que nadie mira.
+
+_(pendiente de redactar)_
+
 ## v2.597.2 — El error del sistema son los cobros de crédito
 
 **Los cortes del 13-ago ya muestran la cifra correcta. No hizo falta recapturar

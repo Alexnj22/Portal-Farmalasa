@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchCortesDelDia, resolverCorte } from '../../data/cortes';
+import { fetchCortes, resolverCorte } from '../../data/cortes';
 import { conTramo, contraste, diferenciaDelCorte, severidad } from '../../utils/cortesDiagnostico';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -27,13 +27,24 @@ const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 
 const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
 
-export default function WidgetCortesSala({ selectedBranchId = null }) {
+export default function WidgetCortesSala({ soloMiSala = true }) {
     const { user, hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const appendAuditLog = useStaff((s) => s.appendAuditLog);
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
 
-    const branchId = selectedBranchId ?? user?.branchId ?? user?.branch_id ?? null;
+    // La sala de quien mira, sólo si de verdad tiene una con cortes. Quien
+    // trabaja desde Administración —o ve todas las salas— no tiene caja propia:
+    // filtrar por su `branch_id` le dejaba el widget vacío para siempre, que es
+    // como se vio la primera vez.
+    const miSala = user?.branchId ?? user?.branch_id ?? null;
+
+    const branches = useStaff((st) => st.branches);
+    const nombreSala = useMemo(() => {
+        const m = {};
+        for (const b of branches || []) m[b.id] = b.name;
+        return m;
+    }, [branches]);
 
     const [filas, setFilas] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -42,10 +53,11 @@ export default function WidgetCortesSala({ selectedBranchId = null }) {
     const [ocupado, setOcupado] = useState(null);           // id en curso
 
     const cargar = useCallback(async () => {
-        const { data, error: err } = await fetchCortesDelDia(hoySV());
-        if (err) { setError(mensajeAmigable(err, 'No se pudieron cargar los cortes')); setCargando(false); return; }
+        const hoy = hoySV();
+        const data = await fetchCortes({ desde: hoy, hasta: hoy });
+        if (!data) { setError('No se pudieron cargar los cortes'); setCargando(false); return; }
         setError(null);
-        setFilas(data || []);
+        setFilas(data);
         setCargando(false);
     }, []);
 
@@ -57,10 +69,30 @@ export default function WidgetCortesSala({ selectedBranchId = null }) {
 
     // Con alcance BRANCH la base ya devuelve sólo la propia; el filtro es para
     // quien ve todas y no debería recibir seis salas en una baldosa.
+    // Por sala y por día, porque el tramo se mide dentro del día.
     const cortes = useMemo(() => {
-        const deLaSala = filas.filter((c) => branchId == null || String(c.branch_id) === String(branchId));
-        return conTramo(deLaSala).filter((c) => c.tipo === 'C');
-    }, [filas, branchId]);
+        const propios = filas.filter((c) => c.branch_id === Number(miSala));
+        // Si la sala propia no tiene cortes hoy, se muestra lo que la sesión
+        // alcance a ver: para un supervisor eso son todas las salas, y es
+        // infinitamente más útil que una baldosa vacía.
+        const base = (soloMiSala && propios.length) ? propios : filas;
+        const porSala = new Map();
+        for (const c of base) {
+            if (!porSala.has(c.branch_id)) porSala.set(c.branch_id, []);
+            porSala.get(c.branch_id).push(c);
+        }
+        const out = [];
+        for (const lista of porSala.values()) {
+            out.push(...conTramo([...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora)))));
+        }
+        return out.filter((c) => c.tipo === 'C')
+            .sort((a, b) => String(b.hora).localeCompare(String(a.hora)));
+    }, [filas, miSala, soloMiSala]);
+
+    const variasSalas = useMemo(
+        () => new Set(cortes.map((c) => c.branch_id)).size > 1,
+        [cortes],
+    );
 
     const resolver = useCallback(async (corte, estado, motivo) => {
         setOcupado(corte.id);
@@ -106,6 +138,9 @@ export default function WidgetCortesSala({ selectedBranchId = null }) {
                     <div key={c.id} data-surface="card" className="p-2.5">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-caption font-semibold text-content-2 tabular-nums">{hhmm(c.hora)}</span>
+                            {variasSalas && (
+                                <span className="text-caption text-content-3 truncate">{nombreSala[c.branch_id]}</span>
+                            )}
                             {c.estado === 'DESCARTADO' ? (
                                 <span className="text-label font-semibold text-content-3 line-through tabular-nums">
                                     {conSigno(diferenciaDelCorte(c).valor)}

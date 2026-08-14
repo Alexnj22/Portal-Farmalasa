@@ -1,31 +1,72 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Wallet, CheckCircle2, Ban, AlertTriangle } from 'lucide-react';
-import Badge from '../../components/common/Badge';
-import Button from '../../components/common/Button';
+import { CheckCircle2, Wallet } from 'lucide-react';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { formatMoney } from '../../utils/formatNumber';
+import CorteDetalleModal from '../../components/cortes/CorteDetalleModal';
+import TarjetaCorte from '../../components/cortes/TarjetaCorte';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchCortes, resolverCorte } from '../../data/cortes';
-import { conTramo, contraste, diferenciaDelCorte, severidad } from '../../utils/cortesDiagnostico';
+import { fetchCortes, fetchCortesResumen, fetchPersonas, resolverCorte } from '../../data/cortes';
+import { conTramoPorSalaYDia, resumenDeCortes } from '../../utils/cortesDiagnostico';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
-// Los cortes de HOY de la sala, en el Inicio, para confirmarlos sin ir a buscar
-// el módulo. Es donde la sala mira apenas corta — el módulo completo es para
-// revisar un día entero, comparar salas y leer el detalle.
-//
-// La cifra es el TRAMO, igual que en el módulo: lo que se movió desde el corte
-// anterior. Sale de `conTramo`, el mismo cálculo, para que las dos pantallas no
-// puedan decir cosas distintas del mismo corte.
+/**
+ * Los cortes de caja en el Inicio: lo que falta confirmar, y cómo va el mes.
+ *
+ * ── Ya no es «los cortes de hoy» (2026-08-14) ──────────────────────────────
+ * Lo era, y por eso la baldosa salía vacía justo cuando había trabajo: el
+ * usuario tenía 23 cortes sin confirmar de AYER y el widget no mostraba ninguno,
+ * porque sólo miraba la fecha de hoy. Un pendiente no deja de serlo a medianoche.
+ * Ahora la ventana son 7 días y la lista son los que siguen sin resolver.
+ *
+ * ── Y trae el resumen del mes ──────────────────────────────────────────────
+ * Cuántos cuadraron al centavo, cuántos tuvieron exceso y cuántos faltante, más
+ * cuántos quedan sin confirmar contra cuántos ya se firmaron. Va en esta misma
+ * baldosa y no en una aparte: es la misma pregunta —«¿cómo va la caja?»— y
+ * partirla en dos widgets obliga a mirar dos sitios para responderla.
+ *
+ * El resumen se pide con `fetchCortesResumen`, que trae 11 columnas en vez de
+ * 40: son ~900 filas al mes y la fila completa incluye el texto del tiquete.
+ *
+ * La cifra de cada corte es el TRAMO, igual que en el módulo, y sale del mismo
+ * `conTramoPorSalaYDia`: dos pantallas que calculan por su cuenta terminan
+ * diciendo cosas distintas del mismo corte.
+ */
 const REFRESCO_MS = 60 * 1000;
-const MOTIVOS = ['Conteo de prueba', 'Se contó mal', 'Corte repetido'];
+const REFRESCO_MES_MS = 10 * 60 * 1000;
+const DIAS_PENDIENTES = 7;
 
 const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
-const hhmm = (h) => String(h || '').slice(0, 5);
-const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
+const correrDia = (fecha, dias) => {
+    const d = new Date(`${fecha}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + dias);
+    return d.toISOString().slice(0, 10);
+};
 
-const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
+const rotularDia = (fecha) => {
+    const hoy = hoySV();
+    if (fecha === hoy) return 'Hoy';
+    if (fecha === correrDia(hoy, -1)) return 'Ayer';
+    return new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
+        day: 'numeric', month: 'short', timeZone: 'UTC',
+    });
+};
+
+const TONO_MINI = {
+    ok:    'text-success-text',
+    sobra: 'text-warning-text',
+    falta: 'text-danger-text',
+};
+
+/** Un número del mes con su rótulo. Tres caben en el ancho de la baldosa. */
+function Mini({ n, label, tono }) {
+    return (
+        <div data-surface="card" className="px-1.5 py-1 text-center min-w-0">
+            <div className={`text-label font-black tabular-nums leading-tight ${TONO_MINI[tono]}`}>{n}</div>
+            <div className="text-micro text-content-3 leading-tight truncate">{label}</div>
+        </div>
+    );
+}
 
 export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null }) {
     const { user, hasPermission } = useAuth();
@@ -47,161 +88,187 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     }, [branches]);
 
     const [filas, setFilas] = useState([]);
+    const [mes, setMes] = useState([]);
+    const [personas, setPersonas] = useState(() => new Map());
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
-    const [descartando, setDescartando] = useState(null);   // id del corte
     const [ocupado, setOcupado] = useState(null);           // id en curso
+    const [abierto, setAbierto] = useState(null);           // id del corte en el detalle
+    const [modoInicial, setModoInicial] = useState(null);
 
-    const cargar = useCallback(async () => {
-        const hoy = hoySV();
-        const data = await fetchCortes({ desde: hoy, hasta: hoy });
+    const cargarLista = useCallback(async () => {
+        const hasta = hoySV();
+        const data = await fetchCortes({ desde: correrDia(hasta, -(DIAS_PENDIENTES - 1)), hasta });
         if (!data) { setError('No se pudieron cargar los cortes'); setCargando(false); return; }
         setError(null);
         setFilas(data);
         setCargando(false);
+        const autores = await fetchPersonas(data.map((c) => c.resuelto_por));
+        setPersonas(new Map(autores.map((p) => [p.id, p])));
+    }, []);
+
+    const cargarMes = useCallback(async () => {
+        const hasta = hoySV();
+        const data = await fetchCortesResumen({ desde: `${hasta.slice(0, 7)}-01`, hasta });
+        setMes(data || []);
     }, []);
 
     useEffect(() => {
-        cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco
-        const t = setInterval(cargar, REFRESCO_MS);
+        cargarLista(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco
+        const t = setInterval(cargarLista, REFRESCO_MS);
         return () => clearInterval(t);
-    }, [cargar]);
+    }, [cargarLista]);
 
-    // Con alcance BRANCH la base ya devuelve sólo la propia; el filtro es para
-    // quien ve todas y no debería recibir seis salas en una baldosa.
-    // Por sala y por día, porque el tramo se mide dentro del día.
-    const cortes = useMemo(() => {
-        // Si hay una sala elegida en la cabecera, manda ésa. Si no, la propia.
-        if (salaElegida) {
-            const deEsa = filas.filter((c) => String(c.branch_id) === String(salaElegida));
-            const porUna = new Map([[Number(salaElegida), deEsa]]);
-            return [...porUna.values()].flatMap((l) =>
-                conTramo([...l].sort((x, y) => String(x.hora).localeCompare(String(y.hora)))))
-                .filter((c) => c.tipo === 'C')
-                .sort((x, y) => String(y.hora).localeCompare(String(x.hora)));
-        }
-        const propios = filas.filter((c) => c.branch_id === Number(miSala));
-        // Si la sala propia no tiene cortes hoy, se muestra lo que la sesión
-        // alcance a ver: para un supervisor eso son todas las salas, y es
-        // infinitamente más útil que una baldosa vacía.
-        const base = (soloMiSala && propios.length) ? propios : filas;
-        const porSala = new Map();
-        for (const c of base) {
-            if (!porSala.has(c.branch_id)) porSala.set(c.branch_id, []);
-            porSala.get(c.branch_id).push(c);
-        }
-        const out = [];
-        for (const lista of porSala.values()) {
-            out.push(...conTramo([...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora)))));
-        }
-        return out.filter((c) => c.tipo === 'C')
-            .sort((a, b) => String(b.hora).localeCompare(String(a.hora)));
-    }, [filas, miSala, soloMiSala, salaElegida]);
+    useEffect(() => {
+        cargarMes(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco
+        const t = setInterval(cargarMes, REFRESCO_MES_MS);
+        return () => clearInterval(t);
+    }, [cargarMes]);
 
-    const variasSalas = useMemo(
-        () => new Set(cortes.map((c) => c.branch_id)).size > 1,
-        [cortes],
+    // ── El alcance, decidido UNA vez ────────────────────────────────────────
+    // La lista y el resumen tienen que hablar de las mismas salas. Si cada uno
+    // resolviera su propio respaldo —«si la mía no tiene, mostrá todas»— podrían
+    // terminar en alcances distintos y la baldosa diría «3 sin confirmar» arriba
+    // con una sola tarjeta abajo.
+    const salaFiltro = useMemo(() => {
+        if (salaElegida) return Number(salaElegida);
+        if (!soloMiSala || miSala == null) return null;
+        const tieneCortes = mes.some((c) => c.branch_id === Number(miSala))
+            || filas.some((c) => c.branch_id === Number(miSala));
+        return tieneCortes ? Number(miSala) : null;
+    }, [salaElegida, soloMiSala, miSala, mes, filas]);
+
+    const deLaSala = useCallback(
+        (lista) => (salaFiltro == null ? lista : lista.filter((c) => c.branch_id === salaFiltro)),
+        [salaFiltro],
     );
 
-    const resolver = useCallback(async (corte, estado, motivo) => {
+    const resumen = useMemo(
+        () => resumenDeCortes(conTramoPorSalaYDia(deLaSala(mes))),
+        [mes, deLaSala],
+    );
+
+    const conTramo = useMemo(
+        () => conTramoPorSalaYDia(deLaSala(filas)),
+        [filas, deLaSala],
+    );
+
+    // Lo que hay que hacer: los cortes de caja que siguen sin resolver, del más
+    // reciente al más viejo.
+    const pendientes = useMemo(() => conTramo
+        .filter((c) => c.tipo === 'C' && c.estado === 'PENDIENTE')
+        .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
+            || String(b.hora).localeCompare(String(a.hora))),
+    [conTramo]);
+
+    const variasSalas = useMemo(
+        () => new Set(pendientes.map((c) => c.branch_id)).size > 1,
+        [pendientes],
+    );
+
+    const corteAbierto = useMemo(
+        () => (abierto == null ? null : conTramo.find((c) => c.id === abierto) || null),
+        [abierto, conTramo],
+    );
+
+    const recargar = useCallback(() => { cargarLista(); cargarMes(); }, [cargarLista, cargarMes]);
+
+    const abrirDetalle = useCallback((corte, modo) => {
+        setModoInicial(modo || null);
+        setAbierto(corte.id);
+    }, []);
+
+    // El camino de un clic: sólo para los que cuadran al centavo. Cuál es cuál
+    // lo decide `TarjetaCorte`, para que el Inicio y el módulo no discrepen.
+    const confirmarRapido = useCallback(async (corte) => {
         setOcupado(corte.id);
-        const { error: err } = await resolverCorte(corte.id, estado, { motivo: motivo ?? null });
+        const { error: err } = await resolverCorte(corte.id, 'CONFIRMADO');
         setOcupado(null);
         if (err) {
             showToast?.('No se pudo guardar', mensajeAmigable(err, 'Vuelve a intentar en un momento.'), 'error');
             return;
         }
-        appendAuditLog?.(estado === 'CONFIRMADO' ? 'CORTE_CAJA_CONFIRMADO' : 'CORTE_CAJA_DESCARTADO', user?.id, {
-            corte_id: corte.id, hora: corte.hora, diferencia: corte.diferencia_erp, motivo, origen: 'inicio',
+        appendAuditLog?.('CORTE_CAJA_CONFIRMADO', user?.id, {
+            corte_id: corte.id, sucursal: nombreSala[corte.branch_id],
+            fecha: corte.fecha, hora: corte.hora, diferencia: corte.tramo, origen: 'inicio',
         });
-        showToast?.(estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado', hhmm(corte.hora), 'success');
-        setDescartando(null);
-        cargar();
-    }, [showToast, appendAuditLog, user, cargar]);
+        showToast?.('Corte confirmado', `${nombreSala[corte.branch_id] || ''} · ${String(corte.hora).slice(0, 5)}`.trim(), 'success');
+        recargar();
+    }, [showToast, appendAuditLog, user, nombreSala, recargar]);
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 
-
-    if (error) {
-        return <EmptyState icon={Wallet} message="No se pudieron cargar" subtext={error} />;
-    }
-
-    if (!cortes.length) {
-        return (
-            <EmptyState
-                icon={Wallet}
-                message="Sin cortes hoy"
-                subtext={salaElegida
-                    ? `${nombreSala[salaElegida] || 'Esa sala'} todavía no ha cortado hoy.`
-                    : 'Cuando se saque un corte de caja aparece acá para confirmarlo.'}
-            />
-        );
-    }
-
     return (
-        <div className="h-full overflow-y-auto p-2 space-y-1.5">
-            {cortes.map((c) => {
-                const sev = severidad(c.tramo);
-                const disputa = contraste(c)?.enDisputa;
-                const resuelto = c.estado !== 'PENDIENTE';
-                const enCurso = ocupado === c.id;
+        <div className="h-full flex flex-col min-h-0">
+            {/* ── Cómo va el mes ──────────────────────────────────────────── */}
+            <div className="shrink-0 px-2 pt-2 pb-2 border-b border-divider">
+                <div className="flex items-baseline justify-between gap-2 mb-1.5 px-0.5">
+                    <span className="text-micro font-black uppercase tracking-widest text-content-3">
+                        Este mes
+                    </span>
+                    <span className="text-micro text-content-3 tabular-nums truncate">
+                        {resumen.pendientes} sin confirmar · {resumen.confirmados} {resumen.confirmados === 1 ? 'confirmado' : 'confirmados'}
+                    </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                    <Mini n={resumen.cuadrados} label="Cuadraron" tono="ok" />
+                    <Mini n={resumen.exceso}    label="Exceso"    tono="sobra" />
+                    <Mini n={resumen.faltante}  label="Faltante"  tono="falta" />
+                </div>
+            </div>
 
-                return (
-                    <div key={c.id} data-surface="card" className="p-2.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-caption font-semibold text-content-2 tabular-nums">{hhmm(c.hora)}</span>
-                            {variasSalas && (
-                                <span className="text-caption text-content-3 truncate">{nombreSala[c.branch_id]}</span>
-                            )}
-                            {c.estado === 'DESCARTADO' ? (
-                                <span className="text-label font-semibold text-content-3 line-through tabular-nums">
-                                    {conSigno(diferenciaDelCorte(c).valor)}
-                                </span>
-                            ) : (
-                                <span className={`text-label font-bold tabular-nums ${TONO_TEXTO[sev]}`}>
-                                    {conSigno(c.tramo ?? 0)}
-                                </span>
-                            )}
-                            {disputa && <Badge variant="danger" size="sm" icon={AlertTriangle}>Dos cifras</Badge>}
-                            {c.estado === 'CONFIRMADO' && <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>}
-                            {c.estado === 'DESCARTADO' && <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>}
-                        </div>
+            {/* ── Lo que falta confirmar ──────────────────────────────────── */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
+                {error && (
+                    <EmptyState linea icon={Wallet} title="No se pudieron cargar" subtitle={error} />
+                )}
 
-                        {!resuelto && puedeResolver && (
-                            descartando === c.id ? (
-                                <div className="mt-2 space-y-1.5">
-                                    <div className="text-micro text-content-3">¿Por qué se descarta?</div>
-                                    <div className="flex gap-1.5 flex-wrap">
-                                        {MOTIVOS.map((m) => (
-                                            <Button
-                                                key={m}
-                                                variant="danger"
-                                                size="sm"
-                                                loading={enCurso}
-                                                onClick={() => resolver(c, 'DESCARTADO', m)}
-                                            >
-                                                {m}
-                                            </Button>
-                                        ))}
-                                        <Button variant="ghost" size="sm" onClick={() => setDescartando(null)}>Cancelar</Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="mt-2 flex gap-1.5 flex-wrap">
-                                    <Button variant="primary" size="sm" icon={CheckCircle2} loading={enCurso}
-                                        onClick={() => resolver(c, 'CONFIRMADO')}>
-                                        Confirmar
-                                    </Button>
-                                    <Button variant="secondary" size="sm" icon={Ban}
-                                        onClick={() => setDescartando(c.id)}>
-                                        Descartar
-                                    </Button>
-                                </div>
-                            )
-                        )}
-                    </div>
-                );
-            })}
+                {!error && !pendientes.length && (
+                    <EmptyState
+                        linea
+                        icon={CheckCircle2}
+                        title="Sin cortes por confirmar"
+                        subtitle={`Al día en los últimos ${DIAS_PENDIENTES} días.`}
+                    />
+                )}
+
+                {/* La franja de arriba cuenta el MES y la lista muestra los
+                    últimos 7 días. Cuando no coinciden hay que decirlo: una
+                    lista más corta que su propio número se lee como «ya está
+                    todo», que es justo lo contrario. */}
+                {!error && resumen.pendientes > pendientes.length && (
+                    <p className="text-micro text-content-3 text-center px-2 pt-1">
+                        Hay {resumen.pendientes - pendientes.length} sin confirmar de antes de
+                        {' '}{DIAS_PENDIENTES} días. Están en Cortes de caja.
+                    </p>
+                )}
+
+                {!error && pendientes.map((c) => (
+                    <TarjetaCorte
+                        key={c.id}
+                        corte={c}
+                        compacta
+                        sala={[
+                            variasSalas ? nombreSala[c.branch_id] : null,
+                            c.fecha !== hoySV() ? rotularDia(c.fecha) : null,
+                        ].filter(Boolean).join(' · ') || null}
+                        persona={personas.get(c.resuelto_por) || null}
+                        puedeResolver={puedeResolver}
+                        ocupado={ocupado === c.id}
+                        onAbrir={abrirDetalle}
+                        onConfirmar={confirmarRapido}
+                    />
+                ))}
+            </div>
+
+            <CorteDetalleModal
+                corte={corteAbierto}
+                nombreSala={nombreSala}
+                modoInicial={modoInicial}
+                onClose={() => { setAbierto(null); setModoInicial(null); }}
+                onResuelto={recargar}
+                origen="inicio"
+            />
         </div>
     );
 }

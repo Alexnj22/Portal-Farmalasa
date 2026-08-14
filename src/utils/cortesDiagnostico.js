@@ -46,6 +46,64 @@ export function conTramo(cortesDeLaSala) {
 }
 
 /**
+ * `conTramo` aplicado a una lista MEZCLADA de salas y de días.
+ *
+ * El tramo se mide POR SALA Y POR DÍA: los cortes son acumulativos dentro del
+ * día y arrancan de cero cada mañana, así que meter dos días en la misma serie
+ * restaría el cierre de ayer contra el primero de hoy y daría un tramo enorme e
+ * inventado. Lo mismo mezclando salas.
+ *
+ * Vive acá y no en la vista porque el módulo y el widget del Inicio lo hacían
+ * cada uno por su cuenta —el widget agrupaba sólo por sala, que era correcto
+ * mientras sólo miraba HOY y dejó de serlo al abrirle la ventana a los
+ * pendientes de días anteriores—. Dos pantallas que calculan por su cuenta
+ * terminan diciendo cosas distintas del mismo corte, y acá eso significa
+ * señalarle un faltante a alguien por una resta que la otra pantalla no hace.
+ */
+export function conTramoPorSalaYDia(cortes) {
+    const grupos = new Map();
+    for (const c of cortes || []) {
+        const k = `${c.branch_id}|${c.fecha}`;
+        if (!grupos.has(k)) grupos.set(k, []);
+        grupos.get(k).push(c);
+    }
+    const out = [];
+    for (const lista of grupos.values()) {
+        out.push(...conTramo([...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora)))));
+    }
+    return out;
+}
+
+/**
+ * Cómo le fue a un período: cuántos cortes cuadraron, cuántos sobraron y
+ * cuántos faltaron, más cuántos siguen sin confirmar.
+ *
+ * Cuenta CORTES, no días, y sólo los de caja (`tipo === 'C'`): el cierre del día
+ * no es un conteo. Los descartados salen del reparto por severidad —un conteo
+ * mal hecho no es ni un sobrante ni un faltante— pero se cuentan aparte para que
+ * el total no mienta por omisión.
+ *
+ * @param {Array} cortesConTramo ya pasados por `conTramoPorSalaYDia`
+ */
+export function resumenDeCortes(cortesConTramo) {
+    const r = {
+        vivos: 0, cuadrados: 0, exceso: 0, faltante: 0,
+        pendientes: 0, confirmados: 0, descartados: 0,
+    };
+    for (const c of cortesConTramo || []) {
+        if (c.tipo !== 'C') continue;
+        if (c.estado === 'DESCARTADO') { r.descartados += 1; continue; }
+        r.vivos += 1;
+        if (c.estado === 'PENDIENTE') r.pendientes += 1; else r.confirmados += 1;
+        const s = severidad(c.tramo);
+        if (s === 'ok') r.cuadrados += 1;
+        else if (s === 'sobra') r.exceso += 1;
+        else r.faltante += 1;
+    }
+    return r;
+}
+
+/**
  * El estado de la sala en el día: la diferencia del último corte vivo.
  *
  * El conteo se llama `cantidad` y NO `cortes` porque este objeto se mezcla con

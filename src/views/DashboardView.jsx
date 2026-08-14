@@ -162,8 +162,10 @@ const WIDGET_SIZES = {
   facturas_sala: { minCols: 1, minRows: 1, label: 'Facturas Sala' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
   // Lista con botones: sin alto no entra ni un corte (mismo motivo que
-  // `vendedores` y `traslados`, abajo).
-  cortes_sala:   { minCols: 2, minRows: 2, label: 'Cortes de caja' },
+  // `vendedores` y `traslados`, abajo). Tres renglones desde el 2026-08-14:
+  // arriba va la franja del mes (~62px) y abajo las tarjetas de lo que falta
+  // confirmar; con dos renglones quedaba media tarjeta a la vista.
+  cortes_sala:   { minCols: 2, minRows: 3, label: 'Cortes de caja' },
   // `vendedores` y `traslados` no tenían entrada, así que caían al mínimo de
   // 1×1 — una baldosa de 312×120 donde entran el título y una línea, y ni una
   // sola fila de la lista. Quien no las agrandara a mano veía dos widgets que

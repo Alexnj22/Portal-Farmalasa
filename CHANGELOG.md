@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.601.0 — Cortes: tarjetas por sala, alerta al firmar y el widget con el mes
+
+Tres pedidos del usuario mirando la vista, más un defecto que salió al
+verificarlos.
+
+**El módulo son tarjetas, agrupadas por sala.** Eran renglones de ancho
+completo: una fila por corte, las salas intercaladas y una sola columna. Ahora
+cada día se parte por sucursal y cada sala tiene su rejilla —hasta cuatro
+tarjetas por renglón en pantalla ancha, una en el teléfono—, así que 23 cortes
+entran en lo que antes ocupaban 8. La tarjeta entera abre el detalle
+(`clickable`, con su contrato de teclado), y **«Descartar» ya está en la lista**:
+antes sólo se podía descartar desde adentro del modal.
+
+**Confirmar o descartar un corte CON diferencia abre una alerta.** Regla del
+usuario, y la decisión de cuándo se aplica vive en un solo sitio —
+`TarjetaCorte`— para que el Inicio y el módulo no puedan discrepar:
+
+* cuadra al centavo → «Confirmar» resuelve de un clic, no hay nada que leer;
+* tiene diferencia → «Confirmar» abre el detalle con el monto, de dónde sale la
+  cifra, qué revisar y un campo para dejar escrito qué se encontró;
+* «Descartar» siempre abre, porque descartar exige decir por qué.
+
+**Al confirmar o rechazar se ve el nombre, la foto y la hora.** En la tarjeta y
+en el detalle. Y ahí apareció el defecto: `employees_safe` no sirve para esto
+porque la policy de `employees` **esconde a los superusuarios de todos menos de
+sí mismos**, y quien resuelve un corte suele ser justamente un supervisor con
+ese rol — la tarjeta decía «Sin registrar quién» sobre una decisión que sí tenía
+autor. Lo resuelve `get_cortes_resolutores`, una función DEFINER acotada dos
+veces: sólo devuelve a quien aparece como `resuelto_por` de algún corte, y sólo
+a quien puede ver el módulo. No abre la tabla de personal: expone la firma de
+una decisión, que es lo que una bitácora tiene que mostrar.
+
+**El widget del Inicio no daba los pendientes.** Miraba sólo la fecha de hoy, y
+el usuario tenía 23 cortes sin confirmar de AYER: la baldosa salía vacía justo
+cuando había trabajo. Un pendiente no deja de serlo a medianoche — la ventana
+ahora son 7 días. Y su estado vacío salía **cortado y sin una sola palabra**:
+pasaba `message`/`subtext` a `EmptyState`, que espera `title`/`subtitle`, así que
+pintaba el ícono de 400px de alto y ningún texto. El mismo error estaba en el
+módulo. Los dos usan ahora el canónico como es, y el widget en su variante
+`linea`, que es la que corresponde dentro de una baldosa.
+
+**Y trae el resumen del mes**, en la misma baldosa y no en una aparte: cuántos
+cortes cuadraron, cuántos tuvieron exceso y cuántos faltante, más cuántos quedan
+sin confirmar contra cuántos ya se firmaron. Cuando el mes tiene más pendientes
+que los que entran en la ventana de 7 días, lo dice — una lista más corta que su
+propio número se lee como «ya está todo», que es lo contrario. El resumen se
+pide con `fetchCortesResumen`, que trae 11 columnas en vez de 40: son ~900 filas
+al mes y la fila completa incluye el texto del tiquete.
+
+**Una sola definición de tarjeta y de detalle** (`src/components/cortes/`). El
+módulo y el widget venían con dos versiones de cada pantalla, y el widget
+calculaba el tramo agrupando **sólo por sala** — correcto mientras miraba un
+solo día, y silenciosamente equivocado al abrirle la ventana a los pendientes de
+ayer. Ahora los dos llaman a `conTramoPorSalaYDia`. Dos pantallas que calculan
+por su cuenta terminan diciendo cosas distintas del mismo corte, y acá eso
+significa señalarle un faltante a alguien por una resta que la otra pantalla no
+hace.
+
 ## v2.600.0 — El ajuste de MIN·MAX tiene que cambiar algo
 
 **«— · —» y «0 · 0» son el mismo número.** Reportado sobre una solicitud de

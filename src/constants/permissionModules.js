@@ -369,7 +369,7 @@ const GRUPOS_CRUDOS = [
             // `can_view` lista y descarga; `can_edit` es lo que habilita TOMAR
             // una factura. El alcance importa de verdad acá: con scope BRANCH la
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
-            { key: 'dash_cortes_sala',    label: 'Widget: Cortes de caja de mi sala', desc: 'Los cortes de caja de hoy en la sala, con la diferencia de cada tramo, para confirmarlos o descartarlos sin salir del Inicio', icon: Wallet, hasApprove: false, hasScope: true },
+            { key: 'dash_cortes_sala',    label: 'Widget: Cortes de caja de mi sala', desc: 'Los cortes de caja que quedan sin confirmar en la sala —de los últimos 7 días, no sólo de hoy— con la diferencia de cada tramo, más cómo va el mes: cuántos cuadraron, cuántos tuvieron exceso y cuántos faltante', icon: Wallet, hasApprove: false, hasScope: true },
             { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
             // Los dos widgets de venta tienen DOS lecturas, y la capacidad
             // «vista completa» es la que decide cuál se pinta. Apagada, el

@@ -23,11 +23,34 @@ const corto = (s, max = 26) => (s.length > max ? `${s.slice(0, max - 1).trimEnd(
  * diferencia de +$0.25, en el de la noche como mínimo debe haber +$0.25; si no
  * pasa eso, entonces faltan $0.25 en el corte de la noche».
  *
+ * ── SÓLO UN CONFIRMADO CORRE LA BASE (usuario, 2026-08-14) ──────────────────
+ * La frase de arriba dice «el primer corte CONFIRMADO», y esa palabra es la
+ * regla entera: arrastrar una diferencia que nadie firmó le cobra al corte
+ * siguiente algo que todavía no es un hecho.
+ *
+ * Importa porque el sistema de origen no anula cortes: cuando la sala encuentra
+ * el error, REHACE el corte. Así que un corte repetido —mismo efectivo, misma
+ * venta— es la corrección del anterior, no un tramo nuevo. Corriendo la base
+ * con el pendiente, el portal le restaba al bueno la diferencia del que vino a
+ * reemplazar, e inventaba un faltante igual y opuesto.
+ *
+ * Salud 5, 14-ago, el caso que lo destapó: 12:36 declaró $230.07 contra
+ * $228.82 esperados —el cobro de crédito de $1.25 no estaba registrado— y
+ * sobraba $1.25. Lo registraron y rehicieron el corte: 12:40, mismo efectivo,
+ * misma venta, exacto. El portal mostraba «FALTANTE −$1.25» (0.00 − 1.25) sobre
+ * un corte que cuadra, y con el botón de confirmarlo al lado. Midiendo contra
+ * el último CONFIRMADO —ninguno ese día— los dos dicen lo suyo: +$1.25 y
+ * exacto, que es lo mismo que el aviso que la sala lee hace años.
+ *
+ * Verificado sobre los 35 cortes capturados: enderezaba 6 de los 8 tramos
+ * inventados (Salud 5, Salud 3 ×1, Salud 1 ×1, Salud 2, La Popular ×2). Los 2
+ * que quedan son de Salud 1 del 13-ago y NO son un defecto del cálculo: el
+ * corte de las 19:52 se confirmó estando mal (declaró $834.28 con la caja en
+ * $1,456.00) y un confirmado sí corre la base. Se arregla reabriendo esa
+ * decisión, no acá.
+ *
  * Los DESCARTADOS no cuentan ni como base ni como tramo: un conteo mal hecho no
- * puede desplazar la referencia de los que vienen después. Ejemplo real del
- * 13-ago en Salud 1: 19:52 declaró $834.28 con −$621.17 y 19:53 declaró
- * $1,456.00 con +$0.55 — descartado el primero, el tramo de las 19:53 se mide
- * contra el corte de las 13:22, que es lo correcto.
+ * puede desplazar la referencia de los que vienen después.
  *
  * @param {Array} cortesDeLaSala ordenados por hora ascendente
  */
@@ -42,7 +65,10 @@ export function conTramo(cortesDeLaSala) {
         // dando el tramo.
         const { valor: dif, fuente, esperado } = diferenciaDelCorte(c);
         const tramo = redondear(dif - previa);
-        previa = dif;
+        // Sólo una decisión firmada mueve la referencia. Ver el bloque de
+        // arriba: con el pendiente corriéndola, un corte rehecho le restaba al
+        // bueno la diferencia del que vino a reemplazar.
+        if (c.estado === 'CONFIRMADO') previa = dif;
         return { ...c, tramo, acumulado: dif, fuente, esperadoUsado: esperado };
     });
 }

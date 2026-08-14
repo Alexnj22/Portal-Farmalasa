@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.605.1 — fix(cortes): la diferencia de un corte sin confirmar no le corre la base al siguiente
+
+Salud 5 lo destapó. A las 12:36 el corte sobraba $1.25 porque el cobro de
+crédito de $1.25 no estaba registrado; lo registraron y **rehicieron el corte**
+a las 12:40 — mismo efectivo ($230.07), misma venta ($225.85), exacto. El aviso
+que la sala lee hace años decía «Exacto, felicidades» y el portal, al lado,
+**«FALTANTE −$1.25»** con el botón de confirmarlo.
+
+El portal restaba la diferencia del corte anterior aunque nadie la hubiera
+firmado. Como el sistema no anula cortes, rehacerlo es la única forma que tiene
+la sala de corregir: el portal le cobraba al corte bueno la diferencia del que
+vino a reemplazar, e inventaba un faltante igual y opuesto.
+
+La regla ahora es la que dijo el usuario, con la palabra que ya estaba en ella:
+**sólo un corte CONFIRMADO corre la base.** Medido sobre los 35 cortes
+capturados, endereza 6 de los 8 tramos inventados — Salud 5, Salud 3, Salud 1,
+Salud 2 y La Popular ×2. Salud 4 nunca tuvo el problema porque es la única que
+descartó sus cortes repetidos.
+
+Los 2 que quedan son de Salud 1 del 13-ago y no son del cálculo: el corte de las
+19:52 se **confirmó estando mal** (declaró $834.28 con la caja en $1,456.00) y
+un confirmado sí corre la base. Hoy no hay forma de deshacer esa firma —
+`resolver_corte_caja` rechaza cualquier corte ya resuelto y el «reabrir» que
+menciona su comentario no existe.
+
 ## v2.605.0 — Confirmar el corte desde el aviso
 
 El aviso avisaba y nada más: había que entrar al módulo para resolverlo. Ahora

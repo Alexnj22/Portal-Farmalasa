@@ -26,7 +26,7 @@ import { updatePedidoSucursalStatus, recibirTrasladoPedido } from '../../data/pe
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { construirCajasEspeciales } from '../../utils/cajasEspeciales';
+import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasEspeciales';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
@@ -225,6 +225,10 @@ export default function RecepcionModal({
     const allAccessibleDone = hasAnythingToReceive
         && (accessibleBoxNums.length === 0 || accessibleBoxNums.every(n => allRecibidas.includes(n)))
         && allEspecialesDone;
+
+    // Qué hay abierto: una caja especial, una caja normal, o el pedido entero.
+    // Una sola vez y en una función probada — ver `alcanceDeRecepcion`.
+    const alcance = alcanceDeRecepcion({ especial: selectedEspecial, caja: selectedCaja, hasCajaMap });
 
     // Rows for the currently selected box (or especial, or all if no caja map)
     const selectedCajaRows = useMemo(() => {
@@ -429,9 +433,67 @@ export default function RecepcionModal({
         }
     }, [buildPItems, pedido, sucursalId, user]);
 
+    // ── Cerrar lo que se acaba de confirmar ─────────────────────────────────────
+    // Estos dos bloques vivían duplicados dentro de «Confirmar» y de «Todo OK», y
+    // ya habían divergido: la copia de «Todo OK» no conocía las cajas especiales
+    // —desde adentro de una confirmaba el pedido ENTERO— y tampoco las esperaba
+    // antes de darlo por terminado. Una sola copia de cada uno.
+    const cerrarEspecial = useCallback(async ({ itemsCount, hasDiff, todoOk = false }) => {
+        const newConfirmedIds = new Set([...confirmedEspecialIds, selectedEspecial.item.id]);
+        setConfirmedEspecialIds(newConfirmedIds);
+        const espDone = especialItems.filter(e => !e.item.falta_caja)
+            .every(e => newConfirmedIds.has(e.item.id) || e.item.status === 'recibido');
+        const regDone = accessibleBoxNums.length === 0 || accessibleBoxNums.every(n => allRecibidas.includes(n));
+        useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
+            sucursal_id: sucursalId, especial: selectedEspecial.label, items_count: itemsCount,
+            ...(todoOk ? { todo_ok: true } : {}),
+        });
+        if (regDone && espDone) {
+            await saveExtras();
+            onConfirmed?.({ hasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
+            onClose();
+        } else {
+            setScreen('cajas'); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false);
+        }
+    }, [confirmedEspecialIds, selectedEspecial, especialItems, accessibleBoxNums, allRecibidas,
+        pedido, sucursalId, saveExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems]);
+
+    const cerrarCaja = useCallback(async ({ itemsCount, hasDiff, todoOk = false }) => {
+        const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
+        // Sin este chequeo la caja se pintaba recibida en pantalla y reaparecía
+        // pendiente al recargar: el UPDATE lo frenaba RLS y no devolvía error.
+        // Es lo que pasó el 2026-08-14 en La Popular.
+        const { error } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
+        if (error) throw error;
+        setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
+
+        const regDone = accessibleBoxNums.every(n => newRec.includes(n));
+        const espDone = especialItems.filter(e => !e.item.falta_caja)
+            .every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
+        useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
+            sucursal_id: sucursalId, caja: selectedCaja, items_count: itemsCount,
+            ...(todoOk ? { todo_ok: true } : {}),
+        });
+        if (regDone && espDone) {
+            await saveExtras();
+            useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
+                sucursal_id: sucursalId, extras_count: extras.length,
+            });
+            onConfirmed?.({ hasDiff, allDone: true });
+            onClose();
+        } else {
+            // More boxes / especiales pending — back to picker
+            setScreen('cajas'); setSelectedCaja(null); setProdSearch(''); setShowSearch(false);
+        }
+    }, [allRecibidas, selectedCaja, pedido, sucursalId, accessibleBoxNums, especialItems,
+        confirmedEspecialIds, saveExtras, extras, onConfirmed, onClose]);
+
     // ── Confirm a single box (or all if no caja map) ────────────────────────────
     const handleConfirmarCaja = useCallback(async () => {
-        const rowsToSave = (selectedEspecial !== null || (hasCajaMap && selectedCaja !== null)) ? selectedCajaRows : sortedRows;
+        // `selectedCajaRows` YA resuelve los tres alcances (especial, caja,
+        // pedido entero), así que repetir la condición acá sólo daba lugar a que
+        // se escribiera distinta en cada sitio. Y así se escribió.
+        const rowsToSave = selectedCajaRows;
 
         const invalidExtra = extras.find(e => e.fQty === 0 && e.sQty === 0);
         if (invalidExtra) {
@@ -478,54 +540,10 @@ export default function RecepcionModal({
             const newAnyDiff = anyHasDiff || boxHasDiff;
             setAnyHasDiff(newAnyDiff);
 
-            if (selectedEspecial !== null) {
-                // Mark this especial as confirmed locally
-                const newConfirmedIds = new Set([...confirmedEspecialIds, selectedEspecial.item.id]);
-                setConfirmedEspecialIds(newConfirmedIds);
-                const newAllEspeciales = especialItems
-                    .filter(e => !e.item.falta_caja)
-                    .every(e => newConfirmedIds.has(e.item.id) || e.item.status === 'recibido');
-                const allRegDone = accessibleBoxNums.length === 0 || accessibleBoxNums.every(n => allRecibidas.includes(n));
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
-                    sucursal_id: sucursalId, especial: selectedEspecial.label, items_count: p_items.length,
-                });
-                if (allRegDone && newAllEspeciales) {
-                    await saveExtras();
-                    onConfirmed?.({ hasDiff: newAnyDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
-                    onClose();
-                } else {
-                    setScreen('cajas'); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false);
-                }
-            } else if (hasCajaMap && selectedCaja !== null) {
-                // Mark this box as received
-                const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
-                // Sin este chequeo la caja se pintaba recibida en pantalla y
-                // reaparecía pendiente al recargar: el UPDATE lo frenaba RLS y
-                // no devolvía error. Es lo que pasó el 2026-08-14 en La Popular.
-                const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
-                if (recErr) throw recErr;
-                setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
-
-                const nowRegDone = accessibleBoxNums.every(n => newRec.includes(n));
-                const nowEspDone = especialItems.filter(e => !e.item.falta_caja).every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
-
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
-                    sucursal_id: sucursalId, caja: selectedCaja, items_count: p_items.length,
-                });
-
-                if (nowRegDone && nowEspDone) {
-                    await saveExtras();
-                    useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
-                        sucursal_id: sucursalId, extras_count: extras.length,
-                    });
-                    onConfirmed?.({ hasDiff: newAnyDiff, allDone: true });
-                    onClose();
-                } else {
-                    // More boxes / especiales pending — back to picker
-                    setScreen('cajas');
-                    setSelectedCaja(null);
-                    setProdSearch(''); setShowSearch(false);
-                }
+            if (alcance === 'especial') {
+                await cerrarEspecial({ itemsCount: p_items.length, hasDiff: newAnyDiff });
+            } else if (alcance === 'caja') {
+                await cerrarCaja({ itemsCount: p_items.length, hasDiff: newAnyDiff });
             } else {
                 // No caja map — single confirm, original behavior
                 await saveExtras();
@@ -541,9 +559,8 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [
-        selectedEspecial, hasCajaMap, selectedCaja, selectedCajaRows, sortedRows, extras, buildPItems,
-        pedido, sucursalId, user, anyHasDiff, allRecibidas, accessibleBoxNums, confirmedEspecialIds,
-        especialItems, saveExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems,
+        alcance, selectedCajaRows, extras, buildPItems, cerrarEspecial, cerrarCaja,
+        pedido, sucursalId, user, anyHasDiff, saveExtras, onConfirmed, onClose,
     ]);
 
     // ── Confirmar todo sin errores (acción rápida) ──────────────────────────────
@@ -551,7 +568,10 @@ export default function RecepcionModal({
     // recibido = enviado sin revisar línea por línea (mismo criterio que
     // handleConfirmarTodo, pero acotado a la caja/pedido actualmente abierto).
     const handleTodoOk = useCallback(async () => {
-        const rowsToSave = (hasCajaMap && selectedCaja !== null) ? selectedCajaRows : sortedRows;
+        // Acotado a lo que hay ABIERTO. Preguntaba sólo por el número de caja,
+        // que dentro de una caja especial es `null`: desde una especial este
+        // botón daba por recibido el pedido entero.
+        const rowsToSave = selectedCajaRows;
         setSaving(true); setSaveError(null);
 
         // Payload con cantidades exactas asignadas, sin diferencias
@@ -570,25 +590,10 @@ export default function RecepcionModal({
             });
             if (error) throw error;
 
-            if (hasCajaMap && selectedCaja !== null) {
-                const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
-                const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
-                if (recErr) throw recErr;
-                setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
-
-                const nowAllDone = accessibleBoxNums.every(n => newRec.includes(n));
-                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
-                    sucursal_id: sucursalId, caja: selectedCaja, items_count: p_items.length, todo_ok: true,
-                });
-
-                if (nowAllDone) {
-                    await saveExtras();
-                    useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, { sucursal_id: sucursalId, extras_count: extras.length });
-                    onConfirmed?.({ hasDiff: anyHasDiff, allDone: true });
-                    onClose();
-                } else {
-                    setScreen('cajas'); setSelectedCaja(null); setProdSearch(''); setShowSearch(false);
-                }
+            if (alcance === 'especial') {
+                await cerrarEspecial({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
+            } else if (alcance === 'caja') {
+                await cerrarCaja({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
             } else {
                 await saveExtras();
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, { sucursal_id: sucursalId, items_count: p_items.length, todo_ok: true });
@@ -600,8 +605,8 @@ export default function RecepcionModal({
         } finally {
             setSaving(false);
         }
-    }, [hasCajaMap, selectedCaja, selectedCajaRows, sortedRows, pedido, sucursalId, user,
-        anyHasDiff, allRecibidas, accessibleBoxNums, extras, saveExtras, onConfirmed, onClose]);
+    }, [alcance, selectedCajaRows, pedido, sucursalId, user, anyHasDiff,
+        cerrarEspecial, cerrarCaja, saveExtras, onConfirmed, onClose]);
 
     // ── Confirmar TODAS las cajas accesibles de una vez (Todo OK) ──────────────
     const handleConfirmarTodo = useCallback(async () => {
@@ -696,7 +701,13 @@ export default function RecepcionModal({
     if (!montadoParaSalida) return null;
 
     // Visible rows for the items grid
-    const gridRows = selectedCaja !== null ? selectedCajaRows : sortedRows;
+    //
+    // Era `selectedCaja !== null ? selectedCajaRows : sortedRows`, y adentro de
+    // una caja especial `selectedCaja` es null: la pantalla listaba los
+    // productos de las cajas NORMALES bajo el título de la especial. Visto en La
+    // Popular el 2026-08-14 («E3 — Caja especial» con tres leches adentro).
+    // `selectedCajaRows` ya resuelve los tres alcances; no hay nada que decidir.
+    const gridRows = selectedCajaRows;
     const visibleRows = prodSearch.trim()
         ? gridRows.filter(r => tokenMatch(prodSearch, r.products?.nombre))
         : gridRows;
@@ -1409,7 +1420,9 @@ export default function RecepcionModal({
                     <div className="flex items-center gap-2">
                         <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={handleTodoOk}>Todo OK</Button>
                         <Button tone="success" disabled={saving} onClick={handleConfirmarCaja}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-                            {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}</Button>
+                            {alcance === 'especial' ? `Confirmar ${selectedEspecial.label}`
+                                : alcance === 'caja'  ? `Confirmar Caja ${selectedCaja}`
+                                :                       'Confirmar recepción'}</Button>
                     </div>
                 </div>
             </PedidoModal.Footer>

@@ -44,6 +44,28 @@ export function cajasDeRenglon(r) {
  * que si dos pantallas numeran distinto, marcar «E2 dañada» en una señala otra
  * caja en la otra.
  */
+/**
+ * Qué hay abierto en la pantalla de recepción: `'especial'` (una caja
+ * especial), `'caja'` (una caja normal) o `'pedido'` (el despacho entero — los
+ * viejos, sin mapa de cajas).
+ *
+ * Existe porque cuatro sitios del modal lo preguntaban por su cuenta y tres lo
+ * respondían mal: preguntaban sólo por el número de caja, que dentro de una
+ * caja especial vale `null`, y caían en «el pedido entero». En pantalla eso
+ * listaba los productos de las cajas normales bajo el título de la especial
+ * —visto en La Popular el 2026-08-14: «E3 — Caja especial» con tres leches
+ * adentro— y el botón se ofrecía a «Confirmar Caja null». Peor: «Todo OK» daba
+ * por recibido el pedido COMPLETO desde adentro de una caja de Electrolit.
+ *
+ * Una caja especial ES una caja. Con la respuesta derivada en un solo lugar no
+ * puede volver a haber tres respuestas distintas para la misma pregunta.
+ */
+export function alcanceDeRecepcion({ especial = null, caja = null, hasCajaMap = false } = {}) {
+    if (especial != null) return 'especial';
+    if (hasCajaMap && caja != null) return 'caja';
+    return 'pedido';
+}
+
 export function construirCajasEspeciales(rows) {
     let n = 1;
     return [...(rows ?? [])]

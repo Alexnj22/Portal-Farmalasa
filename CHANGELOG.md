@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.606.1 — Una caja especial abre su caja, no la lista entera
+
+Visto recibiendo en La Popular: al entrar a «E3 — Caja especial
+(ELECTROLIT FRESA 625ML)» la pantalla listaba **LECHE NAN 2 OPTIPRO, LECHE NAN
+AR y LECHE NIDO 1** —los productos de las cajas normales— y el botón se ofrecía
+a «Confirmar Caja **null**».
+
+La pantalla preguntaba «¿qué hay abierto?» en cuatro sitios distintos y tres la
+contestaban mirando sólo el número de caja, que adentro de una caja especial
+vale `null`. Los tres caían en «el pedido entero»:
+
+- **La grilla** pintaba todos los productos del despacho. Quien recibe contaba
+  esos tres, y al confirmar sólo se guardaba el Electrolit: lo contado y lo
+  guardado no eran lo mismo.
+- **«Todo OK» daba por recibido el pedido COMPLETO** desde adentro de una caja
+  de Electrolit, y cerraba la recepción como terminada. Es el más grave de los
+  tres y no se veía.
+- **El botón decía «Confirmar Caja null»**, que es la única señal que llegó a la
+  pantalla.
+
+Ahora la pregunta se contesta una sola vez, en `alcanceDeRecepcion` —una
+función pura, con pruebas ancladas a este caso— y los cuatro sitios la usan. De
+paso, los dos botones que confirman («Confirmar» y «Todo OK») tenían cada uno su
+copia del cierre y ya habían divergido: la de «Todo OK» tampoco esperaba a las
+cajas especiales antes de dar el pedido por terminado. Queda una sola copia de
+cada cierre.
+
 ## v2.606.0 — Resolver la diferencia de un corte, con su comprobante en papel
 
 Hasta hoy un corte se firmaba y ya: si faltaba dinero, el portal lo mostraba y

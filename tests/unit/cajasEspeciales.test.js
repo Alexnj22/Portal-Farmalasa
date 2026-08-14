@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cajasDeRenglon, construirCajasEspeciales } from '../../src/utils/cajasEspeciales';
+import { alcanceDeRecepcion, cajasDeRenglon, construirCajasEspeciales } from '../../src/utils/cajasEspeciales';
 
 // El ancla es el pedido #114 REAL —La Popular, finalizado el 2026-08-14 a las
 // 12:24— que salió con 60 etiquetas E1…E60 para 5 cajas de Electrolit. Sus cuatro
@@ -87,5 +87,32 @@ describe('construirCajasEspeciales', () => {
         const porContador = P114.reduce((s, r) => s + cajasDeRenglon(r), 0);
         expect(construirCajasEspeciales(P114)).toHaveLength(porContador);
         expect(porContador).toBe(5);
+    });
+});
+
+// ── Qué hay abierto en la pantalla de recepción ────────────────────────────
+// El ancla es lo que se vio en La Popular el 2026-08-14: adentro de «E3 — Caja
+// especial» (ELECTROLIT FRESA 625ML) la pantalla listaba LECHE NAN 2 OPTIPRO,
+// LECHE NAN AR y LECHE NIDO 1 —los productos de las cajas normales— y ofrecía
+// «Confirmar Caja null». La causa es esta pregunta contestada mirando sólo el
+// número de caja, que dentro de una especial vale null.
+describe('alcanceDeRecepcion', () => {
+    it('una caja especial abierta es "especial", aunque no haya número de caja', () => {
+        expect(alcanceDeRecepcion({ especial: { label: 'E3' }, caja: null, hasCajaMap: true })).toBe('especial');
+    });
+
+    it('la especial gana aunque quede un número de caja de la pantalla anterior', () => {
+        expect(alcanceDeRecepcion({ especial: { label: 'E1' }, caja: 2, hasCajaMap: true })).toBe('especial');
+    });
+
+    it('una caja normal abierta es "caja" — incluida la caja 0, que es un número', () => {
+        expect(alcanceDeRecepcion({ especial: null, caja: 3, hasCajaMap: true })).toBe('caja');
+        expect(alcanceDeRecepcion({ especial: null, caja: 0, hasCajaMap: true })).toBe('caja');
+    });
+
+    it('sin nada abierto, o sin mapa de cajas, es el pedido entero', () => {
+        expect(alcanceDeRecepcion({ especial: null, caja: null, hasCajaMap: true })).toBe('pedido');
+        expect(alcanceDeRecepcion({ especial: null, caja: 4, hasCajaMap: false })).toBe('pedido');
+        expect(alcanceDeRecepcion()).toBe('pedido');
     });
 });

@@ -12,6 +12,24 @@ export function upsertEducationCatalogEntries(rows) {
     return supabase.from('education_catalog_entries').upsert(rows, { onConflict: 'category,value', ignoreDuplicates: true });
 }
 
+// ── Quién hizo algo, cuando no es de tu sucursal ────────────────────────────
+//
+// El padrón que carga el arranque viene RECORTADO a la sucursal propia para
+// quien no tiene «ver» en Personal (`scopeToMyBranch` en `systemSlice`), y eso
+// está bien: una sala no navega los expedientes de las demás. Pero el efecto
+// colateral es que **quien preparó tu pedido en bodega no existe en tu mapa de
+// empleados**, así que la línea de tiempo pintaba la hora y dejaba el nombre y
+// la cara en blanco — no por falta de permiso, sino porque nadie los trajo.
+//
+// Esto trae SÓLO a las personas que ya aparecen nombradas en registros que el
+// usuario tiene delante, y sólo su identidad pública: nombre y foto. No es el
+// padrón: es resolver un `id` que la pantalla ya está mostrando.
+export function fetchEmployeesPublicByIds(ids) {
+    return supabase.from('employees_safe')
+        .select('id, name, first_names, last_names, photo_url')
+        .in('id', ids);
+}
+
 // ── Expediente de empleado ───────────────────────────────────────────────────
 
 export function insertEmployee(dbPayload) {

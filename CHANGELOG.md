@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.605.8 — la sala ve quién preparó su pedido y se entera cuando sale
+
+Dos pedidos del usuario: que las salas puedan ver quién inició, cuándo
+terminaron y cuándo salió el pedido, y que les llegue un aviso cuando se marca
+en ruta.
+
+**Por qué no veían el nombre.** El padrón que carga el arranque viene recortado a
+la sucursal propia para quien no tiene «ver» en Personal
+(`scopeToMyBranch`, `systemSlice`) — y **ningún rol de sala lo tiene**: ni Jefe/a
+de Sala, ni Subjefe/a, ni Regente, ni Dependiente. Quien prepara el pedido está
+en Bodega, o sea en otra sucursal, así que `empMap.get(iniciado_por)` daba
+`undefined` y el bloque de foto+nombre no se pintaba. No era un permiso: **el
+dato nunca se pidió**. La hora sí se mostraba; lo que faltaba era la persona.
+
+El recorte se queda —una sala no navega expedientes de otras— pero ahora los
+nombres que las filas visibles ya mencionan se resuelven aparte, por id y sólo
+identidad pública (nombre y foto firmada): quien confirmó, inició, finalizó,
+envió, recibió, reenvió, pausó, el conductor y quien entregó. Se pregunta una vez
+por id, con freno de reintento para que un id que no vuelve no dispare un bucle.
+
+**El aviso de salida existía en un camino de tres.** Sólo avisaba crear la ruta.
+«Iniciar ruta» en la pestaña de Rutas y «Iniciar» en la tarjeta de Pedidos —los
+caminos que se usan cuando la ruta quedó pendiente o cuando se arma hoy y sale
+mañana— no avisaban nada. Ahora los tres pasan por
+`utils/avisoSalidaPedido.js`, y **con push**: antes era campana sola, así que
+sólo lo veía quien ya tenía el portal abierto, que es justo quien no lo
+necesita.
+
+**Y el aviso podía mentir.** Al crear la ruta, el `error` del arranque no se
+miraba: si fallaba, la ruta quedaba en «pendiente» y a las salas les llegaba
+igual que su pedido «salió de bodega». Ahora se corta antes de avisar.
+
 ## v2.605.7 — Una recepción que la base rechaza ya no pasa por buena
 
 En La Popular se recibió el pedido #114 contra una pantalla que decía que sí y

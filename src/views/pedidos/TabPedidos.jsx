@@ -41,6 +41,7 @@ import PostCompletionSection from './tabpedidos/PostCompletionSection';
 import ReceptionActions from './tabpedidos/ReceptionActions';
 import FilterPill from './tabpedidos/FilterPill';
 import { fetchBodegaBranchId, updateRutaStatus } from '../../data/pedidos';
+import { avisarSalidaALasSalas } from '../../utils/avisoSalidaPedido';
 import { usePedidosData } from './tabpedidos/usePedidosData';
 import { clickable } from '../../utils/clickable';
 
@@ -688,6 +689,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
+                                                            await avisarSalidaALasSalas(ruta.ruta_pedidos ?? [], ruta.conductor_nombre);
                                                             loadActiveRutas();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}>Iniciar</Button>

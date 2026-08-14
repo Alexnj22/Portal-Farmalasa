@@ -31,6 +31,7 @@ import { registerPlugin } from '@capacitor/core';
 
 import { mensajeAmigable } from '../../../utils/errorMessages';
 import { cajasDeRenglon, construirCajasEspeciales } from '../../../utils/cajasEspeciales';
+import { fetchEmployeesPublicByIds } from '../../../data/employees';
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
 // @capacitor-community/background-geolocation es un plugin 100% nativo sin
@@ -49,11 +50,20 @@ export function usePedidosData({ searchTerm = '' }) {
 
     // Employee store for name/photo lookups
     const storeEmployees = useStaff(s => s.employees);
+    // Quienes actuaron sobre el pedido desde OTRA sucursal — casi siempre
+    // bodega. El padrón del arranque llega recortado a la sucursal propia para
+    // quien no tiene «ver» en Personal (ningún rol de sala lo tiene), así que
+    // sin esto la línea de tiempo mostraba la hora de «Inicio», «Listo» y «En
+    // ruta» con el nombre y la cara en blanco. Se resuelven aparte, por id.
+    const [empExternos, setEmpExternos] = useState(() => new Map());
+    const empIntentados = useRef(new Set());
     const empMap = useMemo(() => {
         const m = new Map();
         (storeEmployees || []).forEach(e => m.set(e.id, e));
+        // El padrón propio manda: trae más campos y su foto ya viene firmada.
+        empExternos.forEach((e, id) => { if (!m.has(id)) m.set(id, e); });
         return m;
-    }, [storeEmployees]);
+    }, [storeEmployees, empExternos]);
 
     const [erpSucursalId, setErpSucursalId] = useState(null);
     const [branchName,    setBranchName]    = useState('');
@@ -292,6 +302,56 @@ export function usePedidosData({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => { loadActiveRutas(); }, [loadActiveRutas]);
+
+    // Resolver las caras que faltan. Se junta lo que las filas visibles ya
+    // nombran —quien confirmó, inició, finalizó, envió, recibió, reenvió, el
+    // conductor, quien entregó— y se piden sólo los ids que el padrón propio no
+    // trajo. Corre después de cada carga porque una ruta nueva o un pedido que
+    // avanza suman personas que antes no estaban.
+    useEffect(() => {
+        const ids = new Set();
+        const anotar = v => { if (v) ids.add(v); };
+        activeRows.forEach(r => {
+            [r.created_by, r.iniciado_por, r.finalizado_por, r.enviado_por,
+             r.llegada_fisica_por, r.recibido_erp_por, r.diferencias_reportadas_por,
+             r.confirmado_correccion_por, r.reenvio_por, r.reanudado_por].forEach(anotar);
+            (r.pauses ?? []).forEach(p => { anotar(p.pausado_por); anotar(p.reanudado_por); });
+            (r.reenvios_historial ?? []).forEach(c => { anotar(c.sent_by); anotar(c.arrived_por); });
+        });
+        pedidoRutaMap.forEach(({ ruta, stop }) => {
+            anotar(ruta?.conductor_id);
+            anotar(stop?.entregado_por);
+        });
+
+        // `empIntentados` evita el bucle: un id que la consulta NO devuelve
+        // —dado de baja, o filtrado— seguiría faltando en `empMap`, y como este
+        // efecto depende de `empMap`, volvería a pedirlo para siempre. Se
+        // pregunta una vez por id; si la consulta falla se sueltan para que un
+        // render posterior reintente.
+        const faltantes = [...ids].filter(id => !empMap.has(id) && !empIntentados.current.has(id));
+        if (!faltantes.length) return;
+        faltantes.forEach(id => empIntentados.current.add(id));
+
+        let vivo = true;
+        (async () => {
+            const { data, error } = await fetchEmployeesPublicByIds(faltantes);
+            if (error) {
+                console.error('empExternos:', error.message);
+                faltantes.forEach(id => empIntentados.current.delete(id));
+                return;
+            }
+            // El bucket de fotos es privado: sin firmar, el `img` da 400 y la
+            // cara queda rota, que es peor que no ponerla.
+            const firmados = await signPhotosDeep(data ?? []);
+            if (!vivo || !firmados?.length) return;
+            setEmpExternos(prev => {
+                const next = new Map(prev);
+                firmados.forEach(e => next.set(e.id, { ...e, photo: e.photo_url }));
+                return next;
+            });
+        })();
+        return () => { vivo = false; };
+    }, [activeRows, pedidoRutaMap, empMap]);
     useEffect(() => {
         const ch = supabase.channel('pedido-rutas-rt')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' }, () => { loadActiveRutas(); loadActive(); })

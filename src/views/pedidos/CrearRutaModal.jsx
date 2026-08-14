@@ -421,7 +421,12 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       const visitasData = paradas
         .filter(s => s.isEncargo)
         .map(s => ({ erp_sucursal_id: s.erp_sucursal_id, suc_name: s.suc_name, orden: s.orden, dist_m: s.dist_m ?? null, dur_min: s.dur_min ?? null }));
-      await updateRutaStatus(rutaId, { status: 'en_ruta', salida_at: new Date().toISOString(), ...(visitasData.length > 0 ? { visitas: visitasData } : {}) });
+      // El `error` de acá NO se miraba, y es el que decide si la ruta salió:
+      // si falla, la ruta queda en «pendiente» y abajo igual se avisaba a las
+      // salas que su pedido «salió de bodega». Se corta antes — la ruta ya
+      // existe y se arranca desde la pestaña de Rutas, que es la recuperación.
+      const { error: salidaErr } = await updateRutaStatus(rutaId, { status: 'en_ruta', salida_at: new Date().toISOString(), ...(visitasData.length > 0 ? { visitas: visitasData } : {}) });
+      if (salidaErr) throw salidaErr;
 
       useStaff.getState().appendAuditLog('RUTA_CREADA', rutaId, {
         conductor: conductorNombre,
@@ -441,12 +446,16 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
           const numeros    = stop.items.map(i => `#${i.numero}`).join(', ');
           const totalCajas = stop.items.reduce((s, i) => s + (i.total_cajas ?? 0), 0);
           const cajasStr   = totalCajas ? ` en ${totalCajas} caja${totalCajas !== 1 ? 's' : ''}` : '';
-          // Informativo (aún no llegó): campana sin push
+          // Con push, a pedido del usuario (2026-08-14): la sala necesita
+          // enterarse de que su pedido salió aunque no tenga el portal abierto
+          // —es cuando empieza a organizar quién lo recibe—. Antes era campana
+          // sola, o sea que sólo lo veía quien ya estaba mirando.
           notifyBranch(bid, {
             type: 'PEDIDO_TRACKING',
             title: `Pedido ${numeros} en camino`,
             body: `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorCorto}.`,
             link: '/pedidos',
+            push: true,
           });
         }
       }

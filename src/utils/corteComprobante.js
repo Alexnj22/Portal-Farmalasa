@@ -80,6 +80,73 @@ const selloDeTiempo = (iso) => (iso
     : '');
 
 /**
+ * El comprobante del MOVIMIENTO ACUMULADO — el ingreso o el vale único.
+ *
+ * Es el otro papel, y hace falta por lo mismo que el primero: en el sistema
+ * queda un ingreso de $X y nada dice de qué está hecho. Este se anexa a ESE
+ * documento y lo desarma diferencia por diferencia, con la fecha y la hora del
+ * corte de cada una — una sala puede cortar tres veces el mismo día, así que sin
+ * la hora la línea no identifica cuál.
+ *
+ * No reemplaza al de la reposición: aquél lo firma quien entrega el dinero, y
+ * éste respalda el asiento. Uno es del bolsillo de alguien, el otro de la caja.
+ *
+ * Usa las CUATRO columnas del ticket a propósito. La geometría de cuatro está
+ * medida contra un ticket real (concepto 29, después 7, 8 y 8) y la de dos
+ * colapsa a «primera … última», que perdería la fecha y la hora en el medio.
+ *
+ * @param {string}  sala        nombre de la sucursal
+ * @param {boolean} entra       true = ingreso (faltantes), false = vale (sobrantes)
+ * @param {string}  referencia  con qué número quedó el documento en el sistema
+ * @param {Array}   filas       las diferencias que cubre
+ * @param {string}  registradoPor  quién lo marcó
+ * @param {string}  cuando      ISO del momento en que se registró
+ */
+export function construirComprobanteDeAsiento({
+    sala, entra, referencia, filas = [], registradoPor, cuando,
+}) {
+    const total = filas.reduce((a, d) => a + Math.abs(Number(d.monto ?? 0)), 0);
+
+    return {
+        titulo: entra ? 'INGRESO POR FALTANTES DE CAJA' : 'VALE POR SOBRANTES DE CAJA',
+        encabezado: {
+            titulo: soloAscii(EMPRESA.razonSocial),
+            lineas: [`NIT ${EMPRESA.nit}`],
+        },
+        datos: [
+            ['Sala', recortar(sala || '', 34)],
+            [entra ? 'No. de ingreso' : 'No. de vale', recortar(referencia || '', 24)],
+            ['Cubre', `${filas.length} ${filas.length === 1 ? 'diferencia' : 'diferencias'}`],
+        ],
+        items: {
+            columnas: [
+                { label: 'MOTIVO' },
+                { label: 'FECHA', alinear: 'der' },
+                { label: 'HORA', alinear: 'der' },
+                { label: 'MONTO', alinear: 'der' },
+            ],
+            filas: filas.map((d) => [
+                recortar(d.causa || 'Sin motivo', 28),
+                fechaCorta(d.fecha).slice(0, 5),
+                hhmm(d.hora),
+                formatMoney(Math.abs(Number(d.monto ?? 0))),
+            ]),
+        },
+        totales: [[entra ? 'TOTAL QUE ENTRA' : 'TOTAL QUE SALE', formatMoney(total), true]],
+        pie: [
+            `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
+            selloDeTiempo(cuando),
+            '',
+            'Firma ______________________',
+            '',
+            entra
+                ? 'Anexar al ingreso de caja.'
+                : 'Anexar al vale de caja.',
+        ],
+    };
+}
+
+/**
  * El comprobante de una diferencia resuelta.
  *
  * @param {object}  corte        el corte al que pertenece (fecha, hora, caja)

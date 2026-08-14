@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { construirComprobante, soloAscii } from '../../src/utils/corteComprobante';
+import {
+    construirComprobante, construirComprobanteDeAsiento, soloAscii,
+} from '../../src/utils/corteComprobante';
 import { seccionesParaElPrograma, COLUMNAS_TICKET } from '../../src/utils/ticketPrint';
 
 // El comprobante de una diferencia de caja es el PRIMER documento del portal que
@@ -101,5 +103,86 @@ describe('el comprobante de una diferencia de caja', () => {
     it('recorta un nombre largo acá y no en la impresora', () => {
         const t = armar({ personas: [{ nombre: 'X'.repeat(80), monto: 1.25 }] });
         expect(t.items.filas[0][0].length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica - 14);
+    });
+});
+
+// ── El otro papel: el del movimiento acumulado ──────────────────────────────
+// En el sistema queda UN ingreso por el total y nada dice de qué está hecho.
+// Este comprobante lo desarma. Usa las cuatro columnas del ticket, cuya
+// geometría está medida contra un ticket real — si alguien la cambia, la fecha
+// y la hora se corren y el papel deja de identificar el corte.
+
+const asiento = (extra = {}) => construirComprobanteDeAsiento({
+    sala: 'Salud 5',
+    entra: true,
+    referencia: 'ING-4471',
+    filas: [
+        { fecha: '2026-08-14', hora: '12:40:20', monto: -1.25, causa: 'Cobro de credito sin registrar' },
+        { fecha: '2026-08-14', hora: '19:02:11', monto: -0.75, causa: 'Vale sin su papel' },
+    ],
+    registradoPor: 'Wendy Martínez',
+    cuando: '2026-08-14T22:05:00.000Z',
+    ...extra,
+});
+
+describe('el comprobante del ingreso o vale acumulado', () => {
+    it('no manda un solo caracter que el rollo no sepa imprimir', () => {
+        const texto = todoElTexto(asiento()).replace(/\\u001b./g, '');
+        expect([...texto].filter((c) => c.charCodeAt(0) > 126 && c !== '\\')).toEqual([]);
+    });
+
+    it('no pasa de 54 columnas en ningun renglon', () => {
+        for (const linea of cuerpo(asiento()).split('\n')) {
+            expect(linea.replace(/\x1b./g, '').length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
+        }
+    });
+
+    it('suma exactamente lo que suman sus lineas', () => {
+        // El total del papel TIENE que ser el del documento del sistema: si no,
+        // el que cuadre la caja va a buscar una diferencia que no existe. Se
+        // compara contra la suma de las filas, no contra un texto suelto: un
+        // `toContain('2.00')` pasaría igual si el 2.00 saliera de otro renglón.
+        const t = asiento();
+        const numero = (s) => Number(String(s).replace(/[^0-9.]/g, ''));
+        const suma = t.items.filas.reduce((a, f) => a + numero(f[3]), 0);
+        expect(numero(t.totales[0][1])).toBeCloseTo(suma, 2);
+        expect(suma).toBeCloseTo(2.00, 2);
+    });
+
+    it('dice de que corte sale cada linea, con fecha y hora', () => {
+        // Una sala corta tres veces el mismo día: sin la hora, la línea no
+        // identifica cuál de los tres.
+        const texto = cuerpo(asiento());
+        expect(texto).toContain('12:40');
+        expect(texto).toContain('19:02');
+        expect(texto).toContain('14/08');
+    });
+
+    it('lleva el numero con que quedo el documento en el sistema', () => {
+        expect(cuerpo(asiento())).toContain('ING-4471');
+    });
+
+    it('cambia de documento y de direccion segun el signo', () => {
+        expect(asiento().titulo).toBe('INGRESO POR FALTANTES DE CAJA');
+        expect(cuerpo(asiento())).toContain('TOTAL QUE ENTRA');
+
+        const vale = asiento({ entra: false, referencia: 'VAL-88', filas: [
+            { fecha: '2026-08-14', hora: '12:40:20', monto: 1.25, causa: 'Venta no registrada' },
+        ] });
+        expect(vale.titulo).toBe('VALE POR SOBRANTES DE CAJA');
+        expect(cuerpo(vale)).toContain('TOTAL QUE SALE');
+    });
+
+    it('respeta la geometria de cuatro columnas del ticket real', () => {
+        // Las mismas posiciones que ancla `ticketPrint.test.js`: 36, 44 y 52.
+        const linea = cuerpo(asiento()).split('\n').find((l) => l.includes('Cobro de credito'));
+        expect(linea.indexOf('14/08') + '14/08'.length).toBe(36);
+        expect(linea.indexOf('12:40') + '12:40'.length).toBe(44);
+        expect(linea.indexOf('$1.25') + '$1.25'.length).toBe(52);
+    });
+
+    it('recorta un motivo largo aca y no en la impresora', () => {
+        const t = asiento({ filas: [{ fecha: '2026-08-14', hora: '12:40:20', monto: -1, causa: 'x'.repeat(90) }] });
+        expect(t.items.filas[0][0].length).toBeLessThanOrEqual(28);
     });
 });

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.606.7 — El movimiento acumulado también sale en papel
+
+Faltaba la mitad del respaldo. Al resolver un faltante salía su comprobante,
+pero al registrar el ingreso o el vale único en el sistema no salía nada: allá
+quedaba un monto solo y **ningún papel decía de qué estaba hecho**. Quien fuera
+a cuadrar la caja después veía un ingreso de $2.00 sin manera de saber a qué
+cortes correspondía.
+
+Ahora al marcarlo registrado sale su comprobante, y **se anexa a ese documento**:
+lo desarma diferencia por diferencia, con el motivo, la fecha y **la hora del
+corte** de cada una. La hora importa — una sala corta tres veces el mismo día y
+sin ella la línea no dice cuál. Para eso la lectura ahora la trae.
+
+Son dos papeles distintos y ninguno reemplaza al otro: el de la reposición lo
+firma quien entrega el dinero, y éste respalda el asiento. Uno es del bolsillo
+de alguien, el otro de la caja.
+
+Cambia de nombre y de dirección según el signo — **ingreso por faltantes** o
+**vale por sobrantes** —, que son los dos documentos que existen allá. Y se puede
+volver a imprimir sin cerrar: la ticketera dice «recibido», nunca «salió papel»,
+y después de recargar la lista ya no tiene el detalle con que se armó.
+
+Su geometría queda anclada en las mismas columnas del ticket real que ya
+verificaba la prueba de impresión: 36, 44 y 52.
+
 ## v2.606.6 — el control de versiones frena el número de otra sesión
 
 El 2026-08-14 pasó **dos veces en la misma tarde**, entre cuatro sesiones

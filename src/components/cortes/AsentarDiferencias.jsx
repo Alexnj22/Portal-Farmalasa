@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Landmark } from 'lucide-react';
+import { Landmark, Printer } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import LiquidModal from '../common/LiquidModal';
@@ -7,6 +7,8 @@ import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import useSobreviveAlCierre from '../../hooks/useSobreviveAlCierre';
 import { asentarDiferencias } from '../../data/cortes';
+import { construirComprobanteDeAsiento } from '../../utils/corteComprobante';
+import { imprimirDocumento } from '../../utils/ticketPrint';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { formatMoney } from '../../utils/formatNumber';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -47,6 +49,10 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
     const [excluidas, setExcluidas] = useState(() => new Set());
     const [refs, setRefs] = useState(() => new Map());
     const [ocupada, setOcupada] = useState(null);
+    // El último asiento registrado, para poder reimprimir su papel sin cerrar.
+    // Se guarda acá y no se relee: al registrar, esas filas salen de la lista de
+    // pendientes, así que el dato del que salió el papel ya no está en pantalla.
+    const [ultimo, setUltimo] = useState(null);
 
     const grupos = useMemo(() => {
         const m = new Map();
@@ -68,15 +74,36 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
         });
     }, []);
 
+    /**
+     * El papel que respalda el movimiento acumulado. Se anexa al ingreso o al
+     * vale del sistema y lo desarma diferencia por diferencia — allá queda un
+     * monto solo y sin esto nada dice de qué está hecho.
+     *
+     * `ok: true` de la ticketera significa RECIBIDO, no «salió papel».
+     */
+    const imprimirAsiento = useCallback(async (asiento) => {
+        const r = await imprimirDocumento(construirComprobanteDeAsiento({
+            sala: nombreSala[asiento.branchId] || '',
+            entra: asiento.entra,
+            referencia: asiento.ref,
+            filas: asiento.filas,
+            registradoPor: user?.name || '',
+            cuando: asiento.cuando,
+        }));
+        if (!r.ok) showToast?.('No se pudo imprimir', r.detalle, 'error');
+        return r.ok;
+    }, [nombreSala, user, showToast]);
+
     const registrar = useCallback(async (g) => {
-        const ids = g.filas.filter((d) => !excluidas.has(d.id)).map((d) => d.id);
+        const incluidas = g.filas.filter((d) => !excluidas.has(d.id));
+        const ids = incluidas.map((d) => d.id);
         const ref = (refs.get(g.k) || '').trim();
         if (!ids.length || !ref) return;
 
         setOcupada(g.k);
         const { error } = await asentarDiferencias(ids, ref);
-        setOcupada(null);
         if (error) {
+            setOcupada(null);
             showToast?.('No se pudo registrar', mensajeAmigable(error, 'Vuelve a cargar la lista.'), 'error');
             return;
         }
@@ -88,8 +115,18 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
             `${ids.length} ${ids.length === 1 ? 'diferencia' : 'diferencias'} con el número ${ref}`,
             'success',
         );
+
+        // Se guarda ANTES de imprimir y de recargar: al recargar, estas filas
+        // salen de la lista de pendientes y el papel se quedaría sin su detalle.
+        const asiento = {
+            branchId: g.branchId, entra: g.entra, ref, filas: incluidas,
+            cuando: new Date().toISOString(),
+        };
+        setUltimo(asiento);
+        await imprimirAsiento(asiento);
+        setOcupada(null);
         onHecho?.();
-    }, [excluidas, refs, showToast, appendAuditLog, user, nombreSala, onHecho]);
+    }, [excluidas, refs, showToast, appendAuditLog, user, nombreSala, onHecho, imprimirAsiento]);
 
     return (
         <LiquidModal
@@ -177,6 +214,28 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                         </div>
                     );
                 })}
+
+                {/* Volver a imprimir el último, sin cerrar. La ticketera dice
+                    «recibido», nunca «salió papel»: si se atascó el rollo, esta
+                    es la salida — y después de recargar, la lista ya no tiene el
+                    detalle con que se armó. */}
+                {ultimo && (
+                    <div data-surface="card" className="p-3 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                            <span className="text-label font-bold text-content">
+                                {ultimo.entra ? 'Ingreso' : 'Vale'} {ultimo.ref}
+                            </span>
+                            <span className="block text-caption text-content-3">
+                                {nombreSala[ultimo.branchId] || ''} · {ultimo.filas.length}{' '}
+                                {ultimo.filas.length === 1 ? 'diferencia' : 'diferencias'}
+                            </span>
+                        </div>
+                        <Button variant="secondary" size="sm" icon={Printer}
+                            onClick={() => imprimirAsiento(ultimo)}>
+                            Volver a imprimir
+                        </Button>
+                    </div>
+                )}
 
                 {!grupos.length && (
                     <Notice variant="success">No queda ninguna diferencia por registrar.</Notice>

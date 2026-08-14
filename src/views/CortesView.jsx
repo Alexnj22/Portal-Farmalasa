@@ -353,57 +353,18 @@ const CortesView = () => {
                                 </div>
                             </div>
 
-                            {detalle.fuente === 'guardada' && (
-                                <Notice variant="warning" icon={Clock}>
-                                    Esta cifra no sale del corte sino de lo que el sistema guardó aparte:
-                                    el corte se leyó un buen rato después de hacerse, así que su ticket ya
-                                    traía movimientos posteriores adentro. Desde que la captura corre cada
-                                    minuto esto no vuelve a pasar.
-                                </Notice>
-                            )}
-
-                            {/* Las dos fórmulas del origen, cuando no coinciden. */}
                             {contraste(detalle)?.enDisputa && (
-                                <Notice variant="danger" icon={AlertTriangle}>
-                                    <span className="font-bold">Este corte tiene dos cifras y no coinciden.</span>
-                                    <span className="block mt-1 text-content-2">
-                                        Lo que el sistema guardó: <b className="tabular-nums">{conSigno(contraste(detalle).difErp)}</b>.
-                                        Lo que calcula su propio ticket: <b className="tabular-nums">{conSigno(contraste(detalle).difTicket)}</b>.
-                                        Son <b className="tabular-nums">{formatMoney(Math.abs(contraste(detalle).brecha))}</b> de brecha.
-                                        {contraste(detalle).comparable
-                                            ? ' Las dos se midieron casi a la misma hora, así que no es que una esté vieja.'
-                                            : ' El ticket se leyó un rato después del corte, así que parte podría ser de movimientos posteriores.'}
+                                <Notice variant={contraste(detalle).porCobrosCredito ? 'info' : 'danger'} icon={AlertTriangle}>
+                                    <span className="font-bold">
+                                        El sistema dice {conSigno(contraste(detalle).difErp)}; acá se usa {conSigno(contraste(detalle).difTicket)}.
                                     </span>
                                     <span className="block mt-1 text-content-2">
-                                        Revisa los movimientos del día antes de dar por bueno un faltante con este corte.
+                                        {contraste(detalle).porCobrosCredito
+                                            ? `La diferencia entre las dos es exactamente ${Math.abs(contraste(detalle).vecesElCobro)} ${Math.abs(contraste(detalle).vecesElCobro) === 1 ? 'vez' : 'veces'} los cobros de crédito del día (${formatMoney(contraste(detalle).cobros)}). Es un defecto del sistema al contarlos, no algo que pasó en la caja: la cifra del corte cierra contra los movimientos del día y es la que vale.`
+                                            : `Son ${formatMoney(Math.abs(contraste(detalle).brecha))} de brecha y no se explican por los cobros de crédito. Revisa los movimientos del día antes de dar por bueno un faltante.`}
                                     </span>
                                 </Notice>
                             )}
-
-                            {/* El desglose, con su advertencia */}
-                            <div>
-                                <div className="text-caption font-bold uppercase tracking-wide text-content-3 mb-1.5">Desglose</div>
-                                <div className="space-y-1 text-caption">
-                                    {[
-                                        ['Ventas', detalle.tk_venta],
-                                        ['Ingresos de caja', detalle.tk_ingresos],
-                                        ['Vales', detalle.tk_vales == null ? null : -Math.abs(Number(detalle.tk_vales))],
-                                        ['Cobros de crédito', detalle.tk_cobros_credito],
-                                        ['Pagos con tarjeta', detalle.tk_tarjeta],
-                                        ['Devoluciones', detalle.tk_devoluciones],
-                                    ].filter(([, v]) => v != null && Number(v) !== 0).map(([k, v]) => (
-                                        <div key={k} className="flex justify-between gap-3">
-                                            <span className="text-content-2">{k}</span>
-                                            <span className="tabular-nums text-content">{formatMoney(v)}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <p className="text-micro text-content-3 mt-2 leading-relaxed">
-                                    El desglose puede no sumar el «debía haber»: el sistema lo recalcula cada vez
-                                    que se pide y ya trae adentro movimientos posteriores a este corte. El «debía
-                                    haber» quedó guardado al cortar y no se mueve — es el único que sirve para juzgar.
-                                </p>
-                            </div>
 
                             {/* Qué revisar */}
                             {sugerencias.length > 0 && (

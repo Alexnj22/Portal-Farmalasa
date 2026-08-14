@@ -64,39 +64,40 @@ export function estadoDelDia(cortesDeLaSala) {
 }
 
 /**
- * El sistema de origen produce DOS diferencias por corte, con dos fórmulas
- * distintas, y no siempre coinciden:
+ * El origen produce DOS diferencias por corte, con dos fórmulas distintas:
  *
- *   1. La que guarda      → `total_declarado − esperado`, donde `esperado` lo
+ *   1. La que guarda  → `total_declarado − esperado`, con el `esperado` que
  *      calcula el servidor al abrir el formulario del corte.
- *   2. La del ticket      → `total_declarado − TOTAL CAJA`, que el ticket
- *      recalcula con los movimientos del día.
+ *   2. La del ticket   → `total_declarado − TOTAL CAJA`, donde
+ *      `TOTAL CAJA = ingresos + venta − vales + cobros de crédito`.
  *
- * Medido el 13-ago en Salud 3: la guardada dijo −$729.78 y la del ticket
- * −$511.18. **$218.60 de brecha, a la misma hora** — el aviso de Telegram salió
- * un minuto después del corte con la cifra del ticket, así que no es que el
- * ticket haya derivado: las dos fórmulas ya discrepaban en ese instante. Y la
- * del ticket reconcilia al centavo con los movimientos del día (ingresos
- * 1,041.39, abonos 54.65, vales 704.09); del `esperado` guardado quedan $218.60
- * que no explica ningún movimiento.
+ * ── DÓNDE ESTÁ EL ERROR, medido sobre los 24 cortes del 13-ago ──────────────
+ * El desvío entre las dos es SIEMPRE un múltiplo entero exacto de los cobros de
+ * crédito de esa sala, y las salas sin cobros de crédito (Salud 2, 4 y 5)
+ * coinciden al centavo en todos sus cortes:
  *
- * Regla: **cuando discrepan, el portal NO elige.** Muestra las dos y lo marca.
- * Cobrarle a alguien sobre una cifra que el propio origen contradice es
- * exactamente el daño que este módulo existe para evitar.
+ *     Salud 2 · 4 · 5   sin cobros    → desvío 0.00 en los 10 cortes
+ *     Salud 1           cobros  4.60  → −1×, −1×, −1×, 0, 0, 0, 0
+ *     La Popular        cobros  9.20  → +1×, +3×, +3×
+ *     Salud 3           cobros 54.65  → −1×, −1×, +4×, +4×   (los $218.60)
  *
- * El desfase cambia lo que se puede AFIRMAR, no si se muestra. El ticket se
- * recalcula, así que leído horas después parte de la brecha puede venir de
- * movimientos posteriores al corte. Pero esconder la brecha por eso fue un
- * error que cometí y que la propia prueba destapó: el caso de Salud 3 tenía
- * 1h23m de desfase —era del primer relleno, no del cron— y con un umbral de 15
- * minutos quedaba callado justo el corte de $218.60 que hay que mirar.
+ * O sea: **el `esperado` del origen cuenta mal los cobros de crédito**, un
+ * número entero de veces de más o de menos. El ticket los cuenta una sola vez,
+ * y su cuenta cierra contra los movimientos del día — verificado en Salud 3:
+ * ingresos $1,041.39, abonos $54.65 y vales $704.09 salen exactos de la tabla
+ * de movimientos, y dan su TOTAL CAJA de $1,538.35.
  *
- * Entonces: la brecha se muestra SIEMPRE, y `comparable` sólo decide si se dice
- * «no coinciden» o «puede que parte sea de después». Un número que no se ve no
- * se puede revisar.
+ * ── EL TICKET NO DERIVA ────────────────────────────────────────────────────
+ * Lo di por sentado y era falso. Se comprobó pidiendo dos tickets del 13-ago de
+ * nuevo al día siguiente: devolvieron exactamente los mismos importes que se
+ * habían guardado. Ingresos, venta y vales son la foto del corte —varían corte
+ * a corte dentro del mismo día— así que un corte leído tarde vale igual que uno
+ * leído al minuto. Por eso NO hay que recapturar nada del 13-ago.
+ *
+ * (El único matiz: los cobros de crédito del ticket son el total del día, no la
+ * foto. En un corte temprano puede aparecer un cobro que entró después. Para el
+ * corte definitivo —el que se confirma— ya pasaron todos, así que no estorba.)
  */
-const DESFASE_COMPARABLE_SEG = 15 * 60;
-
 export function contraste(corte) {
     const declarado = num(corte?.total_declarado);
     const totalCaja = num(corte?.tk_total_caja);
@@ -105,40 +106,57 @@ export function contraste(corte) {
 
     const difTicket = redondear(declarado - totalCaja);
     const brecha = redondear(difErp - difTicket);
-    const desfase = num(corte?.desfase_seg);
-    const comparable = desfase != null && desfase <= DESFASE_COMPARABLE_SEG;
+    const cobros = num(corte?.tk_cobros_credito);
+
+    // Cuántas veces el cobro de crédito explica la brecha. Entero → es el
+    // defecto conocido del origen y no hay nada que investigar en la sala.
+    const veces = cobros && Math.abs(cobros) >= 0.01 ? brecha / cobros : null;
+    const porCobrosCredito = veces != null && Math.abs(veces - Math.round(veces)) < 0.001;
 
     return {
         difErp,
         difTicket,
         brecha,
-        comparable,
-        desfase,
+        cobros,
+        vecesElCobro: porCobrosCredito ? Math.round(veces) : null,
+        porCobrosCredito,
         enDisputa: Math.abs(brecha) >= 0.01,
     };
 }
 
 /**
- * La diferencia que MANDA, y de dónde salió.
+ * La diferencia que MANDA: la del corte.
  *
  * Regla del usuario (2026-08-14): «el corte de caja trae toda la info; para lo
- * que sirven los movimientos de caja es para validar ante una diferencia».
- * Entonces la cifra buena es la del corte —la que reconcilia con sus propios
- * movimientos— y no la que el origen guarda por su cuenta. Es también la que la
- * sala viene leyendo hace años en el aviso de Telegram, que se calculaba así.
+ * que sirven los movimientos de caja es para validar ante una diferencia». Y la
+ * medición le da la razón — la del ticket es la que cierra contra los
+ * movimientos; la guardada cuenta mal los cobros de crédito. Es además la que
+ * la sala viene leyendo hace años en el aviso de Telegram, que se calculaba así.
  *
- * El único requisito es que el ticket se haya leído CERCA del corte, porque el
- * origen lo recalcula: leído horas después ya trae movimientos posteriores
- * adentro. Con la captura de cada minuto eso está resuelto de acá en adelante;
- * para un corte que se leyó tarde —los del relleno inicial— se cae a la
- * guardada, que no deriva, y se dice.
+ * Sin fecha de vencimiento y sin mirar el desfase: el ticket es una foto, no se
+ * recalcula. Si no hubiera ticket se cae a la guardada, que es todo lo que
+ * queda.
  */
 export function diferenciaDelCorte(corte) {
     const c = contraste(corte);
-    const guardada = num(corte?.diferencia_erp) ?? 0;
-    if (!c) return { valor: guardada, fuente: 'guardada', esperado: num(corte?.esperado) };
-    if (c.comparable) return { valor: c.difTicket, fuente: 'ticket', esperado: num(corte?.tk_total_caja) };
-    return { valor: c.difErp, fuente: 'guardada', esperado: num(corte?.esperado) };
+    if (!c) {
+        return { valor: num(corte?.diferencia_erp) ?? 0, fuente: 'guardada', esperado: num(corte?.esperado) };
+    }
+    // El caso `−1×` es el único donde manda la guardada: significa que el ticket
+    // sumó los cobros de crédito del DÍA a un corte que se hizo ANTES de que
+    // entraran. Ahí el formulario tenía razón —contó cero porque todavía no
+    // había— y el ticket es el que sobra. En cualquier otro múltiplo el que
+    // cuenta de más es el formulario.
+    //
+    // Contrastado contra el aviso de Telegram del 13-ago en Salud 3, que es un
+    // testigo independiente y de la misma hora del corte: 12:39 → +$0.75,
+    // 12:41 → exacto, 21:03 → −$511.18, 21:21 → −$22.38. Los cuatro salen.
+    // `brecha = difErp − difTicket = tk_total_caja − esperado`, o sea el INVERSO
+    // del desvío: el caso «el ticket sumó un cobro de más» es brecha = +1×.
+    if (c.vecesElCobro === 1) {
+        return { valor: c.difErp, fuente: 'guardada', esperado: num(corte?.esperado) };
+    }
+    return { valor: c.difTicket, fuente: 'ticket', esperado: num(corte?.tk_total_caja) };
 }
 
 /** 'ok' | 'sobra' | 'falta' — la forma, no sólo el color. */
@@ -169,11 +187,13 @@ export function sugerenciasDeCorte(corte, movimientos = []) {
     const c = contraste(corte);
     if (c?.enDisputa) {
         out.push({
-            tono: 'danger',
-            titulo: `Dos cifras distintas para este corte: ${formatMoney(c.difErp)} y ${formatMoney(c.difTicket)}`,
-            detalle: c.comparable
-                ? `El sistema guardó una y su propio ticket calcula otra — ${formatMoney(Math.abs(c.brecha))} de brecha, medidas casi a la misma hora. No confirmes un faltante con esto sin revisar primero los movimientos del día.`
-                : `El sistema guardó una y su propio ticket calcula otra — ${formatMoney(Math.abs(c.brecha))} de brecha. El ticket se leyó un rato después del corte, así que parte podría ser de movimientos posteriores; el resto no. No confirmes un faltante con esto sin revisar los movimientos del día.`,
+            tono: c.porCobrosCredito ? 'info' : 'danger',
+            titulo: c.porCobrosCredito
+                ? `El sistema dice ${formatMoney(c.difErp)}; la cifra buena es ${formatMoney(c.difTicket)}`
+                : `Dos cifras distintas: ${formatMoney(c.difErp)} y ${formatMoney(c.difTicket)}`,
+            detalle: c.porCobrosCredito
+                ? `La diferencia entre las dos es exactamente ${Math.abs(c.vecesElCobro)} ${Math.abs(c.vecesElCobro) === 1 ? 'vez' : 'veces'} los cobros de crédito del día (${formatMoney(c.cobros)}) — es un defecto conocido del sistema al contarlos, no algo que haya pasado en la caja. El portal usa la del corte, que cierra contra los movimientos.`
+                : `El sistema guardó una y su propio ticket calcula otra: ${formatMoney(Math.abs(c.brecha))} de brecha, y no se explica por los cobros de crédito. Revisa los movimientos del día antes de dar por bueno un faltante.`,
         });
     }
 

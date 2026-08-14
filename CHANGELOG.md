@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.597.2 — El error del sistema son los cobros de crédito
+
+**Los cortes del 13-ago ya muestran la cifra correcta. No hizo falta recapturar
+nada** — lo que estaba mal era mi lógica, no los datos.
+
+**El ticket NO deriva.** Lo había dado por sentado y era falso. Se comprobó
+pidiendo dos tickets del 13-ago de nuevo al día siguiente: devolvieron
+exactamente los mismos importes guardados. Ingresos, venta y vales son la foto
+del corte y varían corte a corte dentro del mismo día. Sobre esa premisa falsa
+había construido un candado por desfase que descartaba justo los cortes buenos.
+
+**Dónde está el error del origen.** Medido sobre los 24 cortes del día: el
+desvío entre sus dos cifras es SIEMPRE un múltiplo entero exacto de los cobros
+de crédito de esa sala, y las salas sin cobros de crédito coinciden al centavo
+en todos sus cortes.
+
+| sala | cobros de crédito | desvío |
+|---|---|---|
+| Salud 2 · 4 · 5 | ninguno | **0.00 en los 10 cortes** |
+| Salud 1 | $4.60 | −1×, −1×, −1×, 0, 0, 0, 0 |
+| La Popular | $9.20 | +1×, +3×, +3× |
+| Salud 3 | $54.65 | −1×, −1×, **+4×** (los $218.60) |
+
+O sea: **el `esperado` del origen cuenta mal los cobros de crédito**, un número
+entero de veces. El ticket los cuenta una sola vez y su cuenta cierra contra los
+movimientos del día — en Salud 3, ingresos $1,041.39, abonos $54.65 y vales
+$704.09 salen exactos de la tabla y dan su TOTAL CAJA de $1,538.35.
+
+**Con una excepción, y es la que faltaba:** los cobros de crédito del ticket son
+del DÍA, no del corte. En un corte temprano el ticket suma cobros que todavía no
+habían entrado — ahí el formulario tenía razón porque contó cero. Es el caso
+`+1×` de brecha, y sólo ése usa la cifra guardada.
+
+**Contrastado contra un testigo independiente:** el aviso de Telegram del 13-ago
+en Salud 3, emitido al minuto de cada corte. Los cuatro salen exactos —
+12:39 → +$0.75, 12:41 → exacto, 21:03 → −$511.18, 21:21 → −$22.38.
+
+Y cuando la brecha SÍ se explica por los cobros, el portal deja de gritar
+«dos cifras» y lo dice como lo que es: un defecto conocido del sistema al
+contarlos, no algo que pasó en la caja.
+
+_(pendiente de redactar)_
+
 ## v2.597.1 — La cifra que manda es la del corte
 
 Regla del usuario: «el corte de caja trae toda la info; para lo que sirven los

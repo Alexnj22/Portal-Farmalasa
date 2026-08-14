@@ -27,7 +27,7 @@ const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : formatMoney(n));
 
 const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
 
-export default function WidgetCortesSala({ soloMiSala = true }) {
+export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null }) {
     const { user, hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const appendAuditLog = useStaff((s) => s.appendAuditLog);
@@ -71,6 +71,15 @@ export default function WidgetCortesSala({ soloMiSala = true }) {
     // quien ve todas y no debería recibir seis salas en una baldosa.
     // Por sala y por día, porque el tramo se mide dentro del día.
     const cortes = useMemo(() => {
+        // Si hay una sala elegida en la cabecera, manda ésa. Si no, la propia.
+        if (salaElegida) {
+            const deEsa = filas.filter((c) => String(c.branch_id) === String(salaElegida));
+            const porUna = new Map([[Number(salaElegida), deEsa]]);
+            return [...porUna.values()].flatMap((l) =>
+                conTramo([...l].sort((x, y) => String(x.hora).localeCompare(String(y.hora)))))
+                .filter((c) => c.tipo === 'C')
+                .sort((x, y) => String(y.hora).localeCompare(String(x.hora)));
+        }
         const propios = filas.filter((c) => c.branch_id === Number(miSala));
         // Si la sala propia no tiene cortes hoy, se muestra lo que la sesión
         // alcance a ver: para un supervisor eso son todas las salas, y es
@@ -87,7 +96,7 @@ export default function WidgetCortesSala({ soloMiSala = true }) {
         }
         return out.filter((c) => c.tipo === 'C')
             .sort((a, b) => String(b.hora).localeCompare(String(a.hora)));
-    }, [filas, miSala, soloMiSala]);
+    }, [filas, miSala, soloMiSala, salaElegida]);
 
     const variasSalas = useMemo(
         () => new Set(cortes.map((c) => c.branch_id)).size > 1,
@@ -112,6 +121,7 @@ export default function WidgetCortesSala({ soloMiSala = true }) {
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 
+
     if (error) {
         return <EmptyState icon={Wallet} message="No se pudieron cargar" subtext={error} />;
     }
@@ -121,13 +131,15 @@ export default function WidgetCortesSala({ soloMiSala = true }) {
             <EmptyState
                 icon={Wallet}
                 message="Sin cortes hoy"
-                subtext="Cuando se saque un corte de caja aparece acá para confirmarlo."
+                subtext={salaElegida
+                    ? `${nombreSala[salaElegida] || 'Esa sala'} todavía no ha cortado hoy.`
+                    : 'Cuando se saque un corte de caja aparece acá para confirmarlo.'}
             />
         );
     }
 
     return (
-        <div className="p-2 space-y-1.5 overflow-y-auto">
+        <div className="h-full overflow-y-auto p-2 space-y-1.5">
             {cortes.map((c) => {
                 const sev = severidad(c.tramo);
                 const disputa = contraste(c)?.enDisputa;

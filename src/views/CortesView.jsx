@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Wallet, CheckCircle2, Ban, Clock, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Wallet, CheckCircle2, Ban, Clock, ShieldCheck, AlertTriangle, Search } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -33,17 +33,19 @@ const correrDia = (fecha, dias) => {
     return d.toISOString().slice(0, 10);
 };
 
-const rotularFecha = (fecha) =>
-    new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
-        weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
+const rotularDia = (fecha) => {
+    const hoy = hoySV();
+    if (fecha === hoy) return 'Hoy';
+    if (fecha === correrDia(hoy, -1)) return 'Ayer';
+    return new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
+        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
     });
+};
 
 const hhmm = (hora) => String(hora || '').slice(0, 5);
 
-const TONO_BADGE = { ok: 'success', sobra: 'warning', falta: 'danger' };
-const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
-const ROTULO_SEV = { ok: 'Cuadra', sobra: 'Sobra', falta: 'Falta' };
-const TONO_CARD = { ok: undefined, sobra: 'warning', falta: 'danger' };
+const TONO_TEXTO  = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
+const TONO_FRANJA = { ok: 'bg-success/40',     sobra: 'bg-warning',        falta: 'bg-danger' };
 
 const MOTIVOS = ['Conteo de prueba', 'Se contó mal', 'Corte repetido'];
 
@@ -74,17 +76,17 @@ const CortesView = () => {
     const [tab, setTab] = useState('pendientes');
     const [busqueda, setBusqueda] = useState('');
     const [sala, setSala] = useState('');
-    const [soloZ, setSoloZ] = useState(false);
 
     const [cortes, setCortes] = useState(VACIO);
     const [cargando, setCargando] = useState(true);
+    const [resolviendo, setResolviendo] = useState(null);   // id del corte en curso
 
     // ── El detalle y su copia para el cierre ────────────────────────────────
     // `detalle` manda si el modal está abierto; `detalleVisible` es lo que se
     // PINTA. Se separan porque el modal se cierra con animación: si el cuerpo
-    // leyera `detalle`, al cerrar el contenido desaparecería ANTES que el modal
-    // y se vería un panel vacío por un instante. Al abrir se escriben los dos;
-    // al cerrar sólo `detalle`, así lo pintado sobrevive la salida.
+    // leyera `detalle`, al cerrar el contenido desaparecería ANTES que el panel
+    // y se vería vacío por un instante. Al abrir se escriben los dos; al cerrar
+    // sólo `detalle`, así lo pintado sobrevive la salida.
     const [detalle, setDetalle] = useState(null);
     const [detalleVisible, setDetalleVisible] = useState(null);
     const [movsDetalle, setMovsDetalle] = useState(VACIO);
@@ -94,7 +96,7 @@ const CortesView = () => {
     const [guardando, setGuardando] = useState(false);
 
     const [pagina, setPagina] = useState(1);
-    const [porPagina, setPorPagina] = useState(24);
+    const [porPagina, setPorPagina] = useState(50);
 
     const cargar = useCallback(async () => {
         setCargando(true);
@@ -125,8 +127,7 @@ const CortesView = () => {
         }
         const out = [];
         for (const lista of grupos.values()) {
-            const enOrden = [...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
-            out.push(...conTramo(enOrden));
+            out.push(...conTramo([...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora)))));
         }
         out.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
             || String(b.hora).localeCompare(String(a.hora)));
@@ -135,18 +136,22 @@ const CortesView = () => {
 
     const filtrados = useMemo(() => conTramoTodos.filter((c) => {
         if (sala && String(c.branch_id) !== String(sala)) return false;
-        if (soloZ ? c.tipo !== 'Z' : c.tipo !== 'C') return false;
+
+        // El cierre del día (Z) no es un conteo y no se confirma: sólo aparece
+        // en «Todos», como contexto. Tuvo un chip propio y no se entendía qué
+        // hacía ahí — porque un cierre bajo «Sin confirmar» no significa nada.
+        if (c.tipo === 'Z' && tab !== 'todos') return false;
 
         if (tab === 'pendientes' && c.estado !== 'PENDIENTE') return false;
         if (tab === 'resueltos'  && c.estado === 'PENDIENTE') return false;
-        if (tab === 'diferencia' && severidad(c.tramo) === 'ok') return false;
+        if (tab === 'diferencia' && (c.tipo !== 'C' || severidad(c.tramo) === 'ok')) return false;
 
         if (!busqueda.trim()) return true;
         return tokenMatch(busqueda,
             nombreSala[c.branch_id], c.empleado_texto, c.fecha, c.hora,
             String(c.total_declarado ?? ''), String(c.tramo ?? ''),
             String(c.erp_corte_id ?? ''), c.motivo_descarte);
-    }), [conTramoTodos, tab, busqueda, sala, soloZ, nombreSala]);
+    }), [conTramoTodos, tab, busqueda, sala, nombreSala]);
 
     const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
     const pagActual = Math.min(pagina, totalPaginas);
@@ -154,6 +159,22 @@ const CortesView = () => {
         () => filtrados.slice((pagActual - 1) * porPagina, pagActual * porPagina),
         [filtrados, pagActual, porPagina],
     );
+
+    // Agrupar por día: es como se trabaja —«¿qué pasó ayer?»— y da un descanso
+    // visual cada tantas filas. Sin esto, 90 días son cientos de renglones
+    // iguales sin un solo punto de referencia.
+    const porDia = useMemo(() => {
+        const m = new Map();
+        for (const c of enPagina) {
+            if (!m.has(c.fecha)) m.set(c.fecha, []);
+            m.get(c.fecha).push(c);
+        }
+        return [...m.entries()].map(([fecha, lista]) => ({
+            fecha,
+            lista,
+            conDiferencia: lista.filter((c) => c.tipo === 'C' && severidad(c.tramo) !== 'ok').length,
+        }));
+    }, [enPagina]);
 
     const abrirDetalle = useCallback(async (corte) => {
         setDetalleVisible(corte);
@@ -178,34 +199,36 @@ const CortesView = () => {
         [detalleVisible],
     );
 
-    const resolver = useCallback(async () => {
+    const aplicar = useCallback(async (corte, estado, { motivo: mot = null, observaciones = null } = {}) => {
+        setResolviendo(corte.id);
+        const { error } = await resolverCorte(corte.id, estado, { motivo: mot, observaciones });
+        setResolviendo(null);
+        if (error) {
+            showToast?.('No se pudo guardar', error.message || 'Vuelve a intentar en un momento.', 'error');
+            return false;
+        }
+        appendAuditLog?.(estado === 'CONFIRMADO' ? 'CORTE_CAJA_CONFIRMADO' : 'CORTE_CAJA_DESCARTADO', user?.id, {
+            corte_id: corte.id, sucursal: nombreSala[corte.branch_id],
+            fecha: corte.fecha, hora: corte.hora, diferencia: corte.tramo, motivo: mot ?? undefined,
+        });
+        showToast?.(
+            estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado',
+            `${nombreSala[corte.branch_id]} · ${hhmm(corte.hora)}`, 'success',
+        );
+        cargar();
+        return true;
+    }, [showToast, appendAuditLog, user, nombreSala, cargar]);
+
+    const resolverDesdeModal = useCallback(async () => {
         if (!detalleVisible || !modo) return;
         setGuardando(true);
-        const estado = modo === 'confirmar' ? 'CONFIRMADO' : 'DESCARTADO';
-        const { error } = await resolverCorte(detalleVisible.id, estado, {
+        const ok = await aplicar(detalleVisible, modo === 'confirmar' ? 'CONFIRMADO' : 'DESCARTADO', {
             motivo: modo === 'descartar' ? motivo : null,
             observaciones: nota,
         });
         setGuardando(false);
-        if (error) {
-            showToast?.('No se pudo guardar', error.message || 'Vuelve a intentar en un momento.', 'error');
-            return;
-        }
-        appendAuditLog?.(estado === 'CONFIRMADO' ? 'CORTE_CAJA_CONFIRMADO' : 'CORTE_CAJA_DESCARTADO', user?.id, {
-            corte_id: detalleVisible.id,
-            sucursal: nombreSala[detalleVisible.branch_id],
-            fecha: detalleVisible.fecha, hora: detalleVisible.hora,
-            diferencia: detalleVisible.tramo,
-            motivo: modo === 'descartar' ? motivo : undefined,
-        });
-        showToast?.(
-            estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado',
-            `${nombreSala[detalleVisible.branch_id]} · ${hhmm(detalleVisible.hora)}`,
-            'success',
-        );
-        cerrarDetalle();
-        cargar();
-    }, [detalleVisible, modo, motivo, nota, showToast, appendAuditLog, user, nombreSala, cerrarDetalle, cargar]);
+        if (ok) cerrarDetalle();
+    }, [detalleVisible, modo, motivo, nota, aplicar, cerrarDetalle]);
 
     const salaOptions = useMemo(
         () => branches
@@ -214,7 +237,7 @@ const CortesView = () => {
         [branches, cortes],
     );
 
-    const limpiar = () => { setSala(''); setSoloZ(false); setDias(7); setBusqueda(''); setPagina(1); };
+    const limpiar = () => { setSala(''); setDias(7); setBusqueda(''); setPagina(1); };
 
     const filtersContent = (
         <>
@@ -226,11 +249,10 @@ const CortesView = () => {
                 onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
                 placeholder="Buscar por sala, persona, hora o monto…"
             />
-            <FilterBar onClear={limpiar} activeCount={[sala, soloZ, dias !== 7].filter(Boolean).length}>
+            <FilterBar onClear={limpiar} activeCount={[sala, dias !== 7].filter(Boolean).length}>
                 <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                     <FilterBar.Sucursal value={sala} onChange={(v) => { setSala(v); setPagina(1); }} options={salaOptions} />
                 </FilterBar.Section>
-
                 <FilterBar.Section label="período">
                     {RANGOS.map((r) => (
                         <FilterBar.Chip key={r.key} tone="brand" active={dias === r.key}
@@ -239,85 +261,95 @@ const CortesView = () => {
                         </FilterBar.Chip>
                     ))}
                 </FilterBar.Section>
-
-                <FilterBar.Section>
-                    <FilterBar.Chip tone="brand" active={soloZ} onToggle={() => { setSoloZ((v) => !v); setPagina(1); }}>
-                        Cierres del día
-                    </FilterBar.Chip>
-                </FilterBar.Section>
             </FilterBar>
         </>
     );
 
     return (
         <GlassViewLayout icon={Wallet} title="Cortes de caja" filtersContent={filtersContent}>
-            <div className="p-4 md:p-6 space-y-4">
+            <div className="p-4 md:p-6 space-y-5">
 
                 {cargando && <LoadingState label="Buscando los cortes" />}
 
                 {!cargando && filtrados.length === 0 && (
                     <EmptyState
                         icon={Wallet}
-                        message={busqueda ? 'Nada con esa búsqueda' : 'Sin cortes acá'}
+                        message={busqueda ? 'Nada con esa búsqueda' : 'Nada pendiente acá'}
                         subtext={busqueda
                             ? 'Prueba con el nombre de la sala, la persona o el monto.'
                             : 'Cambia de pestaña o amplía el período para ver más.'}
                     />
                 )}
 
-                {!cargando && filtrados.length > 0 && (
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        {enPagina.map((c) => {
-                            const esZ = c.tipo === 'Z';
-                            const desc = c.estado === 'DESCARTADO';
-                            const sev = severidad(c.tramo);
-                            const ct = contraste(c);
-                            const revisarCifras = !!ct?.enDisputa && !ct.porCobrosCredito;
-                            return (
-                                <button
-                                    key={c.id}
-                                    type="button"
-                                    data-surface="card"
-                                    data-tono={desc || esZ ? undefined : TONO_CARD[sev]}
-                                    className="p-4 text-left w-full"
-                                    onClick={() => abrirDetalle(c)}
-                                >
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-label font-bold text-content">
-                                            {nombreSala[c.branch_id] || `Sucursal ${c.branch_id}`}
-                                        </span>
-                                        {esZ
-                                            ? <Badge variant="info" size="sm">Cierre del día</Badge>
-                                            : <Badge variant={TONO_BADGE[sev]} size="sm">{ROTULO_SEV[sev]}</Badge>}
-                                    </div>
+                {!cargando && porDia.map((g) => (
+                    <section key={g.fecha} className="space-y-1.5">
+                        <div className="flex items-baseline justify-between gap-3 px-1">
+                            <h3 className="text-label font-bold text-content capitalize">{rotularDia(g.fecha)}</h3>
+                            <span className="text-caption text-content-3">
+                                {g.lista.length} {g.lista.length === 1 ? 'corte' : 'cortes'}
+                                {g.conDiferencia > 0 && ` · ${g.conDiferencia} con diferencia`}
+                            </span>
+                        </div>
 
-                                    <div className="text-caption text-content-3 mt-0.5 truncate">
-                                        {rotularFecha(c.fecha)} · {hhmm(c.hora)}
-                                        {c.empleado_texto ? ` · ${c.empleado_texto}` : ''}
-                                    </div>
+                        <div data-surface="card" className="divide-y divide-divider overflow-hidden">
+                            {g.lista.map((c) => {
+                                const esZ = c.tipo === 'Z';
+                                const desc = c.estado === 'DESCARTADO';
+                                const sev = severidad(c.tramo);
+                                const ct = contraste(c);
+                                const revisar = !!ct?.enDisputa && !ct.porCobrosCredito;
+                                const enCurso = resolviendo === c.id;
 
-                                    {esZ ? (
-                                        <div className="mt-2 text-body font-bold text-content-2 tabular-nums">
-                                            {formatMoney(c.total_declarado)}
-                                            <span className="text-caption font-normal text-content-3"> en ventas</span>
+                                return (
+                                    <div key={c.id} className="flex items-stretch gap-3 pr-3">
+                                        {/* La franja es FORMA, no sólo color: se lee sin distinguir tonos. */}
+                                        <span aria-hidden="true"
+                                            className={`w-1 shrink-0 ${esZ || desc ? 'bg-transparent' : TONO_FRANJA[sev]}`} />
+
+                                        <div className="min-w-0 flex-1 py-2.5 flex items-center gap-3 flex-wrap">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-label font-bold text-content">
+                                                        {nombreSala[c.branch_id] || `Sucursal ${c.branch_id}`}
+                                                    </span>
+                                                    <span className="text-caption text-content-3 tabular-nums">{hhmm(c.hora)}</span>
+                                                    {esZ && <Badge variant="info" size="sm">Cierre del día</Badge>}
+                                                    {c.estado === 'CONFIRMADO' && <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>}
+                                                    {desc && <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>}
+                                                    {revisar && <Badge variant="danger" size="sm" icon={AlertTriangle}>Revisar cifras</Badge>}
+                                                </div>
+                                                <div className="text-caption text-content-3 truncate">
+                                                    {c.empleado_texto || 'Sin nombre'}
+                                                    {desc && c.motivo_descarte ? ` · ${c.motivo_descarte}` : ''}
+                                                </div>
+                                            </div>
+
+                                            <div className={`text-body font-bold tabular-nums shrink-0 text-right
+                                                ${esZ ? 'text-content-2' : desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
+                                                {esZ
+                                                    ? <>{formatMoney(c.total_declarado)}<span className="block text-caption font-normal text-content-3">en ventas</span></>
+                                                    : conSigno(desc ? diferenciaDelCorte(c).valor : (c.tramo ?? 0))}
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <Button variant="ghost" size="sm" icon={Search} iconOnly
+                                                    aria-label={`Revisar el corte de las ${hhmm(c.hora)}`}
+                                                    onClick={() => abrirDetalle(c)} />
+                                                {!esZ && c.estado === 'PENDIENTE' && puedeResolver && (
+                                                    <Button variant="primary" size="sm" icon={CheckCircle2}
+                                                        loading={enCurso}
+                                                        onClick={() => aplicar(c, 'CONFIRMADO')}>
+                                                        Confirmar
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <div className={`mt-2 text-2xl font-bold tabular-nums ${desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
-                                            {conSigno(desc ? diferenciaDelCorte(c).valor : (c.tramo ?? 0))}
-                                        </div>
-                                    )}
-
-                                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                                        {c.estado === 'CONFIRMADO' && <Badge variant="success" size="sm" icon={CheckCircle2}>Confirmado</Badge>}
-                                        {desc && <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>}
-                                        {c.estado === 'PENDIENTE' && !esZ && <Badge variant="neutral" size="sm" icon={Clock}>Sin confirmar</Badge>}
-                                        {revisarCifras && <Badge variant="danger" size="sm" icon={AlertTriangle}>Revisar cifras</Badge>}
                                     </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    </section>
+                ))}
 
                 {!cargando && filtrados.length > porPagina && (
                     <TablePagination
@@ -342,12 +374,10 @@ const CortesView = () => {
             >
                 <LiquidModal.Header>
                     <div className="min-w-0">
-                        <h3 className="text-body font-bold text-content">
-                            Corte de las {hhmm(detalleVisible?.hora)}
-                        </h3>
+                        <h3 className="text-body font-bold text-content">Corte de las {hhmm(detalleVisible?.hora)}</h3>
                         <p className="text-caption text-content-3 truncate">
                             {nombreSala[detalleVisible?.branch_id]}
-                            {detalleVisible?.fecha ? ` · ${rotularFecha(detalleVisible.fecha)}` : ''}
+                            {detalleVisible?.fecha ? ` · ${rotularDia(detalleVisible.fecha)}` : ''}
                             {detalleVisible?.empleado_texto ? ` · ${detalleVisible.empleado_texto}` : ''}
                         </p>
                     </div>
@@ -464,7 +494,7 @@ const CortesView = () => {
                             <>
                                 <Button variant="ghost" onClick={() => setModo(null)} disabled={guardando}>Volver</Button>
                                 <Button variant={modo === 'confirmar' ? 'primary' : 'destructive'}
-                                    onClick={resolver} loading={guardando}>
+                                    onClick={resolverDesdeModal} loading={guardando}>
                                     {modo === 'confirmar' ? 'Confirmar corte' : 'Descartar corte'}
                                 </Button>
                             </>

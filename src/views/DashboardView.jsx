@@ -1674,6 +1674,11 @@ const DashboardView = ({ openModal }) => {
     const propia = Number(user?.branchId ?? user?.branch_id);
     return String(META_SALA_IDS.includes(propia) ? propia : META_SALA_IDS[0]);
   });
+  // Vacío = todas las salas que la sesión alcance a ver. A diferencia de
+  // `metaBranch`, acá NO se preselecciona la sala propia: quien tiene alcance
+  // ALL suele estar en Administración, y arrancar filtrado por una sala sin
+  // caja dejaba la baldosa en blanco.
+  const [cortesBranch,   setCortesBranch]   = useState('');
   const [absences,       setAbsences]       = useState([]);
   const [absLoading,     setAbsLoading]     = useState(true);
   const [todaySales,     setTodaySales]     = useState({});
@@ -3200,12 +3205,35 @@ const DashboardView = ({ openModal }) => {
     // otra pantalla no hace.
     if (wid === 'cortes_sala') {
       if (!showWidget('cortes_sala', 'dash_cortes_sala')) return null;
-      // Sin selector de sala a propósito: el widget se llama «de mi sala» y
-      // filtra por la de quien mira. Quien necesite comparar salas tiene el
-      // módulo, que para eso existe.
+      // Con alcance ALL el selector SÍ va: quien ve las seis salas no tiene
+      // caja propia y sin él la baldosa no sirve para nada. Con BRANCH no se
+      // ofrece — la base rechaza cualquier otra sala y prometería un alcance
+      // que no existe (mismo criterio que `facturas_sala` y `meta_sala`).
+      const cortesAllScope = getScope('dash_cortes_sala') === 'ALL';
+      const cortesOpts = MM_ERP_ORDER
+        .map(erp => Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === erp))
+        .map(id => branches.find(b => String(b.id) === String(id)))
+        .filter(Boolean)
+        .map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('cortes_sala',
-        <WidgetCard title="Cortes de caja" icon={Wallet} category="ventas">
-          <WidgetCortesSala soloMiSala={getScope('dash_cortes_sala') !== 'ALL'} />
+        <WidgetCard title="Cortes de caja" icon={Wallet} category="ventas"
+          action={cortesAllScope && cortesOpts.length > 1 && (
+            <LiquidSelect
+              value={cortesBranch}
+              onChange={val => setCortesBranch(val || '')}
+              options={cortesOpts}
+              placeholder="Todas"
+              icon={Building2}
+              clearable
+              compact
+              bare
+            />
+          )}
+        >
+          <WidgetCortesSala
+            soloMiSala={!cortesAllScope}
+            salaElegida={cortesAllScope ? (cortesBranch || null) : null}
+          />
         </WidgetCard>
       , staggerIdx);
     }

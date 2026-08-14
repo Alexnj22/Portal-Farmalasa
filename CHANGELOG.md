@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.599.0 — Cortes: lista por día y el widget con sala
+
+**La rejilla de tarjetas se va.** Veinticuatro tarjetas iguales, todas con su
+borde de color y su píldora «SIN CONFIRMAR», eran una pared sin jerarquía: nada
+resaltaba porque todo resaltaba. Ahora es una **lista agrupada por día** —«Hoy»,
+«Ayer», y la fecha larga más atrás— con una fila por corte: sala, hora, persona,
+la cifra a la derecha y una franja de severidad de 4px al borde. Cada renglón
+ocupa un tercio de lo que ocupaba una tarjeta, así que un día entero se lee sin
+scrollear, y el encabezado de cada día dice cuántos cortes trae y cuántos con
+diferencia.
+
+**Confirmar sin abrir nada.** El botón está en la fila. Descartar sigue dentro
+del detalle, porque exige motivo y conviene que cueste un clic más.
+
+**El chip «Cierres del día» se retira.** Era la pregunta del usuario —«¿qué hace
+el filterpill ahí?»— y tenía razón: un cierre bajo la pestaña «Sin confirmar» no
+significa nada, porque el Z no se confirma. Ahora aparece sólo en «Todos», como
+contexto, sin botones.
+
+**El widget del Inicio ahora sirve:**
+- **Hace scroll.** Tenía `overflow-y-auto` pero ninguna altura contra la cual
+  medir —el cuerpo de `WidgetCard` es `flex-1 min-h-0`—, así que la lista se
+  cortaba y no había forma de llegar al resto.
+- **Selector de sucursal** en su cabecera para quien tiene alcance ALL. Con
+  alcance BRANCH no se ofrece: la base rechaza cualquier otra sala y el
+  desplegable prometería un alcance que no existe. Arranca en «Todas» y no en la
+  sala propia, porque quien ve las seis suele estar en Administración, que no
+  tiene caja.
+
+_(pendiente de redactar)_
+
 ## v2.598.0 — Cortes: tarjetas de todos, buscador y modal claro
 
 Cinco correcciones sobre lo que reportó el usuario mirando la vista.

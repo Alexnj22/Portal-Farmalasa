@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.596.1 — Los cortes los confirma la sala
+
+Decisión del usuario: **las salas confirman sus propios cortes.** Dependiente de
+Farmacia, Jefe/a y Subjefe/a de Sala y Regente de Enfermería pasan a `can_edit`
+con alcance BRANCH — cada sala resuelve la suya y nada más. La frontera la
+revuelve a chequear `resolver_corte_caja` del lado del servidor, así que el
+permiso no abre la puerta a resolver cortes ajenos.
+
+**Y un error que rompía la vista entera.** `estadoDelDia()` devolvía la clave
+`cortes` con el CONTEO, el objeto de la sala la traía con la LISTA, y el spread
+iba después: el número pisaba al array y la línea de cortes reventaba con
+`cortes.map is not a function` — la pantalla no abría.
+
+Dos arreglos, porque uno solo deja el filo puesto: el conteo se llama ahora
+`cantidad` —describe lo que es, y un número no se confunde con una lista— y el
+spread pasó a ir PRIMERO, de modo que las claves propias siempre ganan. Con
+cualquiera de los dos alcanzaba; juntos, la colisión no puede volver.
+
+Verificado contra los datos reales del 13-ago: La Popular da tramos
+`−$13.80 / −$13.80 / $0.00`, y en Salud 1 el conteo malo de las 19:52, una vez
+descartado, no corre la base del siguiente.
+
+
+_(pendiente de redactar)_
+
 ## v2.596.0 — La pantalla de cortes de caja
 
 Comercial → **Cortes de caja** (`/cortes`). El día por sala, la línea de cortes

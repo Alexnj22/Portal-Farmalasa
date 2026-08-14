@@ -95,7 +95,15 @@ const CortesView = () => {
         const salas = [];
         for (const [branchId, lista] of m) {
             const conjunto = conTramo(lista);
-            salas.push({ branchId, nombre: nombreSala[branchId] || `Sucursal ${branchId}`, cortes: conjunto, ...estadoDelDia(conjunto) });
+            // El spread PRIMERO y las claves propias después: así lo explícito
+            // gana siempre. Al revés, `estadoDelDia` pisó `cortes` con su
+            // conteo y la lista dejó de ser una lista.
+            salas.push({
+                ...estadoDelDia(conjunto),
+                branchId,
+                nombre: nombreSala[branchId] || `Sucursal ${branchId}`,
+                cortes: conjunto,
+            });
         }
         // Lo que necesita atención primero: mayor diferencia en valor absoluto.
         salas.sort((a, b) => Math.abs(b.acumulado) - Math.abs(a.acumulado) || a.nombre.localeCompare(b.nombre));
@@ -199,7 +207,7 @@ const CortesView = () => {
                                     </div>
                                     <div className="mt-2 flex items-center justify-between gap-2 text-caption text-content-3">
                                         <span>
-                                            {s.cortes} {s.cortes === 1 ? 'corte' : 'cortes'}
+                                            {s.cantidad} {s.cantidad === 1 ? 'corte' : 'cortes'}
                                             {s.cierre ? ` · cierre ${hhmm(s.cierre.hora)}` : ' · sin cierre'}
                                         </span>
                                         {s.pendientes > 0 && (

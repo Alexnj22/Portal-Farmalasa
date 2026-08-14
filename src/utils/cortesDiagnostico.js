@@ -38,13 +38,21 @@ export function conTramo(cortesDeLaSala) {
     });
 }
 
-/** El estado de la sala en el día: la diferencia del último corte vivo. */
+/**
+ * El estado de la sala en el día: la diferencia del último corte vivo.
+ *
+ * El conteo se llama `cantidad` y NO `cortes` porque este objeto se mezcla con
+ * el de la sala, que sí lleva la lista en `cortes`. Se llamaba igual, el spread
+ * quedó después, y el número pisó al array: la vista reventó con
+ * «cortes.map is not a function». Un nombre que describe el contenido —una
+ * cantidad es un número— no se presta a esa colisión.
+ */
 export function estadoDelDia(cortesDeLaSala) {
     const vivos = cortesDeLaSala.filter((c) => c.tipo === 'C' && c.estado !== 'DESCARTADO');
     const ultimo = vivos[vivos.length - 1];
     return {
         acumulado: ultimo ? (num(ultimo.diferencia_erp) ?? 0) : 0,
-        cortes: vivos.length,
+        cantidad: vivos.length,
         pendientes: vivos.filter((c) => c.estado === 'PENDIENTE').length,
         cierre: cortesDeLaSala.find((c) => c.tipo === 'Z') || null,
     };

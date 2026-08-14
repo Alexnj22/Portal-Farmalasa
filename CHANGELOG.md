@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.605.3 — El corte aparece en la mitad de tiempo
+
+**La captura pasa de cada minuto a cada 30 segundos.** Medido sobre los 12
+cortes del 14-ago —el primer día con la captura corriendo desde temprano— el
+corte tardaba en aparecer entre **20 y 87 segundos**, con mediana de 57.
+
+Lo interesante es dónde estaba ese tiempo: **no en el trabajo**. La corrida
+entera —entrar, pararse en cada una de las seis salas y pedirle su listado—
+termina en 1 a 7 segundos; los cortes se guardan siempre a los pocos segundos
+del tope de minuto. Todo lo demás era **esperar el próximo tic**. Partiendo el
+tic al medio, esa espera se parte al medio.
+
+Un detalle del reloj: el horario ya no puede ir en la expresión del cron
+—aceptar segundos obliga a la forma «cada 30 segundos», que no tiene campos de
+hora— así que la ventana de 6:00 a 23:59 pasó a ser una condición dentro del
+propio trabajo. Es la misma ventana de antes.
+
+**Y el historial de los crons ahora se purga a los 7 días.** No tenía retención
+—67 MB al 14-ago, con las corridas diarias subiendo de 1,700 a 3,980 en una
+semana— y esta captura sola le suma ~1,440 por día. Es la regla que el proyecto
+se puso para toda tabla de log, aplicada a una que vino con la extensión y por
+eso se había salteado.
+
 ## v2.605.2 — una ruta que no se pudo guardar ahora lo dice
 
 Salió de una pregunta concreta: por qué Fernando no podía iniciar su ruta. La

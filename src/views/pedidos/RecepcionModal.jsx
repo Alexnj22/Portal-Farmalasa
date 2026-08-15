@@ -28,6 +28,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { alcanceDeRecepcion, construirCajasEspeciales } from '../../utils/cajasEspeciales';
+import { estadoDeHojas, hojasContables, hojasContadas } from '../../utils/hojasRecepcion';
 import useMontadoParaSalida from '../../hooks/useMontadoParaSalida';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
@@ -301,6 +302,8 @@ export default function RecepcionModal({
     faltaCajas   = [],   // cajas que no llegaron (sus productos quedan excluidos)
     hasFaltaItems = false, // hay items falta_caja:true en otros grupos (electrolit/especial/caja pendiente)
     especialesLlegadas = {}, // { 'E1': 'ok'|'danada'|'faltante', ... }
+    itemsEnReenvio  = [],  // ids de renglones que quedaron en una caja que no llegó
+    itemsYaContados = [],  // ids de renglones que ya se contaron (en cualquier sesión)
 }) {
     const montadoParaSalida = useMontadoParaSalida(open);
     const { user } = useAuth();
@@ -481,11 +484,28 @@ export default function RecepcionModal({
         return [...s].sort((a, b) => a - b);
     }, [initHojasRecibidas, localRec]);
 
-    // Una hoja sin ningún renglón presente no se puede contar: todos sus
-    // productos viajaban en una caja que no llegó.
+    // Una hoja sin ningún renglón presente no se puede contar AHORA: sus
+    // productos ya se contaron antes, o viajaban en una caja que no llegó.
     const accessibleHojaNums = useMemo(() =>
         allHojaNums.filter(n => (itemIdsByHoja[String(n)]?.size ?? 0) > 0),
     [allHojaNums, itemIdsByHoja]);
+
+    // ── En qué está cada hoja ───────────────────────────────────────────────────
+    // La regla vive en `estadoDeHojas`, probada: `rows` trae SÓLO lo pendiente,
+    // así que una hoja contada en una sesión anterior llega acá sin un renglón
+    // —igual que una que viaja en una caja que no llegó— y el encabezado terminó
+    // diciendo «0/2 contadas» sobre una lista de cuatro con dos ya contadas.
+    const hojaEstado = useMemo(() => estadoDeHojas({
+        hojaNums:          allHojaNums,
+        paginaItems,
+        pendientesPorHoja: Object.fromEntries(allHojaNums.map(n => [n, itemIdsByHoja[String(n)]?.size ?? 0])),
+        hojasRecibidas:    allRecibidas,
+        itemsEnReenvio,
+        itemsYaContados,
+    }), [allHojaNums, paginaItems, itemIdsByHoja, allRecibidas, itemsEnReenvio, itemsYaContados]);
+
+    const contables = hojasContables(allHojaNums, hojaEstado);
+    const contadas  = hojasContadas(allHojaNums, hojaEstado);
 
     const accessibleEspeciales = especialItems.filter(e => !e.item.falta_caja);
     const allEspecialesDone = accessibleEspeciales.every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
@@ -982,7 +1002,7 @@ export default function RecepcionModal({
     // SCREEN: CAJAS — box picker
     // ════════════════════════════════════════════════════════════════
     if (screen === 'cajas' && hayHojas) {
-        const receivedAccessible = accessibleHojaNums.filter(n => allRecibidas.includes(n)).length;
+        const todasContadas = contables.length > 0 && contadas.length === contables.length;
 
         return (
             <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md" className="max-h-[90vh]">
@@ -991,12 +1011,14 @@ export default function RecepcionModal({
                         <div className="flex-1 min-w-0">
                             <h3 className="text-subtitle font-bold text-content leading-snug">Confirmar recepción</h3>
                             <p className="text-label text-content-3 mt-0.5">
-                                {sucursalNombre} · {rows.length} prod. · {allHojaNums.length} hoja{allHojaNums.length !== 1 ? 's' : ''}
+                                {/* «58 prod.» sonaba a que el despacho traía 58, cuando son
+                                    los que QUEDAN: `rows` ya viene sin lo contado antes. */}
+                                {sucursalNombre} · {rows.length} {contadas.length > 0 ? 'por contar' : 'prod.'} · {allHojaNums.length} hoja{allHojaNums.length !== 1 ? 's' : ''}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant={allAccessibleDone ? 'success' : 'warning'} uppercase={false}>
-                                {receivedAccessible}/{accessibleHojaNums.length} contadas
+                            <Badge variant={todasContadas ? 'success' : 'warning'} uppercase={false}>
+                                {contadas.length}/{contables.length} contadas
                             </Badge>
                             <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={onClose} />
                         </div>
@@ -1020,9 +1042,9 @@ export default function RecepcionModal({
                     <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2 mt-4">Hojas del despacho</p>
                     <div className="flex flex-col gap-1.5">
                         {allHojaNums.map(hojaNum => {
-                            const isContada  = allRecibidas.includes(hojaNum);
+                            const isContada  = hojaEstado[hojaNum] === 'contada';
                             const itemCount  = itemIdsByHoja[String(hojaNum)]?.size ?? 0;
-                            const sinNada    = itemCount === 0;   // todo su contenido está en reenvío
+                            const sinNada    = hojaEstado[hojaNum] === 'reenvio';  // todo su contenido está en reenvío
                             const isAlertada = hojasAlertadas.has(hojaNum);
                             const cajas      = cajasDeHoja[hojaNum] ?? [];
                             const cajaHint   = cajas.length === 0 ? null

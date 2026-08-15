@@ -565,7 +565,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
                                                 llegadaEmp={llegadaEmp}
                                                 erpEmp={erpEmp}
-                                                cardApoyo={recepApoyo}
                                                 pendientesCount={cardStats[cardKey]?.pendientes ?? 0}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, sucDeLaTarjeta, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, sucDeLaTarjeta, cardKey)}
@@ -828,6 +827,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                     faltaCajas={modal.faltaCajas     ?? []}
                     hasFaltaItems={modal.hasFaltaItems ?? false}
                     especialesLlegadas={modal.especialesLlegadas ?? {}}
+                    itemsEnReenvio={modal.itemsEnReenvio ?? []}
+                    itemsYaContados={modal.itemsYaContados ?? []}
                     onConfirmed={async ({ hasDiff, allDone }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);

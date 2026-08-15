@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.609.2 — El apoyo de la recepción sale con nombre, y el conteo de hojas habla de las hojas que se ven
+
+**Quién apoyó la recepción, con su nombre.** Eran caras de 16 y 20 píxeles
+pisadas entre sí, en tres sitios de la misma tarjeta: colgando del paso
+«Llegada», otra vez colgando de «Finalizado» —un paso que muchas veces todavía
+no había ocurrido— y una tercera al lado del botón «Apoyo». El nombre sólo vivía
+en el `title`, que en la tablet de la sala no aparece nunca, y de la cuarta
+persona en adelante ni siquiera se dibujaban. Ahora es **una sola fila** al pie
+de la línea de tiempo, con el ancho de la tarjeta: una pastilla por persona con
+su foto y su nombre, que envuelve a la línea siguiente. Da igual si es una
+persona o son seis — se ven todas. La fila se queda después de finalizar, así
+que bodega también ve quién apoyó. La foto va por el avatar canónico, que la
+pide en WEBP en vez de bajar la de la ficha entera para un círculo de 20px.
+
+**«0/2 contadas» sobre una lista de cuatro hojas.** La pantalla de recepción
+recibe sólo los renglones pendientes, así que una hoja contada en una sesión
+anterior le llega sin un solo renglón adentro… exactamente igual que una hoja
+cuyos productos viajaban en una caja que no llegó. Como no las distinguía, las
+dos hojas ya contadas se caían del numerador **y** del denominador a la vez: el
+encabezado contaba una lista distinta de la que se veía debajo, donde H1 y H2
+decían «Contada». Ahora dice **2/4**. De paso: una hoja que se completó
+recibiendo sus productos de a uno se marca «Contada» en vez de «En reenvío», que
+es de otra cosa; y el «58 prod.» del encabezado dice «58 por contar» cuando ya
+hay algo contado, porque son los que quedan, no los que trajo el despacho.
+
+La regla vive en `estadoDeHojas` (`src/utils/hojasRecepcion.js`) con sus pruebas,
+en vez de repartida entre el conteo y el dibujo de cada fila.
+
 ## v2.609.1 — El corte avisa de las formas que no pasan por la caja
 
 El comprobante del corte imprime dos secciones y sólo dos: pagos con tarjeta y

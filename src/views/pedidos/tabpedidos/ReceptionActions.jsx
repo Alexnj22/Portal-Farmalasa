@@ -14,7 +14,11 @@ const LLEGADA_TIPO_LABEL = {
     mixto:       'daños + faltantes',
 };
 
-export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null, canEdit = true }) {
+// Quién apoya la recepción NO se dibuja acá: es del pedido entero, no de este
+// bloque de botones, y vive con nombre en la línea de tiempo (ver
+// `LifecycleTimeline`, bloque «Apoyo en recepción»). Acá había una pila de caras
+// de 16px sin nombre, repetida en dos filas de este mismo componente.
+export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null, canEdit = true }) {
     // Sin permiso para gestionar pedidos NO se pinta ningún botón. Antes se
     // pintaban todos y ninguno podía funcionar: la base rechaza la escritura y
     // el 2026-08-14 eso costó una recepción entera, contada dos veces contra
@@ -28,16 +32,6 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                 : <UserCircle2 size={12} className="text-content-3" />}
             <span className="whitespace-nowrap">{shortEmployeeName(emp)}</span>
         </span>
-    ) : null;
-
-    const apoyoChips = cardApoyo.length > 0 ? (
-        <div className="flex items-center gap-0.5">
-            {cardApoyo.slice(0, 4).map((a, i) => (
-                a.photo_url
-                    ? <img key={a.id} src={a.photo_url} title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full object-cover border-2 border-border-card shadow-sm shrink-0" alt="" />
-                    : <span key={a.id} role="img" title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-surface-card-hover border-2 border-border-card flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-content-3" /></span>
-            ))}
-        </div>
     ) : null;
 
     const apoyoBtn = (
@@ -133,7 +127,6 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                         Paso 2 — Confirmar en Sistema de Ventas {pendientesCount > 0 ? `(${pendientesCount})` : ''}
                     </span>
                     <div className="ml-auto flex items-center gap-1.5">
-                        {apoyoChips}
                         {accion(apoyoBtn)}
                         {accion(<Button tone="chart-3" disabled={!!busy} onClick={onOpenRecibir}>Confirmar</Button>)}
                     </div>
@@ -147,7 +140,6 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     <span className="text-success-text">Confirmado en Sistema de Ventas</span>
                     <div className="ml-auto flex items-center gap-1.5">
                         {empChip(erpEmp)}
-                        {apoyoChips}
                     </div>
                 </div>
             )}

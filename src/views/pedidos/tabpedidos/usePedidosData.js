@@ -1091,6 +1091,10 @@ export function usePedidosData({ searchTerm = '' }) {
                     hojasRecibidas: pss?.hojas_recibidas ?? [],
                     faltaCajas:     hasFalta ? cajasFaltantes : [],
                     hasFaltaItems:  hasFaltaItemsNow,
+                    // Ver el comentario de `openModal`: sin estos dos juegos de
+                    // ids, una hoja ya contada se ve igual que una en reenvío.
+                    itemsEnReenvio:  (freshItems || []).filter(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0).map(r => r.id),
+                    itemsYaContados: (freshItems || []).filter(r => r.status !== 'pendiente').map(r => r.id),
                 });
             }
         } catch (e) {
@@ -1158,7 +1162,16 @@ export function usePedidosData({ searchTerm = '' }) {
         }
 
         const especialesLlegadas = activeRow?.cajas_especiales_llegadas ?? {};
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas });
+
+        // `rows` sólo lleva lo que queda PENDIENTE, así que una hoja contada en
+        // una sesión anterior llega al modal sin un solo renglón — idéntica a una
+        // que viaja en una caja que no llegó. Estos dos juegos de ids son lo único
+        // que las separa, y sin ellos el encabezado contaba «0/2» sobre una lista
+        // de cuatro hojas con dos ya contadas.
+        const itemsEnReenvio  = (loaded || []).filter(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0).map(r => r.id);
+        const itemsYaContados = (loaded || []).filter(r => r.status !== 'pendiente').map(r => r.id);
+
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, paginas, hojasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas, itemsEnReenvio, itemsYaContados });
     }, [fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {

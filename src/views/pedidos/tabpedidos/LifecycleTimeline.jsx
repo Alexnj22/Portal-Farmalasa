@@ -4,6 +4,7 @@
 import React from 'react';
 import { UserCircle2, Pause } from 'lucide-react';
 import { fmtMin, elapsed } from './helpers';
+import LiquidAvatar from '../../../components/common/LiquidAvatar';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
 // `es-SV` devuelve «10:22 a. m.» —con espacio dentro de la abreviatura— y eso
@@ -96,8 +97,12 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
         { key: 'preparado',      label: 'Listo',      time: row.finalizado_at,        emp: finalizadorEmp },
         { key: 'enviado',        label: 'En ruta',    time: row.enviado_at,           emp: enviadorEmp    },
         { key: 'ruta_entregado', label: 'Entregado',  time: rutaStop?.entregado_at ?? null, emp: entregadorEmp, isRutaNode: true },
-        { key: 'llegada',        label: 'Llegada',    time: row.llegada_fisica_at,    emp: llegadaEmp,    apoyo: receptionApoyo },
-        { key: 'erp',            label: 'Finalizado', time: row.recibido_erp_at,      emp: erpEmp,        apoyo: receptionApoyo },
+        // El apoyo NO cuelga de estos dos pasos: es del pedido, y ponerlo en los
+        // dos dibujaba la misma lista dos veces —una de ellas debajo de
+        // «Finalizado», un paso que todavía no había ocurrido—. Va con nombre en
+        // su propia fila, al pie de la línea de tiempo.
+        { key: 'llegada',        label: 'Llegada',    time: row.llegada_fisica_at,    emp: llegadaEmp    },
+        { key: 'erp',            label: 'Finalizado', time: row.recibido_erp_at,      emp: erpEmp        },
     ];
     if (row.falta_caja_at) {
         // Label descriptivo según tipo
@@ -148,6 +153,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
         // `overflow: visible` de abajo protege. Separados, cada uno hace lo suyo.
         // El `-mx-3 px-3` deja que el carril llegue al borde de la tarjeta en vez
         // de cortar contra su padding, así se ve que hay más.
+        <>
         <div className="-mx-3 px-3 overflow-x-auto overscroll-x-contain lg:mx-0 lg:px-0 lg:overflow-x-visible [&::-webkit-scrollbar]:hidden">
             <div className="flex items-start w-full min-w-max lg:min-w-0 pb-1 pt-0.5" style={{ overflow: 'visible' }}>
             {nodes.map((node, idx) => {
@@ -246,16 +252,6 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     <span className="w-full text-micro text-content-2 leading-tight font-medium text-center">{shortEmployeeName(node.emp)}</span>
                                 </div>
                             )}
-                            {/* Apoyo avatar stack */}
-                            {node.apoyo?.length > 0 && (
-                                <div className="flex justify-center mt-0.5" style={{ paddingLeft: node.apoyo.length > 1 ? 6 : 0 }}>
-                                    {node.apoyo.slice(0, 3).map((a, i) => (
-                                        a.photo_url
-                                            ? <img key={a.id} src={a.photo_url} title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-surface-card shadow-sm shrink-0 relative" alt="" />
-                                            : <span key={a.id} role="img" title={shortEmployeeName(a)} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-surface-card flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
-                                    ))}
-                                </div>
-                            )}
                         </div>
 
                         {/* Connector */}
@@ -297,5 +293,27 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
             })}
             </div>
         </div>
+
+        {/* Quién apoyó la recepción, CON su nombre. Antes eran caras de 20px
+            pisadas entre sí colgando de dos pasos: sin nombre visible —el
+            `title` no existe en una pantalla táctil, que es donde se recibe—, y
+            de la cuarta persona en adelante no se dibujaban. Acá tiene el ancho
+            de la tarjeta: envuelve, y da igual si es una o son seis. Misma
+            pastilla que el apoyo de preparación. */}
+        {receptionApoyo.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
+                <span className="text-caption font-semibold text-content-3 uppercase tracking-wide shrink-0">Apoyo en recepción</span>
+                {receptionApoyo.map(a => (
+                    <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-surface-card border border-divider shadow-sm">
+                        {/* El avatar canónico y no una `<img>` a mano: pide la foto en
+                            WEBP —180 kB de ficha para un círculo de 20px, y acá hay uno
+                            por persona en cada tarjeta— y cae a la inicial si falla. */}
+                        <LiquidAvatar src={a.photo_url} alt="" fallbackText={shortEmployeeName(a)} className="w-5 h-5 rounded-full shrink-0 text-micro" />
+                        <span className="text-label font-semibold text-content-2 whitespace-nowrap">{shortEmployeeName(a)}</span>
+                    </span>
+                ))}
+            </div>
+        )}
+        </>
     );
 }

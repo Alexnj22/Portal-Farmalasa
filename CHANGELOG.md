@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.612.0 — la hoja se confirma con aviso, y dar por bueno también ingresa
+
+Confirmar una hoja mete sus productos al inventario de la sala y la saca de la
+lista. Es tan definitivo como «Confirmar todo» —que ya preguntaba— y estaba a un
+solo clic. Ahora los dos botones del pie de la hoja pasan por el mismo aviso, y
+el aviso dice las tres cosas que importan: cuántos productos, que entran al
+inventario automáticamente, y que después esa hoja no se vuelve a contar.
+
+**Y el aviso ahora es cierto en los tres caminos.** El ingreso al inventario
+vivía sólo adentro de «Confirmar hoja»: «Todo OK» y «Confirmar todo» marcaban
+recibido en el portal y **no ingresaban nada**, aunque el aviso de «Confirmar
+todo» ya prometía que el pedido completo entraba solo. O sea que dar por bueno
+un pedido entero de una vez —el camino más rápido, el que uno usa cuando llega
+todo bien— dejaba la sala con el pedido confirmado y sin existencias. Una sola
+copia del ingreso, y la llaman los tres.
+
+Tres decisiones que van con eso:
+
+- **Sin ids no se llama.** La recepción sin lista de productos ni número de hoja
+  recibe TODO lo pendiente de la sucursal. Una hoja cuyos renglones ya se
+  recibieron de a uno deja la lista vacía, y esa llamada habría ingresado el
+  pedido completo sin que nadie lo pidiera.
+- **El ingreso de «Confirmar todo» va por hoja, no en una sola llamada.** Un
+  pedido grande pasa de las 500 líneas que la recepción trae por vuelta, y el
+  resto se habría quedado afuera en silencio.
+- **El aviso de fallo va por toast.** Los tres caminos pueden terminar cerrando
+  el modal, y ahí la franja del pie se va con él sin que nadie la lea.
+
+**Un producto recibido de a uno ahora se ve recibido en su hoja.** Antes seguía
+igual que los demás —casillas vivas, botón de recibir, contado en el «N
+productos» del encabezado— con una pastilla «listo» de 40px como única señal, y
+al confirmar la hoja volvía a viajar en el envío. La base lo ignoraba (sólo toca
+lo que sigue pendiente), así que nunca sumó existencias de más, pero el número
+que quedaba registrado mentía y la lista de ids del ingreso se armaba mal. Ahora
+el renglón se pinta en verde, dice **Recibido**, sus casillas quedan de sólo
+lectura y sus dos botones desaparecen: un control que no escribe nada no tiene
+por qué verse vivo. Se queda a la vista —sacarlo dejaría a quien cuenta buscando
+un producto que el papel sí tiene— y el encabezado pasa a decir *«3 por contar ·
+2 ya recibidos»*.
+
 ## v2.611.3 — El buscador vuelve a dibujarse, y el tipo que faltaba recupera su nombre
 
 Dos cosas que sólo aparecieron al abrir las pantallas, después de que v2.611.0

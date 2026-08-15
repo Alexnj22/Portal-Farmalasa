@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 import PedidoModal from './PedidoModal';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -332,6 +333,11 @@ export default function RecepcionModal({
     const [localRec,     setLocalRec]     = useState([]);   // confirmed this session
     const [anyHasDiff,   setAnyHasDiff]   = useState(false);
     const [confirmarTodoOpen, setConfirmarTodoOpen] = useState(false);
+    // Qué confirmación de la hoja/caja ABIERTA está esperando respuesta:
+    // 'contado' (las cantidades de pantalla) | 'todook' (tal como se envió).
+    // Confirmar una hoja mete su contenido al inventario de la sala y no se
+    // deshace desde acá, así que pregunta igual que «Confirmar todo».
+    const [confirmarHoja, setConfirmarHoja] = useState(null);
 
     // ── Per-item input state ────────────────────────────────────────────────────
     const [fQtyVals,  setFQtyVals]  = useState({});
@@ -527,6 +533,21 @@ export default function RecepcionModal({
         return sortedRows.filter(r => ids.has(r.id));
     }, [selectedHoja, selectedEspecial, itemIdsByHoja, sortedRows, hayHojas]);
 
+    // Un renglón que ya se recibió de a uno —en esta sesión o en otra— NO se
+    // vuelve a contar. Sigue a la vista en su hoja, marcado, porque quien cuenta
+    // tiene que ver que ese producto ya está resuelto; lo que no hace es entrar
+    // otra vez en el envío al confirmar. La base sola no alcanza: sólo toca los
+    // renglones que siguen `pendiente`, así que mandarlo de nuevo no suma
+    // existencias, pero sí miente en el número que queda registrado y —lo caro—
+    // deja que la lista de ids del ingreso al inventario se arme mal.
+    const yaRecibido = useCallback(
+        (r) => sueltosOk.has(r.id) || r.status === 'recibido',
+        [sueltosOk]);
+
+    const filasPorContar = useMemo(
+        () => filasAbiertas.filter(r => !yaRecibido(r)),
+        [filasAbiertas, yaRecibido]);
+
     // ── Init on open ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!open) return;
@@ -536,6 +557,9 @@ export default function RecepcionModal({
         setConfirmedEspecialIds(new Set());
         setLocalRec([]);
         setAnyHasDiff(false);
+        setSueltosOk(new Set());
+        setConfirmarHoja(null);
+        setConfirmarTodoOpen(false);
         setSaveError(null);
         setPresMap({});
         setExtras([]); setExtraSearch(''); setExtraResults([]);
@@ -674,6 +698,48 @@ export default function RecepcionModal({
         if (error) throw error;
     }, [extras, rows, pedido?.id, sucursalId, user]);
 
+    // ── Meter al inventario lo que se acaba de confirmar ────────────────────────
+    // Cada producto viaja en su propio traslado, así que dar por recibidos los
+    // renglones contados es recibir esos traslados ENTEROS. Por eso la recepción
+    // parcial —que no existe del otro lado— no hace falta.
+    //
+    // Nunca bloquea ni lanza: lo contado ya quedó guardado, y un tropiezo acá no
+    // puede deshacerlo ni hacer creer que no se contó. `NADA_QUE_RECIBIR` no es
+    // un error: es lo normal en los pedidos que se despacharon a mano.
+    //
+    // Existía sólo adentro de «Confirmar hoja». «Todo OK» y «Confirmar todo»
+    // marcaban recibido en el portal y NO ingresaban nada —el aviso de
+    // «Confirmar todo» ya prometía que sí—, o sea que dar por bueno un pedido
+    // entero de una vez dejaba la sala sin existencias. Una sola copia, y la
+    // llaman los tres.
+    //
+    // El aviso va por toast y no en la franja del pie: los tres caminos pueden
+    // terminar cerrando el modal, y ahí la franja se va con él sin que nadie la
+    // lea.
+    const ingresarAlInventario = useCallback(async (itemIds) => {
+        // SIN ids no se llama. La función sin `pedido_item_ids` ni `hoja` recibe
+        // TODO lo pendiente de la sucursal: una hoja cuyos renglones ya se
+        // recibieron de a uno deja la lista vacía, y esa llamada ingresaría el
+        // pedido completo sin que nadie lo pidiera.
+        if (!itemIds.length) return { ok: true };
+        try {
+            const erp = await recibirTrasladoPedido(pedido.id, sucursalId, { itemIds });
+            if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') return { ok: false, error: erp.error ?? 'sin detalle' };
+            return { ok: true };
+        } catch (e) {
+            console.error('ingreso al inventario:', e);
+            return { ok: false, error: mensajeAmigable(e) };
+        }
+    }, [pedido?.id, sucursalId]);
+
+    const avisarIngresoFallido = useCallback((detalle) => {
+        useToastStore.getState().showToast(
+            'Recepción guardada, inventario pendiente',
+            `El conteo quedó guardado, pero los productos no entraron al inventario: ${detalle}. Se puede reintentar.`,
+            'error', 8000,
+        );
+    }, []);
+
     // ── Recibir UN producto, sin contar el resto de la caja ─────────────────────
     // El caso real: llegó la caja, todavía no se cuenta, y hace falta ese
     // producto para venderlo AHORA. Sin esto habría que confirmar la caja
@@ -702,7 +768,7 @@ export default function RecepcionModal({
 
             if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') {
                 setSaveError(
-                    `Quedó recibido en el portal, pero el ingreso al sistema falló: ${erp.error ?? 'sin detalle'}. `
+                    `Quedó contado, pero no entró al inventario: ${erp.error ?? 'sin detalle'}. `
                     + 'Todavía no se puede facturar.',
                 );
             }
@@ -772,8 +838,9 @@ export default function RecepcionModal({
     const handleConfirmarCaja = useCallback(async () => {
         // `filasAbiertas` YA resuelve los tres alcances (especial, caja,
         // pedido entero), así que repetir la condición acá sólo daba lugar a que
-        // se escribiera distinta en cada sitio. Y así se escribió.
-        const rowsToSave = filasAbiertas;
+        // se escribiera distinta en cada sitio. Y así se escribió. Lo ya
+        // recibido de a uno queda fuera: se cuenta una vez.
+        const rowsToSave = filasPorContar;
 
         const invalidExtra = extras.find(e => e.fQty === 0);
         if (invalidExtra) {
@@ -791,30 +858,9 @@ export default function RecepcionModal({
             });
             if (error) throw error;
 
-            // ── Y lo mismo en el sistema ────────────────────────────────────
-            // Cada producto viaja en su propio traslado, así que confirmar esta
-            // caja es recibir esos traslados ENTEROS. Por eso no hace falta que
-            // el sistema soporte recepción parcial: no la soporta.
-            //
-            // Va en su PROPIO try y nunca bloquea: lo que se acaba de contar ya
-            // quedó guardado en el portal, y un tropiezo acá no puede
-            // deshacerlo ni hacer creer que no se contó.
-            //
-            // `NADA_QUE_RECIBIR` no es un error: es lo normal en los pedidos
-            // que se despacharon a mano, que son todos los anteriores a hoy.
-            try {
-                const erp = await recibirTrasladoPedido(pedido.id, sucursalId, {
-                    itemIds: p_items.map(it => it.pedido_item_id),
-                });
-                if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') {
-                    setSaveError(
-                        `Se guardó la recepción, pero el ingreso al sistema quedó pendiente: ${erp.error ?? 'sin detalle'}`,
-                    );
-                }
-            } catch (e) {
-                console.error('recepción en el sistema:', e);
-                setSaveError('Se guardó la recepción, pero no se pudo ingresar al sistema. Se puede reintentar.');
-            }
+            // ── Y lo mismo en el inventario ─────────────────────────────────
+            const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id));
+            if (!ing.ok) avisarIngresoFallido(ing.error);
 
             const boxHasDiff = p_items.some(it => it.error_tipo !== null);
             const newAnyDiff = anyHasDiff || boxHasDiff;
@@ -839,8 +885,9 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [
-        alcance, filasAbiertas, extras, buildPItems, cerrarEspecial, cerrarHoja,
+        alcance, filasPorContar, extras, buildPItems, cerrarEspecial, cerrarHoja,
         pedido, sucursalId, user, anyHasDiff, saveExtras, onConfirmed, onClose,
+        ingresarAlInventario, avisarIngresoFallido,
     ]);
 
     // ── Confirmar todo sin errores (acción rápida) ──────────────────────────────
@@ -851,7 +898,7 @@ export default function RecepcionModal({
         // Acotado a lo que hay ABIERTO. Preguntaba sólo por el número de caja,
         // que dentro de una caja especial es `null`: desde una especial este
         // botón daba por recibido el pedido entero.
-        const rowsToSave = filasAbiertas;
+        const rowsToSave = filasPorContar;
         setSaving(true); setSaveError(null);
 
         // Payload con cantidades exactas asignadas, sin diferencias
@@ -870,6 +917,12 @@ export default function RecepcionModal({
             });
             if (error) throw error;
 
+            // Dar por bueno también ingresa: «Todo OK» y «Confirmar» dejan el
+            // mismo renglón recibido, y sólo uno de los dos metía el producto al
+            // inventario. Quien lo apretaba se quedaba sin existencias.
+            const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id));
+            if (!ing.ok) avisarIngresoFallido(ing.error);
+
             if (alcance === 'especial') {
                 await cerrarEspecial({ itemsCount: p_items.length, hasDiff: anyHasDiff, todoOk: true });
             } else if (alcance === 'hoja') {
@@ -885,12 +938,19 @@ export default function RecepcionModal({
         } finally {
             setSaving(false);
         }
-    }, [alcance, filasAbiertas, pedido, sucursalId, user, anyHasDiff,
-        cerrarEspecial, cerrarHoja, saveExtras, onConfirmed, onClose]);
+    }, [alcance, filasPorContar, pedido, sucursalId, user, anyHasDiff,
+        cerrarEspecial, cerrarHoja, saveExtras, onConfirmed, onClose,
+        ingresarAlInventario, avisarIngresoFallido]);
 
     // ── Confirmar de una vez todo lo que se puede (Todo OK) ────────────────────
     const handleConfirmarTodo = useCallback(async () => {
         setSaving(true); setSaveError(null);
+        // El ingreso al inventario va POR HOJA y no en una sola llamada al
+        // final: un pedido grande pasa de las 500 líneas que la recepción trae
+        // por vuelta, y ahí el resto se quedaría afuera en silencio. Los fallos
+        // se juntan y se avisan una vez —dentro del bucle, cada aviso pisaría al
+        // anterior—.
+        const fallosIngreso = [];
         try {
             let newRec = [...allRecibidas];
             for (const hojaNum of accessibleHojaNums) {
@@ -902,8 +962,13 @@ export default function RecepcionModal({
                 if (hojasAlertadas.has(hojaNum)) continue;
                 const ids = itemIdsByHoja[String(hojaNum)];
                 if (!ids) continue;
-                const hojaRows = sortedRows.filter(r => ids.has(r.id));
-                if (!hojaRows.length) continue;
+                const hojaRows = sortedRows.filter(r => ids.has(r.id) && !yaRecibido(r));
+                if (!hojaRows.length) {
+                    // Sin renglones por contar la hoja igual queda contada: sus
+                    // productos se recibieron de a uno y ya están adentro.
+                    newRec = [...new Set([...newRec, hojaNum])].sort((a, b) => a - b);
+                    continue;
+                }
                 const p_items = hojaRows.map(r => {
                     const erpFactor  = Number(r.factor) || 1;
                     const dispFactor = Number(r.dispatch_factor) || erpFactor;
@@ -915,9 +980,12 @@ export default function RecepcionModal({
                     p_items, p_received_by: user?.id ?? null,
                 });
                 if (error) throw error;
+                const ing = await ingresarAlInventario(p_items.map(it => it.pedido_item_id));
+                if (!ing.ok) fallosIngreso.push(`H${hojaNum}: ${ing.error}`);
                 newRec = [...new Set([...newRec, hojaNum])].sort((a, b) => a - b);
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_HOJA', pedido.id, {
                     sucursal_id: sucursalId, hoja: hojaNum, items_count: p_items.length, todo_ok: true,
+                    entro_al_inventario: ing.ok,
                 });
             }
             const { error: recErr } = await updatePedidoSucursalStatus(pedido.id, sucursalId, { hojas_recibidas: newRec });
@@ -938,9 +1006,12 @@ export default function RecepcionModal({
                     p_received_by: user?.id ?? null,
                 });
                 if (error) throw error;
+                const ingEsp = await ingresarAlInventario([item.id]);
+                if (!ingEsp.ok) fallosIngreso.push(`${label}: ${ingEsp.error}`);
                 newConfirmedEspIds.add(item.id);
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
                     sucursal_id: sucursalId, especial: label, todo_ok: true,
+                    entro_al_inventario: ingEsp.ok,
                 });
             }
             setConfirmedEspecialIds(newConfirmedEspIds);
@@ -948,7 +1019,9 @@ export default function RecepcionModal({
             await saveExtras();
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                 sucursal_id: sucursalId, extras_count: extras.length, todo_ok: true, batch: true,
+                ingresos_fallidos: fallosIngreso.length || undefined,
             });
+            if (fallosIngreso.length) avisarIngresoFallido(fallosIngreso.join(' · '));
             // Sólo se da por terminado si no quedó nada por revisar ni en reenvío
             const quedaPorRevisar = accessibleHojaNums.some(n => hojasAlertadas.has(n) && !newRec.includes(n));
             onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems && !quedaPorRevisar });
@@ -960,7 +1033,8 @@ export default function RecepcionModal({
         }
     }, [accessibleHojaNums, allRecibidas, itemIdsByHoja, sortedRows, pedido, sucursalId, user,
         anyHasDiff, initHojasRecibidas, saveExtras, extras, onConfirmed, onClose, hojasAlertadas,
-        especialItems, confirmedEspecialIds, faltaCajas.length, hasFaltaItems]);
+        especialItems, confirmedEspecialIds, faltaCajas.length, hasFaltaItems,
+        yaRecibido, ingresarAlInventario, avisarIngresoFallido]);
 
     // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
     const handleFinalizar = useCallback(async () => {
@@ -1242,7 +1316,7 @@ export default function RecepcionModal({
                     title="¿Dar por bueno todo el pedido?"
                     message={
                         'Se van a confirmar todas las hojas y cajas especiales tal como se enviaron, sin contarlas, '
-                        + 'y el pedido completo se cargará automáticamente en el sistema.'
+                        + 'y el pedido completo entra al inventario de la sala automáticamente.'
                         + (hojasAlertadas.size > 0
                             ? ` Quedan fuera las hojas ${[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')}, que venían en una caja con problema y hay que revisar.`
                             : '')
@@ -1427,6 +1501,24 @@ export default function RecepcionModal({
     const hojaEnAlerta = alcance === 'hoja' && hojasAlertadas.has(selectedHoja);
     const isDanadaEspecial = selectedEspecial ? especialesLlegadas[selectedEspecial.label] === 'danada' : false;
 
+    // ── Lo que dice el aviso antes de confirmar ─────────────────────────────────
+    // Confirmar una hoja mete su contenido al inventario de la sala y deja la
+    // hoja fuera de la lista: es tan definitivo como «Confirmar todo», que ya
+    // preguntaba. Los dos botones del pie pasan por acá.
+    const rotuloAbierto = alcance === 'especial' ? `la caja ${selectedEspecial.label}`
+        : alcance === 'hoja'                     ? `la hoja ${selectedHoja}`
+        :                                          'este pedido';
+    const nPorContar     = filasPorContar.length;
+    const nYaRecibidos   = filasAbiertas.length - nPorContar;
+    const colaYaRecibido = nYaRecibidos > 0
+        ? ` ${nYaRecibidos === 1 ? 'Un producto ya se recibió' : `${nYaRecibidos} productos ya se recibieron`} de a uno y no se vuelve${nYaRecibidos === 1 ? '' : 'n'} a contar.`
+        : '';
+    const avisoConfirmar = nPorContar === 0
+        ? `No queda nada por contar en ${rotuloAbierto}: sus productos ya se recibieron de a uno y están en el inventario. Confirmar sólo la marca como contada.`
+        : confirmarHoja === 'todook'
+            ? `Se van a dar por buenos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} tal como se enviaron, sin contarlos, y entran al inventario de la sala automáticamente.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`
+            : `Se van a dar por recibidos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} con las cantidades que están en pantalla, y entran al inventario de la sala automáticamente.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`;
+
     return (
         <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl" className="max-h-[90vh]">
 
@@ -1458,7 +1550,13 @@ export default function RecepcionModal({
                                             {hojaEnAlerta && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Revisar</span>}
                                         </h3>
                                         <p className="text-label text-content-3 mt-0.5">
-                                            {filasAbiertas.length} productos · {sucursalNombre}
+                                            {/* Cuántos quedan por contar, no cuántos trae la
+                                                hoja: los recibidos de a uno siguen en la
+                                                lista y decir «5 productos» sobre 3 por contar
+                                                manda a buscar dos que ya están adentro. */}
+                                            {nPorContar} por contar
+                                            {nYaRecibidos > 0 && ` · ${nYaRecibidos} ya recibido${nYaRecibidos !== 1 ? 's' : ''}`}
+                                            {' · '}{sucursalNombre}
                                         </p>
                                     </>
                                 ) : (
@@ -1547,7 +1645,11 @@ export default function RecepcionModal({
                         const hasProb   = !!tp;
                         const panelOpen = tp === true;
                         const fRaw = Math.round(fQty * fPres / erpFactor);
-                        const hasDiff = fRaw !== enviado;
+                        // Un renglón ya recibido no tiene diferencia que mostrar:
+                        // su cantidad quedó guardada cuando se recibió, y lo que
+                        // haya en estas casillas ya no se manda a ningún lado.
+                        const recibidoSolo = yaRecibido(r);
+                        const hasDiff = !recibidoSolo && fRaw !== enviado;
                         const delta   = fRaw - enviado;
 
                         const presOpts = opcionesDePresentacion(r, presMap);
@@ -1563,12 +1665,20 @@ export default function RecepcionModal({
                         const confirmProblema = () => setTieneProblema(p => ({ ...p, [r.id]: 'done' }));
 
                         return (
-                            <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-warning/10' : hasProb ? 'bg-chart-4/10' : 'bg-surface-card hover:bg-surface-card-hover/50'}`}>
+                            <div key={r.id} className={`transition-colors ${recibidoSolo ? 'bg-success/10' : hasDiff ? 'bg-warning/10' : hasProb ? 'bg-chart-4/10' : 'bg-surface-card hover:bg-surface-card-hover/50'}`}>
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                                    <span className="text-body-sm text-content-2 font-semibold leading-snug">
+                                    <span className={`text-body-sm font-semibold leading-snug ${recibidoSolo ? 'text-content-3' : 'text-content-2'}`}>
                                         {r.products?.nombre}
                                         {!hayHojas && r.caja_especial && (
                                             <Badge variant="chart-3" size="sm" icon={Star} uppercase={false}>Especial</Badge>
+                                        )}
+                                        {/* El renglón ya está resuelto: se recibió de a
+                                            uno y su producto entró al inventario. Se
+                                            queda a la vista —sacarlo dejaría a quien
+                                            cuenta buscando un producto que el papel sí
+                                            tiene— pero no se cuenta ni se toca. */}
+                                        {recibidoSolo && (
+                                            <Badge variant="success" size="sm" icon={Check} uppercase={false}>Recibido</Badge>
                                         )}
                                     </span>
                                     <span className="text-body-sm font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
@@ -1579,12 +1689,14 @@ export default function RecepcionModal({
                                         options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
                                         compact
                                         clearable={false}
+                                        disabled={recibidoSolo}
                                     />
 
                                     <div className="relative">
                                         <PortalInput
                                             aria-label="Cantidad facturada" compact
-                                            tono={hasDiff ? 'warning' : 'chart-9'}
+                                            readOnly={recibidoSolo}
+                                            tono={recibidoSolo ? undefined : hasDiff ? 'warning' : 'chart-9'}
                                             type="number" min={0} value={fQty}
                                             onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                             data-qty-row={rowIdx} data-qty-col="fqty"
@@ -1604,21 +1716,26 @@ export default function RecepcionModal({
                                         aparecía como un ícono verde huérfano debajo del
                                         nombre del producto. */}
                                     <div className="flex items-center justify-end gap-1">
-                                        <Button
-                                            icon={AlertTriangle}
-                                            iconOnly
-                                            size="sm"
-                                            tone="chart-4"
-                                            soft
-                                            onClick={toggleProblema}
-                                            title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
-                                        />
+                                        {/* Ya recibido = sin acciones. Reportarle un
+                                            problema o volver a recibirlo no escribe
+                                            nada —la base sólo toca lo `pendiente`—,
+                                            así que un botón vivo ahí sería un control
+                                            que promete lo que no hace. */}
+                                        {recibidoSolo ? (
+                                            <Check size={15} className="text-success" aria-hidden="true" />
+                                        ) : (<>
+                                            <Button
+                                                icon={AlertTriangle}
+                                                iconOnly
+                                                size="sm"
+                                                tone="chart-4"
+                                                soft
+                                                onClick={toggleProblema}
+                                                title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
+                                            />
 
-                                        {/* Recibir SOLO este, para poder venderlo antes de
-                                            contar el resto de la hoja. */}
-                                        {sueltosOk.has(r.id) || r.status === 'recibido' ? (
-                                            <Badge variant="success" size="sm" uppercase={false}>listo</Badge>
-                                        ) : (
+                                            {/* Recibir SOLO este, para poder venderlo antes de
+                                                contar el resto de la hoja. */}
                                             <Button
                                                 icon={PackageCheck}
                                                 iconOnly
@@ -1627,13 +1744,13 @@ export default function RecepcionModal({
                                                 soft
                                                 disabled={saving}
                                                 onClick={() => handleRecibirSolo(r)}
-                                                title="Recibir solo este producto e ingresarlo al sistema ahora"
+                                                title="Recibir solo este producto e ingresarlo al inventario ahora"
                                             />
-                                        )}
+                                        </>)}
                                     </div>
                                 </div>
 
-                                {panelOpen && (
+                                {panelOpen && !recibidoSolo && (
                                     <div className="px-5 pb-2.5">
                                         <PanelProblema id={r.id} fQty={fQty} campos={campos} onListo={confirmProblema} />
                                     </div>
@@ -1675,15 +1792,32 @@ export default function RecepcionModal({
                         {/* Sin «Todo OK» en una hoja que venía en una caja dañada o
                             que no llegó: es justo la que hay que mirar de a uno. */}
                         {!hojaEnAlerta && (
-                            <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={handleTodoOk}>Todo OK</Button>
+                            <Button tone="success" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={() => setConfirmarHoja('todook')}>Todo OK</Button>
                         )}
-                        <Button tone="success" disabled={saving} onClick={handleConfirmarCaja}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                        <Button tone="success" disabled={saving} onClick={() => setConfirmarHoja('contado')}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
                             {alcance === 'especial' ? `Confirmar ${selectedEspecial.label}`
                                 : alcance === 'hoja'  ? `Confirmar Hoja ${selectedHoja}`
                                 :                       'Confirmar recepción'}</Button>
                     </div>
                 </div>
             </PedidoModal.Footer>
+
+            <ConfirmModal
+                isOpen={confirmarHoja !== null}
+                onClose={() => setConfirmarHoja(null)}
+                onConfirm={() => {
+                    const modo = confirmarHoja;
+                    setConfirmarHoja(null);
+                    if (modo === 'todook') handleTodoOk(); else handleConfirmarCaja();
+                }}
+                title={confirmarHoja === 'todook'
+                    ? `¿Dar por bueno todo lo de ${rotuloAbierto}?`
+                    : `¿Confirmar ${rotuloAbierto}?`}
+                message={avisoConfirmar}
+                confirmText={confirmarHoja === 'todook' ? 'Sí, dar por bueno' : 'Sí, confirmar'}
+                isDestructive={false}
+                isProcessing={saving}
+            />
         </PedidoModal>
     );
 }

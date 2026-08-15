@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.619.2 — Ocultar un laboratorio de MIN·MAX vuelve a guardarse de verdad
+
+Salió de revisar si el problema de permisos de v2.619.0 se repetía en otros
+módulos. No se repetía — pero apareció el defecto **contrario**.
+
+**La casilla para ocultar un laboratorio de MIN·MAX nunca guardó nada.** La
+tabla de laboratorios tenía el candado puesto y ninguna regla que permitiera
+escribirla: sólo una que permite leerla, más el bloqueo general, que sólo sabe
+restringir. Sin una regla que conceda, la base rechaza la escritura y no hay
+usuario que pueda hacerla.
+
+**Y fallaba en silencio, que es lo que lo mantuvo escondido.** La pantalla sí
+comprueba si hubo error, pero una escritura rechazada por el candado no devuelve
+error: devuelve «todo bien, cero filas cambiadas». Así que la casilla se movía,
+el portal decía que había guardado, y al volver a entrar estaba como antes.
+
+Ahora la escritura la permite el permiso de MIN·MAX, que es donde vive esa
+casilla — se comprobó que es la única escritura a esa tabla en todo el portal.
+Un solo permiso y no una lista de dos, que es justo lo que causó el problema de
+v2.619.0.
+
+De la misma revisión quedan sin arreglar, por decisión: las tres tablas de
+administración de encuestas tienen el mismo hueco. Responder una encuesta sí
+funciona; crear o editar una, no.
+
 ## v2.619.1 — El modal de llegada de cajas deja de aplastar el rótulo
 
 Reportado con una captura: en «¿Cómo llegó cada caja?» el rótulo salía partido

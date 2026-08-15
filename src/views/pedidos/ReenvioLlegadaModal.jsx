@@ -72,7 +72,9 @@ export default function ReenvioLlegadaModal({
     if (!montadoParaSalida) return null;
 
     return (
-        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm">
+        // Mismo ancho que `LlegadaModal`: es la misma pregunta en otro momento
+        // del pedido, y tenía el mismo rótulo estrujado.
+        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-xl">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="w-9 h-9 rounded-xl bg-chart-3 shadow-[var(--shadow-glow-chart-3-md)] flex items-center justify-center shrink-0">
@@ -88,11 +90,11 @@ export default function ReenvioLlegadaModal({
             </div>
 
             {/* Body */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
 
                 {/* Cajas regulares */}
                 {cajasCiclo.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                         <p className="text-caption text-content-2 uppercase tracking-wide font-semibold">
                             {cajasCiclo.length} caja{cajasCiclo.length !== 1 ? 's' : ''} esperadas
                         </p>
@@ -105,25 +107,27 @@ export default function ReenvioLlegadaModal({
                                         : est === 'danada' ? 'bg-warning shadow-[var(--shadow-glow-warning)]'
                                         :                    'bg-danger shadow-[var(--shadow-glow-danger)]';
                             return (
-                                <div key={num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-body-lg tabular-nums text-white transition-all ${numBg}`}>
-                                        {num}
+                                // Envuelve en vez de apretarse — ver la nota
+                                // equivalente en `LlegadaModal`.
+                                <div key={num} className={`flex flex-wrap items-center gap-x-3 gap-y-2.5 p-3 rounded-2xl border transition-all ${rowBg}`}>
+                                    <div className="flex items-center gap-3 flex-1 basis-32 min-w-0">
+                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-body-lg tabular-nums text-white transition-all ${numBg}`}>
+                                            {num}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-body-sm font-bold text-content-2 leading-tight truncate">Caja #{num}</p>
+                                            <p className="text-caption font-medium text-content-3 mt-0.5 truncate">
+                                                {pageHint(cajaMap, num) ?? `Reenvío ${cicloNum}`}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-body-sm font-bold text-content-2 leading-tight">Caja #{num}</p>
-                                        <p className="text-caption font-medium text-content-3 mt-0.5">
-                                            {pageHint(cajaMap, num) ?? `Reenvío ${cicloNum}`}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        <SegmentedControl
-                                            size="sm"
-                                            options={['ok','danada','faltante'].map(e => ({
-                                                value: e, label: TOGGLE_CFG[e].label, icon: TOGGLE_CFG[e].Icon,
-                                                tone: e === 'ok' ? 'success' : e === 'danada' ? 'warning' : 'danger',
-                                            }))}
-                                            value={est} onChange={v => setEst(num, v)} label="Estado de la caja" />
-                                    </div>
+                                    <SegmentedControl
+                                        size="sm"
+                                        options={['ok','danada','faltante'].map(e => ({
+                                            value: e, label: TOGGLE_CFG[e].label, icon: TOGGLE_CFG[e].Icon,
+                                            tone: e === 'ok' ? 'success' : e === 'danada' ? 'warning' : 'danger',
+                                        }))}
+                                        value={est} onChange={v => setEst(num, v)} label={`Estado de la caja ${num}`} />
                                 </div>
                             );
                         })}
@@ -227,7 +231,11 @@ export default function ReenvioLlegadaModal({
                         )}
                     </div>
                 )}
-                <div className="flex items-center justify-between gap-2">
+                {/* `flex-wrap` — mismo motivo que en `LlegadaModal`: el rótulo
+                    del botón principal no se encoge y en un teléfono salía
+                    cortado. Acá el más largo es «Respondé el Electrolit
+                    primero». */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
                     <Button tone="chart-3" disabled={submitting || !hasContent || electrolitPending} onClick={handleConfirm}>{submitting && <Loader2 size={11} className="animate-spin" />}
                         {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}</Button>

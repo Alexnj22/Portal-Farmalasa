@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.619.1 — El modal de llegada de cajas deja de aplastar el rótulo
+
+Reportado con una captura: en «¿Cómo llegó cada caja?» el rótulo salía partido
+en cuatro renglones —«Caja / 1 / pág. / 1»— y la pregunta de las cajas de más se
+cortaba en dos.
+
+**El diálogo medía 384px y la fila tenía que meter tres cosas.** El número de la
+caja, el rótulo, y un segmentado de TRES opciones con ícono y texto («OK ·
+Dañada · No llegó»). Nada de eso se encoge, así que lo que cedía era la única
+columna flexible: el rótulo quedaba en unos 50px y se rompía palabra por
+palabra. El paso siguiente de esa misma recepción (`RecepcionModal`) ya era
+`max-w-2xl` — el angosto era este, y quedó en `max-w-xl`.
+
+**Pero ensanchar no alcanza, porque en un teléfono el ancho lo pone la
+pantalla.** La fila no tenía ninguna estrategia de envoltura: apretaba hasta
+romper. Ahora envuelve — el rótulo conserva un piso de 8rem y, cuando el
+segmentado no entra al lado, baja a su propio renglón. Medido a 340px: envuelve,
+no desborda, y «Caja 1» queda entero.
+
+Lo mismo en el pie: «Confirmar que todas llegaron» no se encoge y en un teléfono
+salía cortado a media palabra. Con `flex-wrap` baja entero. En escritorio no
+cambia nada, porque los dos botones entran.
+
+`ReenvioLlegadaModal` tenía la fila y el pie idénticos —es la misma pregunta en
+otro momento del pedido— y recibió el mismo arreglo. Y el segmentado de cada
+fila ahora se llama por su caja (`Estado de Caja 3`): con ocho filas, ocho
+«Estado de la caja» no distinguen ninguna.
+
 ## v2.619.0 — Editar MIN·MAX y las reglas de despacho deja de venir de regalo con recibir un pedido
 
 Reportado: *«un empleado que ve los pedidos puede modificar los min y max, ¿por

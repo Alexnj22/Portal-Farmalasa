@@ -147,7 +147,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     if (!montadoParaSalida) return null;
 
     return (
-        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm">
+        // `max-w-xl` y no `max-w-sm`: en 384px la fila de cada caja tenía que
+        // meter el número, el rótulo y un segmentado de TRES opciones con ícono
+        // y texto. Lo que cedía era el rótulo, que quedaba en una columna de
+        // ~50px y se partía en cuatro renglones —«Caja / 1 / pág. / 1»—.
+        // El paso siguiente de esta misma recepción (`RecepcionModal`) ya era
+        // `max-w-2xl`, así que el angosto era este.
+        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-xl">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="flex-1">
@@ -168,12 +174,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             )}
 
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
                 <p className="text-caption text-content-2 uppercase tracking-wide font-semibold">
                     {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
                 </p>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                     {cajas.map(c => {
                         const est = getEst(c.num);
                         const rowBg = est === 'ok'      ? 'bg-success/10 border-success/30'
@@ -183,23 +189,33 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                     : est === 'danada'  ? 'bg-warning shadow-[var(--shadow-glow-warning)]'
                                     :                     'bg-danger shadow-[var(--shadow-glow-danger)]';
                         return (
-                            <div key={c.num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-body-lg tabular-nums text-white transition-all ${numBg}`}>
-                                    {c.num}
+                            // La fila ENVUELVE en vez de apretarse. El rótulo
+                            // conserva un piso de 8rem (`basis-32`), así que
+                            // cuando el segmentado no entra al lado se va a su
+                            // propio renglón — que es lo correcto en un
+                            // teléfono, donde el ancho lo pone la pantalla y
+                            // ensanchar el diálogo no ayuda. Antes no envolvía
+                            // nada: el rótulo se estrujaba hasta romperse.
+                            <div key={c.num} className={`flex flex-wrap items-center gap-x-3 gap-y-2.5 p-3 rounded-2xl border transition-all ${rowBg}`}>
+                                <div className="flex items-center gap-3 flex-1 basis-32 min-w-0">
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-body-lg tabular-nums text-white transition-all ${numBg}`}>
+                                        {c.num}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-body-sm font-bold text-content-2 leading-tight truncate">{c.label}</p>
+                                        <p className="text-caption font-medium text-content-3 mt-0.5 truncate">{c.hint}</p>
+                                    </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-body-sm font-bold text-content-2 leading-tight">{c.label}</p>
-                                    <p className="text-caption font-medium text-content-3 mt-0.5">{c.hint}</p>
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                    <SegmentedControl
-                                        size="sm"
-                                        options={['ok','danada','faltante'].map(e => ({
-                                            value: e, label: TOGGLE_CFG[e].label, icon: TOGGLE_CFG[e].Icon,
-                                            tone: e === 'ok' ? 'success' : e === 'danada' ? 'warning' : 'danger',
-                                        }))}
-                                        value={est} onChange={v => setEst(c.num, v)} label="Estado de la caja" />
-                                </div>
+                                <SegmentedControl
+                                    size="sm"
+                                    options={['ok','danada','faltante'].map(e => ({
+                                        value: e, label: TOGGLE_CFG[e].label, icon: TOGGLE_CFG[e].Icon,
+                                        tone: e === 'ok' ? 'success' : e === 'danada' ? 'warning' : 'danger',
+                                    }))}
+                                    value={est} onChange={v => setEst(c.num, v)}
+                                    // Nombra la caja: con ocho filas, ocho
+                                    // "Estado de la caja" no distinguen ninguna.
+                                    label={`Estado de ${c.label}`} />
                             </div>
                         );
                     })}
@@ -304,10 +320,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {/* Cajas de más */}
                 <div>
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-warning/30 bg-warning/10">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 rounded-xl border border-warning/30 bg-warning/10">
                         <HelpCircle size={13} className="text-warning shrink-0" />
-                        <span className="text-label text-content-2 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-label text-content-2 flex-1 basis-40">¿Llegaron cajas de más (no esperadas)?</span>
+                        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                             <Button tone="warning" size="xs" disabled={cajasExtra === 0} onClick={() => setCajasExtra(n => Math.max(0, n - 1))}>−</Button>
                             <span className={`w-6 text-center text-body font-black tabular-nums ${cajasExtra > 0 ? 'text-warning' : 'text-content-3'}`}>{cajasExtra}</span>
                             <Button tone="warning" size="xs" onClick={() => setCajasExtra(n => n + 1)}>+</Button>
@@ -383,7 +399,11 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         Las cajas sin marcar se registran como <strong>OK</strong>
                     </p>
                 )}
-                <div className="flex items-center justify-between gap-2">
+                {/* `flex-wrap`: «Confirmar que todas llegaron» no se encoge, y
+                    en un teléfono el pie no le daba el ancho — el rótulo salía
+                    cortado a media palabra. Envolviendo, baja entero a su
+                    renglón. En escritorio nada cambia: los dos entran. */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
                     <Button loading={submitting} onClick={handleConfirm}>
                         {Object.keys(estados).length === 0 && cajas.length > 0

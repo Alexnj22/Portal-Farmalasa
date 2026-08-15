@@ -676,6 +676,7 @@ ristra de clases condicionales:
 | `danger` | con error de validación, o urgente |
 | `success` | confirmada / completada |
 | `brand` | seleccionada |
+| `chart-3` | la tarjeta que es de una **categoría**, no de una severidad (2026-08-15). Los de arriba dicen «qué tan grave»; éste dice «de qué circuito es» — la misma extensión categórica que ya tenían `Badge` y `Notice`. Lo pidió el grupo de ruta de Pedidos. **Hay uno solo a propósito**: el segundo se agrega cuando aparezca el segundo caso real |
 | `dashed` | la tarjeta **vacía** que invita a llenarla (documento faltante, cargo sin asignar). No es severidad, es ausencia — por eso no lleva color |
 
 **Cuando el tinte es del RELLENO y no del borde, no se emite `data-surface`** —
@@ -946,14 +947,43 @@ Tres cosas que valen para la próxima:
    código hacía justo eso.** El doc tenía la regla correcta y el token la
    contradecía; ningún gate cruza las dos cosas.
 
-**QUEDA ABIERTO — los avisos teñidos.** El escalón arregla la tinta lisa, no
-los `bg-X/10` + `text-X-text`: siguen entre **3.4 y 4.3:1**. La causa es otra y
-es del propio par tinte/token, no del material — subir el alfa del tinte los
-**empeora**, porque los acentos son mid-tone y acercan el fondo al texto en vez
-de alejarlo (medido: `success` va de 3.38 a /10 hasta 3.23 a /35). `--success-text`
-es el más terco: ni sobre blanco puro pasa de **4.91:1** con su tinte al 10 %.
-Arreglarlo es oscurecer los cinco tokens `*-text`, que es una decisión aparte
-—los toca TODO el portal, incluido Solid, donde hoy sí pasan— y no se tomó.
+**Los avisos teñidos — CERRADO el 2026-08-15** (era el pendiente de esta misma
+sección). El escalón arreglaba la tinta lisa pero no los `bg-X/10` + `text-X-text`,
+que quedaban entre 3.4 y 4.3:1. La causa era del par tinte/token, no del material:
+subir el alfa del tinte los **empeora**, porque los acentos son de tono medio y
+acercan el fondo al texto en vez de alejarlo (medido: `success` va de 3.38 a /10
+hasta 3.23 a /35).
+
+Se bajaron los **nueve** `*-text` de los temas claros —sólo la luminosidad, tono
+y saturación intactos (HLS), y lo mínimo para cruzar 4.6:1—:
+
+| token | antes | después | en Solid |
+|---|---|---|---|
+| `brand` | 3.86 | **4.61** | 6.71 |
+| `success` | 3.33 | **4.65** | 6.72 |
+| `warning` | 4.07 | **4.62** | 6.68 |
+| `danger` | 4.18 | **4.63** | 6.74 |
+| `chart-1` | 4.04 | **4.60** | 6.65 |
+| `chart-3` | 4.23 | **4.61** | 6.67 |
+| `chart-4` | 4.48 | **4.60** | 6.63 |
+| `chart-6` | 3.60 | **4.62** | 6.69 |
+| `chart-9` | 3.39 | **4.65** | 6.71 |
+
+**El error de origen estaba escrito y nadie lo leyó como tal.** El comentario de
+`--chart-4-text` dice que se calibró «sobre el chip claro (base al 12 % sobre
+blanco)» y que era «el único de las 32 combinaciones color×tema que fallaba».
+Blanco es la tarjeta de **Solid**. Ese barrido dio por buenos los otros ocho
+porque los midió contra el tema equivocado — el mismo error que este documento
+describe arriba, cometido dos veces con seis meses de diferencia. Es
+[[feedback_un_token_de_material_se_mide_sobre_el_pixel_pintado]] en su forma más
+literal.
+
+**SIGUE ABIERTO — el escalón de tinta lisa.** `content-3` queda en 4.15:1 sobre
+la tarjeta. Bajarlo a 4.8 es una línea, pero `content-2` está en 5.07: quedarían
+a un pelo uno del otro y el terciario dejaría de leerse como terciario. Cerrarlo
+bien es mover los DOS (`content-2` → ~7.0, `content-3` → ~4.8), y eso es un
+cambio de la escala tipográfica del tema claro, no un arreglo de contraste. No se
+tomó.
 
 ### 5.ter El backdrop root — lo único que puede apagar el vidrio (2026-08-09)
 

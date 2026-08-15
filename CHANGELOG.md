@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.617.0 — Los avisos teñidos se leen, y el grupo de ruta vuelve a ser una tarjeta de verdad
+
+Los dos pendientes que quedaron anotados en v2.615.0 y v2.616.0.
+
+**Los avisos y badges de color no llegaban a legibles.** Arreglar el material
+—que la tarjeta dejara de ser más oscura que la página— subió toda la tinta
+lisa, pero no los avisos teñidos: un texto de color sobre un fondo del mismo
+color al 10 % se quedaba entre 3.4 y 4.3 de los 4.5 que exige la norma.
+
+Y no se arregla subiendo el tinte: lo **empeora**. Los acentos del portal son de
+tono medio, así que más tinte acerca el fondo al texto en vez de alejarlo
+(medido: el verde va de 3.38 con 10 % a 3.23 con 35 %). Lo que había que bajar
+era el texto. Se bajaron los **nueve** colores de texto de los temas claros —sólo
+su luminosidad, conservando tono y saturación, y lo mínimo para cruzar el
+umbral—: azul, verde, ámbar, rojo, violeta, naranja, rosa y verde azulado quedan
+todos entre 4.6 y 4.7, y en el tema plano suben a ~6.7. Alcanza a todo el portal,
+no sólo a Pedidos.
+
+**El error de origen ya estaba escrito en el código y nadie lo leyó como tal.**
+Un barrido anterior había corregido el naranja «sobre el chip claro (base al 12 %
+sobre blanco)» y concluyó que era «el único de las 32 combinaciones que fallaba».
+Blanco es la tarjeta del tema *plano*. Ese barrido dio por buenos los otros ocho
+porque los midió contra el tema equivocado — el mismo error que v2.615.0
+describía, cometido dos veces con meses de diferencia.
+
+**El grupo de ruta no era una tarjeta, se le parecía.** Estaba dibujado con el
+color de tarjeta, un borde y un radio escritos a mano, más un resplandor. Los
+valores eran los correctos y aun así quedaba fuera del material: sin el
+desenfoque del fondo, sin el brillo interior, sin el destello del borde al
+apuntarlo y con un radio propio que no seguía al tema. Medido, el grupo se
+separaba del fondo de la vista **1.05 a 1** — o sea que prácticamente no se veía
+como una caja aparte. Ahora es una superficie de verdad y se separa 1.26 a 1.
+
+Su color violeta pasa a ser un estado declarado de la tarjeta, que era la única
+forma de que se pintara: la superficie fija su propio borde y le gana a cualquier
+color escrito encima, así que el borde violeta que tenía **no pintaba nada**. Se
+agregó ese estado al sistema; el resplandor lo reemplaza el anillo, que es como
+el portal marca una tarjeta por su situación.
+
+**Sigue abierto:** el texto terciario queda en 4.15 sobre la tarjeta. Bajarlo es
+una línea, pero el secundario está en 5.07 y quedarían indistinguibles; cerrarlo
+bien es mover los dos, y eso ya es rediseñar la escala de texto del tema claro.
+
 ## v2.616.0 — El modal cabe en cualquier pantalla, y la cara de quien recibió el pedido vuelve a verse
 
 Reportado: *«los modales no se ven bien en todos los monitores, se salen

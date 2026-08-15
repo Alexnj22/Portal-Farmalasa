@@ -723,8 +723,23 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const isCompletada = ruta.status === 'completada';
                             const fmtT = (iso) => iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
                             const conductorEmp = ruta.conductor_id ? empMap.get(ruta.conductor_id) : null;
+                            // El grupo de ruta ES una tarjeta, así que va por su
+                            // `data-surface` y no copiando su color (§5.0.1). Estaba escrito
+                            // `rounded-2xl border bg-surface-card` + una sombra de resplandor:
+                            // los tokens eran los correctos y aun así quedaba fuera del
+                            // material — sin desenfoque, sin el lente, sin el destello del
+                            // canto al apuntarla y con un radio propio que no seguía al tema.
+                            //
+                            // Y el tinte va por `data-tono`, que es la única forma de marcarla:
+                            // `[data-surface="card"]` fija borde y sombra y le gana por
+                            // especificidad a cualquier `border-*` de Tailwind (§5.1) — o sea
+                            // que el `border-chart-3/30` que había no pintaba nada. El
+                            // resplandor lo reemplaza el anillo del tono, que es como el
+                            // sistema marca una tarjeta por su estado.
                             return (
-                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-surface-card shadow-[var(--shadow-glow-chart-3-md)] ${isCompletada ? 'border-border-card' : 'border-chart-3/30'}`}>
+                                <div key={ruta.id} data-surface="card"
+                                    data-tono={isCompletada ? undefined : 'chart-3'}
+                                    className="overflow-hidden">
                                     {/* Header sin color — glass */}
                                     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-divider bg-surface-card" onClick={e => e.stopPropagation()}>
                                         {/* Foto/icono conductor */}

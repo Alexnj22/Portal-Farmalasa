@@ -107,11 +107,21 @@ export function fetchActiveRutas(todayStartIso) {
 // equivocado. Visto el 2026-08-15 con el pedido #114, entregado a las 20:53 del
 // día anterior. Va por (pedido, sucursal) porque un pedido con varias sucursales
 // tiene una parada por cada una.
-export function fetchEntregasDePedidos(pedidoIds) {
-    return supabase.from('ruta_pedidos')
-        .select('pedido_id, erp_sucursal_id, entregado_at, entregado_por, rutas(id, numero, conductor_id, conductor_nombre)')
-        .in('pedido_id', pedidoIds)
-        .not('entregado_at', 'is', null);
+//
+// Va por RPC y no leyendo `ruta_pedidos`: esa tabla exige permiso del módulo de
+// Rutas, así que quien sólo trabaja pedidos seguía viendo el paso vacío, y
+// dárselo le abriría una pestaña que no le toca. `get_pedido_entregas` autoriza
+// con el mismo permiso con el que ya ve el pedido.
+//
+// El array se parte en tandas de 1000: PostgREST corta la RESPUESTA en 1000
+// filas sin avisar, y con ≤1000 ids adentro la respuesta no puede pasarse.
+export async function fetchEntregasDePedidos(pedidoIds) {
+    const ids = pedidoIds ?? [];
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += 1000) tandas.push(ids.slice(i, i + 1000));
+    const res = await Promise.all(tandas.map(t => supabase.rpc('get_pedido_entregas', { p_pedido_ids: t })));
+    const fallo = res.find(r => r.error);
+    return { data: res.flatMap(r => r.data ?? []), error: fallo?.error ?? null };
 }
 
 export function fetchRutaLocations(rutaIds) {

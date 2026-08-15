@@ -184,7 +184,9 @@ export function usePedidosData({ searchTerm = '' }) {
             const { data: entRows, error: entErr } = await fetchEntregasDePedidos(ids);
             if (entErr) console.error('loadActive: entregas failed:', entErr.message);
             (entRows ?? []).forEach(e => {
-                entregas[`act_${e.pedido_id}_${e.erp_sucursal_id}`] = { ...e, ruta: e.rutas ?? null };
+                entregas[`act_${e.pedido_id}_${e.erp_sucursal_id}`] = {
+                    ...e, ruta: { conductor_id: e.conductor_id, conductor_nombre: e.conductor_nombre },
+                };
             });
         }
         setEntregaMap(entregas);

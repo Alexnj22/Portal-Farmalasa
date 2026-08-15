@@ -21,6 +21,81 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.611.4 — El ojo llega a la ficha móvil de toda tabla y a la tarjeta de conteo
+
+**Faltaba la mitad del portal, y era la del teléfono.** El barrido de v2.610.0
+buscó tarjetas por sus clases, así que sólo vio las que están escritas a mano en
+una vista. Las que más se repiten no se escriben: las dibuja un canónico. La más
+grande es la **ficha que toda tabla pinta en el teléfono** —33 vistas—, que al
+tocarla abre su hoja de detalle y no lo decía en ninguna parte; y como esa hoja
+existe en unas pantallas y en otras no, la misma tabla era tocable en una y muda
+en la siguiente sin forma de saberlo salvo probando. Ahora el ojo sale de la
+misma condición que decide si la ficha responde al toque, así que no pueden
+discrepar. Lo mismo con la **tarjeta de un conteo de inventario** en el
+teléfono.
+
+**Y se fue un chevron que apuntaba a nada.** Ventas e Inventario dibujaban una
+flechita para decir «esta fila se despliega». En el teléfono la fila que
+desplegaba no se pinta, así que la flecha no llevaba a ningún lado — y encima
+quedaba al lado del ojo, o sea dos señales para un solo toque. Se queda en la
+tabla de escritorio, que es donde sí hace algo.
+
+Los widgets del Inicio se revisaron uno por uno y quedan sin ojo con motivo: sus
+filas eligen (un cliente, un vendedor, un producto que se agrega), crean, o ya
+llevan su propia flecha.
+
+## v2.611.3 — Diagnóstico de la caja y receta para rearmar la ticketera
+
+Nada de esto cambia el portal: es documentación y una herramienta de sala.
+
+**`scripts/diagnostico-caja.sh`** — sólo lectura, no imprime ni configura nada.
+Levanta de una computadora de sala lo que desde fuera no se puede saber: nombre
+y dirección de red (y si es fija o la da el router), las colas de CUPS con su
+predeterminada, `/dev/usb/lp*`, si el servidor web local contesta y dónde está
+la carpeta del programa de impresión, el cortafuegos y los permisos del
+dispositivo.
+
+Existe porque **la impresión en ticketera cuelga de un programa que no tenemos**:
+sus archivos PHP no están en el servidor del sistema de facturación —dan 404
+ahí—, viven sólo en el disco de cada sala. Un formateo los pierde y no hay de
+dónde bajarlos.
+
+**§5 bis del doc: rearmar una caja desde cero.** Separa las dos capas —el
+aparato y la cola de CUPS las recuperamos nosotros con tres comandos; el
+programa del origen hay que pedirlo—, con la regla udev para fijarle un nombre
+estable al dispositivo por número de serie, y la advertencia de que `-m raw`
+está en retirada en CUPS 2.4+. Repite la trampa medida en Salud 3: la impresora
+predeterminada del sistema es una que está deshabilitada, así que **todo `lp` va
+con `-d pos-80` explícito**.
+
+**§5 ter: imprimir desde cualquier computadora de la red.** Queda escrito por
+qué apuntar a la IP de la caja está muerto (contenido mixto: una página `https`
+no puede llamar a `http://192.168.x.x`, y la exención es exclusiva de
+`localhost`), qué habría que relevar en las 6 salas con caja, y que el papel
+saldría idéntico porque **la maqueta la decide el portal, no el aparato desde el
+que se manda**. Sigue sin trabajo aprobado.
+
+## v2.611.1 — Ver la entrega del pedido ya no exige el módulo de Rutas
+
+La entrega es **historia del pedido**, pero se leía de la tabla de paradas de
+ruta, que está gateada por el permiso del módulo de Rutas. Resultado: quien
+trabaja pedidos y no administra rutas veía el paso «Entregado» vacío aunque el
+pedido fuera suyo — y la única forma de arreglarlo era darle un permiso que
+además le abre una pestaña entera que no le toca. Hoy eso alcanza a un cargo,
+Jefe/a de Compras y Logística, el único que ve Pedidos sin ver Rutas.
+
+Ahora el dato viaja por `get_pedido_entregas`, que autoriza con **el mismo
+permiso con el que esa persona ya ve el pedido** (`pedidos.can_view` y su
+alcance — el predicado es copia literal del de `pedido_items`) y devuelve cuatro
+campos de las paradas que se le pidieron: nada de la tabla, nada de otras rutas,
+ningún permiso que tocar.
+
+Verificado en producción simulando dos sesiones reales: con la de Compras y
+Logística, leer `ruta_pedidos` directo devuelve **0 filas** y la función devuelve
+la entrega del pedido #114 (14 ago 20:53, Fernando Oliva); con la de una sala de
+Salud 1, la misma llamada sobre ese pedido de La Popular devuelve **0** — el
+alcance por sucursal se sostiene.
+
 ## v2.611.0 — El traslado se contesta en Solicitudes, y los tipos recuperan su nombre
 
 **Pedirle producto a otra sala vivía en tres pantallas.** Se pedía desde el

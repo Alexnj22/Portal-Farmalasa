@@ -27,7 +27,8 @@
     "worktree": "bash scripts/worktree.sh",
     "verificar:libros": "node scripts/verificar-libros.mjs",
     "gate:permisos": "node scripts/permissions-gate.mjs",
-    "fichas:diaria": "echo \"La corrida diaria ahora vive en Supabase (cron sincronizar-fichas-clientes-2130-sv). Para dispararla a mano, invocar la edge function.\""
+    "fichas:diaria": "echo \"La corrida diaria ahora vive en Supabase (cron sincronizar-fichas-clientes-2130-sv). Para dispararla a mano, invocar la edge function.\"",
+    "verificar:recepcion": "node scripts/verificar-recepcion.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

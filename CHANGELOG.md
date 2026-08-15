@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.614.0 — la tarjeta dice si lo recibido entró al inventario
+
+Confirmar una recepción escribe en **dos** sitios: el renglón queda recibido en
+el portal, y el producto entra al inventario de la sala. El segundo va en su
+propio `try` a propósito —un tropiezo del otro lado no puede deshacer un conteo
+que ya se guardó—, así que el estado **«lo conté y NO entró»** existe por
+diseño. Es el único del circuito que deja a la sala sin poder facturar, y hasta
+hoy no se veía en ninguna pantalla: el aviso era un toast que se va solo, la
+píldora de la tarjeta sólo hablaba del despacho, y `resumen_traslado_pedido`
+—que calcula justo esto— no la llamaba nadie.
+
+Ahora la tarjeta del pedido lo dice, y se queda dicho: `get_pedidos_en_curso`
+devuelve también los completados, así que la alarma no desaparece cuando el
+pedido termina.
+
+- **`12 sin ingresar`** en rojo, con un botón **Reintentar** al lado.
+- **`134 en el inventario`** en verde cuando cerró. El verde también se dice: sin
+  él, «no hay aviso» y «entró todo» se ven igual.
+
+**Reintentar manda la lista EXACTA, y la arma el servidor.** `items_sin_ingresar`
+devuelve los renglones que la sala ya contó y cuya línea quedó sin recibir. Sin
+lista, la recepción toma *todo* lo pendiente de la sucursal — y ahí entrarían al
+inventario productos que nadie contó, que es el defecto inverso. Repetirlo es
+inofensivo: sólo se miran las líneas que siguen en `enviada`.
+
+Las dos funciones nuevas son **INVOKER a propósito**. Las policies de
+`pedido_traslado_linea` y `pedido_items` filtran por `erp_sucursal_id`: así cada
+sala ve lo suyo y quien tiene alcance ALL ve todo, igual que la tarjeta. Con
+`SECURITY DEFINER` una sala habría visto los pedidos de las demás.
+
+**Y un chequeo que se puede correr**: `npm run verificar:recepcion` cruza los dos
+sitios y separa cuatro clases, porque se arreglan distinto — sin ingresar
+(reintentar lo resuelve), sin línea que lo respalde (bodega nunca lo despachó),
+entró sin confirmar (dividido entre pendiente y anulado, que no se parecen) y
+líneas con error o aviso. No cuenta como fallo lo que nace recibido con
+`cantidad_asignada = 0`: en el #114 eran 176 de 310 y habrían dado una alarma
+falsa del 57%.
+
+Medido en producción al cerrar: **#114 La Popular, 134 de 134 en el inventario**.
+El #102 de Salud 5 tiene 3 renglones que entraron y después se anuló el pedido
+—pedido de prueba del 12-08—, o sea que la sala quedó con existencias que ningún
+pedido respalda.
+
 ## v2.613.0 — El corte sin confirmar se recuerda a las 7:30
 
 La sala ya se entera cuando **nace** un corte de caja, pero ese aviso llega a

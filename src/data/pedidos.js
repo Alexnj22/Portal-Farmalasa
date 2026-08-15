@@ -422,6 +422,36 @@ export function fetchTrasladosDePedidos(pedidoIds) {
         .eq('modo', 'real').eq('paso', 'enviar');
 }
 
+/**
+ * ¿Lo que la sala dio por recibido está en el inventario?
+ *
+ * Confirmar una recepción escribe en dos sitios y el segundo —el que mueve
+ * existencias— puede fallar solo, a propósito: un tropiezo del otro lado no
+ * puede deshacer un conteo que ya se guardó. O sea que «lo conté y NO entró»
+ * existe por diseño, y es el único estado que deja a la sala sin poder
+ * facturar. Esto es lo que le permite a la tarjeta decirlo.
+ *
+ * Una llamada para las N tarjetas: devuelve una fila por (pedido, sucursal), no
+ * una por renglón, así que no se acerca al corte de 1000.
+ */
+export function fetchResumenIngresoPedidos(pedidoIds) {
+    return supabase.rpc('resumen_ingreso_pedidos', { p_pedido_ids: pedidoIds });
+}
+
+/**
+ * Los renglones que hay que reintentar, para mandarlos EXPLÍCITOS.
+ *
+ * Sin lista, la recepción toma todo lo pendiente de la sucursal — y ahí
+ * entrarían al inventario renglones que la sala todavía no contó, que es el
+ * defecto inverso al que se está arreglando.
+ */
+export async function fetchItemsSinIngresar(pedidoId, sucId) {
+    const { data, error } = await supabase.rpc('items_sin_ingresar', {
+        p_pedido_id: pedidoId, p_sucursal_id: sucId,
+    });
+    return { itemIds: data ?? [], error };
+}
+
 /** El avance del traslado de una sucursal, por estado y por hoja. */
 export async function fetchResumenTraslado(pedidoId, sucId) {
     const { data, error } = await supabase.rpc('resumen_traslado_pedido', {

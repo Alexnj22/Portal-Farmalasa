@@ -13,7 +13,7 @@ import {
     Truck, Pause, Play, Home,
     X, Send, Check, RotateCcw, Flag, UserCircle2,
     ClipboardList, UserPlus, Inbox, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban, Star, Search, Radio,
+    CalendarClock, Ban, Star, Search, Radio, RefreshCw,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -130,6 +130,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         apoyoModal, setApoyoModal,
         cardStats,
         trasladoStats,
+        ingresoStats,
+        handleReintentarIngreso,
         entregaMap,
         anularModal, setAnularModal,
         busyAnular,
@@ -400,6 +402,41 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 );
                                                 if (tr.estado === 'error') return (
                                                     <Badge variant="danger" uppercase={false}>no salió al sistema</Badge>
+                                                );
+                                                return null;
+                                            })()}
+                                            {(() => {
+                                                // ¿Lo confirmado llegó al inventario? Es la otra
+                                                // mitad del circuito y la que puede fallar sola: el
+                                                // ingreso va en su propio try para no deshacer un
+                                                // conteo ya guardado, así que «lo conté y NO entró»
+                                                // existe por diseño. Hasta acá el único aviso era un
+                                                // toast que se va solo, y es el ÚNICO estado que deja
+                                                // a la sala sin poder facturar.
+                                                const ing = ingresoStats?.[cardKey];
+                                                if (!ing || !ing.lineas) return null;
+                                                if (ing.sin_ingresar > 0) return (
+                                                    <>
+                                                        <Badge variant="danger" icon={AlertTriangle} uppercase={false}>
+                                                            {ing.sin_ingresar} sin ingresar
+                                                        </Badge>
+                                                        {canEdit && (
+                                                            <Button
+                                                                variant="secondary" size="xs" icon={RefreshCw}
+                                                                disabled={busyAction === 'ingreso'}
+                                                                title="Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"
+                                                                onClick={() => handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id)}
+                                                            >Reintentar</Button>
+                                                        )}
+                                                    </>
+                                                );
+                                                // El verde también se dice: es la única señal de que
+                                                // el circuito cerró, y sin ella «no hay aviso» y
+                                                // «entró todo» se ven igual.
+                                                if (ing.ingresadas > 0) return (
+                                                    <Badge variant="success" uppercase={false}>
+                                                        {ing.ingresadas} en el inventario
+                                                    </Badge>
                                                 );
                                                 return null;
                                             })()}

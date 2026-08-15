@@ -22,6 +22,9 @@ import {
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
     confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho,
     fetchTrasladosDePedidos,
+    fetchResumenIngresoPedidos,
+    fetchItemsSinIngresar,
+    recibirTrasladoPedido,
     fetchEntregasDePedidos,
 } from '../../../data/pedidos';
 import {
@@ -117,6 +120,10 @@ export function usePedidosData({ searchTerm = '' }) {
 
     // Card stats (for collapsed pill display)
     const [trasladoStats, setTrasladoStats] = useState({});
+    // Lo confirmado que NO llegó al inventario, por tarjeta. Es el único estado
+    // del circuito que deja a la sala sin poder facturar y no se veía en
+    // ninguna pantalla: el aviso era un toast que se va solo.
+    const [ingresoStats, setIngresoStats] = useState({});
     const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
     const [entregaMap, setEntregaMap] = useState({}); // cardKey → { entregado_at, entregado_por, ruta }
 
@@ -173,6 +180,18 @@ export function usePedidosData({ searchTerm = '' }) {
             });
         }
         setTrasladoStats(traslados);
+
+        // Y si lo confirmado llegó al inventario. Mismo criterio que arriba: una
+        // sola consulta para las N tarjetas y su fallo no tumba el tablero.
+        const ingresos = {};
+        if (ids.length) {
+            const { data: ingRows, error: ingErr } = await fetchResumenIngresoPedidos(ids);
+            if (ingErr) console.error('loadActive: ingreso al inventario failed:', ingErr.message);
+            (ingRows ?? []).forEach(r => {
+                ingresos[`act_${r.pedido_id}_${r.erp_sucursal_id}`] = r;
+            });
+        }
+        setIngresoStats(ingresos);
 
         // La entrega de cada parada. Viaja con el pedido y no con la ruta: el
         // mapa de rutas activas sólo conoce las de hoy, así que al día siguiente
@@ -1163,6 +1182,43 @@ export function usePedidosData({ searchTerm = '' }) {
         } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
 
+    // ── Reintentar el ingreso al inventario ─────────────────────────────────
+    // El caso: la sala contó y confirmó, y el ingreso —que va en su propio try
+    // para no deshacer un conteo ya guardado— no entró. El producto está en la
+    // sala y el inventario no lo tiene, así que no se puede facturar.
+    //
+    // La lista de qué reintentar sale del SERVIDOR (`items_sin_ingresar`), no
+    // del navegador: son los renglones que la sala ya contó y cuya línea quedó
+    // sin recibir. Mandar la recepción sin lista toma todo lo pendiente de la
+    // sucursal, y ahí entrarían productos que nadie contó.
+    //
+    // Repetirlo es inofensivo: la recepción sólo mira las líneas que siguen
+    // 'enviada', así que reintentar sobre algo ya ingresado no hace nada.
+    const handleReintentarIngreso = useCallback(async (pedidoId, sucId) => {
+        if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
+        setBusyAction('ingreso');
+        try {
+            const { itemIds, error } = await fetchItemsSinIngresar(pedidoId, sucId);
+            if (error) throw error;
+            if (!itemIds.length) {
+                useToastStore.getState().showToast('Nada que ingresar', 'Todo lo confirmado ya está en el inventario.', 'info');
+                await loadActive();
+                return;
+            }
+            const erp = await recibirTrasladoPedido(pedidoId, sucId, { itemIds });
+            if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') throw new Error(erp.error ?? 'No se pudo ingresar.');
+            useStaff.getState().appendAuditLog('REINTENTAR_INGRESO_INVENTARIO', pedidoId, {
+                sucursal_id: sucId, items_count: itemIds.length,
+            });
+            useToastStore.getState().showToast('Ingresado',
+                `${itemIds.length} producto${itemIds.length !== 1 ? 's' : ''} entr${itemIds.length !== 1 ? 'aron' : 'ó'} al inventario.`, 'success');
+            await loadActive();
+        } catch (e) {
+            console.error(e);
+            useToastStore.getState().showToast('No se pudo ingresar', mensajeAmigable(e), 'error');
+        } finally { setBusyAction(null); }
+    }, [busyAction, loadActive]);
+
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
         const loaded = await fetchItems(key, pedidoId, sucId);
         const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
@@ -1549,6 +1605,8 @@ export function usePedidosData({ searchTerm = '' }) {
         apoyoModal, setApoyoModal,
         cardStats,
         trasladoStats,
+        ingresoStats,
+        handleReintentarIngreso,
         entregaMap,
         anularModal, setAnularModal,
         busyAnular,

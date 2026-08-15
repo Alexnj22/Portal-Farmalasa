@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { Package } from 'lucide-react';
 import SearchInput from './SearchInput';
 import ListRow from './ListRow';
 import { SkeletonText } from './StateViews';
-import { HerramientasModal } from '../../views/dashboard/LanzadorSolicitud';
 import { buscarProductosMinMax } from '../../data/minmaxRequests';
 
 // Elegir un producto del catálogo, para un formulario que empieza por ahí.
@@ -41,8 +40,24 @@ import { buscarProductosMinMax } from '../../data/minmaxRequests';
 // @param invitacion   `{ icono, texto }` — lo que se ve antes de escribir. Cada
 //                     pantalla dice para qué está buscando; un texto genérico
 //                     no ayuda a nadie.
+// @param EnvoltorioBusqueda  Dónde va la barra de búsqueda. Por defecto, donde
+//                     está: arriba de la lista.
+//
+//                     Existe porque el modal del tablero manda su barra a una
+//                     RANURA propia (`HerramientasModal`), que es un hueco del
+//                     encabezado de `ModalConRanuras`. Este componente traía esa
+//                     ranura adentro, heredada de donde nació — y una ranura
+//                     fuera de su modal no falla: **no dibuja nada**. El
+//                     resultado, visto recién al abrirlo, fue una pantalla que
+//                     dice «busca el producto» y no tiene dónde escribir.
+//                     Grepear no lo habría encontrado: compila, pasa los gates y
+//                     el JSX se ve razonable.
+//
+//                     Por eso el defecto es el que funciona en cualquier envase,
+//                     y la ranura es lo que se pide a propósito.
 export default function BuscadorDeProducto({
     onElegir, placeholder, invitacion, accentColor = 'var(--brand)',
+    EnvoltorioBusqueda = Fragment,
 }) {
     const [search,  setSearch]  = useState('');
     const [results, setResults] = useState([]);
@@ -67,10 +82,10 @@ export default function BuscadorDeProducto({
 
     return (
         <div className="flex flex-col gap-3 flex-1 min-h-0">
-            <HerramientasModal>
+            <EnvoltorioBusqueda>
                 <SearchInput accentColor={accentColor} value={search} onChange={setSearch}
                     placeholder={placeholder} />
-            </HerramientasModal>
+            </EnvoltorioBusqueda>
 
             <div className="flex-1 overflow-y-auto overscroll-contain space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}

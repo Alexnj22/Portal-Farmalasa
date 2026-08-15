@@ -488,6 +488,9 @@ export function FormularioMinMax({ selectedErp = null }) {
   return (
     <BuscadorDeProducto
       accentColor="var(--warning)"
+      /* Acá la barra SÍ va a la ranura del encabezado del modal: es el envase
+         de `ModalConRanuras` y ahí es donde vive, abierta y sin plegar. */
+      EnvoltorioBusqueda={HerramientasModal}
       placeholder="Buscar producto para ajustar Min/Max…"
       invitacion={{ icono: TrendingUp, texto: 'Busca un producto para proponer un ajuste de mínimo/máximo' }}
       onElegir={(p) => { setPicked(p); setView('form'); }}

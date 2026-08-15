@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.611.3 — El buscador vuelve a dibujarse, y el tipo que faltaba recupera su nombre
+
+Dos cosas que sólo aparecieron al abrir las pantallas, después de que v2.611.0
+compilara y pasara todos los gates.
+
+**«Pedir a otra sala» decía «busca el producto» y no tenía dónde escribir.** El
+buscador que se extrajo del widget de Min/Max se trajo adentro, sin querer, la
+*ranura* del modal del tablero — un hueco del encabezado de ese modal en
+concreto. Fuera de él, una ranura no falla: **no dibuja nada**. Ahora la barra
+va donde está por defecto, y quien la quiera en su ranura la pide.
+
+**Y faltaba un tipo de solicitud entero.** «Cambio de vacaciones» —el que se
+manda al pedir correr las fechas ya aprobadas— existe en la base y hasta tiene
+su nombre en castellano dentro del aviso que llega, pero el portal no lo
+conocía: en la bandeja salía rotulado con su clave interna. Es la segunda cara
+del arreglo de v2.611.0, que había corregido la copia y no el original.
+
+Para que no haya una tercera, **el gate de datos ahora cruza los tipos que la
+base admite contra los que el portal sabe nombrar**, y compara también el texto:
+que la pantalla y el aviso llamen distinto a la misma cosa es la mitad del mismo
+problema. Un tipo nuevo sin rótulo ya no llega a producción — antes no fallaba
+nada, simplemente se imprimía la clave y seguía de largo.
+
+Verificado abriendo el portal contra el entorno de pruebas con una solicitud de
+**cada uno de los 16 tipos**: los 16 se leen en castellano, en la bandeja y en
+el Inicio. Y el circuito del traslado, de punta a punta: se pidió desde
+Solicitudes eligiendo el producto, apareció en la bandeja y se contestó ahí
+mismo.
+
 ## v2.611.2 — El ojo llega a la ficha móvil de toda tabla y a la tarjeta de conteo
 
 **Faltaba la mitad del portal, y era la del teléfono.** El barrido de v2.610.0

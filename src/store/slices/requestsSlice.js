@@ -37,6 +37,15 @@ export const REQUEST_TYPES = {
     ADVANCE:      { label: 'Anticipo salarial',  color: 'bg-success/10 text-success-text', border: 'border-success/30', variante: 'success' },
     CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
     DISABILITY:             { label: 'Incapacidad',             color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
+    /* Faltaba, y era el único de los 16 tipos que la base admite sin rótulo acá
+     * (2026-08-15). No es hipotético: lo crea el plan de vacaciones cuando
+     * alguien pide correr sus fechas, y `fetchVacationChangeRequests` lo
+     * consulta. Postgres YA lo sabía nombrar —el disparador del aviso lo llama
+     * «Cambio de vacaciones» desde hace meses—, así que quien lo pedía recibía
+     * un aviso en castellano y después lo encontraba en la bandeja rotulado
+     * `VACATION_CHANGE`. Se usa la misma cadena que la base, no una parecida.
+     * El mismo amarillo que VACATION: es la misma familia. */
+    VACATION_CHANGE:        { label: 'Cambio de vacaciones', color: 'bg-warning/10 text-warning-text', border: 'border-warning/30', variante: 'warning' },
     SHIFT_EXCEPTION:        { label: 'Excepción de turno', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     ANNULMENT_REQUEST:      { label: 'Anulación de factura',    color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     PAYMENT_CHANGE_REQUEST: { label: 'Cambio de forma de pago', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },

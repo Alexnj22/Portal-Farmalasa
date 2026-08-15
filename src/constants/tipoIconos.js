@@ -1,6 +1,6 @@
 import {
     Palmtree, FileText, RefreshCw, Coffee, DollarSign, FileCheck, Stethoscope,
-    Ban, CreditCard, UserCog, Contact,
+    Ban, CreditCard, UserCog, Contact, CalendarClock, CalendarX2,
     Package, BarChart2, ClipboardList, Info, Bell,
     PackagePlus, Trash2, ArrowLeftRight, Wallet,
 } from 'lucide-react';
@@ -37,6 +37,12 @@ export const ICONO_POR_TIPO = {
     PAYMENT_CHANGE_REQUEST: CreditCard,
     VENDOR_CHANGE_REQUEST:  UserCog,
     CLIENT_CHANGE_REQUEST:  Contact,
+    // Los dos que faltaban (2026-08-15). Los dos son tipos que la base admite y
+    // que Postgres ya sabía nombrar; acá no existían, así que caían al genérico.
+    // `VACATION_CHANGE` la crea el plan de vacaciones cuando alguien pide correr
+    // sus fechas; `SHIFT_EXCEPTION` sí tenía rótulo pero no ícono.
+    VACATION_CHANGE:        CalendarClock,
+    SHIFT_EXCEPTION:        CalendarX2,
 
     // Los tres que mueven producto. Faltaban los tres, así que en la Bandeja y
     // en la campana caían al ícono genérico — justo los tipos donde el ícono

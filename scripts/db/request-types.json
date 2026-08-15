@@ -1,0 +1,24 @@
+{
+  "_comment": "Retrato de los tipos de solicitud que la base admite y de cómo los nombra ELLA. Lo usa scripts/data-gate.mjs (categoría `tipo-sin-rotulo`) para detectar el tipo que existe en Postgres y no tiene rótulo en el portal — el bug que hacía que una fila apareciera en pantalla como INVENTORY_DISCARD_REQUEST o VACATION_CHANGE. Regenerar con: npm run gate:data -- --regen-tipos (imprime el SQL a correr).",
+  "_generado": "2026-08-15",
+  "_fuente": "CHECK approval_requests_type_check (qué se admite) + CASE de notificar_solicitud_creada (cómo lo nombra la base). MINMAX_CHANGE_REQUEST no está: vive en minmax_change_requests y no pasa por ese CHECK ni por ese disparador.",
+  "_por_que_la_base_manda": "El rótulo del portal y el del aviso tienen que ser la MISMA cadena. Quien pide una solicitud recibe un aviso que la nombra en castellano; si la bandeja la llama distinto —o peor, con la clave cruda— son dos nombres para una cosa. Ya pasó con VACATION_CHANGE: el aviso decía «Cambio de vacaciones» y la bandeja, `VACATION_CHANGE`.",
+  "tipos": {
+    "ADVANCE": "Anticipo salarial",
+    "ANNULMENT_REQUEST": "Anulación de factura",
+    "CERTIFICATE": "Constancia Laboral",
+    "CLIENT_CHANGE_REQUEST": "Cambio de cliente",
+    "DISABILITY": "Incapacidad",
+    "INVENTORY_DISCARD_REQUEST": "Descarte de inventario",
+    "INVENTORY_LOAD_REQUEST": "Carga de inventario",
+    "INVENTORY_TRANSFER_REQUEST": "Traslado entre salas",
+    "OVERTIME": "Horas extra",
+    "PAYMENT_CHANGE_REQUEST": "Cambio de forma de pago",
+    "PERMIT": "Permiso / licencia",
+    "SHIFT_CHANGE": "Cambio de turno",
+    "SHIFT_EXCEPTION": "Excepción de turno",
+    "VACATION": "Vacaciones",
+    "VACATION_CHANGE": "Cambio de vacaciones",
+    "VENDOR_CHANGE_REQUEST": "Cambio de vendedor"
+  }
+}

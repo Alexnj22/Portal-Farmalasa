@@ -49,6 +49,33 @@ const SCHEMA = JSON.parse(readFileSync(join(RAIZ, 'scripts', 'db', 'boolean-colu
 const BOOLEANAS = SCHEMA.tablas;
 const GRANDES = Object.keys(SCHEMA.tablas_grandes).filter(k => !k.startsWith('_'));
 
+/* Los tipos de solicitud que la base admite, con el nombre que ELLA les da.
+ * Retrato de prod; ver el `_comment` del JSON para regenerarlo. */
+const TIPOS_DE_SOLICITUD = JSON.parse(
+  readFileSync(join(RAIZ, 'scripts', 'db', 'request-types.json'), 'utf8')).tipos;
+
+if (process.argv.includes('--regen-tipos')) {
+  console.log(`
+Correr contra prod y volcar el resultado en scripts/db/request-types.json:
+
+  select m[1] as tipo, m[2] as rotulo
+  from pg_proc p
+       join pg_namespace n on n.oid = p.pronamespace,
+       lateral regexp_matches(pg_get_functiondef(p.oid),
+               'WHEN\\s+''([A-Z_]+)''\\s+THEN\\s+''([^'']+)''', 'g') as m
+  where n.nspname = 'public' and p.proname = 'notificar_solicitud_creada';
+
+Cruzar el resultado contra el CHECK, que es quien decide qué se admite:
+
+  select pg_get_constraintdef(oid) from pg_constraint
+  where conname = 'approval_requests_type_check';
+
+Si el CHECK admite un tipo que el disparador no nombra, el hueco es de la BASE
+y se arregla allá: el aviso de ese tipo sale hoy con la clave cruda.
+`);
+  process.exit(0);
+}
+
 /**
  * Excepciones con MOTIVO escrito. Una entrada por archivo, con todas sus
  * categorías — igual que design-gate, una clave repetida pisaría a la anterior
@@ -163,7 +190,7 @@ const leerFuente = (archivo) => (soloIndexado
   ? (desdeIndice.get(archivo) ?? '')
   : readFileSync(join(RAIZ, archivo), 'utf8'));
 
-const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'error-ignorado': [], 'escritura-a-ciegas': [] };
+const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'error-ignorado': [], 'escritura-a-ciegas': [], 'tipo-sin-rotulo': [] };
 const push = (cat, archivo, linea, detalle) => {
   if (exento(archivo, cat)) return;
   hallazgos[cat].push({ archivo, linea, detalle });
@@ -257,6 +284,55 @@ for (const archivo of archivos) {
     if (/\breturn$/.test(antes)) continue;       // lo devuelve: el error lo mira el llamador
     push('escritura-a-ciegas', archivo, lineaDe(src, m.index),
       'el resultado se descarta: la escritura puede fallar sin lanzar nada');
+  }
+}
+
+/* ── tipo-sin-rotulo: un tipo que la base admite y el portal no sabe nombrar ──
+ *
+ * No es un patrón dentro de un archivo, así que no va en el bucle de arriba:
+ * es un cruce entre lo que dice Postgres y UNA lista del portal.
+ *
+ * El bug, dos veces el mismo (2026-08-15): `REQUEST_TYPES` traduce la clave
+ * interna al castellano, y quien la lee cae a la clave cruda si no está —
+ * `REQUEST_TYPES[t]?.label ?? t`—. Ese `?? t` es correcto como último recurso,
+ * pero significa que agregar un tipo y olvidar el rótulo **no falla**: imprime
+ * `INVENTORY_DISCARD_REQUEST` debajo del nombre de una persona y sigue.
+ *
+ *   · La primera copia era una lista aparte en el Inicio con 7 de los 15 tipos.
+ *     Se borró; ahora esa pantalla lee el registro.
+ *   · La segunda era el registro mismo: le faltaba `VACATION_CHANGE`, que la
+ *     base admite, el plan de vacaciones crea y el disparador del aviso ya
+ *     nombraba «Cambio de vacaciones». O sea que quien lo pedía recibía el
+ *     aviso en castellano y encontraba la solicitud rotulada con la clave.
+ *
+ * Se compara contra el retrato de la base (`scripts/db/request-types.json`) y
+ * no contra otra lista del portal: cruzar dos listas escritas a mano deja
+ * pasar lo que las dos olvidaron. Y se compara TAMBIÉN el texto, porque el
+ * rótulo tiene que ser el mismo en la pantalla y en el aviso: dos nombres
+ * distintos para una cosa es la mitad del problema que esto viene a cerrar.
+ *
+ * Regenerar el retrato cuando la base cambie:
+ *   npm run gate:data -- --regen-tipos
+ */
+{
+  const RUTA_TIPOS = 'src/store/slices/requestsSlice.js';
+  const src = leerFuente(RUTA_TIPOS);
+  // El bloque `export const REQUEST_TYPES = { … };` y nada más: el archivo tiene
+  // otros mapas y comentarios que citan tipos.
+  const bloque = src.match(/export const REQUEST_TYPES\s*=\s*\{([\s\S]*?)\n\};/)?.[1] ?? '';
+  const rotulos = new Map(
+    [...bloque.matchAll(/^\s*([A-Z_]+):\s*\{[^}]*?label:\s*'([^']*)'/gm)].map(m => [m[1], m[2]]));
+
+  for (const [tipo, rotuloBase] of Object.entries(TIPOS_DE_SOLICITUD)) {
+    const enElPortal = rotulos.get(tipo);
+    if (enElPortal === undefined) {
+      push('tipo-sin-rotulo', RUTA_TIPOS, lineaDe(src, src.indexOf('REQUEST_TYPES')),
+        `la base admite '${tipo}' y REQUEST_TYPES no lo nombra — se pinta la clave cruda. `
+        + `La base lo llama «${rotuloBase}»`);
+    } else if (enElPortal !== rotuloBase) {
+      push('tipo-sin-rotulo', RUTA_TIPOS, lineaDe(src, src.indexOf(`${tipo}:`)),
+        `'${tipo}' se llama «${enElPortal}» en pantalla y «${rotuloBase}» en el aviso`);
+    }
   }
 }
 

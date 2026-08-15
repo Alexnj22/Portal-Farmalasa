@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, ArrowLeftRight, Eye, FileText, Clock } from 'lucide-react';
+import { Check, X, ArrowLeftRight, FileText, Clock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
+import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 import ModalShell from '../../components/common/ModalShell';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -144,13 +145,18 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
 
     return (
         <button data-surface="card" onClick={() => onOpen(req)}
-            className={`w-full text-left px-4 py-3.5 flex flex-col gap-2.5 overflow-hidden transform-gpu
+            className={`group w-full text-left px-4 py-3.5 flex flex-col gap-2.5 overflow-hidden transform-gpu
                 hover:bg-surface-card-hover/40 active:scale-[0.99]
                 transition-[background-color,transform,border-color] duration-[var(--dur-base)]
                 ${isUrgent ? '!border-danger' : isRejected ? '!border-danger/30' : ''}`}>
 
             <div className="flex items-center gap-3">
-                {/* La cara dice quién; la insignia, de qué es; el color, el estado. */}
+                {/* La cara dice quién; la insignia, de qué es; el color, el estado.
+                    La insignia se veía como un arco de 2px hasta el 2026-08-15: la
+                    foto le pasaba por encima. No era el orden de acá —va después,
+                    que es lo correcto— sino que el avatar dejaba escapar el
+                    `z-base` de su `<img>`; se arregló en `LiquidAvatar`, y por eso
+                    esta esquina no lleva ningún z-index. */}
                 <div className="relative flex-shrink-0">
                     <CaraPersona persona={solicitante} className="w-10 h-10 rounded-full" />
                     <span className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full
@@ -186,7 +192,7 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
                     <CompactSummary req={req} />
                 </div>
 
-                <Eye size={14} strokeWidth={2.5} className="text-content-3 flex-shrink-0 self-start mt-1" />
+                <OjoDeTarjeta className="self-start mt-1" />
             </div>
 
             {/* El pie: cuándo entró y en manos de quién está. */}

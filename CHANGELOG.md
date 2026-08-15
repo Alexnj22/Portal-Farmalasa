@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.610.0 — Solicitudes: filtro de sucursal, la insignia del tipo sale de atrás de la foto, y el ojo se hace canónico
+
+**Se pueden ver las solicitudes de UNA sala.** Con alcance sobre todas, la
+bandeja mezcla las siete: cada tarjeta decía de cuál venía, pero no había forma
+de quedarse con una. El selector de sucursal es el primero de la barra —el orden
+de siempre: «las de Salud 4, sólo las mías»— y sólo ofrece las salas que de
+verdad tienen algo. Con una sola no se dibuja: un menú de una opción es un clic
+que no informa.
+
+Filtra por la sala DONDE PASA la cosa, no por el nombre que muestra la tarjeta.
+Las cinco familias de la sala guardan a cuál pertenecen desde que se crean; un
+ajuste de Min/Max guarda la del sistema de origen y se traduce; el resto
+—vacaciones, permisos, constancias— es la de quien la mandó. Cruzar por el
+nombre habría hecho que una tilde de diferencia borrara una sala entera sin
+avisar.
+
+**La insignia del tipo de solicitud sale de atrás de la foto.** Es el disco de
+18px en la esquina de la cara que dice de qué es la solicitud, y se veía sólo
+como un arco de 2px: la foto le pasaba por encima. No era el orden en que está
+escrita —va después, que es lo correcto— sino que la foto se llevaba consigo una
+capa que no le correspondía. Corregido en el avatar, así que **alcanza a todo el
+portal**: cualquier marca sobre una foto —la torta de cumpleaños de Personal, un
+punto de estado— deja de necesitar trucos para verse.
+
+**Una tarjeta que se puede abrir ahora lo dice, y en todas las pantallas
+iguales.** Una tarjeta no se parece a un botón, y en el teléfono no hay cursor
+ni realce que lo delate: la única forma de saber si abre algo era tocarla. El
+ojo de la esquina, que existía escrito a mano sólo en Solicitudes, pasa a ser el
+canónico del portal y se aplicó donde faltaba: **Cortes de caja**, **Conexiones**
+y las dos tarjetas de «Personal asignado» de una sucursal. Se barrieron los 44
+candidatos del portal y se dejó fuera lo que NO abre nada —lo que elige, lo que
+filtra la vista y lo que pliega un grupo—, porque un ojo ahí prometería algo
+distinto de lo que pasa al tocar.
+
 ## v2.609.2 — El apoyo de la recepción sale con nombre, y el conteo de hojas habla de las hojas que se ven
 
 **Quién apoyó la recepción, con su nombre.** Eran caras de 16 y 20 píxeles

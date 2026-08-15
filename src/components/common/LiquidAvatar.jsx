@@ -16,6 +16,25 @@ import { webpSignedUrl } from '../../utils/storageFiles';
  *
  * Si el render falla NO se cae a iniciales: primero reintenta con la URL
  * original. Solo si esa también falla se muestran las iniciales.
+ *
+ * ── `isolate`: la foto no puede taparle nada a quien la rodea (2026-08-15) ──
+ * La `<img>` de adentro va en `z-base` (z-index 10) para quedar por encima del
+ * brillo de carga. Pero `position: relative` sin `z-index` **no crea contexto
+ * de apilado**, así que ese 10 no se quedaba adentro: competía de igual a igual
+ * con los hermanos del avatar, y todo hermano posicionado —que va en `auto`,
+ * o sea 0— quedaba DEBAJO de la foto.
+ *
+ * Lo delató la tarjeta de Solicitudes: la insignia del tipo de solicitud, un
+ * disco de 18px en la esquina de la cara, se veía apenas como un arco de 2px —
+ * los otros 16 estaban tapados por la foto. En Personal el mismo choque ya
+ * estaba parcheado a mano con un `z-content` sobre la torta de cumpleaños, o
+ * sea que la clase de error ya había aparecido dos veces.
+ *
+ * `isolation: isolate` encierra ese 10 dentro del avatar. No cambia nada de lo
+ * que se ve adentro —la foto sigue arriba del brillo— y devuelve el orden
+ * natural afuera: lo que se dibuja DESPUÉS del avatar queda encima. Va acá y no
+ * en cada llamador porque el que se olvide de ponerlo no ve un error: ve una
+ * insignia recortada, que se lee como un problema de tamaño.
  */
 const LiquidAvatar = ({ src, alt, fallbackText, className = "", optimize = true }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +56,7 @@ const LiquidAvatar = ({ src, alt, fallbackText, className = "", optimize = true 
     // Si no hay URL o hubo un error, mostramos las iniciales o el icono por defecto
     if (!src || hasError) {
         return (
-            <div className={`relative flex items-center justify-center bg-surface-card-hover overflow-hidden ${className}`}>
+            <div className={`relative isolate flex items-center justify-center bg-surface-card-hover overflow-hidden ${className}`}>
                 {fallbackText ? (
                     <span className="font-black uppercase text-brand-text tracking-tight">{fallbackText.charAt(0)}</span>
                 ) : (
@@ -50,7 +69,7 @@ const LiquidAvatar = ({ src, alt, fallbackText, className = "", optimize = true 
     const finalSrc = (optimize && !useOriginal) ? webpSignedUrl(src) : src;
 
     return (
-        <div className={`relative overflow-hidden bg-surface-card-hover ${className}`}>
+        <div className={`relative isolate overflow-hidden bg-surface-card-hover ${className}`}>
             {/* 🚨 SKELETON PRELOADER: Brillo animado mientras carga */}
             {isLoading && (
                 <div className="absolute inset-0 z-0 bg-surface-card-hover">

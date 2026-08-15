@@ -19,7 +19,7 @@ import { useDecidirSolicitud } from '../hooks/useDecidirSolicitud';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, esOperativa, adaptarMinMax } from '../store/slices/requestsSlice';
 import { fetchAllMinMaxChangeRequests } from '../data/minmaxRequests';
-import { ERP_NAMES } from '../constants/erp';
+import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '../constants/erp';
 import { ICONO_POR_TIPO } from '../constants/tipoIconos';
 import { MODULO_QUE_DECIDE } from '../constants/solicitudModulos';
 import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
@@ -40,6 +40,41 @@ import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
 // de notificaciones necesita los mismos íconos para los mismos tipos, y tener
 // dos listas era garantía de que se desincronizaran.
 const TYPE_ICONS = ICONO_POR_TIPO;
+
+/** El camino de vuelta: sucursal del sistema de origen → `branch_id` del portal. */
+const BRANCH_POR_ERP = Object.fromEntries(
+    Object.entries(BRANCH_A_ERP).map(([bid, eid]) => [String(eid), String(bid)]));
+
+/**
+ * De qué SALA habla una solicitud — y se contesta con la clave, no con el rótulo.
+ *
+ * La tarjeta ya mostraba la sala, pero la resolvía por su NOMBRE
+ * (`meta.branch_name`), y un filtro construido sobre eso cruza texto contra
+ * texto: basta una tilde de diferencia para que una sala no coincida consigo
+ * misma y desaparezca sin error. Es la regla del proyecto —«un rótulo no es una
+ * clave»— y acá la clave existe, así que se usa.
+ *
+ * Tres orígenes, en este orden y por este motivo:
+ *
+ *   1. `meta.branch_id` — lo guardan las cinco familias operativas al crearse
+ *      (verificado sobre las 22 filas de la base: las 22 lo traen). Es la sala
+ *      DONDE PASA la cosa, que no siempre es la de quien la mandó.
+ *   2. `meta.erp_sucursal_id` — los ajustes de Min/Max viven en otra tabla y
+ *      sólo guardan la del sistema de origen; se traduce con el mapa de siempre.
+ *   3. `employee.branch_id` — el resto (vacaciones, permisos, constancias): ahí
+ *      la sala de la solicitud ES la de la persona.
+ *
+ * Sin ninguna de las tres devuelve `null`, y una solicitud sin sala se esconde
+ * al filtrar por una — que es lo correcto: no se puede afirmar que sea de ésa.
+ */
+const salaDe = (r) => {
+    const meta = (typeof r?.metadata === 'object' && r.metadata) ? r.metadata : {};
+    if (meta.branch_id != null && meta.branch_id !== '') return String(meta.branch_id);
+    if (meta.erp_sucursal_id != null && meta.erp_sucursal_id !== '')
+        return BRANCH_POR_ERP[String(meta.erp_sucursal_id)] ?? null;
+    const suya = r?.employee?.branch_id ?? null;
+    return suya != null ? String(suya) : null;
+};
 
 // Acá vivía `TYPE_COLORS` (tokenizado en T7, AUDITORIA-TEMA-2026-07.md): un color de relleno por cada tipo de solicitud —
 // chart-1, chart-3, chart-4, chart-6, chart-8, chart-9, success, warning,
@@ -118,6 +153,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
 
     const requests       = useStaff(s => s.requests);
     const employees      = useStaff(s => s.employees);
+    const branches       = useStaff(s => s.branches);
     const holidays       = useStaff(s => s.holidays);
     const isLoadingReqs  = useStaff(s => s.isLoadingRequests);
     const fetchRequests  = useStaff(s => s.fetchRequests);
@@ -239,6 +275,12 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * mitad dejaría a la persona sin poder contestar. */
     const [quien, setQuien] = useState('TODAS');
     const filtrandoMias = !soloMio && quien === 'MIAS';
+
+    /* ── El filtro de sala ────────────────────────────────────────────────
+     * Con alcance sobre todas, la bandeja mezcla las siete: la tarjeta dice de
+     * cuál viene cada una, pero no había forma de quedarse con una sola. Guarda
+     * el `branch_id` del portal, que es lo que devuelve `salaDe`. */
+    const [sala, setSala] = useState('');
 
     // ── Crear ────────────────────────────────────────────────────────────────
     const [nuevaAbierta, setNuevaAbierta] = useState(false);
@@ -391,7 +433,28 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         return paraQuien(r) === miId;
     };
 
-    const enFiltro = (r) => visible(r) && (!filtrandoMias || deQuienEs(r) === miId);
+    const enFiltro = (r) => visible(r)
+        && (!filtrandoMias || deQuienEs(r) === miId)
+        && (!sala || salaDe(r) === sala);
+
+    /* Las salas que OFRECE el selector son las que de verdad tienen algo, y se
+     * miden sobre todo lo que la persona puede ver —sin el filtro de sala ni el
+     * de «de quién»—: una lista que se recorta a sí misma deja al usuario sin
+     * poder volver, y una que cambia al tocar otro filtro se lee como que la
+     * pantalla esconde salas. Con una sola opción la ranura no se dibuja: un
+     * menú de una opción es un clic que no informa. */
+    const conSala = new Set(delAmbito.filter(visible).map(salaDe).filter(Boolean));
+    const salaOptions = (branches ?? [])
+        .filter(b => conSala.has(String(b.id)))
+        .map(b => ({
+            value: String(b.id),
+            label: b.name,
+            // El orden con que el negocio nombra las salas —La Popular primero,
+            // Bodega al final—, no el del maestro. Lo que no esté en el mapa
+            // (Administración) va al fondo en vez de colarse al principio.
+            orden: BRANCH_A_ERP[b.id] != null ? ERP_ORDEN.indexOf(BRANCH_A_ERP[b.id]) : 99,
+        }))
+        .sort((a, b) => a.orden - b.orden);
 
     const pendingCount = delAmbito.filter(r => r.status === 'PENDING' && enFiltro(r)).length;
 
@@ -503,18 +566,33 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * se dibuja: una puerta que abre a un menú vacío es peor que no estar. */
     const puedeCrear = canCreate && (!esSucursal || familiasDisponibles(hasPermission).length > 0);
 
+    const hayFiltroDeSala = salaOptions.length > 1;
+    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0);
+    const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); };
+
     // §17: la acción vive en la píldora del CUERPO, no en el header. Y desde la
     // fusión la barra lleva además el filtro de a quién pertenece lo que se
     // está mirando, que es el control que convierte la bandeja en «lo mío».
-    const filtrosCuerpo = (puedeCrear || !soloMio) ? (
+    const filtrosCuerpo = (puedeCrear || !soloMio || hayFiltroDeSala) ? (
         <FilterBar
-            activeCount={filtrandoMias ? 1 : 0}
-            onClear={filtrandoMias ? () => setQuien('TODAS') : undefined}
+            activeCount={filtrosPuestos}
+            onClear={filtrosPuestos > 0 ? limpiarTodo : undefined}
             acciones={puedeCrear ? [{
                 key: 'nueva', icon: Plus, label: 'Nueva solicitud', variant: 'primary',
                 onClick: () => { setPrefillEmpleado(''); setNuevaAbierta(true); },
             }] : []}
         >
+            {/* Ámbito primero, que es el orden de §17: «las de Salud 4, sólo
+                las mías». La sala cambia el significado de lo que sigue, así
+                que va antes. */}
+            {hayFiltroDeSala && (
+                <FilterBar.Section label="sucursal" active={!!sala}
+                    onClear={() => setSala('')}>
+                    <FilterBar.Sucursal value={sala} onChange={(v) => setSala(v || '')}
+                        options={salaOptions} />
+                </FilterBar.Section>
+            )}
+
             {!soloMio && (
                 <FilterBar.Section label="de quién" active={filtrandoMias}
                     onClear={() => setQuien('TODAS')}>

@@ -4,6 +4,7 @@ import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import LiquidModal from '../components/common/LiquidModal';
+import OjoDeTarjeta from '../components/common/OjoDeTarjeta';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -257,7 +258,7 @@ const SesionesView = () => {
                                 type="button"
                                 data-surface="card"
                                 onClick={() => setAbierta(p.persona_id)}
-                                className="p-4 text-left w-full flex items-center gap-3 active:scale-[0.99] transition-transform duration-[var(--dur-base)]"
+                                className="group p-4 text-left w-full flex items-center gap-3 active:scale-[0.99] transition-transform duration-[var(--dur-base)]"
                             >
                                 <LiquidAvatar
                                     src={p.foto}
@@ -280,6 +281,10 @@ const SesionesView = () => {
                                         </Badge>}
                                     {p.tiene_esta && <Badge variant="info" size="sm">Aquí</Badge>}
                                 </div>
+                                {/* La tarjeta abre el detalle de la persona —sus
+                                    conexiones, y desde ahí cerrarlas o bloquearla—
+                                    y nada lo decía. El canónico de §5.3. */}
+                                <OjoDeTarjeta className="self-start mt-0.5" />
                             </button>
                         ))}
                     </div>

@@ -3,6 +3,7 @@ import { AlertTriangle, Ban, CheckCircle2 } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidAvatar from '../common/LiquidAvatar';
+import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
 import { contraste, diferenciaDelCorte, seConfirmaDeUnClic, severidad } from '../../utils/cortesDiagnostico';
 import { formatMoney } from '../../utils/formatNumber';
@@ -143,7 +144,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
         <div
             data-surface="card"
             {...clickable(abrir, { label: `Revisar el corte de las ${hhmm(corte.hora)}${sala ? ` de ${sala}` : ''}` })}
-            className={`flex flex-col ${compacta ? 'gap-1.5 p-2' : 'gap-2 p-3'}`}
+            className={`group flex flex-col ${compacta ? 'gap-1.5 p-2' : 'gap-2 p-3'}`}
         >
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -158,11 +159,18 @@ const TarjetaCorte = memo(function TarjetaCorte({
                     </div>
                 </div>
 
-                <div className={`font-bold tabular-nums shrink-0 text-right ${compacta ? 'text-label' : 'text-body'}
-                    ${esZ ? 'text-content-2' : desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
-                    {esZ
-                        ? <>{formatMoney(corte.total_declarado)}<span className="block text-caption font-normal text-content-3">en ventas</span></>
-                        : conSigno(desc ? diferenciaDelCorte(corte).valor : (corte.tramo ?? 0))}
+                {/* La cifra manda y el ojo la acompaña: la tarjeta ABRE el corte
+                    —con su detalle y su decisión— y hasta hoy no lo decía en
+                    ninguna parte. Es el canónico de §5.3, el mismo que llevan
+                    las solicitudes. */}
+                <div className="flex items-start gap-1.5 shrink-0">
+                    <div className={`font-bold tabular-nums text-right ${compacta ? 'text-label' : 'text-body'}
+                        ${esZ ? 'text-content-2' : desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
+                        {esZ
+                            ? <>{formatMoney(corte.total_declarado)}<span className="block text-caption font-normal text-content-3">en ventas</span></>
+                            : conSigno(desc ? diferenciaDelCorte(corte).valor : (corte.tramo ?? 0))}
+                    </div>
+                    <OjoDeTarjeta size={13} className="mt-0.5" />
                 </div>
             </div>
 

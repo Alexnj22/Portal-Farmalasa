@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle, Building2, Globe, CalendarDays, MapPin } from 'lucide-react';
+import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '../../utils/clickable';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { SIN_ASIGNAR } from '../../data/constants';
@@ -161,6 +162,13 @@ const hasInjections = legal.injections === true;
                                         <h4 className="text-body-lg font-black text-content truncate leading-tight">{shortEmployeeName(emp)}</h4>
                                         <span className="text-caption font-bold uppercase tracking-widest text-content-3 mt-1 block truncate">{slot.roleName}</span>
                                     </div>
+                                    {/* La tarjeta abre la ficha de la persona. El panel
+                                        que sube al pasar el puntero ya lo decía con su
+                                        flecha, pero eso es hover: en un teléfono no
+                                        existe, así que en reposo no había ninguna señal.
+                                        No se pisan — la cara de arriba se va justo
+                                        cuando aparece el panel. */}
+                                    <OjoDeTarjeta className="self-start" />
                                 </div>
                                 
                                 {/* 🚨 Panel Deslizante Liquid Glass */}
@@ -217,6 +225,9 @@ const hasInjections = legal.injections === true;
                                     <h4 className="text-label font-bold text-content-2 leading-tight group-hover:text-brand-text transition-colors whitespace-normal truncate">{shortEmployeeName(emp)}</h4>
                                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
                                 </div>
+                                {/* Ésta no tenía ninguna señal: se veía igual que la
+                                    de al lado sin persona asignada, que no abre nada. */}
+                                <OjoDeTarjeta size={13} className="self-start" />
                             </div>
                         );
                     })}

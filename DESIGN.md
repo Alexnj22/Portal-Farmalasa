@@ -29,6 +29,7 @@
 | acción en la barra de vista | `TabBarAction` | §15.5 |
 | aviso inline | `Notice` | §15.6 |
 | fila de lista | `ListRow` | §15.7 |
+| «esta tarjeta abre un detalle» | `OjoDeTarjeta` | §5.3 |
 | barra de filtros de la vista | `FilterBar` | §17 |
 | correr el período (‹ etiqueta ›) | `PeriodStepper` | §17.1 |
 | paginación de tabla | `TablePagination` | §17.2 |
@@ -768,6 +769,53 @@ en cero. La firma estructural que busca son las tres cosas juntas —
 `createPortal` + `document.body` + `getBoundingClientRect`— o sea "sale del
 árbol y se posiciona contra un disparador". Un modal centrado no mide un
 disparador, así que no entra solo.
+
+### 5.3 `OjoDeTarjeta` — la tarjeta que se puede abrir lo DICE (2026-08-15)
+
+Una tarjeta no se parece a un botón: es una superficie con texto adentro. En
+escritorio se delata con el cursor y el lift; **en el teléfono no hay ninguna de
+las dos cosas**, así que la única manera de saber si abre algo es tocarla — o
+sea, probar. `src/components/common/OjoDeTarjeta.jsx` es esa señal, y va siempre
+en el mismo sitio: **arriba a la derecha**, para que se reconozca sin leerla.
+
+```jsx
+<button data-surface="card" onClick={() => abrir(x)} className="group …">
+    …
+    <OjoDeTarjeta className="self-start mt-1" />
+</button>
+```
+
+El `group` de la tarjeta es lo que enciende el realce al pasar el puntero. Sin
+él no falla nada: el ojo se queda en su gris.
+
+**El ojo promete "acá hay más para VER", y nada más.** Esa es toda la regla:
+
+| la tarjeta… | ¿ojo? | por qué |
+|---|---|---|
+| abre el detalle de lo que muestra | **sí** | es exactamente lo que el ojo dice |
+| ELIGE una opción (un cargo, un vendedor, una presentación) | no | el acuse es la marca de selección |
+| FILTRA la vista (las baldosas de métrica) | no | tocarla no abre nada, recorta la lista de abajo |
+| PLIEGA un grupo | no | lo dice el chevron, que además apunta a dónde va |
+| ya tiene su botón «ver» o su chevron de entrar | no | dos afordancias para una acción se leen como dos acciones |
+
+**No lo vigila el gate, a propósito.** La diferencia entre «abre» y «elige» está
+en el handler, no en las clases: un detector que mire la forma de la tarjeta
+clasifica mal por construcción. Es el mismo motivo por el que `clickable()`
+tampoco se puede deducir de un barrido (§25.8) — y se midió: de **44 candidatos
+del portal, 4 eran tarjetas que abren un detalle** y ninguna lo decía.
+
+Aplicado el 2026-08-15 a Solicitudes (ya lo tenía a mano, se migró al canónico),
+Cortes de caja, Conexiones y las dos tarjetas de «Personal asignado» de una
+sucursal.
+
+**Y una insignia sobre una foto va DESPUÉS de la foto, sin z-index.** La
+`<img>` de `LiquidAvatar` lleva `z-base` para tapar su brillo de carga, y hasta
+esta fecha ese 10 se escapaba del avatar —`position: relative` sin `z-index` no
+crea contexto de apilado— y le ganaba a cualquier hermano posicionado. La
+insignia del tipo de solicitud, un disco de 18px en la esquina de la cara, se
+veía como un arco de 2px. `LiquidAvatar` ahora es `isolate`: el 10 se queda
+adentro y el orden natural manda afuera. Si tenés que escribir un `z-` para que
+algo se vea encima de una foto, el problema es otro.
 
 ## 5.bis Material — lo que cambió en agosto 2026
 

@@ -1,7 +1,22 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
+import { CircleDot } from 'lucide-react';
 import PeriodPicker from '../../../components/common/PeriodPicker';
 import { currentMonthRange } from './helpers';
 import FilterBar from '../../../components/common/FilterBar';
+
+/**
+ * Los cuatro estados de un pedido. Se declaran acá arriba —y no en el JSX— para
+ * que la ranura sepa CUÁNTOS son antes de decidir su forma: `FilterBar.Opciones`
+ * da segmentado hasta 3 y select de 4 en adelante, y ese umbral se evalúa sobre
+ * este arreglo.
+ */
+const ESTADOS = [
+    { value: 'all',         label: 'Todos los estados' },
+    { value: 'confirmado',  label: 'Pendientes' },
+    { value: 'enviado',     label: 'En ruta' },
+    { value: 'observacion', label: 'Con observación' },
+    { value: 'completado',  label: 'Completados' },
+];
 
 /**
  * Los filtros de Pedidos. Desde el 2026-07-30 es un `FilterBar` de verdad.
@@ -23,18 +38,6 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
     const activos     = [!isBranch && filterSuc !== '', filterStatus !== 'all', dateDirty].filter(Boolean).length;
 
-    // `FilterBar.Chip` es EXACTAMENTE esto: se apaga al volver a pulsarlo,
-    // lleva `aria-pressed` y ya dibuja la × cuando está activo.
-    const chipEstado = (key, label, tone = 'brand') => (
-        <FilterBar.Chip
-            tone={tone}
-            active={filterStatus === key}
-            onToggle={() => setFilterStatus(v => v === key ? 'all' : key)}
-        >
-            {label}
-        </FilterBar.Chip>
-    );
-
     return (
         <FilterBar onClear={clearAll} activeCount={activos} title="Filtros de pedidos">
             {/* 1 · ámbito */}
@@ -49,12 +52,25 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                 <PeriodPicker value={filterDate} onChange={setFilterDate} />
             </FilterBar.Section>
 
-            {/* 4 · estado */}
+            {/* 4 · estado — un SELECT, no cuatro chips (2026-08-15).
+                `FilterBar.Chip` promete filtros INDEPENDIENTES: cada uno se
+                prende y se apaga por su cuenta y varios pueden convivir. Acá era
+                mentira — `setFilterStatus` guarda UN valor, así que elegir
+                «En ruta» apagaba «Pendientes» sin que nada lo anunciara. Un
+                `aria-pressed` por chip le dice al lector de pantalla que hay
+                cuatro interruptores donde hay una sola decisión.
+                Es una-de-N, y de eso se encarga `FilterBar.Opciones`: con cinco
+                opciones da `LiquidSelect` solo (§15.3, umbral 3). De paso
+                devuelve el ancho de cuatro píldoras a las otras ranuras. */}
             <FilterBar.Section active={filterStatus !== 'all'} onClear={() => setFilterStatus('all')} label="estado">
-                {chipEstado('confirmado',  'Pendientes')}
-                {chipEstado('enviado',     'En ruta')}
-                {chipEstado('observacion', 'Con observación', 'warning')}
-                {chipEstado('completado',  'Completados',     'success')}
+                <FilterBar.Opciones
+                    label="Estado" icon={CircleDot}
+                    value={filterStatus}
+                    onChange={v => setFilterStatus(v || 'all')}
+                    options={ESTADOS}
+                    placeholder="Todos los estados"
+                    ancho="180px"
+                />
             </FilterBar.Section>
         </FilterBar>
     );

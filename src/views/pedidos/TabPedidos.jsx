@@ -4,6 +4,7 @@ import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
+import LiquidAvatar from '../../components/common/LiquidAvatar';
 import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +12,7 @@ import {
     ChevronDown, ChevronRight, CheckCircle2,
     Package, Building2, AlertTriangle,
     Truck, Pause, Play, Home,
-    X, Send, Check, RotateCcw, Flag, UserCircle2,
+    X, Send, Check, RotateCcw, Flag,
     ClipboardList, UserPlus, Inbox, FileDown, Box, Zap, Map as MapIcon,
     CalendarClock, Ban, Star, Search, Radio, RefreshCw,
 } from 'lucide-react';
@@ -452,18 +453,28 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
-                                    {/* Apoyo preparación (bodega) */}
+                                    {/* Apoyo preparación (bodega) — el GEMELO de «Apoyo en
+                                        recepción» de `LifecycleTimeline`: misma lista
+                                        (`apoyoMap`, otro cubo), misma anatomía, y hasta el
+                                        2026-08-15 dibujada distinto y con un bug propio.
+                                        Leía `a.photo_url` a secas, que es la URL CRUDA: el
+                                        bucket de fotos es privado, así que la que se puede
+                                        pintar es la firmada y vive en `photo` (la pone
+                                        `signPhotosDeep` en `usePedidosData`). O sea que
+                                        estas caras salían como monigote gris mientras las
+                                        de recepción, dos renglones abajo, salían bien.
+                                        Ahora comparte el canónico con su gemelo: `Badge`
+                                        neutro + `LiquidAvatar`. */}
                                     {prepApoyo.length > 0 && (
                                         <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
                                             <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
                                             {prepApoyo.map(a => (
-                                                <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-surface-card border border-divider shadow-sm">
-                                                    {a.photo_url
-                                                        ? <img src={a.photo_url} alt={a.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
-                                                        : <span className="w-5 h-5 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={10} className="text-content-3" /></span>
-                                                    }
-                                                    <span className="text-label font-semibold text-content-2 whitespace-nowrap">{shortEmployeeName(a)}</span>
-                                                </span>
+                                                <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
+                                                    <LiquidAvatar src={a.photo || a.photo_url} alt=""
+                                                        fallbackText={shortEmployeeName(a)}
+                                                        className="w-5 h-5 rounded-full shrink-0 text-micro" />
+                                                    {shortEmployeeName(a)}
+                                                </Badge>
                                             ))}
                                         </div>
                                     )}
@@ -588,12 +599,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     </div>
 
 
-                                    {/* Entrega estimada — visible en sucursal cuando hay programación y el pedido no ha llegado */}
+                                    {/* Entrega estimada — visible en sucursal cuando hay programación y el pedido no ha llegado.
+                                        Era una franja a sangre pegada al borde de la tarjeta:
+                                        el mismo aviso que los de recepción, con otra forma. Con
+                                        aquéllos ya en `Notice`, dejarla así la hacía leer como
+                                        otra clase de cosa. */}
                                     {isBranch && row.entrega_programada_at && stage !== 'erp' && stage !== 'contando' && (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-chart-3/30 bg-chart-3/10">
-                                            <CalendarClock size={11} className="text-chart-3-text shrink-0" />
-                                            <span className="text-caption font-semibold text-chart-3-text">Entrega estimada:</span>
-                                            <span className="text-caption font-bold text-chart-3-text">{fmtEntrega(row.entrega_programada_at)}</span>
+                                        <div className="px-3 pb-2">
+                                            <Notice variant="chart-3" icon={CalendarClock} compact>
+                                                Entrega estimada: <strong>{fmtEntrega(row.entrega_programada_at)}</strong>
+                                            </Notice>
                                         </div>
                                     )}
 

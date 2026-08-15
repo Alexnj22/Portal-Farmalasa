@@ -395,8 +395,38 @@
   --lente-lado:  .58;
   --lente-bajo:  .31;
   /* La anidada (§1.5): una superficie DENTRO de otra pierde el vidrio y pasa
-     a un escalón de tono. El escalón INVIERTE su dirección según el tema. */
-  --anidada:     rgba(12,20,48,.09);
+     a un escalón de tono. El escalón INVIERTE su dirección según el MATERIAL,
+     no según el tema — y hasta el 2026-08-15 acá decía «según el tema», que es
+     lo que tenía este valor al revés.
+     ── Qué pasaba (medido sobre una captura de producción de Pedidos) ───────
+     El escalón oscurecía 9% de navy. Pero el cuerpo de vista (GlassViewLayout)
+     TAMBIÉN es `data-surface="card"`, así que toda tarjeta del portal es una
+     anidada, y en Liquid claro su contenedor no es blanco: es un 16% de tinte
+     pálido sobre el ambiente lavanda, ya oscurecido por el `saturate(200%)`
+     del propio vidrio. Oscurecerlo otro escalón dejaba la tarjeta MÁS OSCURA
+     QUE LA PÁGINA — luminancia 0.387 contra 0.522— y ahí la tinta, que está
+     calibrada para tarjeta clara, se cae entera (AA pide 4.5:1):
+         tinta          antes   con este valor
+         content        6.09     9.78  ✓
+         content-2      3.15     5.07  ✓
+         content-3      2.58     4.15  ← sigue corto
+         aviso éxito    2.18     3.38  ← sigue corto
+     Los avisos `bg-X/10` + `text-X-text` NO los arregla este token y quedan
+     abiertos: su `-text` es mid-oscuro y su tinte al 10% apenas aclara, así
+     que ni sobre blanco puro pasan de 4.9:1. Ver DESIGN.md §5.bis.1.
+     En Solid claro el escalón sí oscurece, y está bien: ahí el contenedor ES
+     blanco opaco. Por eso el valor vive por tema y no es uno solo.
+     ── Por qué ACLARAR es lo correcto acá, y no un parche ───────────────────
+     Es la misma física que ya decidieron el panel del sidebar («lo que flota
+     se aclara») y el realce de hover: dos capas de vidrio CLARO sobre un fondo
+     oscuro dejan pasar más luz, no menos. Y no debilita el escalón — lo
+     refuerza: la separación entre la anidada y su contenedor sube de 1.21:1 a
+     1.30:1, que es justo lo que §1.5 le pide (sin escalón queda a 1.02:1, o
+     sea invisible).
+     El valor sale de un mockup con el ambiente real reconstruido, aprobado por
+     el usuario el 2026-08-15. No moverlo sin volver a medir sobre lo pintado:
+     el token que manda no es este sino el contraste que produce. */
+  --anidada:     rgba(255,255,255,.40);
   /* §1.6 · el canto: base tenue, destello puntual, y el BLOOM que lo hace
      visible — sin él, en claro, no cambia un solo píxel. */
   /* §1.6.bis · EL FILO CONTRASTA CON SU SUPERFICIE: oscuro sobre claro, claro
@@ -2818,13 +2848,19 @@ thead.sticky,
      Apagar el blur ya estaba hecho, por rendimiento. Lo que faltaba era la
      otra mitad: sin un escalón de tono la anidada queda a 1.02:1 de su
      contenedor, o sea invisible. El escalón INVIERTE su dirección según el
-     tema —en claro oscurece, en oscuro aclara— porque es la misma física de
-     §1.1: un realce claro sobre una superficie clara no existe.
+     MATERIAL del contenedor: sobre blanco opaco (los dos Solid claros)
+     oscurece, sobre vidrio translúcido aclara. La regla que estaba escrita acá
+     —«en claro oscurece»— confundía el TEMA con el material, y por eso Liquid
+     claro oscurecía una superficie que ya era oscura. Ver el bloque largo de
+     `--anidada` en `:root`.
      Alcanza más arriba de lo que §1.5 tenía en mente: el CUERPO DE VISTA
      también es `data-surface="card"` (GlassViewLayout), así que la tabla que
      vive adentro es vidrio sobre vidrio a nivel de vista. Medido en la app
      real, tabla contra cuerpo: claro 9.15→10.87, oscuro **4.37→19.26**,
-     Solid 7.41, Solid oscuro 8.81. En oscuro antes se fundían. */
+     Solid 7.41, Solid oscuro 8.81. En oscuro antes se fundían.
+     ⚠ Ese alcance es también el motivo por el que este escalón NO es un
+     detalle estético: lo que se le hace acá se le hace a TODA tarjeta del
+     portal, no a los paneles anidados que la sección tenía en mente. */
   background: var(--anidada);
   box-shadow: none;   /* una anidada no sobresale: se hunde un paso */
   /* Y un radio MENOR. Dos esquinas concéntricas con el mismo radio se ven mal:

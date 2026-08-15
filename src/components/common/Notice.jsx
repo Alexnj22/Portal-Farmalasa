@@ -42,6 +42,21 @@ const VARIANTES = {
     neutral: { caja: 'bg-surface-card-hover border-border-card text-content-2', icono: Info },
 };
 
+// Categóricos — un color por CATEGORÍA, sin significado de severidad. Es la
+// misma extensión que `Badge` ya tenía y por el mismo motivo: hay avisos cuyo
+// color no dice «qué tan grave» sino «de qué circuito es». En Pedidos, chart-3
+// es el color del tránsito y del Sistema de Ventas, y lo comparten la tarjeta
+// de ruta, la barra de progreso y estos avisos; mapearlos a `info` los habría
+// desconectado de la ruta a la que pertenecen.
+//
+// ESCRITOS LITERALES A PROPÓSITO, no generados en un bucle — misma trampa que
+// documenta `Badge`: Tailwind escanea strings literales del fuente, así que con
+// `bg-chart-${n}/10` no emite ninguna clase y el aviso saldría SIN FONDO y en
+// silencio.
+Object.assign(VARIANTES, {
+    'chart-3': { caja: 'bg-chart-3/10 border-chart-3/30 text-chart-3-text', icono: Info },
+});
+
 const Notice = memo(({
     variant = 'info',
     icon: IconoPropio,

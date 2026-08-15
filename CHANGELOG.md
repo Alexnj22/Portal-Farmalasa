@@ -21,6 +21,61 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.615.0 — El tema claro deja de oscurecer las tarjetas, y el filtro de estado de Pedidos es un select
+
+Reportado sobre Pedidos: *«en la recepción en liquidglass no se distingue ni lee
+bien el texto, se ve todo muy sutil»*. No era de Pedidos.
+
+**Una tarjeta era más oscura que la página.** El escalón que separa una
+superficie de la que la contiene (`--anidada`) **oscurecía** en el tema claro,
+siguiendo una regla que mira el tema cuando lo que manda es el material de
+abajo. En Solid está bien: ahí la tarjeta que hay debajo es blanca opaca. En
+Liquid claro el material es translúcido sobre el degradado lavanda, ya
+oscurecido por el `saturate(200%)` del propio vidrio — bajarle otro escalón
+dejaba la tarjeta en luminancia 0.387 contra 0.522 de la página.
+
+Y como el cuerpo de vista **también** es una superficie de tarjeta, eso no
+afectaba a unos pocos paneles: afectaba a **toda tarjeta del portal en tema
+claro**. Medido sobre píxeles pintados de una captura de producción, fuera de
+Pedidos: barra de filtros 3.84:1, tarjetas de sucursal 3.42:1, hitos de la
+línea de tiempo 3.11:1 — todos por debajo del 4.5:1 que pide AA.
+
+Ahora el escalón **aclara**, que es la misma física que ya decidieron el panel
+del menú y el realce al pasar el puntero: dos capas de vidrio claro sobre un
+fondo oscuro dejan pasar más luz, no menos. La tinta lisa sube de 3.15 a 5.07
+(secundaria) y de 6.09 a 9.78 (principal), y de paso el escalón **separa mejor**
+que antes: 1.30:1 contra 1.21:1. El vidrio no se tocó — sigue igual de
+transparente— ni el degradado del fondo. El valor salió de un mockup con el
+ambiente real reconstruido, elegido por el usuario entre cuatro opciones.
+
+**Sigue abierto:** los avisos teñidos (`bg-X/10` + su color de texto) quedan
+entre 3.4 y 4.3:1. La causa es del par tinte/token y no del material —subirle el
+tinte los empeora, porque los acentos son de tono medio— y arreglarlo es
+oscurecer los cinco tokens de texto, que toca también a Solid, donde hoy sí
+pasan. Anotado en DESIGN.md §5.bis.1.
+
+**En Pedidos, además:**
+
+- **El filtro de estado es un select.** Eran cuatro chips, y un chip promete un
+  filtro independiente que se prende y se apaga por su cuenta —lleva su
+  `aria-pressed`—, pero el estado guarda **un** valor: elegir «En ruta» apagaba
+  «Pendientes» sin que nada lo anunciara. Es una-de-N, así que lo dibuja el
+  canónico de filtros, que con cinco opciones da un desplegable. De paso les
+  devuelve a las otras ranuras el ancho de cuatro píldoras.
+- **Los seis avisos del bloque de recepción son el canónico**, no seis divs con
+  la misma forma copiada. Al ponerlos en columna se veían las discrepancias que
+  produce repetir a mano: dos bordes al 20 % y dos al 30 % para el mismo tinte,
+  el ícono de «Llegada confirmada» pintado con el acento crudo mientras su texto
+  usaba el color de texto —justo el bug que da 2.16:1— y el intercambio
+  ícono/spinner armado a mano en dos botones que ya lo traen. El rótulo
+  «RECEPCIÓN» pasa a la tinta secundaria: era la terciaria, a 2.86:1.
+- **Las caras de quién apoyó la preparación se veían grises.** Leían la URL
+  cruda de la foto, y el bucket es privado — la que se puede pintar es la
+  firmada. Su gemela de dos renglones abajo («Apoyo en recepción») ya estaba
+  arreglada y se dibujaba con otro componente; ahora comparten el mismo.
+- La «Entrega estimada» era una franja a sangre pegada al borde de la tarjeta:
+  el mismo aviso que los de recepción con otra forma. Ahora es un aviso más.
+
 ## v2.614.1 — la alarma de inventario sobrevive al filtro por defecto
 
 La píldora de v2.614.0 estaba bien escrita y aun así no se habría visto nunca en

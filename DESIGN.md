@@ -887,10 +887,73 @@ No hay lista que mantener: sale del DOM. Si escribís un control dentro de una
 |---|---|
 | **Un token de color se define en los CUATRO temas** | `:root` + Solid y nada en `dark` = Liquid oscuro hereda un valor calibrado en claro. Pasó **cinco** veces: las tres de siempre, más `--rim-sombra` y los 21 tokens de material de §3-§5, que salteaban `dark` entero. Lo vigila el gate `tema-incompleto`, **pero sólo mira tokens de COLOR** — alfas, longitudes y duraciones pasan de largo. |
 | **Una decisión CERRADA no es una decisión CABLEADA** | §2 a §5 estaban ✅ CERRADO y describían un material que el portal no tenía: 21 tokens escritos sin un solo `var()` que los leyera. Antes de dar por hecha una sección, grepear que alguien consuma sus tokens. |
-| **La dirección del realce la manda el ROL de la superficie** | la anidada **oscurece** porque se hunde; el panel del sidebar **aclara** porque flota; el hover **aclara siempre**. «En claro oscurecer» es falso. |
+| **La dirección del realce la manda el MATERIAL de abajo, no el tema** | el panel del sidebar **aclara** porque flota; el hover **aclara siempre**; y la anidada **depende de sobre qué se apoya**: sobre blanco opaco (Solid) oscurece, sobre vidrio translúcido **aclara**. «En claro oscurecer» es falso, y creerlo tuvo un costo medido — ver abajo. |
 | **Una superficie dentro de otra se aplana** | pierde el `backdrop-filter`, toma `--anidada` y `--card-radius-anidada`. Un vidrio sobre vidrio queda a 1.02:1 de su contenedor: invisible. |
 | **Una superficie `sticky` tiene que ocluir** | `--thead-bg`, nunca una opacidad de acento. Lo que pasa por debajo se lee a través. |
 | **Un ancestro con `transform` / `filter` / `opacity<1` APAGA el vidrio de todo lo que contiene** | Es la regla del *backdrop root*, y es la que hacía que el tema se viera «gris sucio». Ver §5.ter. |
+
+### 5.bis.1 El escalón anidado en Liquid claro iba al revés (2026-08-15)
+
+Reportado sobre la vista de Pedidos: *«en la recepción en liquidglass no se
+distingue ni lee bien el texto, se ve todo muy sutil»*. No era de Pedidos.
+
+`--anidada` valía `rgba(12,20,48,.09)` en Liquid claro, o sea **oscurecía**,
+siguiendo la regla «en claro oscurece». Pero esa regla mira el TEMA y lo que
+manda es el MATERIAL de abajo. En Solid claro el contenedor es blanco opaco y
+oscurecer está bien. En Liquid claro el contenedor es un 16 % de tinte pálido
+sobre el ambiente lavanda, **ya oscurecido por el `saturate(200%)` del propio
+vidrio** — bajarle otro escalón dejaba la tarjeta más oscura que la página.
+
+Medido sobre una captura de producción, píxel pintado:
+
+| capa | luminancia |
+|---|---|
+| página | 0.522 |
+| cuerpo de vista (vidrio nivel 1) | 0.465 |
+| **tarjeta (anidada)** | **0.387** ← más oscura que la página |
+
+Y como el **cuerpo de vista también es `data-surface="card"`**, esto no afectaba
+a unos pocos paneles anidados: afectaba a **toda tarjeta del portal**. Contraste
+de la tinta sobre esa tarjeta, antes → después de invertir el escalón:
+
+| tinta | antes | después | AA 4.5:1 |
+|---|---|---|---|
+| `content` | 6.09 | **9.78** | ✓ |
+| `content-2` | 3.15 | **5.07** | ✓ |
+| `content-3` | 2.58 | 4.15 | ✗ sigue corto |
+| aviso `info` (`bg-brand/10` + `-text`) | 2.54 | 3.95 | ✗ |
+| aviso `success` | 2.18 | 3.38 | ✗ |
+| aviso `warning` | 2.67 | 4.13 | ✗ |
+| aviso `danger` | 2.76 | 4.27 | ✗ |
+| aviso `chart-3` | 2.78 | 4.30 | ✗ |
+
+**Invertirlo REFUERZA el escalón, no lo debilita**: la separación entre la
+anidada y su contenedor sube de 1.21:1 a 1.30:1 — que es exactamente lo que
+§1.5 le pide (sin escalón queda a 1.02:1, invisible).
+
+Tres cosas que valen para la próxima:
+
+1. **Un token de material se verifica sobre el PÍXEL PINTADO, no sobre su
+   valor.** `--text-tertiary` lleva escrito en su comentario que da 4.96:1
+   «sobre surface-card (liquid)». Daba 2.58:1. El cálculo se había hecho contra
+   una tarjeta clara *supuesta*, y nadie volvió a mirarla después de que el
+   material de agosto la volviera translúcida. Es la contracara de
+   `feedback_una_captura_verifica_el_bundle_no_el_codigo`.
+2. **`backdrop-filter: saturate(200%)` OSCURECE un fondo de color.** Subir el
+   croma baja la luminancia. En un tema claro sobre un ambiente saturado, el
+   vidrio no aclara: apaga.
+3. **La fila de la tabla de arriba decía «En claro oscurecer es falso» y el
+   código hacía justo eso.** El doc tenía la regla correcta y el token la
+   contradecía; ningún gate cruza las dos cosas.
+
+**QUEDA ABIERTO — los avisos teñidos.** El escalón arregla la tinta lisa, no
+los `bg-X/10` + `text-X-text`: siguen entre **3.4 y 4.3:1**. La causa es otra y
+es del propio par tinte/token, no del material — subir el alfa del tinte los
+**empeora**, porque los acentos son mid-tone y acercan el fondo al texto en vez
+de alejarlo (medido: `success` va de 3.38 a /10 hasta 3.23 a /35). `--success-text`
+es el más terco: ni sobre blanco puro pasa de **4.91:1** con su tinte al 10 %.
+Arreglarlo es oscurecer los cinco tokens `*-text`, que es una decisión aparte
+—los toca TODO el portal, incluido Solid, donde hoy sí pasan— y no se tomó.
 
 ### 5.ter El backdrop root — lo único que puede apagar el vidrio (2026-08-09)
 

@@ -288,9 +288,16 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             {cajasEspeciales.map(e => {
                                 const est = espEstados[e.label] ?? 'ok';
                                 return (
-                                    <div key={e.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30'}`}>
+                                    // Envuelve, igual que la fila de las cajas
+                                    // normales. Acá lo flexible es un NOMBRE DE
+                                    // PRODUCTO —largo—, así que en pantalla
+                                    // angosta su columna caía a ~78px y el
+                                    // nombre se apilaba letra por letra. El
+                                    // piso de 10rem es lo que fuerza a que baje
+                                    // el control en vez de estrujar el texto.
+                                    <div key={e.label} className={`flex flex-wrap items-center gap-x-2 gap-y-2 px-2.5 py-2.5 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30'}`}>
                                         <span className={`text-label font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{e.label}</span>
-                                        <span className="flex-1 text-caption text-content-2 leading-tight">{e.product_name}</span>
+                                        <span className="flex-1 basis-40 min-w-0 text-caption text-content-2 leading-tight">{e.product_name}</span>
                                         {/* OK · Falta es un uno-de-N, no dos botones. Con
                                             `SegmentedControl` el lector de pantalla anuncia
                                             "1 de 2" y la caja de esta especial se lee como

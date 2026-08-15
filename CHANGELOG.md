@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.620.2 — La fila de cajas especiales también envuelve
+
+Cierre de la revisión que pidió el usuario: «¿habrá algún otro modal que tenga
+el mismo problema?».
+
+**Se revisaron los 45 archivos que renderizan un modal** con un detector de la
+forma que rompió v2.619.1 —una fila `flex` sin envoltura que pone texto
+flexible al lado de un control ancho que no se encoge—. Antes de creerle, el
+detector se calibró contra casos conocidos: tiene que sonar en `LlegadaModal` y
+`ReenvioLlegadaModal` **de antes del arreglo**, y callar en los arreglados y en
+los que se midieron limpios en el navegador. Sin esa prueba, «cero hallazgos» y
+«detector que no funciona» se ven igual.
+
+Dos errores del propio detector salieron de ahí: contaba las opciones del
+control con `||`, y en el patrón `.map()` eso daba 1 en vez de 3 —así que se
+perdía justo la fila que rompía—; y buscaba el texto flexible en una ventana de
+400 caracteres, que la sangría del hermano ya excedía.
+
+**Resultado: una sola fila en toda la aplicación**, y en el mismo modal — la de
+cajas especiales. No se había visto porque el pedido de prueba no tiene
+ninguna. Ahí lo flexible es un **nombre de producto**, o sea texto largo: a
+ancho de teléfono su columna caía a unos 78px y el nombre se apilaba. Recibe el
+mismo tratamiento (`flex-wrap` + piso de 10rem), y el barrido queda en cero.
+
+Verificado con `npm run build`; no se pudo mirar en pantalla porque esa fila
+sólo aparece en pedidos con cajas especiales.
+
 ## v2.620.1 — El folio de la bolsa lleva la sucursal
 
 Pedido del usuario: «el folio debe llevar la sucursal para saber». Pasa de

@@ -25,27 +25,12 @@
 
 import { EMPRESA } from '../constants/empresa';
 import { formatMoney } from './formatNumber';
+import { COLUMNAS, soloAscii, recortar, fechaCorta, hhmm, selloDeTiempo } from './ticketCampos';
 
-/** El ancho útil del rollo en letra chica. Ver COLUMNAS_TICKET. */
-const COLUMNAS = 54;
-
-/**
- * Sin tildes ni eñes: el rollo es ASCII. Se hace acá además de en el envío
- * directo porque los nombres de las personas vienen de la base y nadie los
- * escribió pensando en papel térmico — «NUÑEZ» salió `NUÆEZ` la primera vez.
- */
-export const soloAscii = (s) => String(s ?? '')
-    // La eñe ANTES de descomponer: `NFD` la parte en `n` + tilde y el barrido de
-    // diacríticos la dejaría en `n` igual, pero así el paso es explícito y no
-    // depende del orden de dos reglas que parecen independientes.
-    .replace(/ñ/g, 'n').replace(/Ñ/g, 'N')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\x20-\x7E]/g, '');
-
-const recortar = (s, max) => {
-    const t = soloAscii(s).trim();
-    return t.length > max ? `${t.slice(0, max - 1)}.` : t;
-};
+// Nacieron acá, cuando este era el unico documento que iba al rollo. Viven en
+// `ticketCampos` desde que hay un segundo (las bolsas de efectivo); se
+// reexporta `soloAscii` porque es parte de lo que este modulo ya prometia.
+export { soloAscii };
 
 const TITULO = {
     REPONE:    'COMPROBANTE DE REPOSICION',
@@ -60,24 +45,6 @@ const CONCEPTO = {
     RETIRA:    'SALE DE CAJA',
     JUSTIFICA: 'NO MUEVE DINERO',
 };
-
-const hhmm = (hora) => String(hora || '').slice(0, 5);
-
-/** dd/mm/aaaa de una fecha `YYYY-MM-DD`, sin que el huso la corra un día. */
-const fechaCorta = (fecha) => {
-    if (!fecha) return '';
-    const [a, m, d] = String(fecha).split('-');
-    return `${d}/${m}/${a}`;
-};
-
-/** Cuándo se firmó, en hora de la sala. */
-const selloDeTiempo = (iso) => (iso
-    ? soloAscii(new Date(iso).toLocaleString('es-SV', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true,
-        timeZone: 'America/El_Salvador',
-    }))
-    : '');
 
 /**
  * El comprobante del MOVIMIENTO ACUMULADO — el ingreso o el vale único.

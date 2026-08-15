@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.618.0 — Los tres papeles de una bolsa de efectivo
+
+Primer trabajo del control de bolsas de efectivo —el dinero que la sala guarda
+al confirmar un corte y que alguien retira cada ~3 días—. La definición completa
+está en `docs/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md`; acá van sólo los
+documentos que van al rollo, que es lo que reemplaza la cinta escrita a mano.
+
+- **`src/utils/bolsaComprobante.js`** — la **etiqueta** que se pega afuera (con
+  lo que salió de la bolsa y cuánto efectivo debe quedar), el **vale** que queda
+  adentro cuando se saca dinero (y dice cuánto QUEDA, que es lo que el papel a
+  mano nunca dijo) y el **comprobante de entrega** que firman la sala y quien
+  retira. Nada está enganchado a una pantalla todavía.
+- **`src/utils/ticketCampos.js`** — los campos que ya compartían los documentos
+  del rollo (ASCII, recorte, fecha, hora, sello). Vivían dentro de
+  `corteComprobante.js`, que era el único que imprimía; con el segundo,
+  copiarlos era tener dos definiciones de «sólo ASCII».
+
+Dos defectos que sólo se ven en el papel y quedaron anclados en pruebas:
+
+- `EFECTIVO` mide 8 caracteres y su columna mide 8, así que el encabezado se
+  pegaba al de al lado y salía `HORAEFECTIVO`.
+- **El relleno del rollo recorta por la izquierda lo que no entra.** Con
+  `-1,234.56` en una columna de 8 se perdía el primer carácter, que es el signo:
+  un faltante impreso como sobrante. Los importes de esa columna van sin `$` y
+  sin signo —la dirección la declara el encabezado— y sueltan el separador de
+  miles antes que perder un dígito.
+
 ## v2.617.0 — Los avisos teñidos se leen, y el grupo de ruta vuelve a ser una tarjeta de verdad
 
 Los dos pendientes que quedaron anotados en v2.615.0 y v2.616.0.

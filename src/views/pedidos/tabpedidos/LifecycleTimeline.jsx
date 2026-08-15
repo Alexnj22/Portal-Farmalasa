@@ -2,8 +2,9 @@
 // timeline (Confirmado → Inicio → Listo → En Ruta → ... → Finalizado) with
 // its pause badge, shown inside each expanded pedido card.
 import React from 'react';
-import { UserCircle2, Pause } from 'lucide-react';
+import { Pause } from 'lucide-react';
 import { fmtMin, elapsed } from './helpers';
+import Badge from '../../../components/common/Badge';
 import LiquidAvatar from '../../../components/common/LiquidAvatar';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
@@ -245,10 +246,12 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             {/* Responsible person mini-avatar */}
                             {node.emp && (
                                 <div className="flex flex-col items-center gap-0.5 mt-1">
-                                    {node.emp.photo
-                                        ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-surface-card shadow-md shrink-0" alt="" />
-                                        : <span className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-content-3" /></span>
-                                    }
+                                    <LiquidAvatar
+                                        src={node.emp.photo || node.emp.photo_url}
+                                        alt=""
+                                        fallbackText={shortEmployeeName(node.emp)}
+                                        className="w-7 h-7 rounded-full border-2 border-surface-card shadow-md shrink-0 text-caption"
+                                    />
                                     <span className="w-full text-micro text-content-2 leading-tight font-medium text-center">{shortEmployeeName(node.emp)}</span>
                                 </div>
                             )}
@@ -298,19 +301,28 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
             pisadas entre sí colgando de dos pasos: sin nombre visible —el
             `title` no existe en una pantalla táctil, que es donde se recibe—, y
             de la cuarta persona en adelante no se dibujaban. Acá tiene el ancho
-            de la tarjeta: envuelve, y da igual si es una o son seis. Misma
-            pastilla que el apoyo de preparación. */}
+            de la tarjeta: envuelve, y da igual si es una o son seis.
+
+            La pastilla es `Badge` y no una a mano: la primera versión copió el
+            chip de «Prep:» —`rounded-full bg-surface-card border-divider
+            shadow-sm`— y en vidrio se veía como una etiqueta opaca pegada
+            encima de la tarjeta, con más peso que las de «6 cajas» que tiene al
+            lado. `Badge neutral` es el material medido del sistema
+            (`bg-surface-card-hover` + `text-content-2`, el par que pasa AA por
+            tema) y su forma sale de `rounded-badge`, así que sigue al tema en
+            vez de imponer una píldora en Solid. */}
         {receptionApoyo.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
                 <span className="text-caption font-semibold text-content-3 uppercase tracking-wide shrink-0">Apoyo en recepción</span>
                 {receptionApoyo.map(a => (
-                    <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-surface-card border border-divider shadow-sm">
-                        {/* El avatar canónico y no una `<img>` a mano: pide la foto en
-                            WEBP —180 kB de ficha para un círculo de 20px, y acá hay uno
-                            por persona en cada tarjeta— y cae a la inicial si falla. */}
-                        <LiquidAvatar src={a.photo_url} alt="" fallbackText={shortEmployeeName(a)} className="w-5 h-5 rounded-full shrink-0 text-micro" />
-                        <span className="text-label font-semibold text-content-2 whitespace-nowrap">{shortEmployeeName(a)}</span>
-                    </span>
+                    <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
+                        {/* `photo || photo_url` y no `photo_url` a secas: el bucket es
+                            privado, y la firmada vive en `photo` — `photo_url` es la
+                            cruda que se guarda en la base. Es el mismo orden que usa
+                            el resto del portal. */}
+                        <LiquidAvatar src={a.photo || a.photo_url} alt="" fallbackText={shortEmployeeName(a)} className="w-5 h-5 rounded-full shrink-0 text-micro" />
+                        {shortEmployeeName(a)}
+                    </Badge>
                 ))}
             </div>
         )}

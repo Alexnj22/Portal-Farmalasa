@@ -99,6 +99,21 @@ export function fetchActiveRutas(todayStartIso) {
         .order('created_at', { ascending: false });
 }
 
+// La entrega de cada parada, sin depender de que su ruta siga activa.
+// `fetchActiveRutas` sólo trae las rutas pendientes, en curso, o completadas
+// HOY —es la que alimenta el mapa en vivo—, así que al día siguiente el paso
+// «Entregado» de la tarjeta se quedaba en blanco aunque el conductor lo hubiera
+// marcado: el dato estaba en la base y la pantalla lo buscaba en el sitio
+// equivocado. Visto el 2026-08-15 con el pedido #114, entregado a las 20:53 del
+// día anterior. Va por (pedido, sucursal) porque un pedido con varias sucursales
+// tiene una parada por cada una.
+export function fetchEntregasDePedidos(pedidoIds) {
+    return supabase.from('ruta_pedidos')
+        .select('pedido_id, erp_sucursal_id, entregado_at, entregado_por, rutas(id, numero, conductor_id, conductor_nombre)')
+        .in('pedido_id', pedidoIds)
+        .not('entregado_at', 'is', null);
+}
+
 export function fetchRutaLocations(rutaIds) {
     return supabase.from('ruta_locations').select('ruta_id, updated_at').in('ruta_id', rutaIds);
 }

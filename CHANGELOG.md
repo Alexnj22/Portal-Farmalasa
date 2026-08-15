@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.610.1 — El apoyo usa la pastilla del sistema, la foto firmada y la entrega vuelve a la tarjeta
+
+**La pastilla del apoyo era una copia a mano.** Salió con la forma del chip de
+«Prep:» —`rounded-full`, el color de la tarjeta y una sombra propia— y en vidrio
+se leía como una etiqueta opaca pegada encima, con más peso que las de «6 cajas»
+que tiene al lado. Ahora es `Badge` en su variante neutra, que es el material
+medido del sistema: el par fondo/texto que pasa AA en los cuatro temas, y una
+forma que sale de `rounded-badge` —redonda en vidrio, tensa en sólido— en vez de
+imponer una píldora siempre.
+
+**La foto de quien confirmó la llegada.** El bucket de fotos es privado: la URL
+que se puede pintar es la firmada y vive en `photo`; `photo_url` es la cruda que
+se guarda en la base. La fila de «Llegada confirmada» miraba sólo `photo_url`,
+así que dibujaba un monigote gris aunque la foto estuviera ahí — y dos renglones
+más arriba, en la línea de tiempo, la misma persona se veía bien. Las caras de
+los pasos pasan al avatar canónico, que además pide la miniatura en WEBP en vez
+de bajar la foto de la ficha para un círculo de 28px.
+
+**«Entregado» amanecía en blanco.** El pedido #114 se entregó a las 20:53 del 14
+de agosto y al día siguiente ese paso no mostraba ni la hora ni al conductor. El
+dato estaba en la base: la tarjeta lo buscaba en el mapa de **rutas activas**,
+que sólo conoce las pendientes, las que están en curso y las completadas **hoy**
+—es lo que alimenta el seguimiento en vivo, no el historial del pedido—. La
+entrega ahora viaja con el pedido, por (pedido, sucursal). Eso corrige de paso
+un segundo error latente: el mapa de rutas se indexa sólo por pedido, así que en
+un pedido con dos sucursales la última parada le ganaba a la otra.
+
 ## v2.610.0 — Solicitudes: filtro de sucursal, la insignia del tipo sale de atrás de la foto, y el ojo se hace canónico
 
 **Se pueden ver las solicitudes de UNA sala.** Con alcance sobre todas, la

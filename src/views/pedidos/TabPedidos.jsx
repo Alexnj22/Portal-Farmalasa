@@ -130,6 +130,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         apoyoModal, setApoyoModal,
         cardStats,
         trasladoStats,
+        entregaMap,
         anularModal, setAnularModal,
         busyAnular,
         printingPdf,
@@ -433,9 +434,20 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-divider px-3 pt-2 pb-1.5">
                                         {(() => {
+                                            // La parada de ESTA tarjeta. El mapa de rutas vivas se
+                                            // indexa sólo por pedido —con dos sucursales gana la
+                                            // última— y además olvida las rutas de ayer, así que el
+                                            // paso «Entregado» amanecía en blanco. `entregaMap` es
+                                            // el registro del pedido: va por (pedido, sucursal) y no
+                                            // caduca. La ruta viva manda cuando es de esta sucursal,
+                                            // porque se actualiza en el momento en que el conductor
+                                            // marca la entrega.
                                             const rutaInfo = pedidoRutaMap.get(row.pedido_id);
-                                            const rtStop   = rutaInfo?.stop ?? null;
-                                            const rtCond   = rutaInfo?.ruta?.conductor_id ? empMap.get(rutaInfo.ruta.conductor_id) ?? null : null;
+                                            const stopVivo = rutaInfo?.stop?.erp_sucursal_id === sucDeLaTarjeta ? rutaInfo.stop : null;
+                                            const entrega  = entregaMap[cardKey] ?? null;
+                                            const rtStop   = stopVivo ?? entrega ?? rutaInfo?.stop ?? null;
+                                            const condId   = rutaInfo?.ruta?.conductor_id ?? entrega?.ruta?.conductor_id ?? null;
+                                            const rtCond   = condId ? empMap.get(condId) ?? null : null;
                                             return (
                                                 <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />
                                             );

@@ -22,6 +22,7 @@ import {
     fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
     confirmarEnvioPedido, despacharTrasladoPedido, tieneEtiquetaDeDespacho,
     fetchTrasladosDePedidos,
+    fetchEntregasDePedidos,
 } from '../../../data/pedidos';
 import {
     fetchDevolucionesDePedido, solicitarDevolucion, decidirDevolucion,
@@ -117,6 +118,7 @@ export function usePedidosData({ searchTerm = '' }) {
     // Card stats (for collapsed pill display)
     const [trasladoStats, setTrasladoStats] = useState({});
     const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
+    const [entregaMap, setEntregaMap] = useState({}); // cardKey → { entregado_at, entregado_por, ruta }
 
     // ── Cargar rutas activas ──────────────────────────────────────────────────
 
@@ -171,6 +173,21 @@ export function usePedidosData({ searchTerm = '' }) {
             });
         }
         setTrasladoStats(traslados);
+
+        // La entrega de cada parada. Viaja con el pedido y no con la ruta: el
+        // mapa de rutas activas sólo conoce las de hoy, así que al día siguiente
+        // el paso «Entregado» se quedaba vacío aunque el conductor lo hubiera
+        // marcado. Se guarda por (pedido, sucursal) — el mapa de rutas se indexa
+        // sólo por pedido, y un pedido de dos sucursales tiene dos paradas.
+        const entregas = {};
+        if (ids.length) {
+            const { data: entRows, error: entErr } = await fetchEntregasDePedidos(ids);
+            if (entErr) console.error('loadActive: entregas failed:', entErr.message);
+            (entRows ?? []).forEach(e => {
+                entregas[`act_${e.pedido_id}_${e.erp_sucursal_id}`] = { ...e, ruta: e.rutas ?? null };
+            });
+        }
+        setEntregaMap(entregas);
         return rows;
     }, []);
 
@@ -322,6 +339,12 @@ export function usePedidosData({ searchTerm = '' }) {
             anotar(ruta?.conductor_id);
             anotar(stop?.entregado_por);
         });
+        // Y quien entregó según el registro del pedido, que es el que sobrevive
+        // a que la ruta deje de estar activa.
+        Object.values(entregaMap).forEach(e => {
+            anotar(e?.entregado_por);
+            anotar(e?.ruta?.conductor_id);
+        });
 
         // `empIntentados` evita el bucle: un id que la consulta NO devuelve
         // —dado de baja, o filtrado— seguiría faltando en `empMap`, y como este
@@ -351,7 +374,7 @@ export function usePedidosData({ searchTerm = '' }) {
             });
         })();
         return () => { vivo = false; };
-    }, [activeRows, pedidoRutaMap, empMap]);
+    }, [activeRows, pedidoRutaMap, entregaMap, empMap]);
     useEffect(() => {
         const ch = supabase.channel('pedido-rutas-rt')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' }, () => { loadActiveRutas(); loadActive(); })
@@ -1524,6 +1547,7 @@ export function usePedidosData({ searchTerm = '' }) {
         apoyoModal, setApoyoModal,
         cardStats,
         trasladoStats,
+        entregaMap,
         anularModal, setAnularModal,
         busyAnular,
         printingPdf,

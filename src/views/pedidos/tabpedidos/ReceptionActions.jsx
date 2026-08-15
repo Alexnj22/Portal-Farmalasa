@@ -1,6 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
-import { UserCircle2, PackageCheck, AlertTriangle, PackageX, Truck, Database, UserPlus, Loader2 } from 'lucide-react';
+import { PackageCheck, AlertTriangle, PackageX, Truck, Database, UserPlus, Loader2 } from 'lucide-react';
 import Badge from '../../../components/common/Badge';
+import LiquidAvatar from '../../../components/common/LiquidAvatar';
 import Button from '../../../components/common/Button';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
@@ -25,11 +26,19 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
     // una pantalla que decía que sí. Los avisos de estado se quedan —ver qué
     // pasó con el pedido es lo que sí puede hacer— pero sin nada que apretar.
     const accion = (btn) => canEdit ? btn : null;
+    // `photo || photo_url`: el bucket de fotos es privado, así que la URL que se
+    // puede pintar es la FIRMADA y vive en `photo`; `photo_url` es la cruda que
+    // se guarda en la base. Mirando sólo `photo_url`, la cara de quien confirmó
+    // la llegada salía como un monigote gris aunque su foto estuviera ahí — dos
+    // renglones más arriba, en la línea de tiempo, se veía bien.
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-caption text-content-3">
-            {emp.photo_url
-                ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-border-card shadow-sm" alt="" />
-                : <UserCircle2 size={12} className="text-content-3" />}
+            <LiquidAvatar
+                src={emp.photo || emp.photo_url}
+                alt=""
+                fallbackText={shortEmployeeName(emp)}
+                className="w-4 h-4 rounded-full border border-border-card shadow-sm shrink-0 text-micro"
+            />
             <span className="whitespace-nowrap">{shortEmployeeName(emp)}</span>
         </span>
     ) : null;

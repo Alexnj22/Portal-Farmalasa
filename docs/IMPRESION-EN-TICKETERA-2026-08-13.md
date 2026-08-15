@@ -448,6 +448,129 @@ La forma del objeto `ticket`, campo por campo, está en el JSDoc de
 `tests/unit/ticketPrint.test.js` contra un ticket real: si alguien la cambia «para
 que se vea mejor», la prueba falla acá en vez de salir torcido en la sala.
 
+## 5 bis. Si hay que rearmar una caja desde cero (2026-08-15)
+
+Pregunta del usuario: *«si se restaura, ¿cómo podríamos configurar el pos-80 para
+seguir imprimiendo?»*.
+
+La respuesta corta es que **hay dos capas independientes, y sólo una depende de
+quien mantiene el sistema de facturación**:
+
+| Capa | Qué hace falta | ¿Podemos rehacerla nosotros? |
+|---|---|---|
+| El aparato | Que el núcleo vea la ticketera USB → `/dev/usb/lp*` | **Sí.** Es enchufar el cable |
+| La cola | Una cola de CUPS en modo crudo (`pos-80`) | **Sí.** Tres comandos |
+| El programa del origen | Servidor web + PHP + la carpeta `impresion_dte/` | **No.** Esos archivos **no están en su servidor** (404): viven sólo en el disco de cada sala. Hay que pedirle la reinstalación a quien lo mantiene |
+
+O sea: **la impresora la recuperamos nosotros; el programa ajeno no.** Por eso el
+agente propuesto en §5 ter no lo usa.
+
+`scripts/diagnostico-caja.sh` (sólo lectura, no imprime ni cambia nada) levanta
+todo lo de abajo antes de tocar la máquina.
+
+### 1. Que el sistema vea la impresora
+
+```bash
+lsusb | grep -i -E 'print|pos'      # el aparato en el bus
+ls -l /dev/usb/lp*                  # el dispositivo crudo — dueño root, grupo lp
+dmesg | grep -i usblp               # si no aparece, el módulo usblp no cargó
+```
+
+Si `/dev/usb/lp0` existe, **ya se puede imprimir sin CUPS ni nada más**: es
+exactamente por donde escribe el programa del origen.
+
+### 2. Un nombre estable para el dispositivo
+
+`lp0`/`lp1` se reparten por orden de encendido, así que con más de una impresora
+el número puede bailar. La ticketera de Salud 3 tiene serie `48FEB70F3DB2`, y con
+eso se le fija un nombre propio en `/etc/udev/rules.d/99-ticketera.rules`:
+
+```
+SUBSYSTEM=="usbmisc", KERNEL=="lp[0-9]*", ATTRS{serial}=="48FEB70F3DB2", \
+  SYMLINK+="ticketera", MODE="0660", GROUP="lp"
+```
+
+⚠️ **El `SUBSYSTEM` hay que confirmarlo en la máquina** (`udevadm info -a -n
+/dev/usb/lp0 | head -30`): según la versión del núcleo puede ser `usbmisc` o
+`usb`. Es el único paso de esta receta que no está medido.
+
+### 3. La cola de CUPS en modo crudo
+
+Es la que ya funciona hoy (`lp -d pos-80 -o raw` sacó papel el 2026-08-14). Para
+recrearla:
+
+```bash
+lpstat -v                                   # ver el URI exacto del aparato
+sudo lpadmin -p pos-80 -E -v 'usb://Printer/POS-80?serial=48FEB70F3DB2' -m raw
+sudo cupsenable pos-80 && sudo cupsaccept pos-80
+lp -d pos-80 -o raw /etc/hosts              # prueba: gasta unos centímetros de papel
+```
+
+Dos advertencias:
+
+- **`-m raw` está en retirada en CUPS 2.4+.** Si lo rechaza, la alternativa es
+  `-m everywhere` o directamente saltear CUPS y escribir al dispositivo del paso
+  2 — que es lo que hace el origen y está probado en ese hardware.
+- **NO tocar `pos-80` en una caja que funciona**: es por donde imprime hoy el
+  sistema de facturación. Si hiciera falta otra configuración, se crea una cola
+  nueva apuntando al mismo dispositivo.
+
+### 4. La trampa que ya nos mordió
+
+La predeterminada del sistema en Salud 3 es **`l210`, una impresora deshabilitada**.
+Cualquier `lp` sin `-d` va ahí y no sale nada, sin error visible. **Siempre `-d
+pos-80` explícito**, en el agente y a mano.
+
+## 5 ter. Imprimir desde cualquier computadora — cómo se vería (2026-08-15)
+
+Diseño consultado el 2026-08-15, **sin trabajo aprobado todavía**. Ver la memoria
+`project_impresion_en_ticketera_2026_08_13` para por qué se descartó apuntar a la
+IP de la caja (contenido mixto: `https` no puede llamar a `http://192.168.x.x`, y
+la exención es sólo de `localhost`).
+
+### Qué habría que relevar por sucursal
+
+**Sí, una vuelta por las 6 salas con caja** —La Popular y Salud 1 a 5; Bodega y
+Administración no venden—. Pero se releva **una vez**, y lo que varíe queda como
+**dato en una tabla, no como código**: sucursal, nombre de la cola, sistema
+operativo. Correr `scripts/diagnostico-caja.sh` en cada caja es exactamente ese
+relevamiento.
+
+Lo que hay que confirmar sala por sala: el nombre de la cola (`pos-80` es lo
+medido en Salud 3, **no está dicho que se llame igual en las otras**), si la
+predeterminada del sistema también está rota, y si alguna caja es Windows — el
+origen reporta `sist_ope: "lin"`, pero está medido en una sola.
+
+### Cómo saldría el papel
+
+**Idéntico al de hoy.** La maqueta la decide el portal, no el aparato desde el
+que se manda: el agente recibe las mismas nueve secciones que arma
+`seccionesParaElPrograma()` y las tubea a la impresora. Las 54 columnas, el ASCII
+y el alineado por relleno valen igual si el ticket salió de una computadora de
+sala, de la caja o de un teléfono.
+
+### Cómo se vería en pantalla
+
+```
+tu puesto (o el teléfono)          la caja
+─────────────────────────          ───────
+[Imprimir en caja]  ──▶ en cola
+                                   el agente pregunta cada 2 s
+                                   lp -d pos-80 -o raw  ──▶ sale el papel
+       «Impreso en caja» ◀──────── y avisa que salió
+```
+
+Dos cosas que hoy no se pueden y ahí sí:
+
+1. **El acuse es real.** Hoy `ok: true` significa «lo recibió», nunca «salió
+   papel» (§5). Con la cola, el agente sabe si el comando terminó bien y lo
+   reporta: la pantalla puede decir la verdad.
+2. **Se puede mandar desde el teléfono**, que hoy no tiene ningún camino.
+
+Y una que hay que decidir antes de escribirlo: **un trabajo encolado con la caja
+apagada tiene que vencerse** (diez minutos, digamos). Si no, a la mañana siguiente
+sale un ticket de ayer que nadie está esperando.
+
 ## 6. Lo que queda abierto
 
 1. ~~**El ancho del rollo para el camino del navegador.**~~ Medido el 2026-08-14

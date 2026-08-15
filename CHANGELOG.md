@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.622.1 — El disparador de la bolsa deja de ser una RPC
+
+Hallazgo de la auditoría previa a probar en sala. `crear_bolsa_al_confirmar()`
+—la función del disparador que crea la bolsa— quedó **ejecutable por `anon` y por
+cualquier usuario**, o sea publicada en `/rest/v1/rpc/`, porque al crearla no se
+le hizo el REVOKE que la regla 4 exige para toda función. Rompía el invariante
+del proyecto: fuera de las cinco del kiosco, ninguna función es ejecutable por
+`anon`.
+
+El riesgo real era bajo —devuelve `trigger`, así que una llamada por REST falla
+sola— pero una función SECURITY DEFINER colgada de la API pública no se deja ahí
+porque hoy no se pueda llamar. De paso se revocó `nuevo_folio_de_bolsa`, que
+quema un folio de la secuencia cada vez que se la llama.
+
+Postgres no comprueba EXECUTE al disparar un trigger, así que revocar no lo
+apaga: verificado en el entorno de pruebas con una transacción revertida —
+después del REVOKE, confirmar un corte siguió creando su bolsa.
+
 ## v2.622.0 — Sacar dinero de una bolsa: remesas y salidas
 
 La última pieza del control de bolsas. Cuando hay que entregar una remesa y la

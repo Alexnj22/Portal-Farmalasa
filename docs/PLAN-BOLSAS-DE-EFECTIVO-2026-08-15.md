@@ -1,7 +1,17 @@
 # Bolsas de efectivo — control de custodia entre el corte y administración
 
-**Estado: definición, sin implementar.** Escrito el 2026-08-15 a pedido del
-usuario. Ninguna decisión de acá está cerrada hasta que él conteste la §12.
+**Estado: F1 EN PRODUCCIÓN (v2.620.0). F2 a F5 sin implementar.** Escrito el
+2026-08-15 a pedido del usuario.
+
+Lo que ya corre: la tabla `bolsas` y sus funciones, los tres papeles del rollo
+(`bolsaComprobante.js`), y la baldosa **Bolsas de efectivo** del Inicio — guardar
+la bolsa de un corte confirmado, ver lo que espera el retiro, la alarma de los 4
+días y la etiqueta impresa. **Todavía no hay pantalla propia**: eso llega con el
+retiro (F2) y el conteo (F3).
+
+**Falta la prueba física**, y es lo que hay que hacer antes de construir F2 y F3
+encima: cerrar una bolsa real, pegarle la etiqueta y contarla contra el papel.
+Ahí se confirma o se cae la fórmula del monto de la §5.1.
 
 ---
 
@@ -191,7 +201,7 @@ Prefijo `bolsas_*`, español de negocio, como `pedidos` y `traslados`.
 | columna | tipo | nota |
 |---|---|---|
 | `id` | bigint PK | |
-| `folio` | text unique | `S3-260814-2` — legible, se busca a mano con la bolsa en la mano |
+| `folio` | text unique | `S3-1042` — la sucursal y un correlativo; ver §5.2-bis |
 | `branch_id` | int FK | |
 | `corte_id` | bigint FK null | de qué corte nació |
 | `origen` | text | `CORTE` \| `MANUAL` (con motivo obligatorio) |
@@ -265,6 +275,24 @@ además el hilo de comentarios entre administración y la sala (`nota`), y los
 casos que no mueven dinero: «se abrió para cambiar sencillo», «se reimprimió la
 etiqueta».
 
+### 5.2-bis El folio lleva la sucursal, en LETRAS
+
+Decisión del usuario (2026-08-15): *«el folio debe llevar la sucursal para
+saber»*. La primera versión usaba una secuencia pelada —`B-1042`— por miedo a
+que un prefijo numérico (`B27-`) se leyera como el número de la sala; es la
+confusión que ya costó una vez, ver
+[[feedback_la_numeracion_de_sala_del_erp_no_es_su_nombre]]. **Con letras ese
+riesgo no existe**: `S3` es Salud 3 y `LP` es La Popular, no hay ningún número
+que confundir. El folio queda `S3-1042`.
+
+**El código es una COLUMNA de `branches` (`codigo`), no algo derivado del
+nombre.** Derivarlo («Salud 3» → `S3`) sería la trampa de siempre: el día que
+renombren la sala, los folios nuevos dejarían de coincidir con los viejos y nada
+avisaría. Sembrado por `id`: LP, S1, S2, S3, S4, S5, BOD, ADM.
+
+Una sucursal nueva sin código **no bloquea** el guardado: sale `B-1050`, sigue
+siendo único, y se nota al primer papel que salga así.
+
 ### 5.3 La remesa es un hecho; los vales son de dónde salió la plata
 
 La primera versión de este documento metía el proveedor, la boleta y la foto
@@ -278,8 +306,8 @@ bolsas significan dos copias del mismo dato — y dos copias se desincronizan.
 
 ```
 bolsas_operaciones (la remesa)          bolsas_movimientos (los vales)
-  id, folio                     ◄────┐    bolsa_id  → S3-260814-2   -300.00
-  tipo  REMESA                       ├──  bolsa_id  → S3-260815-1   -200.00
+  id, folio                     ◄────┐    bolsa_id  → S3-1042   -300.00
+  tipo  REMESA                       ├──  bolsa_id  → S3-1051   -200.00
   monto 500.00                       │
   banco / red, numero_boleta         │    (dos vales, uno en cada bolsa)
   foto_url                           │
@@ -298,7 +326,7 @@ Reglas:
   cierra, no se registra. Sin eso, un vale puede quedar por menos de lo que se
   sacó.
 - **Un vale por bolsa**, y cada vale se queda físicamente en SU bolsa. El papel
-  lo dice: *«Este vale queda dentro de la bolsa S3-260814-2»*. Un vale que
+  lo dice: *«Este vale queda dentro de la bolsa S3-1042»*. Un vale que
   cambia de bolsa deja un hueco y un sobrante.
 - **Una operación puede no tocar ninguna bolsa.** Si la remesa se pagó con el
   efectivo del cajón, la operación existe igual, con su boleta y su foto, y con
@@ -350,7 +378,7 @@ renderizado por el mismo camino que usa la ticketera de la sala:
 ______________________________________________________
 BOLSA DE EFECTIVO
 
-Bolsa: S3-260814-2
+Bolsa: S3-1042
 Sala: Salud 3
 Corte del: 14/08/2026  19:01
 Caja: MI CAJA LA SALUD 3
@@ -388,8 +416,8 @@ poner firmas también acá invita a firmar el que no era.
 ______________________________________________________
 VALE DE EFECTIVO
 
-Vale: V-S3-260815-4
-Bolsa: S3-260814-2
+Vale: V-S3-1052
+Bolsa: S3-1042
 Sala: Salud 3
 Corte del: 14/08/2026  19:01
 Motivo: Pago a proveedor
@@ -410,7 +438,7 @@ Recibe: MARIA JOSE PENA
 
 Firma ______________________
 
-Este vale queda dentro de la bolsa S3-260814-2.
+Este vale queda dentro de la bolsa S3-1042.
 Parte de P-260815-7 por $500.00.
 ```
 
@@ -433,15 +461,15 @@ tipos, y dice **cómo** se comprobó que era él (§8.1).
 ______________________________________________________
 ENTREGA DE BOLSAS
 
-Comprobante: E-S3-260816-1
+Comprobante: E-S3-1060
 Sala: Salud 3
 Fecha: 16/08/2026, 08:20 a. m.
 ______________________________________________________
 BOLSA                            DEL    HORA   MONTO
 ______________________________________________________
-S3-260814-2                    14/08   19:01  366.92
-S3-260815-1                    15/08   12:40  512.30
-S3-260815-2                    15/08   20:55  365.92
+S3-1042                    14/08   19:01  366.92
+S3-1051                    15/08   12:40  512.30
+S3-1055                    15/08   20:55  365.92
 ______________________________________________________
 BOLSAS                                 3
 EFECTIVO                       $1,245.14

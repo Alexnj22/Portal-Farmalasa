@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.620.1 — El folio de la bolsa lleva la sucursal
+
+Pedido del usuario: «el folio debe llevar la sucursal para saber». Pasa de
+`B-1042` a **`S3-1042`**.
+
+La primera versión evitaba codificar la sala por miedo a que un prefijo numérico
+—`B27-`— se leyera como el número de la sala, que es una confusión que ya costó
+una vez. Con letras ese riesgo no existe: `S3` es Salud 3 y `LP` es La Popular.
+
+El código vive en una **columna nueva de la sucursal** (`branches.codigo`), no
+se deriva del nombre: derivarlo haría que el día que renombren una sala los
+folios nuevos dejaran de coincidir con los viejos, sin que nada avisara.
+Sembrado por id — LP, S1, S2, S3, S4, S5, BOD, ADM — y único. Una sucursal sin
+código no bloquea nada: sale `B-1050` y se nota al primer papel.
+
+Se aplicó sin migrar folios viejos porque no hay ninguno: la tabla estaba en
+cero.
+
 ## v2.620.0 — La bolsa nace del corte y sale con su etiqueta
 
 Primera fase del control de bolsas de efectivo. Entre «el corte cuadró» y «el

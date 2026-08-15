@@ -201,11 +201,14 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     return (
         <div className="h-full flex flex-col min-h-0">
             {/* ── Cuánto efectivo hay en la sala ──────────────────────────────
-                DOS tarjetas y no tres. Con tres, la del efectivo quedaba tan
-                angosta que `$666.65` salía `$66…` — y acá el número tiene que
-                leerse entero: es la plata que hay guardada. Cuántos días lleva
-                la más vieja va en el renglón de arriba, que es donde esta misma
-                baldosa pone el dato de contexto y donde cabe en palabras. */}
+                UNA tarjeta, y el resto en el renglón de arriba. Fueron tres,
+                después dos, y las dos versiones se cayeron por la misma razón:
+                **la celda de esta baldosa mide 200px a 1280** y una cifra de
+                dinero es ancha. Con tres, `$666.65` salía `$66…`; con dos, el
+                barrido de escritorio midió 216px de contenido en 200 de marco y
+                la segunda quedaba cortada. El número que hay que leer entero es
+                el efectivo — cuántas bolsas y de cuántos días son contexto, y en
+                palabras caben. */}
             <div className="shrink-0 px-2 pt-2 pb-1 border-b border-divider">
                 <div className="flex items-baseline justify-between gap-2 mb-1 px-0.5">
                     <span className="text-caption font-black uppercase tracking-widest text-content-3">
@@ -213,15 +216,13 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                     </span>
                     <span className={`text-caption tabular-nums truncate ${vencidas ? 'text-danger-text font-bold' : 'text-content-3'}`}>
                         {enSala.length
-                            ? `la más vieja, ${masVieja} ${masVieja === 1 ? 'día' : 'días'}`
+                            ? `${enSala.length} ${enSala.length === 1 ? 'bolsa' : 'bolsas'} · ${masVieja}d`
                             : 'nada en espera'}
                     </span>
                 </div>
                 <CarrilCards ariaLabel="Efectivo guardado en la sala">
-                    <StatCard densa icon={Package} iconBg="bg-info/10" iconCls="text-info-text"
-                        label="Bolsas" value={enSala.length} />
                     <StatCard densa icon={Banknote} iconBg="bg-success/10" iconCls="text-success-text"
-                        label="Efectivo" value={formatMoney(total)} valueCls="text-success-text" />
+                        label="Efectivo guardado" value={formatMoney(total)} valueCls="text-success-text" />
                 </CarrilCards>
 
                 {/* «Entrega de remesas», lo que pidió el usuario: cuando hay que

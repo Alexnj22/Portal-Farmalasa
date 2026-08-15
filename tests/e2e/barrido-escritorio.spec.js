@@ -39,7 +39,7 @@ const SALIDA = 'barridos/escritorio';
 // la leen de ahí. Duplicarla tiene un costo conocido —se desincroniza— y por eso
 // la prueba de abajo lo verifica en vez de confiar.
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'overview', 'ventas', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
+    'overview', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
     'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
     'staff', 'monitor', 'audit', 'schedules', 'payroll', 'requests', 'vacation-plan',

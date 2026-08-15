@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.624.1 — El carril de la baldosa de bolsas entra a 1280
+
+Lo encontró el barrido de escritorio, que hasta hoy no podía verlo: **`cortes` no
+estaba en la lista de rutas de ninguno de los dos barridos** —ni el de escritorio
+ni el móvil— así que el módulo nunca se había medido. Queda agregado en los dos.
+
+Con la ruta adentro, el barrido midió: **`cortes` limpio a 1440 y a 1280**, cero
+columnas fuera del marco, cero texto cortado, cero errores; 1.6 pantallas en
+teléfono. Y un hallazgo en el Inicio que sí era mío: a 1280 la celda de la
+baldosa mide **200px** y las dos tarjetas pedían **216**, así que la segunda
+quedaba cortada.
+
+Queda una sola tarjeta —el efectivo, que es el número que hay que leer entero— y
+cuántas bolsas y de cuántos días pasan al renglón de arriba, en palabras. Es la
+tercera versión de esa fila: fueron tres tarjetas (y `$666.65` salía `$66…`),
+después dos, y las dos se cayeron por lo mismo. Una cifra de dinero es ancha y
+esa celda es angosta.
+
+Medido aparte, porque conviene no adivinar: el Inicio da **8.3 pantallas** con
+esta baldosa y **8.1 sin ella**. O sea que ya estaba largo —el tope del canon son
+7— y esto le suma 0.2. La deuda es del Inicio, no de la baldosa.
+
+El baseline de `gate:ux` **no se tocó**: el informe de esta corrida cubre 2 rutas
+de 37, y actualizarlo con eso borraría la medición de las otras 35.
+
 ## v2.624.0 — Los canónicos que me inventé, y tres agujeros más
 
 Segunda auditoría del circuito de bolsas, esta vez contra `DESIGN.md` y contra

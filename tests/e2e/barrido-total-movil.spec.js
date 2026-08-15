@@ -39,7 +39,7 @@ const INFORME = `${SALIDA_INFORMES}/informe-${ETIQUETA}.json`;
 // en vez de una hora: las dos primeras versiones del recorrido de pestañas se
 // descubrieron rotas después de 20 minutos de corrida.
 const RUTAS = process.env.RUTAS ? process.env.RUTAS.split(',').map(r => r.trim()) : [
-    'overview', 'ventas', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
+    'overview', 'ventas', 'cortes', 'compras', 'productos', 'pedidos', 'minmax', 'clientes',
     'proveedores', 'facturacion', 'facturas-compra', 'cotizaciones', 'conteo-inventario',
     'libro-compras-completo', 'libros-iva', 'resumen-fiscal', 'corte-z', 'ventas-perdidas',
     'staff', 'monitor', 'audit', 'schedules', 'payroll', 'requests', 'vacation-plan',

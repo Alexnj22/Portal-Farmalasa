@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.623.0 — Lo que la auditoría encontró sin camino en la pantalla
+
+Antes de probar el circuito de bolsas en una sala, una auditoría encontró cuatro
+cosas. Dos eran de la base y se corrigieron en migraciones; estas dos eran de la
+pantalla.
+
+**Las salas no podían ver nada.** Los cuatro cargos que trabajan la caja
+—Dependiente de Farmacia, Jefe/a y Subjefe/a de Sala, Regente de Enfermería—
+tenían `bolsas` y el widget en `can_view: false`. La semilla los había puesto en
+true copiándolos de cortes de caja; se apagaron después, a mano, media hora más
+tarde. Es el mismo modo de falla que rompió la recepción de pedidos: un permiso
+apagado y una pantalla que no dice por qué. Quedan alineados con cortes de caja.
+
+**El arranque iba a empezar con 16 bolsas inventadas.** La lista de «Sin bolsa»
+ofrecía los cortes confirmados antes de que existiera el disparador: **16 por
+$10,778.41** en las seis salas. Apretarlos habría hecho que el portal afirmara
+que hay diez mil dólares guardados en bolsas que no existen. La lista arranca
+desde el momento en que la bolsa nace sola — de 16 pasó a 0.
+
+**Y el detalle de una bolsa, que no existía.** Tres cosas estaban escritas en la
+base y sin ningún botón que las alcanzara:
+
+- **La foto del comprobante se subía y no se podía ver.** Administración recibía
+  una bolsa con un vale de $500 respaldado por una boleta que nadie podía abrir
+  desde el portal: la mitad del control escrita y la otra mitad invisible.
+- **Anular una bolsa no tenía camino.** Desde que la bolsa nace sola al confirmar
+  el corte, anularla es la única corrección posible.
+- **La bitácora tampoco.** Las columnas guardan la última decisión; quién hizo
+  qué y cuándo sólo vive en los eventos.
+
+Ahora la tarjeta de una bolsa abre su detalle: lo que se guardó, lo que salió
+vale por vale —con banco, boleta, quién lo recibió y cómo se comprobó que era
+él—, el botón para ver el comprobante, la bitácora completa, y las dos
+anulaciones, las dos con motivo obligatorio y sólo mientras la bolsa siga en la
+sala. Anular un vale devuelve el dinero al saldo.
+
+De paso: el vale ahora queda marcado como impreso, la fecha del corte se lee
+`15/08/2026` y no en crudo, y el detalle se baja al abrirlo — importado de forma
+estática la vista pasaba de 72 a 75 kB y su tope son 72.
+
 ## v2.622.1 — El disparador de la bolsa deja de ser una RPC
 
 Hallazgo de la auditoría previa a probar en sala. `crear_bolsa_al_confirmar()`

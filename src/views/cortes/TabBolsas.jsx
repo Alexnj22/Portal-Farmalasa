@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import {
     AlertTriangle, Banknote, CheckCircle2, HandCoins, Inbox, Package, Printer, Scale, Send, ShieldCheck,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
+import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
@@ -13,12 +14,20 @@ import {
     contarBolsa, entregarBolsas, fetchBolsas, fetchPersonasDeBolsas, fetchSaldos,
     fetchSalidasDeBolsa, recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
+import { clickable } from '../../utils/clickable';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+
+/* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
+ * motor de impresion y el visor de archivos firmados, y la lista se ve entera
+ * sin tocar nada. Mismo criterio que `CorteDetalleModal` en la baldosa del
+ * Inicio, y lo obliga el gate de bundle: importado de forma estática, la vista
+ * pasaba de 72 a 75 kB y su tope es 72. */
+const DetalleDeBolsa = lazy(() => import('../../components/bolsas/DetalleDeBolsa'));
 
 /**
  * El proceso entero de una bolsa de efectivo, en una pantalla.
@@ -69,11 +78,12 @@ const suma = (lista) => lista.reduce((a, b) => a + saldoDe(b), 0);
 const diferenciaDe = (b) => (b.contado == null ? null : Math.round((Number(b.contado) - saldoDe(b)) * 100) / 100);
 
 /** Una bolsa, con lo que hay que saber de ella en cualquier etapa. */
-function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, alarma }) {
+function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, alarma, onAbrir }) {
     const dias = diasDesde(bolsa.fecha);
     const quien = personas.get(bolsa.contado_por || bolsa.recibida_por || bolsa.entregada_por || bolsa.cerrada_por);
     return (
-        <div data-surface="card" className="flex flex-col gap-1.5 p-3">
+        <div data-surface="card" className="flex flex-col gap-1.5 p-3 group"
+            {...(onAbrir ? clickable(() => onAbrir(bolsa), { label: `Ver el detalle de la bolsa ${bolsa.folio}` }) : {})}>
             <div className="flex items-start gap-2">
                 {onSeleccionar && (
                     <input
@@ -82,6 +92,7 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                         checked={seleccionada}
                         onChange={() => onSeleccionar(bolsa.id)}
                         aria-label={`Elegir la bolsa ${bolsa.folio}`}
+                        onClick={(e) => e.stopPropagation()}
                     />
                 )}
                 <div className="min-w-0 flex-1">
@@ -99,8 +110,9 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                     monto inicial, la pantalla estaría prometiendo plata que ya no
                     está adentro. */}
                 <div className="text-right shrink-0">
-                    <div className="text-label font-bold tabular-nums text-content">
+                    <div className="text-label font-bold tabular-nums text-content flex items-center gap-1.5 justify-end">
                         {formatMoney(saldoDe(bolsa))}
+                        {onAbrir && <OjoDeTarjeta size={13} />}
                     </div>
                     {Number(bolsa.vales || 0) > 0 && (
                         <div className="text-caption text-content-3 tabular-nums">
@@ -132,7 +144,11 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                         <span className="text-caption text-content-3 truncate">{quien.name}</span>
                     </span>
                 )}
-                {children}
+                {/* Frena el clic: la tarjeta abre el detalle, y un boton de
+                    adentro no puede abrirlo ademas de hacer lo suyo. */}
+                {children && (
+                    <span className="contents" onClick={(e) => e.stopPropagation()}>{children}</span>
+                )}
             </div>
         </div>
     );
@@ -258,6 +274,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
     const [elegidas, setElegidas] = useState(() => new Set());
     const [ocupado, setOcupado] = useState(null);
     const [sacando, setSacando] = useState(false);
+    // Qué bolsa está abierta en el detalle: es donde viven la foto del
+    // comprobante, la bitácora y las dos anulaciones.
+    const [abierta, setAbierta] = useState(null);
 
     const { imprimir, imprimirVale } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
     const nombrePersona = useMemo(() => {
@@ -288,7 +307,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
         setPersonas(new Map(gente.map((p) => [p.id, p])));
     }, [desde, hasta]);
 
-    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar el período
+    useEffect(() => { cargar(); }, [cargar]);
 
     const deLaSala = useMemo(
         () => (sala ? bolsas.filter((b) => String(b.branch_id) === String(sala)) : bolsas),
@@ -388,11 +407,12 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 seleccionada={elegidas.has(b.id)}
                 onSeleccionar={extra?.elegible ? alternar : null}
                 alarma={extra?.alarma}
+                onAbrir={setAbierta}
             >
                 {extra?.pie?.(b)}
             </Bolsa>
         ),
-    })), [nombreSala, personas, elegidas, alternar]);
+    })), [nombreSala, personas, elegidas, alternar, setAbierta]);
 
     if (cargando) return <LoadingState label="Buscando las bolsas" />;
 
@@ -522,6 +542,17 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 })}
                 vacio="Sin bolsas contadas en estas fechas"
             />
+
+            {abierta && (
+                <Suspense fallback={null}>
+                    <DetalleDeBolsa
+                bolsa={abierta}
+                sala={abierta ? nombreSala[abierta.branch_id] : ''}
+                onClose={() => setAbierta(null)}
+                onCambio={cargar}
+            />
+                </Suspense>
+            )}
 
             <SalidaDeBolsa
                 abierto={sacando}

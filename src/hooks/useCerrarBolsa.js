@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { cerrarBolsa, marcarEtiquetaImpresa } from '../data/bolsas';
+import { cerrarBolsa, marcarEtiquetaImpresa, marcarValeImpreso } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -108,6 +108,10 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
                 : null,
             registradoAt: mov.registrado_at,
         }));
+
+        // Constancia de que se mandó a imprimir. Como con la etiqueta, `ok`
+        // significa RECIBIDO y no «salió papel», así que se puede reimprimir.
+        if (r.ok) await marcarValeImpreso(mov.movimiento_id);
 
         showToast?.(
             r.ok ? 'Vale enviado' : 'No se pudo imprimir el vale',

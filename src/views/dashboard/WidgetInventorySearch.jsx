@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
@@ -22,7 +22,20 @@ import { unidadesDe, sumaUnidades } from '../../utils/unidadesInventario';
 import SearchInput from '../../components/common/SearchInput';
 import LanzadorSolicitud, { HerramientasModal } from './LanzadorSolicitud';
 import { Carril, FranjaVacia } from './InstrumentoBaldosa';
-import PedirTrasladoModal from './PedirTrasladoModal';
+/* El formulario de pedir a otra sala se baja al APRETAR «Solicitar», no al
+ * entrar al Inicio.
+ *
+ * Venía estático, y mientras fue el único que lo usaba se pagaba escondido
+ * dentro del trozo de este widget. Desde que Solicitudes también lo abre
+ * (2026-08-15), el empaquetador tuvo que sacarlo a un trozo compartido — y ahí
+ * se vio lo que ya costaba: él (4 kB) más su buscador de catálogo y las
+ * presentaciones que consulta, 6 kB gzip en el cierre estático del Inicio, para
+ * un formulario que la mayoría de las visitas no abre.
+ *
+ * Es la regla de CLAUDE.md §«librerías pesadas SOLO por await import()»
+ * aplicada a un modal: lo que sólo hace falta al apretar un botón no viaja con
+ * la vista. Del otro lado ya se abría así. */
+const PedirTrasladoModal = lazy(() => import('./PedirTrasladoModal'));
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -869,11 +882,13 @@ function PanelInventario({ query = '', onQueryChange }) {
             esta rama, «Solicitar» pondría el producto en el estado y no se
             abriría nada. */}
         {pedido && (
-          <PedirTrasladoModal
-            producto={pedido}
-            onClose={() => setPedido(null)}
-            onListo={cargarFaltantes}
-          />
+          <Suspense fallback={null}>
+            <PedirTrasladoModal
+              producto={pedido}
+              onClose={() => setPedido(null)}
+              onListo={cargarFaltantes}
+            />
+          </Suspense>
         )}
 
         <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
@@ -1095,11 +1110,13 @@ function PanelInventario({ query = '', onQueryChange }) {
       {/* Se monta SOLO al pedir: si no, cada faltante de la lista traería sus
           presentaciones al abrir el widget. */}
       {pedido && (
-        <PedirTrasladoModal
-          producto={pedido}
-          onClose={() => setPedido(null)}
-          onListo={cargarFaltantes}
-        />
+        <Suspense fallback={null}>
+          <PedirTrasladoModal
+            producto={pedido}
+            onClose={() => setPedido(null)}
+            onListo={cargarFaltantes}
+          />
+        </Suspense>
       )}
 
       <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>

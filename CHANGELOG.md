@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.612.1 — El formulario de pedir a otra sala deja de viajar con el Inicio
+
+La consulta de inventario cargaba ese formulario **al abrir el Inicio**, no al
+apretar «Solicitar». Mientras fue el único que lo usaba, el peso quedaba
+escondido dentro del trozo de ese widget y nadie lo veía. Al abrirlo también
+desde Solicitudes (v2.611.0) el empaquetador tuvo que sacarlo a un trozo
+compartido, y ahí se vio lo que ya costaba: **6 kB gzip** —él, su buscador de
+catálogo y las presentaciones que consulta— en lo que se descarga al entrar al
+Inicio, para un formulario que la mayoría de las visitas no abre.
+
+Ahora se baja al apretar el botón, que es como ya se abría del otro lado. El
+cierre estático del Inicio baja de 136 a **133 kB**: 3 menos de los que costó
+publicar el cambio, y 1 por debajo de lo que pesaba antes de empezar.
+
+**Esto no pone el gate del bundle en verde, y conviene decir por qué.** El
+Inicio cruzó su techo de 118 kB en **v2.601.0** —el rediseño de cortes de caja,
+que le metió el detalle del corte, su tarjeta y la impresión en ticketera— y
+desde entonces fue subiendo. `ProveedoresView` está 1 kB encima del suyo por
+otro camino. Las dos son deuda anterior y se arreglan aparte: el Inicio importa
+de forma estática cuatro widgets que sólo se abren al tocarlos, y ése es el
+hilo del que hay que tirar.
+
 ## v2.612.0 — la hoja se confirma con aviso, y dar por bueno también ingresa
 
 Confirmar una hoja mete sus productos al inventario de la sala y la saca de la

@@ -1458,12 +1458,22 @@ export function usePedidosData({ searchTerm = '' }) {
 
     const filterOptions = useMemo(() => ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` })), []);
 
+    // Qué hace que un pedido siga mereciendo la pantalla. Importa por el filtro
+    // por defecto: un completado SIN observación se oculta.
+    //
+    // Y ahí entra lo que quedó sin ingresar al inventario. Un pedido se completa
+    // en cuanto la sala termina de contar —el ingreso va aparte, en su propio
+    // try— así que el caso «lo conté, no entró, y no puedo facturar» nacía
+    // completado y se ocultaba solo: la alarma desaparecía justo cuando importa.
+    // Visto en el navegador, no en el fuente; el `get_pedidos_en_curso` sí los
+    // devuelve, era este filtro el que los tiraba.
     const hasObservacion = useCallback((r) =>
         r.pedido_status === 'parcial' ||
         (r.llegada_tipo && r.llegada_tipo !== 'completa') ||
         (r.falta_cajas?.length  > 0) ||
-        (r.cajas_danadas?.length > 0),
-    []);
+        (r.cajas_danadas?.length > 0) ||
+        ((ingresoStats[`act_${r.pedido_id}_${r.erp_sucursal_id}`]?.sin_ingresar ?? 0) > 0),
+    [ingresoStats]);
 
     // Group activeRows by pedido to detect if ALL sucursales for a pedido are preparado
     const pedidoStageMap = useMemo(() => {

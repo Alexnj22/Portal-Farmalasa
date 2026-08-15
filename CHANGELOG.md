@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.614.1 — la alarma de inventario sobrevive al filtro por defecto
+
+La píldora de v2.614.0 estaba bien escrita y aun así no se habría visto nunca en
+el caso que importa. El filtro por defecto del tablero **oculta los pedidos
+completados sin observación**, y un pedido se completa en cuanto la sala termina
+de contar — el ingreso al inventario va aparte, en su propio `try`. O sea que
+«lo conté, no entró, y no puedo facturar» nacía completado y se ocultaba solo:
+la alarma desaparecía justo cuando hacía falta.
+
+Lo que quedó sin ingresar cuenta ahora como observación, que es exactamente lo
+que ese filtro ya usaba para no tirar un pedido con diferencias o cajas
+faltantes.
+
+Lo encontró **abrir la vista en el navegador**, no leer el fuente: el RPC
+respondía 200 con la fila correcta y la lista salía vacía. Compilar y pasar los
+gates no dice nada sobre lo que se ve — es la misma lección del 2026-08-02.
+Verificado después contra producción con el pedido real de La Popular: la
+píldora `134 en el inventario` se pinta junto a la del despacho.
+
 ## v2.614.0 — la tarjeta dice si lo recibido entró al inventario
 
 Confirmar una recepción escribe en **dos** sitios: el renglón queda recibido en

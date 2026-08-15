@@ -133,7 +133,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
             open={!!abierto}
             onClose={ocupada ? undefined : onClose}
             maxWidth="max-w-2xl"
-            className="max-h-[88vh] h-fit"
+            className="h-fit"
             ariaLabel="Registrar las diferencias en el sistema"
         >
             <LiquidModal.Header>

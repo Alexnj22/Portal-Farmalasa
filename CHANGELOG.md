@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.616.0 — El modal cabe en cualquier pantalla, y la cara de quien recibió el pedido vuelve a verse
+
+Reportado: *«los modales no se ven bien en todos los monitores, se salen
+verticalmente por lo que no se puede confirmar»*, sobre Rutas.
+
+**En escritorio el modal no tenía tope de alto.** En táctil sí desde siempre
+(88 % de la pantalla), pero con puntero la tarjeta crecía con su contenido, y el
+contenedor que la centra ocupa la ventana entera **sin scroll propio**: lo que
+sobraba se salía por arriba y por abajo. El pie —donde vive «Confirmar»— era lo
+primero en irse, así que el formulario quedaba imposible de completar. Medido en
+una ventana de 699 px con la ruta de 14 paradas: la tarjeta pedía 817 px y el
+botón «Crear ruta» quedaba **58 px fuera de la pantalla**. En un monitor alto no
+pasa; en un portátil, sí — por eso «no en todos los monitores».
+
+La anatomía para scrollear ya estaba bien (encabezado y pie fijos, cuerpo
+desplazable); lo que faltaba era el techo, porque un cuerpo elástico dentro de
+una tarjeta sin alto máximo nunca tiene contra qué encogerse: no desborda, así
+que no scrollea. Ahora el tope lo pone el componente de modal y ya no se le pide
+a cada pantalla.
+
+**Y era justamente eso lo que fallaba: se le pedía a cada pantalla.** Lo pasaban
+11 de 20, con **cinco valores distintos** para la misma idea, y entre las 9 que
+no estaba el envoltorio por el que pasan casi todos los formularios del portal.
+Se retiraron los 11 valores escritos a mano y quedó uno solo.
+
+De paso, dos redes para los diálogos cortos —confirmaciones y avisos— que no
+usan ese componente: si su contenido no entra, ahora la ventana los deja
+desplazar en vez de recortarlos, y el fondo sigue tapando y sigue cerrando al
+tocarlo aunque se haya bajado.
+
+**En Pedidos, la cara y el nombre de quien recibió:**
+
+Reportado: *«sigo sin ver la foto de Dolores, y pon nombre y apellido, ya que no
+se ve»*. Los dos síntomas salían del mismo renglón del resumen de recepción:
+
+- La foto se pedía por su **dirección sin firmar**, y el archivero de fotos es
+  privado: el navegador la rechazaba. Y como la dirección existe, el respaldo
+  —el muñequito gris— nunca se dibujaba: quedaba un **círculo vacío**, que se
+  lee como un error de carga. Dos renglones más arriba, en la línea de tiempo,
+  la misma cara se veía bien porque allá sí se pide la firmada.
+- El nombre se recortaba al **primer espacio**, así que decía «DOLORES» a secas.
+  Ahora usa el nombre corto del portal —primer nombre + primer apellido— que
+  además sale de las columnas donde nombre y apellido están separados de verdad,
+  en vez de adivinar dónde estaba la frontera partiendo el texto.
+
+Ahora los dibuja el componente de cara del portal, que si la foto igual falla
+pinta las iniciales en lugar de un hueco. El mismo par de errores estaba en el
+bloque de diferencias del pedido y se corrigió con él.
+
 ## v2.615.1 — Los formularios del Inicio se bajan al abrirlos
 
 **El Inicio pesaba 133 kB gzip y ahora pesa 86.** Un tercio de lo que se

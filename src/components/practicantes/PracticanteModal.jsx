@@ -200,7 +200,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card";
 
     return (
-        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo practicante'}>
+        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo practicante'}>
             <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-base shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-3-text`}><GraduationCap size={22} strokeWidth={2.5} /></div>

@@ -772,7 +772,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     // (scrollRef es overflow-y-auto) — confirmado con Playwright: el contenido colapsaba a
     // ~430px de los ~850px disponibles. Encadenar flex-1/min-h-0 en cada nivel es robusto.
     const fillHeight = type === 'viewDocument' || type === 'viewPurchaseDte' || type === 'viewSalesDte';
-    const getModalHeightClass = () => fillHeight ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
+    // Sin `max-h` propio: el tope lo pone `LiquidModal` (2026-08-15). `h-[85vh]`
+    // se queda porque no es un tope sino lo contrario —los visores de documento
+    // tienen que OCUPAR el alto, si no el PDF colapsa—, y convive con el tope
+    // del canónico sin pelearse: 85vh es menor que su 88dvh.
+    const getModalHeightClass = () => fillHeight ? 'h-[85vh]' : 'h-fit';
     const hidesHeader = HIDES_HEADER.has(type);
     const hidesFooter = HIDES_FOOTER.has(type);
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-sm bg-surface-card-hover";

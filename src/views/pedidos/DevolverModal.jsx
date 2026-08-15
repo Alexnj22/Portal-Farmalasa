@@ -55,7 +55,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving }
     };
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" className="max-h-[90vh]"
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm"
             ariaLabel={`Devolver a bodega — ${item?.products?.nombre ?? ''}`}>
             <LiquidModal.Header>
                 <div className="flex items-center justify-between">

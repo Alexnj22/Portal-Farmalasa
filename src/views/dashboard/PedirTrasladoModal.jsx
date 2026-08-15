@@ -289,8 +289,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     };
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Solicitar a otra sala"
-            className="max-h-[85dvh]">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Solicitar a otra sala">
             {/* Las tres ranuras del canónico. Antes era un `<div>` suelto con el
                 título a mano, sin botón de cerrar y con la acción al final del
                 cuerpo que scrollea. */}

@@ -134,8 +134,7 @@ export function ModalConRanuras({
     const ranuras = useMemo(() => ({ nodos, registrar }), [nodos, registrar]);
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth={maxWidth} ariaLabel={label}
-            className="max-h-[85dvh]">
+        <LiquidModal open onClose={onClose} maxWidth={maxWidth} ariaLabel={label}>
             <RanurasCtx.Provider value={ranuras}>
                 <LiquidModal.Header>
                     <div className="flex items-center gap-2.5">

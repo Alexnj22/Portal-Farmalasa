@@ -197,7 +197,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 border border-border-card shadow-[var(--shadow-elevation-sm)] bg-surface-card";
 
     return (
-        <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-2xl" className="max-h-[90vh] h-fit" ariaLabel="Nuevo conteo de inventario">
+        <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-2xl" className="h-fit" ariaLabel="Nuevo conteo de inventario">
             <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-base shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-9-text`}><ClipboardCheck size={22} strokeWidth={2.5} /></div>

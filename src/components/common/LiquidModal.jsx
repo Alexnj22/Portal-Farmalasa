@@ -20,7 +20,9 @@ import useMediaQuery from '../../hooks/useMediaQuery';
  *   onClose   – called on Escape or backdrop click
  *   maxWidth  – Tailwind max-w-* class (default: max-w-sm)
  *   zClass    – z-index override (default: ModalShell default z-modal)
- *   className – extra classes on the card (e.g. max-h-[90vh] h-fit)
+ *   className – extra classes on the card. **Ya NO hace falta pasarle un
+ *               `max-h-*`**: el tope lo pone este canónico (ver abajo). Si se
+ *               pasa uno igual, gana el del llamador.
  *   ariaLabel – accessible name announced by screen readers (pass the
  *               modal's actual title — without it every LiquidModal in the
  *               app announces as the generic ModalShell default)
@@ -35,7 +37,33 @@ import useMediaQuery from '../../hooks/useMediaQuery';
  * es de props. Convertirlo obligaría a reescribir los 6 llamadores; darle la
  * anatomía por dentro los cubre a todos sin tocar ninguno. Las dos formas
  * producen la misma hoja.
+ *
+ * ── El TOPE DE ALTO lo pone el canónico (2026-08-15) ──────────────────────
+ * Reportado así: *«los modales no se ven bien en todos los monitores, se salen
+ * verticalmente por lo que no se puede confirmar»*, sobre Rutas.
+ *
+ * En táctil el tope existía desde siempre (`max-h-[88dvh]`). En ESCRITORIO no
+ * había ninguno: la tarjeta crecía con su contenido, `ModalShell` la centra en
+ * un `fixed inset-0` **sin scroll propio**, y lo que sobraba del viewport se
+ * salía por arriba y por abajo. El pie —donde vive «Confirmar»— era lo primero
+ * en irse, así que el modal quedaba imposible de completar. En un monitor alto
+ * no se nota; en un portátil de 768px, sí. Por eso «no en todos los monitores».
+ *
+ * La anatomía para scrollear YA estaba bien —`Header` es `flex-none`, `Body` es
+ * `flex-1 overflow-y-auto`, `Footer` es `flex-none shrink-0`—, pero un `flex-1`
+ * dentro de un contenedor sin alto máximo no tiene contra qué encogerse: nunca
+ * desborda, así que nunca scrollea. Faltaba el techo, nada más.
+ *
+ * **Y era una prop opt-in**, que es una prop olvidada: el JSDoc lo sugería
+ * («e.g. max-h-[90vh] h-fit») y lo pasaban 11 de 20 usos, con CINCO valores
+ * distintos (85vh · 85dvh · 88vh · 88dvh · 90vh). Los 9 que no lo pasaban
+ * incluían `UnifiedModal`, o sea casi todos los formularios del portal. Una
+ * decisión que se toma llamador por llamador se toma distinto en cada llamador.
  */
+
+// El tope de escritorio. `dvh` y no `vh` por lo mismo que en táctil: es la
+// unidad que descuenta el cromo del navegador, y en escritorio vale igual.
+const TOPE_ALTO = 'max-h-[88dvh]';
 export default function LiquidModal({
     open = true,
     onClose,
@@ -66,6 +94,13 @@ export default function LiquidModal({
         alCerrar: onClose,
         activo: enTactil && !sinMovimiento && !!onClose,
     });
+    // El tope es UNO y lo pone el canónico — no se compone con el del llamador.
+    // Se intentó respetar el que pasara cada uno y no se puede: dos `max-h-*`
+    // sobre el mismo elemento tienen la misma especificidad, así que quién manda
+    // lo decide el orden en que Tailwind los emitió en la hoja, que no es algo
+    // que se pueda leer desde acá. Los 11 valores escritos a mano se retiraron
+    // en el mismo commit (eran cinco números distintos para una sola idea).
+    const topeCanonico = TOPE_ALTO;
     return (
         <ModalShell
             open={open}
@@ -108,8 +143,8 @@ export default function LiquidModal({
                             // `rounded-b-none!` con importancia porque el radio lo fija
                             // `[data-surface="modal"]`, selector de atributo que le gana
                             // por orden de hoja.
-                            ? 'max-h-[88dvh] rounded-t-modal rounded-b-none!'
-                            : 'animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-[var(--dur-slow)] ease-[var(--ease-spring)]'}
+                            ? `${topeCanonico} rounded-t-modal rounded-b-none!`
+                            : `${topeCanonico} animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-[var(--dur-slow)] ease-[var(--ease-spring)]`}
                     ${lateral
                         // `pl-5` reserva el carril del asa. Sin él, el contenido
                         // se dibuja ENCIMA —los dos llevan `z-base` y gana el que

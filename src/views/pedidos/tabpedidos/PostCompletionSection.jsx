@@ -1,7 +1,9 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { useRef, useEffect } from 'react';
 import Badge from '../../../components/common/Badge';
-import { UserCircle2, Truck, CheckCircle2, AlertCircle, Check, AlertTriangle, PackageX } from 'lucide-react';
+import LiquidAvatar from '../../../components/common/LiquidAvatar';
+import { shortEmployeeName } from '../../../utils/nameUtils';
+import { Truck, CheckCircle2, AlertCircle, Check, AlertTriangle, PackageX } from 'lucide-react';
 
 // El tipo de llegada, como variante del canónico `Badge`. Era un par
 // bg/borde/texto escrito a mano y un glifo de texto por caso ('✓', '⚠', '!'),
@@ -35,12 +37,36 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
         <div className="border-t border-divider px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
                 <p className="text-caption font-bold text-content-2 uppercase tracking-wide">Resumen de recepción</p>
+                {/* Reportado el 2026-08-15: «sigo sin ver la foto de Dolores, y
+                    pon nombre y apellido». Dos bugs en el mismo renglón, y los
+                    dos porque este bloque no usaba los canónicos:
+
+                    1 · `photo_url` es la URL CRUDA y el bucket de fotos es
+                        privado, así que el `<img>` daba 403 — y como
+                        `photo_url` SÍ existe, el ternario nunca caía en el
+                        ícono de respaldo: quedaba un círculo vacío, que es peor
+                        que no poner nada. La firmada vive en `photo` (la pone
+                        `signPhotosDeep` en el arranque). Dos renglones más
+                        arriba, en la línea de tiempo, la misma cara se veía
+                        bien porque allá sí se lee `photo || photo_url`.
+                    2 · `name.split(' ')[0]` es sólo el PRIMER NOMBRE, así que
+                        se leía «DOLORES» a secas. El nombre del portal es
+                        `shortEmployeeName` —primer nombre + primer apellido— y
+                        además sale de `first_names`/`last_names`, que es donde
+                        el dato está separado de verdad: partir `name` por
+                        espacios adivina dónde estaba la frontera.
+
+                    `LiquidAvatar` cierra el caso de raíz: si la foto falla
+                    igual, pinta las iniciales en vez de un hueco. */}
                 {llegadaEmp && (
-                    <span className="flex items-center gap-1 text-caption text-content-3">
-                        {llegadaEmp.photo_url
-                            ? <img src={llegadaEmp.photo_url} className="w-4 h-4 rounded-full object-cover border border-border-card shadow-sm" alt="" />
-                            : <UserCircle2 size={12} className="text-content-3" />}
-                        {llegadaEmp.name?.split(' ')[0]}
+                    <span className="flex items-center gap-1.5 text-caption text-content-3">
+                        <LiquidAvatar
+                            src={llegadaEmp.photo || llegadaEmp.photo_url}
+                            alt=""
+                            fallbackText={shortEmployeeName(llegadaEmp)}
+                            className="w-4 h-4 rounded-full border border-border-card shadow-sm shrink-0 text-micro"
+                        />
+                        <span className="whitespace-nowrap">{shortEmployeeName(llegadaEmp)}</span>
                     </span>
                 )}
             </div>

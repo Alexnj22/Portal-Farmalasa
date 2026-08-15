@@ -2,7 +2,8 @@
 // section shown inside an expanded pedido card.
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
-import { AlertCircle, CheckCircle2, X, Loader2, UserCircle2, Check } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X, Loader2, Check } from 'lucide-react';
+import LiquidAvatar from '../../../components/common/LiquidAvatar';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
@@ -196,9 +197,21 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             {res === 'propuesta' && !readOnly && (
                                 <>
                                     <div className="flex items-start gap-1.5 text-caption bg-chart-3/10 rounded-lg px-2.5 py-1.5 border border-chart-3/20">
-                                        {resueltoEmp?.photo_url
-                                            ? <img src={resueltoEmp.photo_url} className="w-5 h-5 rounded-full object-cover border border-border-card shadow-sm shrink-0 mt-0.5" alt="" />
-                                            : <UserCircle2 size={14} className="text-chart-3-text shrink-0 mt-0.5" />}
+                                        {/* `photo || photo_url` y `LiquidAvatar`: `resueltoEmp`
+                                            sale de `empMap`, donde la firmada vive en `photo` y
+                                            `photo_url` es la cruda de un bucket privado. Con la
+                                            cruda el `<img>` da 403 — y como `photo_url` existe,
+                                            el ternario tampoco caía en el ícono: quedaba un
+                                            círculo vacío. Mismo caso que el resumen de
+                                            recepción, corregido el 2026-08-15. */}
+                                        {resueltoEmp && (
+                                            <LiquidAvatar
+                                                src={resueltoEmp.photo || resueltoEmp.photo_url}
+                                                alt=""
+                                                fallbackText={shortEmployeeName(resueltoEmp)}
+                                                className="w-5 h-5 rounded-full border border-border-card shadow-sm shrink-0 mt-0.5 text-micro"
+                                            />
+                                        )}
                                         <div className="flex-1">
                                             <span className="font-semibold text-chart-3-text">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
                                             {resueltoEmp && <span className="text-chart-3-text"> — {shortEmployeeName(resueltoEmp)}</span>}

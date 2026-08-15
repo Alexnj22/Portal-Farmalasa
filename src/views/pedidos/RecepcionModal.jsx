@@ -1079,7 +1079,7 @@ export default function RecepcionModal({
         const todasContadas = contables.length > 0 && contadas.length === contables.length;
 
         return (
-            <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md" className="max-h-[90vh]">
+            <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md">
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -1336,7 +1336,7 @@ export default function RecepcionModal({
 
     if (screen === 'extras') {
         return (
-            <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-2xl" className="max-h-[90vh]">
+            <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-2xl">
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-center gap-2">
                         <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={goBackFromExtras} />
@@ -1520,7 +1520,7 @@ export default function RecepcionModal({
             : `Se van a dar por recibidos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} con las cantidades que están en pantalla, y entran al inventario de la sala automáticamente.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`;
 
     return (
-        <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl" className="max-h-[90vh]">
+        <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl">
 
             {/* Header */}
             <PedidoModal.Header className="px-5 py-4">

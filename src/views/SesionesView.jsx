@@ -302,7 +302,7 @@ const SesionesView = () => {
                 open={!!detalle && !porBloquear && !porCerrar}
                 onClose={() => setAbierta(null)}
                 maxWidth="max-w-lg"
-                className="max-h-[85vh] h-fit"
+                className="h-fit"
                 ariaLabel={`Conexiones de ${detalleVisible?.empleado || ''}`}
             >
                 <LiquidModal.Header>

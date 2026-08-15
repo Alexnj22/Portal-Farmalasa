@@ -256,7 +256,7 @@ export default function CorteDetalleModal({
             open={abierto}
             onClose={ocupadoId ? undefined : onClose}
             maxWidth="max-w-2xl"
-            className="max-h-[88vh] h-fit"
+            className="h-fit"
             ariaLabel={`Corte de las ${hhmm(visible?.hora)}`}
         >
             <LiquidModal.Header>

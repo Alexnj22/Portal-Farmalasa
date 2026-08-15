@@ -593,7 +593,21 @@ export default function ModalShell({
     // donde está el pulgar que lo abrió — y porque el notch, cuando cae a la
     // izquierda, dejaría el asa debajo del hardware.
     align === "side"   ? "items-stretch justify-end" :
-                         "items-center justify-center p-4 sm:p-6";
+    // ── Centrado: la RED para el panel que no cabe (2026-08-15) ───────────
+    // Este contenedor es `fixed inset-0` y no scrolleaba, así que un panel más
+    // alto que la ventana se salía por arriba y por abajo sin forma de llegar
+    // al pie. `LiquidModal` ya no lo permite —tiene su propio tope y su cuerpo
+    // scrollea—, pero los diálogos que componen sobre `ModalShell` directo
+    // (`ConfirmModal`, `AlertModal`, `PromptModal`) no tienen esa anatomía: su
+    // contenido es un bloque suelto, así que un tope acá los RECORTARÍA. Que
+    // scrollee el contenedor es lo que sirve para los dos casos.
+    //
+    // `items-start` + `my-auto` en el panel y NO `items-center`: con centrado
+    // flex, un hijo más alto que el contenedor desborda por LOS DOS lados y el
+    // tramo de arriba queda fuera del área scrolleable —es el problema clásico
+    // del centrado con overflow—. Los márgenes automáticos centran igual cuando
+    // sobra sitio y ceden cuando falta.
+                         "items-start justify-center p-4 sm:p-6 overflow-y-auto overscroll-contain";
 
   return createPortal(
     <EstadoDialogoCtx.Provider value={{ cerrando: !open, salidaMs: tiemposGota().salida, alCerrar: onClose }}>
@@ -629,7 +643,12 @@ export default function ModalShell({
           ref={veloRef}
           data-velo="si"
           aria-hidden="true"
-          className={`absolute inset-0 pointer-events-none ${veloAnim}`}
+          // `fixed` y no `absolute`: desde que la posición centrada scrollea, un
+          // `absolute inset-0` se mide contra la caja VISIBLE del contenedor y
+          // deja de tapar en cuanto se baja. El padre ya es `fixed inset-0` y no
+          // crea contenedor de posicionamiento, así que el rectángulo es el
+          // mismo — lo único que cambia es que no se va con el scroll.
+          className={`fixed inset-0 pointer-events-none ${veloAnim}`}
         />
       )}
 
@@ -643,7 +662,9 @@ export default function ModalShell({
           aria-hidden="true"
           tabIndex={-1}
           onClick={onClose}
-          className="absolute inset-0 cursor-default w-full h-full bg-transparent border-none outline-none"
+          // `fixed`, por lo mismo que el velo: si no, al bajar en un panel alto
+          // el clic afuera dejaba de cerrar en la parte scrolleada.
+          className="fixed inset-0 cursor-default w-full h-full bg-transparent border-none outline-none"
         />
       )}
 
@@ -714,7 +735,10 @@ export default function ModalShell({
             // `background: rgba(0,0,0,0)` y el texto encima de la tabla.
             // Lleva el fondo de PÁGINA y no el de tarjeta, porque lo que se
             // está dibujando es una pantalla y adentro van tarjetas.
-            : align === "pantalla" ? 'h-full w-full' : 'w-full'} ${autoHoja && align !== "side" && align !== "pantalla"
+            // `my-auto` centra verticalmente sin el desborde inalcanzable del
+            // centrado flex — ver la nota de `alignCls`. Sólo en la posición
+            // centrada: las hojas se anclan a un borde y la pantalla ocupa todo.
+            : align === "pantalla" ? 'h-full w-full' : `w-full${align === "center" ? ' my-auto' : ''}`} ${autoHoja && align !== "side" && align !== "pantalla"
             ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,var(--sa-bottom))]'
             : (align === "side" || align === "pantalla") ? '' : maxWidthClass} ${panelAnim} ease-[var(--ease-spring)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}

@@ -147,7 +147,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     if (!montadoParaSalida) return null;
 
     return (
-        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm" className="max-h-[90vh]">
+        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="flex-1">

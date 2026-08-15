@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.615.1 — Los formularios del Inicio se bajan al abrirlos
+
+**El Inicio pesaba 133 kB gzip y ahora pesa 86.** Un tercio de lo que se
+descargaba al entrar eran cuatro formularios que sólo aparecen si alguien
+toca una baldosa: el ajuste de inventario, la modificación a facturación, el
+ajuste de Min/Max y el detalle del corte de caja. Ahora cada uno se baja al
+abrirse.
+
+Las baldosas —lo que sí se ve sin tocar nada, con su número de pendientes y su
+franja— siguen viajando con la pantalla y no cambiaron. Lo que se movió es el
+formulario de adentro. Para las tres primeras hubo que separar la baldosa a su
+propio archivo (`dashboard/baldosas/`): se movieron **60-80 líneas** por
+baldosa en vez de las 450-900 del formulario, así que los archivos grandes
+quedaron intactos y «Nueva solicitud» de Solicitudes los sigue abriendo por el
+mismo camino.
+
+Nadie va a notar una espera: los trozos pesan entre 4 y 13 kB y el modal ya
+muestra su giro mientras llega. Lo que sí se nota es entrar al Inicio.
+
+**Con esto el gate del bundle vuelve a verde**, después de estar en rojo desde
+v2.601.0 —lo confirmó un `git bisect` sobre las 309 revisiones desde que se
+fijó el techo—.
+
+Aparte, el techo de **Proveedores** subió de 44 a 46, a mano y con el motivo
+escrito en el propio archivo del baseline. Esa vista no creció: en v2.604.0
+`HojaMovil` dejó de ir empaquetada dentro de otro trozo y pasó a tener el suyo
+—porque la campana empezó a usarla—, y los mismos bytes repartidos en dos
+trozos cuestan un kilobyte más al redondear. De sus 45 kB, 9 son la vista y 36
+el kit de componentes que de verdad dibuja: no hay nada que recortar.
+
 ## v2.615.0 — El tema claro deja de oscurecer las tarjetas, y el filtro de estado de Pedidos es un select
 
 Reportado sobre Pedidos: *«en la recepción en liquidglass no se distingue ni lee

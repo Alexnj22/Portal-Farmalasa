@@ -9,7 +9,6 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { supabase } from '../../supabaseClient';
 import LanzadorSolicitud, { PieModal, EncabezadoModal } from './LanzadorSolicitud';
-import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
@@ -18,7 +17,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
-    fetchPerecederos, insertMovimientoInventario, contarPorVencer,
+    fetchPerecederos, insertMovimientoInventario,
 } from '../../data/inventoryMovements';
 
 // Widget «Ajuste de Inventario».
@@ -1307,64 +1306,11 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
 }
 
 
-/* ─── La baldosa del tablero ──────────────────────────────────────────────── */
-export default function WidgetInventoryMovement(props) {
-    const [plazo, setPlazo] = useState(null);
-
-    useEffect(() => {
-        let cancelado = false;
-        contarPorVencer({ erpSucursalId: props.erpSucursalId }).then(r => {
-            if (!cancelado) setPlazo(r);
-        });
-        return () => { cancelado = true; };
-    }, [props.erpSucursalId]);
-
-    // ── La franja: lo que todavía se puede salvar ────────────────────────────
-    // La baldosa avisaba de una pérdida ya consumada —lo vencido— y de nada
-    // más. Lo que vence dentro de 7 y de 30 días todavía se puede trasladar o
-    // rebajar, así que es el dato que permite ACTUAR; el de vencidas sólo
-    // permite descargar.
-    //
-    // Los tres tramos se reparten sobre el total de los tres, no sobre el
-    // inventario entero: la franja compara urgencias entre sí, que es la
-    // pregunta («¿cuánto de esto es ya y cuánto tiene margen?»).
-    const franja = useMemo(() => {
-        if (!plazo) return null;
-        const total = plazo.vencidas + plazo.en7 + plazo.en30;
-        if (!total) return { tramos: [], detalle: null };
-        return {
-            tramos: [
-                { frac: plazo.vencidas / total, tinta: 'alerta' },
-                { frac: plazo.en7      / total, tinta: 'fuerte' },
-                { frac: plazo.en30     / total, tinta: 'medio'  },
-            ],
-            // El orden del texto sigue al de los tramos. Lo vencido ya lo dice
-            // el contador, así que acá empieza en el segundo.
-            detalle: [
-                plazo.en7  ? `${plazo.en7} en 7 d`  : null,
-                plazo.en30 ? `${plazo.en30} en 30 d` : null,
-            ].filter(Boolean).join(' · ') || null,
-        };
-    }, [plazo]);
-
-    return (
-        <LanzadorSolicitud
-            icon={PackageMinus}
-            label="Ajuste de inventario"
-            pendientes={plazo === null ? null : plazo.vencidas}
-            etiquetaPendientes="línea vencida"
-            etiquetaPendientesPlural="líneas vencidas"
-            vacio="Sin vencidos"
-            tono="danger"
-            descripcion="Cargar o descargar producto de tu sala"
-            instrumento={franja === null
-                ? <FranjaVacia />
-                : <BarraTramos tramos={franja.tramos} />}
-            detalle={franja?.detalle}
-        >
-            {/* El encabezado lo pone `LanzadorSolicitud` con las ranuras del
-                canónico (`LiquidModal.Header`), igual que en sus hermanos. */}
-            {(cerrar) => <FormularioAjuste {...props} onHecho={cerrar} />}
-        </LanzadorSolicitud>
-    );
-}
+/* La BALDOSA se mudó a `baldosas/BaldosaInventario.jsx` el 2026-08-15, por el
+ * mismo motivo que sus dos hermanas: mientras vivía acá, importarla arrastraba
+ * este archivo entero —formulario incluido— a lo que el Inicio descarga al
+ * entrar. Ahora se lo trae con `lazy()` al abrirse.
+ *
+ * Lo que queda acá es `FormularioAjuste`, que abren la baldosa y «Nueva
+ * solicitud» de Solicitudes — las dos por `import()`.
+ */

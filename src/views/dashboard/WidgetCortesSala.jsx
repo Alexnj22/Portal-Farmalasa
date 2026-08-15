@@ -1,15 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import CorteDetalleModal from '../../components/cortes/CorteDetalleModal';
 import TarjetaCorte from '../../components/cortes/TarjetaCorte';
 import { fetchCortes, fetchCortesResumen, fetchPersonas } from '../../data/cortes';
 import { conTramoPorSalaYDia, resumenDeCortes } from '../../utils/cortesDiagnostico';
 import { useAuth } from '../../context/AuthContext';
 import useResolverCorte from '../../hooks/useResolverCorte';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+
+/* El detalle del corte se baja al abrir uno, no al entrar al Inicio.
+ *
+ * Es 13 kB gzip con lo que arrastra —la impresión en ticketera y el asiento de
+ * diferencias— y es lo más pesado que traía esta baldosa a lo que se descarga
+ * al entrar. La campana ya lo cargaba así desde que decide en el sitio; acá
+ * seguía estático.
+ *
+ * `TarjetaCorte` NO: es lo que la baldosa dibuja, se ve sin tocar nada. */
+const CorteDetalleModal = lazy(() => import('../../components/cortes/CorteDetalleModal'));
 
 /**
  * Los cortes de caja en el Inicio: lo que falta confirmar, y cómo va el mes.
@@ -91,6 +100,11 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     const [error, setError] = useState(null);
     const [abierto, setAbierto] = useState(null);           // id del corte en el detalle
     const [modoInicial, setModoInicial] = useState(null);
+    /* Se enciende al abrir el primero y ya no se apaga: el diálogo tiene que
+     * quedar montado con `corte` en nulo para hacer su salida en vez de
+     * desaparecer de golpe, así que la condición es «ya se abrió alguno», no
+     * «hay uno abierto». Mismo patrón que la campana. */
+    const [montarDetalle, setMontarDetalle] = useState(false);
 
     const cargarLista = useCallback(async () => {
         const hasta = hoySV();
@@ -170,6 +184,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     const recargar = useCallback(() => { cargarLista(); cargarMes(); }, [cargarLista, cargarMes]);
 
     const abrirDetalle = useCallback((corte, modo) => {
+        setMontarDetalle(true);
         setModoInicial(modo || null);
         setAbierto(corte.id);
     }, []);
@@ -255,14 +270,18 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                 ))}
             </div>
 
-            <CorteDetalleModal
-                corte={corteAbierto}
-                nombreSala={nombreSala}
-                modoInicial={modoInicial}
-                onClose={cerrarDetalle}
-                onResuelto={recargar}
-                origen="inicio"
-            />
+            {montarDetalle && (
+                <Suspense fallback={null}>
+                    <CorteDetalleModal
+                        corte={corteAbierto}
+                        nombreSala={nombreSala}
+                        modoInicial={modoInicial}
+                        onClose={cerrarDetalle}
+                        onResuelto={recargar}
+                        origen="inicio"
+                    />
+                </Suspense>
+            )}
         </div>
     );
 }

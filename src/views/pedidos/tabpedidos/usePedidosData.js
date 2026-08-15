@@ -51,6 +51,15 @@ export function usePedidosData({ searchTerm = '' }) {
     const { user, getScope, hasPermission } = useAuth();
     const isBranch = getScope('pedidos') === 'BRANCH';
     const canEdit  = hasPermission('pedidos', 'can_edit');
+    // ── Editar MIN·MAX es del módulo MIN·MAX, no de Pedidos (2026-08-15) ──
+    // Reportado: «un empleado que ve los pedidos puede modificar los min y max,
+    // ¿por qué? no tienen permisos». Porque nadie lo preguntaba: la fila de
+    // «revisión MIN·MAX» de `ItemSections` escribe `product_stock_params` y no
+    // consultaba ningún permiso, así que la veía y la podía usar cualquiera que
+    // abriera un pedido. `pedidos.can_edit` está concedido a ONCE cargos —los de
+    // sala lo necesitan para RECIBIR—, y con él se estaba reescribiendo el
+    // MIN·MAX del catálogo.
+    const canEditMinMax = hasPermission('minmax', 'can_edit');
 
     // Employee store for name/photo lookups
     const storeEmployees = useStaff(s => s.employees);
@@ -1581,7 +1590,7 @@ export function usePedidosData({ searchTerm = '' }) {
     }, [filteredRows, pedidoRutaMap, user]);
 
     return {
-        user, isBranch, canEdit,
+        user, isBranch, canEdit, canEditMinMax,
         erpSucursalId, branchName,
         filterSuc, setFilterSuc,
         filterStatus, setFilterStatus,

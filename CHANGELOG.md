@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.619.0 — Editar MIN·MAX y las reglas de despacho deja de venir de regalo con recibir un pedido
+
+Reportado: *«un empleado que ve los pedidos puede modificar los min y max, ¿por
+qué? no tienen permisos»*. Tenía razón, y el agujero estaba en las tres capas a
+la vez.
+
+**El permiso de recibir un pedido traía adentro el de reescribir el MIN·MAX del
+catálogo.** La regla de la base aceptaba el permiso del módulo MIN·MAX **o** el
+de Pedidos, y el de Pedidos lo tienen once cargos porque los de sala lo
+necesitan para recibir. Así que un dependiente de farmacia podía cambiar los
+mínimos y máximos de su sala sin tener nada que ver con ese módulo. Ahora la
+regla pide el permiso de MIN·MAX y nada más. Cinco cargos —Auxiliar de Bodega,
+Dependiente de Farmacia, Jefe/a de Sala, Regente de Enfermería y Subjefe/a de
+Sala— dejan de poder hacerlo; ninguno de ellos lo había usado nunca, salvo
+Bodega cuatro veces en un día de julio.
+
+**Y la pantalla tampoco preguntaba.** El campo de MIN·MAX que aparece dentro de
+un pedido, en la lista de «revisar regla», se dibujaba para cualquiera que
+abriera la tarjeta y se guarda solo al teclear — no hay botón que sirva de
+freno. Ahora sólo lo edita quien tiene el permiso de MIN·MAX; el resto lo ve en
+solo lectura y la fila lo dice.
+
+**Lo mismo en «Reglas de despacho».** Esa pestaña no consultaba ningún permiso:
+quien la veía, la escribía. Y la base pedía el permiso de Pedidos (once cargos)
+en vez del de la pestaña (seis). Ahora las dos capas piden lo mismo.
+
+**Antes de encender esa compuerta hubo que arreglar los permisos, no aplicarlos
+tal cual.** El registro decía que en esa pestaña sólo QA podía editar; la
+bitácora decía que quien edita es Jefe/a de Compras (1.382 veces) y Supervisor/a
+de Ventas (101), y ninguno de los dos tenía el permiso. Ese campo nunca se había
+leído, así que su valor no significaba nada — encenderlo tal como estaba les
+habría quitado la herramienta a las dos únicas personas que hacen ese trabajo.
+Se les concedió.
+
+Por lo mismo, el alcance de MIN·MAX de Jefe/a de Compras pasa de «su sala» a
+«toda la red». No es un permiso nuevo: es el que ya ejercía —sus 287 ajustes
+tocaron seis sucursales distintas— y que le llegaba prestado del alcance de
+Pedidos. Al cortar ese préstamo habría quedado encerrado en una sola sala.
+
 ## v2.618.0 — Los tres papeles de una bolsa de efectivo
 
 Primer trabajo del control de bolsas de efectivo —el dinero que la sala guarda

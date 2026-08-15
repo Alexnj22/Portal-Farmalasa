@@ -9,7 +9,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
 import { normSearch } from '../../utils/searchUtils';
 import {
-    Loader2, Check, X, Ban, AlertTriangle, Package,
+    Loader2, Check, X, Ban, AlertTriangle, Package, ShieldAlert,
     Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight, Building2,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -25,6 +25,7 @@ import {
 } from '../../data/dispatchRules';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '../../utils/errorMessages';
+import { useAuth } from '../../context/AuthContext';
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil, CORTE_TELEFONO } from '../../components/common/usarExpediente';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -607,6 +608,20 @@ export default function TabReglas({ searchTerm = '' }) {
     const [saveError,       setSaveError]       = useState(null);
     const [justSaved,       setJustSaved]       = useState(false);
 
+    // ── Esta pestaña no preguntaba NADA (2026-08-15) ──────────────────────
+    // `TabReglas` no importaba `useAuth`: quien veía la pestaña la podía
+    // escribir. Y las dos capas estaban desalineadas con el registro de
+    // permisos, que es donde la intención está declarada:
+    //   · el registro: 6 cargos con `can_view` en `pedidos_tab_reglas`, y
+    //     `can_edit` sólo uno. O sea que cinco tenían que ser de solo lectura.
+    //   · la pantalla: sin compuerta, los seis escribían.
+    //   · la base: las policies de `dispatch_rules` piden `pedidos.can_edit`
+    //     —que tienen ONCE cargos— y no `pedidos_tab_reglas`.
+    // El guardado además es automático al elegir una presentación: no hay
+    // botón «Guardar» que sirva de último freno.
+    const { hasPermission } = useAuth();
+    const canEditReglas = hasPermission('pedidos_tab_reglas', 'can_edit');
+
     // Ref siempre al día para que applyVals y loadProducts lean reglas frescas
     // sin que cada autoguardado dispare un re-fetch de la tabla de productos.
     const rulesMapRef    = useRef({});
@@ -736,12 +751,19 @@ export default function TabReglas({ searchTerm = '' }) {
 
     const cancelEdit  = useCallback(() => { setEditingId(null); setSaveError(null); }, []);
     const toggleEdit  = useCallback((productId) => {
+        // Sin permiso el panel NO se abre. La alternativa —abrirlo y que el
+        // guardado no haga nada— es peor: el autoguardado dice «Guardado» y no
+        // guarda, que es exactamente la familia de fallos silenciosos que este
+        // repo persigue. Con `can_view` se ven las reglas en la tabla, que es lo
+        // que ese permiso concede.
+        if (!canEditReglas) return;
         if (editingId === productId) { cancelEdit(); return; }
         startEdit(productId, rulesMap[productId] ?? null);
-    }, [editingId, rulesMap, startEdit, cancelEdit]);
+    }, [canEditReglas, editingId, rulesMap, startEdit, cancelEdit]);
 
     // Autoguardado: aplica los vals al instante. Sin botón Guardar.
     const applyVals = useCallback(async (productId, v) => {
+        if (!canEditReglas) return;
         setSaving(true); setSaveError(null);
         const existing = rulesMapRef.current[productId];
         try {
@@ -798,7 +820,11 @@ export default function TabReglas({ searchTerm = '' }) {
         } finally {
             setSaving(false);
         }
-    }, []);
+    // `canEditReglas` va en las dependencias: con el array vacío el callback
+    // guardaba el valor del primer render, y los permisos se refrescan en vivo
+    // (`refreshPermissions`) — o sea que la compuerta de arriba habría leído un
+    // permiso viejo. Es lo único que este callback lee de fuera.
+    }, [canEditReglas]);
 
     // Computed
     const rulesCount = Object.keys(rulesMap).length;
@@ -829,6 +855,12 @@ export default function TabReglas({ searchTerm = '' }) {
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
+
+            {!canEditReglas && (
+                <Notice variant="neutral" icon={ShieldAlert}>
+                    Estás viendo las reglas de despacho en solo lectura — tu cargo no las modifica.
+                </Notice>
+            )}
 
             {/* ── Stat cards + filtros ───────────────────────────────────────── */}
             {/* UNA fila, sin `flex-wrap` (§17.0). No es estética: `useMedidaFila`

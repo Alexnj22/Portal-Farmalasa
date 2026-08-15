@@ -314,7 +314,14 @@ function ItemSection({ label, count, variante = 'neutral', rows, columns, noteEl
     );
 }
 
-export default function ItemSections({ allItems, loading }) {
+// `canEditMinMax` sale de `minmax.can_edit`, NO de `pedidos.can_edit`. La fila de
+// «revisión MIN·MAX» escribe `product_stock_params`, que es el dato del módulo
+// MIN·MAX: quién puede tocarlo lo decide ese módulo y no el hecho de estar
+// mirando un pedido. Sin esto la fila se pintaba para cualquiera que abriera la
+// tarjeta —`pedidos.can_edit` lo tienen ONCE cargos, porque los de sala lo
+// necesitan para RECIBIR—, y el guardado es automático al teclear: no hay botón
+// que sirva de freno. Reportado el 2026-08-15.
+export default function ItemSections({ allItems, loading, canEditMinMax = false }) {
     const [pspMap,          setPspMap]          = React.useState({});
     const [editMap,         setEditMap]         = React.useState({});
     const [origMap,         setOrigMap]         = React.useState({});
@@ -388,6 +395,12 @@ export default function ItemSections({ allItems, loading }) {
     };
 
     const doSave = async (row, min, max) => {
+        // La compuerta también acá y no sólo en los campos: `doSave` lo llaman
+        // tres caminos (teclear, «Restaurar» y «0 / 0») y uno corre por un
+        // temporizador de 800ms, así que puede dispararse después de que el
+        // permiso ya no esté. La base es la que manda —esto no la reemplaza—,
+        // pero un guardado que no puede funcionar no debería salir.
+        if (!canEditMinMax) return;
         setSavingId(row.id);
         try {
             const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
@@ -487,7 +500,7 @@ export default function ItemSections({ allItems, loading }) {
                                 const e = validateEdit(editMap[row.id] ?? {});
                                 setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
-                            readOnly={isSaving}
+                            readOnly={isSaving || !canEditMinMax}
                             compact
                             inputClassName="text-center font-bold tabular-nums"
                         />
@@ -503,14 +516,24 @@ export default function ItemSections({ allItems, loading }) {
                                 const e = validateEdit(editMap[row.id] ?? {});
                                 setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
-                            readOnly={isSaving}
+                            readOnly={isSaving || !canEditMinMax}
                             compact
                             inputClassName="text-center font-bold tabular-nums"
                         />
                         {isSaving && <Loader2 size={10} className="animate-spin text-brand-text shrink-0" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
-                        <Button icon={RotateCcw} disabled={isSaving} title="Restaurar MIN/MAX original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
-                        <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0 — excluye del próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>
+                        {/* Sin permiso de MIN·MAX no hay nada que apretar, y se DICE
+                            por qué: un campo que no responde sin explicación se lee
+                            como que el portal falla. Mismo criterio que la recepción
+                            cuando el cargo no recibe pedidos. */}
+                        {canEditMinMax ? (
+                            <>
+                                <Button icon={RotateCcw} disabled={isSaving} title="Restaurar MIN/MAX original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
+                                <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0 — excluye del próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>
+                            </>
+                        ) : (
+                            <Badge variant="neutral" size="sm" uppercase={false}>Solo lectura — tu cargo no ajusta MIN·MAX</Badge>
+                        )}
                     </div>
                 </td>
             </tr>

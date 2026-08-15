@@ -97,7 +97,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     // { pedidoId, sucId, item } — el renglón que la sala quiere devolver.
     const [devolverModal, setDevolverModal] = React.useState(null);
     const {
-        user, isBranch, canEdit,
+        user, isBranch, canEdit, canEditMinMax,
         erpSucursalId, branchName,
         filterSuc, setFilterSuc,
         filterStatus, setFilterStatus,
@@ -707,7 +707,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     <AnimatePresence>
                                         {isExp && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
-                                                <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} />
+                                                <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} canEditMinMax={canEditMinMax} />
                                             </motion.div>
                                         )}
                                     </AnimatePresence>

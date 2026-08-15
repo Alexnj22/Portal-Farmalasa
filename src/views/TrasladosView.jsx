@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeftRight, Ban, CheckCircle2, History, PackageCheck } from 'lucide-react';
+import { ArrowLeftRight, Ban, History, PackageCheck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -9,11 +9,9 @@ import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore } from '../store/staffStore';
 import { smartFilter } from '../utils/searchUtils';
-import { FilaPorConfirmar, FilaPorRecibir } from './traslados/FilasTraslado';
+import { FilaPorRecibir } from './traslados/FilasTraslado';
 import { fmtFechaLarga, resumenItems, textoBuscable } from './traslados/trasladoTexto';
-import {
-    fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchTrasladosHistorial,
-} from '../data/traslados';
+import { fetchTrasladosPorRecibir, fetchTrasladosHistorial } from '../data/traslados';
 
 // Vista «Traslados entre Salas».
 //
@@ -25,11 +23,27 @@ import {
 // los descarta, y los 2 rechazados porque nadie los consultaba nunca. Con ellos
 // se iba el único registro de por qué una sala dijo que no.
 //
-// ── Tres pestañas, que son los tres momentos ──────────────────────────────
-// «Por confirmar» es lo que otra sala me pide y todavía no contesté. «Por
-// recibir» es lo que ya salió y no entró. «Historial» es lo que se cerró, con
-// su motivo si fue un rechazo. Las dos primeras son las del widget —las mismas
-// filas, importadas, no copiadas—; la tercera es la que faltaba.
+// ── Dos pestañas, que son los dos momentos que quedan acá ─────────────────
+// «En camino» es lo que ya salió y todavía no entró. «Historial» es lo que se
+// cerró, con su motivo si fue un rechazo.
+//
+// ── Por qué ya no está «Por confirmar» (2026-08-15) ───────────────────────
+// Porque contestar un traslado es contestar una solicitud, y las solicitudes se
+// contestan en Solicitudes. Hasta acá el circuito vivía repartido en tres
+// pantallas —se pedía desde el tablero, se veía en Solicitudes sin ningún botón,
+// y se confirmaba en ésta—, que es la peor de las combinaciones: la solicitud
+// estaba a la vista, estaba pendiente, y había que saber que se resolvía en otro
+// lado. Reportado por el usuario así: «me pierdo».
+//
+// El bloque que confirma o rechaza no se movió ni se copió: es
+// `DecisionTraslado`, y lo usan el modal de Solicitudes, la campana y la tarjeta
+// del tablero. Sigue releyendo la existencia de la sala de origen al abrirse,
+// que es lo que nunca se puede perder.
+//
+// Lo que queda acá es el lado LOGÍSTICO: lo que viene en camino y lo que ya
+// pasó. Recibir no es una decisión —lo hace la sala que pidió, después de que la
+// otra despachó—, así que no tiene nada que hacer en una bandeja de
+// aprobaciones.
 //
 // ── Por qué está bajo Solicitudes y no bajo Inventario ────────────────────
 // Porque un traslado ES una solicitud: vive en `approval_requests` y su ciclo
@@ -47,9 +61,8 @@ import {
 // abrir vacía. El arreglo sería de la policy, no de acá.
 
 const TABS = [
-    { key: 'confirmar', label: 'Por confirmar' },
-    { key: 'recibir',   label: 'Por recibir'   },
-    { key: 'historial', label: 'Historial'     },
+    { key: 'recibir',   label: 'En camino' },
+    { key: 'historial', label: 'Historial' },
 ];
 
 // El historial es una LISTA DE REGISTROS, así que va en `DataTable` — no en
@@ -100,7 +113,7 @@ export default function TrasladosView() {
     const alcanceTodas = getScope('traslados') === 'ALL';
     const miBranch = user?.branchId ?? user?.branch_id ?? null;
 
-    const [activeTab, setActiveTab] = useState('confirmar');
+    const [activeTab, setActiveTab] = useState('recibir');
     const [busqueda,  setBusqueda]  = useState('');
     // Con alcance de una sola sala el filtro de sucursal no se ofrece: el RLS ya
     // recortó y un desplegable de siete que sólo funciona con una es un control
@@ -108,7 +121,6 @@ export default function TrasladosView() {
     const [sala, setSala] = useState('');
     const [tipo, setTipo] = useState('');
 
-    const [porConfirmar, setPorConfirmar] = useState(null);
     const [porRecibir,   setPorRecibir]   = useState(null);
     const [historial,    setHistorial]    = useState(null);
     const [error,        setError]        = useState('');
@@ -122,14 +134,12 @@ export default function TrasladosView() {
     // síncrono dentro del efecto que la llama, y eso encadena renders. El error
     // se resuelve cuando llega la respuesta, que es cuando se sabe.
     const cargar = useCallback(async () => {
-        const [a, b, c] = await Promise.all([
-            fetchTrasladosPorConfirmar(),
+        const [b, c] = await Promise.all([
             fetchTrasladosPorRecibir(),
             fetchTrasladosHistorial({ branchId: alcanceTodas ? (sala || null) : miBranch }),
         ]);
-        const fallo = a.error ?? b.error ?? c.error;
+        const fallo = b.error ?? c.error;
         setError(fallo ? (fallo.message ?? 'No se pudo leer.') : '');
-        setPorConfirmar(a.filas);
         setPorRecibir(b.filas);
         setHistorial(c.filas);
     }, [alcanceTodas, sala, miBranch]);
@@ -153,21 +163,19 @@ export default function TrasladosView() {
     }, [busqueda, nombrePor, recortaSala]);
 
     const vistas = useMemo(() => ({
-        confirmar: filtrar(porConfirmar),
         recibir:   filtrar(porRecibir),
         // El tipo sólo recorta el historial: es la única pestaña donde conviven
         // los dos desenlaces.
         historial: filtrar(historial).filter(f => !tipo || f.status === tipo),
-    }), [filtrar, porConfirmar, porRecibir, historial, tipo]);
+    }), [filtrar, porRecibir, historial, tipo]);
 
-    const cargando = porConfirmar === null || porRecibir === null || historial === null;
+    const cargando = porRecibir === null || historial === null;
 
     // El contador va en la pestaña y sale de lo que HAY, no de lo filtrado: un
     // número que baja al escribir en el buscador deja de decir cuánto falta.
+    // El historial no lleva: es un archivo, no una cola que alguien vacía.
     const conCuenta = TABS.map(t => {
-        const total = recortaSala(
-            t.key === 'confirmar' ? porConfirmar : t.key === 'recibir' ? porRecibir : null,
-        ).length;
+        const total = recortaSala(t.key === 'recibir' ? porRecibir : null).length;
         return { ...t, label: total > 0 ? `${t.label} · ${total}` : t.label };
     });
 
@@ -304,8 +312,8 @@ export default function TrasladosView() {
                     </DataTable>
                 </div>
             ) : (
-                /* Las dos pestañas de acción: tarjetas, y las MISMAS que el
-                   widget. No son registros — llevan un formulario adentro. */
+                /* «En camino»: tarjetas y no tabla, porque cada fila lleva su
+                   botón de recibir adentro. Son las MISMAS del widget. */
                 <div className="p-4 md:p-5 flex flex-col gap-2">
                     {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
@@ -313,21 +321,15 @@ export default function TrasladosView() {
 
                     {!cargando && lista.length === 0 && (
                         <EmptyState
-                            icon={activeTab === 'recibir' ? PackageCheck : CheckCircle2}
-                            title={busqueda.trim()
-                                ? `Sin coincidencias para "${busqueda}"`
-                                : activeTab === 'confirmar' ? 'Nada por confirmar' : 'Nada en camino'}
+                            icon={PackageCheck}
+                            title={busqueda.trim() ? `Sin coincidencias para "${busqueda}"` : 'Nada en camino'}
                             subtitle={busqueda.trim() ? undefined
-                                : activeTab === 'confirmar'
-                                    ? 'Cuando otra sala pida producto de la tuya, aparece acá.'
-                                    : 'Lo que pediste y ya salió se lista acá hasta que lo recibas.'}
+                                : 'Lo que pediste y ya salió se lista acá hasta que lo recibas.'}
                         />
                     )}
 
                     {!cargando && lista.map(f => (
-                        activeTab === 'confirmar'
-                            ? <FilaPorConfirmar key={f.id} fila={f} nombrePor={nombrePor} onHecho={cargar} />
-                            : <FilaPorRecibir   key={f.id} fila={f} onHecho={cargar} />
+                        <FilaPorRecibir key={f.id} fila={f} onHecho={cargar} />
                     ))}
                 </div>
             )}

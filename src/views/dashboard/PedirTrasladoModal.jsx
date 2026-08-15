@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeftRight, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, Loader2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
+import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
@@ -11,11 +12,24 @@ import { fetchPresentaciones } from '../../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../../data/traslados';
 import { lotesEnUnidades, repartirPedido } from '../../utils/unidadesInventario';
 
-// Pedirle un producto a otra sala, desde la lista de faltantes.
+// Pedirle un producto a otra sala.
 //
-// La lista ya sabe todo lo que hace falta —qué producto, qué salas lo tienen y
-// cuántas unidades—, así que acá solo quedan tres decisiones: a cuál pedirle,
-// cuánto, y para qué. Esa última es obligatoria: es lo único que queda escrito
+// Se abre de dos maneras, y la diferencia es sólo con cuánto se llega:
+//
+//  · **Desde la consulta de inventario** (`producto` viene puesto): la lista ya
+//    sabe qué producto, qué salas lo tienen, cuántas unidades y con qué lotes.
+//    Quedan tres decisiones: a cuál pedirle, cuánto, y para qué.
+//  · **Desde Solicitudes** (`producto` llega en nulo, 2026-08-15): el primer
+//    paso es elegir el producto, y de ahí en adelante es exactamente el mismo
+//    formulario. Las salas que lo tienen las trae `fetchDondeHay`, que es el
+//    camino que este archivo ya usaba cuando la búsqueda no las traía; los
+//    lotes no, así que ahí no se ofrece elegirlos — no se inventa un reparto
+//    sobre datos que no se tienen.
+//
+// Antes esa segunda puerta no existía y el motivo escrito era «sin ese producto
+// no tiene primera pantalla». Ahora la tiene, y es la compartida.
+//
+// El «para qué» es obligatorio en los dos casos: es lo único que queda escrito
 // en el movimiento de las dos salas.
 //
 // ── Lo que NO se elige acá ────────────────────────────────────────────────
@@ -38,9 +52,15 @@ function diasHasta(d) {
     return Math.round((new Date(d + 'T12:00:00') - new Date(hoy + 'T12:00:00')) / 86400000);
 }
 
-export default function PedirTrasladoModal({ producto, onClose, onListo }) {
+export default function PedirTrasladoModal({ producto: productoInicial = null, onClose, onListo }) {
     const { user } = useAuth();
     const appendAuditLog = useStaffStore(s => s.appendAuditLog);
+    /* Lo elegido en el primer paso, cuando hubo primer paso. La fila del
+       catálogo trae `{ id, nombre }` y el resto del archivo habla de
+       `{ erp_product_id, descripcion }`: se traduce acá, en el borde, y no en
+       cada uno de los cinco sitios que lo leen. */
+    const [elegido, setElegido] = useState(null);
+    const producto = productoInicial ?? elegido;
     const [salaId,   setSalaId]   = useState(null);
     const [presIdx,  setPresIdx]  = useState('0');
     const [presentaciones, setPresentaciones] = useState([]);
@@ -281,17 +301,36 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-body font-black text-content leading-tight">
-                            {producto?.descripcion}
+                            {producto?.descripcion ?? 'Pedir a otra sala'}
                         </p>
-                        <p className="text-label text-content-3 mt-0.5">Solicitar a otra sala</p>
+                        <p className="text-label text-content-3 mt-0.5">
+                            {producto ? 'Solicitar a otra sala' : 'Elige el producto'}
+                        </p>
                     </div>
+                    {/* Volver al buscador sólo cuando hubo buscador: si el
+                        producto llegó puesto desde la consulta de inventario,
+                        atrás no es acá. */}
+                    {elegido && !listo && (
+                        <Button variant="ghost" size="xs" icon={ArrowLeft} iconOnly
+                            onClick={() => { setElegido(null); setSalaId(null); setPresIdx('0'); setCantidad('1'); }}
+                            aria-label="Elegir otro producto" />
+                    )}
                     <Button variant="ghost" size="xs" icon={X} iconOnly
                         onClick={onClose} aria-label="Cerrar" />
                 </div>
             </LiquidModal.Header>
 
             <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
-                {listo ? (
+                {!producto ? (
+                    <BuscadorDeProducto
+                        placeholder="Buscar el producto que hace falta…"
+                        invitacion={{
+                            icono: ArrowLeftRight,
+                            texto: 'Busca el producto que necesitas para ver qué salas lo tienen',
+                        }}
+                        onElegir={(p) => setElegido({ erp_product_id: p.id, descripcion: p.nombre })}
+                    />
+                ) : listo ? (
                     <p className="text-label font-semibold text-success-text py-6 text-center leading-snug">
                         Solicitud enviada.<br />
                         <span className="text-content-3 font-medium">
@@ -443,7 +482,10 @@ export default function PedirTrasladoModal({ producto, onClose, onListo }) {
                 )}
             </LiquidModal.Body>
 
-            {!listo && (
+            {/* Sin producto todavía no hay nada que solicitar: el pie sería un
+                botón apagado sin ninguna pista de qué lo enciende. La salida en
+                ese paso es la X del encabezado. */}
+            {!listo && producto && (
                 <LiquidModal.Footer>
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                     <Button disabled={!puedeEnviar || enviando} onClick={enviar}>

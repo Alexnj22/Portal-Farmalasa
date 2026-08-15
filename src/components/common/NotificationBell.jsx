@@ -568,7 +568,29 @@ const NotificationBell = ({ variant = 'desktop' }) => {
             // —tiene que sobrevivir a que ésta se cierre— y dejarlos encimados
             // deja dos superficies compitiendo por el mismo toque.
             setIsOpen(false);
-            setRechazo({ req });
+            setRechazo({ req, accion: 'reject' });
+        }
+        setDecidiendoId(null);
+    };
+
+    /* El traslado abre el MISMO diálogo, sin decisión desplegada.
+     *
+     * Hasta el 2026-08-15 este botón decía «Resolver en Traslados» y navegaba a
+     * esa pantalla: la campana avisaba de algo que después había que ir a
+     * buscar. Ahora el diálogo canónico trae adentro el bloque que confirma o
+     * rechaza —el mismo de la tarjeta del tablero, que relee la existencia de la
+     * sala de origen—, así que no hay a dónde ir.
+     *
+     * Sigue sin pasar por `decidir`, y ésa es la parte que no cambió: aprobarlo
+     * con `approveRequest` lo marcaría APROBADO sin mover un solo producto. */
+    const resolverTrasladoDesdeElAviso = async (n) => {
+        if (decidiendoId) return;
+        if (!n.read_at) markNotificationRead(n.id);
+        setDecidiendoId(n.id);
+        const req = await traerSolicitud(n);
+        if (req && !yaResuelta(n, req)) {
+            setIsOpen(false);
+            setRechazo({ req, accion: null });
         }
         setDecidiendoId(null);
     };
@@ -1111,10 +1133,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                             </div>
                                         )}
 
-                                        {/* Un traslado se resuelve en SU pantalla, que relee la
-                                                            existencia de la sala de origen antes de despachar.
-                                                            Acá se dice a dónde ir, en vez de ofrecer dos botones
-                                                            que marcarían APROBADO sin mover producto. */}
+                                        {/* El traslado abre su solicitud con el bloque que
+                                                            confirma o rechaza adentro. Un solo botón y no dos:
+                                                            confirmarlo relee la existencia de la sala de origen y
+                                                            puede resultar que ya no alcance, así que prometer
+                                                            «Aprobar» desde acá sería prometer lo que no se sabe. */}
                                                         {trasladoPorResolver(n) && (
                                                             <div className={`relative px-3.5 pb-3 ${expandible ? '' : '-mt-1'}`}>
                                                                 <Button
@@ -1122,14 +1145,14 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     soft
                                                                     icon={ArrowLeftRight}
                                                                     className="w-full"
+                                                                    loading={decidiendoId === n.id}
+                                                                    disabled={!!decidiendoId}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        if (!n.read_at) markNotificationRead(n.id);
-                                                                        setIsOpen(false);
-                                                                        navigate('/traslados');
+                                                                        resolverTrasladoDesdeElAviso(n);
                                                                     }}
                                                                 >
-                                                                    Resolver en Traslados
+                                                                    Revisar el traslado
                                                                 </Button>
                                                             </div>
                                                         )}
@@ -1171,10 +1194,16 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         req={rechazo.req}
                         canApprove
                         employeesById={empleadosPorId}
-                        accionInicial="reject"
+                        accionInicial={rechazo.accion}
                         ocupado={decidiendo}
                         onCerrar={() => !decidiendo && setRechazo(null)}
                         onDecidir={decidir}
+                        /* El traslado lo aplica una Edge Function y su aviso
+                           tiene fila propia: el disparador de la base lo marca
+                           resuelto, pero eso llega por realtime y el panel
+                           todavía ofrecería el botón. Se apaga acá, igual que
+                           hace `useDecidirSolicitud` con el resto. */
+                        onResuelto={(estado) => marcarAvisoResuelto(rechazo.req.id, estado)}
                     />
                 </Suspense>
             )}

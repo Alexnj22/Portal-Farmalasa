@@ -4,7 +4,7 @@ import Button from '../../components/common/Button';
 import { SkeletonText } from '../../components/common/StateViews';
 import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff, CalendarClock, Boxes } from 'lucide-react';
 import Notice from '../../components/common/Notice';
-import SearchInput from '../../components/common/SearchInput';
+import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
 import LanzadorSolicitud, { HerramientasModal, PieModal } from './LanzadorSolicitud';
@@ -12,7 +12,7 @@ import { BarraTramos, FranjaVacia } from './InstrumentoBaldosa';
 import { useAuth } from '../../context/AuthContext';
 import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
-    buscarProductosMinMax, fetchMinMaxEstados, fetchMinMaxContextoVenta,
+    fetchMinMaxEstados, fetchMinMaxContextoVenta,
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '../../data/stockParams';
@@ -434,11 +434,8 @@ export function FormularioMinMax({ selectedErp = null }) {
   const { user }       = useAuth();
   const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
-  const [view, setView]       = useState('search'); // search | form | success
-  const [search, setSearch]   = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [picked, setPicked]   = useState(null);
+  const [view, setView]   = useState('search'); // search | form | success
+  const [picked, setPicked] = useState(null);
 
   // ── La búsqueda se resuelve en el servidor (2026-08-07) ────────────────
   // Esto bajaba el catálogo entero al navegador —los 5.205 productos activos,
@@ -454,31 +451,9 @@ export function FormularioMinMax({ selectedErp = null }) {
   // Lo único que sí cambia es el algoritmo del APROXIMADO —el que solo entra
   // cuando la búsqueda exacta no da nada—, y queda anotado en la migración.
   //
-  // ── El debounce es nuevo, y son 150 ms MEDIDOS, no un número redondo ───
-  // Filtrar en memoria era gratis por tecla; un viaje al servidor no, así que
-  // sin debounce cada letra sería una petición. Pero el debounce se paga entero
-  // después de la última tecla, y con 250 ms el A/B lo delató: contra una base
-  // ya caliente, el camino nuevo salía **más lento** que bajarse el catálogo
-  // (mín 504 ms contra 394). A 150 ms empata en reloj y se queda con lo demás:
-  // una petición en vez de seis, unos kB en vez de ~1,4 MB, y un primer uso que
-  // baja de 4,4 s a menos de un segundo.
-  //
-  // Es más corto que sus hermanos (300 ms en Ajuste de Inventario, 380 en la
-  // Consulta) a propósito: acá la respuesta son 20 filas de texto, no la
-  // existencia de siete salas.
-  useEffect(() => {
-    const q = search.trim();
-    if (q.length < 2) { setResults([]); setLoading(false); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- limpia resultados cuando la búsqueda es muy corta
-    let cancelado = false;
-    setLoading(true);
-    const t = setTimeout(async () => {
-      const { filas } = await buscarProductosMinMax(q, 20);
-      if (cancelado) return;
-      setResults(filas);
-      setLoading(false);
-    }, 150);
-    return () => { cancelado = true; clearTimeout(t); };
-  }, [search]);
+  // El cuerpo de la búsqueda —con su debounce medido— vive desde el 2026-08-15
+  // en `BuscadorDeProducto`, que es el mismo primer paso que usa «pedir a otra
+  // sala». Los números están anotados allá.
 
   if (view === 'success') {
     return (
@@ -497,55 +472,26 @@ export function FormularioMinMax({ selectedErp = null }) {
       <RequestForm
         product={picked} erp={selectedErp} user={user} appendAuditLog={appendAuditLog}
         onBack={() => { setView('search'); setPicked(null); }}
-        onSuccess={() => { setView('success'); setTimeout(() => { setView('search'); setPicked(null); setSearch(''); setResults([]); }, 2600); }}
+        /* El buscador se remonta al volver a 'search' —es otro nodo del
+           árbol— así que su texto y sus resultados se van solos. Antes había
+           que limpiarlos a mano porque el estado vivía acá. */
+        onSuccess={() => { setView('success'); setTimeout(() => { setView('search'); setPicked(null); }, 2600); }}
       />
     );
   }
 
+  /* El buscador se mudó a `BuscadorDeProducto` (2026-08-15), cuando pedirle
+     producto a otra sala desde Solicitudes necesitó exactamente el mismo primer
+     paso. Lo que se comparte no es el dibujo sino el debounce de 150 ms —que se
+     midió acá, contra 250 y contra bajarse el catálogo entero— y el piso de dos
+     letras. Copiado, la próxima corrección habría tocado un solo lado. */
   return (
-    <div className="flex flex-col gap-3 flex-1 min-h-0">
-      {/* El buscador va ABIERTO y en el encabezado del modal, como el de
-          Facturación. Plegado detrás de una lupa —que es lo que hacía
-          `expandable`— se leía como un botón sin nombre en una pantalla cuyo
-          único trabajo es buscar: había que descubrir el control antes de poder
-          empezar. Reportado el 2026-08-07 sobre esta misma vista. */}
-      <HerramientasModal>
-        <SearchInput accentColor="var(--warning)" value={search} onChange={setSearch}
-          placeholder="Buscar producto para ajustar Min/Max…" />
-      </HerramientasModal>
-
-      <div className="flex-1 overflow-y-auto overscroll-contain space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
-
-        {!loading && search.trim().length >= 2 && results.length === 0 && (
-          <div className="py-8 text-center text-body-sm text-content-3 font-medium">Sin resultados para "{search}"</div>
-        )}
-
-        {!loading && search.trim().length < 2 && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
-            <TrendingUp size={28} strokeWidth={1.5} />
-            <p className="text-body-sm font-semibold text-content-3 text-center px-4">Busca un producto para proponer un ajuste de mínimo/máximo</p>
-          </div>
-        )}
-
-        {!loading && results.map(p => (
-          <ListRow
-            key={p.id}
-            onClick={() => { setPicked(p); setView('form'); }}
-            leading={p.foto_url
-              ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
-              : <Package size={14} className="text-content-3" strokeWidth={2} />}
-            iconBoxClass="bg-surface-card-hover border-border-card overflow-hidden"
-            className="border-divider bg-surface-card hover:border-brand/40"
-            title={p.nombre}
-            trailing={<Building2 size={12} className="text-content-3" />}
-          >
-            {p.principio_activo && <span className="block text-micro text-success-text font-semibold truncate">{p.principio_activo}</span>}
-            {p.laboratorio_nombre && <span className="block text-micro text-content-3 truncate">{p.laboratorio_nombre}</span>}
-          </ListRow>
-        ))}
-      </div>
-    </div>
+    <BuscadorDeProducto
+      accentColor="var(--warning)"
+      placeholder="Buscar producto para ajustar Min/Max…"
+      invitacion={{ icono: TrendingUp, texto: 'Busca un producto para proponer un ajuste de mínimo/máximo' }}
+      onElegir={(p) => { setPicked(p); setView('form'); }}
+    />
   );
 }
 

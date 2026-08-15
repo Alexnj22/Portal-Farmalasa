@@ -33,6 +33,7 @@ import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
  * vista lo necesita antes de decidir si dibuja el botón. */
 const ModalNuevaPersonal  = lazy(() => import('./solicitudes/ModalNuevaPersonal'));
 const ModalNuevaOperativa = lazy(() => import('./solicitudes/ModalNuevaOperativa'));
+const PedirTrasladoModal  = lazy(() => import('./dashboard/PedirTrasladoModal'));
 import { familiasDisponibles } from './solicitudes/familiasOperativas';
 import { lineasDe, buscadorDePersonas } from './solicitudes/movimientoTexto';
 
@@ -286,6 +287,19 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     const [nuevaAbierta, setNuevaAbierta] = useState(false);
     const [prefillEmpleado, setPrefillEmpleado] = useState('');
 
+    /* Pedirle producto a otra sala. Es la cuarta familia operativa y la única
+     * que no entra en una ranura del modal de «Nueva solicitud»: trae su propio
+     * diálogo, así que aquél se cierra y éste se abre. Dos ventanas encimadas
+     * serían dos superficies peleando por el mismo toque en el teléfono.
+     *
+     * `useCallback` no es adorno: el hijo lo dispara desde un efecto, y una
+     * función nueva en cada render lo volvería a disparar en bucle. */
+    const [pidiendoTraslado, setPidiendoTraslado] = useState(false);
+    const abrirPedirTraslado = useCallback(() => {
+        setNuevaAbierta(false);
+        setPidiendoTraslado(true);
+    }, []);
+
     // Cancelar la propia. No es una decisión —no la toma quien aprueba y no
     // lleva motivo— así que viaja aparte, por `accionPropia` del modal.
     const cancelRequest = useStaff(s => s.cancelRequest);
@@ -391,8 +405,10 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      *                `MODULO_QUE_DECIDE`. Desde v2.576.0 aprobar dejó de ser un
      *                solo interruptor: la base lo cobra por familia y esto es su
      *                espejo, para no ofrecer un botón que va a rebotar.
-     *   · Traslado → NADIE desde acá: se confirma en Traslados, que relee la
-     *                existencia de la sala antes de despachar.
+     *   · Traslado → por este camino NADIE, pero sí desde esta pantalla: el
+     *                modal trae su propio bloque de decisión, porque confirmarlo
+     *                relee la existencia de la sala y lo aplica una Edge
+     *                Function. Su permiso es `traslados.can_approve`.
      *   · Cambio de turno → el COMPAÑERO al que se le pide, y sin permiso de
      *                módulo: en su primer nivel no lo contesta una jefatura. Sin
      *                esta rama, encender el alcance «sólo míos» dejaba a la
@@ -404,6 +420,11 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
 
     const puedeDecidir = (req) => {
         if (!req) return false;
+        /* El traslado se contesta acá desde el 2026-08-15, pero NO por este
+         * camino: `approveRequest` lo marcaría APROBADO sin mover un producto.
+         * Lo resuelve `DecisionTraslado` dentro del modal, con su propia Edge
+         * Function y su propio permiso. Este `false` es lo que apaga los botones
+         * genéricos para que no haya dos formas de decir que sí. */
         if (req.type === 'INVENTORY_TRANSFER_REQUEST') return false;
         if (req.type === 'SHIFT_CHANGE' && req.status === 'PENDING'
             && paraQuien(req) === miId && deQuienEs(req) !== miId) return true;
@@ -422,6 +443,18 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         // cualquier filtro de bandeja que se le aplique la esconde: una
         // solicitud mía tiene a otro de aprobador por definición.
         if (deQuienEs(r) === miId) return true;
+        /* El traslado no se reparte por `approver_id`: la cascada deja una
+         * LISTA en `metadata.destinatarios` y cualquiera de ellos puede
+         * confirmarlo, más la jefatura de la sala de origen. El filtro genérico
+         * de abajo se queda con `approver_id` a secas, así que sin esta rama el
+         * traslado desaparecía de la bandeja de todos los destinatarios menos
+         * uno — justo ahora que es acá donde se contesta.
+         *
+         * No hace falta preguntar nada más: la policy de `approval_requests`
+         * exige `traslados.can_approve` para siquiera VER una fila de este
+         * tipo, y después aplica el alcance. Si llegó hasta acá, es de quien
+         * mira. */
+        if (r.type === 'INVENTORY_TRANSFER_REQUEST') return true;
         // El cambio de turno lo contesta el compañero y no es asunto de nadie
         // más mientras está pendiente.
         if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && paraQuien(r) !== miId) return false;
@@ -739,6 +772,11 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                         ocupado={isActioning}
                         onCerrar={() => !isActioning && setAbierta(null)}
                         onDecidir={handleDecidir}
+                        /* El traslado lo aplica una Edge Function, así que el
+                           store no se entera: hay que volver a leer. Las otras
+                           familias no lo necesitan porque `approveRequest`
+                           parcha la lista en el sitio. */
+                        onResuelto={recargarSolicitudes}
                         accionPropia={esPropiaPendiente ? {
                             label: 'Cancelar solicitud',
                             onClick: (r) => { setAbierta(null); setCancelarId(r.id); },
@@ -772,6 +810,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     hasPermission={hasPermission}
                     branchIdUsuario={user?.branchId ?? user?.branch_id}
                     alcanceTodas={alcance === 'ALL'}
+                    onPedirTraslado={abrirPedirTraslado}
                 />
             ) : (
                 <ModalNuevaPersonal
@@ -787,6 +826,18 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     onEnviado={() => fetchRequests(criterios)}
                 />
             )}</Suspense>}
+
+            {/* Se monta SOLO al pedirlo: trae el buscador del catálogo y las
+                presentaciones del producto, y nada de eso tiene por qué viajar
+                con la vista. */}
+            {pidiendoTraslado && (
+                <Suspense fallback={null}>
+                    <PedirTrasladoModal
+                        onClose={() => setPidiendoTraslado(false)}
+                        onListo={recargarSolicitudes}
+                    />
+                </Suspense>
+            )}
         </GlassViewLayout>
     );
 };

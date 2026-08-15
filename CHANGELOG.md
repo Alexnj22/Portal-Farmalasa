@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.611.0 — El traslado se contesta en Solicitudes, y los tipos recuperan su nombre
+
+**Pedirle producto a otra sala vivía en tres pantallas.** Se pedía desde el
+tablero, se veía en Solicitudes —donde aparecía, decía «pendiente» y **no tenía
+ningún botón**— y se confirmaba en Traslados. Preguntado por el usuario así:
+«¿por qué las solicitudes de productos están en Traslados y todas las demás en
+Solicitudes? Me pierdo».
+
+No había razón. Un traslado ya era una solicitud —la misma tabla, el mismo ciclo
+de pedir → contestar— y las otras tres familias con permiso propio (facturación,
+inventario, Min/Max) hace rato que se contestan dentro de Solicitudes, cada una
+con su llave. La única de las cuatro que mandaba a otra pantalla era ésta.
+
+**Ahora el circuito entero cabe en un solo lugar.** En Solicitudes se pide
+—«Pedir a otra sala» es la cuarta opción de «Nueva solicitud», y empieza
+buscando el producto—, se ve y se contesta. La campana también: su aviso abre la
+solicitud con la decisión adentro, en vez de decir a dónde ir.
+
+Lo que confirma o rechaza **no se copió**: es el mismo bloque que ya usaba la
+tarjeta del tablero, así que sigue releyendo la existencia de la sala de origen
+al abrirse —entre que alguien pide y alguien contesta, la sala pudo vender lo
+último— y sigue ofreciendo sólo los cuatro motivos de rechazo que la base
+valida. Aprobarlo por el camino genérico lo habría marcado APROBADO sin mover un
+producto, y por eso ese camino sigue cerrado.
+
+**Traslados se queda con lo suyo: lo que viene en camino y el historial.**
+Recibir no es una decisión —lo hace la sala que pidió, después de que la otra
+despachó—, así que no tiene nada que hacer en una bandeja de aprobaciones. La
+pestaña «Por confirmar» se fue; «Por recibir» se llama ahora **En camino**.
+
+**Y una solicitud volvió a llamarse como se llama.** El widget de solicitudes
+del Inicio rotulaba las filas con una lista escrita a mano que tenía **7 de los
+15 tipos**: los de la persona (vacaciones, permiso, incapacidad…) y ninguno de
+los que hablan de la sala. Nació cuando ésos eran todos los que había, y las
+veces que el portal sumó una familia entera nadie volvió a tocarla, porque no
+falla — imprime la clave interna y sigue de largo. Así es como un descarte de
+inventario aparecía en pantalla como `INVENTORY_DISCARD_REQUEST`. Ahora los
+nombres salen del mismo registro que usan la bandeja, la tarjeta y la campana,
+que es el que los tiene todos.
+
+**Debajo:** el buscador de producto salió de dentro del widget de Min/Max a
+`BuscadorDeProducto`. Era, textualmente, el motivo por el que el traslado no
+podía abrirse desde Solicitudes —«sin producto no tiene primera pantalla»— y
+copiarlo habría dejado el debounce de 150 ms, que está medido, en dos sitios que
+se corrigen por separado.
+
 ## v2.610.1 — El apoyo usa la pastilla del sistema, la foto firmada y la entrega vuelve a la tarjeta
 
 **La pastilla del apoyo era una copia a mano.** Salió con la forma del chip de

@@ -40,6 +40,7 @@ import {
 } from '../constants/erp';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
+import { REQUEST_TYPES } from '../store/slices/requestsSlice';
 import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
@@ -508,11 +509,31 @@ function resolveCollisions(dragId, targetCol, targetRow, layout, sizes, gridCols
 }
 
 // ─── Other constants ───────────────────────────────────────────────────────────
-const REQUEST_TYPE_LABELS = {
-  VACATION: 'Vacaciones', PERMIT: 'Permiso', DISABILITY: 'Incapacidad',
-  ADVANCE: 'Anticipo', CERTIFICATE: 'Constancia',
-  SHIFT_CHANGE: 'Cambio turno', OVERTIME: 'Horas extra',
-};
+/* Cómo se llama un tipo de solicitud, en castellano.
+ *
+ * Acá vivía `REQUEST_TYPE_LABELS`, una lista escrita a mano con **7 de los 15**
+ * tipos: tenía los de la persona —vacaciones, permiso, incapacidad, anticipo,
+ * constancia, cambio de turno, horas extra— y ninguno de los que hablan de la
+ * sala. Nació cuando esos eran todos los que había, y las dos veces que el
+ * portal sumó una familia entera —facturación en su momento, inventario,
+ * traslado y Min/Max después— nadie volvió a tocarla, porque no falla: el
+ * `|| r.type` de al lado imprimía la clave cruda y seguía de largo.
+ *
+ * Resultado, reportado por el usuario: el widget de solicitudes rotulaba una
+ * fila `INVENTORY_DISCARD_REQUEST` debajo del nombre de quien la mandó.
+ *
+ * `REQUEST_TYPES` del store es el registro único —el mismo que usan la bandeja,
+ * la tarjeta, el modal y la campana— y tiene los 15. Se lee de ahí en vez de
+ * mantener una segunda copia, que es exactamente lo que se acaba de romper.
+ * El `?? tipo` final no es un rótulo: es la señal de que falta uno en el
+ * registro, y ahí sí hay que agregarlo (en el registro, no acá).
+ */
+const nombreDeTipo = (tipo) => REQUEST_TYPES[tipo]?.label ?? tipo;
+
+/* La versión corta, para el chip que va al lado del nombre completo. Se queda
+ * con la primera palabra —«Permiso / licencia» → «Permiso»— y sólo se usa en
+ * Ausencias, donde conviven tres tipos que la primera palabra ya distingue. */
+const nombreCorto = (tipo) => nombreDeTipo(tipo).split(' ')[0];
 
 // Tokenizado T7 — mismo criterio de PERMIT=cat-2 que RequestsView/
 // EmployeeProfileView (mismo enum de tipo de ausencia en toda la app).
@@ -2584,8 +2605,8 @@ const DashboardView = ({ openModal }) => {
                 return (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                     <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
-                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}`}</p></div>
-                    <Badge variant={cfg.variante} size="sm">{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</Badge>
+                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{nombreDeTipo(r.type)}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}`}</p></div>
+                    <Badge variant={cfg.variante} size="sm">{nombreCorto(r.type)}</Badge>
                   </div>
                 );
               })}
@@ -2629,7 +2650,7 @@ const DashboardView = ({ openModal }) => {
                   icon={ClipboardList} iconClass="text-warning-text"
                   iconBoxClass="bg-warning/10 border-warning/30"
                   title={getEmpName(r.employee_id)}
-                  subtitle={REQUEST_TYPE_LABELS[r.type]||r.type}
+                  subtitle={nombreDeTipo(r.type)}
                   onClick={puedeAbrir('/requests')?()=>navigate('/requests'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={<span className="text-caption text-content-3">{new Date(r.created_at).toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}</span>} />

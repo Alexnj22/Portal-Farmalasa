@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Check, X, ArrowLeftRight, FileText, Clock } from 'lucide-react';
+import { Check, X, FileText, Clock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
@@ -9,6 +8,8 @@ import ModalShell from '../../components/common/ModalShell';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice';
 import { ICONO_POR_TIPO } from '../../constants/tipoIconos';
+import { useAuth } from '../../context/AuthContext';
+import { DecisionTraslado } from '../traslados/FilasTraslado';
 import DetalleSolicitud from './DetalleSolicitud';
 import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
@@ -243,17 +244,33 @@ RequestCard.displayName = 'RequestCard';
  * @param extra         Bloque propio de la pantalla que lo usa (p. ej. adjuntar
  *                      el certificado de una incapacidad, que sólo tiene sentido
  *                      del lado de quien la pidió).
+ * @param onResuelto    Se llama cuando un TRASLADO se despachó o se rechazó.
+ *                      Va aparte de `onDecidir` porque el traslado no se decide
+ *                      con `approveRequest`: lo aplica una Edge Function que
+ *                      mueve existencia de verdad, así que el store no se entera
+ *                      solo y la pantalla tiene que volver a leer.
  */
-export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDecidir, ocupado, accionInicial, accionPropia, extra }) => {
+export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDecidir, ocupado, accionInicial, accionPropia, extra, onResuelto }) => {
     const [modo, setModo]   = useState(accionInicial ?? null);   // null | 'approve' | 'reject'
     const [nota, setNota]   = useState('');
-    const navigate          = useNavigate();
     const bloqueDecision    = useRef(null);
+    const { hasPermission } = useAuth();
 
     const meta      = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
     const lineas    = lineasDe(meta);
     const esTraslado = req.type === 'INVENTORY_TRANSFER_REQUEST';
+    /* El traslado NO pasa por la decisión genérica, y nunca pasó: aprobarlo con
+     * `approveRequest` lo marcaría APROBADO sin mover un solo producto. Lo que
+     * cambió el 2026-08-15 es que ya no manda a otra pantalla a resolverlo —
+     * trae acá su propio bloque, que es el mismo de la tarjeta del tablero.
+     *
+     * Su permiso también es propio (`traslados.can_approve`, no `requests`), y
+     * se pregunta acá porque `canApprove` habla del módulo del ámbito. Es la
+     * misma cuenta que hace la policy de la base: sin ese permiso no hay botón,
+     * y con él la base acepta. */
     const decidible  = req.status === 'PENDING' && canApprove && !esTraslado;
+    const decidibleTraslado = esTraslado && req.status === 'PENDING'
+        && hasPermission('traslados', 'can_approve');
 
     /* Qué entra y cuánto.
      *
@@ -359,11 +376,6 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                             </Button>
                         </>
                     )}
-                    {esTraslado && req.status === 'PENDING' && (
-                        <Button icon={ArrowLeftRight} onClick={() => navigate('/traslados')}>
-                            Resolver en Traslados
-                        </Button>
-                    )}
                     {/* «Cerrar» sólo cuando no se está decidiendo: al lado de
                         «Volver» son dos salidas para lo mismo, y en el teléfono
                         empujan el pie a tres botones en dos renglones. */}
@@ -377,19 +389,6 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                 </>}
             >
                 <div className="space-y-3 text-left max-h-[60vh] overflow-y-auto pr-1">
-                    {/* Un traslado se resuelve en su pantalla, no acá. Y no es un
-                        detalle de gusto: confirmarlo relee la existencia de la
-                        sala de origen justo antes de despachar y ofrece los
-                        motivos de rechazo que la base valida. Aprobarlo desde
-                        acá lo marcaba APROBADO **sin mover nada** y lo hacía
-                        desaparecer de las tres pestañas de Traslados. */}
-                    {esTraslado && req.status === 'PENDING' && (
-                        <Notice variant="info" icon={ArrowLeftRight}>
-                            Este traslado se confirma o se rechaza en la pantalla de Traslados,
-                            donde se revisa la existencia de la sala antes de enviarlo.
-                        </Notice>
-                    )}
-
                     <DetalleSolicitud req={req} employeesById={employeesById}
                         seleccion={porLinea && modo === 'approve' ? seleccion : undefined}
                         onToggle={porLinea && modo === 'approve' ? alternar : undefined}
@@ -412,6 +411,20 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                           ].filter(Boolean).join(' y ') + '. Contá por qué abajo.'
                                         : 'Entra todo lo que se pidió, completo.'}
                             </Notice>
+                        </div>
+                    )}
+
+                    {/* La decisión del traslado, debajo de lo que se está
+                        mirando — igual que el resto del modal, que despliega la
+                        decisión en el sitio en vez de tapar el detalle.
+                        Es el MISMO bloque de la tarjeta del tablero: relee la
+                        existencia de la sala de origen al abrirse, avisa si ya
+                        no alcanza, y ofrece los cuatro motivos de rechazo que
+                        la base valida. No se copió — se importa. */}
+                    {decidibleTraslado && (
+                        <div className="pt-1">
+                            <DecisionTraslado fila={req}
+                                onHecho={(estado) => { onResuelto?.(estado); onCerrar(); }} />
                         </div>
                     )}
 

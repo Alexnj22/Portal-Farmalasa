@@ -1,4 +1,4 @@
-import React, { useState, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { PackageMinus, ChevronRight, Loader2 } from 'lucide-react';
 import { ModalConRanuras } from '../dashboard/LanzadorSolicitud';
 import { FAMILIAS, familiasDisponibles } from './familiasOperativas';
@@ -27,12 +27,14 @@ import {
  * Solicitudes, que es lo que hace todo el mundo, para un botón que aprieta
  * poca gente. Con `lazy` el peso lo paga quien lo abre.
  *
- * ── Lo que queda fuera, y se dice ─────────────────────────────────────────
- * El **traslado entre salas** no está. No es un olvido: su formulario arranca
- * con un producto ya elegido —se pide desde la existencia de otra sala, en la
- * consulta de inventario— y sin ese producto no tiene primera pantalla. Darle
- * una acá sería escribirle un buscador propio, o sea la copia que este archivo
- * existe para no hacer.
+ * ── El traslado entra, pero no por acá adentro ────────────────────────────
+ * Desde el 2026-08-15 «Pedir a otra sala» es la cuarta familia. Su formulario
+ * ya tiene primera pantalla —el buscador de producto se extrajo a
+ * `BuscadorDeProducto`, así que no hubo que escribirle uno propio, que era la
+ * copia que este archivo existe para no hacer—, pero vive dentro de su propio
+ * `LiquidModal`. Meterlo en una ranura serían dos diálogos encimados, así que
+ * lo que se hace es avisar hacia arriba (`onPedirTraslado`): esta ventana se
+ * cierra y la pantalla abre la otra.
  */
 
 const FormularioAjuste = lazy(() =>
@@ -48,12 +50,21 @@ const Cargando = () => (
     </div>
 );
 
-export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUsuario, alcanceTodas }) {
+export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUsuario, alcanceTodas, onPedirTraslado }) {
     const disponibles = useMemo(() => familiasDisponibles(hasPermission), [hasPermission]);
 
     // Con una sola familia disponible no hay nada que elegir: se entra directo
     // a su formulario. Un menú de una opción es un clic que no informa.
     const [familia, setFamilia] = useState(() => (disponibles.length === 1 ? disponibles[0].key : null));
+
+    /* El traslado no se dibuja acá: se delega. Va en un efecto y no en el
+       `onClick` porque hay DOS caminos hasta acá —el clic en la baldosa y el
+       atajo de arriba cuando es la única familia disponible— y sólo uno pasa
+       por el clic. Con la comprobación en un solo sitio, quien tenga
+       únicamente este permiso abriría un modal vacío. */
+    useEffect(() => {
+        if (familia === 'traslado') onPedirTraslado?.();
+    }, [familia, onPedirTraslado]);
 
     const erpPropio = BRANCH_A_ERP[branchIdUsuario] ?? null;
     const [erp, setErp] = useState(() => String(erpPropio ?? 5));
@@ -116,6 +127,11 @@ export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUs
                         </div>
                     );
                 }
+
+                // El traslado se abre por fuera; mientras el aviso viaja hacia
+                // arriba, esta ventana muestra el mismo giro que las otras en
+                // vez de un hueco.
+                if (familia === 'traslado') return <Cargando />;
 
                 return (
                     <Suspense fallback={<Cargando />}>

@@ -27,16 +27,28 @@ export function Recorrido({ meta, className = '' }) {
     );
 }
 
-/* ─── Una solicitud, con sus dos respuestas ───────────────────────────────── */
-export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
+/* ─── La decisión: confirmar y enviar, o no poder ─────────────────────────────
+ *
+ * Aparte de la fila desde el 2026-08-15, cuando la decisión del traslado se
+ * mudó a Solicitudes —que es donde se contestan las otras cuatro familias— y
+ * dejó de tener un solo hogar. Lo que se comparte es esto y no la fila entera:
+ * el modal ya dibuja arriba qué se pide, quién lo pide y de dónde a dónde va,
+ * así que meterle la fila completa habría repetido esos tres datos dentro de su
+ * propio detalle.
+ *
+ * Lo que este bloque sabe y no se puede perder al copiarlo —por eso no se
+ * copia—: que la existencia se relee AL ABRIR y no al apretar, que sin
+ * existencia la única salida es rechazar con el motivo ya elegido, que la
+ * sugerencia se arma con el dato fresco y viaja en el aviso, y que «Otro» sin
+ * texto no es un motivo.
+ */
+export function DecisionTraslado({ fila, onHecho }) {
     const [modo,     setModo]     = useState(null);   // null | 'rechazo'
     const [motivo,   setMotivo]   = useState(MOTIVOS_RECHAZO[0]);
     const [texto,    setTexto]    = useState('');
     const [ocupado,  setOcupado]  = useState(false);
     const [error,    setError]    = useState('');
     const [disp,     setDisp]     = useState(null);   // null = todavía no se sabe
-
-    const meta = fila.metadata ?? {};
 
     // Se pregunta al abrir y no al apretar: entre que alguien pide y alguien
     // contesta, la sala pudo vender lo último que le quedaba —o habérselo
@@ -72,7 +84,10 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
         const r = await despacharTraslado(fila.id);
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo despachar.'); return; }
-        onHecho();
+        // Con el desenlace: quien lo abrió desde un aviso necesita saber en qué
+        // terminó para apagar el botón con el rótulo correcto. Las listas que ya
+        // lo usaban recargan entero y lo ignoran.
+        onHecho('APPROVED');
     };
 
     const rechazar = async () => {
@@ -80,7 +95,7 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
         const { error: e } = await rechazarTraslado(fila.id, motivo, texto, sugerencia);
         setOcupado(false);
         if (e) { setError(e.message ?? 'No se pudo rechazar.'); return; }
-        onHecho();
+        onHecho('REJECTED');
     };
 
     // «Otro» sin texto no explica nada: es el motivo vacío con otro nombre, y la
@@ -88,36 +103,7 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
     const puedeRechazar = motivo !== 'Otro' || texto.trim().length > 0;
 
     return (
-        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <div className="flex items-start gap-2">
-                <ArrowLeftRight size={13} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                <div className="flex-1 min-w-0">
-                    <p className="text-label font-black text-content leading-tight">
-                        {resumenItems(meta)}
-                    </p>
-                    {/* Los lotes que pidieron, cuando el pedido los trae. Van
-                        ACÁ —bajo lo que se pide y antes de quién lo pide—
-                        porque son parte de qué se pide, no del contexto. */}
-                    {lotesPedidos(meta).length > 0 && (
-                        <div className="mt-1 flex flex-col gap-0.5">
-                            {lotesPedidos(meta).map((l, i) => (
-                                <p key={i} className="text-micro text-content-2 font-semibold">
-                                    <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
-                                    {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
-                                    {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
-                                </p>
-                            ))}
-                        </div>
-                    )}
-                    <p className="text-micro text-content-3 mt-0.5 truncate">
-                        {nombrePor(fila.employee_id)} · {meta.branch_name ?? 'otra sala'} · {fmtCuando(fila.created_at)}
-                    </p>
-                    {fila.note && (
-                        <p className="text-micro text-content-2 mt-1 leading-snug">{fila.note}</p>
-                    )}
-                </div>
-            </div>
-
+        <div className="flex flex-col gap-2">
             {/* Lo que la sala tiene AHORA, no cuando se lo pidieron — y ya con
                 lo que salió y todavía no aparece en el conteo descontado. */}
             {disp && !puede && (
@@ -188,6 +174,49 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+/* ─── Una solicitud, con sus dos respuestas ───────────────────────────────────
+ *
+ * La tarjeta del widget del tablero: qué se pide, quién lo pide, y debajo la
+ * decisión. En Solicitudes esos tres primeros datos ya los pinta el detalle, así
+ * que allá se usa `DecisionTraslado` a secas.
+ */
+export function FilaPorConfirmar({ fila, nombrePor, onHecho }) {
+    const meta = fila.metadata ?? {};
+    return (
+        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+                <ArrowLeftRight size={13} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
+                <div className="flex-1 min-w-0">
+                    <p className="text-label font-black text-content leading-tight">
+                        {resumenItems(meta)}
+                    </p>
+                    {/* Los lotes que pidieron, cuando el pedido los trae. Van
+                        ACÁ —bajo lo que se pide y antes de quién lo pide—
+                        porque son parte de qué se pide, no del contexto. */}
+                    {lotesPedidos(meta).length > 0 && (
+                        <div className="mt-1 flex flex-col gap-0.5">
+                            {lotesPedidos(meta).map((l, i) => (
+                                <p key={i} className="text-micro text-content-2 font-semibold">
+                                    <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
+                                    {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
+                                    {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+                                </p>
+                            ))}
+                        </div>
+                    )}
+                    <p className="text-micro text-content-3 mt-0.5 truncate">
+                        {nombrePor(fila.employee_id)} · {meta.branch_name ?? 'otra sala'} · {fmtCuando(fila.created_at)}
+                    </p>
+                    {fila.note && (
+                        <p className="text-micro text-content-2 mt-1 leading-snug">{fila.note}</p>
+                    )}
+                </div>
+            </div>
+            <DecisionTraslado fila={fila} onHecho={onHecho} />
         </div>
     );
 }

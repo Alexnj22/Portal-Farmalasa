@@ -17,7 +17,7 @@ import { MODULO_QUE_DECIDE } from '../../constants/solicitudModulos';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useDecidirSolicitud } from '../../hooks/useDecidirSolicitud';
-import useCortesDeAvisos from '../../hooks/useCortesDeAvisos';
+import useCortesDeAvisos, { AVISOS_DE_CORTE } from '../../hooks/useCortesDeAvisos';
 import useResolverCorte from '../../hooks/useResolverCorte';
 import { seConfirmaDeUnClic } from '../../utils/cortesDiagnostico';
 import { esAvisoDeMinMax, cargarFilaDeAviso, paraDecidir } from '../../data/solicitudDeAviso';
@@ -102,6 +102,15 @@ const ACTION_LABEL = {
     PEDIDO_PROBLEMA: 'Ver detalle',
     CORTE_NUEVO:     'Revisar el corte',
 };
+
+/* El recordatorio de las 7:30 nombra UNO o VARIOS cortes según lo que haya
+ * quedado colgado, así que su etiqueta no puede ser fija: es el verbo que
+ * promete lo que pasa al tocar la fila, y prometer «los cortes» sobre uno solo
+ * es la misma clase de mentira chica que un botón que no hace lo que dice. */
+const etiquetaDeAccion = (n) =>
+    n.type === 'CORTE_PENDIENTE'
+        ? (n.metadata?.cuantas === 1 ? 'Resolver el corte' : 'Resolver los cortes')
+        : ACTION_LABEL[n.type];
 
 /* Los dos avisos que existen para PEDIR una decisión — y que por eso se van de
  * la campana en cuanto la decisión se toma. Son los únicos: el resto de los
@@ -476,9 +485,14 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const [montarDetalleCorte, setMontarDetalleCorte] = useState(false);
 
     /* El corte del aviso, sólo si de verdad hay algo que resolver: el cierre
-     * del día (Z) no se confirma, y uno ya resuelto tampoco. */
+     * del día (Z) no se confirma, y uno ya resuelto tampoco.
+     *
+     * Sirve para los dos avisos que nombran un corte. El recordatorio de las
+     * 7:30 trae `corte_id` únicamente cuando quedó uno solo, así que con varios
+     * esto devuelve nulo solo —sin condición aparte— y la fila queda con su
+     * link a la pantalla. */
     const corteResoluble = (n) => {
-        if (n.type !== 'CORTE_NUEVO' || !puedeResolverCortes) return null;
+        if (!AVISOS_DE_CORTE.has(n.type) || !puedeResolverCortes) return null;
         const c = cortesPorId.get(String(n.metadata?.corte_id));
         return c && c.tipo === 'C' && c.estado === 'PENDIENTE' ? c : null;
     };
@@ -860,7 +874,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                 const resuelta    = n.metadata?.resuelta;
                                                 const actionLabel = resuelta
                                                     ? (RESUELTA_LABEL[resuelta] || 'Resuelta')
-                                                    : (n.link ? (ACTION_LABEL[n.type] || 'Ver') : null);
+                                                    : (n.link ? (etiquetaDeAccion(n) || 'Ver') : null);
 
                                                 const expandible = puedeExpandir(n);
                                                 const abierta    = expandidas.has(n.id);

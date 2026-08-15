@@ -64,8 +64,11 @@ export const ICONO_POR_TIPO = {
     REQUEST_PENDING:  ClipboardList,
     REQUEST_DECIDED:  ClipboardList,
     // El mismo `Wallet` del módulo (`moduleMap`/`permissionModules`): el aviso
-    // lleva a esa pantalla y tiene que verse como ella.
+    // lleva a esa pantalla y tiene que verse como ella. Y el recordatorio de la
+    // mañana lleva el mismo ícono que el corte que vino a recordar: son el
+    // mismo trabajo visto dos veces, no dos asuntos.
     CORTE_NUEVO:      Wallet,
+    CORTE_PENDIENTE:  Wallet,
     SYSTEM:           Info,       // mensaje del portal, no de una persona
 };
 

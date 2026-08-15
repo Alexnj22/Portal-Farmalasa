@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.613.0 — El corte sin confirmar se recuerda a las 7:30
+
+La sala ya se entera cuando **nace** un corte de caja, pero ese aviso llega a
+media tarde y compite con todo lo del día. El que se pasa de largo no lo vuelve
+a nombrar nadie: queda visible en la pantalla y en la baldosa del Inicio, y hay
+que ir a mirar para saber que está ahí.
+
+Ahora, **a las 7:30 de la mañana**, si quedó algún corte sin confirmar ni
+descartar, el portal lo dice. Un aviso por sala —no uno por corte, que a esa
+hora serían seis pings— con cuántos son y de qué días: *«Quedaron 6 cortes de
+caja sin confirmar · Salud 1 — 6 del 13/08»*. Va con push, porque es trabajo sin
+hacer, y **sólo sale si de verdad hay algo pendiente**: la mañana en que no
+suena también está diciendo algo.
+
+**Insiste hasta que se resuelva.** La ventana es de 7 días, la misma que ya usa
+la baldosa del Inicio, y no sólo el día de ayer: un corte que se saltea un día
+dejaría de nombrarse para siempre, y es justo el que hay que atender. Uno por
+sala y por día, aunque el trabajo se corra dos veces — la marca es el propio
+aviso.
+
+**Cuando quedó UNO solo, se resuelve desde la campana**, con la misma regla de
+siempre: si cuadra al centavo, «Confirmar» lo cierra de un toque; si tiene
+diferencia, abre el detalle. Con varios el aviso lleva a la pantalla a
+propósito: el tramo de cada corte es la resta contra el confirmado anterior, así
+que resolverlos sueltos y en desorden es exactamente lo que no hay que hacer.
+
+Dos detalles del camino. Los destinatarios —los de esa sala que tienen el
+módulo— pasaron a `destinatarios_de_cortes`, compartida con el aviso del corte
+nuevo: copiada, un día uno le llegaría a alguien y el otro no, sin que nada lo
+delatara. Y el cuerpo del aviso viejo decía «revisalo y confirmalo», voseo que
+el gate de diseño no ve porque sólo lee `src/`; quedó en impersonal, como el
+resto de los mensajes que salen de Postgres.
+
+Cron `cortes-pendientes-0730-sv` (13:30 UTC), migración `20260815154834`.
+
 ## v2.612.1 — El formulario de pedir a otra sala deja de viajar con el Inicio
 
 La consulta de inventario cargaba ese formulario **al abrir el Inicio**, no al

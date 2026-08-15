@@ -3,7 +3,17 @@ import { fetchCortes } from '../data/cortes';
 import { conTramoPorSalaYDia } from '../utils/cortesDiagnostico';
 
 /**
- * Los cortes que nombran los avisos «CORTE_NUEVO» de la campana, con su tramo.
+ * Los dos avisos que nombran un corte concreto: el de cuando nace y el
+ * recordatorio de las 7:30 —éste sólo cuando quedó UNO pendiente; con varios
+ * lleva a la pantalla, porque el tramo de cada uno es la resta contra el
+ * confirmado anterior y resolverlos en desorden es justo lo que no hay que
+ * hacer—. La lista vive acá y no en la campana para que el hook y los botones
+ * no puedan contestar distinto a la misma pregunta.
+ */
+export const AVISOS_DE_CORTE = new Set(['CORTE_NUEVO', 'CORTE_PENDIENTE']);
+
+/**
+ * Los cortes que nombran esos avisos, con su tramo.
  *
  * El aviso trae el id del corte, no el corte: la fila de `notifications` es una
  * foto del momento en que se capturó y el corte cambia después —alguien lo
@@ -23,7 +33,7 @@ export default function useCortesDeAvisos(notificaciones, activo) {
     const fechas = useMemo(() => {
         const s = new Set();
         for (const n of notificaciones || []) {
-            if (n.type === 'CORTE_NUEVO' && n.metadata?.fecha) s.add(n.metadata.fecha);
+            if (AVISOS_DE_CORTE.has(n.type) && n.metadata?.fecha) s.add(n.metadata.fecha);
         }
         return [...s].sort();
     }, [notificaciones]);

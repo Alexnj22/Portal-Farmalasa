@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Camera, HandCoins, Package, ScanLine, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, HandCoins, Package, ScanLine, ShieldCheck } from 'lucide-react';
 import Button from '../common/Button';
+import FileField from '../common/FileField';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
@@ -239,24 +240,22 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                         placeholder="El de la boleta del POS"
                     />
                 )}
+                {/* `FileField` y no un `<input type="file">` suelto: el canónico
+                    de §15.9. Las dos excepciones vivas son selectores de foto
+                    donde el disparador ES la imagen (avatar, foto de producto) —
+                    acá el adjunto es una fila más del formulario, que es
+                    exactamente el caso que el canónico resuelve, con su límite
+                    de tamaño y su estado de «falta y es error». */}
                 {t?.pide_foto && (
-                    <div>
-                        <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
-                            Foto del comprobante
-                        </span>
-                        <label data-surface="card" className="flex items-center gap-2 p-3 cursor-pointer">
-                            <Camera size={16} className="text-content-3 shrink-0" />
-                            <span className="text-label text-content truncate">
-                                {foto ? foto.name : 'Tomar o elegir la foto'}
-                            </span>
-                            <input
-                                type="file" accept="image/*" capture="environment"
-                                className="sr-only"
-                                aria-label="Foto del comprobante"
-                                onChange={(e) => setFoto(e.target.files?.[0] || null)}
-                            />
-                        </label>
-                    </div>
+                    <FileField
+                        label="Foto del comprobante"
+                        accept="image/*"
+                        maxSizeMB={10}
+                        file={foto}
+                        onChange={setFoto}
+                        emptyState="pending"
+                        hint="La boleta que imprimió el POS."
+                    />
                 )}
 
                 {/* Quién se lleva el efectivo. En una remesa no va: quien recibe

@@ -4,12 +4,12 @@ import {
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import Checkbox from '../../components/common/Checkbox';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
-import SalidaDeBolsa from '../../components/bolsas/SalidaDeBolsa';
 import {
     contarBolsa, entregarBolsas, fetchBolsas, fetchPersonasDeBolsas, fetchSaldos,
     fetchSalidasDeBolsa, recibirBolsas, resolverDiferenciaBolsa,
@@ -28,6 +28,10 @@ import { useToastStore } from '../../store/toastStore';
  * Inicio, y lo obliga el gate de bundle: importado de forma estática, la vista
  * pasaba de 72 a 75 kB y su tope es 72. */
 const DetalleDeBolsa = lazy(() => import('../../components/bolsas/DetalleDeBolsa'));
+
+/* Y el formulario de salida igual: arrastra `FileField` y el selector de
+ * personas, y sólo hace falta al apretar «Sacar dinero». */
+const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa'));
 
 /**
  * El proceso entero de una bolsa de efectivo, en una pantalla.
@@ -85,15 +89,20 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
         <div data-surface="card" className="flex flex-col gap-1.5 p-3 group"
             {...(onAbrir ? clickable(() => onAbrir(bolsa), { label: `Ver el detalle de la bolsa ${bolsa.folio}` }) : {})}>
             <div className="flex items-start gap-2">
+                {/* `Checkbox` y no la casilla nativa: la nativa se pinta con el
+                    color del sistema operativo e ignora los cuatro temas
+                    (DESIGN.md §15.4, «reemplaza a `<input type="checkbox">`
+                    siempre»). Frena el clic porque la tarjeta entera abre el
+                    detalle. */}
                 {onSeleccionar && (
-                    <input
-                        type="checkbox"
-                        className="mt-1 accent-[var(--color-brand)] w-4 h-4 shrink-0"
-                        checked={seleccionada}
-                        onChange={() => onSeleccionar(bolsa.id)}
-                        aria-label={`Elegir la bolsa ${bolsa.folio}`}
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                    <span className="mt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                            size="sm"
+                            checked={seleccionada}
+                            onChange={() => onSeleccionar(bolsa.id)}
+                            aria-label={`Elegir la bolsa ${bolsa.folio}`}
+                        />
+                    </span>
                 )}
                 <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2 flex-wrap">
@@ -331,6 +340,15 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
         [contadas],
     );
 
+    // Entregadas hace más de un día y todavía sin recibir. Se mide contra
+    // `entregada_at` —cuándo salió de la sala— y no contra la fecha del corte:
+    // una bolsa vieja entregada hace diez minutos no tiene nada de malo.
+    const enCaminoViejas = useMemo(
+        () => enCamino.filter((b) => b.entregada_at
+            && Date.now() - Date.parse(b.entregada_at) > 24 * 3600_000),
+        [enCamino],
+    );
+
     const alternar = useCallback((id) => setElegidas((s) => {
         const n = new Set(s);
         if (n.has(id)) n.delete(id); else n.add(id);
@@ -477,7 +495,26 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 vacio="Sin efectivo esperando en las salas"
             />
 
-            {/* ── 2. Esperando recepción ────────────────────────────────── */}
+            {/* ── 2. Esperando recepción ──────────────────────────────────
+                Es el estado MÁS riesgoso del circuito —la bolsa no está en la
+                sala ni en administración, la tiene una persona en el camino— y
+                era el único sin alarma: la de los 4 días sólo mira las que están
+                en la sala. Una bolsa entregada que nunca llegó se veía igual que
+                una entregada hace diez minutos. */}
+            {enCaminoViejas.length > 0 && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    <span className="font-bold">
+                        {enCaminoViejas.length === 1
+                            ? 'Una bolsa lleva más de un día entregada y sin recibir'
+                            : `${enCaminoViejas.length} bolsas llevan más de un día entregadas y sin recibir`}
+                    </span>
+                    <span className="block mt-0.5 font-normal text-content-2">
+                        Suman {formatMoney(suma(enCaminoViejas))}. Mientras nadie confirme la
+                        recepción, ese dinero no está ni en la sala ni en administración.
+                    </span>
+                </Notice>
+            )}
+
             <Etapa
                 icon={Send}
                 titulo="Esperando recepción"
@@ -554,13 +591,17 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 </Suspense>
             )}
 
-            <SalidaDeBolsa
+            {sacando && (
+                <Suspense fallback={null}>
+                    <SalidaDeBolsa
                 abierto={sacando}
                 bolsas={enSala}
                 saldos={null}
                 onClose={() => setSacando(false)}
                 onHecho={traslimSalida}
             />
+                </Suspense>
+            )}
         </div>
     );
 }

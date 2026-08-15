@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.624.0 — Los canónicos que me inventé, y tres agujeros más
+
+Segunda auditoría del circuito de bolsas, esta vez contra `DESIGN.md` y contra
+los casos que nadie había pensado. Seis hallazgos.
+
+**Dos controles inventados que ya existían.** La casilla para elegir bolsas era
+un `<input type="checkbox">` a mano —§15.4 dice que `Checkbox` lo reemplaza
+**siempre**, porque la casilla nativa se pinta con el color del sistema operativo
+e ignora los cuatro temas— y la foto del comprobante era un `<input type="file">`
+suelto, que §15.9 prohíbe: para eso está `FileField`, con su límite de tamaño y
+su estado de «falta y debería estar». **El gate de diseño no los detecta**: sus
+categorías cubren los inputs de texto, no estos dos.
+
+**El corte se descarta y la bolsa quedaba huérfana.** No es un caso raro: el
+sistema de origen no anula cortes, la sala los **rehace**. Se confirma un corte,
+nace su bolsa, se descubre el error, se descarta y se rehace — y la bolsa vieja
+seguía viva. Ahora se anula sola, pero **sólo si está limpia**: si ya le sacaron
+dinero, anularla en silencio borraría el respaldo de esa salida, así que queda el
+hecho en la bitácora y le llega un aviso a la sala.
+
+**Anular una bolsa dejaba sus vales vivos.** Medido: una bolsa anulada con un
+vale de $200 adentro quedaba con saldo $300 y el vale seguía respaldando una
+bolsa que ya no cuenta. Ahora se rechaza diciendo qué hacer primero.
+
+**Un reintegro no tenía tope.** Medido: $99,999 devueltos a una bolsa de $500 la
+dejaban en $100,299. El tope natural es lo que salió — una bolsa no puede tener
+más de lo que se guardó en ella.
+
+**Una bolsa entregada que nunca llega no tenía alarma.** Es el estado más
+riesgoso del circuito —no está en la sala ni en administración, la tiene alguien
+en el camino— y la alarma de los 4 días sólo mira las que están en la sala. Ahora
+la pestaña avisa cuando pasa un día sin que nadie confirme la recepción, con
+cuánto suman.
+
+De paso, el detalle y el formulario de salida se bajan al abrirlos: los
+canónicos pesan, y estáticos subían la vista de 69 a 75 kB con tope de 72.
+
+Lo que la auditoría **descartó al mirarlo**: `notify_employees` aguanta que una
+sala no tenga a nadie con el módulo (no bloquea el conteo), y
+`update_proveedor_manual` —expuesta a `anon`, que no es mía— valida el permiso
+adentro, así que un anónimo recibe `FORBIDDEN`. Es higiene, no un agujero.
+
 ## v2.623.0 — Lo que la auditoría encontró sin camino en la pantalla
 
 Antes de probar el circuito de bolsas en una sala, una auditoría encontró cuatro

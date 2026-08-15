@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { AlertTriangle, Banknote, HandCoins, Package, Printer, ShieldCheck } from 'lucide-react';
-import SalidaDeBolsa from '../../components/bolsas/SalidaDeBolsa';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
@@ -11,6 +10,11 @@ import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+
+/* El formulario se baja al apretar «Entrega de remesas», no al entrar al Inicio:
+ * arrastra el canónico de archivo y el selector de personas, y la baldosa se ve
+ * entera sin tocar nada. */
+const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa'));
 
 /**
  * Las bolsas de efectivo en el Inicio: lo que falta guardar y lo que espera el
@@ -357,13 +361,17 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                 )}
             </div>
 
-            <SalidaDeBolsa
+            {sacando && (
+                <Suspense fallback={null}>
+                    <SalidaDeBolsa
                 abierto={sacando}
                 bolsas={enSala}
                 saldos={null}
                 onClose={() => setSacando(false)}
                 onHecho={trasLaSalida}
             />
+                </Suspense>
+            )}
         </div>
     );
 }

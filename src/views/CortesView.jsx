@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarDays, CheckCircle2, Clock, Landmark, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, Landmark, Package, Scale, Search, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -14,6 +14,7 @@ import { EmptyState, LoadingState } from '../components/common/StateViews';
 import AsentarDiferencias from '../components/cortes/AsentarDiferencias';
 import CorteDetalleModal from '../components/cortes/CorteDetalleModal';
 import TarjetaCorte from '../components/cortes/TarjetaCorte';
+import TabBolsas from './cortes/TabBolsas';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import useResolverCorte from '../hooks/useResolverCorte';
@@ -91,6 +92,7 @@ const CortesView = () => {
     const branches = useStaff((s) => s.branches) || VACIO;
     const { hasPermission, getScope } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+    const verBolsas = hasPermission('bolsas', 'can_view');
     // Quien ve una sola sala no elige sala: la policy de `cortes_caja` ya se lo
     // resolvió, y ofrecerle el filtro sería un control que no recorta nada.
     const alcanceTodas = getScope('cortes_caja') === 'ALL';
@@ -297,13 +299,32 @@ const CortesView = () => {
         setBusqueda(''); setPagina(1);
     };
 
-    // En el header queda SÓLO el buscador. Las cinco pestañas de estado se
-    // fueron a la píldora del cuerpo — ver la nota de `ESTADOS`.
+    // ── Dos pestañas, y estas SÍ son secciones ──────────────────────────────
+    //
+    // Los estados de un corte se fueron a la píldora del cuerpo porque eran
+    // recortes de la misma lista (ver la nota de `ESTADOS`). «Bolsas» es otra
+    // cosa: son otras filas, otras acciones y otro público —la sala entrega,
+    // administración cuenta—, o sea una sección de verdad.
+    //
+    // Va acá y no en un módulo aparte porque es lo que le pasa al MISMO dinero
+    // después del corte: separarlo obligaría a saltar de pantalla para seguir un
+    // billete. Pedido del usuario (2026-08-15): «hacé la vista con lo que hay en
+    // cortes de caja como una pestaña».
+    const [tab, setTab] = useState('cortes');
+    const enBolsas = tab === 'bolsas';
+
     const filtersContent = (
         <ViewTabBar
+            tabs={verBolsas
+                ? [{ key: 'cortes', label: 'Cortes', icon: Wallet },
+                   { key: 'bolsas', label: 'Bolsas de efectivo', icon: Package }]
+                : []}
+            activeTab={tab}
+            onTabChange={setTab}
             searchValue={busqueda}
             onSearchChange={(v) => { setBusqueda(v); setPagina(1); }}
             placeholder="Buscar por sala, persona, hora o monto…"
+            showSearch={!enBolsas}
         />
     );
 
@@ -317,14 +338,20 @@ const CortesView = () => {
                     abuelo de la píldora y le descuenta 314px lo tenga al lado o
                     no. En renglones separados no falla: roba ancho en silencio. */}
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    <CarrilCards className="flex-1" ariaLabel="Resumen de los cortes del período">
-                        {METRICAS.map((m) => (
-                            <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
-                                label={m.label} value={resumen[m.clave]} valueCls={m.valueCls}
-                                active={metricaActiva(m)} onClick={() => aplicarMetrica(m)}
-                                loading={cargando} />
-                        ))}
-                    </CarrilCards>
+                    {/* El carril describe los CORTES del período: en Bolsas no
+                        dice nada de lo que hay en pantalla, y una fila de
+                        métricas que no habla de lo que se está mirando es peor
+                        que no tenerla. */}
+                    {!enBolsas ? (
+                        <CarrilCards className="flex-1" ariaLabel="Resumen de los cortes del período">
+                            {METRICAS.map((m) => (
+                                <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                    label={m.label} value={resumen[m.clave]} valueCls={m.valueCls}
+                                    active={metricaActiva(m)} onClick={() => aplicarMetrica(m)}
+                                    loading={cargando} />
+                            ))}
+                        </CarrilCards>
+                    ) : <div className="flex-1" />}
 
                     {/* El orden de las ranuras es el de §17: ámbito → entidad →
                         tiempo → estado. `MAX_RANURAS` son 3, así que la cuarta
@@ -333,7 +360,9 @@ const CortesView = () => {
                         promesa de «el lugar único donde mirar qué se filtra». */}
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
-                            activeCount={[sala, !esHoy, estado !== 'TODOS', diferencia !== 'TODAS'].filter(Boolean).length}>
+                            activeCount={[sala, !esHoy,
+                                !enBolsas && estado !== 'TODOS',
+                                !enBolsas && diferencia !== 'TODAS'].filter(Boolean).length}>
                             {/* La ranura de sucursal SÓLO con alcance ALL. Con
                                 BRANCH la policy de `cortes_caja` ya devuelve
                                 únicamente la sala propia, así que el selector
@@ -363,25 +392,43 @@ const CortesView = () => {
                                 </PeriodStepper>
                             </FilterBar.Section>
 
-                            <FilterBar.Section active={estado !== 'TODOS'} onClear={() => setEstado('TODOS')} label="estado">
-                                <FilterBar.Opciones
-                                    label="Estado" icon={CheckCircle2}
-                                    value={estado} onChange={(v) => { setEstado(v || 'TODOS'); setPagina(1); }}
-                                    options={ESTADOS} ancho="165px"
-                                />
-                            </FilterBar.Section>
+                            {/* Estado y diferencia son de un CORTE. En Bolsas el
+                                estado es la etapa del circuito, y esa ya es la
+                                sección donde vive cada bolsa: una ranura que
+                                repitiera lo mismo escondería la mitad del
+                                proceso detrás de un filtro. */}
+                            {!enBolsas && (
+                                <FilterBar.Section active={estado !== 'TODOS'} onClear={() => setEstado('TODOS')} label="estado">
+                                    <FilterBar.Opciones
+                                        label="Estado" icon={CheckCircle2}
+                                        value={estado} onChange={(v) => { setEstado(v || 'TODOS'); setPagina(1); }}
+                                        options={ESTADOS} ancho="165px"
+                                    />
+                                </FilterBar.Section>
+                            )}
 
-                            <FilterBar.Section active={diferencia !== 'TODAS'} onClear={() => setDiferencia('TODAS')} label="diferencia">
-                                <FilterBar.Opciones
-                                    label="Diferencia" icon={Scale}
-                                    value={diferencia} onChange={(v) => { setDiferencia(v || 'TODAS'); setPagina(1); }}
-                                    options={DIFERENCIAS} ancho="165px"
-                                />
-                            </FilterBar.Section>
+                            {!enBolsas && (
+                                <FilterBar.Section active={diferencia !== 'TODAS'} onClear={() => setDiferencia('TODAS')} label="diferencia">
+                                    <FilterBar.Opciones
+                                        label="Diferencia" icon={Scale}
+                                        value={diferencia} onChange={(v) => { setDiferencia(v || 'TODAS'); setPagina(1); }}
+                                        options={DIFERENCIAS} ancho="165px"
+                                    />
+                                </FilterBar.Section>
+                            )}
                         </FilterBar>
                     </div>
                 </div>
 
+                {/* ── BOLSAS DE EFECTIVO ──────────────────────────────────
+                    El proceso entero de lo que pasa con el dinero después del
+                    corte: en la sala → entregada → recibida → contada. Comparte
+                    con Cortes la sucursal y el período; el resto es suyo. */}
+                {enBolsas && (
+                    <TabBolsas desde={desde} hasta={hasta} sala={sala} nombreSala={nombreSala} />
+                )}
+
+                {!enBolsas && (<>
                 {/* El trabajo que queda después de resolver una diferencia: el
                     movimiento en el sistema. Va como aviso y no como pestaña
                     porque no es otra sección de la pantalla —son los mismos
@@ -491,6 +538,7 @@ const CortesView = () => {
                         unit="cortes"
                     />
                 )}
+                </>)}
             </div>
 
             <AsentarDiferencias

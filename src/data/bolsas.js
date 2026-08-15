@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { signPhotosDeep } from '../utils/storageFiles';
 
 // Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte, hasta
 // que administración lo cuenta.
@@ -15,7 +16,10 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 const CAMPOS = `
     id, folio, branch_id, corte_id, origen, motivo_origen,
     monto_inicial, fecha, hora, caja,
-    cerrada_por, cerrada_at, estado, etiqueta_version, etiqueta_impresa_at
+    cerrada_por, cerrada_at, estado, etiqueta_version, etiqueta_impresa_at,
+    entregada_por, entregada_at, recibida_por, recibida_at,
+    contado, contado_por, contado_at,
+    dif_via, dif_causa, dif_por, dif_at
 `;
 
 /**
@@ -26,11 +30,21 @@ const CAMPOS = `
  * trunca; el día que lo haga, el síntoma sería una sala que «no tiene bolsas»,
  * que se lee como que ya las entregó.
  */
-export function fetchBolsas({ desde, hasta, estados = ['ABIERTA'] } = {}) {
+export function fetchBolsas({ desde, hasta, estados = ['ABIERTA'], porFechaDeConteo = false } = {}) {
     return fetchAllRows(() => {
         let q = supabase.from('bolsas').select(CAMPOS);
-        if (desde) q = q.gte('fecha', desde);
-        if (hasta) q = q.lte('fecha', hasta);
+        // `porFechaDeConteo` recorta por CUÁNDO SE CONTÓ y no por la fecha del
+        // corte. Existe porque sin él el historial mentía: una bolsa del corte
+        // del martes que se cuenta hoy desaparecía de la pantalla en cuanto se
+        // firmaba —el período arranca en «Hoy»— y quien acababa de contarla veía
+        // su trabajo esfumarse. Lo destapó la prueba en el entorno de pruebas
+        // con una bolsa de hace cinco días.
+        const campo = porFechaDeConteo ? 'contado_at' : 'fecha';
+        if (desde) q = q.gte(campo, desde);
+        // El fin del día, no la medianoche: `contado_at` lleva hora, y comparar
+        // contra la fecha pelada dejaría fuera todo lo contado después de las
+        // 00:00 del último día del rango.
+        if (hasta) q = q.lte(campo, porFechaDeConteo ? `${hasta}T23:59:59.999Z` : hasta);
         if (estados?.length) q = q.in('estado', estados);
         return q.order('fecha', { ascending: false }).order('hora', { ascending: false });
     });
@@ -89,7 +103,75 @@ export function marcarEtiquetaImpresa(id) {
     return supabase.rpc('marcar_etiqueta_impresa', { p_bolsa_id: id });
 }
 
-/** Se anula, nunca se borra: la etiqueta ya salió y está pegada a una bolsa. */
+/**
+ * Se anula, nunca se borra: la etiqueta ya salió y está pegada a una bolsa.
+ *
+ * Es además **la corrección** del guardado automático. Desde que la bolsa nace
+ * sola al confirmar el corte (decisión del usuario, 2026-08-15), el registro
+ * afirma que existe antes de que nadie meta un billete; si el dinero no se
+ * guardó, la salida es anularla con su motivo, no borrar la fila.
+ */
 export function anularBolsa(id, motivo) {
     return supabase.rpc('anular_bolsa', { p_id: id, p_motivo: motivo });
+}
+
+// ── La cadena de custodia ───────────────────────────────────────────────────
+//
+// Tres actos y tres firmas distintas: la sala entrega, administración acusa
+// recibo, administración cuenta. Que sean tres y no uno es el control: quien
+// entrega no puede firmar la recepción, y el servidor lo rechaza.
+
+/** La bolsa sale de la sala. Varias a la vez: se entregan juntas. */
+export function entregarBolsas(ids) {
+    return supabase.rpc('entregar_bolsas', { p_ids: ids });
+}
+
+/**
+ * Administración acusa recibo, **sin contar el dinero**. Cuenta bolsas: es el
+ * paso rápido de cuando llega la valija, y el conteo puede ser al otro día.
+ */
+export function recibirBolsas(ids) {
+    return supabase.rpc('recibir_bolsas', { p_ids: ids });
+}
+
+/**
+ * El conteo. `esperadoVisto` es lo que decía la pantalla y NO es lo que se
+ * guarda: el servidor calcula el suyo y rechaza si no coinciden.
+ *
+ * Lo contado queda para siempre — resolver una diferencia después no lo pisa.
+ */
+export function contarBolsa(id, contado, esperadoVisto) {
+    return supabase.rpc('contar_bolsa', {
+        p_id: id, p_contado: contado, p_esperado: esperadoVisto,
+    });
+}
+
+/** REPONE (entra dinero), RETIRA (sale) o JUSTIFICA (no mueve nada). */
+export function resolverDiferenciaBolsa(id, via, causa) {
+    return supabase.rpc('resolver_diferencia_bolsa', { p_id: id, p_via: via, p_causa: causa });
+}
+
+/** La bitácora de una bolsa: cada firma, con quién y cuándo. */
+export async function fetchEventosDeBolsa(id) {
+    const { data, error } = await supabase.rpc('get_bolsa_eventos', { p_bolsa_id: id });
+    if (error) { console.error('bolsas: fetchEventosDeBolsa failed:', error.message); return []; }
+    await signPhotosDeep(data || []);
+    return data || [];
+}
+
+/**
+ * Quién firmó cada paso: nombre y foto.
+ *
+ * NO va contra `employees_safe`. Su policy esconde a los superusuarios de todos
+ * menos de sí mismos, y quien cuenta el dinero suele serlo: la pantalla decía
+ * «sin registrar quién» sobre una firma que sí tiene autor. Es el mismo motivo
+ * por el que existe `get_cortes_resolutores`.
+ */
+export async function fetchPersonasDeBolsas(ids) {
+    const unicos = [...new Set((ids || []).filter(Boolean))];
+    if (!unicos.length) return [];
+    const { data, error } = await supabase.rpc('get_bolsas_personas', { p_ids: unicos });
+    if (error) { console.error('bolsas: fetchPersonasDeBolsas failed:', error.message); return []; }
+    await signPhotosDeep(data || []);
+    return data || [];
 }

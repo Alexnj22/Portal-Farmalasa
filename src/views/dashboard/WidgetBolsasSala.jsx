@@ -227,13 +227,19 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                             </div>
                         </div>
                         <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
-                            <Badge variant="warning" size="sm" dot>Sin guardar</Badge>
+                            {/* Desde que la bolsa nace sola al confirmar el
+                                corte, esto dejó de ser un paso de rutina y pasó
+                                a ser una EXCEPCIÓN: un corte confirmado sin
+                                bolsa es de antes de que existiera el circuito, o
+                                a alguien le anularon la suya. Por eso el rótulo
+                                nombra el problema y no la tarea. */}
+                            <Badge variant="warning" size="sm" dot>Sin bolsa</Badge>
                             {puedeGuardar && (
                                 <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
                                     <Button variant="primary" size="sm" icon={Package}
                                         loading={ocupadoId === c.corte_id}
                                         onClick={() => guardar(c)}>
-                                        Guardar en bolsa
+                                        Guardar ahora
                                     </Button>
                                 </div>
                             )}

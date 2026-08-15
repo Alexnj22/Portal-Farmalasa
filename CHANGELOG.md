@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.621.0 — La bolsa nace sola y el circuito llega al conteo
+
+Dos pedidos del usuario. **La bolsa se guarda automáticamente al confirmar el
+corte** —un disparador sobre la confirmación, nunca sobre la captura— y hay una
+**pestaña «Bolsas de efectivo» dentro de Cortes de caja** con el proceso entero.
+
+La pestaña son cuatro secciones en el orden en que pasan las cosas: **en la
+sala** (con la etiqueta y la alarma de los 4 días) → **esperando recepción** →
+**por contar** → **contadas**. No es una lista con un filtro de estado: cada
+etapa tiene su acción y su dueño, y verlas en orden explica el circuito sin que
+nadie lo enseñe. El widget del Inicio sigue siendo el atajo.
+
+- **Contar es un toque** cuando el dinero coincide; cuando no, se escribe lo que
+  se contó y le llega un aviso a la sala con la cifra. Después se resuelve como
+  en los cortes: repuesto, retirado o justificado, siempre con el motivo.
+- **Lo contado no se edita nunca.** Resolver la diferencia no lo pisa: quedan los
+  dos números y la bitácora dice quién hizo qué.
+- **Quien entrega no puede firmar la recepción**, y lo rechaza el servidor.
+- Permiso nuevo **«Recibir y contar el dinero»** (`bolsas_conteo`), aparte del de
+  la sala: con uno solo, darle a la sala lo suyo le daría también el poder de dar
+  por buena su propia bolsa.
+
+Como la bolsa ahora nace sola, «Guardar en bolsa» dejó de ser un paso de rutina:
+en el widget pasó a decir **«Sin bolsa»** y es una excepción —un corte de antes
+de que existiera el circuito, o una bolsa anulada—. La corrección de una bolsa
+que no debía existir es anularla, con motivo.
+
+Probado de punta a punta en el entorno de pruebas. Dos defectos que sólo
+aparecieron al usarlo, los dos corregidos:
+
+- **Una bolsa contada desaparecía de la pantalla** si su corte era de otro día:
+  el historial recortaba por la fecha del corte y el período arranca en «Hoy».
+  Ahora recorta por cuándo se contó.
+- **Los avisos del servidor salieron en voseo** («la entregaste vos», «volvé a
+  abrirla») y sin acentos. Es el mismo defecto que ya se corrigió una vez en las
+  funciones de cortes, y vuelve a pasar por el mismo motivo: el gate de diseño no
+  lee `supabase/`, así que hay texto de interfaz dentro de funciones de Postgres
+  que nada revisa.
+
 ## v2.620.2 — La fila de cajas especiales también envuelve
 
 Cierre de la revisión que pidió el usuario: «¿habrá algún otro modal que tenga

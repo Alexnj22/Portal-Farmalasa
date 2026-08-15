@@ -151,7 +151,13 @@ const GRUPOS_CRUDOS = [
             // es guardar la bolsa e imprimir su etiqueta; el alcance es el mismo
             // criterio que los cortes — la sala trabaja la suya, la supervisión
             // ve todas.
-            { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, y la etiqueta que va pegada a cada bolsa', icon: Package, hasApprove: false, hasScope: true },
+            { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icon: Package, hasApprove: false, hasScope: true, sub: [
+                // Módulo aparte y no una capacidad de `bolsas` porque son dos
+                // públicos: la sala entrega, administración recibe y cuenta. Con
+                // un solo permiso, darle a la sala lo suyo le daría también el
+                // poder de dar por buena su propia bolsa.
+                { key: 'bolsas_conteo', label: 'Recibir y contar el dinero (administración)', tipo: 'cap' },
+            ]},
             { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, sub: [
                 { key: 'facturacion_tab_anuladas',      label: 'Anuladas',      tipo: 'tab' },
                 { key: 'facturacion_tab_pendiente_mh',  label: 'Pendiente MH',  tipo: 'tab' },

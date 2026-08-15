@@ -52,6 +52,7 @@ import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
 import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
 import WidgetMetaSala from './dashboard/WidgetMetaSala';
 import WidgetCortesSala from './dashboard/WidgetCortesSala';
+import WidgetBolsasSala from './dashboard/WidgetBolsasSala';
 // Estaba USADO y sin importar: el componente existe, su rama de render está
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
@@ -600,6 +601,7 @@ const WIDGET_DEFS = [
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
   { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
+  { id: 'bolsas_sala',  label: 'Bolsas de efectivo de mi sala', permission: 'dash_bolsas_sala', icon: Package,  category: 'ventas'    },
 ];
 
 // El permiso de cada widget, indexado. Lo necesitan la barra de pestañas, el
@@ -1702,6 +1704,7 @@ const DashboardView = ({ openModal }) => {
   // ALL suele estar en Administración, y arrancar filtrado por una sala sin
   // caja dejaba la baldosa en blanco.
   const [cortesBranch,   setCortesBranch]   = useState('');
+  const [bolsasBranch,   setBolsasBranch]   = useState('');
   const [absences,       setAbsences]       = useState([]);
   const [absLoading,     setAbsLoading]     = useState(true);
   const [todaySales,     setTodaySales]     = useState({});
@@ -3256,6 +3259,46 @@ const DashboardView = ({ openModal }) => {
           <WidgetCortesSala
             soloMiSala={!cortesAllScope}
             salaElegida={cortesAllScope ? (cortesBranch || null) : null}
+          />
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── BOLSAS DE EFECTIVO DE MI SALA ── */
+    // Lo que pasa DESPUÉS del corte: el efectivo se guarda en una bolsa y espera
+    // ahí hasta que alguien lo retira. Va en su propia baldosa y no dentro de la
+    // de cortes porque son dos preguntas distintas —«¿confirmé lo que corté?» y
+    // «¿cuánto efectivo tengo guardado?»— y las contesta gente en momentos
+    // distintos del día.
+    if (wid === 'bolsas_sala') {
+      if (!showWidget('bolsas_sala', 'dash_bolsas_sala')) return null;
+      // Mismo criterio que cortes: con alcance ALL el selector sí va —quien ve
+      // las seis salas no tiene caja propia—; con BRANCH no se ofrece, porque la
+      // base rechaza cualquier otra sala y prometería un alcance que no existe.
+      const bolsasAllScope = getScope('dash_bolsas_sala') === 'ALL';
+      const bolsasOpts = MM_ERP_ORDER
+        .map(erp => Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === erp))
+        .map(id => branches.find(b => String(b.id) === String(id)))
+        .filter(Boolean)
+        .map(b => ({ value: String(b.id), label: b.name }));
+      return wrapWidget('bolsas_sala',
+        <WidgetCard title="Bolsas de efectivo" icon={Package} category="ventas"
+          action={bolsasAllScope && bolsasOpts.length > 1 && (
+            <LiquidSelect
+              value={bolsasBranch}
+              onChange={val => setBolsasBranch(val || '')}
+              options={bolsasOpts}
+              placeholder="Todas"
+              icon={Building2}
+              clearable
+              compact
+              bare
+            />
+          )}
+        >
+          <WidgetBolsasSala
+            soloMiSala={!bolsasAllScope}
+            salaElegida={bolsasAllScope ? (bolsasBranch || null) : null}
           />
         </WidgetCard>
       , staggerIdx);

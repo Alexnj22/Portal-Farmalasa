@@ -146,6 +146,12 @@ const GRUPOS_CRUDOS = [
             // ventas. `hasScope` porque la sala mira la suya y la supervisión
             // mira todas — el mismo alcance que ya tiene Ventas.
             { key: 'cortes_caja',   label: 'Cortes de caja', desc: 'Confirmar o descartar los cortes de cada sala, con la diferencia de cada tramo y qué revisar cuando no cuadra', icon: Wallet, hasApprove: false, hasScope: true },
+            // Lo que pasa DESPUÉS del corte: el efectivo se guarda en una bolsa
+            // y espera ahí hasta que alguien lo retira, hasta tres días. `can_edit`
+            // es guardar la bolsa e imprimir su etiqueta; el alcance es el mismo
+            // criterio que los cortes — la sala trabaja la suya, la supervisión
+            // ve todas.
+            { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, y la etiqueta que va pegada a cada bolsa', icon: Package, hasApprove: false, hasScope: true },
             { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, sub: [
                 { key: 'facturacion_tab_anuladas',      label: 'Anuladas',      tipo: 'tab' },
                 { key: 'facturacion_tab_pendiente_mh',  label: 'Pendiente MH',  tipo: 'tab' },
@@ -370,6 +376,7 @@ const GRUPOS_CRUDOS = [
             // una factura. El alcance importa de verdad acá: con scope BRANCH la
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
             { key: 'dash_cortes_sala',    label: 'Widget: Cortes de caja de mi sala', desc: 'Los cortes de caja que quedan sin confirmar en la sala —de los últimos 7 días, no sólo de hoy— con la diferencia de cada tramo, más cómo va el mes: cuántos cuadraron, cuántos tuvieron exceso y cuántos faltante', icon: Wallet, hasApprove: false, hasScope: true },
+            { key: 'dash_bolsas_sala',    label: 'Widget: Bolsas de efectivo de mi sala', desc: 'El efectivo que espera el retiro en la sala y los cortes confirmados a los que todavía no se les guardó el dinero, con la alarma de la bolsa que lleva 4 días o más', icon: Package, hasApprove: false, hasScope: true },
             { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi sala',   desc: 'Tomar la factura del proveedor que le corresponde a la sala —agua y recargas de Tigo, Claro y Movistar— para poder cargar la compra. Al tomarla queda registrada a nombre de esa sala y ya no le aparece a las demás', icon: ReceiptText, hasApprove: false, hasScope: true },
             // Los dos widgets de venta tienen DOS lecturas, y la capacidad
             // «vista completa» es la que decide cuál se pinta. Apagada, el

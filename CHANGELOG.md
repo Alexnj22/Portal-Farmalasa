@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.620.0 — La bolsa nace del corte y sale con su etiqueta
+
+Primera fase del control de bolsas de efectivo. Entre «el corte cuadró» y «el
+dinero llegó a administración» no había ningún registro, y ese hueco dura hasta
+tres días con el efectivo de seis salas adentro.
+
+- **Tabla `bolsas`** (migración `20260815173255`) con sus funciones: cerrar la
+  bolsa de un corte, listar los cortes que esperan la suya, marcar la etiqueta
+  impresa y anular una bolsa creada por error. Las escrituras van sólo por
+  funciones del servidor: la tabla no tiene policy de escritura, así que **el
+  monto no lo puede elegir el navegador**.
+- **Baldosa «Bolsas de efectivo» en el Inicio** — cuánto efectivo hay guardado,
+  qué cortes confirmados esperan que se les guarde el dinero (con el monto), y
+  la alarma cuando una bolsa lleva 4 días o más esperando el retiro. Guardar la
+  bolsa imprime su etiqueta; el botón de reimprimir sube el número y el papel
+  dice que anula a la anterior.
+- **Permisos `bolsas` y `dash_bolsas_sala`**, calcados de los de cortes de caja:
+  las salas guardan sus propias bolsas.
+
+**Cuánto entra a la bolsa lo calcula el servidor**, no la pantalla. Los cortes
+son acumulativos dentro del día, así que es lo declarado menos lo que ya se
+embolsó antes de esa hora; y se mide contra las bolsas y no contra el corte
+anterior, porque si un corte se confirmó y nadie embolsó, ese efectivo sigue en
+el cajón y tiene que entrar completo a la siguiente. La pantalla manda lo que
+mostró y el servidor rechaza si no coincide.
+
+Probado en el entorno de pruebas de punta a punta: guardar la bolsa del corte de
+las 12:49 por $666.65 bajó sola la sugerencia del corte de las 19:01 de $1,177.90
+a $511.25 — que es el invariante del sistema, la suma de las bolsas del día
+contra lo declarado en el último corte.
+
+Guardar la bolsa es un paso aparte de confirmar el corte, a propósito: meter el
+dinero en la bolsa lo hace una persona con las manos, y si el portal la creara
+sola el registro diría que hay una bolsa donde a lo mejor no la hay.
+
 ## v2.619.2 — Ocultar un laboratorio de MIN·MAX vuelve a guardarse de verdad
 
 Salió de revisar si el problema de permisos de v2.619.0 se repetía en otros

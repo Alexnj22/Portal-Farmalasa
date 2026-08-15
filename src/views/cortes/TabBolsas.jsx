@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    AlertTriangle, Banknote, CheckCircle2, Inbox, Package, Printer, Scale, Send, ShieldCheck,
+    AlertTriangle, Banknote, CheckCircle2, HandCoins, Inbox, Package, Printer, Scale, Send, ShieldCheck,
 } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -8,9 +8,10 @@ import LiquidAvatar from '../../components/common/LiquidAvatar';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
+import SalidaDeBolsa from '../../components/bolsas/SalidaDeBolsa';
 import {
-    contarBolsa, entregarBolsas, fetchBolsas, fetchPersonasDeBolsas,
-    recibirBolsas, resolverDiferenciaBolsa,
+    contarBolsa, entregarBolsas, fetchBolsas, fetchPersonasDeBolsas, fetchSaldos,
+    fetchSalidasDeBolsa, recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
@@ -59,8 +60,13 @@ const diasDesde = (f) => Math.max(0, Math.round(
 ));
 
 const DIAS_DE_ALARMA = 4;
-const suma = (lista) => lista.reduce((a, b) => a + Number(b.monto_inicial || 0), 0);
-const diferenciaDe = (b) => (b.contado == null ? null : Math.round((Number(b.contado) - Number(b.monto_inicial)) * 100) / 100);
+
+// `monto_inicial` es lo que se guardó; el SALDO es lo que debe haber en billetes
+// hoy. Desde que se puede sacar dinero de una bolsa, sumar lo guardado sería
+// decir que hay plata que ya no está.
+const saldoDe = (b) => Number(b.saldo ?? b.monto_inicial ?? 0);
+const suma = (lista) => lista.reduce((a, b) => a + saldoDe(b), 0);
+const diferenciaDe = (b) => (b.contado == null ? null : Math.round((Number(b.contado) - saldoDe(b)) * 100) / 100);
 
 /** Una bolsa, con lo que hay que saber de ella en cualquier etapa. */
 function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, alarma }) {
@@ -88,12 +94,28 @@ function Bolsa({ bolsa, sala, personas, seleccionada, onSeleccionar, children, a
                         {bolsa.caja ? ` · ${bolsa.caja}` : ''}
                     </div>
                 </div>
-                <div className="text-label font-bold tabular-nums text-content text-right shrink-0">
-                    {formatMoney(bolsa.monto_inicial)}
+                {/* La cifra grande es lo que DEBE HABER en billetes. Cuando salió
+                    dinero, lo guardado va abajo y tachado: si sólo se mostrara el
+                    monto inicial, la pantalla estaría prometiendo plata que ya no
+                    está adentro. */}
+                <div className="text-right shrink-0">
+                    <div className="text-label font-bold tabular-nums text-content">
+                        {formatMoney(saldoDe(bolsa))}
+                    </div>
+                    {Number(bolsa.vales || 0) > 0 && (
+                        <div className="text-caption text-content-3 tabular-nums">
+                            de {formatMoney(bolsa.monto_inicial)}
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
+                {Number(bolsa.vales || 0) > 0 && (
+                    <Badge variant="info" size="sm">
+                        {bolsa.salidas} {Number(bolsa.salidas) === 1 ? 'vale' : 'vales'} · {formatMoney(bolsa.vales)}
+                    </Badge>
+                )}
                 {alarma && dias >= DIAS_DE_ALARMA && (
                     <Badge variant="danger" size="sm" dot>{dias} días en sala</Badge>
                 )}
@@ -235,8 +257,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
     const [cargando, setCargando] = useState(true);
     const [elegidas, setElegidas] = useState(() => new Set());
     const [ocupado, setOcupado] = useState(null);
+    const [sacando, setSacando] = useState(false);
 
-    const { imprimir } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
+    const { imprimir, imprimirVale } = useCerrarBolsa({ nombreSala, origen: 'modulo' });
     const nombrePersona = useMemo(() => {
         const m = new Map();
         for (const e of empleados || []) m.set(e.id, e.name);
@@ -254,7 +277,11 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
             fetchBolsas({ desde, hasta, estados: ['CONTADA'], porFechaDeConteo: true }),
         ]);
         const todas = [...(vivas || []), ...(contadas || [])];
-        setBolsas(todas);
+        // El saldo va pegado a la bolsa desde el principio: si llegara después,
+        // la pantalla mostraría por un instante el monto guardado como si fuera
+        // el efectivo que hay adentro.
+        const saldos = await fetchSaldos(todas.map((b) => b.id));
+        setBolsas(todas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setCargando(false);
         const firmas = todas.flatMap((b) => [b.cerrada_por, b.entregada_por, b.recibida_por, b.contado_por, b.dif_por]);
         const gente = await fetchPersonasDeBolsas(firmas);
@@ -319,10 +346,35 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
         lista.length === 1 ? 'Recepción confirmada' : `Recepción de ${lista.length} bolsas confirmada`), [correr]);
 
     const contar = useCallback((bolsa, monto) => correr(`contar-${bolsa.id}`,
-        () => contarBolsa(bolsa.id, monto, Number(bolsa.monto_inicial)),
-        Math.abs(monto - Number(bolsa.monto_inicial)) < 0.01
+        () => contarBolsa(bolsa.id, monto, saldoDe(bolsa)),
+        Math.abs(monto - saldoDe(bolsa)) < 0.01
             ? `${bolsa.folio} cuadró`
             : `${bolsa.folio} quedó marcada`), [correr]);
+
+    /**
+     * Después de sacar dinero salen DOS papeles por bolsa: el vale que queda
+     * adentro y la etiqueta nueva de afuera. La etiqueta se reimprime sola
+     * porque la anterior dejó de ser cierta en ese mismo momento — dejarla
+     * pendiente sería dejar una bolsa con un número equivocado pegado encima.
+     */
+    const traslimSalida = useCallback(async (_oper, repartos) => {
+        for (const r of repartos || []) {
+            const salidas = await fetchSalidasDeBolsa(r.bolsa_id);
+            const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
+            const vivas = salidas.filter((s) => !s.anulado_at);
+            const ultima = vivas[vivas.length - 1];
+            const saldo = Number(bolsa?.monto_inicial || 0)
+                + vivas.reduce((a, s) => a + Number(s.monto || 0), 0);
+            if (ultima && bolsa) await imprimirVale(ultima, bolsa, saldo);
+            if (bolsa) {
+                await imprimir({ ...bolsa, saldo }, {
+                    cerradaPor: nombrePersona.get(bolsa.cerrada_por),
+                    salidas: (await import('../../utils/bolsaComprobante')).salidasParaEtiqueta(vivas),
+                });
+            }
+        }
+        cargar();
+    }, [bolsas, imprimirVale, imprimir, nombrePersona, cargar]);
 
     const resolver = useCallback((bolsa, via, causa) => correr(`resolver-${bolsa.id}`,
         () => resolverDiferenciaBolsa(bolsa.id, via, causa),
@@ -385,11 +437,22 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                         </div>
                     ),
                 })}
-                accion={puedeEntregar && elegidasEnSala.length > 0 && (
-                    <Button variant="primary" size="sm" icon={Send} loading={ocupado === 'entregar'}
-                        onClick={() => entregar(elegidasEnSala)}>
-                        Entregar {elegidasEnSala.length} · {formatMoney(suma(elegidasEnSala))}
-                    </Button>
+                accion={puedeEntregar && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* Sacar dinero está SIEMPRE, no detrás de elegir una
+                            bolsa: quien va a pagar una remesa sabe el monto, no
+                            de qué bolsa sale — eso lo elige el portal. */}
+                        <Button variant="secondary" size="sm" icon={HandCoins}
+                            disabled={!enSala.length} onClick={() => setSacando(true)}>
+                            Sacar dinero
+                        </Button>
+                        {elegidasEnSala.length > 0 && (
+                            <Button variant="primary" size="sm" icon={Send} loading={ocupado === 'entregar'}
+                                onClick={() => entregar(elegidasEnSala)}>
+                                Entregar {elegidasEnSala.length} · {formatMoney(suma(elegidasEnSala))}
+                            </Button>
+                        )}
+                    </div>
                 )}
                 vacio="Sin efectivo esperando en las salas"
             />
@@ -458,6 +521,14 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                     },
                 })}
                 vacio="Sin bolsas contadas en estas fechas"
+            />
+
+            <SalidaDeBolsa
+                abierto={sacando}
+                bolsas={enSala}
+                saldos={null}
+                onClose={() => setSacando(false)}
+                onHecho={traslimSalida}
             />
         </div>
     );

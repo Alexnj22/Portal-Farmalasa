@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.622.0 — Sacar dinero de una bolsa: remesas y salidas
+
+La última pieza del control de bolsas. Cuando hay que entregar una remesa y la
+caja no alcanza, el dinero sale de una bolsa y hasta hoy quedaba un papel escrito
+a mano adentro. Ahora queda un vale impreso, la etiqueta de afuera se rehace
+sola, y el saldo de la bolsa baja.
+
+**«Entrega de remesas»** está en la baldosa del Inicio y en la pestaña de Bolsas.
+Se escribe el monto y **el portal elige la bolsa**: la más vieja que alcance
+sola. Sólo combina cuando ninguna alcanza, y ahí lo avisa antes de registrar —
+son dos vales en dos bolsas, no uno.
+
+- **El formulario sale del catálogo.** Qué pide cada motivo son datos, no `if`s:
+  una remesa pide banco, número de boleta y foto; un anticipo no pide ninguno.
+  Ocho motivos sembrados, más «dinero que vuelve» y «se abrió para cambiar
+  sencillo» (que no mueve el saldo pero rompe el sello, y eso hay que verlo).
+- **Quien retira el efectivo se identifica con su carné o su usuario y
+  contraseña**, y se comprueba **en el servidor**. El navegador diciendo «ya
+  verifiqué» no es una verificación, y firmar con el cliente de siempre habría
+  reemplazado la sesión abierta: la sala quedaría logueada como quien vino a
+  retirar el dinero. La clave no se guarda en ninguna tabla. En una remesa no hay
+  a quién identificar: quien recibe es el cliente y lo identifica la boleta.
+- **Salen dos papeles por bolsa**: el vale que queda adentro —con cuánto QUEDA,
+  que es lo que el papel a mano nunca decía— y la etiqueta nueva de afuera, que
+  dejó de ser cierta en ese mismo momento.
+- **`REPOSICION_CAJA` no existe a propósito.** Devolverle dinero al cajón lo hace
+  reaparecer en el conteo del corte siguiente, y de ahí se embolsa otra vez: el
+  mismo billete contado dos veces sin que ninguna cuenta lo delate.
+
+Y un detalle que se ve poco pero decide todo: **`bolsa_sugerida` sigue midiendo
+contra lo guardado, no contra el saldo.** El vale ocupa el lugar del billete, así
+que el declarado acumulado del corte siguiente ya incluye ese dinero; restar el
+saldo lo descontaría dos veces y la bolsa siguiente nacería inflada.
+
+Probado de punta a punta en el entorno de pruebas, incluido el caso de las dos
+bolsas. Un defecto que sólo apareció en el papel: **la etiqueta imprimía la hora
+en UTC** mientras el vale de la misma operación decía la hora de la sala — seis
+horas de diferencia entre dos papeles de la misma bolsa, y el que mentía era el
+que va pegado afuera. Estaba escrito a mano en dos pantallas; ahora es una sola
+función (`salidasParaEtiqueta`) con su prueba.
+
 ## v2.621.0 — La bolsa nace sola y el circuito llega al conteo
 
 Dos pedidos del usuario. **La bolsa se guarda automáticamente al confirmar el

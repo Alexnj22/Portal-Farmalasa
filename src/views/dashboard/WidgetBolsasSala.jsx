@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Banknote, Package, Printer, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Banknote, HandCoins, Package, Printer, ShieldCheck } from 'lucide-react';
+import SalidaDeBolsa from '../../components/bolsas/SalidaDeBolsa';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchBolsas, fetchCortesPorEmbolsar } from '../../data/bolsas';
+import { fetchBolsas, fetchCortesPorEmbolsar, fetchSaldos, fetchSalidasDeBolsa } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { useAuth } from '../../context/AuthContext';
 import useCerrarBolsa from '../../hooks/useCerrarBolsa';
@@ -15,19 +16,19 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
  * Las bolsas de efectivo en el Inicio: lo que falta guardar y lo que espera el
  * retiro.
  *
- * ── Guardar la bolsa es un paso aparte de confirmar el corte ────────────────
- * A propósito. Meter el dinero en la bolsa lo hace una persona con las manos; si
- * el portal creara la bolsa solo al confirmar el corte, el registro diría que
- * hay una bolsa donde a lo mejor no la hay — y ese registro es justamente contra
- * lo que administración cuenta después.
+ * ── Es el ATAJO; el proceso vive en Cortes de caja → Bolsas ────────────────
+ * «El widget es para acceder fácil, pero debe haber una vista donde se haga todo
+ * el proceso» (usuario, 2026-08-15). Acá está lo que la sala necesita en el día:
+ * cuánto efectivo hay guardado, sacar dinero para una remesa, e imprimir la
+ * etiqueta. Entregar, recibir y contar viven en la pestaña.
  *
- * ── «Por guardar» mira dos días, no siete ──────────────────────────────────
- * El corte se embolsa en el momento, o a la mañana siguiente. Un corte
- * confirmado hace cinco días sin bolsa no es una tarea pendiente: es un
- * descuadre, y ofrecer «Guardar en bolsa $716.92» ahí invitaría a registrar una
- * bolsa por dinero que ya no está. La ventana corta también hace que el arranque
- * se limpie solo, en vez de estrenar la baldosa con la lista entera del
- * histórico.
+ * ── «Sin bolsa» es una EXCEPCIÓN, no una tarea ─────────────────────────────
+ * La bolsa nace sola al confirmar el corte. Un corte confirmado sin bolsa es de
+ * antes de que existiera el circuito, o le anularon la suya — por eso el rótulo
+ * nombra el problema. La ventana de dos días es corta a propósito: ofrecer
+ * «Guardar ahora $716.92» sobre un corte de hace cinco días invitaría a
+ * registrar una bolsa por dinero que ya no está, y además hace que el arranque
+ * se limpie solo.
  *
  * ── La alarma de los 4 días ─────────────────────────────────────────────────
  * El retiro pasa cada ~3 días y los días no son fijos (usuario, 2026-08-15), así
@@ -83,8 +84,9 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [imprimiendo, setImprimiendo] = useState(null);
+    const [sacando, setSacando] = useState(false);
 
-    const { cerrar, imprimir, ocupadoId } = useCerrarBolsa({ nombreSala, origen: 'inicio' });
+    const { cerrar, imprimir, imprimirVale, ocupadoId } = useCerrarBolsa({ nombreSala, origen: 'inicio' });
 
     const cargar = useCallback(async () => {
         const hasta = hoySV();
@@ -96,7 +98,10 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
         ]);
         if (!abiertas) { setError('No se pudieron cargar las bolsas'); setCargando(false); return; }
         setError(null);
-        setBolsas(abiertas);
+        // Con el saldo pegado: lo guardado ya no es lo que hay adentro desde que
+        // se puede sacar dinero para una remesa.
+        const saldos = await fetchSaldos(abiertas.map((b) => b.id));
+        setBolsas(abiertas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
         setPorEmbolsar(pendientes || []);
         setCargando(false);
     }, []);
@@ -130,8 +135,10 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
         [enSala, faltan],
     );
 
+    // El SALDO, no lo guardado: sumar `monto_inicial` diría que hay efectivo que
+    // ya salió en una remesa.
     const total = useMemo(
-        () => enSala.reduce((a, b) => a + Number(b.monto_inicial || 0), 0),
+        () => enSala.reduce((a, b) => a + Number(b.saldo ?? b.monto_inicial ?? 0), 0),
         [enSala],
     );
     const masVieja = useMemo(
@@ -147,12 +154,43 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
         if (await cerrar(corte)) cargar();
     }, [cerrar, cargar]);
 
+    const salidasParaLaEtiqueta = useCallback(async (bolsaId) => {
+        const filas = await fetchSalidasDeBolsa(bolsaId);
+        const { salidasParaEtiqueta } = await import('../../utils/bolsaComprobante');
+        return salidasParaEtiqueta(filas);
+    }, []);
+
     const reimprimir = useCallback(async (bolsa) => {
         setImprimiendo(bolsa.id);
-        await imprimir(bolsa, { cerradaPor: nombrePersona.get(bolsa.cerrada_por) });
+        // La etiqueta tiene que listar lo que salió: sin eso diría el monto
+        // guardado sobre una bolsa que ya no lo tiene.
+        const salidas = Number(bolsa.salidas || 0) > 0 ? await salidasParaLaEtiqueta(bolsa.id) : [];
+        await imprimir(bolsa, { cerradaPor: nombrePersona.get(bolsa.cerrada_por), salidas });
         setImprimiendo(null);
         cargar();
-    }, [imprimir, nombrePersona, cargar]);
+    }, [imprimir, nombrePersona, cargar, salidasParaLaEtiqueta]);
+
+    /**
+     * Después de una remesa salen dos papeles por bolsa: el vale de adentro y la
+     * etiqueta nueva de afuera. La etiqueta se reimprime sola porque la anterior
+     * dejó de ser cierta en ese mismo momento.
+     */
+    const trasLaSalida = useCallback(async (_oper, repartos) => {
+        for (const r of repartos || []) {
+            const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
+            if (!bolsa) continue;
+            const filas = (await fetchSalidasDeBolsa(r.bolsa_id)).filter((s) => !s.anulado_at);
+            const ultima = filas[filas.length - 1];
+            const saldo = Number(bolsa.monto_inicial || 0)
+                + filas.reduce((a, s) => a + Number(s.monto || 0), 0);
+            if (ultima) await imprimirVale(ultima, bolsa, saldo);
+            await imprimir({ ...bolsa, saldo }, {
+                cerradaPor: nombrePersona.get(bolsa.cerrada_por),
+                salidas: (await import('../../utils/bolsaComprobante')).salidasParaEtiqueta(filas),
+            });
+        }
+        cargar();
+    }, [bolsas, imprimir, imprimirVale, nombrePersona, cargar]);
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 
@@ -181,6 +219,18 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                     <StatCard densa icon={Banknote} iconBg="bg-success/10" iconCls="text-success-text"
                         label="Efectivo" value={formatMoney(total)} valueCls="text-success-text" />
                 </CarrilCards>
+
+                {/* «Entrega de remesas», lo que pidió el usuario: cuando hay que
+                    pagar una remesa y la caja no alcanza, el dinero sale de acá.
+                    Sólo aparece si hay de dónde sacarlo — un botón que siempre
+                    termina en «no hay bolsas» es un botón que enseña a no
+                    apretarlo. */}
+                {puedeGuardar && enSala.length > 0 && (
+                    <Button variant="secondary" size="sm" icon={HandCoins} className="w-full mt-1.5"
+                        onClick={() => setSacando(true)}>
+                        Entrega de remesas
+                    </Button>
+                )}
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-1.5">
@@ -306,6 +356,14 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                     />
                 )}
             </div>
+
+            <SalidaDeBolsa
+                abierto={sacando}
+                bolsas={enSala}
+                saldos={null}
+                onClose={() => setSacando(false)}
+                onHecho={trasLaSalida}
+            />
         </div>
     );
 }

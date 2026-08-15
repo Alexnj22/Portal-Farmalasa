@@ -13,11 +13,12 @@ import { useToastStore } from '../store/toastStore';
  * de `useResolverCorte`: allá la misma escritura terminó copiada en el módulo,
  * la baldosa y el detalle, y juntarlas fue un trabajo aparte.
  *
- * ── Guardar la bolsa es un acto FÍSICO ─────────────────────────────────────
- * Por eso es un paso aparte de confirmar el corte y no un efecto automático. Si
- * la bolsa naciera sola al confirmar, el registro diría que hay una bolsa donde
- * a lo mejor no la hay — y ese registro es justamente el que después se compara
- * contra el dinero que llega a administración.
+ * ── `cerrar` es hoy la EXCEPCIÓN, no la rutina ─────────────────────────────
+ * Desde el 2026-08-15 la bolsa nace sola al confirmar el corte (decisión del
+ * usuario; un disparador la crea). Esta función quedó para el caso que el
+ * disparador no cubre: un corte confirmado antes de que existiera el circuito, o
+ * uno cuya bolsa se anuló. La pantalla lo nombra así —«Sin bolsa», no «Guardar
+ * en bolsa»— porque es un problema, no una tarea.
  *
  * ── El monto lo calcula el servidor ────────────────────────────────────────
  * `sugerida` es lo que la pantalla mostró; el servidor recalcula el suyo y
@@ -75,6 +76,48 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
     }, [showToast, nombreSala, user]);
 
     /**
+     * El vale que queda DENTRO de la bolsa cuando sale dinero.
+     *
+     * Se imprime junto con la etiqueta nueva y no en lugar de ella: son dos
+     * papeles con dos trabajos. El vale respalda la salida y lo firma quien se
+     * llevó el efectivo; la etiqueta va pegada afuera y dice cuánto queda —y
+     * dejó de ser cierta en el momento en que salió la plata.
+     */
+    const imprimirVale = useCallback(async (mov, bolsa, saldoDespues) => {
+        if (!mov || !bolsa) return false;
+        const [{ imprimirDocumento }, { construirValeDeSalida }] = await Promise.all([
+            import('../utils/ticketPrint'),
+            import('../utils/bolsaComprobante'),
+        ]);
+
+        const r = await imprimirDocumento(construirValeDeSalida({
+            vale: { folio: mov.vale_folio, monto: mov.monto, saldo_despues: saldoDespues },
+            operacion: {
+                folio: mov.operacion_folio,
+                motivo: mov.etiqueta,
+                banco: mov.entidad,
+                numero_boleta: mov.numero_boleta,
+                monto: mov.monto_operacion,
+                nota: mov.nota,
+            },
+            bolsa,
+            sala: nombreSala[bolsa.branch_id] || '',
+            registradoPor: mov.registrado_nombre,
+            recibidoPor: mov.recibido_nombre
+                ? { nombre: mov.recibido_nombre, metodo: mov.recibido_metodo }
+                : null,
+            registradoAt: mov.registrado_at,
+        }));
+
+        showToast?.(
+            r.ok ? 'Vale enviado' : 'No se pudo imprimir el vale',
+            r.ok ? `${mov.vale_folio} · dejalo dentro de la bolsa` : r.detalle,
+            r.ok ? 'success' : 'error',
+        );
+        return r.ok;
+    }, [showToast, nombreSala]);
+
+    /**
      * Cierra la bolsa del corte y manda la etiqueta a imprimir.
      *
      * @param corte  fila de `get_cortes_por_embolsar` (trae `corte_id` y `sugerida`)
@@ -105,5 +148,5 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
         return data;
     }, [ocupadoId, showToast, appendAuditLog, user, nombreSala, origen, imprimir]);
 
-    return { cerrar, imprimir, ocupadoId };
+    return { cerrar, imprimir, imprimirVale, ocupadoId };
 }

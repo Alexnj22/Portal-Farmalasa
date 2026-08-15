@@ -173,6 +173,34 @@ describe('el vale que queda dentro de la bolsa', () => {
     });
 });
 
+describe('la hora que va en la etiqueta', () => {
+    it('es la de la sala, no la del sello UTC', async () => {
+        // El defecto real: cortando el ISO a mano (`slice(11,16)`) el vale decía
+        // «04:23 p. m.» y la etiqueta de la MISMA bolsa listaba esa salida a las
+        // «22:23». Dos papeles de la misma operación con seis horas de
+        // diferencia, y el que miente es el que va pegado afuera.
+        const { enHoraDeLaSala } = await import('../../src/utils/bolsaComprobante');
+        expect(enHoraDeLaSala('2026-08-15T22:23:00.000Z'))
+            .toEqual({ fecha: '2026-08-15', hora: '16:23' });
+        // Y cruza el día correctamente: 03:00 UTC es todavía el día anterior en
+        // El Salvador.
+        expect(enHoraDeLaSala('2026-08-16T03:00:00.000Z'))
+            .toEqual({ fecha: '2026-08-15', hora: '21:00' });
+    });
+
+    it('deja fuera los vales anulados: ya no están adentro', async () => {
+        const { salidasParaEtiqueta } = await import('../../src/utils/bolsaComprobante');
+        const filas = [
+            { registrado_at: '2026-08-15T22:23:00.000Z', monto: -500, etiqueta: 'Remesa' },
+            { registrado_at: '2026-08-15T23:00:00.000Z', monto: -100, etiqueta: 'Gasto', anulado_at: '2026-08-16T00:00:00.000Z' },
+            { registrado_at: '2026-08-15T23:30:00.000Z', monto: 100, etiqueta: 'Reintegro' },
+        ];
+        const out = salidasParaEtiqueta(filas);
+        expect(out).toHaveLength(1);
+        expect(out[0]).toEqual({ fecha: '2026-08-15', hora: '16:23', motivo: 'Remesa', monto: -500 });
+    });
+});
+
 describe('el comprobante de entrega', () => {
     it('cierra con efectivo, vales y el total que amparan los cortes', () => {
         expect(entrega().totales).toEqual([

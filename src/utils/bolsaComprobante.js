@@ -56,6 +56,46 @@ const importeDeColumna = (valor) => {
 /** «1 bolsa» / «2 bolsas» — un rótulo mal conjugado se lee como un descuido. */
 const plural = (n, singular, muchos) => `${n} ${n === 1 ? singular : muchos}`;
 
+/**
+ * La fecha y la hora de El Salvador de un sello de tiempo.
+ *
+ * Existe porque cortar el ISO a mano —`iso.slice(11,16)`— imprime la hora UTC.
+ * Se vio en el primer vale real: el papel del vale decía «04:23 p. m.» y la
+ * etiqueta de la misma bolsa listaba esa salida a las «22:23». Dos papeles de la
+ * misma operación con seis horas de diferencia, y el que miente es el que va
+ * pegado afuera.
+ */
+export function enHoraDeLaSala(iso) {
+    if (!iso) return { fecha: '', hora: '' };
+    const partes = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/El_Salvador',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(iso));
+    const v = (t) => partes.find((x) => x.type === t)?.value || '';
+    return { fecha: `${v('year')}-${v('month')}-${v('day')}`, hora: `${v('hour')}:${v('minute')}` };
+}
+
+/**
+ * Las salidas de una bolsa, con la forma que espera la etiqueta.
+ *
+ * Vive acá y no en cada pantalla porque estaba escrito dos veces —la baldosa y
+ * la pestaña— y las dos tenían el mismo defecto de huso. Una etiqueta la imprime
+ * cualquiera de las dos, así que dos versiones significan dos papeles distintos
+ * de la misma bolsa.
+ *
+ * Las anuladas quedan fuera: un vale anulado ya no está adentro.
+ */
+export function salidasParaEtiqueta(filas = []) {
+    return (filas || [])
+        .filter((s) => !s.anulado_at && Number(s.monto) < 0)
+        .map((s) => ({
+            ...enHoraDeLaSala(s.registrado_at),
+            motivo: s.etiqueta,
+            monto: s.monto,
+        }));
+}
+
 const encabezadoDeLaEmpresa = () => ({
     titulo: soloAscii(EMPRESA.razonSocial),
     lineas: [`NIT ${EMPRESA.nit}`],

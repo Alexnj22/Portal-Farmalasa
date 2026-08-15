@@ -151,6 +151,114 @@ export function resolverDiferenciaBolsa(id, via, causa) {
     return supabase.rpc('resolver_diferencia_bolsa', { p_id: id, p_via: via, p_causa: causa });
 }
 
+// ── Sacar dinero de una bolsa ───────────────────────────────────────────────
+//
+// La remesa es un HECHO y los vales son de dónde salió la plata: una operación
+// puede tocar más de una bolsa, y si el banco, la boleta y la foto vivieran
+// dentro de cada salida serían dos copias del mismo dato.
+
+const BUCKET_COMPROBANTES = 'payment-proofs';
+
+/**
+ * Los motivos por los que puede salir dinero, con **qué exige cada uno**.
+ *
+ * Sale de la tabla y no de una lista escrita acá: de estas filas se arma el
+ * formulario —si pide banco, si pide boleta, si pide foto, si hay que
+ * identificar a quien retira—. Una lista de opciones que existe como tabla no
+ * se escribe a mano; escrita dos veces, un motivo nuevo aparece en la base y no
+ * en la pantalla, o al revés.
+ */
+export async function fetchTiposDeSalida() {
+    const { data, error } = await supabase.from('bolsas_tipos_salida')
+        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, pide_foto, pide_receptor')
+        .eq('activo', true)
+        .order('orden');
+    if (error) { console.error('bolsas: fetchTiposDeSalida failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
+ * La foto del comprobante del POS. Bucket privado; se guarda la URL en formato
+ * público como identificador porque la firmada expira (regla 10 de CLAUDE.md).
+ */
+export async function subirComprobante(archivo, { salaId, userId }) {
+    const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `bolsas/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+        .from(BUCKET_COMPROBANTES).upload(path, archivo, { contentType: archivo.type });
+    if (error) throw new Error(`No se pudo subir la foto: ${error.message}`);
+    const { data } = supabase.storage.from(BUCKET_COMPROBANTES).getPublicUrl(path);
+    return data?.publicUrl || null;
+}
+
+/**
+ * Registrar una salida (o un reintegro) de una o más bolsas.
+ *
+ * `repartos` es `[{ bolsa_id, monto }]` — de qué bolsas sale. La regla es **la
+ * más vieja que alcance sola**; combinar es la excepción para cuando ninguna
+ * alcanza, y ahí la operación queda con dos vales. El servidor exige que la
+ * suma cierre exactamente contra el monto: sin eso, un vale podría quedar por
+ * menos de lo que se sacó.
+ *
+ * `secreto` es la contraseña —o el número del carné— de quien retira el
+ * efectivo. **Viaja sólo en esta llamada y no se guarda en ninguna tabla**: el
+ * servidor lo compara contra el hash y lo descarta. Se comprueba allá y no acá
+ * por dos motivos: el navegador diciendo «ya verifiqué» no es una verificación,
+ * y `signInWithPassword` en el cliente de siempre reemplazaría la sesión abierta
+ * —la sala quedaría logueada como quien vino a retirar el dinero—.
+ */
+export function registrarSalida({
+    tipo, monto, repartos, entidad, numeroBoleta, fotoUrl, nota,
+    recibidoPor, metodo, secreto,
+}) {
+    return supabase.rpc('registrar_salida_de_bolsa', {
+        p_tipo: tipo,
+        p_monto: monto,
+        p_repartos: repartos,
+        p_entidad: entidad || null,
+        p_numero_boleta: numeroBoleta || null,
+        p_foto_url: fotoUrl || null,
+        p_nota: nota || null,
+        p_recibido_por: recibidoPor || null,
+        p_metodo: metodo || null,
+        p_secreto: secreto || null,
+    });
+}
+
+/** Se anula, nunca se borra: el vale ya salió impreso y está dentro de la bolsa. */
+export function anularSalida(operacionId, motivo) {
+    return supabase.rpc('anular_salida_de_bolsa', {
+        p_operacion_id: operacionId, p_motivo: motivo,
+    });
+}
+
+/**
+ * El saldo y las salidas de cada bolsa.
+ *
+ * `monto_inicial` es lo que se guardó; el SALDO es lo que debe haber en
+ * billetes hoy. Desde que se puede sacar dinero, la pantalla que muestre el
+ * primero sin el segundo está diciendo que hay plata que no está.
+ */
+export async function fetchSaldos(ids) {
+    const unicos = [...new Set((ids || []).filter(Boolean))];
+    if (!unicos.length) return new Map();
+    const { data, error } = await supabase.rpc('get_bolsas_saldos', { p_ids: unicos });
+    if (error) { console.error('bolsas: fetchSaldos failed:', error.message); return new Map(); }
+    return new Map((data || []).map((r) => [r.bolsa_id, r]));
+}
+
+/** Lo que salió de una bolsa, con su operación: para el detalle y la etiqueta. */
+export async function fetchSalidasDeBolsa(bolsaId) {
+    const { data, error } = await supabase.rpc('get_salidas_de_bolsa', { p_bolsa_id: bolsaId });
+    if (error) { console.error('bolsas: fetchSalidasDeBolsa failed:', error.message); return []; }
+    return data || [];
+}
+
+/** Constancia de que el vale se mandó a imprimir. No promete que salió papel. */
+export function marcarValeImpreso(movimientoId) {
+    return supabase.rpc('marcar_vale_impreso', { p_movimiento_id: movimientoId });
+}
+
 /** La bitácora de una bolsa: cada firma, con quién y cuándo. */
 export async function fetchEventosDeBolsa(id) {
     const { data, error } = await supabase.rpc('get_bolsa_eventos', { p_bolsa_id: id });

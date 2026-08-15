@@ -464,8 +464,15 @@ export default function TabInventario({ searchTerm = '' }) {
 
                                     <DataCell>
                                         <div className="flex items-center gap-2">
+                                            {/* Sólo en la tabla de verdad. Por debajo de
+                                                `lg`, `DataTable` pinta fichas: la fila
+                                                hermana que este chevron despliega ya no se
+                                                dibuja —o sea que apuntaba a nada— y encima
+                                                queda al lado del ojo, que es la señal que
+                                                SÍ corresponde ahí (§5.3). Mismo corte y
+                                                mismo motivo que el de Conteo. */}
                                             <ChevronDown size={12} strokeWidth={2.5}
-                                                className={`text-content-3 shrink-0 transition-transform duration-[var(--dur-base)] ${isExpanded ? 'rotate-180 text-brand-text' : ''}`} />
+                                                className={`hidden lg:inline text-content-3 shrink-0 transition-transform duration-[var(--dur-base)] ${isExpanded ? 'rotate-180 text-brand-text' : ''}`} />
                                             <div className="min-w-0">
                                                 <span className="text-body font-medium text-content line-clamp-2 leading-tight">
                                                     {group.descripcion || '—'}

@@ -30,6 +30,7 @@ import Button from './Button';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import ModalShell from './ModalShell';
 import HojaMovil from './HojaMovil';
+import OjoDeTarjeta from './OjoDeTarjeta';
 
 // `hideBelow` se armaba en runtime: `hidden ${hideBelow}:table-cell`. Tailwind
 // escanea el FUENTE, así que esa clase nunca existió por sí misma — funcionaba
@@ -729,14 +730,14 @@ function Ficha({ celdas, onClick }) {
 
   if (acciones.length > 0) {
     return (
-      <div data-surface="card" className={`w-full px-3.5 py-3 rounded-card ${fueraDePantalla}`}>
+      <div data-surface="card" className={`group w-full px-3.5 py-3 rounded-card ${fueraDePantalla}`}>
         <Elem
           {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
           className="w-full text-left block
             transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
             active:scale-[0.985]"
         >
-          <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} />
+          <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} tocable={!!alTocar} />
         </Elem>
         <div className="flex items-center justify-end gap-1.5 mt-2.5 pt-2.5 border-t border-divider">
           {acciones.map((v, i) => <React.Fragment key={i}>{v}</React.Fragment>)}
@@ -749,11 +750,11 @@ function Ficha({ celdas, onClick }) {
     <Elem
       {...(alTocar ? { type: 'button', onClick: alTocar } : {})}
       data-surface="card"
-      className={`w-full text-left px-3.5 py-3 rounded-card
+      className={`group w-full text-left px-3.5 py-3 rounded-card
         transition-transform duration-[var(--dur-fast)] ease-[var(--ease-spring)]
         active:scale-[0.985] ${fueraDePantalla}`}
     >
-      <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} />
+      <Cuerpo deCol={deCol} papeles={papeles} chipsVisibles={chipsVisibles} tocable={!!alTocar} />
     </Elem>
   );
 }
@@ -761,15 +762,29 @@ function Ficha({ celdas, onClick }) {
 // El cuerpo de la ficha —identidad, ancla y la línea de contexto— vive aparte
 // porque lo comparten las dos formas: la tarjeta que ES un botón y la que
 // CONTIENE uno (ver la nota de `acciones`).
-function Cuerpo({ deCol, papeles, chipsVisibles }) {
+//
+// `tocable` dibuja el ojo de §5.3, y es la señal que a esta ficha le faltaba: en
+// el teléfono no hay cursor ni realce, así que una ficha que abre la hoja se veía
+// idéntica a una que no hace nada — y `alTocar` cambia de una vista a otra, o sea
+// que la misma tabla es tocable en una pantalla y muda en la siguiente. Con el
+// ojo eso se ve sin probar.
+//
+// Va DENTRO del cuerpo y no en la tira de acciones a propósito: ahí abajo, al
+// lado de una papelera, un ícono suelto se lee como un segundo botón — es
+// exactamente por eso que ConteoInventario esconde su chevron por debajo de
+// `lg`. Acá el ojo está pegado al dato, en la parte que ES el botón.
+function Cuerpo({ deCol, papeles, chipsVisibles, tocable = false }) {
   return (
     <>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0 truncate font-bold text-body-lg text-content">
           {deCol(papeles.identidad)}
         </span>
-        <span className="shrink-0 font-black text-body-xl tabular-nums text-content">
-          {deCol(papeles.ancla)}
+        <span className="shrink-0 flex items-baseline gap-1.5">
+          <span className="font-black text-body-xl tabular-nums text-content">
+            {deCol(papeles.ancla)}
+          </span>
+          {tocable && <OjoDeTarjeta size={13} className="self-center" />}
         </span>
       </div>
       {chipsVisibles.length > 0 && (

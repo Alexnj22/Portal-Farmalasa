@@ -21,7 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.611.4 — El ojo llega a la ficha móvil de toda tabla y a la tarjeta de conteo
+## v2.611.2 — El ojo llega a la ficha móvil de toda tabla y a la tarjeta de conteo
 
 **Faltaba la mitad del portal, y era la del teléfono.** El barrido de v2.610.0
 buscó tarjetas por sus clases, así que sólo vio las que están escritas a mano en

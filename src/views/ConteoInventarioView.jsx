@@ -15,6 +15,7 @@ import FilterBar from '../components/common/FilterBar';
 import StatCard from '../components/common/StatCard';
 import CarrilCards from '../components/common/CarrilCards';
 import ListRow from '../components/common/ListRow';
+import OjoDeTarjeta from '../components/common/OjoDeTarjeta';
 import { SkeletonText } from '../components/common/StateViews';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Button from '../components/common/Button';
@@ -382,20 +383,29 @@ export default function ConteoInventarioView() {
                             conOpciones={canEdit}
                             onAbrir={() => navigate(`/conteo-inventario/${c.id}`)}
                             onOpciones={abrirOpciones}
+                            /* Las insignias dicen el ESTADO; el ojo dice que la
+                               tarjeta se abre (§5.3). Hacían falta las dos: el
+                               toque lleva al conteo y nada lo anunciaba —el
+                               chevron de la tabla de al lado se esconde por
+                               debajo de `lg` justo para no leerse como un
+                               segundo botón al lado de la papelera—. */
                             trailing={(
-                                <span className="flex flex-col items-end gap-1">
-                                    <Badge variant={es.variante} size="sm">{es.label}</Badge>
-                                    {c.total_diferencias > 0 && (
-                                        <span className="text-caption font-bold text-warning-text tabular-nums">
-                                            {c.total_diferencias} dif{canVerMontos ? ` · ${formatMoney(valorNeto)}` : ''}
-                                        </span>
-                                    )}
-                                    {faltaAjuste(c) && (
-                                        <Badge variant="warning" size="sm" icon={FileSpreadsheet} uppercase={false}>Falta ajuste</Badge>
-                                    )}
-                                    {c.total_pendientes > 0 && !c.pendientes_como_cero && (
-                                        <Badge variant="danger" size="sm" uppercase={false}>Parcial</Badge>
-                                    )}
+                                <span className="flex items-center gap-2">
+                                    <span className="flex flex-col items-end gap-1">
+                                        <Badge variant={es.variante} size="sm">{es.label}</Badge>
+                                        {c.total_diferencias > 0 && (
+                                            <span className="text-caption font-bold text-warning-text tabular-nums">
+                                                {c.total_diferencias} dif{canVerMontos ? ` · ${formatMoney(valorNeto)}` : ''}
+                                            </span>
+                                        )}
+                                        {faltaAjuste(c) && (
+                                            <Badge variant="warning" size="sm" icon={FileSpreadsheet} uppercase={false}>Falta ajuste</Badge>
+                                        )}
+                                        {c.total_pendientes > 0 && !c.pendientes_como_cero && (
+                                            <Badge variant="danger" size="sm" uppercase={false}>Parcial</Badge>
+                                        )}
+                                    </span>
+                                    <OjoDeTarjeta size={13} />
                                 </span>
                             )}
                         />

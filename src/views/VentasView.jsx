@@ -822,8 +822,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                             </LiquidTooltip>
                                         )}
                                         <p className={`text-body font-black ${isCancelled ? 'line-through text-content-3' : 'text-content'}`}>{fmt(r.total)}</p>
+                                        {/* Sólo en la tabla de verdad. Por debajo de `lg`
+                                            esto se pinta como ficha, y ahí la fila que
+                                            este chevron despliega no existe: apuntaba a
+                                            nada y encima competía con el ojo, que es la
+                                            señal correcta para una ficha que abre su hoja
+                                            (§5.3). Mismo corte que el de Conteo. */}
                                         <ChevronDown size={12}
-                                            className={`transition-transform duration-[var(--dur-base)] shrink-0 ${isExpanded ? 'rotate-180 text-chart-1-text' : noData ? 'text-content-3' : 'text-content-3'}`} />
+                                            className={`hidden lg:inline transition-transform duration-[var(--dur-base)] shrink-0 ${isExpanded ? 'rotate-180 text-chart-1-text' : noData ? 'text-content-3' : 'text-content-3'}`} />
                                     </div>
                                 </DataCell>
                             </DataRow>

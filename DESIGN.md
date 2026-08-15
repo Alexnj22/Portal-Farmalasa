@@ -801,12 +801,43 @@ El `group` de la tarjeta es lo que enciende el realce al pasar el puntero. Sin
 **No lo vigila el gate, a propósito.** La diferencia entre «abre» y «elige» está
 en el handler, no en las clases: un detector que mire la forma de la tarjeta
 clasifica mal por construcción. Es el mismo motivo por el que `clickable()`
-tampoco se puede deducir de un barrido (§25.8) — y se midió: de **44 candidatos
-del portal, 4 eran tarjetas que abren un detalle** y ninguna lo decía.
+tampoco se puede deducir de un barrido (§25.8).
+
+#### El barrido tiene que incluir los CANÓNICOS, no sólo el JSX suelto
+
+La primera pasada buscó `<div>`/`<button>` con clases de tarjeta y un manejador
+de clic. Encontró 44 candidatos y 4 tarjetas de verdad — y **se dejó afuera la
+mayor parte del portal**, porque las tarjetas más repetidas no se escriben con
+clases: las dibuja un canónico y el manejador viaja como *prop* de un componente
+en mayúscula.
+
+| dónde | qué es | cubre |
+|---|---|---|
+| `Ficha` de `DataTable` | lo que una tabla pinta por debajo de `lg` | **33 vistas** de una sola vez |
+| `ListRow surface="card"` | tarjeta suelta en una grilla | hoy Conteo (teléfono) |
+| `<button data-surface="card">` a mano | la tarjeta escrita en la vista | Solicitudes, Conexiones, Cortes, Personal de sucursal |
+
+En `Ficha` el ojo sale de `alTocar`, que es la misma condición que decide si la
+ficha es un `<button>`: **la señal y el comportamiento salen del mismo dato**, así
+que no pueden discrepar. Y va dentro del cuerpo, no en la tira de acciones — ahí
+abajo, junto a una papelera, un ícono suelto se lee como un segundo botón.
+
+`ListRow surface="card"` **no** lo pone solo: su otro uso con `onClick`
+(`PayrollView`) es una selección, y un ojo ahí mentiría. Va explícito en
+`trailing`.
+
+**Un chevron de expandir NO sobrevive al modo ficha.** Varias tablas ponen un
+`ChevronDown` en una celda para señalar que la fila despliega una hermana. Por
+debajo de `lg` esa hermana no se pinta —el chevron apunta a nada— y encima queda
+al lado del ojo. Van con `hidden lg:inline`: hecho en Ventas e Inventario, que
+es donde el barrido midió el choque; Conteo ya lo tenía por el mismo motivo.
 
 Aplicado el 2026-08-15 a Solicitudes (ya lo tenía a mano, se migró al canónico),
-Cortes de caja, Conexiones y las dos tarjetas de «Personal asignado» de una
-sucursal.
+Cortes de caja, Conexiones, las dos tarjetas de «Personal asignado» de una
+sucursal, la ficha móvil de `DataTable` y la tarjeta de conteo del teléfono.
+Los widgets del Inicio quedaron fuera **con motivo medido**: sus filas o eligen
+(un cliente, un vendedor, un producto que se agrega), o crean, o ya llevan
+chevron.
 
 **Y una insignia sobre una foto va DESPUÉS de la foto, sin z-index.** La
 `<img>` de `LiquidAvatar` lleva `z-base` para tapar su brillo de carga, y hasta

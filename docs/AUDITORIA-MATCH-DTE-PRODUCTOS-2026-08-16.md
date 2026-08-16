@@ -601,3 +601,62 @@ NOVA sin mirar.
 **El lote y el vencimiento dejaron de ser el problema.** Quedan SAVONA,
 CONGELADOS y STEINER —helados y bebidas—, que no los mandan en ningún lado y los
 seguirá poniendo una persona, como hoy.
+
+---
+
+# Octava parte: las pruebas — ¿y si pone un vencimiento equivocado?
+
+Pedido del usuario, y es la pregunta correcta: lo que produce esta lectura entra
+al inventario como **fecha de vencimiento de un medicamento**. Un mes corrido no
+da error — se descubre contando, o no se descubre.
+
+## 1. La lógica salió de la función y quedó con pruebas
+
+`supabase/functions/_shared/loteVencimiento.ts`: funciones puras, sin red ni
+base. `leer-dte-json` la **importa** en vez de tener una copia — una copia con
+pruebas al lado prueba la copia, no lo que corre.
+
+`tests/unit/loteVencimiento.test.js`, **23 pruebas**, con cadenas **literales de
+producción** (no ejemplos redactados: un caso inventado prueba la regex contra
+sí misma). Cubren los ocho formatos, y sobre todo las trampas encontradas:
+
+- el precio `12.00` de LETERAGO que se leía como diciembre del 2000
+- el guion del rótulo de IMBERTON que salía como número de lote
+- el gramaje (`X 30`, `500ML`) que no debe confundirse con un lote
+- `(V-12-27)` de VIJOSA, que es mes y año
+- que dos renglones seguidos del mismo PDF no se roben el lote entre sí
+- que **sin ancla devuelve nulo**, en vez de adivinar
+
+El año de referencia se pasa como parámetro para que la ventana de fechas
+creíbles no dependa de cuándo se corran las pruebas.
+
+## 2. Contrastado contra lo que una persona escribió
+
+La prueba de fuego: cada compra registrada tiene el vencimiento que alguien
+tecleó mirando la caja. Se compara el **conjunto** de fechas leídas contra el
+tecleado —así el error del matcher de productos no se mete en una medición que
+es sólo del extractor—.
+
+**21 documentos pareados, 18 idénticos.** Las cuatro diferencias, una por una:
+
+| documento | qué pasó |
+|---|---|
+| **GAMMA 5314** (CLOMAZOL) | La factura dice lote `B26102`, vence `02/2029`. **La persona tecleó lote `GENERICO` y vence `02/2030`.** El extractor tiene razón; lo confirma la captura de la propia factura. |
+| **VIJOSA 4826** | Una línea difiere y la otra —de la misma factura y el mismo formato `(V-mm-aa)`— coincide exacto. El formato se lee bien; lo que difiere es lo que se tecleó. |
+| **AMERICANA 5249** | No es un error: el DTE trae cada producto **dos veces**, la venta y la bonificación (`*…|0.000000`), con el mismo lote y la misma fecha. La persona las junta en un renglón. |
+| **GAMMA 2285** | Lo mismo: 24 renglones en el DTE contra 22 cargados. |
+
+## 3. Lo que la prueba destapó del proceso de hoy
+
+**El 57.1% de las líneas de compra —23,177 de 40,576— tienen el lote tecleado
+como `GENERICO`.** No es un lote: es un relleno.
+
+Eso reencuadra toda la comparación de arriba. **Lo tecleado a mano no es una
+verdad limpia contra la cual medir**: en más de la mitad de los casos el lote no
+se copió de ningún lado, y el vencimiento que lo acompaña sale de la misma
+escritura apurada (el CLOMAZOL con `GENERICO` traía también el año cambiado).
+
+O sea que la carga automática no es sólo más rápida. **Es más exacta**, y le
+devuelve al inventario la trazabilidad por lote que hoy no tiene en la mitad de
+sus renglones — que es justo lo que el Art. 142 pide que el registro refleje
+«clara y verazmente».

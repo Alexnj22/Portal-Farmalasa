@@ -122,6 +122,62 @@ test.describe('Acomodar widgets', () => {
         await page.screenshot({ path: 'barridos/acomodar-intercambio.png' });
     });
 
+    test('el tablero se reacomoda EN VIVO y no deja blancos', async ({ page }) => {
+        // «debe ser fluido, no deben haber espacios en blanco si alguno cabe».
+        // Se mide sobre el tablero real —28 widgets— en tres momentos: antes de
+        // tocar nada, MIENTRAS se arrastra y al soltar. Los tres tienen que
+        // estar sin blancos y sin encimados, y los dos últimos tienen que ser
+        // idénticos: lo que se ve arrastrando es lo que se guarda, no una
+        // aproximación.
+        await abrirEditor(page);
+
+        const foto = () => page.evaluate(() => {
+            const d = document.querySelector('[role="dialog"]');
+            const span = (v) => { const m = /span (\d+)/.exec(v); return m ? +m[1] : 1; };
+            const fichas = [...d.querySelectorAll('button[aria-pressed]')].map(b => {
+                const s = getComputedStyle(b);
+                return { t: b.innerText.replace(/\s+/g, ' ').trim().slice(0, 22),
+                         col: +s.gridColumnStart, row: +s.gridRowStart,
+                         cols: span(s.gridColumnEnd), rows: span(s.gridRowEnd) };
+            });
+            const ocupadas = new Set(); let ultima = 0, pisan = 0;
+            for (const f of fichas) {
+                ultima = Math.max(ultima, f.row + f.rows - 1);
+                for (let c = f.col; c < f.col + f.cols; c++)
+                    for (let r = f.row; r < f.row + f.rows; r++) {
+                        if (ocupadas.has(`${c},${r}`)) pisan++;
+                        ocupadas.add(`${c},${r}`);
+                    }
+            }
+            return { huecos: ultima * 4 - ocupadas.size, pisan,
+                     mapa: Object.fromEntries(fichas.map(f => [f.t, `${f.col},${f.row}`])) };
+        });
+
+        const antes = await foto();
+        expect(antes.pisan, 'el tablero arranca con widgets encimados').toBe(0);
+
+        // Un widget grande sobre una zona de chicos: el caso que reportó el
+        // usuario («si muevo un 2×2 y hay 2 ahí de 1×1 intercambian puesto»).
+        const grande  = fichas(page).filter({ hasText: /2×2|2×3/ }).first();
+        const destino = fichas(page).filter({ hasText: /1×1/ }).first();
+        const ca = await grande.boundingBox(), cb = await destino.boundingBox();
+        await page.mouse.move(ca.x + ca.width / 2, ca.y + ca.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(cb.x + cb.width / 2, cb.y + cb.height / 2, { steps: 14 });
+        await page.waitForTimeout(150);
+        const durante = await foto();
+        await page.mouse.up();
+        await page.waitForTimeout(250);
+        const despues = await foto();
+
+        expect(despues.pisan, 'quedaron widgets encimados').toBe(0);
+        expect(despues.huecos, 'el acomodo dejó blancos de más')
+            .toBeLessThanOrEqual(antes.huecos + 2);
+        const distintos = Object.keys(despues.mapa)
+            .filter(k => durante.mapa[k] !== despues.mapa[k]);
+        expect(distintos, 'lo que se pinta arrastrando no es lo que se guarda').toEqual([]);
+    });
+
     test('Cancelar descarta el borrador', async ({ page }) => {
         const posiciones = async () => page.evaluate(() =>
             Object.fromEntries([...document.querySelectorAll('[data-widget-id]')].map(el => {

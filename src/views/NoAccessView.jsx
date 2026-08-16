@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../components/common/Button';
-import { ShieldOff, LogOut, MessageCircle, Loader2 } from 'lucide-react';
+import { ShieldOff, LogOut, MessageCircle, Loader2, WifiOff, RefreshCw } from 'lucide-react';
 import { fetchRoleName } from '../data/permissions';
 import { useAuth } from '../context/AuthContext';
 
 const SUPPORT_PHONE = '50370153222';
 
-const NoAccessView = () => {
+/**
+ * @param {object} p
+ * @param {boolean} [p.porFalloDeLectura]  Los permisos NO se pudieron leer.
+ *   No es lo mismo que no tenerlos, y decirlo mal es acusar a la cuenta de algo
+ *   que no pasa: el usuario vio «tu cuenta no tiene módulos habilitados» unos
+ *   segundos al cerrar sesión (2026-08-16) porque la consulta de permisos había
+ *   fallado. Con esta bandera la pantalla dice lo que de verdad ocurrió y
+ *   ofrece reintentar, que es la salida que corresponde.
+ */
+const NoAccessView = ({ porFalloDeLectura = false, onReintentar }) => {
     const { user, logout } = useAuth();
+    const [reintentando, setReintentando] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
     const [roleName, setRoleName] = useState('');
 
@@ -47,23 +57,37 @@ const NoAccessView = () => {
                 <div className="relative mb-10">
                     <span className="absolute inset-0 m-auto w-28 h-28 rounded-full bg-danger/15 animate-ping" style={{ animationDuration: '2.5s' }} />
                     <span className="absolute -inset-6 rounded-full bg-danger/10 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.6s' }} />
-                    <div className="relative w-28 h-28 rounded-header bg-surface-card border border-danger/30 shadow-[var(--shadow-glow-danger)] flex items-center justify-center">
-                        <ShieldOff size={48} className="text-danger" strokeWidth={1.5} />
+                    <div className={`relative w-28 h-28 rounded-header bg-surface-card border flex items-center justify-center ${porFalloDeLectura ? 'border-warning/30 shadow-[var(--shadow-glow-warning)]' : 'border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
+                        {porFalloDeLectura
+                            ? <WifiOff size={48} className="text-warning" strokeWidth={1.5} />
+                            : <ShieldOff size={48} className="text-danger" strokeWidth={1.5} />}
                     </div>
                 </div>
 
                 {/* Text */}
                 <div className="animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both" style={{ animationDelay: '150ms' }}>
                     <h1 className="text-display-lg font-black text-content tracking-tight leading-none mb-3">
-                        Sin acceso
+                        {porFalloDeLectura ? 'No pudimos cargar tus permisos' : 'Sin acceso'}
                     </h1>
                     <p className="text-subtitle text-content-3 font-medium leading-relaxed mb-8">
-                        Tu cuenta no tiene módulos habilitados.
+                        {porFalloDeLectura
+                            ? 'Revisa tu conexión e intenta de nuevo. Tu cuenta está bien: lo que falló fue la consulta.'
+                            : 'Tu cuenta no tiene módulos habilitados.'}
                     </p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-col items-center gap-3 w-full animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both" style={{ animationDelay: '300ms' }}>
+                    {porFalloDeLectura && onReintentar && (
+                        <Button
+                            size="lg"
+                            className="w-full"
+                            icon={RefreshCw}
+                            disabled={reintentando}
+                            onClick={() => { setReintentando(true); onReintentar(); setTimeout(() => setReintentando(false), 4000); }}
+                        >{reintentando ? 'Reintentando...' : 'Reintentar'}</Button>
+                    )}
+
                     {/* WhatsApp support */}
                     <Button
                         size="lg"

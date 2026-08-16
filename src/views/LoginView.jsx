@@ -54,8 +54,16 @@ const RAFAGA_ESPERA_ENTER_MS = 400;
    «si no hay lector conectado, que no pida escanear»).
    Ojo: la CAPTURA sigue encendida siempre. Lo que se apaga es la interfaz y
    la espera de 30s — así el primer escaneo de un equipo nuevo funciona igual
-   y, de paso, es el que enciende el cartel para las próximas veces. */
-const LECTOR_VISTO = 'lector_carne_visto';
+   y, de paso, es el que enciende el cartel para las próximas veces.
+
+   La marca se escribe SÓLO cuando un carné realmente ABRE la sesión. La
+   versión anterior la escribía ante cualquier ráfaga detectada, y eso resultó
+   ser justo el falso positivo: un gestor de contraseñas que rellena tecleando
+   marcaba la laptop como «tiene lector» y a partir de ahí el detector le comía
+   la contraseña en cada intento. Una ráfaga que no entra no prueba nada; un
+   carné que entra, sí. Por eso también cambió el nombre de la clave: las
+   marcas escritas con el criterio viejo no valen. */
+const LECTOR_VISTO = 'lector_carne_ok';
 
 const hayLector = () => {
     if (isMobileOrApp()) return false;          // un teléfono no lleva lector
@@ -145,8 +153,8 @@ const keyframeStyles = `
     .lgn-fondo input:-webkit-autofill:hover,
     .lgn-fondo input:-webkit-autofill:focus,
     .lgn-fondo input:-webkit-autofill:active{
-        -webkit-text-fill-color:var(--content);
-        caret-color:var(--content);
+        -webkit-text-fill-color:var(--text-primary);
+        caret-color:var(--text-primary);
         -webkit-box-shadow:0 0 0 1000px var(--lgn-campo-solido) inset;
         box-shadow:0 0 0 1000px var(--lgn-campo-solido) inset;
         transition:background-color 9999s ease-in-out 0s;
@@ -403,6 +411,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 setTimeout(() => setScanFeedback(cur => (cur?.status === 'error' ? null : cur)), 2500);
                 return false;
             }
+            // Un carné que ABRE la sesión es la única prueba de que este
+            // equipo tiene lector.
+            recordarLector();
+            setConLector(true);
             setScanFeedback({ status: 'success', message: '¡Acceso concedido!' });
             return true;
         } catch {
@@ -449,8 +461,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     usernameRef.current?.focus();
                     return;
                 }
-                recordarLector();
-                setConLector(true);
                 handleScanLoginRef.current(code);
             } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 scanBufRef.current += e.key;
@@ -549,9 +559,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         olvidarRafaga();
         syncFormEngaged();
         if (codigo.length < SCAN_MIN_LENGTH) return;
-        // Este equipo tiene lector: quedó demostrado recién.
-        recordarLector();
-        setConLector(true);
         handleScanLoginRef.current(codigo);
     }, [olvidarRafaga, syncFormEngaged]);
 
@@ -817,17 +824,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             autoComplete={autoComplete}
                             spellCheck="false"
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
-                            // En «usuario» el detector va SIEMPRE: ahí es donde
-                            // el carné quedaría escrito a la vista, y eso puede
-                            // pasar en la primera lectura de un equipo que
-                            // todavía no sabemos que tiene lector.
-                            // En «contraseña» no hay nada que ocultar —el campo
-                            // ya enmascara— y lo peor que puede pasar sin él es
-                            // un intento de login fallido. A cambio, un gestor
-                            // que rellena TECLEANDO deja de correr el riesgo de
-                            // que el detector se le coma la contraseña. Sólo se
-                            // enciende en equipos donde consta que hay lector.
-                            onKeyDown={(id === 'username' || conLector) ? vigilarRafaga : undefined}
+                            // El detector de ráfagas SÓLO en equipos donde
+                            // consta que hay lector (terminal de kiosco, o
+                            // donde ya se escaneó). En una computadora
+                            // personal no intercepta nada: el gestor de
+                            // contraseñas rellena tan rápido como un lector, y
+                            // el precio de confundirlos es que el usuario no
+                            // pueda entrar — pasó tres veces el 2026-08-16.
+                            // Donde SÍ hay lector, que es donde el carné se
+                            // escanea de verdad, la protección sigue entera.
+                            onKeyDown={conLector ? vigilarRafaga : undefined}
                             onPaste={bloquearPegado} onDrop={bloquearPegado} onDragOver={e => e.preventDefault()}
                             // Copiar y cortar sólo se bloquean en la contraseña:
                             // el usuario es un dato público (sale en la lista de

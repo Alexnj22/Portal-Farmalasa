@@ -9,6 +9,7 @@ import { useStaffStore as useStaff } from "./store/staffStore";
 import { useToastStore } from "./store/toastStore";
 import { isMobileOrApp } from './utils/helpers';
 import { MODULE_MAP } from './constants/moduleMap';
+import { pantallaDeArranque, PANTALLA } from './utils/arranqueSesion';
 import AlertModal from "./components/common/AlertModal";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import AvisoEntornoPruebas from "./components/common/AvisoEntornoPruebas";
@@ -230,7 +231,7 @@ const LANDING_PREFERIDO = [
 ];
 
 function MainApp() {
-    const { user, logout, isAuthenticated, hasPermission, loading, permsLoading } = useAuth();
+    const { user, logout, isAuthenticated, hasPermission, loading, permsLoading, rolePerms, permsError, refreshPermissions } = useAuth();
 
     // Zustand Actions
     const addEmployee = useStaff((state) => state.addEmployee);
@@ -479,7 +480,30 @@ function MainApp() {
         }
     };
 
-    if (loading || (isAuthenticated && permsLoading)) {
+    // Qué pantalla toca mientras la sesión se arma: la decisión vive en
+    // `utils/arranqueSesion.js` con sus casos escritos, porque confundir
+    // «todavía no sé tus permisos» con «no tenés ninguno» es lo que hacía
+    // aparecer «Sin acceso» al cerrar sesión (2026-08-16).
+    const pantalla = pantallaDeArranque({
+        cargando: loading,
+        autenticado: isAuthenticated,
+        permisos: rolePerms,
+        leyendoPermisos: permsLoading,
+        falloDePermisos: permsError,
+    });
+
+    if (pantalla === PANTALLA.ERROR_PERMISOS) {
+        // `NoAccessView` es lazy y este `return` está ANTES del <Suspense> de
+        // las rutas: sin uno propio, la promesa del chunk no tiene quién la
+        // espere y revienta la pantalla entera.
+        return (
+            <Suspense fallback={<RouteLoadingFallback />}>
+                <NoAccessView porFalloDeLectura onReintentar={() => refreshPermissions()} />
+            </Suspense>
+        );
+    }
+
+    if (pantalla === PANTALLA.SPLASH) {
         return (
             /* Splash de arranque. ThemeProvider ya puso [data-theme] en <html>
                cuando esto pinta, pero el fondo, la tarjeta y el pill del logo

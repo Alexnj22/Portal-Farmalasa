@@ -147,6 +147,27 @@ export default function AcomodarModal({
     const [arrastrando, setArrastrando] = useState(null);
     const [destino, setDestino] = useState(null);   // { col, row }
 
+    // ── El tablero se reacomoda MIENTRAS se arrastra ──────────────────────
+    //
+    // «debe ser fluido», pedido del usuario. Antes sólo se veía un contorno
+    // punteado en el destino y el resultado aparecía recién al soltar: uno
+    // arrastraba a ciegas y descubría después a quién había movido. Ahora se
+    // pinta el acomodo que va a quedar, con el MISMO cálculo que se aplica al
+    // soltar — así lo que se ve es lo que se guarda, no una aproximación.
+    //
+    // Memoizado por destino y no por posición del puntero: `pointermove`
+    // dispara decenas de veces por segundo y el destino sólo cambia al cruzar
+    // de celda, así que el cálculo corre una vez por celda y no una por píxel.
+    const enVivo = useMemo(() => {
+        if (!arrastrando || !destino || !bAcomodo[arrastrando]) return null;
+        return reacomodar(arrastrando, destino.col, destino.row, bAcomodo, medidaDe, columnas);
+        // `destino` es un objeto nuevo en cada cálculo; lo que importa son sus
+        // dos números, y por eso son ellos los que están en el array.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [arrastrando, destino?.col, destino?.row, bAcomodo, medidaDe, columnas]);
+
+    const acomodoPintado = enVivo || bAcomodo;
+
     const calcularDestino = useCallback((x, y, id) => {
         const caja = rejillaRef.current?.getBoundingClientRect();
         const { desCol, desFila, pistas } = arrastreRef.current;
@@ -328,6 +349,12 @@ export default function AcomodarModal({
                         // techo. El techo es lo que evita que un tablero de tres
                         // renglones dibuje fichas de 200px de alto.
                         gridTemplateRows: `repeat(${filas}, minmax(${FILA_MIN}px, 1fr))`,
+                        // Las filas implícitas miden lo mismo que las
+                        // declaradas: mientras se arrastra, el acomodo en vivo
+                        // puede empujar algo un renglón más abajo del último, y
+                        // sin esto CSS le fabricaría una fila `auto` — un
+                        // renglón de otro alto justo debajo del dedo.
+                        gridAutoRows: `minmax(${FILA_MIN}px, 1fr)`,
                         maxHeight: `${filas * FILA_MAX + (filas - 1) * HUECO}px`,
                         gap: `${HUECO}px`,
                     }}
@@ -350,7 +377,11 @@ export default function AcomodarModal({
                     {puestos.map(id => {
                         const w = rotulos[id];
                         const m = medidaDe(id);
-                        const p = bAcomodo[id];
+                        // Mientras se arrastra, la posición sale del acomodo que
+                        // VA A QUEDAR, no del guardado: el tablero se reacomoda
+                        // debajo del dedo y uno ve a quién está moviendo antes
+                        // de soltar.
+                        const p = acomodoPintado[id] ?? bAcomodo[id];
                         const Icono = w.icon;
                         const activo = elegido === id;
                         const movido = arrastrando === id;

@@ -21,6 +21,86 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.639.2 — El acomodo del editor elige el más denso y se reacomoda en vivo
+
+Reportado: *«aún no funciona correctamente al mover widgets, haz pruebas, debe
+ser fluido, no deben haber espacios en blanco si alguno cabe — por ejemplo si
+muevo un widget de 2×2 y hay 2 ahí de 1×1 intercambian puesto, y así en otros
+casos»*.
+
+**El intercambio ahora es por ÁREA, no por tamaño exacto.** La versión anterior
+sólo intercambiaba dos widgets de medidas idénticas, que es el caso más pobre.
+Hoy, los widgets que estén bajo el destino se mudan al hueco que deja el
+arrastrado si caben ahí adentro: un 2×2 sobre **dos** 1×1 los manda a su hueco
+de 2×2, y sobre **cuatro** 1×1 también. Dos del mismo tamaño pasó a ser el caso
+particular más simple, no una regla aparte.
+
+**Y se calculan DOS acomodos, quedándose con el que deja menos blancos.** Uno es
+el intercambio + empuje (toca a poca gente); el otro clava el arrastrado donde
+se soltó y recoloca a todos los demás en orden de lectura (mueve mucho más, pero
+cierra huecos que el primero no puede — el caso de soltar un 1×1 encima de un
+2×2, donde el grande no entra en el hueco del chico). Los dos terminan con una
+compactación: cada widget flota hacia arriba en su columna mientras quepa.
+
+Elegir entre los dos está **medido**, sobre 3,000 movimientos al azar en
+tableros compactos —los que arma `empacarFilas`, o sea los reales—:
+
+| | regla original | intercambio | reempaque | **elegir** |
+|---|---|---|---|---|
+| blancos que deja | 4.71 | 0.55 | 2.01 | **0.27** |
+| widgets desplazados | 0.49 | 0.41 | 2.95 | **0.55** |
+
+La mitad de blancos por 0.14 widgets más de movimiento. Y hay una lección de
+método adentro: **la primera medición usó tableros irregulares y daba el
+resultado al revés** (ahí el reempaque parecía ganar). El tablero real no es
+irregular, así que la medición correcta era la otra.
+
+De paso, la regla original resultó producir **37 acomodos inválidos de 3,000**
+sobre tableros irregulares — widgets encimados. Las reglas de hoy: 0.
+
+**El tablero se reacomoda MIENTRAS se arrastra.** Antes sólo se veía un contorno
+punteado en el destino y el resultado aparecía recién al soltar: uno arrastraba
+a ciegas y descubría después a quién había movido. Ahora se pinta el acomodo que
+va a quedar, con el mismo cálculo que se aplica al soltar. Verificado en el
+navegador sobre el tablero real de 28 widgets: **0 blancos y 0 encimados** en
+los tres momentos —antes, durante el arrastre y al soltar— y **cero diferencias**
+entre lo que se ve arrastrando y lo que se guarda.
+
+## v2.640.0 — El login deja de estorbar al gestor de contraseñas, y «Sin acceso» ya no aparece por un permiso que no se pudo leer
+
+- **El detector del lector se comía el relleno del gestor, y encima se
+  autoinstalaba.** La marca «este equipo tiene lector» se escribía ante
+  cualquier ráfaga detectada — o sea que un gestor de contraseñas que rellena
+  tecleando marcaba la laptop como terminal de sala y, a partir de ahí, el
+  detector le comía la contraseña en cada intento (el usuario veía «Carné no
+  reconocido» y el campo vacío). Ahora esa marca la escribe **sólo un carné que
+  de verdad abre la sesión**, y el detector vive **únicamente** en equipos donde
+  consta que hay lector: en una computadora personal no intercepta nada. La
+  clave de la marca cambió de nombre a propósito — las escritas con el criterio
+  viejo no valen.
+- **El texto del autocompletado salía negro sobre el campo oscuro.** La regla
+  usaba `var(--content)`, que no existe: el token es `--text-primary` (lo que
+  consume `--color-content`). Una variable inexistente invalida la declaración
+  entera, así que mandaba el negro por defecto del navegador.
+
+### La sesión
+
+- **«Sin acceso — tu cuenta no tiene módulos habilitados» aparecía por unos
+  segundos al cerrar sesión**, y era una acusación falsa: los permisos estaban
+  bien, lo que había fallado era LEERLOS. `rolePerms` valía `null` para dos
+  cosas distintas —«todavía no se sabe» y «se leyó y no hay ninguno»— y la app
+  resolvía las dos igual: ningún módulo con permiso ⇒ `/no-access`, con un
+  `<Navigate replace>` que además dejaba ahí aunque los permisos llegaran
+  después. Ahora `null` es DESCONOCIDO y `{}` es vacío de verdad; mientras no se
+  sepa, se espera.
+- **Un fallo al leer los permisos se reintenta tres veces** y, si aun así no se
+  puede, la pantalla lo dice con esas palabras y ofrece reintentar, en vez de
+  culpar a la cuenta. Con permisos ya cargados un fallo no cambia nada: se
+  conservan, como antes.
+- La decisión de qué pantalla toca vive en `src/utils/arranqueSesion.js` con
+  sus siete casos en `tests/unit/arranqueSesion.test.js`, incluido el que
+  causaba esto.
+
 ## v2.639.1 — El gestor de contraseñas vuelve a poder rellenar el login
 
 Segundo intento sobre el mismo reporte: *«sigo sin poder entrar con contraseñas

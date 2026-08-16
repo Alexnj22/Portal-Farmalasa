@@ -3,155 +3,182 @@ import { reacomodar } from '../../src/utils/acomodoWidgets';
 
 // La regla que decide dónde queda cada widget al soltar uno encima de otro.
 //
-// Se prueba acá y no en el navegador porque el defecto que la motivó era de
-// aritmética, no de pintura: el acomodo viejo mandaba a los desplazados «a la
-// primera celda libre barriendo desde la fila 1», así que un widget de la fila
-// 8 aparecía arriba de todo. Eso se ve en un `expect`, no en una captura.
+// Se prueba acá y no en el navegador porque lo que se rompió tres veces era
+// aritmética, no pintura: el acomodo original mandaba a los desplazados «a la
+// primera celda libre barriendo desde la fila 1», el segundo sólo intercambiaba
+// entre widgets del mismo tamaño exacto, y el tercero dejaba huecos que alguien
+// podía llenar. Eso se ve en un `expect`, no en una captura.
+//
+// Los tableros de estas pruebas son COMPACTOS —bandas que suman las 4 columnas,
+// sin una celda vacía— porque es la forma que tiene el tablero real: lo arma
+// `empacarFilas`. Medir sobre tableros irregulares invierte el resultado, y ése
+// fue el error de la primera medición.
 
+const COLS = 4;
 const medidas = (m) => (id) => m[id] ?? { cols: 1, rows: 1 };
 
+/** Celdas vacías dentro del rectángulo que ocupa el tablero. */
+function huecos(acomodo, m, cols = COLS) {
+    const ocupadas = new Set();
+    let ultima = 0;
+    for (const id of Object.keys(acomodo)) {
+        const p = acomodo[id], mm = m[id];
+        ultima = Math.max(ultima, p.row + mm.rows - 1);
+        for (let c = p.col; c < p.col + mm.cols; c++)
+            for (let r = p.row; r < p.row + mm.rows; r++) ocupadas.add(`${c},${r}`);
+    }
+    return ultima * cols - ocupadas.size;
+}
+
+/** Nadie se pisa, nadie se sale y nadie se queda sin posición. */
+function esValido(acomodo, m, cols = COLS) {
+    const ocupadas = new Set();
+    for (const id of Object.keys(m)) {
+        const p = acomodo[id];
+        if (!p) return `${id} quedó sin posición`;
+        if (p.col < 1 || p.row < 1) return `${id} fuera de la retícula`;
+        if (p.col + m[id].cols - 1 > cols) return `${id} se sale por la derecha`;
+        for (let c = p.col; c < p.col + m[id].cols; c++)
+            for (let r = p.row; r < p.row + m[id].rows; r++) {
+                if (ocupadas.has(`${c},${r}`)) return `${id} pisa la celda ${c},${r}`;
+                ocupadas.add(`${c},${r}`);
+            }
+    }
+    return null;
+}
+
+/** ¿Está `id` completamente dentro del rectángulo que ocupaba `rect`? */
+const dentroDe = (p, m, rect, mRect) =>
+    p.col >= rect.col && p.col + m.cols <= rect.col + mRect.cols &&
+    p.row >= rect.row && p.row + m.rows <= rect.row + mRect.rows;
+
 describe('reacomodar', () => {
-    it('mueve a un hueco libre sin tocar a nadie', () => {
-        const acomodo = { a: { col: 1, row: 1 }, b: { col: 2, row: 1 } };
-        const r = reacomodar('a', 4, 1, acomodo, medidas({}), 4);
-        expect(r).toEqual({ a: { col: 4, row: 1 }, b: { col: 2, row: 1 } });
+    it('EL CASO DEL USUARIO: un 2×2 sobre dos 1×1 los manda a su hueco', () => {
+        // «si muevo un widget de 2x2 y hay 2 ahi de 1x1 intercambian puesto».
+        const m = { A: { cols: 2, rows: 2 }, B: { cols: 1, rows: 1 },
+                    C: { cols: 1, rows: 1 }, D: { cols: 2, rows: 1 } };
+        const antes = { A: { col: 1, row: 1 }, B: { col: 3, row: 1 },
+                        C: { col: 4, row: 1 }, D: { col: 3, row: 2 } };
+        const r = reacomodar('A', 3, 1, antes, medidas(m), COLS);
+
+        expect(esValido(r, m)).toBeNull();
+        expect(r.A).toEqual({ col: 3, row: 1 });
+        // B y C se mudaron al rectángulo que A dejó libre.
+        expect(dentroDe(r.B, m.B, antes.A, m.A), 'B no fue al hueco de A').toBe(true);
+        expect(dentroDe(r.C, m.C, antes.A, m.A), 'C no fue al hueco de A').toBe(true);
+        expect(huecos(r, m), 'el tablero quedó con blancos').toBe(0);
     });
 
-    it('INTERCAMBIA cuando el destino lo ocupa uno solo del mismo tamaño', () => {
-        const acomodo = { a: { col: 1, row: 1 }, b: { col: 3, row: 5 } };
-        const r = reacomodar('a', 3, 5, acomodo, medidas({}), 4);
-        expect(r.a).toEqual({ col: 3, row: 5 });
-        // Lo que importa: `b` va al sitio de `a`, no a la primera celda libre
-        // del tablero. Con el acomodo viejo terminaba en la fila 1.
-        expect(r.b).toEqual({ col: 1, row: 1 });
+    it('un 2×2 sobre CUATRO 1×1: los cuatro caben en su hueco', () => {
+        const m = { A: { cols: 2, rows: 2 }, B: { cols: 1, rows: 1 }, C: { cols: 1, rows: 1 },
+                    D: { cols: 1, rows: 1 }, E: { cols: 1, rows: 1 } };
+        const antes = { A: { col: 1, row: 1 }, B: { col: 3, row: 1 }, C: { col: 4, row: 1 },
+                        D: { col: 3, row: 2 }, E: { col: 4, row: 2 } };
+        const r = reacomodar('A', 3, 1, antes, medidas(m), COLS);
+
+        expect(esValido(r, m)).toBeNull();
+        expect(r.A).toEqual({ col: 3, row: 1 });
+        for (const id of ['B', 'C', 'D', 'E']) {
+            expect(dentroDe(r[id], m[id], antes.A, m.A), `${id} no fue al hueco de A`).toBe(true);
+        }
+        expect(huecos(r, m)).toBe(0);
     });
 
-    it('intercambia también dos anchos iguales', () => {
-        const m = { a: { cols: 2, rows: 2 }, b: { cols: 2, rows: 2 } };
-        const acomodo = { a: { col: 1, row: 1 }, b: { col: 3, row: 4 } };
-        const r = reacomodar('a', 3, 4, acomodo, medidas(m), 4);
-        expect(r).toEqual({ a: { col: 3, row: 4 }, b: { col: 1, row: 1 } });
+    it('dos del mismo tamaño se intercambian, y nadie más se mueve', () => {
+        // El caso más simple del intercambio por área — no una regla aparte.
+        const m = { A: { cols: 2, rows: 2 }, B: { cols: 2, rows: 2 },
+                    C: { cols: 4, rows: 1 } };
+        const antes = { A: { col: 1, row: 1 }, B: { col: 3, row: 1 }, C: { col: 1, row: 3 } };
+        const r = reacomodar('A', 3, 1, antes, medidas(m), COLS);
+
+        expect(esValido(r, m)).toBeNull();
+        expect(r.A).toEqual({ col: 3, row: 1 });
+        expect(r.B).toEqual({ col: 1, row: 1 });
+        expect(r.C, 'C no tenía por qué moverse').toEqual({ col: 1, row: 3 });
+        expect(huecos(r, m)).toBe(0);
+    });
+
+    it('un 1×1 sobre un 2×2 —donde el intercambio NO cabe— igual deja el mínimo de blancos', () => {
+        // El grande no entra en el hueco del chico, así que gana el reempaque.
+        // Con 6 celdas de contenido en 4 columnas, 2 blancos es el mínimo.
+        const m = { A: { cols: 1, rows: 1 }, B: { cols: 2, rows: 2 }, C: { cols: 1, rows: 1 } };
+        const antes = { A: { col: 1, row: 1 }, B: { col: 2, row: 1 }, C: { col: 4, row: 1 } };
+        const r = reacomodar('A', 2, 1, antes, medidas(m), COLS);
+
+        expect(esValido(r, m)).toBeNull();
+        expect(r.A).toEqual({ col: 2, row: 1 });
+        expect(huecos(r, m), 'quedaron más blancos de los inevitables').toBe(2);
     });
 
     it('NO intercambia si el destino se solapa con el origen', () => {
-        // Correr un 2×2 una celda a la derecha, sobre otro 2×2: intercambiarlos
-        // los dejaría a los dos encima, porque el origen sigue debajo del
-        // destino. Es la guarda que obliga el caso real de un ajuste chico.
-        const m = { a: { cols: 2, rows: 2 }, b: { cols: 2, rows: 2 } };
-        const acomodo = { a: { col: 1, row: 1 }, b: { col: 3, row: 1 } };
-        const r = reacomodar('a', 2, 1, acomodo, medidas(m), 4);
-        expect(r.a).toEqual({ col: 2, row: 1 });
-        // Sin solaparse con `a`, que ahora ocupa las columnas 2-3 de la fila 1-2.
-        const chocan = r.b.col < 4 && r.b.col + 2 > 2 && r.b.row < 3 && r.b.row + 2 > 1;
-        expect(chocan).toBe(false);
+        // Correr un 2×2 una celda al costado: intercambiarlos los dejaría a los
+        // dos encima, porque el origen sigue debajo del destino.
+        const m = { A: { cols: 2, rows: 2 }, B: { cols: 2, rows: 2 } };
+        const antes = { A: { col: 1, row: 1 }, B: { col: 3, row: 1 } };
+        const r = reacomodar('A', 2, 1, antes, medidas(m), COLS);
+        expect(esValido(r, m)).toBeNull();
+        expect(r.A).toEqual({ col: 2, row: 1 });
     });
 
-    it('NO intercambia al redimensionar (mismo sitio)', () => {
-        // `updateWidgetSize` llama con la posición actual. Si eso intercambiara,
-        // el otro widget iría justo encima del que no se movió.
-        const m = { a: { cols: 2, rows: 1 }, b: { cols: 2, rows: 1 } };
-        const acomodo = { a: { col: 1, row: 1 }, b: { col: 2, row: 1 } };
-        const r = reacomodar('a', 1, 1, acomodo, medidas(m), 4);
-        expect(r.a).toEqual({ col: 1, row: 1 });
-        expect(r.b.col >= 3 || r.b.row > 1).toBe(true);
+    it('NO intercambia al redimensionar, que llama con la MISMA posición', () => {
+        // `updateWidgetSize` pasa el sitio actual. Si eso intercambiara, el otro
+        // widget iría justo encima del que no se movió.
+        const m = { A: { cols: 2, rows: 1 }, B: { cols: 2, rows: 1 } };
+        const antes = { A: { col: 1, row: 1 }, B: { col: 3, row: 1 } };
+        const r = reacomodar('A', 1, 1, antes, medidas(m), COLS);
+        expect(esValido(r, m)).toBeNull();
+        expect(r.A).toEqual({ col: 1, row: 1 });
     });
 
-    it('el desplazado NUNCA sube: se queda en su fila o baja', () => {
-        // Éste es el defecto original. `c` vive en la fila 8; al soltar `a`
-        // encima suyo, el acomodo viejo lo mandaba a la fila 1 —la primera
-        // celda libre del tablero— y de paso empujaba a `b`. Hoy se corre al
-        // hueco más cercano sin subir, y `b` ni se entera.
-        const m = { a: { cols: 2, rows: 1 }, b: { cols: 1, rows: 1 }, c: { cols: 1, rows: 1 } };
-        const acomodo = { a: { col: 1, row: 1 }, b: { col: 3, row: 1 }, c: { col: 3, row: 8 } };
-        const r = reacomodar('a', 3, 8, acomodo, medidas(m), 4);
-        expect(r.a).toEqual({ col: 3, row: 8 });
-        expect(r.c.row).toBeGreaterThanOrEqual(8);
-        expect(r.b).toEqual({ col: 3, row: 1 });
+    it('compacta: nadie queda flotando con un blanco encima', () => {
+        // «no deben haber espacios en blanco si alguno cabe». B está en la fila
+        // 5 con su columna libre arriba: tiene que subir.
+        const m = { A: { cols: 1, rows: 1 }, B: { cols: 1, rows: 1 } };
+        const antes = { A: { col: 1, row: 1 }, B: { col: 2, row: 5 } };
+        const r = reacomodar('A', 1, 1, antes, medidas(m), COLS);
+        expect(r.B.row, 'B se quedó flotando').toBe(1);
+        expect(huecos(r, m)).toBe(2);   // sólo las columnas 3 y 4, que nadie llena
     });
 
-    it('prefiere el hueco de la misma fila antes que bajar un renglón', () => {
-        // `a` (2 anchos) cae sobre `c` en las columnas 3-4 de la fila 8. En esa
-        // misma fila quedan libres las columnas 1-2, así que `c` se corre de
-        // lado: conserva la banda horizontal, que es lo que uno ve.
-        const m = { a: { cols: 2, rows: 1 }, c: { cols: 1, rows: 1 } };
-        const acomodo = { a: { col: 1, row: 1 }, c: { col: 3, row: 8 } };
-        const r = reacomodar('a', 3, 8, acomodo, medidas(m), 4);
-        expect(r.c.row).toBe(8);
-        expect(r.c.col).toBeLessThan(3);
-    });
-
-    it('baja cuando la fila está llena, en vez de irse arriba', () => {
-        // Fila 5 completa con cuatro de 1×1. `a` mide 1×2 —así NO hay
-        // intercambio, que necesita el mismo tamaño— y cae sobre `d`: no hay
-        // hueco de lado, así que `d` baja. Lo que nunca puede pasar es que suba
-        // a la fila 1, aunque el sitio que `a` dejó vacío esté justo ahí: es
-        // exactamente lo que hacía el acomodo viejo.
-        const m = { a: { cols: 1, rows: 2 }, b: { cols: 1, rows: 1 },
-                    c: { cols: 1, rows: 1 }, d: { cols: 1, rows: 1 }, e: { cols: 1, rows: 1 } };
-        const acomodo = { a: { col: 1, row: 1 },
-                          b: { col: 1, row: 5 }, c: { col: 2, row: 5 },
-                          d: { col: 3, row: 5 }, e: { col: 4, row: 5 } };
-        const r = reacomodar('a', 3, 5, acomodo, medidas(m), 4);
-        expect(r.a).toEqual({ col: 3, row: 5 });
-        expect(r.d.row).toBeGreaterThan(5);
-        // Los otros tres de la fila no se movieron.
-        expect(r.b).toEqual({ col: 1, row: 5 });
-        expect(r.c).toEqual({ col: 2, row: 5 });
-        expect(r.e).toEqual({ col: 4, row: 5 });
-    });
-
-    it('no deja a nadie sin posición ni fuera de la retícula', () => {
-        const m = {
-            a: { cols: 2, rows: 2 }, b: { cols: 2, rows: 2 },
-            c: { cols: 3, rows: 1 }, d: { cols: 1, rows: 3 }, e: { cols: 4, rows: 1 },
-        };
-        const acomodo = {
-            a: { col: 1, row: 1 }, b: { col: 3, row: 1 },
-            c: { col: 1, row: 3 }, d: { col: 4, row: 3 }, e: { col: 1, row: 6 },
-        };
-        const r = reacomodar('e', 1, 1, acomodo, medidas(m), 4);
-        for (const id of Object.keys(acomodo)) {
-            expect(r[id], id).toBeDefined();
-            expect(r[id].col).toBeGreaterThanOrEqual(1);
-            expect(r[id].row).toBeGreaterThanOrEqual(1);
-            expect(r[id].col + m[id].cols - 1).toBeLessThanOrEqual(4);
-        }
-        // Y nadie se pisa con nadie.
-        const ocupadas = new Set();
-        for (const id of Object.keys(r)) {
-            for (let c = r[id].col; c < r[id].col + m[id].cols; c++) {
-                for (let f = r[id].row; f < r[id].row + m[id].rows; f++) {
-                    expect(ocupadas.has(`${c},${f}`), `${id} pisa ${c},${f}`).toBe(false);
-                    ocupadas.add(`${c},${f}`);
-                }
-            }
-        }
-    });
-
-    it('mueve lo mínimo: sobre 200 tableros al azar, casi nadie se corre', () => {
-        // La medida de «ya no desordena». Con el acomodo viejo un solo
-        // movimiento reescribía el tablero entero; acá se cuenta cuántos
-        // widgets cambian de lugar además del que se arrastró.
-        let movidos = 0, casos = 0;
-        // Determinista a propósito: un test que falla una vez cada diez
-        // corridas no se arregla, se ignora.
+    it('sobre 400 tableros compactos: nunca inválido y casi sin blancos', () => {
+        // Determinista a propósito: un test que falla una vez cada diez corridas
+        // no se arregla, se ignora.
         let semilla = 7;
         const azar = (n) => { semilla = (semilla * 1103515245 + 12345) % 2147483648; return semilla % n; };
+        // Bandas que suman exactamente 4 columnas — la forma que produce
+        // `empacarFilas`, o sea la del tablero real.
+        const REPARTOS = [[1, 1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2], [2, 2], [3, 1], [1, 3], [4]];
 
-        for (let t = 0; t < 200; t++) {
-            const ids = ['a', 'b', 'c', 'd', 'e', 'f'];
-            const m = Object.fromEntries(ids.map(id => [id, { cols: 1 + azar(2), rows: 1 + azar(2) }]));
-            // Acomodo inicial: en columnas, uno debajo del otro, sin solapes.
-            const acomodo = {}; let fila = 1;
-            for (const id of ids) { acomodo[id] = { col: 1, row: fila }; fila += m[id].rows; }
+        let blancos = 0, movidos = 0, casos = 0;
+        for (let t = 0; t < 400; t++) {
+            const m = {}, antes = {}, ids = [];
+            let fila = 1, n = 0;
+            while (n < 8) {
+                const rep = REPARTOS[azar(REPARTOS.length)], alto = 1 + azar(3);
+                let col = 1;
+                for (const ancho of rep) {
+                    const id = 'abcdefgh'[n++];
+                    ids.push(id); m[id] = { cols: ancho, rows: alto }; antes[id] = { col, row: fila };
+                    col += ancho;
+                    if (n >= 8) break;
+                }
+                fila += alto;
+            }
             const arrastrado = ids[azar(ids.length)];
-            const destino = { col: 1 + azar(4 - m[arrastrado].cols + 1), row: 1 + azar(fila) };
-            const r = reacomodar(arrastrado, destino.col, destino.row, acomodo, medidas(m), 4);
+            const alto = Math.max(...ids.map(i => antes[i].row + m[i].rows));
+            const destino = { col: 1 + azar(COLS - m[arrastrado].cols + 1), row: 1 + azar(alto) };
+            const r = reacomodar(arrastrado, destino.col, destino.row, antes, medidas(m), COLS);
+
+            expect(esValido(r, m), `tablero ${t}`).toBeNull();
             casos++;
+            blancos += huecos(r, m);
             movidos += ids.filter(id => id !== arrastrado &&
-                (r[id].col !== acomodo[id].col || r[id].row !== acomodo[id].row)).length;
+                (r[id].col !== antes[id].col || r[id].row !== antes[id].row)).length;
         }
-        // Menos de un widget desplazado por movimiento, en promedio.
-        expect(movidos / casos).toBeLessThan(1);
+        // Medido: 0.27 blancos y 0.55 desplazados por movimiento. Los topes van
+        // holgados — es una red contra una regresión de fondo, no un ancla del
+        // número exacto, que cambia con cualquier ajuste de la heurística.
+        expect(blancos / casos, 'el acomodo dejó de ser compacto').toBeLessThan(1);
+        expect(movidos / casos, 'volvió a desordenar el tablero').toBeLessThan(1.5);
     });
 });

@@ -135,8 +135,20 @@ const fijarClaseDispositivo = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // `rolePerms === null` significa NO SE SABE, y `{}` significa «se leyó y no
+  // tiene ninguno». Que las dos cosas fueran `null` es lo que hacía que un
+  // fallo al LEER los permisos se mostrara como «Sin acceso — tu cuenta no
+  // tiene módulos habilitados», que es una acusación falsa: el usuario reportó
+  // el 2026-08-16 haberla visto unos segundos al cerrar sesión, antes de que
+  // la revalidación lo mandara al login.
   const [rolePerms, setRolePerms] = useState(null);
   const [permsLoading, setPermsLoading] = useState(false);
+  // Los permisos no se pudieron leer y ya no se va a reintentar. Es un estado
+  // propio para que la app pueda decirlo con esas palabras en vez de inventar
+  // que la cuenta no tiene módulos.
+  const [permsError, setPermsError] = useState(false);
+  const permsIntentosRef = useRef(0);
+  const rolePermsRef = useRef(null);
   // `isSU` vive en su PROPIO estado y no dentro del objeto del usuario.
   //
   // Medido el 2026-08-05: arrancaba en `true` y a los ~3.2s pasaba a
@@ -178,13 +190,33 @@ export const AuthProvider = ({ children }) => {
   const sesionProcesada = useRef(null);
 
   useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { rolePermsRef.current = rolePerms; }, [rolePerms]);
 
   // -------------------------
   // 🔑 Permisos de rol
   // -------------------------
   const refreshPermissions = useCallback((currentUser) => {
     const u = currentUser ?? userRef.current;
-    if (!u) { setRolePerms(null); setPermsLoading(false); setMaxPriceLevel(null); return; }
+    if (!u) {
+      setRolePerms(null); setPermsLoading(false); setMaxPriceLevel(null);
+      setPermsError(false); permsIntentosRef.current = 0;
+      return;
+    }
+
+    // Un fallo de lectura no se traga en silencio:
+    //   · con permisos ya cargados (caché o red) no cambia nada — se conservan;
+    //   · sin permisos, se reintenta, y si aun así no se puede, se DICE.
+    const alFallar = () => {
+      if (rolePermsRef.current) { setPermsLoading(false); return; }
+      if (permsIntentosRef.current < 3) {
+        permsIntentosRef.current += 1;
+        setPermsLoading(true);
+        setTimeout(() => refreshPermissionsRef.current?.(u), 1200 * permsIntentosRef.current);
+        return;
+      }
+      setPermsLoading(false);
+      setPermsError(true);
+    };
 
     const roleId = u.roleId ?? (Number.isInteger(u.role) ? u.role : null);
     const secondaryRoleId = Number.isInteger(u.secondaryRoleId) ? u.secondaryRoleId : null;
@@ -214,7 +246,7 @@ export const AuthProvider = ({ children }) => {
     Promise.all([permsQuery, priceLevelQuery, heredadosQuery])
       .then(([{ data, error }, { data: roleData }, heredados]) => {
         // No sobreescribir en error de red — conservar permisos previos
-        if (error || !data) { setPermsLoading(false); return; }
+        if (error || !data) { alFallar(); return; }
         // Bloque 8 — modelo de unión: el permiso efectivo por module_key es el OR
         // entre lo que da el rol primario y lo que da el secundario (si existe);
         // el secundario rellena lo que le falta al primario, nunca lo reemplaza.
@@ -250,14 +282,21 @@ export const AuthProvider = ({ children }) => {
           return updated;
         });
         setPermsLoading(false);
+        setPermsError(false);
+        permsIntentosRef.current = 0;
         try {
           localStorage.setItem(LS_PERMS, JSON.stringify(map));
           localStorage.setItem(LS_PRICE, JSON.stringify(price));
           localStorage.setItem(LS_SU, JSON.stringify(isSU));
         } catch { /* storage lleno — ignorar */ }
       })
-      .catch(() => { setPermsLoading(false); });
+      .catch(() => { alFallar(); });
   }, []);
+
+  // El reintento necesita llamarse a sí mismo sin entrar en las dependencias
+  // del `useCallback` (que es estable a propósito).
+  const refreshPermissionsRef = useRef(null);
+  refreshPermissionsRef.current = refreshPermissions;
 
   // -------------------------
   // 🔧 Candados de mantenimiento por módulo
@@ -987,14 +1026,17 @@ export const AuthProvider = ({ children }) => {
     return {
       user, isAuthenticated: !!user,
       isSU, getScope,
-      rolePerms, permsLoading, hasPermission,
+      rolePerms, permsLoading, permsError, hasPermission,
       moduleLocks, moduleLock, isModuleLocked, refreshModuleLocks,
       maxPriceLevel, loading,
       completeLogin, completePasswordChange,
       login, loginWithEmail, loginWithUsername, logout,
       refreshPermissions,
     };
-  }, [user, loading, isSU, rolePerms, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
+  // `permsLoading` y `permsError` van en la lista: `permsError` cambia SOLO
+  // —sin que cambien los permisos—, así que sin él la app nunca se entera de
+  // que la lectura falló y se queda en el splash para siempre.
+  }, [user, loading, isSU, rolePerms, permsLoading, permsError, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

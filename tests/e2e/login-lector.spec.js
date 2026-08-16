@@ -23,8 +23,15 @@ const focoAsentado = async (page) => {
 const RAFAGA = 6;    // ms entre teclas — un lector real anda por debajo de 15
 const HUMANO = 130;  // ms entre teclas — un tecleo rápido de persona
 
+// El detector sólo vive en equipos donde CONSTA que hay lector: una terminal
+// de kiosco, o una donde un carné ya abrió sesión. En una computadora personal
+// no intercepta nada — un gestor de contraseñas rellena tan rápido como un
+// lector y confundirlos deja al usuario sin poder entrar (pasó tres veces el
+// 2026-08-16). La marca la escribe el login al validar un carné; acá se
+// siembra a mano para poder probar el caso.
 test.describe('Login · el carné no se escribe en el campo de usuario', () => {
     test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => localStorage.setItem('lector_carne_ok', '1'));
         await page.goto('/login');
         await expect(page.locator('#username')).toBeVisible();
     });
@@ -71,9 +78,7 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
     // el 2026-08-16). Ahí no hay nada que ocultar —el campo ya enmascara— y lo
     // peor que puede pasar sin detector es un intento de login fallido. Así
     // que sólo se enciende donde consta que hay lector.
-    test('en un equipo con lector, la ráfaga tampoco entra por la contraseña', async ({ page }) => {
-        await page.addInitScript(() => localStorage.setItem('lector_carne_visto', '1'));
-        await page.goto('/login');
+    test('la ráfaga tampoco entra por el campo de contraseña', async ({ page }) => {
         const clave = page.locator('#password');
         await clave.click();
         await page.keyboard.type('447', { delay: RAFAGA });
@@ -81,12 +86,20 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
         await expect(clave).toHaveValue('');
     });
 
-    test('en un equipo sin lector, la contraseña recibe las teclas rápidas', async ({ page }) => {
-        const clave = page.locator('#password');
-        await clave.click();
-        await page.keyboard.type('Sup3rSecreta!', { delay: RAFAGA });
-        await expect(clave).toHaveValue('Sup3rSecreta!');
-    });
+});
+
+test.describe('Login · en un equipo sin lector no se intercepta nada', () => {
+    // Éste es el caso de una computadora personal con gestor de contraseñas:
+    // que escriba rápido no puede costarle el texto a nadie.
+    for (const campo of ['username', 'password']) {
+        test(`las teclas rápidas llegan enteras a ${campo}`, async ({ page }) => {
+            await page.goto('/login');
+            const input = page.locator(`#${campo}`);
+            await input.click();
+            await page.keyboard.type('Sup3rSecreta!', { delay: RAFAGA });
+            await expect(input).toHaveValue('Sup3rSecreta!');
+        });
+    }
 });
 
 test.describe('Login · el carné tecleado a mano no abre la sesión', () => {

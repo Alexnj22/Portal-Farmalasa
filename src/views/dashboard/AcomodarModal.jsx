@@ -291,7 +291,34 @@ export default function AcomodarModal({
                     Éste es tu tablero en chico. Nada se guarda hasta que toques <b>Listo</b>.
                 </Notice>
 
-                <div className="flex-1 min-h-0 flex flex-col">
+                {/* El LIENZO del editor, y `--thead-bg` no es decorativo.
+                    Reportado con captura el 2026-08-16: «no se distingue bien,
+                    no se logra leer». Medido en Liquid claro, que es donde
+                    pasa: el panel del modal deja pasar el 49% y las fichas
+                    estaban a **16%** de opacidad y sin desenfoque propio, así
+                    que el tablero de atrás llegaba al texto al **41%** de su
+                    color — con las barras naranjas y azules de las gráficas
+                    justo debajo. En Solid no se ve (todo es opaco) y en oscuro
+                    casi tampoco (la ficha es 58%), que es por qué las capturas
+                    de la sesión anterior no lo mostraron: estaban tomadas con
+                    la cuenta de QA, que usa Solid.
+
+                    El canon ya tenía la respuesta y no era subirle la opacidad
+                    al panel —eso está decidido al revés (§LiquidModal: dos
+                    superficies apiladas dan un modal «casi opaco» y se
+                    consideró un defecto)— sino §5.bis: **una superficie que
+                    tiene que ocluir usa `--thead-bg`, nunca una opacidad de
+                    acento; lo que pasa por debajo se lee a través**. Es
+                    literalmente el caso del encabezado pegajoso de una tabla, y
+                    `--thead-bg` está entre 97% y 98% en los cuatro temas.
+
+                    Va acá y no en la regla global de superficie anidada de
+                    `index.css`: esa regla sólo cubre tarjeta-dentro-de-tarjeta y
+                    extenderla a los paneles cambiaría el aspecto de las
+                    tarjetas de 117 archivos, la mayoría dentro de modales, sin
+                    haberlas mirado. */}
+                <div className="flex-1 min-h-0 flex flex-col rounded-card border border-divider p-2"
+                     style={{ background: 'var(--thead-bg)' }}>
                 <div
                     ref={rejillaRef}
                     className="grid select-none flex-1 min-h-0"
@@ -338,12 +365,25 @@ export default function AcomodarModal({
                                     gridColumnStart: p.col, gridRowStart: p.row,
                                     gridColumnEnd: `span ${m.cols}`, gridRowEnd: `span ${m.rows}`,
                                     opacity: movido ? 0.35 : 1,
+                                    // El escalón sobre el lienzo, que es el que
+                                    // el canon define para una superficie dentro
+                                    // de otra (§5.bis, `--anidada`). Antes acá
+                                    // iba `bg-surface-card`, que a 16% en Liquid
+                                    // claro no es un escalón: es un vidrio sobre
+                                    // otro vidrio, y a través se leía el
+                                    // tablero. `--anidada` ACLARA sobre material
+                                    // translúcido y OSCURECE sobre blanco opaco
+                                    // — el token ya resuelve la dirección por
+                                    // tema, que es lo que un color a mano no
+                                    // puede hacer.
+                                    ...(activo ? {} : { background: 'var(--anidada)' }),
                                 }}
-                                className={`min-w-0 rounded-xl border px-2 py-1 text-left touch-none cursor-grab active:cursor-grabbing
+                                className={`min-w-0 rounded-[var(--card-radius-anidada)] border px-2 py-1 text-left
+                                    touch-none cursor-grab active:cursor-grabbing
                                     transition-[background-color,border-color] duration-[var(--dur-fast)]
                                     ${activo
-                                        ? 'bg-brand/10 border-brand/50'
-                                        : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}
+                                        ? 'bg-brand/25 border-brand/60'
+                                        : 'border-divider hover:bg-surface-card-hover'}`}
                             >
                                 {/* Rótulo y medida en UNA línea: la segunda
                                     obligaba a un renglón de 40px de piso y hacía
@@ -375,9 +415,14 @@ export default function AcomodarModal({
                         <div className="flex flex-wrap gap-1.5">
                             {apagados.map(w => {
                                 const Icono = w.icon;
+                                // Ocluye igual que el lienzo: estas píldoras sí
+                                // quedan apoyadas sobre el vidrio del panel, y
+                                // con `bg-surface-card` se leía el tablero a
+                                // través del rótulo.
                                 return (
                                     <button key={w.id} type="button" onClick={() => encender(w.id)}
-                                        className="inline-flex items-center gap-1.5 rounded-full border border-divider bg-surface-card
+                                        style={{ background: 'var(--thead-bg)' }}
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-divider
                                             px-2.5 py-1.5 hover:bg-surface-card-hover
                                             transition-colors duration-[var(--dur-fast)]">
                                         <Plus size={11} className="text-content-3" />

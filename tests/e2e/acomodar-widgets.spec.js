@@ -43,6 +43,21 @@ test.describe('Acomodar widgets', () => {
         await abrirEditor(page);
         const n = await fichas(page).count();
         expect(n, 'el editor no listó ningún widget').toBeGreaterThan(2);
+
+        // El lienzo tiene que OCLUIR. Reportado el 2026-08-16 con captura: en
+        // Liquid claro el panel deja pasar el 49% y las fichas estaban a 16%,
+        // así que las barras de las gráficas se leían a través del texto. La
+        // guarda mide la opacidad real y no la clase, porque el defecto vive en
+        // el token — y corre en el tema de la cuenta de QA (Solid), donde todo
+        // es opaco, así que sólo puede fallar si alguien quita el `--thead-bg`.
+        const alfa = await page.evaluate(() => {
+            const l = document.querySelector('[role="dialog"] [style*="thead-bg"]');
+            if (!l) return null;
+            const m = getComputedStyle(l).backgroundColor.match(/[\d.]+/g);
+            return m && m.length === 4 ? Number(m[3]) : 1;
+        });
+        expect(alfa, 'el lienzo del editor dejó de ocluir').not.toBeNull();
+        expect(alfa).toBeGreaterThanOrEqual(0.9);
         // Y entra sin scroll horizontal, que es el punto de verlo en chico.
         const desborde = await page.evaluate(() => {
             const d = document.querySelector('[role="dialog"]');

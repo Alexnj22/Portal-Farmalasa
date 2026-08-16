@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.637.1 — El editor de acomodo se lee sobre cualquier tablero
+
+Reportado con captura: *«no se distingue bien, no se logra leer»*. El editor de
+acomodo (v2.635.0) sobre un tablero con gráficas: las barras naranjas y azules
+se leían **a través** de los rótulos.
+
+Medido en Liquid claro, que es donde pasa:
+
+| | opacidad propia | desenfoque |
+|---|---|---|
+| panel del modal | 51% | `blur(10px)` |
+| **ficha** | **16%** | **ninguno** |
+| velo | 0% | ninguno |
+
+O sea que el tablero de atrás llegaba al texto al **41%** de su color. En oscuro
+la ficha es 58% y casi no se nota; en Solid es opaca y no se ve nada. **Las
+capturas de verificación de v2.635.0 estaban tomadas con la cuenta de QA, que
+usa Solid** — el tema escondía el defecto.
+
+El arreglo **no** es subirle la opacidad al panel: eso ya está decidido al revés
+(§LiquidModal de `DESIGN.md` — dos superficies apiladas dan un modal «casi
+opaco» y se consideró un defecto). Es §5.bis: **una superficie que tiene que
+ocluir usa `--thead-bg`, nunca una opacidad de acento; lo que pasa por debajo se
+lee a través.** Es literalmente el caso del encabezado pegajoso de una tabla, y
+ese token está entre 97% y 98% en los cuatro temas.
+
+Entonces: la retícula del editor va sobre un **lienzo** que ocluye, y las fichas
+se apoyan en él con `--anidada`, que es el escalón que el canon define para una
+superficie dentro de otra (y que ya resuelve por tema si aclara u oscurece — un
+color a mano no puede). Las píldoras de «Apagados», que sí quedan sobre el
+vidrio del panel, ocluyen ellas mismas.
+
+Va en el componente y **no** en la regla global de superficie anidada de
+`index.css`: esa regla sólo cubre tarjeta-dentro-de-tarjeta, y extenderla a los
+paneles cambiaría el aspecto de las tarjetas de **117 archivos**, la mayoría
+dentro de modales, sin haberlas mirado.
+
+`tests/e2e/acomodar-widgets.spec.js` mide ahora la opacidad real del lienzo, no
+la clase — el defecto vivía en el token.
+
 ## v2.637.0 — El login se adapta a la pantalla y el carné deja de escribirse en el campo de usuario
 
 - **El carné es la contraseña, y podía quedar escrito a la vista.** El login

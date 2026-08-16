@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.627.1 — Instalar la caja se reduce a escribir un código de 8 letras
+
+La instalación que salió con v2.627.0 pedía copiar **dos UUID a mano** a un
+archivo de texto en la computadora de la caja, y después editar una ruta en el
+archivo del servicio. Eso no se le pide a nadie en una farmacia: se transcribe
+mal, y un carácter cambiado da un error que no dice cuál de los dos está mal.
+
+Ahora el portal muestra **un código de 8 letras** —`K7MD-P9QX`— y en la caja se
+escribe `bash instalar.sh`. El instalador hace el resto: comprueba que la
+computadora sirva (Python, sistema de impresión, conexión), **encuentra la
+ticketera sola** por el nombre de la cola, pide el código, lo canjea por las
+credenciales de verdad, escribe la configuración con permisos `600`, deja el
+servicio encendido para siempre y **manda una hoja de prueba**. Si salió el
+papel, ya está.
+
+El código se puede escribir en minúsculas y con o sin guion, y su alfabeto no
+tiene O, 0, I ni 1 — los cuatro que se confunden al leerlos de una pantalla.
+Vive 15 minutos y se usa una sola vez, que es lo que hace que ser corto no lo
+haga inseguro.
+
+La cola de CUPS dejó de preguntarse desde el portal: quien está frente a esa
+pantalla no tiene por qué saber cómo se llama la impresora de una sala. La
+elige el instalador mirando la propia computadora, y la manda al canjear.
+
+Dos cosas más que salieron de esto: una caja creada y nunca instalada ya no
+cuenta como «esta sala imprime» —si contara, el papel se quedaría esperando a
+un agente que no existe—, y la pantalla distingue **«sin instalar»** de «no
+contesta», que mandaban a revisar lugares distintos.
+
+Nota: `instalar.sh` lleva adentro la llave `publishable` de Supabase, que es la
+misma que viaja dentro del JavaScript del portal. Lo que autoriza a cada caja es
+su *token*, y ése lo entrega el canje: no está en el repositorio.
+
 ## v2.627.0 — El papel sale en la caja de la sucursal: cola de impresión y agente
 
 Hasta hoy imprimir significaba «mandarlo a `http://localhost`», o sea a la

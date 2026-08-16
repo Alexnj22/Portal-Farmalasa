@@ -3,7 +3,85 @@
 Hace que el papel salga **en la caja de la sucursal**, lo mande quien lo mande y
 desde donde sea — incluido el teléfono.
 
-## Por qué hace falta
+---
+
+## Instalación (3 pasos, unos 5 minutos)
+
+### 1. En el portal, generá el código
+
+**Sistema → Prueba de impresión → Cajas de las salas → Agregar una caja.**
+
+Elegí la sucursal, ponele un nombre que diga cuál es (`Caja Salud 3`) y apretá
+**Generar el código**. Sale un código de 8 letras así:
+
+```
+K7MD-P9QX
+```
+
+Dura **15 minutos** y se usa **una sola vez**. Si se vence, generás otro.
+
+### 2. Copiá esta carpeta a la computadora de la caja
+
+En una memoria USB, por red, como sea. Sólo hacen falta `instalar.sh` y
+`agente.py`.
+
+### 3. En la computadora de la caja, corré una línea
+
+Abrí una terminal en esa carpeta y escribí:
+
+```bash
+bash instalar.sh
+```
+
+Te va a ir preguntando, y hace todo lo demás:
+
+- comprueba que la computadora sirva (Python, sistema de impresión, internet),
+- **encuentra la ticketera sola** y te pide que confirmes,
+- te pide el código de 8 letras,
+- escribe la configuración,
+- deja el agente prendido para siempre (se enciende solo al reiniciar),
+- y **manda una hoja de prueba**.
+
+Si salió el papel de prueba, ya está. No hay que configurar nada más.
+
+---
+
+## Preguntas que van a salir
+
+**¿Qué pasa si me equivoco al escribir el código?**
+Te deja intentar tres veces. Podés escribirlo en minúsculas y con o sin el
+guion: `k7md-p9qx` y `K7MDP9QX` son lo mismo. El alfabeto no tiene O, 0, I ni 1
+justamente para que no se confundan al leerlos.
+
+**¿Y si se vence el código?**
+Generás otro en el portal y volvés a correr `bash instalar.sh`.
+
+**¿Cómo sé que está funcionando?**
+En el portal, esa caja va a decir **«ahora mismo»** al lado del nombre. Si dice
+«sin instalar», el código nunca se canjeó; si dice «hace 3 h», la computadora
+está apagada o sin internet.
+
+**¿Cómo lo veo trabajar?**
+
+```bash
+sudo journalctl -u farmalasa-impresion -f
+```
+
+**El papel sale pero no se corta.**
+Editá `/opt/farmalasa/agente-impresion/agente.conf`, quitale el `#` a la línea
+`CORTAR=1` y reiniciá con
+`sudo systemctl restart farmalasa-impresion`. Viene apagado porque la ticketera
+de las salas corta sola, y prender un comando de corte que no hace falta puede
+hacer que salga basura.
+
+**¿Se puede instalar en más de una computadora de la misma sala?**
+No hace falta y no conviene: el papel sale igual en la caja aunque el documento
+se mande desde otra máquina. Si igual se hace, no se imprime dos veces (la cola
+usa `FOR UPDATE SKIP LOCKED`), pero no hay motivo.
+
+---
+
+## Por qué hace falta esto
 
 El portal imprime mandando el ticket a `http://localhost` de la computadora que
 tiene el navegador abierto. Eso alcanza sólo a esa máquina y **no puede alcanzar
@@ -28,74 +106,27 @@ Además sobrevive a un formateo de la caja, que el camino de hoy no: los
 `print*.php` del sistema de facturación **no están en ningún servidor**, viven
 sólo en el disco de cada computadora de sala y no hay de dónde bajarlos.
 
-## Qué necesita
+---
 
-- Python 3 (viene con Linux; no usa ninguna librería de fuera)
-- CUPS con la ticketera dada de alta — en Salud 3 es la cola `pos-80`
-- Salida a internet hacia el portal. **No abre ningún puerto**: siempre pregunta
-  él, así que no expone la impresora a la red.
+## Notas para quien mantenga esto
 
-## Instalación
-
-**1. Registrar la caja en el portal.** Sistema → Prueba de impresión → «Cajas de
-impresión» → *Registrar esta caja*. Elegí la sucursal y ponele un nombre que
-diga cuál es (`Caja Salud 3`). El portal devuelve un **identificador** y un
-**token**.
-
-> El token se muestra **una sola vez**. No se puede volver a leer desde ninguna
-> pantalla — un token que se puede releer es un token que viaja. Si se pierde,
-> se registra la caja de nuevo.
-
-**2. Copiar la carpeta a la computadora de la caja** y crear `agente.conf` al
-lado de `agente.py`:
-
-```ini
-SUPABASE_URL=https://sacecdkdmsdvgqnrsett.supabase.co
-SUPABASE_ANON_KEY=<la misma llave pública que usa el portal>
-DEVICE_ID=<el identificador que dio el portal>
-DEVICE_TOKEN=<el token que dio el portal>
-# CORTAR=1   # sólo si el papel sale sin cortarse (ver abajo)
-```
-
-**3. Probarlo a mano** antes de dejarlo corriendo:
-
-```bash
-python3 agente.py
-```
-
-Mandá algo a imprimir desde el portal —Sistema → Prueba de impresión sirve— y
-mirá que salga papel y que la consola diga `impreso`.
-
-**4. Dejarlo prendido** con systemd:
-
-```bash
-sudo cp farmalasa-impresion.service /etc/systemd/system/
-sudo systemctl enable --now farmalasa-impresion
-journalctl -u farmalasa-impresion -f     # para verlo trabajar
-```
-
-## Cosas que conviene saber
-
-**El corte del papel viene apagado.** La ticketera de las salas corta sola al
-terminar el trabajo (medido con `lp -o raw`). `CORTAR=1` agrega el comando de
-corte por si alguna no lo hace — se prende sólo si el papel sale sin cortarse,
-con papel en la mano y no por las dudas.
+**No hay secretos en `instalar.sh`.** La llave que lleva es la `publishable` de
+Supabase — la misma que viaja dentro del JavaScript del portal, o sea que la
+tiene cualquiera que abra la página. Lo que autoriza a esta caja es su *token*,
+y ése lo entrega el canje del código: nunca está escrito en el repositorio.
+`agente.conf`, que sí lo tiene, queda con permisos `600` y está en `.gitignore`.
 
 **El agente no maqueta.** El contenido llega con sus columnas y sus códigos de
 impresora ya adentro, igual que lo que recibe el programa del sistema de
-facturación. La maquetación vive en `src/utils/ticketPrint.js`, y tiene que
+facturación. La maquetación vive en `src/utils/ticketPrint.js` y tiene que
 seguir viviendo ahí: dos maquetadores se desincronizan y la diferencia sólo se
 ve en el papel.
-
-**No corras dos agentes contra la misma sala.** No imprime dos veces —la cola
-usa `FOR UPDATE SKIP LOCKED`, así que dos lectores nunca se llevan la misma
-fila— pero no hay motivo para tener dos.
 
 **Un trabajo que queda a medias vuelve solo.** Si el agente se muere con el
 papel en la mano, a los dos minutos ese trabajo vuelve a la cola. A los 3
 intentos pasa a `ERROR` y deja de reintentarse: un ticket que no sale nunca
-taparía a los que sí saldrían.
+taparía a los que sí saldrían. La cola se purga a los 14 días.
 
 **⚠️ No reconfigures la cola `pos-80`.** Es por la que imprime hoy el sistema de
 facturación. Si hiciera falta otra configuración, se crea una cola nueva al
-mismo dispositivo y se pone su nombre al registrar la caja.
+mismo dispositivo y el instalador te deja elegirla.

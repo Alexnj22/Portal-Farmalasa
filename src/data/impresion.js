@@ -36,16 +36,26 @@ export function encolarImpresion({ branchId, titulo, contenido }) {
  */
 export async function fetchCajasDeImpresion() {
     const { data, error } = await supabase.from('impresion_dispositivos')
-        .select('id, branch_id, nombre, impresora, activo, ultimo_latido, created_at')
+        .select('id, branch_id, nombre, equipo, impresora, activo, ultimo_latido, vinculada_at, created_at')
         .order('nombre');
     if (error) { console.error('impresion: fetchCajasDeImpresion failed:', error.message); return []; }
     return data || [];
 }
 
-/** Registra una caja y devuelve su token — la única vez que se puede leer. */
-export function registrarCaja({ branchId, nombre, impresora }) {
-    return supabase.rpc('registrar_caja_de_impresion', {
-        p_branch_id: branchId, p_nombre: nombre, p_impresora: impresora || 'pos-80',
+/**
+ * Crea la caja y devuelve un **código de 8 letras** para escribir en ella.
+ *
+ * Antes esto devolvía dos UUID que había que transcribir a mano a un archivo de
+ * texto en la computadora de la caja. Eso no se le pide a nadie: se copia mal, y
+ * un carácter cambiado da un error que no dice cuál de los dos está mal.
+ *
+ * El código vive 15 minutos y se usa una sola vez, así que ser corto no lo hace
+ * inseguro — y el alfabeto no tiene O, 0, I ni 1, que son los que se confunden
+ * al leerlos de una pantalla.
+ */
+export function crearCodigoDeVinculacion({ branchId, nombre }) {
+    return supabase.rpc('crear_codigo_de_vinculacion', {
+        p_branch_id: branchId, p_nombre: nombre,
     });
 }
 

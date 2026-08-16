@@ -4,7 +4,7 @@ import Button from '../common/Button';
 import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import { fetchCajasDeImpresion, fetchColaDeImpresion, registrarCaja } from '../../data/impresion';
+import { crearCodigoDeVinculacion, fetchCajasDeImpresion, fetchColaDeImpresion } from '../../data/impresion';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -59,7 +59,6 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const [cola, setCola] = useState([]);
     const [sala, setSala] = useState('');
     const [nombre, setNombre] = useState('');
-    const [impresora, setImpresora] = useState('pos-80');
     const [nueva, setNueva] = useState(null);
     const [guardando, setGuardando] = useState(false);
 
@@ -77,18 +76,18 @@ export default function CajasDeImpresion({ puedeEditar }) {
     const registrar = useCallback(async () => {
         if (!sala || !nombre.trim() || guardando) return;
         setGuardando(true);
-        const { data, error } = await registrarCaja({
-            branchId: Number(sala), nombre: nombre.trim(), impresora: impresora.trim(),
+        const { data, error } = await crearCodigoDeVinculacion({
+            branchId: Number(sala), nombre: nombre.trim(),
         });
         setGuardando(false);
         if (error) {
-            showToast?.('No se pudo registrar', mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
+            showToast?.('No se pudo generar el código', mensajeAmigable(error, 'Vuelve a intentar.'), 'error');
             return;
         }
         setNueva(data?.[0] || null);
         setNombre('');
         cargar();
-    }, [sala, nombre, impresora, guardando, showToast, cargar]);
+    }, [sala, nombre, guardando, showToast, cargar]);
 
     const copiar = useCallback(async (texto) => {
         try {
@@ -102,23 +101,26 @@ export default function CajasDeImpresion({ puedeEditar }) {
     return (
         <div className="space-y-4">
             {nueva && (
-                <Notice variant="warning" icon={AlertTriangle}>
-                    <span className="font-bold">Guarda esto ahora: no se vuelve a mostrar</span>
-                    <span className="block mt-1 font-normal text-content-2">
-                        Va en el archivo <code>agente.conf</code> de esa computadora.
+                <Notice variant="success" icon={CheckCircle2}>
+                    <span className="font-bold">Escribe este código en la computadora de la caja</span>
+                    {/* El código es lo ÚNICO que se transcribe, así que se pinta
+                        grande, espaciado y partido en dos mitades: es la forma
+                        de que no se lea mal desde el otro lado del mostrador. */}
+                    <span className="block my-2 font-mono text-title font-black tracking-[0.2em] text-content select-all">
+                        {nueva.codigo.slice(0, 4)}-{nueva.codigo.slice(4)}
                     </span>
-                    <span className="block mt-2 font-mono text-caption break-all select-all text-content">
-                        DEVICE_ID={nueva.id}
-                        <br />
-                        DEVICE_TOKEN={nueva.token}
+                    <span className="block font-normal text-content-2">
+                        En esa computadora, abre una terminal y escribe{' '}
+                        <code>bash instalar.sh</code>. Te va a pedir este código.
+                        {' '}<strong>Dura 15 minutos</strong> y se usa una sola vez.
                     </span>
                     <span className="flex gap-2 mt-2">
                         <Button size="sm" variant="secondary" icon={Copy}
-                            onClick={() => copiar(`DEVICE_ID=${nueva.id}\nDEVICE_TOKEN=${nueva.token}`)}>
+                            onClick={() => copiar(nueva.codigo)}>
                             Copiar
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setNueva(null)}>
-                            Ya lo guardé
+                            Listo
                         </Button>
                     </span>
                 </Notice>
@@ -136,7 +138,12 @@ export default function CajasDeImpresion({ puedeEditar }) {
             )}
 
             {cajas.map((c) => {
-                const latido = haceCuanto(c.ultimo_latido);
+                // «Sin instalar» y «no contesta» son cosas distintas: la primera
+                // es un código que nadie canjeó, la segunda una caja apagada. Un
+                // solo texto para las dos mandaría a revisar el lugar equivocado.
+                const latido = c.vinculada_at
+                    ? haceCuanto(c.ultimo_latido)
+                    : { txt: 'sin instalar', vivo: false };
                 return (
                     <div key={c.id} data-surface="card" className="p-3 flex items-center gap-3 flex-wrap">
                         <Printer size={16} className="text-content-3 shrink-0" />
@@ -155,7 +162,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
 
             {puedeEditar && (
                 <div data-surface="card" className="p-3 space-y-3">
-                    <p className="text-label font-bold text-content">Registrar una caja</p>
+                    <p className="text-label font-bold text-content">Agregar una caja</p>
                     <LiquidSelect
                         value={sala} onChange={setSala}
                         options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
@@ -166,14 +173,13 @@ export default function CajasDeImpresion({ puedeEditar }) {
                         onChange={(e) => setNombre(e.target.value)}
                         placeholder="Caja Salud 3"
                     />
-                    <PortalInput
-                        label="Cola de impresión (CUPS)" name="impresora" value={impresora}
-                        onChange={(e) => setImpresora(e.target.value)}
-                        placeholder="pos-80"
-                    />
+                    {/* La ticketera NO se pregunta acá: la encuentra el
+                        instalador mirando la propia computadora. Preguntarla
+                        desde el portal era pedir un dato que quien está frente
+                        a esta pantalla no tiene por qué saber. */}
                     <Button variant="primary" size="sm" icon={Plus} loading={guardando}
                         disabled={!sala || !nombre.trim()} onClick={registrar}>
-                        Registrar
+                        Generar el código
                     </Button>
                 </div>
             )}

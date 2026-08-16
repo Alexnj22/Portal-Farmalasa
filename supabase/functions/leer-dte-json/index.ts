@@ -58,6 +58,71 @@ async function textoDelPdf(bytes: Uint8Array): Promise<string> {
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// ── El vencimiento es MES Y AÑO, nunca día ─────────────────────────────────
+// Regla del negocio, confirmada contra los datos: de las 24,776 líneas de
+// compra de los últimos diez meses, **las 24,776 se guardaron con día 1**. Cero
+// excepciones. (Las 483 con otro día son todas anteriores a nov-2025, de una
+// convención que ya no se usa; `inventory` dice lo mismo.)
+//
+// Eso simplifica y robustece la lectura: **el día que imprime el proveedor es
+// ruido**. COFARSAL escribe `01/01/2030`, RONASA `31/10/2027`, GAMMA `04/2028`
+// y VIJOSA `(V-12-27)` — los cuatro terminan en el mismo lugar. Y el formato de
+// VIJOSA, que sin esta regla parecía incompleto, resulta ser exactamente lo que
+// hace falta.
+const MES_ES = /^(0?[1-9]|1[0-2])$/;
+
+/** Cualquier fecha que escriba un proveedor → `YYYY-MM-01`, o null. */
+function aMesYAnio(bruto: string | null): string | null {
+  if (!bruto) return null;
+  const p = bruto.trim().split(/[\/\-.]/).filter(Boolean);
+  let mes: string | null = null, anio: string | null = null;
+
+  if (p.length === 3) {            // dd/mm/aaaa — el día se descarta
+    [, mes, anio] = p;
+  } else if (p.length === 2) {     // mm/aaaa  o  mm/aa
+    [mes, anio] = p;
+  } else return null;
+
+  if (!MES_ES.test(mes)) return null;
+  if (anio.length === 2) anio = String(2000 + Number(anio));
+  if (!/^\d{4}$/.test(anio)) return null;
+  const a = Number(anio);
+  // Un vencimiento fuera de este rango es un número mal leído, no una fecha.
+  if (a < 2000 || a > 2100) return null;
+  return `${anio}-${String(Number(mes)).padStart(2, "0")}-01`;
+}
+
+// Las formas en que los proveedores escriben la fecha, de la más específica a
+// la más suelta. El orden importa: `dd/mm/aaaa` tiene que probarse antes que
+// `mm/aaaa`, o la primera mitad se leería como mes y año.
+const FECHAS = [
+  /(?:fecha\s*exp\.?|vence|vencimiento|caducidad|v)\s*[:.]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/i,
+  /\(\s*v\s*-\s*(\d{1,2}\s*-\s*\d{2,4})\s*\)/i,          // VIJOSA: (V-12-27)
+  /(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4})/,
+  /(\d{1,2}[\/\-.]\d{4})\b/,                              // GAMMA: 04/2028
+];
+
+const LOTES = [
+  /(?:n[uú]mero\s+de\s+)?lote\s*[:.]?\s*([A-Za-z0-9._\-\/]+)/i,
+  /\bl0te\s*[:.]?\s*([A-Za-z0-9._\-\/]+)/i,
+];
+
+// Un lote de verdad tiene al menos dos caracteres y alguno alfanumérico.
+// Sin esto, IMBERTON —que rotula «cantidad - lote - fecha caducidad»— devolvía
+// el guion como número de lote: un dato inventado, que es peor que ninguno.
+const loteValido = (s: string | null) =>
+  !!s && s.replace(/[^A-Za-z0-9]/g, "").length >= 2 ? s : null;
+
+/** Lote y vencimiento escondidos en el texto libre de un renglón. */
+function deTextoLibre(s: string): { lote: string | null; vence: string | null } {
+  const t = norm(s ?? "");
+  let vence: string | null = null;
+  for (const re of FECHAS) { const m = t.match(re); if (m) { vence = aMesYAnio(m[1]); if (vence) break; } }
+  let lote: string | null = null;
+  for (const re of LOTES) { const m = t.match(re); if (m) { lote = loteValido(m[1]); if (lote) break; } }
+  return { lote, vence };
+}
+
 /**
  * Lote y vencimiento de un renglón, leídos del PDF.
  *
@@ -70,9 +135,14 @@ const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Devuelve `null` cuando el ancla no aparece en el texto: es preferible que la
  * pantalla lo pida a inventar un vencimiento, que es un dato sanitario.
  */
-function loteYVence(texto: string, item: any): { lote: string | null; vence: string | null; anclado: boolean } {
+function loteYVence(texto: string, item: any): { lote: string | null; vence: string | null; de: string } {
   const desc = norm(String(item?.descripcion ?? ""));
-  if (!desc) return { lote: null, vence: null, anclado: false };
+  if (!desc) return { lote: null, vence: null, de: "sin descripción" };
+
+  // (0) La propia descripción del JSON. Diez de los quince proveedores meten
+  //     ahí el lote y el vencimiento, así que ni hace falta abrir el PDF.
+  const enDesc = deTextoLibre(desc);
+  if (enDesc.lote || enDesc.vence) return { ...enDesc, de: "descripcion" };
 
   // La cantidad tal como la imprime el papel («4.00»), para cerrar el hueco.
   const cant = Number(item?.cantidad ?? 0);
@@ -88,10 +158,10 @@ function loteYVence(texto: string, item: any): { lote: string | null; vence: str
   const m = t.match(re);
   if (m) {
     const medio = norm(m[1]);
-    const f = medio.match(/(\d{2}\/\d{4}|\d{2}\/\d{2}\/\d{4})\s*$/);
-    const vence = f ? f[1] : null;
-    const lote  = norm(f ? medio.slice(0, f.index) : medio) || null;
-    if (lote || vence) return { lote, vence, anclado: true };
+    const f = medio.match(/(\d{1,2}[\/\-.]\d{2,4}(?:[\/\-.]\d{2,4})?)\s*$/);
+    const vence = f ? aMesYAnio(f[1]) : null;
+    const lote  = loteValido(norm(f ? medio.slice(0, f.index) : medio) || null);
+    if (lote || vence) return { lote, vence, de: "pdf/columnas" };
   }
 
   // (B) Rótulos explícitos — MENFAR: `descripción Lote: X Vencimiento: Y`.
@@ -100,12 +170,11 @@ function loteYVence(texto: string, item: any): { lote: string | null; vence: str
   const i = t.indexOf(desc);
   if (i >= 0) {
     const ventana = t.slice(i + desc.length, i + desc.length + 120);
-    const ml = ventana.match(/lote\s*:?\s*([A-Za-z0-9._\-\/]+)/i);
-    const mv = ventana.match(/(?:vencimiento|vence|f\.?\s*exp\.?)\s*:?\s*(\d{2}[\/-]\d{2,4}(?:[\/-]\d{2,4})?)/i);
-    if (ml || mv) return { lote: ml ? ml[1] : null, vence: mv ? mv[1] : null, anclado: true };
+    const r = deTextoLibre(ventana);
+    if (r.lote || r.vence) return { ...r, de: "pdf/rotulos" };
   }
 
-  return { lote: null, vence: null, anclado: false };
+  return { lote: null, vence: null, de: "no encontrado" };
 }
 
 Deno.serve(async (req: Request) => {
@@ -203,7 +272,7 @@ Deno.serve(async (req: Request) => {
             descripcion: it?.descripcion ?? null,
             cantidad: it?.cantidad ?? null,
             precioUni: it?.precioUni ?? null,
-            lote: r.lote, vence: r.vence, anclado: r.anclado,
+            lote: r.lote, vence: r.vence, de: r.de,
           };
         });
         salida.push({

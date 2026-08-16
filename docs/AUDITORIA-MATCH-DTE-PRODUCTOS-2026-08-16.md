@@ -482,3 +482,53 @@ Y un hallazgo suelto del mismo barrido: **CONGELADOS y STEINER mandan el código
 de barras dentro de la descripción** (`Choco Cono Sarita|7401090803022|15.000
 |Caja`, `ELECTROLIT MORA AZUL 625ML | 7501125184277`). Para el match de producto
 eso los pone en la vía del 99.8%, que es la mejor que hay.
+
+---
+
+# Sexta parte: el vencimiento es MES Y AÑO, y eso lo cambia todo
+
+Regla del negocio dada por el usuario, y confirmada contra los datos: **de las
+24,776 líneas de compra de los últimos diez meses, las 24,776 se guardaron con
+día 1.** Cero excepciones. (Las 483 con otro día son todas anteriores a
+noviembre de 2025, de una convención que ya no se usa; `inventory` dice lo
+mismo: 13,206 con día 1 contra 268.)
+
+**El día que imprime el proveedor es ruido.** COFARSAL escribe `01/01/2030`,
+RONASA `31/10/2027`, GAMMA `04/2028` y VIJOSA `(V-12-27)`: los cuatro terminan
+en el mismo lugar, `AAAA-MM-01`.
+
+Y con eso el formato de VIJOSA —que sin esta regla parecía incompleto por no
+traer día— resulta ser **exactamente lo que hace falta**. Al aplicarla pasó de
+**0 a 32 de 32**.
+
+## Resultado final del extractor
+
+| proveedor | renglones | lote | vencimiento | de dónde |
+|---|---:|---:|---:|---|
+| VIJOSA | 32 | 32 | **32** | descripción |
+| RONASA | 24 | 24 | **24** | descripción |
+| COFARSAL | 17 | 17 | **17** | descripción |
+| GAMMA | 15 | 15 | **15** | **PDF** |
+| MONTREAL | 10 | 0 | **10** | descripción |
+| NUEVA SAN CARLOS | 4 | 4 | **4** | descripción |
+| SANTA LUCÍA | 4 | 0 | **4** | descripción |
+| MENFAR | 4 | 4 | 0 | **PDF** |
+| IMBERTON | 1 | 0 | **1** | descripción |
+| AMERICANA | 1 | 0 | 0 | — |
+
+**Vencimiento: ocho de diez proveedores al 100%.** Los dos que faltan son
+MENFAR —que imprime literalmente `Vencimiento: ?`, o sea que el dato no
+existe— y AMERICANA, que lo manda entre `|` sin rótulo y necesita su regla
+posicional.
+
+**Lote: falta en MONTREAL, SANTA LUCÍA y AMERICANA**, los tres por lo mismo —
+lo mandan sin rótulo, en una posición fija entre separadores. Es una regla por
+proveedor, que era lo previsto desde el principio.
+
+## Un lote inventado es peor que ninguno
+
+IMBERTON rotula sus columnas `cantidad - lote - fecha caducidad`, y el extractor
+devolvía **`-`** como número de lote: el guion del rótulo. Un dato que parece
+válido y no lo es entra al inventario sin que nada avise. Ahora un lote necesita
+al menos dos caracteres alfanuméricos, y si no los tiene devuelve nulo — que es
+lo que hace que la pantalla lo pida.

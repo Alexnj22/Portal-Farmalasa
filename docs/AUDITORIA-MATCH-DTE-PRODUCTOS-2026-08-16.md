@@ -189,24 +189,52 @@ Se pueden sacar con una regla por proveedor —son pocos y el formato es fijo—
 pero **es la parte que no se puede resolver de forma genérica**, y por eso la
 pantalla de confirmación tiene que mostrarlos para que un ojo los mire.
 
-## ⚠️ La trampa: los id de producto son POR CUENTA
+## ⚠️ Un producto tiene DOS números, y confundirlos devuelve otro producto
 
-Medido, no supuesto. Consultando con la cuenta de **clientes**:
+**Corregido el 2026-08-16.** La primera versión de este documento decía que los
+id de producto eran por cuenta, como pasa con `id_proveedor`. **Era falso, y el
+error fue del instrumento**: se consultó `consultar_stock` con `tipo=1`, que no
+es ninguno de los dos modos reales, y devolvió otra cosa.
 
-| se pidió | el sistema respondió | nuestro producto con ese id |
+El sistema identifica un producto de dos maneras, y `consultar_stock` lo decide
+con `tipo`:
+
+| `tipo` | qué espera en `id_producto` | quién lo usa en la pantalla |
 |---|---|---|
-| `id_producto=2445` | PSICODOL 1MG/ML X 60 ML | NAFINA PLUS GOTAS X 15 ML |
-| `id_producto=2449` | ROSECOL 20 MG X 30 TAB | OFTIGEL 0.2% GEL OFTALMICO X 10 GR |
+| `C` | el **código** del producto | la caja «Ingrese Código de producto» |
+| `D` | el **id interno** | el buscador por nombre, que lo saca de `autocomp_prod.php` |
 
-Es el mismo fenómeno ya documentado para `id_proveedor` en
-`scrape-erp-proveedores`, y ahora se confirma que también aplica a los
-productos: **`products.id` sólo coincide con la numeración de la cuenta de
-COMPRAS**, que es de donde se bajó (`descargar_compras_json.php`).
+Y devuelve siempre `id_p`, que es **el id interno** — el mismo que después viaja
+en `json_arr` como `id_producto`. O sea que la pantalla convierte código → id
+antes de guardar.
 
-**Automatizar con la cuenta equivocada cargaría productos completamente
-distintos, y sin error**: la compra se registraría bien, con el total correcto,
-y el inventario quedaría mal. Se descubriría contando. Toda esta automatización
-va con `ERP_PURCHASES_CREDS` y con ninguna otra.
+Consultado con `tipo=D`, los cuatro casos probados dan exactamente nuestro
+catálogo:
+
+| se pidió | el sistema respondió | nuestro `products.id` |
+|---|---|---|
+| `2461` | TODEXFINA GOTAS X 7.5 ML | TODEXFINA GOTAS X 7.5 ML |
+| `2445` | NAFINA PLUS GOTAS X 15 ML | NAFINA PLUS GOTAS X 15 ML |
+| `2449` | OFTIGEL 0.2% GEL OFTALMICO X 10 GR | OFTIGEL 0.2% GEL OFTALMICO X 10 GR |
+| `2014` | PSICODOL 1MG/ML X 60 ML | PSICODOL 1MG/ML X 60 ML |
+
+**`products.id` ES el id interno del sistema.** No hay desfase, no hay que
+traducir nada y la automatización puede armar `json_arr` con el id que ya
+tenemos. Lo confirma también el histórico: en la compra 153684 los siete
+renglones cargados a mano casan por id con el nombre exacto de nuestro catálogo.
+
+Lo que sí es cierto es lo que pasa al equivocarse de modo: pedir `2445` por la
+vía del código devuelve **PSICODOL (id 2014)** — un producto real, con
+`typeinfo: Success`, sin ningún error. Por eso queda escrito acá: **la
+automatización usa `tipo=D` y el id; nunca la vía del código.** El código del
+producto en el sistema es otro número que nosotros no guardamos (para estos dos
+casos iba 431 arriba del id, pero ese desfase no es una regla en la que
+apoyarse).
+
+Aparte, y sin cambios: **`id_proveedor` sí depende de la cuenta** — está medido
+en `scrape-erp-proveedores`, y `suppliers.erp_supplier_id` salió de la cuenta de
+COMPRAS. Esta automatización va con `ERP_PURCHASES_CREDS` de todos modos, porque
+es la cuenta que numera los proveedores igual que nosotros.
 
 ## Dos cosas más que conviene saber
 

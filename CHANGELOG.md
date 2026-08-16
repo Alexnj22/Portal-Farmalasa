@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.640.0 — El login deja de estorbar al gestor de contraseñas, y «Sin acceso» ya no aparece por un permiso que no se pudo leer
+
+- **El detector del lector se comía el relleno del gestor, y encima se
+  autoinstalaba.** La marca «este equipo tiene lector» se escribía ante
+  cualquier ráfaga detectada — o sea que un gestor de contraseñas que rellena
+  tecleando marcaba la laptop como terminal de sala y, a partir de ahí, el
+  detector le comía la contraseña en cada intento (el usuario veía «Carné no
+  reconocido» y el campo vacío). Ahora esa marca la escribe **sólo un carné que
+  de verdad abre la sesión**, y el detector vive **únicamente** en equipos donde
+  consta que hay lector: en una computadora personal no intercepta nada. La
+  clave de la marca cambió de nombre a propósito — las escritas con el criterio
+  viejo no valen.
+- **El texto del autocompletado salía negro sobre el campo oscuro.** La regla
+  usaba `var(--content)`, que no existe: el token es `--text-primary` (lo que
+  consume `--color-content`). Una variable inexistente invalida la declaración
+  entera, así que mandaba el negro por defecto del navegador.
+
+### La sesión
+
+- **«Sin acceso — tu cuenta no tiene módulos habilitados» aparecía por unos
+  segundos al cerrar sesión**, y era una acusación falsa: los permisos estaban
+  bien, lo que había fallado era LEERLOS. `rolePerms` valía `null` para dos
+  cosas distintas —«todavía no se sabe» y «se leyó y no hay ninguno»— y la app
+  resolvía las dos igual: ningún módulo con permiso ⇒ `/no-access`, con un
+  `<Navigate replace>` que además dejaba ahí aunque los permisos llegaran
+  después. Ahora `null` es DESCONOCIDO y `{}` es vacío de verdad; mientras no se
+  sepa, se espera.
+- **Un fallo al leer los permisos se reintenta tres veces** y, si aun así no se
+  puede, la pantalla lo dice con esas palabras y ofrece reintentar, en vez de
+  culpar a la cuenta. Con permisos ya cargados un fallo no cambia nada: se
+  conservan, como antes.
+- La decisión de qué pantalla toca vive en `src/utils/arranqueSesion.js` con
+  sus siete casos en `tests/unit/arranqueSesion.test.js`, incluido el que
+  causaba esto.
+
 ## v2.639.2 — El acomodo del editor elige el más denso y se reacomoda en vivo
 
 Reportado: *«aún no funciona correctamente al mover widgets, haz pruebas, debe
@@ -65,41 +100,6 @@ va a quedar, con el mismo cálculo que se aplica al soltar. Verificado en el
 navegador sobre el tablero real de 28 widgets: **0 blancos y 0 encimados** en
 los tres momentos —antes, durante el arrastre y al soltar— y **cero diferencias**
 entre lo que se ve arrastrando y lo que se guarda.
-
-## v2.640.0 — El login deja de estorbar al gestor de contraseñas, y «Sin acceso» ya no aparece por un permiso que no se pudo leer
-
-- **El detector del lector se comía el relleno del gestor, y encima se
-  autoinstalaba.** La marca «este equipo tiene lector» se escribía ante
-  cualquier ráfaga detectada — o sea que un gestor de contraseñas que rellena
-  tecleando marcaba la laptop como terminal de sala y, a partir de ahí, el
-  detector le comía la contraseña en cada intento (el usuario veía «Carné no
-  reconocido» y el campo vacío). Ahora esa marca la escribe **sólo un carné que
-  de verdad abre la sesión**, y el detector vive **únicamente** en equipos donde
-  consta que hay lector: en una computadora personal no intercepta nada. La
-  clave de la marca cambió de nombre a propósito — las escritas con el criterio
-  viejo no valen.
-- **El texto del autocompletado salía negro sobre el campo oscuro.** La regla
-  usaba `var(--content)`, que no existe: el token es `--text-primary` (lo que
-  consume `--color-content`). Una variable inexistente invalida la declaración
-  entera, así que mandaba el negro por defecto del navegador.
-
-### La sesión
-
-- **«Sin acceso — tu cuenta no tiene módulos habilitados» aparecía por unos
-  segundos al cerrar sesión**, y era una acusación falsa: los permisos estaban
-  bien, lo que había fallado era LEERLOS. `rolePerms` valía `null` para dos
-  cosas distintas —«todavía no se sabe» y «se leyó y no hay ninguno»— y la app
-  resolvía las dos igual: ningún módulo con permiso ⇒ `/no-access`, con un
-  `<Navigate replace>` que además dejaba ahí aunque los permisos llegaran
-  después. Ahora `null` es DESCONOCIDO y `{}` es vacío de verdad; mientras no se
-  sepa, se espera.
-- **Un fallo al leer los permisos se reintenta tres veces** y, si aun así no se
-  puede, la pantalla lo dice con esas palabras y ofrece reintentar, en vez de
-  culpar a la cuenta. Con permisos ya cargados un fallo no cambia nada: se
-  conservan, como antes.
-- La decisión de qué pantalla toca vive en `src/utils/arranqueSesion.js` con
-  sus siete casos en `tests/unit/arranqueSesion.test.js`, incluido el que
-  causaba esto.
 
 ## v2.639.1 — El gestor de contraseñas vuelve a poder rellenar el login
 

@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.633.0 — El libro declarable avisa cuando un documento entró dos veces
+
+Salió de una pregunta del usuario: **¿qué pasa si un DTE trae productos para dos
+sucursales?** Legalmente, nada — el documento se emite a nombre de la empresa
+(un NIT, un NRC), hay **un solo libro de compras** y el Art. 141 lit. b) del
+Código Tributario manda anotar cada comprobante *«en forma separada e
+individualizada»*: **un documento, un renglón**. La factura se registra completa
+en una sala y lo que es de la otra se mueve por inventario, que es donde sí
+importa (Art. 142: el registro debe reflejar *«clara y verazmente su real
+movimiento»*).
+
+El riesgo es lo contrario: **registrarla dos veces, una por sala**. El libro
+declarable arma un renglón por compra registrada y no deduplicaba, así que ese
+documento aparecía dos veces y su crédito fiscal se contaba dos veces, sin que
+nada lo avisara.
+
+**Ya había pasado**: en julio 2026 el mismo documento de COFARSAL por $73.52
+está registrado dos veces —06/07 y 08/07, la misma sucursal—, o sea que julio
+declaró ese crédito repetido.
+
+Ahora el libro cuenta cuántos renglones son el mismo documento y lo dice: un
+aviso en rojo con cuántos documentos y **cuánto crédito fiscal se está contando
+de más**, la insignia «Repetido ×2» en cada renglón y una columna en el CSV, que
+es donde trabaja quien arma la declaración.
+
+**Qué cuenta como «el mismo documento»**, y el orden importa: primero el
+documento ya identificado, y sólo si no hay, el sello de Hacienda. Medido: dos
+compras del 21/07 comparten el sello porque el sistema de origen lo copió mal,
+pero son dos documentos distintos — agrupar por el sello primero las habría
+marcado como repetidas sin serlo. Y lo que **no** detecta, dicho en el código:
+las compras cuyo documento no se pudo identificar (su número llega cortado a 20
+caracteres y 104 compras distintas comparten la misma cadena), y el duplicado
+repartido entre dos meses.
+
 ## v2.632.0 — El gate ve las tarjetas a mano que no veía, y Facturación cierra las suyas
 
 **Pregunta del usuario, después de arreglar las tarjetas de Facturación:

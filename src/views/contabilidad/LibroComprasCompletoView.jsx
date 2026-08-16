@@ -223,11 +223,31 @@ export default function LibroComprasCompletoView({ openModal }) {
     // `trabado` es el que acciona: lo que se destrabaría al confirmar la
     // clasificación de esos proveedores.
     const totDecl = useMemo(() => {
-        const acc = { docs: 0, credito: 0, sinCuenta: 0, trabado: 0, motivos: new Map() };
+        const acc = { docs: 0, credito: 0, sinCuenta: 0, trabado: 0, motivos: new Map(),
+                      repRenglones: 0, repDocs: 0, repCredito: 0 };
         if (!esDecl) return acc;
         for (const r of filas) {
             acc.docs++;
             acc.credito += Number(r.credito_fiscal || 0);
+
+            // ── El documento que entró dos veces ──────────────────────────
+            // El servidor ya contó cuántos renglones del libro son el MISMO
+            // documento fiscal (`veces_en_el_libro`); acá sólo se agrega.
+            //
+            // Se reparte cada renglón entre sus copias en vez de agruparlos a
+            // mano: `1/veces` suma exactamente 1 por documento y
+            // `credito × (veces−1)/veces` da el crédito que sobra —exacto
+            // cuando las copias son idénticas, que es el caso real—. Agrupar
+            // por número de documento del lado del cliente no serviría: cuando
+            // el documento no se pudo identificar, dos copias pueden llegar con
+            // números distintos y quedarían sin agrupar.
+            const veces = Number(r.veces_en_el_libro || 1);
+            if (veces > 1) {
+                acc.repRenglones++;
+                acc.repDocs    += 1 / veces;
+                acc.repCredito += Number(r.credito_fiscal || 0) * (veces - 1) / veces;
+            }
+
             if (r.computa_credito) continue;
             acc.sinCuenta++;
             acc.motivos.set(r.motivo, (acc.motivos.get(r.motivo) || 0) + 1);
@@ -248,7 +268,11 @@ export default function LibroComprasCompletoView({ openModal }) {
         return delTab.filter(r =>
             normalizeText(r.proveedor || '').includes(q) ||
             normalizeText(r.documento_completo || '').includes(q) ||
-            normalizeText(r.nit || '').includes(q));
+            normalizeText(r.nit || '').includes(q) ||
+            // «Repetido» se busca porque se ve: es el rótulo que la fila lleva
+            // puesto, y el aviso de arriba manda a buscarlo. Sin esto, dar con
+            // 2 renglones entre 300 sería pasar el ojo por la tabla entera.
+            (q.length >= 3 && Number(r.veces_en_el_libro || 1) > 1 && 'repetido'.includes(q)));
     }, [delTab, busqueda]);
 
     const totales = useMemo(() => {
@@ -281,24 +305,32 @@ export default function LibroComprasCompletoView({ openModal }) {
         // suma cero— y escribiría una sucursal que este libro no tiene.
         if (esDecl) {
             exportCsv(
+                // «REPETIDO» viaja al CSV: quien arma la declaración trabaja
+                // sobre el archivo, no sobre la pantalla, y ahí el aviso rojo no
+                // existe. Una columna vacía en 300 filas y un «SI ×2» en dos es
+                // exactamente lo que hay que ver antes de presentar.
                 ['FECHA', 'TIPO', 'DOCUMENTO', 'NRC', 'NIT', 'PROVEEDOR',
-                 'GRAVADAS', 'CREDITO FISCAL', 'TOTAL', 'CUENTA', 'MOTIVO', 'CLASIFICACION'],
+                 'GRAVADAS', 'CREDITO FISCAL', 'TOTAL', 'CUENTA', 'REPETIDO',
+                 'MOTIVO', 'CLASIFICACION'],
                 [
                     ...filas.map(r => [
                         fmtFecha(r.fecha), r.documento_tipo || '', r.documento_completo || '',
                         r.nrc || '', r.nit || '', r.proveedor || '',
                         num(r.compras_gravadas), num(r.credito_fiscal), num(r.total),
                         r.computa_credito ? 'SI' : 'NO',
+                        Number(r.veces_en_el_libro || 1) > 1 ? `SI x${r.veces_en_el_libro}` : '',
                         r.motivo || '', r.clasificacion || '',
                     ]),
                     ['TOTALES', '', '', '', '', '', '',
-                     num(totDecl.credito), '', '', '', ''],
+                     num(totDecl.credito), '', '', '', '', ''],
                 ],
                 `libro-compras-declarable_${desde.slice(0, 7)}.csv`,
             );
             useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_DECLARABLE_EXPORT', mes, {
                 documentos: totDecl.docs, credito_fiscal: totDecl.credito,
                 sin_contar: totDecl.sinCuenta,
+                documentos_repetidos: Math.round(totDecl.repDocs),
+                credito_repetido: totDecl.repCredito,
             });
             return;
         }
@@ -475,6 +507,28 @@ export default function LibroComprasCompletoView({ openModal }) {
                     </Notice>
                 )}
 
+                {/* El documento que entró dos veces. Va ARRIBA de los motivos y
+                    en rojo porque es el único aviso de esta pantalla que dice
+                    que hay crédito fiscal de MÁS: los otros dicen que falta.
+                    Un renglón repetido no es un detalle de forma —el Art. 141
+                    lit. b) CT manda anotar cada comprobante «en forma separada e
+                    individualizada»— y encima deduce dos veces el mismo IVA. */}
+                {esDecl && !loading && totDecl.repRenglones > 0 && (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <b>{Math.round(totDecl.repDocs)}</b> documento(s) están registrados más
+                        de una vez — <b>{totDecl.repRenglones}</b> renglón(es) del libro.
+                        {/* El monto sólo si lo hay: un documento repetido que no
+                            computaba crédito igual está mal anotado, pero decir
+                            «$0.00 de crédito repetido» sería ruido. */}
+                        {canVerMontos && totDecl.repCredito > 0 && <> Se está
+                        contando <b>{formatMoney(totDecl.repCredito)}</b> de crédito fiscal repetido.</>}
+                        {' '}Van marcados <b>«Repetido»</b> en la tabla y en el CSV. Dejá
+                        <b> uno solo</b> antes de declarar: una factura que trae productos de dos
+                        salas se registra <b>completa una vez</b> y lo que es de la otra se
+                        traslada por inventario.
+                    </Notice>
+                )}
+
                 {/* Los motivos, agregados. Un `title` por fila no alcanza: sin
                     esto habría que pasar el mouse por 300 filas para saber qué
                     quedó afuera y por qué. */}
@@ -525,6 +579,16 @@ export default function LibroComprasCompletoView({ openModal }) {
                                         : r.documento_tipo === 'NOTA DE DÉBITO' ? 'N. débito'
                                         : r.documento_tipo}
                                 </Badge>
+                                {/* Va acá y no en «Documento», que se esconde
+                                    bajo `lg`: la marca que dice «este crédito
+                                    está contado dos veces» no puede depender del
+                                    ancho de la pantalla. */}
+                                {Number(r.veces_en_el_libro || 1) > 1 && (
+                                    <Badge variant="danger" size="sm"
+                                        title="Este mismo documento está en más de un renglón del libro: su crédito fiscal se está contando repetido.">
+                                        Repetido ×{r.veces_en_el_libro}
+                                    </Badge>
+                                )}
                             </DataCell>
                             <DataCell className="max-w-[15rem]" hideBelow="lg">
                                 <span className="font-mono text-micro break-all">{r.documento_completo || '—'}</span>

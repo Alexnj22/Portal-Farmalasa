@@ -639,11 +639,35 @@ capa a 6.
 color. `bg-surface-card` está bien para lo que NO es una tarjeta —el relleno de
 un envoltorio de input, un chip— y para eso existe.
 
-**Esto no lo puede vigilar un gate.** Se probaron dos señales: `bg-surface-card`
-+ borde + radio da **133** coincidencias en el repo y `hover:translate-y-[var(--lift-*)]`
-a mano da **78**, casi todas legítimas (envoltorios de campo con alto fijo). Un
-detector con esa tasa de falsos positivos se silencia a la semana. Queda escrito
-acá y en la memoria, que es donde sí se sostiene.
+**Esto SÍ lo vigila un gate, desde el 2026-08-16 — y la historia de por qué
+tardó es la lección.** El texto que estaba acá decía que no se podía: la terna
+`bg-surface-card` + borde + radio da **133** coincidencias, casi todas legítimas
+(envoltorios de campo con alto fijo), y un detector con esa tasa de falsos
+positivos se silencia a la semana. La conclusión era correcta sobre la señal
+probada y **equivocada sobre el problema**: lo que descarta a un envoltorio de
+campo no es el padding, es el **tamaño fijo**.
+
+La categoría `tarjeta-a-mano` existía desde julio y estaba en **0**. Un censo a
+mano en agosto encontró **81 sitios vivos**. El cero era del instrumento, y
+sus tres condiciones fallidas valen para cualquier detector que se escriba:
+
+| condición vieja | cuántas dejaba pasar | por qué |
+|---|---|---|
+| «tiene padding generoso» | **63 de 81** | una tarjeta CONTENEDORA no lleva padding — lo llevan sus hijos |
+| sólo `rounded-2xl/3xl` | 35 | `rounded-xl` también es una tarjeta a mano |
+| sólo `<div>` | 16 | las otras son `button`, `label`, `motion.div`, `a`, `p` |
+
+Más un punto ciego por debajo: el `className` se leía con
+`/className=[{`"]+([^`"}]*)/`, que **corta en la primera `}`** — o sea que toda
+clase escrita dentro de un `${cond ? … : …}` era invisible (19 de las 81). Lo
+resuelve `classNameDeTag()`, que lee el valor completo y sólo el del nivel 0 del
+tag.
+
+Entró por ratchet con **66** —deuda vieja, no nueva— y baja archivo por archivo.
+
+> **La moraleja, que es de método:** cuando un detector no encuentra nada,
+> antes de creerle hay que contar a mano una vez. Un gate verde prueba su
+> detector, no la ausencia del defecto.
 
 ### 5.1 `data-tono` — la tarjeta marcada por su estado (2026-07-28)
 

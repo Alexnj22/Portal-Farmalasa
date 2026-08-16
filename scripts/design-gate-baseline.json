@@ -1,5 +1,8 @@
 {
   "_comment": "Ratchet del gate de diseño. El gate falla si una categoría SUBE respecto a estos números. Cada fase del plan (docs/planes-cerrados/AUDITORIA-DISENO-2026-07-26.md) baja los suyos; al llegar a 0 la categoría queda bloqueante. Regenerar solo al BAJAR deuda: npm run gate:design -- --update-baseline",
-  "updated": "2026-08-06",
-  "categories": {}
+  "updated": "2026-08-16",
+  "_tarjeta-a-mano": "66 NO es deuda nueva: es deuda VIEJA que el detector no veía. La categoría llegó a 0 en julio y siguió en verde mientras un censo a mano encontraba 81 sitios vivos — el cero era del instrumento. El 2026-08-16 se ensanchó (lee el className completo con sus condicionales, acepta rounded-xl, mira más que <div>, y cambia «tiene padding» por «no tiene tamaño fijo»: una tarjeta CONTENEDORA no lleva padding, lo llevan sus hijos). Entra por ratchet y no bloqueante en cero, igual que carril-pildora el 2026-08-05, porque nace con deuda preexistente. Se baja archivo por archivo y NO se regenera para tapar un hallazgo nuevo: si sube, es código nuevo. Las 10 de FacturacionView ya se cerraron en la misma sesión.",
+  "categories": {
+    "tarjeta-a-mano": 66
+  }
 }

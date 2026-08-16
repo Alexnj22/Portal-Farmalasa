@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.632.0 — El gate ve las tarjetas a mano que no veía, y Facturación cierra las suyas
+
+**Pregunta del usuario, después de arreglar las tarjetas de Facturación:
+«¿por qué aún hay, después de varias auditorías de diseño y con el canónico
+hecho?».** La respuesta resultó ser que el verificador automático llevaba tres
+semanas dando el visto bueno sobre algo que no sabía mirar.
+
+Había una comprobación llamada «tarjeta a mano» y marcaba **cero**. Un conteo a
+mano encontró **81 sitios** donde una tarjeta está dibujada copiando los colores
+del componente estándar en vez de usarlo. El cero era del instrumento, y sus
+tres puntos ciegos se explican solos:
+
+- exigía que la tarjeta tuviera **relleno propio**, y una tarjeta que contiene
+  cosas no lo tiene — el relleno lo ponen sus hijos. Eso solo dejaba pasar **63
+  de 81**;
+- aceptaba una sola familia de esquinas redondeadas, y dejaba pasar 35;
+- miraba un solo tipo de elemento, y dejaba pasar 16.
+
+Más uno por debajo: leía la lista de estilos **cortada en el primer condicional**,
+así que cualquier estilo escrito dentro de un «si pasa esto, tal color» era
+invisible — 19 de los 81.
+
+Corregido: ahora lee la lista completa, acepta las dos familias de esquinas,
+mira todos los elementos, y cambia «tiene relleno» por «no tiene tamaño fijo»,
+que es lo que de verdad distingue una tarjeta de la cajita de un campo o de un
+ícono.
+
+**Se comprobó que la comprobación muerde.** Se inyectaron a propósito dos
+tarjetas mal escritas, de las dos formas que antes pasaban desapercibidas: el
+gate falló con `68 / 66`. Un verificador nuevo que no se prueba contra un error
+fabricado es otro visto bueno sin respaldo.
+
+Los 66 restantes entran como deuda tolerada y anotada, con su motivo escrito
+adentro para que nadie los confunda con deuda nueva: bajan archivo por archivo y
+el número no puede volver a subir.
+
+**Y Facturación cerró los suyos:** los diez contenedores de las pestañas
+Anuladas, Saltos, No Efectivo y Observaciones —y el panel de historial de
+Pendiente MH, que se me había quedado— pasan al componente estándar. Verificado
+en las cuatro pestañas: ninguna quedó sin fondo, que es como se vería una que no
+resolvió.
+
 ## v2.631.0 — La cola de Hacienda se lee de un vistazo y el número del historial es el real
 
 Cinco correcciones sobre la pestaña Pendiente MH, todas señaladas por el usuario.

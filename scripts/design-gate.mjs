@@ -528,6 +528,61 @@ function tagQueContiene(txt, pos) {
 }
 
 /**
+ * El valor COMPLETO del `className` de un tag, interpolaciones incluidas.
+ *
+ * Existe porque `tag.match(/className=[{`"]+([^`"}]*)/)` —lo que usaban los
+ * detectores— **corta en la primera `}`**. O sea que de
+ * `className={\`base ${activo ? 'bg-surface-card border' : ''}\`}` sólo leía
+ * `base `, y toda clase escrita dentro de un condicional era invisible. Medido
+ * el 2026-08-16 sobre las tarjetas a mano: 19 de 81 tenían sus clases ahí.
+ * Es el mismo defecto que [[feedback_el_gate_de_diseno_no_ve_el_estilo_guardado_en_una_constante]],
+ * un nivel más abajo.
+ *
+ * Y lee sólo el `className` del **nivel 0** del tag: `action={<Button
+ * className="…"/>}` mete el de OTRO componente en el mismo texto, que es la
+ * trampa que costó una vuelta en `prop-inexistente` (150 «hallazgos» que eran 31).
+ */
+function classNameDeTag(tag) {
+  let i = 0, llaves = 0, comilla = null;
+  while (i < tag.length) {
+    const c = tag[i];
+    if (comilla) {
+      if (c === '\\') { i += 2; continue; }
+      if (c === comilla) comilla = null;
+      i++; continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { comilla = c; i++; continue; }
+    if (c === '{') { llaves++; i++; continue; }
+    if (c === '}') { llaves--; i++; continue; }
+    if (llaves === 0 && tag.startsWith('className', i) && /[\s=]/.test(tag[i + 9] ?? '')) {
+      const eq = tag.indexOf('=', i);
+      if (eq < 0) return null;
+      let j = eq + 1;
+      while (/\s/.test(tag[j] ?? '')) j++;
+      if (tag[j] === '"' || tag[j] === "'") {
+        const fin = tag.indexOf(tag[j], j + 1);
+        return fin < 0 ? null : tag.slice(j + 1, fin);
+      }
+      if (tag[j] === '{') {
+        let k = j + 1, prof = 1, q = null;
+        while (k < tag.length && prof > 0) {
+          const ch = tag[k];
+          if (q) { if (ch === '\\') { k += 2; continue; } if (ch === q) q = null; }
+          else if (ch === '"' || ch === "'" || ch === '`') q = ch;
+          else if (ch === '{') prof++;
+          else if (ch === '}') prof--;
+          k++;
+        }
+        return tag.slice(j + 1, k - 1);
+      }
+      return null;
+    }
+    i++;
+  }
+  return null;
+}
+
+/**
  * Todos los `<Nombre …>` de un archivo, como pares [inicio, fin).
  *
  * Hermano de `tagQueContiene`, que resuelve UNO desde una posición conocida;
@@ -1697,27 +1752,65 @@ function scanFile(path) {
     // por tema —en Solid las tarjetas son más tensas—, y el `backdrop-filter`
     // queda escrito aunque Solid prometa cero blur.
     //
-    // Exige las cuatro señales juntas y descarta las cajas de ícono
-    // (`w-10 h-10`) para no marcar píldoras ni avatares. No mira las
-    // superficies bespoke: sidebar, kiosco y login (DESIGN.md §25.4).
+    // No mira las superficies bespoke: sidebar, kiosco y login (§25.4).
+    //
+    // ── Ensanchado el 2026-08-16, porque el CERO era del detector ────────
+    // La categoría llegó a 0 en julio (184 → 31 → 0) y siguió en verde
+    // mientras un censo a mano encontraba **81 sitios vivos**. Tres de las
+    // cinco condiciones viejas dejaban pasar casi todo, y son de manual:
+    //
+    //   · «tiene padding generoso» descartaba **63 de 81**. Una tarjeta
+    //     CONTENEDORA no lleva padding: lo llevan sus hijos. El envoltorio de
+    //     sucursal de Facturación era `rounded-2xl border bg-surface-card
+    //     shadow-sm` a secas y por eso nunca se marcó. La forma más común de
+    //     una tarjeta era justo la que la condición excluía.
+    //   · aceptar sólo `rounded-2xl/3xl` dejaba pasar **35**: `rounded-xl`
+    //     también es una tarjeta escrita a mano, sólo que con otro número.
+    //   · leer únicamente `<div>` dejaba pasar **16**, que son `button`,
+    //     `label`, `motion.div`, `a` y `p`.
+    //
+    // Y por debajo de las tres, el `className` se leía truncado en la primera
+    // `}` — ver `classNameDeTag`.
+    //
+    // Lo que reemplaza a «tiene padding» es «no tiene TAMAÑO FIJO», que es lo
+    // que de verdad separa una tarjeta de un envoltorio de campo (`h-[40px]`)
+    // o una caja de ícono (`w-10 h-10`). Medido sobre los 147 sitios crudos:
+    // 61 son eso y se descartan por esa señal sola.
     if (!/timeclock\/|LoginView|AppLayout/.test(path)) {
-      const RE_DIV = /<div\b(?:(?!>).)*?>/gs;
-      let md;
-      while ((md = RE_DIV.exec(sinComentarios2))) {
-        const tag = md[0];
+      // Un contenedor, no una hoja: `input`, `img` y `svg` no pueden ser una
+      // tarjeta ni aunque lleven las clases.
+      const HOJAS = new Set(['input', 'img', 'svg', 'br', 'hr', 'path', 'circle', 'rect', 'textarea']);
+      const RE_CN = /className\s*=/g;
+      let mc2;
+      const yaVistos = new Set();
+      while ((mc2 = RE_CN.exec(sinComentarios2))) {
+        const t = tagQueContiene(sinComentarios2, mc2.index);
+        if (!t || yaVistos.has(t.ini)) continue;
+        yaVistos.add(t.ini);
+        const tag = t.texto;
         if (tag.includes('data-surface')) continue;
-        const mc = tag.match(/className=[{`"]+([^`"}]*)/);
-        if (!mc) continue;
-        const c = mc[1];
+        // Sólo etiquetas del DOM (y `motion.*`). Un componente en mayúscula
+        // recibe `className` y decide él qué hacer con ella — puede estar
+        // reenviándola a su propio canónico.
+        const nombre = (tag.match(/^<([A-Za-z][\w.]*)/) || [, ''])[1];
+        if (!/^[a-z]/.test(nombre)) continue;
+        if (HOJAS.has(nombre)) continue;
+
+        const c = classNameDeTag(tag);
+        if (!c) continue;
         // `\b` después de "card" también matchea `bg-surface-card-hover`, que es
         // OTRO token (la superficie de realce, no la de tarjeta). Se vio al
         // migrar el pie de RolesView y marcaba como tarjeta algo que no lo es.
         if (!/bg-surface-card(?!-)/.test(c)) continue;
-        if (!/\bborder\b|border-(divider|border-card)/.test(c)) continue;
-        if (!/rounded-(2xl|3xl|card|modal|header)/.test(c)) continue;
-        if (!/\bp-[3-9]|\bp-1[0-9]|\bpx-[4-9]|\bpy-[3-9]/.test(c)) continue;
-        if (/\bw-\d{1,2}\b|\bh-\d{1,2}\b/.test(c)) continue;
-        const linea = sinComentarios2.slice(0, md.index).split('\n').length;
+        if (!/\bborder\b|border-(divider|border-card|\[)/.test(c)) continue;
+        if (!/rounded-(xl|2xl|3xl|card|modal|header)/.test(c)) continue;
+        // Tamaño fijo → envoltorio de campo o caja de ícono, no una tarjeta.
+        if (/\b[wh]-\[|\b[wh]-\d{1,2}\b|\bsize-\d/.test(c)) continue;
+        // Tinta y capas flotantes: un chip en línea, un tooltip o un popover
+        // no son superficies de tarjeta (DESIGN.md §5.bis «lo que NO es material»).
+        if (/\binline-flex\b|\babsolute\b|\bfixed\b|focus-within:|\bw-max\b/.test(c)) continue;
+
+        const linea = sinComentarios2.slice(0, t.ini).split('\n').length;
         findings.push({ line: linea, label: 'tarjeta a mano — usar `data-surface="card"` (DESIGN.md §5)',
           category: 'tarjeta-a-mano', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
       }

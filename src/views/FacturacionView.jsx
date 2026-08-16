@@ -707,7 +707,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
             {loading ? (
                 <div className="space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="rounded-2xl border border-divider bg-surface-card shadow-sm overflow-hidden">
+                        <div key={i} data-surface="card" className="overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
                                 <div className="h-3 w-28 skeleton rounded-full" />
                                 <div className="h-3 w-12 skeleton rounded-full" />
@@ -739,7 +739,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                         const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
                         const isCollapsed = !!collapsedBranches[branchId];
                         return (
-                            <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
+                            <div key={branchId} data-surface="card">
                                 <ListRow
                                     density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
                                     tone={branchHasCCF ? 'danger' : null}
@@ -842,7 +842,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
 
             {/* Historial */}
             {!loading && resolved.length > 0 && (
-                <div ref={resolvedSectionRef} className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
+                <div ref={resolvedSectionRef} data-surface="card" className="overflow-hidden">
                     <ListRow
                         icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
                         title={`${showAllResolved ? resolved.length : resolvedThisMonth.length} solventada${resolved.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
@@ -1470,7 +1470,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
             {/* Historial solventados */}
             {!loading && resolved.length > 0 && (
-                <div ref={resolvedSectionRef} className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
+                <div ref={resolvedSectionRef} data-surface="card" className="overflow-hidden">
                     <ListRow
                         icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
                         // El número del mes es el del SERVIDOR; el de la lista, lo
@@ -1727,7 +1727,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                             const isCollapsed = !!collapsedGapBranches[branchId];
                             const hasCCF = branchGaps.some(g => g.tipo_documento === 'CCF');
                             return (
-                                <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
+                                <div key={branchId} data-surface="card">
                                     <ListRow
                                         density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={hasCCF ? 'text-danger' : 'text-content-3'}
                                         tone={hasCCF ? 'danger' : null}
@@ -1821,7 +1821,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
                         {Object.entries(nullsByBranch).map(([branchId, branchNulls]) => {
                             const isCollapsed = !!collapsedNullBranches[branchId];
                             return (
-                                <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
+                                <div key={branchId} data-surface="card">
                                     <ListRow
                                         density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={'text-content-3'}
                                         title={getBranch(Number(branchId))}
@@ -1914,7 +1914,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros 
 
             {/* ── Historial solventados ── */}
             {resolvedGaps.length > 0 && (
-                <div ref={resolvedSectionRef} className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
+                <div ref={resolvedSectionRef} data-surface="card" className="overflow-hidden">
                     <ListRow
                         icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
                         title={`${showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto${resolvedGaps.length !== 1 ? 's' : ''} solventado${resolvedGaps.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
@@ -2664,7 +2664,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
             {loading ? (
                 <div className="space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="rounded-2xl border border-divider bg-surface-card shadow-sm overflow-hidden">
+                        <div key={i} data-surface="card" className="overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
                                 <div className="h-3 w-28 skeleton rounded-full" />
                                 <div className="h-3 w-12 skeleton rounded-full" />
@@ -2697,7 +2697,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                         const branchHasCCF = docs.some(r => r.tipo_documento === 'CCF');
                         const isCollapsed  = !!collapsedBranches[branchId];
                         return (
-                            <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
+                            <div key={branchId} data-surface="card">
                                 <ListRow
                                     density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent"
                                     iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
@@ -2849,7 +2849,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                 arriba, así que sin esta sección desaparecería sin dejar rastro
                 visible — y la observación sigue existiendo en la factura. */}
             {!loading && resueltas.length > 0 && (
-                <div className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
+                <div data-surface="card" className="overflow-hidden">
                     <ListRow
                         icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
                         title={`${resueltas.length} solventada${resueltas.length !== 1 ? 's' : ''}`}

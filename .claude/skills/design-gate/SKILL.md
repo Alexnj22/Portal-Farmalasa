@@ -1,6 +1,6 @@
 ---
 name: design-gate
-description: Historia y reglas de operación de `npm run gate:design` — cómo funciona el ratchet contra `scripts/design-gate-baseline.json`, por qué hoy el baseline está VACÍO (las 47 categorías en cero y bloqueantes desde el 2026-08-06), cómo se bajaron los 168 hallazgos que tenía, por qué cinco de ellos eran excepciones medidas mal clasificadas como deuda, la trampa de claves duplicadas en `EXCEPTIONS`, y cuándo se regenera el baseline. Cargar al trabajar en tema, estandarización visual, colores crudos, elementos nativos del navegador, o al tocar `scripts/design-gate.mjs` / el baseline.
+description: Historia y reglas de operación de `npm run gate:design` — cómo funciona el ratchet contra `scripts/design-gate-baseline.json`, por qué hoy la única categoría con número es `tarjeta-a-mano` (66, deuda VIEJA que el detector no veía hasta que se ensanchó el 2026-08-16) y las demás están en cero y bloqueantes, cómo se bajaron los 168 hallazgos de agosto, por qué cinco de ellos eran excepciones medidas mal clasificadas como deuda, la trampa de claves duplicadas en `EXCEPTIONS`, por qué un detector tiene que leer el `className` completo y no sólo hasta la primera `}`, y cuándo se regenera el baseline. Cargar al trabajar en tema, estandarización visual, colores crudos, elementos nativos del navegador, o al tocar `scripts/design-gate.mjs` / el baseline.
 ---
 
 # Gate de diseño — cómo opera y por qué
@@ -21,6 +21,12 @@ tenerla en rojo. Un gate permanentemente rojo no lo mira nadie — que es
 exactamente cómo se acumuló esta deuda.
 
 ## Estado actual
+
+**2026-08-16 — el baseline tiene UNA categoría: `tarjeta-a-mano` en 66.** No es
+deuda nueva: es deuda vieja que el detector no veía. Las otras 46 siguen en cero
+y bloqueantes. Detalle abajo, en «`tarjeta-a-mano` ensanchada».
+
+---
 
 **Estado al cierre del 2026-08-06 — el baseline VOLVIÓ A ESTAR VACÍO.**
 
@@ -176,6 +182,46 @@ Dos cosas que costaron una vuelta:
    de los 24 scrollers del tablero, en una sesión real scrolleaban 5. La
    comprobación fue `getComputedStyle(el).overscrollBehaviorY` sobre los
    elementos que efectivamente tenían `scrollHeight > clientHeight`.
+
+## `tarjeta-a-mano` ensanchada (2026-08-16) — el cero era del detector
+
+La categoría llegó a **0 el 2026-07-28** (184 → 31 → 0) y quedó bloqueante. En
+agosto, arreglando una vista, el usuario preguntó si las tarjetas eran canónicas
+—no lo eran— y después: *«¿por qué aún hay, después de varias auditorías?»*. Un
+censo a mano encontró **81 sitios vivos** con el gate en verde.
+
+**El cero era del instrumento.** Las tres condiciones que lo causaban:
+
+| condición vieja | dejaba pasar | por qué |
+|---|---|---|
+| `\bp-[3-9]\|px-[4-9]\|py-[3-9]` — «tiene padding» | **63 de 81** | una tarjeta CONTENEDORA no lleva padding: lo llevan sus hijos |
+| `rounded-(2xl\|3xl\|card\|modal\|header)` | 35 | `rounded-xl` también es una tarjeta a mano |
+| `RE_DIV = /<div\b…/` | 16 | las demás son `button`, `label`, `motion.div`, `a`, `p` |
+
+Y por debajo de las tres, el mismo defecto que ya tenía nombre: el `className`
+se leía con `/className=[{`"]+([^`"}]*)/`, que **corta en la primera `}`**. Toda
+clase dentro de un `${cond ? … : …}` era invisible — **19 de las 81**. Lo
+arregla `classNameDeTag()`, que lee el valor completo y **sólo el del nivel 0**
+del tag (leer el tag entero traería el `className` de un `<Button>` anidado en
+un prop: la trampa que costó una vuelta en `prop-inexistente`).
+
+**Qué reemplazó al padding:** «no tiene TAMAÑO FIJO». Es lo que de verdad separa
+una tarjeta de un envoltorio de campo (`h-[40px]`) o una caja de ícono
+(`w-10 h-10`) — 61 de los 147 sitios crudos son eso. Más el descarte de tinta y
+capas flotantes (`inline-flex`, `absolute/fixed`, `focus-within:`, `w-max`).
+
+**Entró por ratchet con 66, no bloqueante en cero**, con el mismo criterio que
+`carril-pildora` el 2026-08-05: nace con deuda **preexistente**, así que
+tolerarla por número es lo correcto — lo prohibido es regenerar para tapar un
+hallazgo NUEVO. El motivo va escrito en el propio baseline (`_tarjeta-a-mano`)
+para que nadie lo lea como deuda nueva. Las 10 de `FacturacionView` se cerraron
+en la misma sesión.
+
+**Se verificó que el ratchet muerde**, que es la parte que suele faltar:
+inyectando dos tarjetas a mano de las formas que el detector viejo NO veía
+(`rounded-xl` sin padding en un `<div>`, y clases dentro de un condicional sobre
+un `<button>`) el gate pasó a `68 / 66 SUBIÓ +2` y falló. Un detector nuevo que
+no se prueba contra una regresión fabricada es otro verde sin respaldo.
 
 ## Regenerar el baseline
 

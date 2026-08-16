@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale } from 'lucide-react';
+import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale, Landmark } from 'lucide-react';
+import { guardarCondicionesProveedor } from '../../data/cuentasPorPagar';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier, setProveedorClasificacionFiscal } from '../../data/proveedores';
@@ -92,6 +93,14 @@ function FiscalRow({ icon: Icon, label, value }) {
     );
 }
 
+// Las mismas cuatro que acepta la base (`proveedores_maestro_forma_pago_check`).
+const FORMAS_PAGO = [
+    { value: 'cheque',        label: 'Cheque'        },
+    { value: 'transferencia', label: 'Transferencia' },
+    { value: 'efectivo',      label: 'Efectivo'      },
+    { value: 'otro',          label: 'Otro'          },
+];
+
 const FormProveedorDetail = ({ formData, onClose }) => {
     const navigate = useNavigate();
     const [form, setForm] = useState({
@@ -106,6 +115,32 @@ const FormProveedorDetail = ({ formData, onClose }) => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // ── Condiciones de crédito ────────────────────────────────────────────
+    // Estado y botón propios, como la clasificación fiscal: es otro acto y lo
+    // guarda otra función. `proveedores_maestro` no tiene policy de UPDATE, así
+    // que va por RPC — un `.update()` devolvería cero filas sin error.
+    const [credito, setCredito] = useState({
+        dias:   formData?.dias_credito   ?? '',
+        limite: formData?.limite_credito ?? '',
+        forma:  formData?.forma_pago     ?? '',
+    });
+    const [savingCredito, setSavingCredito] = useState(false);
+    const [creditoError, setCreditoError] = useState('');
+
+    const guardarCredito = async () => {
+        setSavingCredito(true); setCreditoError('');
+        const { error: e } = await guardarCondicionesProveedor(formData.id, {
+            diasCredito: credito.dias, limiteCredito: credito.limite, formaPago: credito.forma,
+        });
+        setSavingCredito(false);
+        if (e) { setCreditoError(e); return; }
+        useStaffStore.getState().appendAuditLog('PROVEEDOR_CONDICIONES_CREDITO', String(formData.id), {
+            nombre: formData.nombre, ...credito,
+        });
+        useToastStore.getState().showToast('Guardado', 'Condiciones de crédito actualizadas.', 'success');
+        formData?.onSaved?.();
+    };
 
     // Categoría y match ERP guardan de inmediato al cambiar (mismo patrón que
     // tenían antes en la tabla de ProveedoresView — ahora viven solo acá,
@@ -440,6 +475,58 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                                 {savingFiscal
                                     ? <><Loader2 size={16} className="animate-spin" /> Guardando…</>
                                     : <><Check size={15} strokeWidth={2.5} /> Confirmar clasificación</>}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Condiciones de crédito — lo que decide si podemos comprarle.
+                Va acá, en su ficha, porque es un dato del proveedor; Cuentas
+                por pagar ofrece los mismos campos como atajo para no obligar a
+                cambiar de pantalla en medio de un pago. */}
+            <div className="space-y-3">
+                <SectionHeader icon={Landmark}>Condiciones de Crédito</SectionHeader>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <PortalInput
+                        name="dias_credito"
+                        label="Días de crédito"
+                        type="number"
+                        title="El plazo es el mismo en todas las facturas de un proveedor: se llena una vez"
+                        placeholder="30"
+                        value={credito.dias}
+                        readOnly={!canEdit}
+                        onChange={e => setCredito(p => ({ ...p, dias: e.target.value }))}
+                    />
+                    <PortalInput
+                        name="limite_credito"
+                        label="Límite de crédito"
+                        type="number"
+                        title="Lo que queda de este techo es lo que contesta «¿podemos comprarle?»"
+                        placeholder="Sin límite"
+                        value={credito.limite}
+                        readOnly={!canEdit}
+                        onChange={e => setCredito(p => ({ ...p, limite: e.target.value }))}
+                    />
+                    <div>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                            Forma de pago
+                        </label>
+                        <LiquidSelect
+                            value={credito.forma}
+                            onChange={(v) => setCredito(p => ({ ...p, forma: v || '' }))}
+                            options={FORMAS_PAGO}
+                            disabled={!canEdit}
+                            placeholder="Sin definir"
+                        />
+                    </div>
+                    {creditoError && <div className="sm:col-span-3 text-label text-danger-text px-1">{creditoError}</div>}
+                    {canEdit && (
+                        <div className="sm:col-span-3">
+                            <Button variant="secondary" disabled={savingCredito} onClick={guardarCredito}>
+                                {savingCredito
+                                    ? <><Loader2 size={16} className="animate-spin" /> Guardando…</>
+                                    : <><Check size={15} strokeWidth={2.5} /> Guardar condiciones</>}
                             </Button>
                         </div>
                     )}

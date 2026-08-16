@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.641.1 — Las condiciones de crédito se guardan de verdad
+
+Defecto encontrado al preguntar «¿dónde se ponen los límites de crédito?».
+`proveedores_maestro` **no tiene policy de UPDATE** —sólo de SELECT—, así que el
+botón «Guardar condiciones» que salió con Cuentas por pagar habría devuelto
+**cero filas y ningún error**: diría «guardado» sin guardar nada. Por eso toda
+esa tabla se escribe por funciones; ésta ahora también
+(`set_proveedor_condiciones_credito`).
+
+Y el segundo lado del mismo problema: `get_proveedores_maestro` lista sus
+columnas una por una, así que los tres campos nuevos **no salían**. La ficha los
+mostraba vacíos aunque estuvieran puestos, y guardar encima los habría borrado.
+
+**Dónde se ponen ahora**: en la ficha del proveedor (Compras → Proveedores →
+abrir uno → «Condiciones de Crédito»), que es donde vive un dato del proveedor.
+Cuentas por pagar ofrece los mismos tres campos como atajo, para no obligar a
+cambiar de pantalla en medio de un pago.
+
 ## v2.641.0 — Cuentas por pagar: cuánto le debemos a cada proveedor y si podemos comprarle
 
 Módulo nuevo, pedido por Compras y Logística: **cuánto debemos, qué está

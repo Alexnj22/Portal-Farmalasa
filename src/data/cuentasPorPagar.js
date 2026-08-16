@@ -91,13 +91,15 @@ export async function anularPago(pagoId, motivo) {
  * 39% de las facturas).
  */
 export async function guardarCondicionesProveedor(proveedorId, { diasCredito, limiteCredito, formaPago }) {
-    const { error } = await supabase
-        .from('proveedores_maestro')
-        .update({
-            dias_credito:   diasCredito   === '' || diasCredito   == null ? null : Number(diasCredito),
-            limite_credito: limiteCredito === '' || limiteCredito == null ? null : Number(limiteCredito),
-            forma_pago:     formaPago || null,
-        })
-        .eq('id', proveedorId);
+    // Por RPC y no por `.update()`: `proveedores_maestro` **no tiene policy de
+    // UPDATE**, sólo de SELECT. Un update directo devuelve cero filas y ningún
+    // error — el botón diría «guardado» sin haber guardado nada. Es la misma
+    // razón por la que el resto de esa tabla también se escribe por funciones.
+    const { error } = await supabase.rpc('set_proveedor_condiciones_credito', {
+        p_id: Number(proveedorId),
+        p_dias_credito:   diasCredito   === '' || diasCredito   == null ? null : Number(diasCredito),
+        p_limite_credito: limiteCredito === '' || limiteCredito == null ? null : Number(limiteCredito),
+        p_forma_pago:     formaPago || null,
+    });
     return { error: error?.message ?? null };
 }

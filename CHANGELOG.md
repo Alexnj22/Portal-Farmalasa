@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.638.0 — El login sólo pide escanear si hay lector, y el carné tecleado a mano ya no abre sesión
+
+Cinco correcciones sobre v2.637.0, todas reportadas por el usuario.
+
+- **Escribir un código y pulsar Enter abría la sesión de esa persona.** El
+  login tomaba por escaneo cualquier cosa tecleada con la pantalla enfocada que
+  terminara en Enter — y el carné es la contraseña, con códigos de 3 a 5
+  dígitos que un compañero se puede saber de memoria. Ahora se exige velocidad
+  de lector (la misma medida con la que el kiosco rechaza el tecleo manual
+  desde siempre); escrito a mano avisa que el carné se lee con el lector y no
+  valida nada. Anclado en `tests/e2e/login-lector.spec.js`.
+- **Si no hay lector, el login ya no pide escanear.** Un lector de carné se
+  presenta como un teclado más, así que no hay forma de preguntarle al
+  navegador si está conectado; lo que sí se sabe es si este equipo está
+  vinculado como kiosco (por definición tiene lector) o si alguna vez se
+  escaneó acá. Sin ninguna de las dos, no hay cartel de «lector activo» ni
+  cuenta regresiva: el foco va derecho al usuario. La captura del lector sigue
+  encendida igual — el primer escaneo entra sin más y es el que enciende el
+  cartel para las próximas veces.
+- **En teléfono, sólo usuario y contraseña.** Nadie escanea un carné con el
+  teléfono del portal, y el terminal de kiosco ya estaba oculto ahí. En un
+  equipo de escritorio sin lector pero con cámara queda el botón de la cámara,
+  sin el cartel del lector.
+- **El botón de salir del kiosco era una barra de lado a lado.** Estaba suelto
+  dentro de un contenedor en columna, así que se estiraba a todo el ancho y
+  quedaba pegado al borde de arriba. Va anclado arriba a la derecha, con su
+  tamaño, y por debajo de los modales.
+- **El autocompletado pintaba dos barras amarillas en modo oscuro** —relleno
+  del navegador, con el texto negro y el placeholder ilegible encima—. Ahora
+  toma el color del tema.
+- **Y lo que impedía entrar:** el bloqueo de pegado se llevaba puesto al gestor
+  de contraseñas, que rellena con eventos sintéticos; el campo de contraseña
+  quedaba vacío y el login devolvía error. Hoy sólo se bloquea el pegado de una
+  persona (`isTrusted`), y por la misma razón el detector de ráfagas ignora las
+  teclas sintéticas: un gestor que rellena tecleando ya no pierde el texto. Las
+  tres cosas quedaron con prueba, incluido un control positivo del portapapeles
+  — sin él, un portapapeles vacío haría pasar la prueba sin probar nada.
+
 ## v2.637.1 — El editor de acomodo se lee sobre cualquier tablero
 
 Reportado con captura: *«no se distingue bien, no se logra leer»*. El editor de

@@ -43,6 +43,43 @@ const RAFAGA_MIN_TECLAS = 3;
 // la credencial que este bloque evita.
 const RAFAGA_ESPERA_ENTER_MS = 400;
 
+/* ── ¿Este equipo tiene lector? ──────────────────────────────────────────
+   No hay forma de preguntárselo al navegador: un lector de carné se presenta
+   como un teclado más, sin marca ni identidad (WebHID pediría permiso
+   explícito y no lo dan las tablets). Lo que sí se puede saber es si ALGUNA
+   VEZ escaneó alguien acá, y si este equipo está vinculado como kiosco — que
+   por definición tiene lector. Con las dos cosas en falso, el login deja de
+   pedir un carné que nadie puede acercar (2026-08-16, a pedido del usuario:
+   «si no hay lector conectado, que no pida escanear»).
+   Ojo: la CAPTURA sigue encendida siempre. Lo que se apaga es la interfaz y
+   la espera de 30s — así el primer escaneo de un equipo nuevo funciona igual
+   y, de paso, es el que enciende el cartel para las próximas veces. */
+const LECTOR_VISTO = 'lector_carne_visto';
+
+const hayLector = () => {
+    if (isMobileOrApp()) return false;          // un teléfono no lleva lector
+    try {
+        if (localStorage.getItem('kiosk_config')) return true;   // terminal de sala
+        return localStorage.getItem(LECTOR_VISTO) === '1';
+    } catch { return false; }                   // localStorage bloqueado
+};
+
+const recordarLector = () => {
+    try { localStorage.setItem(LECTOR_VISTO, '1'); } catch { /* modo privado */ }
+};
+
+/* ── Velocidad: lo único que separa un lector de una persona ─────────────
+   Copia deliberada del umbral de `detectInputMethod`
+   (utils/timeClock.helpers.js), que es con el que el kiosco viene separando
+   ESCANER_INFRARROJO de TECLADO_MANUAL. No se importa de ahí para no arrastrar
+   el módulo de asistencia al chunk del login; el número es el mismo y este
+   comentario es el puente. */
+const esVelocidadDeLector = (tiempos) => {
+    if (!Array.isArray(tiempos) || tiempos.length < RAFAGA_MIN_TECLAS) return false;
+    const total = tiempos[tiempos.length - 1] - tiempos[0];
+    return total / (tiempos.length - 1) < RAFAGA_GAP_MS;
+};
+
 /* ─── Shared styles ─────────────────────────────────────────────────────── */
 
 const inputCls = [
@@ -74,6 +111,10 @@ const keyframeStyles = `
         --lgn-campo:rgba(255,255,255,0.22);
         --lgn-campo-hover:rgba(255,255,255,0.32);
         --lgn-campo-foco:rgba(255,255,255,0.58);
+        /* Opaco: la sombra interior que tapa el amarillo del autocompletado
+           no puede ser translúcida, así que es el color que da el campo ya
+           mezclado sobre la tarjeta. */
+        --lgn-campo-solido:#eeecfb;
         --lgn-linea:rgba(255,255,255,0.60);
         --lgn-boton:rgba(255,255,255,0.18);
         --lgn-boton-hover:rgba(255,255,255,0.38);
@@ -87,12 +128,28 @@ const keyframeStyles = `
         --lgn-campo:rgba(255,255,255,0.07);
         --lgn-campo-hover:rgba(255,255,255,0.11);
         --lgn-campo-foco:rgba(255,255,255,0.17);
+        --lgn-campo-solido:#2a2258;
         --lgn-linea:rgba(255,255,255,0.20);
         --lgn-boton:rgba(255,255,255,0.05);
         --lgn-boton-hover:rgba(255,255,255,0.12);
         --lgn-logo-filo:rgba(255,255,255,0.16);
     }
     @keyframes lgn-logo{0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(110,70,220,0.16),inset 0 2px 0 var(--lgn-logo-filo);}50%{transform:scale(1.04);box-shadow:0 20px 56px rgba(110,70,220,0.28),inset 0 2px 0 var(--lgn-logo-filo);}}
+    /* El relleno amarillo del autocompletado es del navegador y no entiende
+       de temas: en oscuro dejaba dos barras amarillo chillón con el texto
+       negro y el placeholder ilegible encima. Chrome no deja cambiar ese
+       fondo —lo pinta aparte—, pero sí se tapa con una sombra interior del
+       tamaño del campo, que es la receta de siempre. */
+    .lgn-fondo input:-webkit-autofill,
+    .lgn-fondo input:-webkit-autofill:hover,
+    .lgn-fondo input:-webkit-autofill:focus,
+    .lgn-fondo input:-webkit-autofill:active{
+        -webkit-text-fill-color:var(--content);
+        caret-color:var(--content);
+        -webkit-box-shadow:0 0 0 1000px var(--lgn-campo-solido) inset;
+        box-shadow:0 0 0 1000px var(--lgn-campo-solido) inset;
+        transition:background-color 9999s ease-in-out 0s;
+    }
     @keyframes scan-ln{0%{top:10%}50%{top:88%}100%{top:10%}}
     @keyframes scannerReveal{from{opacity:0;transform:scaleY(0.72) translateY(-12px);filter:blur(6px);transform-origin:top center;}to{opacity:1;transform:scaleY(1) translateY(0);filter:blur(0);transform-origin:top center;}}
 `;
@@ -181,9 +238,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [changePassLoading, setChangePassLoading] = useState(false);
     const [mustChangePwd,     setMustChangePwd]     = useState(false);
     const [pendingUserLocal,  setPendingUserLocal]  = useState(null);
-    const [scanHold,          setScanHold]          = useState(true);
     const [scanHoldLeft,      setScanHoldLeft]      = useState(SCAN_FOCUS_WAIT_MS / 1000);
     const [hasCamera,         setHasCamera]         = useState(false);
+    // Equipo con lector: manda el cartel, la espera de 30s y hasta si el
+    // bloque del lector se dibuja. Es estado y no una constante porque el
+    // primer escaneo de un equipo nuevo lo enciende en vivo.
+    const [conLector,         setConLector]         = useState(hayLector);
+    const [scanHold,          setScanHold]          = useState(() => hayLector());
+    const enMovil = isMobileOrApp();
 
     // Las tres preguntas de pantalla, todas por `matchMedia` y no por
     // `window.innerWidth` leído en el render: así el login se reacomoda solo al
@@ -202,6 +264,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const busyRef         = useRef(false);
     const scanBufRef      = useRef('');
     const scanLastKeyRef  = useRef(0);
+    const tiemposRef      = useRef([]);   // marcas de tiempo de la ráfaga global
     const scanHoldTimeoutRef  = useRef(null);
     const scanHoldIntervalRef = useRef(null);
 
@@ -263,16 +326,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setScanHold(false);
     }, []);
 
-    // Prioridad inicial del lector: durante los primeros 10s nada tiene foco
+    // Prioridad inicial del lector: durante los primeros 30s nada tiene foco
     // (el navegador/gestor de contraseñas suele enfocar el primer input — se
     // libera); si no hubo login al vencer, el foco pasa a usuario.
+    // En un equipo SIN lector no hay nada que esperar: el foco va derecho al
+    // usuario y no se le quita a nadie.
+    // Soltar el foco corre UNA vez, al montar, y sólo si hay lector: es para
+    // el navegador o el gestor de contraseñas, que enfocan el primer campo
+    // solos. Si quien lo enfocó fue una PERSONA —alcanzó a hacer clic dentro
+    // de esos 50ms—, quitárselo le manda las teclas al lector global y el
+    // campo se queda vacío sin que se entienda por qué. Lo destapó la prueba
+    // de Playwright, que hace exactamente eso: cliquea apenas aparece.
     useEffect(() => {
-        // Soltar el foco es para el navegador o el gestor de contraseñas, que
-        // enfocan el primer campo solos al montar. Si quien lo enfocó fue una
-        // PERSONA —alcanzó a hacer clic dentro de esos 50ms—, quitárselo le
-        // manda las teclas al lector global y el campo se queda vacío sin que
-        // se entienda por qué. Lo destapó la prueba de Playwright, que hace
-        // exactamente eso: cliquea apenas aparece el campo.
+        if (!conLector) return undefined;
         const tocado = { por_persona: false };
         const marcar = () => { tocado.por_persona = true; };
         window.addEventListener('pointerdown', marcar, true);
@@ -281,6 +347,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             const ae = document.activeElement;
             if (ae === usernameRef.current || ae === userPasswordRef.current) ae.blur();
         }, 50);
+        return () => { window.removeEventListener('pointerdown', marcar, true); clearTimeout(blurT); };
+        // Sólo al montar: si un escaneo enciende `conLector` más tarde, robarle
+        // el foco a quien está escribiendo sería peor que no hacer nada.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        // Sin lector no hay nada que esperar: el foco va derecho al usuario.
+        if (!conLector) {
+            setScanHold(false);
+            const t = setTimeout(() => { if (!busyRef.current) usernameRef.current?.focus(); }, 60);
+            return () => clearTimeout(t);
+        }
         const start = Date.now();
         scanHoldIntervalRef.current = setInterval(() => {
             setScanHoldLeft(Math.max(0, Math.ceil((SCAN_FOCUS_WAIT_MS - (Date.now() - start)) / 1000)));
@@ -290,12 +369,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             if (!busyRef.current) usernameRef.current?.focus();
         }, SCAN_FOCUS_WAIT_MS);
         return () => {
-            window.removeEventListener('pointerdown', marcar, true);
-            clearTimeout(blurT);
             clearTimeout(scanHoldTimeoutRef.current);
             clearInterval(scanHoldIntervalRef.current);
         };
-    }, [endScanHold]);
+    }, [conLector, endScanHold]);
 
     useEffect(() => {
         if (user) { if (hasPermission('staff_list', 'can_view') || hasPermission('overview', 'can_view')) setView('dashboard'); else { setActiveEmployee(user); setView('employee-detail'); } }
@@ -341,22 +418,42 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     // Captura global: el lector siempre está activo mientras el foco NO esté en un
     // input (si el usuario escribe usuario/contraseña, las teclas van al campo).
+    //
+    // Y se exige VELOCIDAD DE LECTOR, no sólo que termine en Enter (corregido
+    // el 2026-08-16, a pedido del usuario: «cualquiera puede escribir un
+    // código»). Sin eso, el carné —que es la contraseña— se podía teclear a
+    // mano: alcanzaba con saberse el código de un compañero, escribirlo con la
+    // pantalla de login enfocada y apretar Enter para entrar como esa persona.
+    // El kiosco ya rechazaba el tecleo manual con esta misma medida
+    // (`detectInputMethod`); el login era la puerta que quedaba abierta.
     useEffect(() => {
         const onKeyDown = (e) => {
+            if (!e.isTrusted) return;   // ver la nota de `vigilarRafaga`
             const t = e.target;
             if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
             const now = Date.now();
-            if (now - scanLastKeyRef.current > SCAN_KEY_GAP_MS) scanBufRef.current = '';
+            if (now - scanLastKeyRef.current > SCAN_KEY_GAP_MS) { scanBufRef.current = ''; tiemposRef.current = []; }
             scanLastKeyRef.current = now;
             if (e.key === 'Enter') {
                 const code = scanBufRef.current.trim();
+                const tiempos = tiemposRef.current;
                 scanBufRef.current = '';
-                if (code.length >= SCAN_MIN_LENGTH) {
-                    e.preventDefault();
-                    handleScanLoginRef.current(code);
+                tiemposRef.current = [];
+                if (code.length < SCAN_MIN_LENGTH) return;
+                e.preventDefault();
+                if (!esVelocidadDeLector(tiempos)) {
+                    // Tecleado a mano. No se dice «muy lento» ni se muestra
+                    // nada del código: sólo que esto se lee con el lector.
+                    setError('El carné se lee con el lector. Para entrar a mano, usa tu usuario y contraseña.');
+                    usernameRef.current?.focus();
+                    return;
                 }
+                recordarLector();
+                setConLector(true);
+                handleScanLoginRef.current(code);
             } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 scanBufRef.current += e.key;
+                tiemposRef.current.push(now);
             }
         };
         window.addEventListener('keydown', onKeyDown, true);
@@ -450,10 +547,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         if (r.campo) r.campo.value = r.prefijo;   // el código NO se muestra
         olvidarRafaga();
         syncFormEngaged();
-        if (codigo.length >= SCAN_MIN_LENGTH) handleScanLoginRef.current(codigo);
+        if (codigo.length < SCAN_MIN_LENGTH) return;
+        // Este equipo tiene lector: quedó demostrado recién.
+        recordarLector();
+        setConLector(true);
+        handleScanLoginRef.current(codigo);
     }, [olvidarRafaga, syncFormEngaged]);
 
     const vigilarRafaga = (e) => {
+        // Un lector es hardware: sus teclas llegan `isTrusted`. Las de un
+        // gestor de contraseñas que RELLENA tecleando, no — y ésas hay que
+        // dejarlas pasar enteras, o el gestor escribe la contraseña y el
+        // detector se la come creyendo que es un carné.
+        if (!e.isTrusted) return;
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         const r = rafagaRef.current;
         const campo = e.currentTarget;
@@ -505,9 +611,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     // Pegar en usuario o contraseña queda prohibido (a pedido del usuario,
     // 2026-08-16): una credencial que viaja por el portapapeles queda ahí,
     // legible para cualquier otra app y para el siguiente que se siente.
-    // El autocompletado del navegador NO pasa por acá — rellena el campo sin
-    // emitir `paste`, así que sigue funcionando.
+    //
+    // Pero SÓLO el pegado de una persona. `isTrusted` es la diferencia: lo que
+    // viene de un Ctrl+V real llega en `true`, y lo que dispara una extensión
+    // —un gestor de contraseñas rellenando el formulario— llega en `false`.
+    // Sin esa distinción el bloqueo se lleva puesto al gestor: el usuario
+    // reportó el 2026-08-16 que el campo de contraseña quedaba vacío y el
+    // login devolvía error. Un candado que impide entrar no es un candado.
     const bloquearPegado = (e) => {
+        if (!e.isTrusted) return;              // relleno del gestor: pasa
         e.preventDefault();
         setError('Por seguridad, escribe tus datos: aquí no se pega.');
     };
@@ -552,8 +664,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const renderScanWidget = (compact) => {
         const st     = scanFeedback?.status; // 'reading' | 'success' | 'error' | undefined
-        const paused = formEngaged && !st && !isLoading && !cameraActive;
-        const active = !paused && !st && !isLoading && !cameraActive;
+        // Sin lector no hay «pausa» ni «activo» que anunciar: el bloque queda
+        // como lo que es, el botón de escanear con la cámara.
+        const paused = conLector && formEngaged && !st && !isLoading && !cameraActive;
+        const active = conLector && !paused && !st && !isLoading && !cameraActive;
 
         return (
             <div className="flex flex-col gap-2.5">
@@ -603,12 +717,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <p className="text-label font-black uppercase tracking-widest text-content-2">Lector en pausa</p>
                                 <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">Toca fuera de los campos para reactivar</p>
                             </>
-                        ) : (
+                        ) : conLector ? (
                             <>
                                 <p className="text-label font-black uppercase tracking-widest text-brand-text">Lector activo</p>
                                 <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">
                                     {scanHold ? `Escanea tu carné · usuario en ${scanHoldLeft}s` : 'Escanea tu carné para entrar'}
                                 </p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-label font-black uppercase tracking-widest text-content-2">Escanear carné</p>
+                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">Con la cámara de este equipo</p>
                             </>
                         )}
                     </div>
@@ -645,15 +764,28 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         );
     };
 
+    // Qué se ofrece además de usuario/contraseña:
+    //   · En teléfono o en la app: NADA. Nadie escanea un carné con el
+    //     teléfono del portal y el kiosco ya está oculto ahí — la pantalla
+    //     queda con los dos campos y nada más (2026-08-16, a pedido del
+    //     usuario).
+    //   · En un equipo con lector: el bloque completo.
+    //   · En un equipo sin lector pero con cámara: sólo el botón de cámara,
+    //     sin cartel de «lector activo» ni cuenta regresiva. Pedir un escaneo
+    //     que nadie puede hacer no es una opción, es un estorbo.
+    const mostrarEscaneo = !enMovil && (conLector || hasCamera);
+
     const renderLoginForm = (compact) => (
         <div className={`flex flex-col ${compact ? 'gap-3' : 'gap-4'}`}>
-            {renderScanWidget(compact)}
+            {mostrarEscaneo && renderScanWidget(compact)}
 
+            {mostrarEscaneo && (
             <div className="relative flex items-center gap-3 px-1">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/60 to-white/60" />
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[var(--lgn-linea)] to-[var(--lgn-linea)]" />
                 <span className="text-micro font-black uppercase tracking-widest text-content-3 shrink-0">o con tu usuario</span>
-                <div className="flex-1 h-px bg-gradient-to-l from-transparent via-white/60 to-white/60" />
+                <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[var(--lgn-linea)] to-[var(--lgn-linea)]" />
             </div>
+            )}
 
             <form onSubmit={handleUsernameLogin} className={`flex flex-col ${compact ? 'gap-3' : 'gap-4'}`}>
                 {[

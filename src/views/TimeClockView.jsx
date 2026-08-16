@@ -189,8 +189,19 @@ const TimeClockView = ({ setView }) => {
         />
       )}
 
-      {/* ── Exit button ───────────────────────────────────────────── */}
-      <Button variant="secondary" icon={LogOut} title="Salir del Kiosco (Esc)" onClick={handleLogout}><span className="hidden sm:inline text-caption uppercase tracking-widest font-semibold">Salir</span></Button>
+      {/* ── Salir ─────────────────────────────────────────────────────
+          El botón era un hijo suelto de este contenedor `flex flex-col`, o
+          sea que `align-items: stretch` lo estiraba de lado a lado: una
+          barra de 1366px pegada al borde de arriba, con la palabra «SALIR»
+          centrada en el medio de la pantalla. Va anclado arriba a la
+          derecha, con su propio ancho, `fixed` para que no se mueva con el
+          scroll de emergencia y por debajo de los modales (z-header = 40,
+          contra el 60 del configurador y el 90 del aviso). ── */}
+      <div className="fixed top-4 right-4 [@media(max-height:640px)]:top-2 [@media(max-height:640px)]:right-2 z-header">
+        <Button variant="secondary" size="sm" icon={LogOut} title="Salir del Kiosco (Esc)" onClick={handleLogout}>
+          <span className="hidden sm:inline">Salir</span>
+        </Button>
+      </div>
 
       {/* ── Main content ──────────────────────────────────────────── */}
       {/* [@media(max-height:800px)] = modo compacto: mismo breakpoint que ya

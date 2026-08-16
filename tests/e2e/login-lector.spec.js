@@ -13,6 +13,13 @@
 // Corre contra la pantalla de login, sin sesión: no toca la base.
 import { test, expect } from '@playwright/test';
 
+// El login enfoca «usuario» solo a los 60ms de montar (en un equipo sin
+// lector). Toda prueba que dependa de dónde está el foco tiene que esperar a
+// que eso pase: si no, corre una carrera contra el propio login.
+const focoAsentado = async (page) => {
+    await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('username');
+};
+
 const RAFAGA = 6;    // ms entre teclas — un lector real anda por debajo de 15
 const HUMANO = 130;  // ms entre teclas — un tecleo rápido de persona
 
@@ -67,19 +74,86 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
     });
 });
 
-test.describe('Login · no se pega en usuario ni en contraseña', () => {
+test.describe('Login · el carné tecleado a mano no abre la sesión', () => {
+    // El código de carné es corto y se lo puede saber un compañero. Antes
+    // alcanzaba con escribirlo con la pantalla enfocada y apretar Enter: el
+    // login lo tomaba por un escaneo. Ahora se exige velocidad de lector, que
+    // es la misma medida con la que el kiosco rechaza el tecleo manual.
+    test('escribirlo despacio y pulsar Enter no valida nada', async ({ page }) => {
+        const intentos = [];
+        page.on('request', (r) => { if (r.url().includes('ensure_user_by_code')) intentos.push(r.url()); });
+
+        await page.goto('/login');
+        await expect(page.locator('#username')).toBeVisible();
+        // El foco tiene que estar FUERA de los campos, que es donde escucha el
+        // lector. En un equipo sin lector el login enfoca «usuario» solo a los
+        // 60ms, así que hay que esperar a que eso ocurra antes de soltarlo —
+        // si no, la prueba corre una carrera y a veces teclea dentro del campo.
+        await focoAsentado(page);
+        await page.evaluate(() => document.activeElement?.blur());
+        await page.keyboard.type('447', { delay: 180 });
+        await page.keyboard.press('Enter');
+
+        await expect(page.getByText(/se lee con el lector/i)).toBeVisible();
+        expect(intentos).toHaveLength(0);
+    });
+});
+
+test.describe('Login · pegar', () => {
+    // La regla no es «nunca se pega»: es «no se pega a mano». Un gestor de
+    // contraseñas rellena con eventos sintéticos, y bloquearlos dejaba al
+    // usuario sin poder entrar — pasó el 2026-08-16.
+    test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
     for (const campo of ['username', 'password']) {
-        test(`pegar en ${campo} no escribe nada`, async ({ page }) => {
+        test(`Ctrl+V de una persona en ${campo} no escribe nada`, async ({ page }) => {
             await page.goto('/login');
             const input = page.locator(`#${campo}`);
-            await input.click();
-            await input.evaluate((el) => {
-                const dt = new DataTransfer();
-                dt.setData('text/plain', 'pegado.prohibido');
-                el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+            await focoAsentado(page);
+            await page.evaluate(() => navigator.clipboard.writeText('pegado.prohibido'));
+
+            // Control positivo: sin esto, un portapapeles vacío haría pasar la
+            // prueba sin probar nada.
+            await page.evaluate(() => {
+                const testigo = document.createElement('input');
+                testigo.id = 'testigo-pegado';
+                document.body.appendChild(testigo);
+                testigo.focus();
             });
+            await page.keyboard.press('ControlOrMeta+V');
+            await expect(page.locator('#testigo-pegado')).toHaveValue('pegado.prohibido');
+
+            await input.click();
+            await page.keyboard.press('ControlOrMeta+V');
             await expect(input).toHaveValue('');
             await expect(page.getByText(/aquí no se pega/i)).toBeVisible();
         });
     }
+
+    test('el relleno de un gestor de contraseñas sí entra', async ({ page }) => {
+        await page.goto('/login');
+        const permitido = await page.locator('#password').evaluate((el) => {
+            const dt = new DataTransfer();
+            dt.setData('text/plain', 'del-gestor');
+            // `dispatchEvent` devuelve false si alguien llamó a preventDefault.
+            return el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+        });
+        expect(permitido).toBe(true);
+    });
+
+    test('un gestor que rellena TECLEANDO rápido no pierde el texto', async ({ page }) => {
+        // Sus teclas son sintéticas (`isTrusted: false`): no son un lector, y
+        // si el detector de ráfagas se las come, la contraseña nunca llega.
+        await page.goto('/login');
+        await page.locator('#password').evaluate((el) => {
+            el.focus();
+            const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+            for (const ch of 'Sup3rSecreta!') {
+                el.dispatchEvent(new KeyboardEvent('keydown', { key: ch, bubbles: true }));
+                setter.call(el, el.value + ch);
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+        await expect(page.locator('#password')).toHaveValue('Sup3rSecreta!');
+    });
 });

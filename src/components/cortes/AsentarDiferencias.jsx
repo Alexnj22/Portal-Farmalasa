@@ -89,7 +89,10 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
             filas: asiento.filas,
             registradoPor: user?.name || '',
             cuando: asiento.cuando,
-        }));
+            // El asiento se anexa al documento que se hizo EN esa caja, así que
+            // el papel tiene que salir ahí. Si esta computadora no tiene la
+            // ticketera, va a la cola de esa sucursal.
+        }), { sala: asiento.branchId });
         if (!r.ok) showToast?.('No se pudo imprimir', r.detalle, 'error');
         return r.ok;
     }, [nombreSala, user, showToast]);

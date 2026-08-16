@@ -42,7 +42,11 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
             personas,
             registradoPor: dif.registrado_nombre || user?.name || '',
         });
-        const r = await imprimirDocumento(ticket);
+        // `sala`: el comprobante lo firma quien entrega el dinero, que está
+        // EN la sala. Si esta computadora no tiene la ticketera —gerencia
+        // resolviendo desde la oficina— el papel sale en la caja de esa
+        // sucursal en vez de salir acá, donde no sirve.
+        const r = await imprimirDocumento(ticket, { sala: corte.branch_id });
         if (r.ok) {
             await marcarComprobanteImpreso(dif.id);
             showToast?.('Comprobante enviado a la impresora',

@@ -1,0 +1,20 @@
+[Unit]
+Description=Agente de impresion de la caja — Portal Farmalasa
+After=network-online.target cups.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Ajustar la ruta si la carpeta quedó en otro lado.
+WorkingDirectory=/opt/farmalasa/agente-impresion
+ExecStart=/usr/bin/python3 /opt/farmalasa/agente-impresion/agente.py
+# Que se levante solo: la caja se reinicia y nadie se acuerda de arrancarlo.
+Restart=always
+RestartSec=10
+# El usuario tiene que poder usar `lp`. `lp` no necesita root.
+User=nobody
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

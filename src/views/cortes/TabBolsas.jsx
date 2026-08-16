@@ -398,7 +398,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                     bolsas: d.bolsas || [],
                     entregadoPor: d.entregado_por,
                     recibidoPor: d.recibido_por,
-                }), { soloDirecta: true });
+                }), { soloDirecta: true, sala: entrega.branch_id });
             }
         } catch (err) {
             // Que no salga el papel no deshace una entrega ya firmada.

@@ -62,7 +62,7 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
             cerradaPor: cerradaPor || user?.name || user?.nombre || '',
             version: version ?? (bolsa.etiqueta_version || 0) + 1,
             impresaAt: new Date().toISOString(),
-        }));
+        }), { sala: bolsa.branch_id });
 
         // `ok` significa RECIBIDO, nunca «salió papel»: la respuesta del programa
         // de la caja es opaca por construcción. Decir «impresa» sería prometer
@@ -107,7 +107,7 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
                 ? { nombre: mov.recibido_nombre, metodo: mov.recibido_metodo }
                 : null,
             registradoAt: mov.registrado_at,
-        }));
+        }), { sala: bolsa.branch_id });
 
         // Constancia de que se mandó a imprimir. Como con la etiqueta, `ok`
         // significa RECIBIDO y no «salió papel», así que se puede reimprimir.

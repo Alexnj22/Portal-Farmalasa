@@ -559,6 +559,28 @@ export function seccionesParaElPrograma(ticket) {
 }
 
 /**
+ * El ticket como los bytes que se le mandan a la impresora, en una sola cadena.
+ *
+ * Es lo que viaja a la cola de la sala para que el agente de la caja lo tubee a
+ * `lp -d <impresora> -o raw`. **La maquetación se queda acá**: el agente es un
+ * caño, igual que el programa del sistema de facturación. Si supiera de
+ * columnas habría dos maquetadores que mantener parecidos, y la diferencia sólo
+ * se vería en el papel.
+ *
+ * Arranca con `ESC @` —inicializar— para que el estado de letra que dejó el
+ * trabajo anterior no se cuele en éste: la cola imprime tickets seguidos y el
+ * segundo saldría con la letra del primero.
+ *
+ * `totales` y `total_letras` de `seccionesParaElPrograma` NO se concatenan: son
+ * sólo códigos de tamaño que el origen aplica antes de imprimir cifras que su
+ * programa arma aparte. Acá las cifras ya vienen dentro de `cuerpo`.
+ */
+export function textoParaElRollo(ticket) {
+    const s = seccionesParaElPrograma(ticket);
+    return `${ESC}@` + s.encabezado + s.cuerpo + s.pie;
+}
+
+/**
  * ¿El navegador tiene prohibido alcanzar la red local de esta computadora?
  *
  * Existe porque sin esto **«no hay programa» y «el navegador me bloqueó» se ven
@@ -733,21 +755,53 @@ export function guardarAjustesDeImpresion(ajustes) {
  *
  * `soloDirecta` es para los papeles que salen SOLOS, sin que nadie haya
  * apretado «imprimir»: al confirmar un corte, por ejemplo. Ahí el respaldo del
- * diálogo no sirve y estorba — quien confirma desde el teléfono, o desde una
- * computadora que no es la caja, se encontraría con una ventana de impresión
- * que no pidió y que además mandaría el papel al lugar equivocado. Sin
- * ticketera a mano, la impresión automática simplemente no ocurre y la pantalla
- * ofrece el botón de imprimir.
+ * diálogo no sirve y estorba — quien confirma desde el teléfono se encontraría
+ * con una ventana de impresión que no pidió.
  *
- * @returns {Promise<{via: 'directa'|'dialogo', ok: boolean, detalle: string}>}
+ * ── `sala`: el papel sale en la caja de ESA sucursal ───────────────────────
+ * El camino directo sólo alcanza la computadora que tiene el navegador abierto,
+ * y no puede alcanzar otra: apuntar a la IP de la caja es contenido mixto y el
+ * navegador lo corta. Con `sala`, lo que no se pudo imprimir acá se deja en la
+ * cola de esa sucursal y lo saca el agente que corre en su caja.
+ *
+ * El orden importa y es el de la utilidad decreciente:
+ *   1. **Acá mismo**, si esta computadora tiene la ticketera — el papel sale al
+ *      instante y quien lo pidió lo tiene en la mano.
+ *   2. **En la caja de la sala**, si sabemos cuál es — llega en dos segundos y
+ *      es el único camino que funciona desde un teléfono.
+ *   3. **El diálogo del navegador**, que es el respaldo de siempre.
+ *
+ * @returns {Promise<{via: 'directa'|'cola'|'dialogo', ok: boolean, detalle: string}>}
  */
-export async function imprimirDocumento(ticket, { forzarDialogo = false, soloDirecta = false } = {}) {
+export async function imprimirDocumento(
+    ticket, { forzarDialogo = false, soloDirecta = false, sala = null } = {},
+) {
     const { ancho, sistema } = leerAjustesDeImpresion();
     const doc = { ancho, ...ticket };
 
     if (!forzarDialogo) {
         const r = await enviarAImpresoraDeLaComputadora(doc, { sistema });
         if (r.ok) return { via: 'directa', ok: true, detalle: r.detalle };
+
+        if (sala != null) {
+            // `await import`: la capa de datos de la cola no tiene por qué
+            // viajar en el chunk de una vista que quizá nunca imprima.
+            const { encolarImpresion } = await import('../data/impresion');
+            const { error } = await encolarImpresion({
+                branchId: sala,
+                titulo: ticket?.titulo || 'Documento',
+                contenido: textoParaElRollo(doc),
+            });
+            if (!error) {
+                return {
+                    via: 'cola', ok: true,
+                    detalle: 'Se mandó a la caja de la sala. Sale en unos segundos.',
+                };
+            }
+            // Sin caja registrada la función rechaza a propósito: una cola que
+            // nadie lee es papel que nunca sale. Se sigue al diálogo.
+        }
+
         if (soloDirecta) return { via: 'directa', ok: false, detalle: r.detalle };
     }
 

@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.627.0 — El papel sale en la caja de la sucursal: cola de impresión y agente
+
+Hasta hoy imprimir significaba «mandarlo a `http://localhost`», o sea a la
+computadora que tiene el navegador abierto — y **no puede significar otra
+cosa**: apuntar a la IP de la caja es contenido mixto, el navegador lo corta, y
+la exención de `localhost` no se hereda a una IP. Ningún permiso lo destraba.
+
+Lo que se veía en el uso: la sala confirma un corte **desde el teléfono**, que
+es justo donde llega el aviso, y no hay `localhost` que conteste; gerencia
+resuelve una diferencia **desde la oficina** y el comprobante que debía
+firmarse en la sala sale impreso en la oficina.
+
+**Ahora hay una cola por sucursal y un agente en la caja.** El portal deja el
+documento con su sala; un programa que corre en esa computadora pregunta cada
+dos segundos y lo tubea a `lp -d pos-80 -o raw` — el único camino que ya sacó
+papel en esa impresora. Vive en `scripts/agente-impresion/`: Python 3 sin
+dependencias, para que corra en las Linux de sala sin instalar nada.
+
+**Y el acuse deja de ser una promesa.** Por el camino directo, `ok` significa
+«el programa recibió el pedido» y nunca «salió papel» — la respuesta llega
+opaca, un 404 y un 200 se ven igual. El agente contesta si el comando funcionó,
+y si falló devuelve el trabajo a la cola con el motivo escrito.
+
+**La cascada de `imprimirDocumento`,** en orden de utilidad decreciente: esta
+computadora si tiene la ticketera (el papel sale al instante y en la mano de
+quien lo pidió) → la caja de la sala si sabemos cuál es → el diálogo del
+navegador. Los cinco documentos del circuito del dinero ya viajan con su sala:
+la etiqueta al confirmar el corte, la etiqueta y el vale de una salida, el
+comprobante de reposición, el de asiento y el de entrega.
+
+**El agente no ve la llave de servicio.** Se identifica con dispositivo +
+token, el mismo patrón que `kiosk_devices`, y nunca abre un puerto: siempre
+pregunta él, así que la impresora no queda expuesta a la red. El token se
+muestra **una sola vez** al registrar la caja — la policy no lo publica, porque
+un token que se puede releer es un token que viaja.
+
+Cuatro frenos que se rompen solos si no están: `FOR UPDATE SKIP LOCKED` (dos
+agentes abiertos por error no imprimen dos veces), el trabajo que queda a
+medias vuelve a los 2 minutos, a los 3 intentos pasa a `ERROR` para no tapar a
+los que sí saldrían, y encolar se niega a los 50 pendientes — si se llegó ahí,
+el agente está caído y encolar más no ayuda. Purga a los 14 días.
+
+Se prueba en Sistema → Prueba de impresión, que ahora muestra las cajas
+registradas, **cuándo preguntó cada una** («registrada» no es «funciona») y qué
+pasó con los últimos documentos.
+
+Un defecto que sólo apareció al probarlo: `RETURNS TABLE(id …)` declara una
+variable `id` que existe en todo el cuerpo, así que el `WHERE id = p_device`
+del latido no sabía si hablaba de la columna o de la salida. La función se creó
+sin quejarse —el conflicto es de ejecución, no de compilación— y sólo reventó
+al correr el circuito completo.
+
 ## v2.626.0 — Entregar el efectivo: quién se lo lleva queda probado con su carné
 
 El circuito que pidió el usuario: la sala abre el módulo, marca **Entregar

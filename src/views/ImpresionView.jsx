@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Printer, Ruler, CheckCircle2, AlertCircle, Send, Eye, Laptop, PlugZap } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
+import CajasDeImpresion from '../components/impresion/CajasDeImpresion';
 import Button from '../components/common/Button';
 import Notice from '../components/common/Notice';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -71,7 +72,10 @@ const Tarjeta = ({ titulo, children }) => (
 );
 
 const ImpresionView = () => {
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
+    // Registrar una caja es instalar un dispositivo que va a imprimir dinero:
+    // lo hace quien administra el módulo, no cualquiera que abra la pantalla.
+    const puedeRegistrarCaja = hasPermission?.('impresion', 'can_edit');
     const branches = useStaff(state => state.branches) || EMPTY_ARRAY;
     const sucursal = branches.find(b => b.id === user?.branchId);
 
@@ -310,6 +314,18 @@ const ImpresionView = () => {
                                 )}
                             </Notice>
                         )}
+
+                        {/* Las cajas de las salas: lo que hace que un documento
+                            mandado desde el teléfono o desde la oficina salga
+                            impreso DONDE tiene que salir. */}
+                        <Tarjeta titulo="Cajas de las salas">
+                            <p className="text-body text-content-2 leading-snug mb-3">
+                                Una caja registrada imprime lo que se le manda desde cualquier
+                                lado — el teléfono incluido. Sin ninguna registrada, sólo sale
+                                papel en la computadora que tenga la ticketera conectada.
+                            </p>
+                            <CajasDeImpresion puedeEditar={puedeRegistrarCaja} />
+                        </Tarjeta>
 
                         <Tarjeta titulo="Si no hay impresión directa">
                             <p className="text-body text-content-2 leading-snug">

@@ -63,10 +63,13 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
         // pestaña de bolsas y apretar imprimir, y la bolsa que se quedaba sin
         // etiqueta llegaba a administración sin nada que la identificara.
         //
-        // `soloDirecta` es deliberado: este papel sale SOLO. Si esta computadora
-        // no tiene la ticketera —el teléfono de quien confirma desde la campana,
-        // la oficina— no se abre ningún diálogo; la etiqueta queda para
-        // imprimirse desde la sala, que es donde está la bolsa.
+        // Los dos parámetros dicen lo mismo desde dos lados: este papel sale
+        // SOLO y tiene que salir DONDE ESTÁ LA BOLSA. Con `sala`, lo que no se
+        // pueda imprimir en esta computadora se deja en la cola de esa
+        // sucursal y lo saca el agente de su caja — que es lo único que
+        // funciona cuando quien confirma lo hace desde el teléfono. Y
+        // `soloDirecta` evita el último recurso: un diálogo de impresión que
+        // nadie pidió, en una máquina que no es la caja.
         if (estado === 'CONFIRMADO') {
             try {
                 const bolsa = await fetchBolsaDeCorte(corte.id);
@@ -85,7 +88,7 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
                         cerradaPor: user?.name || '',
                         version: version ?? (bolsa.etiqueta_version || 0) + 1,
                         impresaAt: new Date().toISOString(),
-                    }), { soloDirecta: true });
+                    }), { soloDirecta: true, sala: corte.branch_id });
                     if (r.ok) {
                         showToast?.('Etiqueta enviada', `${bolsa.folio} · pégala en la bolsa`, 'success');
                     }

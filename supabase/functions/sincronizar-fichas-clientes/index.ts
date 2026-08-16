@@ -3,6 +3,7 @@ import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "
 import {
   login, leerFicha, idClienteDeFactura, escribirCampo, escribirCampos,
   ponerUbicacion, duiValido, telefonoValido, TELEFONO_DEFECTO, filaPortal,
+  type Ficha,
 } from "../_shared/erp-clientes.ts";
 import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
 
@@ -53,10 +54,17 @@ import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
 // lo verificado— y quedaron afuera las dos fáciles. Por eso «bloque procesó
 // 25,946 fichas sin problemas» y esto sí los tenía.
 //
-// ── Alcance: quién se toca y quién sólo se copia ────────────────────────────
-// En el ERP se escriben SÓLO consumidores (decisión del usuario, 2026-08-09).
-// A los contribuyentes se los espeja al portal y nada más — sus CCF pueden
-// seguir trabándose y eso está aceptado.
+// ── Alcance: quién se toca, cuánto, y quién sólo se copia ───────────────────
+// Lo decide `alcance_escritura_ficha()` del lado de la base — no un `if` acá.
+//
+//   · consumidor / huérfana → `todo`: la tabla de decisión completa.
+//   · contribuyente → `solo_distrito` (pedido del usuario, 2026-08-16, que
+//     abrió la decisión del 09-08). Se le COMPLETA el distrito si falta,
+//     derivándolo con el matcher DENTRO de su departamento y municipio, y no se
+//     toca nada más. Nunca el triple por defecto: medido, 15 de esas 77 fichas
+//     viven fuera de Chalatenango y el default las habría mudado de
+//     departamento — o sea, cambiado el domicilio de un documento fiscal.
+//   · extranjero / categoría nueva → `ninguno`: sólo espejo.
 //
 // ── El freno ────────────────────────────────────────────────────────────────
 // Si el campo ya se corrigió ANTES de este rechazo, la corrección no alcanzó:
@@ -91,9 +99,14 @@ interface Candidato {
   erp_id: string | null;
   categoria: string | null;
   origen: "rechazo" | "sin_distrito";
-  campo: string;                 // distrito | municipio | departamento | dui
+  campo: string;                 // distrito | municipio | departamento | dui | phone
   motivo_mh: string | null;
-  puede_escribir: boolean;       // false = contribuyente: sólo espejo
+  // Lo decide `alcance_escritura_ficha()` en la base, que es donde vive la
+  // política — antes era un booleano y se leía como «tocar todo o nada».
+  //   todo ........... consumidor u huérfana: la tabla de decisión entera
+  //   solo_distrito .. contribuyente: se le completa el distrito y NADA MÁS
+  //   ninguno ........ extranjero o categoría desconocida: sólo espejo
+  alcance_escritura: "todo" | "solo_distrito" | "ninguno";
   ya_corregido: boolean;         // ya se intentó y Hacienda volvió a rechazar
 }
 
@@ -173,14 +186,20 @@ Deno.serve(async (req) => {
     // los preventivos. Existe para poder soltar el cambio por partes — la
     // primera corrida con reglas nuevas sobre 94 fichas a la vez es mucho de
     // una sola vez, y el rechazo es el conjunto chico y verificable.
+    //
+    // `customer_id` acota a UNA ficha. Lo usa el botón de una factura suelta:
+    // sin él, apretar «Solventar» en un documento corregía hasta 120 fichas de
+    // otros clientes — un efecto que nadie pidió colgado de un solo botón.
     const cuerpo = await req.json().catch(() => ({}));
     const alcance: string = cuerpo?.alcance ?? "todo";
+    const soloCliente: number | null = cuerpo?.customer_id ? Number(cuerpo.customer_id) : null;
 
     const { data: candidatos, error: eCand } =
       await admin.rpc("fichas_para_corregir_dte");
     if (eCand) throw new Error(`fichas_para_corregir_dte: ${eCand.message}`);
     const lista: Candidato[] = (candidatos ?? [])
       .filter((c: Candidato) => alcance === "todo" || c.origen === "rechazo")
+      .filter((c: Candidato) => soloCliente === null || c.customer_id === soloCliente)
       .slice(0, MAX_FICHAS);
     if (!lista.length)
       return json({ ok: true, revisadas: 0, mensaje: "no hay fichas que corregir" });
@@ -215,6 +234,43 @@ Deno.serve(async (req) => {
     const aEspejar: Record<string, unknown>[] = [];
     const correcciones: Record<string, unknown>[] = [];
     const detalle: unknown[] = [];
+
+    /**
+     * Regla ② de bloque: derivar el distrito de la DIRECCIÓN, dentro del
+     * departamento y municipio que la ficha ya tiene. El matcher está verificado
+     * contra las 25,946 decisiones del original.
+     *
+     * Está acá afuera porque lo usan dos ramas: la ficha de alcance completo a
+     * la que sólo le falta el distrito, y el contribuyente, para quien ésta es
+     * la ÚNICA escritura permitida. Escribirlo dos veces era garantizar que un
+     * día divergieran.
+     *
+     * Nunca deja el campo en blanco «por las dudas»: si la dirección no dice
+     * nada, `elegirDistrito` elige uno de los del municipio de forma
+     * determinista. Eso sigue siendo un distrito del municipio correcto — que es
+     * exactamente lo que Hacienda exige y lo que la ficha no tenía.
+     */
+    const derivarDistrito = async (c: Candidato, erpId: string, ficha: Ficha) => {
+      const eleccion = await elegirDistrito(
+        `erp:${erpId}`,
+        ficha.campos.direccion ?? "",
+        ficha.opciones.distrito ?? [],
+        ubicacionDe(
+          Object.fromEntries(ficha.opciones.departamento ?? [])[ficha.campos.departamento ?? ""] ?? "",
+          Object.fromEntries(ficha.opciones.municipio ?? [])[ficha.campos.municipio ?? ""] ?? "",
+        ),
+      );
+      if (!eleccion.value) { res.distrito_sin_evidencia++; return; }
+      const w = await escribirCampo(cookie, erpId, "distrito", eleccion.value);
+      if (w.ok) {
+        res.distrito_escrito++;
+        correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "distrito",
+                            antes: "", despues: eleccion.value,
+                            motivo: c.origen === "rechazo" ? "rechazo_distrito" : "sin_distrito" });
+        detalle.push({ ficha: c.name, accion: "distrito", motivo: eleccion.motivo });
+      } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
+      else { res.fallidas++; detalle.push({ ficha: c.name, accion: "distrito", error: w.motivo }); }
+    };
 
     for (const c of lista) {
       if (!queda()) { res.cortada_por_tiempo = true; break; }
@@ -310,9 +366,46 @@ Deno.serve(async (req) => {
             datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
           });
           res.a_revisar++;
-        } else if (!c.puede_escribir) {
-          // Contribuyentes: no se tocan en el ERP, sólo se espejan.
+        } else if (c.alcance_escritura === "ninguno") {
+          // Extranjero, o una categoría que nadie decidió todavía: sólo espejo.
           res.solo_espejo++;
+        } else if (c.alcance_escritura === "solo_distrito") {
+          // ── Contribuyente ────────────────────────────────────────────
+          // Una sola escritura permitida: completar el distrito que falta,
+          // derivándolo DENTRO de su departamento y municipio. Nada de DUI,
+          // nada de teléfono, y sobre todo nada de triple por defecto — mover
+          // el departamento de un contribuyente le cambia el domicilio fiscal.
+          if (ficha.campos.distrito) {
+            if (c.origen === "rechazo") {
+              // Tiene distrito y aun así Hacienda lo rechazó. Acá se acaba lo
+              // que el circuito puede hacer sin tocar lo que no le toca: se
+              // dice, en vez de contarlo como «ya estaba» y desaparecer.
+              aRevisar.push({
+                erp_id: erpId, name: c.name, motivo: "distrito_rechazado_con_valor",
+                detalle: `La ficha de «${c.name}» YA tiene distrito y Hacienda la ` +
+                         `rechazó igual: «${c.motivo_mh ?? "sin motivo"}». Como es ` +
+                         `contribuyente, el portal sólo puede completar el distrito ` +
+                         `cuando falta — hay que revisar su dirección a mano.`,
+                datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
+              });
+              res.a_revisar++;
+            } else {
+              // El espejo estaba viejo: en el ERP el distrito ya está puesto.
+              res.ya_estaban++;
+            }
+          } else if (!ficha.campos.municipio) {
+            aRevisar.push({
+              erp_id: erpId, name: c.name, motivo: "sin_municipio_no_derivable",
+              detalle: `«${c.name}» no tiene municipio en su ficha, así que no hay ` +
+                       `de dónde deducir el distrito. Como es contribuyente, el ` +
+                       `portal no le pone la ubicación por defecto: eso le cambiaría ` +
+                       `el domicilio. Hay que completarlo a mano.`,
+              datos: { customer_id: c.customer_id },
+            });
+            res.a_revisar++;
+          } else {
+            await derivarDistrito(c, erpId, ficha);
+          }
         } else if (c.campo === "dui" || duiValido(ficha.campos.dui) === false) {
           // Regla ③ de bloque: un DUI que no cumple el algoritmo se borra. La
           // ficha queda limpia y el dato sigue disponible para corregirlo.
@@ -370,31 +463,7 @@ Deno.serve(async (req) => {
           } else if (esRechazoPorDuplicado(u.motivo)) { aRevisarDuplicado(c, erpId, u.motivo); }
           else { res.fallidas++; detalle.push({ ficha: c.name, accion: "ubicación", error: u.motivo }); }
         } else if (!ficha.campos.distrito) {
-          // Regla ② — el matcher, verificado contra las 25,946 decisiones.
-          const eleccion = await elegirDistrito(
-            `erp:${erpId}`,
-            ficha.campos.direccion ?? "",
-            ficha.opciones.distrito ?? [],
-            ubicacionDe(
-              Object.fromEntries(ficha.opciones.departamento ?? [])[ficha.campos.departamento ?? ""] ?? "",
-              Object.fromEntries(ficha.opciones.municipio ?? [])[ficha.campos.municipio ?? ""] ?? "",
-            ),
-          );
-          if (eleccion.value) {
-            const w = await escribirCampo(cookie, erpId, "distrito", eleccion.value);
-            if (w.ok) {
-              res.distrito_escrito++;
-              correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "distrito",
-                                  antes: "", despues: eleccion.value, motivo: "sin_distrito" });
-              detalle.push({ ficha: c.name, accion: "distrito", motivo: eleccion.motivo });
-            } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
-            else {
-              res.fallidas++;
-              detalle.push({ ficha: c.name, accion: "distrito", error: w.motivo });
-            }
-          } else {
-            res.distrito_sin_evidencia++;
-          }
+          await derivarDistrito(c, erpId, ficha);
         }
 
         // ── 3 · Copiar al portal ──────────────────────────────────────

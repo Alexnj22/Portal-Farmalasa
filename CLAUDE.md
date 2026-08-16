@@ -422,9 +422,38 @@ elegirlo, y quien la llama agrega su propio freno: si los nombres no se parecen,
 no fusiona — publica en «Por revisar» con motivo `fusion_dudosa`. Unir a dos
 personas que no lo son mezcla sus historiales y no se deshace.
 
-**El alcance de la escritura al ERP son SÓLO consumidores** (decisión del
-usuario, 2026-08-09). A los contribuyentes se los espeja al portal y nada más;
-sus CCF pueden trabarse y está aceptado. 77 fichas sin distrito quedan fuera.
+**El alcance de la escritura al ERP lo decide `alcance_escritura_ficha()`, en la
+base** — no un `if` en la Edge Function. Tres valores, y ninguno es un booleano
+a propósito: «se puede escribir» resultó ser una pregunta de grado.
+
+| categoría | alcance | qué se le escribe |
+|---|---|---|
+| Consumidor, o ficha sin categoría | `todo` | la tabla de decisión completa |
+| Contribuyente · Gran Contribuyente | `solo_distrito` | **sólo** el distrito, y sólo si falta |
+| Extranjero, o una categoría nueva | `ninguno` | nada: sólo espejo |
+
+La decisión del 2026-08-09 era «a los contribuyentes no se los toca, sus CCF
+pueden trabarse y está aceptado». El usuario la abrió el **2026-08-16**: *«si es
+contribuyente, permite editar el distrito si no está también»*.
+
+**El distrito del contribuyente se DERIVA con el matcher, nunca con el triple
+por defecto.** Es la parte que no se puede improvisar: de las 77 fichas de
+contribuyente sin distrito, **15 viven fuera de Chalatenango** (San Salvador,
+La Libertad, San Miguel, Sonsonate). El default habría mudado de departamento a
+esas 15 — o sea, cambiado el domicilio de un documento fiscal. Las 77 tienen
+departamento y municipio; lo único que falta es el distrito, así que
+`elegirDistrito` lo elige DENTRO de los del municipio propio.
+
+Consecuencia que hay que conocer: cuando la dirección no nombra ningún distrito,
+el matcher elige uno **determinista** entre los del municipio (2 de los 3
+primeros casos reales). Es un distrito del municipio correcto —que es lo que
+Hacienda exige y lo que la ficha no tenía—, pero no es un dato averiguado. Si
+alguna vez se decide que un contribuyente sólo se corrige con evidencia en la
+dirección, el lugar es la rama `solo_distrito` de `sincronizar-fichas-clientes`.
+
+Y `ninguno` es la falla segura: una categoría que nadie decidió NO se escribe.
+Al revés, el día que aparezca una, el circuito le escribiría sin que nadie lo
+haya resuelto.
 
 **`identificacion.fecEmi` no es un dato del cliente** y NO se corrige: aparece
 siempre que se transmite hoy una factura emitida antes, y cambiarla sería

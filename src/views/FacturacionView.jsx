@@ -475,6 +475,10 @@ function BotonRegularizar({ filterBranch, branches, bolsa, canEdit, onDone, pend
         // Se dice lo que pasó, no "listo": una corrida que resolvió 3 de 8 no es
         // un éxito, y una que resolvió 0 porque no había nada tampoco es un fallo.
         const partes = [`${r.resueltas} de ${r.revisadas}`];
+        // Que hubo que TOCAR la ficha del cliente no es un detalle interno: es
+        // la diferencia entre «entró» y «entró porque le arreglamos el dato», y
+        // sin decirlo el cambio en la ficha ocurre sin que nadie se entere.
+        if (r.fichas_corregidas)  partes.push(`${r.fichas_corregidas} ficha${r.fichas_corregidas !== 1 ? 's' : ''} de cliente corregida${r.fichas_corregidas !== 1 ? 's' : ''}`);
         if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
         if (r.fallidas)         partes.push(`${r.fallidas} sin resolver`);
         // Si quedó cola hay que decirlo. Callarla es lo que hace que un tope se
@@ -494,9 +498,9 @@ function BotonRegularizar({ filterBranch, branches, bolsa, canEdit, onDone, pend
         <Button
             variant="secondary" size="sm" icon={ShieldCheck}
             loading={corriendo} onClick={correr}
-            title={`Completar ante Hacienda lo pendiente de ${ambito}`}
+            title={`Corregir lo que haga falta y enviar a Hacienda lo pendiente de ${ambito}`}
         >
-            {corriendo ? 'Enviando…' : 'Completar ante Hacienda'}
+            {corriendo ? 'Enviando…' : 'Solventar todas'}
         </Button>
     );
 }
@@ -938,8 +942,8 @@ const TARJETA_TONO = {
 };
 
 const TarjetaPendienteMH = memo(({
-    r, isCCF, isVisited, isCopied, hasNullCampos, isSolving, canEdit,
-    onCopiar, onResolver,
+    r, isCCF, isVisited, isCopied, hasNullCampos, isSolving, canEdit, enviando,
+    onCopiar, onResolver, onSolventar,
 }) => {
     const tono = isSolving ? TARJETA_TONO.resolviendo
                : hasNullCampos ? TARJETA_TONO.nulos
@@ -983,7 +987,7 @@ const TarjetaPendienteMH = memo(({
             </div>
 
             {/* Acciones */}
-            <div className="mt-2.5 flex items-center gap-2 border-t border-divider pt-2.5">
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-divider pt-2.5">
                 <Button
                     variant="secondary" size="sm"
                     icon={isCopied || isVisited ? Check : Copy}
@@ -993,18 +997,33 @@ const TarjetaPendienteMH = memo(({
                 >
                     {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                 </Button>
-                {canEdit && (
+                {canEdit && (<>
+                    {/* La salida manual: quedó atendido por fuera y se anota.
+                        Antes se llamaba «Solventar» y era lo único que había —
+                        o sea que el botón que prometía resolver sólo dejaba una
+                        nota y la factura seguía sin llegar a Hacienda. */}
                     <Button
                         variant="secondary" size="sm"
-                        tone={isSolving ? 'danger' : 'success'} soft
+                        tone={isSolving ? 'danger' : null}
                         icon={isSolving ? X : Check}
                         onClick={onResolver}
                         aria-pressed={isSolving}
                         className="ml-auto"
                     >
-                        {isSolving ? 'Cancelar' : 'Solventar'}
+                        {isSolving ? 'Cancelar' : 'Marcar revisada'}
                     </Button>
-                )}
+                    {/* Solventar de verdad: corrige la ficha si hace falta y
+                        vuelve a mandar el documento. */}
+                    <Button
+                        variant="secondary" size="sm" tone="success" soft
+                        icon={ShieldCheck}
+                        loading={enviando}
+                        onClick={onSolventar}
+                        title="Corregir lo que haga falta y enviar este documento a Hacienda"
+                    >
+                        {enviando ? 'Enviando…' : 'Solventar'}
+                    </Button>
+                </>)}
             </div>
         </div>
     );
@@ -1028,6 +1047,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const [comment, setComment]         = useState('');
     const [saving, setSaving]           = useState(false);
     const [copiedId, setCopiedId]             = useState(null);
+    const [enviandoId, setEnviandoId]         = useState(null);
     const [nullCamposIds, setNullCamposIds]   = useState(new Set());
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const { visitedIds, toggleVisited, clearVisited } = useVisitados();
@@ -1178,6 +1198,49 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         setResolved(prev => [{ ...inv, resolution: { comment: comment.trim() || null, resolved_by: resolvedBy, resolved_at: new Date().toISOString() } }, ...prev]);
         setRows(prev => prev.filter(r => r.id !== invoiceId));
         setSolvingId(null); setComment(''); setSaving(false);
+    };
+
+    /**
+     * Solventar UNA: corregir lo que haga falta y volver a mandarla.
+     *
+     * El servidor hace el ciclo entero —envía, y si Hacienda la rechaza por un
+     * dato del cliente que se sabe corregir, corrige esa ficha y reenvía— así
+     * que acá sólo se informa el resultado FINAL. La corrección se acota al
+     * cliente de esta factura: apretar un botón en una fila no puede terminar
+     * escribiendo las fichas de otros clientes.
+     *
+     * El sello NO lo escribe el portal: lo trae el sync. Por eso al terminar se
+     * recarga en vez de sacar la fila de la lista a mano.
+     */
+    const handleRegularizarUna = async (r) => {
+        setEnviandoId(r.id);
+        const res = await regularizarDte({ alcance: 'una', invoiceId: r.id });
+        setEnviandoId(null);
+
+        if (!res.ok) {
+            useToastStore.getState().showToast('No se pudo enviar', mensajeAmigable(res.error), 'error');
+            return;
+        }
+        useStaff.getState().appendAuditLog('REGULARIZAR_UNA_MH', String(r.id), {
+            correlativo: r.correlativo, resueltas: res.resueltas,
+            fichas_corregidas: res.fichas_corregidas,
+        });
+        if (res.resueltas > 0) {
+            const partes = [r.correlativo];
+            if (res.fichas_corregidas) partes.push('se corrigió la ficha del cliente');
+            if (res.con_observaciones) partes.push('Hacienda la recibió con observaciones');
+            useToastStore.getState().showToast('Enviado a Hacienda', partes.join(' · '), 'success');
+        } else {
+            // El motivo de Hacienda, palabra por palabra. Un «no se pudo» sin el
+            // texto obliga a ir a buscarlo a otra pantalla.
+            const fallo = (res.detalle || []).find(d => !d.ok);
+            useToastStore.getState().showToast(
+                'Hacienda no la aceptó',
+                fallo?.error || 'No quedó registrado el motivo.',
+                'warning',
+            );
+        }
+        loadData();
     };
 
     const { filtered, isPendienteFuzzy } = useMemo(() => {
@@ -1345,11 +1408,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                                 isVisited={visitedIds.has(String(r.erp_invoice_id))}
                                                                 hasNullCampos={nullCamposIds.has(r.id)}
                                                                 canEdit={canEdit}
+                                                                enviando={enviandoId === r.id}
                                                                 onCopiar={() => copyErpId(r.erp_invoice_id)}
                                                                 onResolver={() => {
                                                                     if (isSolving) { setSolvingId(null); setComment(''); }
                                                                     else { setSolvingId(r.id); setComment(''); }
                                                                 }}
+                                                                onSolventar={() => handleRegularizarUna(r)}
                                                             />
                                                         );
                                                     })}

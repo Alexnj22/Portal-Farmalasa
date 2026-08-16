@@ -397,6 +397,17 @@ Deno.serve(async (req) => {
     // corrida de fichas en alcance «rechazos» y se vuelve a enviar, todo
     // dentro de la misma noche.
     //
+    // ── Y también cuando lo aprieta una persona (2026-08-16) ──────────────
+    // Estaba condicionado a `esCron`, así que «Solventar» —una factura o
+    // todas— mandaba el documento tal cual y devolvía el rechazo. Quien lo
+    // apretaba veía «no se pudo» sobre algo que el barrido de esa misma noche
+    // iba a arreglar solo. El ciclo es el mismo para los dos: detectar qué se
+    // puede corregir, corregirlo, reenviar.
+    //
+    // Con una diferencia que importa: **la corrección se acota al cliente de
+    // esa factura** cuando el alcance es «una». Sin eso, apretar un botón en
+    // una fila escribía hasta 120 fichas de otros clientes.
+    //
     // `segundaVuelta` es el freno de recursión: la llamada de vuelta lo trae
     // en true y ahí el bloque no se ejecuta. Sin eso, un rechazo que la
     // corrección no arregla haría rebotar las dos funciones sin fin.
@@ -417,12 +428,23 @@ Deno.serve(async (req) => {
     //      pedirle el mismo rechazo, y encima ensucia el historial de intentos.
     let segundaVueltaHecha = false;
     let segundaVueltaMotivo: string | null = null;
-    if (!segundaVuelta && esCron) {
+    let corregidas = 0;
+    if (!segundaVuelta && fallidas > 0) {
+      // El cliente al que hay que mirarle la ficha cuando esto es UNA factura.
+      // `pendientes[0]` es esa factura: con alcance 'una' la lista tiene una.
+      let clienteDeLaFactura: number | null = null;
+      if (alcance === "una") {
+        const { data: inv } = await admin.from("sales_invoices")
+          .select("customer_id").eq("id", pendientes[0].id).maybeSingle();
+        clienteDeLaFactura = inv?.customer_id ?? null;
+      }
+
       const { data: candidatos, error: eCand } = await admin.rpc("fichas_para_corregir_dte");
       if (eCand) console.error("fichas_para_corregir_dte:", eCand.message);
       const corregibles = (candidatos ?? []).filter(
-        (c: { origen: string; puede_escribir: boolean; ya_corregido: boolean }) =>
-          c.origen === "rechazo" && c.puede_escribir && !c.ya_corregido,
+        (c: { origen: string; alcance_escritura: string; ya_corregido: boolean; customer_id: number }) =>
+          c.origen === "rechazo" && c.alcance_escritura !== "ninguno" && !c.ya_corregido
+          && (clienteDeLaFactura === null || c.customer_id === clienteDeLaFactura),
       ).length;
 
       // Margen para las DOS llamadas encadenadas, no el resto del presupuesto:
@@ -438,24 +460,41 @@ Deno.serve(async (req) => {
           const cab = { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` };
           const rFichas = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sincronizar-fichas-clientes`, {
             method: "POST", headers: cab,
-            body: JSON.stringify({ alcance: "rechazos" }),
+            body: JSON.stringify({
+              alcance: "rechazos",
+              ...(clienteDeLaFactura ? { customer_id: clienteDeLaFactura } : {}),
+            }),
             signal: AbortSignal.timeout(120_000),
           });
           const f = await rFichas.json().catch(() => ({}));
           // Todo lo que cambia lo que el sistema le va a mandar a Hacienda. Una
           // fusión cuenta: reapunta la factura a OTRA ficha, así que el receptor
           // del documento deja de ser el mismo.
-          const escritas = (f?.distrito_escrito ?? 0) + (f?.ubicacion_por_defecto ?? 0)
-                         + (f?.dui_borrado ?? 0) + (f?.telefono_puesto ?? 0) + (f?.fusionadas ?? 0);
-          if (!escritas) {
+          corregidas = (f?.distrito_escrito ?? 0) + (f?.ubicacion_por_defecto ?? 0)
+                     + (f?.dui_borrado ?? 0) + (f?.telefono_puesto ?? 0) + (f?.fusionadas ?? 0);
+          if (!corregidas) {
             segundaVueltaMotivo = "la corrección de fichas no cambió nada";
           } else {
-            await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
+            // El reenvío conserva el alcance del llamador: apretar el botón de
+            // UNA factura no puede terminar mandando las de toda la empresa.
+            const rEnvio = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
               method: "POST", headers: cab,
-              body: JSON.stringify({ alcance: "todas", segundaVuelta: true }),
+              body: JSON.stringify({ alcance, invoice_id, branch_id, bolsa, segundaVuelta: true }),
               signal: AbortSignal.timeout(120_000),
             });
+            const r2 = await rEnvio.json().catch(() => ({}));
             segundaVueltaHecha = true;
+            // ── El número que se informa es el FINAL, no el de la ida ──────
+            // Sin esto, «Solventar» decía «1 no se pudo» sobre una factura que
+            // el reenvío acababa de meter con sello. Las que fallaron y se
+            // reintentaron ya están contadas en la vuelta 2: `fallidas` se
+            // REEMPLAZA, no se suma.
+            if (r2?.ok) {
+              resueltas += r2.resueltas ?? 0;
+              procesadas += r2.revisadas ?? 0;
+              conObservaciones += r2.con_observaciones ?? 0;
+              fallidas = r2.fallidas ?? 0;
+            }
           }
         } catch (e) {
           segundaVueltaMotivo = "falló la cadena";
@@ -487,6 +526,9 @@ Deno.serve(async (req) => {
         excluidas: excluidas.size,
         cortada_por_tiempo: cortadaPorTiempo,
         segunda_vuelta: segundaVueltaHecha,
+        // Cuántas fichas se tocaron para lograrlo. Es lo que separa «entró» de
+        // «entró porque le arreglamos el dato», y quien aprieta el botón lo ve.
+        fichas_corregidas: corregidas,
         // Por qué NO se hizo. Sin esto, una noche sin segunda vuelta se lee
         // igual que una noche en la que no hacía falta — y son cosas distintas.
         segunda_vuelta_motivo: segundaVueltaMotivo,
@@ -507,6 +549,9 @@ Deno.serve(async (req) => {
       excluidas: excluidas.size,
       cortada_por_tiempo: cortadaPorTiempo,
       segunda_vuelta: segundaVueltaHecha,
+      // Cuántas fichas se tocaron para lograrlo. Es lo que separa «entró» de
+      // «entró porque le arreglamos el dato», y quien aprieta el botón lo ve.
+      fichas_corregidas: corregidas,
       segunda_vuelta_motivo: segundaVueltaMotivo,
       detalle,
     });

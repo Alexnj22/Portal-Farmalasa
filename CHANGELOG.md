@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.629.0 — Al contribuyente se le completa el distrito, y Solventar corrige antes de reenviar
+
+**Tres facturas de Salud 1 llevaban días rebotando en Hacienda por un distrito
+vacío en la ficha del cliente, y el portal no las tocaba porque eran de
+contribuyentes.** Esa regla se abrió: ahora al contribuyente se le completa el
+distrito cuando falta. Nada más — ni el departamento, ni el municipio, ni el
+carné, ni el teléfono.
+
+**Y el distrito se deriva, no se rellena con el de siempre.** Cuando Hacienda
+rechaza la ubicación de un consumidor, el portal le pone la ubicación por
+defecto (Chalatenango). Hacer lo mismo con un contribuyente habría sido un
+error caro: de las 77 fichas de contribuyente sin distrito, **15 viven en San
+Salvador, La Libertad, San Miguel o Sonsonate**, y ponerles el default les
+habría cambiado el departamento — o sea el domicilio de su documento fiscal.
+Todas tienen departamento y municipio; lo único que falta es el distrito, así
+que se elige entre los de **su propio municipio**, a partir de su dirección.
+
+Las tres entraron con sello a los pocos segundos. En dos de ellas la dirección
+no nombraba ningún distrito, así que se eligió uno del municipio de forma
+consistente: es un distrito correcto del municipio correcto, que es lo que
+Hacienda exige, pero conviene saber que no es un dato averiguado.
+
+**«Completar ante Hacienda» ahora se llama «Solventar todas», y solventar hace
+lo que dice.** Antes, el botón de cada documento sólo dejaba una nota de que
+alguien lo había revisado — la factura seguía sin llegar a Hacienda. Y el botón
+de arriba mandaba el documento tal cual, así que devolvía el mismo rechazo que
+el barrido de esa noche iba a arreglar solo.
+
+Ahora los dos hacen el ciclo completo: mandan, y si Hacienda rechaza por un dato
+del cliente que el portal sabe corregir, corrigen esa ficha y vuelven a mandar.
+El aviso dice el resultado final y avisa cuándo hubo que tocar la ficha del
+cliente. La nota manual sigue existiendo, con su nombre real: **«Marcar
+revisada»**.
+
+Al solventar UN documento, la corrección se limita al cliente de ESA factura.
+Sin ese límite, apretar un botón en una fila habría escrito hasta 120 fichas de
+otros clientes.
+
 ## v2.628.0 — La cola de Hacienda se lee sin apuntar, y el teléfono deja de trabar el envío
 
 **El barrido de anoche corrió entero y no arregló nada, y eso tenía dos causas

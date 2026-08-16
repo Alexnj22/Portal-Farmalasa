@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.640.1 — El login ya no se ve claro un instante antes de oscurecerse
+
+- **La tarjeta del login entraba clara y después se oscurecía, en modo
+  oscuro.** Reportado por el usuario. No era un parpadeo de un cuadro: era una
+  transición visible, y tenía dos causas que se sumaban.
+
+  La primera es que el login pinta su propio material —fondo, vidrio, campos,
+  botones— con un juego de variables propio, porque vive fuera del proveedor de
+  temas. Ese juego tenía la versión oscura escrita **sólo** para el tema
+  `dark`, y el portal tiene **dos** temas oscuros: quien nunca eligió tema y
+  tiene el sistema en oscuro arranca en `solid-dark`. Con ese atributo, el
+  login caía en la paleta clara.
+
+  La segunda es de tiempo. El login fuerza claro/oscuro según el sistema, y lo
+  hacía en un efecto **pasivo**: como la vista se carga aparte del arranque,
+  ese efecto corría *después* de que el login ya estaba pintado. Y como la
+  tarjeta lleva `transition-all`, el cambio de atributo no se veía como un
+  salto sino como una animación de claro a oscuro.
+
+  Ahora la regla oscura cubre los dos temas oscuros —así el primer cuadro sale
+  bien aunque el JavaScript todavía no haya corrido— y los dos efectos del tema
+  son de layout, o sea que el atributo queda puesto **antes** del pintado. Lo
+  mismo al salir: la limpieza devuelve el tema del empleado antes de que se
+  pinte la vista siguiente.
+
 ## v2.640.0 — El login deja de estorbar al gestor de contraseñas, y «Sin acceso» ya no aparece por un permiso que no se pudo leer
 
 - **El detector del lector se comía el relleno del gestor, y encima se

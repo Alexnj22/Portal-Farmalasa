@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
     ShoppingCart, Pill, AlertCircle, Lock, Camera,
@@ -129,7 +129,17 @@ const keyframeStyles = `
         --lgn-boton-hover:rgba(255,255,255,0.38);
         --lgn-logo-filo:rgba(255,255,255,1);
     }
-    [data-theme="dark"] .lgn-fondo{
+    /* Los DOS temas oscuros del portal, no sólo "dark" (2026-08-16).
+       El bootstrap de index.html estampa el tema guardado ANTES del primer
+       pintado, y para quien nunca eligió tema con el sistema en oscuro ese
+       valor es "solid-dark". Con la regla escrita sólo para "dark", el login
+       caía en la paleta CLARA de arriba hasta que el efecto de abajo cambiaba
+       el atributo — o sea, la tarjeta se veía clara y después se oscurecía.
+       Acá el material del login queda bien pintado con CUALQUIERA de los dos
+       atributos oscuros, sin depender de que haya corrido JavaScript.
+       (Sin acentos graves acá adentro: esto vive en un template literal.) */
+    [data-theme="dark"] .lgn-fondo,
+    [data-theme="solid-dark"] .lgn-fondo{
         --lgn-bg:radial-gradient(ellipse at 38% 28%, #241a55 0%, #1b1445 22%, #150f36 50%, #0c0822 100%);
         --lgn-vidrio:rgba(255,255,255,0.06);
         --lgn-vidrio-borde:rgba(255,255,255,0.14);
@@ -291,8 +301,18 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     // acá no hay quién haya elegido «sólido» ni «líquido».
     // El valor real de <html> se guarda al montar y se devuelve al salir —
     // como el kiosco, que fuerza `dark` mientras vive.
+    //
+    // Los dos son `useLayoutEffect` y NO `useEffect` (2026-08-16). Esta vista
+    // es `lazy()`, así que commitea en su propio pintado, bastante después del
+    // arranque: con un efecto pasivo el atributo se cambiaba DESPUÉS de que el
+    // login ya estaba en pantalla, y como la tarjeta lleva `transition-all`, el
+    // cambio no era un parpadeo de un cuadro sino una transición visible de
+    // claro a oscuro. Un efecto de layout corre antes del pintado, así que el
+    // primer cuadro del login ya sale con el tema correcto. Y en la salida pasa
+    // lo mismo al revés: la limpieza devuelve el tema antes de que se pinte la
+    // vista siguiente.
     const temaPrevioRef = useRef(null);
-    useEffect(() => {
+    useLayoutEffect(() => {
         const root = document.documentElement;
         temaPrevioRef.current = root.getAttribute('data-theme');
         const meta = document.querySelector('meta[name="theme-color"]');
@@ -307,7 +327,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     // Efecto aparte del de arriba: éste se re-ejecuta si el sistema cambia de
     // claro a oscuro con el login abierto. Si guardara/restaurara el tema
     // previo, la segunda corrida guardaría el valor que puso la primera.
-    useEffect(() => {
+    // Va DESPUÉS del de arriba a propósito: los efectos corren en orden de
+    // declaración, así que el de arriba alcanza a guardar el tema real antes
+    // de que éste lo pise.
+    useLayoutEffect(() => {
         const root = document.documentElement;
         if (modoOscuro) root.setAttribute('data-theme', 'dark');
         else root.removeAttribute('data-theme');

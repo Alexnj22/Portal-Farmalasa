@@ -21,6 +21,58 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.630.0 — Facturas de mi sala: reservar vuelve a funcionar y el detalle dice lo que trae la factura
+
+**El botón «Es de mi sala» nunca funcionó.** Desde que se publicó el widget
+(2026-08-07), toda sala que lo apretó recibió **«Tu usuario no está activo.»** y
+la factura se quedó donde estaba. La tabla de reservas tenía **cero filas** en
+nueve días, y como el aviso suena a problema de la cuenta, nadie lo reportó como
+defecto del portal.
+
+La causa: las dos funciones del circuito buscaban al empleado con
+`status = 'ACTIVE'`, en inglés. El único valor que esa columna acepta es
+`ACTIVO` —lo fija el propio CHECK de la tabla, junto con INACTIVO / BAJA /
+LIQUIDADO / SUSPENDIDO—, así que la comparación no decía «este empleado no está
+activo»: no encontraba **ningún** empleado, para nadie, nunca. Lo mismo tenía
+«Soltar», sólo que no llegó a verse porque no había nada tomado que soltar.
+Reproducido en el entorno de pruebas antes de corregirlo y verificado después:
+tomar, soltar y la carrera entre dos salas.
+
+**El renglón de la factura decía cualquier cosa.** La factura de COFARSAL del
+10/08 —$662.25— se leía así en pantalla:
+
+> 2218 GRUPO DE TELEFONIAS · RECARGA TIGO $ 25.00 · Cant.: 8. · 2218 GRUPO DE
+> TELEFONIAS · RECARGA TIGO $ 25.00 · Cant.: 8. · 2226 GRUPO DE TELEFONIAS ·
+> RECARGA CLARO $1.00 · Cant.: 300.
+
+Ahora dice lo que la sala compró: **RECARGA TIGO $ 25.00 × 16 · RECARGA CLARO
+$1.00 × 300** (16 × $25 + 300 × $1, con el descuento de recargas, son los
+$662.25 exactos). Cuatro cosas estaban mal a la vez y las cuatro se ven ahí: el
+texto se partía por el `|` equivocado —el proveedor usa uno propio adentro de la
+descripción—, el grupo interno se pintaba como si fuera un producto, la cantidad
+arrastraba el punto final, y dos lotes del mismo producto salían como dos
+renglones idénticos en vez de sumarse.
+
+**El número de adelante no era una cantidad.** «4 GARRAFA DE AGUA» es el
+producto n.º 4 del proveedor, no cuatro garrafas: el mismo texto aparece en
+facturas de $4.00, $6.00 y $10.00. Se dejó de mostrar.
+
+**La factura ahora se llama por todo lo que trae.** La del 10/08 tiene recargas
+Tigo **y** Claro, y se titulaba «Recarga Tigo» a secas — la mitad de lo que la
+sala está por cargar no figuraba. Hoy dice «Recarga Tigo · Recarga Claro», en el
+widget y en Compras → Facturas de sala, que antes podían nombrarla distinto.
+
+**Y tres arreglos más del mismo barrido:**
+
+- «De tu línea» tiene su propio grupo en vez de caer bajo «Sin asignar», que
+  decía justo lo contrario.
+- El aviso de la carrera —«Otra sala tomó esta factura primero»— ya no se va
+  con la fila que lo produjo: ahora se lee arriba de la lista.
+- La antigüedad de la franja se medía contra medianoche UTC, o sea seis horas de
+  más por factura en El Salvador; los tramos de 2 y 7 días cambiaban antes de
+  tiempo.
+- La base ahora frena, y no sólo esconde, la factura de la línea de otra sala.
+
 ## v2.629.0 — Al contribuyente se le completa el distrito, y Solventar corrige antes de reenviar
 
 **Tres facturas de Salud 1 llevaban días rebotando en Hacienda por un distrito

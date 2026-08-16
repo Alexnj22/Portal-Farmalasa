@@ -80,28 +80,83 @@ export async function fetchFacturasSalaPanel(dias = 90) {
 }
 
 // ── El renglón, legible ─────────────────────────────────────────────────────
-// `items_text` viene tal como lo escribió el proveedor y trae de todo: el
-// separador `|` entre renglones, un `\r` en medio de la línea de COFARSAL, y la
-// cola de lote y vencimiento que a la sala no le dice nada para decidir si la
-// factura es suya.
+// `items_text` lo arma el sync de correo (`extractItemsText`): une los renglones
+// del DTE con ` | ` y le antepone a cada uno el CÓDIGO del proveedor —
+// `${codigo} ${descripcion}`—. La descripción viene tal como la escribió el
+// proveedor y trae de todo: un `\r` en medio, la cola de lote y vencimiento, y
+// —en COFARSAL— un `|` PROPIO que separa el grupo del producto:
 //
-//   "2218 GRUPO DE TELEFONIAS|RECARGA TIGO $ 25.00 \rLote: 8168 Cant.: 16. Fecha Exp.: 01/01/2030"
+//   "2218 GRUPO DE TELEFONIAS|RECARGA TIGO $ 25.00 \rLote: 8168 Cant.: 8. Fecha Exp.: 01/01/2030 | 2218 …Lote: 8253 Cant.: 8.… | 2226 …RECARGA CLARO $1.00 …Cant.: 300."
 //
-// De ahí lo que importa es «RECARGA TIGO $ 25.00 · Cant.: 16».
-export function resumenRenglones(itemsText) {
+// De ahí lo que importa es «RECARGA TIGO $ 25.00 × 16  ·  RECARGA CLARO $1.00 × 300».
+//
+// Cuatro cosas que se rompieron por leer mal ese texto (corregidas 2026-08-16,
+// las cuatro visibles a la vez en la factura de arriba):
+//
+//   1. **Partir por `|` a secas mezcla los DOS usos del carácter**: el separador
+//      de renglones que pone el sync (` | `, CON espacios) y el que el proveedor
+//      escribe adentro de su descripción. Así «2218 GRUPO DE TELEFONIAS» salía
+//      en pantalla como si fuera un producto más.
+//   2. **El número de adelante es el código del proveedor, NO la cantidad.**
+//      Medido: «4 GARRAFA DE AGUA» aparece igual en facturas de $4.00, $6.00 y
+//      $10.00 — si fuera la cantidad, las tres valdrían lo mismo. Mostrarlo
+//      invita a leer «4 garrafas» donde dice «producto n.º 4», y el comentario
+//      viejo de este archivo cometía exactamente esa lectura.
+//   3. **`([\d.]+)` se llevaba el punto que cierra la oración**: «Cant.: 8.».
+//   4. **Dos lotes del mismo producto se pintaban como dos renglones idénticos**
+//      —«RECARGA TIGO $ 25.00 × 8» dos veces— porque el lote, que es lo único
+//      que los distingue, se tira. Se suman: 16, que es lo que la sala compró.
+//
+// El código del proveedor se quita a sabiendas de que un renglón sin código
+// cuya descripción empiece con un número puro lo perdería. Hoy no existe: los
+// tres proveedores con regla mandan código (COFARSAL y la envasadora) o no
+// empiezan con número (Movistar: "Artículo: RECARGA ELECTRONICA…").
+const SEP_RENGLONES = / \| /;
+const MAX_RENGLONES = 6;
+
+const fmtCantidad = (n) => String(Math.round(n * 1000) / 1000);
+
+export function resumenRenglones(itemsText, { max = MAX_RENGLONES } = {}) {
     if (!itemsText) return 'Sin detalle';
-    return itemsText
-        .split('|')
-        .map(l => l.replace(/\r/g, ' ').replace(/\s+/g, ' ').trim())
-        .filter(Boolean)
-        .map(l => {
-            const cant = l.match(/Cant\.?:\s*([\d.]+)/i);
-            // Se corta en Lote/Fecha Exp. porque son la cola administrativa; la
-            // cantidad se rescata antes de tirarla, que es lo que sí ayuda a
-            // reconocer la factura.
-            const cuerpo = l.split(/\s*(?:Lote|Fecha Exp)\.?:/i)[0].trim();
-            return cant ? `${cuerpo} · Cant.: ${cant[1]}` : cuerpo;
-        })
-        .filter(Boolean)
-        .join('  ·  ');
+
+    // Map en vez de array: la clave es el cuerpo del renglón, así dos lotes del
+    // mismo producto caen en la misma entrada y sus cantidades se suman.
+    const renglones = new Map();
+
+    for (const crudo of String(itemsText).split(SEP_RENGLONES)) {
+        const linea = crudo.replace(/\r/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!linea) continue;
+
+        // La cantidad se rescata ANTES de tirar la cola administrativa, que es
+        // donde el proveedor la escribe.
+        const cant = linea.match(/\bCant\.?:\s*(\d+(?:[.,]\d+)?)/i);
+
+        let cuerpo = linea.split(/\s*(?:Lote|Fecha Exp)\.?:/i)[0].trim();
+        // Del `grupo|producto` del proveedor queda el producto — y con él se va
+        // el código, que viaja pegado al grupo.
+        cuerpo = cuerpo.split('|').pop().trim();
+        // Sin `|` de por medio el código queda al frente y hay que quitarlo acá.
+        cuerpo = cuerpo.replace(/^\d{1,6}\s+(?=\S)/, '').trim();
+        if (!cuerpo) continue;
+
+        const n = cant ? Number(cant[1].replace(',', '.')) : null;
+        const previo = renglones.get(cuerpo);
+        if (previo === undefined)            renglones.set(cuerpo, n);
+        // Un renglón sin cantidad no se puede sumar: manda el «no se sabe».
+        else if (previo === null || n === null) renglones.set(cuerpo, null);
+        else                                 renglones.set(cuerpo, previo + n);
+    }
+
+    const lineas = [...renglones].map(
+        ([cuerpo, n]) => (n === null ? cuerpo : `${cuerpo} × ${fmtCantidad(n)}`));
+    if (!lineas.length) return 'Sin detalle';
+
+    // `items_text` admite hasta 8 kB: una factura con 60 renglones convertiría
+    // la tarjeta del tablero en una pared de texto. Hoy el máximo real son 3
+    // renglones, así que el tope no recorta nada — está para que el día que
+    // recorte, se note que recortó.
+    if (lineas.length > max) {
+        return [...lineas.slice(0, max), `y ${lineas.length - max} más`].join('  ·  ');
+    }
+    return lineas.join('  ·  ');
 }

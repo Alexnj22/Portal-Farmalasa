@@ -60,8 +60,19 @@ const fmtFecha = (iso) => {
     return `${d}/${m}/${a.slice(2)}`;
 };
 
+// La misma trampa que esquiva `fmtFecha`, y la franja de antigüedad caía en
+// ella: `new Date('2026-08-10').getTime()` es medianoche UTC —las 18:00 del día
+// ANTERIOR en El Salvador— y se restaba contra un reloj local, así que toda
+// factura contaba 6 horas de más y cruzaba los cortes de 2 y 7 días esa
+// cantidad antes de tiempo. Se arma la fecha como medianoche LOCAL.
+const diasDesde = (iso, ahora) => {
+    if (!iso) return 0;
+    const [a, m, d] = iso.split('-').map(Number);
+    return (ahora - new Date(a, m - 1, d).getTime()) / 86400000;
+};
+
 /* ─── Una factura ─────────────────────────────────────────────────────────── */
-function FilaFactura({ fila, branchId, onCambio }) {
+function FilaFactura({ fila, branchId, onCambio, onAviso }) {
     const [ocupado, setOcupado] = useState(false);
     const [error,   setError]   = useState('');
 
@@ -75,7 +86,12 @@ function FilaFactura({ fila, branchId, onCambio }) {
         setError(''); setOcupado(true);
         const { error: e } = await reclamarFactura(fila.document_id, branchId);
         setOcupado(false);
-        if (e) { setError(e); onCambio(); return; }   // recargar: quizá otra la tomó
+        // El aviso NO puede vivir en esta fila. El caso que importa es el que
+        // el diseño promete resolver —«Otra sala tomó esta factura primero»— y
+        // ahí la recarga hace desaparecer la fila: el mensaje se iría montado
+        // en ella y la sala vería su factura esfumarse sin explicación. Sube al
+        // panel, que sigue en pantalla.
+        onAviso(e ?? '');
         onCambio();
     };
 
@@ -115,8 +131,12 @@ function FilaFactura({ fila, branchId, onCambio }) {
                         {fila.linea && ` · línea ${fila.linea}`}
                     </p>
                     {/* El renglón es lo que deja reconocer la factura sin abrir
-                        nada: "4 GARRAFA DE AGUA", "RECARGA TIGO $ 25.00 · Cant.: 16".
-                        Por eso va completo y no recortado a una palabra. */}
+                        nada: "GARRAFA DE AGUA", "RECARGA TIGO $ 25.00 × 16".
+                        Por eso va completo y no recortado a una palabra.
+                        El número que el proveedor pone ADELANTE de la
+                        descripción es su código de producto y no se muestra:
+                        "4 GARRAFA DE AGUA" es el producto n.º 4, no cuatro
+                        garrafas — el detalle, en `resumenRenglones`. */}
                     <p className="text-micro text-content-2 mt-1 leading-snug">
                         {resumenRenglones(fila.items_text)}
                     </p>
@@ -167,6 +187,7 @@ function FilaFactura({ fila, branchId, onCambio }) {
 // abre el modal, los datos están — se ve la lista, no un esqueleto.
 function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onCambio }) {
     const [busca, setBusca] = useState('');
+    const [aviso, setAviso] = useState('');
 
     // El buscador barre monto, proveedor, etiqueta y el renglón: teclear "184"
     // deja las de $184.68 y teclear "tigo" deja las recargas. Es el filtro por
@@ -182,8 +203,17 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
         ].some(v => String(v ?? '').toLowerCase().includes(q)));
     }, [filas, busca]);
 
+    // Tres grupos y no dos. «De tu línea» estaba cayendo bajo el rótulo «Sin
+    // asignar», que dice exactamente lo contrario: esa factura SÍ está asignada
+    // —por el número de teléfono— y lo único que falta es confirmarla.
+    //
+    // Y los grupos filtran por el estado que les toca en vez de por «todo lo que
+    // no es mío»: si algún día vuelve a pedirse `incluirTomadas`, las de otras
+    // salas no se colarán en «Sin asignar» con un botón que la base va a
+    // rechazar.
     const mias     = (visibles ?? []).filter(f => f.estado === 'mia');
-    const abiertas = (visibles ?? []).filter(f => f.estado !== 'mia');
+    const deLinea  = (visibles ?? []).filter(f => f.estado === 'mia_linea');
+    const abiertas = (visibles ?? []).filter(f => f.estado === 'disponible');
 
     return (
         <div className="flex flex-col gap-3 flex-1 min-h-0">
@@ -204,6 +234,9 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
 
             {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
 
+            {/* El aviso de la carrera: la fila que lo produjo ya no está. */}
+            {aviso && <p className="text-label text-danger-text font-medium px-1">{aviso}</p>}
+
             {cargando && <SkeletonText lines={4} />}
 
             {!cargando && visibles.length === 0 && (
@@ -217,7 +250,20 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
                         Tuyas · descargalas para cargar la compra
                     </p>
                     {mias.map(f => (
-                        <FilaFactura key={f.document_id} fila={f} branchId={branchId} onCambio={onCambio} />
+                        <FilaFactura key={f.document_id} fila={f} branchId={branchId}
+                            onCambio={onCambio} onAviso={setAviso} />
+                    ))}
+                </div>
+            )}
+
+            {!cargando && deLinea.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                        De tu línea · confirmá que son tuyas
+                    </p>
+                    {deLinea.map(f => (
+                        <FilaFactura key={f.document_id} fila={f} branchId={branchId}
+                            onCambio={onCambio} onAviso={setAviso} />
                     ))}
                 </div>
             )}
@@ -228,7 +274,8 @@ function PanelFacturas({ filas, error, cargando, branchId, selectorSucursal, onC
                         Sin asignar
                     </p>
                     {abiertas.map(f => (
-                        <FilaFactura key={f.document_id} fila={f} branchId={branchId} onCambio={onCambio} />
+                        <FilaFactura key={f.document_id} fila={f} branchId={branchId}
+                            onCambio={onCambio} onAviso={setAviso} />
                     ))}
                 </div>
             )}
@@ -308,8 +355,7 @@ export default function WidgetFacturasSala({ branchId, selectorSucursal }) {
         const esperando = filas.filter(f => f.estado === 'disponible' || f.estado === 'mia_linea');
         if (!esperando.length) return { tramos: [], monto: 0, viejas: 0 };
 
-        const hoy = ahora;
-        const dias = (f) => (hoy - new Date(f.fecha_emision).getTime()) / 86400000;
+        const dias = (f) => diasDesde(f.fecha_emision, ahora);
         const recientes = esperando.filter(f => dias(f) < 2).length;
         const medias    = esperando.filter(f => dias(f) >= 2 && dias(f) <= 7).length;
         const viejas    = esperando.filter(f => dias(f) > 7).length;

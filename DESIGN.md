@@ -3166,7 +3166,7 @@ el borde tintado no se vería.
 
 | # | dónde | por qué |
 |---|---|---|
-| 1-2 | `LoginView` (dos campos) | Superficie **bespoke**: fuerza tema claro porque corre antes de que exista sesión — no hay tema de usuario que seguir (§25.4) |
+| 1-2 | `LoginView` (dos campos) | Superficie **bespoke**: corre antes de que exista sesión, así que no hay tema de perfil que seguir. Desde el 2026-08-16 sigue el modo **claro/oscuro del sistema** (`prefers-color-scheme`), que es lo único disponible ahí; su material sale de variables propias (`--lgn-*`) declaradas en la vista, no de los tokens del shell (§25.4) |
 | 3 | `AuthPromptPanel` — el PIN del kiosco | Su borde lleva el **caret virtual animado**, que es el indicador anti-fraude. El canónico dibuja la caja en el CONTENEDOR, no en el `<input>`, así que la animación quedaría invisible |
 | 4 | `MenuSearchModal` | La barra del encabezado de ⌘K. No es un campo en una caja: es una fila a todo el ancho con divisor abajo |
 

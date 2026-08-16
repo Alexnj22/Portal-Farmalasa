@@ -200,12 +200,25 @@ const TimeClockView = ({ setView }) => {
           quedaba inaccesible — no había scroll que lo alcanzara porque este
           contenedor usaba min-h en vez de h fija (ver el cambio de
           min-h-[100dvh]→h-[100dvh] arriba, que además deja un scroll real
-          como red de seguridad para cualquier caso más extremo). */}
-      <main className="relative z-base flex-1 w-full flex flex-col items-center px-4 py-20 sm:py-24 [@media(max-height:800px)]:py-6">
-        <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(max-height:800px)]:gap-2.5">
+          como red de seguridad para cualquier caso más extremo).
 
-          {/* Logo */}
-          <div className="animate-view-enter flex flex-col items-center gap-2 [@media(max-height:800px)]:gap-1">
+          El relleno bajó de `py-20 sm:py-24` a `py-10 sm:py-12` (2026-08-16):
+          la columna se centra con `my-auto`, así que ese relleno NO es aire
+          de diseño — es un PISO que le quita 96px de alto útil al panel y no
+          se ve. Medido con el marco real: el formulario de permiso obligaba a
+          scrollear 49px hasta en 1920×1080 y 266px en 1024×600, en una
+          pantalla que se opera de pie y sin mouse. Además hay un escalón
+          intermedio en 900px, que es donde vive media flota de portátiles
+          (1440×900, 1600×900): antes saltaba de tamaño completo a compacto y
+          esos 100px no los cubría nadie. */}
+      <main className="relative z-base flex-1 w-full flex flex-col items-center px-4 py-8 sm:py-10 [@media(min-height:801px)_and_(max-height:900px)]:py-6 [@media(max-height:800px)]:py-5 [@media(max-height:640px)]:!py-2">
+        <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(min-height:801px)_and_(max-height:900px)]:gap-4 [@media(max-height:800px)]:gap-2.5">
+
+          {/* Logo — se retira por completo abajo de 640px de alto: en esas
+              pantallas es lo único prescindible (el reloj y el panel no lo
+              son), y son justo los 60px que hacen que el formulario de
+              permiso entre sin scroll. */}
+          <div className="animate-view-enter flex flex-col items-center gap-2 [@media(max-height:800px)]:gap-1 [@media(max-height:640px)]:hidden">
             <img
               src="/Logo192.png"
               alt="Farmalasa"
@@ -223,7 +236,7 @@ const TimeClockView = ({ setView }) => {
               bg-gradient-to-b from-blue-950/[0.30] to-white/[0.02]
               backdrop-blur-[60px] backdrop-saturate-[160%]
               border border-white/[0.10]
-              rounded-header px-5 py-7 [@media(max-height:800px)]:py-3
+              rounded-header px-5 py-7 [@media(min-height:801px)_and_(max-height:900px)]:py-5 [@media(max-height:800px)]:py-3 [@media(max-height:640px)]:!py-2
               shadow-[var(--shadow-glass-5)]
               transition-all duration-[var(--dur-lento)] hover:border-white/[0.16] hover:translate-y-[var(--lift-card)]
               hover:shadow-[var(--shadow-glass-5)]"
@@ -236,7 +249,7 @@ const TimeClockView = ({ setView }) => {
 
             {/* Time */}
             <h2 className="relative text-white/[0.92] font-extralight tabular-nums leading-none w-full text-center whitespace-nowrap
-              text-[3rem] sm:text-[3.5rem] [@media(max-height:800px)]:text-[1.85rem] tracking-tight
+              text-[3rem] sm:text-[3.5rem] [@media(min-height:801px)_and_(max-height:900px)]:text-[2.6rem] [@media(max-height:800px)]:text-[1.85rem] [@media(max-height:640px)]:!text-[1.5rem] tracking-tight
               drop-shadow-[0_0_40px_rgba(147,197,253,0.22)]">
               {timeStr}
             </h2>
@@ -248,7 +261,7 @@ const TimeClockView = ({ setView }) => {
 
             {/* Device label */}
             {kioskLabel && (
-              <p className="relative text-white/20 text-micro font-semibold uppercase tracking-[0.22em] mt-2 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-4">
+              <p className="relative text-white/20 text-micro font-semibold uppercase tracking-[0.22em] mt-2 [@media(max-height:800px)]:mt-1 [@media(max-height:640px)]:hidden w-full text-center truncate px-4">
                 {kioskLabel}
               </p>
             )}

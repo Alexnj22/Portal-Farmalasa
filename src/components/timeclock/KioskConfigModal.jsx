@@ -50,10 +50,15 @@ const KioskConfigModal = ({
   }));
 
   return (
-    <div className="absolute inset-0 z-sidebar-desktop bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-[var(--dur-slow)]">
-      
+    // `fixed` y no `absolute`: el velo se medía contra la caja VISIBLE del
+    // kiosco, que es un contenedor scrolleable — al bajar dejaba de tapar. Y
+    // `items-start` + `my-auto` en la tarjeta en vez de `items-center`, para
+    // que en un monitor bajo el contenido sobrante quede alcanzable en vez de
+    // salirse por arriba (misma receta que ModalShell.jsx).
+    <div className="fixed inset-0 z-sidebar-desktop bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-start justify-center overflow-y-auto overscroll-contain p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-[var(--dur-slow)]">
+
       {/* Tarjeta Liquid Glass */}
-      <div className="w-full max-w-[420px] max-h-full overflow-y-auto scrollbar-hide flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 shadow-[var(--shadow-glass-dark)] text-center relative">
+      <div className="w-full max-w-[420px] my-auto flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] text-center relative">
         
         {parsedConfig ? (
           /* =========================================

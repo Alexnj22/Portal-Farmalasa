@@ -165,7 +165,10 @@ const EXCEPTIONS = {
   // no pueden heredar su material.
   //
   //  · `LoginView` se pinta antes de que exista sesión, tema de perfil ni
-  //    layout — es la única vista sin `GlassViewLayout` alrededor.
+  //    layout — es la única vista sin `GlassViewLayout` alrededor. Desde el
+  //    2026-08-16 SÍ tiene tema, pero el del SISTEMA (claro/oscuro), y lo
+  //    resuelve con variables propias (`--lgn-*`) declaradas en la vista:
+  //    fuera del shell no hay tokens de superficie que heredar.
   //  · El kiosco (`timeclock/*`) es oscuro en los CUATRO temas por decisión,
   //    igual que el sidebar antes de §12: corre en una tablet fija de sucursal,
   //    a un brazo de distancia, y su contraste está calibrado para eso.

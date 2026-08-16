@@ -42,9 +42,9 @@ const AuthPromptPanel = ({
   const hasValue = scanCode && scanCode.length > 0;
 
   return (
-    <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-[var(--dur-lento)] pointer-events-auto overflow-hidden">
-      
-      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] overflow-hidden transition-all duration-[var(--dur-lento)] hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
+    <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(min-height:801px)_and_(max-height:900px)]:p-2 [@media(max-height:800px)]:p-0 animate-in fade-in duration-[var(--dur-lento)] pointer-events-auto overflow-hidden">
+
+      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-8 [@media(min-height:801px)_and_(max-height:900px)]:p-4 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] overflow-hidden transition-all duration-[var(--dur-lento)] hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
 
         {/* TOP */}
         <div className="flex flex-col items-center text-center w-full mb-5 sm:mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">

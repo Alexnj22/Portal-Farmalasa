@@ -9,30 +9,90 @@ import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
 import { mensajeAmigable } from '../utils/errorMessages';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
 const SCAN_MIN_LENGTH = 3;
-// Ventana inicial con prioridad del lector: si nadie escanea, el foco pasa a usuario.
-const SCAN_FOCUS_WAIT_MS = 10_000;
+// Ventana inicial con prioridad del lector: si nadie escanea, el foco pasa a
+// usuario. Eran 10s y no alcanzaban para sacar el carné y acercarlo al lector
+// (2026-08-16, a pedido del usuario): el foco saltaba al campo de usuario en
+// mitad del gesto y el carné terminaba tecleándose adentro del campo.
+const SCAN_FOCUS_WAIT_MS = 30_000;
+
+/* ── Ráfaga del lector DENTRO de un campo ────────────────────────────────
+   El carné ES la contraseña (`AuthContext.login` lo manda como `password`),
+   así que si el lector dispara con el foco puesto en «usuario» el código
+   queda ESCRITO Y A LA VISTA en un campo de texto plano — cualquiera que
+   mire la pantalla se lleva la credencial. La captura global de keydown no
+   cubre ese caso a propósito: mientras el foco está en un input, las teclas
+   son del input.
+   La solución es medir la velocidad, que es lo único que distingue un lector
+   de una persona: 40ms es el mismo umbral con el que `detectInputMethod`
+   (utils/timeClock.helpers.js) separa ESCANER_INFRARROJO de TECLADO_MANUAL
+   en el kiosco. A las 3 teclas seguidas por debajo de ese hueco se borra lo
+   que alcanzó a pintarse y el resto no llega al campo.
+   Los códigos reales miden 3, 4 o 5 caracteres (medido sobre `employees`),
+   así que el detector NO puede esperar a la sexta tecla: tiene que decidir
+   con dos huecos. Por eso existe la vuelta atrás — si el hueco siguiente es
+   humano, era un tecleo veloz y el texto se devuelve al campo intacto. */
+const RAFAGA_GAP_MS = 40;
+const RAFAGA_MIN_TECLAS = 3;
+// Un lector sin sufijo Enter existe: si la ráfaga muere sin Enter, se toma
+// como escaneo igual. Devolver el código al campo sería justamente publicar
+// la credencial que este bloque evita.
+const RAFAGA_ESPERA_ENTER_MS = 400;
 
 /* ─── Shared styles ─────────────────────────────────────────────────────── */
 
 const inputCls = [
     'w-full',
-    'bg-white/[0.22] hover:bg-white/[0.32]',
+    'bg-[var(--lgn-campo)] hover:bg-[var(--lgn-campo-hover)]',
     'backdrop-blur-md',
     'border border-border-card hover:border-border-card',
     'text-content placeholder-content-3/80',
     'outline-none',
-    'focus:bg-white/[0.58] focus:border-border-card',
+    'focus:bg-[var(--lgn-campo-foco)] focus:border-border-card',
     'focus:shadow-[var(--shadow-shine-lg)]',
     'transition-all duration-[var(--dur-base)]',
     'font-bold',
 ].join(' ');
 
+/* El login vive FUERA de `ThemeProvider` (es la única vista sin shell), así
+   que no puede consumir sus tokens de superficie: los define acá y los
+   duplica bajo `[data-theme="dark"]`, que es el atributo que esta misma
+   vista estampa según el modo claro/oscuro del sistema. Un solo juego de
+   variables en el contenedor raíz — así el material se decide en UN lugar y
+   no en veinte `bg-white/[0.xx]` sueltos que sólo servían para el fondo
+   claro. */
 const keyframeStyles = `
-    @keyframes lgn-logo{0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(110,70,220,0.16),inset 0 2px 0 rgba(255,255,255,1);}50%{transform:scale(1.04);box-shadow:0 20px 56px rgba(110,70,220,0.28),inset 0 2px 0 rgba(255,255,255,1);}}
+    .lgn-fondo{
+        --lgn-bg:radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%);
+        --lgn-vidrio:rgba(255,255,255,0.20);
+        --lgn-vidrio-borde:rgba(255,255,255,0.84);
+        --lgn-brillo:rgba(255,255,255,0.26);
+        --lgn-campo:rgba(255,255,255,0.22);
+        --lgn-campo-hover:rgba(255,255,255,0.32);
+        --lgn-campo-foco:rgba(255,255,255,0.58);
+        --lgn-linea:rgba(255,255,255,0.60);
+        --lgn-boton:rgba(255,255,255,0.18);
+        --lgn-boton-hover:rgba(255,255,255,0.38);
+        --lgn-logo-filo:rgba(255,255,255,1);
+    }
+    [data-theme="dark"] .lgn-fondo{
+        --lgn-bg:radial-gradient(ellipse at 38% 28%, #241a55 0%, #1b1445 22%, #150f36 50%, #0c0822 100%);
+        --lgn-vidrio:rgba(255,255,255,0.06);
+        --lgn-vidrio-borde:rgba(255,255,255,0.14);
+        --lgn-brillo:rgba(255,255,255,0.07);
+        --lgn-campo:rgba(255,255,255,0.07);
+        --lgn-campo-hover:rgba(255,255,255,0.11);
+        --lgn-campo-foco:rgba(255,255,255,0.17);
+        --lgn-linea:rgba(255,255,255,0.20);
+        --lgn-boton:rgba(255,255,255,0.05);
+        --lgn-boton-hover:rgba(255,255,255,0.12);
+        --lgn-logo-filo:rgba(255,255,255,0.16);
+    }
+    @keyframes lgn-logo{0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(110,70,220,0.16),inset 0 2px 0 var(--lgn-logo-filo);}50%{transform:scale(1.04);box-shadow:0 20px 56px rgba(110,70,220,0.28),inset 0 2px 0 var(--lgn-logo-filo);}}
     @keyframes scan-ln{0%{top:10%}50%{top:88%}100%{top:10%}}
     @keyframes scannerReveal{from{opacity:0;transform:scaleY(0.72) translateY(-12px);filter:blur(6px);transform-origin:top center;}to{opacity:1;transform:scaleY(1) translateY(0);filter:blur(0);transform-origin:top center;}}
 `;
@@ -73,10 +133,10 @@ const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h
     </button>
 );
 
-const CameraScanner = ({ videoRef }) => (
+const CameraScanner = ({ videoRef, compact }) => (
     <div style={{ animation: 'scannerReveal 450ms var(--ease-spring) both' }} className="flex flex-col gap-2.5">
         <div className="relative w-full overflow-hidden border border-white/[0.14] shadow-[var(--shadow-glass-5)]"
-            style={{ height: 224, borderRadius: '1.5rem' }}>
+            style={{ height: compact ? 156 : 224, borderRadius: '1.5rem' }}>
             <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-sm" />
             <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" autoPlay playsInline muted />
             <div style={{ position:'absolute', left:'8%', right:'8%', height:'2px', background:'linear-gradient(90deg, transparent, rgba(0,82,204,0.95), transparent)', animation:'scan-ln 2s ease-in-out infinite', zIndex:10, boxShadow:'0 0 18px rgba(0,82,204,0.75), 0 0 50px rgba(0,82,204,0.25)' }} />
@@ -125,6 +185,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [scanHoldLeft,      setScanHoldLeft]      = useState(SCAN_FOCUS_WAIT_MS / 1000);
     const [hasCamera,         setHasCamera]         = useState(false);
 
+    // Las tres preguntas de pantalla, todas por `matchMedia` y no por
+    // `window.innerWidth` leído en el render: así el login se reacomoda solo al
+    // cambiar de monitor, al girar la tablet o al mover la ventana, sin quedar
+    // clavado en la medida que había al montar.
+    const esAngosto = useMediaQuery('(max-width: 1023px)');
+    const esBaja    = useMediaQuery('(max-height: 820px)');
+    const modoOscuro = useMediaQuery('(prefers-color-scheme: dark)');
+
     const usernameRef     = useRef(null);
     const userPasswordRef = useRef(null);
     const videoRef        = useRef(null);
@@ -142,25 +210,39 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         return () => clearTimeout(t);
     }, []);
 
-    // El login siempre es claro/liquid, sin importar el tema que el usuario
-    // haya dejado activo antes de cerrar sesión (--content, --brand, etc. se
-    // leen vía [data-theme] en <html> — si queda "dark"/"solid-dark" puesto,
-    // los íconos y textos de esta vista salen con tokens oscuros sobre el
-    // fondo claro hardcodeado de abajo). Mismo patrón que TimeClockView.jsx
-    // (kiosco, siempre-oscuro): forzamos el atributo mientras la vista vive
-    // y restauramos el tema real del usuario al desmontar.
+    // ── Tema del login: claro u oscuro según el SISTEMA (2026-08-16) ─────
+    // Antes esta vista era siempre clara, pasara lo que pasara. Ahora sigue
+    // el modo del sistema operativo, que es lo único que existe ANTES de que
+    // haya sesión: el tema del portal es una preferencia del empleado y vive
+    // en su perfil, o sea del otro lado del login.
+    // Son sólo dos estados a propósito (claro/oscuro), no los cuatro temas:
+    // acá no hay quién haya elegido «sólido» ni «líquido».
+    // El valor real de <html> se guarda al montar y se devuelve al salir —
+    // como el kiosco, que fuerza `dark` mientras vive.
+    const temaPrevioRef = useRef(null);
     useEffect(() => {
         const root = document.documentElement;
-        const prevTheme = root.getAttribute('data-theme');
+        temaPrevioRef.current = root.getAttribute('data-theme');
         const meta = document.querySelector('meta[name="theme-color"]');
-        const prevColor = meta?.content;
-        root.removeAttribute('data-theme');
-        if (meta) meta.content = '#e2defc';
+        const colorPrevio = meta?.content;
         return () => {
-            if (prevTheme) root.setAttribute('data-theme', prevTheme);
-            if (meta && prevColor) meta.content = prevColor;
+            if (temaPrevioRef.current) root.setAttribute('data-theme', temaPrevioRef.current);
+            else root.removeAttribute('data-theme');
+            if (meta && colorPrevio) meta.content = colorPrevio;
         };
     }, []);
+
+    // Efecto aparte del de arriba: éste se re-ejecuta si el sistema cambia de
+    // claro a oscuro con el login abierto. Si guardara/restaurara el tema
+    // previo, la segunda corrida guardaría el valor que puso la primera.
+    useEffect(() => {
+        const root = document.documentElement;
+        if (modoOscuro) root.setAttribute('data-theme', 'dark');
+        else root.removeAttribute('data-theme');
+        const meta = document.querySelector('meta[name="theme-color"]');
+        // Mismos valores que THEME_COLOR_MAP de ThemeContext (liquid / dark).
+        if (meta) meta.content = modoOscuro ? '#130d35' : '#e2defc';
+    }, [modoOscuro]);
 
     // Solo mostrar el botón de cámara si el dispositivo tiene una.
     useEffect(() => {
@@ -185,7 +267,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     // (el navegador/gestor de contraseñas suele enfocar el primer input — se
     // libera); si no hubo login al vencer, el foco pasa a usuario.
     useEffect(() => {
+        // Soltar el foco es para el navegador o el gestor de contraseñas, que
+        // enfocan el primer campo solos al montar. Si quien lo enfocó fue una
+        // PERSONA —alcanzó a hacer clic dentro de esos 50ms—, quitárselo le
+        // manda las teclas al lector global y el campo se queda vacío sin que
+        // se entienda por qué. Lo destapó la prueba de Playwright, que hace
+        // exactamente eso: cliquea apenas aparece el campo.
+        const tocado = { por_persona: false };
+        const marcar = () => { tocado.por_persona = true; };
+        window.addEventListener('pointerdown', marcar, true);
         const blurT = setTimeout(() => {
+            if (tocado.por_persona) return;
             const ae = document.activeElement;
             if (ae === usernameRef.current || ae === userPasswordRef.current) ae.blur();
         }, 50);
@@ -198,6 +290,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             if (!busyRef.current) usernameRef.current?.focus();
         }, SCAN_FOCUS_WAIT_MS);
         return () => {
+            window.removeEventListener('pointerdown', marcar, true);
             clearTimeout(blurT);
             clearTimeout(scanHoldTimeoutRef.current);
             clearInterval(scanHoldIntervalRef.current);
@@ -330,6 +423,95 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         }, 0);
     }, [endScanHold]);
 
+    /* ── El lector, cuando dispara con el foco DENTRO de un campo ────────── */
+
+    // `prefijo` es lo que el usuario ya tenía escrito antes de la ráfaga: se
+    // conserva para no borrarle su texto, y para poder devolvérselo entero si
+    // resulta que no era un lector sino un tecleo veloz.
+    const rafagaRef = useRef({ activa: false, buf: '', prefijo: '', teclas: 0, ultima: 0, campo: null, timer: null });
+
+    const olvidarRafaga = useCallback(() => {
+        const r = rafagaRef.current;
+        clearTimeout(r.timer);
+        r.activa = false; r.buf = ''; r.prefijo = ''; r.teclas = 0; r.campo = null; r.timer = null;
+    }, []);
+
+    // Falso positivo: alguien tecleando muy rápido. Se le devuelve el texto.
+    const devolverRafaga = useCallback(() => {
+        const r = rafagaRef.current;
+        if (r.activa && r.campo) r.campo.value = r.prefijo + r.buf;
+        olvidarRafaga();
+        syncFormEngaged();
+    }, [olvidarRafaga, syncFormEngaged]);
+
+    const cobrarRafagaComoEscaneo = useCallback(() => {
+        const r = rafagaRef.current;
+        const codigo = r.buf;
+        if (r.campo) r.campo.value = r.prefijo;   // el código NO se muestra
+        olvidarRafaga();
+        syncFormEngaged();
+        if (codigo.length >= SCAN_MIN_LENGTH) handleScanLoginRef.current(codigo);
+    }, [olvidarRafaga, syncFormEngaged]);
+
+    const vigilarRafaga = (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const r = rafagaRef.current;
+        const campo = e.currentTarget;
+
+        if (e.key === 'Enter') {
+            // Enter del lector: el submit del formulario no llega a correr —
+            // mandar el carné como contraseña sólo produce un error inútil.
+            if (r.activa) { e.preventDefault(); cobrarRafagaComoEscaneo(); }
+            return;
+        }
+        if (e.key.length !== 1) return;   // Shift, Tab, flechas, Backspace…
+
+        const ahora  = Date.now();
+        const hueco  = ahora - r.ultima;
+        r.ultima = ahora;
+
+        if (hueco > RAFAGA_GAP_MS || r.campo !== campo) {
+            if (r.activa) devolverRafaga();   // el hueco humano deshace la sospecha
+            const rr = rafagaRef.current;
+            // `prefijo` se toma ACÁ, en la primera tecla de la posible ráfaga:
+            // es el texto que el usuario ya tenía escrito, todavía sin ella.
+            // Calcularlo después restando teclas no sirve — en `keydown` el
+            // carácter aún no se insertó, y cuánto alcanzó a pintarse depende
+            // de la carrera entre el lector y el navegador (medido: dejaba
+            // «an» de «ana»).
+            rr.prefijo = campo.value;
+            rr.buf = e.key; rr.teclas = 1; rr.campo = campo; rr.activa = false; rr.ultima = ahora;
+            return;
+        }
+
+        r.buf += e.key;
+        r.teclas += 1;
+        if (r.teclas < RAFAGA_MIN_TECLAS) return;
+
+        if (!r.activa) {
+            r.activa = true;
+            // Lo que la ráfaga alcanzó a pintar desaparece; lo que el usuario
+            // tenía escrito antes se respeta.
+            campo.value = r.prefijo;
+            syncFormEngaged();
+        }
+        e.preventDefault();               // el resto del código ya no llega al campo
+        clearTimeout(r.timer);
+        r.timer = setTimeout(() => { if (rafagaRef.current.activa) cobrarRafagaComoEscaneo(); }, RAFAGA_ESPERA_ENTER_MS);
+    };
+
+    useEffect(() => () => clearTimeout(rafagaRef.current.timer), []);
+
+    // Pegar en usuario o contraseña queda prohibido (a pedido del usuario,
+    // 2026-08-16): una credencial que viaja por el portapapeles queda ahí,
+    // legible para cualquier otra app y para el siguiente que se siente.
+    // El autocompletado del navegador NO pasa por acá — rellena el campo sin
+    // emitir `paste`, así que sigue funcionando.
+    const bloquearPegado = (e) => {
+        e.preventDefault();
+        setError('Por seguridad, escribe tus datos: aquí no se pega.');
+    };
+
     /* ── Login usuario/contraseña ────────────────────────────────────────── */
 
     const handleUsernameLogin = async (e) => {
@@ -458,7 +640,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         </button>
                     )}
                 </div>
-                {cameraActive && <CameraScanner videoRef={videoRef} />}
+                {cameraActive && <CameraScanner videoRef={videoRef} compact={compact} />}
             </div>
         );
     };
@@ -482,7 +664,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
                         <input aria-label={placeholder} ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
+                            spellCheck="false"
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
+                            onKeyDown={vigilarRafaga}
+                            onPaste={bloquearPegado} onDrop={bloquearPegado} onDragOver={e => e.preventDefault()}
+                            // Copiar y cortar sólo se bloquean en la contraseña:
+                            // el usuario es un dato público (sale en la lista de
+                            // personal), la contraseña no.
+                            onCopy={id === 'password' ? (e => e.preventDefault()) : undefined}
+                            onCut={id === 'password' ? (e => e.preventDefault()) : undefined}
                             className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-body-xl':'pl-12 pr-5 py-4 text-body-xl'} rounded-3xl`} />
                     </div>
                 ))}
@@ -506,12 +696,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     ══════════════════════════════════════════════════════ */
     if (mustChangePwd) {
         return (
-            <div className="relative flex items-center justify-center w-full min-h-[100dvh] overflow-hidden"
-                style={{ background:'radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%)' }}>
+            // `items-start` + `my-auto` en la tarjeta, y NO `items-center`: con
+            // centrado flex, una tarjeta más alta que la ventana desborda por
+            // los DOS lados y el tramo de arriba queda fuera del área
+            // scrolleable. Es la misma receta que ModalShell.jsx (2026-08-15).
+            <div className="lgn-fondo relative flex items-start justify-center w-full h-[100dvh] overflow-y-auto overflow-x-hidden px-5 py-8"
+                style={{ background:'var(--lgn-bg)' }}>
                 <style>{keyframeStyles}</style>
-                <div className={`relative z-base w-full max-w-[420px] mx-5 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
-                    <div className="rounded-header p-8 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.85] shadow-[var(--shadow-glass-5)] flex flex-col gap-6">
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/28 to-transparent pointer-events-none rounded-header" />
+                <div className={`relative z-base w-full max-w-[420px] my-auto transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0 scale-100':'opacity-0 translate-y-6 scale-[0.96]'}`}>
+                    <div className="rounded-header p-8 [@media(max-height:820px)]:p-6 bg-[var(--lgn-vidrio)] backdrop-blur-[48px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-6 [@media(max-height:820px)]:gap-4">
+                        <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] to-transparent pointer-events-none rounded-header" />
                         <div className="relative flex flex-col items-center gap-3">
                             <div className="w-14 h-14 rounded-2xl bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[var(--shadow-shine)]">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
@@ -542,12 +736,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     ══════════════════════════════════════════════════════ */
 
     const renderMobileLayout = () => (
-        <div className="flex flex-col items-center justify-between min-h-[100dvh] w-full px-5 py-8 gap-4">
+        <div className="flex flex-col items-center justify-between flex-1 w-full px-5 py-8 [@media(max-height:700px)]:py-4 gap-4 [@media(max-height:700px)]:gap-2">
             <div className={`flex flex-col items-center gap-2 transition-all duration-[var(--dur-lento)] delay-[80ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
                 <div className="relative">
                     <div className="absolute -inset-3 rounded-modal blur-xl opacity-40 bg-gradient-to-tr from-chart-3/60 to-chart-1/40" />
-                    <div className="relative w-16 h-16 rounded-3xl bg-white/[0.55] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-2)]">
-                        <img src="/Logo192.png" alt="FarmaLasa" className="w-10 h-10 object-contain" />
+                    <div className="relative w-16 h-16 [@media(max-height:700px)]:w-12 [@media(max-height:700px)]:h-12 rounded-3xl bg-[var(--lgn-campo-foco)] backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-2)]">
+                        <img src="/Logo192.png" alt="FarmaLasa" className="w-10 h-10 [@media(max-height:700px)]:w-8 [@media(max-height:700px)]:h-8 object-contain" />
                     </div>
                 </div>
                 <div className="text-center mt-1">
@@ -557,14 +751,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             </div>
 
             <div className={`relative w-full max-w-[420px] transition-all duration-[var(--dur-lento)] delay-[160ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.94] translate-y-5'}`}>
-                <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-header" />
-                <div className="rounded-header p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[var(--shadow-glass-5)] flex flex-col gap-4">
+                <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] to-transparent pointer-events-none rounded-header" />
+                <div className="rounded-header p-5 [@media(max-height:700px)]:p-3.5 bg-[var(--lgn-vidrio)] backdrop-blur-[48px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-4 [@media(max-height:700px)]:gap-2.5">
                     {renderLoginForm(true)}
                     {!isMobileOrApp() && (
                         <>
                             <div className="h-px bg-divider mx-2" />
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-3 rounded-3xl bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
+                                className="group w-full p-3 [@media(max-height:700px)]:p-2 rounded-3xl bg-[var(--lgn-boton)] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:bg-[var(--lgn-boton-hover)] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-colors shadow-sm">
                                         <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
@@ -596,7 +790,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                        vistas nunca medía el login porque entraba con sesión y
                        `/login` redirigía a la app. */
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-2 px-4 py-2.5 min-h-[var(--tap-min)] bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.03] hover:translate-y-[var(--lift-card)]">
+                        className="group flex items-center gap-2 px-4 py-2.5 min-h-[var(--tap-min)] bg-[var(--lgn-campo)] hover:bg-[var(--lgn-campo-foco)] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.03] hover:translate-y-[var(--lift-card)]">
                         <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-[var(--dur-base)] group-hover:scale-110" />
                         <span className="text-caption font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
                     </a>
@@ -606,42 +800,48 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     );
 
     const renderDesktopLayout = () => (
-        <div className="relative flex items-center justify-center w-full min-h-[100dvh] px-6 py-10">
-            <div className={`relative w-full max-w-[480px] z-base transition-all duration-[var(--dur-lento)] delay-[80ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
-                <div className="absolute -inset-6 rounded-header blur-2xl opacity-18 bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none" />
+        // `items-start` + `my-auto` en la tarjeta: ver la nota de la pantalla
+        // de cambio de contraseña. Con `items-center`, un monitor bajo
+        // (1366×768, 1280×720) recortaba el logo y no había forma de subir.
+        <div className={`relative flex items-start justify-center w-full flex-1 px-6 ${esBaja ? 'py-5' : 'py-10'}`}>
+            <div className={`relative w-full max-w-[480px] my-auto z-base transition-all duration-[var(--dur-lento)] delay-[80ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
+                {/* El halo de la tarjeta pesa distinto según el fondo: el mismo
+                    18% que apenas se insinúa sobre el degradado claro tiñe de
+                    violeta media pantalla sobre el oscuro. */}
+                <div className={`absolute -inset-6 rounded-header blur-2xl ${modoOscuro ? 'opacity-[0.09]' : 'opacity-18'} bg-gradient-to-b from-chart-3 via-chart-3/70 to-chart-1 pointer-events-none`} />
 
-                <div className="relative rounded-header px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[var(--shadow-glass-5)] flex flex-col gap-6 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/26 via-transparent to-transparent pointer-events-none rounded-header" />
+                <div className={`relative rounded-header ${esBaja ? 'px-8 py-6 gap-4' : 'px-10 py-10 gap-6'} bg-[var(--lgn-vidrio)] backdrop-blur-[52px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col overflow-hidden`}>
+                    <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] via-transparent to-transparent pointer-events-none rounded-header" />
 
                     {/* Logo */}
-                    <div className="relative flex flex-col items-center gap-3">
+                    <div className={`relative flex flex-col items-center ${esBaja ? 'gap-1.5' : 'gap-3'}`}>
                         <div className="relative group/logo">
                             <div className="absolute -inset-4 rounded-header blur-2xl opacity-32 group-hover/logo:opacity-60 transition-all duration-[var(--dur-lento)] bg-gradient-to-tr from-chart-3/55 to-chart-1/40" />
-                            <div className="relative w-[88px] h-[88px] rounded-card bg-white/[0.62] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-4)]"
+                            <div className={`relative ${esBaja ? 'w-[62px] h-[62px]' : 'w-[88px] h-[88px]'} rounded-card bg-[var(--lgn-campo-foco)] backdrop-blur-2xl border border-border-card flex items-center justify-center shadow-[var(--shadow-glass-4)]`}
                                 style={{ animation:'lgn-logo 4.5s ease-in-out infinite' }}>
-                                <img src="/Logo192.png" alt="FarmaLasa" className="w-[58px] h-[58px] object-contain" />
+                                <img src="/Logo192.png" alt="FarmaLasa" className={`${esBaja ? 'w-10 h-10' : 'w-[58px] h-[58px]'} object-contain`} />
                             </div>
                         </div>
                         <div className="text-center">
-                            <h1 className="text-display-lg font-black text-content tracking-tight leading-none">Portal</h1>
-                            <p className="text-caption font-black text-brand-text/72 uppercase tracking-[0.22em] mt-2">Farmacias La Popular &amp; La Salud</p>
+                            <h1 className={`${esBaja ? 'text-display' : 'text-display-lg'} font-black text-content tracking-tight leading-none`}>Portal</h1>
+                            <p className={`text-caption font-black text-brand-text/72 uppercase tracking-[0.22em] ${esBaja ? 'mt-1' : 'mt-2'}`}>Farmacias La Popular &amp; La Salud</p>
                         </div>
                     </div>
 
-                    <div className="relative h-px"><div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/55 to-transparent" /></div>
+                    <div className="relative h-px"><div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--lgn-linea)] to-transparent" /></div>
 
-                    <div className="relative flex flex-col gap-5">
-                        {renderLoginForm(false)}
+                    <div className={`relative flex flex-col ${esBaja ? 'gap-3' : 'gap-5'}`}>
+                        {renderLoginForm(esBaja)}
                     </div>
 
-                    <div className="relative h-px"><div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/55 to-transparent" /></div>
+                    <div className="relative h-px"><div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--lgn-linea)] to-transparent" /></div>
                     {!isMobileOrApp() && (
                         <div className="relative">
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-4 rounded-card bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)]">
+                                className={`group w-full ${esBaja ? 'p-2.5' : 'p-4'} rounded-card bg-[var(--lgn-boton)] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:bg-[var(--lgn-boton-hover)] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)]`}>
                                 <div className="flex items-center gap-3.5">
-                                    <div className="w-11 h-11 rounded-2xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-all duration-[var(--dur-base)] shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]">
-                                        <Clock size={18} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
+                                    <div className={`${esBaja ? 'w-9 h-9' : 'w-11 h-11'} rounded-2xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-all duration-[var(--dur-base)] shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]`}>
+                                        <Clock size={esBaja ? 15 : 18} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-body-sm font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
@@ -659,8 +859,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
             {/* Quick links */}
             <div className={`absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-content transition-all duration-[var(--dur-lento)] delay-[300ms] ease-[var(--ease-spring)] ${mounted?'opacity-100 translate-x-0':'opacity-0 translate-x-8'}`}>
-                <div className="rounded-modal p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[var(--shadow-glass-5)] flex flex-col gap-3 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-modal" />
+                <div className="rounded-modal p-4 bg-[var(--lgn-vidrio)] backdrop-blur-[40px] backdrop-saturate-[200%] border border-[var(--lgn-vidrio-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-3 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-[var(--lgn-brillo)] to-transparent pointer-events-none rounded-modal" />
                     <div className="relative flex items-center gap-2 px-1 mb-1">
                         <Sparkles size={11} className="text-chart-3-text" strokeWidth={2} />
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
@@ -670,7 +870,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         {href:'https://farmalasa.com',Icon:Pill,label:'Farmalasa',sub:'Sitio web oficial',color:'#6929C4',glow:'rgba(105,41,196,0.22)'},
                     ].map(({href,Icon,label,sub,color,glow})=>(
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.02] hover:translate-y-[var(--lift-card)] w-[210px] overflow-hidden"
+                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-[var(--lgn-campo)] hover:bg-[var(--lgn-campo-foco)] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-[var(--dur-base)] active:scale-[0.97] hover:scale-[1.02] hover:translate-y-[var(--lift-card)] w-[210px] overflow-hidden"
                             onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${glow}, inset 0 1px 0 rgba(255,255,255,0.7)`; }}
                             onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; }}>
                             <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
@@ -691,14 +891,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         </div>
     );
 
-    const isMob = window.innerWidth < 1024;
-
     return (
-        <div className={`relative w-full min-h-[100dvh] overflow-hidden transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] ${leaving?'opacity-0 scale-[1.03]':'opacity-100 scale-100'}`}
-            style={{ background:'radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%)' }}>
+        // `h-[100dvh] overflow-y-auto` y NO `min-h-[100dvh] overflow-hidden`:
+        // arriba de 1024px el reset deja `html, body, #root` en `overflow:
+        // hidden` (index.css §3276), así que un contenedor de alto automático
+        // no scrollea — crece, y lo que sobra lo recorta #root sin dejar forma
+        // de llegar. Con alto fijo, el scroll vive acá y es la red que evita
+        // que la tarjeta quede cortada en un monitor bajo. Mismo cambio que ya
+        // se le había hecho al kiosco.
+        <div className={`lgn-fondo relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden transition-all duration-[var(--dur-slow)] ease-[var(--ease-spring)] ${leaving?'opacity-0 scale-[1.03]':'opacity-100 scale-100'}`}
+            style={{ background:'var(--lgn-bg)' }}>
             <style>{keyframeStyles}</style>
-            <div className="relative z-base w-full min-h-[100dvh]">
-                {isMob ? renderMobileLayout() : renderDesktopLayout()}
+            <div className="relative z-base w-full min-h-full flex flex-col">
+                {esAngosto ? renderMobileLayout() : renderDesktopLayout()}
             </div>
         </div>
     );

@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.637.0 — El login se adapta a la pantalla y el carné deja de escribirse en el campo de usuario
+
+- **El carné es la contraseña, y podía quedar escrito a la vista.** El login
+  captura el lector con un escucha global de teclado, pero ese escucha se
+  calla mientras el foco está dentro de un campo — o sea que un escaneo con el
+  cursor en «usuario» tecleaba el código en un campo de texto plano, delante de
+  quien estuviera mirando el mostrador. Ahora se mide la VELOCIDAD, que es lo
+  único que separa a un lector de una persona: tres teclas seguidas por debajo
+  de 40ms (el mismo umbral con el que el kiosco distingue escáner de tecleo
+  manual) borran lo que alcanzó a pintarse y mandan el resto al lector, sin
+  pasar por el campo. Si el hueco siguiente es humano, era un tecleo veloz y el
+  texto vuelve entero — hace falta porque los códigos reales miden 3, 4 o 5
+  caracteres y el detector tiene que decidir con dos huecos. Anclado en
+  `tests/e2e/login-lector.spec.js`, incluido el caso de la ráfaga que llega
+  después de texto ya escrito.
+- **Pegar queda prohibido en usuario y contraseña.** Una credencial que viaja
+  por el portapapeles se queda ahí, legible para cualquier otra app. El
+  autocompletado del navegador no pasa por ese evento, así que sigue andando.
+- **La ventana del lector pasa de 10 a 30 segundos.** Diez no alcanzaban para
+  sacar el carné y acercarlo: el foco saltaba al campo de usuario en mitad del
+  gesto, que es exactamente cómo el código terminaba tecleado adentro.
+- **El login tiene tema.** Sigue el modo claro/oscuro del sistema — lo único
+  que existe antes de que haya sesión, porque el tema del portal es una
+  preferencia del empleado y vive del otro lado del login. El material sale de
+  variables propias (`--lgn-*`) en vez de veinte `bg-white/[0.xx]` sueltos que
+  sólo servían sobre el fondo claro.
+- **La tarjeta ya no se corta en un monitor bajo.** La vista centraba con flex
+  dentro de un contenedor sin scroll, y arriba de 1024px el reset deja
+  `html, body, #root` en `overflow: hidden`: lo que no entraba se salía por
+  arriba y no había forma de alcanzarlo. Ahora el alto es fijo, el scroll vive
+  en la vista y la tarjeta se centra con márgenes automáticos (la misma receta
+  de `ModalShell`), con una versión compacta abajo de 820px de alto. Además el
+  cambio entre teléfono y escritorio se decide con `matchMedia` y no con un
+  `window.innerWidth` leído una sola vez, así que también se acomoda al
+  cambiar de monitor o al girar la tablet.
+- **Un clic temprano ya no se queda sin foco.** El login suelta el foco 50ms
+  después de montar para dejárselo al lector; si quien lo había puesto era una
+  persona, se lo quitaba y sus teclas se iban al lector global. Ahora sólo se
+  lo quita al navegador.
+
+### Kiosco — que no haya que scrollear
+
+Medido con Playwright en ocho resoluciones, con el marco real (logo y reloj
+encima de cada panel):
+
+- **El formulario de permiso obligaba a scrollear siempre** — 49px hasta en
+  1920×1080 y 266px en 1024×600, en una pantalla que se opera de pie. El
+  relleno del contenedor eran 96px que no se ven (la columna ya se centra
+  sola), y ni ese formulario ni el de declarar horario tenían modo compacto.
+  Hoy los dos entran completos, junto con el de autorización.
+- **«Declara tu horario» se pasaba de la ventana en 1280×720** sin dejar
+  scroll que lo alcanzara.
+- **El escalón de alto que faltaba: 900px.** Entre 801 y 900 —donde vive media
+  flota de portátiles— se usaba el tamaño completo. Los tres escalones (900,
+  800 y 640) son rangos disjuntos a propósito: Tailwind ordena las variantes
+  arbitrarias por aparición, no por especificidad, así que solapados se pisan
+  entre sí.
+- **La pantalla de confirmación scrolleaba por su decoración.** El orbe de luz
+  mide 800px de alto fijo: en cualquier monitor más bajo era él, y no el
+  contenido, el que se salía. Queda recortado en su propia capa, y el
+  contenedor —que antes recortaba TODO, incluido el botón que cierra el aviso—
+  ahora scrollea de verdad si algún día hace falta.
+- **El velo del configurador se medía contra la parte visible** de un
+  contenedor que scrollea: al bajar dejaba de tapar. Pasa a `fixed`.
+
 ## v2.636.2 — Prueba de la convención de día
 
 La clave del día dentro del horario semanal la comparten seis lugares (kiosco,

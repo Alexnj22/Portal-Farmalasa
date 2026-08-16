@@ -55,15 +55,27 @@ export default function FeedbackOverlay({
 
   return (
     // Contenedor principal Liquidglass Black
-    <div className="fixed inset-0 z-bell-desktop flex flex-col items-center justify-center animate-in fade-in duration-[var(--dur-lento)] ease-[var(--ease-spring)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
+    // `overflow-y-auto` + `items-start` en vez de `overflow-hidden` con
+    // centrado: esta pantalla es la que trae foto, aviso y reloj a la vez, o
+    // sea la más alta de todo el kiosco. Con el centrado viejo, lo que no
+    // entraba se salía por arriba y por abajo SIN scroll que lo alcanzara —
+    // y acá lo que se pierde es el botón que cierra el aviso.
+    <div className="fixed inset-0 z-bell-desktop flex flex-col items-start justify-start overflow-y-auto overscroll-contain animate-in fade-in duration-[var(--dur-lento)] ease-[var(--ease-spring)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%]">
 
-      {/* ORBE DE LUZ DE FONDO */}
-      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full blur-[140px] pointer-events-none transition-colors duration-[var(--dur-lento)] ${color === 'red' ? 'opacity-20' : 'opacity-10'} ${theme.glow}`}></div>
+      {/* ORBE DE LUZ DE FONDO — envuelto en su propio recorte: mide 800px de
+          alto fijo, así que en cualquier monitor de menos de 800 ERA él, y no
+          el contenido, quien inventaba el scroll de esta pantalla (medido:
+          16px sobrantes en 1366×768, 100px en 1024×600 — exactamente lo que
+          se sale por arriba y por abajo). Antes no se notaba porque el
+          contenedor recortaba todo, incluido lo que sí importaba. */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full blur-[140px] transition-colors duration-[var(--dur-lento)] ${color === 'red' ? 'opacity-20' : 'opacity-10'} ${theme.glow}`}></div>
+      </div>
 
-      <div className="flex flex-col items-center justify-center text-center w-full max-w-6xl h-full p-8 relative z-base">
+      <div className="flex flex-col items-center justify-center text-center w-full max-w-6xl min-h-full my-auto mx-auto p-8 [@media(min-height:801px)_and_(max-height:900px)]:p-5 [@media(max-height:800px)]:p-4 relative z-base">
 
         {isLactationAction && (
-          <div className="absolute top-10 right-10 flex items-center gap-2 bg-chart-6/10 backdrop-blur-2xl border border-chart-6/30 px-5 py-2.5 rounded-full text-white font-bold animate-pulse shadow-[var(--shadow-glass-2)] overflow-hidden">
+          <div className="absolute top-10 right-10 [@media(max-height:800px)]:top-4 [@media(max-height:800px)]:right-4 flex items-center gap-2 bg-chart-6/10 backdrop-blur-2xl border border-chart-6/30 px-5 py-2.5 rounded-full text-white font-bold animate-pulse shadow-[var(--shadow-glass-2)] overflow-hidden">
             <Baby size={20} className="text-chart-6 drop-shadow-[var(--shadow-glow-chart-6-md)]" /> Periodo de Lactancia
           </div>
         )}
@@ -75,14 +87,14 @@ export default function FeedbackOverlay({
             <div className="flex flex-col items-center justify-center flex-1 animate-in slide-in-from-left-8 duration-[var(--dur-lento)] ease-[var(--ease-spring)] w-full max-w-[500px]">
 
               {/* 🚨 PIEZA UNIFICADA: Foto + Nombre Integrado */}
-              <div className="relative mb-16 shrink-0 flex flex-col items-center">
+              <div className="relative mb-16 [@media(min-height:801px)_and_(max-height:900px)]:mb-12 [@media(max-height:800px)]:mb-9 shrink-0 flex flex-col items-center">
                 
                 {/* Orbe de luz interno */}
                 <div className={`absolute inset-0 rounded-header blur-2xl opacity-60 ${theme.glow}`}></div>
                 
                 {/* Contenedor de la Foto */}
                 <div
-                  className={`relative h-36 w-36 md:h-44 md:w-44 rounded-modal md:rounded-header flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[var(--shadow-glass-5)] overflow-hidden transition-all duration-[var(--dur-lento)] ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
+                  className={`relative h-36 w-36 md:h-44 md:w-44 [@media(min-height:801px)_and_(max-height:900px)]:!h-32 [@media(min-height:801px)_and_(max-height:900px)]:!w-32 [@media(max-height:800px)]:!h-24 [@media(max-height:800px)]:!w-24 rounded-modal md:rounded-header flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[var(--shadow-glass-5)] overflow-hidden transition-all duration-[var(--dur-lento)] ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
                   {(employee?.photo || employee?.photo_url) ? (
                     <img
                       src={employee.photo || employee.photo_url}
@@ -90,7 +102,7 @@ export default function FeedbackOverlay({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-6xl md:text-7xl font-bold text-white/50 drop-shadow-md">
+                    <span className="text-6xl md:text-7xl [@media(max-height:800px)]:!text-4xl font-bold text-white/50 drop-shadow-md">
                       {employeeInitials(employee)}
                     </span>
                   )}
@@ -116,7 +128,7 @@ export default function FeedbackOverlay({
               <div className="flex flex-col items-stretch gap-3 w-max max-w-[95vw] mx-auto">
                 
                 {/* Subtexto (Píldora adaptable al 100% del contenedor padre) */}
-                <div className={`flex items-center justify-center bg-white/5 backdrop-blur-2xl rounded-3xl px-8 py-3.5 border shadow-sm w-full ${color === 'red' ? 'border-danger/40' : 'border-white/10'}`}>
+                <div className={`flex items-center justify-center bg-white/5 backdrop-blur-2xl rounded-3xl px-8 py-3.5 [@media(max-height:800px)]:py-2 border shadow-sm w-full ${color === 'red' ? 'border-danger/40' : 'border-white/10'}`}>
                   <p className="text-xs sm:text-sm md:text-subtitle text-white font-bold uppercase tracking-[0.15em] text-center whitespace-nowrap">
                     {subtext}
                   </p>
@@ -134,7 +146,7 @@ export default function FeedbackOverlay({
                 )}
 
                 {/* Reloj (Mismo ancho automático y misma curvatura de borde que el subtexto) */}
-                <div className="flex items-center justify-center gap-3 text-white font-light tabular-nums text-3xl md:text-4xl bg-white/[0.03] backdrop-blur-2xl px-8 py-4 rounded-3xl border border-white/10 shadow-[var(--shadow-shine-lg)] w-full">
+                <div className="flex items-center justify-center gap-3 text-white font-light tabular-nums text-3xl md:text-4xl [@media(max-height:800px)]:!text-2xl bg-white/[0.03] backdrop-blur-2xl px-8 py-4 [@media(max-height:800px)]:py-2.5 rounded-3xl border border-white/10 shadow-[var(--shadow-shine-lg)] w-full">
                   <Clock size={32} className="text-white/30 shrink-0" /> 
                   <span className="whitespace-nowrap">{time}</span>
                 </div>
@@ -152,7 +164,7 @@ export default function FeedbackOverlay({
                     <div className="absolute -bottom-4 -left-4 text-[80px] opacity-[0.07] select-none">🎉</div>
                   </div>
                 )}
-                <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-[var(--dur-lento)] ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
+                <div className={`relative p-6 [@media(max-height:800px)]:p-4 flex items-center gap-4 border-b transition-colors duration-[var(--dur-lento)] ${isBirthday ? 'bg-gradient-to-r from-chart-6/15 to-warning/10 border-chart-6/20' : isUrgent ? 'bg-danger/10 border-danger/20' : 'bg-white/[0.02] border-white/5'}`}>
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-[var(--shadow-shine-lg)] border shrink-0 transition-transform duration-[var(--dur-lento)] group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-chart-6/20 border-chart-6/30' : isUrgent ? 'bg-white/5 border-white/10 text-danger shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 border-white/10 text-chart-1-text'}`}>
                     {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
@@ -166,12 +178,12 @@ export default function FeedbackOverlay({
                   </div>
                 </div>
 
-                <div className="relative p-8 flex flex-col justify-between h-full min-h-[300px] bg-transparent">
-                  <div className="flex-1 overflow-y-auto max-h-[200px] scrollbar-hide">
+                <div className="relative p-8 [@media(min-height:801px)_and_(max-height:900px)]:p-6 [@media(max-height:800px)]:p-4 flex flex-col justify-between h-full min-h-[300px] [@media(max-height:800px)]:min-h-[200px] bg-transparent">
+                  <div className="flex-1 overflow-y-auto max-h-[200px] [@media(max-height:800px)]:max-h-[140px] scrollbar-hide">
                     <p className={`text-subtitle md:text-body-xl font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-btn font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 [@media(min-height:801px)_and_(max-height:900px)]:mt-5 [@media(max-height:800px)]:mt-3 w-full py-4 [@media(max-height:800px)]:py-2.5 rounded-btn font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
                     {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-[var(--dur-base)]" /> ¡Confirmado!</> : isBirthday ? <><span className="text-body-xl">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>
@@ -184,10 +196,10 @@ export default function FeedbackOverlay({
              ========================================================= */
           <div className="flex flex-col items-center justify-center animate-in zoom-in-95 duration-[var(--dur-lento)] w-full max-w-lg mx-auto">
 
-            <div className="relative mb-8 shrink-0">
+            <div className="relative mb-8 [@media(max-height:800px)]:mb-4 shrink-0">
               <div className={`absolute inset-0 rounded-header blur-2xl opacity-60 ${theme.glow}`}></div>
               <div
-                className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 rounded-header md:rounded-header flex items-center justify-center border backdrop-blur-3xl transition-all duration-[var(--dur-lento)] 
+                className={`relative h-40 w-40 sm:h-48 sm:w-48 md:h-56 md:w-56 [@media(min-height:801px)_and_(max-height:900px)]:!h-40 [@media(min-height:801px)_and_(max-height:900px)]:!w-40 [@media(max-height:800px)]:!h-28 [@media(max-height:800px)]:!w-28 rounded-header md:rounded-header flex items-center justify-center border backdrop-blur-3xl transition-all duration-[var(--dur-lento)] 
                 ${color === 'red'
                     ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-shine-lg)] animate-[pulse_2s_infinite]'
                     : 'bg-white/[0.03] border-white/10 shadow-[var(--shadow-glass-dark)]'
@@ -204,11 +216,11 @@ export default function FeedbackOverlay({
               </div>
             </div>
 
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-6 tracking-tight uppercase text-center leading-tight w-full px-4 drop-shadow-md">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl [@media(max-height:800px)]:!text-xl font-bold text-white mb-6 [@media(max-height:800px)]:mb-3 tracking-tight uppercase text-center leading-tight w-full px-4 drop-shadow-md">
               {message}
             </h1>
 
-            <div className={`backdrop-blur-2xl rounded-3xl px-8 py-4 border shadow-lg text-center transition-colors duration-[var(--dur-lento)] max-w-[95%] w-fit mx-auto
+            <div className={`backdrop-blur-2xl rounded-3xl px-8 py-4 [@media(max-height:800px)]:py-2.5 border shadow-lg text-center transition-colors duration-[var(--dur-lento)] max-w-[95%] w-fit mx-auto
               ${color === 'red' ? 'bg-danger/15 border-danger/30' : 'bg-white/5 border-white/10'}
             `}>
               <p className={`text-sm md:text-body-xl font-bold uppercase tracking-widest text-balance leading-relaxed

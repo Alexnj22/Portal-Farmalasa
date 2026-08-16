@@ -23,7 +23,7 @@ exactamente cómo se acumuló esta deuda.
 ## Estado actual
 
 **2026-08-16 — el baseline tiene UNA categoría: `tarjeta-a-mano` en 66.** No es
-deuda nueva: es deuda vieja que el detector no veía. Las otras 46 siguen en cero
+deuda nueva: es deuda vieja que el detector no veía. Las otras 50 siguen en cero
 y bloqueantes. Detalle abajo, en «`tarjeta-a-mano` ensanchada».
 
 ---

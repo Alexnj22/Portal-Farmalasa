@@ -31,7 +31,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone, ShieldOff,
-    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet
+    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet, Landmark
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
 
@@ -234,6 +234,12 @@ const GRUPOS_CRUDOS = [
             { key: 'facturas_sala', label: 'Facturas de sala', desc: 'Qué factura tomó cada sala, quién la tomó y si terminó cargada como compra; liberar una tomada por error', icon: ReceiptText, hasApprove: false, sub: [
                 { key: 'facturas_sala_ver_montos', label: 'Ver montos', tipo: 'cap' },
             ]},
+            // «Compras lo marca, pero Gerencia ve el control y aprueba los
+            // cheques» (decisión del usuario, 2026-08-16). Por eso los tres
+            // permisos NO son intercambiables acá: `can_edit` registra el pago
+            // y lo deja PENDIENTE —sin bajar el saldo, porque el cheque todavía
+            // no salió—, y `can_approve` es el que lo hace contar.
+            { key: 'cuentas_por_pagar', label: 'Cuentas por pagar', desc: 'Cuánto le debemos a cada proveedor, qué está vencido y cuánto queda de su límite de crédito. Editar registra el pago; aprobar es lo que lo hace contar contra el saldo', icon: Landmark, hasApprove: true },
             { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icon: Truck, hasApprove: false },
             { key: 'conteo_inventario', label: 'Conteo de inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, sub: [
                 // El conteo es CIEGO mientras está abierto: sin este permiso la

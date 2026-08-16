@@ -60,6 +60,7 @@ const TrasladosView = lazy(IMPORTADORES.TrasladosView);
 const VentasPperdidasView = lazy(IMPORTADORES.VentasPperdidasView);
 const ComprasView = lazy(IMPORTADORES.ComprasView);
 const FacturasSalaView = lazy(IMPORTADORES.FacturasSalaView);
+const CuentasPorPagarView = lazy(IMPORTADORES.CuentasPorPagarView);
 const FacturasCompraView = lazy(IMPORTADORES.FacturasCompraView);
 const LibrosIvaView = lazy(IMPORTADORES.LibrosIvaView);
 const LibroComprasCompletoView = lazy(IMPORTADORES.LibroComprasCompletoView);
@@ -701,6 +702,7 @@ function MainApp() {
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
                                     <Route path="facturas-sala" element={<PermissionGuard moduleKey="facturas_sala"><FacturasSalaView /></PermissionGuard>} />
+                                    <Route path="cuentas-por-pagar" element={<PermissionGuard moduleKey="cuentas_por_pagar"><CuentasPorPagarView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libro-compras-completo" element={<PermissionGuard moduleKey="libro_compras_completo"><LibroComprasCompletoView openModal={openModal} /></PermissionGuard>} />
@@ -829,6 +831,7 @@ const ROUTE_TITLES = {
     '/compras':           'Compras',
     '/facturas-compra':   'Facturas de compra',
     '/facturas-sala':     'Facturas de sala',
+    '/cuentas-por-pagar': 'Cuentas por pagar',
     '/proveedores':       'Proveedores',
     '/libros-iva':        'Libros IVA',
     '/libro-compras-completo': 'Compras completo',

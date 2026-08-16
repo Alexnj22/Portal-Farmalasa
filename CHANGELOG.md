@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.641.0 — Cuentas por pagar: cuánto le debemos a cada proveedor y si podemos comprarle
+
+Módulo nuevo, pedido por Compras y Logística: **cuánto debemos, qué está
+vencido, cuánto queda del límite de cada proveedor y qué pagos están
+pendientes**. Hasta hoy nada de eso vivía en el portal — no había una sola
+tabla de pagos, saldos ni abonos.
+
+**La deuda se cuenta desde la fecha del DTE**, no desde la compra registrada
+(decisión del usuario). Es lo que el proveedor va a cobrar exista o no la carga,
+y así entran **las facturas que llegaron por correo y nadie registró**, que no
+estaban en ningún control. Al abrir el módulo eso son **103 proveedores, 1,536
+documentos y $536,364** desde junio.
+
+**Compras registra el pago; Gerencia lo aprueba.** Eso cae exacto en los
+permisos que el portal ya tenía: `can_edit` registra, `can_approve` autoriza. Y
+mientras el pago está pendiente **no baja el saldo** —el cheque todavía no
+salió— pero sí se ve como «en trámite», que es lo que evita pagarlo dos veces.
+
+**Un pago se aplica a varias facturas, y una factura se paga en abonos.** Por eso
+son dos tablas y no un campo «pagada sí/no»: con un booleano no se puede
+representar un cheque que cubre tres facturas, y a los dos meses el saldo no
+cuadra contra el banco. La validación vive en el RPC —lo único que puede mirar
+el saldo del documento antes de escribir—; las tablas **no tienen policy de
+escritura** a propósito.
+
+**Anular no borra**: deja el pago con quién lo anuló y por qué, y exige motivo.
+Una salida de plata que desaparece del registro es justo lo que un control no
+puede permitir.
+
+**El plazo se llena una vez por proveedor.** Está medido que es constante
+—COFARSAL 30 días, MONTREAL 60, y ninguno varía entre sus facturas—, y el 39% de
+los documentos ya lo traen adentro (`resumen.pagos`). Mientras un proveedor no
+lo tenga, la pantalla avisa que **de sus facturas no se puede saber si están
+vencidas**: la columna diría cero porque no sabe, no porque esté al día.
+
+Probado de punta a punta contra el entorno de pruebas: registrar deja el saldo
+igual y el trámite arriba, aprobar lo baja, y quedan rechazados el sobrepago
+($500 sobre una factura con $462.25), aplicar a la factura de otro proveedor y
+anular sin motivo.
+
 ## v2.640.1 — El login ya no se ve claro un instante antes de oscurecerse
 
 - **La tarjeta del login entraba clara y después se oscurecía, en modo

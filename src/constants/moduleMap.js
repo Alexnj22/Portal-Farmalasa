@@ -11,7 +11,7 @@ import { CalendarCheck,
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, Wrench,
-    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText, MonitorSmartphone, Printer, Wallet
+    BookOpen, Contact, Calculator, ArrowLeftRight, ReceiptText, MonitorSmartphone, Printer, Wallet, Landmark
 } from 'lucide-react';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -68,6 +68,7 @@ export const MODULE_MAP = {
     ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas perdidas',          icon: PackageMinus  },
     compras:           { path: '/compras',           label: 'Compras',                  icon: ShoppingCart  },
     facturas_sala:     { path: '/facturas-sala',     label: 'Facturas de sala',         icon: ReceiptText   },
+    cuentas_por_pagar: { path: '/cuentas-por-pagar', label: 'Cuentas por pagar',        icon: Landmark      },
     facturas_compra:   { path: '/facturas-compra',    label: 'Facturas de compra',       icon: Mail          },
     libros_iva:        { path: '/libros-iva',         label: 'Libros IVA',               icon: BookOpen      },
     libro_compras_completo: { path: '/libro-compras-completo', label: 'Compras completo',  icon: BookOpen      },

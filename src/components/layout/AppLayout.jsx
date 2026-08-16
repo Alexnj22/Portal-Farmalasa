@@ -88,7 +88,7 @@ const MENU_GROUPS = [
     // factura tomada haya quedado cargada como compra trabaja en este grupo, no
     // en el de los documentos que llegan por correo. Decisión del usuario
     // 2026-08-07 («agregalo en compras, no en contabilidad»).
-    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'facturas_sala', 'proveedores'] },
+    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'facturas_sala', 'cuentas_por_pagar', 'proveedores'] },
     // Datos Contables (2026-07-31, pedido del usuario). Facturas de Compra sale
     // de "Compras": el documento de compra se sincroniza para CONTABILIDAD —el
     // DTE, su JSON/PDF y el proveedor fiscal—, no para decidir qué reponer, que

@@ -810,3 +810,112 @@ con un token inventado**.
 2. El diccionario arranca vacío: las primeras facturas de cada proveedor
    preguntan, y a partir de ahí no.
 3. SAVONA, CONGELADOS y STEINER no mandan lote ni vencimiento en ningún lado.
+
+---
+
+# Parte 11 — La auditoría de cierre (2026-08-16)
+
+Todo lo construido para Compras, revisado de punta a punta. **Doce comprobaciones
+de camino de fallo, cinco de fuga de datos, los cinco registros de cada módulo,
+los advisors de Supabase y una prueba de humo en el navegador.** Dos defectos
+encontrados y corregidos (v2.642.1); el resto pasó sin tocar nada.
+
+## Lo que se comprobó, y con qué
+
+### 1. Los advisors de Supabase: **0 ERRORES**
+
+De los 271 avisos abiertos, **ninguno es de lo construido acá** — verificado uno
+por uno y no por el conteo: el único `rls_enabled_no_policy` es `identidad_vales`,
+los tres `function_search_path_mutable` son funciones de otros módulos, y ninguno
+de los 16 `anon_security_definer_function_executable` cae en las RPC nuevas.
+
+### 2. Los caminos de fallo, con el mensaje que ve la persona
+
+`scratchpad/auditoria.mjs` — 12 comprobaciones, cada una provocando el error a
+propósito contra el entorno de pruebas y **leyendo el texto devuelto**, no sólo
+que fallara:
+
+| se intenta | tiene que decir |
+|---|---|
+| pago sin aplicaciones | «Un pago tiene que decir a qué facturas se aplica.» |
+| aplicar más de lo que se debe | «A la factura N sólo le quedan $X por pagar.» |
+| aplicar a una factura de otro proveedor | «La factura N no es deuda de ese proveedor.» |
+| aplicación en cero o negativa | «Cada aplicación tiene que ser mayor que cero.» |
+| **la misma factura dos veces** | ← **fallaba: ver abajo** |
+| aprobar sin ser Gerencia | «No tenés permiso para aprobar pagos.» |
+| aprobar dos veces | «Ese pago ya no está pendiente.» |
+| anular sin motivo | «Anular un pago exige decir por qué.» |
+| anular un pago ya anulado | «Ese pago ya está anulado.» |
+| confirmar un alias de un producto que no existe | «Ese producto no existe.» |
+| condiciones de crédito con días negativos | «Los días de crédito no pueden ser negativos.» |
+| leer el documento sin sesión | 401 |
+
+### 3. Las fugas: `anon` no ve nada
+
+`scratchpad/fugas.mjs` — con la llave pública y sin sesión, **cero filas** de
+`compra_pagos`, `compra_pago_aplicado`, `compra_producto_alias`,
+`compra_deuda_documentos` y `proveedores_maestro`; y un `INSERT` directo a las
+dos tablas de pagos devuelve **403**. Es lo esperado: esas tablas tienen policy
+de SELECT y **ninguna de escritura a propósito** —toda la validación de saldo
+vive en `registrar_pago_compra`, que es lo único que puede mirar cuánto queda de
+un documento antes de escribir.
+
+### 4. Los cinco registros de cada módulo
+
+`cuentas_por_pagar` y `cargar_compra` declarados en `moduleMap.js`,
+`permissionModules.js`, `routeImporters.js`, el menú de `AppLayout.jsx` y
+`App.jsx` (lazy + ruta + título), más las filas de `role_permissions`. El
+`gate:permisos` cierra en verde: todo lo declarado se consulta y todo lo
+consultado está declarado.
+
+### 5. En el navegador
+
+Con la cuenta de pruebas: **Cuentas por pagar**, **Cargar compra**,
+**Proveedores** (con su nueva sección de Condiciones de Crédito), **Compras
+completo** y el widget **Facturas de mi sala** abren, cargan y **no dejan un solo
+error propio en consola**.
+
+### 6. Los gates
+
+293 pruebas, `gate:design` sin deuda nueva, `gate:migrations --remote` sin
+deriva (380 filas en el registro de prod, todas con su archivo), `data-gate` en
+verde, `eslint` limpio y compila.
+
+## Los dos defectos que salieron, y qué eran
+
+**Un pago con la misma factura dos veces devolvía el error de Postgres crudo.**
+`[{doc:1, monto:10}, {doc:1, monto:10}]` chocaba contra el índice único y la
+pantalla mostraba *«duplicate key value violates unique constraint
+compra_pago_aplicado_pago_id_document_id_key»*. El freno funcionaba —no se
+guardó nada de más— pero quien lo lee no puede saber qué hizo mal, y ese texto
+en una pantalla de plata parece una falla del sistema. Hoy se comprueba **antes
+de escribir nada**: «Una misma factura no puede ir dos veces en el mismo pago.»
+(`20260816234229`.)
+
+**El carril de tarjetas no aplanaba los fragmentos.** `Children.toArray` aplana
+arreglos pero **no un `<>`**, así que en Libro de compras completo, Libros de IVA
+y Corte Z el carril recibía **una** hija en vez de tres: le ponía `compacta` al
+fragmento —React avisaba en consola— y las tarjetas de adentro **nunca recibían
+el prop**, que es justo el que evita que su línea de detalle se corte a mitad de
+palabra bajo 176px. De paso el cupo de §17.0 contaba el fragmento como una sola
+tarjeta. No era de Compras, pero apareció mirando Compras.
+
+## Una comprobación que pasaba por el motivo equivocado
+
+Tres de las doce daban verde **porque `set_proveedor_condiciones_credito` no
+existía en el entorno de pruebas**: PostgREST devolvía *«Could not find the
+function … in the schema cache»*, el script veía «falló como se esperaba» y lo
+contaba como acierto. Aplicada la función al entorno y repetidas, las doce pasan
+**por lo que dicen probar**. Es la forma más barata de un verde falso: un error
+que llega en el momento correcto y no es el que se estaba buscando.
+
+## Lo que la auditoría NO puede decir
+
+- **El diccionario está vacío.** Todo lo medido del emparejador salió del código
+  de barras y del parecido de nombre; la vía que más va a resolver —la
+  confirmación humana— todavía no tiene una sola fila.
+- **Ningún pago real pasó por acá.** Los pagos probados son de prueba, en el
+  entorno de prueba. El circuito completo —Compras registra, Gerencia aprueba—
+  no se ha corrido con plata de verdad.
+- **Nada se escribió nunca en el sistema de origen.** Sigue siendo la pieza que
+  falta, y hasta que exista, «Cargar compra» arma la compra y la muestra.

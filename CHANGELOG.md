@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.631.0 — La cola de Hacienda se lee de un vistazo y el número del historial es el real
+
+Cinco correcciones sobre la pestaña Pendiente MH, todas señaladas por el usuario.
+
+**El historial decía «1000 solventados este mes» y ese número no existía.** Era
+el tope que Postgres le pone a cualquier consulta que no traiga el suyo — las
+confirmadas del mes eran **10,770**. El cap exacto es la peor forma de truncar,
+porque parece un dato. Ahora el número lo cuenta el servidor y la lista trae
+las 200 más recientes, con el encabezado diciendo las dos cosas: *«10,780
+confirmadas por Hacienda este mes · se muestran 200»*. Traerlas todas no era
+opción: son las ventas del mes de seis sucursales.
+
+**Las tarjetas de cada documento ahora son tarjetas de verdad.** Estaban
+pintadas a mano —borde, fondo y radio copiados— porque vivían dentro de la
+tarjeta de la sucursal y anidarlas habría dado dos anillos concéntricos. Se
+invirtió: la sucursal pasa a ser un encabezado y cada documento es una tarjeta
+canónica. Gana lo que el canónico trae y a mano no estaba: la sombra completa
+(seis capas en vez de una), el realce del borde al apuntarla, el gel al
+presionarla, el radio del tema y la animación de entrada.
+
+**«Solventar todas» se mudó a la píldora de filtros.** Estaba como botón suelto
+al lado, que es el único sitio donde el estándar de la casa dice que NO van los
+controles de la vista. Como acción de la píldora, además, en el teléfono aparece
+sola en la barra del pulgar — como botón suelto se quedaba fuera.
+
+**Se quitó «Pausar»**, que congelaba la actualización automática. La lista se
+relee sola cada uno o dos minutos y nadie necesitaba detenerla; era un
+interruptor de más compitiendo por el pulgar.
+
+**Y se quitó el aviso «Al corregirse en sistema se confirman automáticamente en
+el portal.»**
+
 ## v2.630.0 — Facturas de mi sala: reservar vuelve a funcionar y el detalle dice lo que trae la factura
 
 **El botón «Es de mi sala» nunca funcionó.** Desde que se publicó el widget

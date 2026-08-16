@@ -8,7 +8,7 @@ import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History,
     ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, Copy, Info,
-    Pause, Play, ShieldCheck
+    ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -30,7 +30,7 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import { formatMoney } from '../utils/formatNumber';
 import {
     regularizarDte,
-    fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices,
+    fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, countConfirmedMhInvoices,
     fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
     fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
     fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
@@ -441,9 +441,9 @@ function BloqueFormaPago({
     );
 }
 
-// ─── Tab: Anuladas ────────────────────────────────────────────────────────────
 /**
- * Termina el trámite pendiente ante Hacienda de lo que se está mirando.
+ * Solventar todas: corregir lo que haga falta y enviar a Hacienda lo pendiente
+ * de lo que se está mirando.
  *
  * El alcance sale del filtro de sucursal que ya está puesto: si hay una
  * elegida, corrige esa; si no, todas. No se inventa un selector aparte — la
@@ -451,61 +451,50 @@ function BloqueFormaPago({
  * decir lo mismo es como se llega a que no coincidan.
  *
  * Lo mismo que corre solo cada noche a las 22:30; esto es para no esperar.
+ *
+ * ── Por qué es una función y ya no un `<Button>` (2026-08-16) ──────────────
+ * Vivía como botón suelto al lado de la píldora de filtros, o sea en el único
+ * sitio donde §17 dice que NO van los controles de vista. `FilterBar` lleva los
+ * filtros **y las acciones**, y las acciones son DESCRIPTORES —no JSX— porque
+ * el mismo control se dibuja de dos maneras: `TabBarAction` en la píldora de
+ * escritorio y un botón del clúster en la barra flotante táctil. Como botón
+ * suelto, en un teléfono quedaba fuera del alcance del pulgar.
  */
-function BotonRegularizar({ filterBranch, branches, bolsa, canEdit, onDone, pendientes }) {
-    const [corriendo, setCorriendo] = useState(false);
-    if (!canEdit || !pendientes) return null;
+async function solventarTodas({ filterBranch, bolsa, onDone }) {
+    const r = await regularizarDte({
+        alcance:  filterBranch ? 'sucursal' : 'todas',
+        branchId: filterBranch || null,
+        bolsa,
+    });
 
-    const sucursal = branches.find(b => String(b.id) === String(filterBranch));
-    const ambito   = filterBranch ? (sucursal?.name || 'esta sucursal') : 'todas las sucursales';
-
-    const correr = async () => {
-        setCorriendo(true);
-        const r = await regularizarDte({
-            alcance:  filterBranch ? 'sucursal' : 'todas',
-            branchId: filterBranch || null,
-            bolsa,
-        });
-        setCorriendo(false);
-
-        if (!r.ok) {
-            useToastStore.getState().showToast('No se pudo completar', mensajeAmigable(r.error), 'error');
-            return;
-        }
-        // Se dice lo que pasó, no "listo": una corrida que resolvió 3 de 8 no es
-        // un éxito, y una que resolvió 0 porque no había nada tampoco es un fallo.
-        const partes = [`${r.resueltas} de ${r.revisadas}`];
-        // Que hubo que TOCAR la ficha del cliente no es un detalle interno: es
-        // la diferencia entre «entró» y «entró porque le arreglamos el dato», y
-        // sin decirlo el cambio en la ficha ocurre sin que nadie se entere.
-        if (r.fichas_corregidas)  partes.push(`${r.fichas_corregidas} ficha${r.fichas_corregidas !== 1 ? 's' : ''} de cliente corregida${r.fichas_corregidas !== 1 ? 's' : ''}`);
-        if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
-        if (r.fallidas)         partes.push(`${r.fallidas} sin resolver`);
-        // Si quedó cola hay que decirlo. Callarla es lo que hace que un tope se
-        // lea como "ya está todo".
-        if (r.restantes > 0)    partes.push(`quedan ${r.restantes} para la próxima tanda`);
-        useToastStore.getState().showToast(
-            r.revisadas === 0 ? 'No había nada pendiente'
-              : r.restantes > 0 ? 'Tanda enviada a Hacienda'
-              : 'Trámite enviado a Hacienda',
-            partes.join(' · '),
-            (r.fallidas || r.restantes > 0) ? 'warning' : 'success',
-        );
-        onDone?.();
-    };
-
-    return (
-        <Button
-            variant="secondary" size="sm" icon={ShieldCheck}
-            loading={corriendo} onClick={correr}
-            title={`Corregir lo que haga falta y enviar a Hacienda lo pendiente de ${ambito}`}
-        >
-            {corriendo ? 'Enviando…' : 'Solventar todas'}
-        </Button>
+    if (!r.ok) {
+        useToastStore.getState().showToast('No se pudo completar', mensajeAmigable(r.error), 'error');
+        return;
+    }
+    // Se dice lo que pasó, no "listo": una corrida que resolvió 3 de 8 no es
+    // un éxito, y una que resolvió 0 porque no había nada tampoco es un fallo.
+    const partes = [`${r.resueltas} de ${r.revisadas}`];
+    // Que hubo que TOCAR la ficha del cliente no es un detalle interno: es
+    // la diferencia entre «entró» y «entró porque le arreglamos el dato», y
+    // sin decirlo el cambio en la ficha ocurre sin que nadie se entere.
+    if (r.fichas_corregidas) partes.push(`${r.fichas_corregidas} ficha${r.fichas_corregidas !== 1 ? 's' : ''} de cliente corregida${r.fichas_corregidas !== 1 ? 's' : ''}`);
+    if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
+    if (r.fallidas)          partes.push(`${r.fallidas} sin resolver`);
+    // Si quedó cola hay que decirlo. Callarla es lo que hace que un tope se
+    // lea como "ya está todo".
+    if (r.restantes > 0)     partes.push(`quedan ${r.restantes} para la próxima tanda`);
+    useToastStore.getState().showToast(
+        r.revisadas === 0 ? 'No había nada pendiente'
+          : r.restantes > 0 ? 'Tanda enviada a Hacienda'
+          : 'Trámite enviado a Hacienda',
+        partes.join(' · '),
+        (r.fallidas || r.restantes > 0) ? 'warning' : 'success',
     );
+    onDone?.();
 }
 
-function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit, paused, barraFiltros }) {
+// ─── Tab: Anuladas ────────────────────────────────────────────────────────────
+function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, recargaRef }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -557,7 +546,10 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
     }, [filterBranch]);
 
     useEffect(() => { loadData(); }, [loadData]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
-    useEffect(() => { if (paused) return; const id = setInterval(loadData, 60_000); return () => clearInterval(id); }, [loadData, paused]);
+    useEffect(() => { const id = setInterval(loadData, 60_000); return () => clearInterval(id); }, [loadData]);
+    // El botón manda su recarga a la vista: la acción «Solventar todas» vive en
+    // la píldora de filtros, que es hermana de la pestaña y no su madre.
+    useEffect(() => { if (recargaRef) recargaRef.current = loadData; }, [loadData, recargaRef]);
 
     const handleSolve = async (invoiceId) => {
         setSaving(true);
@@ -708,9 +700,6 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                     )}
                 </CarrilCards>
                 <div className="flex items-center justify-end gap-2 min-w-0">
-                    <BotonRegularizar
-                        filterBranch={filterBranch} branches={branches} bolsa="anuladas"
-                        canEdit={canEdit} pendientes={filtered.length} onDone={loadData} />
                     {barraFiltros}
                 </div>
             </div>
@@ -931,28 +920,31 @@ const GRACIA_SELLO_DIAS = 2;
 // la ficha (decisión del 2026-08-09), así que ése se resuelve a mano— y la
 // FORMA DE PAGO.
 //
-// No lleva `data-surface="card"`: vive DENTRO de la tarjeta de la sucursal y
-// anidarlas daría dos anillos concéntricos (DESIGN.md §5.1). Una franja dentro
-// de una tarjeta es `bg-surface-card-hover` + borde.
-const TARJETA_TONO = {
-    resolviendo: 'border-success/40 bg-success/10',
-    nulos:       'border-chart-3/40 bg-chart-3/[0.06]',
-    ccf:         'border-danger/30 bg-danger/[0.06]',
-    normal:      'border-divider bg-surface-card-hover/60',
-};
-
+// Es una tarjeta CANÓNICA: `data-surface="card"`, no tres clases que le copian
+// el color. La diferencia no es de estilo — el canónico trae el `backdrop-filter`
+// del vidrio, las seis capas de sombra, el realce del borde al apuntarla, el gel
+// al presionarla y el radio del tema. Copiar `bg-surface-card` deja todo eso
+// afuera y en modo claro la tarjeta desaparece contra la página (DESIGN.md
+// §5.0.1). Por eso también dejó de vivir dentro de otra tarjeta: anidarlas era
+// lo que obligaba a pintarla a mano.
+//
+// El estado va por `data-tono`, que es lo que sube la especificidad por encima
+// del canónico (§5.1): un `border-danger/40` suelto NO lo pisa.
 const TarjetaPendienteMH = memo(({
     r, isCCF, isVisited, isCopied, hasNullCampos, isSolving, canEdit, enviando,
     onCopiar, onResolver, onSolventar,
 }) => {
-    const tono = isSolving ? TARJETA_TONO.resolviendo
-               : hasNullCampos ? TARJETA_TONO.nulos
-               : isCCF ? TARJETA_TONO.ccf
-               : TARJETA_TONO.normal;
+    const tono = isSolving ? 'warning'
+               : isCCF ? 'danger'
+               : hasNullCampos ? 'chart-3'
+               : undefined;
     const categoria = r.cliente_categoria;
     return (
-        <div className={`rounded-xl border px-3.5 py-3 transition-all duration-[var(--dur-fast)] ${tono} ${
-            isVisited && !isSolving ? 'opacity-40' : ''}`}>
+        <div
+            data-surface="card"
+            data-tono={tono}
+            className={`px-3.5 py-3 animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)] ${
+                isVisited && !isSolving ? 'opacity-40' : ''}`}>
             {/* Documento y monto */}
             <div className="flex items-start gap-2">
                 <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
@@ -1029,7 +1021,7 @@ const TarjetaPendienteMH = memo(({
     );
 });
 
-function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, paused, barraFiltros }) {
+function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, recargaRef }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -1038,6 +1030,9 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     }, [employees]);
     const [rows, setRows]               = useState([]);
     const [resolved, setResolved]       = useState([]);
+    // El conteo real del mes lo cuenta el SERVIDOR. Contar el array traído decía
+    // «1000» —el cap de PostgREST— sobre 10,770 reales.
+    const [confirmadasMes, setConfirmadasMes] = useState(null);
     const [showResolved, setShowResolved] = useState(false);
     const [showAllResolved, setShowAllResolved] = useState(false);
     const resolvedSectionRef = useRef(null);
@@ -1116,13 +1111,15 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         // dejaba la vista clavada en esqueletos para siempre: `setLoading(false)`
         // y el candado del sondeo quedaban sin ejecutar, y el fallo se leía como
         // "está cargando".
-        let pendData, resInvs, allResolutions, nullsData;
+        let pendData, resInvs, allResolutions, nullsData, confirmadas;
         try {
-            [pendData, { data: resInvs }, { data: allResolutions }, { data: nullsData }] = await Promise.all([
+            [pendData, { data: resInvs }, { data: allResolutions }, { data: nullsData },
+             { count: confirmadas }] = await Promise.all([
                 fetchPendingMhInvoices(filterBranch),
                 fetchConfirmedMhInvoices(filterBranch, fini, ffin),
                 fetchInvoiceResolutionsHistorial('invoice_id, comment, resolved_by, resolved_at'),
                 fetchInvoiceNullIds(),
+                countConfirmedMhInvoices(filterBranch, fini, ffin),
             ]);
         } catch (e) {
             console.error('loadData (pendiente MH):', e?.message || e);
@@ -1172,12 +1169,14 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
         setRows(filteredPend);
         setResolved(allResolved);
+        setConfirmadasMes(confirmadas ?? 0);
         setLoading(false);
         pollingRef2.current = false;
     }, [filterBranch]);
 
     useEffect(() => { loadData(); }, [loadData]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
-    useEffect(() => { if (paused) return; const id = setInterval(loadData, 120_000); return () => clearInterval(id); }, [loadData, paused]);
+    useEffect(() => { const id = setInterval(loadData, 120_000); return () => clearInterval(id); }, [loadData]);
+    useEffect(() => { if (recargaRef) recargaRef.current = loadData; }, [loadData, recargaRef]);
 
     const handleSolve = async (invoiceId) => {
         setSaving(true);
@@ -1313,25 +1312,29 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                     )}
                 </CarrilCards>
                 <div className="flex items-center justify-end gap-2 min-w-0">
-                    <BotonRegularizar
-                        filterBranch={filterBranch} branches={branches} bolsa="sin_sello"
-                        canEdit={canEdit} pendientes={filtered.length} onDone={loadData} />
                     {barraFiltros}
                 </div>
             </div>
 
             {/* Pending list */}
             {loading ? (
-                <div className="space-y-3">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="rounded-2xl border border-divider bg-surface-card shadow-sm overflow-hidden">
-                            <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
+                // El esqueleto tiene la FORMA de lo que va a llegar: encabezado de
+                // sucursal y una grilla de tarjetas. Con la silueta vieja —una fila
+                // de píldoras— la lista saltaba al cargar.
+                <div className="space-y-6">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                        <div key={i} className="space-y-2.5">
+                            <div data-surface="card" className="flex items-center justify-between px-4 py-3">
                                 <div className="h-3 w-28 skeleton rounded-full" />
                                 <div className="h-3 w-12 skeleton rounded-full" />
                             </div>
-                            <div className="px-4 py-3 flex flex-wrap gap-1.5">
-                                {Array.from({ length: 3 }).map((_, j) => (
-                                    <div key={j} className="h-7 w-20 skeleton rounded-xl" />
+                            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
+                                {Array.from({ length: 2 }).map((_, j) => (
+                                    <div key={j} data-surface="card" className="px-3.5 py-3 space-y-2.5">
+                                        <div className="h-3 w-40 skeleton rounded-full" />
+                                        <div className="h-3 w-32 skeleton rounded-full" />
+                                        <div className="h-7 w-full skeleton rounded-xl" />
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -1339,32 +1342,39 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                 </div>
             ) : filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-chart-3-text" glowClass="bg-chart-3"
-                    title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
+                    title="Sin pendientes" subtitle="Todos los documentos tienen su sello de recepción." />
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-6">
                     {isPendienteFuzzy && searchTerm && (
                         <Notice variant="warning" icon={Search}>
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </Notice>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
-                        <Info size={13} className="text-brand-text shrink-0" />
-                        Al corregirse en sistema se confirman automáticamente en el portal.
-                    </div>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
                         const branchTotal = Object.values(byFecha).flat().length;
                         const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
                         const isCollapsed = !!collapsedBranches[branchId];
                         return (
-                            <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
+                            // ── Sin tarjeta envolvente, a propósito (2026-08-16) ──
+                            // Antes la sucursal era una tarjeta y los documentos
+                            // vivían adentro, así que el documento NO podía ser una
+                            // tarjeta canónica: anidarlas da dos anillos
+                            // concéntricos (DESIGN.md §5.1) y obliga a pintar la de
+                            // adentro a mano — sin lente, sin sombra, sin el realce
+                            // al apuntarla y sin animación de entrada.
+                            //
+                            // Invertido: la sucursal es un encabezado (`ListRow`,
+                            // que ES el canónico de fila-tarjeta) y cada documento
+                            // es una `data-surface="card"` de verdad.
+                            <section key={branchId} className="space-y-2.5">
                                 {/* Branch header — collapsible */}
                                 <ListRow
+                                    surface="card"
                                     density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
                                     tone={branchHasCCF ? 'danger' : null}
                                     title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
                                     onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
                                     aria-expanded={!isCollapsed}
-                                    className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
                                     trailing={<>
                                         <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
                                         <ChevronDown size={13} className={`text-content-3 transition-transform duration-[var(--dur-base)] ${isCollapsed ? '-rotate-90' : ''}`} />
@@ -1372,7 +1382,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                 />
 
                                 {/* Date sections */}
-                                {!isCollapsed && <div className="divide-y divide-divider">
+                                {!isCollapsed && <div className="space-y-4 pt-0.5">
                                     {Object.entries(byFecha).map(([fecha, fechaRows]) => {
                                         const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
                                         const isToday = fecha === todayStr;
@@ -1384,9 +1394,9 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                         const vencida = diasDesde(fecha) > GRACIA_SELLO_DIAS;
 
                                         return (
-                                            <div key={fecha} className="px-4 py-3">
+                                            <div key={fecha}>
                                                 {/* Date label */}
-                                                <div className="flex items-center gap-2 mb-2.5">
+                                                <div className="flex items-center gap-2 mb-2.5 px-1">
                                                     <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
                                                     <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : vencida ? 'warning' : 'neutral'} size="sm">{dLabel}</Badge>
                                                 </div>
@@ -1420,12 +1430,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                     })}
                                                 </div>
 
-                                                {/* Solve form — shown below pills when ✓ clicked */}
+                                                {/* La nota de «Marcar revisada», debajo de las tarjetas */}
                                                 {fechaRows.some(r => r.id === solvingId) && (() => {
                                                     const r    = fechaRows.find(r => r.id === solvingId);
                                                     const isCCF = r.tipo_documento === 'CCF';
                                                     return (
-                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
+                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-fast)]">
                                                             <div className="flex items-center gap-2 mb-2.5">
                                                                 <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
                                                                 {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
@@ -1452,7 +1462,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                         );
                                     })}
                                 </div>}
-                            </div>
+                            </section>
                         );
                     })}
                 </div>
@@ -1463,8 +1473,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                 <div ref={resolvedSectionRef} className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
                     <ListRow
                         icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
-                        title={`${showAllResolved ? resolved.length : resolvedThisMonth.length} solventado${resolved.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
-                        subtitle="Historial de envíos al MH"
+                        // El número del mes es el del SERVIDOR; el de la lista, lo
+                        // que se está mostrando. Son dos cosas distintas y ahora se
+                        // dicen las dos, que es lo que faltaba cuando el encabezado
+                        // anunciaba «1000» sobre 10,770.
+                        title={`${(confirmadasMes ?? resolvedThisMonth.length).toLocaleString('es-SV')} confirmada${confirmadasMes === 1 ? '' : 's'} por Hacienda este mes`}
+                        subtitle={`Historial de envíos · se muestran ${resolvedDisplay.length.toLocaleString('es-SV')}`}
                         onClick={() => setShowResolved(v => !v)}
                         aria-expanded={showResolved}
                         className="rounded-none border-x-0 border-t-0"
@@ -1504,9 +1518,19 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                     </div>
                                 );
                             })}
-                            <div className="px-5 py-3 border-t border-divider flex justify-center">
-                                <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>{showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}</Button>
-                            </div>
+                            {/* «Ver todos» prometía traer el resto y no podía: la
+                                lista está topeada a propósito. Lo que este botón
+                                hace de verdad es incluir las de meses anteriores
+                                —que son las marcadas a mano—, así que eso dice. */}
+                            {resolved.length > resolvedThisMonth.length && (
+                                <div className="px-5 py-3 border-t border-divider flex justify-center">
+                                    <Button variant="ghost" onClick={() => setShowAllResolved(v => !v)}>
+                                        {showAllResolved
+                                            ? 'Ver solo este mes'
+                                            : `Ver también meses anteriores (${resolved.length - resolvedThisMonth.length})`}
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -2906,7 +2930,10 @@ export default function FacturacionView() {
 
     // Sondeo automático: decisión de la vista, no de cada pestaña. Ver el
     // descriptor `pausa` de la píldora, más abajo.
-    const [paused, setPaused] = useState(false);
+    const [solventando, setSolventando] = useState(false);
+    // El cable entre la píldora de filtros y la pestaña activa: la acción vive
+    // acá y los datos allá, y son hermanas, no una hija de la otra.
+    const recargaRef = useRef(null);
 
     // El mes de No Efectivo vivía como un `LiquidSelect` suelto dentro de la
     // pestaña — un filtro fuera de la píldora, que es justo lo que §17 prohíbe.
@@ -2930,8 +2957,7 @@ export default function FacturacionView() {
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
     // Montar al VISITAR, no al entrar. `hidden` esconde pero no desmonta, y las
-    // cinco pestañas cargan sola al montarse (el `paused` que reciben apaga el
-    // sondeo de 60 s, no la carga inicial). O sea que abrir «Anuladas» traía
+    // cinco pestañas cargan solas al montarse. O sea que abrir «Anuladas» traía
     // también el backlog de Pendiente MH, No Efectivo, Saltos y Observaciones:
     // medido, 6 lecturas de `sales_invoices` —la tabla de 548K filas, paginada
     // con fetchAllRows— por 231 kB, más `get_invoice_observations`, que con
@@ -2999,24 +3025,43 @@ export default function FacturacionView() {
         />
     );
 
-    // Pausar la actualización automática es de la VISTA, no de una pestaña: las
-    // dos que sondean comparten la decisión, y como interruptor su sitio es la
-    // píldora (§17, campo `activo` → `aria-pressed` y encendido en el clúster
-    // táctil). Antes era un `<Button>` suelto dentro del encabezado de cada
-    // pestaña, o sea el mismo control escrito dos veces y en un sitio donde §17
-    // no pone controles de vista.
-    const puedePausar = activeTab === 'anuladas' || activeTab === 'pendiente_mh';
-    const accionesFacturacion = puedePausar ? [{
-        key: 'pausa',
-        icon: paused ? Play : Pause,
-        label: paused ? 'Reanudar' : 'Pausar',
-        // Un rótulo fijo bajo el ícono del pulgar: el estado lo dicen el ícono
-        // (▶/⏸) y el color, y "REANUDAR" no entra en la columna.
-        rotulo: 'Pausa',
-        title: paused ? 'Reanudar actualización automática' : 'Pausar actualización automática',
-        activo: paused,
-        tone: paused ? 'warning' : undefined,
-        onClick: () => setPaused(p => !p),
+    // ── «Solventar todas», la acción de la vista (2026-08-16) ───────────────
+    // Aquí vivía «Pausar», que apagaba el sondeo automático. Se quitó a pedido
+    // del usuario: la lista se relee sola cada uno o dos minutos y nadie
+    // necesitaba congelarla — era un interruptor de más en una barra donde cada
+    // control compite por el pulgar.
+    //
+    // La acción de verdad es ésta, y va acá porque §17 dice que los controles
+    // de la vista viven en la píldora de filtros. Como descriptor, además, la
+    // barra flotante táctil la dibuja sola en el clúster del pulgar; como
+    // `<Button>` suelto al lado de la píldora se quedaba fuera.
+    const bolsaDeLaPestana = activeTab === 'anuladas' ? 'anuladas'
+                           : activeTab === 'pendiente_mh' ? 'sin_sello' : null;
+    const accionesFacturacion = (bolsaDeLaPestana && canEdit) ? [{
+        key: 'solventar-todas',
+        icon: solventando ? Loader2 : ShieldCheck,
+        label: solventando ? 'Enviando…' : 'Solventar todas',
+        // El rótulo del clúster táctil es otro texto a propósito: medido en un
+        // iPhone 13 con tres acciones, «Solventar» —9 caracteres, el techo justo
+        // de `LARGO_ROTULO_CLUSTER`— sale cortado como «SOLVENT…». Un rótulo con
+        // puntos suspensivos no nombra nada, y el nombre completo sigue estando
+        // en el tooltip y en el panel de «Otros».
+        rotulo: 'Enviar',
+        title: `Corregir lo que haga falta y enviar a Hacienda lo pendiente de ${
+            filterBranch ? (branches.find(b => String(b.id) === String(filterBranch))?.name || 'esta sucursal')
+                         : 'todas las sucursales'}`,
+        disabled: solventando,
+        tone: 'success',
+        onClick: async () => {
+            setSolventando(true);
+            // La pestaña publica su recarga en `recargaRef`; si por lo que sea
+            // no llegó, el sondeo de un minuto la trae igual — degrada, no falla.
+            await solventarTodas({
+                filterBranch, bolsa: bolsaDeLaPestana,
+                onDone: () => recargaRef.current?.(),
+            });
+            setSolventando(false);
+        },
     }] : [];
 
     // La píldora se dibuja SIEMPRE: quien tiene alcance de una sola sucursal no
@@ -3089,13 +3134,13 @@ export default function FacturacionView() {
                 {visitadas.has('anuladas') && (
                     <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
                         <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
-                            paused={paused} barraFiltros={activeTab === 'anuladas' ? filtrosCuerpo : null} />
+                            recargaRef={recargaRef} barraFiltros={activeTab === 'anuladas' ? filtrosCuerpo : null} />
                     </div>
                 )}
                 {visitadas.has('pendiente_mh') && (
                     <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
                         <TabPendienteMH canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
-                            paused={paused} barraFiltros={activeTab === 'pendiente_mh' ? filtrosCuerpo : null} />
+                            recargaRef={recargaRef} barraFiltros={activeTab === 'pendiente_mh' ? filtrosCuerpo : null} />
                     </div>
                 )}
                 {visitadas.has('saltos') && (

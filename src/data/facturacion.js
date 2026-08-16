@@ -149,13 +149,40 @@ export async function fetchPendingMhInvoices(filterBranch) {
 //
 // La buena exige la forma del dato, no su ausencia de NULL. Ver CLAUDE.md,
 // "el tipo de la columna manda, no el nombre".
-export function fetchConfirmedMhInvoices(filterBranch, fini, ffin) {
+// ── El historial se PAGINA de verdad, y el número sale del servidor ─────────
+//
+// Esta consulta no tenía tope, así que PostgREST le ponía el suyo: 1000. El
+// encabezado decía «1000 solventados este mes» y ese número no significaba nada
+// — medido el 2026-08-16, las confirmadas del mes eran **10,770**. El cap exacto
+// es la peor forma de truncar porque parece un dato (CLAUDE.md: `.limit(1000)`
+// está prohibido).
+//
+// Traerlas todas tampoco: son las ventas del mes de seis sucursales, y el
+// historial es una lista que se lee, no un conjunto que se procesa. Así que el
+// tope es explícito y CHICO, y el conteo real viaja aparte —
+// `countConfirmedMhInvoices`— para que la pantalla diga cuántas hay y cuántas
+// muestra. Un tope que no se anuncia se lee como «ya está todo».
+export const TOPE_HISTORIAL_MH = 200;
+
+export function fetchConfirmedMhInvoices(filterBranch, fini, ffin, limite = TOPE_HISTORIAL_MH) {
     let q = supabase
         .from('sales_invoices')
         .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
         .like('recibido_mh', SELLO_MH_LIKE)
         .gte('fecha', fini).lte('fecha', ffin)
-        .order('fecha', { ascending: false });
+        .order('fecha', { ascending: false })
+        .limit(limite);
+    if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+    return q;
+}
+
+/** Cuántas confirmó Hacienda de verdad en el período. `head` no trae filas. */
+export function countConfirmedMhInvoices(filterBranch, fini, ffin) {
+    let q = supabase
+        .from('sales_invoices')
+        .select('id', { count: 'exact', head: true })
+        .like('recibido_mh', SELLO_MH_LIKE)
+        .gte('fecha', fini).lte('fecha', ffin);
     if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
     return q;
 }

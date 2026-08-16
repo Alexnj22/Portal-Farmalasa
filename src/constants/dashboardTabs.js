@@ -23,6 +23,24 @@ export function catalogoDePestana(tabId, todosLosIds = []) {
 }
 
 /**
+ * ¿Esta pestaña hospeda las baldosas por sucursal?
+ *
+ * Las `sales_branch_*` son ids **dinámicos** —una por sucursal con ventas— así
+ * que no pueden estar en las listas de arriba, que son fijas. Y hasta el
+ * 2026-08-16 sólo aparecían en General, porque el único sitio donde se
+ * colocaban era el acomodo de esa pestaña. Reportado por el usuario: «porque
+ * los de ventas por sucursal no salen? ni en comercial?».
+ *
+ * La regla es la del widget del que dependen: van donde va «Ventas por
+ * día/hora» (`sales`), que es el que además les presta el permiso
+ * (`dash_sales`). Hoy eso da General y Comercial, y el día que `sales` entre a
+ * otra categoría, las baldosas la siguen sin que nadie tenga que acordarse.
+ */
+export function hospedaBaldosasDeSucursal(tabId) {
+    return tabId === 'general' || (PESTANAS_TEMATICAS[tabId] || []).includes('sales');
+}
+
+/**
  * La pestaña temática a la que PERTENECE un widget, o `null` si no tiene una
  * propia. Sirve para agrupar en Permisos, donde cada widget tiene que aparecer
  * una sola vez: dos interruptores del mismo permiso no se pueden leer.
@@ -83,7 +101,7 @@ export function pestanasVisibles(todosLosIds, esVisible) {
  * @param canonOrden  `orden` publicado, o vacío si el SU todavía no publicó
  * @param esVisible   (id) => boolean — permiso del cargo
  */
-export function ordenDeLaPestana(tabId, canonOrden, esVisible) {
+export function ordenDeLaPestana(tabId, canonOrden, esVisible, dinamicos = []) {
     const catalogo = (PESTANAS_TEMATICAS[tabId] || []).filter(id => id !== 'kpi');
     // Del canon sobrevive lo que sigue existiendo: un widget retirado se cae
     // solo, sin necesidad de limpiar la fila publicada.
@@ -92,7 +110,11 @@ export function ordenDeLaPestana(tabId, canonOrden, esVisible) {
     // la categoría. Es el caso de un widget agregado después de publicar: sale
     // igual, en un lugar razonable, y al SU se le avisa que quedó sin ubicar.
     const sinUbicar = catalogo.filter(id => !publicados.includes(id));
-    return [...publicados, ...sinUbicar].filter(esVisible);
+    // Las baldosas por sucursal van al final y **nunca al canon**: el canon es
+    // una lista publicada para todos los cargos, y qué sucursales tienen ventas
+    // cambia solo. Guardarlas ahí sería congelar un dato vivo — es el mismo
+    // motivo por el que esta función devuelve un ORDEN y no coordenadas.
+    return [...publicados, ...sinUbicar, ...dinamicos].filter(esVisible);
 }
 
 /**

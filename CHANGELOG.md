@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.639.0 — Las ventas por sucursal se acomodan y también viven en Comercial
+
+Reportado: *«porque los de ventas por sucursal no salen? ni en comercial?»*.
+
+Las baldosas «Hoy · sucursal» —la gráfica de ventas por hora de cada sala— son
+ids **dinámicos** (`sales_branch_<id>`, una por sucursal con ventas en los
+últimos 7 días), así que no están en el catálogo de widgets, que es una lista
+fija. De ahí salían dos cosas:
+
+**1. No aparecían en el editor de acomodo, y además las movía.** El editor
+armaba su lista sólo del catálogo estático. Eso no era únicamente que no se
+vieran: al no estar en la lista, «Listo» guardaba un acomodo **sin ellas**, y el
+efecto que las da de alta las volvía a colocar donde encontrara hueco. Medido:
+las 6 estaban en las filas 1 y 2 y terminaban en las **13, 14 y 19**. O sea que
+acomodar el tablero desacomodaba justo lo que no se podía acomodar.
+
+Ahora salen con el nombre de su sala («Hoy · La Popular») y se mueven y se
+redimensionan como cualquier otra. No se quitan de a una: su encendido es el del
+widget «Ventas por día/hora», no uno propio, y ofrecer un «Quitar» que no apaga
+nada sería un control que no controla.
+
+**2. Sólo existían en General.** El único sitio donde se colocaban era el
+acomodo de esa pestaña, así que Comercial no podía verlas por construcción. La
+regla ahora es la del widget del que dependen: **van donde va «Ventas por
+día/hora»** — hoy General y Comercial, y el día que ese widget cambie de
+categoría, las baldosas lo siguen sin que nadie tenga que acordarse.
+
+Nunca entran al **canon publicado** de la pestaña: el canon es una lista para
+todos los cargos y qué sucursales venden cambia solo. Se agregan al final del
+orden al pintar, que es el mismo motivo por el que `ordenDeLaPestana` devuelve un
+orden y no coordenadas.
+
+**Quién las ve.** Pedido del usuario: sólo Admin, Gerencia, Talento y
+Supervisor. Verificado contra los cargos reales — el permiso `dash_sales` con
+`can_view` lo tienen **Gerente General, Administrador, Jefe/a de Talento Humano
+y Supervisor/a de Ventas**, y nadie más salvo la cuenta de QA. O sea que ya era
+exactamente eso y no hizo falta un permiso nuevo. Lo que sí se corrigió es que
+la regla de visibilidad estaba escrita **dos veces** y sólo una sabía de las
+baldosas: la del acomodo adaptado las dejaba pasar por
+`PERMISO_DE[id] === undefined`, o sea **sin permiso**. Hoy es una sola función.
+
+De paso, la lista de baldosas sale de las sucursales que venden y ya no del
+acomodo guardado: una sucursal que deja de vender sale sola, en vez de quedarse
+reservando una celda para un widget que ya no se pintaba.
+
 ## v2.638.0 — El login sólo pide escanear si hay lector, y el carné tecleado a mano ya no abre sesión
 
 Cinco correcciones sobre v2.637.0, todas reportadas por el usuario.

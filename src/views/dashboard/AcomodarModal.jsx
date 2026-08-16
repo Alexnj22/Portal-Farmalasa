@@ -463,9 +463,15 @@ export default function AcomodarModal({
                                 options={[1, 2, 3, 4].map(n => ({
                                     value: n, label: String(n), disabled: n < elegidoMin.minRows,
                                 }))} />
-                            <Button variant="secondary" icon={X} onClick={() => apagar(elegido)}>
-                                Quitar
-                            </Button>
+                            {/* Las baldosas de sucursal no se quitan de a una:
+                                su encendido es el del widget «Ventas por
+                                día/hora», no uno propio. Un «Quitar» que no
+                                apaga nada es peor que no tenerlo. */}
+                            {!rotulos[elegido].fijo && (
+                                <Button variant="secondary" icon={X} onClick={() => apagar(elegido)}>
+                                    Quitar
+                                </Button>
+                            )}
                         </div>
                     ) : (
                         <Button variant="secondary" icon={RotateCcw} onClick={onRestablecer}>

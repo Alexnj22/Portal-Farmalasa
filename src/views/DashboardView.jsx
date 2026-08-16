@@ -81,6 +81,7 @@ import useCapaFlotante from '../utils/capaFlotante';
 import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
 import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
+    hospedaBaldosasDeSucursal,
 } from '../constants/dashboardTabs';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
@@ -1127,6 +1128,44 @@ const DashboardView = ({ openModal }) => {
   //     hacía al leer el acomodo de escritorio (`initTabLayouts`, por `srs_inv`
   //     justamente) y **no** en el camino móvil, que es donde sobrevivió.
   //
+  // ── Las baldosas por sucursal ──────────────────────────────────────────────
+  //
+  // Suben acá arriba —estaban con el resto del estado de datos, 500 líneas más
+  // abajo— porque desde el 2026-08-16 el ACOMODO las necesita: dejaron de vivir
+  // sólo en General y ahora también las hospeda Comercial, que se arma con
+  // `ordenDeLaPestana` y no con un acomodo guardado. En JS un `const` declarado
+  // después no existe antes: leerlo desde el memo de arriba tira por TDZ, no
+  // devuelve `undefined`.
+  const [salesBranchIds, setSalesBranchIds] = useState(new Set());
+  const [salesBranchIdsLoading, setSalesBranchIdsLoading] = useState(true);
+  const salesBranches = useMemo(
+    () => branches.filter(b => salesBranchIds.has(String(b.id))), [branches, salesBranchIds]);
+
+  // Los ids dinámicos de la pestaña abierta. Salen de `salesBranches` y ya NO
+  // del acomodo guardado, que es de donde se leían: el acomodo sólo las tenía
+  // porque un efecto las escribía en el de General, así que Comercial nunca
+  // podía verlas. Y de paso se limpia solo — una sucursal que deja de vender
+  // sale de la lista en vez de quedarse reservando su celda para un widget que
+  // `renderWidget` ya devolvía `null`.
+  const baldosasDeSucursal = useMemo(
+    () => (hospedaBaldosasDeSucursal(activeTab) ? salesBranches.map(b => `sales_branch_${b.id}`) : []),
+    [activeTab, salesBranches]);
+
+  // La ÚNICA regla de «¿se ve este widget?», para las dos rutas que arman un
+  // tablero: la del acomodo adaptado (pestaña temática) y la del catálogo
+  // (General). Estaban escritas dos veces y sólo una sabía de las baldosas por
+  // sucursal — la otra las dejaba pasar por `PERMISO_DE[id] === undefined`, o
+  // sea SIN permiso, que es lo contrario de lo que se quiere.
+  //
+  // Una baldosa por sucursal no tiene permiso propio: usa el del widget del que
+  // depende, «Ventas por día/hora» (`dash_sales`). Verificado contra los cargos
+  // reales el 2026-08-16 — lo tienen con `can_view` Gerente General,
+  // Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas, y nadie
+  // más salvo la cuenta de QA. Que es exactamente a quiénes se les debe mostrar.
+  const esVisibleEnTablero = useCallback((id) => (id.startsWith('sales_branch_')
+    ? showWidget('sales', 'dash_sales')
+    : showWidget(id, PERMISO_DE[id])), [showWidget]);
+
   // ── El acomodo adaptado: la pestaña temática vista por quien no la acomoda ─
   //
   // Nada de esto sale de un acomodo guardado por usuario, y ahí está el punto:
@@ -1141,7 +1180,7 @@ const DashboardView = ({ openModal }) => {
   // diría una cosa y el widget mediría otra.
   const acomodoAdaptado = useMemo(() => {
     if (acomodoLibre) return null;
-    const orden   = ordenDeLaPestana(activeTab, canon?.[activeTab]?.orden, id => showWidget(id, PERMISO_DE[id]));
+    const orden   = ordenDeLaPestana(activeTab, canon?.[activeTab]?.orden, esVisibleEnTablero, baldosasDeSucursal);
     const medidas = canon?.[activeTab]?.medidas || EMPTY_OBJ;
     // En el teléfono NO se empaca: el ancho de cada baldosa lo decide
     // `anchoEnTelefono` y `getEffectiveCols` lo impone por encima de las
@@ -1155,16 +1194,10 @@ const DashboardView = ({ openModal }) => {
   // Lo que esta persona PUEDE ver en la pestaña abierta, en el orden del
   // catálogo. Vive fuera de `activeLayout` porque lo necesitan los dos: el
   // acomodo automático para armarlo y el guardado para depurarlo.
-  const catalogoVisible = useMemo(() => {
-    const dinamicos = Object.keys(widgetLayout[activeTab] || EMPTY_OBJ).filter(id => id.startsWith('sales_branch_'));
-    const visible = (id) => (id.startsWith('sales_branch_')
-      ? showWidget('sales', 'dash_sales')
-      : showWidget(id, WIDGET_DEFS.find(w => w.id === id)?.permission));
-    return [
-      ...(TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi' && visible(id)),
-      ...dinamicos.filter(visible),
-    ];
-  }, [activeTab, widgetLayout, showWidget]);
+  const catalogoVisible = useMemo(() => [
+    ...(TAB_WIDGETS[activeTab] || []).filter(id => id !== 'kpi' && esVisibleEnTablero(id)),
+    ...baldosasDeSucursal.filter(esVisibleEnTablero),
+  ], [activeTab, esVisibleEnTablero, baldosasDeSucursal]);
 
   // El tablero que se arma solo, para quien todavía no movió nada.
   //
@@ -1691,8 +1724,6 @@ const DashboardView = ({ openModal }) => {
   const [absLoading,     setAbsLoading]     = useState(true);
   const [todaySales,     setTodaySales]     = useState({});
   const [todayLoading,   setTodayLoading]   = useState(false);
-  const [salesBranchIds, setSalesBranchIds] = useState(new Set());
-  const [salesBranchIdsLoading, setSalesBranchIdsLoading] = useState(true);
 
   // ── Comercial tab data ─────────────────────────────────────────────────────
   const [cotizStats,     setCotizStats]     = useState({ activas: 0, total: 0, recent: [] });
@@ -1711,8 +1742,6 @@ const DashboardView = ({ openModal }) => {
         setSalesBranchIdsLoading(false);
       });
   }, []);
-
-  const salesBranches = useMemo(() => branches.filter(b => salesBranchIds.has(String(b.id))), [branches, salesBranchIds]);
 
   useEffect(() => {
     if (!salesBranches.length) return;
@@ -2065,11 +2094,37 @@ const DashboardView = ({ openModal }) => {
   // El catálogo de ESTA pestaña con su estado, encendidos y apagados juntos:
   // el modal necesita los dos —lo que está puesto y lo que se puede agregar— y
   // `catalogoVisible` sólo trae los primeros.
-  const catalogoDelModal = useMemo(() => WIDGET_DEFS
-    .filter(w => w.id !== 'kpi' && (TAB_WIDGETS[activeTab] || []).includes(w.id) && canSee(w.permission))
-    .map(w => ({ id: w.id, label: w.label, icon: w.icon,
-                 encendido: isWidgetOn(w.id), permitido: true })),
-    [activeTab, canSee, isWidgetOn]);
+  //
+  // ⚠️ Y las baldosas de sucursal (`sales_branch_*`) NO están en `WIDGET_DEFS`:
+  // son ids dinámicos, uno por sucursal con ventas, que un efecto coloca en el
+  // acomodo. Armar esta lista sólo desde el catálogo estático las dejaba fuera
+  // del editor —reportado por el usuario, «porque los de ventas por sucursal no
+  // salen»— y eso no era sólo que no se vieran: al no estar en la lista,
+  // `AcomodarModal` las filtraba también al guardar, así que «Listo» devolvía
+  // un acomodo sin ellas y el efecto de alta las volvía a colocar donde
+  // encontraba hueco. Medido: las 6 estaban en las filas 1 y 2 y terminaban en
+  // las 13, 14 y 19. O sea que acomodar el tablero **desacomodaba** justo las
+  // baldosas que no se podían acomodar.
+  //
+  // Es la misma familia que `catalogoVisible`, que ya las pesca del acomodo por
+  // ese motivo — y por eso se leen de ahí y no de `salesBranches`: la fuente de
+  // verdad de qué baldosas hay puestas en ESTA pestaña es el acomodo.
+  const catalogoDelModal = useMemo(() => {
+    const estaticos = WIDGET_DEFS
+      .filter(w => w.id !== 'kpi' && (TAB_WIDGETS[activeTab] || []).includes(w.id) && canSee(w.permission))
+      .map(w => ({ id: w.id, label: w.label, icon: w.icon,
+                   encendido: isWidgetOn(w.id), permitido: true }));
+    // `fijo`: se mueven y se redimensionan, pero no se quitan de a una. Su
+    // encendido es el del widget «Ventas por día/hora» (`showWidget('sales',
+    // 'dash_sales')` en `catalogoVisible`), no uno propio — ofrecer un «Quitar»
+    // que no apaga nada sería un control que no controla.
+    const porSucursal = baldosasDeSucursal.filter(esVisibleEnTablero).map(id => {
+      const sucursal = salesBranches.find(b => String(b.id) === id.replace('sales_branch_', ''));
+      return { id, icon: BarChart2, encendido: true, permitido: true, fijo: true,
+               label: sucursal ? `Hoy · ${sucursal.name}` : getWidgetSize(id).label };
+    });
+    return [...estaticos, ...porSucursal];
+  }, [activeTab, canSee, isWidgetOn, baldosasDeSucursal, esVisibleEnTablero, salesBranches]);
 
   const aplicarAcomodo = useCallback(({ acomodo, medidas, apagados }) => {
     const tabId = activeTabRef.current;

@@ -58,6 +58,20 @@ test.describe('Acomodar widgets', () => {
         });
         expect(alfa, 'el lienzo del editor dejó de ocluir').not.toBeNull();
         expect(alfa).toBeGreaterThanOrEqual(0.9);
+
+        // Las baldosas por sucursal (`sales_branch_*`) son ids dinámicos y no
+        // están en `WIDGET_DEFS`: la primera versión del editor armaba su lista
+        // sólo del catálogo estático y las dejaba fuera. Y no era cosmético —
+        // al no estar en la lista, «Listo» guardaba un acomodo sin ellas y el
+        // efecto de alta las recolocaba: las 6 pasaban de las filas 1-2 a las
+        // 13, 14 y 19. Reportado el 2026-08-16.
+        const enElTablero = await page.locator('[data-widget-id^="sales_branch_"]').count();
+        if (enElTablero > 0) {
+            const rotulos = await fichas(page).allInnerTexts();
+            const enElEditor = rotulos.filter(t => t.trim().startsWith('Hoy ·')).length;
+            expect(enElEditor, 'las baldosas de sucursal no salen en el editor')
+                .toBe(enElTablero);
+        }
         // Y entra sin scroll horizontal, que es el punto de verlo en chico.
         const desborde = await page.evaluate(() => {
             const d = document.querySelector('[role="dialog"]');

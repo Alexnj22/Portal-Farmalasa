@@ -13,7 +13,9 @@ import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
-import { fetchEducationCatalogEntries, fetchLastTerminationEvent } from '../../data/employees';
+import {
+    codigoDeCarneLibre, fetchCredenciales, fetchEducationCatalogEntries, fetchLastTerminationEvent,
+} from '../../data/employees';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
@@ -274,6 +276,30 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return () => { cancelled = true; };
     }, []);
 
+    // El código de carné y el PIN ya no viajan con la fila del empleado: son la
+    // credencial con la que se entra al portal (`login()` hace
+    // `signInWithPassword(password: code)`), y publicarlos en `employees_safe`
+    // significaba que cualquier empleado con sesión leía el de todos. Se piden
+    // aparte, con la misma compuerta que gobierna editar personal.
+    //
+    // Sólo al EDITAR: al crear a alguien el código lo genera esta pantalla.
+    useEffect(() => {
+        if (!isEditMode || !formData?.id) return;
+        let cancelled = false;
+        fetchCredenciales([formData.id]).then((mapa) => {
+            const cred = mapa.get(formData.id);
+            if (cancelled || !cred) return;
+            // `prev.code ?? ` y no al revés: si quien edita ya escribió un
+            // código nuevo, la respuesta que llega después no se lo pisa.
+            setFormData((prev) => ({
+                ...prev,
+                code: prev.code ?? cred.code ?? '',
+                kiosk_pin: prev.kiosk_pin ?? cred.kiosk_pin ?? '',
+            }));
+        });
+        return () => { cancelled = true; };
+    }, [isEditMode, formData?.id, setFormData]);
+
     // Art. 28: si esta persona tiene una baja (TERMINATION) a menos de 1 año de
     // la fecha de contratación actual, no puede volver a estipularse período de
     // prueba — solo se necesita el evento más reciente para saberlo.
@@ -434,15 +460,25 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     }, [formData?.department]);
 
     // Código SOLO numérico (regla de negocio + trigger en BD): con dígitos no
-    // existe ambigüedad de mayúsculas en el hash SHA-256 del PIN. Verifica
-    // contra los códigos existentes para no colisionar con el índice único.
-    const generateUniqueCode = () => {
-        const taken = new Set(employees.map(e => (e.code || '').trim()));
-        for (let i = 0; i < 50; i++) {
+    // existe ambigüedad de mayúsculas en el hash SHA-256 del PIN.
+    //
+    // Quién decide que está libre cambió: antes se cruzaba contra los códigos
+    // de la lista cargada, y esa lista ya no los trae —el código es la
+    // contraseña del portal—. Un `Set` vacío daba por libre CUALQUIER
+    // candidato, o sea que el generador habría empezado a repetir códigos sin
+    // avisar, y dos personas con el mismo código son dos con la misma
+    // contraseña. Ahora pregunta al servidor candidato por candidato.
+    const generateUniqueCode = async () => {
+        for (let i = 0; i < 12; i++) {
             const candidate = String(Math.floor(1000 + Math.random() * 9000));
-            if (!taken.has(candidate)) return candidate;
+            if (await codigoDeCarneLibre(candidate) === true) return candidate;
         }
-        return Date.now().toString().slice(-6);
+        // Ninguna respuesta afirmativa en 12 intentos: puede ser mala suerte o
+        // que el servidor no esté contestando. No se inventa un código —sería
+        // exactamente el fallo que esto evita—: se avisa y no se toca el campo.
+        useToastStore.getState().showToast('No se pudo generar un código',
+            'Escríbelo a mano y comprueba que no esté en uso.', 'error');
+        return null;
     };
 
     useEffect(() => {
@@ -2087,7 +2123,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
                                             />
                                         </div>
-                                        <Button tone="chart-1" icon={RefreshCw} iconOnly aria-label="Generar un código nuevo" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} />
+                                        {/* `generateUniqueCode` pregunta al servidor si el
+                                            candidato está libre, así que hay que esperarla: sin
+                                            el await el campo se llenaba con una Promise. */}
+                                        <Button tone="chart-1" icon={RefreshCw} iconOnly aria-label="Generar un código nuevo"
+                                            onClick={async () => {
+                                                const nuevo = await generateUniqueCode();
+                                                if (nuevo) setFormData(p => ({ ...p, code: nuevo }));
+                                            }} />
                                     </div>
                                     <p className="text-micro font-bold text-brand-text mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
 

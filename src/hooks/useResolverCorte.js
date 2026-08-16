@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { resolverCorte } from '../data/cortes';
+import { fetchBolsaDeCorte } from '../data/bolsas';
 import { mensajeAmigable } from '../utils/errorMessages';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -54,6 +55,48 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
             estado === 'CONFIRMADO' ? 'Corte confirmado' : 'Corte descartado',
             `${sala} · ${String(corte.hora || '').slice(0, 5)}`.trim(), 'success',
         );
+
+        // ── La etiqueta de la bolsa sale acá, no en otra pantalla ───────────
+        //
+        // Al confirmar, un disparador crea la bolsa con el efectivo del tramo.
+        // Hasta ahora nadie mandaba su etiqueta al rollo: había que ir a la
+        // pestaña de bolsas y apretar imprimir, y la bolsa que se quedaba sin
+        // etiqueta llegaba a administración sin nada que la identificara.
+        //
+        // `soloDirecta` es deliberado: este papel sale SOLO. Si esta computadora
+        // no tiene la ticketera —el teléfono de quien confirma desde la campana,
+        // la oficina— no se abre ningún diálogo; la etiqueta queda para
+        // imprimirse desde la sala, que es donde está la bolsa.
+        if (estado === 'CONFIRMADO') {
+            try {
+                const bolsa = await fetchBolsaDeCorte(corte.id);
+                if (bolsa) {
+                    const [{ imprimirDocumento }, { construirEtiquetaDeBolsa }, { marcarEtiquetaImpresa }] =
+                        await Promise.all([
+                            import('../utils/ticketPrint'),
+                            import('../utils/bolsaComprobante'),
+                            import('../data/bolsas'),
+                        ]);
+                    const { data: version } = await marcarEtiquetaImpresa(bolsa.id);
+                    const r = await imprimirDocumento(construirEtiquetaDeBolsa({
+                        bolsa,
+                        sala,
+                        salidas: [],
+                        cerradaPor: user?.name || '',
+                        version: version ?? (bolsa.etiqueta_version || 0) + 1,
+                        impresaAt: new Date().toISOString(),
+                    }), { soloDirecta: true });
+                    if (r.ok) {
+                        showToast?.('Etiqueta enviada', `${bolsa.folio} · pégala en la bolsa`, 'success');
+                    }
+                }
+            } catch (err) {
+                // Que no salga el papel no puede deshacer una confirmación ya
+                // guardada: el dinero es lo que importa y la etiqueta se
+                // reimprime desde la sala.
+                console.error('cortes: no se pudo imprimir la etiqueta de la bolsa:', err?.message);
+            }
+        }
         return true;
     }, [ocupadoId, showToast, appendAuditLog, user, nombreSala, origen]);
 

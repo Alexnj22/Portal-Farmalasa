@@ -61,28 +61,23 @@ export function fetchApoyoForPedido(pedidoId, sucId) {
     return q;
 }
 
-// ApoioScanModal.jsx (2 sitios)
+// ApoioScanModal.jsx — «¿de quién es este carné?»
 //
-// Busca por código de carné O por kiosk_pin. Antes solo miraba `kiosk_pin`, lo
-// que contradice al kiosco: ambos escanean el mismo carné físico, pero el
-// kiosco matchea contra `employees.code` (useTimeClockEngine) y esto contra el
-// PIN. El mensaje de error de ApoioScanModal habla de "carnet", así que lo más
-// probable es que el correcto sea `code`.
+// Lo contesta el SERVIDOR. Antes filtraba `employees` por `code`, y filtrar por
+// una columna exige poder leerla: desde que el código de carné es un secreto
+// —es la contraseña del portal— esa consulta ya no compila.
 //
-// No se resuelve la ambigüedad a ciegas: aceptar los dos es estrictamente más
-// permisivo que hoy, así que no puede romper el flujo en uso. Queda por
-// confirmar cuál usa el carné real ANTES de la fase que borra la columna
-// `kiosk_pin` — a partir de ahí el PIN será aleatorio y solo existirá como
-// hash, con lo que esta búsqueda dejará de encontrar nada por esa vía.
-// Ver AUDITORIA-SUPABASE-2026-07-29.md.
-export function fetchEmployeeByKioskPin(code) {
-    const v = String(code || '').trim();
-    return supabase
-        .from('employees')
-        .select('id, name, first_names, last_names, photo_url')
-        .or(`code.eq.${v},kiosk_pin.eq.${v}`)
-        .limit(1)
-        .maybeSingle();
+// El cambio no es sólo mecánico. Un buscador de códigos es un **oráculo**: con
+// códigos de 3 a 5 dígitos, quien pregunte cien mil veces reconstruye la tabla
+// entera y esconder la columna no habría servido de nada. Por eso
+// `identificar_por_carne` sólo contesta por gente de la sala de quien pregunta
+// —que es lo que este flujo necesita, el carné está físicamente ahí—, registra
+// cada intento en `intentos_identidad` y corta a los 20 fallos en 15 minutos.
+export async function fetchEmployeeByKioskPin(code) {
+    const { data, error } = await supabase.rpc('identificar_por_carne', {
+        p_valor: String(code || '').trim(),
+    });
+    return { data: data?.[0] ?? null, error };
 }
 
 export function upsertPedidoApoyo(payload) {

@@ -73,6 +73,45 @@ export async function fetchCortesPorEmbolsar({ desde, hasta }) {
 }
 
 /**
+ * El invariante del circuito, sala por sala y día por día:
+ * **Σ bolsas del día == declarado del último corte confirmado**.
+ *
+ * Detecta el caso peor —efectivo contado que nunca se guardó— y es lo único que
+ * lo detecta: un corte que cuadra no dice nada sobre si el dinero llegó a una
+ * bolsa. Estaba escrito en el plan como algo que «sale gratis» y no existía en
+ * ninguna pantalla.
+ *
+ * El servidor devuelve TAMBIÉN los días que cuadran, a propósito: una lista que
+ * sólo trae problemas no se distingue de una que no se cargó — ver
+ * `feedback_cero_hallazgos_y_cero_datos_se_ven_igual`. Y sólo mira los días
+ * nacidos dentro del circuito; antes del disparador hay cortes confirmados sin
+ * bolsa que no son dinero perdido, y una alarma siempre roja se ignora.
+ */
+export async function fetchInvariante({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('get_bolsas_invariante', {
+        p_desde: desde, p_hasta: hasta,
+    });
+    if (error) { console.error('bolsas: fetchInvariante failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
+ * La bolsa que nació al confirmar un corte — para imprimir su etiqueta en ese
+ * mismo momento, sin que nadie tenga que ir a buscarla a otra pantalla.
+ *
+ * Devuelve `null` cuando el corte no generó bolsa, que es un caso normal y no
+ * un error: si lo declarado ya estaba cubierto por las bolsas del día, el
+ * disparador no crea ninguna.
+ */
+export async function fetchBolsaDeCorte(corteId) {
+    const { data, error } = await supabase.from('bolsas')
+        .select(CAMPOS).eq('corte_id', corteId).neq('estado', 'ANULADA')
+        .order('id', { ascending: false }).limit(1).maybeSingle();
+    if (error) { console.error('bolsas: fetchBolsaDeCorte failed:', error.message); return null; }
+    return data || null;
+}
+
+/**
  * Cerrar la bolsa de un corte.
  *
  * `montoVisto` es lo que decía la pantalla y NO es lo que se guarda: el servidor
@@ -200,16 +239,12 @@ export async function subirComprobante(archivo, { salaId, userId }) {
  * suma cierre exactamente contra el monto: sin eso, un vale podría quedar por
  * menos de lo que se sacó.
  *
- * `secreto` es la contraseña —o el número del carné— de quien retira el
- * efectivo. **Viaja sólo en esta llamada y no se guarda en ninguna tabla**: el
- * servidor lo compara contra el hash y lo descarta. Se comprueba allá y no acá
- * por dos motivos: el navegador diciendo «ya verifiqué» no es una verificación,
- * y `signInWithPassword` en el cliente de siempre reemplazaría la sesión abierta
- * —la sala quedaría logueada como quien vino a retirar el dinero—.
+ * `vale` es el comprobante de identidad que devolvió `probarIdentidad`, NO la
+ * contraseña. El secreto nunca pasa por acá.
  */
 export function registrarSalida({
     tipo, monto, repartos, entidad, numeroBoleta, fotoUrl, nota,
-    recibidoPor, metodo, secreto,
+    recibidoPor, metodo, vale,
 }) {
     return supabase.rpc('registrar_salida_de_bolsa', {
         p_tipo: tipo,
@@ -221,7 +256,33 @@ export function registrarSalida({
         p_nota: nota || null,
         p_recibido_por: recibidoPor || null,
         p_metodo: metodo || null,
-        p_secreto: secreto || null,
+        p_vale: vale || null,
+    });
+}
+
+/**
+ * Comprueba que quien retira el efectivo es quien dice, y devuelve un vale de
+ * un solo uso que vive 5 minutos.
+ *
+ * ── Por qué es una llamada aparte y no un parámetro del registro ───────────
+ * Antes el secreto viajaba dentro de `registrar_salida_de_bolsa`, que **aborta
+ * la transacción** cuando no coincide. Abortar revierte todo, incluido
+ * cualquier registro del intento: probar mil claves no dejaba una sola línea en
+ * ninguna parte, y sin rastro no hay contra qué contar para bloquear. Partido
+ * en dos, esta llamada confirma sola y su rastro sobrevive aunque lo que sigue
+ * falle. Corta a los 5 fallos en 15 minutos **contra esa persona** — lo que hay
+ * que encarecer es adivinarle el carné a alguien en concreto.
+ *
+ * La comprobación es del servidor y no del navegador por dos motivos: el
+ * navegador diciendo «ya verifiqué» no es una verificación, y
+ * `signInWithPassword` en el cliente de siempre reemplazaría la sesión abierta
+ * —la sala quedaría logueada como quien vino a retirar el dinero—.
+ */
+export function probarIdentidad({ employeeId, metodo, secreto }) {
+    return supabase.rpc('probar_identidad', {
+        p_employee_id: employeeId,
+        p_metodo: metodo,
+        p_secreto: secreto,
     });
 }
 

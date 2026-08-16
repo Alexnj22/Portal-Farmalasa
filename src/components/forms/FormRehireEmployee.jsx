@@ -64,8 +64,11 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Recontratando a</p>
                     <p className="font-black text-content text-body-xl leading-tight truncate">{formData.name}</p>
                     <p className="text-label text-content-3 font-medium mt-0.5">
-                        Código <span className="font-black text-content-2">{formData.code}</span>
-                        {' · '}Última salida: <span className="font-black text-content-2">{lastExit}</span>
+                        {/* El código de carné ya no se muestra: es la contraseña con la
+                            que se entra al portal, y esta tarjeta es sólo para reconocer a
+                            quién se está recontratando. Se ve y se edita en Personal, con
+                            el permiso que corresponde. */}
+                        Última salida: <span className="font-black text-content-2">{lastExit}</span>
                     </p>
                 </div>
             </div>

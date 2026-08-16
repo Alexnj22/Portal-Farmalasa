@@ -4,6 +4,7 @@ import { getSignedFileUrl } from '../../utils/storageFiles';
 import { OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 import {
+    codigoDeCarneLibre,
     upsertEducationCatalogEntries, insertEmployee, updateEmployee, updateEmployeeReturning,
     fetchEmployeeRosterSchedule, insertEmployeeEventRaw, fetchAttendanceSince,
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
@@ -495,10 +496,15 @@ export const createEmployeeSlice = (set, get) => ({
                 if (!/^\d+$/.test(cleanCode)) {
                     throw new Error('El código de empleado debe contener solo números.');
                 }
-                const dup = get().employees.find(e =>
-                    (e.code || '').trim().toUpperCase() === cleanCode.toUpperCase()
-                );
-                if (dup) throw new Error(`El código "${cleanCode}" ya está asignado a ${dup.name}.`);
+                // Lo contesta el SERVIDOR. Cruzarlo contra la lista cargada dejó
+                // de ser fiable cuando `code` salió de `employees_safe`: quien
+                // no ve Ventas no recibe el campo, y una lista sin códigos no
+                // encuentra ningún choque — «no encontré» se ve igual que «no
+                // hay», y dos personas con el mismo código son dos con la misma
+                // contraseña del portal.
+                if (await codigoDeCarneLibre(cleanCode) === false) {
+                    throw new Error(`El código "${cleanCode}" ya está asignado a otra persona.`);
+                }
             }
 
             validateDui(formData.dui || null, get().employees);
@@ -697,11 +703,10 @@ export const createEmployeeSlice = (set, get) => ({
                     if (dbPayload.code !== prevCode && !/^\d+$/.test(dbPayload.code)) {
                         throw new Error('El código de empleado debe contener solo números.');
                     }
-                    const dup = get().employees.find(e =>
-                        String(e.id) !== String(id) &&
-                        (e.code || '').trim().toUpperCase() === dbPayload.code.toUpperCase()
-                    );
-                    if (dup) throw new Error(`El código "${dbPayload.code}" ya está asignado a ${dup.name}.`);
+                    // Igual que en el alta: la unicidad la contesta el servidor.
+                    if (await codigoDeCarneLibre(dbPayload.code, id) === false) {
+                        throw new Error(`El código "${dbPayload.code}" ya está asignado a otra persona.`);
+                    }
                 }
             }
 

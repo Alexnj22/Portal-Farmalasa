@@ -5,8 +5,15 @@ import { useStaffStore as useStaff } from '../../store/staffStore'; // ✅ Corre
 import { shortEmployeeName, employeeInitials } from '../../utils/nameUtils';
 
 const FormRoleEmployees = ({ formData }) => {
-    const { employees } = useStaff();
+    const { employees, branches = [] } = useStaff();
     const role = formData?.role;
+    // Debajo del nombre iba el código de carné. Dejó de ir porque ese código es
+    // la contraseña del portal (`login()` entra con él), y esta lista la abre
+    // cualquiera que pueda ver un cargo. La sucursal dice lo mismo que hacía
+    // falta saber acá —dónde está esa persona— y no es una credencial.
+    const nombreSala = React.useMemo(
+        () => Object.fromEntries(branches.map((b) => [b.id, b.name])), [branches],
+    );
 
     if (!role) return null;
 
@@ -54,7 +61,7 @@ const FormRoleEmployees = ({ formData }) => {
                                         {shortEmployeeName(emp)}
                                     </p>
                                     <p className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">
-                                        {emp.code || 'SIN CÓDIGO'}
+                                        {nombreSala[emp.branch_id] || 'SIN SUCURSAL'}
                                     </p>
                                 </div>
                             </div>

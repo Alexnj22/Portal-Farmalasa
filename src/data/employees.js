@@ -32,8 +32,18 @@ export function fetchEmployeesPublicByIds(ids) {
 
 // ── Expediente de empleado ───────────────────────────────────────────────────
 
+// `RETURNING` enumera las columnas a propósito, y NO puede volver a ser `*`.
+//
+// Desde que `code` y `kiosk_pin` dejaron de ser legibles con la sesión del
+// usuario (son la credencial del carné, y el carné es la contraseña del
+// portal), un `.select()` sin argumentos pide `*` y el servidor responde
+// «permission denied for column code» — o sea que guardar un empleado fallaría
+// entero. Se listan los campos que el llamador realmente usa después.
+const DEVUELVE = 'id, name, branch_id, role_id, secondary_role_id, photo_url, '
+    + 'employee_documents, education_level, status';
+
 export function insertEmployee(dbPayload) {
-    return supabase.from('employees').insert([dbPayload]).select().single();
+    return supabase.from('employees').insert([dbPayload]).select(DEVUELVE).single();
 }
 
 export function updateEmployee(employeeId, patch) {
@@ -41,7 +51,43 @@ export function updateEmployee(employeeId, patch) {
 }
 
 export function updateEmployeeReturning(employeeId, patch) {
-    return supabase.from('employees').update(patch).eq('id', employeeId).select().single();
+    return supabase.from('employees').update(patch).eq('id', employeeId).select(DEVUELVE).single();
+}
+
+/**
+ * El código de carné y el PIN de quienes administran personal.
+ *
+ * Van por RPC y no con la fila porque **el código de carné es la contraseña del
+ * portal**: `login()` hace `signInWithPassword(password: code)`. Publicarlo en
+ * `employees_safe` significaba que cualquier empleado con sesión podía leer el
+ * de todos —medido: 47 de 47— y entrar como cualquiera.
+ *
+ * La compuerta es la misma que ya gobierna editar un empleado
+ * (`staff_list.can_edit`), así que ver un código es ahora una llamada explícita
+ * y no un efecto de traer la fila.
+ */
+export async function fetchCredenciales(ids) {
+    const unicos = [...new Set((ids || []).filter(Boolean))];
+    if (!unicos.length) return new Map();
+    const { data, error } = await supabase.rpc('get_employee_credenciales', { p_ids: unicos });
+    if (error) { console.error('employees: fetchCredenciales failed:', error.message); return new Map(); }
+    return new Map((data || []).map((r) => [r.employee_id, r]));
+}
+
+/**
+ * ¿Este código de carné está libre?
+ *
+ * La comprobación vivía en el navegador, cruzando contra la lista de empleados
+ * ya cargada. Sin `code` en esa lista no encontraría nunca un choque —y un
+ * choque sin detectar son dos personas con la misma contraseña—, así que la
+ * pregunta la contesta el servidor sin devolver de quién es.
+ */
+export async function codigoDeCarneLibre(codigo, excluirId = null) {
+    const { data, error } = await supabase.rpc('carne_disponible', {
+        p_code: String(codigo || ''), p_excluir: excluirId,
+    });
+    if (error) { console.error('employees: codigoDeCarneLibre failed:', error.message); return null; }
+    return data;
 }
 
 // ── EmployeeDetailView.jsx (timeline, VIEW employee_timeline) ───────────────

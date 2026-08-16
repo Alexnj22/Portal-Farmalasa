@@ -9,7 +9,7 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
 import {
-    fetchTiposDeSalida, registrarSalida, subirComprobante,
+    fetchTiposDeSalida, probarIdentidad, registrarSalida, subirComprobante,
 } from '../../data/bolsas';
 import { disponibles, elegirBolsas, totalDisponible } from '../../utils/bolsasReparto';
 import { formatMoney } from '../../utils/formatNumber';
@@ -124,6 +124,20 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 });
             }
 
+            // Primero se prueba la identidad; recién si sale bien se escribe el
+            // dinero. Son dos llamadas a propósito: la del secreto confirma
+            // sola, así que un intento fallido queda registrado aunque lo que
+            // sigue se aborte. Ver `probarIdentidad` en `data/bolsas.js`.
+            let vale = null;
+            if (t.pide_receptor) {
+                const { data: token, error: idErr } = await probarIdentidad({
+                    employeeId: quien, metodo, secreto,
+                });
+                setSecreto('');   // se olvida apenas se manda, salga bien o mal
+                if (idErr) { setError(mensajeAmigable(idErr, 'Vuelve a intentar.')); return; }
+                vale = token;
+            }
+
             const { data, error: err } = await registrarSalida({
                 tipo: t.codigo,
                 monto: n,
@@ -131,9 +145,8 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 entidad, numeroBoleta: boleta, fotoUrl, nota,
                 recibidoPor: t.pide_receptor ? quien : null,
                 metodo: t.pide_receptor ? metodo : null,
-                secreto: t.pide_receptor ? secreto : null,
+                vale,
             });
-            // La clave se olvida apenas se manda, salga bien o mal.
             setSecreto('');
             if (err) { setError(mensajeAmigable(err, 'Vuelve a intentar en un momento.')); return; }
 

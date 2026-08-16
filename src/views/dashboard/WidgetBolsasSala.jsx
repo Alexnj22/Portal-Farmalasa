@@ -185,8 +185,10 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
             if (!bolsa) continue;
             const filas = (await fetchSalidasDeBolsa(r.bolsa_id)).filter((s) => !s.anulado_at);
             const ultima = filas[filas.length - 1];
-            const saldo = Number(bolsa.monto_inicial || 0)
-                + filas.reduce((a, s) => a + Number(s.monto || 0), 0);
+            // El saldo lo dice el SERVIDOR (`bolsa_saldo`). Ver el gemelo de
+            // esta función en `TabBolsas`: la suma hecha acá era una segunda
+            // definición de cuánto hay en la bolsa, y era la que se imprimía.
+            const saldo = (await fetchSaldos([r.bolsa_id])).get(r.bolsa_id)?.saldo;
             if (ultima) await imprimirVale(ultima, bolsa, saldo);
             await imprimir({ ...bolsa, saldo }, {
                 cerradaPor: nombrePersona.get(bolsa.cerrada_por),

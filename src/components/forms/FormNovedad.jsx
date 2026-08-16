@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { codigoDeCarneLibre } from '../../data/employees';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import {
@@ -27,6 +28,26 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const [permPickerKey, setPermPickerKey] = useState(0);
     const [codeConflict, setCodeConflict] = useState(null);
     const now = useNowTick();
+
+    // La respuesta que llega tarde no puede pisar a la de un código más nuevo:
+    // se teclea dígito a dígito y las llamadas vuelven desordenadas. El
+    // contador descarta todo lo que no sea la última pregunta.
+    const consultaRef = useRef(0);
+
+    /**
+     * ¿Está libre este código? Lo contesta el servidor, y contesta sí/no: decir
+     * de quién es convertiría la comprobación en un buscador de códigos ajenos,
+     * que es justo lo que se acaba de cerrar. Por eso el aviso ya no nombra a
+     * nadie.
+     */
+    const comprobarCodigo = useCallback(async (valor) => {
+        const turno = ++consultaRef.current;
+        if (!valor) { setCodeConflict(null); return; }
+        const libre = await codigoDeCarneLibre(valor, activeEmployee?.id ?? null);
+        if (turno !== consultaRef.current) return;
+        // `null` es «no se pudo preguntar»: no se afirma que esté libre.
+        setCodeConflict(libre === false ? { code: valor } : null);
+    }, [activeEmployee?.id]);
 
     const type = formData?.type;
     const isPromotion = type === 'PROMOTION';
@@ -574,18 +595,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         // El código es SOLO numérico (regla de negocio + trigger en BD)
                                         const cleanVal = e.target.value.replace(/\D/g, '');
                                         setFormData(prev => ({ ...prev, newCode: cleanVal }));
-                                        if (cleanVal.length > 0) {
-                                            const conflict = employees.find(emp =>
-                                                emp.id !== activeEmployee?.id &&
-                                                emp.status === 'ACTIVO' &&
-                                                (emp.code === cleanVal ||
-                                                 emp.kiosk_pin?.toUpperCase() === cleanVal ||
-                                                 emp.username?.toLowerCase() === cleanVal.toLowerCase())
-                                            );
-                                            setCodeConflict(conflict || null);
-                                        } else {
-                                            setCodeConflict(null);
-                                        }
+                                        // El choque lo contesta el SERVIDOR. Cruzarlo contra la
+                                        // lista cargada dejó de funcionar cuando el código de
+                                        // carné pasó a ser secreto —es la contraseña del portal—:
+                                        // sin `code` en esa lista no encontraría nunca un choque,
+                                        // y «no encontré» se ve igual que «no hay». Dos personas
+                                        // con el mismo código son dos con la misma contraseña.
+                                        comprobarCodigo(cleanVal);
                                     }}
                                     />
                             </div>
@@ -595,7 +611,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-danger/10 border border-danger/30 rounded-2xl">
                                 <AlertCircle size={14} className="text-danger shrink-0" />
                                 <p className="text-label font-bold text-danger">
-                                    El código ya está en uso por <b>{codeConflict.name}</b>. Elige otro código.
+                                    El código <b>{codeConflict.code}</b> ya está en uso. Elige otro.
                                 </p>
                             </div>
                         )}

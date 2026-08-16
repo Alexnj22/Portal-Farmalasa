@@ -731,15 +731,24 @@ export function guardarAjustesDeImpresion(ajustes) {
  * Lo que NO puede prometer es que el papel haya salido: la respuesta del programa
  * de la caja es opaca por construcción (ver `enviarAImpresoraDeLaComputadora`).
  *
+ * `soloDirecta` es para los papeles que salen SOLOS, sin que nadie haya
+ * apretado «imprimir»: al confirmar un corte, por ejemplo. Ahí el respaldo del
+ * diálogo no sirve y estorba — quien confirma desde el teléfono, o desde una
+ * computadora que no es la caja, se encontraría con una ventana de impresión
+ * que no pidió y que además mandaría el papel al lugar equivocado. Sin
+ * ticketera a mano, la impresión automática simplemente no ocurre y la pantalla
+ * ofrece el botón de imprimir.
+ *
  * @returns {Promise<{via: 'directa'|'dialogo', ok: boolean, detalle: string}>}
  */
-export async function imprimirDocumento(ticket, { forzarDialogo = false } = {}) {
+export async function imprimirDocumento(ticket, { forzarDialogo = false, soloDirecta = false } = {}) {
     const { ancho, sistema } = leerAjustesDeImpresion();
     const doc = { ancho, ...ticket };
 
     if (!forzarDialogo) {
         const r = await enviarAImpresoraDeLaComputadora(doc, { sistema });
         if (r.ok) return { via: 'directa', ok: true, detalle: r.detalle };
+        if (soloDirecta) return { via: 'directa', ok: false, detalle: r.detalle };
     }
 
     const error = await imprimirTicket(doc);

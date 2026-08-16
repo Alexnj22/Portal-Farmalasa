@@ -400,8 +400,11 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
             const bolsa = bolsas.find((b) => b.id === r.bolsa_id);
             const vivas = salidas.filter((s) => !s.anulado_at);
             const ultima = vivas[vivas.length - 1];
-            const saldo = Number(bolsa?.monto_inicial || 0)
-                + vivas.reduce((a, s) => a + Number(s.monto || 0), 0);
+            // El saldo lo dice el SERVIDOR (`bolsa_saldo`), no una suma hecha
+            // acá. Sumar `monto_inicial + Σ salidas` en el navegador era una
+            // segunda definición de cuánto dinero hay en una bolsa, y la que
+            // iba impresa en la etiqueta y en el vale era justamente ésta.
+            const saldo = (await fetchSaldos([r.bolsa_id])).get(r.bolsa_id)?.saldo;
             if (ultima && bolsa) await imprimirVale(ultima, bolsa, saldo);
             if (bolsa) {
                 await imprimir({ ...bolsa, saldo }, {

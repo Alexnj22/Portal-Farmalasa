@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.625.0 — Auditoría del circuito del efectivo: el carné deja de ser público y los cortes se confirman en orden
+
+Auditoría completa de cortes de caja, bolsas de efectivo y su impresión. Once
+hallazgos, medidos contra producción y no leídos del código.
+
+**El código de carné era legible por cualquier empleado con sesión.** La policy
+`employees_select` no tenía compuerta de módulo ni alcance de sala: actuando
+como una Dependiente de Farmacia se veían las 47 filas de `employees_safe`, las
+47 con `code` y con `kiosk_pin`. Y ese código no es un identificador cualquiera
+— `login()` hace `signInWithPassword(password: code)`, así que leer el de un
+compañero es entrar como esa persona; de 53 cuentas internas, 22 tienen la
+contraseña igual al código. Ahora `code` y `kiosk_pin` salen de la vista y de
+lo que `authenticated` puede leer (privilegio por COLUMNA: la vista no era
+barrera, es `security_invoker`). Quien administra personal los pide por
+`get_employee_credenciales`; el escaneo de carné se resuelve con
+`identificar_por_carne`, que contesta sólo por la propia sala, registra cada
+intento y corta a los 20 fallos.
+
+**Pero el mismo valor es el código de vendedor del ERP** —está en 349,207
+facturas—, así que esconder la columna no lo vuelve secreto y además rompía
+Ventas. El mapa vuelve por `get_vendedores`, detrás de `ventas.can_view`.
+Queda anotado: el arreglo de fondo es darle al carné un secreto propio.
+
+**Retirar efectivo se prueba en dos pasos.** El secreto viajaba dentro de
+`registrar_salida_de_bolsa`, que aborta la transacción al no coincidir — y
+abortar revertía también cualquier registro del intento, así que probar mil
+claves no dejaba una línea y no había contra qué contar para bloquear. Ahora
+`probar_identidad` confirma sola, deja su rastro en `intentos_identidad`, corta
+a los 5 fallos contra esa persona y devuelve un vale de un solo uso que vive 5
+minutos; la escritura del dinero recibe el vale, nunca la clave.
+
+**Confirmar cortes en desorden mandaba a embolsar dinero que no existe.**
+`bolsa_sugerida` restaba sólo las bolsas anteriores en hora: con los dos cortes
+de Salud 3 del 13-ago, en orden daba $1,027.17 y al revés $1,515.97 — $488.80
+de efectivo fantasma. Ahora resta todo lo ya embolsado del día, y además
+confirmar exige orden cronológico (descartar no, que es la salida para un
+conteo malo que traba la serie).
+
+**Nadie mueve la base de una diferencia ya firmada.** Confirmar o reabrir un
+corte cambia el tramo de los posteriores; si alguno ya tenía su diferencia
+resuelta, el monto cobrado a una persona dejaba de corresponderse con el corte
+en silencio. `corte_trabado_por_posterior` lo impide desde los dos caminos.
+
+**El invariante existe.** «Σ bolsas del día == declarado del último corte
+confirmado» estaba escrito en el plan como algo que «sale gratis» y no vivía en
+ninguna pantalla ni cron. Es `get_bolsas_invariante`, y sólo mira los días
+nacidos dentro del circuito: una alarma siempre roja se ignora.
+
+**Al confirmar un corte sale la etiqueta de su bolsa.** Antes había que ir a
+otra pantalla, y la bolsa sin etiqueta llegaba a administración sin nada que la
+identificara. Va con `soloDirecta`: un papel que sale solo no puede abrir un
+diálogo de impresión en el teléfono de quien confirma desde la campana.
+
+Además: `asentar_diferencias_corte` exige una sola sala (la regla vivía sólo en
+la pantalla y asentar es irreversible), `contar_bolsa` chequea alcance de
+sucursal, quien repone un faltante tiene que ser de esa sala y estar activo,
+`corte_tramo` desempata por `id` cuando dos cortes comparten hora, y el saldo
+que va impreso en la etiqueta y el vale lo dice el servidor y no una suma hecha
+en el navegador.
+
 ## v2.624.1 — El carril de la baldosa de bolsas entra a 1280
 
 Lo encontró el barrido de escritorio, que hasta hoy no podía verlo: **`cortes` no

@@ -97,7 +97,14 @@ export function conTramoPorSalaYDia(cortes) {
     }
     const out = [];
     for (const lista of grupos.values()) {
-        out.push(...conTramo([...lista].sort((a, b) => String(a.hora).localeCompare(String(b.hora)))));
+        // Desempate por `id`, igual que `corte_tramo` en el servidor. Sin él,
+        // dos cortes de la misma hora quedan en un orden que decide el motor de
+        // JavaScript, y el tramo de los dos sale de una resta distinta a la que
+        // hace la base — que es la que manda al firmar. El sistema de origen no
+        // anula cortes: los REHACE, a veces dentro del mismo minuto.
+        out.push(...conTramo([...lista].sort(
+            (a, b) => String(a.hora).localeCompare(String(b.hora)) || (a.id - b.id),
+        )));
     }
     return out;
 }

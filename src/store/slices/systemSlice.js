@@ -8,6 +8,7 @@ import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { fireBrowserNotif } from '../../utils/browserNotif';
 import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
+import { codigoDeCarneLibre } from '../../data/employees';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
@@ -302,6 +303,40 @@ export const createSystemSlice = (set, get) => ({
                                 branchMap[employee_id].push(branch_id);
                             });
 
+                            // ── El código de vendedor, para quien puede ver Ventas ──────
+                            //
+                            // `employees_safe` dejó de traer `code`: ese valor es la
+                            // credencial del carné y con él se entra al portal, así que
+                            // publicarlo a toda sesión era publicar la contraseña de todos.
+                            //
+                            // Pero el MISMO valor es el código de vendedor del ERP —está en
+                            // 349,207 facturas— y media docena de pantallas de Ventas
+                            // resuelven `cod_vendedor` contra él. Se vuelve a pegar acá, en
+                            // UN solo sitio y detrás de su propia puerta (`get_vendedores`
+                            // exige `ventas.can_view`), en vez de tocar los quince lugares
+                            // que hacen `employees.find(e => e.code === …)`. Quien no ve
+                            // Ventas sencillamente no recibe el campo.
+                            //
+                            // ⚠️ Esto significa que esconder la columna NO convierte al
+                            // código en un secreto: quien ve Ventas sigue teniendo el mapa,
+                            // y ahí entran los cargos de sala. El arreglo de fondo es darle
+                            // al carné un secreto propio, distinto del código de vendedor.
+                            //
+                            // El `error` NO se descarta: si esta llamada falla, las
+                            // pantallas de Ventas dejan de resolver quién vendió y el
+                            // síntoma —columnas de vendedor vacías— se lee como si las
+                            // ventas no tuvieran vendedor. Un select que falla en silencio
+                            // deja lookups vacíos que viven semanas sin detectarse.
+                            let codigoPorId = new Map();
+                            {
+                                const { data: vend, error: vendErr } = await supabase.rpc('get_vendedores');
+                                if (vendErr) {
+                                    console.error('systemSlice: get_vendedores failed:', vendErr.message);
+                                } else {
+                                    codigoPorId = new Map((vend || []).map((v) => [v.id, v.code]));
+                                }
+                            }
+
                             const mappedEmployees = empData.map((e) => {
                                 const myHistory = eventsData ? eventsData.filter((ev) => String(ev.employee_id) === String(e.id)) : [];
                                 const myDocs = docsData ? docsData.filter((d) => String(d.employee_id) === String(e.id)) : [];
@@ -309,6 +344,7 @@ export const createSystemSlice = (set, get) => ({
 
                                 return {
                                     ...e,
+                                    code: codigoPorId.get(e.id),
                                     branchId: e.branch_id,
                                     hireDate: e.hire_date,
                                     birthDate: e.birth_date,
@@ -594,10 +630,12 @@ export const createSystemSlice = (set, get) => ({
                         e.userFacing = true;
                         throw e;
                     }
-                    const dup = stateNow.employees.find(e =>
-                        String(e.id) !== String(employeeId) &&
-                        (e.code || '').trim().toUpperCase() === cleanCode.toUpperCase()
-                    );
+                    // La unicidad la contesta el servidor: `code` ya no viaja en
+                    // la lista de empleados salvo para quien ve Ventas, y una
+                    // lista sin códigos nunca encuentra un choque. Ver
+                    // `codigoDeCarneLibre`.
+                    const dup = (await codigoDeCarneLibre(cleanCode, employeeId)) === false
+                        ? { name: 'otra persona' } : null;
                     if (dup) {
                         const e = new Error(`El código "${cleanCode}" ya está asignado a ${dup.name}.`);
                         e.userFacing = true;

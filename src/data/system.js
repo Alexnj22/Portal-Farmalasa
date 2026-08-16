@@ -33,8 +33,12 @@ export function updateEmployeeEventMetadata(eventId, metadata) {
 
 // ── Expediente de empleado (aplicar/revertir cambios de un evento) ─────────
 
+// Va contra `employees_safe` y no contra la tabla: `select('*')` sobre
+// `employees` ya no compila del lado del servidor —`code` y `kiosk_pin` dejaron
+// de ser legibles con la sesión del usuario— y la vista es exactamente el resto
+// de las columnas. Ver `fetchCredenciales` en `data/employees.js`.
 export function fetchEmployeeById(employeeId) {
-    return supabase.from('employees').select('*').eq('id', employeeId).single();
+    return supabase.from('employees_safe').select('*').eq('id', employeeId).single();
 }
 
 export function updateEmployeeFields(employeeId, patch) {

@@ -11,6 +11,7 @@ import {
 } from '../../data/employees';
 import { insertEmployeeBranches, deleteEmployeeBranches, upsertWeeklyRoster } from '../../data/system';
 import { TERMINATION_REASONS, SIN_ASIGNAR } from '../../data/constants';
+import { claveDeDia } from '../../utils/scheduleHelpers';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -1017,8 +1018,9 @@ export const createEmployeeSlice = (set, get) => ({
             return d.toISOString().split('T')[0];
         };
         const weekStart = getMondayISO(date);
-        const _rawDay = new Date(date + 'T00:00:00').getDay();
-        const dayId   = _rawDay === 0 ? 7 : _rawDay;
+        // Domingo = "0" (ver `claveDeDia`). Con 7 el día reactivado quedaba en
+        // una clave que ni la pantalla de horarios ni la planilla leen.
+        const dayId   = claveDeDia(new Date(date + 'T00:00:00'));
 
         const { data: roster } = await fetchEmployeeRosterSchedule(id, weekStart);
         const raw = roster?.schedule_data || {};
@@ -1128,6 +1130,42 @@ export const createEmployeeSlice = (set, get) => ({
             });
             return true;
         } catch { return false; }
+    },
+
+    // Mezcla marcajes que llegaron por la vía del kiosco (RPC validado por
+    // dispositivo, sin sesión) dentro del estado local de empleados.
+    //
+    // El kiosco no puede usar `loadAttendanceLastDays`: ése lee `attendance`
+    // directo y sin sesión la policy lo rechaza — devolvía cero filas y el
+    // motor resolvía «entrada» en cada escaneo porque creía que nadie había
+    // marcado nunca.
+    mergeKioskAttendance: (rows) => {
+        const lista = Array.isArray(rows) ? rows : [];
+        if (!lista.length) return;
+
+        const porEmpleado = new Map();
+        for (const r of lista) {
+            const k = String(r.employee_id);
+            if (!porEmpleado.has(k)) porEmpleado.set(k, []);
+            porEmpleado.get(k).push(r);
+        }
+
+        set((state) => ({
+            employees: state.employees.map((emp) => {
+                const nuevos = porEmpleado.get(String(emp.id));
+                if (!nuevos) return emp;
+
+                const porId = new Map((emp.attendance || []).map((p) => [String(p.id), p]));
+                for (const p of nuevos) porId.set(String(p.id), p);
+
+                return {
+                    ...emp,
+                    attendance: [...porId.values()].sort(
+                        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+                    ),
+                };
+            }),
+        }));
     },
 
     getAllAttendance: () => {

@@ -1,3 +1,5 @@
+import { claveDeDia } from './scheduleHelpers';
+
 // --- FECHAS Y TIEMPO (CORREGIDO UTC vs LOCAL) ---
 
 // Normaliza la fecha local (evita el error de cambio de día a las 6pm/7pm)
@@ -91,7 +93,24 @@ export const getEffectiveStatus = (emp) => {
 export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new Date()) => {
     if (!employee) return { isOffDay: true, shift: null };
 
-    const dateStr = toLocalISO(specificDateObj); 
+    // «Sin horario cargado» NO es «hoy libre».
+    //
+    // El kiosco marcaba la diferencia al revés: sin horario publicado el día
+    // salía libre, y entonces cada marcaje pedía autorización de supervisor.
+    // Medido para la semana del 17-ago-2026: 41 de 49 empleados activos no
+    // tenían horario, o sea que casi toda la empresa habría quedado trabada.
+    //
+    // Decisión del usuario: que marque igual, y Talento Humano valida ese turno
+    // en su revisión semanal/quincenal. `sinHorario` es lo que viaja con el
+    // marcaje para que esa revisión los pueda encontrar.
+    //
+    // La bandera sólo la manda la carga del kiosco (`has_roster`), así que el
+    // resto del portal conserva su comportamiento de siempre.
+    if (employee.has_roster === false) {
+        return { isOffDay: false, sinHorario: true, shift: null };
+    }
+
+    const dateStr = toLocalISO(specificDateObj);
     
     // 1. BUSCAR EXCEPCIONES (Fechas específicas)
     const exceptions = employee.exceptions || employee.exceptions_roster || [];
@@ -112,11 +131,14 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
     }
 
     // 2. BUSCAR HORARIO REGULAR
-    const jsDay = specificDateObj.getDay();
-    const dbDay = jsDay === 0 ? 7 : jsDay; // Domingo es 7
-    
+    // La clave sale de `claveDeDia` — domingo es "0", igual que en la tabla.
+    // Acá decía `jsDay === 0 ? 7 : jsDay`, y como no existe ninguna clave "7",
+    // TODO domingo se resolvía como día libre. Ver el comentario de
+    // `claveDeDia` para el alcance completo del desfase.
+    const dbDay = claveDeDia(specificDateObj);
+
     const scheduleBase = employee.weekly_roster || employee.weeklySchedule || {};
-    const dayConfig = scheduleBase[dbDay] || scheduleBase[dbDay.toString()];
+    const dayConfig = scheduleBase[dbDay] || scheduleBase[Number(dbDay)];
 
     if (!dayConfig || dayConfig.isOffDay || dayConfig.isOff || (!dayConfig.shiftId && !dayConfig.shift_id)) {
         return { isOffDay: true, shift: null };

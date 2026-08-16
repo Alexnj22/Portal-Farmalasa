@@ -9,6 +9,7 @@ import { fireBrowserNotif } from '../../utils/browserNotif';
 import { buscarCargo } from '../../utils/roles';
 import { SIN_ASIGNAR } from '../../data/constants';
 import { codigoDeCarneLibre } from '../../data/employees';
+import { kioscoMarcajesRecientes } from '../../data/kiosco';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
@@ -1500,8 +1501,16 @@ export const createSystemSlice = (set, get) => ({
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));
                 }
 
-                // Load today's attendance so the kiosk knows current punch state after page reloads
-                await get().loadAttendanceLastDays(1);
+                // Los marcajes de ayer y hoy, para que el kiosco sepa en qué
+                // punto de su jornada está cada persona después de recargar.
+                //
+                // Acá se llamaba a `loadAttendanceLastDays(1)`, que lee la tabla
+                // `attendance` directo. Sin sesión esa lectura la rechaza la
+                // policy (`permission denied for function auth_employee_id`), y
+                // el kiosco arrancaba creyendo que nadie había marcado nunca:
+                // todo escaneo resolvía «entrada», incluida la salida.
+                const { marcajes } = await kioscoMarcajesRecientes();
+                get().mergeKioskAttendance(marcajes);
             }
 
             return true;

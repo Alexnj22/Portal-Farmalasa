@@ -401,9 +401,9 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   const isFuture   = new Date(`${dateStr}T23:59:59-06:00`) > now;
   const isToday    = getCSTDateStr(now) === dateStr;
 
-  // Schedule for this day
-  const dayKey    = dow === 0 ? 7 : dow;
-  const dayConfig    = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
+  // Schedule for this day — domingo es "0", igual que en la tabla (ver `claveDeDia`)
+  const dayKey    = String(dow);
+  const dayConfig    = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[dow];
   const isNoSchedule = !dayConfig;
   const isExplicitOff = !isNoSchedule && (dayConfig.isOff || dayConfig.isOffDay || dayConfig.shiftId === 'LIBRE');
   const isOff = isNoSchedule || isExplicitOff;
@@ -669,8 +669,8 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
       if (new Date(`${dateStr}T23:59:59-06:00`) > now) return;
       const punches = (emp.attendance || []).filter(p => getCSTDateStr(p.timestamp) === dateStr);
       const dow     = new Date(dateStr + 'T12:00:00Z').getUTCDay();
-      const dayKey  = dow === 0 ? 7 : dow;
-      const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
+      const dayKey  = String(dow); // domingo = "0" (ver `claveDeDia`)
+      const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[dow];
       if (!dayConfig || dayConfig.isOff) return;
       const shiftId = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
       const shift   = shiftId ? shiftById.get(shiftId) : null;

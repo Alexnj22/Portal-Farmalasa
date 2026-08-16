@@ -284,6 +284,16 @@ case 'OUT_EARLY': {
       break;
   }
 
+  // Sin horario cargado no hay turno contra el cual medir nada: el marcaje se
+  // registra igual y queda señalado para la revisión de Talento Humano.
+  if (config?.sinHorario) {
+    presentation.metadata.sinHorario = true;
+    presentation.metadata.pendingHRReview = true;
+    presentation.shiftName = 'Sin horario';
+    presentation.warning = presentation.warning
+      || 'Aún no tienes horario cargado para esta semana. Talento Humano lo revisará.';
+  }
+
   if (presentation.lateStatus?.isLate) {
     presentation.message = 'Registro con atraso';
     presentation.subtext = presentation.lateStatus.text || 'Marcaje tardío';

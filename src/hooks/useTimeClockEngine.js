@@ -14,7 +14,6 @@ import {
     buildAuthPromptState,
     buildEarlyExitMetadata,
     buildFeedbackState,
-    buildKioskAuditInfo,
     buildLateOutAdjustedMetadata,
     getApplicableAnnouncement,
     getBirthdayAnnouncement,
@@ -25,9 +24,17 @@ import { verifyKioskAuthorization } from '../data/kioskAuth';
 import { hasRecentKioskVerification, recordKioskVerification } from '../utils/kioskGrace';
 import { playFeedbackTone } from '../utils/kioskSound';
 import { enqueueAttendancePunch, flushAttendanceQueue } from '../utils/attendanceQueue';
+import {
+    kioscoAvisoLeido,
+    kioscoBitacora,
+    kioscoDeclararTurno,
+    kioscoIdentificar,
+    kioscoMarcajesRecientes,
+    kioscoMarcar,
+} from '../data/kiosco';
 import useKioskDevice from './useKioskDevice';
+import { useAuth } from '../context/AuthContext';
 import { XCircle, ShieldAlert } from 'lucide-react';
-import { insertApprovalRequestSilent } from '../data/requests';
 
 import { mensajeAmigable } from '../utils/errorMessages';
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
@@ -44,17 +51,20 @@ export function useTimeClockEngine(props = {}) {
     const storeAnnouncements = useStaff((s) => s.announcements) || EMPTY_ARRAY;
     const branches = useStaff((s) => s.branches) || EMPTY_ARRAY;
 
-    const storeRegisterAttendance = useStaff((s) => s.registerAttendance);
-    const storeMarkAnnouncementAsRead = useStaff((s) => s.markAnnouncementAsRead);
     const storeRegisterKioskDevice = useStaff((s) => s.registerKioskDevice);
-    const storeAppendAuditLog = useStaff((s) => s.appendAuditLog);
     const storeRevokeKioskDevice = useStaff((s) => s.revokeKioskDevice);
+    const mergeKioskAttendance = useStaff((s) => s.mergeKioskAttendance);
 
-    const registerAttendance = props.registerAttendance ?? storeRegisterAttendance;
-    const markAnnouncementAsRead = props.markAnnouncementAsRead ?? storeMarkAnnouncementAsRead;
     const registerKioskDevice = props.registerKioskDevice ?? storeRegisterKioskDevice;
-    const appendAuditLog = props.appendAuditLog ?? storeAppendAuditLog;
     const revokeKioskDevice = props.revokeKioskDevice ?? storeRevokeKioskDevice;
+
+    // El kiosco no tiene sesión: todo lo que escribe va por su propia
+    // superficie validada por dispositivo (`src/data/kiosco.js`). Las acciones
+    // del store —`registerAttendance`, `appendAuditLog`,
+    // `markAnnouncementAsRead`— escriben directo a tablas con policy
+    // `TO authenticated` y desde acá fallaban SIEMPRE, en silencio.
+    const registrarMarcaje = props.registrarMarcaje ?? kioscoMarcar;
+    const anotarEnBitacora = props.anotarEnBitacora ?? kioscoBitacora;
 
     const showToast = useToastStore((state) => state.showToast);
 
@@ -90,6 +100,7 @@ export function useTimeClockEngine(props = {}) {
     const scanLastKeyRef = useRef(0);
 
     const kiosk = useKioskDevice();
+    const { isAuthenticated } = useAuth();
 
     // 7B.4: feedback sonoro — el visual (FeedbackOverlay/color) ya existía,
     // solo faltaba el tono. Reusa la máquina de estados de `feedback`, no
@@ -98,11 +109,21 @@ export function useTimeClockEngine(props = {}) {
         if (feedback?.color) playFeedbackTone(feedback.color);
     }, [feedback]);
 
-    // 7B.8, Fase B: vacía la cola de marcajes pendientes al volver la conexión
-    // (evento 'online') y además cada 30s como red de seguridad — el evento
-    // 'online' no siempre dispara de forma confiable en algunos WebViews.
+    // Vacía la cola de marcajes pendientes al volver la conexión (evento
+    // 'online') y además cada 30 s como red de seguridad — 'online' no dispara
+    // de forma confiable en todos los navegadores. El marcaje recuperado viaja
+    // con la hora en que OCURRIÓ, no con la del reintento.
     useEffect(() => {
-        const tryFlush = () => { flushAttendanceQueue(registerAttendance).catch(() => {}); };
+        const tryFlush = () => {
+            flushAttendanceQueue((item) => registrarMarcaje({
+                employeeId: item.employeeId,
+                tipo:       item.type,
+                detalles:   item.metadata,
+                momento:    item.ocurridoEn,
+            })).then((r) => {
+                if (r?.synced) kioscoMarcajesRecientes().then(({ marcajes }) => mergeKioskAttendance(marcajes));
+            }).catch(() => {});
+        };
         tryFlush();
         window.addEventListener('online', tryFlush);
         const interval = setInterval(tryFlush, 30_000);
@@ -110,7 +131,7 @@ export function useTimeClockEngine(props = {}) {
             window.removeEventListener('online', tryFlush);
             clearInterval(interval);
         };
-    }, [registerAttendance]);
+    }, [registrarMarcaje, mergeKioskAttendance]);
 
     useEffect(() => {
         const clockInterval = setInterval(() => {
@@ -199,11 +220,17 @@ export function useTimeClockEngine(props = {}) {
             closeTimerRef.current = null;
         }
         if (earlyPendingData) {
-            registerAttendance(
-                earlyPendingData.employee.id,
-                'IN',
-                { adjustedTimestamp: earlyPendingData.adjustedTimestamp, actualPunchTime: earlyPendingData.actualTime.toISOString() }
-            ).catch((err) => console.error('❌ Kiosko: error al guardar entrada temprana:', err));
+            registrarMarcaje({
+                employeeId: earlyPendingData.employee.id,
+                tipo: 'IN',
+                detalles: {
+                    adjustedTimestamp: earlyPendingData.adjustedTimestamp,
+                    actualPunchTime: earlyPendingData.actualTime.toISOString(),
+                },
+            }).then((r) => {
+                if (r?.ok && r.marcaje) mergeKioskAttendance([r.marcaje]);
+                else if (!r?.ok) console.error('❌ Kiosko: no se guardó la entrada temprana:', r?.motivo);
+            }).catch((err) => console.error('❌ Kiosko: error al guardar entrada temprana:', err));
             setEarlyPendingData(null);
         }
         setFeedback(null);
@@ -211,7 +238,7 @@ export function useTimeClockEngine(props = {}) {
         setScanCode('');
         keystrokesRef.current = [];
         ensureInputFocus();
-    }, [earlyPendingData, ensureInputFocus, registerAttendance]);
+    }, [earlyPendingData, ensureInputFocus, registrarMarcaje, mergeKioskAttendance]);
 
     const scheduleFeedbackClose = useCallback((delayMs = 4000) => {
         if (closeTimerRef.current) {
@@ -245,12 +272,16 @@ export function useTimeClockEngine(props = {}) {
     const finalizePunch = useCallback(async (employee, rawType, customConfig, metadata = null, kioskData = null, nowDate = new Date()) => {
         const extendedMetadata = metadata ? { ...metadata } : {};
 
-        if (kioskData) {
-            extendedMetadata.audit_info = buildKioskAuditInfo({
-                employee,
-                kioskData,
-                actionType: rawType,
-            });
+        // La procedencia (sucursal, equipo) la escribe el SERVIDOR dentro de
+        // `kiosco_marcar`. Acá sólo viaja cómo se leyó el carné, que es lo
+        // único que el navegador sabe y el servidor no.
+        //
+        // Antes esto llamaba a `buildKioskAuditInfo({ employee, kioskData })`,
+        // pero esa función recibe el parámetro con el nombre `kioskConfig`: el
+        // objeto entraba por una llave que nadie leía, así que TODOS los
+        // marcajes guardaban sucursal, equipo y método de lectura en blanco.
+        if (kioskData?.inputMethod) {
+            extendedMetadata.inputMethod = kioskData.inputMethod;
         }
 
         const presentation = buildFinalPunchPresentation({
@@ -271,19 +302,50 @@ export function useTimeClockEngine(props = {}) {
 
         const finalMetadata = Object.keys(extendedMetadata).length > 0 ? extendedMetadata : null;
 
-        // 7B.8: antes esto era fire-and-forget (.catch(console.error)) y el
-        // feedback de "éxito" se pintaba ANTES de saber si el insert realmente
-        // llegó a la BD — un empleado podía ver "marcaje exitoso" que nunca se
-        // guardó. Ahora se espera el resultado real; si falla (sin conexión u
-        // otro error), el marcaje se encola localmente en vez de perderse —
-        // se reintenta solo cuando vuelve la conexión (ver flushAttendanceQueue).
+        // El feedback de éxito se pinta DESPUÉS de saber si el marcaje llegó.
+        // Sólo se encola cuando el fallo es de RED: un rechazo del servidor
+        // (duplicado, evento activo, empleado de otra sucursal) no mejora por
+        // reintentarse, y encolarlo dejaba la cola trabada para siempre
+        // mostrando «se sincronizará solo».
         let queuedOffline = false;
-        try {
-            await registerAttendance(employee.id, presentation.finalType, finalMetadata);
-        } catch (err) {
-            console.error('❌ Kiosko: error al guardar marcaje en DB, encolado localmente:', err);
-            enqueueAttendancePunch({ employeeId: employee.id, type: presentation.finalType, metadata: finalMetadata });
+        let rechazo = null;
+
+        const resultado = await registrarMarcaje({
+            employeeId: employee.id,
+            tipo:       presentation.finalType,
+            detalles:   finalMetadata || {},
+        });
+
+        if (resultado?.ok) {
+            if (resultado.marcaje) mergeKioskAttendance([resultado.marcaje]);
+        } else if (resultado?.networkError) {
+            enqueueAttendancePunch({
+                employeeId: employee.id,
+                type:       presentation.finalType,
+                metadata:   finalMetadata,
+                ocurridoEn: nowDate.toISOString(),
+            });
             queuedOffline = true;
+        } else {
+            rechazo = resultado?.motivo || 'ERROR';
+        }
+
+        if (rechazo) {
+            setFeedback({
+                status: 'error',
+                employee,
+                message: rechazo === 'DUPLICADO' ? 'MARCAJE YA REGISTRADO' : 'NO SE PUDO REGISTRAR',
+                subtext: rechazo === 'DUPLICADO'
+                    ? 'Ese mismo marcaje acaba de quedar guardado.'
+                    : 'Avisa a tu jefatura para que lo registre.',
+                color: 'orange',
+                icon: ShieldAlert,
+            });
+            setAuthPrompt(null);
+            setSpecialMode(false);
+            setScanCode('');
+            scheduleFeedbackClose(4000);
+            return;
         }
 
         const skipWarning = extendedMetadata.pinOmitido
@@ -314,7 +376,8 @@ export function useTimeClockEngine(props = {}) {
         }
     }, [
         announcements,
-        registerAttendance,
+        registrarMarcaje,
+        mergeKioskAttendance,
         scheduleFeedbackClose,
         shifts,
     ]);
@@ -383,11 +446,16 @@ export function useTimeClockEngine(props = {}) {
 
     const cancelAuth = useCallback(() => {
         if (authPrompt?.type === 'IN_EARLY_EXTRA' && earlyPendingData) {
-            registerAttendance(
-                earlyPendingData.employee.id,
-                'IN',
-                { adjustedTimestamp: earlyPendingData.adjustedTimestamp, actualPunchTime: earlyPendingData.actualTime.toISOString() }
-            ).catch((err) => console.error('❌ Kiosko: error al guardar entrada temprana:', err));
+            registrarMarcaje({
+                employeeId: earlyPendingData.employee.id,
+                tipo: 'IN',
+                detalles: {
+                    adjustedTimestamp: earlyPendingData.adjustedTimestamp,
+                    actualPunchTime: earlyPendingData.actualTime.toISOString(),
+                },
+            }).then((r) => {
+                if (r?.ok && r.marcaje) mergeKioskAttendance([r.marcaje]);
+            }).catch((err) => console.error('❌ Kiosko: error al guardar entrada temprana:', err));
         }
         resetOperationalState();
         setIsRevokeModalOpen(false);
@@ -395,23 +463,17 @@ export function useTimeClockEngine(props = {}) {
         requestAnimationFrame(() => {
             inputRef.current?.focus();
         });
-    }, [authPrompt, earlyPendingData, registerAttendance, resetOperationalState]);
+    }, [authPrompt, earlyPendingData, registrarMarcaje, mergeKioskAttendance, resetOperationalState]);
 
     const handleSkipPin = useCallback(() => {
         if (!authPrompt) return;
         const { employee, type, customConfig, kioskData } = authPrompt;
         const skipMetadata = { pinOmitido: true, pendingHRReview: true, skipReason: 'PIN omitido en kiosko', accionOriginal: type };
 
-        appendAuditLog?.('MARCAJE_SIN_PIN', employee?.id || 'KIOSCO', {
+        anotarEnBitacora('MARCAJE_SIN_PIN', employee?.id || null, {
             empleado: employee?.name,
-            codigo_empleado: employee?.code,
             accion_intentada: type,
-            severity: 'WARN',
             pendingHRReview: true,
-            source: 'KIOSK',
-            branch_id: kioskData?.branchId,
-            branch_name: kioskData?.branchName,
-            device_name: kioskData?.deviceName,
         });
 
         if (type === 'SPECIAL_OUT_REQUEST') {
@@ -439,7 +501,7 @@ export function useTimeClockEngine(props = {}) {
             setAuthPrompt(null);
             setScanCode('');
         }
-    }, [authPrompt, appendAuditLog, finalizePunch, time]);
+    }, [authPrompt, anotarEnBitacora, finalizePunch, time]);
 
     const handleEarlyExtraRequest = useCallback(() => {
         if (!earlyPendingData) return;
@@ -465,25 +527,19 @@ export function useTimeClockEngine(props = {}) {
         const { employee, customConfig, kioskData, skipMetadata, punchTime } = selfDeclareData;
 
         if (declaredStart && declaredEnd) {
-            const workDate = (punchTime || new Date()).toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' });
-            await insertApprovalRequestSilent([{
-                employee_id: employee.id,
-                approver_id: null,
-                type:        'SHIFT_EXCEPTION',
-                status:      'PENDING',
-                note:        'Turno auto-declarado en kiosk — pendiente de revisión TH',
+            // La fecha y la sucursal las pone el servidor. Antes esto insertaba
+            // directo en `approval_requests`, cuya policy exige que la fila sea
+            // del propio usuario: sin sesión el insert se rechazaba y la
+            // función ni siquiera miraba el error — se llamaba
+            // `insertApprovalRequestSilent`, y silenciosa fue.
+            await kioscoDeclararTurno({
+                employeeId: employee.id,
+                inicio:     declaredStart,
+                fin:        declaredEnd,
                 metadata: {
-                    date:         workDate,
-                    declaredStart,
-                    declaredEnd,
                     pinOmitido:   !!skipMetadata,
-                    branchId:     kioskData?.branchId,
-                    branchName:   kioskData?.branchName,
-                    deviceName:   kioskData?.deviceName,
                     employeeName: employee.name,
                 },
-            }]).then(({ error }) => {
-                if (error) console.error('submitSelfDeclare insert error:', error);
             });
         }
 
@@ -580,13 +636,17 @@ export function useTimeClockEngine(props = {}) {
         }
 
         try {
-            await markAnnouncementAsRead(feedback.announcement.id, feedback.employee.id);
+            // Los avisos de cumpleaños los arma el kiosco al vuelo: no son una
+            // fila de la tabla y marcarlos como leídos daría error.
+            if (!feedback.announcement.isBirthday) {
+                await kioscoAvisoLeido(feedback.announcement.id, feedback.employee.id);
+            }
         } catch {
-            // best-effort: si falla, el aviso se vuelve a marcar como leído en el próximo intento
+            // best-effort: si falla, el aviso se vuelve a mostrar en el próximo marcaje
         } finally {
             closeFeedback();
         }
-    }, [closeFeedback, feedback, markAnnouncementAsRead]);
+    }, [closeFeedback, feedback]);
 
 const submitEarlyExit = useCallback((e) => {
     e.preventDefault();
@@ -663,6 +723,29 @@ const submitEarlyExit = useCallback((e) => {
         const masterKey = `${hourlyPin}geofls`.toUpperCase();
 
         if (codeToFind === masterKey) {
+            // Esta llave NO es una credencial: `getHourlyCode()` es `Math.sin()`
+            // del reloj y vive en el bundle público, así que cualquiera la
+            // calcula (está documentado en `helpers.js`). Vincular un equipo ya
+            // exigía sesión con permiso —el insert en `kiosk_devices` la pide—,
+            // pero DESvincular no: la llave abría el configurador sin sesión y
+            // «Desvincular» borraba la configuración local aunque el servidor
+            // rechazara la revocación (`revokeKioskDevice` devuelve `false` en
+            // vez de lanzar). O sea, cualquiera podía dejar el kiosco de una
+            // sala fuera de servicio hasta que una jefatura lo volviera a
+            // vincular. Ahora el configurador exige la sesión que la operación
+            // necesitaba desde el principio.
+            if (!isAuthenticated) {
+                setFeedback({
+                    status: 'error',
+                    message: 'SE NECESITA UNA SESIÓN',
+                    subtext: 'Para configurar este equipo hay que iniciar sesión con una cuenta con permiso sobre sucursales.',
+                    color: 'red',
+                    icon: ShieldAlert,
+                });
+                setScanCode('');
+                scheduleFeedbackClose(4000);
+                return;
+            }
             openConfigurator();
             return;
         }
@@ -675,18 +758,13 @@ const submitEarlyExit = useCallback((e) => {
         if ((feedback && !specialMode && !authPrompt) || isProcessing || earlyExitData) return;
 
         if (!authPrompt && inputMethod === 'TECLADO_MANUAL') {
-            appendAuditLog?.(
-                'INTENTO_MANUAL_BLOQUEADO',
-                'KIOSK',
-                {
-                    codigo_intentado: codeToFind,
-                    source: 'KIOSK',
-                    severity: 'WARNING',
-                    branch_id: kiosk.kioskConfig?.branchId,
-                    branch_name: kiosk.kioskConfig?.branchName,
-                    device_name: kiosk.kioskConfig?.deviceName,
-                }
-            );
+            // El valor tecleado NO se registra: puede ser el carné real de
+            // quien lo escribió, y la bitácora la lee cualquiera con permiso de
+            // auditoría. El servidor además lo descarta por su cuenta.
+            anotarEnBitacora('INTENTO_MANUAL_BLOQUEADO', null, {
+                largo_ingresado: codeToFind.length,
+                inputMethod,
+            });
             setFeedback({
                 status: 'error',
                 message: 'USO DE LECTOR REQUERIDO',
@@ -765,21 +843,15 @@ const submitEarlyExit = useCallback((e) => {
                     : null;
 
                 if (kioskPinAuthorizerName || pendingVerification) {
-                    appendAuditLog?.(
+                    anotarEnBitacora(
                         pendingVerification ? 'AUTORIZACION_OFFLINE_PENDIENTE' : 'AUTORIZACION_KIOSK_PIN',
-                        authPrompt.employee?.id || 'KIOSCO',
+                        authPrompt.employee?.id || null,
                         {
                             empleado:          authPrompt.employee?.name || 'Desconocido',
                             autorizador:       kioskPinAuthorizerName || (graced ? 'VENTANA_DE_GRACIA' : 'SIN_VERIFICAR'),
                             accion_autorizada: authPrompt.type,
                             metodo:            auth.method || (offline ? 'OFFLINE' : null),
-                            source:            'KIOSK',
-                            severity:          pendingVerification ? 'WARNING' : undefined,
-                            branch_id:         kioskConfig.branchId,
-                            branch_name:       kioskConfig.branchName,
-                            device_name:       kioskConfig.deviceName,
-                        },
-                        kioskPinAuthorizerName || 'KIOSCO'
+                        }
                     );
                 }
                 if (authPrompt.type === 'SPECIAL_OUT_REQUEST') {
@@ -798,11 +870,9 @@ const submitEarlyExit = useCallback((e) => {
                         actualPunchTime: earlyPendingData?.actualTime?.toISOString() || time.toISOString(),
                         ...(authMetadata || {}),
                     };
-                    registerAttendance(
-                        authPrompt.employee.id,
-                        'IN',
-                        metadata
-                    ).catch((err) => console.error('❌ Kiosko: error al guardar tiempo extra:', err));
+                    registrarMarcaje({ employeeId: authPrompt.employee.id, tipo: 'IN', detalles: metadata })
+                        .then((r) => { if (r?.ok && r.marcaje) mergeKioskAttendance([r.marcaje]); })
+                        .catch((err) => console.error('❌ Kiosko: error al guardar tiempo extra:', err));
                     setFeedback({
                         status: 'success',
                         employee: authPrompt.employee,
@@ -844,30 +914,23 @@ const submitEarlyExit = useCallback((e) => {
                     );
                 }
             } else {
-                appendAuditLog?.(
+                anotarEnBitacora(
                     'INTENTO_PIN_INCORRECTO',
-                    authPrompt.employee?.id || 'KIOSCO',
+                    authPrompt.employee?.id || null,
                     {
                         empleado: authPrompt.employee?.name || 'Desconocido',
-                        codigo_empleado: authPrompt.employee?.code || 'N/A',
-                        // El valor tecleado NO se registra: audit_logs es legible
-                        // por cualquier autenticado, y un dedazo puede meter ahí
-                        // el PIN real de quien lo escribió. Se guarda su longitud,
-                        // que es lo único útil para investigar.
+                        // El valor tecleado NO se registra: la bitácora es
+                        // legible por cualquiera con permiso de auditoría, y un
+                        // dedazo puede meter ahí el PIN real de quien lo
+                        // escribió. Se guarda su longitud, que es lo único útil
+                        // para investigar.
                         largo_ingresado: codeToFind.length,
                         accion_intentada: authPrompt.type,
-                        metodo_ingreso: inputMethod,
+                        inputMethod,
                         requiere_su_pin: requiresSuPin,
                         motivo: auth.rateLimited ? 'RATE_LIMIT' : 'CODIGO_INVALIDO',
                         alerta: 'Posible intento de manipulación del sistema / evasión de seguridad',
-                        source: 'KIOSK',
-                        severity: 'WARNING',
-                        branch_id: kioskConfig.branchId,
-                        branch_name: kioskConfig.branchName,
-                        device_name: kioskConfig.deviceName,
-                        input_method: inputMethod,
-                    },
-                    authPrompt.employee?.name || 'Sistema/Anónimo'
+                    }
                 );
 
                 setFeedback({
@@ -885,22 +948,57 @@ const submitEarlyExit = useCallback((e) => {
             return;
         }
 
-        const employee = (employees || []).find((emp) => {
-            const empCode = String(emp?.code || emp?.employee_code || '')
-                .trim().replace(/\s+/g, '').toUpperCase();
-            return empCode && empCode === codeToFind;
-        });
+        // El carné lo resuelve el SERVIDOR, no esta lista.
+        //
+        // Acá se comparaba el valor escaneado contra `emp.code`, pero el carné
+        // impreso lleva el PIN de 8 caracteres, no el código: medido sobre los
+        // 46 carnés con PIN, CERO coinciden con su código, así que ningún carné
+        // real habría sido reconocido. Y para poder compararlo el arranque
+        // repartía el código de cada persona de la sala al navegador — el mismo
+        // número con el que se entra al portal.
+        const identidad = await kioscoIdentificar(codeToFind);
 
-        if (!employee) {
+        if (!identidad.ok) {
+            const sinRed = identidad.networkError;
+            if (!sinRed) {
+                anotarEnBitacora('CARNE_NO_RECONOCIDO', null, {
+                    largo_ingresado: codeToFind.length,
+                    inputMethod,
+                    motivo: identidad.motivo,
+                });
+            }
             setFeedback({
                 status: 'error',
-                message: 'Código no encontrado',
-                subtext: `Verifique su carnet`,
+                message: identidad.rateLimited ? 'DEMASIADOS INTENTOS'
+                       : sinRed                ? 'SIN CONEXIÓN'
+                       : 'CARNÉ NO RECONOCIDO',
+                subtext: identidad.rateLimited ? 'Espera unos minutos antes de volver a intentar.'
+                       : sinRed                ? 'No se pudo confirmar tu carné. Intenta de nuevo en un momento.'
+                       : 'Vuelve a pasar tu carné. Si sigue igual, avisa a tu jefatura.',
                 color: 'red',
                 icon: XCircle,
             });
             setScanCode('');
-            scheduleFeedbackClose(2000);
+            setIsProcessing(false);
+            scheduleFeedbackClose(3000);
+            return;
+        }
+
+        const employee = (employees || []).find((emp) => String(emp.id) === String(identidad.employeeId));
+
+        if (!employee) {
+            // El servidor lo reconoció pero no está en la carga de esta pantalla:
+            // se agregó a la sucursal después del último arranque.
+            setFeedback({
+                status: 'error',
+                message: 'Actualizando la lista',
+                subtext: 'Tu registro es nuevo en esta sucursal. Espera un momento y vuelve a pasar el carné.',
+                color: 'orange',
+                icon: ShieldAlert,
+            });
+            setScanCode('');
+            setIsProcessing(false);
+            scheduleFeedbackClose(3500);
             return;
         }
 
@@ -912,11 +1010,9 @@ const submitEarlyExit = useCallback((e) => {
             PERMIT: 'Permiso Especial',
         };
         if (employee.active_event_type && EVENT_LABELS[employee.active_event_type]) {
-            appendAuditLog?.('MARCAJE_BLOQUEADO_EVENTO', employee.id, {
+            anotarEnBitacora('MARCAJE_BLOQUEADO_EVENTO', employee.id, {
                 empleado: employee.name,
                 motivo: employee.active_event_type,
-                source: 'KIOSK',
-                severity: 'INFO',
             });
             setFeedback({
                 status: 'error',
@@ -1009,21 +1105,12 @@ const submitEarlyExit = useCallback((e) => {
                 const lastTimeStr = new Date(ultimoMismoTipo.timestamp)
                     .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                appendAuditLog?.(
-                    'MARCAJE_DUPLICADO_BLOQUEADO',
-                    employee.id,
-                    {
-                        empleado: employee.name,
-                        tipo_marcaje: flow.type,
-                        ultimo_marcaje: ultimoMismoTipo.timestamp,
-                        minutos_desde_ultimo: Math.floor(minutosDesdeUltimo),
-                        source: 'KIOSK',
-                        severity: 'WARNING',
-                        branch_id: kioskConfig.branchId,
-                        branch_name: kioskConfig.branchName,
-                        device_name: kioskConfig.deviceName,
-                    }
-                );
+                anotarEnBitacora('MARCAJE_DUPLICADO_BLOQUEADO', employee.id, {
+                    empleado: employee.name,
+                    tipo_marcaje: flow.type,
+                    ultimo_marcaje: ultimoMismoTipo.timestamp,
+                    minutos_desde_ultimo: Math.floor(minutosDesdeUltimo),
+                });
 
                 setFeedback({
                     status: 'warning',
@@ -1115,8 +1202,10 @@ const submitEarlyExit = useCallback((e) => {
             scheduleFeedbackClose(4000);
         }
     }, [
-        appendAuditLog,
+        anotarEnBitacora,
         authPrompt,
+        isAuthenticated,
+        mergeKioskAttendance,
         earlyExitData,
         earlyPendingData?.actualTime,
         earlyPendingData?.earlyMins,
@@ -1126,7 +1215,7 @@ const submitEarlyExit = useCallback((e) => {
         isProcessing,
         kiosk,
         openConfigurator,
-        registerAttendance,
+        registrarMarcaje,
         scanCode,
         shifts,
         specialMode,

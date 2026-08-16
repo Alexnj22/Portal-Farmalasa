@@ -10,6 +10,7 @@ import {
   DoorOpen, 
   CircleCheck
 } from 'lucide-react';
+import { claveDeDia } from './scheduleHelpers';
 
 // -----------------------------------------------------------------------------
 // 🧾 TimeClock • Auditoría (Modo Pro)
@@ -265,10 +266,9 @@ export const getBirthdayAnnouncement = ({ employee, rawType, nowDate }) => {
 
   if (isBirthdayTomorrow && String(rawType || '').startsWith('OUT')) {
     // Check if tomorrow is a day off
-    const jsDay = tomorrowDate.getDay();
-    const dbDay = jsDay === 0 ? 7 : jsDay;
+    const dbDay = claveDeDia(tomorrowDate);
     const schedule = employee.weeklySchedule || employee.weekly_schedule || employee.weekly_roster || {};
-    const tomorrowConfig = schedule[dbDay] || schedule[String(dbDay)];
+    const tomorrowConfig = schedule[dbDay] || schedule[Number(dbDay)];
     const tomorrowIsOff = !tomorrowConfig || tomorrowConfig.isOffDay || (!tomorrowConfig.shiftId && !tomorrowConfig.shift_id);
 
     if (tomorrowIsOff) {

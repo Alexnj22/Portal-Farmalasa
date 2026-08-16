@@ -1,5 +1,24 @@
 import { Palmtree, HeartPulse, FileText, CalendarOff, Building2 } from 'lucide-react';
 
+// Clave del día dentro de `employee_rosters.schedule_data` y de
+// `schedule_coverage.day_of_week`.
+//
+// **Domingo es 0**, que es lo que devuelve `Date.getDay()` y lo que hay
+// guardado: medido sobre las 103 filas de producción, las únicas claves que
+// existen son "0".."6" y no hay ni una "7".
+//
+// Existía por escrito la convención contraria (domingo = 7) en seis lugares —el
+// lector del kiosco, el aviso del turno de mañana, la vista de auditoría, el
+// regreso de vacaciones y el marcado de incapacidad/vacaciones en el horario—,
+// así que el domingo era invisible: el kiosco buscaba una clave inexistente,
+// daba el día por libre y pedía autorización de supervisor en cada marcaje
+// dominical; y marcar una incapacidad que cae domingo escribía una clave "7"
+// que ni la pantalla de horarios ni la consolidación de planilla leen jamás.
+//
+// Esta función es el único lugar donde vive la convención. No escribirla a mano
+// de nuevo. Está anclada en `tests/unit/kioscoHorario.test.js`.
+export const claveDeDia = (date) => String(new Date(date).getDay());
+
 export const getLocalMonday = (dateStr) => {
     let y, m, day;
     if (!dateStr) {

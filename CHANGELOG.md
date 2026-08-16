@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.636.0 — El kiosco de marcación puede marcar
+
+Auditoría del circuito de asistencia antes de arrancar con el kiosco. Tres
+bloqueos duros, los tres medidos, no supuestos.
+
+**El kiosco no podía guardar un marcaje.** La pantalla `/kiosk` corre sin sesión
+a propósito, pero todo lo que escribía iba a tablas que exigen sesión.
+Comprobado con la llave pública: `SELECT` e `INSERT` sobre `attendance`
+devuelven `HTTP 401`. En la práctica el kiosco no sabía si alguien ya había
+entrado —así que resolvía «entrada» siempre, incluso para salir—, el marcaje
+caía a una cola local que reintentaba contra la misma policy que lo rechazaba, y
+la pantalla decía «se sincronizará solo». Tampoco podía anotar en la bitácora de
+seguridad, ni marcar un aviso como leído, ni registrar un turno declarado.
+Ahora todo eso pasa por funciones de servidor que valida el propio dispositivo
+(`kiosco_identificar`, `kiosco_marcar`, `kiosco_marcajes_recientes`,
+`kiosco_bitacora`, `kiosco_aviso_leido`, `kiosco_declarar_turno`).
+
+**El carné no coincidía con lo que el kiosco buscaba.** El código de barras
+impreso lleva el PIN de 8 caracteres; el kiosco comparaba contra el código de
+empleado de 3–5 dígitos. De 46 carnés con PIN, cero coinciden. Ahora el carné se
+resuelve en el servidor, con freno de 20 intentos fallidos por equipo cada 15
+minutos — y de paso el arranque **deja de repartir el código de cada persona de
+la sala al navegador**, que es el número con el que se entra al portal.
+
+**El domingo era invisible.** El horario se guarda con domingo = `0`, pero el
+lector del kiosco, el aviso del turno de mañana, la vista de auditoría y el
+marcado de incapacidad/vacaciones en el horario usaban `7`. Resultado: todo
+domingo salía como día libre y pedía autorización de supervisor en cada marcaje;
+y una incapacidad que caía domingo dejaba ese día con su turno intacto. La
+convención ahora vive en un solo lugar (`claveDeDia`) y está anclada en pruebas.
+
+Además:
+
+- **La hora del marcaje la pone el servidor**, no el reloj del equipo. Un
+  marcaje recuperado de la cola viaja con la hora en que ocurrió: antes se
+  guardaba con la del reintento, así que una entrada de las 8 de la mañana
+  recuperada a las 3 de la tarde entraba a planilla como si hubiera llegado a
+  las 3.
+- **Sucursal, equipo y método de lectura vuelven a quedar registrados** en cada
+  marcaje. Se pasaban con el nombre de parámetro equivocado (`kioskData` en vez
+  de `kioskConfig`), así que estaban en blanco en todos.
+- **Sin horario cargado ya no es lo mismo que día libre.** Para la semana del 17
+  de agosto, 41 de 49 empleados no tienen horario publicado; con el
+  comportamiento anterior cada uno de sus marcajes habría exigido autorización.
+  Ahora marcan normal y el día queda señalado para la revisión de Talento
+  Humano.
+- **La lista de cobertura entre salas estaba rota desde el 16 de agosto**
+  (`column e.code does not exist`, tapando un segundo error por una columna
+  `end_date` que no existe). El navegador la envolvía en un `catch` marcado
+  «non-fatal», así que la cobertura simplemente dejó de llegar.
+- **El configurador del kiosco exige sesión.** Su llave maestra se calcula desde
+  el bundle público: vincular ya pedía permiso, pero desvincular no, y cualquiera
+  podía dejar un kiosco fuera de servicio.
+- Un marcaje que el servidor rechaza ya no se encola para siempre: sólo se
+  guarda para reintentar cuando el fallo es de red.
+
+_(pendiente de redactar)_
+
 ## v2.635.0 — El tablero se acomoda desde un modal, y mover un widget ya no desordena el resto
 
 Reportado por el usuario: *«el movimiento de widget se siente torpe, al pasar de

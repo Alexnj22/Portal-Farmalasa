@@ -15,6 +15,7 @@ import {
 import { fetchEmployeeRosterSchedule } from '../../data/employees';
 import { upsertWeeklyRoster } from '../../data/system';
 import { signStorageUrls } from '../../utils/storageFiles';
+import { claveDeDia } from '../../utils/scheduleHelpers';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -578,8 +579,11 @@ const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
         const weekMap = {};
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             const weekKey = getMondayISO(d.toISOString().split('T')[0]);
-            const rawDay  = d.getDay();
-            const dayId   = rawDay === 0 ? 7 : rawDay; // 7=Dom, 1=Lun … 6=Sab (matches kiosk reader)
+            // Domingo = "0", que es la clave que existe en la tabla. Decía 7, y
+            // como esa clave no la lee nadie, una incapacidad que caía domingo
+            // dejaba ese día con su turno intacto: la persona seguía figurando
+            // como programada y la planilla la contaba ausente. Ver `claveDeDia`.
+            const dayId   = claveDeDia(d);
             if (!weekMap[weekKey]) weekMap[weekKey] = [];
             weekMap[weekKey].push(dayId);
         }
@@ -611,8 +615,7 @@ const markVacationDaysInRoster = async (employeeId, startDate, endDate) => {
         const weekMap = {};
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             const weekKey  = getMondayISO(d.toISOString().split('T')[0]);
-            const rawDay   = d.getDay();
-            const dayId    = rawDay === 0 ? 7 : rawDay; // 7=Dom (matches kiosk reader)
+            const dayId    = claveDeDia(d); // domingo = "0" (ver `claveDeDia`)
             if (!weekMap[weekKey]) weekMap[weekKey] = [];
             weekMap[weekKey].push(dayId);
         }
@@ -673,8 +676,7 @@ const checkAndAlertCoverage = async (employeeId, branchId, startDate, endDate, a
                 const dateISO = checkD.toISOString().split('T')[0];
                 if (dateISO < startDate || dateISO > endDate) continue;
 
-                const rawDay = checkD.getDay();
-                const dayId  = rawDay === 0 ? 7 : rawDay;
+                const dayId  = claveDeDia(checkD); // domingo = "0" (ver `claveDeDia`)
                 let working = 0;
                 for (const roster of (rosters || [])) {
                     const s = typeof roster.schedule_data === 'string'
@@ -1166,7 +1168,7 @@ export const createRequestsSlice = (set, get) => ({
                             const monD      = new Date(swapDateD);
                             monD.setDate(monD.getDate() - diffToMon);
                             const weekStart = `${monD.getFullYear()}-${String(monD.getMonth() + 1).padStart(2, '0')}-${String(monD.getDate()).padStart(2, '0')}`;
-                            const dayKey    = String(dow === 0 ? 7 : dow); // 7=Dom (matches kiosk)
+                            const dayKey    = claveDeDia(swapDateD); // domingo = "0" (ver `claveDeDia`)
 
                             const [{ data: shiftsRows, error: shiftsErr }, { data: rosters, error: rostersErr }] = await Promise.all([
                                 fetchShiftsBasic(),

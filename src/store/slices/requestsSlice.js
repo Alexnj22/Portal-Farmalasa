@@ -294,6 +294,38 @@ const apagarAviso = (get, requestId, estado) =>
     get().marcarAvisoDeSolicitudResuelto?.(requestId, estado);
 
 /**
+ * La solicitud con la que se decide, venga de donde venga.
+ *
+ * `approveRequest`/`rejectRequest` la buscaban SÓLO en `get().requests`, y esa
+ * lista la llena una sola pantalla (`fetchRequests`, en Solicitudes). Desde
+ * cualquier otro lado —la campana, que vive en `AppLayout` y ahora decide en el
+ * sitio— el arreglo llegaba vacío: `find` devolvía `undefined`, aprobar se
+ * cortaba en el `if (!req) return false` y salía «No se pudo procesar la
+ * acción», un error sin causa que sólo desaparecía si antes se había entrado al
+ * módulo. Rechazar era peor: no se cortaba —el UPDATE no necesita la fila— así
+ * que la solicitud quedaba RECHAZADA y **quien la mandó nunca se enteraba**,
+ * porque el aviso cuelga de `req.employee.id`.
+ *
+ * Por eso la fila se resuelve en TRES escalones y no en uno: lo que ya trae
+ * quien llama, lo que la lista tenga cargado, y —recién ahí— una lectura por id.
+ *
+ * Y siempre se hidrata a las dos personas contra el maestro: una fila cruda de
+ * `approval_requests` trae `employee_id`, no el empleado, y de ese objeto salen
+ * el aviso a quien pidió, su sucursal y su nombre.
+ */
+const hidratarPersonas = (fila, get) => {
+    if (!fila) return null;
+    if (fila.employee && fila.approver !== undefined) return fila;
+    const emps = get().employees ?? [];
+    const buscar = (id) => (id ? emps.find(e => String(e.id) === String(id)) ?? null : null);
+    return {
+        ...fila,
+        employee: fila.employee ?? buscar(fila.employee_id),
+        approver: fila.approver ?? buscar(fila.approver_id),
+    };
+};
+
+/**
  * El candado no dejó pasar la decisión: la solicitud ya no está donde esta
  * pestaña la vio.
  *
@@ -1220,7 +1252,7 @@ export const createRequestsSlice = (set, get) => ({
      */
     approveRequest: async (requestId, approverId, approverNote = '', _reqOverride = null, aceptadas = null) => {
         try {
-            const req = _reqOverride || get().requests.find(r => r.id === requestId);
+            const req = await get()._solicitudParaDecidir(requestId, _reqOverride);
             if (!req) return false;
 
             /* Si esta pestaña YA sabe que se resolvió, se corta antes de tocar
@@ -1354,10 +1386,30 @@ export const createRequestsSlice = (set, get) => ({
         }
     },
 
+    /**
+     * La fila con la que se decide. Ver `hidratarPersonas`: sin esto, decidir
+     * desde fuera del módulo de Solicitudes trabajaba sobre `undefined`.
+     *
+     * La lectura por id va última y sólo si hace falta — quien ya tiene la fila
+     * fresca (la campana la lee antes de ofrecer los botones) la pasa y no se
+     * paga un segundo viaje.
+     */
+    _solicitudParaDecidir: async (requestId, override = null) => {
+        const local = override || get().requests.find(r => r.id === requestId);
+        if (local) return hidratarPersonas(local, get);
+
+        const { data, error } = await fetchApprovalRequestById(requestId);
+        if (error) {
+            console.error('_solicitudParaDecidir: leer la solicitud falló:', error.message);
+            return null;
+        }
+        return hidratarPersonas(data, get);
+    },
+
     // ── Reject ─────────────────────────────────────────────────────────────
-    rejectRequest: async (requestId, approverId, approverNote = '') => {
+    rejectRequest: async (requestId, approverId, approverNote = '', _reqOverride = null) => {
         try {
-            const req = get().requests.find(r => r.id === requestId);
+            const req = await get()._solicitudParaDecidir(requestId, _reqOverride);
 
             /* Mismo candado que al aprobar, y por el mismo motivo: rechazar dos
              * veces manda dos avisos al empleado. El nivel también entra —si la

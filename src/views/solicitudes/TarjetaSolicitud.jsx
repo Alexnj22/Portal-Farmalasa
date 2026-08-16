@@ -234,10 +234,14 @@ RequestCard.displayName = 'RequestCard';
 // enlace de la campana con `&accion=aprobar` iba derecho ahí. O sea que el
 // camino más corto hasta una decisión era el que menos información daba.
 //
-// Acá la decisión vive DENTRO del detalle: se despliega debajo de lo que se
-// está mirando, como hace la fila de un traslado, en vez de taparlo con otra
-// ventana encima.
+// Acá la decisión vive DENTRO del detalle: lo que se ajusta y la nota están
+// debajo de lo que se está mirando, como en la fila de un traslado, en vez de
+// taparlo con otra ventana encima. Y el pie decide de una — el segundo toque
+// quedó sólo para el rechazo, que es el que exige escribir un motivo.
 /**
+ * @param accionInicial `'reject'` abre el motivo desplegado (deep-link
+ *                      `&accion=rechazar`). Cualquier otro valor abre el
+ *                      detalle a secas: aprobar ya no es un paso aparte.
  * @param accionPropia  Acción de quien MANDÓ la solicitud —hoy, cancelarla—.
  *                      Va aparte de `onDecidir` porque no es una decisión: no
  *                      la toma quien aprueba y no necesita motivo.
@@ -251,7 +255,17 @@ RequestCard.displayName = 'RequestCard';
  *                      solo y la pantalla tiene que volver a leer.
  */
 export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDecidir, ocupado, accionInicial, accionPropia, extra, onResuelto }) => {
-    const [modo, setModo]   = useState(accionInicial ?? null);   // null | 'approve' | 'reject'
+    /* Sólo el RECHAZO es un modo aparte, y por una razón concreta: exige un
+     * motivo escrito, así que hay algo que llenar antes de poder confirmar.
+     *
+     * Aprobar no tenía ninguna: apretar «Aprobar» sólo cambiaba el pie por otro
+     * botón que decía «Aprobar completo», o sea dos toques para decir lo mismo
+     * sobre un detalle que ya se estaba mirando. Corregido a pedido del usuario
+     * (2026-08-16): «me toca darle 2 veces confirmar … eso que pase solo para
+     * descartar». Lo que se ajusta antes de aprobar —qué líneas entran y con
+     * cuánta cantidad— ya no se despliega al entrar en un modo: está a la vista
+     * desde que se abre el detalle, que es donde se mira. */
+    const [modo, setModo]   = useState(accionInicial === 'reject' ? 'reject' : null);   // null | 'reject'
     const [nota, setNota]   = useState('');
     const bloqueDecision    = useRef(null);
     const { hasPermission } = useAuth();
@@ -282,8 +296,11 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
      * La cantidad se ofrece incluso con UNA sola línea: ahí no hay nada que
      * elegir entre renglones, pero sí cuánto de ese renglón entra. Las casillas,
      * en cambio, sólo aparecen con más de una — con una sola, desmarcarla es
-     * rechazar, y para eso está su botón. */
-    const editable = decidible && esMovimiento(req.type);
+     * rechazar, y para eso está su botón.
+     *
+     * Se ofrecen mientras no se esté rechazando: al rechazar no hay nada que
+     * recortar y las casillas sólo confundirían. */
+    const editable = decidible && esMovimiento(req.type) && modo !== 'reject';
     const porLinea = editable && lineas.length > 1;
 
     const [seleccion, setSeleccion] = useState(() => new Set(lineas.map((_, i) => i)));
@@ -313,10 +330,10 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
     const nadaSeleccionado = porLinea && seleccion.size === 0;
 
     const faltaMotivo = (modo === 'reject' && !nota.trim())
-                     || (modo === 'approve' && parcial && !nota.trim());
+                     || (modo === null && parcial && !nota.trim());
 
-    const confirmar = () => onDecidir({
-        req, modo, nota: nota.trim(),
+    const confirmar = (modoElegido) => onDecidir({
+        req, modo: modoElegido, nota: nota.trim(),
         // Qué entra y cuánto — sólo cuando de verdad se cambió algo. Van los
         // ÍNDICES con su cantidad, nunca las líneas: el servidor las resuelve
         // contra lo que se guardó al crear la solicitud.
@@ -326,13 +343,17 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
             : null,
     });
 
-    /* En el teléfono el detalle es más alto que la pantalla, así que al entrar en
-     * modo decisión —y al dejar una línea afuera— el motivo que HABILITA el botón
+    /* En el teléfono el detalle es más alto que la pantalla, así que al entrar a
+     * rechazar —y al dejar una línea afuera— el motivo que HABILITA el botón
      * queda debajo del pliegue. Sin esto se ve un botón apagado y ninguna pista
      * de por qué: hay que adivinar que abajo hay un campo obligatorio.
-     * Se trae a la vista en vez de esperar que alguien deslice a buscarlo. */
+     * Se trae a la vista en vez de esperar que alguien deslice a buscarlo.
+     *
+     * Al abrir NO se mueve nada: con la nota opcional siempre a la vista, esto
+     * corría en el primer render y arrancaba el detalle deslizado hasta abajo,
+     * tapando justo lo que hay que leer antes de decidir. */
     useEffect(() => {
-        if (modo === null) return;
+        if (modo === null && !parcial && !nadaSeleccionado) return;
         bloqueDecision.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, [modo, parcial, nadaSeleccionado]);
 
@@ -353,23 +374,27 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                 icono={TypeIcon}
                 anchoEscritorio="max-w-xl"
                 pie={<>
+                    {/* Aprobar APLICA. No abre un segundo paso: lo que había
+                        que ver ya está arriba y lo que se puede ajustar está a
+                        la vista. Sólo se apaga cuando la decisión todavía no es
+                        una —nada marcado, o un parcial sin explicar—. */}
                     {decidible && modo === null && (
                         <>
-                            <Button tone="success" icon={Check} disabled={ocupado}
-                                onClick={() => { setModo('approve'); setNota(''); }}>Aprobar</Button>
+                            <Button tone="success" icon={Check} loading={ocupado}
+                                disabled={faltaMotivo || nadaSeleccionado}
+                                onClick={() => confirmar('approve')}>
+                                {parcial ? 'Aplicar lo marcado' : 'Aprobar'}
+                            </Button>
                             <Button variant="destructive" icon={X} disabled={ocupado}
                                 onClick={() => { setModo('reject'); setNota(''); }}>Rechazar</Button>
                         </>
                     )}
-                    {decidible && modo !== null && (
+                    {decidible && modo === 'reject' && (
                         <>
-                            <Button onClick={confirmar} loading={ocupado}
-                                disabled={faltaMotivo || nadaSeleccionado}
-                                tone={modo === 'approve' ? 'success' : 'danger'}
-                                icon={modo === 'approve' ? Check : X}>
-                                {modo === 'approve'
-                                    ? (parcial ? 'Aplicar lo marcado' : 'Aprobar completo')
-                                    : 'Confirmar rechazo'}
+                            <Button onClick={() => confirmar('reject')} loading={ocupado}
+                                disabled={faltaMotivo}
+                                tone="danger" icon={X}>
+                                Confirmar rechazo
                             </Button>
                             <Button variant="ghost" disabled={ocupado} onClick={() => { setModo(null); setNota(''); }}>
                                 Volver
@@ -390,12 +415,12 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
             >
                 <div className="space-y-3 text-left max-h-[60vh] overflow-y-auto pr-1">
                     <DetalleSolicitud req={req} employeesById={employeesById}
-                        seleccion={porLinea && modo === 'approve' ? seleccion : undefined}
-                        onToggle={porLinea && modo === 'approve' ? alternar : undefined}
-                        onCantidad={editable && modo === 'approve' ? fijarCantidad : undefined}
-                        cantidades={editable && modo === 'approve' ? cantidades : undefined} />
+                        seleccion={porLinea ? seleccion : undefined}
+                        onToggle={porLinea ? alternar : undefined}
+                        onCantidad={editable ? fijarCantidad : undefined}
+                        cantidades={editable ? cantidades : undefined} />
 
-                    {modo === 'approve' && editable && (
+                    {editable && (
                         <div>
                             <Notice variant={nadaSeleccionado ? 'danger' : parcial ? 'warning' : 'info'} icon={Check}>
                                 {nadaSeleccionado
@@ -430,7 +455,14 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
 
                     {extra}
 
-                    {modo !== null && (
+                    {/* La nota vive con el detalle y no detrás de un paso.
+                        Sacar el segundo toque de «Aprobar» habría costado la
+                        nota opcional a quien aprueba —el único canal para
+                        decirle algo a quien mandó la solicitud—, así que en vez
+                        de aparecer al entrar en un modo, está desde que se abre.
+                        Obligatoria en los dos casos en que la decisión no se
+                        explica sola: un rechazo, y un parcial. */}
+                    {decidible && (
                         <div ref={bloqueDecision}>
                             <label className="text-label font-black uppercase tracking-widest text-content-2 mb-1.5 block">
                                 {modo === 'reject' ? 'Motivo de rechazo'
@@ -442,7 +474,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                 value={nota}
                                 onChange={e => setNota(e.target.value)}
                                 rows={3}
-                                placeholder={modo === 'approve' && !parcial ? 'Opcional...' : 'Explicá el motivo...'}
+                                placeholder={modo === null && !parcial ? 'Opcional...' : 'Explicá el motivo...'}
                                 readOnly={ocupado}
                                 textareaClassName="disabled:opacity-50"
                             />

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.627.2 — Aprobar desde el aviso deja de fallar y en la pantalla se aprueba de un toque
+
+**Aprobar desde la campana daba «No se pudo procesar la acción», y sólo
+funcionaba después de entrar a Solicitudes.** No era un error de permisos ni de
+la base: al aprobar, el portal buscaba la solicitud en una lista que llena
+**una sola pantalla**. Quien la aprobaba desde el tablero tenía esa lista
+vacía, no encontraba la solicitud y se cortaba antes de intentar nada. Entrar
+al módulo la llenaba, y por eso «ahí sí funciona».
+
+Rechazar tenía el mismo hueco pero no se veía, que es lo peor de los dos: el
+rechazo **sí** se aplicaba —esa parte no necesitaba la solicitud— pero el aviso
+a quien la había mandado cuelga de ella, así que la solicitud quedaba rechazada
+y **la persona nunca se enteraba**. Sin error, sin rastro.
+
+Ahora la solicitud se resuelve en tres escalones —la que ya trae quien decide,
+la de la lista, y una lectura por número— así que decidir funciona igual desde
+donde sea. La campana, que ya la había leído para ofrecer los botones, la pasa
+en vez de hacer que se busque de nuevo.
+
+**Y en la pantalla, aprobar es UN toque.** Antes «Aprobar» no aprobaba: cambiaba
+el pie por otro botón que decía «Aprobar completo». Dos toques para decir lo
+mismo sobre un detalle que ya se estaba mirando. El segundo toque queda sólo
+para **rechazar**, que es el que exige escribir un motivo. Lo que se ajusta
+antes de aprobar una carga o un descarte —qué productos entran y con cuánta
+cantidad— ya no aparece al entrar en un modo: está a la vista desde que se abre
+la solicitud, junto con la nota opcional para quien la envió. Si se deja algo
+afuera, el botón pasa a «Aplicar lo marcado» y pide explicar por qué.
+
+Queda cubierto por una prueba automatizada nueva que decide desde el tablero
+**sin pasar por Solicitudes** — que es la única forma de ver el defecto. La que
+ya existía sólo cubría los ajustes de Min/Max, la única familia que se resuelve
+por otro camino, y por eso no lo vio.
+
 ## v2.627.1 — Instalar la caja se reduce a escribir un código de 8 letras
 
 La instalación que salió con v2.627.0 pedía copiar **dos UUID a mano** a un

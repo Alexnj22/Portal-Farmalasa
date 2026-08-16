@@ -117,9 +117,15 @@ export function useDecidirSolicitud({ onAplicado } = {}) {
             return true;
         }
 
+        /* La fila VIAJA, no se vuelve a buscar. El store la buscaba en su lista
+         * de Solicitudes, que llena una sola pantalla: desde la campana esa
+         * lista está vacía y aprobar moría en «No se pudo procesar la acción»
+         * sin más pista que «entrá al módulo y probá de nuevo». Acá la fila ya
+         * está —recién leída de la base, que es mejor que la copia de la
+         * lista—, así que se pasa. */
         const resultado = modo === 'approve'
-            ? await approveRequest(req.id, user.id, nota, null, aceptadas)
-            : await rejectRequest(req.id, user.id, nota);
+            ? await approveRequest(req.id, user.id, nota, req, aceptadas)
+            : await rejectRequest(req.id, user.id, nota, req);
         setOcupado(false);
 
         if (resultado === true) {

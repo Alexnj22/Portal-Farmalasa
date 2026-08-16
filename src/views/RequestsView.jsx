@@ -314,8 +314,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         }
     }, [location.state?.prefillEmployeeId, location.pathname, navigate]);
 
-    /* Deep-link desde la notificación: `?solicitud=<id>` abre esa solicitud, y
-       `&accion=aprobar|rechazar` la abre con su decisión ya desplegada.
+    /* Deep-link desde la notificación: `?solicitud=<id>` abre esa solicitud.
        Es lo que convierte el aviso en «acá está» en vez de «andá a buscarla»,
        y es el camino que usa iPhone, donde iOS no dibuja los botones de acción
        de una notificación web.
@@ -324,6 +323,10 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
        campana a un «¿aprobar?» sin haber visto una sola línea de lo que se
        aprobaba. Ahora abre la solicitud —con su detalle— y deja la decisión
        lista abajo, que es el mismo atajo sin el punto ciego.
+
+       `&accion=rechazar` es lo único que sigue desplegando algo: el motivo, que
+       es obligatorio. `aprobar` ya no despliega nada porque aprobar dejó de ser
+       un paso aparte — el botón del pie aplica de una.
 
        Se espera a que `requests` tenga la solicitud: la campana es global y la
        lista puede llegar después. Los parámetros se limpian recién cuando se
@@ -337,7 +340,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
         const accion = searchParams.get('accion');
         setAbierta({ // eslint-disable-line react-hooks/set-state-in-effect -- abre la solicitud por deep-link
             req,
-            accionInicial: accion === 'aprobar' ? 'approve' : accion === 'rechazar' ? 'reject' : null,
+            accionInicial: accion === 'rechazar' ? 'reject' : null,
         });
         // Sin esto la solicitud podría quedar escondida tras el filtro activo.
         if (req.status !== statusFilter) setStatusFilter(req.status);

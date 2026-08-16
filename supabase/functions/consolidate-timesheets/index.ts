@@ -222,11 +222,19 @@ Deno.serve(async (req) => {
 
     // 4a. Load approved absence requests to classify justified absences
     // El error acá convierte una ausencia JUSTIFICADA en injustificada.
+    //
+    // Acotado a las solicitudes creadas en el último año: sin filtro esto crece
+    // sin techo y PostgREST corta en 1000 filas SIN avisar, así que el día que
+    // se cruce ese número las ausencias más viejas desaparecen del Map y las de
+    // gente que sí está de vacaciones se consolidan como injustificadas.
+    const haceUnAnio = new Date(workDate + 'T12:00:00Z');
+    haceUnAnio.setUTCFullYear(haceUnAnio.getUTCFullYear() - 1);
     const { data: absenceRequests, error: absenceErr } = await supabase
       .from('approval_requests')
       .select('employee_id, type, metadata')
       .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
-      .eq('status', 'APPROVED');
+      .eq('status', 'APPROVED')
+      .gte('created_at', haceUnAnio.toISOString());
     if (absenceErr) throw new Error(`approval_requests aprobadas: ${absenceErr.message}`);
 
     const absenceTypeMap = new Map<string, string>();
@@ -247,15 +255,22 @@ Deno.serve(async (req) => {
     }
 
     // 4b. Load attendance punches in CST day window (UTC-6)
-    const dayStart = workDate + 'T00:00:00-06:00';
-    const dayEnd   = workDate + 'T23:59:59-06:00';
+    //
+    // La ventana llega hasta las 08:00 del día siguiente para alcanzar la
+    // salida de un turno que cruza la medianoche. La ENTRADA se sigue buscando
+    // sólo dentro del día, así que un marcaje de madrugada no puede ser tomado
+    // como el inicio de la jornada siguiente.
+    const dayStart    = workDate + 'T00:00:00-06:00';
+    const dayEnd      = workDate + 'T23:59:59-06:00';
+    const ventanaFin  = new Date(new Date(dayEnd).getTime() + 8 * 3600000).toISOString();
     const { data: punches, error: punchErr } = await supabase
       .from('attendance')
       .select('employee_id, type, timestamp')
       .gte('timestamp', dayStart)
-      .lte('timestamp', dayEnd)
+      .lte('timestamp', ventanaFin)
       .order('timestamp', { ascending: true });
     if (punchErr) throw punchErr;
+    const finDelDia = new Date(dayEnd).getTime();
 
     // Index punches by employee_id
     const punchMap = new Map<string, { type: string; timestamp: string }[]>();
@@ -265,14 +280,29 @@ Deno.serve(async (req) => {
       punchMap.get(key)!.push(p);
     }
 
+    // Quién se consolida: quien tiene horario publicado MÁS quien marcó ese día.
+    //
+    // Antes sólo entraban los del roster, y quien no tuviera horario publicado
+    // no recibía timesheet aunque hubiera marcado entrada y salida — sus horas
+    // no llegaban a planilla y nadie se enteraba. Deja de ser un caso raro
+    // desde que el kiosco acepta marcar sin horario cargado (decisión del
+    // 2026-08-16): para la semana del 17-ago, 41 de 49 empleados activos no
+    // tenían horario publicado.
+    const rosterPorEmpleado = new Map<string, Record<string, unknown>>();
+    for (const r of rosters || []) rosterPorEmpleado.set(String(r.employee_id), r.schedule_data);
+
+    const aConsolidar = new Set<string>(rosterEmpIds);
+    for (const empId of punchMap.keys()) aConsolidar.add(empId);
+    const idsAConsolidar = [...aConsolidar];
+
     // Pre-cargar timesheets existentes del día en un Map (evita un SELECT por empleado)
     const timesheetIdMap = new Map<string, number>();
-    if (rosterEmpIds.length > 0) {
+    if (idsAConsolidar.length > 0) {
       const { data: existingTs, error: existingTsErr } = await supabase
         .from('timesheets')
         .select('id, employee_id')
         .eq('work_date', workDate)
-        .in('employee_id', rosterEmpIds);
+        .in('employee_id', idsAConsolidar);
       // El Map vacío hace creer que no hay timesheet previo y se duplica el día.
       if (existingTsErr) throw new Error(`timesheets del ${workDate}: ${existingTsErr.message}`);
       for (const t of existingTs || []) timesheetIdMap.set(String(t.employee_id), t.id);
@@ -282,13 +312,16 @@ Deno.serve(async (req) => {
     let skipped  = 0;
     let failed   = 0;
 
-    for (const roster of rosters || []) {
-      const empId    = String(roster.employee_id);
-      const dayData  = roster.schedule_data?.[dayKey];
+    for (const empId of idsAConsolidar) {
+      const scheduleData = rosterPorEmpleado.get(empId) as Record<string, { isOff?: boolean; shiftId?: string; customStart?: string; customEnd?: string }> | undefined;
+      const dayData   = scheduleData?.[dayKey];
       const exception = exceptionMap.get(empId);
+      const marcoHoy  = (punchMap.get(empId) || []).length > 0;
 
       const isOffInRoster = !dayData || dayData.isOff;
-      if (isOffInRoster && !exception) {
+      // Sin turno y sin marcar: no hay nada que consolidar. Pero si marcó, sí
+      // hay — y ahí se consolida lo que efectivamente trabajó.
+      if (isOffInRoster && !exception && !marcoHoy) {
         skipped++;
         continue;
       }
@@ -311,8 +344,19 @@ Deno.serve(async (req) => {
 
       const empPunches = punchMap.get(empId) || [];
 
-      const entryPunch = empPunches.find(p => ENTRY_TYPES.has(p.type));
-      const exitPunch  = [...empPunches].reverse().find(p => EXIT_TYPES.has(p.type));
+      // La ENTRADA sólo puede estar dentro del día; la SALIDA puede caer
+      // después de la medianoche si el turno cruza. Sin esta distinción, la
+      // ventana ampliada tomaría un marcaje de madrugada como la entrada del
+      // día siguiente.
+      const entryPunch = empPunches.find(
+        p => ENTRY_TYPES.has(p.type) && new Date(p.timestamp).getTime() <= finDelDia,
+      );
+      const exitPunch  = entryPunch
+        ? [...empPunches].reverse().find(
+            p => EXIT_TYPES.has(p.type) &&
+                 new Date(p.timestamp).getTime() > new Date(entryPunch.timestamp).getTime(),
+          )
+        : null;
 
       const isAbsent  = !entryPunch;
       let actualStart = entryPunch ? new Date(entryPunch.timestamp) : null;
@@ -327,7 +371,13 @@ Deno.serve(async (req) => {
 
       // Auto-punch: employee checked in but never out
       if (actualStart && !actualEnd && scheduledEnd) {
-        const autoEndTime = cstTimeToUTC(workDate, scheduledEnd);
+        let autoEndTime = cstTimeToUTC(workDate, scheduledEnd);
+        // Turno que cruza la medianoche: el fin es del día siguiente. Sin esto
+        // la salida generada quedaba ANTES de la entrada y la jornada daba
+        // negativa.
+        if (scheduledStart && toMinutes(scheduledEnd) <= toMinutes(scheduledStart)) {
+          autoEndTime = new Date(autoEndTime.getTime() + 24 * 3600000);
+        }
         const punchType   = isOffInRoster ? 'OUT_EXTRA' : 'OUT';
         const { error: autoErr } = await supabase.from('attendance').insert({
           employee_id: empId,
@@ -355,9 +405,20 @@ Deno.serve(async (req) => {
         const lactatMins = calcBreakMinutes(empPunches, LACTAT_OUT, LACTAT_IN);
         const netMins    = Math.max(0, grossMins - lunchMins - lactatMins);
 
-        const shiftMins = scheduledStart && scheduledEnd
-          ? toMinutes(scheduledEnd) - toMinutes(scheduledStart)
-          : netMins;
+        // Un turno que cruza la medianoche (22:00→06:00) daba −960 minutos, y
+        // con eso `regularHours` salía NEGATIVA y todo lo trabajado se
+        // contabilizaba como tiempo extra. Hoy ningún turno cruza —el que más
+        // tarde termina es a las 22:00— pero el día que se cree uno, esto lo
+        // resuelve solo en vez de facturar mal una quincena.
+        //
+        // Sin horario de referencia (quien marcó sin horario cargado) el turno
+        // es lo que efectivamente trabajó: se le acreditan sus horas y no se le
+        // inventa tiempo extra.
+        let shiftMins = netMins;
+        if (scheduledStart && scheduledEnd) {
+          shiftMins = toMinutes(scheduledEnd) - toMinutes(scheduledStart);
+          if (shiftMins <= 0) shiftMins += 24 * 60;
+        }
 
         regularHours  = Math.min(netMins, shiftMins) / 60;
         overtimeHours = Math.max(0, netMins - shiftMins) / 60;
@@ -379,7 +440,13 @@ Deno.serve(async (req) => {
         let scheduledNocturnalMins = 0;
         if (scheduledStart && scheduledEnd) {
           const schedStartUTC = cstTimeToUTC(workDate, scheduledStart);
-          const schedEndUTC   = cstTimeToUTC(workDate, scheduledEnd);
+          let   schedEndUTC   = cstTimeToUTC(workDate, scheduledEnd);
+          // Mismo cruce de medianoche que arriba: con el fin antes del inicio,
+          // `splitNocturnal` devolvía 0 y la parte nocturna del turno planeado
+          // desaparecía, mandando TODO lo nocturno real a extra nocturna.
+          if (schedEndUTC.getTime() <= schedStartUTC.getTime()) {
+            schedEndUTC = new Date(schedEndUTC.getTime() + 24 * 3600000);
+          }
           scheduledNocturnalMins = splitNocturnal(schedStartUTC, schedEndUTC).nocturnalMins;
         }
 

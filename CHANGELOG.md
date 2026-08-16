@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.636.1 — La consolidación de planilla ve a quien marcó
+
+Segunda parte de la auditoría del circuito de asistencia: lo que pasa con los
+marcajes **después** de que el kiosco los guarda.
+
+- **El estado que la propia consolidación escribía era rechazado por la tabla.**
+  Cuando alguien entra y no registra la salida, la función genera la salida
+  faltante y marca el día como `AUTO_PUNCHED` — pero la restricción de
+  `timesheets` sólo aceptaba `PENDING`, `APPROVED` y `DISPUTED`. La salida
+  generada sí quedaba registrada, pero el día no llegaba a planilla, y la
+  función lo contaba como fallo y devolvía éxito igual. Olvidar marcar la salida
+  es el error más común de un kiosco.
+- **Quien marca sin horario cargado ahora sí llega a planilla.** Antes sólo se
+  consolidaba a quien tuviera horario publicado; sus horas se acreditan con la
+  jornada que efectivamente trabajó y sin inventarle tiempo extra.
+- **Un turno que cruza la medianoche ya no da horas negativas.** Daba −16 h de
+  jornada regular y mandaba todo lo trabajado a tiempo extra. Hoy ningún turno
+  cruza —el último termina a las 22:00— así que es prevención, no corrección.
+- La búsqueda de ausencias aprobadas se acota a un año: sin filtro, el día que
+  cruce las mil filas las más viejas desaparecen sin aviso y una persona de
+  vacaciones se consolida como ausencia injustificada.
+
+Verificado en el entorno de pruebas con los cuatro casos: quien marcó entrada y
+salida, quien no marcó, quien entró y no salió, y quien no tiene horario.
+
+_(pendiente de redactar)_
+
 ## v2.636.0 — El kiosco de marcación puede marcar
 
 Auditoría del circuito de asistencia antes de arrancar con el kiosco. Tres

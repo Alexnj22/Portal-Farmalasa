@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
-import { requireInvokeSecret } from "../_shared/security.ts";
+import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
@@ -52,14 +52,55 @@ async function textoDelPdf(bytes: Uint8Array): Promise<string> {
   return text;
 }
 
+/**
+ * ¿El rol de esta persona puede ver facturas de compra?
+ *
+ * Se resuelve contra `role_permissions` con la llave de servicio y NO con
+ * `auth_has_module_permission`, porque esa función saca al empleado del JWT y
+ * acá la conexión es de servicio: no hay JWT que resolver y devolvería falso
+ * para todos.
+ */
+async function tienePermiso(admin: any, emp: any): Promise<boolean> {
+  // `requireActiveEmployeeUser` devuelve sólo id/status/code/name — el rol NO
+  // viene, así que hay que ir por él. Sin este paso `roles` quedaba vacío y la
+  // función negaba el paso a todo el mundo con un 401 que parecía de sesión.
+  const { data: ficha } = await admin
+    .from("employees").select("role_id, secondary_role_id").eq("id", emp?.id).maybeSingle();
+  const roles = [ficha?.role_id, ficha?.secondary_role_id].filter(Boolean);
+  if (!roles.length) return false;
+  const { data } = await admin
+    .from("role_permissions")
+    .select("module_key, can_view")
+    .in("role_id", roles)
+    .in("module_key", ["compras", "facturas_compra", "cuentas_por_pagar"])
+    .eq("can_view", true);
+  return (data ?? []).length > 0;
+}
+
 const norm20 = (s: string) =>
   s.replace(/\s/g, "").replace(/\./g, "").replace(/O/gi, "0").toUpperCase();
 
 Deno.serve(async (req: Request) => {
-  if (!requireInvokeSecret(req)) {
-    return new Response(JSON.stringify({ error: "no autorizado" }), {
-      status: 401, headers: { "Content-Type": "application/json" },
-    });
+  const cors = { ...getCorsHeaders(req), "Content-Type": "application/json" };
+  if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
+
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // DOS puertas, porque son dos llamadores distintos:
+  //   · Postgres, con el secreto de Vault (los barridos y las mediciones).
+  //   · El navegador, con la sesión de quien mira la pantalla de carga — y ahí
+  //     además se le exige el permiso del módulo, porque esto lee facturas de
+  //     compra con su detalle completo.
+  let autorizado = requireInvokeSecret(req);
+  if (!autorizado) {
+    const emp = await requireActiveEmployeeUser(req, admin);
+    if (emp) autorizado = await tienePermiso(admin, emp);
+  }
+  if (!autorizado) {
+    return new Response(JSON.stringify({ error: "no autorizado" }), { status: 401, headers: cors });
   }
 
   try {
@@ -69,11 +110,6 @@ Deno.serve(async (req: Request) => {
       limit = 3, max_items = MAX_ITEMS, modo = "items",
       desde = null,
     } = body ?? {};
-
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
 
     let q = admin
       .from("purchase_dte_documents")
@@ -316,12 +352,10 @@ Deno.serve(async (req: Request) => {
       salida.push({ ...base, items: items.slice(0, Math.min(Number(max_items) || MAX_ITEMS, 25)) });
     }
 
-    return new Response(JSON.stringify({ documentos: salida }, null, 1), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ documentos: salida }, null, 1), { headers: cors });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message ?? String(e) }), {
-      status: 500, headers: { "Content-Type": "application/json" },
+      status: 500, headers: cors,
     });
   }
 });

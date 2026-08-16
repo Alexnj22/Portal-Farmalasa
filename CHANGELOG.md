@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.642.0 — Cargar compra: el portal arma la compra desde el documento
+
+**Compras → Cargar compra.** Lista los documentos recibidos que todavía no
+tienen compra registrada —**481 en 60 días, $93,594.94**— y al abrir uno arma la
+compra entera: producto, cantidad, costo, lote y vencimiento, con un rótulo por
+renglón que dice **de dónde salió cada dato**.
+
+**No escribe nada en el sistema de origen**, a propósito. Convierte «teclear 40
+renglones» en «revisar 40 renglones» sin ningún riesgo, y es lo que prueba el
+emparejador contra facturas reales antes de dejarlo tocar nada.
+
+Medido sobre 36 facturas de 12 proveedores (353 renglones): **94.3% con producto
+propuesto, 93.5% con lote, 92.1% con vencimiento**, y el encabezado fiscal sale
+completo en las 36 porque ya vivía en la ficha del proveedor.
+
+**El parecido de nombre nunca llega marcado como listo**, por alto que sea el
+número: entre 0.45 y 0.75 acierta 91.5%, o sea que una de cada doce líneas
+entraría al inventario como otro producto — y eso no avisa, se descubre
+contando. Sólo el código de barras y el diccionario llegan listos.
+
+**Lo único que sí escribe es el diccionario.** Al confirmar un renglón queda
+guardado que ese código de ese proveedor es ese producto, y **no se vuelve a
+preguntar**: el 87% de los renglones usan un código que se repite, así que el
+trabajo baja solo con el uso. Y el diccionario no aprende de lo que adivinó el
+parecido — sólo de confirmaciones y del código de barras.
+
+Dos defectos que salieron de construirla: al emparejador le llegaba la
+descripción **cruda**, con el lote y la fecha adentro, y eso dejaba 28% de los
+renglones sin candidato (con el nombre limpio, 5.7%); y al abrir la función al
+navegador, la comprobación de permiso miraba un campo que `requireActiveEmployeeUser`
+**no devuelve** —el rol—, así que respondía 401 a todo el mundo.
+
 ## v2.641.1 — Las condiciones de crédito se guardan de verdad
 
 Defecto encontrado al preguntar «¿dónde se ponen los límites de crédito?».

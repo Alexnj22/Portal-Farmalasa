@@ -756,3 +756,57 @@ del número.
    ahí en adelante ese proveedor no vuelve a preguntar por ese producto.
 3. Un `dias_credito` por proveedor, con el mismo mecanismo.
 4. Recién al final, el `insert` al sistema.
+
+---
+
+# Décima parte: la pantalla — «Cargar compra»
+
+Primera entrega en el portal (Compras → **Cargar compra**). Lista los documentos
+recibidos que **todavía no tienen compra registrada** —al abrirla, **481 en 60
+días por $93,594.94**— y al abrir uno arma la compra entera para revisarla.
+
+**No escribe nada en el sistema de origen.** A propósito: convierte «teclear 40
+renglones» en «revisar 40 renglones», sin ningún riesgo, y es lo que prueba el
+emparejador contra facturas reales antes de dejarlo tocar nada.
+
+## Cada renglón dice de dónde salió
+
+| rótulo | qué significa | acierto medido |
+|---|---|---|
+| **Código de barras** | el documento trae el EAN y existe en el catálogo | 99.8% |
+| **Ya confirmado** | alguien lo confirmó antes; el diccionario lo recuerda | llave exacta |
+| **Por parecido · N%** | el mejor parecido de nombre, con su número | 99.1% sobre 0.75, y se cae rápido |
+
+**El parecido nunca llega marcado como listo**, por más alto que sea el número.
+Medido: entre 0.45 y 0.75 acierta 91.5% — una de cada doce líneas entraría al
+inventario como otro producto, y eso no avisa: se descubre contando.
+
+## Lo único que sí escribe: el diccionario
+
+Al confirmar («Es correcto» o eligiendo otro producto) se guarda
+`(NIT del proveedor, su código) → nuestro producto`, y **ese proveedor no vuelve
+a preguntar por ese producto**. Está medido que el 87% de los renglones usan un
+código que se repite, así que el trabajo baja solo con el uso.
+
+El diccionario **no aprende de lo que adivinó el parecido**: sólo de esto y del
+código de barras. Si aprendiera de sus propias adivinanzas, un error se volvería
+permanente.
+
+## Dos defectos que salieron de construirla
+
+**El emparejador recibía la descripción cruda.** Con el lote y la fecha adentro
+—ruido distinto en cada renglón— el 28% de los renglones quedaba sin ningún
+candidato. Pasándole el nombre limpio bajó a **5.7%**.
+
+**La función negaba el paso a todo el mundo.** Al abrirla al navegador,
+`requireActiveEmployeeUser` devuelve sólo `id/status/code/name` — **el rol no
+viene**—, así que la comprobación de permiso miraba un campo inexistente y
+respondía 401 a todos. Verificado después: **200 con la sesión del usuario, 401
+con un token inventado**.
+
+## Lo que sigue faltando
+
+1. El `insert` al sistema de origen — leído, nunca enviado.
+2. El diccionario arranca vacío: las primeras facturas de cada proveedor
+   preguntan, y a partir de ahí no.
+3. SAVONA, CONGELADOS y STEINER no mandan lote ni vencimiento en ningún lado.

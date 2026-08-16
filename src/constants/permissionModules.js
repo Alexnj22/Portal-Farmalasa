@@ -31,7 +31,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck, Boxes, MonitorSmartphone, ShieldOff,
-    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet, Landmark
+    BookOpen, Contact, Wrench, Users, Calculator, ReceiptText, Printer, Wallet, Landmark, PackagePlus
 } from 'lucide-react';
 import { tematicaDe } from './dashboardTabs';
 
@@ -239,6 +239,11 @@ const GRUPOS_CRUDOS = [
             // permisos NO son intercambiables acá: `can_edit` registra el pago
             // y lo deja PENDIENTE —sin bajar el saldo, porque el cheque todavía
             // no salió—, y `can_approve` es el que lo hace contar.
+            // Editar es lo que deja CONFIRMAR un producto — y esa
+            // confirmación se guarda para siempre en el diccionario, así que no
+            // es un permiso de sólo mirar. Ver sin editar sirve para revisar la
+            // compra armada sin poder enseñarle nada al portal.
+            { key: 'cargar_compra', label: 'Cargar compra', desc: 'Arma la compra desde el documento del proveedor —producto, cantidad, costo, lote y vencimiento— para revisarla antes de registrarla. Editar confirma a qué producto nuestro corresponde cada renglón, y esa confirmación no se vuelve a preguntar', icon: PackagePlus, hasApprove: false },
             { key: 'cuentas_por_pagar', label: 'Cuentas por pagar', desc: 'Cuánto le debemos a cada proveedor, qué está vencido y cuánto queda de su límite de crédito. Editar registra el pago; aprobar es lo que lo hace contar contra el saldo', icon: Landmark, hasApprove: true },
             { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icon: Truck, hasApprove: false },
             { key: 'conteo_inventario', label: 'Conteo de inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, sub: [

@@ -160,9 +160,28 @@ export function anularBolsa(id, motivo) {
 // recibo, administración cuenta. Que sean tres y no uno es el control: quien
 // entrega no puede firmar la recepción, y el servidor lo rechaza.
 
-/** La bolsa sale de la sala. Varias a la vez: se entregan juntas. */
-export function entregarBolsas(ids) {
-    return supabase.rpc('entregar_bolsas', { p_ids: ids });
+/**
+ * La sala entrega el efectivo a quien lo recolecta.
+ *
+ * Varias bolsas a la vez —se entregan juntas, por días— y **con la identidad de
+ * quien se lo lleva probada**: `vale` es el comprobante de un solo uso que
+ * devolvió `probarIdentidad`, nunca el secreto.
+ *
+ * Devuelve la entrega, que es un hecho con folio propio: es lo que se imprime
+ * para que lo firmen los dos y lo que administración confirma de recibido
+ * después. Antes esto marcaba N bolsas sueltas y no había a qué ponerle folio.
+ */
+export function entregarBolsas(ids, recibidoPor, vale) {
+    return supabase.rpc('entregar_bolsas', {
+        p_ids: ids, p_recibido_por: recibidoPor, p_vale: vale,
+    });
+}
+
+/** La entrega con sus bolsas y sus dos nombres — para el comprobante. */
+export async function fetchEntrega(id) {
+    const { data, error } = await supabase.rpc('get_entrega', { p_id: id });
+    if (error) { console.error('bolsas: fetchEntrega failed:', error.message); return null; }
+    return data || null;
 }
 
 /**

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, HandCoins, Package, ScanLine, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, HandCoins, Package } from 'lucide-react';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
 import LiquidModal from '../common/LiquidModal';
@@ -7,7 +7,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
-import SegmentedControl from '../common/SegmentedControl';
+import PruebaDeIdentidad from './PruebaDeIdentidad';
 import {
     fetchTiposDeSalida, probarIdentidad, registrarSalida, subirComprobante,
 } from '../../data/bolsas';
@@ -15,7 +15,6 @@ import { disponibles, elegirBolsas, totalDisponible } from '../../utils/bolsasRe
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 
 /**
@@ -45,15 +44,9 @@ import { useToastStore } from '../../store/toastStore';
  * identifica la boleta del POS.
  */
 
-const METODOS = [
-    { value: 'CARNE', label: 'Carné' },
-    { value: 'CLAVE', label: 'Usuario y contraseña' },
-];
-
 export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHecho }) {
     const { user } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
-    const empleados = useStaff((st) => st.employees);
 
     const [tipos, setTipos] = useState([]);
     const [tipo, setTipo] = useState('');
@@ -89,11 +82,6 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
         () => elegirBolsas(lista, Number.isFinite(n) ? n : 0),
         [lista, n],
     );
-
-    const gente = useMemo(() => (empleados || [])
-        .filter((e) => e.status === 'ACTIVO')
-        .map((e) => ({ value: e.id, label: e.name }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'es')), [empleados]);
 
     const falta = useMemo(() => {
         if (!t) return 'Falta el motivo.';
@@ -274,33 +262,11 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 {/* Quién se lleva el efectivo. En una remesa no va: quien recibe
                     es el cliente y lo identifica la boleta del POS. */}
                 {t?.pide_receptor && (
-                    <div data-surface="card" className="p-3 space-y-3">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck size={15} className="text-content-3 shrink-0" />
-                            <span className="text-label font-bold text-content">Quién se lleva el efectivo</span>
-                        </div>
-                        <LiquidSelect
-                            value={quien} onChange={setQuien} options={gente}
-                            placeholder="Buscar a la persona…" ariaLabel="Quién se lleva el efectivo"
-                        />
-                        <SegmentedControl
-                            value={metodo}
-                            onChange={(v) => { setMetodo(v); setSecreto(''); }}
-                            options={METODOS}
-                        />
-                        <PortalInput
-                            label={metodo === 'CARNE' ? 'Escanear el carné' : 'Su contraseña'}
-                            name="secreto"
-                            type={metodo === 'CARNE' ? 'text' : 'password'}
-                            icon={metodo === 'CARNE' ? ScanLine : undefined}
-                            value={secreto} onChange={(e) => setSecreto(e.target.value)}
-                            placeholder={metodo === 'CARNE' ? 'Pasá el carné por el lector' : '••••••••'}
-                            autoComplete="off"
-                        />
-                        <p className="text-caption text-content-3">
-                            Se comprueba contra su cuenta. No se guarda en ninguna parte.
-                        </p>
-                    </div>
+                    <PruebaDeIdentidad
+                        quien={quien} onQuien={setQuien}
+                        metodo={metodo} onMetodo={setMetodo}
+                        secreto={secreto} onSecreto={setSecreto}
+                    />
                 )}
 
                 <PortalTextarea

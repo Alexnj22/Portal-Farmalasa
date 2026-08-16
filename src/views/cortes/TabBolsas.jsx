@@ -11,7 +11,7 @@ import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import {
-    contarBolsa, entregarBolsas, fetchBolsas, fetchPersonasDeBolsas, fetchSaldos,
+    contarBolsa, fetchBolsas, fetchEntrega, fetchPersonasDeBolsas, fetchSaldos,
     fetchSalidasDeBolsa, recibirBolsas, resolverDiferenciaBolsa,
 } from '../../data/bolsas';
 import { clickable } from '../../utils/clickable';
@@ -32,6 +32,7 @@ const DetalleDeBolsa = lazy(() => import('../../components/bolsas/DetalleDeBolsa
 /* Y el formulario de salida igual: arrastra `FileField` y el selector de
  * personas, y sólo hace falta al apretar «Sacar dinero». */
 const SalidaDeBolsa = lazy(() => import('../../components/bolsas/SalidaDeBolsa'));
+const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBolsas'));
 
 /**
  * El proceso entero de una bolsa de efectivo, en una pantalla.
@@ -283,6 +284,7 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
     const [elegidas, setElegidas] = useState(() => new Set());
     const [ocupado, setOcupado] = useState(null);
     const [sacando, setSacando] = useState(false);
+    const [entregando, setEntregando] = useState(false);
     // Qué bolsa está abierta en el detalle: es donde viven la foto del
     // comprobante, la bitácora y las dos anulaciones.
     const [abierta, setAbierta] = useState(null);
@@ -374,9 +376,36 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
         return true;
     }, [showToast, cargar]);
 
-    const entregar = useCallback((lista) => correr('entregar',
-        () => entregarBolsas(lista.map((b) => b.id)),
-        lista.length === 1 ? 'Bolsa entregada' : `${lista.length} bolsas entregadas`), [correr]);
+    /**
+     * Terminada la entrega sale UN papel: el comprobante que firman quien
+     * entrega y quien se lleva el dinero. Es el que estaba escrito desde el
+     * 15-ago y nunca tuvo de dónde salir.
+     *
+     * `soloDirecta`: este papel también sale solo. Si la computadora no tiene
+     * la ticketera no se abre ningún diálogo — se reimprime desde la sala.
+     */
+    const trasLaEntrega = useCallback(async (entrega) => {
+        try {
+            const d = await fetchEntrega(entrega.id);
+            if (d) {
+                const [{ imprimirDocumento }, { construirComprobanteDeEntrega }] = await Promise.all([
+                    import('../../utils/ticketPrint'),
+                    import('../../utils/bolsaComprobante'),
+                ]);
+                await imprimirDocumento(construirComprobanteDeEntrega({
+                    entrega: { folio: d.entrega?.folio, entregado_at: d.entrega?.entregada_at },
+                    sala: d.sala,
+                    bolsas: d.bolsas || [],
+                    entregadoPor: d.entregado_por,
+                    recibidoPor: d.recibido_por,
+                }), { soloDirecta: true });
+            }
+        } catch (err) {
+            // Que no salga el papel no deshace una entrega ya firmada.
+            console.error('bolsas: no se pudo imprimir el comprobante de entrega:', err?.message);
+        }
+        cargar();
+    }, [cargar]);
 
     const recibir = useCallback((lista) => correr('recibir',
         () => recibirBolsas(lista.map((b) => b.id)),
@@ -437,7 +466,6 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
 
     if (cargando) return <LoadingState label="Buscando las bolsas" />;
 
-    const elegidasEnSala = elegidasDe(enSala);
     const elegidasEnCamino = elegidasDe(enCamino);
 
     return (
@@ -461,7 +489,9 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 titulo="En la sala"
                 ayuda="Nacen solas al confirmar el corte. La etiqueta se imprime acá y se pega a la bolsa."
                 bolsas={conNodo(enSala, {
-                    elegible: puedeEntregar,
+                    // Sin casilla: entregar dejó de elegirse bolsa por bolsa
+                    // —el diálogo pregunta por DÍAS— y una casilla que ya no
+                    // manda a ningún lado es adorno, no control.
                     alarma: true,
                     pie: (b) => (
                         <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">
@@ -487,12 +517,14 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                             disabled={!enSala.length} onClick={() => setSacando(true)}>
                             Sacar dinero
                         </Button>
-                        {elegidasEnSala.length > 0 && (
-                            <Button variant="primary" size="sm" icon={Send} loading={ocupado === 'entregar'}
-                                onClick={() => entregar(elegidasEnSala)}>
-                                Entregar {elegidasEnSala.length} · {formatMoney(suma(elegidasEnSala))}
-                            </Button>
-                        )}
+                        {/* Entregar tampoco depende de haber marcado bolsas: el
+                            diálogo pregunta por DÍAS, que es como la sala piensa
+                            lo que se lleva. Marcar de a una sigue existiendo
+                            para el caso raro, pero dejó de ser el camino. */}
+                        <Button variant="primary" size="sm" icon={Send}
+                            disabled={!enSala.length} onClick={() => setEntregando(true)}>
+                            Entregar dinero
+                        </Button>
                     </div>
                 )}
                 vacio="Sin efectivo esperando en las salas"
@@ -591,6 +623,19 @@ export default function TabBolsas({ desde, hasta, sala, nombreSala }) {
                 onClose={() => setAbierta(null)}
                 onCambio={cargar}
             />
+                </Suspense>
+            )}
+
+            {entregando && (
+                <Suspense fallback={null}>
+                    <EntregaDeBolsas
+                        abierto={entregando}
+                        bolsas={enSala}
+                        saldoDe={saldoDe}
+                        nombreSala={enSala.length ? nombreSala[enSala[0].branch_id] : ''}
+                        onClose={() => setEntregando(false)}
+                        onHecho={trasLaEntrega}
+                    />
                 </Suspense>
             )}
 

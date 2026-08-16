@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.626.0 — Entregar el efectivo: quién se lo lleva queda probado con su carné
+
+El circuito que pidió el usuario: la sala abre el módulo, marca **Entregar
+dinero**, elige los días, y al confirmar se escanea el carné —o se escribe
+usuario y contraseña— de quien se lleva el efectivo. Al llegar a
+administración, alguien de ahí confirma de recibido: el traslado queda
+finalizado y se abre el conteo.
+
+**La entrega pasa a ser un hecho, no N bolsas marcadas.** `bolsas_entregas`
+tiene folio propio (`E-LP-1000`), la sala que la despacha, quién la entregó,
+**quién se la llevó y con qué método lo probó**, y después quién la confirmó de
+recibido en administración. Antes eran bolsas sueltas: no había a qué ponerle
+folio, ni qué firmar, ni qué confirmar como una sola cosa.
+
+**Faltaba identidad justo en el momento de más riesgo.** `entregar_bolsas`
+guardaba la sesión de la sala y nada más, así que el tramo en que el efectivo
+ya salió y todavía no llegó era el único sin nadie identificado. Ahora exige un
+vale de identidad de un solo uso, y la lista de bolsas se valida **antes** de
+gastarlo — si algo no cuadra, no hay que volver a escanear el carné.
+
+**Se elige por día.** Una sala junta dos o tres bolsas por día y entrega cada
+tres días: lo que la persona tiene delante son «los días que se lleva», no ocho
+folios sueltos. Los días vienen marcados de entrada —entregar todo es el caso
+normal— y el detalle de cada uno queda a la vista para cotejarlo contra las
+bolsas físicas antes de firmar. La casilla por bolsa salió de esa etapa: ya no
+mandaba a ningún lado.
+
+**Y sale el comprobante que firman los dos**, que estaba escrito desde el
+15-ago y nunca tuvo de dónde salir.
+
+Lo que **no** cambió: sacar una remesa sigue sin pedir carné. Quien recibe es
+el cliente y lo identifica la boleta del POS; queda el nombre de quien la
+registra. Esa diferencia vive en el catálogo (`bolsas_tipos_salida.pide_receptor`,
+`false` para remesa y reintegro, `true` para pago a proveedor, gasto, envío a
+otra sala, anticipo y otro), no en código.
+
+De paso, la prueba de identidad salió a `PruebaDeIdentidad`: la piden la
+entrega y las salidas con receptor, y escrita dos veces habrían terminado
+pidiéndola distinto.
+
 ## v2.625.0 — Auditoría del circuito del efectivo: el carné deja de ser público y los cortes se confirman en orden
 
 Auditoría completa de cortes de caja, bolsas de efectivo y su impresión. Once

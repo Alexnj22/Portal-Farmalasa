@@ -17,6 +17,9 @@ import { createPortal } from 'react-dom';
 // El componente vive en `dashboard/GraficaTendencia.jsx`; leer su encabezado
 // antes de tocarlo (hay un bucle de WebKit detrás).
 const GraficaTendencia = lazy(() => import('./dashboard/GraficaTendencia'));
+// El editor de acomodo vive detrás de «Personalizar»: no viaja en el chunk de
+// quien entra al Inicio y nunca lo abre.
+const AcomodarModal = lazy(() => import('./dashboard/AcomodarModal'));
 import {
   Users, UserCheck, ClipboardList, Building2, TrendingUp,
   CalendarDays, Megaphone, ChevronRight, ChevronLeft,
@@ -72,6 +75,7 @@ import {
 } from '../data/dashboard';
 import { fetchRolesForPermissions, fetchRolePermissions } from '../data/permissions';
 import { clickable } from '../utils/clickable';
+import { reacomodar } from '../utils/acomodoWidgets';
 import { formatMoney } from '../utils/formatNumber';
 import useCapaFlotante from '../utils/capaFlotante';
 import { shortEmployeeName, employeeInitials } from '../utils/nameUtils';
@@ -466,47 +470,25 @@ const TAB_WIDGETS = {
   get operacion() { return catalogoDePestana('operacion'); },
 };
 
-// Resolve collisions after a drop: dragged widget wins its target position,
-// displaced widgets find their next free slot (top-left priority, no cascades).
+// La medida efectiva de un widget en una retícula de `gridCols` columnas: lo
+// que la persona eligió, recortado al ancho disponible, o el mínimo del
+// catálogo si nunca lo tocó.
+const medidaEfectiva = (sizes, gridCols) => (id) => ({
+  cols: Math.min(sizes[id]?.cols ?? getWidgetSize(id).minCols, gridCols),
+  rows: sizes[id]?.rows ?? getWidgetSize(id).minRows,
+});
+
+// Dónde queda cada widget después de soltar uno encima de otro.
+//
+// La regla vive en `utils/acomodoWidgets` y no acá porque el modal de Acomodar
+// resuelve exactamente lo mismo: con dos copias, arrastrar en el tablero y
+// arrastrar en el modal terminarían acomodando distinto, que es la clase de
+// desacuerdo que nadie reporta como bug — se reporta como «el tablero hace
+// cosas raras».
+//
+// Esta envoltura existe para que los llamadores sigan pasando `sizes` crudo.
 function resolveCollisions(dragId, targetCol, targetRow, layout, sizes, gridCols = GRID_COLS) {
-  const eCols = Math.min(sizes[dragId]?.cols ?? getWidgetSize(dragId).minCols, gridCols);
-  const eRows = sizes[dragId]?.rows ?? getWidgetSize(dragId).minRows;
-  const occ = new Set();
-  const stamp = (col, row, cols, rows) => {
-    for (let c = col; c < col + cols; c++)
-      for (let r = row; r < row + rows; r++) occ.add(`${c},${r}`);
-  };
-  const fits = (col, row, cols, rows) => {
-    if (col + cols - 1 > gridCols) return false;
-    for (let c = col; c < col + cols; c++)
-      for (let r = row; r < row + rows; r++) if (occ.has(`${c},${r}`)) return false;
-    return true;
-  };
-  // Dragged widget locks in first
-  stamp(targetCol, targetRow, eCols, eRows);
-  const resolved = { [dragId]: { col: targetCol, row: targetRow } };
-  // Others sorted by original position (top-left first keeps stable order)
-  const others = Object.keys(layout)
-    .filter(id => id !== dragId)
-    .sort((a, b) => { const pa = layout[a], pb = layout[b]; return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col; });
-  for (const id of others) {
-    const wc = Math.min(sizes[id]?.cols ?? getWidgetSize(id).minCols, gridCols);
-    const wr = sizes[id]?.rows ?? getWidgetSize(id).minRows;
-    const orig = layout[id];
-    if (fits(orig.col, orig.row, wc, wr)) {
-      stamp(orig.col, orig.row, wc, wr);
-      resolved[id] = { col: orig.col, row: orig.row };
-    } else {
-      let placed = false;
-      outer: for (let r = 1; r <= 100; r++) {
-        for (let c = 1; c <= gridCols; c++) {
-          if (fits(c, r, wc, wr)) { stamp(c, r, wc, wr); resolved[id] = { col: c, row: r }; placed = true; break outer; }
-        }
-      }
-      if (!placed) resolved[id] = orig;
-    }
-  }
-  return resolved;
+  return reacomodar(dragId, targetCol, targetRow, layout, medidaEfectiva(sizes, gridCols), gridCols);
 }
 
 // ─── Other constants ───────────────────────────────────────────────────────────
@@ -2067,6 +2049,57 @@ const DashboardView = ({ openModal }) => {
     });
   };
 
+  // ── Acomodar: el tablero entero, en chico, en un modal ─────────────────────
+  //
+  // Reportado: «el movimiento de widget se siente torpe, al pasar de un lado a
+  // otro, desordena todo lo que había ordenado». Ver `AcomodarModal` para el
+  // diagnóstico completo — acá sólo vive el cableado.
+  //
+  // NO reemplaza al arrastre sobre el tablero: para correr una tarjeta un lugar,
+  // arrastrarla donde está sigue siendo lo más directo. Reemplaza a la sesión
+  // larga de acomodo, que es donde el tablero que scrollea se vuelve el problema.
+  const [acomodarAbierto, setAcomodarAbierto] = useState(false);
+  // Dónde se personaliza: el editor en chico, o el panel de siempre.
+  const editorEnModal = activeTab === 'general' && acomodoLibre && !esTelefono;
+
+  // El catálogo de ESTA pestaña con su estado, encendidos y apagados juntos:
+  // el modal necesita los dos —lo que está puesto y lo que se puede agregar— y
+  // `catalogoVisible` sólo trae los primeros.
+  const catalogoDelModal = useMemo(() => WIDGET_DEFS
+    .filter(w => w.id !== 'kpi' && (TAB_WIDGETS[activeTab] || []).includes(w.id) && canSee(w.permission))
+    .map(w => ({ id: w.id, label: w.label, icon: w.icon,
+                 encendido: isWidgetOn(w.id), permitido: true })),
+    [activeTab, canSee, isWidgetOn]);
+
+  const aplicarAcomodo = useCallback(({ acomodo, medidas, apagados }) => {
+    const tabId = activeTabRef.current;
+    const isM   = isMobileRef.current;
+    const fuera = new Set(apagados);
+    const dentro = new Set(Object.keys(acomodo));
+
+    // El registro de encendidos es UNO para todo el tablero, no por pestaña:
+    // sólo se tocan los ids que este modal manejó, o apagar algo en General se
+    // llevaría puesto lo que la persona eligió en otra pestaña.
+    const config = widgetConfig.map(w =>
+      fuera.has(w.id)  ? { ...w, enabled: false }
+      : dentro.has(w.id) ? { ...w, enabled: true }
+      : w);
+    setWidgetConfig(config);
+    try { localStorage.setItem(`portal_dashboard_${user?.id||'guest'}`, JSON.stringify(config)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+
+    const prefijo = isM ? 'mobile_' : '';
+    (isM ? setMobileLayout : setWidgetLayout)(prev => ({ ...prev, [tabId]: acomodo }));
+    (isM ? setMobileSizes  : setWidgetSizes )(prev => ({ ...prev, [tabId]: medidas }));
+    try {
+      localStorage.setItem(`portal_dash_${prefijo}layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(acomodo));
+      localStorage.setItem(`portal_dash_${prefijo}sizes_${user?.id||'guest'}_${tabId}`,  JSON.stringify(medidas));
+    } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+    // Igual que al arrastrar: a partir de acá manda lo que la persona dejó, o
+    // el tablero se rearma solo en la siguiente carga. En el teléfono no se
+    // marca — el acomodo móvil es otro y esta persona no tocó el de escritorio.
+    if (!isM) marcarAcomodada(tabId);
+  }, [widgetConfig, user, marcarAcomodada]);
+
   // ── Publicar el acomodo de una pestaña temática (solo SU) ──────────────────
   //
   // Sale del acomodo de ESCRITORIO, nunca de `activeLayout`: si el SU estuviera
@@ -3444,13 +3477,26 @@ const DashboardView = ({ openModal }) => {
       {/* El engranaje giraba 60° al abrir: se conserva con `className` en el
           canónico, porque es la única señal de que el panel quedó abierto
           además del color. */}
+      {/* En General —la pestaña propia— «Personalizar» abre el editor en chico:
+          ahí adentro están las tres cosas que el panel de abajo hacía por
+          separado (encender, acomodar, medir) y además se ve el tablero entero
+          sin scrollear. Pedido del usuario.
+
+          En el TELÉFONO sigue abriendo el panel, y no por espacio: con
+          `esTelefono` la rejilla ignora `gridColumnStart` y acomoda por orden
+          del DOM (ver `wrapWidget`), así que un editor de POSICIONES mostraría
+          un tablero que ahí no existe. Lo que sí aplica en el teléfono —el
+          tamaño y el encendido— es exactamente lo que el panel ya ofrece.
+
+          En las pestañas temáticas también, porque ahí el panel no personaliza:
+          publica el acomodo para todos, que es otro trabajo. */}
       <Button
-        aria-expanded={showConfig}
-        variant={showConfig ? undefined : 'secondary'}
-        tone={showConfig ? 'brand' : null}
+        aria-expanded={editorEnModal ? undefined : showConfig}
+        variant={showConfig && !editorEnModal ? undefined : 'secondary'}
+        tone={showConfig && !editorEnModal ? 'brand' : null}
         icon={Settings2}
-        className={showConfig ? '[&_svg]:rotate-[60deg] [&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]' : '[&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]'}
-        onClick={() => setShowConfig(v => !v)}
+        className={showConfig && !editorEnModal ? '[&_svg]:rotate-[60deg] [&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]' : '[&_svg]:transition-transform [&_svg]:duration-[var(--dur-slow)]'}
+        onClick={() => (editorEnModal ? setAcomodarAbierto(true) : setShowConfig(v => !v))}
       >
         Personalizar
       </Button>
@@ -3723,6 +3769,25 @@ const DashboardView = ({ openModal }) => {
           {getWidgetSize(dndActive).label}
         </div>,
         document.body
+      )}
+
+      {/* El tablero en chico. `lazy` como el resto de lo que vive detrás de un
+          botón: no tiene que viajar en el chunk de quien nunca personaliza. */}
+      {editorEnModal && acomodarAbierto && (
+        <Suspense fallback={null}>
+          <AcomodarModal
+            abierto={acomodarAbierto}
+            onCerrar={() => setAcomodarAbierto(false)}
+            titulo={TABS.find(t => t.id === activeTab)?.label ?? activeTab}
+            columnas={activeCols}
+            widgets={catalogoDelModal}
+            acomodo={activeLayout}
+            medidas={activeSizes}
+            minimos={getWidgetSize}
+            onAplicar={aplicarAcomodo}
+            onRestablecer={() => { resetTab(activeTab); setAcomodarAbierto(false); }}
+          />
+        </Suspense>
       )}
     </GlassViewLayout>
   );

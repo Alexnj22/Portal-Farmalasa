@@ -21,6 +21,68 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.635.0 — El tablero se acomoda desde un modal, y mover un widget ya no desordena el resto
+
+Reportado por el usuario: *«el movimiento de widget se siente torpe, al pasar de
+un lado a otro, desordena todo lo que había ordenado»*. Eran **tres** defectos
+distintos con un solo síntoma.
+
+**1. El acomodo se rebarajaba solo, y estaba en el código.** `resolveCollisions`
+resolvía así: el widget arrastrado se queda con su destino, y cada desplazado se
+recoloca en **la primera celda libre barriendo desde la fila 1, columna 1**. O
+sea que un widget de la fila 8 aparecía arriba de todo, y cada recolocación
+liberaba un hueco que podía subir al siguiente.
+
+La regla nueva (`src/utils/acomodoWidgets.js`) hace dos cosas en orden:
+**intercambia** cuando el destino lo ocupa uno solo del mismo tamaño, y si no,
+**empuja hacia abajo** desde la fila del desplazado. Se resuelve en dos pasadas
+—primero se quedan los que pueden quedarse, después buscan los que no— porque
+con una sola, un desplazado podía llevarse el sitio de alguien que ni se movía y
+encadenar el empuje.
+
+Medido sobre 3,000 movimientos en tableros de 8 widgets y 4 columnas:
+
+| | antes | ahora |
+|---|---|---|
+| widgets desplazados por movimiento | 1.89 | **1.10** |
+| celdas recorridas por movimiento | 5.64 | **4.74** |
+| widgets que saltaron **hacia arriba** | 0.58 | **0.04** |
+
+Y los 108 que suben con la regla nueva son **los 108** intercambios: subir es la
+mitad de un intercambio. Fuera de eso, nadie sube nunca. Anclado en
+`tests/unit/acomodoWidgets.test.js`.
+
+**2. Se arrastraba a ciegas.** En el tablero se mueve una tarjeta de 400px por
+una página que scrollea: el origen y el destino no caben juntos en pantalla, así
+que había que soltar, bajar y volver a empezar. **«Personalizar» ahora abre el
+tablero entero en chico** (idea del usuario): cada widget es su título y su
+medida, los 18 de General entran sin scroll, y mover algo es un gesto corto con
+las dos puntas a la vista. El tamaño se cambia eligiendo una ficha y usando el
+control de abajo — un asa en la esquina de una ficha de 60×24 no se agarra con
+el dedo.
+
+Dos cosas que costaron una medición cada una: los renglones **no** pueden tener
+alto fijo (con 46px el editor medía 728px y volvía a scrollear, que es lo que
+venía a evitar), y el destino del arrastre **no** se calcula dividiendo el alto
+de la caja entre el número de filas — con renglones elásticos se van todos al
+piso y la división daba 27.75px de paso contra los 32 reales, así que soltar
+sobre la fila 9 caía en la 10 y el intercambio no se disparaba. Hoy las pistas
+se leen del estilo computado, y el arrastre descuenta **por dónde se agarró** la
+ficha.
+
+**3. No había cómo arrepentirse.** Cada soltada se guardaba al instante —estado,
+`localStorage` y base a los 1.5s—, así que un arrastre malo era permanente. El
+editor trabaja sobre un **borrador**: «Listo» guarda, «Cancelar» descarta.
+
+En el teléfono «Personalizar» sigue abriendo el panel de siempre, y no por
+espacio: ahí la rejilla ignora la posición y acomoda por orden del DOM, así que
+un editor de posiciones mostraría un tablero que no existe. Lo que sí aplica en
+el teléfono —tamaño y encendido— es exactamente lo que ese panel ya ofrece.
+
+Verificado en el navegador (`tests/e2e/acomodar-widgets.spec.js`): el editor
+abre sin desborde, arrastrar una ficha sobre otra las intercambia sin tocar a
+nadie más, y «Cancelar» deja el tablero como estaba.
+
 ## v2.634.0 — El ranking de vendedores divide por horas, y marca la venta que no cuadra con el turno
 
 Tres cosas en el widget «Venta por vendedor», las tres pedidas por el usuario.

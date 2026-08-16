@@ -532,3 +532,72 @@ devolvía **`-`** como número de lote: el guion del rótulo. Un dato que parece
 válido y no lo es entra al inventario sin que nada avise. Ahora un lote necesita
 al menos dos caracteres alfanuméricos, y si no los tiene devuelve nulo — que es
 lo que hace que la pantalla lo pida.
+
+---
+
+# Séptima parte: el lote sin rótulo — y el resultado final
+
+El usuario señaló que DROGUERÍA AMERICANA **sí** manda lote y vencimiento:
+
+```
+OVESTIN CREMA 1MG. X 15GR.|B22625K|30/11/2027|7.000000
+```
+
+Tenía razón, y la tabla anterior estaba mal por una razón que vale anotar: **la
+probé con un solo documento de un solo renglón, y ese renglón era
+`REINTEGRO CASA 40 - ||`** — un reintegro, no un producto. Una muestra de uno,
+generalizada. Ver [[feedback_una_muestra_de_uno_no_es_el_formato_del_proveedor]].
+
+## El lote se ancla en la fecha, no se busca solo
+
+Casi la mitad de los proveedores manda el lote **sin rótulo**, en una posición
+fija. Buscar «algo que parezca un lote» devuelve presentaciones y gramajes, así
+que se usa el vencimiento como ancla —que sí se reconoce solo— y **el lote es lo
+que está pegado antes**:
+
+- **entre `|`**: el campo anterior al que es una fecha, y sin espacios (el
+  nombre del producto también va entre `|`, pero lleva espacios) — AMERICANA,
+  SANTA LUCÍA, LETERAGO
+- **con la fecha rotulada**: el token pegado antes del rótulo, exigiendo que
+  mezcle letra y dígito para no traerse el `30` de «X 30» — MONTREAL
+- **con la fila entera rotulada**: IMBERTON escribe el encabezado y después los
+  valores en ese orden (`cantidad - lote - fecha caducidad 2 - 790748N11 -
+  18-07-2027`), así que el ancla es el orden que él mismo declara
+
+## Un precio leído como fecha
+
+LETERAGO devolvía **`false`** como número de lote. Su descripción es
+`false|12.00|02197|01/12/2027|5.00|`, y el precio `12.00` se leía como
+**diciembre del año 2000** —mes 12, año 00—, lo que corría el ancla un campo y
+tomaba `false` como lote.
+
+La ventana de años válidos pasó de `2000..2100` a **`hoy-5 .. hoy+20`**. Un
+vencimiento de hace 26 años no existe en una compra de hoy, y esa sola condición
+mata la lectura falsa. Ahora LETERAGO devuelve `S17946`, que es el lote de
+verdad.
+
+## Resultado final — 12 proveedores, 378 renglones
+
+| proveedor | renglones | lote | vencimiento |
+|---|---:|---:|---:|
+| RONASA | 63 | 63 | 63 |
+| COFARSAL | 51 | 51 | 51 |
+| LETERAGO | 47 | 47 | 47 |
+| GAMMA | 43 | 43 | 43 (PDF) |
+| VIJOSA | 36 | 36 | 36 |
+| DROGUERÍA NOVA | 29 | 29 | 28 |
+| DROGUERÍA AMERICANA | 27 | 26 | 26 |
+| NUEVA SAN CARLOS | 22 | 22 | 22 |
+| MENFAR | 18 | 18 (PDF) | 14 |
+| MONTREAL | 16 | 16 | 16 |
+| C. IMBERTON | 15 | 15 | 15 |
+| SANTA LUCÍA | 11 | 11 | 11 |
+| **total** | **378** | **377 · 99.7%** | **372 · 98.4%** |
+
+Lo que falta es explicable, uno por uno: el renglón de AMERICANA es el
+reintegro; los 4 de MENFAR son los que imprimen `Vencimiento: ?`; queda 1 de
+NOVA sin mirar.
+
+**El lote y el vencimiento dejaron de ser el problema.** Quedan SAVONA,
+CONGELADOS y STEINER —helados y bebidas—, que no los mandan en ningún lado y los
+seguirá poniendo una persona, como hoy.

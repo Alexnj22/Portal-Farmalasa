@@ -87,8 +87,15 @@ function aMesYAnio(bruto: string | null): string | null {
   if (anio.length === 2) anio = String(2000 + Number(anio));
   if (!/^\d{4}$/.test(anio)) return null;
   const a = Number(anio);
-  // Un vencimiento fuera de este rango es un número mal leído, no una fecha.
-  if (a < 2000 || a > 2100) return null;
+  // Un vencimiento fuera de esta ventana es un número mal leído, no una fecha.
+  //
+  // El rango importa MÁS de lo que parece. Con `2000..2100` el precio `12.00`
+  // de LETERAGO se leía como diciembre del 2000 —mes 12, año 00— y eso
+  // arrastraba el campo de al lado como número de lote: devolvía `false`, que
+  // es literalmente lo que ese proveedor manda como descripción. Un vencimiento
+  // de hace 26 años no existe en una compra de hoy.
+  const hoy = new Date().getUTCFullYear();
+  if (a < hoy - 5 || a > hoy + 20) return null;
   return `${anio}-${String(Number(mes)).padStart(2, "0")}-01`;
 }
 
@@ -113,6 +120,44 @@ const LOTES = [
 const loteValido = (s: string | null) =>
   !!s && s.replace(/[^A-Za-z0-9]/g, "").length >= 2 ? s : null;
 
+/**
+ * El lote SIN rótulo, que es como lo manda casi la mitad de los proveedores.
+ * Se apoya en el vencimiento: el lote es lo que está **pegado antes** de la
+ * fecha. No se busca «algo que parezca un lote» —eso devuelve presentaciones y
+ * gramajes—; se usa la fecha como ancla, que sí se reconoce sola.
+ *
+ *   DROGUERÍA AMERICANA  `OVESTIN CREMA 1MG. X 15GR.|B22625K|30/11/2027|7.000000`
+ *   SANTA LUCÍA          `VISINA 15 ML 7750021004879|RAB3F00|30/01/2029|FCO|18.00`
+ *   MONTREAL             `GASTROFLUX 10MG X 30 L138601 V. 01-11-2028 16`
+ */
+function loteSinRotulo(t: string): string | null {
+  // (0) IMBERTON escribe el ENCABEZADO y después los valores en ese orden:
+  //     `SIMILAC RICE 400GX6IT cantidad - lote - fecha caducidad 2 - 790748N11 - 18-07-2027`
+  //     Rotula la fila entera en vez de cada dato, así que el rótulo suelto no
+  //     sirve de ancla — sirve el orden que él mismo declara.
+  const imb = t.match(/cantidad\s*-\s*lote\s*-\s*fecha\s+caducidad\s+\S+\s*-\s*(\S+)\s*-/i);
+  if (imb) { const c = loteValido(imb[1]); if (c) return c; }
+
+  // (a) Entre separadores: el campo justo antes del que es una fecha.
+  const partes = t.split("|").map((x) => x.trim());
+  if (partes.length >= 3) {
+    for (let i = 1; i < partes.length; i++) {
+      if (aMesYAnio(partes[i]) && partes[i].split(/[\/\-.]/).length >= 2) {
+        const cand = loteValido(partes[i - 1]);
+        // El nombre del producto también está entre `|`: un lote no lleva
+        // espacios, y eso lo separa del nombre sin tener que conocerlo.
+        if (cand && !/\s/.test(cand)) return cand;
+      }
+    }
+  }
+  // (b) Sin separadores, con la fecha rotulada: el token pegado antes del
+  //     rótulo. Se exige que mezcle letra y dígito para no traerse «30» ni
+  //     «X» de «X 30».
+  const m = t.match(/([A-Za-z0-9][A-Za-z0-9._\-\/]{2,})\s+(?:v\.|vence|vencimiento|f\.?\s*exp)/i);
+  if (m && /[A-Za-z]/.test(m[1]) && /\d/.test(m[1])) return loteValido(m[1]);
+  return null;
+}
+
 /** Lote y vencimiento escondidos en el texto libre de un renglón. */
 function deTextoLibre(s: string): { lote: string | null; vence: string | null } {
   const t = norm(s ?? "");
@@ -120,6 +165,7 @@ function deTextoLibre(s: string): { lote: string | null; vence: string | null } 
   for (const re of FECHAS) { const m = t.match(re); if (m) { vence = aMesYAnio(m[1]); if (vence) break; } }
   let lote: string | null = null;
   for (const re of LOTES) { const m = t.match(re); if (m) { lote = loteValido(m[1]); if (lote) break; } }
+  if (!lote) lote = loteSinRotulo(t);
   return { lote, vence };
 }
 

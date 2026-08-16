@@ -134,3 +134,108 @@ un inventario mal cargado no avisa: se descubre contando.
 - Las 50 líneas (1.8%) en que el código de barras cayó en un producto que no
   estaba en esa compra. Pueden ser sustituciones, devoluciones o un código de
   barras repetido en el catálogo; no se abrieron una por una.
+
+---
+
+# Segunda parte: `compras.php` — sí, el circuito cierra
+
+Estudiado el 2026-08-16 **sin escribir nada**: se bajó la página y su JavaScript
+(`js/funciones/funciones_compras.js`, 1,258 líneas) y se leyeron dos consultas.
+**No se envió ningún `insert`; no se creó ninguna compra.**
+
+## Los cuatro procesos
+
+`compras.php` es un endpoint POST con un campo `process` que decide qué hace:
+
+| `process` | qué hace | escribe |
+|---|---|:--:|
+| `validarNumdoc` | ¿ya existe ese número de documento para ese proveedor? | no |
+| `consultar_stock` | ficha del producto por `id_producto` | no |
+| `datos_proveedores` | la percepción del proveedor | no |
+| **`insert`** | **crea la compra y da ingreso al inventario** | **sí** |
+
+Y el `insert` recibe exactamente esto:
+
+```
+process, datos, json_arr, cuantos, total, fecha, concepto, destino, proveedor,
+tipo_doc, numero_doc, sumas_sin_iva, subtotal, iva, venta_exenta,
+total_percepcion, dias_credito, id_compra, total_renta_retenida, json_imp_arr,
+tipo_operacion, clasificacion, tipo_costo_gasto, total_fovial, total_cotrans,
+clase_documento_tributario, numero_serie
+```
+
+Cada renglón dentro de `json_arr` (`storeTblValue()`):
+
+```
+id_producto, compra, venta, cant, unidad, vence, id_presentacion,
+exento, bandera, descripcion_ser, compra_fin, numero_lote
+```
+
+**De esos doce campos, el DTE da tres** —`id_producto` (vía el matcher), `cant`
+y `compra`—; **cinco los da el propio sistema** cuando se le pregunta por el
+producto (`consultar_stock` devuelve costo, precio de venta, unidad,
+presentación y si es perecedero); y **dos no los da nadie: `vence` y
+`numero_lote`.**
+
+## Lo que el DTE no trae: lote y vencimiento
+
+El estándar de Hacienda no tiene campo de lote ni de vencimiento. Los
+proveedores los escriben **dentro de la descripción**, cada uno a su manera
+—`Lote: 8168 … Fecha Exp.: 01/01/2030`, `L138601 V. 01-11-2028`,
+`|75781|08/08/2027|`, `LOTE: 251082 VENCE: 31/10/2027`—. Y hacen falta: de tres
+productos consultados, dos vienen con `perecedero = 1`.
+
+Se pueden sacar con una regla por proveedor —son pocos y el formato es fijo—
+pero **es la parte que no se puede resolver de forma genérica**, y por eso la
+pantalla de confirmación tiene que mostrarlos para que un ojo los mire.
+
+## ⚠️ La trampa: los id de producto son POR CUENTA
+
+Medido, no supuesto. Consultando con la cuenta de **clientes**:
+
+| se pidió | el sistema respondió | nuestro producto con ese id |
+|---|---|---|
+| `id_producto=2445` | PSICODOL 1MG/ML X 60 ML | NAFINA PLUS GOTAS X 15 ML |
+| `id_producto=2449` | ROSECOL 20 MG X 30 TAB | OFTIGEL 0.2% GEL OFTALMICO X 10 GR |
+
+Es el mismo fenómeno ya documentado para `id_proveedor` en
+`scrape-erp-proveedores`, y ahora se confirma que también aplica a los
+productos: **`products.id` sólo coincide con la numeración de la cuenta de
+COMPRAS**, que es de donde se bajó (`descargar_compras_json.php`).
+
+**Automatizar con la cuenta equivocada cargaría productos completamente
+distintos, y sin error**: la compra se registraría bien, con el total correcto,
+y el inventario quedaría mal. Se descubriría contando. Toda esta automatización
+va con `ERP_PURCHASES_CREDS` y con ninguna otra.
+
+## Dos cosas más que conviene saber
+
+- **La compra cae en la sucursal de la SESIÓN**, no en un campo del formulario:
+  se cambia con `cambio_sesion.php` (`process=set_sucursal`). La automatización
+  tiene que fijar Bodega antes de insertar.
+- **El sistema ya rechaza el documento repetido** (`validarNumdoc`, por
+  proveedor + número). Es el mismo freno que el aviso nuevo del libro, pero del
+  otro lado: uno impide crearlo, el otro lo caza si ya está.
+
+# El diccionario: proveedor + código → producto
+
+Sí: cada confirmación queda anexada y no se vuelve a preguntar. La llave es
+**`(NIT del proveedor, código del proveedor) → products.id`**, y el proveedor va
+en la llave por dos motivos:
+
+1. **El mismo producto se le compra a varios proveedores, y cada uno lo nombra y
+   lo numera distinto.** Medido: de 3,774 productos comprados, **1,180 (31.3%)
+   vienen de más de un proveedor** — 1,055 de dos, 125 de tres o más, hasta 5.
+   Esos son 2, 3 o 5 renglones del diccionario apuntando al MISMO producto
+   nuestro. Cada uno se aprende una vez y no se vuelve a preguntar.
+2. **El código es interno de cada proveedor** (`31045`, `0070410`, `35CG`): que
+   hoy no choquen entre proveedores es suerte del muestreo, no una garantía.
+   Meter el NIT en la llave no cuesta nada y quita el problema para siempre.
+
+Para los proveedores que no mandan código usable —Droguería Nova no manda
+ninguno, Leterago manda `false` como descripción— la llave de repuesto es
+`(NIT, descripción normalizada)`. Peor, pero también se aprende una sola vez.
+
+Lo que el diccionario **no** debe hacer es aprender solo de lo que adivinó el
+parecido de nombre. Se siembra con lo que confirmó una persona y con lo que
+resolvió el código de barras; el parecido propone, nunca enseña.

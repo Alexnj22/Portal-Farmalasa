@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     aMesYAnio, loteValido, loteSinRotulo, deTextoLibre, loteYVence,
+    nombreLimpio,
 } from '../../supabase/functions/_shared/loteVencimiento.ts';
 
 // Lote y vencimiento de una compra, leídos del texto del proveedor.
@@ -163,5 +164,33 @@ describe('loteYVence — la descripción primero, el PDF después', () => {
         expect(loteYVence('otro documento entero', { descripcion: 'PALETA SANDIA CJA 25U', cantidad: 1 }, A))
             .toEqual({ lote: null, vence: null, de: 'no encontrado' });
         expect(loteYVence('', { descripcion: '', cantidad: 1 }, A).lote).toBeNull();
+    });
+});
+
+describe('nombreLimpio — lo que se busca en el catálogo', () => {
+    const casos = [
+        // COFARSAL: `LAB|NOMBRE …cola…`, el nombre va DESPUÉS del pipe
+        ['FARDEL|LORATADINA FARDEL 5.0mg/5ml x 60 ml Lote: 6165 Cant.: 4. Fecha Exp.: 01/05/2029',
+         'LORATADINA FARDEL 5.0mg/5ml x 60 ml'],
+        // AMERICANA: `NOMBRE|lote|fecha|cant`, el nombre va ANTES
+        ['OVESTIN CREMA 1MG. X 15GR.|B22625K|30/11/2027|7.000000',
+         'OVESTIN CREMA 1MG. X 15GR.'],
+        ['RONASA sin pipes: TOTALVIT KID JARABE X 120 ML LOTE: 251082 VENCE: 31/10/2027'
+            .replace('RONASA sin pipes: ', ''),
+         'TOTALVIT KID JARABE X 120 ML'],
+        ['SUVIAR 5 MG X 45 TAB L60640 V. 01-04-2029 2', 'SUVIAR 5 MG X 45 TAB L60640'],
+        ['VIDOL011-02 DOLO RELAFLEX T 10 TABLETAS RECUBIERTAS LOTE: 2509096 (V-12-27) CANT: 1',
+         'VIDOL011-02 DOLO RELAFLEX T 10 TABLETAS RECUBIERTAS'],
+        ['SIMILAC RICE 400GX6IT cantidad - lote - fecha caducidad 2 - 790748N11 - 18-07-2027',
+         'SIMILAC RICE 400GX6IT'],
+        ['Choco Cono Sarita|7401090803022|15.000 |Caja', 'Choco Cono Sarita'],
+        ['ADEMIN GOT. PED. F X 15ml.', 'ADEMIN GOT. PED. F X 15ml.'],
+    ];
+    for (const [entra, sale] of casos) {
+        it(`«${entra.slice(0, 42)}…»`, () => expect(nombreLimpio(entra)).toBe(sale));
+    }
+    it('no se queda vacío ni con basura', () => {
+        expect(nombreLimpio('')).toBe('');
+        expect(nombreLimpio(null)).toBe('');
     });
 });

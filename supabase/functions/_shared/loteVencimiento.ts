@@ -130,6 +130,43 @@ export function deTextoLibre(s: string, anioRef?: number): { lote: string | null
   return { lote, vence };
 }
 
+/**
+ * El NOMBRE del producto, sin lo que el proveedor le pegó alrededor.
+ *
+ * Hace falta para emparejar: buscar el producto con la descripción cruda le
+ * mete al parecido de nombre el lote, la fecha y la cantidad, que son ruido
+ * distinto en cada renglón. Medido: pasar la descripción cruda deja **28% de
+ * renglones sin ningún candidato**; con el nombre limpio, 9%.
+ *
+ * Dos limpiezas, en este orden:
+ *   1. El tramo con más letras de los separados por `|`. El `|` va al revés
+ *      según el proveedor —COFARSAL escribe `LAB|NOMBRE` y DROGUERÍA AMERICANA
+ *      `NOMBRE|lote|fecha|cant`—, y el tramo más largo es el nombre en los dos.
+ *   2. La cola administrativa (lote, vencimiento, cantidad), que cada uno
+ *      rotula a su manera.
+ */
+export function nombreLimpio(descripcion: string): string {
+  const t = norm(descripcion);
+  if (!t) return "";
+  const tramo = t.split("|")
+    .map((x) => x.trim())
+    .sort((a, b) => b.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, "").length
+                  - a.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, "").length)[0] ?? t;
+  return norm(
+    tramo
+      .replace(/(?:^|\s)(?:lote|l0te)\s*[:.].*$/i, "")
+      .replace(/(?:^|\s)(?:vence|vencimiento|fecha\s*exp\.?|caducidad)\s*[:.].*$/i, "")
+      .replace(/(?:^|\s)cant(?:idad)?\s*[:.].*$/i, "")
+      .replace(/\s*cantidad\s*-\s*lote.*$/i, "")
+      .replace(/\s*\(\s*v\s*-\s*\d{1,2}\s*-\s*\d{2,4}\s*\).*$/i, "")
+      .replace(/\s+v\.\s+\d{1,2}[-/]\d{1,2}[-/]\d{2,4}.*$/i, "")
+      .replace(/\s*\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}\s*$/, "")
+      // La cantidad suelta al final tiene que ser un token propio: sin el
+      // `\s+`, `L60640` perdía su cola y quedaba `L6`.
+      .replace(/\s+\d{1,4}(\.\d+)?\s*$/, ""),
+  );
+}
+
 export type Leido = { lote: string | null; vence: string | null; de: string };
 
 /**

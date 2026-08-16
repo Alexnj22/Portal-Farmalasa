@@ -660,3 +660,99 @@ O sea que la carga automática no es sólo más rápida. **Es más exacta**, y l
 devuelve al inventario la trazabilidad por lote que hoy no tiene en la mitad de
 sus renglones — que es justo lo que el Art. 142 pide que el registro refleje
 «clara y verazmente».
+
+---
+
+# Novena parte: la propuesta armada — sin escribir en ningún lado
+
+Primera entrega, corriendo. `leer-dte-json` en `modo: 'propuesta'` arma la
+compra entera de un documento y **no toca el sistema de origen ni la base**:
+sólo lee. Es lo que va a alimentar la pantalla.
+
+## El encabezado, campo por campo
+
+Comparado con el formulario real que se llena hoy:
+
+| campo del formulario | de dónde sale | ¿sale solo? |
+|---|---|---|
+| Proveedor | NIT del emisor → `proveedores_maestro.supplier_id` | sí |
+| Tipo Documento | `identificacion.tipoDte` | sí |
+| Numero de Documento | `codigoGeneracion` | sí |
+| Fecha | `identificacion.fecEmi` | sí |
+| **Días Crédito** | **`resumen.pagos[].periodo`** | **en el 39% de las facturas** |
+| Tipo de operación | `proveedores_maestro.f07_tipo_operacion` | **sí, 36 de 36** |
+| Clasificación | `proveedores_maestro.f07_clasificacion` | **sí, 36 de 36** |
+| Tipo de Costo/Gasto | `proveedores_maestro.f07_tipo_costo_gasto` | **sí, 36 de 36** |
+| Numero Serie (Sello) | `selloRecibido` | sí, 30 de 36 |
+| Destino / Clase de Documento | fijos | sí |
+
+**Los tres campos fiscales ya estaban en el portal** —`f07_tipo_operacion`,
+`f07_clasificacion`, `f07_tipo_costo_gasto` en la ficha del proveedor— y salen
+en el 100% de las facturas probadas. Nadie los va a teclear más.
+
+## Días de crédito
+
+El estándar lo trae en `resumen.pagos[]`: `plazo` es un catálogo (01 días,
+02 meses, 03 años) y `periodo` el número. **Lo mandan COFARSAL, GAMMA, NOVA,
+MONTREAL y AMERICANA — el 39% de las facturas probadas.** GAMMA dice
+`plazo 01, periodo 30` y su PDF imprime «Plazo: 30 Días»: cuadra.
+
+Dos cosas que hay que saber:
+
+- **`condicionOperacion = 2` (crédito) en TODAS.** Ninguna compra probada es de
+  contado.
+- **Un emisor lo manda mal**: DROGUERÍA AMERICANA pone `plazo 02` (meses) con
+  `periodo 75` — 75 meses son seis años. Se detecta con un tope: si el plazo
+  convertido pasa de 365 días, se toma el número crudo. No se puede confiar
+  ciegamente en el catálogo del emisor.
+
+Los que NO lo mandan lo escriben en el apéndice, en texto libre y cada uno a su
+manera («Crédito 30», «60 días», «Sesenta dias»). **La salida limpia es un campo
+`dias_credito` por proveedor en el portal**, que se propone y se aprende de lo
+que se confirma — igual que el diccionario de productos. Hoy no existe: ni
+`proveedores_maestro` ni `purchase_receipts` lo guardan.
+
+## El sello: ¿es necesario? Sí, y con número
+
+| ¿la compra tiene sello? | compras | ¿se cruzan con su documento? |
+|---|---:|---:|
+| **Sí** | 877 | **777 · 88.6%** |
+| **No** | 594 | **12 · 2.0%** |
+
+**Sin el sello, el 98% de las compras queda huérfana**: no se liga a su DTE, el
+libro no la cruza, el detector de duplicados no la ve y la reconciliación no
+puede confirmarla. Hoy se llena en el 59.6% de los casos. Cargando desde el
+documento se llena siempre, y ese 40% ciego desaparece.
+
+## Los renglones: 36 facturas, 353 renglones
+
+| | renglones | % |
+|---|---:|---:|
+| con producto propuesto | 333 | **94.3%** |
+| con lote | 330 | **93.5%** |
+| con vencimiento | 325 | **92.1%** |
+
+Lo que falta es explicable: los 23 sin lote y 22 de los 28 sin vencimiento son
+**CONGELADOS DEL SABOR** (helados: no los manda nadie), y 4 son MENFAR con su
+`Vencimiento: ?`.
+
+## Una corrección que salió de correr esto
+
+La primera pasada dio **28% de renglones sin ningún candidato**. La causa: al
+emparejador le llegaba la descripción **cruda**, con el lote y la fecha adentro,
+que son ruido distinto en cada renglón y hunden el parecido de nombre.
+
+Pasándole el **nombre limpio** —`nombreLimpio()`, con sus pruebas— bajó a
+**5.7%**. Cinco veces mejor por limpiar la entrada, sin tocar el emparejador.
+
+Y el propio test unitario encontró un error en esa limpieza: `L60640` quedaba
+en `L6`, porque la regla que quita la cantidad final no exigía un espacio antes
+del número.
+
+## Lo que sigue
+
+1. La pantalla que muestra esto y deja confirmar renglón por renglón.
+2. Cada confirmación escribe `compra_producto_alias` — el diccionario —, y de
+   ahí en adelante ese proveedor no vuelve a preguntar por ese producto.
+3. Un `dias_credito` por proveedor, con el mismo mecanismo.
+4. Recién al final, el `insert` al sistema.

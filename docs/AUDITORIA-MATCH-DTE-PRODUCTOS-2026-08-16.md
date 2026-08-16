@@ -417,3 +417,68 @@ eso viene siempre, el widget «Facturas de mi sala» podría asignar sus factura
 solo —hoy las ofrece a todas para que alguien las reclame—. Es una pista, no una
 medición: haría falta leer varias para saber si el campo es constante y si el
 nombre casa con nuestras salas.
+
+---
+
+# Quinta parte: leer el lote y el vencimiento del PDF — probado
+
+El JSON no los trae para cinco proveedores. El PDF sí, y está guardado. Se
+probó con `unpdf`, el mismo extractor que ya usa `sync-purchase-emails`.
+
+## Cómo se lee, y por qué así
+
+**No se busca «un lote» a ciegas.** El JSON ya dice, de cada renglón, el código,
+la descripción, la cantidad y el precio. Así que el dato que falta queda
+**encerrado entre dos anclas conocidas** y no hay que adivinar cuál número de la
+línea es cuál. Dos formas, medidas:
+
+- **(A) columnas sin rótulo** — GAMMA imprime `código descripción LOTE VENCE
+  cant precio`: se lee lo que hay entre la descripción y la cantidad.
+- **(B) rótulos explícitos** — MENFAR imprime `descripción Lote: X
+  Vencimiento: Y`: se busca el rótulo en una ventana corta después de la
+  descripción, para no traerse el lote del renglón siguiente.
+
+Si ninguna ancla aparece, devuelve **nulo**. Un vencimiento inventado es un dato
+sanitario falso; que la pantalla lo pida es lo correcto.
+
+## Resultados
+
+| proveedor | renglones | lote | vencimiento |
+|---|---:|---:|---:|
+| **GAMMA** (2 facturas) | 15 y 15 | **15/15 y 15/15** | **15/15 y 15/15** |
+| MENFAR (2 facturas) | 4 y 1 | **4/4 y 1/1** | 0/4 y 1/1 |
+| RONASA (2 facturas) | 24 y 22 | 23 y 21 | 23 y 20 |
+| VIJOSA | 32 | 24 | 0 |
+| COFARSAL, MONTREAL | 17, 10 | 0 | 0 |
+
+Verificado contra el papel que mandó el usuario: GAMMA renglón 1, lote `D26017`,
+vence `04/2028`. Es exactamente lo que dice la factura.
+
+Los ceros **no son fallas**, y hay que leerlos distinto:
+
+- **COFARSAL y MONTREAL** no necesitan el PDF: su lote y su vencimiento ya vienen
+  dentro de `descripcion`, en el JSON. El extractor busca *después* de la
+  descripción, y ahí ya no está.
+- **MENFAR** imprime `Vencimiento: ?` en una factura y una fecha real en otra:
+  el dato no existe, no es que no se encuentre.
+- **VIJOSA** escribe el vencimiento como `(V-12-27)` —sólo mes y año— y ese
+  formato pide su propia regla.
+
+## Lo que queda claro
+
+**El circuito está completo de punta a punta.** Producto, cantidad, precio,
+lote y vencimiento tienen de dónde salir, y lo único que falta es una regla por
+proveedor para el lote/vencimiento — que es trabajo conocido, no incertidumbre.
+
+El orden correcto para buscarlos, que salió de estas mediciones:
+
+1. **`descripcion` del JSON** (COFARSAL, MONTREAL, RONASA, AMERICANA, SANTA
+   LUCÍA, IMBERTON, VIJOSA, NUEVA SAN CARLOS, LETERAGO, NOVA)
+2. **el PDF** (GAMMA, MENFAR)
+3. **nadie lo manda** (SAVONA, CONGELADOS, STEINER — helados y bebidas): la
+   pantalla lo pide, como hoy.
+
+Y un hallazgo suelto del mismo barrido: **CONGELADOS y STEINER mandan el código
+de barras dentro de la descripción** (`Choco Cono Sarita|7401090803022|15.000
+|Caja`, `ELECTROLIT MORA AZUL 625ML | 7501125184277`). Para el match de producto
+eso los pone en la vía del 99.8%, que es la mejor que hay.

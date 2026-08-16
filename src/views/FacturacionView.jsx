@@ -175,20 +175,46 @@ const ChipDoc = memo(({
 // Ahora guarda el NOMBRE de la variante y el color lo pone el canónico.
 // El color por tipo de documento. Mismo criterio que en VentasView, pero cada
 // vista tiene el suyo: son dos archivos sin nada compartido entre ellos.
-const VARIANTE_DOC = { CCF: 'danger', FCF: 'chart-1' };
+// `COF` es el que de verdad devuelve el sistema para la factura de consumidor
+// final — `FCF` estaba escrito de memoria y nunca coincidió con un dato real, así
+// que esas píldoras salían en gris. Se dejan los dos: el mapa no cuesta nada y
+// borrar el que no aparece hoy es apostar a que nunca aparezca.
+const VARIANTE_DOC = { CCF: 'danger', COF: 'chart-1', FCF: 'chart-1' };
 
 const TIPO_PAGO_VARIANTE = {
+    efectivo: 'chart-6',
     tarjeta: 'chart-1', credito: 'chart-3', transferencia: 'chart-9',
     bitcoin: 'chart-4', cheque:  'chart-9',
 };
 
 
 const TIPO_PAGO_LABELS = {
+    // `efectivo` no estaba: los tres sitios que usaban este mapa miraban SOLO
+    // las formas de pago que no son efectivo. La cola de Hacienda las muestra
+    // todas, y sin esta línea el 100% de sus documentos decía «efectivo» en
+    // minúscula porque caía en el `|| tipo` del final.
+    efectivo:      'Efectivo',
     tarjeta:       'Tarjeta',
     credito:       'Crédito',
     transferencia: 'Transferencia',
     cheque:        'Cheque',
     bitcoin:       'Bitcoin',
+};
+
+// El tipo de cliente decide qué se puede hacer con el documento: al
+// contribuyente el circuito automático NO le corrige la ficha (decisión del
+// 2026-08-09), así que su pendiente se resuelve a mano. Por eso va en la
+// tarjeta y no escondido en un tooltip.
+//
+// Categórico puro, sin severidad: un contribuyente no es «peor» que un
+// consumidor. `neutral` para el que no tiene ficha ligada — que es un tercer
+// estado real, no un vacío.
+// Sólo variantes que `Badge` define de verdad (1, 3, 4, 6, 8, 9). Pedirle una
+// que no existe no falla: dibuja la píldora SIN fondo, en silencio — es el
+// mismo motivo por el que el canónico las escribe literales y no en un bucle.
+const CATEGORIA_CLIENTE_VARIANTE = {
+    Contribuyente: 'chart-3',
+    Consumidor:    'chart-8',
 };
 
 const TIPO_PAGO_THEME = {
@@ -888,6 +914,102 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
 // marca el vencimiento — de ahí el badge en warning de la fila de fecha.
 const GRACIA_SELLO_DIAS = 2;
 
+// ─── La tarjeta de un documento pendiente de Hacienda (2026-08-16) ──────────
+//
+// Reemplaza la píldora con tooltip. El tooltip tenía tres datos —correlativo,
+// cliente y total— y **en un teléfono no existe**: sin hover, la lista entera
+// era una hilera de `#349572 COF ✓` sin decir de qué documento se trata. En
+// escritorio tampoco servía para comparar: había que apuntar de a uno y el dato
+// desaparecía al mover el puntero.
+//
+// Lo que la tarjeta agrega es lo que hace falta para decidir sin abrir nada:
+// el TIPO DE CLIENTE —a un contribuyente el circuito automático no le corrige
+// la ficha (decisión del 2026-08-09), así que ése se resuelve a mano— y la
+// FORMA DE PAGO.
+//
+// No lleva `data-surface="card"`: vive DENTRO de la tarjeta de la sucursal y
+// anidarlas daría dos anillos concéntricos (DESIGN.md §5.1). Una franja dentro
+// de una tarjeta es `bg-surface-card-hover` + borde.
+const TARJETA_TONO = {
+    resolviendo: 'border-success/40 bg-success/10',
+    nulos:       'border-chart-3/40 bg-chart-3/[0.06]',
+    ccf:         'border-danger/30 bg-danger/[0.06]',
+    normal:      'border-divider bg-surface-card-hover/60',
+};
+
+const TarjetaPendienteMH = memo(({
+    r, isCCF, isVisited, isCopied, hasNullCampos, isSolving, canEdit,
+    onCopiar, onResolver,
+}) => {
+    const tono = isSolving ? TARJETA_TONO.resolviendo
+               : hasNullCampos ? TARJETA_TONO.nulos
+               : isCCF ? TARJETA_TONO.ccf
+               : TARJETA_TONO.normal;
+    const categoria = r.cliente_categoria;
+    return (
+        <div className={`rounded-xl border px-3.5 py-3 transition-all duration-[var(--dur-fast)] ${tono} ${
+            isVisited && !isSolving ? 'opacity-40' : ''}`}>
+            {/* Documento y monto */}
+            <div className="flex items-start gap-2">
+                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
+                {/* `min-w-0` o el `truncate` no recorta: un hijo de flex no baja
+                    de su ancho de contenido sin él. */}
+                <p className={`flex-1 min-w-0 truncate font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>
+                    {r.correlativo}
+                </p>
+                <p className={`shrink-0 text-body-sm font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>
+                    <Monto v={r.total} />
+                </p>
+            </div>
+
+            {/* Cliente */}
+            <p className="mt-1.5 truncate text-label font-semibold text-content-2">
+                {r.cliente || 'Sin cliente'}
+            </p>
+
+            {/* Tipo de cliente · forma de pago · hora */}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {/* Sin ficha ligada NO es lo mismo que sin categoría: se dice,
+                    porque es justo el caso que no se puede corregir solo. */}
+                <Badge variant={CATEGORIA_CLIENTE_VARIANTE[categoria] || 'neutral'} size="sm">
+                    {categoria || 'Sin ficha'}
+                </Badge>
+                {r.tipo_pago && (
+                    <Badge variant={TIPO_PAGO_VARIANTE[r.tipo_pago] || 'neutral'} size="sm">
+                        {TIPO_PAGO_LABELS[r.tipo_pago] || r.tipo_pago}
+                    </Badge>
+                )}
+                {r.hora && <span className="text-micro font-bold text-content-3">{String(r.hora).slice(0, 5)}</span>}
+            </div>
+
+            {/* Acciones */}
+            <div className="mt-2.5 flex items-center gap-2 border-t border-divider pt-2.5">
+                <Button
+                    variant="secondary" size="sm"
+                    icon={isCopied || isVisited ? Check : Copy}
+                    onClick={onCopiar}
+                    aria-label={isCopied ? 'Copiado' : `Copiar ${r.erp_invoice_id ? `#${r.erp_invoice_id}` : 'el número'}`}
+                    className="font-mono"
+                >
+                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                </Button>
+                {canEdit && (
+                    <Button
+                        variant="secondary" size="sm"
+                        tone={isSolving ? 'danger' : 'success'} soft
+                        icon={isSolving ? X : Check}
+                        onClick={onResolver}
+                        aria-pressed={isSolving}
+                        className="ml-auto"
+                    >
+                        {isSolving ? 'Cancelar' : 'Solventar'}
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+});
+
 function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, paused, barraFiltros }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
@@ -969,14 +1091,30 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         const fini = `${y}-${m}-01`;
         const ffin = `${y}-${m}-${new Date(y, n.getMonth() + 1, 0).getDate()}`;
 
-        // fetchPendingMhInvoices pagina con fetchAllRows — el backlog de
-        // pendientes de Hacienda (recibido_mh IS NULL) puede superar 1000 filas.
-        const [pendData, { data: resInvs }, { data: allResolutions }, { data: nullsData }] = await Promise.all([
-            fetchPendingMhInvoices(filterBranch),
-            fetchConfirmedMhInvoices(filterBranch, fini, ffin),
-            fetchInvoiceResolutionsHistorial('invoice_id, comment, resolved_by, resolved_at'),
-            fetchInvoiceNullIds(),
-        ]);
+        // `fetchPendingMhInvoices` LANZA si el servidor rechaza —sin permiso de
+        // Facturación, por ejemplo—. Sin el try/finally de abajo esa excepción
+        // dejaba la vista clavada en esqueletos para siempre: `setLoading(false)`
+        // y el candado del sondeo quedaban sin ejecutar, y el fallo se leía como
+        // "está cargando".
+        let pendData, resInvs, allResolutions, nullsData;
+        try {
+            [pendData, { data: resInvs }, { data: allResolutions }, { data: nullsData }] = await Promise.all([
+                fetchPendingMhInvoices(filterBranch),
+                fetchConfirmedMhInvoices(filterBranch, fini, ffin),
+                fetchInvoiceResolutionsHistorial('invoice_id, comment, resolved_by, resolved_at'),
+                fetchInvoiceNullIds(),
+            ]);
+        } catch (e) {
+            console.error('loadData (pendiente MH):', e?.message || e);
+            useToastStore.getState().showToast(
+                'No se pudo cargar la cola de Hacienda',
+                mensajeAmigable(e, 'Inténtalo de nuevo en un momento.'),
+                'error',
+            );
+            setLoading(false);
+            pollingRef2.current = false;
+            return;
+        }
 
         // Invoices that also have non-MH null campos (e.g. cliente, correlativo)
         setNullCamposIds(new Set((nullsData || []).map(r => r.id)));
@@ -1190,53 +1328,29 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                     <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : vencida ? 'warning' : 'neutral'} size="sm">{dLabel}</Badge>
                                                 </div>
 
-                                                {/* Pills row */}
-                                                <div className="flex flex-wrap gap-1.5">
+                                                {/* Tarjetas — una por documento. Una sola columna en el
+                                                    teléfono; en pantallas anchas entran dos o tres, que
+                                                    es lo que la píldora resolvía a costa de no decir
+                                                    nada hasta que la apuntabas. */}
+                                                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
                                                     {fechaRows.map(r => {
-                                                        const isCCF      = r.tipo_documento === 'CCF';
-                                                        const isSolving  = solvingId === r.id;
-                                                        const isCopied   = copiedId === r.erp_invoice_id;
-                                                        const isVisited  = visitedIds.has(String(r.erp_invoice_id));
-                                                        const hasNullCampos = nullCamposIds.has(r.id);
+                                                        const isSolving = solvingId === r.id;
                                                         return (
-                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-[var(--dur-slow)] ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
-                                                                {/* Pill */}
-                                                                <ChipDoc
-                                                                    estado={isVisited ? 'visitado' : hasNullCampos ? 'nulos' : isCCF ? 'ccf' : 'normal'}
-                                                                    copiado={isCopied}
-                                                                    resuelto={isSolving}
-                                                                    onCopiar={() => copyErpId(r.erp_invoice_id)}
-                                                                    etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                                                    nombreResolver="esta factura"
-                                                                    onResolver={canEdit ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
-                                                                >
-                                                                    <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
-                                                                </ChipDoc>
-
-                                                                {/* Tooltip */}
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none
-                                                                    opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100
-                                                                    transition-all duration-[var(--dur-fast)] ease-out w-[210px]">
-                                                                    <div data-surface="card" className="px-3.5 py-3">
-                                                                        <div className="space-y-2">
-                                                                            <div>
-                                                                                <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                                <p className={`font-mono text-body-sm font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
-                                                                            </div>
-                                                                            {r.cliente && <div>
-                                                                                <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
-                                                                                <p className="text-label font-semibold text-content-2 truncate">{r.cliente}</p>
-                                                                            </div>}
-                                                                            <div className="flex items-center justify-between pt-1 border-t border-divider">
-                                                                                <p className="text-micro font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                                <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{<Monto v={r.total} />}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    {/* Arrow */}
-                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
-                                                                </div>
-                                                            </div>
+                                                            <TarjetaPendienteMH
+                                                                key={r.id}
+                                                                r={r}
+                                                                isCCF={r.tipo_documento === 'CCF'}
+                                                                isSolving={isSolving}
+                                                                isCopied={copiedId === r.erp_invoice_id}
+                                                                isVisited={visitedIds.has(String(r.erp_invoice_id))}
+                                                                hasNullCampos={nullCamposIds.has(r.id)}
+                                                                canEdit={canEdit}
+                                                                onCopiar={() => copyErpId(r.erp_invoice_id)}
+                                                                onResolver={() => {
+                                                                    if (isSolving) { setSolvingId(null); setComment(''); }
+                                                                    else { setSolvingId(r.id); setComment(''); }
+                                                                }}
+                                                            />
                                                         );
                                                     })}
                                                 </div>

@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import {
   login, leerFicha, idClienteDeFactura, escribirCampo, escribirCampos,
-  ponerUbicacion, duiValido, filaPortal,
+  ponerUbicacion, duiValido, telefonoValido, TELEFONO_DEFECTO, filaPortal,
 } from "../_shared/erp-clientes.ts";
 import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
 
@@ -36,9 +36,17 @@ import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
 // ── La tabla de decisión, sobre la ficha DEL ERP ────────────────────────────
 //   sin municipio ................... el triple por defecto
 //   con municipio, sin distrito ..... el matcher
-//   rechazada por distrito .......... el triple por defecto
+//   rechazada por ubicación ......... el triple por defecto
 //   DUI que no cumple el algoritmo .. borrarlo
+//   teléfono que no cumple .......... el de la empresa (23010013)
 //   rechazo no accionable (fecEmi) .. nada, es informativo
+//
+// ⚠️ Esta tabla y la lista de `fichas_para_corregir_dte()` son la MISMA lista
+// dicha dos veces, y tienen que moverse juntas. El teléfono lo probó: Hacienda
+// rechazaba por `receptor.telefono`, la vista de rechazos lo marcaba
+// `accionable`, y como el campo no estaba ni en la consulta ni acá, la ficha no
+// llegaba nunca a candidata. La corrida informaba «3 candidatos» sobre 4
+// rechazos y el reenvío recibía el mismo rechazo, todas las noches.
 //
 // Las tres primeras y la cuarta son las reglas ① y ③ de `bloque.py`, que la
 // primera versión de esta función no se trajo: se portó el matcher —lo difícil,
@@ -96,6 +104,13 @@ const UBICACION_DEFECTO = {
   municipio: "Chalatenango Sur",
   distrito: "CHALATENANGO",
 };
+
+// Qué rechazos se arreglan poniendo la ubicación por defecto. Antes esto era
+// `c.origen === "rechazo"` a secas, y alcanzaba porque los únicos rechazos que
+// llegaban acá eran de ubicación o de DUI. Con el teléfono adentro deja de
+// alcanzar: un rechazo de `receptor.telefono` habría reescrito la ubicación de
+// una ficha que la tenía bien.
+const CAMPOS_UBICACION = new Set(["distrito", "municipio", "departamento"]);
 
 /**
  * ¿Los dos nombres son la misma persona escrita distinto?
@@ -174,7 +189,8 @@ Deno.serve(async (req) => {
     const res = {
       fusionadas: 0, facturas_movidas: 0, a_revisar: 0,
       distrito_escrito: 0, distrito_sin_evidencia: 0, espejadas: 0,
-      ubicacion_por_defecto: 0, dui_borrado: 0, solo_espejo: 0, ya_estaban: 0,
+      ubicacion_por_defecto: 0, dui_borrado: 0, telefono_puesto: 0,
+      solo_espejo: 0, ya_estaban: 0,
       sin_numero_no_resuelto: 0, numero_resuelto: 0, filas_a_espejar: 0,
       espejo_rechazado: 0,
       frenadas: 0, fallidas: 0, cortada_por_tiempo: false,
@@ -318,7 +334,25 @@ Deno.serve(async (req) => {
             } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
             else { res.fallidas++; detalle.push({ ficha: c.name, accion: "dui", error: w.motivo }); }
           }
-        } else if (!ficha.campos.municipio || c.origen === "rechazo") {
+        } else if (c.campo === "phone" || !telefonoValido(ficha.campos.telefono1)) {
+          // Un teléfono que no cumple se reemplaza por el de la empresa — no se
+          // borra. Es la diferencia con el DUI: un DUI inventado sería un dato
+          // falso de identidad, mientras que el teléfono es un contacto y
+          // Hacienda EXIGE que tenga forma. Sin él el documento no entra.
+          //
+          // Va preventivo además de por rechazo, igual que el DUI: son 26 fichas
+          // en 27,907 (medido el 2026-08-16), así que se agota en una corrida y
+          // no vuelve a costar nada.
+          const antes = ficha.campos.telefono1 ?? "";
+          const w = await escribirCampos(cookie, erpId, { telefono1: TELEFONO_DEFECTO });
+          if (w.ok) {
+            res.telefono_puesto++;
+            correcciones.push({ erp_id: erpId, customer_id: c.customer_id, campo: "phone",
+                                antes, despues: TELEFONO_DEFECTO, motivo: "telefono_invalido" });
+            detalle.push({ ficha: c.name, accion: "teléfono por defecto", antes });
+          } else if (esRechazoPorDuplicado(w.motivo)) { aRevisarDuplicado(c, erpId, w.motivo); }
+          else { res.fallidas++; detalle.push({ ficha: c.name, accion: "teléfono", error: w.motivo }); }
+        } else if (!ficha.campos.municipio || (c.origen === "rechazo" && CAMPOS_UBICACION.has(c.campo))) {
           // Regla ① de bloque: sin municipio no hay de dónde deducir el
           // distrito. Y si Hacienda rechazó la ubicación, el default también —
           // decisión del usuario: no se diagnostica, se pone el de siempre.

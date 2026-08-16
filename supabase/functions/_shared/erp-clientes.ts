@@ -237,6 +237,30 @@ export async function ponerUbicacion(
   return { ok, pasos, antes, despues, cambios, motivo: ok ? undefined : `quedó ${despues}` };
 }
 
+// ── El teléfono de la ficha ──────────────────────────────────────────────────
+//
+// Hacienda exige un teléfono de receptor con forma —rechazó la 0000068683_COF
+// con «Campo #/receptor/telefono no cumple el tamaño mínimo permitido»— y el
+// dato no siempre está: medido el 2026-08-16, 26 de 27,907 fichas no tienen
+// ninguno y ninguna tiene uno malformado.
+//
+// Cuando falta o no cumple, va el de la empresa. Es una decisión del usuario, no
+// un invento: el documento tiene que poder transmitirse, y un teléfono de
+// contacto real de la farmacia es preferible a inventar dígitos o a dejar la
+// factura sin sello.
+export const TELEFONO_DEFECTO = "23010013";
+
+/**
+ * ¿Esto es un teléfono que Hacienda va a aceptar? OCHO dígitos, ni más ni menos.
+ *
+ * Se miran los DÍGITOS, no la cadena: el ERP guarda «7556-5498» con guion y ese
+ * formato es válido — lo que no lo es son el vacío, el `undefined` y los restos
+ * de migración. Mismo criterio que `duiValido`: la FORMA del dato manda, no que
+ * la columna no esté en null.
+ */
+export const telefonoValido = (tel: string | null | undefined): boolean =>
+  /^\d{8}$/.test(String(tel ?? "").replace(/\D/g, ""));
+
 /** Puerto de `dui_valido` de bloque.py (a su vez de src/utils/duiUtils.js). */
 export function duiValido(dui: string | null | undefined): boolean | null {
   if (!dui || !dui.trim()) return null;              // vacío: no opina

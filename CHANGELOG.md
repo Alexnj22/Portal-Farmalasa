@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.628.0 — La cola de Hacienda se lee sin apuntar, y el teléfono deja de trabar el envío
+
+**El barrido de anoche corrió entero y no arregló nada, y eso tenía dos causas
+distintas.** De las cinco facturas que intentó, una entró y cuatro rebotaron.
+Después llamó a la corrección de fichas y volvió a mandarlas: los mismos cuatro
+rechazos, palabra por palabra.
+
+**Tres eran de contribuyentes**, a los que el circuito automático no les toca la
+ficha por decisión tomada el 9 de agosto. La corrección las miró, comprobó que
+no podía escribirlas y las contó como «sólo espejo». Nada cambió, así que el
+reenvío pidió el mismo rechazo. **La cuarta era de un consumidor y fallaba por el
+teléfono**: Hacienda contesta *«el campo teléfono no cumple el tamaño mínimo»* y
+la ficha lo tenía vacío. La lista de campos que la corrección sabe arreglar no
+incluía el teléfono, así que esa ficha no llegaba nunca a candidata — la corrida
+informaba «3 candidatos» sobre 4 rechazos y nadie notaba la que faltaba.
+
+Tres cambios:
+
+**El teléfono se corrige.** Si falta o no tiene ocho dígitos, se pone el de la
+empresa (2301-0013). Es la misma regla que ya existía para el carné inválido, con
+una diferencia: el carné se borra y el teléfono se reemplaza — un carné inventado
+sería un dato falso de identidad, mientras que Hacienda **exige** un teléfono con
+forma y sin él el documento no entra. Son 26 fichas en 27,907, así que se agota
+en una corrida. Verificado en vivo: la factura 0000068683 llevaba 12 intentos
+fallidos desde el 13 de agosto y entró con sello a la primera.
+
+**El reenvío de la misma noche sólo ocurre si hay algo que corregir, y sólo si se
+corrigió.** Antes se disparaba con «Hacienda se queja de un dato del cliente»,
+que no es lo mismo que «esto se arregla solo»: por eso las dos funciones corrían
+encadenadas todas las noches para no cambiar un dato. Ahora se pregunta primero
+si queda alguna ficha que el circuito pueda escribir —consumidor, con un campo
+que sabe arreglar— y después se mira si la corrección realmente escribió algo.
+Si no, no se reenvía y queda anotado por qué.
+
+**La cola de Pendiente MH pasó de píldoras a tarjetas.** Cada documento mostraba
+`#349572 COF` y el resto vivía en un globo que aparecía al apuntar con el mouse
+— o sea que **en el teléfono no existía**: la lista entera era una hilera de
+números sin decir de qué factura se trata. Ahora cada documento es una tarjeta
+con su tipo, correlativo, cliente, monto, **tipo de cliente** y **forma de pago**,
+en una columna en el teléfono y en dos o tres en pantallas anchas. El tipo de
+cliente está ahí porque es el que decide qué hacer: un contribuyente no se
+arregla solo y hay que ir a la ficha.
+
+Ese dato viene por una función propia del servidor y no leyendo la tabla de
+clientes desde el navegador: esa tabla exige permiso de Clientes o Cotizaciones,
+y quien trabaja Facturación puede no tener ninguno de los dos. Leerla directo no
+habría fallado — habría devuelto la categoría vacía, que se ve igual que «este
+cliente no tiene ficha».
+
 ## v2.627.2 — Aprobar desde el aviso deja de fallar y en la pantalla se aprueba de un toque
 
 **Aprobar desde la campana daba «No se pudo procesar la acción», y sólo

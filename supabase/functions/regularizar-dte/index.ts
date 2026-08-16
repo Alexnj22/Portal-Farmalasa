@@ -393,39 +393,72 @@ Deno.serve(async (req) => {
     // las 21:30 y recién a las 22:30 se reintentaba. Una factura rechazada
     // pasaba 24 horas sin sello por un dato que se arregla solo.
     //
-    // Ahora, si quedó algún rechazo accionable —de los que se corrigen tocando
-    // la ficha— se llama a la corrida de fichas en alcance «rechazos» y se
-    // vuelve a enviar, todo dentro de la misma noche.
+    // Ahora, si hay algo que la corrección PUEDA escribir, se llama a la
+    // corrida de fichas en alcance «rechazos» y se vuelve a enviar, todo
+    // dentro de la misma noche.
     //
     // `segundaVuelta` es el freno de recursión: la llamada de vuelta lo trae
     // en true y ahí el bloque no se ejecuta. Sin eso, un rechazo que la
     // corrección no arregla haría rebotar las dos funciones sin fin.
+    //
+    // ── Dos condiciones, y las dos se aprendieron de una noche vacía ──────
+    // El 2026-08-16 la segunda vuelta corrió y no cambió nada: los 4 rechazos
+    // eran 3 de contribuyentes —a los que el circuito NO les escribe la ficha,
+    // decisión del 2026-08-09— y uno de teléfono, campo que entonces no tenía
+    // regla. El disparador miraba `accionable`, que dice «Hacienda se queja de
+    // un dato del receptor», NO «esto se puede corregir solo».
+    //
+    //   1. Antes de correr: preguntar por lo que el corrector puede ESCRIBIR.
+    //      `fichas_para_corregir_dte()` ya lo sabe y es la misma lista que usa
+    //      la corrida — preguntarle a ella en vez de rehacer el filtro acá es
+    //      lo que evita que las dos se desincronicen otra vez.
+    //   2. Después de corregir: reenviar sólo si la corrección ESCRIBIÓ algo.
+    //      Mandarle a Hacienda el mismo documento sin cambiarle un dato es
+    //      pedirle el mismo rechazo, y encima ensucia el historial de intentos.
     let segundaVueltaHecha = false;
+    let segundaVueltaMotivo: string | null = null;
     if (!segundaVuelta && esCron) {
-      const { count } = await admin
-        .from("dte_rechazos_vigentes")
-        .select("invoice_id", { count: "exact", head: true })
-        .eq("accionable", true);
+      const { data: candidatos, error: eCand } = await admin.rpc("fichas_para_corregir_dte");
+      if (eCand) console.error("fichas_para_corregir_dte:", eCand.message);
+      const corregibles = (candidatos ?? []).filter(
+        (c: { origen: string; puede_escribir: boolean; ya_corregido: boolean }) =>
+          c.origen === "rechazo" && c.puede_escribir && !c.ya_corregido,
+      ).length;
 
       // Margen para las DOS llamadas encadenadas, no el resto del presupuesto:
       // arrancar la cadena sin tiempo de terminarla deja la corrección hecha
       // y el reenvío sin hacer, que es el peor de los dos mundos.
       const MARGEN_SEGUNDA_VUELTA_MS = 60_000;
-      if ((count ?? 0) > 0 && Date.now() - arranque < PRESUPUESTO_MS - MARGEN_SEGUNDA_VUELTA_MS) {
+      const hayTiempo = Date.now() - arranque < PRESUPUESTO_MS - MARGEN_SEGUNDA_VUELTA_MS;
+
+      if (!corregibles) segundaVueltaMotivo = "ningún rechazo se corrige solo";
+      else if (!hayTiempo) segundaVueltaMotivo = "sin tiempo en esta corrida";
+      else {
         try {
           const cab = { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` };
-          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sincronizar-fichas-clientes`, {
+          const rFichas = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sincronizar-fichas-clientes`, {
             method: "POST", headers: cab,
             body: JSON.stringify({ alcance: "rechazos" }),
             signal: AbortSignal.timeout(120_000),
           });
-          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
-            method: "POST", headers: cab,
-            body: JSON.stringify({ alcance: "todas", segundaVuelta: true }),
-            signal: AbortSignal.timeout(120_000),
-          });
-          segundaVueltaHecha = true;
+          const f = await rFichas.json().catch(() => ({}));
+          // Todo lo que cambia lo que el sistema le va a mandar a Hacienda. Una
+          // fusión cuenta: reapunta la factura a OTRA ficha, así que el receptor
+          // del documento deja de ser el mismo.
+          const escritas = (f?.distrito_escrito ?? 0) + (f?.ubicacion_por_defecto ?? 0)
+                         + (f?.dui_borrado ?? 0) + (f?.telefono_puesto ?? 0) + (f?.fusionadas ?? 0);
+          if (!escritas) {
+            segundaVueltaMotivo = "la corrección de fichas no cambió nada";
+          } else {
+            await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
+              method: "POST", headers: cab,
+              body: JSON.stringify({ alcance: "todas", segundaVuelta: true }),
+              signal: AbortSignal.timeout(120_000),
+            });
+            segundaVueltaHecha = true;
+          }
         } catch (e) {
+          segundaVueltaMotivo = "falló la cadena";
           console.error("segunda vuelta:", e instanceof Error ? e.message : String(e));
         }
       }
@@ -454,6 +487,9 @@ Deno.serve(async (req) => {
         excluidas: excluidas.size,
         cortada_por_tiempo: cortadaPorTiempo,
         segunda_vuelta: segundaVueltaHecha,
+        // Por qué NO se hizo. Sin esto, una noche sin segunda vuelta se lee
+        // igual que una noche en la que no hacía falta — y son cosas distintas.
+        segunda_vuelta_motivo: segundaVueltaMotivo,
         detalle,
       },
     });
@@ -471,6 +507,7 @@ Deno.serve(async (req) => {
       excluidas: excluidas.size,
       cortada_por_tiempo: cortadaPorTiempo,
       segunda_vuelta: segundaVueltaHecha,
+      segunda_vuelta_motivo: segundaVueltaMotivo,
       detalle,
     });
 

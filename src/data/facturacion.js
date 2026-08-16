@@ -112,19 +112,30 @@ export const tieneSelloMh = (recibidoMh) => String(recibidoMh ?? '').length === 
 // tiene sello y su observación es de otra cosa. Así que acá cae todo lo que no
 // tenga un sello de 40 caracteres, y las dos colas —ésta y el barrido nocturno—
 // usan la misma definición. Que no coincidan es cómo se pierde una factura.
-export function fetchPendingMhInvoices(filterBranch) {
-    return fetchAllRows(() => {
-        let q = supabase
-            .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, recibido_mh')
-            .or(`recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`)
-            .not('estado', 'eq', 'NULA')
-            .order('branch_id', { ascending: true })
-            .order('fecha',     { ascending: true })
-            .order('hora',      { ascending: true });
-        if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
-        return q;
+//
+// ── Por qué es un RPC y no un select (2026-08-16) ───────────────────────────
+// La cola pasó a pintarse como tarjetas y una tarjeta dice de QUÉ CLIENTE es el
+// documento: contribuyente o consumidor cambia lo que se puede hacer con él.
+//
+// Esa categoría vive en `customers`, y embeberla en el select del navegador
+// —`customers(categoria)`— fallaría en silencio: la policy de esa tabla exige
+// `clientes.can_view` **o** `cotizaciones.can_view`, y quien trabaja Facturación
+// puede no tener ninguna de las dos. PostgREST no da error en ese caso, devuelve
+// el embed en `null`: «sin categoría» se vería idéntico a «no tengo permiso».
+//
+// `get_pending_mh_invoices` es DEFINER con su propia compuerta
+// (`facturacion.can_view`): o contesta con el dato, o lanza. De paso devuelve
+// `json` (Patrón C de CLAUDE.md), así que el tope de 1000 filas de PostgREST
+// deja de aplicar y desaparece el bucle de `.range()`.
+export async function fetchPendingMhInvoices(filterBranch) {
+    const { data, error } = await supabase.rpc('get_pending_mh_invoices', {
+        p_branch_id: filterBranch ? Number(filterBranch) : null,
     });
+    // Lanza a propósito: una cola vacía por falta de permiso se vería igual que
+    // una cola vacía porque no hay pendientes, y ésa es justo la confusión que
+    // dejó una factura un año figurando como confirmada.
+    if (error) throw new Error(error.message);
+    return data ?? [];
 }
 
 // `recibido_mh` es **text**: guarda el sello de recepción de Hacienda (40

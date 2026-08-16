@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.639.1 — El gestor de contraseñas vuelve a poder rellenar el login
+
+Segundo intento sobre el mismo reporte: *«sigo sin poder entrar con contraseñas
+guardadas, solo pega el usuario y no la contraseña»*.
+
+- **`isTrusted` no era la línea correcta.** La corrección anterior daba por
+  «de una persona» todo pegado de confianza, suponiendo que una extensión sólo
+  puede disparar eventos sintéticos. No es así: muchos gestores rellenan con
+  `document.execCommand('paste')`, y ese evento lo genera el navegador — llega
+  igual de confiable que un Ctrl+V. El candado seguía cerrado justo para quien
+  no debía.
+- **Lo que sí distingue a la persona es el atajo.** Su pegado viene precedido
+  de su propio `Ctrl/Cmd+V` milisegundos antes; el del gestor no viene
+  precedido de nada. La regla, con su porqué y sus cuatro casos, vive en
+  `src/utils/pegadoManual.js` y está anclada en
+  `tests/unit/pegadoManual.test.js` — incluido el caso que esto corrige.
+  Queda una rendija a propósito: pegar desde el menú contextual del navegador.
+  Cerrarla exigiría bloquear el clic derecho sobre el campo, que es donde
+  varios gestores ponen su «rellenar contraseña».
+- **El detector de ráfagas se apaga en el campo de contraseña** salvo en
+  equipos donde consta que hay lector. Un gestor que rellena tecleando escribe
+  tan rápido como un lector, y ahí el detector podía comerse la contraseña. En
+  ese campo no hay nada que ocultar —ya enmascara— y lo peor que puede pasar
+  sin él es un intento de login fallido; en «usuario», donde el carné SÍ
+  quedaría a la vista, sigue encendido siempre.
+
 ## v2.639.0 — Las ventas por sucursal se acomodan y también viven en Comercial
 
 Reportado: *«porque los de ventas por sucursal no salen? ni en comercial?»*.

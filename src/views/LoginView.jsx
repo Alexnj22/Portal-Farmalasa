@@ -10,6 +10,7 @@ import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
 import { mensajeAmigable } from '../utils/errorMessages';
 import useMediaQuery from '../hooks/useMediaQuery';
+import { esAtajoDePegar, esPegadoDeUnaPersona } from '../utils/pegadoManual';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
@@ -612,14 +613,32 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     // 2026-08-16): una credencial que viaja por el portapapeles queda ahí,
     // legible para cualquier otra app y para el siguiente que se siente.
     //
-    // Pero SÓLO el pegado de una persona. `isTrusted` es la diferencia: lo que
-    // viene de un Ctrl+V real llega en `true`, y lo que dispara una extensión
-    // —un gestor de contraseñas rellenando el formulario— llega en `false`.
-    // Sin esa distinción el bloqueo se lleva puesto al gestor: el usuario
-    // reportó el 2026-08-16 que el campo de contraseña quedaba vacío y el
-    // login devolvía error. Un candado que impide entrar no es un candado.
+    // Pero SÓLO el pegado de una persona, y la marca de que lo es no es
+    // `isTrusted` — ése fue el primer intento y NO alcanzó (el usuario siguió
+    // sin poder entrar: «solo pega el usuario y no la contraseña»). Muchos
+    // gestores rellenan con `document.execCommand('paste')`, y a ese evento lo
+    // genera el navegador, así que llega `isTrusted: true` igual que un Ctrl+V.
+    //
+    // Lo que sí distingue a la persona es el ATAJO: su pegado viene precedido
+    // por un `Ctrl/Cmd+V` suyo, milisegundos antes. El del gestor no viene
+    // precedido de nada.
+    //
+    // Queda una rendija a propósito: pegar desde el menú contextual del
+    // navegador. Cerrarla exigiría bloquear el clic derecho sobre el campo, y
+    // ahí es donde varios gestores ponen su «rellenar contraseña» — o sea que
+    // cerrarla vuelve a romper justamente lo que este comentario existe para
+    // no romper. Un candado que impide entrar no es un candado.
+    // La regla, con su porqué y sus casos, vive en `utils/pegadoManual.js`
+    // (probada en `tests/unit/pegadoManual.test.js`).
+    const ultimoAtajoPegarRef = useRef(0);
+    useEffect(() => {
+        const onKey = (e) => { if (esAtajoDePegar(e)) ultimoAtajoPegarRef.current = Date.now(); };
+        window.addEventListener('keydown', onKey, true);
+        return () => window.removeEventListener('keydown', onKey, true);
+    }, []);
+
     const bloquearPegado = (e) => {
-        if (!e.isTrusted) return;              // relleno del gestor: pasa
+        if (!esPegadoDeUnaPersona({ confiable: e.isTrusted, ahora: Date.now(), ultimoAtajo: ultimoAtajoPegarRef.current })) return;
         e.preventDefault();
         setError('Por seguridad, escribe tus datos: aquí no se pega.');
     };
@@ -798,7 +817,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             autoComplete={autoComplete}
                             spellCheck="false"
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
-                            onKeyDown={vigilarRafaga}
+                            // En «usuario» el detector va SIEMPRE: ahí es donde
+                            // el carné quedaría escrito a la vista, y eso puede
+                            // pasar en la primera lectura de un equipo que
+                            // todavía no sabemos que tiene lector.
+                            // En «contraseña» no hay nada que ocultar —el campo
+                            // ya enmascara— y lo peor que puede pasar sin él es
+                            // un intento de login fallido. A cambio, un gestor
+                            // que rellena TECLEANDO deja de correr el riesgo de
+                            // que el detector se le coma la contraseña. Sólo se
+                            // enciende en equipos donde consta que hay lector.
+                            onKeyDown={(id === 'username' || conLector) ? vigilarRafaga : undefined}
                             onPaste={bloquearPegado} onDrop={bloquearPegado} onDragOver={e => e.preventDefault()}
                             // Copiar y cortar sólo se bloquean en la contraseña:
                             // el usuario es un dato público (sale en la lista de

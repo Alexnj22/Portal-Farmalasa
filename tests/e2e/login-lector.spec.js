@@ -65,12 +65,27 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
         await expect(usuario).toHaveValue('asdfghij');
     });
 
-    test('la ráfaga tampoco entra por el campo de contraseña', async ({ page }) => {
+    // En «contraseña» el detector es CONDICIONAL, y la razón está medida: un
+    // gestor de contraseñas que rellena tecleando escribe igual de rápido que
+    // un lector, y si el detector se lo come, el usuario no puede entrar (pasó
+    // el 2026-08-16). Ahí no hay nada que ocultar —el campo ya enmascara— y lo
+    // peor que puede pasar sin detector es un intento de login fallido. Así
+    // que sólo se enciende donde consta que hay lector.
+    test('en un equipo con lector, la ráfaga tampoco entra por la contraseña', async ({ page }) => {
+        await page.addInitScript(() => localStorage.setItem('lector_carne_visto', '1'));
+        await page.goto('/login');
         const clave = page.locator('#password');
         await clave.click();
         await page.keyboard.type('447', { delay: RAFAGA });
         await page.keyboard.press('Enter');
         await expect(clave).toHaveValue('');
+    });
+
+    test('en un equipo sin lector, la contraseña recibe las teclas rápidas', async ({ page }) => {
+        const clave = page.locator('#password');
+        await clave.click();
+        await page.keyboard.type('Sup3rSecreta!', { delay: RAFAGA });
+        await expect(clave).toHaveValue('Sup3rSecreta!');
     });
 });
 

@@ -267,3 +267,94 @@ ninguno, Leterago manda `false` como descripción— la llave de repuesto es
 Lo que el diccionario **no** debe hacer es aprender solo de lo que adivinó el
 parecido de nombre. Se siembra con lo que confirmó una persona y con lo que
 resolvió el código de barras; el parecido propone, nunca enseña.
+
+---
+
+# Tercera parte: el formato de cada proveedor
+
+## Lo que NO varía: cantidad y precio
+
+El `cuerpoDocumento` del DTE lo fija Hacienda, así que `cantidad`, `precioUni`,
+`uniMedida`, `numItem` y `ventaGravada/ventaExenta/ventaNoSuj` **vienen como
+campos numéricos en todos los proveedores por igual**. No hay nada que
+interpretar ni que medir por proveedor: el visor de facturas del portal
+(`FormPurchaseDteViewer.jsx`) ya los lee así de documentos reales.
+
+**Lo único que cambia de un proveedor a otro es qué escriben dentro de
+`descripcion`** — y ahí es donde meten el lote y el vencimiento, que el estándar
+no tiene como campo.
+
+## Y hacen falta en casi todas las líneas
+
+Medido sobre las 40,576 líneas de compras ya cargadas:
+
+- **100% tienen lote** (40,573 de 40,576)
+- **97.5% tienen vencimiento**
+- 97% son productos perecederos
+
+O sea que no es un dato opcional: si no sale del DTE, alguien lo teclea.
+
+## Los seis formatos, medidos
+
+Sobre las líneas de los últimos 120 días:
+
+| proveedor | líneas | vencimiento | lote |
+|---|---:|---|---|
+| COFARSAL | 3,289 | `Fecha Exp.: dd/mm/aaaa` (99%) | `Lote: X` |
+| MONTREAL | 937 | `V. dd-mm-aaaa` (100%) | token suelto antes de `V.` |
+| DROGUERÍA AMERICANA | 527 | entre `\|`, sin rótulo (96%) | entre `\|` |
+| RONASA | 431 | `VENCE: dd/mm/aaaa` (98%) | `LOTE: X` |
+| DROGUERÍA SANTA LUCÍA | 308 | entre `\|`, sin rótulo (100%) | entre `\|` |
+| C. IMBERTON | 258 | tras `cantidad - lote - fecha caducidad` (90%) | ídem |
+| LAB. VIJOSA | 222 | `(V-mm-aa)` — **sólo mes y año** (99%) | `LOTE: X` |
+| DROG. NUEVA SAN CARLOS | 218 | `VENCE: dd/mm/aaaa` (100%) | `LOTE: X` |
+| LETERAGO | 288 | entre `\|`, **sólo en el 48%** | entre `\|` |
+| DROGUERÍA NOVA | 146 | `Fecha Exp.` **en un renglón aparte** (33%) | `Lote:` |
+
+Seis reglas —rótulo explícito, `V.`, `VENCE:`, pipes, `caducidad`, `(V-`—
+cubren esos diez proveedores, que son el grueso del volumen.
+
+## Los que NO lo mandan, y son perecederos igual
+
+| proveedor | líneas | lleva lote/vence en el DTE | los necesita |
+|---|---:|:--:|:--:|
+| GAMMA LABORATORIES | 251 | **no** | 100% |
+| MENFAR | 189 | **no** | 100% |
+| SAVONA (LA NEVERÍA) | 184 | **no** | 100% |
+| CONGELADOS DEL SABOR | 139 | **no** | 100% |
+| STEINER | 98 | **no** | — |
+
+Son **~950 líneas cada cuatro meses** en las que el dato no existe en ningún
+lado electrónico: hay que leerlo de la caja física. **Para esos proveedores la
+carga no puede ser automática**, y la pantalla tiene que pedirlos.
+
+## Por qué el JSON no es opcional: `items_text` PIERDE renglones
+
+`extractItemsText` descarta la descripción repetida (`seen.has(desc)`), así que
+dos renglones del mismo producto —dos lotes de la misma entrega— se funden en
+uno. Medido contra las compras ya cargadas:
+
+| proveedor | renglones en el texto | renglones cargados | compras a las que les falta |
+|---|---:|---:|---:|
+| **COFARSAL** | 2,926 | **3,103** | **81 de 209 (39%)** |
+| MONTREAL | 456 | 464 | 4 de 71 |
+| RONASA | 315 | 319 | 3 de 24 |
+
+Sólo COFARSAL pierde **177 renglones**. Una compra armada desde `items_text`
+entraría incompleta y nadie lo notaría hasta contar. **El JSON es obligatorio, no
+una mejora.**
+
+## Lo que falta verificar, y por qué no se hizo todavía
+
+Todo lo de arriba sale de `items_text`, que conserva `descripcion` **literal**
+—así que el mapa de formatos es real—. Lo que **no** se pudo confirmar leyendo
+los JSON de verdad:
+
+- que **todos** los proveedores llenen `cantidad` y `precioUni` como manda el
+  estándar (y no, por ejemplo, cantidad 1 con el total en el precio);
+- si alguno usa `montoDescu` (descuento por línea), que cambiaría el costo real;
+- cuántos renglones trae de verdad cada documento, sin la deduplicación.
+
+Los archivos están en el bucket privado `purchase-dte` y leerlos en lote pide
+una credencial de servicio, que esta sesión no tiene. Es el primer paso de la
+implementación, no un pendiente de esta auditoría.

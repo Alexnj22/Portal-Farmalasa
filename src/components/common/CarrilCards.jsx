@@ -118,6 +118,33 @@ const mascaraDe = (izq, der) => {
     return partes.length ? partes.join(', ') : undefined;
 };
 
+/**
+ * Las tarjetas de verdad, sacando las de adentro de un `<>`.
+ *
+ * `Children.toArray` aplana arreglos pero **no fragmentos**: un
+ * `<CarrilCards>{cond ? <><StatCard/><StatCard/></> : …}</CarrilCards>` —que es
+ * como están escritas tres vistas del portal— llegaba acá como UNA hija, y el
+ * `cloneElement` de abajo le ponía `compacta` al fragmento. React avisaba
+ * («Invalid prop supplied to React.Fragment») y, lo que importa, las tarjetas
+ * de adentro **nunca recibían el prop**: bajo 176px su línea de detalle se
+ * cortaba a mitad de palabra, que es exactamente lo que `compacta` evita.
+ * De paso el cupo de §17.0 contaba el fragmento como una sola tarjeta.
+ *
+ * La clave lleva el camino (`.0/.1`) porque `Children.toArray` **numera desde
+ * cero en cada nivel**: sin el prefijo, la primera hija del fragmento y la
+ * primera del carril se llaman igual y React avisa de claves repetidas.
+ */
+function aplanar(children, prefijo = '') {
+    const salida = [];
+    Children.toArray(children).forEach((hijo, i) => {
+        if (!isValidElement(hijo)) return;
+        const clave = `${prefijo}${hijo.key ?? i}`;
+        if (hijo.type === React.Fragment) salida.push(...aplanar(hijo.props.children, `${clave}/`));
+        else salida.push(cloneElement(hijo, { key: clave }));
+    });
+    return salida;
+}
+
 const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de la vista' }) => {
     const pistaRef = useRef(null);
     const [desliza, setDesliza] = useState(false);
@@ -125,7 +152,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
     const [alFinal, setAlFinal] = useState(false);
     const [compacta, setCompacta] = useState(false);
 
-    const tarjetas = Children.toArray(children).filter(isValidElement);
+    const tarjetas = aplanar(children);
 
     if (import.meta.env.DEV && tarjetas.length > CUPO) {
         console.warn(

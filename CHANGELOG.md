@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.642.1 — La auditoría de compras: un pago no repite factura y el carril aplana el fragmento
+
+Dos cosas que salieron de auditar todo lo construido para Compras. El resto de
+la auditoría —advisors, fugas, caminos de fallo, los cinco registros— pasó sin
+tocar nada; el detalle está en `docs/AUDITORIA-MATCH-DTE-PRODUCTOS-2026-08-16.md`.
+
+**Un pago que nombra dos veces la misma factura lo dice con palabras.** Mandar
+la misma factura en dos renglones del mismo pago chocaba contra el índice único
+y devolvía _«duplicate key value violates unique constraint
+compra_pago_aplicado_pago_id_document_id_key»_. El freno funcionaba —no se
+guardaba nada de más— pero ese texto en una pantalla de plata parece una falla
+del sistema en vez de un dato repetido. Ahora `registrar_pago_compra` lo
+comprueba **antes de escribir nada**: «Una misma factura no puede ir dos veces
+en el mismo pago.»
+
+**El carril de tarjetas aplana los fragmentos.** `Children.toArray` aplana
+arreglos pero no un `<>`, así que en tres vistas —Libro de compras completo,
+Libros de IVA y Corte Z— el carril recibía **una** hija en vez de tres: le
+ponía `compacta` al fragmento (React avisaba en consola) y las tarjetas de
+adentro **nunca recibían el prop**, que es justamente el que evita que la línea
+de detalle se corte a mitad de palabra bajo 176px. De paso el cupo de tarjetas
+de §17.0 contaba el fragmento como una sola.
+
 ## v2.642.0 — Cargar compra: el portal arma la compra desde el documento
 
 **Compras → Cargar compra.** Lista los documentos recibidos que todavía no

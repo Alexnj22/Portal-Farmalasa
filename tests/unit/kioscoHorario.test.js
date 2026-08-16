@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { getTodayScheduleConfig } from '../../src/utils/helpers';
 import { resolveAttendanceFlow } from '../../src/utils/timeClock.helpers';
 import { buildCustomConfig, buildFinalPunchPresentation } from '../../src/utils/timeClock.rules';
+import { claveDeDia } from '../../src/utils/scheduleHelpers';
 
 // El horario semanal se guarda en `employee_rosters.schedule_data` con las
 // claves que produce `Date.getDay()` — o sea **domingo = "0"**. Medido sobre
@@ -123,5 +124,31 @@ describe('sin horario cargado — decisión del usuario: que marque igual', () =
             employee: emp, type: 'IN', rawType: 'IN', customConfig, now: LUNES_8AM, shifts: SHIFTS,
         });
         expect(p.metadata.sinHorario).toBeUndefined();
+    });
+});
+
+describe('claveDeDia — una sola convención para toda la semana', () => {
+    // La clave la comparten el lector del kiosco, la pantalla de horarios, el
+    // marcado de incapacidad/vacaciones en el horario, el regreso anticipado de
+    // vacaciones, el cambio de turno y la consolidación de planilla. Cuando dos
+    // de esos usaban convenciones distintas, el domingo desaparecía.
+    const semana = [
+        ['2026-08-16', '0', 'domingo'],
+        ['2026-08-17', '1', 'lunes'],
+        ['2026-08-18', '2', 'martes'],
+        ['2026-08-19', '3', 'miércoles'],
+        ['2026-08-20', '4', 'jueves'],
+        ['2026-08-21', '5', 'viernes'],
+        ['2026-08-22', '6', 'sábado'],
+    ];
+
+    it.each(semana)('%s (%s) es %s', (fecha, clave) => {
+        expect(claveDeDia(new Date(fecha + 'T12:00:00'))).toBe(clave);
+    });
+
+    it('nunca devuelve "7" — esa clave no existe en la tabla', () => {
+        for (const [fecha] of semana) {
+            expect(claveDeDia(new Date(fecha + 'T12:00:00'))).not.toBe('7');
+        }
     });
 });

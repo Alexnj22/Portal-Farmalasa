@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.636.2 — Prueba de la convención de día
+
+La clave del día dentro del horario semanal la comparten seis lugares (kiosco,
+pantalla de horarios, incapacidades, vacaciones, cambio de turno y planilla).
+Queda anclada para los siete días, con una prueba explícita de que nunca
+devuelve «7» — la clave que no existe en la tabla y que hacía desaparecer el
+domingo.
+
+_(pendiente de redactar)_
+
 ## v2.636.1 — La consolidación de planilla ve a quien marcó
 
 Segunda parte de la auditoría del circuito de asistencia: lo que pasa con los

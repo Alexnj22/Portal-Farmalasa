@@ -358,3 +358,62 @@ los JSON de verdad:
 Los archivos están en el bucket privado `purchase-dte` y leerlos en lote pide
 una credencial de servicio, que esta sesión no tiene. Es el primer paso de la
 implementación, no un pendiente de esta auditoría.
+
+---
+
+# Cuarta parte: los JSON de verdad (14 proveedores)
+
+Leídos con `leer-dte-json`, la función que se desplegó para esto: baja el
+archivo del bucket privado con la credencial del servidor y devuelve el
+`cuerpoDocumento`. Se invoca desde Postgres con `net.http_post` y el secreto de
+Vault, igual que los crons. **No escribe nada.**
+
+## Todos mandan exactamente los mismos campos
+
+COFARSAL, MONTREAL, RONASA, DROGUERÍA AMERICANA, SANTA LUCÍA, IMBERTON, VIJOSA,
+NUEVA SAN CARLOS, LETERAGO, NOVA, GAMMA, MENFAR, SAVONA, CONGELADOS y STEINER
+traen el renglón **idéntico**:
+
+```
+numItem, tipoItem, numeroDocumento, cantidad, codigo, codTributo, uniMedida,
+descripcion, precioUni, montoDescu, ventaNoSuj, ventaExenta, ventaGravada,
+noGravado, tributos, psv
+```
+
+(MENFAR y AMERICANA omiten `psv`/`noGravado`, que son opcionales.)
+
+**No hay formato por proveedor que descifrar para cantidad, precio, descuento ni
+unidad**: son campos numéricos del estándar y vienen llenos. Verificado contra
+el papel — Gamma, renglón 1: `cantidad: 4`, `precioUni: 2.548673`,
+`ventaGravada: 10.19`, y 4 × 2.548673 = 10.19. Cuadra.
+
+## NINGUNO manda lote ni vencimiento
+
+Ni en el renglón, ni en `apendice`, ni en `otrosDocumentos`. El `apendice` —que
+sí traen 13 de los 14— es metadato del documento, no de la línea: número de
+pedido, transporte, vendedor, condición de pago, código de cliente.
+
+Los diez proveedores que «sí lo mandan» lo meten **dentro de `descripcion`**,
+que es texto libre. Los otros cinco no lo mandan en ningún lado.
+
+## El papel dice más que el documento electrónico
+
+La factura de GAMMA del 12-08 imprime **columnas `Lote` y `Vence`** —renglón 1:
+lote `D26017`, vence `04/2028`— y su JSON, leído entero, **no las tiene**:
+`apendice: null`, y el renglón trae sólo los campos del estándar. Gamma las
+imprime desde su propio sistema; no viajan en el DTE.
+
+**Eso abre el camino que faltaba para esos cinco proveedores**: el PDF también
+está guardado (`purchase_dte_documents.pdf_path`), y el repo ya extrae texto de
+PDF sin navegador — `unpdf`, en `sync-purchase-emails`, para detectar el código
+de generación de un PDF huérfano. Leer lote y vencimiento de la tabla impresa es
+el mismo trabajo. **No está probado todavía**, pero deja de ser «hay que
+teclearlo» y pasa a ser «hay que leer el PDF».
+
+## De paso: COFARSAL dice a qué sala es la factura
+
+Su `apendice` trae `AP3 = "FARMACIA POPULAR"` con etiqueta **«Sucursal»**. Si
+eso viene siempre, el widget «Facturas de mi sala» podría asignar sus facturas
+solo —hoy las ofrece a todas para que alguien las reclame—. Es una pista, no una
+medición: haría falta leer varias para saber si el campo es constante y si el
+nombre casa con nuestras salas.

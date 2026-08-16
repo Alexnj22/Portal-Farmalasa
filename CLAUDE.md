@@ -354,9 +354,31 @@ piezas:
 **Dos crons encadenados, y el orden importa.** 21:30 SV
 `sincronizar-fichas-clientes` corrige las fichas; 22:30 SV `regularizar-dte`
 manda a Hacienda. Al revés, el envío recibe rechazos por datos que ya estaban
-arreglados. **Y desde el 09-08 el envío cierra el lazo la MISMA noche**: si
-quedó algún rechazo accionable, llama a la corrida de fichas en alcance
-«rechazos» y reenvía, en vez de esperar 24 horas.
+arreglados. **Y desde el 09-08 el envío cierra el lazo la MISMA noche**: llama a
+la corrida de fichas en alcance «rechazos» y reenvía, en vez de esperar 24 horas.
+
+**Esa segunda vuelta se dispara por «lo puedo escribir», NO por «accionable»**
+(corregido el 2026-08-16). `dte_rechazos_vigentes.accionable` significa *Hacienda
+se queja de un dato del receptor* — que no es lo mismo que *esto se arregla
+solo*. Con el disparador viejo, una noche entera de las dos funciones
+encadenadas no cambió un dato: los 4 rechazos eran 3 de contribuyentes (a los
+que no se les escribe la ficha) y uno de un campo sin regla. Hoy se le pregunta
+a `fichas_para_corregir_dte()` —la MISMA lista que usa la corrida— cuántas
+filas hay con `origen='rechazo' AND puede_escribir AND NOT ya_corregido`, y
+además **sólo se reenvía si la corrección escribió algo**. Mandar el mismo
+documento sin cambiarle un dato es pedir el mismo rechazo.
+
+**La tabla de decisión de `sincronizar-fichas-clientes` y la lista
+`campo_ficha IN (...)` de `fichas_para_corregir_dte()` son la misma lista dicha
+dos veces, y se mueven juntas.** Un campo de más deja fichas dando vueltas sin
+que nadie las escriba; uno de menos las vuelve **invisibles** para el proceso
+hecho para arreglarlas. Pasó con `receptor.telefono`: bien clasificado, marcado
+accionable, y fuera de las dos listas — la corrida informaba «3 candidatos»
+sobre 4 rechazos y nadie notaba la que faltaba. Hoy la lista es distrito,
+municipio, departamento, dui y phone. **Un teléfono que falta o no tiene 8
+dígitos se REEMPLAZA por el de la empresa (`23010013`), no se borra como el
+DUI**: un DUI inventado sería un dato falso de identidad, y Hacienda en cambio
+EXIGE un teléfono con forma — sin él el documento no entra.
 
 **«Sin sello» significa sin sello VÁLIDO — y hay que decirlo en los TRES
 sitios.** `recibido_mh` es `text` con 40 caracteres: `IS NULL` y `!!valor` dan

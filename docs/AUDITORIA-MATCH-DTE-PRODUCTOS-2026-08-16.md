@@ -127,9 +127,9 @@ un inventario mal cargado no avisa: se descubre contando.
 
 ## Lo que NO se verificó
 
-- **`compras.php`** (`https://clientesdte3.oss.com.sv/farma_salud/compras.php`).
-  No se probó qué acepta ni con qué formato. Que el portal ya ejecute cosas en
-  el sistema de origen no prueba que este endpoint sirva para esto.
+- **`compras.php`** — al escribir esto no se había mirado. **Se estudió el mismo
+  día: ver la segunda parte de este documento.** Lo que sigue sin probarse es el
+  `insert`: se leyó qué recibe, no se envió nunca.
 - **El costo de leer el JSON** de cada documento (hoy nadie lo lee en lote).
 - Las 50 líneas (1.8%) en que el código de barras cayó en un producto que no
   estaba en esa compra. Pueden ser sustituciones, devoluciones o un código de

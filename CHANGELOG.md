@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.634.0 — El ranking de vendedores divide por horas, y marca la venta que no cuadra con el turno
+
+Tres cosas en el widget «Venta por vendedor», las tres pedidas por el usuario.
+
+**El nombre ya no se recorta.** Sobre el primer puesto iba un rótulo «· EL MÁS
+ALTO» que le comía 96px al nombre justo en la fila donde más importa leerlo: en
+el widget, «Nataly Flores» salía «Nataly Flor…». Era además el único dato dicho
+tres veces — el «1º», el resalte de la fila y la barra más larga ya dicen quién
+va primero. Se quitó.
+
+**«Por día trabajado» no alcanzaba, y ahora hay «Por hora».** Pregunta del
+usuario: *«¿qué pasa si un vendedor sólo está 22 horas, u otro trabaja 44? el
+cálculo debería ser distinto verdad?»* — y sí. Un día no es una unidad
+comparable: el horario real de la empresa tiene jornadas de 6, 7, 8, 9 y 11
+horas, y semanas de 9, 16, 36 y 44. Medido en agosto en La Popular, la ventana
+de venta de Katherine Salinas promedia **5.7 h** contra **7.5 h** de Nataly
+Flores: por día queda 5ª y por hora queda 1ª ($53.06 contra $44.64). El
+interruptor que existía para no castigar a quien faltó seguía castigando a quien
+está media jornada.
+
+El denominador sale del **horario publicado** (`employee_rosters`), no de un
+reloj: se verificó que las horas trabajadas no son un dato del portal todavía
+—`attendance` tiene **0 filas** y `timesheets.regular_hours` está en **0 en las
+391 filas** que existen—. Las programadas sí. La regla de horas es una
+traducción de `calculateEmployeeWeeklyHoursLocal`, la que ya usa el módulo de
+Horarios, y se enfrentaron las dos implementaciones sobre las **94 semanas
+publicadas reales: 94 iguales, 0 distintas**.
+
+La vista se habilita sólo cuando el horario cubre a **toda** la lista: con
+cobertura parcial la columna mezclaría dos unidades —unos divididos por sus
+horas, otros por nada— y eso no es un ranking, son dos superpuestos. Hoy ninguna
+sala llega (Salud 3 va 5 de 7); se enciende sola a medida que se publiquen.
+
+**Y marca la venta que no cuadra con el turno.** Pedido del usuario en la misma
+corrida: *«verificaremos las ventas erróneas que haya, por alguien que no tenga
+turno en esa sala y aparezca una venta a esa persona»*. Medido en agosto sobre
+los 86 días-persona que sí tienen horario publicado (de 403): **18 ventas en día
+marcado libre** y **9 en una sala que no es la del empleado**. Se cuentan
+aparte y sin veredicto, porque no significan lo mismo:
+
+- Adriana Ramirez acumula **11 días seguidos** «libres» con 20-42 tickets
+  diarios y jornada completa (07:31–14:59, 14:12–21:39). Eso no es una venta mal
+  asignada — es un horario que nadie actualizó. Igual Sergio Tobias (3 días) y
+  Amadeo Clemente (3 domingos de 07:07 a 17:54).
+- **Fernando Oliva y Telma Henriquez son de Bodega y venden en Salud 3 y Salud
+  4.** Ése es el caso que se buscaba.
+- Y hay tres de **un solo ticket** en día ajeno (Katlin Molina un sábado a las
+  15:37, Yessica Hernández $10.60 en Salud 1, Fernando Oliva $3.10) que sí huelen
+  a error de digitación.
+
+El número solo no distingue entre las dos lecturas, así que la fila informa el
+hecho —«No es su sala», «3 días sin turno»— y quién de las dos es lo sabe la
+sala, no el portal.
+
+Lo que hoy **no** se puede afirmar es «tenía turno, pero en otra sala»: el
+horario es de la persona y no nombra sucursal, y la tabla que sí lo hace
+(`schedule_coverage`) está vacía.
+
+Migraciones `20260816200415` y `20260816200748`.
+
 ## v2.633.0 — El libro declarable avisa cuando un documento entró dos veces
 
 Salió de una pregunta del usuario: **¿qué pasa si un DTE trae productos para dos

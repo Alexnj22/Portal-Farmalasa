@@ -157,7 +157,12 @@ function fmtRegla(row) {
     );
 }
 
-const COLS_REGLA = [
+// Es una fábrica y no una constante porque la última línea del «Motivo» es una
+// INSTRUCCIÓN: decirle «ajustá el MAX» a quien no ve ni toca el MIN·MAX lo manda
+// a buscar un campo que su pantalla no tiene. Quien no ajusta MIN·MAX se queda
+// con el porqué —que es lo que necesita para entender su pedido— y sin la orden.
+function colsRegla(canEditMinMax) {
+    return [
     { key: 'lab',        label: 'Laboratorio',   render: renderLab },
     { key: 'prod',       label: 'Producto',      render: renderProd },
     { key: 'pres',       label: 'Presentación',  render: renderPresStock },
@@ -185,11 +190,12 @@ const COLS_REGLA = [
                 <span className="text-content-3 text-micro">
                     {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de la regla` : 'Cantidad < 40% de la unidad mínima de despacho'}
                 </span>
-                <span className="text-content-3 text-micro">Ajustar MAX o reducir el múltiplo en la regla</span>
+                {canEditMinMax && <span className="text-content-3 text-micro">Ajustar MAX o reducir el múltiplo en la regla</span>}
             </div>
         );
     }},
-];
+    ];
+}
 
 function ItemSection({ label, count, variante = 'neutral', rows, columns, noteEl, renderRowExtra }) {
     const [open,        setOpen]        = useState(false);
@@ -321,6 +327,15 @@ function ItemSection({ label, count, variante = 'neutral', rows, columns, noteEl
 // tarjeta —`pedidos.can_edit` lo tienen ONCE cargos, porque los de sala lo
 // necesitan para RECIBIR—, y el guardado es automático al teclear: no hay botón
 // que sirva de freno. Reportado el 2026-08-15.
+//
+// Y sin el permiso la fila NO SE PINTA — no queda en solo lectura (2026-08-17).
+// El primer arreglo dejó los campos visibles y deshabilitados con un cartel; lo
+// pedido era que MIN y MAX no estuvieran ahí. Un dependiente no tiene por qué
+// ver el mínimo, el máximo ni las ventas de 6 meses de su sala para entender por
+// qué un producto no le llegó: eso lo dice la columna «Motivo». Además la fila
+// deshabilitada seguía TRAYENDO los datos —`fetchStockParamsForRevision` corría
+// igual—, así que «no se ve» era sólo la pantalla: el número viajaba al
+// navegador de todos modos. Por eso la compuerta está también en el fetch.
 export default function ItemSections({ allItems, loading, canEditMinMax = false }) {
     const [pspMap,          setPspMap]          = React.useState({});
     const [editMap,         setEditMap]         = React.useState({});
@@ -340,6 +355,10 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
 
     // Fetch product_stock_params for all revision_minmax items (has-rule + no-rule)
     React.useEffect(() => {
+        // Sin permiso no hay fila que llenar: no se pide el dato. Que la consulta
+        // corriera igual era la mitad del hallazgo — el MIN·MAX llegaba al
+        // navegador aunque el campo estuviera deshabilitado.
+        if (!canEditMinMax) { setPspMap({}); setEditMap({}); return; }
         const items = allItems.filter(i => i.revision_minmax);
         if (items.length === 0) { setPspMap({}); setEditMap({}); return; }
         const productIds  = [...new Set(items.map(r => r.erp_product_id))];
@@ -363,7 +382,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
             setEditMap(em);
             setOrigMap({ ...em });
         })();
-    }, [revisionKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [revisionKey, canEditMinMax]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Must be defined BEFORE any early return — hooks cannot be called conditionally
     const revertToOrig = React.useCallback((rowId) => {
@@ -472,7 +491,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
     };
 
     const renderMinMaxRow = (row, colCount) => {
-        if (!row.revision_minmax) return null;
+        if (!row.revision_minmax || !canEditMinMax) return null;
         const psp      = pspMap[`${row.erp_product_id}_${row.erp_sucursal_id}`];
         const edit     = editMap[row.id] ?? { min: '0', max: '0' };
         const isSaving = savingId === row.id;
@@ -500,7 +519,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                                 const e = validateEdit(editMap[row.id] ?? {});
                                 setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
-                            readOnly={isSaving || !canEditMinMax}
+                            readOnly={isSaving}
                             compact
                             inputClassName="text-center font-bold tabular-nums"
                         />
@@ -516,24 +535,14 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                                 const e = validateEdit(editMap[row.id] ?? {});
                                 setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
-                            readOnly={isSaving || !canEditMinMax}
+                            readOnly={isSaving}
                             compact
                             inputClassName="text-center font-bold tabular-nums"
                         />
                         {isSaving && <Loader2 size={10} className="animate-spin text-brand-text shrink-0" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
-                        {/* Sin permiso de MIN·MAX no hay nada que apretar, y se DICE
-                            por qué: un campo que no responde sin explicación se lee
-                            como que el portal falla. Mismo criterio que la recepción
-                            cuando el cargo no recibe pedidos. */}
-                        {canEditMinMax ? (
-                            <>
-                                <Button icon={RotateCcw} disabled={isSaving} title="Restaurar MIN/MAX original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
-                                <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0 — excluye del próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>
-                            </>
-                        ) : (
-                            <Badge variant="neutral" size="sm" uppercase={false}>Solo lectura — tu cargo no ajusta MIN·MAX</Badge>
-                        )}
+                        <Button icon={RotateCcw} disabled={isSaving} title="Restaurar MIN/MAX original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
+                        <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0 — excluye del próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>
                     </div>
                 </td>
             </tr>
@@ -556,9 +565,9 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
             />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} variante="warning" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning-text/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
-                label="Revisar regla de despacho" count={porRegla.length} variante="danger" rows={porRegla} columns={COLS_REGLA}
+                label="Revisar regla de despacho" count={porRegla.length} variante="danger" rows={porRegla} columns={colsRegla(canEditMinMax)}
                 renderRowExtra={renderMinMaxRow}
-                noteEl={<div className="flex items-start gap-2 text-caption text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
+                noteEl={<div className="flex items-start gap-2 text-caption text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo"{canEditMinMax ? ' y ajusta los MIN/MAX.' : '.'}</div>}
             />
             <ConfirmModal
                 isOpen={!!resetZeroTarget}

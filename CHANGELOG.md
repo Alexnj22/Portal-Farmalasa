@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.3 — MIN y MAX se van de la pantalla de quien no los ajusta
+
+Reportado: *«en los pedidos, los vendedores pueden ver y modificar min y max con
+los que no se envían por regla, pedí que eso se quitara»*. La segunda vez que se
+pide lo mismo, y tenía razón: el arreglo de agosto (v2.619.0) cortó el
+**modificar** y se olvidó del **ver**.
+
+Adentro de un pedido, la lista «Revisar regla de despacho» —los productos que no
+se pudieron despachar— traía debajo de cada renglón una tira con las ventas de
+6 meses, el MIN y el MAX. Desde v2.619.0 esa tira aparecía deshabilitada, con un
+cartel que decía «solo lectura, tu cargo no ajusta MIN·MAX». Se pidió que no
+estuviera, no que no funcionara: quien recibe un pedido no necesita el mínimo,
+el máximo ni las ventas de su sala para entender por qué un producto no le
+llegó. Eso ya lo dice la columna «Motivo», y esa se queda.
+
+**Y no era sólo la pantalla.** Con el campo deshabilitado, el portal seguía
+pidiendo esos números a la base y guardándolos en el navegador — o sea que
+«oculto» era una apariencia. Ahora, sin el permiso de MIN·MAX, la consulta ni se
+hace: el dato no sale de la base.
+
+Se va con la tira la línea que decía «Ajustar MAX o reducir el múltiplo en la
+regla»: era una instrucción para tocar un campo que esa pantalla ya no tiene.
+Quien sí ajusta MIN·MAX —Compras y Logística, Supervisión de Ventas, Gerencia,
+Administración— lo ve todo igual que antes, sin un solo cambio.
+
+Queda anclado en `tests/unit/pedidoMinMaxPermiso.test.jsx`, verificado contra el
+código viejo: dos de sus tres pruebas fallan sin este arreglo. Es la tercera vez
+que este campo aparece donde no debía, así que dejar de vigilarlo por escrito no
+era una opción.
+
 ## v2.656.2 — Traslados: confirmar y enviar deja de romperse por una constante borrada
 
 Reportado por el usuario apretando el botón: «le di confirmar y me salió:

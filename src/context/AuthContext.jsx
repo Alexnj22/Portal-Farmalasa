@@ -6,7 +6,7 @@ import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
-import { soltarPushDelEquipoSiEsCompartido } from "../utils/pushEquipo";
+import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "../utils/pushEquipo";
 
 const AuthContext = createContext(null);
 
@@ -476,9 +476,33 @@ export const AuthProvider = ({ children }) => {
     if (userRef.current) { writeLastActivity(false); latirSesion(); }
   }, [latirSesion]);
 
+  // `doLogout` se define más abajo; se referencia por ref para no atarlo a las
+  // dependencias del callback (mismo patrón que `refreshPermissionsRef`).
+  const doLogoutRef = useRef(null);
+
+  // ── Al volver hay que DECIDIR, no perdonar ───────────────────────────────
+  //
+  // Esto escribía la actividad y seguía. Pero mientras la pestaña está oculta el
+  // chequeo del intervalo NO corre (se saltea a propósito, para que iOS no
+  // dispare al reanudar), así que volver de una pestaña minimizada reiniciaba el
+  // reloj sin que nadie comprobara si el límite ya se había pasado.
+  //
+  // Medido el 2026-08-17: con el latido reviviendo la sesión del lado del
+  // servidor, un límite de 5 minutos valía ~20 en la práctica —lo que dure el
+  // token, mediana 15 min sobre 799 renovaciones reales—. La otra mitad del
+  // arreglo vive en `touch_session`, que ya no revive una sesión vencida: ésta
+  // es la del navegador, y sin ella la persona se queda mirando una pantalla que
+  // ya no puede guardar nada.
   const onVisibilityChange = useCallback(() => {
     if (!userRef.current) return;
-    if (document.visibilityState === 'visible') { writeLastActivity(true); latirSesion(); }
+    if (document.visibilityState !== 'visible') return;
+    const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
+    if (last && Date.now() - last >= getIdleLimitMs(userRef.current)) {
+      doLogoutRef.current?.();
+      return;
+    }
+    writeLastActivity(true);
+    latirSesion();
   }, [latirSesion]);
 
   const stopIdleWatcher = () => {
@@ -552,6 +576,26 @@ export const AuthProvider = ({ children }) => {
         try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch { /* localStorage no disponible */ }
       });
   };
+  doLogoutRef.current = doLogout;
+
+  // ── El cierre que `doLogout` no ve: cerrar el navegador ───────────────────
+  //
+  // `doLogout` es el embudo del botón, del vencimiento por inactividad y de la
+  // sesión que ya no vale. Cerrar la pestaña no es ninguno de los tres: no
+  // dispara nada, y la suscripción de avisos del EQUIPO quedaba ligada a quien
+  // se fue. En una computadora de sala eso significa que sus avisos siguen
+  // cayendo en esa pantalla. Ver `utils/pushEquipo.js`.
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    const alIrseLaPagina = () => {
+      let clase = 'navegador';
+      try { clase = localStorage.getItem(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
+      soltarPushAlCerrarLaPagina(clase);
+    };
+    // `pagehide` y no `beforeunload`: éste no dispara en varios casos de móvil.
+    window.addEventListener('pagehide', alIrseLaPagina);
+    return () => window.removeEventListener('pagehide', alIrseLaPagina);
+  }, [user?.id]);
 
   // `hayCache` = «esta pregunta se hace teniendo un usuario guardado».
   //

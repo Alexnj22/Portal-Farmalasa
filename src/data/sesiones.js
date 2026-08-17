@@ -43,16 +43,27 @@ export function agruparPorPersona(filas) {
                 bloqueado_hasta: f.bloqueado_hasta,
                 bloqueo_motivo: f.bloqueo_motivo,
                 conexiones: [],
+                ultima_conexion: null,
             });
         }
-        // `session_id` nulo = persona bloqueada SIN conexiones. Llega para que
-        // no desaparezca de la pantalla —si no, no habría dónde desbloquearla—
-        // pero no es una conexión y no entra en la lista.
-        if (f.session_id) porPersona.get(clave).conexiones.push(f);
+        const p = porPersona.get(clave);
+        // `session_id` nulo = persona SIN conexiones vivas. Llega igual, por dos
+        // motivos: una bloqueada necesita dónde desbloquearse, y del resto hay
+        // que poder ver cuándo entró por última vez. No es una conexión y no
+        // entra en la lista —pero su fecha sí se guarda aparte, que es lo único
+        // que esa fila viene a contar.
+        if (f.session_id) p.conexiones.push(f);
+        else if (f.ultimo_movimiento
+                 && (!p.ultima_conexion || new Date(f.ultimo_movimiento) > new Date(p.ultima_conexion))) {
+            p.ultima_conexion = f.ultimo_movimiento;
+        }
     }
     for (const p of porPersona.values()) {
         p.conexiones.sort((a, b) => new Date(b.ultimo_movimiento) - new Date(a.ultimo_movimiento));
-        p.ultimo_movimiento = p.conexiones[0]?.ultimo_movimiento || null;
+        // Sin conexiones vivas manda la última conexión conocida. Antes esto
+        // quedaba en `null` y la tarjeta mostraba un guión: la persona aparecía
+        // sin ninguna pista de cuándo había entrado.
+        p.ultimo_movimiento = p.conexiones[0]?.ultimo_movimiento || p.ultima_conexion || null;
         p.bloqueado = estaBloqueado(p.bloqueado_hasta);
         p.tiene_esta = p.conexiones.some(c => c.es_actual);
     }

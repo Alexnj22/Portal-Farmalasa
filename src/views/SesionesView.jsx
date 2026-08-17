@@ -231,8 +231,9 @@ const SesionesView = () => {
                     explicación —de dónde salen el dispositivo y el lugar— vive
                     en el detalle, que es donde esos datos se ven. */}
                 <Notice variant="neutral" icon={Info}>
-                    Cada vez que alguien entra al portal se abre una conexión nueva, y hoy ninguna se
-                    cierra sola: por eso una misma persona puede acumular muchas.
+                    Cada vez que alguien entra al portal se abre una conexión nueva. Las que pasan su
+                    tiempo sin usarse se cierran solas cada hora, y la tarjeta sigue mostrando cuándo
+                    entró esa persona por última vez.
                 </Notice>
 
                 <div className="flex justify-end min-w-0">{barraFiltros}</div>
@@ -248,7 +249,7 @@ const SesionesView = () => {
                         compact
                         icon={MonitorSmartphone}
                         title="Sin conexiones"
-                        subtitle="Nadie tiene una sesión abierta que coincida con este filtro."
+                        subtitle="Nadie coincide con este filtro."
                     />
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -274,11 +275,17 @@ const SesionesView = () => {
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1 shrink-0">
+                                    {/* Sin conexiones vivas NO se pinta un «0»:
+                                        la tarjeta está ahí para decir cuándo
+                                        entró por última vez, y un cero al lado
+                                        de «hace 3 días» se lee como un error. */}
                                     {p.bloqueado
                                         ? <Badge variant="danger" size="sm" icon={ShieldOff}>Bloqueado</Badge>
-                                        : <Badge variant={p.conexiones.length > 5 ? 'warning' : 'neutral'} size="sm">
-                                            {p.conexiones.length}
-                                        </Badge>}
+                                        : p.conexiones.length > 0 && (
+                                            <Badge variant={p.conexiones.length > 5 ? 'warning' : 'neutral'} size="sm">
+                                                {p.conexiones.length}
+                                            </Badge>
+                                        )}
                                     {p.tiene_esta && <Badge variant="info" size="sm">Aquí</Badge>}
                                 </div>
                                 {/* La tarjeta abre el detalle de la persona —sus

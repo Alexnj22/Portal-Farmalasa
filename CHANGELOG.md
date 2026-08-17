@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.645.0 — Las sesiones vencidas se cierran solas y Conexiones recuerda la última vez
+
+**Dos huecos medidos en el vencimiento por inactividad, y los dos dejaban que un
+límite escrito no fuera cierto.**
+
+**1. Una sesión que nunca latió no vencía nunca.** El hook decía `IF FOUND
+AND …`: sin fila en `session_activity` no había con qué comparar, así que
+**pasaba siempre**. Medido: una sesión real viva desde el 11-ago sin un solo
+latido —su límite de 5 minutos no le aplicó en 6 días— más 81 de la cuenta de
+pruebas. Ahora, cuando no hay latido, se mide contra la **edad de la sesión**.
+Una recién creada tiene edad ~0 y pasa, que es lo que hace falta para que el
+primer token de un login se emita (verificado: 472 min de edad contra un límite
+de 720 → pasa y emite el claim).
+
+**2. Volver de una pestaña oculta revivía la sesión.** El chequeo del intervalo
+se saltea mientras la pestaña está escondida —a propósito, para que iOS no
+dispare al reanudar—, pero al volver `onVisibilityChange` reiniciaba el reloj
+**sin preguntar si el límite ya se había pasado**, y `touch_session` bumpeaba
+`last_seen_at` del lado del servidor. Resultado: un límite de 5 minutos valía lo
+que durara el token —**mediana 15 min sobre 799 renovaciones reales**—. Corregido
+en los dos lados: `touch_session` ya no revive una sesión vencida, y al volver el
+navegador **decide en vez de perdonar**.
+
+**Se cierran solas cada hora** (`purge_idle_sessions`, cron
+`purge-sesiones-vencidas`). El criterio no es un plazo nuevo: es el **mismo**
+límite que el hook ya usa para negar tokens, así que «sesión viva» pasa a
+significar «sesión que de verdad sirve». Limpieza de arranque: **574 → 4**
+(427 de la cuenta de pruebas + 143 vencidas).
+
+**Conexiones ya no hace desaparecer a nadie.** Antes la pantalla se armaba sólo
+de sesiones vivas: al cerrarse la última, la persona se esfumaba y no había forma
+de ver cuándo entró. Con la purga eso habría vaciado la vista —de 147 conexiones
+reales sólo 4 estaban vivas—, así que la última conexión se guarda en
+`session_last_seen`, **una fila por persona que sobrevive a la purga y a «cerrar
+todas»**. La pantalla pasó a mostrar 27 personas en vez de vaciarse, y la tarjeta
+sin conexiones vivas ya no pinta un «0» al lado de «hace 3 días».
+
+**El aviso del sistema se suelta al cerrar el navegador.** `doLogout` es el
+embudo del botón, del vencimiento y de la sesión inválida — pero cerrar la
+pestaña no es ninguno de los tres. La suscripción del EQUIPO quedaba ligada a
+quien se fue y sus avisos seguían cayendo en esa pantalla de la sala. Ahora se
+suelta en `pagehide` con `fetch` + `keepalive` (sobrevive a que la página muera;
+`sendBeacon` no sirve porque no deja poner `Authorization`), y **sólo en clase
+`navegador`**: en un teléfono con la app instalada `pagehide` dispara al cambiar
+de aplicación y desligaría el equipo todo el día.
+
 ## v2.644.0 — Bitácoras SRS: el libro foliado de dispensación bajo receta
 
 **Módulo nuevo, primera entrega: la base.** Las bitácoras que la Superintendencia

@@ -329,6 +329,27 @@ export async function identificarPorCarne(secreto) {
     return { vale: data.vale, persona: data.employee };
 }
 
+/**
+ * La escotilla del carné que no lee: usuario y contraseña.
+ *
+ * Pedida por el usuario el 2026-08-17 («que aparezca un botón que diga:
+ * autenticar por usuario»). **No es la lista de personas de vuelta**: el usuario
+ * ES el nombre de quien se identifica, igual que el carné, y la contraseña lo
+ * prueba. Elegir un nombre de un desplegable seguía sin probar nada.
+ *
+ * Mismo contrato que `identificarPorCarne`: `{ vale, persona }` o
+ * `{ motivo }` / `{ error }`. La contraseña viaja sólo en esta llamada.
+ */
+export async function identificarPorUsuario(usuario, secreto) {
+    const { data, error } = await supabase.rpc('probar_identidad_por_usuario', {
+        p_usuario: usuario, p_secreto: secreto,
+    });
+    if (error) return { error };
+    if (!data?.ok) return { motivo: data?.motivo || 'No se pudo confirmar la identidad.' };
+    await signPhotosDeep(data.employee);
+    return { vale: data.vale, persona: data.employee };
+}
+
 /** Se anula, nunca se borra: el vale ya salió impreso y está dentro de la bolsa. */
 export function anularSalida(operacionId, motivo) {
     return supabase.rpc('anular_salida_de_bolsa', {

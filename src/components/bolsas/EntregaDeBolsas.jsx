@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Send, UserCircle2 } from 'lucide-react';
+import { AlertTriangle, KeyRound, ScanLine, Send, UserCircle2 } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import EsperaDeCarne from '../common/EsperaDeCarne';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
-import { entregarBolsas, identificarPorCarne } from '../../data/bolsas';
+import PortalInput from '../common/PortalInput';
+import { entregarBolsas, identificarPorCarne, identificarPorUsuario } from '../../data/bolsas';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
 import useCapturaDeCarne from '../../hooks/useCapturaDeCarne';
@@ -37,11 +38,24 @@ import { useToastStore } from '../../store/toastStore';
  * todos modos. Hoy se escanea y listo: `probar_identidad_por_carne` resuelve a
  * la persona y emite el vale en la misma llamada.
  *
- * Sólo escaneo, como en el apoyo de un pedido: un código tecleado lo escribe
- * cualquiera que lo sepa: lo que esto registra es que alguien ESTUVO acá con su
- * carné. El detector vive en `hooks/useCapturaDeCarne` y el panel en
- * `components/common/EsperaDeCarne` — los mismos que usa el apoyo, para que se
- * vean y se comporten igual.
+ * El lector es el camino normal, y ahí sólo vale el escaneo —como en el apoyo de
+ * un pedido—: un código tecleado lo escribe cualquiera que lo sepa, y lo que
+ * esto registra es que alguien ESTUVO acá con su carné. El detector vive en
+ * `hooks/useCapturaDeCarne` y el panel en `components/common/EsperaDeCarne` —
+ * los mismos que usa el apoyo, para que se vean y se comporten igual.
+ *
+ * ── «Autenticar por usuario» es la escotilla, no la lista de vuelta ────────
+ * La pidió el usuario el 2026-08-17 al ver la pantalla sólo-escaneo. Un lector
+ * sucio o un carné despegado dejarían a la sala sin poder entregar el efectivo
+ * del día, y la única salida sería el papel a mano — justo lo que esto vino a
+ * reemplazar. Sigue sin haber desplegable de personas: **el usuario ES el
+ * nombre** de quien se identifica, igual que el carné, y la contraseña lo
+ * prueba. Elegir un nombre de una lista nunca probó nada.
+ *
+ * Mientras el formulario está abierto, la captura del lector se APAGA: es un
+ * `keydown` global y una ráfaga con el foco puesto en «usuario» escribiría el
+ * carné, a la vista, dentro de un campo de texto. Es el mismo defecto que se
+ * corrigió en el login (v2.638.0).
  *
  * ── Los montos NO se muestran acá ──────────────────────────────────────────
  * «no pongas el total de dinero, solo las bolsas. los totales de dinero no los
@@ -79,47 +93,89 @@ export default function EntregaDeBolsas({
     const showToast = useToastStore((s) => s.showToast);
 
     const [dias, setDias] = useState(() => new Set());
-    // Quién se lo lleva y su vale: los DOS salen del carné escaneado, nunca de
-    // un control de la pantalla.
+    // Quién se lo lleva y su vale: los DOS salen del servidor —del carné o del
+    // usuario probado—, nunca de un control de la pantalla.
     const [persona, setPersona] = useState(null);
     const [vale, setVale] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
+    // 'CARNE' es el camino normal; 'CLAVE' es la escotilla.
+    const [metodo, setMetodo] = useState('CARNE');
+    const [usuario, setUsuario] = useState('');
+    const [clave, setClave] = useState('');
+
+    /** Lo que devuelven las dos comprobaciones se trata igual. */
+    const recibirIdentidad = useCallback((r, siFalla) => {
+        if (r.error) { setError(mensajeAmigable(r.error, siFalla)); return; }
+        if (r.motivo) { setError(r.motivo); return; }
+        setPersona(r.persona);
+        setVale(r.vale);
+        // El secreto se olvida apenas se manda, salga bien o mal.
+        setClave('');
+    }, []);
 
     const alEscanear = useCallback(async (codigo) => {
         setLeyendo(true);
         setError(null);
         try {
-            const r = await identificarPorCarne(codigo);
-            if (r.error) { setError(mensajeAmigable(r.error, 'No se pudo confirmar el carné.')); return; }
-            if (r.motivo) { setError(r.motivo); return; }
-            setPersona(r.persona);
-            setVale(r.vale);
+            recibirIdentidad(await identificarPorCarne(codigo), 'No se pudo confirmar el carné.');
         } catch (e) {
             setError(mensajeAmigable(e, 'No se pudo confirmar el carné.'));
         } finally {
             setLeyendo(false);
         }
-    }, []);
+    }, [recibirIdentidad]);
 
-    const { teclas, manual, limpiar } = useCapturaDeCarne(!!abierto && !guardando, alEscanear);
+    const alAutenticar = useCallback(async () => {
+        if (!usuario.trim() || !clave || leyendo) return;
+        setLeyendo(true);
+        setError(null);
+        try {
+            recibirIdentidad(
+                await identificarPorUsuario(usuario, clave),
+                'No se pudo confirmar la identidad.',
+            );
+        } catch (e) {
+            setClave('');
+            setError(mensajeAmigable(e, 'No se pudo confirmar la identidad.'));
+        } finally {
+            setLeyendo(false);
+        }
+    }, [usuario, clave, leyendo, recibirIdentidad]);
 
-    /** Vuelve a la espera del carné: el vale de antes ya no sirve para nada. */
-    const olvidarElCarne = useCallback(() => {
+    // La captura del lector se apaga con el formulario abierto — ver el
+    // encabezado: una ráfaga con el foco en «usuario» publicaría el carné.
+    const { teclas, manual, limpiar } = useCapturaDeCarne(
+        !!abierto && !guardando && metodo === 'CARNE', alEscanear,
+    );
+
+    /** Vuelve a la espera de identidad: el vale de antes ya no sirve para nada. */
+    const olvidarLaIdentidad = useCallback(() => {
         setPersona(null);
         setVale(null);
+        setClave('');
         limpiar();
     }, [limpiar]);
 
-    // Al cerrar se olvida TODO, y el vale el primero: es un permiso de un solo
-    // uso que vive 5 minutos, y no tiene por qué sobrevivir al diálogo.
+    const cambiarMetodo = useCallback((v) => {
+        setMetodo(v);
+        setError(null);
+        setClave('');
+        limpiar();
+    }, [limpiar]);
+
+    // Al cerrar se olvida TODO, y el secreto y el vale los primeros: uno es una
+    // contraseña ajena y el otro un permiso de un solo uso que vive 5 minutos.
     useEffect(() => {
         if (abierto) return;
         setDias(new Set());
         setPersona(null);
         setVale(null);
         setError(null);
+        setMetodo('CARNE');
+        setUsuario('');
+        setClave('');
         limpiar();
     }, [abierto, limpiar]);
 
@@ -167,9 +223,13 @@ export default function EntregaDeBolsas({
 
     const falta = useMemo(() => {
         if (!elegidas.length) return 'Falta elegir qué días se lleva.';
-        if (!persona || !vale) return 'Falta escanear el carné de quien se lo lleva.';
+        if (!persona || !vale) {
+            return metodo === 'CARNE'
+                ? 'Falta escanear el carné de quien se lo lleva.'
+                : 'Falta el usuario y la contraseña de quien se lo lleva.';
+        }
         return null;
-    }, [elegidas, persona, vale]);
+    }, [elegidas, persona, vale, metodo]);
 
     const confirmar = useCallback(async () => {
         if (falta || guardando) return;
@@ -182,7 +242,7 @@ export default function EntregaDeBolsas({
             if (err) {
                 // El vale se gasta en el servidor y vive 5 minutos: si algo
                 // falló, el que había ya no vale y hay que volver a escanear.
-                olvidarElCarne();
+                olvidarLaIdentidad();
                 setError(mensajeAmigable(err, 'Vuelve a escanear el carné.'));
                 return;
             }
@@ -193,12 +253,12 @@ export default function EntregaDeBolsas({
             onHecho?.(entrega, elegidas);
             onClose?.();
         } catch (e) {
-            olvidarElCarne();
+            olvidarLaIdentidad();
             setError(mensajeAmigable(e, 'No se pudo entregar.'));
         } finally {
             setGuardando(false);
         }
-    }, [falta, guardando, elegidas, persona, vale, olvidarElCarne, showToast, onHecho, onClose]);
+    }, [falta, guardando, elegidas, persona, vale, olvidarLaIdentidad, showToast, onHecho, onClose]);
 
     return (
         <LiquidModal open={!!abierto} onClose={guardando ? undefined : onClose}
@@ -262,13 +322,48 @@ export default function EntregaDeBolsas({
                 {/* ── Quién se lo lleva: lo contesta el carné ────────────────
                     Mientras no hay nadie reconocido, la pantalla ESPERA el
                     escaneo. Es el mismo panel del apoyo de un pedido, a pedido
-                    del usuario. */}
+                    del usuario. Debajo, la escotilla para el carné que no lee. */}
                 {porDia.length > 0 && !persona && (
-                    <div data-surface="card" className="p-3">
-                        <EsperaDeCarne
-                            teclas={teclas} manual={manual} ocupado={leyendo}
-                            ayuda={<>Pasa por el lector el carné<br />de quien se lleva el efectivo</>}
-                        />
+                    <div data-surface="card" className="p-3 space-y-3">
+                        {metodo === 'CARNE' ? (
+                            <EsperaDeCarne
+                                teclas={teclas} manual={manual} ocupado={leyendo}
+                                ayuda={<>Pasa por el lector el carné<br />de quien se lleva el efectivo</>}
+                            />
+                        ) : (
+                            <>
+                                <p className="text-body-sm text-content-2 text-center">
+                                    El usuario y la contraseña de quien se lleva el efectivo
+                                </p>
+                                <PortalInput
+                                    label="Usuario" name="usuario-recibe"
+                                    value={usuario} onChange={(e) => setUsuario(e.target.value)}
+                                    placeholder="Su usuario del portal"
+                                    autoComplete="off"
+                                />
+                                <PortalInput
+                                    label="Contraseña" name="clave-recibe" type="password"
+                                    value={clave} onChange={(e) => setClave(e.target.value)}
+                                    placeholder="••••••••"
+                                    autoComplete="off"
+                                    onKeyDown={(e) => { if (e.key === 'Enter') alAutenticar(); }}
+                                />
+                                <Button variant="primary" size="sm" icon={KeyRound} className="w-full"
+                                    loading={leyendo}
+                                    disabled={!usuario.trim() || !clave}
+                                    onClick={alAutenticar}>
+                                    Comprobar
+                                </Button>
+                            </>
+                        )}
+
+                        {/* El lector es el camino normal, así que la escotilla es
+                            secundaria y dice a dónde lleva. */}
+                        <Button variant="ghost" size="sm" className="w-full"
+                            icon={metodo === 'CARNE' ? KeyRound : ScanLine}
+                            onClick={() => cambiarMetodo(metodo === 'CARNE' ? 'CLAVE' : 'CARNE')}>
+                            {metodo === 'CARNE' ? 'Autenticar por usuario' : 'Volver al lector de carné'}
+                        </Button>
                     </div>
                 )}
 
@@ -287,7 +382,7 @@ export default function EntregaDeBolsas({
                             <p className="font-bold text-success-text text-body-lg truncate">{persona.name}</p>
                             <p className="text-label text-success-text mt-0.5">Se lleva el efectivo</p>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={olvidarElCarne} disabled={guardando}>
+                        <Button variant="ghost" size="sm" onClick={olvidarLaIdentidad} disabled={guardando}>
                             No es
                         </Button>
                     </div>

@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.655.2 — La entrega acepta usuario y contraseña cuando el carné no lee
+
+La escotilla que faltaba, pedida por el usuario al ver la pantalla sólo-escaneo
+de v2.655.0: bajo el lector hay un botón **«Autenticar por usuario»**. Un lector
+sucio o un carné despegado dejaban a la sala sin poder entregar el efectivo del
+día, y la única salida habría sido el papel escrito a mano — justo lo que este
+circuito vino a reemplazar.
+
+**No es la lista de personas de vuelta.** El usuario ES el nombre de quien se
+identifica, igual que el carné, y la contraseña lo prueba; sigue sin haber
+desplegable donde elegir a alguien, que era lo que el usuario mandó sacar.
+`probar_identidad_por_usuario` resuelve por `employees.username`, comprueba la
+contraseña con `verificar_persona` —la función privada, para no tener dos
+implementaciones del mismo bcrypt— y emite el mismo vale de un solo uso. El
+comprobante que firman los dos ya distinguía las dos formas: el método viaja en
+el vale y queda en `bolsas_entregas.recibido_metodo`.
+
+Dos cosas medidas antes de escribirlo: los **49 empleados activos** tienen
+usuario único y los 49 resuelven a una cuenta con contraseña, así que la
+escotilla sirve para todos y no sólo para los de oficina.
+
+**Con el formulario abierto se apaga la captura del lector.** Es un `keydown`
+global, y una ráfaga con el foco puesto en «usuario» escribiría el carné, a la
+vista, dentro de un campo de texto plano. Es el mismo defecto que se corrigió en
+el login en v2.638.0.
+
+El freno también cambia de forma según el camino: con carné cuenta los escaneos
+que este equipo no reconoció (no hay a quién apuntarle todavía); con usuario
+cuenta 5 fallos en 15 minutos **contra esa persona**, que es lo que encarece
+adivinarle la clave a alguien en concreto. Y como la función devuelve
+`{ok:false}` en vez de lanzar, el intento fallido queda escrito y el freno tiene
+contra qué contar.
+
 ## v2.655.1 — Margen de corte: la cuchilla ya no se lleva la última línea
 
 Reportado por el usuario con el papel en la mano, sobre los tickets acortados

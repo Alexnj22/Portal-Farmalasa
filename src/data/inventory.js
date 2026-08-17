@@ -22,6 +22,14 @@ import { likePattern } from '../utils/searchUtils';
  *
  * Se pide en tandas de 1000 porque el `in()` viaja como filtro y la respuesta
  * se corta en 1000 filas sin avisar.
+ *
+ * Y las tandas alcanzan porque `nombre` NO se repite entre los productos con
+ * foto: medido el 2026-08-17, ningún nombre tiene más de un producto con foto,
+ * así que 1000 nombres son a lo sumo 1000 filas. Es el único de los sitios que
+ * marca `in-columna-repetida` donde la unicidad es de los DATOS y no de un
+ * índice — o sea que nada la garantiza. Si el catálogo llegara a tener dos
+ * productos con el mismo nombre y foto, esta consulta empieza a truncar en
+ * silencio y hay que envolverla en `fetchAllRows`.
  */
 export async function fetchProductPhotoMap(nombres = null) {
     const pedir = async (lista) => {

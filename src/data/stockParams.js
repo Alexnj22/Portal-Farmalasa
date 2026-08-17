@@ -5,6 +5,7 @@
 // upsertStockParams/updateStockParams genéricos (el caller sigue
 // armando el payload/patch exacto que ya armaba antes).
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 const ONCONFLICT = 'erp_product_id,erp_sucursal_id';
 
@@ -155,11 +156,25 @@ export function fetchErpSucursalIdForBranchLocked(branchId) {
 
 // ── ItemSections.jsx (1 de sus 2 sitios; el otro reutiliza updateStockParams) ─
 
-export function fetchStockParamsForRevision(productIds, sucursalIds) {
-    return supabase.from('product_stock_params')
+/*
+ * PAGINA porque su forma MULTIPLICA. Los dos `.in()` no van apareados: la base
+ * devuelve el producto cartesiano —todos los productos × todas las sucursales
+ * del pedido—, y de ahí el llamador usa sólo las combinaciones que existen. El
+ * peor pedido real hoy pide 90 filas y usa 49 (medido 2026-08-17), pero con las
+ * 7 salas bastan 150 productos para cruzar las 1000 y que PostgREST corte sin
+ * avisar. El síntoma sería MIN y MAX en cero para los productos que quedaron
+ * fuera, indistinguible de un producto sin parámetros.
+ *
+ * Desempate por `id`: `range()` corta por posición y sin orden total la base
+ * puede repartir la misma fila en dos páginas.
+ */
+export async function fetchStockParamsForRevision(productIds, sucursalIds) {
+    const data = await fetchAllRows(() => supabase.from('product_stock_params')
         .select('erp_product_id, erp_sucursal_id, units_sold_6m, daily_velocity, min_units, max_units, manual_min, manual_max, abc_class')
         .in('erp_product_id', productIds)
-        .in('erp_sucursal_id', sucursalIds);
+        .in('erp_sucursal_id', sucursalIds)
+        .order('id', { ascending: true }));
+    return { data };
 }
 
 // ── ExpandedPanel.jsx (2 sitios) ──────────────────────────────────────────────

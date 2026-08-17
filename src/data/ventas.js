@@ -52,6 +52,14 @@ export function fetchVentasRecetaStats({ fini, ffin, branchFilter, anuladas, sea
     });
 }
 
+/*
+ * ACOTADA POR EL DATO, no por la consulta: el `.in('invoice_id', …)` va sobre
+ * una columna que se repite, así que el detector `in-columna-repetida` la marca
+ * y tiene razón en marcarla. Lo que la salva es el `.eq('erp_product_id', 0)`:
+ * los renglones de canje de puntos son **798 en TODA la tabla** (medido
+ * 2026-08-17), o sea que ninguna combinación de facturas puede acercarla a las
+ * 1000. Si algún día el canje de puntos se vuelve masivo, esto pagina.
+ */
 export function fetchPuntosLineItems(invoiceIds) {
     return supabase.from('sales_invoice_items')
         .select('invoice_id, total_linea')
@@ -59,9 +67,22 @@ export function fetchPuntosLineItems(invoiceIds) {
         .in('invoice_id', invoiceIds);
 }
 
-// Usado por fetchStats con filtros especiales (anuladas/antibiótico/búsqueda) —
-// fetchAllRows evita el cap silencioso de 1000 filas: sin esto, el monto
-// mostrado podía quedar truncado aunque el conteo (count exact) fuera correcto.
+/*
+ * Usado por fetchStats con filtros especiales (anuladas/búsqueda) —
+ * fetchAllRows evita el cap silencioso de 1000 filas: sin esto, el monto
+ * mostrado podía quedar truncado aunque el conteo (count exact) fuera correcto.
+ *
+ * Trae el ALCANCE de la lista, no las ventas que suman: con el chip apagado eso
+ * incluye las anuladas, porque la lista las muestra. Por eso viene `estado` —
+ * quien llama cuenta todas y suma sólo las que no están anuladas. Hasta el
+ * 2026-08-17 esta consulta las excluía y el encabezado contaba 31 ventas menos
+ * de las que se podían recorrer en pantalla.
+ *
+ * El `.order('id')` es obligatorio, no cosmético: `fetchAllRows` pagina con
+ * `range()`, que corta por POSICIÓN. Sin orden total la base puede devolver la
+ * misma fila en dos páginas y perder otra — y acá el resultado es una suma de
+ * dinero, así que el error sería un monto mal, no una fila que falta.
+ */
 export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, filterAnuladas, cancelledEstados, isSearching, searchTerm }) {
     let searchIds = null;
     if (isSearching) {
@@ -70,10 +91,10 @@ export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, f
         searchIds = (data || []).map((r) => r.id);
     }
     return fetchAllRows(() => {
-        let q = supabase.from('sales_invoices').select('id, total').gte('fecha', fini).lte('fecha', ffin);
+        let q = supabase.from('sales_invoices').select('id, total, estado')
+            .gte('fecha', fini).lte('fecha', ffin).order('id', { ascending: true });
         if (branchFilter) q = q.eq('branch_id', branchFilter);
         if (filterAnuladas) q = q.in('estado', cancelledEstados);
-        else q = q.not('estado', 'in', `(${cancelledEstados.join(',')})`);
         if (isSearching) q = q.in('id', searchIds.length > 0 ? searchIds : [0]);
         return q;
     });
@@ -134,11 +155,28 @@ export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch
     return q;
 }
 
-export function fetchInvoiceItemsByIds(invoiceIds) {
-    return supabase.from('sales_invoice_items')
+/*
+ * Los renglones de las facturas de la página. PAGINA, aunque la entrada esté
+ * acotada: `invoice_id` se repite, así que 100 facturas no son 100 filas.
+ *
+ * Lo normal son ~170 (1.7 renglones por factura, medido), pero el techo es
+ * alcanzable: las 100 facturas con más renglones de la historia suman **1,846**.
+ * Están repartidas en 18 meses, así que no se juntan navegando; sí puede
+ * juntarlas un filtro. Y si se cortara, no avisa: faltarían renglones al abrir
+ * una venta y la etiqueta «Receta Médica» no se pintaría — un vacío que se ve
+ * igual que un producto que no está.
+ *
+ * El desempate por `id` no es decorativo: `range()` corta por POSICIÓN, y
+ * `total_linea` empata todo el tiempo (dos renglones del mismo precio). Sin
+ * orden total, la base puede mandar la misma fila en dos páginas y perder otra.
+ */
+export async function fetchInvoiceItemsByIds(invoiceIds) {
+    const data = await fetchAllRows(() => supabase.from('sales_invoice_items')
         .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
         .in('invoice_id', invoiceIds)
-        .order('total_linea', { ascending: false });
+        .order('total_linea', { ascending: false })
+        .order('id', { ascending: true }));
+    return { data };
 }
 
 /**

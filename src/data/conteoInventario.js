@@ -55,6 +55,13 @@ export function fetchBranchIdsConInventario() {
     return supabase.from('erp_sucursal_map').select('branch_id');
 }
 
+/*
+ * ACOTADA POR EL DATO: el `.in('erp_sucursal_id', …)` va sobre una columna que
+ * se repite —el detector `in-columna-repetida` la marca con razón— pero el
+ * `.eq('erp_product_id', …)` la fija a UN producto, y la lista de sucursales
+ * tiene 7 como máximo. El producto con más lotes de todo el inventario tiene 66
+ * (medido 2026-08-17). No hay forma de acercar esto a las 1000 filas.
+ */
 export function fetchInventoryLotesForProduct(productId, erpSucursalIds) {
     return supabase.from('inventory')
         .select('lote, fecha_vencimiento')

@@ -21,6 +21,47 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.5 — Las ventas anuladas se cuentan pero no suman
+
+El encabezado de Ventas describía una lista distinta de la que se veía. La
+lista siempre mostró las anuladas —tachadas, con fondo rojo y su rótulo— pero
+la tarjeta **Facturas** las descontaba: en agosto salían **11,434 renglones en
+pantalla y 11,403 en el número**. Treinta y uno que se podían recorrer con el
+dedo y no estaban en el total. Nadie lo notaba porque son el 0.3%.
+
+Ahora la regla es explícita: **las anuladas se cuentan, no se suman.** Una
+anulada ocurrió —es un documento, ocupa un renglón, se puede abrir— así que
+entra en «Facturas». Lo que no ocurrió es la venta, así que no entra en «Total
+ventas», ni en el ticket promedio, ni en los puntos.
+
+El ticket promedio también estaba mal por lo mismo, y al revés de lo que uno
+pensaría: dividía un monto **sin** anuladas entre un conteo **con** anuladas,
+así que salía más bajo de lo real. Ahora divide entre las que suman.
+
+Y cuando se enciende la píldora **Anuladas**, el monto pasa a ser el de ellas.
+Ahí no se está midiendo cuánto se vendió sino cuánto se anuló, que es el número
+por el que uno abre esa vista; dejarlo en $0 habría sido literal y también
+inútil.
+
+**Además, dos consultas que podían cortarse en 1000 sin avisar.** Ninguna
+llegaba hoy, pero las dos tenían camino:
+
+- Los renglones de las facturas de la página. Lo normal son ~170, pero las 100
+  facturas con más renglones de la historia suman **1,846**. Si se cortara, no
+  avisa: faltarían renglones al abrir una venta y la etiqueta «Receta Médica»
+  no se pintaría — un vacío idéntico al de un producto que no está.
+- Los MIN·MAX de una revisión de pedido, que pide productos **×** sucursales:
+  con las 7 salas bastan 150 productos. El síntoma habría sido MIN y MAX en
+  cero, indistinguible de un producto sin parámetros.
+
+Las otras cinco consultas de la misma familia quedaron **documentadas en el
+lugar donde están**, cada una con la medición que la mantiene acotada: los
+renglones de canje de puntos (798 en toda la tabla), los lotes de un producto
+(máximo 66), las fotos por nombre, y dos de la consolidación de marcaciones (49
+empleados, máximo 7 marcaciones por día). Sólo una de las cinco está acotada
+por los datos y no por un índice —las fotos— y así quedó anotado, porque nada
+lo garantiza.
+
 ## v2.656.4 — Solicitudes: los traslados dejan de llenar la bandeja de la sala
 
 Pedido: *«que por defecto no salgan las solicitudes entre salas, solo podamos

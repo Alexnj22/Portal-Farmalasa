@@ -229,6 +229,11 @@ Deno.serve(async (req) => {
     // gente que sí está de vacaciones se consolidan como injustificadas.
     const haceUnAnio = new Date(workDate + 'T12:00:00Z');
     haceUnAnio.setUTCFullYear(haceUnAnio.getUTCFullYear() - 1);
+    // El `.in('type', …)` va sobre una columna que se repite, así que acotar la
+    // entrada no acota la salida (detector `in-columna-repetida`). Lo que la
+    // acota son los OTROS dos filtros: aprobadas y del último año. Medido el
+    // 2026-08-17 sobre prod: 0 filas. `approval_requests` tiene 36 en total.
+    // El día que el expediente crezca de verdad, esto pagina.
     const { data: absenceRequests, error: absenceErr } = await supabase
       .from('approval_requests')
       .select('employee_id, type, metadata')
@@ -298,6 +303,10 @@ Deno.serve(async (req) => {
     // Pre-cargar timesheets existentes del día en un Map (evita un SELECT por empleado)
     const timesheetIdMap = new Map<string, number>();
     if (idsAConsolidar.length > 0) {
+      // ACOTADA POR EL DATO: `employee_id` se repite en `timesheets` (una fila
+      // por persona y día), pero el `.eq('work_date', …)` fija UN día, así que
+      // el techo es la plantilla entera. Medido el 2026-08-17: 49 empleados y
+      // un máximo de 7 marcaciones en un mismo día.
       const { data: existingTs, error: existingTsErr } = await supabase
         .from('timesheets')
         .select('id, employee_id')

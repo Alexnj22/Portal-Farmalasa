@@ -46,29 +46,32 @@
  * En `src/` la categoría arrancó y quedó en CERO, así que cualquier escritura
  * a ciegas nueva del portal falla el gate el mismo día. El tope sólo baja.
  *
- * `in-columna-repetida` nace con tope 10 por el mismo motivo: es deuda vieja
- * que recién ahora algo mira. Los diez se revisaron uno por uno contra los
- * volúmenes REALES de prod el 2026-08-17, y ninguno cruza las 1000 filas hoy —
- * el de recetas era el único que ya las había cruzado, y por eso se arregló en
- * vez de anotarse. Los que más cerca están, para cuando alguien los retome:
+ * `in-columna-repetida` nació con tope 10 el 2026-08-17 y quedó en 5 el mismo
+ * día. Los diez se revisaron uno por uno contra los volúmenes REALES de prod, y
+ * el resultado se repartió en tres grupos:
  *
- *   stockParams.js  fetchStockParamsForRevision cruza productos × sucursales,
- *                   así que un pedido grande lo lleva al tope antes que nadie.
- *   ventas.js:110   fetchInvoiceItemsByIds: 100 facturas por página × 1.7
- *                   renglones de promedio ≈ 170 filas, pero el máximo medido
- *                   por factura es 28.
+ *   ARREGLADO EN LA BASE (1)  El filtro «Receta Médica» de Ventas era el único
+ *     que YA cruzaba las 1000: 4,013 filas, 1000 entregadas, agosto mostrando 8
+ *     ventas de 93. No se anotó como deuda porque no era deuda, era un bug.
  *
- * El resto trabaja sobre conjuntos chicos por construcción (798 filas de canje
- * de puntos en toda la tabla, 36 solicitudes, los lotes de UN producto). El
- * tope sólo baja.
+ *   PAGINADOS (2)  Los que podían llegar al tope aunque hoy no lleguen:
+ *     · `fetchInvoiceItemsByIds` — las 100 facturas con más renglones de la
+ *       historia suman 1,846. No se juntan navegando, pero un filtro puede.
+ *     · `fetchStockParamsForRevision` — pide productos × sucursales; con 7 salas
+ *       bastan 150 productos. El peor pedido real pide 90 y usa 49.
  *
- * El tope queda en 10 y no en el conteo del día porque tres de esos diez son
- * sobre `approval_requests`, que entró a `tablas_grandes` el mismo 2026-08-17
- * y desde otra sesión, y que esa misma sesión estaba paginando mientras esto se
- * escribía. Según qué mitades hayan llegado a `main`, el conteo real da 8 o 10.
- * El gate sólo falla al SUBIR, así que en los dos casos queda verde; el tope
- * está flojo hasta que las dos mitades se junten. Cuando eso pase, bajarlo al
- * número medido — que es lo que hay que hacer siempre con este archivo.
+ *   DOCUMENTADOS (5)  Los que están acotados por OTRO filtro de la misma
+ *     consulta, no por el `.in()`. Cada uno lleva el motivo y la medición
+ *     escritos ARRIBA DE LA CONSULTA, que es donde los va a leer quien la
+ *     toque: los renglones de canje de puntos (798 en toda la tabla), los lotes
+ *     de UN producto (máx. 66), las fotos por nombre (1 producto por nombre),
+ *     y las dos de `consolidate-timesheets` (0 ausencias del último año; 49
+ *     empleados, máx. 7 marcaciones por día).
+ *
+ * El de las fotos es el único cuya cota es de los DATOS y no de un índice —o
+ * sea que nada la garantiza—, y así está anotado.
+ *
+ * El tope sólo baja.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';

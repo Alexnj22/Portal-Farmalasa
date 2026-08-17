@@ -345,12 +345,20 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const { getScope, hasPermission } = useAuth();
     const verCards = hasPermission('ventas_ver_cards');
     const [rows, setRows]             = useState([]);
+    // DOS conteos, no uno. `totalCount` es lo que tiene la lista —incluidas las
+    // anuladas, que se muestran tachadas— y manda en la tarjeta «Facturas» y en
+    // la paginación. `totalCountValido` son las que suman dinero, y es el
+    // divisor del ticket promedio: dividir el monto sin anuladas entre el
+    // conteo con anuladas da un promedio diluido por ventas que no ocurrieron.
     const [totalCount, setTotalCount] = useState(0);
+    const [totalCountValido, setTotalCountValido] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
     const [totalPuntos, setTotalPuntos] = useState(0);
     const [filterPuntos, setFilterPuntos] = useState(false);
     const [puntosCount, setPuntosCount] = useState(0);
-    const [prevStats, setPrevStats]   = useState({ count: 0, sum: 0 });
+    // `count` = las de la lista (con anuladas); `countValido` = las que suman.
+    // El período anterior necesita las dos por el mismo motivo que el actual.
+    const [prevStats, setPrevStats]   = useState({ count: 0, countValido: 0, sum: 0 });
     const [page, setPage]             = useState(1);
     const [pageSize, setPageSize]     = useState(50);
     const [sortCol, setSortCol]       = useState('fecha');
@@ -434,24 +442,25 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         const branchFilter = filterBranch ? Number(filterBranch) : null;
         const horaCorte = currentHoraCorte(ffin);
         // «Receta Médica» tiene su propio camino: el conjunto lo arma la base, así
-        // que conteo, monto y puntos llegan en UNA llamada y sobre exactamente las
-        // mismas filas que va a dibujar la lista. `'excluir'` reproduce lo que
-        // hacía esta función antes del cambio (la lista sí las mezcla — ver
-        // fetchRows, y el desajuste está anotado ahí).
+        // que los dos conteos, el monto y los puntos llegan en UNA llamada y sobre
+        // exactamente las mismas filas que va a dibujar la lista. El alcance que se
+        // le pasa es el MISMO que el de fetchRows — si los dos dejan de coincidir,
+        // el encabezado vuelve a hablar de una lista que no está en pantalla.
         if (filterAntibiotico) {
             const { data, error } = await fetchVentasRecetaStats({
                 fini, ffin, branchFilter,
-                anuladas:   filterAnuladas ? 'solo' : 'excluir',
+                anuladas:   filterAnuladas ? 'solo' : 'todas',
                 searchTerm: isSearching ? searchTerm : null,
             });
             if (error) console.error('fetchStats: get_ventas_receta_stats failed:', error.message);
             const r = data?.[0] || {};
-            setTotalCount(parseInt(r.total_count || 0));
+            setTotalCount(parseInt(r.total_count_todas || 0));
+            setTotalCountValido(parseInt(r.total_count || 0));
             setTotalAmount(parseFloat(r.total_sum || 0));
             setTotalPuntos(parseFloat(r.total_puntos || 0));
             // Sin comparativo de período anterior, igual que el resto de las vistas
             // filtradas: compararía universos distintos.
-            setPrevStats({ count: 0, sum: 0, puntos: 0 });
+            setPrevStats({ count: 0, countValido: 0, sum: 0, puntos: 0 });
             setLoadingStats(false);
             return;
         }
@@ -468,15 +477,23 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 fini, ffin, branchFilter, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,
                 isSearching, searchTerm,
             }) || [];
-            const sum = invoices.reduce((acc, r) => acc + Number(r.total || 0), 0);
-            const puntos = await sumPuntosForIds(invoices.map(r => r.id));
+            // `invoices` es el alcance de la lista. Las que suman dinero son las que
+            // no están anuladas — salvo cuando el chip «Anuladas» está encendido, que
+            // es cuando se las está auditando y el monto que se busca es justamente
+            // el de ellas. Misma regla que get_ventas_receta_stats.
+            const cuentan = filterAnuladas
+                ? invoices
+                : invoices.filter(r => !CANCELLED_ESTADOS.includes(r.estado));
+            const sum = cuentan.reduce((acc, r) => acc + Number(r.total || 0), 0);
+            const puntos = await sumPuntosForIds(cuentan.map(r => r.id));
 
             setTotalCount(invoices.length);
+            setTotalCountValido(cuentan.length);
             setTotalAmount(sum);
             setTotalPuntos(puntos);
             // Sin comparativo de período anterior para vistas filtradas — evita un %
             // engañoso que compare universos distintos (ej. "anuladas" vs "todo el mes pasado").
-            setPrevStats({ count: 0, sum: 0, puntos: 0 });
+            setPrevStats({ count: 0, countValido: 0, sum: 0, puntos: 0 });
             setLoadingStats(false);
             return;
         }
@@ -491,13 +508,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
         const s    = cur.data?.[0] || {};
         const prevS = prev.data?.[0] || {};
-        setTotalCount(parseInt(s.total_count || 0));
+        // `total_count_todas` incluye las anuladas y es lo que tiene la lista;
+        // `total_count` son las que suman. get_puntos_canjeados ya descuenta las
+        // anuladas por su cuenta, así que va con el segundo.
+        setTotalCount(parseInt(s.total_count_todas || 0));
+        setTotalCountValido(parseInt(s.total_count || 0));
         setTotalAmount(parseFloat(s.total_sum || 0));
         setTotalPuntos(parseFloat(puntosCur.data || 0));
         setPrevStats({
-            count:  parseInt(prevS.total_count || 0),
-            sum:    parseFloat(prevS.total_sum || 0),
-            puntos: parseFloat(puntosPrev.data || 0),
+            count:       parseInt(prevS.total_count_todas || 0),
+            countValido: parseInt(prevS.total_count || 0),
+            sum:         parseFloat(prevS.total_sum || 0),
+            puntos:      parseFloat(puntosPrev.data || 0),
         });
         setLoadingStats(false);
     }, [fini, ffin, filterBranch, prevMonthRange, filterAnuladas, filterAntibiotico, isSearching, searchTerm]);
@@ -524,13 +546,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             fetched = data || [];
             setPuntosCount(fetched.length > 0 ? Number(fetched[0].n) : 0);
         } else if (filterAntibiotico) {
-            // `'todas'` y no `'excluir'`: la lista sin filtrar mezcla las anuladas,
-            // así que encender la píldora no debería hacerlas desaparecer. Ojo que
-            // el encabezado SÍ las descuenta (fetchStats pide `'excluir'`) — es un
-            // desajuste que ya existía entre fetchInvoicesList y
-            // fetchInvoicesForStatsSpecial, y se reproduce a propósito para no
-            // mezclar dos cambios en uno. Cuando se decida cuál manda, se corrigen
-            // los dos lados juntos.
+            // `'todas'` y no `'excluir'`: la lista sin filtrar muestra las anuladas
+            // —tachadas y con su rótulo—, así que encender la píldora no debería
+            // hacerlas desaparecer. fetchStats pide EL MISMO alcance, y de ahí sale
+            // que el encabezado describa exactamente esta lista: cuenta todas y
+            // suma sólo las que no están anuladas.
             const { data, error } = await fetchVentasConReceta({
                 fini, ffin, branchFilter: filterBranch,
                 anuladas:   filterAnuladas ? 'solo' : 'todas',
@@ -645,7 +665,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     }, [expandedId, itemsCache, fetchPricesForIds]);
 
     const totalPages = isSearching ? 1 : Math.ceil((filterPuntos ? puntosCount : totalCount) / pageSize);
-    const avgTicket  = totalCount > 0 ? totalAmount / totalCount : 0;
+    // Divide por las que SUMAN, no por las de la lista: el monto ya no incluye
+    // las anuladas, así que dividirlo entre el conteo con anuladas daría un
+    // ticket promedio diluido por ventas que no ocurrieron.
+    const avgTicket  = totalCountValido > 0 ? totalAmount / totalCountValido : 0;
 
     return (
         <div className="p-5 md:p-6 space-y-5">
@@ -677,13 +700,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const prevDays = countDays(pf, pff);
                     const pctCount  = dailyPct(totalCount,  curDays, prevStats.count,  prevDays);
                     const pctSum    = dailyPct(totalAmount,  curDays, prevStats.sum,    prevDays);
-                    const pctAvg    = prevStats.sum > 0 && prevStats.count > 0
-                        ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
+                    const pctAvg    = prevStats.sum > 0 && prevStats.countValido > 0 && totalCountValido > 0
+                        ? ((avgTicket - (prevStats.sum/prevStats.countValido)) / (prevStats.sum/prevStats.countValido)) * 100 : null;
                     const pctPuntos = dailyPct(totalPuntos,  curDays, prevStats.puntos, prevDays);
                     return [
                         { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Total ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
-                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
+                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   sub: prevStats.sum && prevStats.countValido ? `${fmt(prevStats.sum/prevStats.countValido)}` : undefined },
                         { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}

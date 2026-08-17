@@ -364,8 +364,10 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
         const productIds  = [...new Set(items.map(r => r.erp_product_id))];
         const sucursalIds = [...new Set(items.map(r => r.erp_sucursal_id))];
         (async () => {
-            const { data, error } = await fetchStockParamsForRevision(productIds, sucursalIds);
-            if (error) console.error('fetch product_stock_params (revision_minmax) failed:', error.message);
+            // `data: null` es el fallo: la consulta pagina y `fetchAllRows` ya
+            // dejó el motivo en consola. No devuelve `error` porque un fallo a
+            // media paginación no es un error de una sola consulta.
+            const { data } = await fetchStockParamsForRevision(productIds, sucursalIds);
             if (!data) return;
             const map = {};
             for (const psp of data) map[`${psp.erp_product_id}_${psp.erp_sucursal_id}`] = psp;

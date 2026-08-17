@@ -15,7 +15,7 @@ import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
     resumenMovimiento, esMovimiento, lineasDe, esParcial,
     fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
-    personasDe, cuandoSeDecidio,
+    personasDe, cuandoSeDecidio, salaQueEspera,
 } from './movimientoTexto';
 import { shortEmployeeName } from '../../utils/nameUtils';
 
@@ -136,6 +136,12 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
      * asignar» ahí sonaría a que se perdió el destinatario — y lo que pasa es
      * que nunca hubo uno. */
     const sinAprobadorFijo = req.type === 'MINMAX_CHANGE_REQUEST' && !aprobador;
+    /* Un traslado pendiente no lo espera una persona: lo espera la SALA que
+     * tiene el producto, y desde v2.656.7 lo confirma cualquiera de ella con
+     * permiso. El nombre que salía acá era `approver_id` —el primero de la
+     * lista de destinatarios—, o sea uno de varios, y se leía como que sólo ése
+     * podía. Fue exactamente lo que se reportó mirando esta tarjeta. */
+    const esperaSala = salaQueEspera(req);
     const cuandoCerro = cuandoSeDecidio(req);
     const espera      = req.status === 'PENDING' ? desdeHace(req.created_at, ahora) : '';
     // Dos días esperando ya no es «recién llegada»: la espera se tiñe sola para
@@ -214,7 +220,7 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
                             ${isRejected ? 'text-danger' : decidida ? 'text-success' : 'text-content-3'}`}>
                             {isRejected ? 'Rechazó' : decidida ? 'Aprobó' : 'Espera a'}
                         </span>
-                        <ChipPersona persona={aprobador}
+                        <ChipPersona persona={aprobador} sala={esperaSala}
                             vacio={decidida ? 'Sin registro' : 'Sin asignar'} />
                         {decidida && cuandoCerro && (
                             <span className="text-micro text-content-3 shrink-0">{fmtHora(cuandoCerro)}</span>

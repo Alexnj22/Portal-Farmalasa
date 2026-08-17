@@ -1,8 +1,9 @@
 import React from 'react';
+import { Building2 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import { shortEmployeeName } from '../../utils/nameUtils';
 import { useNowTick } from '../../hooks/useNowTick';
-import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio } from './movimientoTexto';
+import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, salaQueEspera } from './movimientoTexto';
 
 /* La cara de quien pide y la de quien decide.
  *
@@ -36,14 +37,20 @@ export const CaraPersona = ({ persona, className = 'w-10 h-10 rounded-full' }) =
  * Cara chica + nombre corto, para meter una persona dentro de un renglón.
  * `truncate` necesita el `min-w-0` de al lado — sin él un flex item no achica.
  */
-export const ChipPersona = ({ persona, vacio = 'Sin asignar', className = '' }) => (
+// `sala` gana sobre `persona`: cuando lo que espera es una SALA —el traslado—,
+// no hay cara que poner y un nombre suelto sería el de uno de varios. Va el
+// mismo icono con el que el portal nombra una sucursal en todos lados
+// (`FilterBar.Sucursal`), para que se lea como un lugar y no como alguien.
+export const ChipPersona = ({ persona, sala = null, vacio = 'Sin asignar', className = '' }) => (
     <span className={`flex items-center gap-1.5 min-w-0 ${className}`}>
         {/* Sin persona no va un círculo vacío: un disco gris al lado del texto
             se lee como una foto que no cargó, y lo que pasa es que no hay a
             quién mostrar. */}
-        {persona && <CaraPersona persona={persona} className="w-5 h-5 rounded-full" />}
-        <span className={`text-caption truncate ${persona ? 'font-bold text-content-2' : 'font-medium text-content-3 italic'}`}>
-            {persona ? shortEmployeeName(persona) : vacio}
+        {sala
+            ? <Building2 size={12} strokeWidth={2.5} className="shrink-0 text-content-3" />
+            : persona && <CaraPersona persona={persona} className="w-5 h-5 rounded-full" />}
+        <span className={`text-caption truncate ${sala || persona ? 'font-bold text-content-2' : 'font-medium text-content-3 italic'}`}>
+            {sala || (persona ? shortEmployeeName(persona) : vacio)}
         </span>
     </span>
 );
@@ -59,7 +66,7 @@ export const ChipPersona = ({ persona, vacio = 'Sin asignar', className = '' }) 
  * @param tono     'card' | 'success' | 'danger' | 'warning' — el color habla del
  *                 ESTADO, nunca del tipo de solicitud (auditoría de tema).
  */
-export const FichaPersona = ({ rotulo, persona, cuando, apunte, vacio = 'Sin asignar', tono = 'card' }) => {
+export const FichaPersona = ({ rotulo, persona, sala = null, cuando, apunte, vacio = 'Sin asignar', tono = 'card' }) => {
     const fondo = {
         card:    'bg-surface-card border-border-card',
         success: 'bg-success/10 border-success/30',
@@ -83,12 +90,25 @@ export const FichaPersona = ({ rotulo, persona, cuando, apunte, vacio = 'Sin asi
         <div className={`px-3 py-2.5 rounded-2xl border ${fondo}`}>
             <p className={`text-micro font-black uppercase tracking-widest mb-1.5 ${tinta}`}>{rotulo}</p>
             <div className="flex items-start gap-2.5 min-w-0">
-                {persona && <CaraPersona persona={persona} className="w-9 h-9 rounded-full" />}
+                {/* Una sala no tiene cara: en su lugar va el icono de sucursal,
+                    del mismo tamaño que el avatar para que las dos fichas
+                    queden alineadas. */}
+                {sala
+                    ? <span className="w-9 h-9 rounded-full border border-border-card bg-surface-card-hover
+                                       flex items-center justify-center shrink-0">
+                        <Building2 size={16} strokeWidth={2.5} className="text-content-3" />
+                      </span>
+                    : persona && <CaraPersona persona={persona} className="w-9 h-9 rounded-full" />}
                 <div className="min-w-0 flex-1">
-                    <p className={`text-body-sm leading-tight truncate ${persona ? 'font-bold text-content' : 'font-medium text-content-3 italic'}`}>
-                        {persona ? shortEmployeeName(persona) : vacio}
+                    <p className={`text-body-sm leading-tight truncate ${sala || persona ? 'font-bold text-content' : 'font-medium text-content-3 italic'}`}>
+                        {sala || (persona ? shortEmployeeName(persona) : vacio)}
                     </p>
-                    {persona && (persona.role || persona.branch_name) && (
+                    {sala && (
+                        <p className="text-micro text-content-3 leading-tight truncate">
+                            La sala que tiene el producto
+                        </p>
+                    )}
+                    {!sala && persona && (persona.role || persona.branch_name) && (
                         <p className="text-micro text-content-3 leading-tight truncate">
                             {[persona.role, persona.branch_name].filter(Boolean).join(' · ')}
                         </p>
@@ -128,6 +148,11 @@ export const BloquePersonas = ({ req, empleadosPorId }) => {
     const rechazada = req.status === 'REJECTED';
     const pendiente = req.status === 'PENDING';
 
+    // Un traslado pendiente lo espera la SALA que tiene el producto, no una
+    // persona. Ya decidido, `aprobador` vuelve a ser quien de verdad lo
+    // resolvió: la función que despacha escribe su id en `approver_id`.
+    const esperaSala = salaQueEspera(req);
+
     const rotulo = pendiente ? 'Pendiente de'
         : cancelada ? 'Cancelada'
         : rechazada ? 'Rechazó'
@@ -151,6 +176,7 @@ export const BloquePersonas = ({ req, empleadosPorId }) => {
             <FichaPersona
                 rotulo={rotulo}
                 persona={cancelada ? null : aprobador}
+                sala={cancelada ? null : esperaSala}
                 /* Un ajuste de Min/Max no tiene aprobador asignado —su tabla no
                    guarda uno— y lo resuelve quien tenga el permiso del módulo.
                    «Sin asignar» ahí sonaría a destinatario perdido. */

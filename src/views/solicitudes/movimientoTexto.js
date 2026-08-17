@@ -196,6 +196,29 @@ export const personasDe = (req, empleadosPorId) => {
 };
 
 /**
+ * La SALA que tiene que contestar un traslado pendiente — o `null`.
+ *
+ * Un traslado no lo espera una persona: lo espera la sala que tiene el
+ * producto. Desde v2.656.7 lo confirma cualquiera de esa sala que tenga el
+ * permiso, así que el nombre que se mostraba —`approver_id`, el primero de la
+ * lista de destinatarios— era uno cualquiera de varios y hacía creer que sólo
+ * esa persona podía. Fue literalmente lo que se reportó mirando la tarjeta.
+ *
+ * `origen_branch_id` es la sala que ENTREGA y `branch_id` la que pidió; la que
+ * espera es la primera. El nombre viene guardado en el metadata desde que se
+ * creó la solicitud, así que no hace falta cruzar contra el padrón de salas.
+ *
+ * Sólo mientras está PENDIENTE. Una vez decidida, `approver_id` deja de ser un
+ * destinatario y pasa a ser quien realmente la resolvió —lo escribe la función
+ * que despacha, con su propio id— y ahí el nombre y la cara son el dato.
+ */
+export const salaQueEspera = (req) => {
+    if (req?.type !== 'INVENTORY_TRANSFER_REQUEST' || req?.status !== 'PENDING') return null;
+    const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
+    return meta.origen_branch_name?.trim() || null;
+};
+
+/**
  * Buscar a una persona por lo poco que a veces se guardó de ella.
  *
  * Min/Max no guarda un id de empleado en «quién decidió»: guarda el CORREO con

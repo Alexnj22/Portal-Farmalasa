@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.10 — En un traslado, la tarjeta dice la sala y no un nombre
+
+Pedido: *«en vez que diga que espera a el jefe en traslados entre salas, que
+diga mejor la sucursal»*.
+
+Es el remate de v2.656.7. Ahí un traslado pasó a poder confirmarlo cualquiera de
+la sala que tiene el producto, pero el pie de la tarjeta siguió diciendo
+**«ESPERA A»** y una cara con un nombre. Ese nombre nunca fue *el* que decide:
+es el primero de la lista de destinatarios, uno de varios. Y leerlo fue
+justamente lo que hizo pensar que sólo esa persona podía contestar.
+
+Ahora un traslado pendiente muestra **la sala que tiene el producto**, con el
+mismo icono de sucursal que el portal usa en todo lo demás, y en el detalle
+agrega debajo «La sala que tiene el producto» para que no haya que deducirlo.
+
+**Sólo mientras está pendiente.** Una vez despachado o rechazado vuelve el
+nombre y la cara: ahí ya no es un destinatario entre varios, es quien realmente
+lo resolvió —el sistema guarda el id de quien apretó— y ése es el dato que uno
+busca al abrir una solicitud cerrada. Las otras familias no cambian: siguen
+mostrando a su aprobador.
+
+La regla vive en una sola función con su prueba, y no dentro de cada pantalla,
+porque la tarjeta y el detalle ya se habían copiado una vez. La prueba fija las
+dos mitades que se rompen solas: que sea la sala de ORIGEN y no la de quien
+pidió —confundirlas pondría la sala de quien ya hizo su parte— y que al cerrarse
+la solicitud vuelva a mandar la persona.
+
 ## v2.656.9 — Traslados: la píldora en su sitio y el circuito de aprobación visible
 
 Reportado con dos capturas: *«el filter pill no es canónico»*, *«no sale quién

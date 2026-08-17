@@ -23,7 +23,8 @@
 | control | componente | §ectión |
 |---|---|---|
 | botón | `Button` | §15.2 |
-| una de N opciones | `SegmentedControl` | §15.3 |
+| una de **hasta 3** opciones | `SegmentedControl` | §15.3 |
+| una de **más de 3** opciones | `LiquidSelect` | §15.3 |
 | encendido/apagado | `Switch` | §15.4 |
 | casilla | `Checkbox` | §15.4 |
 | acción en la barra de vista | `TabBarAction` | §15.5 |
@@ -2299,9 +2300,33 @@ Cada opción acepta `tone` propio cuando el color lleva información (ej. el
 alcance de permisos, donde el color separa "Todos" de "Mi Sucursal").
 Semántica: `role="radiogroup"`, para que un lector anuncie "2 de 3".
 
-**Cuándo NO**: muchas opciones o vienen de datos → `LiquidSelect`. Navegación
-entre secciones → los `tabs` de `ViewTabBar`. Cada opción hace algo distinto →
-son botones sueltos.
+**Cuándo NO**: **más de 3 opciones** → `LiquidSelect`. Vienen de datos →
+`LiquidSelect`. Navegación entre secciones → los `tabs` de `ViewTabBar`. Cada
+opción hace algo distinto → son botones sueltos.
+
+#### El tope son 3, y es un número a propósito
+
+La regla decía «muchas opciones», y «muchas» no se puede verificar ni discutir:
+cada quien decide si ocho son muchas. Regla del usuario (2026-08-17): **arriba de
+tres, va select.**
+
+El motivo es que el segmentado sirve para **comparar de un vistazo** las opciones
+entre sí. Con tres caben en una fila, se leen juntas y elegir es un solo gesto.
+Con más deja de comparar y pasa a ser una lista disfrazada, con dos costos que se
+pagan siempre:
+
+- **Ocupa el alto de la tarjeta.** «Nivel de Precio Máximo», con ocho niveles,
+  pintaba dos renglones de píldoras. Al estar en una rejilla, ese alto lo heredaba
+  toda la fila: «Super Usuario» quedaba con la mitad inferior vacía. Se ve en la
+  captura del 2026-08-17. Con el select, las tres tarjetas del cargo entran en una
+  fila pareja.
+- **Se corta o pide scroll.** Ocho píldoras no entran a lo ancho: a 1440 «Precio
+  7» quedaba tapado por el borde, y taparlo con `overflow-x-auto` es esconder el
+  problema — nadie descubre una opción que hay que arrastrar para ver.
+
+**El límite cuenta opciones, no anchos.** Tres etiquetas largas pueden no entrar
+y ahí también va select; cuatro cortísimas siguen siendo cuatro. Si dudás,
+select: nunca se rompe, y un desplegable con tres opciones se ve bien.
 
 ### 15.4 `Switch` y `Checkbox`
 

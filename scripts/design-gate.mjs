@@ -210,7 +210,12 @@ const EXCEPTIONS = {
   // `pointer-events-none`) — a 100px un trazo de la escala se ve como un dibujo,
   // no como una textura. Es el mismo criterio con que §12 saca a las marcas de
   // agua de la rampa de tamaños.
-  'src/components/forms/FormWfmAnalytics.jsx': ['color', 'icono-stroke', 'white', 'hex'],
+  // `segmentado-largo`: son los FILTROS DE RANGO (día/semana/mes/…), no la
+  // captura de un valor. §15.3 manda select arriba de 3 opciones porque un
+  // segmentado largo deja de comparar; un carril de filtros compara justamente
+  // eso, y esconder los rangos en un desplegable los vuelve invisibles. Es el
+  // mismo motivo por el que las píldoras de filtro son su propio patrón.
+  'src/components/forms/FormWfmAnalytics.jsx': ['color', 'icono-stroke', 'white', 'hex', 'segmentado-largo'],
   // El check y el guion del Checkbox van a `strokeWidth={4}`: dentro de una caja
   // de 16px un trazo de 2.5 se pierde, y ese glifo ES el estado del control —
   // si no se ve, el checkbox no comunica nada. No es un ícono de interfaz más.
@@ -245,7 +250,12 @@ const EXCEPTIONS = {
   'src/views/schedule-tabs/components/SalyCopilot.jsx': ['color'], // caja IA siempre-oscura, mismo patrón shimmer
   'src/views/schedule-tabs/components/ScheduleChart.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/schedule-tabs/TabShifts.jsx': ['color'], // caja IA siempre-oscura
-  'src/views/EmployeeDetailView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
+  // `color`: tooltip flotante dark (resto del archivo ya tokenizado).
+  // `segmentado-largo`: son las cinco SECCIONES de la ficha, o sea navegación
+  // —el caso que §15.3 ya exime en la misma frase que fija el tope de 3—. Este
+  // control reemplazó una pestaña escrita a mano cuyo indicador se calculaba
+  // con cinco ternarios; volverla un desplegable sería peor que el original.
+  'src/views/EmployeeDetailView.jsx': ['color', 'segmentado-largo'],
   // `carril-pildora`: excepción MEDIDA en pantalla, ver la nota junto a TabInventario.
   'src/views/AttendanceAuditView.jsx': ['color', 'carril-pildora'], // tooltip flotante dark (resto del archivo ya tokenizado)
   'src/views/VentasView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
@@ -2621,6 +2631,36 @@ function scanFile(path) {
         });
         break;
       }
+    }
+  }
+
+  // ── §15.3 — arriba de 3 opciones, un segmentado deja de comparar ──────────
+  //
+  // La regla decía «muchas opciones → LiquidSelect», y «muchas» no se puede
+  // verificar: cada quien decide si ocho son muchas. El usuario la fijó en TRES
+  // el 2026-08-17, mirando «Nivel de Precio Máximo» — ocho niveles en dos
+  // renglones de píldoras que marcaban el alto de toda la fila de la rejilla y
+  // dejaban «Super Usuario» con la mitad vacía, y a 1440 «Precio 7» cortado por
+  // el borde de la tarjeta.
+  //
+  // Se cuentan las `value:` del literal de `options`. Cuando `options` sale de
+  // una variable o de un `.map()` no hay nada que contar en el archivo: eso ya
+  // lo cubre la otra mitad de la regla —«vienen de datos → LiquidSelect»— y no
+  // se adivina acá.
+  if (!hasException(path, 'segmentado-largo')) {
+    const limpioSeg = sinComentarios(text);
+    for (const [i, j] of tagsJsx(limpioSeg, 'SegmentedControl')) {
+      const tag = limpioSeg.slice(i, j);
+      const opts = /\boptions=\{\s*\[([^]*?)\]\s*\}/.exec(tag);
+      if (!opts) continue;
+      const n = (opts[1].match(/\bvalue\s*:/g) || []).length;
+      if (n <= 3) continue;
+      findings.push({
+        line: limpioSeg.slice(0, i).split('\n').length,
+        label: `SegmentedControl con ${n} opciones — arriba de 3 va \`LiquidSelect\` (§15.3)`,
+        category: 'segmentado-largo',
+        text: tag.replace(/\s+/g, ' ').slice(0, 120),
+      });
     }
   }
 

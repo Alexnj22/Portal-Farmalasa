@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.649.0 — Gate de borradores, precios en select y tiempo libre en Permisos
+
+**`npm run gate:borradores` — un formulario largo no puede perderse porque se
+cerró la sesión.** El aviso «¿Sigues ahí?» de v2.646.0 evita la sorpresa, no la
+pérdida: nadie vuelve a tiempo si se fue diez minutos. Lo que evita la pérdida es
+el borrador, y el patrón ya existía —`utils/draftUtils.js`, usado por
+`LlegadaModal` y `FinalizarCajasModal`— sin ninguna regla que lo extendiera.
+Medido: **27 formularios de 6 controles de captura o más, cero con borrador.**
+
+El gate cuenta controles de CAPTURA, no de filtro: un `SearchInput` o un
+`PeriodPicker` no tienen nada que perder, y contarlos haría que una pantalla de
+reportes pidiera borrador sin tener qué guardar. Una excepción exige **motivo
+escrito** — hoy hay una sola, el conteo cíclico, que guarda renglón por renglón
+con `guardar_conteo_item` (verificado).
+
+**`CompletarRenglon.jsx` quedó FUERA del baseline a propósito**: es la bitácora
+que motivó todo esto y era trabajo en curso el día que se escribió el gate, así
+que se deja como hallazgo vivo en vez de nacer perdonado.
+
+**§15.3 — el tope de un segmentado son 3 opciones.** La regla decía «muchas
+opciones → `LiquidSelect`», y «muchas» no se puede verificar: cada quien decide
+si ocho son muchas. Ahora es un número, con detector propio en el gate de diseño
+(`segmentado-largo`) — [[feedback_la_regla_que_solo_vive_en_prosa_se_rompe]].
+
+**Nivel de Precio Máximo pasó a select.** Sus ocho niveles pintaban dos renglones
+de píldoras que marcaban el alto de toda la fila de la rejilla: «Super Usuario»
+quedaba con la mitad inferior vacía, y a 1440 «Precio 7» salía cortado por el
+borde de la tarjeta. Las dos excepciones que encontró el detector son legítimas y
+quedaron con su motivo: el rango de tiempo de analítica es un **filtro**, y las
+cinco secciones de la ficha del empleado son **navegación** — los dos casos que
+§15.3 ya eximía en la misma frase.
+
+**El tiempo de inactividad pasó a campo libre.** Cinco minutos, veinte o dos
+horas dependen de cómo trabaja cada sala, y una escala fija obliga a elegir el
+valor más cercano al que uno quería. Se guarda al salir del campo o con Enter,
+nunca en cada tecla: escribir «120» pasa por «1» y por «12», y guardar eso
+dejaría el cargo en un minuto.
+
+**Y con las tres tarjetas ya cortas, la rejilla cierra:** Super Usuario, nivel de
+precio y tiempo en una fila pareja, y Decidir solicitudes a lo ancho de las tres
+columnas — donde su comentario decía que estaba desde que se escribió, sin
+estarlo nunca.
+
 ## v2.648.0 — Bitácoras: completar el renglón, anular sin borrar y menú propio
 
 **El libro ya se completa desde la pantalla.** Un renglón pendiente pide cuatro

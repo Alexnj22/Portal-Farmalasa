@@ -591,6 +591,17 @@ emergencia real, no para silenciar un hallazgo.
   Sistema → Prueba de impresión.
 - Bumpar la versión en cada commit con `npm run version:bump` (la entrada del
   changelog va en `CHANGELOG.md`, nunca en `src/version.js`)
+- **Un formulario largo se guarda solo: `npm run gate:borradores`.** El portal
+  cierra la sesión sola cuando nadie usa la pantalla, y desde v2.647.0 ese plazo
+  se configura por cargo (los de sala están en 5 minutos). Un formulario vive en
+  memoria: cuando la sesión se cierra se pierde todo lo escrito y no queda
+  rastro. El aviso «¿Sigues ahí?» evita la SORPRESA, no la PÉRDIDA — nadie
+  vuelve a tiempo si se fue diez minutos. A partir de **6 controles de captura**,
+  el archivo guarda borrador con `saveDraft`/`loadDraft` de
+  `src/utils/draftUtils.js`, o va a `EXCEPCIONES` de `scripts/draft-gate.mjs`
+  **con su motivo escrito** (el único que hay hoy: el conteo cíclico, que guarda
+  renglón por renglón). El baseline es la deuda del día que se escribió el gate
+  y **sólo baja**: no se regenera para tapar un hallazgo nuevo.
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
+import PortalInput from '../components/common/PortalInput';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { smartFilter } from '../utils/searchUtils';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -197,6 +198,83 @@ const FAMILIAS_DECIDIR = [
     { key: 'traslados',            label: 'Traslados',   desc: 'Confirmar el envío de producto que otra sala pide' },
 ];
 
+// ── Cuánto aguanta una sesión sin que nadie la use ───────────────────────────
+//
+// Campo libre y no una escala de píldoras (pedido del usuario, 2026-08-17):
+// cinco minutos, veinte o dos horas dependen de cómo trabaja cada sala, y una
+// escala fija obliga a elegir el valor más cercano al que uno quería.
+//
+// Se guarda al SALIR del campo o con Enter, no en cada tecla: escribir «120»
+// pasa por «1» y por «12», y guardar eso dejaría el cargo en un minuto —por
+// debajo del piso— o en doce, que nadie pidió.
+const MIN_INACTIVIDAD = 5;
+const MAX_INACTIVIDAD = 1440;
+
+// El mismo número dicho como lo diría una persona. Sirve de confirmación: quien
+// escribe 240 quiere leer «4 horas» antes de irse del campo.
+const enPalabras = (min) => {
+    if (!Number.isFinite(min)) return '';
+    if (min < 60) return `${min} minutos`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    const horas = h === 1 ? '1 hora' : `${h} horas`;
+    return m ? `${horas} y ${m} min` : horas;
+};
+
+const TarjetaTiempoDeInactividad = ({ minutos, onChange, locked }) => {
+    const [texto, setTexto] = useState(String(minutos));
+
+    // Al cambiar de cargo el campo tiene que mostrar el del cargo nuevo. Sin
+    // esto quedaba el número tecleado para el anterior — el mismo modo de falla
+    // que un formulario que no se reinicia al cambiar de ficha.
+    useEffect(() => { setTexto(String(minutos)); }, [minutos]);
+
+    const n = parseInt(texto, 10);
+    const valido = Number.isFinite(n) && n >= MIN_INACTIVIDAD && n <= MAX_INACTIVIDAD;
+
+    const confirmar = () => {
+        if (!valido) { setTexto(String(minutos)); return; }   // se descarta y vuelve al guardado
+        if (n !== minutos) onChange(n);
+    };
+
+    return (
+        <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
+                    <Clock size={18} className="text-white" strokeWidth={2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-body font-black text-content leading-tight">Cerrar sesión sin uso</p>
+                    <p className="text-caption text-content-3 font-medium mt-0.5">
+                        Actual: <span className="font-black text-content-2">{enPalabras(minutos)}</span>
+                    </p>
+                </div>
+            </div>
+
+            <PortalInput
+                type="number"
+                label="Minutos sin tocar el portal"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onBlur={confirmar}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+                readOnly={locked}
+                min={MIN_INACTIVIDAD}
+                max={MAX_INACTIVIDAD}
+                hasError={!!texto && !valido}
+                errorMessage={`Entre ${MIN_INACTIVIDAD} y ${MAX_INACTIVIDAD} minutos`}
+                helperText={valido && n !== minutos ? `Se guardará como ${enPalabras(n)}` : undefined}
+            />
+
+            <p className="text-caption text-content-3 font-medium mt-3 leading-relaxed">
+                Un minuto antes se le pregunta si sigue ahí. En el teléfono con la
+                aplicación instalada no aplica: ahí la sesión dura semanas para que le
+                lleguen los avisos.
+            </p>
+        </div>
+    );
+};
+
 const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, locked, saving, roles = [], employees = [] }) => {
     const perm = (k) => permissions[`${roleId}:${k}`] || {};
     const encendidas = FAMILIAS_DECIDIR.filter(f => perm(f.key).can_approve).length;
@@ -225,7 +303,11 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
         : `${arr.slice(0, -1).join(', ')} y ${arr[arr.length - 1]}`;
 
     return (
-        <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
+        // `md:col-span-3`: el comentario de donde se usa decía «a lo ancho de las
+        // tres columnas» desde que se escribió, y nunca lo estuvo — quedaba en
+        // una columna con dos vacías al lado. Son cuatro píldoras y dos mandos:
+        // apretados en un tercio no se leen.
+        <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full md:col-span-3">
             <div className="flex items-center gap-3 mb-3">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-success to-chart-1 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
                     <CheckCircle2 size={18} className="text-white" strokeWidth={2} />
@@ -1249,7 +1331,15 @@ const PermissionsView = () => {
                                 </div>
                             )}
 
-                            {/* ── Cards: Super Usuario (1/3) + Nivel de Precio (2/3) ── */}
+                            {/* ── Las cuatro preguntas del CARGO ──────────────────
+                                Arriba las tres cortas —Super Usuario, nivel de precio
+                                y tiempo de inactividad—, una por columna y a la misma
+                                altura. Abajo, Decidir solicitudes a lo ancho.
+
+                                Las tres de arriba entraron en una fila recién cuando
+                                el nivel de precio dejó de ser ocho píldoras en dos
+                                renglones: mientras lo fue, marcaba la altura de la
+                                fila y las otras dos quedaban con la mitad vacía. */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
 
                             {/* SU Card — columna pequeña */}
@@ -1331,19 +1421,20 @@ const PermissionsView = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    {/* `flex-wrap` no servía de nada: `SegmentedControl` es UN
-                                        hijo que pinta los 8 niveles en una fila, así que no hay
-                                        dónde envolver — a 1440 "Precio 7" quedaba cortado por el
-                                        borde de la tarjeta. El contenido ancho lleva su propio
-                                        scroll horizontal; el cuerpo de la página nunca. */}
-                                    <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-                                        <SegmentedControl
-                                            size="sm" disabled={!canEdit}
-                                            options={PRICE_OPTS.map(opt => ({ value: opt.value ?? '_null', label: opt.label, icon: opt.icon }))}
-                                            value={currentLevel ?? '_null'}
-                                            onChange={v => canEdit && handlePriceLevelChange(v === '_null' ? null : v)}
-                                            label="Nivel de precio" />
-                                    </div>
+                                    {/* Ocho opciones NO son un segmentado (DESIGN.md §15.3):
+                                        arriba de tres, el segmentado deja de comparar y pasa a
+                                        ser una lista disfrazada. Pintaba dos renglones de
+                                        píldoras que se comían la tarjeta, y a 1440 «Precio 7»
+                                        quedaba cortado por el borde. Con el select, la tarjeta
+                                        mide lo que dice y no hace falta scroll horizontal. */}
+                                    <LiquidSelect
+                                        disabled={!canEdit}
+                                        clearable={false}
+                                        icon={DollarSign}
+                                        options={PRICE_OPTS.map(opt => ({ value: opt.value ?? '_null', label: opt.label }))}
+                                        value={currentLevel ?? '_null'}
+                                        onChange={v => canEdit && handlePriceLevelChange(v === '_null' ? null : v)}
+                                        placeholder="Elegir nivel" />
                                 </div>
                                 );
                             })()}
@@ -1358,51 +1449,11 @@ const PermissionsView = () => {
                                 mundo, así que los 39 de sala y bodega tenían la
                                 computadora del mostrador abierta 12 horas. Ahora es un
                                 dato que se elige, no un efecto secundario. */}
-                            {(() => {
-                                const actual = roleIdleLimits[selectedRoleId] ?? 5;
-                                const OPTS = [
-                                    { value: 5,   label: '5 min'  },
-                                    { value: 15,  label: '15 min' },
-                                    { value: 30,  label: '30 min' },
-                                    { value: 60,  label: '1 hora' },
-                                    { value: 240, label: '4 horas' },
-                                    { value: 720, label: '12 horas' },
-                                ];
-                                // Un valor puesto a mano en la base que no cae en la
-                                // escala no se puede esconder: se nombra, y así quien
-                                // mira entiende por qué no hay ninguna opción marcada.
-                                const enLaEscala = OPTS.some(o => o.value === actual);
-                                return (
-                                <div data-surface="card" className="rounded-2xl border border-border-card p-4 h-full">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)]">
-                                            <Clock size={18} className="text-white" strokeWidth={2} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-body font-black text-content leading-tight">Cerrar sesión sin uso</p>
-                                            <p className="text-caption text-content-3 font-medium mt-0.5">
-                                                Actual: <span className="font-black text-content-2">
-                                                    {enLaEscala ? OPTS.find(o => o.value === actual).label : `${actual} min`}
-                                                </span> sin tocar el portal
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-                                        <SegmentedControl
-                                            size="sm" disabled={!canEdit}
-                                            options={OPTS}
-                                            value={enLaEscala ? actual : null}
-                                            onChange={v => canEdit && handleIdleLimitChange(Number(v))}
-                                            label="Cerrar sesión sin uso" />
-                                    </div>
-                                    <p className="text-caption text-content-3 font-medium mt-3 leading-relaxed">
-                                        Un minuto antes se le pregunta si sigue ahí. En el teléfono con
-                                        la aplicación instalada no aplica: ahí la sesión dura semanas
-                                        para que le lleguen los avisos.
-                                    </p>
-                                </div>
-                                );
-                            })()}
+                            <TarjetaTiempoDeInactividad
+                                minutos={roleIdleLimits[selectedRoleId] ?? 5}
+                                onChange={handleIdleLimitChange}
+                                locked={!canEdit}
+                            />
 
                             {/* Decidir solicitudes va ACÁ y no entre los módulos —pedido
                                 del usuario— porque contesta una pregunta del CARGO, como

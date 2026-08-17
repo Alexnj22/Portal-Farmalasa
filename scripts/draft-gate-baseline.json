@@ -1,0 +1,31 @@
+{
+  "generado": "2026-08-17",
+  "motivo": "Deuda del día que se escribió el gate. Sólo baja. Ver scripts/draft-gate.mjs. NOTA: src/components/bitacoras/CompletarRenglon.jsx quedó FUERA a propósito — es la pantalla que motivó el gate y era trabajo en curso el día que se escribió, así que se deja como hallazgo vivo en vez de nacer perdonado.",
+  "umbral": 6,
+  "deuda": [
+    "src/components/bolsas/SalidaDeBolsa.jsx",
+    "src/components/forms/BranchTabGeneral.jsx",
+    "src/components/forms/BranchTabInmueble.jsx",
+    "src/components/forms/BranchTabLegal.jsx",
+    "src/components/forms/EmployeeFormModal.jsx",
+    "src/components/forms/FormClienteDetail.jsx",
+    "src/components/forms/FormEditPayrollEntry.jsx",
+    "src/components/forms/FormNovedad.jsx",
+    "src/components/forms/FormNursingRegents.jsx",
+    "src/components/forms/FormProveedorDetail.jsx",
+    "src/components/forms/FormRehireEmployee.jsx",
+    "src/components/practicantes/PracticanteModal.jsx",
+    "src/views/CotizacionesView.jsx",
+    "src/views/DashboardView.jsx",
+    "src/views/EncuestaAdminView.jsx",
+    "src/views/FacturacionView.jsx",
+    "src/views/dashboard/WidgetAnnulmentRequest.jsx",
+    "src/views/dashboard/WidgetInventoryMovement.jsx",
+    "src/views/metas/GastoModal.jsx",
+    "src/views/pedidos/RecepcionModal.jsx",
+    "src/views/productos/TabCatalogo.jsx",
+    "src/views/purchases/CuentasPorPagarView.jsx",
+    "src/views/purchases/ProveedoresView.jsx",
+    "src/views/solicitudes/ModalNuevaPersonal.jsx"
+  ]
+}

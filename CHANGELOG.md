@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.649.3 — Naranja limpio, tiempo en horas y minutos, solicitudes compacto
+
+**El naranja se enturbiaba porque el color reemplazaba al vidrio.** La tarjeta de
+Super Usuario encendida cambiaba `data-surface` por un degradado propio
+(`from-warning/20 via-chart-4/10 to-warning/5`), así que el resultado dependía del
+fondo que le tocara detrás: sobre la malla de color de Permisos daba un **marrón
+lavado**, no un naranja. Ahora el vidrio se queda siempre y encendida sólo suma
+borde y aro de aviso; el color vive donde tiene contraste propio —ícono, badge,
+píldora— y no diluido al 20% sobre lo que haya debajo.
+
+**El tiempo se escribe en horas y minutos.** Pedido del usuario: «así no tengo
+que calcular cuántos minutos tiene una hora». Doce horas son 720 y nadie tiene
+por qué saberlo de memoria — la cuenta la hace la pantalla, y en la base sigue
+siendo un solo número. Un campo vacío cuenta como cero, para que dejar sólo «2»
+en horas valga dos horas en vez de quedar inválido.
+
+De paso: el `helperText` de `PortalInput` se pinta **arriba, junto a la etiqueta
+y en mayúsculas**, así que «NO APLICA AL TELÉFONO…» competía con «MINUTOS SIN
+TOCAR EL PORTAL» y las dos se leían como una sola etiqueta rota. La aclaración
+bajó al pie, en texto normal, donde además hace de mensaje de error cuando el
+valor no entra en el rango.
+
+**«Decidir solicitudes» dejó de tener un agujero en el medio.** Sus dos mandos
+vivían en una fila propia con `justify-between` a lo ancho de la tarjeta: al
+ocupar las tres columnas, eso ponía «TODAS» y «DELEGAR» en extremos opuestos con
+un vacío enorme entre medio, que era la mitad del alto. Volvieron junto al
+título.
+
 ## v2.649.2 — Bitácoras: widget de recetas pendientes y tres correcciones de uso
 
 **Widget propio para las recetas pendientes.** Lista las ventas bajo receta que

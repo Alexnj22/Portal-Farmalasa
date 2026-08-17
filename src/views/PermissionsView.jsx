@@ -222,18 +222,34 @@ const enPalabras = (min) => {
 };
 
 const TarjetaTiempoDeInactividad = ({ minutos, onChange, locked }) => {
-    const [texto, setTexto] = useState(String(minutos));
+    // Dos campos, horas y minutos, y NO uno solo en minutos (pedido del usuario,
+    // 2026-08-17): «así no tengo que calcular cuántos minutos tiene una hora».
+    // Doce horas son 720 y nadie tiene por qué saberlo de memoria — la cuenta la
+    // hace la pantalla. En la base sigue siendo un solo número: `h * 60 + m`.
+    const [hh, setHh] = useState(String(Math.floor(minutos / 60)));
+    const [mm, setMm] = useState(String(minutos % 60));
 
-    // Al cambiar de cargo el campo tiene que mostrar el del cargo nuevo. Sin
+    // Al cambiar de cargo los campos tienen que mostrar el del cargo nuevo. Sin
     // esto quedaba el número tecleado para el anterior — el mismo modo de falla
     // que un formulario que no se reinicia al cambiar de ficha.
-    useEffect(() => { setTexto(String(minutos)); }, [minutos]);
+    useEffect(() => {
+        setHh(String(Math.floor(minutos / 60)));
+        setMm(String(minutos % 60));
+    }, [minutos]);
 
-    const n = parseInt(texto, 10);
+    // Vacío cuenta como cero: dejar sólo «2» en horas tiene que valer 2 horas, no
+    // quedar inválido por no haber escrito un 0 al lado.
+    const h = hh.trim() === '' ? 0 : parseInt(hh, 10);
+    const m = mm.trim() === '' ? 0 : parseInt(mm, 10);
+    const n = (Number.isFinite(h) ? h : NaN) * 60 + (Number.isFinite(m) ? m : NaN);
     const valido = Number.isFinite(n) && n >= MIN_INACTIVIDAD && n <= MAX_INACTIVIDAD;
 
     const confirmar = () => {
-        if (!valido) { setTexto(String(minutos)); return; }   // se descarta y vuelve al guardado
+        if (!valido) {   // se descarta y vuelve a lo guardado
+            setHh(String(Math.floor(minutos / 60)));
+            setMm(String(minutos % 60));
+            return;
+        }
         if (n !== minutos) onChange(n);
     };
 
@@ -258,22 +274,36 @@ const TarjetaTiempoDeInactividad = ({ minutos, onChange, locked }) => {
                 </div>
             </div>
 
-            <PortalInput
-                type="number"
-                label="Minutos sin tocar el portal"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                onBlur={confirmar}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
-                readOnly={locked}
-                min={MIN_INACTIVIDAD}
-                max={MAX_INACTIVIDAD}
-                hasError={!!texto && !valido}
-                errorMessage={`Entre ${MIN_INACTIVIDAD} y ${MAX_INACTIVIDAD} minutos`}
-                helperText={valido && n !== minutos
-                    ? `Se guardará como ${enPalabras(n)}`
-                    : 'No aplica al teléfono con la aplicación instalada'}
-            />
+            {/* El `helperText` iba en el campo y `PortalInput` lo pinta ARRIBA, al
+                lado de la etiqueta y en mayúsculas: «NO APLICA AL TELÉFONO…»
+                competía con «MINUTOS SIN TOCAR EL PORTAL» y las dos se leían como
+                una sola etiqueta rota. La aclaración baja al pie, en texto normal. */}
+            <div className="flex items-end gap-2">
+                <PortalInput
+                    type="number" label="Horas" value={hh}
+                    onChange={(e) => setHh(e.target.value)}
+                    onBlur={confirmar}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+                    readOnly={locked} min={0} max={24}
+                    hasError={!valido}
+                />
+                <PortalInput
+                    type="number" label="Minutos" value={mm}
+                    onChange={(e) => setMm(e.target.value)}
+                    onBlur={confirmar}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+                    readOnly={locked} min={0} max={59}
+                    hasError={!valido}
+                />
+            </div>
+
+            <p className={`text-micro font-medium leading-snug ${valido ? 'text-content-3' : 'text-danger-text'}`}>
+                {!valido
+                    ? `Tiene que quedar entre ${MIN_INACTIVIDAD} minutos y 24 horas`
+                    : n !== minutos
+                        ? `Se guardará como ${enPalabras(n)}`
+                        : 'No aplica al teléfono con la aplicación instalada'}
+            </p>
         </div>
     );
 };
@@ -321,12 +351,14 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                         Hoy: <span className="font-black text-content-2">{resumen}</span>
                     </p>
                 </div>
-            </div>
 
-            {/* Los dos mandos que gobiernan la fila entera. En una columna
-                angosta ya no caben junto al título, así que bajan acá; siguen
-                aparte de las píldoras porque no son una familia más. */}
-            <div className="flex items-center justify-between gap-3 mb-2.5">
+            {/* Los dos mandos que gobiernan la fila entera. Volvieron junto al
+                título: al ocupar la tarjeta las tres columnas sobra ancho de
+                sobra, y en su propia fila —con `justify-between` a lo ancho de
+                todo— dejaban un vacío enorme entre «TODAS» y «DELEGAR», que era
+                la mitad del alto de la tarjeta. Siguen separados de las píldoras
+                por el espacio, porque no son una familia más. */}
+            <div className="flex items-center gap-4 flex-shrink-0">
                 <div className="flex items-center gap-2">
                     <span className="text-caption font-black uppercase tracking-widest text-content-3">Todas</span>
                     {/* Encendido SÓLO cuando están las cuatro. Con «algunas» decía
@@ -345,6 +377,7 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                             onChange={(v) => onDelegar(roleId, v)} />
                     </div>
                 </LiquidTooltip>
+            </div>
             </div>
 
             {/* Con el interruptor encendido hay que decir A QUIÉN le llegan estas
@@ -1348,9 +1381,21 @@ const PermissionsView = () => {
                             {/* SU Card — columna pequeña */}
                             {(() => {
                                 const isRoleSU = !!roleIsSU[selectedRoleId];
+                                // El naranja se enturbiaba. La tarjeta encendida
+                                // reemplazaba el vidrio por un degradado propio
+                                // (`from-warning/20 via-chart-4/10 to-warning/5`) y el
+                                // resultado dependía del fondo que le tocara detrás:
+                                // sobre la malla de color de esta pantalla daba un
+                                // marrón lavado, no un naranja.
+                                //
+                                // Ahora el vidrio se queda SIEMPRE —`data-surface`
+                                // fijo— y encendida sólo se le agrega borde y aro de
+                                // aviso. El color va donde tiene contraste propio
+                                // (ícono, badge, píldora), no diluido al 20% sobre lo
+                                // que haya debajo.
                                 return (
-                                <div data-surface={isRoleSU ? undefined : 'card'} className={`relative overflow-hidden rounded-2xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu md:col-span-1 h-full ${isRoleSU ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]' : ''}`}>
-                                    {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-warning/30 blur-xl pointer-events-none" />}
+                                <div data-surface="card" className={`relative overflow-hidden rounded-2xl border transition-all duration-[var(--dur-lento)] ease-out transform-gpu md:col-span-1 h-full ${isRoleSU ? 'border-warning/60 ring-1 ring-warning/30 shadow-[var(--shadow-glass-2)]' : 'border-border-card'}`}>
+                                    {isRoleSU && <div className="absolute -top-6 -right-6 w-14 h-14 rounded-full bg-warning/20 blur-2xl pointer-events-none" />}
                                     <div className="relative p-3.5 flex flex-col gap-3">
                                         {/* Icon + toggle row */}
                                         <div className="flex items-center justify-between">

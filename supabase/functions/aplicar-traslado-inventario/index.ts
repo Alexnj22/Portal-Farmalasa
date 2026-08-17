@@ -208,24 +208,20 @@ Deno.serve(async (req) => {
         return json({ ok: false, codigo: "YA_RECIBIDO", error: "Este traslado ya se recibió." }, 409);
 
       // Recibe la SALA que lo pidió, no la persona: quien pidió puede estar de
-      // descanso cuando llega la caja. Mismo criterio que el RLS —jefatura
-      // siempre, el resto si está en turno— repetido acá porque esta función
-      // usa la llave de servicio y el RLS no la frena.
+      // descanso cuando llega la caja. Mismo criterio que el RLS, repetido acá
+      // porque esta función usa la llave de servicio y el RLS no la frena.
+      //
+      // Hasta el 2026-08-17 pedía además jefatura, o estar en turno. Las dos
+      // condiciones sobraban y la segunda no funcionaba: `empleados_en_turno`
+      // sale de los horarios publicados, y esa semana había OCHO personas con
+      // horario en toda la empresa. El permiso `traslados.can_approve` —que ya
+      // se cobró más arriba— es lo que decide; la sala, dónde.
       if (!alcanceTodo && quien.id !== sol.employee_id) {
         const enLaSala = emp?.branch_id === Number(meta.branch_id);
-        const esJefatura = ["JEFE", "SUBJEFE"].includes(String(emp?.system_role ?? ""));
-        let enTurno = false;
-        if (enLaSala && !esJefatura) {
-          const { data: t } = await admin
-            .rpc("empleados_en_turno", { p_branch_id: Number(meta.branch_id) });
-          enTurno = Array.isArray(t) && t.some((x: { employee_id: string }) => x.employee_id === quien.id);
-        }
-        if (!enLaSala || !(esJefatura || enTurno))
+        if (!enLaSala)
           return json({
             ok: false,
-            error: enLaSala
-              ? "Para recibir hay que estar en turno en la sala."
-              : "El traslado lo recibe la sala que lo pidió.",
+            error: "El traslado lo recibe la sala que lo pidió.",
           }, 403);
       }
 
@@ -340,9 +336,15 @@ Deno.serve(async (req) => {
     // ── Quién puede despachar: lo mismo que decide el RLS ─────────────────
     // Se repite acá porque esta función usa la llave de servicio y el RLS no la
     // frena. Si las dos reglas se separan, una deja pasar lo que la otra niega.
-    const esJefaturaDelOrigen = emp?.branch_id === origenBranch
-      && ["JEFE", "SUBJEFE"].includes(String(emp?.system_role ?? ""));
-    if (!alcanceTodo && !destinatarios.includes(quien.id) && !esJefaturaDelOrigen)
+    //
+    // Lo confirma LA SALA que tiene el producto, no una persona de esa sala.
+    // Hasta el 2026-08-17 exigía jefatura, y eso lo trababa: en toda la empresa
+    // hay 7 JEFE y 2 SUBJEFE para 8 salas, así que cada traslado quedaba
+    // colgado de que una persona concreta abriera el portal. Medido en Salud 5:
+    // 5 personas activas, las 5 con `traslados.can_approve` (cobrado más
+    // arriba) y UNA sola con cargo de jefatura. Reportado por el usuario.
+    const esDeLaSalaDeOrigen = emp?.branch_id === origenBranch;
+    if (!alcanceTodo && !destinatarios.includes(quien.id) && !esDeLaSalaDeOrigen)
       return json({
         ok: false,
         error: "Este traslado lo confirma la sala que tiene el producto.",

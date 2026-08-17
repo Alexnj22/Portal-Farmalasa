@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.656.7 — Un traslado lo confirma la sala, no una persona
+
+Reportado: *«los traslados entre sala deben poder los vendedores de la sucursal
+poderlos aprobar; esa solicitud de Rodrigo que es para Salud 5, otro vendedor de
+Salud 5 no lo puede confirmar ni le sale»*.
+
+El traslado de Rodrigo sale de **Salud 5** —la sala que tiene el producto y por
+lo tanto la que decide— y va a Salud 3. Salud 5 tiene cinco personas y **una
+sola con cargo de jefatura**. Las otras cuatro no veían la solicitud siquiera.
+
+**El permiso ya lo tenían.** Las cinco tienen concedido «aprobar traslados», y
+la pantalla ya pintaba el botón mirando ese mismo permiso. Lo que las frenaba
+era una condición extra escondida en la regla de la base: sobre la sala que
+entrega, no bastaba el permiso — había que ser jefe o subjefe. En toda la
+empresa hay **siete jefes y dos subjefes para ocho salas**, así que cada
+traslado quedaba colgado de que una persona concreta abriera el portal.
+
+Había una válvula de escape —«o estar en turno»— pero puesta del lado
+equivocado: sólo en la sala que **pide**, que es la que no tiene nada que
+confirmar. Y encima no funciona: esta semana hay ocho personas con horario
+publicado en toda la empresa y Salud 5 tiene cero. Los nueve traslados de toda
+la historia cayeron por el escalón de jefatura; el de turno no encontró a nadie
+ni una vez.
+
+Ahora la regla es una sola y sin condiciones de cargo ni de horario:
+**cualquiera de las dos salas involucradas que tenga el permiso de traslados**.
+El permiso vuelve a ser lo que decide, que es para lo que está.
+
+**Y el aviso va a la sala entera.** Era la otra mitad: sin esto la solicitud se
+vuelve visible para los cuatro pero la campana le sigue sonando a uno, y nadie
+se entera de que hay algo que contestar. La cascada que elige a quién avisarle
+dejó de escoger una persona.
+
+Se movieron **las dos capas en el mismo commit** —la regla de la base y la
+función que despacha contra el sistema, que usa la llave de servicio y por eso
+repite la regla por su cuenta—. Separadas, la pantalla ofrecería el botón y el
+despacho lo rebotaría.
+
+Alcance: **sólo traslados**. Facturación, ajustes de inventario y Min/Max quedan
+exactamente como estaban — verificado comparando el texto de la regla carácter
+por carácter, antes y después, en pruebas y en producción.
+
+Verificado en producción simulando las sesiones: una dependienta de Salud 5 pasó
+de ver **0** traslados pendientes a ver el de Rodrigo y poder confirmarlo; una
+dependienta de Salud 1 —sala ajena al traslado— sigue viendo **0**; y la jefa de
+Salud 5 no perdió nada.
+
 ## v2.656.6 — Traslados: la tarjeta de lo que viene en camino
 
 Reportado sobre una captura de «En camino»: *«mejora esta vista, hazla canónica,

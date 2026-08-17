@@ -128,7 +128,8 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
             operacion: {
                 folio: mov.operacion_folio,
                 motivo: mov.etiqueta,
-                banco: mov.entidad,
+                entidad: mov.entidad,
+                entidadEtiqueta: mov.etiqueta_entidad,
                 numero_boleta: mov.numero_boleta,
                 monto: mov.monto_operacion,
                 nota: mov.nota,

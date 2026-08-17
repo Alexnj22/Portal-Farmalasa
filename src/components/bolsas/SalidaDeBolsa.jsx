@@ -9,7 +9,7 @@ import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import PruebaDeIdentidad from './PruebaDeIdentidad';
 import {
-    fetchTiposDeSalida, probarIdentidad, registrarSalida, subirComprobante,
+    fetchEntidadesDeSalida, fetchTiposDeSalida, probarIdentidad, registrarSalida, subirComprobante,
 } from '../../data/bolsas';
 import { disponibles, elegirBolsas, totalDisponible } from '../../utils/bolsasReparto';
 import { formatMoney } from '../../utils/formatNumber';
@@ -29,9 +29,15 @@ import { useToastStore } from '../../store/toastStore';
  *
  * ── El formulario sale del CATÁLOGO ────────────────────────────────────────
  * Qué campos exige cada motivo son datos (`bolsas_tipos_salida`), no `if`s
- * escritos acá: una remesa pide banco, boleta y foto; un anticipo no pide
+ * escritos acá: una remesa pide remesadora, boleta y foto; un anticipo no pide
  * ninguno. Escrito a mano, un motivo nuevo aparecería en la base y no en la
  * pantalla.
+ *
+ * Y desde el 2026-08-17 **las opciones de ese campo también** salen de una tabla
+ * (`bolsas_entidades`): las ocho remesadoras con las que trabaja la sala. Un
+ * campo libre recibía la misma remesadora escrita de tres formas y después no
+ * había con qué agruparlas. El motivo que no tiene lista —«Pago a proveedor»—
+ * sigue siendo un campo libre: lo decide el catálogo, no un `if` acá.
  *
  * ── Quien retira el efectivo se IDENTIFICA, no se elige de una lista ───────
  * Decisión del usuario: «debe escribir el usuario y la contraseña, así nos
@@ -44,11 +50,19 @@ import { useToastStore } from '../../store/toastStore';
  * identifica la boleta del POS.
  */
 
+const hhmm = (hora) => String(hora || '').slice(0, 5);
+// El mediodía en UTC y no la fecha pelada: `2026-08-15` interpretado como
+// medianoche se corre un día para atrás con el huso de la sala.
+const fechaCorta = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-SV', {
+    day: 'numeric', month: 'short', timeZone: 'UTC',
+}) : '');
+
 export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHecho }) {
     const { user } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
 
     const [tipos, setTipos] = useState([]);
+    const [entidades, setEntidades] = useState([]);
     const [tipo, setTipo] = useState('');
     const [monto, setMonto] = useState('');
     const [entidad, setEntidad] = useState('');
@@ -64,6 +78,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     useEffect(() => {
         if (!abierto) return;
         fetchTiposDeSalida().then((t) => { setTipos(t); setTipo((v) => v || t[0]?.codigo || ''); });
+        fetchEntidadesDeSalida().then(setEntidades);
 
         // ── El motor de impresión se baja ANTES de escribir ─────────────────
         // Los dos papeles se arman con `import()` y eso los deja atados a un
@@ -88,6 +103,19 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
     }, [abierto]);
 
     const t = useMemo(() => tipos.find((x) => x.codigo === tipo) || null, [tipos, tipo]);
+
+    /** Las opciones del campo «entidad» de ESTE motivo. Vacío = campo libre. */
+    const opciones = useMemo(
+        () => entidades.filter((e) => e.tipo === tipo).map((e) => ({ value: e.nombre, label: e.nombre })),
+        [entidades, tipo],
+    );
+
+    // Cambiar de motivo VACÍA la entidad. Sin esto, elegir «Remesa · RIA» y
+    // corregir a «Pago a proveedor» dejaba a RIA escrita como proveedor: el
+    // campo se llama igual en los dos, pero el dato no es el mismo. Va en el
+    // manejador y no en un efecto sobre `tipo`: los dos cambian a la vez y son
+    // la misma decisión de quien usa la pantalla.
+    const elegirMotivo = useCallback((codigo) => { setTipo(codigo); setEntidad(''); }, []);
 
     const lista = useMemo(() => disponibles(bolsas, saldos), [bolsas, saldos]);
     const n = Number(String(monto).replace(',', '.'));
@@ -204,7 +232,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                             Motivo
                         </span>
                         <LiquidSelect
-                            value={tipo} onChange={setTipo}
+                            value={tipo} onChange={elegirMotivo}
                             options={tipos.map((x) => ({ value: x.codigo, label: x.etiqueta }))}
                             placeholder="Elegir…" ariaLabel="Motivo de la salida"
                         />
@@ -212,7 +240,12 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                 </div>
 
                 {/* De dónde sale. Se muestra y no sólo se calcula: el papel que
-                    va a entrar a esa bolsa dice justamente esto. */}
+                    va a entrar a esa bolsa dice justamente esto.
+
+                    El folio no alcanza para saber CUÁL es sobre la mesa: las
+                    bolsas de una sala se distinguen por el corte del que
+                    nacieron, y eso —día y hora— es lo que dice la etiqueta
+                    pegada afuera. Pedido del usuario el 2026-08-17. */}
                 {eleccion.repartos.length > 0 && (
                     <div data-surface="card" className="p-3 space-y-1.5">
                         <span className="text-caption font-black uppercase tracking-widest text-content-3">
@@ -225,6 +258,7 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                                     <span className="text-label text-content truncate">
                                         {r.folio}
                                         <span className="text-caption text-content-3">
+                                            {b ? ` · corte del ${fechaCorta(b.fecha)} ${hhmm(b.hora)}` : ''}
                                             {' '}· quedan {formatMoney((b?.saldo || 0) - r.monto)}
                                         </span>
                                     </span>
@@ -243,14 +277,28 @@ export default function SalidaDeBolsa({ abierto, bolsas, saldos, onClose, onHech
                     </div>
                 )}
 
-                {/* Lo que pide el motivo elegido — sale del catálogo. */}
-                {t?.etiqueta_entidad && (
+                {/* Lo que pide el motivo elegido — sale del catálogo. Y si ese
+                    campo tiene lista propia (las remesadoras), es un
+                    desplegable: así lo que se guarda coincide con el catálogo
+                    por construcción y no por cómo lo escribió cada quien. */}
+                {t?.etiqueta_entidad && (opciones.length ? (
+                    <div>
+                        <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
+                            {t.etiqueta_entidad}
+                        </span>
+                        <LiquidSelect
+                            value={entidad} onChange={setEntidad}
+                            options={opciones}
+                            placeholder="Elegir…" ariaLabel={t.etiqueta_entidad}
+                        />
+                    </div>
+                ) : (
                     <PortalInput
                         label={t.etiqueta_entidad} name="entidad"
                         value={entidad} onChange={(e) => setEntidad(e.target.value)}
-                        placeholder={t.etiqueta_entidad === 'Banco' ? 'Banco del POS' : 'A quién se le paga'}
+                        placeholder="A quién se le paga"
                     />
-                )}
+                ))}
                 {t?.pide_boleta && (
                     <PortalInput
                         label="Número de boleta" name="boleta"

@@ -236,6 +236,28 @@ export async function fetchTiposDeSalida() {
 }
 
 /**
+ * A quién se le entrega el dinero, cuando eso es una lista cerrada: las
+ * **remesadoras** de una remesa.
+ *
+ * Sale de `bolsas_entidades` por el mismo motivo que los tipos: una lista de
+ * opciones que existe como tabla no se escribe a mano. Escrita en el `.jsx`, la
+ * remesadora nueva aparece en la base y no en la pantalla — o al revés, que es
+ * peor: se registra un nombre que el servidor va a rechazar.
+ *
+ * Un tipo SIN filas acá deja su campo libre (hoy, «Pago a proveedor»). Por eso
+ * se traen todas de una y se agrupan por tipo en la pantalla: son ocho filas, y
+ * un viaje por cada cambio de motivo sería un viaje por cada clic.
+ */
+export async function fetchEntidadesDeSalida() {
+    const { data, error } = await supabase.from('bolsas_entidades')
+        .select('tipo, nombre')
+        .eq('activo', true)
+        .order('orden');
+    if (error) { console.error('bolsas: fetchEntidadesDeSalida failed:', error.message); return []; }
+    return data || [];
+}
+
+/**
  * La foto del comprobante del POS. Bucket privado; se guarda la URL en formato
  * público como identificador porque la firmada expira (regla 10 de CLAUDE.md).
  */

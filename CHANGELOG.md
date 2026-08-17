@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.5 — Las remesadoras salen de una lista, y el ticket cierra con el efectivo
+
+Tres pedidos del usuario sobre las bolsas de efectivo, más el borrado de los dos
+vales de prueba de la bolsa S5-1003 (vuelve a $488.12, y su bitácora queda con
+«se guardó» y nada más).
+
+**El campo decía «Banco» y recibía una remesadora.** Las dos únicas salidas
+reales lo dejaron escrito: MONEYGRAM y RIA. Una remesa no se le entrega a un
+banco, así que el rótulo pedía un dato y le entraba otro — y como era un campo
+libre, la misma remesadora podía entrar como «Ria», «RIA» o «Ria Money» y
+después no habría con qué agruparlas. Ahora es un desplegable con las ocho que
+dictó el usuario (MONEYGRAM, RIA, TRANSNETWORK, INTERMEX, UNITELLER, BARRI,
+DOLEX, VIAMERICAS), y la lista vive en una tabla (`bolsas_entidades`), no en el
+`.jsx`: escrita a mano se desincroniza del registro. **El servidor la revalida**
+—que la pantalla ofrezca una lista no impide mandar otra cosa por la RPC— y
+guarda el nombre TAL COMO está en el catálogo, así que el dato coincide por
+construcción y no por cómo lo escribió cada quien. El motivo que no tiene lista
+—«Pago a proveedor»— sigue siendo campo libre, y eso también lo decide el
+catálogo y no un `if`.
+
+**El vale impreso decía «Banco» sobre esa misma remesadora.** El rótulo ahora
+viaja desde el tipo de salida, que es el mismo que rotula el campo del
+formulario: los dos cambian juntos y no se puede desincronizar uno.
+
+**«Sale de» ahora dice de qué corte es cada bolsa.** El folio no alcanza para
+encontrarla sobre la mesa: las bolsas de una sala se distinguen por el día y la
+hora del corte del que nacieron, que es justo lo que dice la etiqueta pegada
+afuera.
+
+**La etiqueta cierra con el efectivo, debajo de los vales.** `EFECTIVO QUE DEBE
+HABER` + `VALES ADENTRO (2)` pasaron a ser `VALES (2)` y `EFECTIVO`, en ese
+orden: la etiqueta se lee de arriba abajo como una resta —se guardó tanto, salió
+tanto en vales, queda esto— y el número que cierra la cuenta es el que
+administración busca para contar.
+
+Y una corrección que no se pidió pero se veía desde el mismo formulario: cambiar
+de motivo ya no arrastra la entidad. Elegir «Remesa · RIA» y corregir a «Pago a
+proveedor» dejaba a RIA escrita como proveedor.
+
 ## v2.657.4 — El tablero pide sólo lo que pinta
 
 Reportado por el usuario: *«¿por qué está tan lento el portal?»*. No era la

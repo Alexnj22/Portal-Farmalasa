@@ -33,7 +33,8 @@ const vale = (extra = {}) => construirValeDeSalida({
     vale: { folio: 'V-S3-260815-1', monto: 200, saldo_despues: 516.92 },
     operacion: {
         folio: 'R-260815-3', motivo: 'Remesa entregada a un cliente',
-        banco: 'Banco Agrícola', numero_boleta: '4477201', monto: 200,
+        entidad: 'MONEYGRAM', entidadEtiqueta: 'Remesadora',
+        numero_boleta: '4477201', monto: 200,
     },
     bolsa, sala: 'Salud 3', registradoPor: 'Ana Peña Núñez',
     registradoAt: '2026-08-15T02:15:00.000Z', ...extra,
@@ -130,16 +131,18 @@ describe('la etiqueta de una bolsa', () => {
     it('sin salidas dice el efectivo y no imprime tabla ni vales', () => {
         const t = etiqueta();
         expect(t.items).toBeUndefined();
-        expect(t.totales).toEqual([['EFECTIVO ADENTRO', '$716.92', true]]);
-        expect(cuerpo(t)).not.toContain('VALES ADENTRO');
+        expect(t.totales).toEqual([['EFECTIVO', '$716.92', true]]);
+        expect(cuerpo(t)).not.toContain('VALES');
     });
 
-    it('descuenta las salidas y dice cuanto efectivo debe quedar', () => {
+    it('descuenta las salidas y cierra con el efectivo, DEBAJO de los vales', () => {
         // 716.92 − 200 − 150. Es la cifra que administracion cuenta con las
-        // manos, y por eso es la destacada.
+        // manos, y por eso es la destacada y la ultima: la etiqueta se lee como
+        // una resta, y el numero que cierra la cuenta es el que se busca
+        // (pedido del usuario, 2026-08-17).
         expect(etiqueta({ salidas }).totales).toEqual([
-            ['EFECTIVO QUE DEBE HABER', '$366.92', true],
-            ['VALES ADENTRO (2)', '$350.00'],
+            ['VALES (2)', '$350.00'],
+            ['EFECTIVO', '$366.92', true],
         ]);
     });
 
@@ -150,8 +153,8 @@ describe('la etiqueta de una bolsa', () => {
             salidas: [{ fecha: '2026-08-15', hora: '11:02', motivo: 'Remesa', monto: -716.92 }],
         });
         expect(vacia.totales).toEqual([
-            ['EFECTIVO QUE DEBE HABER', '$0.00', true],
-            ['VALES ADENTRO (1)', '$716.92'],
+            ['VALES (1)', '$716.92'],
+            ['EFECTIVO', '$0.00', true],
         ]);
     });
 
@@ -165,8 +168,8 @@ describe('la etiqueta de una bolsa', () => {
     });
 
     it('sin salidas no repite el monto: el total de abajo dice lo mismo', () => {
-        // `Guardado al cerrar` y `EFECTIVO ADENTRO` son el mismo numero cuando
-        // no salio nada de la bolsa.
+        // `Guardado al cerrar` y `EFECTIVO` son el mismo numero cuando no salio
+        // nada de la bolsa.
         expect(cuerpo(etiqueta())).not.toContain('Guardado al cerrar');
         expect(cuerpo(etiqueta({ salidas }))).toContain('Guardado al cerrar: $716.92');
     });
@@ -228,6 +231,23 @@ describe('el vale que queda dentro de la bolsa', () => {
 
     it('cuando la operacion cabe en una sola bolsa no dice nada de partes', () => {
         expect(pie(vale())).not.toContain('Parte de');
+    });
+
+    it('el rotulo de a quien se le entrego lo dice el TIPO, no este archivo', () => {
+        // El papel decia «Banco» sobre una remesadora. El rotulo viaja desde
+        // `bolsas_tipos_salida` —el mismo que rotula el campo del formulario—,
+        // asi que los dos cambian juntos y no se puede desincronizar uno.
+        expect(cuerpo(vale())).toContain('Remesadora: MONEYGRAM');
+        expect(cuerpo(vale({
+            operacion: {
+                folio: 'P-260815-7', motivo: 'Pago a proveedor', monto: 200,
+                entidad: 'DROGUERIA SANTA MARIA', entidadEtiqueta: 'Proveedor',
+            },
+        }))).toContain('Proveedor: DROGUERIA SANTA MARIA');
+        // Y sin entidad no gasta un renglon en un rotulo vacio.
+        expect(cuerpo(vale({
+            operacion: { folio: 'A-1', motivo: 'Anticipo a un empleado', monto: 200 },
+        }))).not.toContain('Entidad');
     });
 });
 

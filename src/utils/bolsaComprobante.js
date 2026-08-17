@@ -175,14 +175,17 @@ export function construirEtiquetaDeBolsa({
                 importeDeColumna(s.monto),
             ]),
         } : undefined,
+        // El destacado es el efectivo y no el total: es la unica cifra que
+        // alguien va a contar con las manos. Y va ULTIMO, debajo de los vales
+        // (pedido del usuario, 2026-08-17): la etiqueta se lee de arriba abajo
+        // como una resta —se guardo tanto, salio tanto en vales, queda esto— y
+        // el numero que cierra la cuenta es el que administracion busca.
         totales: hubo
             ? [
-                // El destacado es el efectivo y no el total: es la unica cifra
-                // que alguien va a contar con las manos.
-                ['EFECTIVO QUE DEBE HABER', formatMoney(efectivo), true],
-                [`VALES ADENTRO (${salidas.length})`, formatMoney(sacado)],
+                [`VALES (${salidas.length})`, formatMoney(sacado)],
+                ['EFECTIVO', formatMoney(efectivo), true],
             ]
-            : [['EFECTIVO ADENTRO', formatMoney(inicial), true]],
+            : [['EFECTIVO', formatMoney(inicial), true]],
         // El número de etiqueta y la hora en que se imprimió son UN dato —cuál
         // es la buena— así que van en un renglón, no en dos con un blanco en el
         // medio.
@@ -215,7 +218,7 @@ export function construirEtiquetaDeBolsa({
  *     la operación entera.
  *
  * @param {object} vale        { folio, monto, saldo_despues }
- * @param {object} operacion   { folio, motivo, banco, numero_boleta, monto, nota }
+ * @param {object} operacion   { folio, motivo, entidad, entidadEtiqueta, numero_boleta, monto, nota }
  * @param {object} bolsa       { folio, fecha, hora }
  * @param {string} sala
  * @param {string} registradoPor
@@ -238,7 +241,15 @@ export function construirValeDeSalida({
         ['Corte', `${fechaCorta(bolsa?.fecha)} ${hhmm(bolsa?.hora)}`],
         ['Motivo', recortar(operacion?.motivo || 'Sin motivo', 30)],
     ];
-    if (operacion?.banco) datos.push(['Banco', recortar(operacion.banco, 30)]);
+    // El rotulo lo dice el TIPO de salida, no este archivo: una remesa se le
+    // entrega a una remesadora y un pago a un proveedor, y el papel escrito a
+    // mano decia «Banco» sobre las dos. Sale de `bolsas_tipos_salida`, que es
+    // de donde sale tambien el rotulo del formulario — un rotulo escrito en dos
+    // lugares se desincroniza el dia que alguien cambia uno.
+    if (operacion?.entidad) {
+        datos.push([recortar(soloAscii(operacion.entidadEtiqueta || 'Entidad'), 16),
+                    recortar(operacion.entidad, 30)]);
+    }
     if (operacion?.numero_boleta) datos.push(['No. de boleta', recortar(operacion.numero_boleta, 24)]);
 
     const identificacion = recibidoPor?.metodo

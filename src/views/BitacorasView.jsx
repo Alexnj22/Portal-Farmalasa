@@ -57,9 +57,10 @@ const rotularDia = (fecha) => {
     const hoy = hoySV();
     if (fecha === hoy) return 'Hoy';
     if (fecha === correrDia(hoy, -1)) return 'Ayer';
-    return new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
+    const txt = new Date(`${fecha}T12:00:00Z`).toLocaleDateString('es-SV', {
         weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
     });
+    return txt.charAt(0).toUpperCase() + txt.slice(1);
 };
 
 export default function BitacorasView() {
@@ -218,7 +219,7 @@ export default function BitacorasView() {
                                     onNext={() => setFecha(f => correrDia(f, 1))}
                                     nextDisabled={esHoy}
                                 >
-                                    <span className="text-body-sm font-bold text-content-2 capitalize">
+                                    <span className="text-body-sm font-bold text-content-2">
                                         {rotularDia(fecha)}
                                     </span>
                                 </PeriodStepper>
@@ -236,7 +237,7 @@ export default function BitacorasView() {
                         puedeAnotar={puedeAnotar} onRecargar={cargarDia} />
                 ) : tab === 'libro' ? (
                     <TabBajoReceta renglones={libroFiltrado} cargando={cargandoLibro} error={errorLibro}
-                        sucursalNombre={nombreSala} />
+                        branchId={sala} sucursalNombre={nombreSala} />
                 ) : tab === 'cierre' ? (
                     <TabCierre branchId={sala} fechaVista={fecha} />
                 ) : (

@@ -56,7 +56,7 @@ const CLAVE_DE_ORDEN = {
     paciente: 'paciente', medico: 'medico', vendedor: 'vendedor', estado: 'estado',
 };
 
-export default function TabBajoReceta({ renglones, cargando, error, sucursalNombre }) {
+export default function TabBajoReceta({ renglones, cargando, error, branchId, sucursalNombre }) {
     // Se guarda el ID, no la fila. Con la fila entera haría falta un efecto que
     // la cierre cuando la lista se recarga y ese renglón ya no está — y un panel
     // abierto sobre una fila que no existe muestra datos viejos como si fueran
@@ -144,7 +144,7 @@ export default function TabBajoReceta({ renglones, cargando, error, sucursalNomb
                         <DataRow key={r.id} index={i} onClick={() => setAbiertoId(r.id)}
                             className={r.estado === 'anulada' ? 'opacity-60' : ''}>
                             <DataCell>
-                                <span className="text-body-sm font-black tabular-nums text-content">{r.folio_txt}</span>
+                                <span className="text-body-sm font-black tabular-nums text-content whitespace-nowrap">{r.folio_txt}</span>
                             </DataCell>
                             <DataCell>
                                 <p className="text-body-sm text-content-2 tabular-nums">{fmtFecha(r.fecha)}</p>
@@ -187,8 +187,16 @@ export default function TabBajoReceta({ renglones, cargando, error, sucursalNomb
                                 <div className="flex flex-wrap items-center gap-1">
                                     <Badge variant={est.variant} size="sm" uppercase={false}>{est.label}</Badge>
                                     {vencidoAlVender && <Badge variant="danger" size="sm" uppercase={false}>Lote vencido</Badge>}
+                                    {/* Sólo cuántos, no cuáles. La lista entera
+                                        —«falta paciente, médico, foto de la
+                                        receta»— ocupaba tres renglones en CADA
+                                        fila y duplicaba el alto de la tabla; el
+                                        detalle está en el renglón abierto, que
+                                        es donde se va a completar. */}
                                     {faltan.length > 0 && r.estado === 'pendiente' && (
-                                        <span className="text-label text-content-3">falta {faltan.join(', ')}</span>
+                                        <span className="text-label text-content-3 whitespace-nowrap">
+                                            faltan {faltan.length}
+                                        </span>
                                     )}
                                 </div>
                             </DataCell>
@@ -204,7 +212,7 @@ export default function TabBajoReceta({ renglones, cargando, error, sucursalNomb
                 subtitulo={abierto ? `${sucursalNombre} · ${fmtFecha(abierto.fecha)}` : ''}
                 variante="pantalla"
             >
-                {(fila) => <DetalleDeFolio renglon={fila} />}
+                {(fila) => <DetalleDeFolio renglon={fila} branchId={branchId} />}
             </ExpedienteMovil>
         </div>
     );

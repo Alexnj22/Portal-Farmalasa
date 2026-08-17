@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.645.2 — Bitácoras: correcciones vistas en pantalla
+
+**Cinco defectos que ningún gate podía encontrar**, y salieron de abrir la vista
+en el navegador. Es la mitad del checklist que no se puede saltar: compilar y
+pasar los gates no prueba nada sobre lo que se ve.
+
+**Abrir un folio decía «ese folio no existe en esta sucursal» — y era mentira.**
+El detalle pedía la sucursal con `renglon.branch_id ?? renglon.branchId`, un
+campo que la consulta del libro no devuelve. La cadena de rescates convirtió «no
+lo tengo» en `undefined` y siguió; el servidor no encontró fila y la pantalla
+culpó al dato. Ahora la sucursal se pasa explícita desde la vista, que es la
+única que la sabe con certeza.
+
+**«100% de cumplimiento» sobre 0 de 0.** Un mes en el que no se esperaba nada
+no es un mes cumplido, y el regente habría firmado un logro vacío — justo la
+clase de número falso que este módulo existe para no producir. Ahora se pinta
+«—».
+
+**«Julio De 2026» y «Lunes 11 De Agosto»**: la clase `capitalize` de CSS pone
+mayúscula en cada palabra. Se corrige en el rotulador, una sola vez.
+
+**El folio se partía en dos renglones** (`2026-` / `00029`). Es la clave del
+libro y la que se compara contra un papel: cortada a la mitad no se lee de un
+vistazo.
+
+**«falta paciente, médico, foto de la receta» en cada fila** ocupaba tres
+renglones y duplicaba el alto de la tabla. En la lista alcanza con cuántos; el
+detalle está en el renglón abierto, que es donde se completa.
+
+Más el relleno del panel del folio, que iba pegado al filo.
+
+Barrido de teléfono (WebKit, iPhone 13) sobre las cuatro pestañas: 0 tablas, 0
+desbordes, 0 elementos fuera del marco, 0 blancos táctiles chicos, 0 inputs bajo
+16px. Barrido de escritorio a 1440 y 1280: ninguna columna fuera del marco.
+
 ## v2.645.1 — Bitácoras: la pantalla, el libro y el widget
 
 **El módulo ya se ve y se usa.** Cuatro secciones: el registro diario, el libro

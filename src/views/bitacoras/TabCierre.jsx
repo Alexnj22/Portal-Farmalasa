@@ -28,11 +28,19 @@ import {
 
 const nombreMes = (p) => {
     const [a, m] = String(p).split('-').map(Number);
-    return new Date(Date.UTC(a, m - 1, 1))
+    const txt = new Date(Date.UTC(a, m - 1, 1))
         .toLocaleDateString('es-SV', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    // Sólo la PRIMERA letra. La clase `capitalize` de CSS pone mayúscula en cada
+    // palabra y dejaba «Julio De 2026».
+    return txt.charAt(0).toUpperCase() + txt.slice(1);
 };
 
-const pct = (hechas, esperadas) => (esperadas > 0 ? Math.round((hechas / esperadas) * 100) : 100);
+const pct = (hechas, esperadas) => (esperadas > 0 ? Math.round((hechas / esperadas) * 100) : null);
+
+// `null` se pinta «—», no «100%». Un mes sin nada esperado no es un mes
+// cumplido: es un mes que no aplica, y decir 100% sería firmar un logro vacío.
+const rotularPct = (p) => (p === null ? '—' : `${p}%`);
+const tonoPct = (p) => (p === null ? undefined : p === 100 ? 'success' : 'warning');
 
 /** Un número del resumen, con su rótulo. El tono lo pone quien lo usa. */
 function Cifra({ valor, label, tono }) {
@@ -121,7 +129,7 @@ export default function TabCierre({ branchId, fechaVista }) {
                     onNext={() => setPeriodo(p => correrPeriodo(p, 1))}
                     nextDisabled={periodo >= periodoDe(hoySV())}
                 >
-                    <span className="text-body-sm font-bold text-content-2 capitalize">{nombreMes(periodo)}</span>
+                    <span className="text-body-sm font-bold text-content-2">{nombreMes(periodo)}</span>
                 </PeriodStepper>
 
                 {cerrado
@@ -142,8 +150,8 @@ export default function TabCierre({ branchId, fechaVista }) {
                             Lecturas de temperatura y humedad
                         </h4>
                         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                            <Cifra valor={`${pct(L.hechas, L.esperadas)}%`} label="Cumplimiento"
-                                tono={pct(L.hechas, L.esperadas) === 100 ? 'success' : 'warning'} />
+                            <Cifra valor={rotularPct(pct(L.hechas, L.esperadas))} label="Cumplimiento"
+                                tono={tonoPct(pct(L.hechas, L.esperadas))} />
                             <Cifra valor={`${L.hechas}/${L.esperadas}`} label="Anotadas" />
                             <Cifra valor={L.faltantes} label="Faltantes" tono={L.faltantes > 0 ? 'danger' : 'success'} />
                             <Cifra valor={L.tarde} label="Fuera de hora" tono={L.tarde > 0 ? 'warning' : undefined} />
@@ -176,8 +184,8 @@ export default function TabCierre({ branchId, fechaVista }) {
                     <section className="space-y-3">
                         <h4 className="text-body-sm font-black uppercase tracking-widest text-content-3">Limpieza y orden</h4>
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                            <Cifra valor={`${pct(Li.hechas, Li.esperadas)}%`} label="Cumplimiento"
-                                tono={pct(Li.hechas, Li.esperadas) === 100 ? 'success' : 'warning'} />
+                            <Cifra valor={rotularPct(pct(Li.hechas, Li.esperadas))} label="Cumplimiento"
+                                tono={tonoPct(pct(Li.hechas, Li.esperadas))} />
                             <Cifra valor={`${Li.hechas}/${Li.esperadas}`} label="Registradas" />
                             <Cifra valor={Li.faltantes} label="Faltantes" tono={Li.faltantes > 0 ? 'danger' : 'success'} />
                         </div>
@@ -219,7 +227,7 @@ export default function TabCierre({ branchId, fechaVista }) {
                         permiso, por estar el mes en curso o por estar ya cerrado. */}
                     {!cerrado && !enCurso && puedeFirmar && (
                         <section data-surface="card" className="p-4 space-y-3">
-                            <h4 className="text-body font-black text-content">Dar por finalizado {nombreMes(periodo)}</h4>
+                            <h4 className="text-body font-black text-content">Dar por finalizado {nombreMes(periodo).toLowerCase()}</h4>
                             {L.faltantes + Li.faltantes > 0 && (
                                 <Notice variant="warning" icon={AlertTriangle}>
                                     <span className="font-bold">

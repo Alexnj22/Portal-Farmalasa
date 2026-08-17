@@ -59,7 +59,7 @@ function Dato({ label, children, mono = false, ancho = false }) {
     );
 }
 
-export default function DetalleDeFolio({ renglon }) {
+export default function DetalleDeFolio({ renglon, branchId }) {
     const { hasPermission } = useAuth();
     const puedeVerMontos = hasPermission('bitacoras', 'can_view');
 
@@ -73,7 +73,7 @@ export default function DetalleDeFolio({ renglon }) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- pide el folio completo al abrir el panel
         setCargando(true);
         setError(null);
-        fetchFolio(renglon.branch_id ?? renglon.branchId, renglon.anio, renglon.folio)
+        fetchFolio(branchId, renglon.anio, renglon.folio)
             .then(({ renglon: d, error: err }) => {
                 if (!vivo) return;
                 if (err) setError(err.message || 'No se pudo cargar el folio.');
@@ -81,7 +81,7 @@ export default function DetalleDeFolio({ renglon }) {
                 setCargando(false);
             });
         return () => { vivo = false; };
-    }, [renglon]);
+    }, [renglon, branchId]);
 
     const abrirComprobante = useCallback(async () => {
         if (!detalle?.venta?.pdf_path) return;
@@ -107,7 +107,7 @@ export default function DetalleDeFolio({ renglon }) {
     const vencidoAlVender = producto?.vence && detalle.fecha && producto.vence < detalle.fecha;
 
     return (
-        <div className="space-y-4">
+        <div className="p-4 md:p-6 space-y-4">
             {/* La cabecera dice QUÉ es este renglón antes que nada: el folio, su
                 estado y la fecha. Es lo que se compara contra el papel. */}
             <div className="flex flex-wrap items-center gap-2">

@@ -21,6 +21,113 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.657.0 — El traslado que sale de una sala cerrada lo despacha la sala de al lado
+
+Planteado por el usuario: *«las sucursales solicitan traslado a bodega, pero
+bodega trabaja de 8 a 5; si es a las 5 de la tarde, sábado por la tarde o
+domingo todo el día, no hay nadie que lo confirme. Salud 3 está en el mismo
+lugar que bodega, así que ellos lo hacían con un usuario especial para
+realizarlo en el ERP. ¿Cómo podemos solventar con el portal, para no perder
+esta función?»*
+
+**El caso es real y ya es la mayoría del tráfico.** De los 10 traslados de toda
+la historia, **6 salen de Bodega**. Bodega abre L-V 08:00–17:00, el sábado
+hasta el mediodía y el domingo no abre; Salud 3 abre 07:00–21:00. Y las dos
+comparten predio: (14.041176, -88.963111) contra (14.041184, -88.963146) —
+cuatro metros y la misma dirección escrita. Por eso Salud 3 puede sacar el
+producto y Salud 1 no: la regla no es «otra sala cualquiera», es la de al lado.
+
+**El portal nunca necesitó el usuario compartido.** `aplicar-traslado-inventario`
+abre su propia sesión en la sucursal de origen con credenciales de servicio, o
+sea que ya podía despachar desde Bodega apretando el botón desde cualquier
+lado. Lo único que faltaba era la regla que dijera quién puede apretarlo — y
+esta versión la escribe de forma que el movimiento quede firmado con el nombre
+de la persona, que es justo lo que un usuario compartido no puede dar.
+
+── **La sala de respaldo** ──────────────────────────────────────────────────
+
+Una sala puede tener una sala de respaldo (`branches.sala_respaldo_id`, hoy
+Bodega → Salud 3). Mientras la primera está **cerrada según su propio
+horario**, la de respaldo puede despachar sus traslados; en cuanto abre, vuelve
+a decidir ella. Tres decisiones del usuario, tomadas antes de escribir nada:
+
+1. **Sólo con la sala cerrada.** En horario, decide quien tiene el producto.
+2. **Sólo despachar.** Lo que le llega a Bodega lo recibe Bodega cuando abre.
+3. **Salud 3 puede confirmarse lo suyo, y queda marcado** — es el caso real:
+   de noche necesita algo y lo saca de la bodega de al lado.
+
+La regla vive en **una** función (`salas_que_cubre_ahora`), llamada por la
+policy de `approval_requests` y por la Edge Function. El propio archivo de la
+función explica por qué: separadas, la pantalla ofrece el botón y el despacho
+lo rebota con 403.
+
+Tres detalles que no se pueden improvisar:
+
+· **La falla segura es «abierta».** `weekly_hours` se escribe a mano y tiene
+  basura real —Salud 2 guarda `"19:00 PM"`—; un `::time` a secas revienta y se
+  lleva puesta la policy. Se extrae la primera hora con forma, y si no hay
+  ninguna la sala se da por ABIERTA: la duda no le abre la puerta a la sala de
+  respaldo.
+· **La llamada en la policy es un initplan** (`= ANY (COALESCE((SELECT …)))`),
+  o sea UNA evaluación por consulta y no por fila. Regla del incidente
+  2026-07-08.
+· **A la mañana siguiente Bodega se entera.** Un cron a las 08:05 SV le cuenta
+  a la sala que estuvo cerrada qué salió y quién lo despachó. La marca de «ya
+  avisado» es la notificación misma y NO se escribe en la solicitud: cualquier
+  update ahí mueve `updated_at`, que en un traslado despachado es la hora de
+  salida — la que muestra la tarjeta.
+
+**Verificado en prod simulando sesiones** (`request.jwt.claims`, en
+transacción revertida, con el horario de Bodega alterado y devuelto):
+
+| | cubre | ve traslados de Bodega hacia otras salas |
+|---|---|---|
+| Maribel Alberto (Salud 3), Bodega **abierta** | `{}` | 0 |
+| Maribel Alberto (Salud 3), Bodega **cerrada** | `{30}` | 7 |
+| Adriana Ramírez (Salud 1), Bodega **cerrada** | `{}` | 0 |
+
+Y en staging antes: día marcado cerrado → cubre; horario ya vencido → cubre;
+horario ilegible → **no** cubre.
+
+── **Y el nombre de quien pide, que salía vacío** ───────────────────────────
+
+Reportado en la misma sesión: *«cuando se va a aceptar un traslado, solicitó
+sale sin nombre»*.
+
+`COLUMNAS_PERSONA` —la lista de columnas con la que la bandeja de Solicitudes
+trae a las dos personas de cada solicitud— pedía `code`. Desde que ese código
+es la contraseña del carné, `authenticated` **no tiene SELECT sobre esa
+columna** (82 de las 84 de `employees`, y `code` es una de las dos que no), y
+Postgres no devuelve la fila sin ella: devuelve `42501 permission denied for
+table employees` y no trae NADA.
+
+O sea que esa consulta fallaba en CADA carga de la bandeja, **en silencio** —
+sólo un `console.error`—, y las personas se salvaban de rebote por el escalón
+que busca «los que el maestro esconde». Ese respaldo terminó cargando a todo el
+mundo y, como no devuelve `code`, `email` ni `system_role`, las tres se perdían
+igual. Verificado en prod simulando una sesión: con `code` la consulta muere,
+sin `code` devuelve la fila completa.
+
+Se quitó `code` de la lista y con él la línea «Código:» del detalle, que no
+podía tener dato desde el cambio del carné. Si hace falta ubicar a alguien en
+su legajo, el camino es su ficha de personal.
+
+**Falta**, y no está en esta versión: el widget del tablero recorta «Te piden
+de tu sala» por `origen = mi sala` (v2.656.15, otra sesión, sin commitear
+todavía). Ese recorte deja fuera a la sala de respaldo, así que el atajo del
+tablero no le va a mostrar los traslados de Bodega — hay que cambiarlo por
+`origen ∈ {mi sala} ∪ salas que cubro ahora`. Mientras tanto **se contestan
+desde Solicitudes**, que es donde vive la decisión desde el 2026-08-15 y que no
+lleva ese filtro.
+
+Migraciones `20260817205059` y `20260817205505`, la primera probada antes en el
+branch de staging. Edge function redesplegada con `verify_jwt=true` — el 401 del
+curl lo confirma.
+
+## v2.656.15 — fix(traslados): cada sala ve lo suyo — el que pide no confirma y el que despacha no recibe
+
+_(pendiente de redactar)_
+
 ## v2.656.14 — La sala sigue contando aunque un renglón salga con diferencia
 
 Reportado desde La Popular: *«no confirmaron todo y no permite hacerlo»*.

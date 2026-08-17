@@ -344,7 +344,29 @@ Deno.serve(async (req) => {
     // 5 personas activas, las 5 con `traslados.can_approve` (cobrado más
     // arriba) y UNA sola con cargo de jefatura. Reportado por el usuario.
     const esDeLaSalaDeOrigen = emp?.branch_id === origenBranch;
-    if (!alcanceTodo && !destinatarios.includes(quien.id) && !esDeLaSalaDeOrigen)
+
+    /* ── Y la sala de RESPALDO, mientras la de origen está CERRADA ────────
+     *
+     * Bodega trabaja de 8 a 5 y no abre el domingo, así que un traslado que
+     * sale de ahí un sábado por la tarde no tenía a nadie que lo confirmara.
+     * Salud 3 está en el mismo predio —cuatro metros, la misma dirección— y
+     * hasta hoy resolvía eso por fuera del portal, con un usuario compartido.
+     *
+     * Quién cubre a quién y desde qué hora NO se decide acá: lo contesta
+     * `salas_que_cubre_ahora`, la MISMA función que usa la policy. Separadas,
+     * la pantalla ofrecería el botón y el despacho lo rebotaría con 403.
+     *
+     * El error del RPC se propaga a propósito: si no se pudo preguntar, no se
+     * puede afirmar que esta persona tenga permiso. */
+    let cubreAlOrigen = false;
+    if (!esDeLaSalaDeOrigen && emp?.branch_id != null) {
+      const { data: cubiertas, error: cubreErr } = await admin
+        .rpc("salas_que_cubre_ahora", { p_branch_id: emp.branch_id });
+      if (cubreErr) throw cubreErr;
+      cubreAlOrigen = Array.isArray(cubiertas) && cubiertas.includes(origenBranch);
+    }
+
+    if (!alcanceTodo && !destinatarios.includes(quien.id) && !esDeLaSalaDeOrigen && !cubreAlOrigen)
       return json({
         ok: false,
         error: "Este traslado lo confirma la sala que tiene el producto.",
@@ -628,6 +650,12 @@ Deno.serve(async (req) => {
       // pueda nombrar: ahí ya no se tiene a esta persona a mano, sólo lo que
       // quedó guardado acá.
       by_sala: codigoDespacha,
+      // Lo despachó la sala de respaldo porque la del producto estaba cerrada.
+      // Se guarda para que la sala de origen pueda ver, al abrir, qué salió
+      // mientras no había nadie — y para que el historial no lo cuente como si
+      // lo hubiera despachado ella. `undefined` en el caso normal: la clave ni
+      // siquiera aparece en el jsonb.
+      por_respaldo: cubreAlOrigen ? true : undefined,
       id_traslado: idTraslado,
       // Si quedó en null, el traslado ENTRÓ igual: lo único que falta es el
       // número para poder recibirlo desde el portal. Se dice, no se calla.

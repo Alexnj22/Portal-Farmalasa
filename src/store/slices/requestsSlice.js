@@ -234,8 +234,24 @@ const parseMeta = (raw) =>
  * imagen rota, así que se firma acá mismo y se deja en `photo`, que es el
  * nombre que ya usa el maestro de personal. `email` es lo que Min/Max guarda
  * como «quien decidió», y sirve para reconocerlo sin una consulta extra.
+ *
+ * ── Sin `code`, y no es un olvido (2026-08-17) ─────────────────────────────
+ * `code` estaba en esta lista y **hacía fallar la consulta entera**. Al volver
+ * ese código la contraseña del carné se le revocó el SELECT a `authenticated`
+ * (tiene 82 de las 84 columnas de `employees`; `code` es una de las dos que
+ * no), y Postgres no devuelve la fila sin esa columna: devuelve
+ * `42501 permission denied for table employees` y no trae NADA.
+ *
+ * O sea que `fetchEmployeesByIds` venía fallando en CADA carga de la bandeja,
+ * en silencio —sólo un `console.error`— desde entonces. Las personas se salvaban
+ * de casualidad por el escalón 4c, que va a buscar «los que el maestro
+ * esconde»: ese respaldo terminó cargando a TODO el mundo, y como la RPC no
+ * devuelve `code`, `email` ni `system_role`, las tres se perdían igual.
+ *
+ * Verificado en prod simulando una sesión (`request.jwt.claims`): con `code` la
+ * consulta muere; sin `code` devuelve la fila completa.
  */
-const COLUMNAS_PERSONA = 'id, name, first_names, last_names, code, email, photo_url, role_id, branch_id, system_role';
+const COLUMNAS_PERSONA = 'id, name, first_names, last_names, email, photo_url, role_id, branch_id, system_role';
 
 /**
  * Le agrega a cada persona su foto firmada, el NOMBRE de su cargo y el de su

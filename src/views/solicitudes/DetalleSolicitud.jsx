@@ -31,15 +31,11 @@ import { ajusteSinCambio, fmtUltimaVenta } from '../../utils/minmaxSolicitud';
 // Con un solo archivo, agregar un tipo nuevo lo agrega en los dos lados. Que es
 // justo lo que no pasó las últimas tres veces.
 
-// Las solicitudes que NO hablan del expediente de quien las manda: hablan de una
-// factura o de una existencia. Ya no anotan nada en el legajo (ver
-// `REQUEST_TYPES_QUE_SE_APLICAN`), y por lo mismo su detalle no muestra el
-// código de empleado.
-const DE_LEGAJO_AJENO = new Set([
-    'ANNULMENT_REQUEST', 'PAYMENT_CHANGE_REQUEST', 'VENDOR_CHANGE_REQUEST',
-    'CLIENT_CHANGE_REQUEST', 'INVENTORY_LOAD_REQUEST', 'INVENTORY_DISCARD_REQUEST',
-    'INVENTORY_TRANSFER_REQUEST', 'MINMAX_CHANGE_REQUEST',
-]);
+// `DE_LEGAJO_AJENO` vivía acá: la lista de solicitudes que no hablan del
+// expediente de quien las manda —una factura, una existencia— y a las que por
+// eso no se les mostraba el código de empleado. Se fue con esa línea el
+// 2026-08-17, cuando el código dejó de poder leerse desde el navegador; sin el
+// único `if` que la consultaba era una lista que no decidía nada.
 
 const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 // `fmtDateFull` vivía acá y lo usaba el recuadro de la factura que reemplazó
@@ -812,13 +808,16 @@ export default function DetalleSolicitud({ req, employeesById, seleccion, onTogg
                 </div>
             )}
 
-            {/* El código de empleado sirve para ubicar a alguien en su legajo —
-                vacaciones, permisos, constancias—, no para decidir sobre una
-                factura ni sobre una existencia. En esas hablamos del documento o
-                del producto, y el número sobra. */}
-            {req.employee?.code && !DE_LEGAJO_AJENO.has(req.type) && (
-                <p className="text-caption text-content-3">Código: <span className="font-mono font-bold text-content-2">{req.employee.code}</span></p>
-            )}
+            {/* Acá se mostraba el CÓDIGO de empleado de quien pidió. Se retiró
+                el 2026-08-17: desde que ese código es la contraseña del carné,
+                la base no se lo deja leer a nadie salvo al servicio —
+                `authenticated` no tiene SELECT sobre esa columna— así que la
+                línea no podía tener dato. Peor: pedirla hacía fallar la
+                consulta ENTERA de las personas de la solicitud (ver
+                `COLUMNAS_PERSONA` en `requestsSlice`), o sea que el precio de
+                un número que nunca se pintaba lo pagaban el nombre y la cara.
+                Si algún día hace falta ubicar a alguien en su legajo, el camino
+                es su ficha de personal, no esta pantalla. */}
         </div>
     );
 }

@@ -116,6 +116,22 @@ export function DecisionTraslado({ fila, onHecho }) {
 
     return (
         <div className="flex flex-col gap-2">
+            {/* Por qué te aparece un traslado de una sala que no es la tuya.
+                Sin esta línea, quien lo ve tiene que adivinar si es un error.
+
+                Lo dice el SERVIDOR —`respaldo` sale de la misma función que
+                autoriza el despacho—, no una cuenta del navegador: así el
+                aviso no puede prometer algo que después el despacho rebote. Y
+                sólo viene cuando de verdad estás cubriendo a esa sala en este
+                momento; en el caso normal la clave no existe y acá no se pinta
+                nada. */}
+            {disp?.respaldo && (
+                <p className="text-micro font-semibold text-brand-text leading-snug">
+                    {disp.respaldo.sala} está cerrada: lo despachas tú por ellos, y mañana
+                    les llega el aviso de lo que salió.
+                </p>
+            )}
+
             {/* Lo que la sala tiene AHORA, no cuando se lo pidieron — y ya con
                 lo que salió y todavía no aparece en el conteo descontado. */}
             {disp && !puede && (
